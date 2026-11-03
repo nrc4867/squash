@@ -14,6 +14,7 @@ dependencies {
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")
     implementation("dev.chieppa.stretch:stretch-frame")
+    implementation("dev.chieppa.stretch:stretch-devtools")
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
 }
@@ -25,5 +26,8 @@ compose.desktop {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
+        jvmArgs += "-Dsquash.templates=${rootProject.layout.projectDirectory.dir("templates").asFile.path}"
+        // -Pdevtools=<port> serves screenshots of the windows on 127.0.0.1.
+        providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
     }
 }

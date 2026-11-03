@@ -16,7 +16,7 @@ Not a screen, so it has no board in the artifact.
 
 | Board | State | Verify |
 | --- | --- | --- |
-| Home | planned | |
+| Home | building | |
 | Home: library | planned | |
 | Home: cast card menu | planned | |
 
@@ -24,17 +24,17 @@ Not a screen, so it has no board in the artifact.
 
 | Board | State | Verify |
 | --- | --- | --- |
-| 1 New character | planned | |
-| 2 Pick a part type | planned | |
+| 1 New character | building | |
+| 2 Pick a part type | building | |
 | 3 Draw outlines in place | planned | |
-| 4 Fit the part template | planned | |
+| 4 Fit the part template | building | |
 | 5 Oversketch, drag handles | planned | |
 
 ## Several cameras
 
 | Board | State | Verify |
 | --- | --- | --- |
-| A Sheet: three cameras and full view | planned | |
+| A Sheet: three cameras and full view | building | |
 | A Sheet: views that disagree | planned | |
 | B Focus | planned | |
 | C Full first | planned | |

@@ -38,7 +38,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
-| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), slice building, the slice row graph node |
+| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), slice building, the slice row graph node, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
