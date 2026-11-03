@@ -12,7 +12,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Part instance | Template id and version, the socket it sits on, per-view outline curves, parameter values, pair id and per-side overrides | Document |
 | Surface anchor | A point on a part's surface as (part, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
 | Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
-| Slice row | The part's slices: for each u a centre, height, width, roundness, twist and proxy normal | Derived |
+| Slice row | The part's slices: for each u a frame on the axis spline, height, width, a closed section spline and a proxy normal | Derived |
 | Part mesh | Rings times segments from the slice row; every vertex tagged with part, bone, u and v | Derived |
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
@@ -33,16 +33,16 @@ The template is the recipe and the instance is what the user drew. Slices are de
 // Shipped with the app, versioned. A document never edits one.
 data class PartTemplate(
     val id: TemplateId, val version: Int, val name: String,   // "leg"
-    val axis: Axis,                    // socket end to tip; u runs 0..1 along it, v runs 0..1 around it
+    val axis: AxisSpec,                // rest direction before anything is drawn; the built axis is a spline through the Side midline
     val openEnd: End?,                 // the end that sits on the socket plane; null for a closed part
-    val rings: Int, val segments: Int, // fixed topology for every build of this version
+    val rings: Int, val segments: Int, // fixed topology: rings along u; segments = control points of every section spline
     val blocks: List<Block>,           // Tube(u0, u1), Cap(end), ToeRow(count, u), Pad(u, v), Joint(u), Skull(u), Mirror
     val params: Map<String, Range>,    // toes 3..5, spread 0..40 deg, size
-    val joints: List<JointSpec>,       // bone chain: u, hinge axis, limits, stretchable
+    val joints: List<JointSpec>,       // bone chain: u along the built axis, hinge axis, limits, stretchable
     val sockets: List<SocketSpec>,     // where children attach: u, v, outward direction, pairId
     val areas: List<AreaSpec>,         // tagged areas as u and v ranges: pad, rigid toe, inner ear
-    val views: Map<View, Sets>,        // SIDE sets height, TOP sets width, FRONT sets the end cap
-    val roundness: Profile,            // cross-section shape along u, used where a view is missing
+    val views: Map<View, Sets>,        // SIDE sets height and the axis, TOP sets width, FRONT sets the cap or the section
+    val section: SectionProfile,       // default closed section spline along u (circle, egg, keel), used where no view sets it
 )
 
 // In the document. Everything the user chose for one part.
@@ -57,8 +57,13 @@ data class PartInstance(
 )
 
 // Derived. One row per template build; the mesh is a pure function of it.
-data class Slice(val u: Float, val centre: Vec3, val height: Float, val width: Float,
-                 val roundness: Float, val twist: Float, val proxyNormalFrame: Mat3)
+data class Slice(
+    val u: Float,
+    val frame: Frame,                  // centre and orientation on the axis spline at u
+    val height: Float, val width: Float,
+    val section: ClosedSpline,         // exactly `segments` control points, sampled at fixed v, scaled by height and width
+    val proxyNormalFrame: Mat3,
+)
 
 // Where surface work lives. Survives refits because u and v are template coordinates, not positions.
 data class Anchor(val part: PartId, val u: Float, val v: Float, val offset: Float = 0f)
@@ -66,13 +71,15 @@ data class Anchor(val part: PartId, val u: Float, val v: Float, val offset: Floa
 
 Rules the code keeps:
 
-- **Views set slices, nothing fits.** At each u the Side outline's two crossings give the slice's height, the Top outline's give its width, and the Front outline shapes the cap. A missing view takes the template's roundness and the other view's extent.
+- **Views set slices, nothing fits.** At each u the Side outline's two crossings give the slice's centre (their midpoint) and height (their distance), so the axis follows the drawing and a digitigrade leg bends at the hock because it was drawn that way. The Top outline's crossings give width. The Front outline shapes the cap, or, where the template says `section`, the cross-section itself, which is how a chest gets a keel or a flat side. A missing view takes the template's section profile and the other view's extent.
+- **Everything is a spline.** Outlines are cubic Béziers. The axis is a cubic spline through the Side midline. Every cross-section is a closed cubic B-spline with exactly `segments` control points, sampled at fixed v, so a circle, an egg, a keel and a drawn chest outline are one type with different control polygons, and the mesh topology never changes. A part is a lofted surface: sections swept along the axis.
 - **Views can only disagree along the axis.** Height and width are independent, so the only conflict is where a part starts and ends along u. The highlight marks where one view extends past the other's ends, which is a comparison of two intervals per stroke.
 - **Fixed topology per template version.** Ring i maps to u, segment j maps to v, so an anchor reaches its vertex neighbourhood by arithmetic. Changing rings or segments is a new version and a migration.
 - **Open ends close at the socket plane.** The open end's slice is placed on the parent's surface at the socket, and the parent's slices are untouched. A stroke that closes anyway is cut at that plane.
 - **Heads are blocks too.** Skull is a block whose slices run front to back, with a muzzle Tube and eye and ear sockets. Face marks anchor to Skull's u and v like any other mark.
 - **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides are deltas. Breaking a pair copies the shared data into both and clears the pair id.
 - **Poses stay re-editable.** A pose keeps the body curve as a curve and the planted set as flags, so re-sampling after a character update uses the same inputs. Touch-ups are deltas in anchor space, which is why they survive Update from library.
+- **Detail beyond the sweep is anchored, not modelled.** Branching shapes are other blocks or parts. Grooves and muscle lines are a later shape touch-up layer: push and pull offsets stored in anchor space at build time, the same mechanism as per-shot touch-ups, so they survive refits.
 
 ## Part template file format
 
@@ -126,7 +133,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
   "openEnd": "start",                       // u = 0 sits on the parent's surface at the socket
   "topology": { "rings": 24, "segments": 16 },
   "views": { "side": "height", "top": "width", "front": "cap" },
-  "roundness": [[0.0, 0.9], [0.5, 0.95], [1.0, 0.8]],   // (u, roundness) pairs, 1 is a circle
+  "section": "circle",                      // default section profile: circle, egg, keel, or control points
   "params": {
     "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
     "thickness": { "default": 0.28, "min": 0.1, "max": 0.6 }
@@ -197,7 +204,7 @@ Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-`
 
 | Kind | Fields | Builds |
 | --- | --- | --- |
-| `tube` | `u` range, `radius`, `taper`, `roundness` override | A run of slices; the views resize them |
+| `tube` | `u` range, `radius`, `taper`, `section` override (a named profile or control points) | A run of slices; the views resize them |
 | `cap` | `end` (start or end), `shape` (round, flat, pointed) | Closes an end that is not a socket |
 | `skull` | `u` range, `width`, `depth` | A rounded block whose slices run front to back |
 | `toeRow` | `u` range, `count`, `spread`, `radius`, `v` | A row of small tubes fanned across the end, each with its own bone |
