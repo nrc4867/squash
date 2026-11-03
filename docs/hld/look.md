@@ -60,6 +60,20 @@ Eyes carry the acting, so they are not loose marks. An eye is a **mark group** w
 
 **UI.** A gaze gizmo in the Shot viewport (a target handle, with lock-to-camera and lock-to-character), per-eye nudges and open sliders in the Face tool, and the expression picker. None of this is on a board yet: a Shot board for eyes is due before the posing screens are built.
 
+## Mouth
+
+The mouth is a mark group like the eye, with roles: lip line, inner, teeth, tongue, corners. Its controls are open, which drives the jaw joint and a lip morph together so the line parts as the jaw drops; expression shape (smile, frown, o, grimace), a morph within the set; and width. The lip line is drawn on the muzzle's surface and wraps around it, so it reads from the side as well as the front. The inner region is the skull template's inner area with its own color, revealed as the jaw opens; teeth and tongue are marks on it by default and parts later. Smiles and puffed cheeks move the muzzle, not the mark: they are pose-driven shape fixes on the muzzle keyed to the open and expression controls. Spike 9 includes a closed, half-open and open mouth at the same three angles as the eyes.
+
+## Surface work rules
+
+- **Expressions carry poses.** An expression set holds marks and a small face pose: ear joints, jaw, and brows where they are boned. Ears back is an expression, not a hand pose. Sets blend where control counts match and switch on the character's timing where they do not.
+- **Fur has a grain.** Each part has a grain field, by default along its axis from socket to tip and outward on a ruff. A comb tool overrides it, stored as anchor-space vectors on the part. Fur strokes, outline tufts and later hair follow the grain.
+- **Paint and regions cross parts.** A brush stroke or a region border that crosses a socket continues onto the parent patch; a region is a set of anchors on any number of patches. A face mask runs from muzzle to skull and a sock from paw to leg.
+- **Paired parts mirror surface work.** Paint, regions and marks on a paired part mirror to its twin by default, with per-side overrides on top, the same rule as outlines.
+- **Strokes can leave the surface.** A mark whose anchors carry an offset renders as a 3D line off the surface and moves with its part: whiskers, lashes, drips.
+- **Any mark can be camera-locked.** The eye highlight rule applies to a wet nose, a tooth glint and a claw tip.
+- **Effect marks belong to the shot.** Sweat drops, shock lines, blush, speed lines and tears are keyed per shot and pinned to a landmark or drawn in camera space. They are not part of the character and do not travel with it to the library.
+
 ## World
 
 Both a painted 2D backdrop for the distance and 3D sets and props for what characters touch or walk around. Shadows per scene: none, a flat blob under each character, or flat cast shadows from the scene's light. Only characters are outlined; whether props are inked is open.

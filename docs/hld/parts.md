@@ -24,7 +24,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Elephant | A large sheet with a bone chain, the `lens` section almost flat | Later |
 | None (lizards, birds) | No ear part; the opening is a mark | Starter |
 | Eyes | A mark group with roles (lid, white, iris, pupil, highlight, brow, lashes) on the skull's eye region, with per-eye open, expression and dilation controls and a gaze system that moves the pupils toward a target. Bulging eyes are an `eye` sphere part carrying the same group. See [look.md](look.md), Eyes and gaze | First (spike 9) |
-| Mouth | A mark along the mouth landmark when closed. The jaw joint opens it; the skull template tags the mouth interior as an `inner` area with its own color | Starter (mark), open mouth first |
+| Mouth | A mark group with roles (lip line, inner, teeth, tongue, corners), an open control that drives the jaw and a lip morph together, and expression shapes; the line wraps the muzzle so it reads from the side. See [look.md](look.md), Mouth | First (spike 9) |
 | Teeth, fangs, tongue | Marks on the mouth line by default. A `fang` template on a lip socket; a `teeth` row along the mouth landmark; a `tongue` template on a socket inside the mouth | Later |
 | Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter sets the default joint positions and rest axis before anything is drawn | Starter |
 | Arms | The `leg` template with arm joint names and a hanging rest axis: `arm` is a thin template file over the same blocks | First |
@@ -46,6 +46,9 @@ When: starter is spike 1, first is the first version, later is after it.
 | Snakes, tentacles, antennae | Tail-like templates; a body plan with no leg sockets | Later |
 | Six legs, extra limbs, segmented bodies | Body plan sockets; a second torso chained through a socket | Later |
 | Clothing, collars, glasses | Garments and slots | Later, with garments |
+| Holding things | A hold socket on the palm of the hand and paw templates, with a grip pose library per template; a held prop attaches to the socket and rides with the hand | First |
+| Effects: sweat drops, shock lines, blush, speed lines, tears | Shot-level effect marks, pinned to a landmark or in camera space | First |
+| Idle motion: breathing, blinks, ear flicks, tail sway | An automatic layer on the timeline per character, switchable, under the keyed poses | Later |
 | Pose-time shape: bulging, contact, squash | Not parts: Implicit Skinning, Pose Space Deformation and touch-ups on whatever parts exist | Spikes 4 and 5 |
 
 ## What this adds to the data model

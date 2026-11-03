@@ -19,6 +19,9 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation). Eyes and mouths are mark groups | Document |
 | Eye | A mark group on an eye region or a sphere part: travel limits, pupil shape, convergence limit, camera bias, size compensation, lid-flatten flag | Document, on the character |
 | Gaze | Target (scene point, camera, an anchor on another character, or free), per-eye offsets, open and dilation values, lead frames, auto-blink flag | Document, one per shot key beside the pose |
+| Expression set | Marks per role with angle versions, plus a small face pose (ears, jaw, brows) | Document, on the character |
+| Grain | A direction field in anchor space per part, default along the axis; combed overrides stored as vectors | Document, on the part instance |
+| Effect mark | A mark pinned to a landmark or drawn in camera space, keyed over time; sweat drops, shock lines, blush, speed lines, tears | Document, per shot |
 | Scene | Set, backdrop, light, shading limits | Document |
 | Shot | Camera, keys (poses by time), timing per character | Document |
 | Project | The cast (character copies, each with its library version) and scenes | Document file |
