@@ -2,8 +2,12 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
+import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.View
 import dev.chieppa.stretch.frame.ViewportOverlay
+
+/** A stroke in progress in [view], as the points of that view's plane it has passed through. */
+class LiveStroke(val view: View, val points: List<CurvePoint>)
 
 /**
  * A tool working in the locked panes. Each pane hands it its [LockedCamera], which stays the same object until the sheet
@@ -18,6 +22,9 @@ interface PaneTool {
     /** What the tool draws over [view]'s pane, in pane pixels, clipped to the pane. Compose state read here redraws it. */
     fun overlay(view: View, camera: LockedCamera): ViewportOverlay = ViewportOverlay.Empty
 
+    /** The stroke in progress, which the panes compare with the other views. Compose state read here redraws them. */
+    val liveStroke: LiveStroke? get() = null
+
     /** The view a stroke is in progress in, which shows as Drawing. */
-    val drawingIn: View? get() = null
+    val drawingIn: View? get() = liveStroke?.view
 }

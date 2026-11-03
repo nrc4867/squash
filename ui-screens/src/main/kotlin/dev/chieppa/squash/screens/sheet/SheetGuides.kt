@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.CubicBezier
@@ -16,15 +17,16 @@ data class PaneGuides(val verticals: List<Float> = emptyList(), val horizontals:
 
 /** Side's reach: its drawn [outline] when there is one, else what the part's mesh [extents] show there. */
 fun sideExtents(outline: OutlineCurve?, extents: PartExtents): SideExtents {
-    val points = outline?.let(::samples) ?: return SideExtents(extents.along, extents.up)
+    val points = outline?.let(::outlineSamples) ?: return SideExtents(extents.along, extents.up)
     return SideExtents(Span(points.minOf { it.x }, points.maxOf { it.x }), Span(points.minOf { it.y }, points.maxOf { it.y }))
 }
 
-private fun samples(outline: OutlineCurve): List<Vec2> {
+/** [outline] flattened to a polyline in its view's plane, each join repeated. */
+fun outlineSamples(outline: OutlineCurve): List<CurvePoint> {
     val points = outline.points.map { Vec2(it.x, it.y) }
     return (0 until (points.size - 1) / POINTS_PER_SEGMENT).flatMap { segment ->
         val at = segment * POINTS_PER_SEGMENT
-        CubicBezier(points[at], points[at + 1], points[at + 2], points[at + 3]).sample(SAMPLES_PER_SEGMENT)
+        CubicBezier(points[at], points[at + 1], points[at + 2], points[at + 3]).sample(SAMPLES_PER_SEGMENT).map { CurvePoint(it.x, it.y) }
     }
 }
 

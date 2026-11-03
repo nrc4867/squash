@@ -26,16 +26,16 @@ Not a screen, so it has no board in the artifact.
 | --- | --- | --- |
 | 1 New character | verifiable | Run: `./gradlew :app:run` with no `recent.txt` in the app data folder. Do: first launch opens here; type a name; Canine quadruped is selected; Create character. See: "8 parts" and chips Torso, Head, Leg 4, Tail; then the workspace with "<name> · draft" and a dot, Torso selected, status "0 drawn · 3 from template". Test: `./gradlew :ui-screens:test --tests "*CharacterFactoryTest*" --tests "*ShellFlowTest.firstLaunch*"` |
 | 2 Pick a part type | verifiable | Run: `./gradlew :app:run`. Do: in Parts click Front leg; click Draw leg, or another tile first, which moves the socket. See: the bottom panel shows the six tiles, the HUD reads "Socket · front leg", the drawer shows You draw, Tool knows and Areas, status "0 of 8 parts". After Draw leg, Front leg is selected with Paw under it; one undo removes both sides. Test: `./gradlew :ui-screens:test --tests "*SocketsTest*" --tests "*AppStateTest*" --tests "*ShellFlowTest.aSocketRow*"` |
-| 3 Draw outlines in place | building | |
-| 4 Fit the part template | building | |
-| 5 Oversketch, drag handles | planned | |
+| 3 Draw outlines in place | verifiable | Run: `./gradlew :app:run`. Do: New character, Canine quadruped, Front legs, Draw outline armed, draw a closed shape across the right edge of Side, press Ctrl Z. See: the stroke follows the pointer with a tip dot and Side shows Drawing; on release a curve open on the socket plane replaces it and the chip reads Drawn; undo removes it in one step; Full takes no stroke. Test: `./gradlew :geom:desktopTest --tests "*StrokeCleanup*"` and `./gradlew :ui-screens:test --tests "*DrawOutlineTool*" --tests "*StrokeOutline*"` |
+| 4 Fit the part template | verifiable | Run: `./gradlew :app:run`. Do: New character, Canine quadruped, Front legs, draw a closed shape in Side, then one in Top. See: the leg fills in Side and follows the drawing in Full; Top adds width; the status bar reads "1 drawn · 2 from template", then "2 drawn · 1 from template". Test: `./gradlew :ui-screens:test --tests "*DrawnPartPipeline*"` and `./gradlew :character:desktopTest --tests "*DrawnPart*" --tests "*PawAndHead*" --tests "*ShippedTemplates*" --tests "*SessionMesh*"` |
+| 5 Oversketch, drag handles | building | |
 
 ## Several cameras
 
 | Board | State | Verify |
 | --- | --- | --- |
 | A Sheet: three cameras and full view | verifiable | Run: `./gradlew :app:run`. Do: New character, Canine quadruped, Front legs. Middle-drag and scroll in Full. Press Top. See: Top, Full, Side and Front in one surface, the Layout control above them with only Sheet enabled. Full shows the built part filled and orbits. Side, Top and Front show its dashed silhouette with "From template" chips at one scale. Side's extents appear as dashed guides lining up across panes. The accent ring moves to Top. Test: `./gradlew :ui-screens:test --tests "*sheet*"` and `./gradlew :render:test` |
-| A Sheet: views that disagree | building | |
+| A Sheet: views that disagree | verifiable | Run: `./gradlew :app:run`. Do: with a part selected, draw Side, then Top longer than Side, then Front taller than Side. See: past Side's end, Top's outline turns thick warn-edge with a warn line at that end in Top and Side, growing as the stroke does; above Side's height, Front's outline does the same; no message appears. Test: `./gradlew :ui-screens:test --tests "*ViewsDisagree*" --tests "*DisagreeCost*"` |
 | B Focus | planned | |
 | C Full first | planned | |
 | A Sheet for face marks | planned | |
@@ -98,3 +98,6 @@ Where stage 1 is built differently from a board, and why. Omissions of stage 2 w
 | 1 | No rest-pose preview. The count and chips come from the plan: 8 parts, Torso, Head, Leg 4, Tail. The dialog is Stretch's, with its close button |
 | 2 | No rest-pose art or socket dots, so sockets are picked in the tree. Tool Select and Add part are left out. Row names come from the plan. Tile art is the 16-grid icons |
 | A | Other parts are not shown: Full holds only the selected part, because parts are not yet placed on sockets. Readouts in pixels and Refit progress are not built. Erase and Mirror are not in the strip. Undrawn views show a dashed silhouette, as the board labels them |
+| 3 | Built on the Sheet panes, the default layout, not the Single layout the board shows. The Outline drawer, Snap view, thumbnails, Erase and Mirror are not built; smoothing is fixed at the board's default. A drawn pane also shows its stored curve. Pen pressure is not read, so the status bar has no pen readout |
+| 4 | The Refit and Working readouts are not built; the old mesh stays shown while a run is pending, and the status bar reads Building |
+| A disagree | Pixel readouts and the status bar's conflict count are not built. Front past Top's width is also highlighted, by analogy, though no board draws it |

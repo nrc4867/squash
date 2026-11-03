@@ -85,7 +85,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
             cameras = cameras,
             full = if (part != null) orbit.view else null,
             active = tool?.drawingIn ?: active,
-            toolOverlays = if (tool == null) emptyMap() else cameras.mapValues { (view, camera) -> tool.overlay(view, camera) },
+            toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook()),
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {
