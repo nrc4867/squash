@@ -26,7 +26,7 @@ Not used, on purpose: trained models anywhere; Teddy-style inflation; sphere-mes
 
 ## Spikes
 
-Each spike is small, has no UI beyond what it needs, and ends in a pass or fail by eye. Spikes render in 3D on WebGPU through `stretch-gpu` in a `NativeSurface` inside the Stretch frame, as the real app will. The style test is a whole simple quadruped built with all eight spikes.
+Each spike is small, has no UI beyond what it needs, and ends in a pass or fail by eye. Spikes render in 3D on WebGPU through `stretch-gpu` in a `NativeSurface` inside the Stretch frame, as the real app will. The style test is a whole simple quadruped built with all nine spikes.
 
 1. **Parts from outlines.** Starter template files (torso, leg, paw, head, ear, tail) whose slices are sized from outlines drawn in the Sheet, with its four viewports in one surface; one outline alone also builds. Passes if each part matches the drawing in those views and looks plausible from others, the paw has pads underneath, the leg's open end sits inside the body at its socket, the head reads as skull and muzzle, and the highlight for views that disagree keeps up at stroke rate.
 2. **Oversketch.** Redraw part of an outline and drag a handle; the slices re-sample from the curves. Passes if only the touched section changes and surface marks stay attached through the refit.
@@ -36,8 +36,9 @@ Each spike is small, has no UI beyond what it needs, and ends in a pass or fail 
 6. **Look.** Painted colors and one curve-bordered region, flat and two-tone with shadows from slice proxy normals, far-side darkening. Passes if edges are crisp and shadows fall as clean shapes.
 7. **Marks on the surface.** Tapered strokes and fur strokes anchored in slice coordinates on the character, steady while orbiting and through an oversketch, and an eye with three angle versions that switch. Passes if nothing swims or pops wrongly.
 8. **Body curve posing.** One stroke poses tail, spine, neck and head while planted paws stay put, a second stroke in Top tries adding sideways bend, and limbs are then finished by hand. Passes if the pose reads as drawn from every camera and limb posing is quick without throwing the model out of whack.
+9. **Eyes.** A canine head with two surface eyes and the bulging variant, each a mark group. Move the gaze target around in 3D, run open from 1 to 0 and back, from side, three-quarter and front at two head pitches. Passes if gaze reads at every angle, pupils never leave the lid region, both pupils stay visible at three-quarter, blinks are smooth, and nothing pops except at an angle-version switch. See [look.md](look.md), Eyes and gaze.
 
-**Order: 1, 2, 7, 3, 4, 5, 6, 8.** Spike 7 runs third because marks staying attached is a claim about the slice coordinates spike 1 defines, and a flaw there is cheaper to find before weights and contact build on the same mesh. Spikes keep throwaway UI; the real screens come after the style test. The part template format is written and reviewed before spike 1, since spikes 1 through 7 all read it.
+**Order: 1, 2, 7, 9, 3, 4, 5, 6, 8.** Spike 7 runs third because marks staying attached is a claim about the slice coordinates spike 1 defines, and a flaw there is cheaper to find before weights and contact build on the same mesh. Spike 9 follows it because eyes are the first real test of mark groups, and the thing most likely to decide whether the characters act. Spikes keep throwaway UI; the real screens come after the style test. The part template format is written and reviewed before spike 1, since spikes 1 through 7 all read it.
 
 **Style test.** One whole simple quadruped: torso, head, two ears, four legs with paws, a tail, a chest ruff and one face set, built only from drawn outlines. Posed standing and lying down, rendered flat with outlines and line weights, turned to side, front and three-quarter views. If it does not look right, the art approach is revisited before anything else.
 

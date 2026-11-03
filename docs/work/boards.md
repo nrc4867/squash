@@ -59,6 +59,7 @@ Verify is what a person runs to see the board working: a run configuration or Gr
 | 15 Timing | planned | |
 | 16 Scene | planned | |
 | 17 Render | planned | |
+| Shot: eyes and gaze (board not yet drawn; needed before the posing screens) | planned | |
 
 ## Imported images
 

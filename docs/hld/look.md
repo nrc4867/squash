@@ -40,6 +40,26 @@ Fur is mainly strokes drawn on the surface, shown where the area nears the silho
 
 Face marks are painted on the head's surface, with versions drawn for a few head angles that switch, not blend, as the head turns. Each expression has its own set of angle versions. Each mark's 3D position comes from the body it sits on, never estimated from the drawings. Marks anchor to template coordinates (see [data-model.md](data-model.md), Surface anchor), so they survive refits and oversketches.
 
+## Eyes and gaze
+
+Eyes carry the acting, so they are not loose marks. An eye is a **mark group** with named roles and controls, and the pupils have a movement system of their own.
+
+**Roles.** Lid outline, white, iris, pupil, highlight, brow, lashes. Each role has its own ink and fill rule and a fixed draw order. The lid outline clips the white, iris and pupil. The highlight is the one mark that is camera-locked: it sits where the light and camera put it, not where it was drawn.
+
+**Controls per eye.** Open (0 closed to 1 open, a morph between lid versions with the same control-point count, so blinks and sleepy looks are a value, not a drawing), expression shape (a blend within the expression set for lids and brows; angle versions still switch), pupil dilation, and a gaze offset. Every control is per eye, so one brow can rise alone.
+
+**Two eye kinds.** A surface eye is a mark group on the skull's eye region, the area the template tags around the eye landmark. A bulging eye is a sphere part on the eye socket, with the same mark group painted on it; gaze is then a rotation of the sphere and lids are marks or small shells on it. Bulging eyes are first version, because they are also the easy path to correct gaze.
+
+**The pupil system.** A `Gaze` on each character in a shot, keyed over time like a pose:
+
+- **Target.** A point in the scene, the camera, an anchor on another character (its eye landmark, so two characters look at each other), or free, where each eye is placed by hand.
+- **Solve.** For a bulging eye, the sphere rotates to the target within its travel limits. For a surface eye, the direction from the eye centre to the target becomes a 2D offset in the eye region's own u and v, scaled by the eye's travel, clamped to the lid shape with a margin, and clipped by the lid. Near targets converge both eyes up to a convergence limit.
+- **Cheats, switchable per character.** A camera bias pulls both pupils a fraction toward the camera so they stay visible and reading at three-quarter views. Size compensation keeps the far pupil the same apparent size as the near one. A pupil that meets a lid can flatten against it instead of hiding.
+- **Shape.** Round, slit, dot or oval per character, with dilation from a control or an expression.
+- **In motion.** Eyes lead the head by a few frames when the target moves, an optional blink fires on a large gaze change, and angle versions switch with hysteresis on the character's timing (on twos if the character is), never mid-frame on a threshold.
+
+**UI.** A gaze gizmo in the Shot viewport (a target handle, with lock-to-camera and lock-to-character), per-eye nudges and open sliders in the Face tool, and the expression picker. None of this is on a board yet: a Shot board for eyes is due before the posing screens are built.
+
 ## World
 
 Both a painted 2D backdrop for the distance and 3D sets and props for what characters touch or walk around. Shadows per scene: none, a flat blob under each character, or flat cast shadows from the scene's light. Only characters are outlined; whether props are inked is open.
