@@ -137,7 +137,7 @@ class ShellFlowTest {
     fun theSliderIsOneUndoStepAndStaysInItsLimits() = runComposeUiTest {
         val state = AppState(shipped)
         createCharacter(state)
-        onNodeWithContentDescription("Part").performClick()
+        onNodeWithContentDescription("Outline").performClick()
         val session = assertNotNull(state.session.value)
         val root = session.document.value.character.parts.single().id
         val steps = session.history.steps.value.done.size

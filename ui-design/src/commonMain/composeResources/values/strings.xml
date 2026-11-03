@@ -106,6 +106,17 @@
     <string name="pick_socket_hud">Socket · %1$s</string>
     <string name="pick_draw">Draw %1$s</string>
 
+    <string name="draw_drawer_outline">Outline</string>
+    <string name="draw_stroke">Stroke</string>
+    <string name="draw_smooth">Smooth</string>
+    <string name="draw_snap_line">Snap line</string>
+    <string name="draw_close_end">Close end</string>
+    <string name="draw_pen">Pen</string>
+    <string name="draw_pen_pressure">Pressure</string>
+    <string name="draw_pen_pressure_not_used">not used</string>
+    <string name="draw_pen_width">Width</string>
+    <string name="draw_pen_width_shape_only">shape only</string>
+
     <string name="edit_tool_oversketch">Oversketch</string>
     <string name="edit_drawer_curves">Outline curves</string>
     <string name="edit_selected_point">Selected point</string>

@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.ComposeUiTest
@@ -37,6 +36,7 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
+import dev.chieppa.squash.screens.edit.TEST_STROKE_LOOK
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
@@ -64,7 +64,7 @@ private const val SCALE = 100f
 @OptIn(ExperimentalTestApi::class)
 class DrawOutlineToolTest {
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
-    private val look = StrokeLook(Color.Black, 7f, Color.Yellow, 8f, 3f)
+    private val look = TEST_STROKE_LOOK
     private val id = PartId("p")
 
     private class Bench(val state: AppState, val session: CharacterSession, val tool: DrawOutlineTool)

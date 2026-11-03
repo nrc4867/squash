@@ -9,8 +9,15 @@ private const val MIN_BLEND_PIXELS = 8f
 /** A closed stroke over this share of a curve redraws all of it. */
 private const val WHOLE_CURVE_COVERAGE = 0.75f
 
-/** What a redrawn stretch does at its ends: [falloff] is the share of the stroke easing in, [snapEnds] pulls an end onto a nearby anchor. */
-data class OversketchOptions(val falloff: Float = DEFAULT_OVERSKETCH_FALLOFF, val snapEnds: Boolean = true)
+/**
+ * What a redrawn stretch does at its ends: [falloff] is the share of the stroke easing in, [snapEnds] pulls an end onto a
+ * nearby anchor. [stroke] cleans up the stroke, all of it for a whole redraw and only its smoothing for a span.
+ */
+data class OversketchOptions(
+    val falloff: Float = DEFAULT_OVERSKETCH_FALLOFF,
+    val snapEnds: Boolean = true,
+    val stroke: StrokeOptions = StrokeOptions(),
+)
 
 /**
  * A curve after an oversketch. [replaced] sections gave way to [added] new ones starting at section [firstSection] of
@@ -36,8 +43,8 @@ fun oversketch(
 ): Oversketch? {
     val ruler = CurveRuler(path.segments)
     val plane = socketPlane(ruler, ends)
-    val dense = smoothedOpenLine(samples, pixel) ?: return null
-    wholeRedraw(ruler, dense, samples, plane ?: StrokeEnds.Closed, pixel)?.let { return it }
+    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing) ?: return null
+    wholeRedraw(ruler, dense, samples, plane ?: StrokeEnds.Closed, pixel, options.stroke)?.let { return it }
     val line = keptOfDrawnStroke(dense, plane, pixel) ?: return null
     val span = locateSpan(ruler, line, plane, pixel, options.snapEnds) ?: return null
     val shape = resample(spanLine(span, options.falloff, pixel), strokeSpacing(pixel))
@@ -64,6 +71,16 @@ class OversketchPreview(
     val line: List<Vec2>,
     /** The stretch of the old curve the stroke would replace. */
     val touched: List<Vec2>,
+    /** The stretch of the stroke that stays. */
+    val drawn: List<Vec2>,
+    /** The short runs that would join the stroke's ends to the curve. */
+    val connectors: List<List<Vec2>>,
+    /** The stretches of the stroke release discards, past the socket plane. */
+    val dropped: List<List<Vec2>>,
+    /** Whether releasing now would redraw anything; false while the stroke's end is too far from the curve to join it. */
+    val joins: Boolean,
+    /** What the stroke would make instead of a span, when it would redraw the whole curve. */
+    val whole: StrokePreview?,
 )
 
 /** What [oversketch] would touch if the stroke ended here, or null while its start is too far from [path] to join it. */
@@ -76,28 +93,62 @@ fun oversketchPreview(
 ): OversketchPreview? {
     val ruler = CurveRuler(path.segments)
     val plane = socketPlane(ruler, ends)
-    val line = keptOfStroke(samples, plane) ?: return null
+    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing)
+    if (dense != null && redrawsAll(ruler, dense, pixel)) {
+        val whole = strokePreview(samples, plane ?: StrokeEnds.Closed, pixel, options.stroke)
+        if (whole.shape.isNotEmpty()) {
+            return OversketchPreview(whole.shape, ruler.between(0f, ruler.size.toFloat()), emptyList(), emptyList(), emptyList(), true, whole)
+        }
+    }
+    val run = plane?.let { keptRun(samples, it) ?: return null }
+    val line = run?.points ?: samples
     val span = locateSpan(ruler, line, plane, pixel, options.snapEnds, requireEnd = false) ?: return null
+    val released = dense?.let { keptOfDrawnStroke(it, plane, pixel) }
+    val joins = released != null && locateSpan(ruler, released, plane, pixel, options.snapEnds) != null
     val whole = span.ruler
     val stitched = buildList {
         addAll(whole.between(0f, span.from))
         addAll(span.line)
         addAll(whole.between(span.to, whole.size.toFloat()))
     }
-    return OversketchPreview(stitched, whole.between(span.from, span.to))
+    return OversketchPreview(
+        stitched,
+        whole.between(span.from, span.to),
+        line,
+        if (joins) spanConnectors(span) else emptyList(),
+        run?.rest?.map { it.line }.orEmpty(),
+        joins,
+        null,
+    )
+}
+
+/** The straight runs from the stroke's joined ends to where they meet the curve. */
+private fun spanConnectors(span: OversketchSpan): List<List<Vec2>> = buildList {
+    if (!span.freeStart) add(listOf(span.line.first(), span.ruler.pointAt(span.from)))
+    if (!span.freeEnd) add(listOf(span.line.last(), span.ruler.pointAt(span.to)))
 }
 
 /** The kept stretch of a finished stroke; one that comes back on itself counts as the loop it closes, cut once around. */
 private fun keptOfDrawnStroke(dense: List<Vec2>, plane: StrokeEnds.CutAtPlane?, pixel: Float): List<Vec2>? {
     if (plane == null) return dense
-    val loop = closeLoop(dense, closeGap(pixel)) ?: return keptOfStroke(dense, plane)
-    return longestRun(loop, closed = true, plane.plane, if (plane.above) 1f else -1f)
+    val loop = findLoop(dense, closeGap(pixel), strokeSpacing(pixel)) ?: return keptOfStroke(dense, plane)
+    return longestRun(loop.line, closed = true, plane.plane, if (plane.above) 1f else -1f)?.points
 }
 
-private fun wholeRedraw(ruler: CurveRuler, dense: List<Vec2>, samples: List<Vec2>, ends: StrokeEnds, pixel: Float): Oversketch? {
-    if (closeLoop(dense, closeGap(pixel)) == null) return null
-    if (ruler.coverage(dense, nearReach(pixel)) < WHOLE_CURVE_COVERAGE) return null
-    val clean = cleanStroke(samples, ends, pixel) ?: return null
+/** Whether [dense] closes on itself over most of the curve, which redraws all of it. */
+private fun redrawsAll(ruler: CurveRuler, dense: List<Vec2>, pixel: Float): Boolean =
+    findLoop(dense, closeGap(pixel), strokeSpacing(pixel)) != null && ruler.coverage(dense, nearReach(pixel)) >= WHOLE_CURVE_COVERAGE
+
+private fun wholeRedraw(
+    ruler: CurveRuler,
+    dense: List<Vec2>,
+    samples: List<Vec2>,
+    ends: StrokeEnds,
+    pixel: Float,
+    options: StrokeOptions,
+): Oversketch? {
+    if (!redrawsAll(ruler, dense, pixel)) return null
+    val clean = cleanStroke(samples, ends, pixel, options) ?: return null
     return Oversketch(clean.path, 0, ruler.size, clean.path.segments.size, clean.maxError)
 }
 

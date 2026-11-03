@@ -21,6 +21,7 @@ import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.draw.OutlineSections
 import dev.chieppa.squash.screens.edit.OutlineCurvesSections
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
@@ -85,7 +86,12 @@ private fun SelectedPartDetails(state: AppState) {
         EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
         return
     }
-    if (data.outlines.isNotEmpty()) OutlineCurvesSections(state, open, part, data.outlines) else YouDrawSection(template, data.outlines)
+    val tool by state.tool.collectAsState()
+    when (partDrawerKind(tool, hasPart = true, drawn = data.outlines.isNotEmpty())) {
+        PartDrawerKind.OUTLINE_CURVES -> OutlineCurvesSections(state, open, part, data.outlines)
+        PartDrawerKind.OUTLINE -> OutlineSections(state)
+        PartDrawerKind.PART -> YouDrawSection(template, data.outlines)
+    }
     val rows = parameterRows(template, data.params)
     if (rows.isNotEmpty()) {
         DrawerSection(stringResource(Res.string.shell_part_parameters), divider = false) {

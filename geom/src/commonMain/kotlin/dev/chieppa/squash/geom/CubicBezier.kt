@@ -58,6 +58,12 @@ data class CubicBezier(val p0: Vec2, val p1: Vec2, val p2: Vec2, val p3: Vec2) {
     }
 }
 
+/** The straight line from [from] to [to] as a cubic, handles at its thirds. */
+fun straightCubic(from: Vec2, to: Vec2): CubicBezier {
+    val third = (to - from) * (1f / 3f)
+    return CubicBezier(from, from + third, to - third, to)
+}
+
 /** Joined cubic Béziers, as an outline is stored. */
 data class BezierPath(val segments: List<CubicBezier>) {
     /** The points where the path crosses [line], in path order; a crossing on a join counts once. */

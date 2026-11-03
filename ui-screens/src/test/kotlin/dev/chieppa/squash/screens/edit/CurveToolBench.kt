@@ -59,7 +59,25 @@ internal val TEST_CURVE_LOOK = CurveLook(
     grabReach = 12f,
 )
 
-internal val TEST_STROKE_LOOK = StrokeLook(Color.Black, 7f, Color.Yellow, 8f, 3f)
+internal val TEST_STROKE_LOOK = StrokeLook(
+    ink = Color.Black,
+    width = 7f,
+    tip = Color.Yellow,
+    tipRadius = 8f,
+    tipRing = 3f,
+    connector = Color.Magenta,
+    connectorWidth = 3f,
+    connectorDash = 10f,
+    connectorGap = 8f,
+    dropped = Color.Cyan,
+    droppedWidth = 3f,
+    droppedDash = 4f,
+    droppedGap = 6f,
+    startFill = Color.White,
+    startRadius = 7f,
+    startLitRadius = 13f,
+    startRing = 3f,
+)
 
 /** A straight-edged outline through [corners], one section per edge. */
 internal fun edges(vararg corners: Pair<Float, Float>): OutlineCurve {

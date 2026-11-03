@@ -10,13 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.oversketchedOutline
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
@@ -24,6 +20,7 @@ import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.sections
 import dev.chieppa.squash.geom.OversketchPreview
+import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.CurveLook
 import dev.chieppa.squash.screens.edit.Refit
@@ -35,27 +32,14 @@ import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.outlineSamples
-import dev.chieppa.squash.screens.sheet.polyline
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
-import dev.chieppa.stretch.theme.Stretch
-
-/** The colors and pixel sizes of a stroke in progress. */
-data class StrokeLook(val ink: Color, val width: Float, val tip: Color, val tipRadius: Float, val tipRing: Float)
-
-/** The live stroke's drawing in the current theme and pixel density. */
-@Composable
-internal fun rememberStrokeLook(): StrokeLook {
-    val c = Stretch.colors
-    val density = LocalDensity.current
-    fun px(dp: Int) = with(density) { dp.dp.toPx() }
-    return StrokeLook(ink = c.inkStrong, width = px(7), tip = c.accent, tipRadius = px(8), tipRing = px(3))
-}
 
 /**
  * Draw outline: in a pane with no outline yet, a stroke becomes one; over a drawn outline it is an oversketch, replacing
  * only the span it covers, and a stroke too far from the outline does nothing. Either way the stroke is previewed as it
- * grows and ends as one [SetOutline], so one stroke is one undo step. A stroke the pane loses midway sends nothing.
+ * grows, with what release would add and discard, and ends as one [SetOutline], so one stroke is one undo step. A stroke the
+ * pane loses midway sends nothing.
  */
 class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var curveLook: CurveLook) : PaneTool {
     private var strokeView by mutableStateOf<View?>(null)
@@ -132,7 +116,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val curves = state.curves
         val existing = session.document.value.character.resolved(instance).outlines[view]
         if (existing == null) {
-            val fitted = fittedOutline(strokePoints.toList(), ends, pixel) ?: return
+            val fitted = fittedOutline(strokePoints.toList(), ends, pixel, curves.strokeOptions) ?: return
             curves.recordFit(fitted.curve, fitted.errorPixels)
             session.send(SetOutline(part, view, fitted.curve))
             return
@@ -150,14 +134,19 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val points = outline?.let { curvePoints(it, null, camera, curveLook) } ?: ViewportOverlay.Empty
         if (strokeView != view || strokePoints.isEmpty()) return points
         val stroke = strokePoints.toList()
-        val touched = outline?.let { preview(view, it, stroke) }?.touched
+        val over = outline?.let { preview(view, it, stroke) }
+        val guide = if (outline == null) firstStroke(view, stroke, camera) else oversketchGuide(over, stroke.map { Vec2(it.x, it.y) })
         return points + buildOverlay {
-            touched?.let { line -> affected(line.map { CurvePoint(it.x, it.y) }, camera, curveLook) }
-            polyline(stroke, camera, look.ink, look.width)
-            val tip: Offset = camera.toPixel(stroke.last())
-            dot(tip, look.tipRadius + look.tipRing, look.ink)
-            dot(tip, look.tipRadius, look.tip)
+            over?.touched?.let { line -> affected(line.map { CurvePoint(it.x, it.y) }, camera, curveLook) }
+            guide?.let { strokeGuide(it, stroke.last(), camera, look) }
         }
+    }
+
+    private fun firstStroke(view: View, stroke: List<CurvePoint>, camera: LockedCamera): StrokeGuide? {
+        val session = state.session.value ?: return null
+        val part = state.selectedPart.value?.let(session.document.value.character::part) ?: return null
+        val ends = strokeEnds(view, session.templates[part.template].openEnd)
+        return strokeCompletion(stroke, ends, 1f / camera.fit.pixelsPerUnit, state.curves.strokeOptions).guide()
     }
 }
 

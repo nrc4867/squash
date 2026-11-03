@@ -5,9 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.draw_drawer_outline
 import dev.chieppa.squash.uidesign.generated.edit_drawer_curves
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
@@ -51,17 +53,28 @@ private fun shownLayout(layout: FrameLayout, screen: Screen): FrameLayout = when
 }
 
 @Composable
+private fun partDrawerTitle(state: AppState): String {
+    val tool by state.tool.collectAsState()
+    val selected by state.selectedPart.collectAsState()
+    return when (partDrawerKind(tool, selected != null, rememberPartIsDrawn(state))) {
+        PartDrawerKind.PART -> stringResource(Res.string.shell_drawer_part)
+        PartDrawerKind.OUTLINE -> stringResource(Res.string.draw_drawer_outline)
+        PartDrawerKind.OUTLINE_CURVES -> stringResource(Res.string.edit_drawer_curves)
+    }
+}
+
+@Composable
 private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val state = shell.state
     val session by state.session.collectAsState()
     val picked by state.pickedType.collectAsState()
     val open = session
     val pickedName = picked.takeIf { screen == Screen.PICK_PART }?.let { state.templates.template(it) }?.name
-    val curvesTitle = stringResource(Res.string.edit_drawer_curves).takeIf { rememberPartIsDrawn(state) }
+    val partTitle = partDrawerTitle(state)
     val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = PARTS_KEYS) {
         PartsDrawerContent(state)
     }
-    val part = DrawerSpec(DrawerIds.PART, pickedName ?: curvesTitle ?: stringResource(Res.string.shell_drawer_part), SquashIcons.Part) {
+    val part = DrawerSpec(DrawerIds.PART, pickedName ?: partTitle, SquashIcons.Part) {
         PartDrawerContent(state)
     }
     val help = DrawerSpec(DrawerIds.HELP, stringResource(Res.string.shell_drawer_help), StretchIcons.Help) {

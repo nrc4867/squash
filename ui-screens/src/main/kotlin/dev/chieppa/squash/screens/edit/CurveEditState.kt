@@ -10,7 +10,9 @@ import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.DEFAULT_OVERSKETCH_FALLOFF
+import dev.chieppa.squash.geom.DEFAULT_STROKE_SMOOTH
 import dev.chieppa.squash.geom.OversketchOptions
+import dev.chieppa.squash.geom.StrokeOptions
 
 /** The point of an outline that is selected: an index into its points. */
 data class CurveSelection(val part: PartId, val view: View, val index: Int)
@@ -35,6 +37,9 @@ class CurveEditState {
     var selection by mutableStateOf<CurveSelection?>(null)
     var falloff by mutableStateOf(DEFAULT_OVERSKETCH_FALLOFF)
     var snapEnds by mutableStateOf(true)
+    var smooth by mutableStateOf(DEFAULT_STROKE_SMOOTH)
+    var snapLine by mutableStateOf(true)
+    var closeEnd by mutableStateOf(true)
 
     /** Whether a handle drag holds a gesture open on the history. */
     var dragging by mutableStateOf(false)
@@ -47,7 +52,9 @@ class CurveEditState {
     /** How far each fitted outline strays from its stroke, in screen pixels. Outlines not fitted here have no entry. */
     private val fitErrors = mutableStateMapOf<OutlineCurve, Float>()
 
-    val options: OversketchOptions get() = OversketchOptions(falloff, snapEnds)
+    val strokeOptions: StrokeOptions get() = StrokeOptions(smooth, snapLine, closeEnd)
+
+    val options: OversketchOptions get() = OversketchOptions(falloff, snapEnds, strokeOptions)
 
     fun recordFit(curve: OutlineCurve, errorPixels: Float) {
         fitErrors[curve] = errorPixels

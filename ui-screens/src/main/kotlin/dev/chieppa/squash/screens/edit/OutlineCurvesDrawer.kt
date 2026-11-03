@@ -86,7 +86,7 @@ fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: Part
 }
 
 @Composable
-private fun Readout(text: String, modifier: Modifier = Modifier) {
+internal fun Readout(text: String, modifier: Modifier = Modifier) {
     BasicText(text, modifier, style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)), maxLines = 1)
 }
 

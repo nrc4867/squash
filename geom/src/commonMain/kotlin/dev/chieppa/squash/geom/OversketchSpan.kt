@@ -24,9 +24,13 @@ internal class OversketchSpan(
     val freeEnd: Boolean,
 )
 
+/** The stretch of [points] on the kept side of a socket [plane]. Null if none is kept. */
+internal fun keptRun(points: List<Vec2>, plane: StrokeEnds.CutAtPlane): SideRun? =
+    longestRun(points, closed = false, plane.plane, if (plane.above) 1f else -1f)
+
 /** The stretch of [points] on the kept side of a socket plane, or [points] when there is none. Null if none is kept. */
 internal fun keptOfStroke(points: List<Vec2>, plane: StrokeEnds.CutAtPlane?): List<Vec2>? =
-    if (plane == null) points else longestRun(points, closed = false, plane.plane, if (plane.above) 1f else -1f)
+    if (plane == null) points else keptRun(points, plane)?.points
 
 /** The plane an open curve's ends stay on, or null for a closed curve or one with no plane. */
 internal fun socketPlane(ruler: CurveRuler, ends: StrokeEnds): StrokeEnds.CutAtPlane? =
