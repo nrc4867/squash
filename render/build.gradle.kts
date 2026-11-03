@@ -11,4 +11,10 @@ kotlin {
 dependencies {
     api(project(":geom"))
     api("dev.chieppa.stretch:stretch-gpu")
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }

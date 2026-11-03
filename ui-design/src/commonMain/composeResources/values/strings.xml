@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Squash</string>
+    <string name="sheet_layout">Layout</string>
+    <string name="sheet_layout_single">Single</string>
+    <string name="sheet_layout_focus">Focus</string>
+    <string name="sheet_layout_sheet">Sheet</string>
+    <string name="sheet_layout_full_first">Full first</string>
+    <string name="sheet_pane_top">Top · part axes</string>
+    <string name="sheet_pane_side">Side · part axes</string>
+    <string name="sheet_pane_front">Front · part axes</string>
+    <string name="sheet_pane_full">Full · free orbit</string>
+    <string name="sheet_chip_drawing">Drawing</string>
+    <string name="sheet_chip_drawn">Drawn</string>
+    <string name="sheet_chip_from_template">From template</string>
+    <string name="sheet_chip_live">Updates live</string>
 </resources>

@@ -26,7 +26,7 @@ Not a screen, so it has no board in the artifact.
 | --- | --- | --- |
 | 1 New character | building | |
 | 2 Pick a part type | building | |
-| 3 Draw outlines in place | planned | |
+| 3 Draw outlines in place | building | |
 | 4 Fit the part template | building | |
 | 5 Oversketch, drag handles | planned | |
 
@@ -35,7 +35,7 @@ Not a screen, so it has no board in the artifact.
 | Board | State | Verify |
 | --- | --- | --- |
 | A Sheet: three cameras and full view | building | |
-| A Sheet: views that disagree | planned | |
+| A Sheet: views that disagree | building | |
 | B Focus | planned | |
 | C Full first | planned | |
 | A Sheet for face marks | planned | |
