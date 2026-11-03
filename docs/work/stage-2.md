@@ -30,4 +30,13 @@ Each row is a branch in `.worktrees/`, landed by the orchestrator by rebase, squ
 | 3 | `chrome-boards` | Edit menu, undo, redo and command buttons, Erase, the Mirror toggle, the status bar's conflict count and pen readout, Refit progress, pixel readouts |
 | 3 | `single-layout` | The Single layout of board 3: orbit snapping to the part's views, Snap view, thumbnails with the missing view highlighted, the Layout control enabling it |
 
+Round 4 runs after `assembly`, with board 3 redrawn first, since the boards are the specification. These tools make outlines and nothing else: each ends in `SetOutline` commands as one undo step, and the document stores only the curves.
+
+| Round | Branch | Delivers |
+| --- | --- | --- |
+| 4 | `pen-boards` | Board 3's strip and Outline drawer redrawn with the tools below, and a new board for Spine and width; only these changes in the artifact |
+| 4 | `pen-assists` | Half outline, mirrored across the part's centre line. Guide snapping for a stroke's ends and widest points. The part the build will read, shaded on the stroke, so an overhang shows as unread. Stabilizer, live while drawing. A modifier forcing a corner or a smooth point |
+| 4 | `pen-shapes` | Hold to snap: pausing at a stroke's end makes a line, ellipse or capsule to adjust before release, timed by a pointer wait with a timeout. Start from the template: the dashed hint becomes an outline to push and pull |
+| 4 | `spine-and-width` | A centre stroke, then a drag or pen pressure for thickness along it, producing the Side and Top outlines in one step |
+
 Focus, Full first and Shot stay planned: they have their own boards.
