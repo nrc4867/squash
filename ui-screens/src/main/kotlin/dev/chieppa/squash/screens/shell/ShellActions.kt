@@ -83,11 +83,11 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "redo" -> StretchIcons.Redo
     "command" -> StretchIcons.Command
     "parts" -> SquashIcons.Parts
-    "types" -> StretchIcons.Grid
+    "types" -> SquashIcons.PartTypes
     "history" -> StretchIcons.Clock
-    "part" -> StretchIcons.Settings
+    "part" -> SquashIcons.Part
     "help" -> StretchIcons.Help
-    "pen" -> StretchIcons.Pen
+    "pen" -> SquashIcons.DrawOutline
     "edit-curves" -> SquashIcons.EditCurves
     else -> null
 }

@@ -61,7 +61,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = PARTS_KEYS) {
         PartsDrawerContent(state)
     }
-    val part = DrawerSpec(DrawerIds.PART, pickedName ?: curvesTitle ?: stringResource(Res.string.shell_drawer_part), StretchIcons.Settings) {
+    val part = DrawerSpec(DrawerIds.PART, pickedName ?: curvesTitle ?: stringResource(Res.string.shell_drawer_part), SquashIcons.Part) {
         PartDrawerContent(state)
     }
     val help = DrawerSpec(DrawerIds.HELP, stringResource(Res.string.shell_drawer_help), StretchIcons.Help) {
@@ -69,7 +69,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     }
     if (open == null) return listOf(parts, help, part)
     val labels = historyLabels()
-    val types = DrawerSpec(DrawerIds.TYPES, stringResource(Res.string.shell_drawer_types), StretchIcons.Grid, keys = TYPES_KEYS) {
+    val types = DrawerSpec(DrawerIds.TYPES, stringResource(Res.string.shell_drawer_types), SquashIcons.PartTypes, keys = TYPES_KEYS) {
         PartTypesDrawerContent(state, it)
     }
     val history = DrawerSpec(DrawerIds.HISTORY, stringResource(Res.string.shell_drawer_history), StretchIcons.Clock) {

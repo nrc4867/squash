@@ -193,7 +193,7 @@ private fun HomeMain(shell: Shell, current: String?, modifier: Modifier) {
                     )
                 },
             ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(SquashIcons.Parts, c.inkMuted, size = ART_ICON) }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(SquashIcons.Character, c.inkMuted, size = ART_ICON) }
             }
             AddCard(stringResource(Res.string.home_new_character), shell::newCharacter, Modifier.weight(1f).height(ADD_CARD_HEIGHT))
         }

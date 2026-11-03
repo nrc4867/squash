@@ -114,7 +114,7 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
 @Composable
 private fun PlanRow(shell: Shell, plan: BodyPlan, selected: Boolean, onClick: () -> Unit) {
     ListRow(selected, onClick, Modifier.testTag(ShellTags.newPlan(plan.id.value))) {
-        RowIcon(SquashIcons.Parts)
+        RowIcon(SquashIcons.BodyPlan)
         RowText(plan.name, Modifier.weight(1f))
         RowText(stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates)), subtle = true)
     }

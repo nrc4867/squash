@@ -31,7 +31,6 @@ import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
-import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.EmptyState
@@ -67,7 +66,7 @@ private fun PickedTypeDetails(state: AppState) {
                 { state.placePicked() },
                 Modifier.testTag(ShellTags.PICK_DRAW),
                 kind = ButtonKind.Primary,
-                icon = StretchIcons.Pen,
+                icon = SquashIcons.DrawOutline,
             )
         }
     }
