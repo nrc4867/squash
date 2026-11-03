@@ -9,8 +9,10 @@ kotlin {
 }
 
 dependencies {
-    implementation("dev.chieppa.stretch:stretch-ui")
     implementation("dev.chieppa.stretch:stretch-core")
+    implementation("dev.chieppa.stretch:stretch-theme")
+    implementation("dev.chieppa.stretch:stretch-ui")
+    implementation("dev.chieppa.stretch:stretch-frame")
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
 }

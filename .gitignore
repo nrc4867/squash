@@ -19,3 +19,7 @@ captures
 node_modules/
 hs_err_pid*.log
 out/
+
+# Agent worktrees live inside the project
+.worktrees/*
+!.worktrees/.gitkeep
