@@ -14,7 +14,15 @@ When: starter is spike 1, first is the first version, later is after it.
 | Muzzle, snout, pointed nose | The head's muzzle block: length from Side, section from Front, cap shape round, flat (pig) or pointed (fox). A `pad` block at the tip is the nose leather, with its own palette slot | Starter |
 | Human nose | `nose` template, a small tube with a rounded cap on the face socket, since it protrudes from a flat face | First |
 | Beak | `beak` template on the muzzle socket: upper and lower tubes with pointed caps, sharing the jaw joint | Later |
-| Ears | `ear` template: a tube with the `lens` section (thin, cupped), inner area with its own color, one bone | Starter |
+| Ears, all kinds | One `ear` template: a tube with the `lens` section, an inner area with its own color, a base joint that swivels, and parameters for cup, fold and floppiness. The Side and Front outlines give the shape; the kinds below are drawings and parameter settings, not templates | Starter |
+| Cat, fox, dog (pricked) | Triangular outline, cupped section, base swivel. Inner tufts are fur strokes | Starter |
+| Dog (floppy), lop bunny | A fold joint at a drawn u lets the ear hang; floppiness adds a short bone chain with springy follow-through, as a tail has | First |
+| Bunny (upright) | Long narrow outline, two or three bones along the length so it can bend and droop | First |
+| Horse, deer | Small cupped outline, swivel at the base | Starter |
+| Mouse, bear (round) | Round outline, shallow cup, nearly flat | Starter |
+| Human | A small flat `lens` on the head's side socket, the ridges and lobe as marks | First, with `head-round` |
+| Elephant | A large sheet with a bone chain, the `lens` section almost flat | Later |
+| None (lizards, birds) | No ear part; the opening is a mark | Starter |
 | Eyes | Marks on the skull's eye landmarks with angle versions; pupils, highlights, lids and lashes are marks in expression sets. Bulging cartoon eyes are an `eye` template, a sphere on the eye socket, with the pupil as a mark on it | Starter (marks), `eye` part first |
 | Mouth | A mark along the mouth landmark when closed. The jaw joint opens it; the skull template tags the mouth interior as an `inner` area with its own color | Starter (mark), open mouth first |
 | Teeth, fangs, tongue | Marks on the mouth line by default. A `fang` template on a lip socket; a `teeth` row along the mouth landmark; a `tongue` template on a socket inside the mouth | Later |

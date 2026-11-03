@@ -10,10 +10,10 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Body plan | A graph of sockets from a root spine, pair ids for mirrored sockets, the rest pose | Shipped preset, versioned |
 | Character | Body plan, part instances, slots, palette, face sets, and the library version it came from | Document; also its own library file |
 | Part instance | Template id and version, the socket it sits on, per-view outline curves, parameter values, pair id and per-side overrides | Document |
-| Surface anchor | A point on a part's surface as (part, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
+| Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
 | Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
-| Slice row | The part's slices: for each u a frame on the axis spline, height, width, a closed section spline and a proxy normal | Derived |
-| Part mesh | Rings times segments from the slice row; every vertex tagged with part, bone, u and v | Derived |
+| Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the axis spline, height, width, a closed section spline and a proxy normal | Derived |
+| Part mesh | One grid per patch; every vertex tagged with part, patch, bone, u and v | Derived |
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
 | Scene | Set, backdrop, light, shading limits | Document |
@@ -30,20 +30,27 @@ The top three layers (library, project, character and what they hold) are docume
 The template is the recipe and the instance is what the user drew. Slices are derived from the two and never saved, so a saved character is only outlines, parameters and anchors.
 
 ```kotlin
-// Shipped with the app, versioned. A document never edits one.
+// Shipped with the app, versioned and immutable: a changed template is a new version file.
 data class PartTemplate(
     val id: TemplateId, val version: Int, val name: String,   // "leg"
     val axis: AxisSpec,                // rest direction before anything is drawn; the built axis is a spline through the Side midline
     val openEnd: End?,                 // the end that sits on the socket plane; null for a closed part
-    val rings: Int, val segments: Int, // fixed topology: rings along u; segments = control points of every section spline
-    val blocks: List<Block>,           // Tube(u0, u1), Cap(end), ToeRow(count, u), Pad(u, v), Joint(u), Skull(u), Mirror
-    val params: Map<String, Range>,    // toes 3..5, spread 0..40 deg, size
-    val joints: List<JointSpec>,       // bone chain: u along the built axis, hinge axis, limits, stretchable
-    val sockets: List<SocketSpec>,     // where children attach: u, v, outward direction, pairId
-    val areas: List<AreaSpec>,         // tagged areas as u and v ranges: pad, rigid toe, inner ear
+    val rings: Int, val segments: Int, // fixed topology of the body patch: rings along u; segments = control points of every section spline
+    val blocks: List<Block>,           // Tube, Cap, Skull, ToeRow, Pad, Joint, Socket, Area, Landmark; joints, sockets and areas are blocks
+    val params: Map<String, Range>,    // toes 3..5, spread 0..40 deg, size; a new parameter's default reproduces the old build
     val views: Map<View, Sets>,        // SIDE sets height and the axis, TOP sets width, FRONT sets the cap or the section
-    val section: SectionProfile,       // default closed section spline along u (circle, egg, keel), used where no view sets it
+    val section: SectionProfile,       // default closed section spline along u (circle, egg, keel, lens), used where no view sets it
 )
+
+// A block owns its behaviour, so a new block kind is one class and a regenerated schema.
+// Nothing downstream switches on block kind; it reads the patches, joints, sockets and areas blocks produce.
+sealed interface Block {
+    fun build(ctx: BuildContext): List<Patch>
+    fun lint(ctx: LintContext): List<Finding>
+    fun joints(): List<JointSpec>
+    fun sockets(): List<SocketSpec>
+    fun areas(): List<AreaSpec>
+}
 
 // In the document. Everything the user chose for one part.
 data class PartInstance(
@@ -56,7 +63,14 @@ data class PartInstance(
     val overrides: Overrides,              // per-side outline and param deltas layered on the shared ones
 )
 
-// Derived. One row per template build; the mesh is a pure function of it.
+// Derived. A part is one or more patches; the mesh is a pure function of them.
+data class Patch(
+    val name: String,                  // "body", "membrane", "pad:palm"; anchors name it
+    val nu: Int, val nv: Int,          // fixed grid for this template version
+    val closedV: Boolean,              // a tube is closed in v, a sheet is open
+    val slices: List<Slice>?,          // present for swept patches: the body, a toe, a muzzle
+    val points: FloatArray,            // nu * nv * 3
+)
 data class Slice(
     val u: Float,
     val frame: Frame,                  // centre and orientation on the axis spline at u
@@ -65,8 +79,8 @@ data class Slice(
     val proxyNormalFrame: Mat3,
 )
 
-// Where surface work lives. Survives refits because u and v are template coordinates, not positions.
-data class Anchor(val part: PartId, val u: Float, val v: Float, val offset: Float = 0f)
+// Where surface work lives. Survives refits because patch, u and v are template coordinates, not positions.
+data class Anchor(val part: PartId, val patch: String = "body", val u: Float, val v: Float, val offset: Float = 0f)
 ```
 
 Rules the code keeps:
@@ -80,6 +94,23 @@ Rules the code keeps:
 - **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides are deltas. Breaking a pair copies the shared data into both and clears the pair id.
 - **Poses stay re-editable.** A pose keeps the body curve as a curve and the planted set as flags, so re-sampling after a character update uses the same inputs. Touch-ups are deltas in anchor space, which is why they survive Update from library.
 - **Detail beyond the sweep is anchored, not modelled.** Branching shapes are other blocks or parts. Grooves and muscle lines are a later shape touch-up layer: push and pull offsets stored in anchor space at build time, the same mechanism as per-shot touch-ups, so they survive refits.
+
+## Adding parts without refactoring
+
+A new part is one of three things, and each slots in without touching what exists or what is saved.
+
+| New part is | What changes | Old characters |
+| --- | --- | --- |
+| A template file over existing blocks (arm, hand, hoof, nose, horn) | Nothing in code. The part picker lists templates from the folder and the Part drawer renders parameters from the template's metadata | Untouched; they pin their own template ids and versions |
+| A block kind (membrane, socket row, per-digit overrides) | One sealed subclass with its `build`, `lint`, `joints`, `sockets` and `areas`, and the schema regenerates. No `when` over block kinds exists outside the block classes and the schema generator, so nothing else changes | Untouched; their files never mention the kind |
+| A surface that is not a sweep (a membrane between fingers, a sphere eye) | A block whose `build` returns a patch that is open in v, or closed with poles. Anchors, marks, weights and lines already address patches by name, u and v | Untouched; their anchors name the body patch |
+
+Four rules make saved characters keep working, from the first commit:
+
+1. **Template versions are immutable and ship forever.** A changed template is a new version file; the old file stays and old characters keep building with it. An upgrade to the new version is offered, never applied by itself.
+2. **A new parameter's default reproduces the old build exactly.** The golden tests build every shipped template version with default parameters and compare against its stored fixture, so a default that moves a vertex fails the build.
+3. **References are by name, never by index.** Poses name bones by part and joint name, anchors name patches, slots name sockets, marks name landmarks. Adding a joint, a patch or a socket to a new template version shifts nothing stored.
+4. **Documents carry a format number and a migration chain.** Each step from one format to the next is one function with a fixture saved in the older format. A document from a newer app is refused with a clear message, never half-read. Shipped templates stay strictly parsed; documents tolerate only what a migration has accounted for.
 
 ## Part template file format
 
