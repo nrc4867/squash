@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
+import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.EndClosure
@@ -28,6 +29,10 @@ data class Skull(
     @Doc("Full top to bottom extent, as a fraction of the axis length; the skull's own length when left out.")
     val depth: Param? = null,
 ) : Block {
+    override fun run() = u
+
+    override fun patchNames() = listOf(PatchName(name ?: BODY_PATCH))
+
     /** Round over half its rings each way, so with nothing drawn it is an ellipsoid. */
     override fun build(ctx: BuildContext): List<Patch> {
         val rings = ctx.template.topology.rings

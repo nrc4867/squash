@@ -24,10 +24,12 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.PlanRoot
 import dev.chieppa.squash.character.model.PlanSocket
 import dev.chieppa.squash.character.model.SectionSpec
+import dev.chieppa.squash.character.model.Sets
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.character.model.Topology
 import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec2
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,15 +44,17 @@ class LintTest {
         openEnd: End? = End.START,
         params: Map<String, ParamSpec> = emptyMap(),
         section: SectionSpec = SectionSpec.Named(dev.chieppa.squash.geom.SectionProfile.CIRCLE),
+        views: Map<View, Sets> = mapOf(View.SIDE to Sets.HEIGHT, View.TOP to Sets.WIDTH, View.FRONT to Sets.CAP),
+        id: String = "leg",
     ) = PartTemplate(
         format = 1,
-        id = TemplateId("leg"),
+        id = TemplateId(id),
         version = 1,
         name = "Leg",
         axis = AxisSpec(Direction(0f, -1f, 0f)),
         openEnd = openEnd,
         topology = Topology(rings, 8),
-        views = emptyMap(),
+        views = views,
         section = section,
         params = params,
         blocks = blocks,
@@ -114,15 +118,15 @@ class LintTest {
 
     @Test
     fun aPadSitsOnAToeRowOrAtAU() {
-        val nowhere = Pad(size = Param.of(0.1f))
-        val onNothing = Pad(on = "toes", size = Param.of(0.1f))
+        val nowhere = Pad(size = Param.of(0.1f), rings = 7, segments = 12)
+        val onNothing = Pad(on = "toes", size = Param.of(0.1f), rings = 7, segments = 12)
         assertEquals(listOf("$.blocks[1].u", "$.blocks[2].on"), paths(template(listOf(tube, nowhere, onNothing))))
     }
 
     @Test
     fun aToePadComesAfterItsRow() {
-        val row = ToeRow("toes", u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f))
-        val pad = Pad(on = "toes", size = Param.of(0.1f))
+        val row = ToeRow("toes", u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f), rings = 10, segments = 8)
+        val pad = Pad(on = "toes", size = Param.of(0.1f), rings = 7, segments = 12)
         assertEquals(emptyList(), paths(template(listOf(tube, row, pad))))
         assertEquals(listOf("$.blocks[1].on"), paths(template(listOf(tube, pad, row))))
     }
@@ -148,6 +152,101 @@ class LintTest {
     }
 
     @Test
+    fun exactlyOneRunReachesTheOpenEnd() {
+        val other = Tube(name = "second", u = Span(0f, 0.5f), radius = Param.of(0.2f))
+        val late = Tube(u = Span(0.2f, 1f), radius = Param.of(0.2f))
+        assertEquals(emptyList(), paths(template(listOf(tube))))
+        assertEquals(emptyList(), paths(template(listOf(tube, other), openEnd = End.END)))
+        assertEquals(listOf("$.openEnd"), paths(template(listOf(tube, other))))
+        assertEquals(listOf("$.openEnd"), paths(template(listOf(late))))
+        assertEquals(emptyList(), paths(template(listOf(late), openEnd = null)))
+    }
+
+    @Test
+    fun aSocketSitsWhereARunReaches() {
+        val short = Tube(u = Span(0f, 0.6f), radius = Param.of(0.2f))
+        val onIt = Socket("paw", u = 0.5f, v = 0.5f)
+        val pastIt = Socket("paw", u = 0.9f, v = 0.5f)
+        assertEquals(emptyList(), paths(template(listOf(short, onIt))))
+        assertEquals(listOf("$.blocks[1].u"), paths(template(listOf(short, pastIt))))
+    }
+
+    @Test
+    fun aSocketNeedsARunThatIsOnWheneverItIs() {
+        val params = mapOf("extra" to ParamSpec(ParamDefault(1f, isFlag = true)))
+        val flag = ParamRef("\$extra")
+        val switched = Tube(name = "extra", condition = flag, u = Span(0.5f, 1f), radius = Param.of(0.2f))
+        val base = Tube(u = Span(0f, 0.5f), radius = Param.of(0.2f))
+        val onSwitched = Socket("tip", condition = flag, u = 0.9f, v = 0.5f)
+        val always = Socket("tip", u = 0.9f, v = 0.5f)
+        assertEquals(emptyList(), paths(template(listOf(base, switched, onSwitched), params = params)))
+        assertEquals(listOf("$.blocks[2].u"), paths(template(listOf(base, switched, always), params = params)))
+    }
+
+    @Test
+    fun aPlanSocketSitsWhereARunOfItsTemplateReaches() {
+        val torsoId = TemplateId("torso")
+        val short = template(listOf(Tube(u = Span(0f, 0.6f), radius = Param.of(0.2f))), id = "torso")
+        fun plan(u: Float) = BodyPlan(
+            format = 1,
+            id = BodyPlanId("plan"),
+            version = 1,
+            name = "Plan",
+            root = PlanRoot(torsoId, Direction(1f, 0f, 0f)),
+            sockets = listOf(PlanSocket("leg", torsoId, u, 0.35f, takes = emptyList())),
+        )
+        assertEquals(emptyList(), BodyPlanLint.lint(plan(0.5f), listOf(short)))
+        assertEquals(listOf("$.sockets[0].u"), BodyPlanLint.lint(plan(0.9f), listOf(short)).map { it.path })
+    }
+
+    @Test
+    fun noTwoBlocksBuildAPatchOfTheSameName() {
+        fun run(name: String?, u: Span = Span(0.5f, 1f)) = Tube(name = name, u = u, radius = Param.of(0.2f))
+        fun row(name: String) = ToeRow(name, u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f), rings = 10, segments = 8)
+        fun pad(name: String?, on: String? = null) = Pad(name = name, u = if (on == null) 0.5f else null, on = on, size = Param.of(0.1f), rings = 7, segments = 12)
+        fun collisions(vararg blocks: Block) = TemplateLint.lint(template(listOf(tube) + blocks)).filter { it.message.contains("patches named") }.map { it.message }
+
+        assertEquals(emptyList(), collisions(run("muzzle"), row("toes"), pad("palm"), pad(null, on = "toes")))
+        assertEquals(listOf("two patches named 'body'"), collisions(run(null)))
+        assertEquals(listOf("two patches named 'muzzle'"), collisions(run("muzzle"), run("muzzle")))
+        assertEquals(listOf("two patches named 'toes'"), collisions(row("toes"), row("toes")))
+        assertEquals(listOf("two patches named 'toes:1'"), collisions(row("toes"), run("toes:1")))
+        assertEquals(listOf("two patches named 'pad:palm'"), collisions(pad("palm"), pad("palm")))
+        assertEquals(listOf("two patches named 'pad:toes'"), collisions(row("toes"), pad(null, on = "toes"), pad(null, on = "toes")))
+    }
+
+    @Test
+    fun theViewsMapMakesSense() {
+        fun views(vararg entries: Pair<View, Sets>) = paths(template(listOf(tube), views = mapOf(*entries)))
+        assertEquals(emptyList(), views(View.SIDE to Sets.HEIGHT))
+        assertEquals(emptyList(), views(View.SIDE to Sets.HEIGHT, View.TOP to Sets.WIDTH, View.FRONT to Sets.SECTION))
+        assertEquals(emptyList(), views(View.TOP to Sets.HEIGHT, View.SIDE to Sets.WIDTH))
+        assertEquals(listOf("$.views"), views())
+        assertEquals(listOf("$.views"), views(View.FRONT to Sets.CAP))
+        assertEquals(listOf("$.views"), views(View.SIDE to Sets.HEIGHT, View.TOP to Sets.HEIGHT))
+        assertEquals(listOf("$.views.side"), views(View.SIDE to Sets.CAP, View.TOP to Sets.WIDTH))
+        assertEquals(listOf("$.views.front"), views(View.SIDE to Sets.HEIGHT, View.FRONT to Sets.WIDTH))
+    }
+
+    @Test
+    fun capAndSectionAreNotBothSet() {
+        val findings = TemplateLint.lint(
+            template(listOf(tube), views = mapOf(View.SIDE to Sets.HEIGHT, View.TOP to Sets.CAP, View.FRONT to Sets.SECTION)),
+        )
+        assertTrue(findings.any { it.path == "$.views" && it.message.contains("cap and section") })
+    }
+
+    @Test
+    fun aToeOrPadGridIsBigEnoughToBuild() {
+        val row = ToeRow("toes", u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f), rings = 2, segments = 2)
+        val pad = Pad(u = 0.5f, size = Param.of(0.1f), rings = 2, segments = 2)
+        assertEquals(
+            listOf("$.blocks[1].rings", "$.blocks[1].segments", "$.blocks[2].rings", "$.blocks[2].segments"),
+            paths(template(listOf(tube, row, pad))),
+        )
+    }
+
+    @Test
     fun aPlanMustNameShippedTemplatesUnlessOptional() {
         val torso = TemplateId("torso")
         val plan = BodyPlan(
@@ -162,7 +261,7 @@ class LintTest {
                 PlanSocket("twin", torso, 0.9f, 0.5f, pair = Mirror.X, takes = emptyList()),
             ),
         )
-        val findings = BodyPlanLint.lint(plan, setOf(torso))
+        val findings = BodyPlanLint.lint(plan, listOf(template(listOf(tube), id = "torso")))
         assertEquals(listOf("$.sockets[1].takes", "$.sockets[2].v"), findings.map { it.path })
     }
 }

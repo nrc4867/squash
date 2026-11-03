@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.lint
 
 import dev.chieppa.squash.character.model.BodyPlan
+import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.PlanSocket
 import dev.chieppa.squash.character.model.TEMPLATE_FORMAT
 import dev.chieppa.squash.document.TemplateId
@@ -10,10 +11,17 @@ private const val V_UNDER = 0.5f
 
 /** The semantic checks on a body plan against the [templates] that ship with it. */
 object BodyPlanLint {
-    fun lint(plan: BodyPlan, templates: Set<TemplateId>): List<Finding> = buildList {
+    fun lint(plan: BodyPlan, parts: List<PartTemplate>): List<Finding> = buildList {
+        val templates = parts.map { it.id }.toSet()
         if (plan.format != TEMPLATE_FORMAT) add(Finding("$.format", "format ${plan.format} is not $TEMPLATE_FORMAT"))
         if (plan.root.template !in templates) add(Finding("$.root.template", "no template '${plan.root.template.value}'"))
-        plan.sockets.forEachIndexed { i, socket -> addAll(socket(socket, "$.sockets[$i]", templates)) }
+        plan.sockets.forEachIndexed { i, socket ->
+            addAll(socket(socket, "$.sockets[$i]", templates))
+            val on = parts.firstOrNull { it.id == socket.on }
+            if (on != null && on.blocks.none { it.reaches(socket.u) }) {
+                add(Finding("$.sockets[$i].u", "no run of '${socket.on.value}' reaches u = ${socket.u}"))
+            }
+        }
         plan.slots.forEachIndexed { i, slot ->
             if (slot.on !in templates) add(Finding("$.slots[$i].on", "no template '${slot.on.value}'"))
         }

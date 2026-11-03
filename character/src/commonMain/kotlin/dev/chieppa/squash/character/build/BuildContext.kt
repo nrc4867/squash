@@ -26,6 +26,8 @@ class BuildContext(
     private val params: Map<String, Float>,
     private val blocks: List<Block>,
     outlines: Map<View, OutlineCurve> = emptyMap(),
+    /** Throws if this build's run was cancelled. A block building several patches calls it between them. */
+    val checkCancelled: () -> Unit = {},
 ) {
     val axes: PartAxes = PartAxes.of(template.axis.rest.toVec3())
 

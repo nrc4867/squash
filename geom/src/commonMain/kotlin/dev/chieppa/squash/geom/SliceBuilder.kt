@@ -36,7 +36,10 @@ data class TubeSpec(
     val front: FrontSection? = null,
 )
 
-/** A run given ring by ring, for a run that does not follow the part's axis: full extents and centre at each u. */
+/**
+ * A run given ring by ring, for a run that does not follow the part's axis: full extents and centre at each u. Its rings
+ * face [facing], or along a spline over their centres when that is null.
+ */
 class SweepSpec(
     val name: String,
     val us: FloatArray,
@@ -47,6 +50,7 @@ class SweepSpec(
     val up: Vec3,
     val startClosure: EndClosure,
     val endClosure: EndClosure,
+    val facing: Vec3? = null,
 )
 
 /** Builds slices and the patches lofted from them. */
@@ -100,7 +104,8 @@ object SliceBuilder {
         val first = spec.us.first()
         val range = spec.us.last() - first
         val along = FloatArray(spec.us.size) { (spec.us[it] - first) / range }
-        val frames = frames(AxisSpline(spec.centres, along), along.asList(), spec.up)
+        val frames = spec.facing?.let { facing -> spec.centres.map { Frame(it, facing, spec.up) } }
+            ?: frames(AxisSpline(spec.centres, along), along.asList(), spec.up)
         val capRings = defaultCapRings(spec.us.size)
         val slices = spec.us.indices.map { ring ->
             val closure = endScale(ring, capRings, spec.startClosure) * endScale(spec.us.size - 1 - ring, capRings, spec.endClosure)
@@ -134,18 +139,22 @@ object SliceBuilder {
         return Patch(name, slices.size, segments, closedV = true, slices = slices, points = points)
     }
 
-    /** Evenly spaced u values with the nearest ring moved onto each joint, so a joint always lands on a ring. */
+    /**
+     * Evenly spaced u values with the nearest ring moved onto each joint, so a joint always lands on a ring. A flat end's
+     * pole shares its u with the ring it closes, and the other rings space evenly between.
+     */
     private fun ringUs(spec: TubeSpec): List<Float> {
         val n = spec.rings
+        val first = if (spec.startClosure == EndClosure.FLAT) 1 else 0
+        val last = if (spec.endClosure == EndClosure.FLAT) n - 2 else n - 1
+        val steps = (last - first).coerceAtLeast(1)
         val span = spec.uEnd - spec.uStart
-        val us = FloatArray(n) { spec.uStart + span * it / (n - 1) }
+        val us = FloatArray(n) { spec.uStart + span * (it - first).coerceIn(0, steps) / steps }
         for (joint in spec.jointUs) {
             if (joint < spec.uStart || joint > spec.uEnd) continue
             val nearest = us.indices.minBy { abs(us[it] - joint) }
             us[nearest] = joint
         }
-        if (spec.endClosure == EndClosure.FLAT) us[n - 2] = spec.uEnd
-        if (spec.startClosure == EndClosure.FLAT) us[1] = spec.uStart
         return us.toList()
     }
 

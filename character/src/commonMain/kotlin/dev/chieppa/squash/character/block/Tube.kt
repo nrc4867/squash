@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
+import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SectionSpec
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
@@ -34,6 +35,10 @@ data class Tube(
     @Doc("How far the run sits toward the underside when nothing is drawn, as a fraction of the axis length.")
     val drop: Param = Param.of(0f),
 ) : Block {
+    override fun run() = u
+
+    override fun patchNames() = listOf(PatchName(name ?: BODY_PATCH))
+
     override fun build(ctx: BuildContext): List<Patch> = listOf(
         SliceBuilder.tube(
             TubeSpec(

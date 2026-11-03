@@ -60,6 +60,12 @@ data class ClosedSpline(val controlPoints: List<Vec2>) {
         return Vec2(points.maxOf { it.x } - points.minOf { it.x }, points.maxOf { it.y } - points.minOf { it.y })
     }
 
+    /** Halfway between this spline's lowest and highest samples in y. */
+    fun middleY(): Float {
+        val points = sample(controlPoints.size)
+        return (points.maxOf { it.y } + points.minOf { it.y }) / 2f
+    }
+
     /** This spline moved toward [other], control point by control point. */
     fun lerp(other: ClosedSpline, t: Float): ClosedSpline {
         require(other.controlPoints.size == controlPoints.size) { "Blending splines of different sizes" }

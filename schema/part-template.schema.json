@@ -408,11 +408,23 @@
               "type": "null"
             }
           ]
+        },
+        "rings": {
+          "description": "Rings from the pad's inner point to its apex.",
+          "type": "integer",
+          "minimum": 3.0
+        },
+        "segments": {
+          "description": "Points around each of the pad's rings.",
+          "type": "integer",
+          "minimum": 3.0
         }
       },
       "required": [
         "kind",
-        "size"
+        "size",
+        "rings",
+        "segments"
       ],
       "patternProperties": {
         "^x-": {}
@@ -842,6 +854,16 @@
               "type": "null"
             }
           ]
+        },
+        "rings": {
+          "description": "Rings along each toe.",
+          "type": "integer",
+          "minimum": 3.0
+        },
+        "segments": {
+          "description": "Control points of each toe's section.",
+          "type": "integer",
+          "minimum": 3.0
         }
       },
       "required": [
@@ -849,7 +871,9 @@
         "u",
         "count",
         "spread",
-        "radius"
+        "radius",
+        "rings",
+        "segments"
       ],
       "patternProperties": {
         "^x-": {}

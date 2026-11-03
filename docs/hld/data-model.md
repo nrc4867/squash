@@ -12,7 +12,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Part instance | Template id and version, the socket it sits on, its own outlines and params while unpaired, pair id, side and that side's overrides | Document |
 | Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
 | Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
-| Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the axis spline, height, width, a closed section spline and a proxy normal | Derived |
+| Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the part's midline, height, width, a closed section spline and a proxy normal | Derived |
 | Part mesh | One grid per patch; every vertex tagged with part, patch, bone, u and v | Derived |
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
@@ -56,6 +56,8 @@ sealed interface Block {
     fun joints(): List<JointSpec>
     fun sockets(): List<SocketSpec>
     fun areas(): List<AreaSpec>
+    fun run(): Span?                   // the stretch of the axis its run of slices covers, if it builds one
+    fun patchNames(): List<PatchName>  // the patches it builds, for the lint
     fun capShape(end: End): CapShape?  // the shape this block closes an end with, if it closes it
 }
 
@@ -93,10 +95,10 @@ data class Patch(
 )
 data class Slice(
     val u: Float,
-    val frame: Frame,                  // centre and orientation on the axis spline at u
+    val frame: Frame,                  // centre and orientation: on the midline in the plane a = constant when drawn, on the axis spline when not
     val height: Float, val width: Float,
     val section: ClosedSpline,         // exactly `segments` control points, sampled at fixed v, scaled by height and width
-    val proxyNormalFrame: Mat3,
+    val proxyNormalFrame: Mat3,        // along the axis spline's tangent at u, whichever way the ring stands
 )
 
 // Where surface work lives. Survives refits because patch, u and v are template coordinates, not positions.
@@ -106,9 +108,9 @@ data class Anchor(val part: PartId, val patch: String = "body", val u: Float, va
 Rules the code keeps:
 
 - **Outlines live in the part's own axes.** `a` runs along the rest direction from the socket end, `b` toward v = 0 (body up, or body forward for a part whose rest direction is vertical), `c` toward v = 0.25. A Side outline's points are (a, b), a Top outline's (a, -c), a Front outline's (c, b) looking down the axis. Patches are built in the same axes, in body-space orientation, with the socket plane at a = 0; placing a part on its parent is a separate step. `PartBuilder.axes` gives the axes and `PartAxes.pointOnView` a view point's position.
-- **Views set slices, nothing fits.** u runs linearly over the Side outline's range along a; an open start begins at the socket plane instead, and an open end finishes there. At each u the outermost two crossings of the line a = constant give the slice's centre (their midpoint) and height (their distance), so the axis follows the drawing and a digitigrade leg bends at the hock because it was drawn that way. An open outline counts as closed by the chord between its ends. A height crossing a sloped axis is corrected by the slope, so the run keeps its drawn thickness, and a ring on the socket plane lies flat in it. The Top outline's crossings give width only; its midpoint is not read. The Front outline shapes the cap, blending in over the last sixth of the axis, or, where the template says `section`, the whole cross-section, which is how a chest gets a keel or a flat side. A missing view takes the template's section profile and the other view's extent, so the section keeps its proportions; the view present rules u. A Front outline alone changes the section and leaves the sizes to the template. The `size` parameter multiplies a drawing. An outline with no extent, or wholly behind the socket plane, sets nothing.
-- **Refits are local.** A slice reads only the crossings at its own u, and the axis tangent reads only its neighbouring knots, so changing a span of a Side or Top outline moves only slices within two axis knots (1/32 of the length) plus one table station (1/128) of that span. Two edits reach further by their nature: moving the outline's far end along a rescales u for every slice, since the ring count is fixed, and a Front `section` outline applies to every slice.
-- **Everything is a spline.** Outlines are cubic Béziers. The axis is a C1 cubic spline through the Side midline at fixed knots, with Catmull-Rom tangents so that moving a point changes the curve only within two spans of it, and it stays in the plane of a and b. Every cross-section is a closed cubic B-spline with exactly `segments` control points, sampled at fixed v, so a circle, an egg, a keel and a drawn chest outline are one type with different control polygons, and the mesh topology never changes. A part is a lofted surface: sections swept along the axis.
+- **Views set slices, nothing fits.** u runs linearly over the Side outline's range along a; an open start begins at the socket plane instead, and an open end finishes there. At each u a slice lies in its plane a = constant, and the outermost two crossings of that line give its centre (their midpoint) and height (their distance), so the rings' ends are the drawing's crossings: a drawn Side outline is the mesh's silhouette, up to the straight run between one ring and the next. Rings stand on parallel planes, so they cannot cross however quickly the midline moves, and the axis follows the drawing, so a digitigrade leg bends at the hock because it was drawn that way. An open outline counts as closed by the chord between its ends. A tip is a crossing with no gap, so a ring there has no height beyond a floor of 1/500 of the length, and a closed end's last ring reaches the drawn tip. A row of toes stands on the same planes. An undrawn part's rings follow the axis tangent. The Top outline's crossings give width only; its midpoint is not read. The Front outline shapes the cap, blending in over the last sixth of the axis, or, where the template says `section`, the whole cross-section, which is how a chest gets a keel or a flat side. A missing view takes the template's section profile and the other view's extent, so the section keeps its proportions; the view present rules u. A Front outline alone changes the section and leaves the sizes to the template. The `size` parameter multiplies a drawing. An outline with no extent, or wholly behind the socket plane, sets nothing.
+- **Refits are local.** A slice reads only the crossings at its own u, so changing a span of a Side or Top outline moves only slices within one table station (1/128 of the length) of that span. A slice's proxy normal frame reads the axis tangent, and so its neighbouring knots, which reaches two axis knots (1/32) further and moves no vertex. Two edits reach further by their nature: moving the outline's far end along a rescales u for every slice, since the ring count is fixed, and a Front `section` outline applies to every slice.
+- **Everything is a spline.** Outlines are cubic Béziers. The axis is a C1 cubic spline through the Side midline at fixed knots, with Catmull-Rom tangents so that moving a point changes the curve only within two spans of it, and it stays in the plane of a and b. Joints and an undrawn part's rings sit on it; a drawn ring's centre is the midline itself, and the tangent sets only its proxy normal frame. Every cross-section is a closed cubic B-spline with exactly `segments` control points, sampled at fixed v, so a circle, an egg, a keel and a drawn chest outline are one type with different control polygons, and the mesh topology never changes. A part is a lofted surface: sections stacked along the axis.
 - **Views disagree where one passes another's extent.** Side and Top compare where the part starts and ends along u, Front compares against Side's height and Top's width, and a Side narrower than Front never counts, since a cap is meant to be smaller. The highlight marks the stretch past the limit, which is a comparison of intervals per stroke.
 - **Fixed topology per template version.** Ring i maps to u, segment j maps to v, so an anchor reaches its vertex neighbourhood by arithmetic. Changing rings or segments is a new version and a migration.
 - **Open ends close at the socket plane.** The open end's slice is placed on the parent's surface at the socket, and the parent's slices are untouched. A stroke that closes anyway is cut at that plane.
@@ -167,8 +169,8 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
 | --- | --- | --- |
 | JSON Schema | Structure, required keys, ranges, enum values, `$param` reference syntax | Generated from the model and committed; validates in the editor and in CI over every shipped file; CI fails if stale |
 | Typed parse | Unknown `kind`, unknown keys, wrong types; sealed classes make every kind exhaustive in code | On load; a failure names file, path and line |
-| Semantic lint | `u` ranges inside 0 to 1, joints ordered along the axis, exactly one open end when `openEnd` is set, sockets on the surface, paired sockets symmetric, `$param` names exist, ring count enough for the joint count | On load and in CI |
-| Golden build | Each template built with default parameters and no outlines: watertight except the open end, no degenerate triangles, bounds and vertex count match the fixture; random parameters inside their ranges also build. A missing fixture fails; `./gradlew :character:desktopTest -PupdateGoldens` writes fixtures for review in the diff | JUnit, when a template or builder changes |
+| Semantic lint | `u` ranges inside 0 to 1, joints ordered along the axis, exactly one run reaching the open end when `openEnd` is set, sockets of templates and plans where a run reaches, no two blocks building a patch of one name, a views map where each reading has one view, some view sets height or width, cap and section are not both set, and only Front sets a section or cap, paired sockets symmetric, `$param` names exist, ring count enough for the joint count | On load and in CI |
+| Golden build | Each template built with default parameters and no outlines: watertight except the open end, no degenerate triangles, every vertex of every patch matches the fixture to 1/10000 of the axis length; random parameters inside their ranges also build. A missing fixture fails; `./gradlew :character:desktopTest -PupdateGoldens` writes fixtures for review in the diff | JUnit, when a template or builder changes |
 
 ### Extensible
 
@@ -215,9 +217,9 @@ A paw adds the blocks that draw what the user never does, driven by parameters t
 },
 "blocks": [
   { "kind": "tube",   "u": [0.0, 0.6], "radius": 0.3 },
-  { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09 },
-  { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad" },
-  { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad" },
+  { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09, "rings": 10, "segments": 8 },
+  { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+  { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
   { "kind": "cap",    "end": "end" }
 ]
 ```
@@ -229,6 +231,7 @@ A head is a `skull` block instead of a tube, with a muzzle and the landmarks fac
 "blocks": [
   { "kind": "skull",    "u": [0.0, 0.75], "width": 0.82, "depth": 0.78 },
   { "kind": "tube",     "name": "muzzle", "u": [0.6, 1.0], "radius": 0.2, "taper": 0.7, "drop": 0.08 },
+  { "kind": "pad",      "name": "nose",   "u": 0.95, "v": 0.0, "size": 0.07, "color": "nose", "rings": 7, "segments": 12 },
   { "kind": "joint",    "name": "jaw",    "u": 0.6, "v": 0.5, "hinge": "x", "limits": [0, 35] },
   { "kind": "socket",   "name": "ear",    "u": 0.25, "v": 0.12, "pair": "x", "outward": "normal" },
   { "kind": "landmark", "name": "eye",    "u": 0.5,  "v": 0.2,  "pair": "x" },
@@ -263,8 +266,8 @@ Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-`
 | `tube` | `u` range, `radius`, `taper`, `section` override (a named profile or control points), `cup`, `drop` | A run of slices; the views resize them. `cup` curls the section's sides toward v = 0; `drop` lowers the undrawn run toward the underside |
 | `cap` | `end` (start or end), `shape` (round, flat, pointed) | Closes the runs' ends on that side that are not on a socket. An end with no cap that is not the open end closes flat. A drawing shapes the part's own ends, closing only the last ring; a run's inner end still rounds off |
 | `skull` | `u` range, `width`, `depth` | A rounded block whose slices run front to back: an ellipsoid when undrawn, the `body` patch |
-| `toeRow` | `u` range, `count`, `spread` (degrees of the outermost toe from the axis), `radius`, `v` | A row of small closed tubes fanned across the end from the run below them, patches `name:0` on, with a fixed grid of their own. A drawn Side fills each toe to the outline; a drawn Top shares its width among them. Vertices take the bone at their u; toe bones arrive with the rig |
-| `pad` | `u`, `v` or `on` (a toeRow listed earlier), `size`, `color` | A raised closed lens following the surface, a patch named `pad:name` or `pad:name:i` per toe, with no slices. `v` defaults to underneath. Its vertices take the bone at its site |
+| `toeRow` | `u` range, `count`, `spread` (degrees of the outermost toe from the axis), `radius`, `v`, `rings`, `segments` | A row of small closed tubes fanned across the end from the run below them, patches `name:0` on, each on a grid of `rings` by `segments`. A drawn Side fills each toe to the outline; a drawn Top shares its width among them. Vertices take the bone at their u; toe bones arrive with the rig |
+| `pad` | `u`, `v` or `on` (a toeRow listed earlier), `size`, `color`, `rings`, `segments` | A raised closed lens following the surface on a grid of `rings` by `segments`, a patch named `pad:name` or `pad:name:i` per toe, with no slices. `v` defaults to underneath. Its vertices take the bone at its site |
 | `joint` | `u`, optional `v`, `hinge` axis, `limits`, `stretch` | A bone boundary; bones are the spans between joints in `u` order |
 | `socket` | `u`, `v`, `outward` (axis or normal), `pair`, `takes` | A child attachment point; `pair` makes a mirrored twin |
 | `area` | `u` range, `v` range, `tag` (rigid, soft, inner) | A tagged region weights and shading can read |

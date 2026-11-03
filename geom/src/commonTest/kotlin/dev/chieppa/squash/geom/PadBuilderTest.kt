@@ -32,7 +32,7 @@ class PadBuilderTest {
 
     @Test
     fun aPadIsClosedFacesOutAndRisesFromTheSurface() {
-        val pad = PadBuilder.pad("pad:palm", run, 0.5f, 0.5f, 0.2f)
+        val pad = PadBuilder.pad("pad:palm", run, 0.5f, 0.5f, 0.2f, 7, 12)
         val mesh = MeshBuilder.build(pad) { 0 }
         assertEquals(emptyList(), MeshInvariants.check(mesh, openRings = emptySet()))
         assertTrue(MeshInvariants.signedVolume(mesh) > 0f)
@@ -43,7 +43,7 @@ class PadBuilderTest {
 
     @Test
     fun aPadsVerticesTakeTheBoneAtItsSite() {
-        val pad = PadBuilder.pad("pad:palm", run, 0.6f, 0.5f, 0.2f)
+        val pad = PadBuilder.pad("pad:palm", run, 0.6f, 0.5f, 0.2f, 7, 12)
         val mesh = MeshBuilder.build(pad) { if (it < 0.5f) 0 else 1 }
         assertTrue(mesh.bones.all { it == 1 })
     }

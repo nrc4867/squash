@@ -4,11 +4,9 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateRef
-import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
+import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -18,18 +16,18 @@ data class PartBuildInput(val template: TemplateRef, val data: PartData)
 
 /**
  * The derived step from what one part resolves to, its parameters and outlines, to its patches and their slices. A
- * change that leaves those as they were does not reach it, and a change to a pair's data reaches both sides. A part
- * missing from the document has no patches.
+ * change that leaves those as they were does not reach it, and a change to a pair's data reaches both sides. A run stops
+ * between blocks once cancelled. A part missing from the document has no patches.
  */
 fun Graph.sliceRowNode(
     document: Flow<SquashDocument>,
     part: PartId,
     templates: TemplateLibrary,
-): Node<PartBuildInput?, List<Patch>> =
+): Node<PartBuildInput?, PartBuild> =
     node(document.map { it.partBuildInput(part) }.distinctUntilChanged()) { input ->
-        if (input == null) return@node emptyList()
-        currentCoroutineContext().ensureActive()
-        PartBuilder.build(templates[input.template], input.data)
+        if (input == null) return@node PartBuild(null, emptyList())
+        val template = templates[input.template]
+        PartBuild(template, PartBuilder.build(template, input.data, cancellationCheck()))
     }
 
 private fun SquashDocument.partBuildInput(part: PartId): PartBuildInput? =

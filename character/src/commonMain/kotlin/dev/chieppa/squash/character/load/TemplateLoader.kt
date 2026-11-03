@@ -5,7 +5,6 @@ import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
-import dev.chieppa.squash.document.TemplateId
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
@@ -43,10 +42,10 @@ object TemplateLoader {
         return template
     }
 
-    /** Parses [text] and lints it against the [templates] that ship with it, throwing the first problem. */
-    fun loadPlan(source: String, text: String, templates: Set<TemplateId>): BodyPlan {
+    /** Parses [text] and lints it against the [parts] that ship with it, throwing the first problem. */
+    fun loadPlan(source: String, text: String, parts: List<PartTemplate>): BodyPlan {
         val plan = decode(source, text, BodyPlan.serializer())
-        failOnFindings(source, text, BodyPlanLint.lint(plan, templates))
+        failOnFindings(source, text, BodyPlanLint.lint(plan, parts))
         return plan
     }
 

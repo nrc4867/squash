@@ -57,8 +57,8 @@ private const val DRAG = 0.04f
 private const val WAVE = 0.25f
 private const val WAVES = 14f
 
-/** Two axis knots and one table station, as a share of the length, on each side of a touched span. */
-private const val MARGIN = 0.04f
+/** One table station, as a share of the length, on each side of a touched span. */
+private const val MARGIN = 0.008f
 
 private val PLANE = StrokeEnds.CutAtPlane()
 private val LIMIT = CurveLimit(0f, above = true)

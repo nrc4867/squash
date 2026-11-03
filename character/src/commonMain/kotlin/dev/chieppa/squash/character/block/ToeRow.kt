@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
+import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
@@ -21,8 +22,8 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.tan
 
-private const val TOE_RINGS = 10
-private const val TOE_SEGMENTS = 8
+private const val MIN_TOE_RINGS = 3
+private const val MIN_TOE_SEGMENTS = 3
 private const val DEFAULT_ROW_NAME = "toes"
 private const val V_UNDER = 0.5f
 private const val V_SIDE = 0.25f
@@ -43,7 +44,17 @@ data class ToeRow(
     @Doc("Where around the run before it the row sits; underneath when left out.")
     @Range(min = 0.0, max = 1.0)
     val v: Float? = null,
+    @Doc("Rings along each toe.")
+    @Range(min = 3.0)
+    val rings: Int,
+    @Doc("Control points of each toe's section.")
+    @Range(min = 3.0)
+    val segments: Int,
 ) : Block {
+    override fun patchNames() = listOf(PatchName(rowName, repeats = true))
+
+    private val rowName get() = name ?: DEFAULT_ROW_NAME
+
     /** A drawn Side fills each toe to the outline; a drawn Top shares its width among the toes. */
     override fun build(ctx: BuildContext): List<Patch> {
         val toes = ctx.value(count).roundToInt().coerceAtLeast(1)
@@ -54,25 +65,26 @@ data class ToeRow(
         val rest = toward?.let { it * (1f - thickness / 2f / it.length).coerceAtLeast(0f) } ?: Vec3.ZERO
         val rowHalf = run?.let { (it.positionAt(u.start, V_SIDE) - root).length - thickness / 2f } ?: (toes * thickness / 2f)
         val fan = ctx.value(spread) * DEGREES_TO_RADIANS
-        val section = SectionProfile.CIRCLE.spline(TOE_SEGMENTS)
-        val us = FloatArray(TOE_RINGS) { u.start + (u.end - u.start) * it / (TOE_RINGS - 1) }
+        val section = SectionProfile.CIRCLE.spline(segments)
+        val us = FloatArray(rings) { u.start + (u.end - u.start) * it / (rings - 1) }
         return List(toes) { i ->
             val place = if (toes == 1) 0f else 2f * i / (toes - 1) - 1f
             val fanOut = tan(fan * place) * ctx.axisLength
-            val heights = FloatArray(TOE_RINGS) { ctx.views?.heightAt(us[it]) ?: thickness }
-            val widths = FloatArray(TOE_RINGS) { ring ->
+            ctx.checkCancelled()
+            val heights = FloatArray(rings) { ctx.views?.heightAt(us[it]) ?: thickness }
+            val widths = FloatArray(rings) { ring ->
                 ctx.views?.widthAt(us[ring])?.let { it / toes * DRAWN_TOE_OVERLAP } ?: thickness
             }
             val centres = us.map { at ->
                 val share = ctx.views?.widthAt(at)?.let { it * ((i + 0.5f) / toes - 0.5f) }
                 val across = share ?: (rowHalf * place + fanOut * (at - u.start))
-                val base = ctx.axis.pointAt(at) + ctx.axes.side * across
+                val base = (ctx.views?.centreAt(at) ?: ctx.axis.pointAt(at)) + ctx.axes.side * across
                 if (ctx.views?.heightAt(at) != null) base else base + rest
             }
             SliceBuilder.sweep(
                 SweepSpec(
-                    "${name ?: DEFAULT_ROW_NAME}:$i", us, centres, heights, widths, section, ctx.axes.up,
-                    EndClosure.ROUND, EndClosure.ROUND,
+                    "$rowName:$i", us, centres, heights, widths, section, ctx.axes.up,
+                    EndClosure.ROUND, EndClosure.ROUND, ctx.axes.along.takeIf { ctx.views != null },
                 ),
             )
         }
@@ -80,5 +92,5 @@ data class ToeRow(
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) +
-            ctx.unit("v", v)
+            ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS)
 }

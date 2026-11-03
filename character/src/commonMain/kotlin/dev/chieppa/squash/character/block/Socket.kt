@@ -28,5 +28,6 @@ data class Socket(
 ) : Block {
     override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes))
 
-    override fun lint(ctx: LintContext): List<Finding> = ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair)
+    override fun lint(ctx: LintContext): List<Finding> =
+        ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair) + ctx.onTheSurface("u", u, condition)
 }

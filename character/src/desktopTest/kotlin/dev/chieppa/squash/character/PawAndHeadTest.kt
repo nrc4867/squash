@@ -87,7 +87,7 @@ class PawAndHeadTest {
     @Test
     fun theHeadReadsAsSkullAndMuzzle() {
         val patches = PartBuilder.build(head)
-        assertEquals(listOf("body", "muzzle"), patches.map { it.name })
+        assertEquals(listOf("body", "muzzle", "pad:nose"), patches.map { it.name })
         val skull = patches.named("body")
         val muzzle = patches.named("muzzle")
         assertTrue(muzzle.maxOf { it.x } > skull.maxOf { it.x }, "the muzzle reaches past the skull")
@@ -98,6 +98,29 @@ class PawAndHeadTest {
         assertTrue(widest.u in 0.25f..0.5f, "the skull is fullest near its middle, at u = ${widest.u}")
         assertEquals(0f, skull.slices!!.first().height)
         assertEquals(0f, skull.slices!!.last().height)
+    }
+
+    @Test
+    fun theNosePadSitsAtTheMuzzlesTipOnTop() {
+        val patches = PartBuilder.build(head)
+        val muzzle = patches.named("muzzle")
+        val nose = patches.named("pad:nose")
+        assertNull(nose.slices)
+        assertTrue(nose.minOf { it.x } > muzzle.slices!!.first().frame.center.x, "the pad is on the muzzle")
+        assertTrue(nose.maxOf { it.x } > muzzle.maxOf { it.x } - 0.08f, "the pad reaches the muzzle's tip")
+        assertTrue(nose.maxOf { it.y } > muzzle.maxOf { it.y } - 0.1f, "the pad stands on the top of the muzzle")
+        val tagged = PartBuilder.mesh("head", head, patches).patches.first { it.patch.name == "pad:nose" }
+        assertEquals(emptyList(), MeshInvariants.check(tagged, emptySet()))
+    }
+
+    @Test
+    fun theEarHasBonesEitherSideOfItsFold() {
+        val joints = ear.blocks.flatMap { it.joints() }
+        assertEquals(listOf("base", "fold", "tip"), joints.map { it.name })
+        val body = PartBuilder.mesh("ear", ear, PartBuilder.build(ear)).patches.single()
+        val fold = joints.first { it.name == "fold" }.u
+        assertTrue(body.patch.slices!!.any { it.u == fold }, "a ring lands on the fold")
+        assertEquals(setOf(0, 1), body.bones.toSet())
     }
 
     @Test

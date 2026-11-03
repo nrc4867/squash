@@ -5,9 +5,9 @@ import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.MeshInvariants
+import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.golden.GoldenFixture
 import java.nio.file.Path
-import java.util.Locale
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,20 +72,18 @@ class ShippedTemplatesTest {
         assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value })
         for (template in shipped.parts) {
             val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template))
-            val text = mesh.patches.joinToString("") { patch ->
-                val xs = (0 until patch.vertexCount).map { patch.patch.point(it) }
-                "%s vertices=%d triangles=%d x=%.3f..%.3f y=%.3f..%.3f z=%.3f..%.3f\n".format(
-                    Locale.ROOT,
-                    patch.patch.name,
-                    patch.vertexCount,
-                    patch.triangleCount,
-                    xs.minOf { it.x }, xs.maxOf { it.x },
-                    xs.minOf { it.y }, xs.maxOf { it.y },
-                    xs.minOf { it.z }, xs.maxOf { it.z },
-                )
-            }
-            GoldenFixture.check(Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt"), text, "character")
+            GoldenFixture.check(Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt"), templateFixture(mesh), "character")
         }
+    }
+
+    @Test
+    fun aFixtureHoldsEveryVertexSoAnInteriorOneMovingFails() {
+        val paw = template("paw")
+        val patches = PartBuilder.build(paw)
+        val body = patches.first()
+        val moved = body.points.copyOf().also { it[body.index(8, 5) * Patch.COMPONENTS + 1] += FIXTURE_STEP * 2f }
+        val changed = patches.map { if (it === body) Patch(it.name, it.nu, it.nv, it.closedV, it.slices, moved, it.boneU) else it }
+        assertNotEquals(templateFixture(PartBuilder.mesh("paw", paw, patches)), templateFixture(PartBuilder.mesh("paw", paw, changed)))
     }
 
     private fun assertBuildHolds(template: PartTemplate, params: Map<String, Float>) {

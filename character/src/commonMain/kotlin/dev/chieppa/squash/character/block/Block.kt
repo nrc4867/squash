@@ -8,7 +8,9 @@ import dev.chieppa.squash.character.model.CapShape
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.ParamRef
+import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SocketSpec
+import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.Patch
 import kotlinx.serialization.Serializable
 
@@ -28,6 +30,12 @@ sealed interface Block {
     fun joints(): List<JointSpec> = emptyList()
     fun sockets(): List<SocketSpec> = emptyList()
     fun areas(): List<AreaSpec> = emptyList()
+
+    /** The stretch of the axis this block's run of slices covers, if it builds one. */
+    fun run(): Span? = null
+
+    /** The patches this block builds. */
+    fun patchNames(): List<PatchName> = emptyList()
 
     /** The shape this block closes [end] with, if it closes it. */
     fun capShape(end: End): CapShape? = null

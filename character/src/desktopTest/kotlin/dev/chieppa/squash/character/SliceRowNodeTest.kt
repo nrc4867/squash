@@ -52,7 +52,7 @@ class SliceRowNodeTest {
         assertFalse(graph.settled.value)
         runCurrent()
         assertTrue(graph.settled.value)
-        val slices = assertNotNull(node.output.value?.single()?.slices)
+        val slices = assertNotNull(node.output.value?.patches?.single()?.slices)
         assertEquals(24, slices.size)
     }
 
@@ -68,7 +68,7 @@ class SliceRowNodeTest {
         assertFalse(graph.settled.value)
         runCurrent()
         assertNotEquals(before, node.output.value)
-        assertEquals(0.8f, node.output.value!!.single().slices!![5].height, 1e-4f)
+        assertEquals(0.8f, node.output.value!!.patches.single().slices!![5].height, 1e-4f)
 
         history.undo()
         assertTrue(graph.settled.value)
@@ -88,7 +88,7 @@ class SliceRowNodeTest {
         assertFalse(graph.settled.value)
         runCurrent()
         assertNotEquals(before, node.output.value)
-        assertEquals(0.2f, node.output.value!!.single().slices!![5].height, 1e-3f)
+        assertEquals(0.2f, node.output.value!!.patches.single().slices!![5].height, 1e-3f)
 
         history.execute(SetOutline(legId, View.SIDE, null))
         assertTrue(graph.settled.value)
@@ -115,10 +115,10 @@ class SliceRowNodeTest {
         runCurrent()
         history.execute(RemovePart(legId))
         runCurrent()
-        assertEquals(emptyList(), node.output.value)
+        assertEquals(emptyList(), node.output.value?.patches)
         history.execute(AddPart(leg))
         runCurrent()
-        assertEquals(1, node.output.value?.size)
+        assertEquals(1, node.output.value?.patches?.size)
     }
 
     @Test

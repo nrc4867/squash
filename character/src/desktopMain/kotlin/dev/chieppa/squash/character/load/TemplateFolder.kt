@@ -31,9 +31,8 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
         private fun load(files: List<String>, read: (String) -> String): TemplateFolder {
             val parts = files.filter { '/' !in it && it.endsWith(PART_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPart(it, read(it)) }
-            val ids = parts.map { it.id }.toSet()
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
-                .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), ids) }
+                .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
             return TemplateFolder(parts, plans)
         }
 

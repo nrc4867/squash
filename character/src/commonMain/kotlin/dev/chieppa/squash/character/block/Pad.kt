@@ -7,11 +7,13 @@ import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
+import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.geom.PadBuilder
 import dev.chieppa.squash.geom.Patch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+private const val MIN_SEGMENTS = 3
 private const val PATCH_PREFIX = "pad"
 private const val PATCH_SEPARATOR = ":"
 private const val V_UNDER = 0.5f
@@ -33,22 +35,33 @@ data class Pad(
     val size: Param,
     @Doc("A palette slot.")
     val color: String? = null,
+    @Doc("Rings from the pad's inner point to its apex.")
+    @Range(min = 3.0)
+    val rings: Int,
+    @Doc("Points around each of the pad's rings.")
+    @Range(min = 3.0)
+    val segments: Int,
 ) : Block {
+    private val patchName get() = listOfNotNull(PATCH_PREFIX, name ?: on).joinToString(PATCH_SEPARATOR)
+
+    override fun patchNames() = listOf(PatchName(patchName, repeats = on != null))
+
     override fun build(ctx: BuildContext): List<Patch> {
-        val own = PATCH_PREFIX + PATCH_SEPARATOR + (name ?: on)
+        val own = patchName
         val radius = ctx.length(size)
         val around = v ?: V_UNDER
         if (on != null) {
             val row = on + PATCH_SEPARATOR
             return ctx.built.filter { it.name.startsWith(row) }.map { toe ->
-                val rings = requireNotNull(toe.slices) { "Toe ${toe.name} has no slices" }
-                val at = rings.first().u + (rings.last().u - rings.first().u) * ALONG_TOE
-                PadBuilder.pad(own + PATCH_SEPARATOR + toe.name.removePrefix(row), toe, at, around, radius)
+                val slices = requireNotNull(toe.slices) { "Toe ${toe.name} has no slices" }
+                ctx.checkCancelled()
+                val at = slices.first().u + (slices.last().u - slices.first().u) * ALONG_TOE
+                PadBuilder.pad(own + PATCH_SEPARATOR + toe.name.removePrefix(row), toe, at, around, radius, rings, segments)
             }
         }
         val at = requireNotNull(u) { "Pad ${name ?: ""} has neither u nor on" }
         val run = requireNotNull(ctx.runAt(at)) { "Pad ${name ?: ""}: no run reaches u = $at" }
-        return listOf(PadBuilder.pad(own, run, at, around, radius))
+        return listOf(PadBuilder.pad(own, run, at, around, radius, rings, segments))
     }
 
     override fun lint(ctx: LintContext): List<Finding> {
@@ -58,6 +71,7 @@ data class Pad(
             on == null && u == null -> ctx.finding("u", "a pad needs u or on")
             else -> emptyList()
         }
-        return placed + ctx.unit("u", u) + ctx.unit("v", v) + ctx.param("size", size)
+        return placed + ctx.unit("u", u) + ctx.unit("v", v) + ctx.param("size", size) +
+            ctx.atLeast("rings", rings, PadBuilder.MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS)
     }
 }

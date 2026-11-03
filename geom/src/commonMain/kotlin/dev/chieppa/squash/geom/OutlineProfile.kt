@@ -74,10 +74,13 @@ class OutlineProfile private constructor(
             }
         }
 
-        /** A station with no gap between its crossings, as at a tip, takes its nearest neighbour's. False if all do. */
+        /**
+         * A station no edge reached, as rounding can leave at the ends of the range, takes its nearest neighbour's crossings.
+         * False if no station has any gap between its crossings. A tip keeps its single crossing, so its extent is zero.
+         */
         private fun fillGaps(low: FloatArray, high: FloatArray): Boolean {
-            val usable = BooleanArray(STATIONS) { high[it] - low[it] > MIN_CROSSING_GAP }
-            if (usable.none { it }) return false
+            if ((0 until STATIONS).none { high[it] - low[it] > MIN_CROSSING_GAP }) return false
+            val usable = BooleanArray(STATIONS) { high[it] >= low[it] }
             val nearest = IntArray(STATIONS)
             var seen = -1
             for (s in 0 until STATIONS) {

@@ -65,12 +65,33 @@ class ViewSizingTest {
     }
 
     @Test
-    fun aSlantedRunKeepsItsDrawnThickness() {
+    fun aRingStandsInItsPlaneWithItsEndsOnTheCrossings() {
         val slanted = Polyline2(floatArrayOf(0f, 1f, 1f, 0f), floatArrayOf(0.2f, 1.2f, 0.8f, -0.2f))
         val slice = sizing(slanted, open = false).slice(0.5f, round, 1f)
-        val perpendicular = 0.4f * kotlin.math.sqrt(0.5f)
-        assertEquals(perpendicular, slice.height, 1e-3f)
+        assertEquals(axes.along, slice.frame.tangent)
+        assertEquals(axes.up, slice.frame.up)
+        assertEquals(0.5f, slice.frame.center dot axes.along, 1e-5f)
+        assertEquals(0.5f, slice.frame.center dot axes.up, 1e-3f)
+        assertEquals(0.4f, slice.height, 1e-3f)
         assertEquals(slice.height, slice.width, 1e-5f)
+    }
+
+    @Test
+    fun anOffCentreSectionStillEndsOnTheCrossings() {
+        val raised = ClosedSpline(round.controlPoints.map { Vec2(it.x, it.y + 0.5f) })
+        val slice = sizing(strip(leg, mid = 0.3f)).slice(0.5f, raised, 1f)
+        val rises = raised.sample(16).map { (slice.frame.center dot axes.up) + it.y * slice.height / 2f }
+        assertEquals(0.5f, rises.max(), 1e-3f)
+        assertEquals(0.1f, rises.min(), 1e-3f)
+    }
+
+    @Test
+    fun aTipKeepsItsOwnCrossing() {
+        val diamond = Polyline2(floatArrayOf(0f, 0.5f, 1f, 0.5f), floatArrayOf(0.3f, 0.5f, 0.3f, 0.1f))
+        val profile = assertNotNull(OutlineProfile.of(diamond))
+        assertEquals(0f, profile.extentAt(0f), 1e-5f)
+        assertEquals(0f, profile.extentAt(1f), 1e-5f)
+        assertEquals(0.3f, profile.midAt(1f), 1e-5f)
     }
 
     @Test
@@ -89,7 +110,7 @@ class ViewSizingTest {
         val us = List(47) { it / 46f }
         val changed = us.filter { u -> before.slice(u, round, 1f) != after.slice(u, round, 1f) }
         assertTrue(changed.isNotEmpty())
-        val reach = 2f / 64f + 1f / 128f
+        val reach = 1f / 128f
         for (u in us.filter { it < 0.45f - reach || it > 0.55f + reach }) {
             assertEquals(before.slice(u, round, 1f), after.slice(u, round, 1f), "slice at $u")
         }

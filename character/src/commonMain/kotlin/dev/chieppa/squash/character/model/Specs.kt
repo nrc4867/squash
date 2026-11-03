@@ -22,5 +22,8 @@ data class SocketSpec(
     val takes: List<TemplateId>,
 )
 
+/** A patch a block builds: called [name], or `name:i` for each of a row when it [repeats]. */
+data class PatchName(val name: String, val repeats: Boolean = false)
+
 /** A tagged surface region that weights and shading can read. */
 data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag)

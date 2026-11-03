@@ -8,6 +8,9 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SectionSpec
 import dev.chieppa.squash.character.model.Span
 
+/** Whether this block's run of slices reaches [u]. */
+fun Block.reaches(u: Float): Boolean = run()?.let { u >= it.start && u <= it.end } ?: false
+
 private const val V_TOP = 0f
 private const val V_UNDER = 0.5f
 
@@ -42,6 +45,16 @@ class LintContext(val template: PartTemplate, private val path: String) {
         val name = ref?.name ?: return emptyList()
         val spec = template.params[name] ?: return finding(field, "no parameter '$name'")
         return if (spec.default.isFlag) emptyList() else finding(field, "'$name' is a number, not a flag")
+    }
+
+    /** A count is at least [min]. */
+    fun atLeast(field: String, value: Int, min: Int): List<Finding> =
+        if (value >= min) emptyList() else finding(field, "$value is below $min")
+
+    /** A run that is on whenever [condition] is reaches [u], so a point there has a surface to sit on. */
+    fun onTheSurface(field: String, u: Float, condition: ParamRef?): List<Finding> {
+        val runs = template.blocks.filter { it.condition == null || it.condition == condition }
+        return if (runs.any { it.reaches(u) }) emptyList() else finding(field, "no run reaches u = $u")
     }
 
     /** A paired point's twin mirrors v to 1 - v, so it must lie off the plane the twin mirrors across. */

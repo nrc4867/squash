@@ -60,7 +60,7 @@ class DrawnPartTest {
         val low = slices.minBy { kotlin.math.abs(it.u - 0.6f) }
         assertEquals(-0.2f, low.frame.center dot axes.up, 2e-2f)
         assertEquals(1f, slices.last().frame.center dot axes.along, 1e-4f)
-        assertTrue(low.height < 0.3f, "the drawn height shrinks by the axis's slope")
+        assertEquals(0.3f, low.height, 2e-2f)
     }
 
     @Test
@@ -146,6 +146,8 @@ class DrawnPartTest {
         val old = body(View.SIDE to before).slices!!
         val new = body(View.SIDE to after).slices!!
         val reach = 2f / 64f + 1f / 128f
+        val outsidePoints = old.indices.filter { old[it].u < 0.45f - 1f / 128f || old[it].u > 0.55f + 1f / 128f }
+        for (i in outsidePoints) assertEquals(old[i].frame to old[i].height, new[i].frame to new[i].height, "ring $i at u = ${old[i].u}")
         val outside = old.indices.filter { old[it].u < 0.45f - reach || old[it].u > 0.55f + reach }
         assertTrue(outside.size > 16)
         for (i in outside) assertEquals(old[i], new[i], "ring $i at u = ${old[i].u}")
