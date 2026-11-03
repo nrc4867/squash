@@ -1,0 +1,27 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "tail",
+  "version": 1,
+  "name": "Tail",
+  "axis": { "rest": [-1, 0, 0] },
+  "openEnd": "start",
+  "topology": { "rings": 28, "segments": 12 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "thickness": { "default": 0.12, "min": 0.04, "max": 0.4 }
+  },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$thickness", "taper": 0.5 },
+    { "kind": "cap",   "end": "end", "shape": "round" },
+    { "kind": "joint", "name": "root", "u": 0.0, "hinge": "z", "limits": [-60, 60] },
+    { "kind": "joint", "name": "tail1", "u": 0.17, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "joint", "name": "tail2", "u": 0.33, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "joint", "name": "tail3", "u": 0.5, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "joint", "name": "tail4", "u": 0.67, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "joint", "name": "tail5", "u": 0.83, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "z", "limits": [-40, 40] }
+  ]
+}

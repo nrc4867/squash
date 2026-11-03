@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/BodyPlan",
+  "$defs": {
+    "BodyPlan": {
+      "description": "A body plan: a root part and the sockets and slots hung from it.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "format": {
+          "description": "The grammar version of the file.",
+          "type": "integer",
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1.0
+        },
+        "name": {
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/PlanRoot"
+        },
+        "sockets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanSocket"
+          }
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanSlot"
+          }
+        }
+      },
+      "required": [
+        "format",
+        "id",
+        "version",
+        "name",
+        "root",
+        "sockets"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "PlanRoot": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "type": "string"
+        },
+        "rest": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "template",
+        "rest"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "PlanSlot": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "on": {
+          "type": "string"
+        },
+        "takes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "on",
+        "takes"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "PlanSocket": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "on": {
+          "type": "string"
+        },
+        "u": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "v": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "pair": {
+          "description": "Gives this socket a mirrored twin.",
+          "anyOf": [
+            {
+              "enum": [
+                "x"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "takes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "on",
+        "u",
+        "v",
+        "takes"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

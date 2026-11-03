@@ -1,0 +1,27 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "torso",
+  "version": 1,
+  "name": "Torso",
+  "axis": { "rest": [1, 0, 0] },
+  "openEnd": null,
+  "topology": { "rings": 32, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "egg",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "girth": { "default": 0.3,  "min": 0.1, "max": 0.7 }
+  },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth" },
+    { "kind": "cap",   "end": "start", "shape": "round" },
+    { "kind": "cap",   "end": "end",   "shape": "round" },
+    { "kind": "joint", "name": "hips",   "u": 0.0, "hinge": "z", "limits": [-20, 20] },
+    { "kind": "joint", "name": "loin",   "u": 0.2, "hinge": "z", "limits": [-20, 20] },
+    { "kind": "joint", "name": "waist",  "u": 0.4, "hinge": "z", "limits": [-20, 20] },
+    { "kind": "joint", "name": "ribs",   "u": 0.6, "hinge": "z", "limits": [-20, 20] },
+    { "kind": "joint", "name": "chest",  "u": 0.8, "hinge": "z", "limits": [-20, 20] },
+    { "kind": "joint", "name": "withers", "u": 1.0, "hinge": "z", "limits": [-20, 20], "stretch": true }
+  ]
+}

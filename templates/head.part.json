@@ -1,0 +1,24 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "head",
+  "version": 1,
+  "name": "Head",
+  "axis": { "rest": [1, 0, 0] },
+  "openEnd": null,
+  "topology": { "rings": 24, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "circle",
+  "params": {
+    "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
+  },
+  "blocks": [
+    { "kind": "skull",    "u": [0.0, 0.75] },
+    { "kind": "tube",     "name": "muzzle", "u": [0.6, 1.0], "radius": 0.35, "taper": 0.6 },
+    { "kind": "cap",      "end": "end", "shape": "round" },
+    { "kind": "joint",    "name": "jaw",    "u": 0.6, "v": 0.5, "hinge": "x", "limits": [0, 35] },
+    { "kind": "socket",   "name": "ear",    "u": 0.25, "v": 0.12, "pair": "x", "outward": "normal", "takes": ["ear"] },
+    { "kind": "landmark", "name": "eye",    "u": 0.5,  "v": 0.2,  "pair": "x" },
+    { "kind": "landmark", "name": "nose",   "u": 1.0,  "v": 0.0 }
+  ]
+}

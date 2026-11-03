@@ -38,4 +38,13 @@ val stretchDir = providers.gradleProperty("stretch.dir").orNull
     ?: error("Stretch not found: set stretch.dir in ~/.gradle/gradle.properties to your Stretch checkout")
 includeBuild(stretchDir)
 
+include(":annotations")
+include(":geom")
+include(":graph")
+include(":document")
+include(":character")
+include(":render")
+include(":ui-design")
+include(":ui-screens")
 include(":app")
+include(":schema-gen")

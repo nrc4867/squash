@@ -33,7 +33,7 @@ The top three layers (library, project, character and what they hold) are docume
 
 ## Part template and part instance
 
-The template is the recipe and the instance is what the user drew. Slices are derived from the two and never saved, so a saved character is only outlines, parameters and anchors.
+The template is the recipe, in `character`, and the instance is what the user drew, in `document`. Slices are derived from the two and never saved, so a saved character is only outlines, parameters and anchors.
 
 ```kotlin
 // Shipped with the app, versioned and immutable: a changed template is a new version file.
@@ -56,6 +56,7 @@ sealed interface Block {
     fun joints(): List<JointSpec>
     fun sockets(): List<SocketSpec>
     fun areas(): List<AreaSpec>
+    fun capShape(end: End): CapShape?  // the shape this block closes an end with, if it closes it
 }
 
 // In the document. Everything the user chose for one part.
@@ -67,6 +68,7 @@ data class PartInstance(
     val params: Map<String, Float>,
     val pair: PairId?, val side: Side?,     // mirrored pairs share outlines and params
     val overrides: Overrides,              // per-side outline and param deltas layered on the shared ones
+    val grain: Grain,                      // direction field in anchor space, default along the axis
 )
 
 // Derived. A part is one or more patches; the mesh is a pure function of them.
@@ -220,7 +222,7 @@ A head is a `skull` block instead of a tube, with a muzzle and the landmarks fac
 A body plan is the same grammar with its own block kinds, so it shares the parser, schema and lint:
 
 ```json
-// plans/canine-quadruped.plan.json
+// templates/plans/canine-quadruped.plan.json
 {
   "format": 1, "id": "canine-quadruped", "version": 1, "name": "Canine quadruped",
   "root": { "template": "torso", "rest": [1, 0, 0] },
@@ -242,7 +244,7 @@ Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-`
 | Kind | Fields | Builds |
 | --- | --- | --- |
 | `tube` | `u` range, `radius`, `taper`, `section` override (a named profile or control points) | A run of slices; the views resize them |
-| `cap` | `end` (start or end), `shape` (round, flat, pointed) | Closes an end that is not a socket |
+| `cap` | `end` (start or end), `shape` (round, flat, pointed) | Closes an end that is not a socket. An end with no cap that is not the open end closes flat |
 | `skull` | `u` range, `width`, `depth` | A rounded block whose slices run front to back |
 | `toeRow` | `u` range, `count`, `spread`, `radius`, `v` | A row of small tubes fanned across the end, each with its own bone |
 | `pad` | `u`, `v` or `on` (a toeRow name), `size`, `color` | A raised area tagged with a palette slot |

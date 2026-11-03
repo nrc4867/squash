@@ -9,6 +9,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":ui-screens"))
     implementation("dev.chieppa.stretch:stretch-core")
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")

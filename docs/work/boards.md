@@ -4,6 +4,14 @@ The state of every screen against its board in [Squash flow of work](https://cla
 
 Verify is what a person runs to see the board working: a run configuration or Gradle task, then the actions to take, then what must be true.
 
+## Foundation
+
+Not a screen, so it has no board in the artifact.
+
+| Work | State | Verify |
+| --- | --- | --- |
+| Stage 1 skeleton | verifiable | Run: `./gradlew check`. See: passes, including the schema staleness test and `verifyIcons`. Test: `./gradlew :character:desktopTest --tests "*ShippedTemplates*"`; the six starter templates and the canine plan load, lint and build watertight except the open end. `./gradlew :app:run` opens the empty frame |
+
 ## Home
 
 | Board | State | Verify |

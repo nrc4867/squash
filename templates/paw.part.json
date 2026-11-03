@@ -1,0 +1,26 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "paw",
+  "version": 1,
+  "name": "Paw",
+  "axis": { "rest": [1, 0, 0] },
+  "openEnd": "start",
+  "topology": { "rings": 16, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":   { "default": 1.0, "min": 0.4, "max": 2.5 },
+    "toes":   { "default": 4,  "min": 3, "max": 5, "step": 1 },
+    "spread": { "default": 18, "min": 0, "max": 40, "unit": "deg" },
+    "pads":   { "default": true }
+  },
+  "blocks": [
+    { "kind": "tube",   "u": [0.0, 0.6], "radius": 0.3 },
+    { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09 },
+    { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad" },
+    { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad" },
+    { "kind": "cap",    "end": "end" },
+    { "kind": "joint",  "name": "wrist", "u": 0.0, "hinge": "x", "limits": [-45, 45] }
+  ]
+}

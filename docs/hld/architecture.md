@@ -91,9 +91,9 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
-| Domain | `character` | Part templates and body plans, part instances, slice building |
+| Domain | `character` | Part templates and body plans, slice building, the slice row graph node |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
-| Core | `document` | The document types and commands, on `stretch-core` |
+| Core | `document` | The document types (character, part instances, outlines, anchors, grain) and commands, on `stretch-core` |
 | Core | `graph` | The derived-data graph and `Settled` |
 | Core | `geom` | Vectors, curves, slices to meshes, mesh invariants |
 | Core | `annotations` | `@Range` and `@Doc` |

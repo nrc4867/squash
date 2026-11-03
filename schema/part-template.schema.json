@@ -1,0 +1,958 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/PartTemplate",
+  "$defs": {
+    "Area": {
+      "description": "A tagged region weights and shading can read.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "area"
+        },
+        "name": {
+          "type": "string"
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "v": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "tag": {
+          "enum": [
+            "rigid",
+            "soft",
+            "inner"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "u",
+        "v",
+        "tag"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "AxisSpec": {
+      "description": "The rest direction before anything is drawn.",
+      "type": "object",
+      "properties": {
+        "rest": {
+          "description": "From the socket end toward the tip, in body space.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "rest"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Block": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Area"
+        },
+        {
+          "$ref": "#/$defs/Cap"
+        },
+        {
+          "$ref": "#/$defs/Joint"
+        },
+        {
+          "$ref": "#/$defs/Landmark"
+        },
+        {
+          "$ref": "#/$defs/Pad"
+        },
+        {
+          "$ref": "#/$defs/Skull"
+        },
+        {
+          "$ref": "#/$defs/Socket"
+        },
+        {
+          "$ref": "#/$defs/ToeRow"
+        },
+        {
+          "$ref": "#/$defs/Tube"
+        }
+      ]
+    },
+    "Cap": {
+      "description": "Closes an end that is not a socket.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "cap"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "enum": [
+            "start",
+            "end"
+          ]
+        },
+        "shape": {
+          "enum": [
+            "round",
+            "flat",
+            "pointed"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "end"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Joint": {
+      "description": "A bone boundary; bones are the spans between joints in u order.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "joint"
+        },
+        "name": {
+          "type": "string"
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "v": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hinge": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "limits": {
+          "description": "Degrees.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stretch": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "u",
+        "hinge"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Landmark": {
+      "description": "A named surface point face marks and sets anchor to.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "landmark"
+        },
+        "name": {
+          "type": "string"
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "v": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "pair": {
+          "anyOf": [
+            {
+              "enum": [
+                "x"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Pad": {
+      "description": "A raised area tagged with a palette slot.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "pad"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "v": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on": {
+          "description": "The toe row this pad repeats along, in place of u.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "color": {
+          "description": "A palette slot.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "size"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ParamSpec": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "default"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "PartTemplate": {
+      "description": "A part template: axis, open end, topology, blocks, parameters and which view sets what.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "format": {
+          "description": "The grammar version of the file.",
+          "type": "integer",
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "description": "The template's own version; changes when its topology or joints change.",
+          "type": "integer",
+          "minimum": 1.0
+        },
+        "name": {
+          "type": "string"
+        },
+        "axis": {
+          "$ref": "#/$defs/AxisSpec"
+        },
+        "openEnd": {
+          "description": "The end that sits on the socket plane; null for a closed part.",
+          "anyOf": [
+            {
+              "enum": [
+                "start",
+                "end"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "topology": {
+          "$ref": "#/$defs/Topology"
+        },
+        "views": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "side",
+              "top",
+              "front"
+            ]
+          },
+          "additionalProperties": {
+            "enum": [
+              "height",
+              "width",
+              "cap",
+              "section"
+            ]
+          }
+        },
+        "section": {
+          "description": "The default section along u, used where no view sets it.",
+          "oneOf": [
+            {
+              "enum": [
+                "circle",
+                "egg",
+                "keel",
+                "lens"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "params": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/ParamSpec"
+          }
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Block"
+          }
+        }
+      },
+      "required": [
+        "format",
+        "id",
+        "version",
+        "name",
+        "axis",
+        "topology",
+        "views",
+        "blocks"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Skull": {
+      "description": "A rounded block whose slices run front to back.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "skull"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "width": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "u"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Socket": {
+      "description": "A child attachment point; pair makes a mirrored twin.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "socket"
+        },
+        "name": {
+          "type": "string"
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "v": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "outward": {
+          "enum": [
+            "axis",
+            "normal"
+          ]
+        },
+        "pair": {
+          "anyOf": [
+            {
+              "enum": [
+                "x"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "takes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToeRow": {
+      "description": "A row of small tubes fanned across the end, each with its own bone.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "toeRow"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "count": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "spread": {
+          "description": "Degrees.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "radius": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "v": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "u",
+        "count",
+        "spread",
+        "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Topology": {
+      "type": "object",
+      "properties": {
+        "rings": {
+          "description": "Rings along u.",
+          "type": "integer",
+          "minimum": 2.0
+        },
+        "segments": {
+          "description": "Control points of every section spline.",
+          "type": "integer",
+          "minimum": 3.0
+        }
+      },
+      "required": [
+        "rings",
+        "segments"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Tube": {
+      "description": "A run of slices; the views resize them.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "tube"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "radius": {
+          "description": "A fraction of the axis length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "taper": {
+          "description": "The radius at the far end, as a fraction of the radius at the near end.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "section": {
+          "description": "Overrides the template's section.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "enum": [
+                    "circle",
+                    "egg",
+                    "keel",
+                    "lens"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "u",
+        "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

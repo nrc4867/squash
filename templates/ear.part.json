@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "ear",
+  "version": 1,
+  "name": "Ear",
+  "axis": { "rest": [0, 1, 0] },
+  "openEnd": "start",
+  "topology": { "rings": 16, "segments": 12 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "lens",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "width": { "default": 0.35, "min": 0.1, "max": 0.8 }
+  },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$width", "taper": 0.4 },
+    { "kind": "cap",   "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "base", "u": 0.0, "hinge": "y", "limits": [-40, 40] },
+    { "kind": "area",  "name": "inner", "u": [0.1, 0.9], "v": [0.0, 0.5], "tag": "inner" }
+  ]
+}
