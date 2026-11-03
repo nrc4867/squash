@@ -23,6 +23,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew :app:run -Pdevtools=47811  # the app, with window screenshots at curl 127.0.0.1:47811/capture
 ./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
+./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
 ```
 
 Stop a running app before rebuilding; a rebuild under a running app breaks it. To see the running app, use Stretch's screenshot endpoint as described in `../stretch/.claude/skills/app-screenshot/SKILL.md`, never a desktop screenshot.

@@ -13,4 +13,95 @@
     <string name="sheet_chip_drawn">Drawn</string>
     <string name="sheet_chip_from_template">From template</string>
     <string name="sheet_chip_live">Updates live</string>
+
+    <string name="shell_menu_file">File</string>
+    <string name="shell_menu_edit">Edit</string>
+    <string name="shell_menu_view">View</string>
+    <string name="shell_menu_help">Help</string>
+    <string name="shell_action_new">New character</string>
+    <string name="shell_action_open">Open file</string>
+    <string name="shell_action_save">Save</string>
+    <string name="shell_action_save_as">Save as</string>
+    <string name="shell_action_close">Close character</string>
+    <string name="shell_action_undo">Undo</string>
+    <string name="shell_action_redo">Redo</string>
+    <string name="shell_action_commands">Commands</string>
+    <string name="shell_action_draw">Draw outline</string>
+    <string name="shell_action_edit_curves">Edit curves</string>
+    <string name="shell_action_reset_layout">Reset layout</string>
+
+    <string name="shell_drawer_parts">Parts</string>
+    <string name="shell_drawer_part">Part</string>
+    <string name="shell_drawer_types">Part types</string>
+    <string name="shell_drawer_history">History</string>
+    <string name="shell_drawer_help">Help</string>
+
+    <string name="shell_mode_build">Build</string>
+    <string name="shell_mode_shot">Shot</string>
+    <string name="shell_no_character">No character open</string>
+    <string name="shell_draft">%1$s · draft</string>
+    <string name="shell_default_name">Untitled</string>
+    <string name="shell_file_type">Squash scratch save</string>
+
+    <string name="shell_status_ready">Ready</string>
+    <string name="shell_status_saved">Saved</string>
+    <string name="shell_status_settled">Settled</string>
+    <string name="shell_status_building">Building</string>
+    <string name="shell_status_parts">%1$d of %2$d parts</string>
+    <string name="shell_status_views">%1$d drawn · %2$d from template</string>
+    <string name="shell_layout_label">Layout</string>
+
+    <string name="shell_tree_to_draw">to draw</string>
+    <string name="shell_tree_pair">×%1$d</string>
+
+    <string name="shell_view_side">Side</string>
+    <string name="shell_view_top">Top</string>
+    <string name="shell_view_front">Front</string>
+    <string name="shell_part_you_draw">You draw</string>
+    <string name="shell_part_tool_knows">Tool knows</string>
+    <string name="shell_part_areas">Areas</string>
+    <string name="shell_part_parameters">Parameters</string>
+    <string name="shell_part_joints">Joints</string>
+    <string name="shell_part_pair">Pair</string>
+    <string name="shell_part_mirrored">mirrored</string>
+    <string name="shell_part_range">%1$s–%2$s</string>
+    <string name="shell_part_on">on</string>
+    <string name="shell_part_off">off</string>
+    <string name="shell_part_none">No part selected</string>
+
+    <string name="shell_step_add">Add %1$s</string>
+    <string name="shell_step_remove">Remove %1$s</string>
+    <string name="shell_step_outline">%1$s outline</string>
+    <string name="shell_step_parameter">%1$s %2$s</string>
+
+    <string name="shell_save_failed">Couldn\'t save: %1$s</string>
+    <string name="shell_open_failed">Couldn\'t open %1$s</string>
+
+    <string name="home_projects">Projects</string>
+    <string name="home_recent_files">Recent files</string>
+    <string name="home_clear_recent">Clear recent files</string>
+    <string name="home_new_project">New project</string>
+    <string name="home_open_file">Open file</string>
+    <string name="home_drop_title">Open a project</string>
+    <string name="home_drop_kinds">JSON</string>
+    <string name="home_drop_over">Drop to open</string>
+    <string name="home_drop_reject">Not a Squash save</string>
+    <string name="home_new">New</string>
+    <string name="home_continue">Continue</string>
+    <string name="home_new_character">New character</string>
+    <string name="home_empty">No projects</string>
+    <string name="home_card_detail">Build · %1$d of %2$d parts · %3$s</string>
+    <string name="home_today">today %1$s</string>
+
+    <string name="new_title">New character</string>
+    <string name="new_name">Name</string>
+    <string name="new_body_plan">Body plan</string>
+    <string name="new_plan_parts">%1$d parts</string>
+    <string name="new_chip_count">%1$s %2$d</string>
+    <string name="new_recent">Recent</string>
+    <string name="new_open_file">Open file</string>
+    <string name="new_create">Create character</string>
+
+    <string name="pick_socket_hud">Socket · %1$s</string>
+    <string name="pick_draw">Draw %1$s</string>
 </resources>

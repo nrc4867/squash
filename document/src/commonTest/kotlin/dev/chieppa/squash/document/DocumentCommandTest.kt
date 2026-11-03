@@ -18,6 +18,22 @@ class DocumentCommandTest {
     )
 
     @Test
+    fun addingSeveralPartsIsOneUndoStepAndRestoresTheirPlaces() {
+        val ear = PartInstance(PartId("ear-1"), TemplateRef(TemplateId("ear"), 1))
+        scenario(empty) {
+            run(AddPart(tail), AddParts(listOf(leg, ear)))
+            expect { assertEquals(listOf(tail, leg, ear), it.character.parts) }
+            undo()
+            expect { assertEquals(listOf(tail), it.character.parts) }
+            redo()
+            run(RemoveParts(listOf(ear.id, tail.id)))
+            expect { assertEquals(listOf(leg), it.character.parts) }
+            undo()
+            expect { assertEquals(listOf(tail, leg, ear), it.character.parts) }
+        }
+    }
+
+    @Test
     fun addingAPartUndoesAndRedoes() {
         scenario(empty) {
             run(AddPart(leg), AddPart(tail))

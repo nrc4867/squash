@@ -14,6 +14,7 @@ dependencies {
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")
     implementation("dev.chieppa.stretch:stretch-frame")
+    implementation("dev.chieppa.stretch:stretch-document")
     implementation("dev.chieppa.stretch:stretch-devtools")
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
@@ -22,8 +23,10 @@ dependencies {
 compose.desktop {
     application {
         mainClass = "dev.chieppa.squash.MainKt"
+        // The JetBrains Runtime, so StretchWindow can draw its own title bar in a native frame.
         javaHome = javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
+            vendor.set(JvmVendorSpec.JETBRAINS)
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         jvmArgs += "-Dsquash.templates=${rootProject.layout.projectDirectory.dir("templates").asFile.path}"

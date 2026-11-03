@@ -53,7 +53,7 @@ Each board's row in `docs/work/boards.md` gets a verify entry of this shape:
 ```
 Run: ./gradlew :app:run
 Do: New character, Canine quadruped, Front legs, Draw outline, draw a closed shape in Side
-See: the leg builds in Top, Front and Full; the status bar reads "1 drawn, 2 from template"
+See: the leg builds in Top, Front and Full; the status bar reads "1 drawn · 2 from template"
 Test: ./gradlew :geom:test --tests "*SliceBuild*"
 ```
 

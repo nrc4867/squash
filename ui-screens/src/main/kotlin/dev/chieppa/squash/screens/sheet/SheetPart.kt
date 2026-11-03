@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.sheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
@@ -52,7 +53,8 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val selected = id ?: return null
     val document by remember(open) { open.document }.collectAsState()
     val instance = document.character.part(selected) ?: return null
-    val built by remember(open, selected) { open.mesh(selected).output }.collectAsState()
+    // In an effect, because making a node starts its collectors, which composition must not do.
+    val built by produceState<PartMesh?>(null, open, selected) { open.mesh(selected).output.collect { value = it } }
     val template = remember(open, instance.template) { open.templates[instance.template] }
     val part = remember(selected, template, built) { built?.let { sheetPart(selected, template, it) } } ?: return null
     return SheetSelection(part, instance.outlines)

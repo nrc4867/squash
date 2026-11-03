@@ -14,7 +14,10 @@ dependencies {
     api(project(":character"))
     api("dev.chieppa.stretch:stretch-frame")
     api("dev.chieppa.stretch:stretch-ui")
+    api("dev.chieppa.stretch:stretch-document")
+
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("dev.chieppa.stretch:stretch-test")
     testImplementation(compose.desktop.currentOs)
 }

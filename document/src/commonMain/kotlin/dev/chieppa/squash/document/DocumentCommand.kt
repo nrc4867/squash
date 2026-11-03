@@ -33,6 +33,35 @@ data class RemovePart(val part: PartId) : DocumentCommand {
     }
 }
 
+/** Adds [parts] as one step, as a mirrored pair is placed, or restores them to [indices] when undoing a removal. */
+@Serializable
+@SerialName("addParts")
+data class AddParts(val parts: List<PartInstance>, val indices: List<Int>? = null) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val next = document.character.parts.toMutableList()
+        parts.forEachIndexed { i, part ->
+            require(next.none { it.id == part.id }) { "Part ${part.id.value} already exists" }
+            next.add(indices?.get(i) ?: next.size, part)
+        }
+        return Applied(document.withParts(next), RemoveParts(parts.map { it.id }))
+    }
+}
+
+@Serializable
+@SerialName("removeParts")
+data class RemoveParts(val parts: List<PartId>) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val current = document.character.parts
+        val indices = parts.map { id -> current.indexOfFirst { it.id == id }.also { require(it >= 0) { "No part ${id.value}" } } }
+        val removed = indices.map { current[it] }
+        val order = indices.indices.sortedBy { indices[it] }
+        return Applied(
+            document.withParts(current - removed.toSet()),
+            AddParts(order.map { removed[it] }, order.map { indices[it] }),
+        )
+    }
+}
+
 /** Sets the outline drawn in [view]; a null [curve] clears it. */
 @Serializable
 @SerialName("setOutline")
