@@ -1,0 +1,31 @@
+# Stage 2: an assembled character, and the boards as drawn
+
+A working note for the sessions that build stage 2. Folded into the HLD or deleted when the stage lands.
+
+## Goal
+
+Drawing happens in place on the body. The whole character is assembled from its sockets, pairs share their data, every screen of stage 1 matches its board, and what a stroke will do on release is visible before release.
+
+## Decisions
+
+- **Panes stay upright.** A locked pane keeps the body's up on screen, so a leg hangs down in Side with the character ghosted around it at the board's 40%. Panes line up by what they share: Top above Side shares the column, Side beside Front shares the row. Outlines stay in part axes, so for a part whose rest direction is vertical the top-left pane holds the part's Front view and the bottom-right holds its Top view. A pane's label names the view it holds.
+- **Rings stand on the rest axis.** A slice lies in its plane a = constant, so a drawn Side outline is the mesh's silhouette: the crossings at a are the ring's ends. The axis still follows the midline through the slice centres.
+- **A pair is one set of data.** Outlines and params live on the pair; a part's overrides replace the values they name. A paired part's own outlines and params are empty unless overridden. With Mirror on, a command writes the pair; with it off, the selected side's overrides.
+- **Release does what the preview shows.** While a stroke grows, the pane draws what release would produce: the connectors to the start or the socket plane, and the start point lit when the stroke is close enough to close on it.
+- **Exit criterion 2 reads as the HLD says.** Moving an outline's far end or a Front section outline moves every ring, pending Nicholas's call.
+
+## To do
+
+Each row is a branch in `.worktrees/`, landed by the orchestrator by rebase, squash and fast-forward, with `check` before each landing. Rows in one round run at once. The differences table in `docs/work/boards.md` is the list of open bugs; a branch removes each row it fixes.
+
+| Round | Branch | Delivers |
+| --- | --- | --- |
+| 1 | `pair-data` | Shared pair data and per-side overrides in `document`, resolved before the slice build; every reader and command moved to it |
+| 1 | `silhouette-and-graph` | Rings on the rest axis; cancellation checks between blocks and in the mesh node; the template in the mesh node's inputs; lint for the open end, sockets on the surface, patch-name collisions and the views map; golden fixtures with vertices; toe and pad grids in the template; the ear's fold joint and the head's nose pad |
+| 1 | `stroke-preview` | The live completion preview, Outline drawer with Smooth, Snap line and Close end, and tests that the preview equals the release |
+| 1 | `tiers-and-packaging` | The smoke tier behind `-Pslow`; templates loaded from the app's resources |
+| 2 | `assembly` | A graph node placing every part on its socket; Full shows the whole character with the selection ringed; locked panes upright with the ghost and the Ghost and Template hints; normals and silhouettes derived in the graph; rest-pose art on Home, New character and Pick a part type with socket dots |
+| 3 | `chrome-boards` | Edit menu, undo, redo and command buttons, Erase, the Mirror toggle, the status bar's conflict count and pen readout, Refit progress, pixel readouts |
+| 3 | `single-layout` | The Single layout of board 3: orbit snapping to the part's views, Snap view, thumbnails with the missing view highlighted, the Layout control enabling it |
+
+Focus, Full first and Shot stay planned: they have their own boards.
