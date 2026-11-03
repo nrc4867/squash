@@ -21,6 +21,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew check -Pslow               # also the smoke tier (needs a GPU)
 ./gradlew :app:run                   # the app
 ./gradlew :app:run -Pdevtools=47811  # the app, with window screenshots at curl 127.0.0.1:47811/capture
+./gradlew :app:createDistributable   # the packaged app, under app/build/compose/binaries/main/app/Squash
 ./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
 ./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
@@ -69,7 +70,7 @@ These are Stretch's conventions plus Squash's own. They apply from the first com
 
 **Clean panels.** Icons, labels, numbers and tooltips. No explanatory text in panels, no messages that explain incomplete state; show it in place by highlighting it.
 
-**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (generated meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (the real app renders each screen offscreen, tagged slow, before a merge only). A session never spends an hour on integration tests. Run only the module being changed while working.
+**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (generated meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (each screen of the app composed whole over the packaged templates and a real graph and captured offscreen, the panes rendered with `GpuSnapshot`, tagged slow, before a merge only). A session never spends an hour on integration tests. Run only the module being changed while working.
 
 **Research from papers only.** Methods are implemented from the papers' own descriptions. Research code is not opened, read or copied without asking Nicholas first, and only permissively licensed code (MIT, Apache, BSD) is ever a candidate. A method gets a patent check before it is built; see `docs/hld/pipeline.md`.
 

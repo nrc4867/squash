@@ -115,7 +115,7 @@ Logic bugs come first, so almost every test is a plain JVM unit test that runs i
 | Command scenarios | A sequence of commands against a document, then assertions on state | `stretch-test`'s `scenario`, no UI | Constantly |
 | Golden | Generated meshes, rigs and schemas against saved fixtures | JUnit 5 | When a generator changes |
 | UI | A screen's structure and wiring, found by semantics tags | `runComposeUiTest`, waits for idle on its own | Per UI module, seconds |
-| Smoke | The real app starts and renders each screen once to an offscreen image, with `stretch-gpu`'s render-to-image for the 3D view | Needs a GPU; tagged slow | Before a merge only |
+| Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. A native surface needs a window, so the swapchain path and the window around `SquashApp` are not covered | Needs a GPU; JUnit tag `slow`, run by `check -Pslow` | Before a merge only |
 
 - Waits are conditions with a timeout, never delays.
 - If a lower tier can catch it, it does not go in a higher tier.

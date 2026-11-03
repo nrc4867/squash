@@ -1,6 +1,17 @@
+import dev.chieppa.squash.build.PackTemplates
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+}
+
+val packTemplates = tasks.register<PackTemplates>("packTemplates") {
+    group = "squash"
+    description = "Copies the templates folder into the resources, with an index of its files."
+    templates.set(rootProject.layout.projectDirectory.dir("templates"))
+    root.set("dev/chieppa/squash/templates")
+    indexName.set("index.txt")
+    resources.set(layout.buildDirectory.dir("generated/templateResources"))
 }
 
 kotlin {
@@ -8,6 +19,9 @@ kotlin {
     jvm("desktop")
 
     sourceSets {
+        named("desktopMain") {
+            resources.srcDir(packTemplates.flatMap { it.resources })
+        }
         named("desktopTest") {
             kotlin.srcDir(rootProject.layout.projectDirectory.dir("geom/src/goldenSupport/kotlin"))
         }

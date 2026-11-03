@@ -16,8 +16,10 @@ stretch.dir=C:/path/to/stretch
 Without that property, a sibling folder named `stretch` is used. Gradle runs on JDK 25 (`JAVA_HOME`).
 
 ```
-./gradlew check       # tests
-./gradlew :app:run    # the app
+./gradlew check                     # tests
+./gradlew check -Pslow              # also the smoke tier, which needs a GPU
+./gradlew :app:run                  # the app
+./gradlew :app:createDistributable  # the packaged app, under app/build/compose/binaries/main/app/Squash
 ```
 
-IntelliJ IDEA: open the folder; the Squash and Check run configurations are included, and Stretch shows up as an included build.
+IntelliJ IDEA: open the folder; the Squash, Check and Smoke run configurations are included, and Stretch shows up as an included build.

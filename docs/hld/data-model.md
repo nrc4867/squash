@@ -138,6 +138,8 @@ Four rules make saved characters keep working, from the first commit:
 
 Templates and body plans are JSON files, one per template, shipped under `templates/` with a JSON Schema beside them under `schema/`, and parsed by kotlinx.serialization into the sealed classes above. JSON is the only text format with a `commonMain` parser, a schema language that IntelliJ validates as you type, and a diff that reads in a pull request.
 
+The `templates/` folder is the single source. The build copies it into `character`'s resources with a generated index of its files, and the app loads them from there through `TemplateFolder.shipped()`, so a new file needs no code change. Lint, golden and schema tests read the folder itself, and a test holds the resources equal to it.
+
 | Format | Why not |
 | --- | --- |
 | YAML | No `commonMain` parser; indentation errors are silent |

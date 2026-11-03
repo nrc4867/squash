@@ -29,8 +29,12 @@ compose.desktop {
             vendor.set(JvmVendorSpec.JETBRAINS)
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
-        jvmArgs += "-Dsquash.templates=${rootProject.layout.projectDirectory.dir("templates").asFile.path}"
         // -Pdevtools=<port> serves screenshots of the windows on 127.0.0.1.
         providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
+        nativeDistributions {
+            packageName = "Squash"
+            packageVersion = project.version.toString().substringBefore('-')
+            modules("java.instrument", "jdk.httpserver", "jdk.unsupported")
+        }
     }
 }

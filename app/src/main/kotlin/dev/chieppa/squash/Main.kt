@@ -22,7 +22,6 @@ import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.runBlocking
@@ -30,7 +29,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
-private const val TEMPLATES_PROPERTY = "squash.templates"
 private const val APP_ID = "dev.chieppa.squash"
 private const val RECENT_FILE = "recent.txt"
 
@@ -40,7 +38,7 @@ fun main() {
     val store = RecentStore(appDataDirectory(APP_ID).resolve(RECENT_FILE))
     val recent = RecentFiles(store.load()).also { it.prune(FileStorage) }
     val state = AppState(
-        TemplateFolder.load(Path.of(System.getProperty(TEMPLATES_PROPERTY))),
+        TemplateFolder.shipped(),
         recent = recent,
         format = ScratchFormat(runBlocking { getString(Res.string.shell_file_type) }),
     )
