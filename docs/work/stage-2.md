@@ -12,6 +12,7 @@ Drawing happens in place on the body. The whole character is assembled from its 
 - **Rings stand on the rest axis.** A slice lies in its plane a = constant, so a drawn Side outline is the mesh's silhouette: the crossings at a are the ring's ends. The axis still follows the midline through the slice centres.
 - **A pair is one set of data.** Outlines and params live on the pair; a part's overrides replace the values they name. A paired part's own outlines and params are empty unless overridden. With Mirror on, a command writes the pair; with it off, the selected side's overrides.
 - **Release does what the preview shows.** While a stroke grows, the pane draws what release would produce: the connectors to the start or the socket plane, and the start point lit when the stroke is close enough to close on it.
+- **Squash draws its own icons.** Every Squash function has a Squash icon from the boards; only the frame's own controls use Stretch's.
 - **Exit criterion 2 reads as the HLD says.** Moving an outline's far end or a Front section outline moves every ring, pending Nicholas's call.
 
 ## To do
@@ -23,6 +24,7 @@ Each row is a branch in `.worktrees/`, landed by the orchestrator by rebase, squ
 | 1 | `pair-data` | Shared pair data and per-side overrides in `document`, resolved before the slice build; every reader and command moved to it |
 | 1 | `silhouette-and-graph` | Rings on the rest axis; cancellation checks between blocks and in the mesh node; the template in the mesh node's inputs; lint for the open end, sockets on the surface, patch-name collisions and the views map; golden fixtures with vertices; toe and pad grids in the template; the ear's fold joint and the head's nose pad |
 | 1 | `stroke-preview` | The live completion preview, Outline drawer with Smooth, Snap line and Close end, and tests that the preview equals the release |
+| 1 | `squash-icons` | Squash's own icon for every Squash function on a board, replacing the reused Stretch glyphs |
 | 1 | `tiers-and-packaging` | The smoke tier behind `-Pslow`; templates loaded from the app's resources |
 | 2 | `assembly` | A graph node placing every part on its socket; Full shows the whole character with the selection ringed; locked panes upright with the ghost and the Ghost and Template hints; normals and silhouettes derived in the graph; rest-pose art on Home, New character and Pick a part type with socket dots |
 | 3 | `chrome-boards` | Edit menu, undo, redo and command buttons, Erase, the Mirror toggle, the status bar's conflict count and pen readout, Refit progress, pixel readouts |
