@@ -80,13 +80,14 @@ private fun SelectedPartDetails(state: AppState) {
     val open = session
     val document = open?.document?.collectAsState()?.value
     val part = selected?.let { document?.character?.part(it) }
+    val data = part?.let { document?.character?.resolved(it) }
     val template = part?.let { state.templates.template(it.template) }
-    if (open == null || part == null || template == null) {
+    if (open == null || part == null || data == null || template == null) {
         EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
         return
     }
-    if (part.outlines.isNotEmpty()) OutlineCurvesSections(state, open, part) else YouDrawSection(template, part)
-    val rows = parameterRows(template, part)
+    if (data.outlines.isNotEmpty()) OutlineCurvesSections(state, open, part, data.outlines) else YouDrawSection(template, data.outlines)
+    val rows = parameterRows(template, data.params)
     if (rows.isNotEmpty()) {
         DrawerSection(stringResource(Res.string.shell_part_parameters), divider = false) {
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row) } }

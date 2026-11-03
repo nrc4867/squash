@@ -2,7 +2,6 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
-import dev.chieppa.squash.document.PartInstance
 import kotlin.math.round
 
 /** One parameter as the Part drawer shows it: its current value and the limits its template sets. */
@@ -25,9 +24,9 @@ data class ParameterRow(
     }
 }
 
-/** The template's parameters in file order, valued from [part] where it has set them. */
-fun parameterRows(template: PartTemplate, part: PartInstance?): List<ParameterRow> =
-    template.params.map { (name, spec) -> spec.row(name, part?.params?.get(name)) }
+/** The template's parameters in file order, valued from [params] where a part has set them. */
+fun parameterRows(template: PartTemplate, params: Map<String, Float> = emptyMap()): List<ParameterRow> =
+    template.params.map { (name, spec) -> spec.row(name, params[name]) }
 
 private fun ParamSpec.row(name: String, set: Float?) =
     ParameterRow(name, set ?: default.value, default.isFlag, min, max, step, unit)

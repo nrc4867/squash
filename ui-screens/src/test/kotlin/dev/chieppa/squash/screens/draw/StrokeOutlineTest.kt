@@ -64,11 +64,11 @@ class StrokeOutlineTest {
         val second = assertNotNull(fittedOutline(loop(0.3f), StrokeEnds.CutAtPlane(), PIXEL)).curve
         scenario(empty) {
             run(AddPart(part), SetOutline(id, View.SIDE, first), SetOutline(id, View.SIDE, second))
-            expect { assertEquals(second, it.character.part(id)?.outlines?.get(View.SIDE)) }
+            expect { assertEquals(second, it.character.resolved(id)?.outlines?.get(View.SIDE)) }
             undo()
-            expect { assertEquals(first, it.character.part(id)?.outlines?.get(View.SIDE)) }
+            expect { assertEquals(first, it.character.resolved(id)?.outlines?.get(View.SIDE)) }
             undo()
-            expect { assertNull(it.character.part(id)?.outlines?.get(View.SIDE)) }
+            expect { assertNull(it.character.resolved(id)?.outlines?.get(View.SIDE)) }
         }
     }
 }

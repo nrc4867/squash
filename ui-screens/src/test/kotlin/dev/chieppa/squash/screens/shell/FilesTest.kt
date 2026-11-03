@@ -1,5 +1,11 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.SetOutline
+import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.View
 import dev.chieppa.stretch.document.FileStorage
 import java.nio.file.Files
 import java.time.Instant
@@ -20,6 +26,19 @@ class FilesTest {
         val new = newCharacter(caninePlan, shipped, "Fennec")
         val document = new.commands.fold(new.document) { d, c -> c.apply(d).document }
         assertEquals(document, format.decode(format.encode(document)))
+    }
+
+    @Test
+    fun aScratchSaveKeepsAPairsSharedOutline() {
+        val new = newCharacter(caninePlan, shipped, "Fennec")
+        val rooted = new.commands.fold(new.document) { d, c -> c.apply(d).document }
+        val socket = openSockets(rooted, caninePlan, shipped).first { it.name == "front-leg" }
+        val legs = placeOnSocket(socket, assertNotNull(shipped.template(TemplateId("leg"))), rooted)
+        val curve = OutlineCurve(List(4) { CurvePoint(it.toFloat(), 0f) })
+        val document = SetOutline(legs.first().id, View.SIDE, curve).apply(AddParts(legs).apply(rooted).document).document
+        val read = format.decode(format.encode(document))
+        assertEquals(document, read)
+        assertEquals(curve, read.character.resolved(legs.last().id)?.outlines?.get(View.SIDE))
     }
 
     @Test

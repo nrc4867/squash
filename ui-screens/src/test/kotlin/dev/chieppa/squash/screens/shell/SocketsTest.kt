@@ -1,9 +1,15 @@
 package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.document.AddPart
+import dev.chieppa.squash.document.BreakPair
+import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.View
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -87,8 +93,52 @@ class SocketsTest {
         assertTrue(leg.children.single().item is PartRow.Open)
     }
 
+    private val curve = OutlineCurve(List(4) { CurvePoint(it.toFloat(), 0f) })
+
+    private fun SquashDocument.legs(): List<PartInstance> = character.parts.filter { it.socket?.socket == "front-leg" }
+
+    private fun SquashDocument.draw(part: PartInstance, thisSide: Boolean = false): SquashDocument =
+        SetOutline(part.id, View.SIDE, curve, thisSide).apply(this).document
+
+    private fun progress(document: SquashDocument) = partProgress(document, caninePlan, shipped)
+
     @Test
     fun progressCountsDrawnPartsWithAPairOnce() {
-        assertEquals(PartProgress(0, 8), partProgress(rooted().place("front-leg", "leg"), caninePlan, shipped))
+        val placed = rooted().place("front-leg", "leg")
+        assertEquals(PartProgress(0, 8), progress(placed))
+        assertEquals(PartProgress(1, 8), progress(placed.draw(placed.legs().first())))
+        assertEquals(PartProgress(1, 8), progress(placed.draw(placed.legs().last())))
+    }
+
+    @Test
+    fun anOverrideOnTheRightAloneCountsThePairAsDrawn() {
+        val placed = rooted().place("front-leg", "leg")
+        val drawn = placed.draw(placed.legs().last(), thisSide = true)
+        assertEquals(PartProgress(1, 8), progress(drawn))
+        val row = partTree(drawn, caninePlan, shipped).single().children.first().item
+        assertEquals(true, (row as PartRow.Placed).drawn)
+    }
+
+    @Test
+    fun aDrawnPairShowsDrawnInTheTreeAndBothSidesCountTheView() {
+        val placed = rooted().place("front-leg", "leg")
+        val drawn = placed.draw(placed.legs().first())
+        val row = partTree(drawn, caninePlan, shipped).single().children.first().item
+        assertEquals(true, (row as PartRow.Placed).drawn)
+        val leg = assertNotNull(shipped.template(TemplateId("leg")))
+        for (side in drawn.legs()) {
+            assertEquals(ViewCounts(1, 2), viewCounts(leg, drawn.character.resolved(side).outlines))
+        }
+    }
+
+    @Test
+    fun aBrokenPairsSidesAreEachAPartInTheTreeAndTheCount() {
+        val placed = rooted().place("front-leg", "leg")
+        val pair = assertNotNull(placed.legs().first().pair)
+        val broken = BreakPair(pair).apply(placed.draw(placed.legs().first())).document
+        assertEquals(PartProgress(2, 9), progress(broken))
+        val labels = partTree(broken, caninePlan, shipped).single().children.map { it.item.label }
+        assertEquals(2, labels.count { it == "Front leg" })
+        assertEquals(2, openSockets(broken, caninePlan, shipped).count { it.name == "paw" })
     }
 }

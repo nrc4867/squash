@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.shell
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.stretch.ui.TreeNode
 
@@ -14,10 +15,9 @@ sealed interface PartRow {
     /** The name its test tag ends with: a socket's, or the root's template id. */
     val tagName: String
 
-    data class Placed(val part: PartInstance, override val label: String) : PartRow {
+    data class Placed(val part: PartInstance, override val label: String, val drawn: Boolean) : PartRow {
         override val key get() = part.id.value
         override val tagName get() = part.socket?.socket ?: part.template.id.value
-        val drawn get() = part.outlines.isNotEmpty()
     }
 
     data class Open(val socket: OpenSocket, override val label: String) : PartRow {
@@ -37,13 +37,20 @@ fun partTree(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder
         val name = part.socket?.let { displayName(it.socket) } ?: templates.template(part.template)?.name ?: part.template.id.value
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
         val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, displayName(it.name))) }
-        return TreeNode(PartRow.Placed(part, name), placed + waiting)
+        return TreeNode(PartRow.Placed(part, name, document.isDrawn(part)), placed + waiting)
     }
     return parts.filter { it.socket == null }.map(::node)
 }
 
-/** How many of the plan's parts have something drawn: [drawn] of [total], a mirrored pair counting once. */
+/** How many of the plan's parts have something drawn: [drawn] of [total], a mirrored pair counting once and a broken one as two. */
 data class PartProgress(val drawn: Int, val total: Int)
 
-fun partProgress(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder): PartProgress =
-    PartProgress(document.character.parts.count { it.isLeader && it.outlines.isNotEmpty() }, plan.partCount(templates))
+fun partProgress(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder): PartProgress {
+    val parts = document.character.parts
+    val broken = parts.count { it.pair == null && it.side == Side.RIGHT }
+    return PartProgress(parts.count { it.isLeader && document.isDrawn(it) }, plan.partCount(templates) + broken)
+}
+
+/** Whether [part], or the other side of its pair, has an outline. */
+private fun SquashDocument.isDrawn(part: PartInstance): Boolean =
+    listOfNotNull(part, twin(part)).any { character.resolved(it).outlines.isNotEmpty() }

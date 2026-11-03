@@ -46,7 +46,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
 
     private fun outline(view: View): OutlineCurve? {
         val part = state.selectedPart.value ?: return null
-        return state.session.value?.document?.value?.character?.part(part)?.outlines?.get(view)
+        return state.session.value?.document?.value?.character?.resolved(part)?.outlines?.get(view)
     }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
@@ -65,7 +65,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
         val session = state.session.value ?: return null
         val part = state.selectedPart.value ?: return null
         val instance = session.document.value.character.part(part) ?: return null
-        val curve = instance.outlines[view] ?: return null
+        val curve = session.document.value.character.resolved(instance).outlines[view] ?: return null
         val selected = state.curves.selectionIn(part, view, curve)?.index
         val index = curve.pointAt(pixel, look.grabReach, selected, camera::toPixel)
         if (index == null) {

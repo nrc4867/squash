@@ -40,7 +40,8 @@ fun BuildStatusBar(shell: Shell) {
     val plan = state.templates.plan(document.character.bodyPlan)
     val part = selected?.let(document.character::part)
     val template = part?.let { state.templates.template(it.template) }
-    val touched = state.curves.refit?.takeIf { screen == Screen.WORKSPACE && it.part == part?.id && part.outlines[it.view] == it.curve }
+    val outlines = part?.let { document.character.resolved(it).outlines }
+    val touched = state.curves.refit?.takeIf { screen == Screen.WORKSPACE && it.part == part?.id && outlines?.get(it.view) == it.curve }
     StatusBar(
         start = {
             Box(Modifier.testTag(ShellTags.STATUS_START)) {
@@ -57,8 +58,8 @@ fun BuildStatusBar(shell: Shell) {
                     touched != null -> StatusItem(
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
                     )
-                    screen == Screen.WORKSPACE && part != null && template != null -> {
-                        val counts = viewCounts(template, part)
+                    screen == Screen.WORKSPACE && outlines != null && template != null -> {
+                        val counts = viewCounts(template, outlines)
                         StatusItem(stringResource(Res.string.shell_status_views, counts.drawn, counts.fromTemplate))
                     }
                     plan != null -> {

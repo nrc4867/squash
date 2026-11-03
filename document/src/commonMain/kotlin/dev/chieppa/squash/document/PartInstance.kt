@@ -9,26 +9,30 @@ enum class Side {
     @SerialName("right") RIGHT,
 }
 
-/** One side's outline and parameter deltas, layered on what a mirrored pair shares. */
-@Serializable
-data class PartOverrides(
-    val outlines: Map<View, OutlineCurve> = emptyMap(),
-    val params: Map<String, Float> = emptyMap(),
-)
-
 /**
- * Everything the user chose for one part. Slices are derived from this and its template and are never saved.
- * [socket] is null for the root part.
+ * One part on the character. Slices are derived from it and its template and are never saved. [socket] is null for the
+ * root part. [own] holds a part's values while it has no [pair] and stays empty while it has one; [overrides] are the
+ * values this [side] replaces in its pair's. Both stay inside this module: [Character.resolved] is how anything reads
+ * them. [side] outlasts a broken pair, since the part still sits on that side.
+ * See HLD: data-model, Mirroring is shared data plus overrides.
  */
 @Serializable
 data class PartInstance(
     val id: PartId,
     val template: TemplateRef,
     val socket: SocketRef? = null,
-    val outlines: Map<View, OutlineCurve> = emptyMap(),
-    val params: Map<String, Float> = emptyMap(),
+    internal val own: PartData = PartData(),
     val pair: PairId? = null,
     val side: Side? = null,
-    val overrides: PartOverrides = PartOverrides(),
+    internal val overrides: PartData = PartData(),
     val grain: Grain = Grain(),
-)
+) {
+    init {
+        if (pair == null) {
+            require(overrides == PartData()) { "Part ${id.value} has overrides but no pair" }
+        } else {
+            require(own == PartData()) { "Part ${id.value} is paired, so its values live on the pair" }
+            requireNotNull(side) { "Part ${id.value} is paired but has no side" }
+        }
+    }
+}

@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.model.PartTemplate
-import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_part_areas
@@ -44,15 +44,15 @@ fun viewLabel(view: View): String = stringResource(
     },
 )
 
-/** The template's views: with a [part], lit where it has an outline; without one, lit where a person draws. */
+/** The template's views: with a part's [outlines], lit where it has one; without them, lit where a person draws. */
 @Composable
-fun YouDrawSection(template: PartTemplate, part: PartInstance?) {
+fun YouDrawSection(template: PartTemplate, outlines: Map<View, OutlineCurve>?) {
     DrawerSection(stringResource(Res.string.shell_part_you_draw)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             for (view in VIEW_ORDER) {
                 val sets = template.views[view] ?: continue
-                val drawn = part != null && view in part.outlines
-                val lit = if (part != null) drawn else sets.isDrawnByHand()
+                val drawn = outlines != null && view in outlines
+                val lit = if (outlines != null) drawn else sets.isDrawnByHand()
                 Chip(
                     viewLabel(view),
                     Modifier.testTag(ShellTags.viewChip(view.name)),
@@ -68,7 +68,7 @@ fun YouDrawSection(template: PartTemplate, part: PartInstance?) {
 @Composable
 fun ToolKnowsSection(template: PartTemplate, paired: Boolean) {
     DrawerSection(stringResource(Res.string.shell_part_tool_knows)) {
-        for (row in parameterRows(template, null)) {
+        for (row in parameterRows(template)) {
             val min = row.min
             val max = row.max
             val value = when {

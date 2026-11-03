@@ -57,5 +57,5 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val built by produceState<PartMesh?>(null, open, selected) { open.mesh(selected).output.collect { value = it } }
     val template = remember(open, instance.template) { open.templates[instance.template] }
     val part = remember(selected, template, built) { built?.let { sheetPart(selected, template, it) } } ?: return null
-    return SheetSelection(part, instance.outlines)
+    return SheetSelection(part, document.character.resolved(instance).outlines)
 }

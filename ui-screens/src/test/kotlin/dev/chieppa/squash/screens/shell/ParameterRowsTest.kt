@@ -1,7 +1,5 @@
 package dev.chieppa.squash.screens.shell
 
-import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.TemplateId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,11 +9,11 @@ import kotlin.test.assertTrue
 
 class ParameterRowsTest {
     private val paw = assertNotNull(shipped.template(TemplateId("paw")))
-    private val rows = parameterRows(paw, null).associateBy { it.name }
+    private val rows = parameterRows(paw).associateBy { it.name }
 
     @Test
     fun rowsComeFromTheTemplatesSpec() {
-        assertEquals(listOf("size", "toes", "spread", "pads"), parameterRows(paw, null).map { it.name })
+        assertEquals(listOf("size", "toes", "spread", "pads"), parameterRows(paw).map { it.name })
         assertEquals(0.4f..2.5f, rows.getValue("size").range)
         assertEquals("deg", rows.getValue("spread").unit)
         assertTrue(rows.getValue("pads").isFlag)
@@ -24,8 +22,7 @@ class ParameterRowsTest {
 
     @Test
     fun aSetValueWinsOverTheDefault() {
-        val part = PartInstance(PartId("p"), paw.ref, params = mapOf("toes" to 5f))
-        val row = parameterRows(paw, part).first { it.name == "toes" }
+        val row = parameterRows(paw, mapOf("toes" to 5f)).first { it.name == "toes" }
         assertEquals(5f, row.value)
         assertEquals(4f, rows.getValue("toes").value)
     }

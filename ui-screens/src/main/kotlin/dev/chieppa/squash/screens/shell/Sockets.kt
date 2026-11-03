@@ -18,7 +18,7 @@ data class OpenSocket(val parent: PartId, val name: String, val takes: List<Temp
 }
 
 /** The part a mirrored pair is reached through: its left side, or any part not in a pair. */
-val PartInstance.isLeader: Boolean get() = side != Side.RIGHT
+val PartInstance.isLeader: Boolean get() = pair == null || side != Side.RIGHT
 
 /** The other side of this part's mirrored pair. */
 fun SquashDocument.twin(part: PartInstance): PartInstance? =

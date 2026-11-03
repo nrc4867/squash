@@ -109,7 +109,7 @@ class DrawOutlineToolTest {
         waitForIdle()
     }
 
-    private fun Bench.outline(view: View): OutlineCurve? = session.document.value.character.part(id)?.outlines?.get(view)
+    private fun Bench.outline(view: View): OutlineCurve? = session.document.value.character.resolved(id)?.outlines?.get(view)
 
     private fun Bench.undoSteps() = session.history.steps.value.done.size
 

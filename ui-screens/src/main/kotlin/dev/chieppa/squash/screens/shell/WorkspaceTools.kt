@@ -35,7 +35,7 @@ fun rememberPartIsDrawn(state: AppState): Boolean {
     val session by state.session.collectAsState()
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value
-    return selected?.let { document?.character?.part(it) }?.outlines?.isNotEmpty() == true
+    return selected?.let { document?.character?.resolved(it) }?.outlines?.isNotEmpty() == true
 }
 
 @Composable

@@ -9,19 +9,21 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface DocumentCommand : Command<SquashDocument>
 
-/** Adds [part], or restores it to [index] when undoing a removal. */
+/** Adds [part], or restores it to [index] when undoing a removal. A pair it is first to name starts from [pairData], or empty. */
 @Serializable
 @SerialName("addPart")
-data class AddPart(val part: PartInstance, val index: Int? = null) : DocumentCommand {
+data class AddPart(val part: PartInstance, val index: Int? = null, val pairData: PartData? = null) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> {
         val parts = document.character.parts
         require(parts.none { it.id == part.id }) { "Part ${part.id.value} already exists" }
         val at = index ?: parts.size
         val next = parts.take(at) + part + parts.drop(at)
-        return Applied(document.withParts(next), RemovePart(part.id))
+        val restored = if (part.pair != null && pairData != null) mapOf(part.pair to pairData) else emptyMap()
+        return Applied(document.withParts(next, restored), RemovePart(part.id))
     }
 }
 
+/** Removes [part]; its pair's data goes with the pair's last side. */
 @Serializable
 @SerialName("removePart")
 data class RemovePart(val part: PartId) : DocumentCommand {
@@ -29,24 +31,34 @@ data class RemovePart(val part: PartId) : DocumentCommand {
         val parts = document.character.parts
         val at = parts.indexOfFirst { it.id == part }
         require(at >= 0) { "No part ${part.value}" }
-        return Applied(document.withParts(parts - parts[at]), AddPart(parts[at], at))
+        val removed = parts[at]
+        val next = document.withParts(parts - removed)
+        return Applied(next, AddPart(removed, at, document.pairDataDropped(next)[removed.pair]))
     }
 }
 
-/** Adds [parts] as one step, as a mirrored pair is placed, or restores them to [indices] when undoing a removal. */
+/**
+ * Adds [parts] as one step, as a mirrored pair is placed, or restores them to [indices] when undoing a removal. A pair
+ * they are first to name starts from [pairs], or empty.
+ */
 @Serializable
 @SerialName("addParts")
-data class AddParts(val parts: List<PartInstance>, val indices: List<Int>? = null) : DocumentCommand {
+data class AddParts(
+    val parts: List<PartInstance>,
+    val indices: List<Int>? = null,
+    val pairs: Map<PairId, PartData> = emptyMap(),
+) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> {
         val next = document.character.parts.toMutableList()
         parts.forEachIndexed { i, part ->
             require(next.none { it.id == part.id }) { "Part ${part.id.value} already exists" }
             next.add(indices?.get(i) ?: next.size, part)
         }
-        return Applied(document.withParts(next), RemoveParts(parts.map { it.id }))
+        return Applied(document.withParts(next, pairs), RemoveParts(parts.map { it.id }))
     }
 }
 
+/** Removes [parts] as one step; a pair's data goes with the pair's last side. */
 @Serializable
 @SerialName("removeParts")
 data class RemoveParts(val parts: List<PartId>) : DocumentCommand {
@@ -55,40 +67,82 @@ data class RemoveParts(val parts: List<PartId>) : DocumentCommand {
         val indices = parts.map { id -> current.indexOfFirst { it.id == id }.also { require(it >= 0) { "No part ${id.value}" } } }
         val removed = indices.map { current[it] }
         val order = indices.indices.sortedBy { indices[it] }
+        val next = document.withParts(current - removed.toSet())
+        return Applied(next, AddParts(order.map { removed[it] }, order.map { indices[it] }, document.pairDataDropped(next)))
+    }
+}
+
+/**
+ * Sets the outline drawn in [view]: on the pair for a paired part, or with [thisSide] as that side's override alone. A
+ * null [curve] clears it, and clearing an override shows the pair's outline again. An unpaired part has one place for it.
+ */
+@Serializable
+@SerialName("setOutline")
+data class SetOutline(
+    val part: PartId,
+    val view: View,
+    val curve: OutlineCurve?,
+    val thisSide: Boolean = false,
+) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide)
         return Applied(
-            document.withParts(current - removed.toSet()),
-            AddParts(order.map { removed[it] }, order.map { indices[it] }),
+            document.withWritten(instance, thisSide, before.withOutline(view, curve)),
+            SetOutline(part, view, before.outlines[view], thisSide),
         )
     }
 }
 
-/** Sets the outline drawn in [view]; a null [curve] clears it. */
-@Serializable
-@SerialName("setOutline")
-data class SetOutline(val part: PartId, val view: View, val curve: OutlineCurve?) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> {
-        val instance = document.requirePart(part)
-        val outlines = if (curve == null) instance.outlines - view else instance.outlines + (view to curve)
-        return Applied(document.withPart(instance.copy(outlines = outlines)), SetOutline(part, view, instance.outlines[view]))
-    }
-}
-
-/** Sets a parameter's value; a null [value] returns it to the template's default. */
+/**
+ * Sets a parameter's value: on the pair for a paired part, or with [thisSide] as that side's override alone. A null
+ * [value] returns it to the template's default, and clearing an override returns it to the pair's value. An unpaired
+ * part has one place for it.
+ */
 @Serializable
 @SerialName("setParameter")
-data class SetParameter(val part: PartId, val name: String, val value: Float?) : DocumentCommand {
+data class SetParameter(
+    val part: PartId,
+    val name: String,
+    val value: Float?,
+    val thisSide: Boolean = false,
+) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> {
         val instance = document.requirePart(part)
-        val params = if (value == null) instance.params - name else instance.params + (name to value)
-        return Applied(document.withPart(instance.copy(params = params)), SetParameter(part, name, instance.params[name]))
+        val before = document.writtenData(instance, thisSide)
+        return Applied(
+            document.withWritten(instance, thisSide, before.withParam(name, value)),
+            SetParameter(part, name, before.params[name], thisSide),
+        )
     }
 }
 
-private fun SquashDocument.requirePart(id: PartId): PartInstance =
+internal fun SquashDocument.requirePart(id: PartId): PartInstance =
     requireNotNull(character.part(id)) { "No part ${id.value}" }
 
-private fun SquashDocument.withParts(parts: List<PartInstance>): SquashDocument =
-    copy(character = character.copy(parts = parts))
+/** This document with [parts], holding data for just the pairs they name: from [restored], from what it has, or empty. */
+private fun SquashDocument.withParts(parts: List<PartInstance>, restored: Map<PairId, PartData> = emptyMap()): SquashDocument {
+    val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
+    val pairs = named.associateWith { restored[it] ?: character.pairs[it] ?: PartData() }
+    return copy(character = character.copy(parts = parts, pairs = pairs))
+}
+
+/** The pair data this document holds and [next] does not. */
+private fun SquashDocument.pairDataDropped(next: SquashDocument): Map<PairId, PartData> =
+    character.pairs.filterKeys { it !in next.character.pairs }
+
+/** The values a write to [part] replaces: its pair's, its side's overrides, or its own when unpaired. */
+private fun SquashDocument.writtenData(part: PartInstance, thisSide: Boolean): PartData = when {
+    part.pair == null -> part.own
+    thisSide -> part.overrides
+    else -> character.pairs.getValue(part.pair)
+}
+
+private fun SquashDocument.withWritten(part: PartInstance, thisSide: Boolean, data: PartData): SquashDocument = when {
+    part.pair == null -> withPart(part.copy(own = data))
+    thisSide -> withPart(part.copy(overrides = data))
+    else -> copy(character = character.copy(pairs = character.pairs + (part.pair to data)))
+}
 
 private fun SquashDocument.withPart(part: PartInstance): SquashDocument =
-    withParts(character.parts.map { if (it.id == part.id) part else it })
+    copy(character = character.copy(parts = character.parts.map { if (it.id == part.id) part else it }))

@@ -84,7 +84,7 @@ class CurveToolsFlowTest {
         workspace(state)
         val part = checkNotNull(state.selectedPart.value)
         val session = checkNotNull(state.session.value)
-        fun side() = session.document.value.character.part(part)?.outlines?.get(View.SIDE)
+        fun side() = session.document.value.character.resolved(part)?.outlines?.get(View.SIDE)
         fun steps() = session.history.steps.value.done.size
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.SIDE))
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.mesh(part).output.value != null && runCatching { pane.assertExists() }.isSuccess }
@@ -196,7 +196,7 @@ class CurveToolsFlowTest {
         onNodeWithText("Section 2 refit · other sections unchanged").assertExists()
         onNodeWithText("Undo").performClick()
         waitForIdle()
-        assertEquals(LEG_SIDE, session.document.value.character.part(part)?.outlines?.get(View.SIDE))
+        assertEquals(LEG_SIDE, session.document.value.character.resolved(part)?.outlines?.get(View.SIDE))
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 drawn · 2 from template")
     }
 }

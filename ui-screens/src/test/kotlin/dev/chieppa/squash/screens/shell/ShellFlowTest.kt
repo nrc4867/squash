@@ -143,10 +143,10 @@ class ShellFlowTest {
         val steps = session.history.steps.value.done.size
         onNodeWithTag(ShellTags.parameter("size")).performSemanticsAction(SemanticsActions.SetProgress) { it(99f) }
         waitForIdle()
-        assertEquals(2.5f, session.document.value.character.part(root)?.params?.get("size"))
+        assertEquals(2.5f, session.document.value.character.resolved(root)?.params?.get("size"))
         assertEquals(steps + 1, session.history.steps.value.done.size)
         session.history.undo()
-        assertEquals(null, session.document.value.character.part(root)?.params?.get("size"))
+        assertEquals(null, session.document.value.character.resolved(root)?.params?.get("size"))
     }
 
     @Test

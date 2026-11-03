@@ -4,7 +4,7 @@ import dev.chieppa.squash.character.block.Block
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.MeshBuilder
 import dev.chieppa.squash.geom.PartAxes
@@ -26,12 +26,8 @@ object PartBuilder {
         return context.built
     }
 
-    /** The patches of [instance], with its side's overrides replacing the shared values they name. */
-    fun build(template: PartTemplate, instance: PartInstance): List<Patch> = build(
-        template,
-        instance.params + instance.overrides.params,
-        instance.outlines + instance.overrides.outlines,
-    )
+    /** The patches of a part that resolves to [data]. */
+    fun build(template: PartTemplate, data: PartData): List<Patch> = build(template, data.params, data.outlines)
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3())

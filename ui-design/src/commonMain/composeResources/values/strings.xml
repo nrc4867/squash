@@ -71,6 +71,7 @@
 
     <string name="shell_step_add">Add %1$s</string>
     <string name="shell_step_remove">Remove %1$s</string>
+    <string name="shell_step_break_pair">Break pair</string>
     <string name="shell_step_outline">%1$s outline</string>
     <string name="shell_step_parameter">%1$s %2$s</string>
 

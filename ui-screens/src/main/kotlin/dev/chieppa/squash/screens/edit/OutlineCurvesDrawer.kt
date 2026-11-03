@@ -67,12 +67,12 @@ private enum class HandleKind { SMOOTH, CORNER }
 
 /** The Outline curves drawer's sections: the selected point, the oversketch's settings and the outlines drawn. */
 @Composable
-fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: PartInstance) {
-    SelectedPointSection(state, session, part)
+fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
+    SelectedPointSection(state, session, part, outlines)
     OversketchSection(state)
     DrawerSection(stringResource(Res.string.edit_outlines)) {
         VIEW_ORDER.forEach { view ->
-            val curve = part.outlines[view]
+            val curve = outlines[view]
             val anchors = curve?.anchors?.size
             SettingRow(viewLabel(view)) {
                 Spacer(Modifier.weight(1f))
@@ -91,9 +91,9 @@ private fun Readout(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SelectedPointSection(state: AppState, session: CharacterSession, part: PartInstance) {
+private fun SelectedPointSection(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     val selection = state.curves.selection?.takeIf { it.part == part.id } ?: return
-    val curve = part.outlines[selection.view]?.takeIf { selection.index in it.points.indices } ?: return
+    val curve = outlines[selection.view]?.takeIf { selection.index in it.points.indices } ?: return
     val ends = strokeEnds(selection.view, session.templates[part.template].openEnd) as? StrokeEnds.CutAtPlane
     val limit = ends?.let { CurveLimit(it.plane, it.above) }
     val point = curve.points[selection.index]

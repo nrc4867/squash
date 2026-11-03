@@ -60,11 +60,11 @@ class DocumentCommandTest {
         val other = OutlineCurve(outline.points.reversed())
         scenario(empty) {
             run(AddPart(leg), SetOutline(leg.id, View.SIDE, outline), SetOutline(leg.id, View.SIDE, other))
-            expect { assertEquals(other, it.character.part(leg.id)?.outlines?.get(View.SIDE)) }
+            expect { assertEquals(other, it.character.resolved(leg.id)?.outlines?.get(View.SIDE)) }
             undo()
-            expect { assertEquals(outline, it.character.part(leg.id)?.outlines?.get(View.SIDE)) }
+            expect { assertEquals(outline, it.character.resolved(leg.id)?.outlines?.get(View.SIDE)) }
             undo()
-            expect { assertNull(it.character.part(leg.id)?.outlines?.get(View.SIDE)) }
+            expect { assertNull(it.character.resolved(leg.id)?.outlines?.get(View.SIDE)) }
         }
     }
 
@@ -73,9 +73,9 @@ class DocumentCommandTest {
         scenario(empty) {
             run(AddPart(leg))
             gesture(SetParameter(leg.id, "size", 1.1f), SetParameter(leg.id, "size", 1.4f))
-            expect { assertEquals(1.4f, it.character.part(leg.id)?.params?.get("size")) }
+            expect { assertEquals(1.4f, it.character.resolved(leg.id)?.params?.get("size")) }
             undo()
-            expect { assertNull(it.character.part(leg.id)?.params?.get("size")) }
+            expect { assertNull(it.character.resolved(leg.id)?.params?.get("size")) }
         }
     }
 

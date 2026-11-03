@@ -8,8 +8,8 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | --- | --- | --- |
 | Part template | The recipe for a part type: axis, open end, ring and segment counts, blocks, parameter ranges, joints, sockets, tagged areas, which view sets what | Shipped data file, versioned |
 | Body plan | A graph of sockets from a root spine, pair ids for mirrored sockets, the rest pose | Shipped preset, versioned |
-| Character | Body plan, part instances, slots, palette, face sets, and the library version it came from | Document; also its own library file |
-| Part instance | Template id and version, the socket it sits on, per-view outline curves, parameter values, pair id and per-side overrides | Document |
+| Character | Body plan, part instances, the data each mirrored pair shares (outlines and params by pair id), slots, palette, face sets, and the library version it came from | Document; also its own library file |
+| Part instance | Template id and version, the socket it sits on, its own outlines and params while unpaired, pair id, side and that side's overrides | Document |
 | Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
 | Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
 | Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the axis spline, height, width, a closed section spline and a proxy normal | Derived |
@@ -64,12 +64,24 @@ data class PartInstance(
     val id: PartId,
     val template: TemplateRef,             // id and version, pinned
     val socket: SocketRef,                 // parent part and socket name; null for the root torso
-    val outlines: Map<View, OutlineCurve>, // cubic Beziers in the part's own axes, open at the socket end
-    val params: Map<String, Float>,
-    val pair: PairId?, val side: Side?,     // mirrored pairs share outlines and params
-    val overrides: Overrides,              // per-side outlines and params, replacing the shared values they name
+    internal val own: PartData,            // the part's values while it has no pair; empty while it has one
+    val pair: PairId?, val side: Side?,    // the side stays when a pair breaks, since the part still sits there
+    internal val overrides: PartData,      // this side's values, replacing the ones they name in the pair's; empty with no pair
     val grain: Grain,                      // direction field in anchor space, default along the axis
 )
+
+data class PartData(
+    val outlines: Map<View, OutlineCurve>, // cubic Beziers in the part's own axes, open at the socket end
+    val params: Map<String, Float>,
+)
+
+data class Character(
+    // ...
+    val parts: List<PartInstance>,
+    internal val pairs: Map<PairId, PartData>, // what each pair shares, held for exactly the pairs its parts name
+) {
+    fun resolved(part: PartInstance): PartData // the pair's values with the side's overrides on top, or the part's own
+}
 
 // Derived. A part is one or more patches; the mesh is a pure function of them.
 data class Patch(
@@ -101,7 +113,7 @@ Rules the code keeps:
 - **Fixed topology per template version.** Ring i maps to u, segment j maps to v, so an anchor reaches its vertex neighbourhood by arithmetic. Changing rings or segments is a new version and a migration.
 - **Open ends close at the socket plane.** The open end's slice is placed on the parent's surface at the socket, and the parent's slices are untouched. A stroke that closes anyway is cut at that plane.
 - **Heads are blocks too.** Skull is a block whose slices run front to back, with a muzzle Tube and eye and ear sockets. Face marks anchor to Skull's u and v like any other mark.
-- **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides replace the values they name. Breaking a pair copies the shared data into both and clears the pair id.
+- **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides replace the values they name. `Character.resolved` is the only way to read a part's values, since the fields behind it are internal to `document`, and it is what the slice row node builds from, so both sides rebuild when the pair changes and a part rebuilds only when what it resolves to changes. `SetOutline` and `SetParameter` write the pair for a paired part, or with `thisSide` that side's override; clearing an override shows the pair's value again. Breaking a pair copies the shared data, under each side's overrides, into both and clears the pair id; each part keeps its side. A pair's data is created with its first part and goes with its last.
 - **Poses stay re-editable.** A pose keeps the body curve as a curve and the planted set as flags, so re-sampling after a character update uses the same inputs. Touch-ups are deltas in anchor space, which is why they survive Update from library.
 - **Detail beyond the sweep is anchored, not modelled.** Branching shapes are other blocks or parts. Grooves and muscle lines are a later shape touch-up layer: push and pull offsets stored in anchor space at build time, the same mechanism as per-shot touch-ups, so they survive refits.
 

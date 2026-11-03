@@ -2,9 +2,7 @@ package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.pointOnView
-import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.PartInstance
-import dev.chieppa.squash.document.PartOverrides
+import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.MeshInvariants
 import dev.chieppa.squash.geom.Patch
@@ -135,15 +133,10 @@ class DrawnPartTest {
     }
 
     @Test
-    fun aSidesOverridesReplaceTheSharedOutlinesAndParameters() {
-        val instance = PartInstance(
-            PartId("leg-1"),
-            leg.ref,
-            outlines = mapOf(View.SIDE to bentSide),
-            overrides = PartOverrides(outlines = mapOf(View.TOP to top), params = mapOf("size" to 1.5f)),
-        )
+    fun aPartBuildsFromWhatItResolvesTo() {
+        val data = PartData(mapOf(View.SIDE to bentSide, View.TOP to top), mapOf("size" to 1.5f))
         val expected = PartBuilder.build(leg, mapOf("size" to 1.5f), mapOf(View.SIDE to bentSide, View.TOP to top))
-        assertEquals(expected, PartBuilder.build(leg, instance))
+        assertEquals(expected, PartBuilder.build(leg, data))
     }
 
     @Test

@@ -2,8 +2,6 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import kotlin.test.Test
@@ -16,9 +14,8 @@ class StatusTextTest {
 
     @Test
     fun viewsCountAsDrawnOrFromTemplate() {
-        val part = PartInstance(PartId("p"), leg.ref)
-        assertEquals(ViewCounts(0, 3), viewCounts(leg, part))
-        assertEquals(ViewCounts(1, 2), viewCounts(leg, part.copy(outlines = mapOf(View.SIDE to curve))))
+        assertEquals(ViewCounts(0, 3), viewCounts(leg, emptyMap()))
+        assertEquals(ViewCounts(1, 2), viewCounts(leg, mapOf(View.SIDE to curve)))
     }
 
     @Test

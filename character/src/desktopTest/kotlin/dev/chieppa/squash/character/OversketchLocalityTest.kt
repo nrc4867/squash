@@ -12,6 +12,7 @@ import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.CurveLimit
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetOutline
@@ -105,7 +106,7 @@ class OversketchLocalityTest {
     )
 
     private fun TestScope.drawnSession(): CharacterSession {
-        val leg = PartInstance(id, TemplateRef(TemplateId("leg"), 1), outlines = mapOf(View.SIDE to side, View.TOP to top))
+        val leg = PartInstance(id, TemplateRef(TemplateId("leg"), 1), own = PartData(outlines = mapOf(View.SIDE to side, View.TOP to top)))
         return session(leg).also {
             it.mesh(id)
             runCurrent()
@@ -236,7 +237,7 @@ class OversketchLocalityTest {
         val torso = template("torso")
         assertEquals(dev.chieppa.squash.character.model.Sets.SECTION, torso.views[View.FRONT], "the torso's Front sets its section")
         val square = outline(-0.5f to -0.5f, 0.5f to -0.5f, 0.5f to 0.5f, -0.5f to 0.5f, -0.5f to -0.5f)
-        val instance = PartInstance(id, TemplateRef(TemplateId("torso"), torso.version), outlines = mapOf(View.SIDE to side))
+        val instance = PartInstance(id, TemplateRef(TemplateId("torso"), torso.version), own = PartData(outlines = mapOf(View.SIDE to side)))
         val session = session(instance)
         session.mesh(id)
         runCurrent()

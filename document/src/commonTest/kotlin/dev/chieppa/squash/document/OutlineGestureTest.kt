@@ -12,11 +12,11 @@ class OutlineGestureTest {
             CharacterId("fennec"),
             "Fennec",
             BodyPlanRef(BodyPlanId("canine-quadruped"), 1),
-            listOf(PartInstance(leg, TemplateRef(TemplateId("leg"), 1), outlines = mapOf(View.SIDE to start))),
+            listOf(PartInstance(leg, TemplateRef(TemplateId("leg"), 1), own = PartData(outlines = mapOf(View.SIDE to start)))),
         ),
     )
 
-    private fun SquashDocument.side() = character.part(leg)?.outlines?.get(View.SIDE)
+    private fun SquashDocument.side() = character.resolved(leg)?.outlines?.get(View.SIDE)
 
     @Test
     fun aHandleDragMergesItsPreviewsIntoOneUndoStep() {

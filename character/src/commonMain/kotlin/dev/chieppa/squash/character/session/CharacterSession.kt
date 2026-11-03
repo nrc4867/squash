@@ -1,11 +1,11 @@
 package dev.chieppa.squash.character.session
 
+import dev.chieppa.squash.character.build.PartBuildInput
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.Patch
@@ -28,13 +28,13 @@ class CharacterSession(
     val graph = Graph(scope, dispatcher)
     val document: StateFlow<SquashDocument> get() = history.document
 
-    private val rows = mutableMapOf<PartId, Node<PartInstance?, List<Patch>>>()
+    private val rows = mutableMapOf<PartId, Node<PartBuildInput?, List<Patch>>>()
     private val meshes = mutableMapOf<PartId, Node<List<Patch>, PartMesh>>()
 
     fun send(command: DocumentCommand) = history.execute(command)
 
     /** The node deriving [part]'s patches; there is one per part for the session's life. */
-    fun patches(part: PartId): Node<PartInstance?, List<Patch>> =
+    fun patches(part: PartId): Node<PartBuildInput?, List<Patch>> =
         rows.getOrPut(part) { graph.sliceRowNode(document, part, templates) }
 
     /**

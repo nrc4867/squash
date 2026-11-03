@@ -96,7 +96,7 @@ internal class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
 
     fun camera(view: View = View.SIDE) = LockedCamera(view, PartAxes.of(Vec3.X), SheetFit(Vec3(1f, 0f, 0f), SCALE), PANE_WIDTH, PANE_HEIGHT)
 
-    fun outline(view: View = View.SIDE): OutlineCurve? = session.document.value.character.part(id)?.outlines?.get(view)
+    fun outline(view: View = View.SIDE): OutlineCurve? = session.document.value.character.resolved(id)?.outlines?.get(view)
 
     fun steps() = session.history.steps.value.done.size
 

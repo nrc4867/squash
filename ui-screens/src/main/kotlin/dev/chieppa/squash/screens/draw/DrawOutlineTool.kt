@@ -77,7 +77,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
 
     private fun outline(view: View): OutlineCurve? {
         val part = state.selectedPart.value ?: return null
-        return state.session.value?.document?.value?.character?.part(part)?.outlines?.get(view)
+        return state.session.value?.document?.value?.character?.resolved(part)?.outlines?.get(view)
     }
 
     private fun preview(view: View, outline: OutlineCurve, points: List<CurvePoint>): OversketchPreview? {
@@ -130,7 +130,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val ends = strokeEnds(view, session.templates[instance.template].openEnd)
         val pixel = 1f / camera.fit.pixelsPerUnit
         val curves = state.curves
-        val existing = instance.outlines[view]
+        val existing = session.document.value.character.resolved(instance).outlines[view]
         if (existing == null) {
             val fitted = fittedOutline(strokePoints.toList(), ends, pixel) ?: return
             curves.recordFit(fitted.curve, fitted.errorPixels)
