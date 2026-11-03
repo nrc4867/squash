@@ -12,7 +12,7 @@ That is boards Home, 1, 2, 3, 4, 5 and the Sheet layouts A (both), plus spikes 1
 
 Stage 1 is done when all of these hold, in this order of importance:
 
-1. A drawn Side outline alone produces a leg mesh with the leg template's fixed topology through the real slice build. Top adds width. No placeholder mesh anywhere.
+1. A drawn Side outline alone produces a leg mesh with the leg template's fixed topology through the real build: the axis is a spline through the Side midline, each slice's section is a closed spline, and the patch is lofted from them. Top adds width. No placeholder mesh anywhere.
 2. Oversketching a section of an outline, or dragging a handle, refits only the touched span of slices. Verified by a golden test that compares vertex positions outside the span before and after.
 3. The six starter templates (torso, leg, paw, head, ear, tail) load, pass schema, lint and the golden build with default parameters and no outlines. The paw has pads underneath; the head reads as skull and muzzle.
 4. The Sheet layout runs four viewports in one `NativeSurface` at display rate, with the views-disagree highlight updating at stroke rate.
@@ -27,11 +27,11 @@ One orchestrating session per sitting. It plans, lands the shared skeleton itsel
 
 - Module layout from `docs/hld/architecture.md`: `annotations`, `geom`, `graph`, `document`, `character`, `render`, `ui-design`, `ui-screens`, `app`, `schema-gen`, each a Gradle subproject with its dependencies declared and nothing else. Empty modules are fine; the dependency direction is the deliverable.
 - `annotations`: `@Range` and `@Doc`.
-- `character`: the serializable model from `docs/hld/data-model.md` (template, body plan, part instance, blocks as a sealed class on `kind`, the `$param` value class), the loader with strict parsing and `x-` keys, and the semantic lint.
+- `character`: the serializable model from `docs/hld/data-model.md` (template, body plan, part instance with its grain field, blocks as a sealed interface on `kind` that own `build`, `lint`, `joints`, `sockets` and `areas`, the `$param` value class, `Anchor` with its patch name), the loader with strict parsing and `x-` keys, and the semantic lint. No `when` over block kinds outside the block classes and `schema-gen`.
 - `schema-gen`: the descriptor walk, the `generateSchemas` task, the committed schemas under `schema/`, and the staleness test.
 - `templates/`: the six starter files and `plans/canine-quadruped.plan.json`, passing schema and lint.
 - `document` and `graph`: the document type with a character holding part instances, the first commands (add part, set outline, set parameter), undo through `stretch-core`, and a graph with one node (part instance to slice row) that is `Settled`.
-- `geom`: curves (cubic Bezier, sampling, crossings with a line), the slice row builder for `tube`, `cap` and `joint`, and slices to mesh with fixed topology and mesh invariants. Unit and golden tests.
+- `geom`: curves (cubic Bezier sampling and crossings with a line; a cubic spline through sample points for the axis; a closed cubic B-spline with a fixed control-point count for sections, with the built-in profiles `circle`, `egg`, `keel` and `lens`), the `Patch` type (fixed grid, closed or open in v), the slice builder for `tube`, `cap` and `joint`, and patches to mesh with mesh invariants. Unit and golden tests.
 - `ui-design`: the icon folder and generate task wired like Stretch's, with the first Squash-only icons the boards need (mirror, part template bones, body curve, push), and the strings file.
 
 **Sessions 2 and on fan out.** Independent branches, one per line, merged by the orchestrator:
@@ -40,7 +40,7 @@ One orchestrating session per sitting. It plans, lands the shared skeleton itsel
 | --- | --- | --- | --- |
 | `sheet-layout` | `ui-screens`, `render` | One `NativeSurface`, four viewports with scissor and a camera each, Side, Top and Front locked to the selected part's axes, Full orbiting, guides projected between panes, the Layout segmented control | A |
 | `draw-outline` | `ui-screens`, `document` | The Draw outline tool: pen and mouse strokes in a locked pane become an `OutlineCurve` through a command, with cleanup (smooth, simplify, close or cut at the socket plane); the disagree highlight | 3, A-disagree |
-| `slice-build` | `geom`, `character`, `graph` | Views sizing slices: Side to height, Top to width, Front to cap; missing views from roundness; `toeRow`, `pad`, `skull` blocks; the derived mesh shown in every pane with the old result kept while a run is cancelled | 4 |
+| `slice-build` | `geom`, `character`, `graph` | Views sizing slices: Side to the axis spline and height, Top to width, Front to the cap or the section; missing views from the section profile; the open end on the socket plane; `toeRow`, `pad`, `skull` blocks; the derived mesh shown in every pane with the old result kept while a run is cancelled | 4 |
 | `oversketch` | `ui-screens`, `geom` | Edit curves tool: handles and points on the stored curve, oversketch a span, re-sample only that span; golden test for the untouched span | 5 |
 | `shell-screens` | `ui-screens`, `app` | Home with recent projects (no library), New character with the one body plan, Pick a part type with the starter set and sockets, the Parts drawer, the Part drawer with the template's parameters, status bar text | Home, 1, 2 |
 
