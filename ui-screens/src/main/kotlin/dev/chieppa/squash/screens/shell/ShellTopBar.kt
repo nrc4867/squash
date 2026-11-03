@@ -58,8 +58,8 @@ fun ShellTopBar(shell: Shell) {
         actions = {
             val history = session?.history
             TopBarActions(
-                onUndo = history?.takeUnless { home }?.let { { it.undo() } },
-                onRedo = history?.takeUnless { home }?.let { { it.redo() } },
+                onUndo = history?.takeUnless { home }?.let { { state.undo() } },
+                onRedo = history?.takeUnless { home }?.let { { state.redo() } },
                 onCommands = { shell.palette = true },
             )
         },

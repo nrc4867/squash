@@ -36,6 +36,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
@@ -77,7 +78,7 @@ class DrawOutlineToolTest {
         session.send(AddPart(PartInstance(id, found.ref)))
         state.session.value = session
         state.selectedPart.value = id
-        return Bench(state, session, DrawOutlineTool(state, look))
+        return Bench(state, session, DrawOutlineTool(state, look, TEST_CURVE_LOOK))
     }
 
     private fun camera(view: View) = LockedCamera(view, PartAxes.of(Vec3.X), SheetFit(Vec3(1f, 0f, 0f), SCALE), PANE_WIDTH, PANE_HEIGHT)

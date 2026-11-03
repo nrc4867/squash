@@ -1,12 +1,17 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.character.build.toOutline
+import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.OversketchOptions
+import dev.chieppa.squash.geom.OversketchPreview
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.cleanStroke
+import dev.chieppa.squash.geom.oversketchPreview
 
 /** A stroke as the outline it makes, with how far that strays from the stroke at worst, in screen pixels. */
 data class FittedOutline(val curve: OutlineCurve, val errorPixels: Float)
@@ -23,16 +28,14 @@ fun strokeEnds(view: View, openEnd: End?): StrokeEnds = when {
 /** [samples] in a view's plane, cleaned up as [ends] says, or null if they make no outline. [pixel] is a screen pixel's size in the plane. */
 fun fittedOutline(samples: List<CurvePoint>, ends: StrokeEnds, pixel: Float): FittedOutline? {
     val stroke = cleanStroke(samples.map { Vec2(it.x, it.y) }, ends, pixel) ?: return null
-    val segments = stroke.path.segments
-    val points = buildList {
-        add(segments.first().p0.toCurvePoint())
-        for (segment in segments) {
-            add(segment.p1.toCurvePoint())
-            add(segment.p2.toCurvePoint())
-            add(segment.p3.toCurvePoint())
-        }
-    }
-    return FittedOutline(OutlineCurve(points), stroke.maxError / pixel)
+    return FittedOutline(stroke.path.toOutline(), stroke.maxError / pixel)
 }
 
-private fun Vec2.toCurvePoint() = CurvePoint(x, y)
+/** What [samples] would redraw of [outline] if the stroke ended now, or null while it is too far to join. */
+fun strokeOverOutline(
+    outline: OutlineCurve,
+    samples: List<CurvePoint>,
+    ends: StrokeEnds,
+    pixel: Float,
+    options: OversketchOptions,
+): OversketchPreview? = oversketchPreview(outline.toPath(), samples.map { Vec2(it.x, it.y) }, ends, pixel, options)

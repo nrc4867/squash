@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +19,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.render.PixelRect
@@ -41,6 +43,9 @@ private const val ORBIT_MARGIN = 1.5f
 
 /** The view that shows as active until a pane is pressed. */
 private val FIRST_ACTIVE = View.SIDE
+
+/** The test tag of [pane] in the sheet. */
+fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 
 /**
  * The workspace's viewport area as the board draws it: the strip with [tools] and the Layout control, then Top, Full,
@@ -70,8 +75,9 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
     val rects = sheetPaneRects(size.width, size.height, gap)
     val held = remember(part?.id, size) { HeldCameras() }
-    val cameras = if (part == null || size == IntSize.Zero) emptyMap() else held.camerasFor(part, rects)
+    val cameras = if (part == null || size == IntSize.Zero) emptyMap() else held.camerasFor(part, rects, tool?.holdsFit == true)
     val partId = part?.id
+    val refitting = rememberRefitting(state)
     LaunchedEffect(partId) {
         if (part != null) orbit.lookAt(part.center.toGpu(), part.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
     }
@@ -98,10 +104,17 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
                 camera == null -> Modifier
                 else -> Modifier.pressed(view) { active = it }.then(tool?.pointerInput(view, camera) ?: Modifier)
             }
-            val chip = if (selection == null) null else paneChip(pane, selection.outlines.keys, tool?.drawingIn)
-            PaneViewport(pane, chip, input)
+            val chip = if (selection == null) null else paneChip(pane, selection.outlines.keys, tool?.drawingIn, refitting)
+            PaneViewport(pane, chip, input.testTag(sheetPaneTag(pane)), view?.let { tool?.fitErrorPixels(it) })
         }
     }
+}
+
+/** Whether the open character's graph is still deriving, which is what a refit is. */
+@Composable
+private fun rememberRefitting(state: AppState): Boolean {
+    val session by state.session.collectAsState()
+    return session?.graph?.settled?.collectAsState()?.value == false
 }
 
 /** Reports a press in the pane without taking it from anything else. */
@@ -117,7 +130,8 @@ private class HeldCameras {
     private var fit: SheetFit? = null
     private var cameras: Map<View, LockedCamera> = emptyMap()
 
-    fun camerasFor(part: SheetPart, rects: List<PixelRect>): Map<View, LockedCamera> {
+    fun camerasFor(part: SheetPart, rects: List<PixelRect>, hold: Boolean): Map<View, LockedCamera> {
+        if (hold && cameras.isNotEmpty()) return cameras
         val next = keepFit(fit, part.axes, part.extents, rects)
         if (next != fit) {
             fit = next

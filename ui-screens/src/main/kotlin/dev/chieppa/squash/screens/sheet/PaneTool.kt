@@ -27,4 +27,10 @@ interface PaneTool {
 
     /** The view a stroke is in progress in, which shows as Drawing. */
     val drawingIn: View? get() = liveStroke?.view
+
+    /** How far [view]'s outline strays from the stroke it was fitted to, in screen pixels, when it was fitted here. */
+    fun fitErrorPixels(view: View): Float? = null
+
+    /** Whether the panes hold their cameras still, because a drag is moving the part under them. */
+    val holdsFit: Boolean get() = false
 }

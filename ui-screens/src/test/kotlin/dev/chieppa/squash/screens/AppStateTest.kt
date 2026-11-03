@@ -34,6 +34,18 @@ class AppStateTest {
     }
 
     @Test
+    fun undoWaitsForAnOpenGesture() {
+        val state = created()
+        val history = assertNotNull(state.session.value).history
+        val before = history.document.value
+        val gesture = history.begin()
+        state.undo()
+        state.redo()
+        gesture.commit()
+        assertEquals(before, history.document.value)
+    }
+
+    @Test
     fun placingAPickedSocketSelectsTheLeftSide() {
         val state = created()
         val session = assertNotNull(state.session.value)

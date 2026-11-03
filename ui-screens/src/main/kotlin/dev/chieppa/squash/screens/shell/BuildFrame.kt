@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_drawer_curves
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
@@ -56,10 +57,11 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val picked by state.pickedType.collectAsState()
     val open = session
     val pickedName = picked.takeIf { screen == Screen.PICK_PART }?.let { state.templates.template(it) }?.name
+    val curvesTitle = stringResource(Res.string.edit_drawer_curves).takeIf { rememberPartIsDrawn(state) }
     val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = PARTS_KEYS) {
         PartsDrawerContent(state)
     }
-    val part = DrawerSpec(DrawerIds.PART, pickedName ?: stringResource(Res.string.shell_drawer_part), StretchIcons.Settings) {
+    val part = DrawerSpec(DrawerIds.PART, pickedName ?: curvesTitle ?: stringResource(Res.string.shell_drawer_part), StretchIcons.Settings) {
         PartDrawerContent(state)
     }
     val help = DrawerSpec(DrawerIds.HELP, stringResource(Res.string.shell_drawer_help), StretchIcons.Help) {

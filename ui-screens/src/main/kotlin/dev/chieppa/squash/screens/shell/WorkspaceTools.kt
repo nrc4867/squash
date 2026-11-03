@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.shell_action_draw
 import dev.chieppa.squash.uidesign.generated.shell_action_edit_curves
 import dev.chieppa.stretch.theme.StretchIcons
@@ -19,12 +20,22 @@ import org.jetbrains.compose.resources.stringResource
 
 private val TOOL_SIZE = 34.dp
 
-/** The workspace's tool buttons for the strip above the panes: Draw outline and Edit curves. */
+/** The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn, and Edit curves. */
 @Composable
 fun WorkspaceTools(state: AppState) {
     val tool by state.tool.collectAsState()
-    ToolItem(BuildTool.DRAW_OUTLINE, StretchIcons.Pen, stringResource(Res.string.shell_action_draw), "D", tool) { state.tool.value = it }
+    val draw = stringResource(if (rememberPartIsDrawn(state)) Res.string.edit_tool_oversketch else Res.string.shell_action_draw)
+    ToolItem(BuildTool.DRAW_OUTLINE, StretchIcons.Pen, draw, "D", tool) { state.tool.value = it }
     ToolItem(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, stringResource(Res.string.shell_action_edit_curves), "E", tool) { state.tool.value = it }
+}
+
+/** Whether the selected part has an outline drawn, which the tools and the drawer read as a part being reshaped. */
+@Composable
+fun rememberPartIsDrawn(state: AppState): Boolean {
+    val session by state.session.collectAsState()
+    val selected by state.selectedPart.collectAsState()
+    val document = session?.document?.collectAsState()?.value
+    return selected?.let { document?.character?.part(it) }?.outlines?.isNotEmpty() == true
 }
 
 @Composable

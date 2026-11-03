@@ -7,6 +7,7 @@ private const val SIMPLIFY_TOLERANCE_PIXELS = 0.25f
 private const val FIT_SPACING_PIXELS = 8f
 private const val MIN_LENGTH_PIXELS = 6f
 private const val CLOSE_GAP_PIXELS = 16f
+private const val NEAR_PIXELS = 24f
 
 private const val MAX_SMOOTH_PASSES = 8
 
@@ -60,7 +61,7 @@ fun cleanStroke(
     return CleanStroke(BezierPath(segments), closed, maxError(shape, segments))
 }
 
-private fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int): List<Vec2> {
+internal fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int): List<Vec2> {
     val corners = cornerIndices(points, CORNER_WINDOW, CORNER_COSINE, closed).toSet()
     val pinned = if (closed && 0 in corners) corners + points.lastIndex else corners
     return smooth(points, passes, closed, pinned)
@@ -86,10 +87,10 @@ private fun fitSeamless(ring: List<Vec2>, pixel: Float): List<CubicBezier> {
 }
 
 /** A section's end directions are the first and last edges of its simplified line, long on a straight run. */
-private fun fitSection(section: List<Vec2>, pixel: Float): List<CubicBezier> {
+private fun fitSection(section: List<Vec2>, pixel: Float, startTangent: Vec2? = null, endTangent: Vec2? = null): List<CubicBezier> {
     val line = simplified(section, pixel)
-    val start = (line[1] - line[0]).unit()
-    val end = (line[line.lastIndex - 1] - line.last()).unit()
+    val start = startTangent ?: (line[1] - line[0]).unit()
+    val end = endTangent ?: (line[line.lastIndex - 1] - line.last()).unit()
     return fitCubics(fitPoints(line, pixel), FIT_TOLERANCE_PIXELS * pixel, start, end)
 }
 
@@ -106,4 +107,29 @@ private fun rotatedToStartAt(ring: List<Vec2>, index: Int): List<Vec2> =
 private fun maxError(points: List<Vec2>, segments: List<CubicBezier>): Float {
     val flat = segments.flatMap { it.sample(ERROR_SAMPLES_PER_SEGMENT) }
     return points.maxOf { point -> (1 until flat.size).minOf { distanceToSegment(point, flat[it - 1], flat[it]) } }
+}
+
+/** The spacing strokes are resampled to, for a screen pixel of size [pixel]. */
+internal fun strokeSpacing(pixel: Float): Float = SPACING_PIXELS * pixel
+
+/** How close a stroke's ends must come to close it. */
+internal fun closeGap(pixel: Float): Float = CLOSE_GAP_PIXELS * pixel
+
+/** How far from a curve a stroke's end still joins it. */
+internal fun nearReach(pixel: Float): Float = NEAR_PIXELS * pixel
+
+/** [samples] resampled and smoothed with corners held, both ends where they were. Null for a stroke too short to be one. */
+internal fun smoothedOpenLine(samples: List<Vec2>, pixel: Float): List<Vec2>? {
+    if (samples.size < 2 || arcLength(samples) < MIN_LENGTH_PIXELS * pixel) return null
+    return smoothed(resample(samples, strokeSpacing(pixel)), closed = false, (DEFAULT_STROKE_SMOOTH * MAX_SMOOTH_PASSES).toInt())
+}
+
+/** An open run fitted between its corners. A given tangent leaves that end as [fitCubics] takes it; otherwise the run's own direction does. */
+internal fun fitOpenRun(shape: List<Vec2>, pixel: Float, startTangent: Vec2?, endTangent: Vec2?): CleanStroke {
+    val cuts = listOf(0) + cornerIndices(shape, CORNER_WINDOW, CORNER_COSINE) + shape.lastIndex
+    val pieces = cuts.zipWithNext()
+    val segments = pieces.flatMapIndexed { i, (from, to) ->
+        fitSection(shape.subList(from, to + 1), pixel, startTangent.takeIf { i == 0 }, endTangent.takeIf { i == pieces.lastIndex })
+    }
+    return CleanStroke(BezierPath(segments), false, maxError(shape, segments))
 }

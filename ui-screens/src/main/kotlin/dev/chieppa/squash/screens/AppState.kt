@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.screens.edit.CurveEditState
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.OpenSocket
 import dev.chieppa.squash.screens.shell.ScratchFormat
@@ -49,6 +50,9 @@ class AppState(
 
     val tool = MutableStateFlow(BuildTool.DRAW_OUTLINE)
 
+    /** What the curve tools remember: selection, oversketch settings and readouts. */
+    val curves = CurveEditState()
+
     /** What Pick a part type has chosen so far. */
     val pickedSocket = MutableStateFlow<OpenSocket?>(null)
     val pickedType = MutableStateFlow<TemplateId?>(null)
@@ -68,6 +72,7 @@ class AppState(
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
         clearPick()
+        curves.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
@@ -95,7 +100,18 @@ class AppState(
         file.value = null
         selectedPart.value = null
         clearPick()
+        curves.clear()
         screen.value = Screen.HOME
+    }
+
+    /** Takes back the last step, unless a drag holds a gesture open on the history. */
+    fun undo() {
+        session.value?.history?.takeUnless { it.inGesture }?.undo()
+    }
+
+    /** Brings back the last undone step, unless a drag holds a gesture open on the history. */
+    fun redo() {
+        session.value?.history?.takeUnless { it.inGesture }?.redo()
     }
 
     /** Runs [then] once the open character's changes are safe, asking first when there are any. */

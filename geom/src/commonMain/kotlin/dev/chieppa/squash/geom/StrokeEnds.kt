@@ -66,7 +66,7 @@ fun cutAtPlane(points: List<Vec2>, closed: Boolean, ends: StrokeEnds.CutAtPlane)
 }
 
 /** The longest stretch of [points] with x on the [sign] side of [plane], with its crossings placed exactly on the plane. */
-private fun longestRun(points: List<Vec2>, closed: Boolean, plane: Float, sign: Float): List<Vec2>? {
+internal fun longestRun(points: List<Vec2>, closed: Boolean, plane: Float, sign: Float): List<Vec2>? {
     fun kept(p: Vec2) = (p.x - plane) * sign >= 0f
     fun crossing(a: Vec2, b: Vec2) = Vec2(plane, a.y + (b.y - a.y) * ((plane - a.x) / (b.x - a.x)))
     val runs = mutableListOf<MutableList<Vec2>>()

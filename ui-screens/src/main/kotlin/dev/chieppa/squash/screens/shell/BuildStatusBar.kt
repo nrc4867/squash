@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_status_section
+import dev.chieppa.squash.uidesign.generated.edit_status_sections
 import dev.chieppa.squash.uidesign.generated.shell_status_building
 import dev.chieppa.squash.uidesign.generated.shell_status_parts
 import dev.chieppa.squash.uidesign.generated.shell_status_ready
@@ -38,6 +40,7 @@ fun BuildStatusBar(shell: Shell) {
     val plan = state.templates.plan(document.character.bodyPlan)
     val part = selected?.let(document.character::part)
     val template = part?.let { state.templates.template(it.template) }
+    val touched = state.curves.refit?.takeIf { screen == Screen.WORKSPACE && it.part == part?.id && part.outlines[it.view] == it.curve }
     StatusBar(
         start = {
             Box(Modifier.testTag(ShellTags.STATUS_START)) {
@@ -51,6 +54,9 @@ fun BuildStatusBar(shell: Shell) {
         end = {
             Box(Modifier.testTag(ShellTags.STATUS_END)) {
                 when {
+                    touched != null -> StatusItem(
+                        stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
+                    )
                     screen == Screen.WORKSPACE && part != null && template != null -> {
                         val counts = viewCounts(template, part)
                         StatusItem(stringResource(Res.string.shell_status_views, counts.drawn, counts.fromTemplate))

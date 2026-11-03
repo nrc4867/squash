@@ -104,4 +104,27 @@
 
     <string name="pick_socket_hud">Socket · %1$s</string>
     <string name="pick_draw">Draw %1$s</string>
+
+    <string name="edit_tool_oversketch">Oversketch</string>
+    <string name="edit_drawer_curves">Outline curves</string>
+    <string name="edit_selected_point">Selected point</string>
+    <string name="edit_x">X</string>
+    <string name="edit_y">Y</string>
+    <string name="edit_handle">Handle</string>
+    <string name="edit_handle_smooth">Smooth</string>
+    <string name="edit_handle_corner">Corner</string>
+    <string name="edit_falloff">Falloff</string>
+    <string name="edit_percent">%1$d%</string>
+    <string name="edit_snap_ends">Snap ends</string>
+    <string name="edit_outlines">Outlines</string>
+    <string name="edit_points">%1$d pts</string>
+    <string name="edit_none">none</string>
+    <string name="edit_chip_pixels">%1$s px</string>
+    <string name="edit_refit">Refit</string>
+    <string name="edit_status_section">%1$d section touched</string>
+    <string name="edit_status_sections">%1$d sections touched</string>
+    <string name="edit_toast_section">Section %1$d</string>
+    <string name="edit_toast_sections">Sections %1$d–%2$d</string>
+    <string name="edit_toast_refit">%1$s refit · other sections unchanged</string>
+    <string name="edit_toast_refit_whole">%1$s refit · whole part rebuilt</string>
 </resources>

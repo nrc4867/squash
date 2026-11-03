@@ -110,8 +110,8 @@ fun Shell.registerActions() {
     action(ShellActions.SAVE, "save", chord("Ctrl S"), hasCharacter) { save() }
     action(ShellActions.SAVE_AS, null, chord("Ctrl Shift S"), hasCharacter) { save(asNew = true) }
     action(ShellActions.CLOSE, null, available = hasCharacter) { close() }
-    action(ShellActions.UNDO, "undo", chord("Ctrl Z"), hasCharacter) { state.session.value?.history?.undo() }
-    action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), hasCharacter) { state.session.value?.history?.redo() }
+    action(ShellActions.UNDO, "undo", chord("Ctrl Z"), hasCharacter) { state.undo() }
+    action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), hasCharacter) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
     action(ShellActions.PARTS, "parts", chord("B"), inFrame) { toggle(DrawerIds.PARTS) }
     action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
