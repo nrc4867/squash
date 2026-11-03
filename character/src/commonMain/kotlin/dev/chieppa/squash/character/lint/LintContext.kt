@@ -17,6 +17,10 @@ class LintContext(val template: PartTemplate, private val path: String) {
 
     fun block(name: String): Block? = template.blocks.firstOrNull { it.name == name }
 
+    /** Whether the block named [name] comes before [block] in the file, as the blocks that read it need. */
+    fun listedBefore(name: String, block: Block): Boolean =
+        template.blocks.indexOfFirst { it.name == name } < template.blocks.indexOf(block)
+
     fun unit(field: String, value: Float?): List<Finding> =
         if (value == null || value in 0f..1f) emptyList() else finding(field, "$value is outside 0 to 1")
 

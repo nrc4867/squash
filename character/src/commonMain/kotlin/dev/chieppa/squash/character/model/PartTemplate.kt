@@ -15,11 +15,17 @@ const val TEMPLATE_FORMAT = 1
 /** The parameter that sets a part's axis length; 1 when a template has none. */
 const val SIZE_PARAM = "size"
 
+private const val DEFAULT_BEND_AT = 0.5f
+
 @Serializable
 @Doc("The rest direction before anything is drawn.")
 data class AxisSpec(
     @Doc("From the socket end toward the tip, in body space.")
     val rest: Direction,
+    @Doc("How far the axis sits toward the underside at bendAt with nothing drawn, as a fraction of its length.")
+    val bend: Param? = null,
+    @Doc("Where along the axis it bends.") @Range(min = 0.0, max = 1.0)
+    val bendAt: Float = DEFAULT_BEND_AT,
 )
 
 /** The body patch's fixed grid. */

@@ -1,0 +1,24 @@
+package dev.chieppa.squash.geom
+
+import kotlin.math.abs
+
+private const val VERTICAL_AXIS_DOT = 0.99f
+
+/**
+ * A part's own axes, in body space: [along] the rest axis from the socket end, [up] toward v = 0, [side] toward
+ * v = 0.25. The socket plane is a = 0.
+ */
+data class PartAxes(val along: Vec3, val up: Vec3) {
+    val side: Vec3 get() = up cross along
+
+    fun point(a: Float, b: Float, c: Float): Vec3 = along * a + up * b + side * c
+
+    companion object {
+        /** Axes around [rest]; up is body up, or body forward when the rest axis is itself nearly vertical. */
+        fun of(rest: Vec3): PartAxes {
+            val along = rest.normalized()
+            val reference = if (abs(along dot Vec3.Y) > VERTICAL_AXIS_DOT) Vec3.X else Vec3.Y
+            return PartAxes(along, (reference - along * (reference dot along)).normalized())
+        }
+    }
+}

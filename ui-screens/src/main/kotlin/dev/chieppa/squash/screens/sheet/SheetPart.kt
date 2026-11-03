@@ -4,13 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.PartMesh
-import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.RenderMesh
 import dev.chieppa.squash.render.silhouette
@@ -34,13 +32,8 @@ class SheetPart(
     val floor: Vec3 = Vec3(center.x, (0 until mesh.vertexCount).minOf { mesh.position(it).y }, center.z)
 }
 
-/** The panes' one seam with the build: how a built part becomes a mesh. */
-private fun partMesh(id: PartId, template: PartTemplate, patches: List<Patch>): PartMesh =
-    PartBuilder.mesh(id.value, template, patches)
-
 /** Everything the panes derive from one build of a part, or null for a build with nothing in it. */
-fun sheetPart(id: PartId, template: PartTemplate, patches: List<Patch>): SheetPart? {
-    val built = partMesh(id, template, patches)
+fun sheetPart(id: PartId, template: PartTemplate, built: PartMesh): SheetPart? {
     val mesh = RenderMesh.of(built)
     val axes = PartAxes.of(template.axis.rest.toVec3())
     val extents = axes.extentsOf(mesh) ?: return null
@@ -59,8 +52,8 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val selected = id ?: return null
     val document by remember(open) { open.document }.collectAsState()
     val instance = document.character.part(selected) ?: return null
-    val patches by remember(open, selected) { open.patches(selected).output }.collectAsState()
+    val built by remember(open, selected) { open.mesh(selected).output }.collectAsState()
     val template = remember(open, instance.template) { open.templates[instance.template] }
-    val part = remember(selected, template, patches) { patches?.let { sheetPart(selected, template, it) } } ?: return null
+    val part = remember(selected, template, built) { built?.let { sheetPart(selected, template, it) } } ?: return null
     return SheetSelection(part, instance.outlines)
 }

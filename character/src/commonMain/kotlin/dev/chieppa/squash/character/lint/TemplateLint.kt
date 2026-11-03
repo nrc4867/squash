@@ -8,7 +8,8 @@ private const val MIN_RINGS_PER_JOINT = 2
 /** The semantic checks a part template's schema cannot express. See HLD: data-model, Verifiable. */
 object TemplateLint {
     fun lint(template: PartTemplate): List<Finding> =
-        format(template) + params(template) + section(template) + blocks(template) + joints(template) + names(template)
+        format(template) + params(template) + axis(template) + section(template) + blocks(template) + joints(template) +
+            names(template)
 
     private fun format(template: PartTemplate) =
         if (template.format == TEMPLATE_FORMAT) emptyList()
@@ -22,6 +23,11 @@ object TemplateLint {
             if (spec.min != null && value < spec.min) add(Finding(path, "default $value is below the minimum"))
             if (spec.max != null && value > spec.max) add(Finding(path, "default $value is above the maximum"))
         }
+    }
+
+    private fun axis(template: PartTemplate): List<Finding> {
+        val context = LintContext(template, "$.axis")
+        return context.param("bend", template.axis.bend) + context.unit("bendAt", template.axis.bendAt)
     }
 
     private fun section(template: PartTemplate) = LintContext(template, "$").section("section", template.section)

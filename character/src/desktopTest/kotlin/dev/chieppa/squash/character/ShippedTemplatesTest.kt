@@ -3,24 +3,20 @@ package dev.chieppa.squash.character
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.MeshInvariants
-import java.nio.file.Files
+import dev.chieppa.squash.golden.GoldenFixture
 import java.nio.file.Path
 import java.util.Locale
-import kotlin.io.path.exists
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 private const val RANDOM_BUILDS = 25
 
 class ShippedTemplatesTest {
-    /** A golden fixture is one template's whole build; these are built entirely from blocks that build today. */
-    private val goldenIds = setOf("leg", "torso", "ear", "tail")
-
     @Test
     fun theSixStarterTemplatesAndThePlanLoadAndLint() {
         assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value })
@@ -63,12 +59,18 @@ class ShippedTemplatesTest {
     @Test
     fun aFlagSwitchesItsBlocksOff() {
         val paw = shipped.parts.first { it.id.value == "paw" }
-        assertEquals(PartBuilder.build(paw), PartBuilder.build(paw, mapOf("pads" to 0f)))
+        val on = PartBuilder.build(paw)
+        val off = PartBuilder.build(paw, mapOf("pads" to 0f))
+        assertNotEquals(on, off)
+        assertTrue(on.any { it.name.startsWith("pad:") })
+        assertTrue(off.none { it.name.startsWith("pad:") })
+        assertEquals(on.filterNot { it.name.startsWith("pad:") }, off)
     }
 
     @Test
     fun defaultBuildsMatchTheirFixtures() {
-        for (template in shipped.parts.filter { it.id.value in goldenIds }) {
+        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value })
+        for (template in shipped.parts) {
             val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template))
             val text = mesh.patches.joinToString("") { patch ->
                 val xs = (0 until patch.vertexCount).map { patch.patch.point(it) }
@@ -82,12 +84,7 @@ class ShippedTemplatesTest {
                     xs.minOf { it.z }, xs.maxOf { it.z },
                 )
             }
-            val fixture = Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt")
-            if (!fixture.exists()) {
-                Files.createDirectories(fixture.parent)
-                fixture.writeText(text)
-            }
-            assertEquals(fixture.readText().replace("\r\n", "\n"), text, template.id.value)
+            GoldenFixture.check(Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt"), text, "character")
         }
     }
 
@@ -96,8 +93,10 @@ class ShippedTemplatesTest {
         assertTrue(patches.isNotEmpty(), template.id.value)
         val mesh = PartBuilder.mesh(template.id.value, template, patches)
         for (patch in mesh.patches) {
-            assertEquals(template.topology.rings, patch.patch.nu)
-            assertEquals(template.topology.segments, patch.patch.nv)
+            if (patch.patch.name == BODY_PATCH) {
+                assertEquals(template.topology.rings, patch.patch.nu)
+                assertEquals(template.topology.segments, patch.patch.nv)
+            }
             val problems = MeshInvariants.check(patch, PartBuilder.openRings(template, patch.patch))
             assertEquals(emptyList(), problems, "${template.id.value} with $params")
         }

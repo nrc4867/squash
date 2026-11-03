@@ -31,17 +31,47 @@ class Node<I, O : Any> internal constructor(
     private val published = MutableStateFlow(Published<O>(0L, null, null))
     private val cache = MutableStateFlow<Map<I, O>>(emptyMap())
     private var running: Job? = null
+    private var upstream: Node<*, *>? = null
+    private val delivered = MutableStateFlow(0L)
 
     val output: StateFlow<O?> = DerivedStateFlow({ published.value.value }, published)
 
-    /** What the latest run threw, or null if it succeeded. */
+    /** What the latest run threw, or null if it succeeded. A following node also holds what the node it follows threw. */
     val failure: StateFlow<Throwable?> = DerivedStateFlow({ published.value.failure }, published)
 
-    internal val isClean: Boolean get() = completed.value >= latest.value
+    /** Clean only once the node it follows, if any, is clean and its latest result has reached this one. */
+    internal val isClean: Boolean
+        get() {
+            val followed = upstream
+            val caughtUp = followed == null || (followed.isClean && delivered.value == followed.published.value.generation)
+            return caughtUp && completed.value >= latest.value
+        }
 
     /** Collects unconfined, so a new input marks the node dirty inside the call that set it. */
     internal fun start(input: Flow<I>) {
         scope.launch(Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) { input.collect(::accept) }
+    }
+
+    /** Takes [source]'s results as input. Its failure passes through, and this node keeps its own last result. */
+    internal fun follow(source: Node<*, I & Any>) {
+        upstream = source
+        scope.launch(Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
+            source.published.collect { result ->
+                val failure = result.failure
+                val value = result.value
+                when {
+                    failure != null -> reject(failure)
+                    value != null -> accept(value)
+                }
+                delivered.value = result.generation
+                changed()
+            }
+        }
+    }
+
+    private fun reject(failure: Throwable) {
+        running?.cancel()
+        finish(latest.updateAndGet { it + 1 }, null, failure)
     }
 
     private fun accept(value: I) {

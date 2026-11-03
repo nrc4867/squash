@@ -1,6 +1,7 @@
 package dev.chieppa.squash.geom
 
 private const val POLE_TOLERANCE = 1e-6f
+private const val INDICES_PER_QUAD = 6
 
 /** The triangles of one patch over its grid, with every vertex's bone, u and v. A pole's triangles share one vertex. */
 class PatchMesh(
@@ -26,12 +27,18 @@ object MeshBuilder {
         val vertices = nu * nv
         val us = FloatArray(vertices) { ringU[it / nv] }
         val vs = FloatArray(vertices) { (it % nv).toFloat() / (if (patch.closedV) nv else nv - 1) }
-        val bones = IntArray(vertices) { boneAt(us[it]) }
+        val bones = IntArray(vertices) { boneAt(patch.boneU ?: us[it]) }
         val pole = BooleanArray(nu) { isPole(patch, it) }
         fun vertex(ring: Int, segment: Int) = patch.index(ring, if (pole[ring]) 0 else segment)
 
-        val indices = ArrayList<Int>(vertices * 6)
         val segmentCount = if (patch.closedV) nv else nv - 1
+        val indices = IntArray((nu - 1) * segmentCount * INDICES_PER_QUAD)
+        var o = 0
+        fun triangle(x: Int, y: Int, z: Int) {
+            indices[o++] = x
+            indices[o++] = y
+            indices[o++] = z
+        }
         for (ring in 0 until nu - 1) {
             for (segment in 0 until segmentCount) {
                 val next = (segment + 1) % nv
@@ -39,11 +46,11 @@ object MeshBuilder {
                 val b = vertex(ring, next)
                 val c = vertex(ring + 1, next)
                 val d = vertex(ring + 1, segment)
-                if (a != b) indices += listOf(a, c, b)
-                if (c != d) indices += listOf(a, d, c)
+                if (a != b) triangle(a, c, b)
+                if (c != d) triangle(a, d, c)
             }
         }
-        return PatchMesh(patch, indices.toIntArray(), bones, us, vs)
+        return PatchMesh(patch, indices.copyOf(o), bones, us, vs)
     }
 
     private fun isPole(patch: Patch, ring: Int): Boolean {

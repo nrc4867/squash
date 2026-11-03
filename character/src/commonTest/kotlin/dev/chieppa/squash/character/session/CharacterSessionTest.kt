@@ -20,5 +20,6 @@ class CharacterSessionTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val session = CharacterSession(document, TemplateLibrary(emptyList()), backgroundScope, dispatcher)
         assertSame(session.patches(PartId("a")), session.patches(PartId("a")))
+        assertSame(session.mesh(PartId("a")), session.mesh(PartId("a")))
     }
 }

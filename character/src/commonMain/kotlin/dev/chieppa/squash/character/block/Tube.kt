@@ -29,6 +29,10 @@ data class Tube(
     val taper: Param = Param.of(1f),
     @Doc("Overrides the template's section.")
     val section: SectionSpec? = null,
+    @Doc("How far the section's sides curl toward v = 0, as a fraction of its half span.")
+    val cup: Param = Param.of(0f),
+    @Doc("How far the run sits toward the underside when nothing is drawn, as a fraction of the axis length.")
+    val drop: Param = Param.of(0f),
 ) : Block {
     override fun build(ctx: BuildContext): List<Patch> = listOf(
         SliceBuilder.tube(
@@ -39,16 +43,21 @@ data class Tube(
                 uEnd = u.end,
                 rings = ctx.template.topology.rings,
                 segments = ctx.template.topology.segments,
-                section = (section ?: ctx.template.section).spline(ctx.template.topology.segments),
+                section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).cupped(ctx.value(cup)),
                 radius = ctx.length(radius),
                 taper = ctx.value(taper),
                 startClosure = ctx.closure(End.START, u.start),
                 endClosure = ctx.closure(End.END, u.end),
                 jointUs = ctx.jointUs,
+                drop = ctx.length(drop),
+                socketNormal = ctx.axes.along,
+                views = ctx.views,
+                front = ctx.front,
             ),
         ),
     )
 
     override fun lint(ctx: LintContext): List<Finding> =
-        ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.section("section", section)
+        ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.section("section", section) +
+            ctx.param("cup", cup) + ctx.param("drop", drop)
 }

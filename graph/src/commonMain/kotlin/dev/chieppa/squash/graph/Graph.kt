@@ -32,6 +32,17 @@ class Graph(
         return node
     }
 
+    /**
+     * A node that recomputes from each result of [upstream]. The graph stays unsettled until that result has reached this
+     * node and run. A failure of [upstream] becomes this node's failure, keeping its last result.
+     */
+    fun <I : Any, O : Any> follow(upstream: Node<*, I>, cacheSize: Int = DEFAULT_CACHE_SIZE, compute: suspend (I) -> O): Node<I, O> {
+        val node = Node(scope, dispatcher, cacheSize, compute, ::changed)
+        nodes.update { it + node }
+        node.follow(upstream)
+        return node
+    }
+
     private fun changed() {
         changes.update { it + 1 }
     }

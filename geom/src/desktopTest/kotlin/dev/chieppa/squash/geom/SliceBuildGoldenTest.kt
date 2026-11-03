@@ -1,15 +1,17 @@
 package dev.chieppa.squash.geom
 
+import dev.chieppa.squash.golden.GoldenFixture
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
-import kotlin.io.path.exists
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-/** Vertex positions of a fixed tube against a saved fixture. A missing fixture is written, then reviewed in the diff. */
+/** Vertex positions of a fixed tube against a saved fixture. */
 class SliceBuildGoldenTest {
     @Test
     fun aTaperedRoundTubeMatchesItsFixture() {
@@ -33,11 +35,23 @@ class SliceBuildGoldenTest {
             val p = patch.point(i)
             "%.4f %.4f %.4f\n".format(Locale.ROOT, p.x, p.y, p.z)
         }
-        val fixture = Path.of("src/desktopTest/golden/tapered-tube.txt")
-        if (!fixture.exists()) {
-            Files.createDirectories(fixture.parent)
-            fixture.writeText(text)
-        }
-        assertEquals(fixture.readText().replace("\r\n", "\n"), text)
+        GoldenFixture.check(Path.of("src/desktopTest/golden/tapered-tube.txt"), text, "geom")
+    }
+
+    @Test
+    fun aMissingFixtureFailsAndSaysHowToRegenerate() {
+        val fixture = Files.createTempDirectory("golden").resolve("missing.txt")
+        val failure = assertFailsWith<AssertionError> { GoldenFixture.check(fixture, "text", "geom", update = false) }
+        assertTrue("-PupdateGoldens" in failure.message.orEmpty())
+        assertFalse(Files.exists(fixture))
+    }
+
+    @Test
+    fun onlyAnExplicitUpdateWritesAFixture() {
+        val fixture = Files.createTempDirectory("golden").resolve("written.txt")
+        GoldenFixture.check(fixture, "text", "geom", update = true)
+        assertEquals("text", fixture.readText())
+        GoldenFixture.check(fixture, "text", "geom", update = false)
+        assertFailsWith<AssertionError> { GoldenFixture.check(fixture, "other", "geom", update = false) }
     }
 }

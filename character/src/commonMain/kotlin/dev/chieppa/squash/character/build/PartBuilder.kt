@@ -3,19 +3,38 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.character.block.Block
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.MeshBuilder
+import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.Patch
 
-/** Builds a part's patches and mesh from its template and parameter values. */
+/** Builds a part's patches and mesh from its template, parameter values and drawn outlines. */
 object PartBuilder {
-    /** The patches of [template] with [params] over its defaults. */
-    fun build(template: PartTemplate, params: Map<String, Float> = emptyMap()): List<Patch> {
+    /** The patches of [template] with [params] over its defaults, sized by [outlines]. */
+    fun build(
+        template: PartTemplate,
+        params: Map<String, Float> = emptyMap(),
+        outlines: Map<View, OutlineCurve> = emptyMap(),
+    ): List<Patch> {
         val values = template.defaults + params
         val active = template.blocks.filter { it.isOn(values) }
-        val context = BuildContext(template, values, active)
-        return active.flatMap { it.build(context) }
+        val context = BuildContext(template, values, active, outlines)
+        active.forEach { context.add(it.build(context)) }
+        return context.built
     }
+
+    /** The patches of [instance], with its side's overrides replacing the shared values they name. */
+    fun build(template: PartTemplate, instance: PartInstance): List<Patch> = build(
+        template,
+        instance.params + instance.overrides.params,
+        instance.outlines + instance.overrides.outlines,
+    )
+
+    /** The axes an outline of [template] is drawn in and its patches are built in. */
+    fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3())
 
     fun mesh(part: String, template: PartTemplate, patches: List<Patch>): PartMesh {
         val joints = template.blocks.flatMap { it.joints() }.map { it.u }.sorted()

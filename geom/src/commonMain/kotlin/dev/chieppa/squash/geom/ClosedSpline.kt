@@ -14,6 +14,7 @@ private const val KNOT_CENTRE_WEIGHT = 4f
 private const val EGG_BULGE = 0.18f
 private const val KEEL_NARROWING = 0.55f
 private const val LENS_FLATNESS = 0.22f
+private const val MIN_SPAN = 1e-3f
 
 /**
  * A closed uniform cubic B-spline in a slice's plane: x toward the slice's side, y toward its up. v runs 0 to 1 around
@@ -51,6 +52,37 @@ data class ClosedSpline(val controlPoints: List<Vec2>) {
         val centre = Vec2((minX + maxX) / 2f, (minY + maxY) / 2f)
         val scale = 2f / max(maxX - minX, maxY - minY)
         return ClosedSpline(controlPoints.map { (it - centre) * scale })
+    }
+
+    /** The spans in x and y of this spline's samples at its own control-point count. */
+    fun spans(): Vec2 {
+        val points = sample(controlPoints.size)
+        return Vec2(points.maxOf { it.x } - points.minOf { it.x }, points.maxOf { it.y } - points.minOf { it.y })
+    }
+
+    /** This spline moved toward [other], control point by control point. */
+    fun lerp(other: ClosedSpline, t: Float): ClosedSpline {
+        require(other.controlPoints.size == controlPoints.size) { "Blending splines of different sizes" }
+        return ClosedSpline(controlPoints.indices.map { controlPoints[it] + (other.controlPoints[it] - controlPoints[it]) * t })
+    }
+
+    /** This spline with its sides curled toward its up by [amount], refitted to the unit span. */
+    fun cupped(amount: Float): ClosedSpline =
+        if (amount == 0f) this else ClosedSpline(controlPoints.map { Vec2(it.x, it.y + amount * it.x * it.x) }).fittedToUnit()
+
+    companion object {
+        /**
+         * A section with exactly [controlPoints] points evenly spaced along the closed [outline], fitted to the unit
+         * span: v = 0 at its highest point, running toward +x. Null if the outline has no area to speak of.
+         */
+        fun fromOutline(outline: Polyline2, controlPoints: Int): ClosedSpline? {
+            val clockwise = outline.signedArea() <= 0f
+            val around = if (clockwise) outline else outline.reversed()
+            val top = around.ys.indices.maxBy { around.ys[it] }
+            val spline = ClosedSpline(around.resampledClosed(top, controlPoints))
+            val spans = spline.spans()
+            return if (spans.x < MIN_SPAN || spans.y < MIN_SPAN) null else spline.fittedToUnit()
+        }
     }
 }
 

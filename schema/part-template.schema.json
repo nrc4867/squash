@@ -75,6 +75,31 @@
           "items": {
             "type": "number"
           }
+        },
+        "bend": {
+          "description": "How far the axis sits toward the underside at bendAt with nothing drawn, as a fraction of its length.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bendAt": {
+          "description": "Where along the axis it bends.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         }
       },
       "required": [
@@ -299,7 +324,7 @@
       "additionalProperties": false
     },
     "Pad": {
-      "description": "A raised area tagged with a palette slot.",
+      "description": "A raised area tagged with a palette slot, on the first run listed before it that reaches its u.",
       "type": "object",
       "properties": {
         "kind": {
@@ -339,6 +364,7 @@
           ]
         },
         "v": {
+          "description": "Around the surface; underneath when left out.",
           "anyOf": [
             {
               "type": "number",
@@ -351,7 +377,7 @@
           ]
         },
         "on": {
-          "description": "The toe row this pad repeats along, in place of u.",
+          "description": "The toe row this pad repeats along, in place of u. The row is listed before the pad.",
           "anyOf": [
             {
               "type": "string"
@@ -618,6 +644,7 @@
           }
         },
         "width": {
+          "description": "Full side to side extent, as a fraction of the axis length; the skull's own length when left out.",
           "anyOf": [
             {
               "oneOf": [
@@ -636,6 +663,7 @@
           ]
         },
         "depth": {
+          "description": "Full top to bottom extent, as a fraction of the axis length; the skull's own length when left out.",
           "anyOf": [
             {
               "oneOf": [
@@ -731,7 +759,7 @@
       "additionalProperties": false
     },
     "ToeRow": {
-      "description": "A row of small tubes fanned across the end, each with its own bone.",
+      "description": "A row of small tubes fanned across the end, each named for the row and its place in it.",
       "type": "object",
       "properties": {
         "kind": {
@@ -780,7 +808,7 @@
           ]
         },
         "spread": {
-          "description": "Degrees.",
+          "description": "Degrees from the axis of the outermost toe.",
           "oneOf": [
             {
               "type": "number"
@@ -803,6 +831,7 @@
           ]
         },
         "v": {
+          "description": "Where around the run before it the row sits; underneath when left out.",
           "anyOf": [
             {
               "type": "number",
@@ -940,6 +969,30 @@
             },
             {
               "type": "null"
+            }
+          ]
+        },
+        "cup": {
+          "description": "How far the section's sides curl toward v = 0, as a fraction of its half span.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "drop": {
+          "description": "How far the run sits toward the underside when nothing is drawn, as a fraction of the axis length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
             }
           ]
         }

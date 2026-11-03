@@ -5,6 +5,7 @@ import kotlin.math.abs
 private const val CROSSING_INTERVALS = 32
 private const val BISECTION_STEPS = 24
 private const val JOIN_TOLERANCE = 1e-4f
+private const val FLATTEN_STEPS = 16
 
 /** An infinite line in the plane through [point] along [direction]. */
 data class Line2(val point: Vec2, val direction: Vec2) {
@@ -70,5 +71,28 @@ data class BezierPath(val segments: List<CubicBezier>) {
             }
         }
         return points
+    }
+
+    /** This path as straight edges, [stepsPerSegment] to a segment. */
+    fun flatten(stepsPerSegment: Int = FLATTEN_STEPS): Polyline2 {
+        val count = segments.size * stepsPerSegment + 1
+        val xs = FloatArray(count)
+        val ys = FloatArray(count)
+        var o = 0
+        for ((index, segment) in segments.withIndex()) {
+            val first = if (index == 0) 0 else 1
+            for (step in first..stepsPerSegment) {
+                val t = step.toFloat() / stepsPerSegment
+                val s = 1f - t
+                val b0 = s * s * s
+                val b1 = 3f * s * s * t
+                val b2 = 3f * s * t * t
+                val b3 = t * t * t
+                xs[o] = b0 * segment.p0.x + b1 * segment.p1.x + b2 * segment.p2.x + b3 * segment.p3.x
+                ys[o] = b0 * segment.p0.y + b1 * segment.p1.y + b2 * segment.p2.y + b3 * segment.p3.y
+                o++
+            }
+        }
+        return Polyline2(xs, ys)
     }
 }

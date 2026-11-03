@@ -10,10 +10,12 @@ import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
+import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.stretch.core.History
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -69,6 +71,26 @@ class SliceRowNodeTest {
         assertEquals(0.8f, node.output.value!!.single().slices!![5].height, 1e-4f)
 
         history.undo()
+        assertTrue(graph.settled.value)
+        assertSame(before, node.output.value)
+    }
+
+    @Test
+    fun anOutlineCommandRebuildsFromTheOutline() = runTest {
+        val graph = graph()
+        val history = history(leg)
+        val node = graph.sliceRowNode(history.document, legId, library)
+        runCurrent()
+        val before = node.output.value
+
+        val side = outline(0f to 0.1f, 1f to 0.1f, 1f to -0.1f, 0f to -0.1f)
+        history.execute(SetOutline(legId, View.SIDE, side))
+        assertFalse(graph.settled.value)
+        runCurrent()
+        assertNotEquals(before, node.output.value)
+        assertEquals(0.2f, node.output.value!!.single().slices!![5].height, 1e-3f)
+
+        history.execute(SetOutline(legId, View.SIDE, null))
         assertTrue(graph.settled.value)
         assertSame(before, node.output.value)
     }

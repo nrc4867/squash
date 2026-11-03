@@ -2,11 +2,8 @@ package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.PartAxes as BuildAxes
 import dev.chieppa.squash.render.RenderMesh
-import kotlin.math.abs
-
-/** Above this, an axis counts as vertical and its up direction is taken from x. */
-private const val VERTICAL_AXIS_DOT = 0.99f
 
 /**
  * A part's own axes in the space its mesh is built in: [along] its axis from the socket, [up] where its slices' height
@@ -28,10 +25,8 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
     companion object {
         /** The axes of a template with rest axis [rest], the same ones its swept patches' first slice has. */
         fun of(rest: Vec3): PartAxes {
-            val along = rest.normalized()
-            val reference = if (abs(along dot Vec3.Y) > VERTICAL_AXIS_DOT) Vec3.X else Vec3.Y
-            val up = (reference - along * (reference dot along)).normalized()
-            return PartAxes(along, up, up cross along)
+            val axes = BuildAxes.of(rest)
+            return PartAxes(axes.along, axes.up, axes.side)
         }
     }
 }

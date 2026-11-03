@@ -1,0 +1,10 @@
+body vertices=256 triangles=464 x=0.000..0.600 y=-0.300..0.300 z=-0.300..0.300
+toes:0 vertices=80 triangles=128 x=0.550..1.000 y=-0.270..-0.090 z=0.122..0.384
+toes:1 vertices=80 triangles=128 x=0.550..1.000 y=-0.270..-0.090 z=-0.019..0.186
+toes:2 vertices=80 triangles=128 x=0.550..1.000 y=-0.270..-0.090 z=-0.186..0.019
+toes:3 vertices=80 triangles=128 x=0.550..1.000 y=-0.270..-0.090 z=-0.384..-0.122
+pad:palm vertices=84 triangles=120 x=0.230..0.589 y=-0.343..-0.198 z=-0.188..0.188
+pad:toe:0 vertices=84 triangles=120 x=0.752..0.905 y=-0.285..-0.222 z=0.201..0.340
+pad:toe:1 vertices=84 triangles=120 x=0.749..0.907 y=-0.285..-0.222 z=0.022..0.157
+pad:toe:2 vertices=84 triangles=120 x=0.749..0.907 y=-0.285..-0.222 z=-0.157..-0.022
+pad:toe:3 vertices=84 triangles=120 x=0.752..0.905 y=-0.285..-0.222 z=-0.340..-0.201

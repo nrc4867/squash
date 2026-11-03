@@ -35,7 +35,7 @@ class SheetFrameTest {
 
     private fun template(id: String) = templates.first { it.id.value == id }
 
-    private fun part(template: PartTemplate) = assertNotNull(sheetPart(PartId("p"), template, PartBuilder.build(template)))
+    private fun part(template: PartTemplate) = assertNotNull(sheetPart(PartId("p"), template, PartBuilder.mesh("p", template, PartBuilder.build(template))))
 
     private fun input(part: SheetPart, outlines: Map<View, OutlineCurve> = emptyMap(), active: View? = View.SIDE): SheetInput {
         val fit = fitSheet(part.axes, part.extents, rects)

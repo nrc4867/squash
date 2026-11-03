@@ -4,14 +4,15 @@
   "id": "leg",
   "version": 1,
   "name": "Leg",
-  "axis": { "rest": [0, -1, 0] },
+  "axis": { "rest": [0, -1, 0], "bend": "$stance", "bendAt": 0.55 },
   "openEnd": "start",
   "topology": { "rings": 24, "segments": 16 },
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",
   "params": {
     "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "thickness": { "default": 0.28, "min": 0.1, "max": 0.6 }
+    "thickness": { "default": 0.28, "min": 0.1, "max": 0.6 },
+    "stance":    { "default": 0.0,  "min": 0.0, "max": 0.25 }
   },
   "blocks": [
     { "kind": "tube",   "u": [0.0, 1.0], "radius": "$thickness" },

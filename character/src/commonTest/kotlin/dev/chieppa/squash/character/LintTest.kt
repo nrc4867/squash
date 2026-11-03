@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.block.Joint
 import dev.chieppa.squash.character.block.Landmark
 import dev.chieppa.squash.character.block.Pad
 import dev.chieppa.squash.character.block.Socket
+import dev.chieppa.squash.character.block.ToeRow
 import dev.chieppa.squash.character.block.Tube
 import dev.chieppa.squash.character.lint.BodyPlanLint
 import dev.chieppa.squash.character.lint.TemplateLint
@@ -116,6 +117,23 @@ class LintTest {
         val nowhere = Pad(size = Param.of(0.1f))
         val onNothing = Pad(on = "toes", size = Param.of(0.1f))
         assertEquals(listOf("$.blocks[1].u", "$.blocks[2].on"), paths(template(listOf(tube, nowhere, onNothing))))
+    }
+
+    @Test
+    fun aToePadComesAfterItsRow() {
+        val row = ToeRow("toes", u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f))
+        val pad = Pad(on = "toes", size = Param.of(0.1f))
+        assertEquals(emptyList(), paths(template(listOf(tube, row, pad))))
+        assertEquals(listOf("$.blocks[1].on"), paths(template(listOf(tube, pad, row))))
+    }
+
+    @Test
+    fun theAxisBendMustNameAParameterAndSitOnTheAxis() {
+        val bent = template(listOf(tube))
+        val missing = bent.copy(axis = bent.axis.copy(bend = Param("\$nope")))
+        assertEquals(listOf("$.axis.bend"), paths(missing))
+        val outside = bent.copy(axis = bent.axis.copy(bendAt = 1.5f))
+        assertEquals(listOf("$.axis.bendAt"), paths(outside))
     }
 
     @Test

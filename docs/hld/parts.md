@@ -14,9 +14,9 @@ When: starter is spike 1, first is the first version, later is after it.
 | Muzzle, snout, pointed nose | The head's muzzle block: length from Side, section from Front, cap shape round, flat (pig) or pointed (fox). A `pad` block at the tip is the nose leather, with its own palette slot | Starter |
 | Human nose | `nose` template, a small tube with a rounded cap on the face socket, since it protrudes from a flat face | First |
 | Beak | `beak` template on the muzzle socket: upper and lower tubes with pointed caps, sharing the jaw joint | Later |
-| Ears, all kinds | One `ear` template: a tube with the `lens` section, an inner area with its own color, a base joint that swivels, and parameters for cup, fold and floppiness. The Side and Front outlines give the shape; the kinds below are drawings and parameter settings, not templates | Starter |
+| Ears, all kinds | One `ear` template: a tube with the `lens` section, an inner area with its own color, a base joint that swivels, and a `cup` parameter. The Side and Front outlines give the shape; the kinds below are drawings and parameter settings, not templates | Starter |
 | Cat, fox, dog (pricked) | Triangular outline, cupped section, base swivel. Inner tufts are fur strokes | Starter |
-| Dog (floppy), lop bunny | A fold joint at a drawn u lets the ear hang; floppiness adds a short bone chain with springy follow-through, as a tail has | First |
+| Dog (floppy), lop bunny | A `fold` joint at a drawn u lets the ear hang; a `floppiness` parameter adds a short bone chain with springy follow-through, as a tail has | First |
 | Bunny (upright) | Long narrow outline, two or three bones along the length so it can bend and droop | First |
 | Horse, deer | Small cupped outline, swivel at the base | Starter |
 | Mouse, bear (round) | Round outline, shallow cup, nearly flat | Starter |
@@ -26,7 +26,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Eyes | A mark group with roles (lid, white, iris, pupil, highlight, brow, lashes) on the skull's eye region, with per-eye open, expression and dilation controls and a gaze system that moves the pupils toward a target. Bulging eyes are an `eye` sphere part carrying the same group. See [look.md](look.md), Eyes and gaze | First (spike 9) |
 | Mouth | A mark group with roles (lip line, inner, teeth, tongue, corners), an open control that drives the jaw and a lip morph together, and expression shapes; the line wraps the muzzle so it reads from the side. See [look.md](look.md), Mouth | First (spike 9) |
 | Teeth, fangs, tongue | Marks on the mouth line by default. A `fang` template on a lip socket; a `teeth` row along the mouth landmark; a `tongue` template on a socket inside the mouth | Later |
-| Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter sets the default joint positions and rest axis before anything is drawn | Starter |
+| Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter bends the rest axis, and the joints along it, before anything is drawn | Starter |
 | Arms | The `leg` template with arm joint names and a hanging rest axis: `arm` is a thin template file over the same blocks | First |
 | Paws | `paw` template: tube, toe row, pads underneath, cap | Starter |
 | Hands, fingers, palms, thumbs | `hand` template: the paw's blocks with a toe row of five long digits, three joints each, and a per-digit override that moves and angles the thumb. The palm is the tube and a pad | First |

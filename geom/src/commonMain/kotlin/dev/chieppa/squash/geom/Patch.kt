@@ -12,7 +12,8 @@ data class Slice(
 
 /**
  * A named surface: a fixed grid of [nu] rings by [nv] points, closed in v for a tube and open for a sheet. A ring whose
- * points all coincide is a pole. [slices] is present for swept patches.
+ * points all coincide is a pole. [slices] is present for swept patches. [boneU] is the u along the part that every
+ * vertex takes its bone from, for a patch whose own u does not run along the part.
  */
 class Patch(
     val name: String,
@@ -21,6 +22,7 @@ class Patch(
     val closedV: Boolean,
     val slices: List<Slice>?,
     val points: FloatArray,
+    val boneU: Float? = null,
 ) {
     init {
         require(points.size == nu * nv * COMPONENTS) { "Patch $name holds ${points.size} values for a $nu by $nv grid" }
@@ -33,7 +35,7 @@ class Patch(
 
     override fun equals(other: Any?): Boolean =
         other is Patch && name == other.name && nu == other.nu && nv == other.nv && closedV == other.closedV &&
-            slices == other.slices && points.contentEquals(other.points)
+            slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU
 
     override fun hashCode(): Int = 31 * (31 * name.hashCode() + nu) + points.contentHashCode()
 
