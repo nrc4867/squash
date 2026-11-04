@@ -35,12 +35,16 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 
 | Layer | Module | Holds |
 | --- | --- | --- |
-| App | `app` | Entry point; registers modes, drawers and commands with the Stretch frame |
-| Interfaces | `ui-screens` | Squash drawers, panels and layouts over state. Needs a window to test |
+| App | `app` | Entry point; `SquashApp`, which wires the screens together and registers modes, drawers and commands with the Stretch frame |
+| Interfaces | `screens-shell` | Home, New character, Pick a part type, the Build frame and its chrome |
+| Interfaces | `screens-sheet` | The panes, the layouts and Single |
+| Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
+| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions. No sources yet |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
+| Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
-| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), slice building, the slice row graph node, the open character session |
+| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row graph node, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
@@ -48,7 +52,9 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Core | `annotations` | `@Range` and `@Doc` only. Depended on by `character` and `schema-gen`, nothing else |
 | Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors |
 
-Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it.
+Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it. The `screens-*` modules reach `ui-design`, `render`, `character` and Stretch through `screens-core` and never depend on each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent` that `app` supplies.
+
+A test lives with the module it tests. Tests that need two `screens-*` modules at once, and the smoke tier, are in `app`'s test source set. Helpers tests share are in the `testFixtures` of `screens-core` and `screens-draw`.
 
 ## Rules
 

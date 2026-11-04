@@ -86,12 +86,16 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 
 | Layer | Module | Holds |
 | --- | --- | --- |
-| App | `app` | Entry point; registers modes, drawers and commands with the Stretch frame |
-| Interfaces | `ui-screens` | Squash drawers, panels and layouts over state |
+| App | `app` | Entry point; `SquashApp`, which wires the screens together and registers modes, drawers and commands with the Stretch frame |
+| Interfaces | `screens-shell` | Home, New character, Pick a part type, the Build frame and its chrome |
+| Interfaces | `screens-sheet` | The panes, the layouts and Single |
+| Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
+| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions. No sources yet |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
+| Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
-| Domain | `character` | Part templates and body plans, slice building, the slice row graph node, the open character session |
+| Domain | `character` | Part templates and body plans, the catalog over what is loaded, slice building, the slice row graph node, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain) and commands, on `stretch-core` |
 | Core | `graph` | The derived-data graph and `Settled` |
@@ -100,6 +104,8 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Tooling | `schema-gen` | The `generateSchemas` task |
 
 Stretch's modules sit below all of these.
+
+The `screens-*` modules never depend on each other. What they share is in `screens-core`, or in `character` where it is plain domain. `screens-core` exists because `AppState`, `PaneTool` and the locked cameras use both `ui-design` and `render`, which sit beside each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent`, and `app` supplies it.
 
 ### Principles
 
@@ -114,8 +120,8 @@ Logic bugs come first, so almost every test is a plain JVM unit test that runs i
 | Unit | Commands, undo, graph nodes, slice building, rig math | JUnit 5, `kotlinx-coroutines-test` with virtual time | Constantly, only the module being changed |
 | Command scenarios | A sequence of commands against a document, then assertions on state | `stretch-test`'s `scenario`, no UI | Constantly |
 | Golden | Generated meshes, rigs and schemas against saved fixtures | JUnit 5 | When a generator changes |
-| UI | A screen's structure and wiring, found by semantics tags | `runComposeUiTest`, waits for idle on its own | Per UI module, seconds |
-| Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. A native surface needs a window, so the swapchain path and the window around `SquashApp` are not covered | Needs a GPU; JUnit tag `slow`, run by `check -Pslow` | Before a merge only |
+| UI | A screen's structure and wiring, found by semantics tags; flows across screens are in `app`'s tests | `runComposeUiTest`, waits for idle on its own | Per UI module, seconds |
+| Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. A native surface needs a window, so the swapchain path and the window around `SquashApp` are not covered | Needs a GPU; JUnit tag `slow`, in `app`'s tests, run by `check -Pslow` | Before a merge only |
 
 - Waits are conditions with a timeout, never delays.
 - If a lower tier can catch it, it does not go in a higher tier.

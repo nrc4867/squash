@@ -9,7 +9,10 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":ui-screens"))
+    implementation(project(":screens-shell"))
+    implementation(project(":screens-sheet"))
+    implementation(project(":screens-draw"))
+    implementation(project(":screens-surface"))
     implementation("dev.chieppa.stretch:stretch-core")
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")
@@ -18,6 +21,18 @@ dependencies {
     implementation("dev.chieppa.stretch:stretch-devtools")
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
+
+    testImplementation(kotlin("test"))
+    testImplementation(testFixtures(project(":screens-core")))
+    testImplementation(testFixtures(project(":screens-draw")))
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    val templates = rootProject.layout.projectDirectory.dir("templates")
+    inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
+    systemProperty("squash.templates", templates.asFile.path)
 }
 
 compose.desktop {
