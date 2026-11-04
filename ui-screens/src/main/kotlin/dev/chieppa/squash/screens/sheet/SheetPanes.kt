@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.ViewsScene
@@ -34,12 +36,12 @@ import dev.chieppa.stretch.theme.Stretch
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/** The camera Full starts at: three quarters from the front, with the part's forward to the left as on the board. */
+/** The camera Full starts at: three quarters from the front, with the character's forward to the left as on the board. */
 private const val FULL_YAW = 2.54f
 private const val FULL_PITCH = 0.35f
 
-/** Room around a part in Full's view, as a multiple of what fits it exactly. */
-private const val ORBIT_MARGIN = 1.5f
+/** Room around the character in Full's view, as a multiple of what fits it exactly. */
+private const val ORBIT_MARGIN = 0.9f
 
 /** The view that shows as active until a pane is pressed. */
 private val FIRST_ACTIVE = View.SIDE
@@ -75,11 +77,13 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
     val rects = sheetPaneRects(size.width, size.height, gap)
     val held = remember(part?.id, size) { HeldCameras() }
-    val cameras = if (part == null || size == IntSize.Zero) emptyMap() else held.camerasFor(part, rects, tool?.holdsFit == true)
-    val partId = part?.id
+    val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, tool?.holdsFit == true || tool?.drawingIn != null)
     val refitting = rememberRefitting(state)
-    LaunchedEffect(partId) {
-        if (part != null) orbit.lookAt(part.center.toGpu(), part.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
+    val framed = selection?.box
+    val open by state.session.collectAsState()
+    val count = selection?.others?.count { !it.planned }
+    LaunchedEffect(open, count, framed != null) {
+        if (framed != null) orbit.lookAt(framed.center.toGpu(), framed.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
     }
     val frame = sheetFrame(
         SheetInput(
@@ -92,20 +96,23 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
             full = if (part != null) orbit.view else null,
             active = tool?.drawingIn ?: active,
             toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook()),
+            hints = SheetHints(state.curves.templateHint, state.curves.ghost),
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {
         NativeSurface(frame, renderer, Modifier.fillMaxSize(), onFailure = { it.printStackTrace() })
         SheetPaneGrid(gap, Modifier.fillMaxSize()) { pane ->
-            val view = pane.view
+            val body = pane.body
+            val axes = part?.axes
+            val view = if (body == null) null else axes?.framing?.getValue(body) ?: plainView(body)
             val camera = view?.let { cameras[it] }
             val input = when {
-                view == null -> Modifier.orbitNavigation(orbit)
+                body == null -> Modifier.orbitNavigation(orbit)
                 camera == null -> Modifier
-                else -> Modifier.pressed(view) { active = it }.then(tool?.pointerInput(view, camera) ?: Modifier)
+                else -> Modifier.pressed(camera.view) { active = it }.then(tool?.pointerInput(camera.view, camera) ?: Modifier)
             }
-            val chip = if (selection == null) null else paneChip(pane, selection.outlines.keys, tool?.drawingIn, refitting)
-            PaneViewport(pane, chip, input.testTag(sheetPaneTag(pane)), view?.let { tool?.fitErrorPixels(it) })
+            val chip = if (selection == null) null else paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting)
+            PaneViewport(view, chip, input.testTag(sheetPaneTag(pane)), view?.let { tool?.fitErrorPixels(it) })
         }
     }
 }
@@ -125,21 +132,42 @@ private fun Modifier.pressed(view: View, onPress: (View) -> Unit): Modifier = po
     }
 }
 
-/** The locked panes' cameras, kept between compositions so they stay the same objects while the fit holds. */
+/** The view a body view holds before there is a part to frame it. */
+private fun plainView(body: BodyView): View = when (body) {
+    BodyView.TOP -> View.TOP
+    BodyView.SIDE -> View.SIDE
+    BodyView.FRONT -> View.FRONT
+}
+
+/** The locked panes' cameras, kept between compositions so they stay the same objects while the fit and the socket hold. */
 private class HeldCameras {
     private var fit: SheetFit? = null
+    private var origin: Vec3? = null
+    private var scale: Float? = null
     private var cameras: Map<View, LockedCamera> = emptyMap()
 
-    fun camerasFor(part: SheetPart, rects: List<PixelRect>, hold: Boolean): Map<View, LockedCamera> {
+    /** [hold] keeps them still while a stroke or a drag is under way, whatever the part does beneath it. */
+    fun camerasFor(selection: SheetSelection, rects: List<PixelRect>, hold: Boolean): Map<View, LockedCamera> {
         if (hold && cameras.isNotEmpty()) return cameras
-        val next = keepFit(fit, part.axes, part.extents, rects)
-        if (next != fit) {
+        val part = selection.part
+        val next = keepFit(fit, part.box, rects, depthReach(selection, fit))
+        if (next != fit || part.origin != origin || selection.drawingScale != scale) {
             fit = next
+            origin = part.origin
+            scale = selection.drawingScale
             cameras = SheetPane.entries.mapNotNull { pane ->
+                val body = pane.body ?: return@mapNotNull null
                 val rect = rects[pane.ordinal]
-                pane.view?.let { it to LockedCamera(it, part.axes, next, rect.width, rect.height) }
+                val view = part.axes.framing.getValue(body)
+                view to LockedCamera(view, part.axes, next, rect.width, rect.height, part.origin, selection.drawingScale)
             }.toMap()
         }
         return cameras
+    }
+
+    /** How far from the panes' middle the character reaches, so the depth range holds all of it. */
+    private fun depthReach(selection: SheetSelection, fit: SheetFit?): Float {
+        val center = fit?.center ?: selection.part.box.center
+        return (selection.box.center - center).length + selection.box.radius
     }
 }

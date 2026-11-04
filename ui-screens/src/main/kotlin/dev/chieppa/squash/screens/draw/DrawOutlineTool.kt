@@ -69,7 +69,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val session = state.session.value ?: return null
         val part = state.selectedPart.value?.let(session.document.value.character::part) ?: return null
         val ends = strokeEnds(view, session.templates[part.template].openEnd)
-        return strokeOverOutline(outline, points, ends, 1f / camera.fit.pixelsPerUnit, state.curves.options)
+        return strokeOverOutline(outline, points, ends, camera.planePixel, state.curves.options)
     }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
@@ -112,7 +112,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val part = state.selectedPart.value ?: return
         val instance = session.document.value.character.part(part) ?: return
         val ends = strokeEnds(view, session.templates[instance.template].openEnd)
-        val pixel = 1f / camera.fit.pixelsPerUnit
+        val pixel = camera.planePixel
         val curves = state.curves
         val existing = session.document.value.character.resolved(instance).outlines[view]
         if (existing == null) {
@@ -146,7 +146,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val session = state.session.value ?: return null
         val part = state.selectedPart.value?.let(session.document.value.character::part) ?: return null
         val ends = strokeEnds(view, session.templates[part.template].openEnd)
-        return strokeCompletion(stroke, ends, 1f / camera.fit.pixelsPerUnit, state.curves.strokeOptions).guide()
+        return strokeCompletion(stroke, ends, camera.planePixel, state.curves.strokeOptions).guide()
     }
 }
 

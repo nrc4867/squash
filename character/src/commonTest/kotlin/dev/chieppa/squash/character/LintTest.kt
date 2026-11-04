@@ -192,7 +192,7 @@ class LintTest {
             id = BodyPlanId("plan"),
             version = 1,
             name = "Plan",
-            root = PlanRoot(torsoId, Direction(1f, 0f, 0f)),
+            root = PlanRoot(torsoId, Direction(0f, -1f, 0f)),
             sockets = listOf(PlanSocket("leg", torsoId, u, 0.35f, takes = emptyList())),
         )
         assertEquals(emptyList(), BodyPlanLint.lint(plan(0.5f), listOf(short)))
@@ -247,6 +247,14 @@ class LintTest {
     }
 
     @Test
+    fun aPlansRootLiesAsItsTemplateDoes() {
+        val torsoId = TemplateId("torso")
+        val torso = template(listOf(Tube(u = Span(0f, 1f), radius = Param.of(0.2f))), id = "torso")
+        val plan = BodyPlan(format = 1, id = BodyPlanId("plan"), version = 1, name = "Plan", root = PlanRoot(torsoId, Direction(1f, 0f, 0f)), sockets = emptyList())
+        assertEquals(listOf("$.root.rest"), BodyPlanLint.lint(plan, listOf(torso)).map { it.path })
+    }
+
+    @Test
     fun aPlanMustNameShippedTemplatesUnlessOptional() {
         val torso = TemplateId("torso")
         val plan = BodyPlan(
@@ -254,7 +262,7 @@ class LintTest {
             id = BodyPlanId("plan"),
             version = 1,
             name = "Plan",
-            root = PlanRoot(torso, Direction(1f, 0f, 0f)),
+            root = PlanRoot(torso, Direction(0f, -1f, 0f)),
             sockets = listOf(
                 PlanSocket("ruff", torso, 0.9f, 0.5f, takes = listOf(TemplateId("ruff")), optional = true),
                 PlanSocket("leg", torso, 0.9f, 0.35f, takes = listOf(TemplateId("leg"))),

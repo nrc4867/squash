@@ -3,48 +3,67 @@ package dev.chieppa.squash.screens.sheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
-import dev.chieppa.squash.geom.PartMesh
+import dev.chieppa.squash.geom.BodyBox
+import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.geom.PartExtents
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.RenderMesh
-import dev.chieppa.squash.render.silhouette
 import dev.chieppa.squash.screens.AppState
 
-/** One build of a part as the panes draw it: its real mesh, axes and locked silhouettes. Never changes once made. */
-class SheetPart(
-    val id: PartId,
-    val mesh: RenderMesh,
-    val axes: PartAxes,
-    val extents: PartExtents,
-    val silhouettes: Map<View, List<List<Vec3>>>,
-) {
+/** One placed part as the panes draw it: what the graph derived for it, in body space. Never changes once made. */
+class SheetPart(private val placed: PlacedPart) {
+    val id: PartId? get() = placed.id
+    val mesh: RenderMesh get() = placed.surface.mesh
+    val origin: Vec3 get() = placed.origin
+    val mirrored: Boolean get() = placed.mirrored
+    val planned: Boolean get() = placed.planned
+    val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored)
+    val box: BodyBox = requireNotNull(placed.box) { "A part with nothing built is not drawn" }
+    val extents: PartExtents = requireNotNull(placed.surface.extents)
+
     /** The middle of the part. */
-    val center: Vec3 = axes.middle(extents)
+    val center: Vec3 get() = box.center
 
     /** The radius of a sphere around [center] that holds the part. */
-    val radius: Float = Vec3(extents.along.length, extents.up.length, extents.side.length).length / 2f
+    val radius: Float get() = box.radius
 
-    /** The point under [center] at the height of the part's lowest vertex. */
-    val floor: Vec3 = Vec3(center.x, (0 until mesh.vertexCount).minOf { mesh.position(it).y }, center.z)
+    /** The outline of the part as [view]'s pane sees it, as paths of points in body space. */
+    fun silhouette(view: View): List<List<Vec3>> = silhouetteFrom(axes.bodyViewOf(view))
+
+    /** The outline of the part seen from [body], as paths of points in body space. */
+    fun silhouetteFrom(body: BodyView): List<List<Vec3>> =
+        placed.surface.silhouettes.getValue(body).map { path -> path.map { origin + it } }
 }
 
-/** Everything the panes derive from one build of a part, or null for a build with nothing in it. */
-fun sheetPart(id: PartId, template: PartTemplate, built: PartMesh): SheetPart? {
-    val mesh = RenderMesh.of(built)
-    val axes = PartAxes.of(template.axis.rest.toVec3())
-    val extents = axes.extentsOf(mesh) ?: return null
-    return SheetPart(id, mesh, axes, extents, View.entries.associateWith { silhouette(built, axes.basis(it).back) })
+/**
+ * What the panes draw from one assembled character: the [part] selected with the outlines the document holds for it, the
+ * [others] around it, the [box] everything fills, the height of the [floor] and the [drawingScale] its size parameter sets.
+ */
+class SheetSelection(
+    val part: SheetPart,
+    val outlines: Map<View, OutlineCurve>,
+    val others: List<SheetPart> = emptyList(),
+    val box: BodyBox = part.box,
+    val floor: Float = part.box.low.y,
+    val drawingScale: Float = 1f,
+)
+
+/** [character] as the panes draw it with [selected] picked out, or null while that part has built nothing. */
+fun sheetSelection(character: AssembledCharacter, selected: PartId, outlines: Map<View, OutlineCurve>, drawingScale: Float = 1f): SheetSelection? {
+    val shown = character.parts.filter { it.box != null }.map(::SheetPart)
+    val part = shown.firstOrNull { it.id == selected } ?: return null
+    val box = character.box ?: return null
+    return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale)
 }
 
-/** The selected part's build with the outlines the document holds for it now. */
-class SheetSelection(val part: SheetPart, val outlines: Map<View, OutlineCurve>)
-
-/** The selected part through the real build, or null while nothing is selected or it has not built yet. */
+/** The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet. */
 @Composable
 fun rememberSheetSelection(state: AppState): SheetSelection? {
     val session by state.session.collectAsState()
@@ -53,9 +72,10 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val selected = id ?: return null
     val document by remember(open) { open.document }.collectAsState()
     val instance = document.character.part(selected) ?: return null
-    // In an effect, because making a node starts its collectors, which composition must not do.
-    val built by produceState<PartMesh?>(null, open, selected) { open.mesh(selected).output.collect { value = it } }
-    val template = remember(open, instance.template) { open.templates[instance.template] }
-    val part = remember(selected, template, built) { built?.let { sheetPart(selected, template, it) } } ?: return null
-    return SheetSelection(part, document.character.resolved(instance).outlines)
+    val character by remember(open) { open.assembly.output }.collectAsState()
+    val data = document.character.resolved(instance)
+    val outlines = data.outlines
+    val scale = data.params[SIZE_PARAM] ?: 1f
+    val assembled = character ?: return null
+    return remember(assembled, selected, outlines, scale) { sheetSelection(assembled, selected, outlines, scale) }
 }

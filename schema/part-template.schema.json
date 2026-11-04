@@ -76,6 +76,10 @@
             "type": "number"
           }
         },
+        "length": {
+          "description": "How long the axis is with nothing drawn, in body units; the size parameter multiplies it.",
+          "type": "number"
+        },
         "bend": {
           "description": "How far the axis sits toward the underside at bendAt with nothing drawn, as a fraction of its length.",
           "anyOf": [

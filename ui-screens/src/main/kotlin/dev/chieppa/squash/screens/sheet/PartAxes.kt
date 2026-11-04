@@ -1,80 +1,71 @@
 package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
+import kotlin.math.abs
 import dev.chieppa.squash.geom.PartAxes as BuildAxes
-import dev.chieppa.squash.render.RenderMesh
 
 /**
- * A part's own axes in the space its mesh is built in: [along] its axis from the socket, [up] where its slices' height
- * is measured, and [side] where their width is. They come from the template's rest axis alone, so they stay put while
- * the outlines change.
+ * A part's own axes in body space: [along] its axis from the socket, [up] where its slices' height is measured, and [side]
+ * where their width is. They come from the template's rest axis and the part's side alone, so they stay put while the
+ * outlines change. A mirrored part's are reflected across the body's plane, which is why [side] is its own field.
  */
 data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
-    /** The directions that locked [view] shows. */
-    fun basis(view: View): ViewBasis = when (view) {
-        View.SIDE -> ViewBasis(xAxis = along, yAxis = up, screenRight = along * -1f, screenUp = up)
-        View.TOP -> ViewBasis(xAxis = along, yAxis = side * -1f, screenRight = along * -1f, screenUp = side * -1f)
-        View.FRONT -> ViewBasis(xAxis = side, yAxis = up, screenRight = side, screenUp = up)
+    /** Which view each [BodyView] holds: the arrangement that shows every view's plane the most squarely, the plainest on a tie. */
+    val framing: Map<BodyView, View> = FRAMINGS.maxBy { arrangement -> arrangement.entries.sumOf { (body, view) -> squareness(view, body).toDouble() } }
+
+    /** The body view holding [view]. */
+    fun bodyViewOf(view: View): BodyView = framing.entries.first { it.value == view }.key
+
+    /** The direction an outline's x and y run in for [view]. */
+    fun planeOf(view: View): Pair<Vec3, Vec3> = when (view) {
+        View.SIDE -> along to up
+        View.TOP -> along to side * -1f
+        View.FRONT -> side to up
     }
 
-    /** The point at [extents]' middle. */
-    fun middle(extents: PartExtents): Vec3 =
-        along * extents.along.center + up * extents.up.center + side * extents.side.center
+    /** How locked [view] sits in the body. */
+    fun basis(view: View): ViewBasis {
+        val pane = bodyViewOf(view)
+        val (x, y) = planeOf(view)
+        return ViewBasis(xAxis = x, yAxis = y, screenRight = pane.right, screenUp = pane.up)
+    }
+
+    /** How little [view]'s plane is foreshortened in [body]: 1 when it faces it, 0 when seen edge on. */
+    private fun squareness(view: View, body: BodyView): Float {
+        val (x, y) = planeOf(view)
+        return abs((x dot body.right) * (y dot body.up) - (x dot body.up) * (y dot body.right))
+    }
 
     companion object {
-        /** The axes of a template with rest axis [rest], the same ones its swept patches' first slice has. */
-        fun of(rest: Vec3): PartAxes {
+        private val PLAIN = mapOf(BodyView.TOP to View.TOP, BodyView.SIDE to View.SIDE, BodyView.FRONT to View.FRONT)
+
+        /** Every way to give the three body views the three views, the plain one first so it wins a tie. */
+        private val FRAMINGS: List<Map<BodyView, View>> = listOf(
+            PLAIN,
+            mapOf(BodyView.TOP to View.FRONT, BodyView.SIDE to View.SIDE, BodyView.FRONT to View.TOP),
+            mapOf(BodyView.TOP to View.SIDE, BodyView.SIDE to View.TOP, BodyView.FRONT to View.FRONT),
+            mapOf(BodyView.TOP to View.TOP, BodyView.SIDE to View.FRONT, BodyView.FRONT to View.SIDE),
+            mapOf(BodyView.TOP to View.SIDE, BodyView.SIDE to View.FRONT, BodyView.FRONT to View.TOP),
+            mapOf(BodyView.TOP to View.FRONT, BodyView.SIDE to View.TOP, BodyView.FRONT to View.SIDE),
+        )
+
+        /** The axes of a template with rest axis [rest], the same ones its swept patches' first slice has, reflected when [mirrored]. */
+        fun of(rest: Vec3, mirrored: Boolean = false): PartAxes {
             val axes = BuildAxes.of(rest)
-            return PartAxes(axes.along, axes.up, axes.side)
+            if (!mirrored) return PartAxes(axes.along, axes.up, axes.side)
+            return PartAxes(axes.along.mirrored, axes.up.mirrored, axes.side.mirrored)
         }
     }
 }
 
 /**
- * How a locked view sits in part space. A point in the view's plane is (x, y) along [xAxis] and [yAxis]; those are the
- * coordinates an [dev.chieppa.squash.document.OutlineCurve] for the view holds. [screenRight] and [screenUp] are where
- * the pane's right and up point, so Side and Top run x right to left, as a part reads with its socket on the right.
+ * How a locked view sits in the body. A point in the view's plane is (x, y) along [xAxis] and [yAxis]; those are the
+ * coordinates an [dev.chieppa.squash.document.OutlineCurve] for the view holds. [screenRight] and [screenUp] are where the
+ * pane's right and up point, and they follow the body, not the part, so x and y run whichever way the part lies.
  */
 data class ViewBasis(val xAxis: Vec3, val yAxis: Vec3, val screenRight: Vec3, val screenUp: Vec3) {
     /** From the part towards the viewer. */
     val back: Vec3 get() = screenRight cross screenUp
-
-    /** 1 when x grows to the pane's right, -1 when it grows to its left. */
-    val xSign: Float get() = screenRight dot xAxis
-}
-
-/** A range along one axis. */
-data class Span(val min: Float, val max: Float) {
-    val length: Float get() = max - min
-    val center: Float get() = (min + max) / 2f
-
-    /** The range seen along the axis pointing the other way. */
-    operator fun unaryMinus() = Span(-max, -min)
-}
-
-/** How far a part reaches along each of its axes. */
-data class PartExtents(val along: Span, val up: Span, val side: Span) {
-    /** The ranges locked [view] shows, along its x and y. */
-    fun spansIn(view: View): Pair<Span, Span> = when (view) {
-        View.SIDE -> along to up
-        View.TOP -> along to -side
-        View.FRONT -> side to up
-    }
-}
-
-/** How far [mesh] reaches along these axes, or null for a mesh with no vertices. */
-fun PartAxes.extentsOf(mesh: RenderMesh): PartExtents? {
-    if (mesh.vertexCount == 0) return null
-    fun span(axis: Vec3): Span {
-        var min = Float.POSITIVE_INFINITY
-        var max = Float.NEGATIVE_INFINITY
-        for (v in 0 until mesh.vertexCount) {
-            val value = mesh.position(v) dot axis
-            if (value < min) min = value
-            if (value > max) max = value
-        }
-        return Span(min, max)
-    }
-    return PartExtents(span(along), span(up), span(side))
 }

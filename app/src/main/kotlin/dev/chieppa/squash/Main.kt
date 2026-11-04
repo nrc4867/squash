@@ -8,6 +8,7 @@ import androidx.compose.ui.window.rememberWindowState
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.RecentStore
 import dev.chieppa.squash.screens.shell.ScratchFormat
 import dev.chieppa.squash.uidesign.generated.Res
@@ -41,6 +42,7 @@ fun main() {
         TemplateFolder.shipped(),
         recent = recent,
         format = ScratchFormat(runBlocking { getString(Res.string.shell_file_type) }),
+        artist = GpuRestPoseArtist,
     )
     application {
         StretchWindow(

@@ -15,6 +15,10 @@ object BodyPlanLint {
         val templates = parts.map { it.id }.toSet()
         if (plan.format != TEMPLATE_FORMAT) add(Finding("$.format", "format ${plan.format} is not $TEMPLATE_FORMAT"))
         if (plan.root.template !in templates) add(Finding("$.root.template", "no template '${plan.root.template.value}'"))
+        val root = parts.firstOrNull { it.id == plan.root.template }
+        if (root != null && root.axis.rest != plan.root.rest) {
+            add(Finding("$.root.rest", "the plan's rest is not its root template's, and a root part is not turned"))
+        }
         plan.sockets.forEachIndexed { i, socket ->
             addAll(socket(socket, "$.sockets[$i]", templates))
             val on = parts.firstOrNull { it.id == socket.on }

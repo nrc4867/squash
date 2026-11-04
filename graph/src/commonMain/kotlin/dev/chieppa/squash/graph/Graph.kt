@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.update
 
 private const val DEFAULT_CACHE_SIZE = 64
 
+/** What a gathered node reads: the [shape] its sources came from and each source's latest result. */
+data class Gathered<S, K, V>(val shape: S, val values: Map<K, V>)
+
 /** The derived-data graph. Settled when no node is dirty or running. Runs compute on [dispatcher], inside [scope]. */
 class Graph(
     private val scope: CoroutineScope,
@@ -40,6 +43,24 @@ class Graph(
         val node = Node(scope, dispatcher, cacheSize, compute, ::changed)
         nodes.update { it + node }
         node.follow(upstream)
+        return node
+    }
+
+    /**
+     * A node that reads a set of nodes that changes with [shape]: for each value of it, [sourcesOf] names them, and the node
+     * recomputes from that value and their results. The graph stays unsettled until every result has reached this node and
+     * run. A failure of any source becomes this node's, keeping its last result. [shape] must emit its current value on
+     * collection, as a state flow and its maps do.
+     */
+    fun <S, K, V : Any, O : Any> gather(
+        shape: Flow<S>,
+        sourcesOf: (S) -> Map<K, Node<*, V>>,
+        cacheSize: Int = DEFAULT_CACHE_SIZE,
+        compute: suspend (Gathered<S, K, V>) -> O,
+    ): Node<Gathered<S, K, V>, O> {
+        val node = Node(scope, dispatcher, cacheSize, compute, ::changed)
+        nodes.update { it + node }
+        node.gather(shape, sourcesOf, ::Gathered)
         return node
     }
 

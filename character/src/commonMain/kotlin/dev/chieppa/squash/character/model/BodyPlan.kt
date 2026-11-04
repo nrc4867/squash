@@ -21,6 +21,8 @@ data class PlanSocket(
     val v: Float,
     @Doc("Gives this socket a mirrored twin.")
     val pair: Mirror? = null,
+    @Doc("Which way a part on this socket sinks into its parent: back along its own axis, or along the surface's normal.")
+    val outward: Outward = Outward.AXIS,
     val takes: List<TemplateId>,
     val optional: Boolean = false,
 )
@@ -50,4 +52,10 @@ data class BodyPlan(
     val slots: List<PlanSlot> = emptyList(),
 ) {
     val ref: BodyPlanRef get() = BodyPlanRef(id, version)
+
+    /** The sockets a part with [template] offers: this plan's and its own, by name. */
+    fun socketsOn(template: PartTemplate): List<SocketSpec> {
+        val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, it.outward, it.pair, it.takes) }
+        return (planned + template.blocks.flatMap { it.sockets() }).distinctBy { it.name }
+    }
 }

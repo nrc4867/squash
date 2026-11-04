@@ -94,7 +94,7 @@ class SheetUiTest {
     @Test
     fun aPaneShowsItsLabelAndChipInPopupsOverTheSurface() = runComposeUiTest {
         setStretchContent {
-            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(SheetPane.SIDE, PaneChip.FROM_TEMPLATE) }
+            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(View.SIDE, PaneChip.FROM_TEMPLATE) }
         }
         onNodeWithText("Side · part axes").assertExists()
         onNodeWithText("From template").assertExists()
@@ -118,7 +118,7 @@ class SheetUiTest {
                 camera?.let { locked ->
                     SheetPaneGrid(2, Modifier.fillMaxSize()) { pane ->
                         val input = if (pane == SheetPane.SIDE) tool.pointerInput(View.SIDE, locked).testTag("side") else Modifier
-                        PaneViewport(pane, null, input)
+                        PaneViewport(if (pane == SheetPane.SIDE) View.SIDE else null, null, input)
                     }
                 }
             }
@@ -126,7 +126,7 @@ class SheetUiTest {
         onNodeWithTag("side").performMouseInput { click(Offset(60f, 120f)) }
         val locked = assertNotNull(camera)
         assertEquals(Offset(60f, 120f), pressed, "from the pane's own corner")
-        val part = locked.toPart(Offset(60f, 120f))
+        val part = locked.toWorld(Offset(60f, 120f))
         assertEquals(Offset(60f, 120f).x, locked.toPixel(part).x, 0.01f)
     }
 

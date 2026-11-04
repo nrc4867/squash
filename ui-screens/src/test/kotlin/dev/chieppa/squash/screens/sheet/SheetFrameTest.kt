@@ -7,11 +7,15 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.geom.RenderMesh
+import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.PartMaterial
-import dev.chieppa.squash.render.RenderMesh
 import dev.chieppa.squash.render.SceneFrame
+import dev.chieppa.squash.render.SceneView
 import dev.chieppa.stretch.frame.OverlayLine
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.CameraView
@@ -20,7 +24,6 @@ import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -28,26 +31,32 @@ class SheetFrameTest {
     private val templates = TemplateFolder.load(Path.of(System.getProperty("squash.templates"))).parts
     private val look = SheetLook(
         Color.White, Color.Black, Color.Gray, Color.DarkGray, Color.Yellow, Color.Red, Color.LightGray,
-        PartMaterial(Color.Green), 1f, 2f, 1f, 2f, 2f, 2f, 1f, 2f, 2f, 3f, 3f,
+        PartMaterial(Color.Green, Color(0xFF008000), Color.Black), 1f, 2f, 1f, 2f, 2f, 2f, 1f, 2f, 2f, 3f, 3f,
     )
     private val rects = sheetPaneRects(1000, 800, 2)
     private val outline = OutlineCurve(listOf(CurvePoint(0f, 0f), CurvePoint(0f, 1f), CurvePoint(1f, 1f), CurvePoint(1f, 0f)))
 
     private fun template(id: String) = templates.first { it.id.value == id }
 
-    private fun part(template: PartTemplate) = assertNotNull(sheetPart(PartId("p"), template, PartBuilder.mesh("p", template, PartBuilder.build(template))))
+    private fun part(template: PartTemplate) = sheetPartOf(template)
 
-    private fun input(part: SheetPart, outlines: Map<View, OutlineCurve> = emptyMap(), active: View? = View.SIDE): SheetInput {
-        val fit = fitSheet(part.axes, part.extents, rects)
-        val cameras = SheetPane.entries.mapNotNull { pane ->
-            pane.view?.let { it to LockedCamera(it, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height) }
-        }.toMap()
+    private fun input(
+        part: SheetPart,
+        outlines: Map<View, OutlineCurve> = emptyMap(),
+        active: View? = View.SIDE,
+        others: List<SheetPart> = emptyList(),
+        hints: SheetHints = SheetHints(),
+    ): SheetInput {
+        val cameras = camerasOn(part, fitSheet(part.box, rects), rects)
         val full = CameraView(eye = part.center.toGpu() + GpuVec3(3f, 2f, -4f), target = part.center.toGpu())
-        return SheetInput(rects, 1000, 800, look, SheetSelection(part, outlines), cameras, full, active)
+        val box = others.fold(part.box) { box, other -> box.union(other.box) }
+        val selection = SheetSelection(part, outlines, others, box, box.low.y)
+        return SheetInput(rects, 1000, 800, look, selection, cameras, full, active, hints = hints)
     }
 
-    private fun meshesIn(frame: SceneFrame, pane: SheetPane, part: SheetPart) =
-        frame.views.single { it.viewport == rects[pane.ordinal] }.draws.count { it.mesh === part.mesh }
+    private fun viewIn(frame: SceneFrame, pane: SheetPane): SceneView = frame.views.single { it.viewport == rects[pane.ordinal] }
+
+    private fun meshesIn(frame: SceneFrame, pane: SheetPane, part: SheetPart) = viewIn(frame, pane).draws.count { it.mesh === part.mesh }
 
     @Test
     fun axesAgreeWithWhatEveryShippedTemplateBuilds() {
@@ -64,18 +73,25 @@ class SheetFrameTest {
     fun everyShippedTemplateMakesAPartWithAnOutlineInEachView() {
         for (template in templates) {
             val part = part(template)
-            assertEquals(View.entries.toSet(), part.silhouettes.keys)
-            assertTrue(part.silhouettes.values.all { it.isNotEmpty() }, "${template.id}")
+            assertTrue(View.entries.all { part.silhouette(it).isNotEmpty() }, "${template.id}")
         }
     }
 
     @Test
     fun theFrontSilhouetteOfALegIsItsSectionAndItsLengthShowsInSide() {
         val part = part(template("leg"))
-        val side = part.silhouettes.getValue(View.SIDE).flatten()
+        val side = part.silhouette(View.SIDE).flatten()
         assertTrue(abs(side.maxOf { it dot part.axes.along } - part.extents.along.max) < 1e-3f)
-        val front = part.silhouettes.getValue(View.FRONT).flatten()
+        val front = part.silhouette(View.FRONT).flatten()
         assertTrue(abs(front.maxOf { it dot part.axes.up } - part.extents.up.max) < 1e-3f)
+    }
+
+    @Test
+    fun aSilhouetteLandsWhereThePartSits() {
+        val at = Vec3(1f, 2f, 3f)
+        val here = part(template("leg")).silhouette(View.SIDE).flatten().first()
+        val moved = sheetPartOf(template("leg"), at).silhouette(View.SIDE).flatten().first()
+        assertTrue((moved - here - at).length < 1e-3f, "$here to $moved")
     }
 
     @Test
@@ -100,6 +116,12 @@ class SheetFrameTest {
     }
 
     @Test
+    fun theTemplateHintHidesTheDashes() {
+        val frame = sheetFrame(input(part(template("paw")), hints = SheetHints(template = false)))
+        assertTrue(frame.overlay.lines.none { it.color == look.template })
+    }
+
+    @Test
     fun aDrawnViewShowsTheMeshFilled() {
         val part = part(template("paw"))
         val frame = sheetFrame(input(part, mapOf(View.SIDE to outline)))
@@ -110,18 +132,91 @@ class SheetFrameTest {
     }
 
     @Test
-    fun theGroundLiesOnlyWhereThePaneLooksAlongIt() {
-        val paw = part(template("paw"))
-        val frame = sheetFrame(input(paw))
-        fun discs(pane: SheetPane) = frame.views.single { it.viewport == rects[pane.ordinal] }.draws.count { it.mesh === RenderMesh.UnitDisc }
-        assertEquals(1, discs(SheetPane.SIDE))
+    fun aDrawnTopOfALegFillsThePaneHoldingIt() {
+        val part = part(template("leg"))
+        val frame = sheetFrame(input(part, mapOf(View.TOP to outline)))
+        assertEquals(1, meshesIn(frame, SheetPane.FRONT, part), "a leg's Top sits beside Side")
+        assertEquals(0, meshesIn(frame, SheetPane.TOP, part))
+    }
+
+    @Test
+    fun aGhostShowsBehindTheSelectionFurthestFirstAtTheHintsStrength() {
+        val selected = sheetPartOf(template("leg"), Vec3(0f, 0f, 0.5f), Side.RIGHT, "selected")
+        val near = sheetPartOf(template("leg"), Vec3(0f, 0f, -0.5f), Side.LEFT, "near")
+        val far = sheetPartOf(template("leg"), Vec3(0.5f, 0f, 0.9f), Side.RIGHT, "far")
+        val frame = sheetFrame(input(selected, mapOf(View.SIDE to outline), others = listOf(near, far)))
+        val draws = viewIn(frame, SheetPane.SIDE).draws
+
+        assertSame(RenderMesh.UnitDisc, draws.first().mesh, "the ground goes down first")
+        assertEquals(DepthLayer.BACK, draws.first().layer)
+        val ghosts = draws.drop(1).dropLast(1)
+        assertEquals(listOf(far.mesh, near.mesh), ghosts.map { it.mesh }, "a nearer ghost blends over a further one")
+        assertTrue(ghosts.all { it.opacity == DEFAULT_GHOST && it.layer == DepthLayer.SCENE })
+        val top = draws.last()
+        assertSame(selected.mesh, top.mesh, "the selection comes last")
+        assertEquals(1f, top.opacity)
+        assertEquals(DepthLayer.FRONT, top.layer, "so a ghost on the near side never covers it")
+    }
+
+    @Test
+    fun theGhostOrderFollowsThePanesView() {
+        val selected = sheetPartOf(template("paw"), id = "selected")
+        val forward = sheetPartOf(template("paw"), Vec3(1f, 0f, 0f), id = "forward")
+        val rear = sheetPartOf(template("paw"), Vec3(-1f, 0f, 0f), id = "rear")
+        val draws = viewIn(sheetFrame(input(selected, others = listOf(forward, rear))), SheetPane.FRONT).draws.filter { it.opacity < 1f }
+        assertEquals(listOf(rear.mesh, forward.mesh), draws.map { it.mesh }, "Front looks from body forward")
+    }
+
+    @Test
+    fun aGhostAtZeroIsNotDrawnAndTheSlidersStrengthReachesTheDraws() {
+        val selected = sheetPartOf(template("paw"), id = "selected")
+        val other = sheetPartOf(template("leg"), id = "other")
+        assertEquals(0, meshesIn(sheetFrame(input(selected, others = listOf(other), hints = SheetHints(ghost = 0f))), SheetPane.SIDE, other))
+        val faint = viewIn(sheetFrame(input(selected, others = listOf(other), hints = SheetHints(ghost = 0.2f))), SheetPane.SIDE)
+        assertEquals(0.2f, faint.draws.single { it.mesh === other.mesh }.opacity)
+    }
+
+    @Test
+    fun fullShowsTheWholeCharacterOpaqueThePlannedPartsLast() {
+        val selected = sheetPartOf(template("leg"), id = "selected")
+        val other = sheetPartOf(template("torso"), id = "other")
+        val planned = SheetPart(
+            dev.chieppa.squash.character.build.PlacedPart(
+                null,
+                template("head"),
+                null,
+                dev.chieppa.squash.character.build.surfaceOf(template("head"), dev.chieppa.squash.document.PartData(), false),
+                Vec3.ZERO,
+            ),
+        )
+        val full = viewIn(sheetFrame(input(selected, others = listOf(planned, other))), SheetPane.FULL).draws
+        assertEquals(1f, full.single { it.mesh === selected.mesh }.opacity)
+        assertEquals(1f, full.single { it.mesh === other.mesh }.opacity)
+        assertTrue(full.single { it.mesh === planned.mesh }.opacity < 1f)
+        assertSame(planned.mesh, full.last().mesh, "blended over what is solid")
+    }
+
+    @Test
+    fun aMirroredPartTakesTheBoardsFarColorAndSitsByItsOrigin() {
+        val right = sheetPartOf(template("leg"), Vec3(1f, 2f, 3f), Side.RIGHT, "right")
+        val draw = viewIn(sheetFrame(input(right, mapOf(View.SIDE to outline))), SheetPane.SIDE).draws.single { it.mesh === right.mesh }
+        assertEquals(look.part.shade, draw.material.base)
+        val at = draw.model.project(GpuVec3(0f, 0f, 0f))!!
+        assertTrue(abs(at.x - 1f) + abs(at.y - 2f) + abs(at.z - 3f) < 1e-4f, "$at")
+    }
+
+    @Test
+    fun theGroundLiesOnlyWhereThePaneLooksAlongItUnderTheWholeCharacter() {
+        val leg = part(template("leg"))
+        val frame = sheetFrame(input(leg))
+        fun discs(pane: SheetPane) = viewIn(frame, pane).draws.count { it.mesh === RenderMesh.UnitDisc }
+        assertEquals(1, discs(SheetPane.SIDE), "a leg stands on it too")
         assertEquals(1, discs(SheetPane.FRONT))
         assertEquals(0, discs(SheetPane.TOP))
         assertEquals(1, discs(SheetPane.FULL))
-
-        val leg = part(template("leg"))
-        val standing = sheetFrame(input(leg))
-        assertEquals(0, standing.views.single { it.viewport == rects[SheetPane.SIDE.ordinal] }.draws.size, "a leg's up is not the world's")
+        val ground = viewIn(frame, SheetPane.SIDE).draws.first()
+        val at = ground.model.project(GpuVec3(0f, 0f, 0f))!!
+        assertTrue(abs(at.y - leg.box.low.y) < 1e-4f, "at the lowest vertex: ${at.y}, ${leg.box.low.y}")
     }
 
     @Test
@@ -131,6 +226,15 @@ class SheetFrameTest {
         val inTop = rects[SheetPane.TOP.ordinal].toRect()
         assertEquals(4, frame.overlay.lines.count { it.color == look.active })
         assertTrue(frame.overlay.lines.filter { it.color == look.active }.all { inTop.contains(it.from) })
+    }
+
+    @Test
+    fun theRingFollowsTheViewToThePaneHoldingIt() {
+        val leg = part(template("leg"))
+        val frame = sheetFrame(input(leg, active = View.TOP))
+        val beside = rects[SheetPane.FRONT.ordinal].toRect()
+        assertTrue(frame.overlay.lines.filter { it.color == look.active }.all { beside.contains(it.from) })
+        assertEquals(View.TOP, leg.axes.framing[BodyView.FRONT])
     }
 
     @Test

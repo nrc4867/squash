@@ -1,13 +1,9 @@
-package dev.chieppa.squash.render
-
-import dev.chieppa.squash.geom.PartMesh
-import dev.chieppa.squash.geom.PatchMesh
-import dev.chieppa.squash.geom.Vec3
+package dev.chieppa.squash.geom
 
 /**
  * The outline of [mesh] seen along an orthographic view: the edges between a triangle facing [toViewer] and one facing
- * away, and the open edges of triangles facing it, joined into paths of points in the mesh's space. Hidden silhouette
- * edges are included.
+ * away, and every open edge, so an open end shows from either side, joined into paths of points in the mesh's space.
+ * Hidden silhouette edges are included.
  */
 fun silhouette(mesh: PartMesh, toViewer: Vec3): List<List<Vec3>> = mesh.patches.flatMap { patchSilhouette(it, toViewer) }
 
@@ -23,7 +19,7 @@ private fun patchSilhouette(mesh: PatchMesh, toViewer: Vec3): List<List<Vec3>> {
             facing.getOrPut(edgeKey(from, to)) { IntArray(2) }[slot]++
         }
     }
-    val edges = facing.filterValues { (front, back) -> front > 0 && (back > 0 || front == 1) }.keys
+    val edges = facing.filterValues { (front, back) -> (front > 0 && back > 0) || front + back == 1 }.keys
     return joinEdges(edges).map { path -> path.map(mesh.patch::point) }
 }
 

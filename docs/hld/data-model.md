@@ -107,17 +107,30 @@ data class Anchor(val part: PartId, val patch: String = "body", val u: Float, va
 
 Rules the code keeps:
 
-- **Outlines live in the part's own axes.** `a` runs along the rest direction from the socket end, `b` toward v = 0 (body up, or body forward for a part whose rest direction is vertical), `c` toward v = 0.25. A Side outline's points are (a, b), a Top outline's (a, -c), a Front outline's (c, b) looking down the axis. Patches are built in the same axes, in body-space orientation, with the socket plane at a = 0; placing a part on its parent is a separate step. `PartBuilder.axes` gives the axes and `PartAxes.pointOnView` a view point's position.
-- **Views set slices, nothing fits.** u runs linearly over the Side outline's range along a; an open start begins at the socket plane instead, and an open end finishes there. At each u a slice lies in its plane a = constant, and the outermost two crossings of that line give its centre (their midpoint) and height (their distance), so the rings' ends are the drawing's crossings: a drawn Side outline is the mesh's silhouette, up to the straight run between one ring and the next. Rings stand on parallel planes, so they cannot cross however quickly the midline moves, and the axis follows the drawing, so a digitigrade leg bends at the hock because it was drawn that way. An open outline counts as closed by the chord between its ends. A tip is a crossing with no gap, so a ring there has no height beyond a floor of 1/500 of the length, and a closed end's last ring reaches the drawn tip. A row of toes stands on the same planes. An undrawn part's rings follow the axis tangent. The Top outline's crossings give width only; its midpoint is not read. The Front outline shapes the cap, blending in over the last sixth of the axis, or, where the template says `section`, the whole cross-section, which is how a chest gets a keel or a flat side. A missing view takes the template's section profile and the other view's extent, so the section keeps its proportions; the view present rules u. A Front outline alone changes the section and leaves the sizes to the template. The `size` parameter multiplies a drawing. An outline with no extent, or wholly behind the socket plane, sets nothing.
+- **Outlines live in the part's own axes.** `a` runs along the rest direction from the socket end, `b` toward v = 0 (body up, or body forward for a part whose rest direction is within 45 degrees of vertical), `c` toward v = 0.25. A Side outline's points are (a, b), a Top outline's (a, -c), a Front outline's (c, b) looking down the axis. Patches are built in the same axes, in body-space orientation, with the socket plane at a = 0; see Placing parts. `PartBuilder.axes` gives the axes and `PartAxes.pointOnView` a view point's position.
+- **Views set slices, nothing fits.** u runs linearly over the Side outline's range along a; an open start begins at the socket plane instead, and an open end finishes there. At each u a slice lies in its plane a = constant, and the outermost two crossings of that line give its centre (their midpoint) and height (their distance), so the rings' ends are the drawing's crossings: a drawn Side outline is the mesh's silhouette, up to the straight run between one ring and the next. Rings stand on parallel planes, so they cannot cross however quickly the midline moves, and the axis follows the drawing, so a digitigrade leg bends at the hock because it was drawn that way. An open outline counts as closed by the chord between its ends. A tip is a crossing with no gap, so a ring there has no height beyond a floor of 1/500 of the length, and a closed end's last ring reaches the drawn tip. A row of toes stands on the same planes. An undrawn part's rings follow the axis tangent. The Top outline's crossings give width only; its midpoint is not read. The Front outline shapes the cap, blending in over the last sixth of the axis, or, where the template says `section`, the whole cross-section, which is how a chest gets a keel or a flat side. A missing view takes the template's section profile and the other view's extent, so the section keeps its proportions; the view present rules u. A Front outline alone changes the section and leaves the sizes to the template. `axis.length` sets an undrawn part's length, and the `size` parameter multiplies both that and a drawing, so a locked pane's map divides a stroke by it and the stroke builds under the pointer at any size. An outline with no extent, or wholly behind the socket plane, sets nothing.
 - **Refits are local.** A slice reads only the crossings at its own u, so changing a span of a Side or Top outline moves only slices within one table station (1/128 of the length) of that span. A slice's proxy normal frame reads the axis tangent, and so its neighbouring knots, which reaches two axis knots (1/32) further and moves no vertex. Two edits reach further by their nature: moving the outline's far end along a rescales u for every slice, since the ring count is fixed, and a Front `section` outline applies to every slice.
 - **Everything is a spline.** Outlines are cubic Béziers. The axis is a C1 cubic spline through the Side midline at fixed knots, with Catmull-Rom tangents so that moving a point changes the curve only within two spans of it, and it stays in the plane of a and b. Joints and an undrawn part's rings sit on it; a drawn ring's centre is the midline itself, and the tangent sets only its proxy normal frame. Every cross-section is a closed cubic B-spline with exactly `segments` control points, sampled at fixed v, so a circle, an egg, a keel and a drawn chest outline are one type with different control polygons, and the mesh topology never changes. A part is a lofted surface: sections stacked along the axis.
 - **Views disagree where one passes another's extent.** Side and Top compare where the part starts and ends along u, Front compares against Side's height and Top's width, and a Side narrower than Front never counts, since a cap is meant to be smaller. The highlight marks the stretch past the limit, which is a comparison of intervals per stroke.
 - **Fixed topology per template version.** Ring i maps to u, segment j maps to v, so an anchor reaches its vertex neighbourhood by arithmetic. Changing rings or segments is a new version and a migration.
-- **Open ends close at the socket plane.** The open end's slice is placed on the parent's surface at the socket, and the parent's slices are untouched. A stroke that closes anyway is cut at that plane. A closed stroke short of the plane opens around its nearest point, no deeper than it lies from the plane, and reaches the plane along x from there. An open stroke's ends reach the plane along x; if that would cross the stroke, the stroke counts as closed by its chord and opens the same way. With Close end off a stroke's ends stay where they are, and only what passes the plane is cut.
+- **Open ends close at the socket plane.** The open end's slice sits on the parent's surface at the socket, and the parent's slices are untouched. A stroke that closes anyway is cut at that plane. A closed stroke short of the plane opens around its nearest point, no deeper than it lies from the plane, and reaches the plane along x from there. An open stroke's ends reach the plane along x; if that would cross the stroke, the stroke counts as closed by its chord and opens the same way. With Close end off a stroke's ends stay where they are, and only what passes the plane is cut.
 - **Heads are blocks too.** Skull is a block whose slices run front to back, with a muzzle Tube and eye and ear sockets. Face marks anchor to Skull's u and v like any other mark.
 - **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides replace the values they name. `Character.resolved` is the only way to read a part's values, since the fields behind it are internal to `document`, and it is what the slice row node builds from, so both sides rebuild when the pair changes and a part rebuilds only when what it resolves to changes. `SetOutline` and `SetParameter` write the pair for a paired part, or with `thisSide` that side's override; clearing an override shows the pair's value again. Breaking a pair copies the shared data, under each side's overrides, into both and clears the pair id; each part keeps its side. A pair's data is created with its first part and goes with its last.
 - **Poses stay re-editable.** A pose keeps the body curve as a curve and the planted set as flags, so re-sampling after a character update uses the same inputs. Touch-ups are deltas in anchor space, which is why they survive Update from library.
 - **Detail beyond the sweep is anchored, not modelled.** Branching shapes are other blocks or parts. Grooves and muscle lines are a later shape touch-up layer: push and pull offsets stored in anchor space at build time, the same mechanism as per-shot touch-ups, so they survive refits.
+
+## Placing parts
+
+One graph node assembles the character from the built parts, so `Settled` covers it. Nothing is stored: where a part sits is derived every time from its socket and its parent's built surface.
+
+- **The root sits at the origin**, along the plan's rest, which lint holds equal to its template's. Body space has +X forward, +Y up, and -Z the left side.
+- **A socket reads the built surface.** A child's socket plane sits at its socket's (u, v) on the parent's built patches, so a redrawn parent carries its children with it. A paw on a shorter leg rises with the leg's end.
+- **A part sits slightly inside its parent**, so no gap shows. It sinks back along its own axis, or along the surface's normal where the socket says `outward: normal`, by a fraction of its template's first ring. The depth reads the template, never the drawing, so a stroke on a part cannot move the plane it is drawn from.
+- **Placing is translation.** A part keeps its rest direction whatever it sits on; only pose rotates it.
+- **The right side mirrors across the body's plane.** Z and the triangle winding flip, and the socket's v reads 1 - v on an unmirrored parent. A mirrored parent already reflects what sits on it, so a socket on it keeps its v. Both sides build from the one `Character.resolved` of the pair.
+- **An empty socket shows what it would take.** The plan's empty sockets each place a planned part, its first `takes` template built with nothing drawn, recursively, stopping where a plan would loop. So a character with only a torso shows the whole body in its rest pose. A planned part is never in the document. A character's floor lies under the lowest vertex of everything shown.
+
+The node holds, per part, its mesh, silhouettes and extents, each derived in the graph from the part's build.
 
 ## Adding parts without refactoring
 
@@ -186,7 +199,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
   "id": "leg",
   "version": 1,
   "name": "Leg",
-  "axis": { "rest": [0, -1, 0], "bend": "$stance", "bendAt": 0.55 },  // from the socket end toward the tip, in body space
+  "axis": { "rest": [0, -1, 0], "length": 0.5, "bend": "$stance", "bendAt": 0.55 },  // from the socket end toward the tip, in body space
   "openEnd": "start",                       // u = 0 sits on the parent's surface at the socket
   "topology": { "rings": 24, "segments": 16 },
   "views": { "side": "height", "top": "width", "front": "cap" },
@@ -201,7 +214,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
     { "kind": "joint",  "name": "hip",   "u": 0.0,  "hinge": "x", "limits": [-60, 90] },
     { "kind": "joint",  "name": "knee",  "u": 0.55, "hinge": "x", "limits": [0, 140] },
     { "kind": "joint",  "name": "ankle", "u": 1.0,  "hinge": "x", "limits": [-30, 60], "stretch": true },
-    { "kind": "socket", "name": "paw",   "u": 1.0,  "v": 0.5, "outward": "axis" },
+    { "kind": "socket", "name": "paw",   "u": 1.0,  "v": 0.5, "outward": "normal" },
     { "kind": "area",   "name": "knee",  "u": [0.5, 0.6], "v": [0, 1], "tag": "rigid" }
   ]
 }
@@ -247,10 +260,10 @@ A body plan is the same grammar with its own block kinds, so it shares the parse
   "format": 1, "id": "canine-quadruped", "version": 1, "name": "Canine quadruped",
   "root": { "template": "torso", "rest": [1, 0, 0] },
   "sockets": [
-    { "name": "neck",      "on": "torso", "u": 1.0,  "v": 0.1, "takes": ["head"] },
-    { "name": "front-leg", "on": "torso", "u": 0.85, "v": 0.35, "pair": "x", "takes": ["leg"] },
-    { "name": "back-leg",  "on": "torso", "u": 0.15, "v": 0.35, "pair": "x", "takes": ["leg"] },
-    { "name": "tail",      "on": "torso", "u": 0.0,  "v": 0.0, "takes": ["tail"] },
+    { "name": "neck",      "on": "torso", "u": 0.92, "v": 0.04, "takes": ["head"] },
+    { "name": "front-leg", "on": "torso", "u": 0.82, "v": 0.42, "pair": "x", "takes": ["leg"] },
+    { "name": "back-leg",  "on": "torso", "u": 0.18, "v": 0.42, "pair": "x", "takes": ["leg"] },
+    { "name": "tail",      "on": "torso", "u": 0.03, "v": 0.02, "takes": ["tail"] },
     { "name": "ruff",      "on": "torso", "u": 0.9,  "v": 0.5, "takes": ["ruff"], "optional": true }
   ],
   "slots": [ { "name": "paw-claws", "on": "paw", "takes": ["claws"], "default": null } ]
@@ -259,7 +272,7 @@ A body plan is the same grammar with its own block kinds, so it shares the parse
 
 ### Block reference
 
-Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-` keys. Blocks build in file order, so a toe row or a pad reads the runs listed before it. The axis takes `rest` and an optional `bend` and `bendAt`, which set the shape of the undrawn axis: how far it sits toward the underside at that u, which also moves the joints along it.
+Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-` keys. Blocks build in file order, so a toe row or a pad reads the runs listed before it. The axis takes `rest`, an undrawn `length`, and an optional `bend` and `bendAt`, which set the shape of the undrawn axis: how far it sits toward the underside at that u, which also moves the joints along it.
 
 | Kind | Fields | Builds |
 | --- | --- | --- |
@@ -269,7 +282,7 @@ Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-`
 | `toeRow` | `u` range, `count`, `spread` (degrees of the outermost toe from the axis), `radius`, `v`, `rings`, `segments` | A row of small closed tubes fanned across the end from the run below them, patches `name:0` on, each on a grid of `rings` by `segments`. A drawn Side fills each toe to the outline; a drawn Top shares its width among them. Vertices take the bone at their u; toe bones arrive with the rig |
 | `pad` | `u`, `v` or `on` (a toeRow listed earlier), `size`, `color`, `rings`, `segments` | A raised closed lens following the surface on a grid of `rings` by `segments`, a patch named `pad:name` or `pad:name:i` per toe, with no slices. `v` defaults to underneath. Its vertices take the bone at its site |
 | `joint` | `u`, optional `v`, `hinge` axis, `limits`, `stretch` | A bone boundary; bones are the spans between joints in `u` order |
-| `socket` | `u`, `v`, `outward` (axis or normal), `pair`, `takes` | A child attachment point; `pair` makes a mirrored twin |
+| `socket` | `u`, `v`, `outward` (axis or normal: which way the child sinks into this part), `pair`, `takes` | A child attachment point; `pair` makes a mirrored twin. A plan's socket takes `outward` too |
 | `area` | `u` range, `v` range, `tag` (rigid, soft, inner) | A tagged region weights and shading can read |
 | `landmark` | `u`, `v`, `pair` | A named surface point face marks and sets anchor to |
 

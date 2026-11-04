@@ -17,10 +17,14 @@ data class Vec3(val x: Float, val y: Float, val z: Float) {
     val length: Float get() = sqrt(this dot this)
     fun normalized(): Vec3 = this * (1f / length)
 
+    /** This vector reflected across the body's plane, z = 0. */
+    val mirrored: Vec3 get() = Vec3(x, y, -z)
+
     companion object {
         val ZERO = Vec3(0f, 0f, 0f)
         val X = Vec3(1f, 0f, 0f)
         val Y = Vec3(0f, 1f, 0f)
+        val Z = Vec3(0f, 0f, 1f)
     }
 }
 

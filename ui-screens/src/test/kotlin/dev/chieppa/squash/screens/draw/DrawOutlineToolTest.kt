@@ -41,7 +41,6 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
-import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
 import kotlin.math.PI
@@ -87,7 +86,7 @@ class DrawOutlineToolTest {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                    PaneViewport(SheetPane.SIDE, null, tool.pointerInput(camera.view, camera).testTag(TAG))
+                    PaneViewport(View.SIDE, null, tool.pointerInput(camera.view, camera).testTag(TAG))
                 }
             }
         }
@@ -251,7 +250,7 @@ class DrawOutlineToolTest {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                    PaneViewport(SheetPane.SIDE, null, bench.tool.pointerInput(camera.view, camera).testTag(TAG))
+                    PaneViewport(View.SIDE, null, bench.tool.pointerInput(camera.view, camera).testTag(TAG))
                 }
             }
         }

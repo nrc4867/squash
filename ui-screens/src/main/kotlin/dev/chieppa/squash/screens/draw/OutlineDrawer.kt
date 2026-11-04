@@ -10,6 +10,9 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.Readout
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.draw_close_end
+import dev.chieppa.squash.uidesign.generated.draw_hint
+import dev.chieppa.squash.uidesign.generated.draw_hint_ghost
+import dev.chieppa.squash.uidesign.generated.draw_hint_template
 import dev.chieppa.squash.uidesign.generated.draw_pen
 import dev.chieppa.squash.uidesign.generated.draw_pen_pressure
 import dev.chieppa.squash.uidesign.generated.draw_pen_pressure_not_used
@@ -35,16 +38,39 @@ object OutlineDrawerTags {
     const val SMOOTH_VALUE = "outline.smooth.value"
     const val SNAP_LINE = "outline.snapLine"
     const val CLOSE_END = "outline.closeEnd"
+    const val TEMPLATE = "outline.template"
+    const val GHOST = "outline.ghost"
+    const val GHOST_VALUE = "outline.ghost.value"
     const val PRESSURE = "outline.pressure"
     const val WIDTH = "outline.width"
 }
 
-/** The Outline drawer's sections, with [hint], the board's Hint section, between Stroke and Pen. */
+/** The Outline drawer's sections: Stroke, Hint and Pen. */
 @Composable
-fun OutlineSections(state: AppState, hint: @Composable () -> Unit = {}) {
+fun OutlineSections(state: AppState) {
     StrokeSection(state)
-    hint()
+    HintSection(state)
     PenSection()
+}
+
+@Composable
+private fun HintSection(state: AppState) {
+    val curves = state.curves
+    val template = stringResource(Res.string.draw_hint_template)
+    val ghost = stringResource(Res.string.draw_hint_ghost)
+    DrawerSection(stringResource(Res.string.draw_hint)) {
+        SettingRow(template) {
+            Spacer(Modifier.weight(1f))
+            Toggle(curves.templateHint, { curves.templateHint = it }, template, Modifier.testTag(OutlineDrawerTags.TEMPLATE))
+        }
+        SettingRow(ghost) {
+            Slider(curves.ghost, { curves.ghost = it }, ghost, Modifier.weight(1f).testTag(OutlineDrawerTags.GHOST))
+            Readout(
+                stringResource(Res.string.edit_percent, (curves.ghost * PERCENT).roundToInt()),
+                Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.GHOST_VALUE),
+            )
+        }
+    }
 }
 
 @Composable

@@ -4,7 +4,7 @@
   "id": "head",
   "version": 1,
   "name": "Head",
-  "axis": { "rest": [1, 0, 0] },
+  "axis": { "rest": [1, 0, 0], "length": 0.55 },
   "openEnd": null,
   "topology": { "rings": 24, "segments": 16 },
   "views": { "side": "height", "top": "width", "front": "section" },
@@ -18,7 +18,7 @@
     { "kind": "pad",      "name": "nose",   "u": 0.95, "v": 0.0, "size": 0.07, "color": "nose", "rings": 7, "segments": 12 },
     { "kind": "cap",      "end": "end", "shape": "round" },
     { "kind": "joint",    "name": "jaw",    "u": 0.6, "v": 0.5, "hinge": "x", "limits": [0, 35] },
-    { "kind": "socket",   "name": "ear",    "u": 0.25, "v": 0.12, "pair": "x", "outward": "normal", "takes": ["ear"] },
+    { "kind": "socket",   "name": "ear",    "u": 0.3, "v": 0.1, "pair": "x", "outward": "normal", "takes": ["ear"] },
     { "kind": "landmark", "name": "eye",    "u": 0.5,  "v": 0.2,  "pair": "x" },
     { "kind": "landmark", "name": "nose",   "u": 1.0,  "v": 0.0 }
   ]

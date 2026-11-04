@@ -1,14 +1,17 @@
 package dev.chieppa.squash.screens.sheet
 
-import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.render.PixelRect
 
-/** The Sheet layout's panes in reading order, two by two. Full has no locked [view]. */
-enum class SheetPane(val view: View?) {
-    TOP(View.TOP),
+/**
+ * The Sheet layout's panes in reading order, two by two, each named for how it looks at the body. Which of a part's views
+ * each holds comes from the part's axes. Full has no locked [body] view.
+ */
+enum class SheetPane(val body: BodyView?) {
+    TOP(BodyView.TOP),
     FULL(null),
-    SIDE(View.SIDE),
-    FRONT(View.FRONT),
+    SIDE(BodyView.SIDE),
+    FRONT(BodyView.FRONT),
 }
 
 private const val COLUMNS = 2

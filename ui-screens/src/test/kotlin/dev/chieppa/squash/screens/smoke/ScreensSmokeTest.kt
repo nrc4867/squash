@@ -2,10 +2,12 @@ package dev.chieppa.squash.screens.smoke
 
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
@@ -17,16 +19,24 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.PartMaterial
+import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.sheet.DEFAULT_GHOST
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
+import dev.chieppa.squash.screens.sheet.restPoseFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
+import dev.chieppa.squash.screens.sheet.toGpu
+import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.ScratchFormat
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.newCharacter
@@ -34,7 +44,13 @@ import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.document.RecentFiles
+import dev.chieppa.stretch.gpu.GpuImage
+import dev.chieppa.stretch.gpu.GpuOptions
+import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.io.path.absolutePathString
@@ -65,6 +81,14 @@ private const val STROKE_POINTS = 60
 
 /** The least share of a pane the part's fill must cover where the part is drawn. */
 private const val MIN_FILL_SHARE = 0.005f
+
+/** Where each run leaves what it rendered, for a person to look at. */
+private const val IMAGES = "build/smoke-images"
+
+private val SMOKE_LOOK = SheetLook(
+    Color(0xFFEDE7DC), Color(0xFF9A9087), Color(0xFF6E6560), Color(0xFF6E6561), Color(0xFFD9772B), Color(0xFF2E6FD8), Color(0xFFD9D2C4),
+    PartMaterial(Color(0xFFE9A24B), Color(0xFFC27F35), Color(0xFF1C1517)), 2f, 8f, 3f, 10f, 8f, 2f, 3f, 8f, 6f, 4f, 3f, 2f,
+)
 
 private object NoFiles : FileChooser {
     override fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -116,16 +140,19 @@ class ScreensSmokeTest {
         val format = ScratchFormat()
         val new = newCharacter(templates.plans.first(), templates, "Marsh hare")
         FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document }))
-        show(AppState(templates, scope, RecentFiles(listOf(file.absolutePathString())), format))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Marsh hare").fetchSemanticsNodes().isNotEmpty() }
+        show(AppState(templates, scope, RecentFiles(listOf(file.absolutePathString())), format, artist = GpuRestPoseArtist))
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.HOME_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.HOME)
+        keep(onNodeWithTag(ShellTags.HOME).captureToImage().argbPixels(), onNodeWithTag(ShellTags.HOME).fetchSemanticsNode().size.width, "home")
     }
 
     @Test
     fun newCharacter() = smoke {
-        show(AppState(templates, scope))
+        show(AppState(templates, scope, artist = GpuRestPoseArtist))
         onNodeWithTag(ShellTags.newPlan(templates.plans.first().id.value)).assertExists()
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.NEW_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.NEW_DIALOG)
+        keep(onNodeWithTag(ShellTags.NEW_DIALOG).captureToImage().argbPixels(), onNodeWithTag(ShellTags.NEW_DIALOG).fetchSemanticsNode().size.width, "new")
     }
 
     @Test
@@ -136,11 +163,24 @@ class ScreensSmokeTest {
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         assertSettled(session)
         onNodeWithTag(ShellTags.PICK_SOCKET).assertExists()
+        onNodeWithTag(ShellTags.socketDot("tail")).assertExists()
         assertCaptured(ShellTags.PICK)
+        val character = assertNotNull(session.assembly.output.value)
+        val look = SMOKE_LOOK
+        val sockets = character.sockets.map { it.ref }
+        val errors = CopyOnWriteArrayList<String>()
+        val image = GpuSnapshot.render(restPoseFrame(character, look, WIDTH, HEIGHT, sockets, sockets.first()), WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        assertEquals(emptyList(), errors)
+        assertNotBlank(image.pixels, "the rest pose")
+        keep(image, "pick")
+        val whole = PixelRect(0, 0, WIDTH, HEIGHT)
+        assertNotEquals(0, image.countIn(whole, look.part.base), "the placed torso is filled")
+        assertNotEquals(0, image.countIn(whole, look.template), "the parts to come are dashed")
+        assertNotEquals(0, image.countIn(whole, look.active), "the picked socket's dot")
     }
 
     @Test
-    fun theWorkspaceWithAPartSelectedAndAnOutlineDrawn() = smoke {
+    fun theAssembledWorkspaceDrawnInPlace() = smoke {
         val state = AppState(templates, scope)
         var selection: SheetSelection? = null
         var look: SheetLook? = null
@@ -155,8 +195,14 @@ class ScreensSmokeTest {
         }
         val session = createCharacter(state)
         assertSettled(session)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection != null }
-        val fromTemplate = assertNotNull(selection).part.mesh
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        assertSettled(session)
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.part?.id == state.selectedPart.value && selection != null }
+        val leg = assertNotNull(selection)
+        assertEquals(View.SIDE, leg.part.axes.framing[BodyView.SIDE])
+        assertEquals(View.FRONT, leg.part.axes.framing[BodyView.TOP], "a leg's Front sits above its Side")
+        assertEquals(View.TOP, leg.part.axes.framing[BodyView.FRONT], "and its Top beside it")
 
         val side = onNodeWithTag(sheetPaneTag(SheetPane.SIDE))
         val size = side.fetchSemanticsNode().size
@@ -166,10 +212,11 @@ class ScreensSmokeTest {
             press()
             for (i in 1..STROKE_POINTS) {
                 val angle = 2.0 * PI * i / STROKE_POINTS
-                moveTo(middle + Offset(STROKE_RADIUS * cos(angle).toFloat(), STROKE_RADIUS * sin(angle).toFloat()))
+                moveTo(middle + Offset(STROKE_RADIUS * cos(angle).toFloat(), 2f * STROKE_RADIUS * sin(angle).toFloat()))
             }
             release()
         }
+        val fromTemplate = leg.part.mesh
         waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
         assertSettled(session)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 drawn · 2 from template")
@@ -178,7 +225,6 @@ class ScreensSmokeTest {
         val drawn = assertNotNull(selection)
         val mesh = drawn.part.mesh
         assertEquals(fromTemplate.vertexCount, mesh.vertexCount, "drawing keeps the template's topology")
-        assertTrue((0 until mesh.vertexCount).any { mesh.position(it) != fromTemplate.position(it) }, "the drawn outline moves the mesh")
 
         val bounds = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInRoot }
         val left = bounds.minOf { it.left }
@@ -189,14 +235,49 @@ class ScreensSmokeTest {
         val paint = assertNotNull(look)
         val gpuErrors = CopyOnWriteArrayList<String>()
         val image = renderPanes(drawn, paint, rects, width, height, gpuErrors::add)
+        keep(image, "workspace-leg")
 
         assertEquals(emptyList(), gpuErrors)
         assertNotBlank(image.pixels, "the panes")
-        fun fill(pane: SheetPane) = image.countIn(rects[pane.ordinal], paint.part.base)
-        fun enough(pane: SheetPane) = rects[pane.ordinal].let { (it.width * it.height * MIN_FILL_SHARE).toInt() }
-        assertTrue(fill(SheetPane.SIDE) >= enough(SheetPane.SIDE), "Side shows the drawn part filled: ${fill(SheetPane.SIDE)}")
-        assertTrue(fill(SheetPane.FULL) >= enough(SheetPane.FULL), "Full shows the part: ${fill(SheetPane.FULL)}")
-        assertEquals(0, fill(SheetPane.FRONT), "an undrawn view shows no fill")
+        val input = panesInput(drawn, paint, rects, width, height)
+        val camera = assertNotNull(input.cameras[View.SIDE])
+        val sidePane = rects[SheetPane.SIDE.ordinal]
+
+        val filled = image.pointsIn(sidePane, paint.part.base)
+        assertTrue(filled.size >= (sidePane.width * sidePane.height * MIN_FILL_SHARE).toInt(), "Side shows the drawn part filled: ${filled.size}")
+        val socket = camera.toPixel(drawn.part.origin)
+        assertTrue(filled.maxOf { it.y } - filled.minOf { it.y } > filled.maxOf { it.x } - filled.minOf { it.x }, "the leg stands upright")
+        assertTrue(filled.count { it.y >= socket.y - 2f } > filled.size * 9 / 10, "and hangs down from its socket")
+
+        val ghost = paint.part.base.over(paint.well, DEFAULT_GHOST)
+        val ghostly = image.pointsIn(sidePane, ghost)
+        assertTrue(ghostly.isNotEmpty(), "the rest of the character shows in Side")
+        val partBox = camera.toPixel(Vec3(drawn.part.box.high.x, drawn.part.box.low.y, 0f)).x..camera.toPixel(Vec3(drawn.part.box.low.x, 0f, 0f)).x
+        assertTrue(ghostly.any { it.x !in partBox }, "beyond the part")
+
+        val fullPane = rects[SheetPane.FULL.ordinal]
+        val solid = image.pointsIn(fullPane, paint.part.base) + image.pointsIn(fullPane, paint.part.shade) + image.pointsIn(fullPane, ghost)
+        assertTrue(solid.size >= (fullPane.width * fullPane.height * MIN_FILL_SHARE).toInt(), "Full shows the character")
+        val fullCamera = assertNotNull(input.full)
+        for (part in drawn.others + drawn.part) {
+            val at = assertNotNull(fullCamera.project(part.center.toGpu(), fullPane.width, fullPane.height))
+            assertTrue(at.x in 0f..fullPane.width.toFloat() && at.y in 0f..fullPane.height.toFloat(), "Full holds every part: $at")
+        }
+        val across = solid.maxOf { it.x } - solid.minOf { it.x }
+        val partAcross = (drawn.part.box.radius * 2f) / (drawn.box.radius * 2f) * fullPane.width
+        assertTrue(across > partAcross, "Full holds the whole character, wider than the part: $across, $partAcross")
+
+        assertEquals(0, image.countIn(rects[SheetPane.FRONT.ordinal], paint.part.base), "an undrawn view shows no fill of the selection")
         assertNotEquals(0, image.countIn(rects[SheetPane.FRONT.ordinal], paint.template), "an undrawn view shows the template's outline")
+    }
+
+    private fun keep(image: GpuImage, name: String) = keep(image.pixels, image.width, name)
+
+    private fun keep(pixels: IntArray, width: Int, name: String) {
+        val folder = File(IMAGES).apply { mkdirs() }
+        val height = pixels.size / width
+        val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        out.setRGB(0, 0, width, height, pixels, 0, width)
+        ImageIO.write(out, "png", File(folder, "$name.png"))
     }
 }

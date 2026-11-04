@@ -33,7 +33,17 @@ data class SheetLook(
     val ringGap: Float,
     val lockedOutline: Float,
     val fullOutline: Float,
-)
+    val ghostOutline: Float = lockedOutline,
+    val dotFill: Color = well,
+    val dotRadius: Float = 5f,
+    val pickedDotRadius: Float = 8f,
+    val dotEdge: Float = 2f,
+) {
+    /** The side of a pair away from the viewer, in the shade the boards give it. */
+    val farPart: PartMaterial = part.copy(base = part.shade)
+
+    val groundMaterial: PartMaterial = PartMaterial(ground)
+}
 
 /** The panes' drawing in the current theme and pixel density. */
 @Composable
@@ -61,5 +71,10 @@ internal fun rememberSheetLook(): SheetLook {
         ringGap = px(6),
         lockedOutline = px(4),
         fullOutline = px(3),
+        ghostOutline = px(2),
+        dotFill = c.surfaceFloat,
+        dotRadius = px(5),
+        pickedDotRadius = px(8),
+        dotEdge = px(2),
     )
 }

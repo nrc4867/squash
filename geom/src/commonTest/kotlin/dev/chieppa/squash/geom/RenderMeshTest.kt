@@ -1,9 +1,5 @@
-package dev.chieppa.squash.render
+package dev.chieppa.squash.geom
 
-import dev.chieppa.squash.geom.MeshBuilder
-import dev.chieppa.squash.geom.PartMesh
-import dev.chieppa.squash.geom.Patch
-import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -67,7 +63,7 @@ class RenderMeshTest {
         val paths = silhouette(mesh(), toViewer = Vec3(0f, 1f, 0f))
         val points = paths.flatten()
         assertEquals(setOf(0f, 1f, 2f, 3f, 4f), points.filter { abs(it.y) < 1e-3f }.map { it.z }.toSet(), "the edges at y = 0 run the tube's length")
-        assertTrue(points.all { it.y >= -1e-3f }, "only the side facing the viewer: $points")
+        assertEquals(setOf(0f, 4f), points.filter { it.y < -1e-3f }.map { it.z }.toSet(), "behind the tube, only its open ends")
     }
 
     @Test
@@ -76,12 +72,5 @@ class RenderMeshTest {
         assertEquals(1, paths.size)
         assertEquals(setOf(1, 2, 3, 7), paths.single().toSet())
         assertEquals(setOf(1, 7), setOf(paths.single().first(), paths.single().last()), "it runs end to end")
-    }
-
-    @Test
-    fun aRectangleKeepsOnlyWhatIsOnTheSurface() {
-        assertEquals(PixelRect(0, 10, 50, 20), PixelRect(-5, 10, 55, 20).clampedTo(100, 100))
-        assertEquals(PixelRect(90, 90, 10, 10), PixelRect(90, 90, 40, 40).clampedTo(100, 100))
-        assertTrue(PixelRect(200, 0, 10, 10).clampedTo(100, 100).isEmpty)
     }
 }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.smoke
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toArgb
@@ -26,6 +27,21 @@ fun assertNotBlank(pixels: IntArray, name: String) {
 fun ImageBitmap.argbPixels(): IntArray {
     val map = toPixelMap()
     return IntArray(width * height) { map[it % width, it / width].toArgb() }
+}
+
+/** This color at [opacity] over [below], as a blend in the surface's colors does it. */
+fun Color.over(below: Color, opacity: Float) = Color(
+    red * opacity + below.red * (1f - opacity),
+    green * opacity + below.green * (1f - opacity),
+    blue * opacity + below.blue * (1f - opacity),
+)
+
+/** The pixels of [rect] that are [color], in the pane's own coordinates. */
+fun GpuImage.pointsIn(rect: PixelRect, color: Color): List<Offset> {
+    val wanted = color.toArgb()
+    return buildList {
+        for (y in rect.y until rect.bottom) for (x in rect.x until rect.right) if (close(this@pointsIn[x, y], wanted)) add(Offset((x - rect.x).toFloat(), (y - rect.y).toFloat()))
+    }
 }
 
 /** How many of [rect]'s pixels are [color]. */

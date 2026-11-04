@@ -142,7 +142,7 @@ class PawAndHeadTest {
         val bent = PartBuilder.build(leg, mapOf("stance" to 0.2f)).single()
         assertNotEquals(PartBuilder.build(leg).single(), bent)
         val hock = bent.slices!!.minBy { abs(it.u - 0.55f) }
-        assertEquals(-0.2f, hock.frame.center dot axes.up, 1e-3f)
+        assertEquals(-0.2f * leg.axis.length, hock.frame.center dot axes.up, 1e-3f)
         for (p in bent.ring(0)) assertEquals(0f, p dot axes.along, 1e-4f)
         assertEquals(emptyList(), MeshInvariants.check(PartBuilder.mesh("leg", leg, listOf(bent)).patches.single(), setOf(0)))
     }

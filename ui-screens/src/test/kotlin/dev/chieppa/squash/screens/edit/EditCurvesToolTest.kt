@@ -15,7 +15,6 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.sheet.PaneViewport
-import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -141,7 +140,7 @@ class EditCurvesToolTest {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                    PaneViewport(SheetPane.SIDE, null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
+                    PaneViewport(View.SIDE, null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
                 }
             }
         }

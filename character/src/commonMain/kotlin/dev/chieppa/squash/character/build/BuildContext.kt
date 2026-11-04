@@ -41,7 +41,7 @@ class BuildContext(
     val front: FrontSection? = drawn.front
 
     /** The axis length: lengths in a template are fractions of this. */
-    val axisLength: Float = views?.length ?: size
+    val axisLength: Float = views?.length ?: (size * template.axis.length)
 
     val axis: AxisSpline = views?.axis ?: restAxis()
 
@@ -64,12 +64,13 @@ class BuildContext(
 
     /** Straight along the rest direction, or bent toward the underside at the template's bend point. */
     private fun restAxis(): AxisSpline {
-        val end = axes.point(size, 0f, 0f)
+        val length = size * template.axis.length
+        val end = axes.point(length, 0f, 0f)
         val bend = template.axis.bend?.let { value(it) } ?: 0f
         if (bend == 0f) return AxisSpline(listOf(Vec3.ZERO, end))
         val at = template.axis.bendAt
         return AxisSpline(
-            listOf(Vec3.ZERO, axes.point(size * at, -bend * size, 0f), end),
+            listOf(Vec3.ZERO, axes.point(length * at, -bend * length, 0f), end),
             floatArrayOf(0f, at, 1f),
         )
     }

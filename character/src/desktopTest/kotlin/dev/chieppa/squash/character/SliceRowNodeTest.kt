@@ -68,7 +68,7 @@ class SliceRowNodeTest {
         assertFalse(graph.settled.value)
         runCurrent()
         assertNotEquals(before, node.output.value)
-        assertEquals(0.8f, node.output.value!!.patches.single().slices!![5].height, 1e-4f)
+        assertEquals(2f * 0.4f * 0.5f, node.output.value!!.patches.single().slices!![5].height, 1e-4f)
 
         history.undo()
         assertTrue(graph.settled.value)

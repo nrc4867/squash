@@ -13,6 +13,7 @@ import dev.chieppa.squash.geom.DEFAULT_OVERSKETCH_FALLOFF
 import dev.chieppa.squash.geom.DEFAULT_STROKE_SMOOTH
 import dev.chieppa.squash.geom.OversketchOptions
 import dev.chieppa.squash.geom.StrokeOptions
+import dev.chieppa.squash.screens.sheet.DEFAULT_GHOST
 
 /** The point of an outline that is selected: an index into its points. */
 data class CurveSelection(val part: PartId, val view: View, val index: Int)
@@ -40,6 +41,10 @@ class CurveEditState {
     var smooth by mutableStateOf(DEFAULT_STROKE_SMOOTH)
     var snapLine by mutableStateOf(true)
     var closeEnd by mutableStateOf(true)
+
+    /** The Hint section: the template's dashed outline where a view is not drawn, and how strongly the rest of the character shows. */
+    var templateHint by mutableStateOf(true)
+    var ghost by mutableStateOf(DEFAULT_GHOST)
 
     /** Whether a handle drag holds a gesture open on the history. */
     var dragging by mutableStateOf(false)

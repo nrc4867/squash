@@ -2,7 +2,6 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
-import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.BodyPlanRef
@@ -19,13 +18,6 @@ fun TemplateFolder.template(ref: TemplateRef): PartTemplate? = parts.firstOrNull
 
 /** The loaded body plan pinned by [ref], if any. */
 fun TemplateFolder.plan(ref: BodyPlanRef): BodyPlan? = plans.firstOrNull { it.ref == ref }
-
-/** The sockets a part with [template] offers: its body plan's and its own, by name. */
-fun BodyPlan.socketsOn(template: PartTemplate): List<SocketSpec> {
-    val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, Outward.AXIS, it.pair, it.takes) }
-    val own = template.blocks.flatMap { it.sockets() }
-    return (planned + own).distinctBy { it.name }
-}
 
 /** The first template [spec] takes that is loaded; a socket with none is not offered. */
 fun TemplateFolder.firstTaken(spec: SocketSpec): PartTemplate? = spec.takes.firstNotNullOfOrNull { template(it) }

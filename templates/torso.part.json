@@ -11,7 +11,7 @@
   "section": "egg",
   "params": {
     "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "girth": { "default": 0.3,  "min": 0.1, "max": 0.7 }
+    "girth": { "default": 0.22,  "min": 0.1, "max": 0.7 }
   },
   "blocks": [
     { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth" },

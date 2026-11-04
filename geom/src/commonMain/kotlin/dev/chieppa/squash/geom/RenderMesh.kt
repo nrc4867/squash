@@ -1,8 +1,5 @@
-package dev.chieppa.squash.render
+package dev.chieppa.squash.geom
 
-import dev.chieppa.squash.geom.PartMesh
-import dev.chieppa.squash.geom.PatchMesh
-import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -20,6 +17,22 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
     fun position(vertex: Int): Vec3 {
         val at = vertex * FLOATS_PER_VERTEX
         return Vec3(vertices[at], vertices[at + 1], vertices[at + 2])
+    }
+
+    /** This mesh mirrored across z = 0: positions and normals reflected, and each triangle wound the other way so it still faces out. */
+    fun mirrored(): RenderMesh {
+        val flipped = vertices.copyOf()
+        for (v in 0 until vertexCount) {
+            val at = v * FLOATS_PER_VERTEX
+            flipped[at + 2] = -flipped[at + 2]
+            flipped[at + NORMAL_OFFSET_FLOATS + 2] = -flipped[at + NORMAL_OFFSET_FLOATS + 2]
+        }
+        val wound = indices.copyOf()
+        for (t in 0 until wound.size / 3) {
+            wound[t * 3 + 1] = indices[t * 3 + 2]
+            wound[t * 3 + 2] = indices[t * 3 + 1]
+        }
+        return RenderMesh(flipped, wound)
     }
 
     companion object {

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -101,6 +102,26 @@ class ShellFlowTest {
         assertEquals(2, legs.size)
         assertEquals(legs.first().id, state.selectedPart.value)
         onNodeWithTag(ShellTags.partRow("paw")).assertExists()
+    }
+
+    @Test
+    fun aDotOnTheRestPosePicksItsSocketAndTheTreeStillDoes() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        val session = assertNotNull(state.session.value)
+        waitUntil(timeoutMillis = 20_000) { session.assembly.output.value != null && onAllNodesWithTag(ShellTags.socketDot("tail")).fetchSemanticsNodes().isNotEmpty() }
+        assertEquals("front-leg", state.pickedSocket.value?.name)
+
+        onNodeWithTag(ShellTags.socketDot("tail")).performClick()
+        waitForIdle()
+        assertEquals("tail", state.pickedSocket.value?.name)
+        assertEquals(TemplateId("tail"), state.pickedType.value)
+        onNodeWithTag(ShellTags.PICK).assertExists()
+
+        onNodeWithTag(ShellTags.partRow("back-leg")).performClick()
+        waitForIdle()
+        assertEquals("back-leg", state.pickedSocket.value?.name)
     }
 
     @Test

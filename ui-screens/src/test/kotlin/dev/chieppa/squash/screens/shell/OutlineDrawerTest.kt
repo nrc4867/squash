@@ -48,6 +48,20 @@ class OutlineDrawerTest {
     }
 
     @Test
+    fun theHintSectionReadsAsTheBoardDrawsItAndIsSessionState() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithContentDescription("Outline").performClick()
+        waitForIdle()
+        onNodeWithTag(OutlineDrawerTags.GHOST_VALUE).assertTextContains("40%")
+        assertEquals(true, state.curves.templateHint)
+        onNodeWithTag(OutlineDrawerTags.TEMPLATE).performClick()
+        waitForIdle()
+        assertEquals(false, state.curves.templateHint)
+        assertEquals(false, state.session.value?.history?.steps?.value?.done?.size?.let { it > 1 }, "nothing goes on the document's history")
+    }
+
+    @Test
     fun theOutlineDrawerReadsAsTheBoardDrawsItAndSetsTheStrokesOptions() = runComposeUiTest {
         val state = AppState(shipped)
         workspace(state)

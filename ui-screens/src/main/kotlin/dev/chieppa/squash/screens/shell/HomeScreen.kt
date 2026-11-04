@@ -41,6 +41,7 @@ import dev.chieppa.squash.uidesign.generated.home_open_file
 import dev.chieppa.squash.uidesign.generated.home_projects
 import dev.chieppa.squash.uidesign.generated.home_recent_files
 import dev.chieppa.squash.uidesign.generated.home_today
+import dev.chieppa.squash.uidesign.generated.rest_pose_art
 import dev.chieppa.squash.uidesign.generated.shell_status_ready
 import dev.chieppa.squash.uidesign.generated.shell_status_saved
 import dev.chieppa.stretch.document.FileStorage
@@ -193,7 +194,12 @@ private fun HomeMain(shell: Shell, current: String?, modifier: Modifier) {
                     )
                 },
             ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(SquashIcons.Character, c.inkMuted, size = ART_ICON) }
+                val plan = loaded?.let { shell.state.templates.plan(it.document.character.bodyPlan) }
+                val art = rememberRestPoseArt(shell.state, plan, loaded?.document)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (art != null) RestPoseImage(art, stringResource(Res.string.rest_pose_art), Modifier.fillMaxSize().testTag(ShellTags.HOME_ART))
+                    else Icon(SquashIcons.Character, c.inkMuted, size = ART_ICON)
+                }
             }
             AddCard(stringResource(Res.string.home_new_character), shell::newCharacter, Modifier.weight(1f).height(ADD_CARD_HEIGHT))
         }

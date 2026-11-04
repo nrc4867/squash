@@ -213,4 +213,65 @@ class GraphTest {
         assertNull(second.failure.value)
         assertEquals(2, second.output.value)
     }
+
+    @Test
+    fun aGatheredNodeWaitsForEverySourceAndRerunsWithAny() = runTest {
+        val graph = graph()
+        val a = MutableStateFlow(1)
+        val b = MutableStateFlow(2)
+        val left = graph.node(a) { it * 10 }
+        val right = graph.node(b) { it * 10 }
+        val sum = graph.gather(MutableStateFlow("both"), { mapOf("a" to left, "b" to right) }) { (_, values) -> values.values.sum() }
+        assertFalse(graph.settled.value)
+        assertNull(sum.output.value)
+        runCurrent()
+        assertEquals(30, sum.output.value)
+        assertTrue(graph.settled.value)
+        b.value = 5
+        assertFalse(graph.settled.value, "dirty from the moment a source is")
+        runCurrent()
+        assertEquals(60, sum.output.value)
+        assertTrue(graph.settled.value)
+    }
+
+    @Test
+    fun aGatheredNodeFollowsItsShapeAndDropsWhatLeftIt() = runTest {
+        val graph = graph()
+        val shape = MutableStateFlow(listOf("a"))
+        val sources = mutableMapOf<String, Node<*, Int>>()
+        val inputs = mapOf("a" to MutableStateFlow(1), "b" to MutableStateFlow(2))
+        val sum = graph.gather(shape, { names -> names.associateWith { name -> sources.getOrPut(name) { graph.node(inputs.getValue(name)) { it } } } }) { (_, values) -> values.values.sum() }
+        runCurrent()
+        assertEquals(1, sum.output.value)
+        shape.value = listOf("a", "b")
+        assertFalse(graph.settled.value)
+        runCurrent()
+        assertEquals(3, sum.output.value)
+        shape.value = listOf("b")
+        runCurrent()
+        assertEquals(2, sum.output.value)
+        inputs.getValue("a").value = 100
+        runCurrent()
+        assertEquals(2, sum.output.value, "a source no longer named reaches nothing")
+        assertTrue(graph.settled.value)
+    }
+
+    @Test
+    fun aGatheredNodeTakesASourcesFailureKeepsItsResultAndRecovers() = runTest {
+        val graph = graph()
+        val input = MutableStateFlow(1)
+        val source = graph.node(input) { if (it < 0) error("negative") else it }
+        val gathered = graph.gather(MutableStateFlow(Unit), { mapOf("s" to source) }) { (_, values) -> values.getValue("s") * 2 }
+        runCurrent()
+        assertEquals(2, gathered.output.value)
+        input.value = -1
+        runCurrent()
+        assertIs<IllegalStateException>(gathered.failure.value)
+        assertEquals(2, gathered.output.value)
+        assertTrue(graph.settled.value)
+        input.value = 4
+        runCurrent()
+        assertNull(gathered.failure.value)
+        assertEquals(8, gathered.output.value)
+    }
 }

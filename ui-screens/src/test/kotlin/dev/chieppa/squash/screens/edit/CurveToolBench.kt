@@ -33,7 +33,6 @@ import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
-import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
 import kotlinx.coroutines.CoroutineScope
@@ -127,7 +126,7 @@ internal fun ComposeUiTest.showPane(tool: PaneTool, camera: LockedCamera) {
     setStretchContent {
         with(density) {
             Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                PaneViewport(SheetPane.SIDE, null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
+                PaneViewport(camera.view, null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
             }
         }
     }

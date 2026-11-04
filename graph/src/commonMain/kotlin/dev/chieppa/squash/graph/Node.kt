@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,13 @@ class Node<I, O : Any> internal constructor(
     private var running: Job? = null
     private var upstream: Node<*, *>? = null
     private val delivered = MutableStateFlow(0L)
+    private val gathering = MutableStateFlow<Gathering?>(null)
+
+    /** The nodes a gathered node reads, and the generations of theirs its latest pull has seen. */
+    private class Gathering(val sources: Map<*, Node<*, *>>) {
+        val generations: List<Long> get() = sources.values.map { it.published.value.generation }
+        val seen = MutableStateFlow<List<Long>?>(null)
+    }
 
     val output: StateFlow<O?> = DerivedStateFlow({ published.value.value }, published)
 
@@ -44,7 +52,9 @@ class Node<I, O : Any> internal constructor(
         get() {
             val followed = upstream
             val caughtUp = followed == null || (followed.isClean && delivered.value == followed.published.value.generation)
-            return caughtUp && completed.value >= latest.value
+            val gathered = gathering.value
+            val gatheredAll = gathered == null || (gathered.sources.values.all { it.isClean } && gathered.seen.value == gathered.generations)
+            return caughtUp && gatheredAll && completed.value >= latest.value
         }
 
     /** Collects unconfined, so a new input marks the node dirty inside the call that set it. */
@@ -65,6 +75,58 @@ class Node<I, O : Any> internal constructor(
                 }
                 delivered.value = result.generation
                 changed()
+            }
+        }
+    }
+
+    /**
+     * Takes as input what [inputOf] makes of each value of [shape] and the results of the nodes [sourcesOf] names for it. It
+     * runs once all of them have a result, and again when any has a new one. The first failure among them becomes this
+     * node's, keeping its last result. Results reach one loop in turn, whichever thread each source finishes on.
+     */
+    internal fun <S, K, V : Any> gather(shape: Flow<S>, sourcesOf: (S) -> Map<K, Node<*, V>>, inputOf: (S, Map<K, V>) -> I) {
+        val wake = Channel<Unit>(Channel.CONFLATED)
+        val current = MutableStateFlow<Pair<S, Map<K, Node<*, V>>>?>(null)
+        var lastInput: I? = null
+        var lastFailure: Throwable? = null
+        fun pull() {
+            val (value, sources) = current.value ?: return
+            val gathered = gathering.value ?: return
+            val results = sources.mapValues { it.value.published.value }
+            val failure = results.values.firstNotNullOfOrNull { it.failure }
+            val values = results.mapValues { it.value.value }
+            when {
+                failure != null -> if (failure !== lastFailure) {
+                    lastFailure = failure
+                    lastInput = null
+                    reject(failure)
+                }
+                values.values.all { it != null } -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val input = inputOf(value, values as Map<K, V>)
+                    if (input != lastInput) accept(input)
+                    lastInput = input
+                    lastFailure = null
+                }
+            }
+            gathered.seen.value = results.values.map { it.generation }
+            changed()
+        }
+        scope.launch(Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) { for (signal in wake) pull() }
+        scope.launch(Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
+            var watchers: Job? = null
+            shape.collect { value ->
+                watchers?.cancel()
+                val sources = sourcesOf(value)
+                gathering.value = Gathering(sources)
+                current.value = value to sources
+                changed()
+                watchers = launch(start = CoroutineStart.UNDISPATCHED) {
+                    sources.values.forEach { source ->
+                        launch(start = CoroutineStart.UNDISPATCHED) { source.published.collect { wake.trySend(Unit) } }
+                    }
+                }
+                wake.trySend(Unit)
             }
         }
     }

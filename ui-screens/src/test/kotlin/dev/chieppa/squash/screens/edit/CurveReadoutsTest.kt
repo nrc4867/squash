@@ -6,7 +6,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.moved
 import dev.chieppa.squash.screens.sheet.PaneChip
-import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.paneChip
 import dev.chieppa.squash.screens.sheet.pixelsLabel
 import kotlin.test.Test
@@ -108,9 +107,9 @@ class CurveReadoutsTest {
 
     @Test
     fun fullShowsRefitOnlyWhileTheGraphWorks() {
-        assertEquals(PaneChip.LIVE, paneChip(SheetPane.FULL, emptySet(), null, refitting = false))
-        assertEquals(PaneChip.REFIT, paneChip(SheetPane.FULL, emptySet(), null, refitting = true))
-        assertEquals(PaneChip.DRAWN, paneChip(SheetPane.SIDE, setOf(View.SIDE), null, refitting = true))
+        assertEquals(PaneChip.LIVE, paneChip(null, emptySet(), null, refitting = false))
+        assertEquals(PaneChip.REFIT, paneChip(null, emptySet(), null, refitting = true))
+        assertEquals(PaneChip.DRAWN, paneChip(View.SIDE, setOf(View.SIDE), null, refitting = true))
     }
 
     @Test

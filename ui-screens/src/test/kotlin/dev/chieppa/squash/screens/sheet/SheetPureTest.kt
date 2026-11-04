@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.PartExtents
+import dev.chieppa.squash.geom.Span
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.stretch.frame.OverlayDot
@@ -20,7 +22,7 @@ import kotlin.test.assertTrue
 class SheetPureTest {
     private val axes = PartAxes.of(Vec3(1f, 0f, 0f))
     private val extents = PartExtents(along = Span(0f, 1f), up = Span(-0.25f, 0.25f), side = Span(-0.5f, 0.5f))
-    private val fit = SheetFit(axes.middle(extents), 100f)
+    private val fit = SheetFit(Vec3(0.5f, 0f, 0f), 100f)
 
     private fun camera(view: View) = LockedCamera(view, axes, fit, 400, 300)
 
@@ -66,7 +68,7 @@ class SheetPureTest {
         assertEquals(own.horizontals, front.horizontals)
         assertTrue(front.verticals.isEmpty())
         assertEquals(listOf(250f, 150f), own.verticals, "the socket on the right, 100 pixels a unit")
-        assertEquals(listOf(125f, 175f), own.horizontals)
+        assertEquals(listOf(175f, 125f), own.horizontals)
     }
 
     @Test
@@ -81,10 +83,10 @@ class SheetPureTest {
 
     @Test
     fun chipsReadTheOutlinesAndTheStroke() {
-        assertEquals(PaneChip.LIVE, paneChip(SheetPane.FULL, emptySet(), null))
-        assertEquals(PaneChip.FROM_TEMPLATE, paneChip(SheetPane.TOP, setOf(View.SIDE), null))
-        assertEquals(PaneChip.DRAWN, paneChip(SheetPane.SIDE, setOf(View.SIDE), null))
-        assertEquals(PaneChip.DRAWING, paneChip(SheetPane.SIDE, setOf(View.SIDE), View.SIDE))
+        assertEquals(PaneChip.LIVE, paneChip(null, emptySet(), null))
+        assertEquals(PaneChip.FROM_TEMPLATE, paneChip(View.TOP, setOf(View.SIDE), null))
+        assertEquals(PaneChip.DRAWN, paneChip(View.SIDE, setOf(View.SIDE), null))
+        assertEquals(PaneChip.DRAWING, paneChip(View.SIDE, setOf(View.SIDE), View.SIDE))
     }
 
     @Test

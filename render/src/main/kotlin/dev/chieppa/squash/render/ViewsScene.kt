@@ -1,5 +1,6 @@
 package dev.chieppa.squash.render
 
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
 import dev.chieppa.stretch.gpu.GpuFrame
 import dev.chieppa.stretch.gpu.GpuScene

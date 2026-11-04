@@ -2,11 +2,9 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -67,10 +65,7 @@ class DisagreeCostTest {
 
         val part = legPart()
         val rects = sheetPaneRects(1400, 800, 2)
-        val fit = fitSheet(part.axes, part.extents, rects)
-        val cameras = SheetPane.entries.mapNotNull { pane ->
-            pane.view?.let { it to LockedCamera(it, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height) }
-        }.toMap()
+        val cameras = camerasOn(part, fitSheet(part.box, rects), rects)
         val look = OutlineLook(Color.Gray, 4f, Color.Red, 4f, 8f)
         val tool = object : PaneTool {
             override fun pointerInput(view: View, camera: LockedCamera) = Modifier
@@ -98,6 +93,6 @@ class DisagreeCostTest {
     private fun legPart(): SheetPart {
         val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
         val leg = folder.parts.first { it.id.value == "leg" }
-        return checkNotNull(sheetPart(PartId("p"), leg, PartBuilder.mesh("p", leg, PartBuilder.build(leg))))
+        return sheetPartOf(leg)
     }
 }

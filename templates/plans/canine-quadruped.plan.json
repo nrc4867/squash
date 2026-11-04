@@ -6,10 +6,10 @@
   "name": "Canine quadruped",
   "root": { "template": "torso", "rest": [1, 0, 0] },
   "sockets": [
-    { "name": "neck",      "on": "torso", "u": 1.0,  "v": 0.1,  "takes": ["head"] },
-    { "name": "front-leg", "on": "torso", "u": 0.85, "v": 0.35, "pair": "x", "takes": ["leg"] },
-    { "name": "back-leg",  "on": "torso", "u": 0.15, "v": 0.35, "pair": "x", "takes": ["leg"] },
-    { "name": "tail",      "on": "torso", "u": 0.0,  "v": 0.0,  "takes": ["tail"] },
+    { "name": "neck",      "on": "torso", "u": 0.92, "v": 0.04, "takes": ["head"] },
+    { "name": "front-leg", "on": "torso", "u": 0.82, "v": 0.42, "pair": "x", "takes": ["leg"] },
+    { "name": "back-leg",  "on": "torso", "u": 0.18, "v": 0.42, "pair": "x", "takes": ["leg"] },
+    { "name": "tail",      "on": "torso", "u": 0.03, "v": 0.02, "takes": ["tail"] },
     { "name": "ruff",      "on": "torso", "u": 0.9,  "v": 0.5,  "takes": ["ruff"], "optional": true }
   ],
   "slots": [

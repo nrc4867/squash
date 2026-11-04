@@ -1,10 +1,15 @@
 package dev.chieppa.squash.render
 
 import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
+import dev.chieppa.stretch.gpu.webgpu.BlendComponent
+import dev.chieppa.stretch.gpu.webgpu.BlendFactor
+import dev.chieppa.stretch.gpu.webgpu.BlendState
 import dev.chieppa.stretch.gpu.webgpu.BufferBinding
 import dev.chieppa.stretch.gpu.webgpu.BufferUsage
 import dev.chieppa.stretch.gpu.webgpu.ColorTarget
+import dev.chieppa.stretch.gpu.webgpu.CompareFunction
 import dev.chieppa.stretch.gpu.webgpu.CullMode
 import dev.chieppa.stretch.gpu.webgpu.DepthState
 import dev.chieppa.stretch.gpu.webgpu.GpuBindGroup
@@ -19,6 +24,12 @@ import dev.chieppa.stretch.gpu.webgpu.VertexFormat
 
 private const val MATRIX_FLOATS = 16
 private const val VECTOR_FLOATS = 4
+
+/** Keeps what is there: a pipeline blending with this writes only depth, however the pass's color target is set up. */
+private val DEPTH_ONLY = BlendState(
+    color = BlendComponent(BlendFactor.Zero, BlendFactor.One),
+    alpha = BlendComponent(BlendFactor.Zero, BlendFactor.One),
+)
 
 /** A mesh's vertex and index buffers. */
 internal class GpuMesh(context: GpuContext, val mesh: RenderMesh) : AutoCloseable {
@@ -41,7 +52,9 @@ internal class GpuMesh(context: GpuContext, val mesh: RenderMesh) : AutoCloseabl
 }
 
 /**
- * Draws meshes into the frame's pass with a material each. A pass runs after all its uniform writes, so each draw of a
+ * Draws meshes into the frame's pass with a material each. A fill shows both its faces, so an open ring reads as solid
+ * where it stands proud of what it sits in. A draw below full opacity lays its depth first and then blends only what
+ * matches it, so its own far side never shows through. A pass runs after all its uniform writes, so each draw of a
  * frame takes a uniform slot of its own, numbered from 0 by [draw]'s `slot`; the slots grow to the most draws in a frame.
  */
 internal class MeshPass(private val context: GpuContext) : AutoCloseable {
@@ -54,22 +67,34 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
             VertexAttribute(VertexFormat.Float32x3, (RenderMesh.NORMAL_OFFSET_FLOATS * Float.SIZE_BYTES).toLong(), 1),
         ),
     )
-    private val fill = pipeline("vs_fill", "fs_fill", CullMode.Back)
+    private val fill = pipeline("vs_fill", "fs_fill", CullMode.None)
     private val outline = pipeline("vs_outline", "fs_outline", CullMode.Front)
+    private val fillDepth = pipeline("vs_fill", "fs_fill", CullMode.None, DEPTH_ONLY)
+    private val outlineDepth = pipeline("vs_outline", "fs_outline", CullMode.Front, DEPTH_ONLY)
+    private val fillBlend = pipeline("vs_fill", "fs_fill", CullMode.None, BlendState.AlphaBlending, DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual))
+    private val outlineBlend = pipeline("vs_outline", "fs_outline", CullMode.Front, BlendState.AlphaBlending, DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual))
+    private val pipelines = listOf(fill, outline, fillDepth, outlineDepth, fillBlend, outlineBlend)
     private val slots = mutableListOf<Slot>()
     private val data = FloatArray(DRAW_FLOATS)
 
-    private class Slot(val uniforms: GpuBuffer, val fill: GpuBindGroup, val outline: GpuBindGroup)
+    /** A pipeline's bind group layout is its own, so a draw's uniforms have a bind group for each. */
+    private class Slot(val uniforms: GpuBuffer, val groups: Map<GpuRenderPipeline, GpuBindGroup>)
 
-    private fun pipeline(vertex: String, fragment: String, cull: CullMode): GpuRenderPipeline = device.createRenderPipeline(
+    private fun pipeline(
+        vertex: String,
+        fragment: String,
+        cull: CullMode,
+        blend: BlendState? = null,
+        depth: DepthState = DepthState(context.depthFormat),
+    ): GpuRenderPipeline = device.createRenderPipeline(
         RenderPipelineSpec(
             shader = shader,
             vertexEntry = vertex,
             buffers = listOf(layout),
             fragmentEntry = fragment,
-            targets = listOf(ColorTarget(context.format)),
+            targets = listOf(ColorTarget(context.format, blend)),
             cullMode = cull,
-            depth = DepthState(context.depthFormat),
+            depth = depth,
             sampleCount = context.sampleCount,
             label = vertex,
         ),
@@ -80,22 +105,32 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
         writeUniforms(uniforms.uniforms, draw, view)
         pass.setVertexBuffer(0, mesh.vertices)
         pass.setIndexBuffer(mesh.indices, IndexFormat.Uint32)
-        if (draw.outlinePixels > 0f) {
-            pass.setPipeline(outline)
-            pass.setBindGroup(0, uniforms.outline)
-            pass.drawIndexed(mesh.mesh.indices.size)
+        if (draw.opacity < 1f) {
+            drawWith(pass, outlineDepth, fillDepth, uniforms, mesh, draw)
+            drawWith(pass, outlineBlend, fillBlend, uniforms, mesh, draw)
+        } else {
+            drawWith(pass, outline, fill, uniforms, mesh, draw)
         }
-        pass.setPipeline(fill)
-        pass.setBindGroup(0, uniforms.fill)
+    }
+
+    private fun drawWith(pass: GpuRenderPass, withOutline: GpuRenderPipeline, withFill: GpuRenderPipeline, uniforms: Slot, mesh: GpuMesh, draw: MeshDraw) {
+        if (draw.outlinePixels > 0f) drawOne(pass, withOutline, uniforms, mesh)
+        drawOne(pass, withFill, uniforms, mesh)
+    }
+
+    private fun drawOne(pass: GpuRenderPass, pipeline: GpuRenderPipeline, uniforms: Slot, mesh: GpuMesh) {
+        pass.setPipeline(pipeline)
+        pass.setBindGroup(0, uniforms.groups.getValue(pipeline))
         pass.drawIndexed(mesh.mesh.indices.size)
     }
 
     private fun slotAt(index: Int): Slot {
         while (slots.size <= index) {
             val buffer = device.createBuffer(DRAW_FLOATS.toLong() * Float.SIZE_BYTES, BufferUsage.Uniform + BufferUsage.CopyDst, "mesh draw")
-            val fillGroup = fill.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) }
-            val outlineGroup = outline.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) }
-            slots += Slot(buffer, fillGroup, outlineGroup)
+            val groups = pipelines.associateWith { pipeline ->
+                pipeline.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) }
+            }
+            slots += Slot(buffer, groups)
         }
         return slots[index]
     }
@@ -111,7 +146,8 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
             at, material.toLight.x, material.toLight.y, material.toLight.z, if (material.shading == Shading.TWO_TONE) 1f else 0f,
         )
         at = data.put(at, material.ink)
-        data.put(at, draw.outlinePixels, view.viewport.width.toFloat(), view.viewport.height.toFloat(), 0f)
+        at = data.put(at, draw.outlinePixels, view.viewport.width.toFloat(), view.viewport.height.toFloat(), 0f)
+        data.put(at, draw.layer.scale, draw.layer.offset, draw.opacity, 0f)
         device.queue.writeBuffer(buffer, data)
     }
 
@@ -127,12 +163,10 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
 
     override fun close() {
         slots.forEach {
-            it.fill.close()
-            it.outline.close()
+            it.groups.values.forEach(GpuBindGroup::close)
             it.uniforms.close()
         }
-        fill.close()
-        outline.close()
+        pipelines.forEach { it.close() }
         shader.close()
     }
 }

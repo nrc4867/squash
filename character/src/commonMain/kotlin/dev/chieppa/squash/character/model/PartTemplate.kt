@@ -22,6 +22,8 @@ private const val DEFAULT_BEND_AT = 0.5f
 data class AxisSpec(
     @Doc("From the socket end toward the tip, in body space.")
     val rest: Direction,
+    @Doc("How long the axis is with nothing drawn, in body units; the size parameter multiplies it.")
+    val length: Float = 1f,
     @Doc("How far the axis sits toward the underside at bendAt with nothing drawn, as a fraction of its length.")
     val bend: Param? = null,
     @Doc("Where along the axis it bends.") @Range(min = 0.0, max = 1.0)

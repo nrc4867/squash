@@ -14,7 +14,7 @@ private val TIME = DateTimeFormatter.ofPattern("HH:mm")
 private val DATE = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
 
 /** What Home says about a recent file, read from the file itself. */
-data class RecentProject(val path: String, val name: String, val progress: PartProgress, val modified: Instant)
+data class RecentProject(val path: String, val name: String, val progress: PartProgress, val modified: Instant, val document: SquashDocument)
 
 /** Reads the save at [path], or null when it cannot be read as one. */
 fun readRecentProject(path: String, format: DocumentFormat<SquashDocument>, templates: TemplateFolder): RecentProject? =
@@ -22,7 +22,7 @@ fun readRecentProject(path: String, format: DocumentFormat<SquashDocument>, temp
         val file = Path.of(path)
         val document = format.decode(Files.readAllBytes(file))
         val plan = requireNotNull(templates.plan(document.character.bodyPlan))
-        RecentProject(path, document.character.name, partProgress(document, plan, templates), Files.getLastModifiedTime(file).toInstant())
+        RecentProject(path, document.character.name, partProgress(document, plan, templates), Files.getLastModifiedTime(file).toInstant(), document)
     }.getOrNull()
 
 /** When a file changed: its time through [today] when that was today, otherwise its date. */

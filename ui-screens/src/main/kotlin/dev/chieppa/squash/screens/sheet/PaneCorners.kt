@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_chip_pixels
 import dev.chieppa.squash.uidesign.generated.edit_refit
@@ -21,26 +22,26 @@ import dev.chieppa.stretch.ui.ChipKind
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
 
-/** A pane over the surface, which shows through it: its label and chip float in its corners, and [modifier] takes its pointer. */
+/** A pane over the surface, which shows through it: its label names the [view] it holds, null for Full, its chip floats in the other corner, and [modifier] takes its pointer. */
 @Composable
-internal fun PaneViewport(pane: SheetPane, chip: PaneChip?, modifier: Modifier = Modifier, fitError: Float? = null) {
+internal fun PaneViewport(view: View?, chip: PaneChip?, modifier: Modifier = Modifier, fitError: Float? = null) {
     Viewport(
         modifier,
         nativeContent = true,
-        topStart = { PaneLabel(pane) },
+        topStart = { PaneLabel(view) },
         topEnd = chip?.let { { PaneChipView(it, fitError) } },
     ) {}
 }
 
 @Composable
-private fun PaneLabel(pane: SheetPane) {
+private fun PaneLabel(view: View?) {
     Hud(
         stringResource(
-            when (pane) {
-                SheetPane.TOP -> Res.string.sheet_pane_top
-                SheetPane.FULL -> Res.string.sheet_pane_full
-                SheetPane.SIDE -> Res.string.sheet_pane_side
-                SheetPane.FRONT -> Res.string.sheet_pane_front
+            when (view) {
+                View.TOP -> Res.string.sheet_pane_top
+                null -> Res.string.sheet_pane_full
+                View.SIDE -> Res.string.sheet_pane_side
+                View.FRONT -> Res.string.sheet_pane_front
             },
         ),
     )

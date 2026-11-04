@@ -104,6 +104,7 @@ class PairedMeshTest {
         val leftMesh = session.mesh(left.id).output.value
         val rightMesh = session.mesh(right.id).output.value
         session.send(BreakPair(pair))
+        runCurrent()
         assertTrue(session.graph.settled.value, "what each side resolves to is unchanged")
         assertSame(leftMesh, session.mesh(left.id).output.value)
         assertSame(rightMesh, session.mesh(right.id).output.value)

@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.edit.CurveEditState
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.OpenSocket
+import dev.chieppa.squash.screens.shell.RestPoseArtist
 import dev.chieppa.squash.screens.shell.ScratchFormat
 import dev.chieppa.squash.screens.shell.newCharacter
 import dev.chieppa.squash.screens.shell.openSockets
@@ -40,6 +41,8 @@ class AppState(
     val recent: RecentFiles = RecentFiles(),
     val format: ScratchFormat = ScratchFormat(),
     private val storage: DocumentStorage = FileStorage,
+    /** What renders rest pose art offscreen; with none, a screen shows no art. */
+    val artist: RestPoseArtist? = null,
 ) {
     val screen = MutableStateFlow(if (recent.entries.isEmpty()) Screen.NEW_CHARACTER else Screen.HOME)
     val session = MutableStateFlow<CharacterSession?>(null)
@@ -67,7 +70,7 @@ class AppState(
         val job = SupervisorJob(scope.coroutineContext[Job])
         sessionJob = job
         val sessionScope = scope + job
-        val opened = CharacterSession(document, TemplateLibrary(templates.parts), sessionScope)
+        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope)
         file.value = DocumentSession(format, document, storage, path, opened.history)
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id

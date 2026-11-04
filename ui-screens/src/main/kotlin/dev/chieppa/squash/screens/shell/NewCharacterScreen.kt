@@ -1,10 +1,14 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -26,6 +31,7 @@ import dev.chieppa.squash.uidesign.generated.new_open_file
 import dev.chieppa.squash.uidesign.generated.new_plan_parts
 import dev.chieppa.squash.uidesign.generated.new_recent
 import dev.chieppa.squash.uidesign.generated.new_title
+import dev.chieppa.squash.uidesign.generated.rest_pose_art
 import dev.chieppa.squash.uidesign.generated.shell_default_name
 import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.frame.ListRow
@@ -43,6 +49,11 @@ import org.jetbrains.compose.resources.stringResource
 
 private val DIALOG_WIDTH = 640.dp
 private const val LEFT_SHARE = 1.4f
+private val PREVIEW_DP = 150.dp
+
+/** The dialog's preview renders near its own size, so its dashes stay as heavy as the board's. */
+private const val PREVIEW_WIDTH = 760
+private const val PREVIEW_HEIGHT = 300
 
 /** New character over an empty viewport: a name, the body plans and the recent files. */
 @Composable
@@ -52,7 +63,12 @@ fun NewCharacterScreen(shell: Shell) {
     var name by remember { mutableStateOf("") }
     var chosen by remember { mutableStateOf(plans.firstOrNull()) }
     val untitled = stringResource(Res.string.shell_default_name)
-    BuildFrame(shell) { Viewport {} }
+    val backdrop = rememberRestPoseArt(state, chosen, dashed = true)
+    val art = rememberRestPoseArt(state, chosen, dashed = true, width = PREVIEW_WIDTH, height = PREVIEW_HEIGHT)
+    val description = stringResource(Res.string.rest_pose_art)
+    BuildFrame(shell) {
+        Viewport { if (backdrop != null) RestPoseImage(backdrop, description, Modifier.fillMaxSize()) }
+    }
     StretchDialog(
         title = stringResource(Res.string.new_title),
         onDismiss = shell::dismissNew,
@@ -83,6 +99,13 @@ fun NewCharacterScreen(shell: Shell) {
                 }
                 Labeled(stringResource(Res.string.new_body_plan)) {
                     plans.forEach { PlanRow(shell, it, it == chosen) { chosen = it } }
+                }
+                if (art != null) {
+                    RestPoseImage(
+                        art,
+                        description,
+                        Modifier.fillMaxWidth().height(PREVIEW_DP).clip(RoundedCornerShape(Stretch.shapes.card)).background(Stretch.colors.surfaceWell).testTag(ShellTags.NEW_ART),
+                    )
                 }
                 chosen?.let { PlanChips(shell, it) }
             }

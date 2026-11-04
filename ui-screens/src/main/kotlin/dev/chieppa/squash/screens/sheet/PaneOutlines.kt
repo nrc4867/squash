@@ -13,13 +13,9 @@ import dev.chieppa.stretch.frame.OverlayBuilder
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.stretch.theme.Stretch
-import kotlin.math.abs
 
 /** Two views further apart than this on screen disagree; hand-drawn ends never meet exactly. */
 private const val DISAGREE_TOLERANCE_PIXELS = 2f
-
-/** Above this, a part axis runs across the pane rather than up it. */
-private const val ACROSS_DOT = 0.5f
 
 /** Below this cosine of the turn between two lines, the gap on the outside of the joint shows. */
 private const val JOINT_COSINE = 0.995f
@@ -53,7 +49,7 @@ fun paneOutlineOverlays(
     look: OutlineLook,
 ): Map<View, ViewportOverlay> {
     if (selection == null || cameras.isEmpty()) return emptyMap()
-    val tolerance = DISAGREE_TOLERANCE_PIXELS / cameras.values.first().fit.pixelsPerUnit
+    val tolerance = DISAGREE_TOLERANCE_PIXELS * cameras.values.first().planePixel
     val disagreements = viewsDisagree(selection.outlines, tool?.liveStroke, tolerance)
     return cameras.mapValues { (view, camera) ->
         val tooled = tool?.overlay(view, camera) ?: ViewportOverlay.Empty
@@ -79,8 +75,8 @@ fun disagreeOverlay(view: View, camera: LockedCamera, disagreements: List<Disagr
 
 private fun OverlayBuilder.limitLine(found: Disagreement, camera: LockedCamera, look: OutlineLook) {
     val direction = camera.axes.direction(found.axis)
-    val at = camera.toPixel(direction * found.limit)
-    if (abs(direction dot camera.basis.xAxis) > ACROSS_DOT) {
+    val at = camera.toPixel(camera.origin + direction * (found.limit * camera.drawingScale))
+    if (camera.runsAcross(direction)) {
         line(Offset(at.x, 0f), Offset(at.x, camera.height.toFloat()), look.warn, look.limitWidth)
     } else {
         line(Offset(0f, at.y), Offset(camera.width.toFloat(), at.y), look.warn, look.limitWidth)

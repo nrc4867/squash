@@ -2,6 +2,7 @@ package dev.chieppa.squash.render
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.Mat4
@@ -38,13 +39,26 @@ data class PixelRect(val x: Int, val y: Int, val width: Int, val height: Int) {
     }
 }
 
-/** One mesh to draw in a view, placed by [model]. With an [outlinePixels] above 0 it has an outline that wide. */
+/** Which slice of the depth buffer a draw uses, so a whole layer stays behind or in front of another wherever its parts lie. */
+enum class DepthLayer(val scale: Float, val offset: Float) {
+    FRONT(0.1f, 0f),
+    SCENE(0.8f, 0.1f),
+    BACK(0.1f, 0.9f),
+}
+
+/**
+ * One mesh to draw in a view, placed by [model]. With an [outlinePixels] above 0 it has an outline that wide. Below an
+ * [opacity] of 1 it blends over what a view drew before it, showing only its own nearest surface, so a view draws such
+ * meshes after opaque ones and furthest first.
+ */
 @Immutable
 data class MeshDraw(
     val mesh: RenderMesh,
     val material: PartMaterial,
     val model: Mat4 = Mat4.Identity,
     val outlinePixels: Float = 0f,
+    val opacity: Float = 1f,
+    val layer: DepthLayer = DepthLayer.SCENE,
 )
 
 /** One camera's view: what it sees, drawn into [viewport] with nothing outside it. */

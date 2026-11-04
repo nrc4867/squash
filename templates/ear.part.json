@@ -4,7 +4,7 @@
   "id": "ear",
   "version": 1,
   "name": "Ear",
-  "axis": { "rest": [0, 1, 0] },
+  "axis": { "rest": [0, 0.96, -0.28], "length": 0.3 },
   "openEnd": "start",
   "topology": { "rings": 16, "segments": 12 },
   "views": { "side": "height", "top": "width", "front": "section" },
