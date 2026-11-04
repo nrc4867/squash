@@ -130,7 +130,7 @@ internal class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
 internal fun ComposeUiTest.showPane(tool: PaneTool, camera: LockedCamera) {
     setStretchContent {
         with(density) {
-            Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
+            Box(Modifier.size(camera.width.toDp(), camera.height.toDp())) {
                 PaneViewport(camera.axes.bodyViewOf(camera.view), null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
             }
         }

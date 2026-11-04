@@ -119,6 +119,19 @@ fun OutlineCurve.changedSections(other: OutlineCurve): IntRange? {
 }
 
 /**
+ * The sections of this curve that gave way in [other], which may hold another number of them: those between the first and
+ * last that differ, counting in from each end. Null if the two are the same.
+ */
+fun OutlineCurve.replacedSections(other: OutlineCurve): IntRange? {
+    if (points == other.points) return null
+    fun sectionAt(curve: OutlineCurve, section: Int) = curve.points.subList(section * PER_SEGMENT, (section + 1) * PER_SEGMENT + 1)
+    val shorter = minOf(sections, other.sections)
+    val before = (0 until shorter).firstOrNull { sectionAt(this, it) != sectionAt(other, it) } ?: shorter
+    val after = (0 until shorter - before).firstOrNull { sectionAt(this, sections - 1 - it) != sectionAt(other, other.sections - 1 - it) } ?: (shorter - before)
+    return before..(sections - 1 - after).coerceAtLeast(before)
+}
+
+/**
  * This curve with each run of [erased] sections replaced by one straight section between the anchors around it, so the
  * curve stays whole and its ends stay where they are. Null when that would take every section.
  */

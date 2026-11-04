@@ -154,6 +154,55 @@ class StrokeCleanupTest {
     }
 
     @Test
+    fun smoothKeepsItsPassesUpToTheDefaultThenClimbsToAStrongBlur() {
+        assertEquals(0, smoothPasses(0f))
+        assertEquals(2, smoothPasses(0.25f))
+        assertEquals(3, smoothPasses(DEFAULT_STROKE_SMOOTH))
+        assertEquals(4, smoothPasses(0.5f))
+        assertEquals(512, smoothPasses(1f))
+        val slider = List(101) { smoothPasses(it / 100f) }
+        assertEquals(slider.sorted(), slider, "never less for more")
+    }
+
+    @Test
+    fun fullSmoothCalmsAWobbleTheDefaultKeeps() {
+        val wobble = List(1000) { Vec2(it * 2f * PIXEL, 6f * PIXEL * sin(it * 2f * PI.toFloat() / 30f)) }
+        fun left(smoothing: Float) = smooth(wobble, smoothPasses(smoothing)).subList(100, 900).maxOf { abs(it.y) } / PIXEL
+        assertTrue(left(DEFAULT_STROKE_SMOOTH) > 5f, "the default keeps it: ${left(DEFAULT_STROKE_SMOOTH)} px")
+        assertTrue(left(1f) < 0.1f, "full smooth takes it: ${left(1f)} px")
+    }
+
+    private fun leftOf(samples: List<Vec2>, smoothing: Float): Float =
+        strokePreview(samples, StrokeEnds.CutAtPlane(plane = -1f), PIXEL, StrokeOptions(smoothing, snapLine = false, closeEnd = false))
+            .shape.filter { it.x in 0.5f..3.5f }.maxOf { abs(it.y) } / PIXEL
+
+    @Test
+    fun fullSmoothTakesJitterSharpEnoughToReadAsCorners() {
+        val jagged = List(800) { Vec2(it * PIXEL, 5f * PIXEL * sin(it * 2f * PI.toFloat() / 16f)) }
+        assertTrue(leftOf(jagged, DEFAULT_STROKE_SMOOTH) > 4f)
+        assertTrue(leftOf(jagged, 1f) < 0.1f, "left ${leftOf(jagged, 1f)} px")
+        val rough = List(800) { Vec2(it * PIXEL + (noise.nextFloat() - 0.5f) * 2f * PIXEL, (noise.nextFloat() - 0.5f) * 4f * PIXEL) }
+        assertTrue(leftOf(rough, 1f) < 0.5f, "left ${leftOf(rough, 1f)} px")
+    }
+
+    @Test
+    fun fullSmoothLowersARoundWaveWithoutPinningItsPeaks() {
+        val wave = List(800) { Vec2(it * PIXEL, 20f * PIXEL * sin(it * 2f * PI.toFloat() / 100f)) }
+        assertTrue(leftOf(wave, 1f) < 8f, "left ${leftOf(wave, 1f)} px")
+    }
+
+    @Test
+    fun fullSmoothKeepsACorner() {
+        val square = listOf(Vec2(0f, 0f), Vec2(1f, 0f), Vec2(1f, 1f), Vec2(0f, 1f), Vec2(0f, 0f))
+        val dense = resample(square, PIXEL).map { jitter(it, 0.3f) }
+        val stroke = assertNotNull(cleanStroke(dense, StrokeEnds.Closed, PIXEL, StrokeOptions(smoothing = 1f)))
+        val joins = stroke.path.segments.map { it.p0 }
+        for (corner in square.drop(1)) {
+            assertTrue(joins.any { (it - corner).magnitude < 3f * PIXEL }, "no join at $corner in $joins")
+        }
+    }
+
+    @Test
     fun simplifyingKeepsPointsWithinTolerance() {
         val points = circle(Vec2(0f, 0f), 1f, 300)
         val kept = simplify(points, 0.01f)

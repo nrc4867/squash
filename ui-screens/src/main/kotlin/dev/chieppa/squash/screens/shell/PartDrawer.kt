@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.screens.edit.SmoothSections
 import dev.chieppa.squash.uidesign.generated.move_section
 import dev.chieppa.squash.uidesign.generated.move_outward
 import dev.chieppa.squash.uidesign.generated.move_lean
@@ -123,6 +124,7 @@ private fun SelectedPartDetails(state: AppState) {
         }
         PartDrawerKind.OUTLINE -> OutlineSections(state)
         PartDrawerKind.SPINE_WIDTH -> SpineSections(state, base.outlines)
+        PartDrawerKind.SMOOTH -> SmoothSections(state)
         PartDrawerKind.MOVE -> {
             if (part.socket != null) {
                 val hidden = if (mirror) character.overridesOf(part).params else emptyMap()

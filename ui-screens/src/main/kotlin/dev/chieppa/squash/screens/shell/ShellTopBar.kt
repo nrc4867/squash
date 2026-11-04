@@ -90,6 +90,7 @@ private fun shellMenus(shell: Shell): List<BarMenu> = listOf(
         Item(shell, ShellActions.SPINE_WIDTH, close)
         Item(shell, ShellActions.EDIT_CURVES, close)
         Item(shell, ShellActions.ERASE, close)
+        Item(shell, ShellActions.SMOOTH, close)
         MenuDivider()
         Item(shell, ShellActions.MIRROR, close)
     },

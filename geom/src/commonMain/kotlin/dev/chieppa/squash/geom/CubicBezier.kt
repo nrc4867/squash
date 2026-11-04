@@ -22,6 +22,24 @@ data class CubicBezier(val p0: Vec2, val p1: Vec2, val p2: Vec2, val p3: Vec2) {
         return p0 * (s * s * s) + p1 * (3f * s * s * t) + p2 * (3f * s * t * t) + p3 * (t * t * t)
     }
 
+    /** The part of this curve from t = [from] to t = [to], as a curve of its own. */
+    fun between(from: Float, to: Float): CubicBezier {
+        if (from == 0f && to == 1f) return this
+        val tail = if (from == 0f) this else splitAt(from).second
+        return if (to == 1f) tail else tail.splitAt((to - from) / (1f - from)).first
+    }
+
+    /** The curve either side of t = [t]. */
+    private fun splitAt(t: Float): Pair<CubicBezier, CubicBezier> {
+        val a = p0 + (p1 - p0) * t
+        val b = p1 + (p2 - p1) * t
+        val c = p2 + (p3 - p2) * t
+        val d = a + (b - a) * t
+        val e = b + (c - b) * t
+        val middle = d + (e - d) * t
+        return CubicBezier(p0, a, d, middle) to CubicBezier(middle, e, c, p3)
+    }
+
     /** [count] points evenly spaced in t, both ends included. */
     fun sample(count: Int): List<Vec2> {
         require(count >= 2) { "A sample needs at least both ends" }

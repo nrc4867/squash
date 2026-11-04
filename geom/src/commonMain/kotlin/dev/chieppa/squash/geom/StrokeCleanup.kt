@@ -1,5 +1,7 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.sqrt
+
 /** Sample spacing and thresholds, in screen pixels of the view a stroke was drawn in. */
 private const val SPACING_PIXELS = 2f
 private const val FIT_TOLERANCE_PIXELS = 1f
@@ -10,7 +12,9 @@ private const val SNAP_LINE_PIXELS = 2f
 private const val CLOSE_GAP_PIXELS = 16f
 private const val NEAR_PIXELS = 24f
 
-private const val MAX_SMOOTH_PASSES = 8
+/** The filter's passes per unit of Smooth, and all it reaches at the slider's top: a blur of 32 pixels, standard deviation. */
+private const val SMOOTH_PASSES_PER_UNIT = 8f
+private const val MAX_SMOOTH_PASSES = 512f
 
 /** How many samples each side of a point decide whether it is a corner, and the turn it takes: 60 degrees. */
 internal const val CORNER_WINDOW = 4
@@ -49,10 +53,13 @@ internal fun fitCleaned(shape: List<Vec2>, closed: Boolean, pixel: Float, snapLi
 }
 
 internal fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int, marks: List<StrokeMark> = emptyList(), pixel: Float = 0f): List<Vec2> {
-    val corners = strokeCorners(points, closed, marks, pixel).toSet()
+    val corners = cornersUnderBlur(points, closed, marks, pixel, cornerWindow(passes)).toSet()
     val pinned = if (closed && 0 in corners) corners + points.lastIndex else corners
     return smooth(points, passes, closed, pinned)
 }
+
+/** How many samples either side a corner must still turn across to hold through [passes] of the filter: as wide as the blur. */
+private fun cornerWindow(passes: Int): Int = maxOf(CORNER_WINDOW, sqrt(passes / 2f).toInt())
 
 /** The sections of [shape] between its corners; null for a closed shape with none, which has no ends to fit from. */
 private fun cornerSections(shape: List<Vec2>, closed: Boolean, marks: List<StrokeMark>, pixel: Float): List<List<Vec2>>? {
@@ -125,8 +132,12 @@ internal fun strokeSpacing(pixel: Float): Float = SPACING_PIXELS * pixel
 /** The length under which a stroke is no stroke. */
 internal fun strokeMinLength(pixel: Float): Float = MIN_LENGTH_PIXELS * pixel
 
-/** The smoothing filter's passes for a [smoothing] from 0 to 1. */
-internal fun smoothPasses(smoothing: Float): Int = (smoothing * MAX_SMOOTH_PASSES).toInt()
+/** The smoothing filter's passes for a [smoothing] from 0 to 1: steady up to the default, then climbing as a cube to the top. */
+internal fun smoothPasses(smoothing: Float): Int {
+    val steady = smoothing * SMOOTH_PASSES_PER_UNIT
+    val climb = ((smoothing - DEFAULT_STROKE_SMOOTH) / (1f - DEFAULT_STROKE_SMOOTH)).coerceAtLeast(0f)
+    return (steady + (MAX_SMOOTH_PASSES - SMOOTH_PASSES_PER_UNIT) * climb * climb * climb).toInt()
+}
 
 /** How close a stroke's ends must come to close it. */
 internal fun closeGap(pixel: Float): Float = CLOSE_GAP_PIXELS * pixel
@@ -142,10 +153,15 @@ internal fun smoothedOpenLine(samples: List<Vec2>, pixel: Float, smoothing: Floa
 
 /** An open run fitted between its corners. A given tangent leaves that end as [fitCubics] takes it; otherwise the run's own direction does. */
 internal fun fitOpenRun(shape: List<Vec2>, pixel: Float, startTangent: Vec2?, endTangent: Vec2?, marks: List<StrokeMark> = emptyList()): CleanStroke {
+    val segments = fitOpenSegments(shape, pixel, startTangent, endTangent, marks)
+    return CleanStroke(BezierPath(segments), false, maxError(shape, segments))
+}
+
+/** The sections of [fitOpenRun], for a caller with no use for how far they stray. */
+internal fun fitOpenSegments(shape: List<Vec2>, pixel: Float, startTangent: Vec2?, endTangent: Vec2?, marks: List<StrokeMark> = emptyList()): List<CubicBezier> {
     val cuts = listOf(0) + strokeCorners(shape, closed = false, marks, pixel) + shape.lastIndex
     val pieces = cuts.zipWithNext()
-    val segments = pieces.flatMapIndexed { i, (from, to) ->
+    return pieces.flatMapIndexed { i, (from, to) ->
         fitSection(shape.subList(from, to + 1), pixel, startTangent.takeIf { i == 0 }, endTangent.takeIf { i == pieces.lastIndex })
     }
-    return CleanStroke(BezierPath(segments), false, maxError(shape, segments))
 }

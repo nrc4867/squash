@@ -17,6 +17,11 @@ import dev.chieppa.stretch.frame.OverlayBuilder
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.stretch.theme.Stretch
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+
+private const val RING_EDGES = 64
 
 /** The colors and pixel sizes of a curve's points and handles. */
 data class CurveLook(
@@ -71,6 +76,15 @@ fun curvePoints(curve: OutlineCurve, selected: Int?, camera: LockedCamera, look:
 /** A stretch of an old curve about to change, dashed as the board marks it. */
 fun OverlayBuilder.affected(points: List<CurvePoint>, camera: LockedCamera, look: CurveLook) {
     dashed(points.map(camera::toPixel), look.affected, look.affectedWidth, look.affectedDash, look.affectedGap)
+}
+
+/** A circle of [radius] around [center], as lines. */
+fun OverlayBuilder.ring(center: Offset, radius: Float, color: Color, width: Float) {
+    val corners = List(RING_EDGES + 1) { i ->
+        val angle = i * 2f * PI.toFloat() / RING_EDGES
+        center + Offset(radius * cos(angle), radius * sin(angle))
+    }
+    corners.zipWithNext().forEach { (from, to) -> line(from, to, color, width) }
 }
 
 private fun OverlayBuilder.anchorSquare(center: Offset, selected: Boolean, look: CurveLook) {

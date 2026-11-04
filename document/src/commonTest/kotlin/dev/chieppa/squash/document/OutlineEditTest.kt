@@ -130,4 +130,18 @@ class OutlineEditTest {
         assertEquals(1, sectionOf(4, two.sections))
         assertEquals(1, sectionOf(6, two.sections))
     }
+
+    @Test
+    fun replacedSectionsCountInFromEachEndAcrossANewNumberOfSections() {
+        fun curve(vararg anchors: Pair<Float, Float>): OutlineCurve {
+            val points = mutableListOf(CurvePoint(anchors[0].first, 0f))
+            for ((x, bend) in anchors.drop(1)) points += listOf(CurvePoint(x - 0.5f, bend), CurvePoint(x - 0.25f, bend), CurvePoint(x, 0f))
+            return OutlineCurve(points)
+        }
+        val before = curve(0f to 0f, 1f to 0f, 2f to 0f, 3f to 0f, 4f to 0f)
+        assertEquals(null, before.replacedSections(before))
+        assertEquals(1..1, before.replacedSections(curve(0f to 0f, 1f to 0f, 2f to 1f, 3f to 0f, 4f to 0f)))
+        assertEquals(1..2, before.replacedSections(curve(0f to 0f, 1f to 0f, 1.5f to 1f, 2.5f to 1f, 3f to 1f, 4f to 0f)))
+        assertEquals(0..3, before.replacedSections(curve(0f to 0f, 4f to 1f)))
+    }
 }

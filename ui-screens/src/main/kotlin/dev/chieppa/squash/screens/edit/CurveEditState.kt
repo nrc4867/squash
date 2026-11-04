@@ -50,6 +50,10 @@ class CurveEditState {
     var snapGuides by mutableStateOf(true)
     var halfOutline by mutableStateOf(false)
 
+    /** The Smooth tool's brush: its width across in screen pixels and its strength from 0 to 1. */
+    var brushSize by mutableStateOf(DEFAULT_BRUSH_SIZE)
+    var brushStrength by mutableStateOf(DEFAULT_BRUSH_STRENGTH)
+
     /** The Hint section: the template's dashed outline where a view is not drawn, and how strongly the rest of the character shows. */
     var templateHint by mutableStateOf(true)
     var ghost by mutableStateOf(DEFAULT_GHOST)

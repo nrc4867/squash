@@ -55,7 +55,7 @@ fun oversketch(
         this[0] = first().copy(p0 = shape.first())
         this[lastIndex] = last().copy(p3 = shape.last())
     }
-    val added = if (plane == null) exact else keptOnPlaneSide(exact, plane, span)
+    val added = if (plane == null) exact else keptOnPlaneSide(exact, plane, span.freeStart, span.freeEnd)
     val kept = span.ruler.segments
     return Oversketch(
         BezierPath(kept.subList(0, span.first) + added + kept.subList(span.last, kept.size)),
@@ -239,7 +239,7 @@ private fun directionTo(anchor: Vec2, vararg from: Vec2): Vec2? {
 }
 
 /** [added] with its inner points on the kept side of [plane]; a joined end's handle keeps the join's direction. */
-private fun keptOnPlaneSide(added: List<CubicBezier>, plane: StrokeEnds.CutAtPlane, span: OversketchSpan): List<CubicBezier> {
+internal fun keptOnPlaneSide(added: List<CubicBezier>, plane: StrokeEnds.CutAtPlane, freeStart: Boolean, freeEnd: Boolean): List<CubicBezier> {
     val sign = if (plane.above) 1f else -1f
     fun held(p: Vec2) = if ((p.x - plane.plane) * sign < 0f) Vec2(plane.plane, p.y) else p
     return added.mapIndexed { i, segment ->
@@ -247,8 +247,8 @@ private fun keptOnPlaneSide(added: List<CubicBezier>, plane: StrokeEnds.CutAtPla
         val last = i == added.lastIndex
         CubicBezier(
             if (first) segment.p0 else held(segment.p0),
-            if (first && !span.freeStart) segment.p1 else held(segment.p1),
-            if (last && !span.freeEnd) segment.p2 else held(segment.p2),
+            if (first && !freeStart) segment.p1 else held(segment.p1),
+            if (last && !freeEnd) segment.p2 else held(segment.p2),
             if (last) segment.p3 else held(segment.p3),
         )
     }

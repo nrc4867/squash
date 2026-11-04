@@ -31,6 +31,7 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_history
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
+import dev.chieppa.squash.uidesign.generated.smooth_tool
 import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.core.Action
 import dev.chieppa.stretch.core.ActionId
@@ -59,6 +60,7 @@ object ShellActions {
     val SPINE_WIDTH = ActionId("tool-spine-width")
     val EDIT_CURVES = ActionId("tool-edit")
     val ERASE = ActionId("tool-erase")
+    val SMOOTH = ActionId("tool-smooth")
     val MOVE = ActionId("tool-move")
     val FIT_PANE = ActionId("fit-pane")
     val MIRROR = ActionId("mirror")
@@ -87,6 +89,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.SPINE_WIDTH to Res.string.spine_tool,
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
     ShellActions.ERASE to Res.string.edit_tool_erase,
+    ShellActions.SMOOTH to Res.string.smooth_tool,
     ShellActions.MOVE to Res.string.move_tool,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
@@ -120,6 +123,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "spine-and-width" -> SquashIcons.SpineAndWidth
     "edit-curves" -> SquashIcons.EditCurves
     "erase" -> SquashIcons.Erase
+    "smooth" -> SquashIcons.SmoothCurve
     "move" -> SquashIcons.Move
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
@@ -168,6 +172,7 @@ fun Shell.registerActions() {
     action(ShellActions.SPINE_WIDTH, "spine-and-width", chord("W"), inWorkspace) { state.armTool(BuildTool.SPINE_WIDTH) }
     action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
+    action(ShellActions.SMOOTH, "smooth", chord("S"), inWorkspace) { state.armTool(BuildTool.SMOOTH) }
     action(ShellActions.MOVE, "move", chord("V"), inWorkspace) { state.armTool(BuildTool.MOVE) }
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.paneNavigation.fit(state.activeView.value) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }

@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.ui.test.withKeyDown
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
@@ -29,6 +32,7 @@ import dev.chieppa.squash.screens.edit.CurveSelection
 import dev.chieppa.squash.screens.edit.LEG_SIDE
 import dev.chieppa.squash.screens.edit.Refit
 import dev.chieppa.squash.screens.edit.RefitReach
+import dev.chieppa.squash.screens.edit.SmoothDrawerTags
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
@@ -79,6 +83,27 @@ class CurveToolsFlowTest {
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.D) }
         waitForIdle()
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value)
+    }
+
+    @Test
+    fun theSKeyArmsSmoothAndItsDrawerSetsTheBrush() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.S) }
+        waitForIdle()
+        assertEquals(BuildTool.SMOOTH, state.tool.value)
+        onNodeWithTag(ShellTags.tool(BuildTool.SMOOTH)).assertExists()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.S) } }
+        waitForIdle()
+        assertEquals(BuildTool.SMOOTH, state.tool.value, "Ctrl S saves and leaves the tool armed")
+        onNodeWithContentDescription("Part").performClick()
+        waitForIdle()
+        onNodeWithTag(SmoothDrawerTags.SIZE_VALUE).assertTextContains("60 px")
+        onNodeWithTag(SmoothDrawerTags.STRENGTH_VALUE).assertTextContains("50%")
+        onNodeWithTag(SmoothDrawerTags.SIZE).performSemanticsAction(SemanticsActions.SetProgress) { it(120f) }
+        waitForIdle()
+        assertEquals(120f, state.curves.brushSize)
+        onNodeWithTag(SmoothDrawerTags.SIZE_VALUE).assertTextContains("120 px")
     }
 
     @Test

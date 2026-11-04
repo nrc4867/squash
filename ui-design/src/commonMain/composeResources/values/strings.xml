@@ -217,6 +217,11 @@
     <string name="edit_tool_erase">Erase</string>
     <string name="sheet_pane_fit">Fit pane</string>
     <string name="sheet_pane_zoom">%1$d%%</string>
+    <string name="smooth_tool">Smooth</string>
+    <string name="smooth_brush">Brush</string>
+    <string name="smooth_size">Size</string>
+    <string name="smooth_strength">Strength</string>
+    <string name="smooth_size_value">%1$d px</string>
     <string name="move_tool">Move</string>
     <string name="move_section">Placement</string>
     <string name="move_outward">Outward</string>

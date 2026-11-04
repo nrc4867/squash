@@ -486,6 +486,12 @@ object SquashIcons {
             stroke("M6 2.5h4v7H6z")
         }
     }
+    val SmoothCurve: ImageVector by lazy {
+        icon("smooth-curve") {
+            stroke("M1.5 9.5c.7-2 1.3-2 2 0s1.3 2 2 0 1.8-3 9-3")
+            stroke("M6.3 7a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0z")
+        }
+    }
     val SmoothWeight: ImageVector by lazy {
         icon("smooth-weight") {
             stroke("M1.5 6.5c2.2-3.3 4.3-3.3 6.5 0s4.3 3.3 6.5 0")
