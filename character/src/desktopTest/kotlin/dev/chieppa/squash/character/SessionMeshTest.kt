@@ -59,7 +59,7 @@ class SessionMeshTest {
         assertTrue(session.graph.settled.value)
         val mesh = assertNotNull(node.output.value)
         assertEquals("leg-1", mesh.part)
-        assertEquals(24 * 16, mesh.patches.single().vertexCount)
+        assertEquals(template("leg").topology.rings * template("leg").topology.segments, mesh.patches.single().vertexCount)
         assertEquals(PartBuilder.build(template("leg")).single(), mesh.patches.single().patch)
     }
 

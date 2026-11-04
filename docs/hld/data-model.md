@@ -214,7 +214,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
   "name": "Leg",
   "axis": { "rest": [0, -1, 0], "length": 0.5, "bend": "$stance", "bendAt": 0.55 },  // from the socket end toward the tip, in body space
   "openEnd": "start",                       // u = 0 sits on the parent's surface at the socket
-  "topology": { "rings": 24, "segments": 16 },
+  "topology": { "rings": 48, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",                      // default section profile: circle, egg, keel, or control points
   "params": {
@@ -243,7 +243,7 @@ A paw adds the blocks that draw what the user never does, driven by parameters t
 },
 "blocks": [
   { "kind": "tube",   "u": [0.0, 0.6], "radius": 0.3 },
-  { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09, "rings": 10, "segments": 8 },
+  { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09, "rings": 16, "segments": 12 },
   { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
   { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
   { "kind": "cap",    "end": "end" }

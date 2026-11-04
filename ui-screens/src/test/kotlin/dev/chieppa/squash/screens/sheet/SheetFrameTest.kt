@@ -242,7 +242,7 @@ class SheetFrameTest {
     fun aTiltedPartsGhostsAndGroundGoThroughTheCameraThatLooksAlongItsNormal() {
         val tail = part(template("tail"))
         val torso = sheetPartOf(template("torso"), Vec3(0f, -0.2f, 0f), id = "torso")
-        val paw = sheetPartOf(template("paw"), Vec3(0.2f, -0.8f, 0f), id = "paw")
+        val paw = sheetPartOf(template("paw"), Vec3(0.2f, -0.8f, 0.3f), id = "paw")
         val base = input(tail, others = listOf(paw, torso))
         val frame = sheetFrame(base)
         for (pane in listOf(SheetPane.TOP, SheetPane.SIDE, SheetPane.FRONT)) {

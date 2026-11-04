@@ -6,7 +6,7 @@
   "name": "Ear",
   "axis": { "rest": [0, 0.96, -0.28], "length": 0.3 },
   "openEnd": "start",
-  "topology": { "rings": 16, "segments": 12 },
+  "topology": { "rings": 32, "segments": 16 },
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "lens",
   "params": {

@@ -6,7 +6,7 @@
   "name": "Head",
   "axis": { "rest": [1, 0, 0], "length": 0.55 },
   "openEnd": null,
-  "topology": { "rings": 24, "segments": 16 },
+  "topology": { "rings": 48, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "circle",
   "params": {

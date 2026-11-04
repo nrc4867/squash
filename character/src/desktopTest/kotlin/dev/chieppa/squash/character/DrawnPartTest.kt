@@ -117,8 +117,9 @@ class DrawnPartTest {
         val side = body(View.SIDE to bentSide)
         val tall = outline(0f to 1f, 0.3f to 0f, 0f to -1f, -0.3f to 0f, 0f to 1f)
         val capped = body(View.SIDE to bentSide, View.FRONT to tall)
-        assertEquals(side.slices!!.take(16), capped.slices!!.take(16))
-        assertNotEquals(side.slices!![21], capped.slices!![21])
+        val rings = side.slices!!.size
+        assertEquals(side.slices!!.take(rings * 2 / 3), capped.slices!!.take(rings * 2 / 3))
+        assertNotEquals(side.slices!![rings * 7 / 8], capped.slices!![rings * 7 / 8])
         assertHolds("leg", listOf(capped))
     }
 

@@ -53,7 +53,7 @@ class SliceRowNodeTest {
         runCurrent()
         assertTrue(graph.settled.value)
         val slices = assertNotNull(node.output.value?.patches?.single()?.slices)
-        assertEquals(24, slices.size)
+        assertEquals(template("leg").topology.rings, slices.size)
     }
 
     @Test

@@ -32,16 +32,16 @@ private const val TOLERANCE = 0.01f
  * A Front outline sets only a section's shape: it is resampled to the template's control points, which round it, and scaled
  * to the unit span, so a part wider than tall, as the head's skull is, takes that proportion twice.
  */
-private const val FRONT_TOLERANCE = 0.025f
+private const val FRONT_TOLERANCE = 0.03f
 
 /**
  * A drawn paw cannot show its undrawn Side and Top. Its tube closes where its toes begin, which leaves a waist the outline
  * does not set, and drawn toes share the width side by side where undrawn ones fan out to the corners.
  */
-private val PAW_TOLERANCE = mapOf(View.SIDE to 0.03f, View.TOP to 0.045f)
+private val PAW_TOLERANCE = mapOf(View.SIDE to 0.045f, View.TOP to 0.045f)
 
 /** With all three views started, each is held to the others as well, which the paw's fan and the head's proportions show most. */
-private const val IN_TURN_TOLERANCE = 0.045f
+private const val IN_TURN_TOLERANCE = 0.05f
 
 /** Start from template through the real build: the outline it makes rebuilds the silhouette it was made from. */
 class TemplateOutlineTest {

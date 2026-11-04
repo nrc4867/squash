@@ -6,7 +6,7 @@
   "name": "Torso",
   "axis": { "rest": [1, 0, 0] },
   "openEnd": null,
-  "topology": { "rings": 32, "segments": 16 },
+  "topology": { "rings": 64, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "egg",
   "params": {

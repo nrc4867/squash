@@ -6,7 +6,7 @@
   "name": "Leg",
   "axis": { "rest": [0, -1, 0], "length": 0.5, "bend": "$stance", "bendAt": 0.55 },
   "openEnd": "start",
-  "topology": { "rings": 24, "segments": 16 },
+  "topology": { "rings": 48, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",
   "params": {
