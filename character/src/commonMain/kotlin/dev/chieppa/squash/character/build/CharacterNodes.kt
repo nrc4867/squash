@@ -15,32 +15,31 @@ import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 
 /** The surface of a mesh node's part with axes [axes] on [side], following it. */
 fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?): Node<PartMesh, PartSurface> = follow(meshes, stage = BuildStages.SURFACE) { mesh ->
     PartSurface.of(mesh, mesh.axes ?: axes, side == Side.RIGHT, cancellationCheck())
 }
 
-/** A template's surface with nothing drawn, [mirrored] or not. */
-fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean): Node<PartTemplate, PartSurface> = node(MutableStateFlow(template), stage = BuildStages.SURFACE) { recipe ->
-    surfaceOf(recipe, PartData(), mirrored, cancellationCheck())
+/** A template's surface with nothing drawn, [mirrored] or not, at each of [lengthFactor]'s values. */
+fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean, lengthFactor: Flow<Float>): Node<Float, PartSurface> = node(lengthFactor, stage = BuildStages.SURFACE) { factor ->
+    surfaceOf(template, PartData(), mirrored, cancellationCheck(), factor)
 }
 
-/** The surface of an [unplaced] part that resolves to [data]. */
-fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}): PartSurface {
+/** The surface of an [unplaced] part that resolves to [data], built at [lengthFactor] of its length. */
+fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): PartSurface {
     val template = unplaced.placedBy(data.params)
-    val patches = PartBuilder.build(template, data, checkCancelled)
+    val patches = PartBuilder.build(template, data, checkCancelled, lengthFactor)
     return PartSurface.of(PartBuilder.mesh("", template, patches, checkCancelled), PartBuilder.axes(template), mirrored, checkCancelled)
 }
 
 /** What decides what a character is assembled from: its parts and its plan. */
-data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?)
+data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val lengths: LegLengths = LegLengths())
 
 /** The parts of [character], as placing reads them. */
 fun assemblyParts(character: Character): List<AssemblyPart> =
     character.parts.map { part ->
-        val placement = character.resolved(part).params.filterKeys(PlacementParams::isPlacement)
+        val placement = character.resolvedShape(part).params.filterKeys(PlacementParams::isPlacement)
         AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement)
     }
 
@@ -88,13 +87,16 @@ fun Graph.assemblyNode(
         current.parts.associate { it.id to values.getValue(AssemblySource.Part(it.id)) },
         current.plan,
         templates,
-    ) { ref, mirrored -> values[AssemblySource.Default(ref, mirrored)] }
+        { ref, mirrored -> values[AssemblySource.Default(ref, mirrored)] },
+        current.lengths,
+    )
 }
 
 /** The character of [parts] assembled at once, for a screen with no session: each part from [data], with nothing kept. */
 fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: BodyPlan?, templates: TemplateLibrary): AssembledCharacter {
+    val lengths = legLengths(parts, data, plan, templates)
     val defaults = HashMap<Pair<TemplateRef, Boolean>, PartSurface>()
-    fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) { surfaceOf(templates[ref], PartData(), mirrored) }
-    val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT) }
-    return assemble(parts, surfaces, plan, templates, ::default)
+    fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) { surfaceOf(templates[ref], PartData(), mirrored, lengthFactor = lengths.ofPlanned(ref)) }
+    val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id)) }
+    return assemble(parts, surfaces, plan, templates, ::default, lengths)
 }

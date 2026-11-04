@@ -14,6 +14,7 @@ import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.FrontSection
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.Slice
 import dev.chieppa.squash.geom.ViewSizing
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
@@ -25,15 +26,18 @@ import dev.chieppa.squash.geom.covers
 class BuildContext(
     val template: PartTemplate,
     private val params: Map<String, Float>,
-    private val blocks: List<Block>,
+    /** The blocks switched on, in file order. */
+    val blocksOn: List<Block>,
     outlines: Map<View, OutlineCurve> = emptyMap(),
     /** Throws if this build's run was cancelled. A block building several patches calls it between them. */
     val checkCancelled: () -> Unit = {},
+    /** What the part's length along its axis is multiplied by, see [LegLengths]. What lies across the axis keeps its size. */
+    lengthFactor: Float = 1f,
 ) {
     val axes: PartAxes = PartBuilder.axes(template)
 
     private val size: Float = params[SIZE_PARAM] ?: 1f
-    private val drawn = DrawnViews(template, outlines, axes, size)
+    private val drawn = DrawnViews(template, outlines.shortenedBy(lengthFactor), axes, size)
 
     /** What drawn Side and Top outlines set, if either is drawn. */
     val views: ViewSizing? = drawn.sizing
@@ -41,12 +45,15 @@ class BuildContext(
     /** The section a drawn Front outline sets, if it is drawn. */
     val front: FrontSection? = drawn.front
 
-    /** The axis length: lengths in a template are fractions of this. */
-    val axisLength: Float = views?.length ?: (size * template.axis.length)
+    /** The axis length before the length factor: lengths in a template are fractions of this. */
+    private val fullLength: Float = views?.let { it.length / lengthFactor } ?: (size * template.axis.length)
+
+    /** How far the axis reaches. */
+    val axisLength: Float = views?.length ?: (fullLength * lengthFactor)
 
     val axis: AxisSpline = views?.axis ?: restAxis()
 
-    val jointUs: List<Float> = blocks.flatMap { it.joints() }.map { it.u }
+    val jointUs: List<Float> = blocksOn.flatMap { it.joints() }.map { it.u }
 
     private val patches = mutableListOf<Patch>()
 
@@ -56,38 +63,40 @@ class BuildContext(
         patches += built
     }
 
+    /** The ring the first run reaching [u] stands there before its ends close, with nothing built. */
+    fun ringAt(u: Float): Slice? = blocksOn.firstNotNullOfOrNull { it.ringAt(this, u) }
+
     /** The first run already built that reaches [u]. */
     fun runAt(u: Float): Patch? = patches.firstOrNull { it.covers(u) }
 
     fun value(param: Param): Float = param.resolve(params)
 
-    fun length(param: Param): Float = value(param) * axisLength
+    fun length(param: Param): Float = value(param) * fullLength
 
     /** Straight along the rest direction, or bent toward the underside at the template's bend point. */
     private fun restAxis(): AxisSpline {
-        val length = size * template.axis.length
-        val end = axes.point(length, 0f, 0f)
+        val end = axes.point(axisLength, 0f, 0f)
         val bend = template.axis.bend?.let { value(it) } ?: 0f
         if (bend == 0f) return AxisSpline(listOf(Vec3.ZERO, end))
         val at = template.axis.bendAt
         return AxisSpline(
-            listOf(Vec3.ZERO, axes.point(length * at, -bend * length, 0f), end),
+            listOf(Vec3.ZERO, axes.point(axisLength * at, -bend * fullLength, 0f), end),
             floatArrayOf(0f, at, 1f),
         )
     }
 
     /** Whether the template's [block] is switched on for this build. */
-    fun isOn(block: Block): Boolean = block in blocks
+    fun isOn(block: Block): Boolean = block in blocksOn
 
     /** Whether a run other than [own] covers [u]. */
     fun covered(u: Float, own: Span): Boolean =
-        blocks.any { block -> block.run()?.let { it != own && u >= it.start && u <= it.end } == true }
+        blocksOn.any { block -> block.run()?.let { it != own && u >= it.start && u <= it.end } == true }
 
     /** How a run that stops at [u] closes [end]: open on the socket plane, else with that end's cap, else flat. */
     fun closure(end: End, u: Float): EndClosure {
         val reachesEnd = if (end == End.START) u <= 0f else u >= 1f
         if (reachesEnd && template.openEnd == end) return EndClosure.OPEN
-        return when (blocks.firstNotNullOfOrNull { it.capShape(end) }) {
+        return when (blocksOn.firstNotNullOfOrNull { it.capShape(end) }) {
             null, CapShape.FLAT -> EndClosure.FLAT
             CapShape.ROUND -> EndClosure.ROUND
             CapShape.POINTED -> EndClosure.POINTED

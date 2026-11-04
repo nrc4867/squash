@@ -29,6 +29,12 @@ data class Character(
         return sharedReadBy(pairs.getValue(pair), part).overlaidWith(part.overrides)
     }
 
+    /** The outlines and parameters of [resolved], without reading the surface work beside them. */
+    fun resolvedShape(part: PartInstance): PartData {
+        val pair = part.pair ?: return part.own.shape
+        return pairs.getValue(pair).shape.overlaidWith(part.overrides.shape)
+    }
+
     /**
      * What an edit of [part] starts from: with [thisSide], what the side shows, which is what its override will become;
      * otherwise what its pair shares, which an override on this side can hide. An unpaired part has one place for both.

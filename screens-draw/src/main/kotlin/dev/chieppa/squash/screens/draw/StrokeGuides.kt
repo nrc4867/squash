@@ -141,7 +141,7 @@ internal fun StrokeGuide.readBy(reading: OutlineReading?): StrokeGuide {
 
 /** What the build fills, shaded under the stroke. */
 internal fun OverlayBuilder.readShade(reading: OutlineReading, camera: LockedCamera, look: StrokeLook) {
-    val pixel = camera.planePixel
+    val pixel = camera.planePixelX
     for (span in reading.spans(READ_STRIP_PIXELS * pixel)) {
         line(camera.toPixel(CurvePoint(span.x, span.low)), camera.toPixel(CurvePoint(span.x, span.high)), look.read, span.width / pixel)
     }

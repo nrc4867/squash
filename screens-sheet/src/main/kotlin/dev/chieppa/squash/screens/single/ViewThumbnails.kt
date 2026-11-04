@@ -43,7 +43,7 @@ fun viewThumbnails(
     val fit = fitSheet(part.box, part.axes, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
     return DIRECTION_ORDER.map { body ->
         val view = part.axes.framing.getValue(body)
-        val camera = LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale)
+        val camera = LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale, part.lengthFactor)
         val stroke = (listOfNotNull(live) + alongside).firstOrNull { it.view == view }
         val drawn = stroke?.points ?: selection.outlines[view]?.let(::outlineSamples)
         val previewing = stroke?.preview == true

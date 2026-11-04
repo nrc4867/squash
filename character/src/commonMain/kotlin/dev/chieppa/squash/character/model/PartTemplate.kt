@@ -29,6 +29,8 @@ data class AxisSpec(
     val bend: Param? = null,
     @Doc("Where along the axis it bends.") @Range(min = 0.0, max = 1.0)
     val bendAt: Float = DEFAULT_BEND_AT,
+    @Doc("Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.")
+    val bearsWeight: Boolean = false,
     /** Where a turned part's up stays, so its drawings keep their meaning. Never in a file. */
     @Transient val up: Direction? = null,
 )

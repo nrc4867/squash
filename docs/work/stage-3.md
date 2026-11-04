@@ -10,10 +10,9 @@ That is boards 9, 10 and 11, layout C (Full first, since a surface stroke can la
 
 ## Before round 1
 
-Nicholas decides, and the orchestrator does not start until both are written down in `docs/work/boards.md`:
+Nicholas decides, and the orchestrator does not start until it is written down in `docs/work/boards.md`:
 
 - **Locality.** Whether moving an outline's far end, or a Front section outline, may rebuild every ring. The HLD currently says it may.
-- **Move.** A leg leaned out leaves its paw above the ground. This is a bug, not drift, since planted paws in posing depend on feet meeting the ground. It is fixed in round 0.
 
 The orchestrator then:
 
@@ -41,7 +40,6 @@ One orchestrating session per sitting. Round 0 is serial and lands on `main` bef
 ### Round 0, serial
 
 - **Render seams**: a stroke ribbon pass (tapered, screen-space width from the line rules and the width tool), a region and paint pass that renders crisp borders in anchor space, and the two-tone shading with proxy normals and far-side darkening. Each behind a small interface in `render` so the branches below fill them in without touching each other's files.
-- **The Move fix** from Before round 1.
 
 ### Round 1 opens with the look probe
 

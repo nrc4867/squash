@@ -40,6 +40,8 @@ data class TubeSpec(
     val front: FrontSection? = null,
     val startCovered: Boolean = false,
     val endCovered: Boolean = false,
+    /** Where an undrawn run's rings take their up from, or null for what the axis's own direction gives. */
+    val up: Vec3? = null,
 )
 
 /**
@@ -70,6 +72,18 @@ object SliceBuilder {
         return loft(spec.name, slices, spec.segments)
     }
 
+    /** The ring [spec] stands at [u] before either end closes, with no grid around it. */
+    fun ringAt(spec: TubeSpec, u: Float): Slice {
+        val section = sectionAt(spec, u)
+        spec.views?.let { return it.slice(u, section, 1f) }
+        val along = (u - spec.uStart) / (spec.uEnd - spec.uStart)
+        val extent = 2f * spec.radius * (1f + (spec.taper - 1f) * along)
+        val tangent = spec.axis.tangentAt(u)
+        val start = spec.up ?: PartAxes.of(spec.axis.tangentAt(spec.uStart)).up
+        val frame = placed(Frame(spec.axis.pointAt(u), tangent, (start - tangent * (start dot tangent)).normalized()), spec.drop, null)
+        return Slice(u, frame, extent, extent * spec.widthRatio, section, frame.rotation)
+    }
+
     private fun sectionAt(spec: TubeSpec, u: Float) = spec.front?.at(u, spec.section) ?: spec.section
 
     /**
@@ -94,7 +108,7 @@ object SliceBuilder {
     }
 
     private fun restSlices(spec: TubeSpec, us: List<Float>): List<Slice> {
-        val frames = frames(spec.axis, us, null)
+        val frames = frames(spec.axis, us, spec.up)
         val capRings = spec.roundRings ?: defaultCapRings(us.size)
         return us.indices.map { ring ->
             val along = (us[ring] - spec.uStart) / (spec.uEnd - spec.uStart)

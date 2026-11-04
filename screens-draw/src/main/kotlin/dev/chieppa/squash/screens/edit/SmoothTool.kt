@@ -36,6 +36,10 @@ import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.draw.isToolRelease
 import dev.chieppa.squash.screens.draw.strokeEnds
 import dev.chieppa.squash.screens.sheet.LockedCamera
+import dev.chieppa.squash.screens.sheet.shownCurve
+import dev.chieppa.squash.screens.sheet.storedCurve
+import dev.chieppa.squash.screens.sheet.storedPoint
+import dev.chieppa.squash.screens.sheet.toShown
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -106,13 +110,13 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
         val pixel = camera.planePixel
         val brush = SmoothBrush(state.curves.brushSize * RADIUS_OF_SIZE * pixel, state.curves.brushStrength)
         val ends = strokeEnds(target.view, target.template.openEnd)
-        var from = camera.toPlane(down.position).vec()
-        var brushed = BrushedPath(target.curve.toPath(), ends, pixel).dab(from, brush)
+        var from = camera.toShown(down.position).vec()
+        var brushed = BrushedPath(camera.shownCurve(target.curve).toPath(), ends, pixel).dab(from, brush)
         var gesture: History<SquashDocument>.Transaction? = null
         var last = target.curve
         var released = false
         fun show() {
-            val curve = brushed.path.toOutline()
+            val curve = camera.storedCurve(brushed.path.toOutline(), target.curve)
             if (curve == last) return
             last = curve
             val open = gesture ?: target.session.history.begin().also { gesture = it }
@@ -127,7 +131,7 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
                 change.consume()
                 released = isToolRelease(event, change)
                 (change.historical.map { it.position } + change.position).forEach { position ->
-                    val to = camera.toPlane(position).vec()
+                    val to = camera.toShown(position).vec()
                     brushed = brushed.drag(from, to, brush)
                     from = to
                 }
@@ -166,8 +170,8 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
         val radius = state.curves.brushSize * RADIUS_OF_SIZE
         val pixel = camera.planePixel
         return buildOverlay {
-            stretchesUnderBrush(outline.toPath(), camera.toPlane(at).vec(), radius * pixel, pixel).forEach { stretch ->
-                affected(stretch.map { CurvePoint(it.x, it.y) }, camera, look)
+            stretchesUnderBrush(camera.shownCurve(outline).toPath(), camera.toShown(at).vec(), radius * pixel, pixel).forEach { stretch ->
+                affected(stretch.map { camera.storedPoint(CurvePoint(it.x, it.y)) }, camera, look)
             }
             ring(at, radius, look.ring, look.handleWidth)
         }

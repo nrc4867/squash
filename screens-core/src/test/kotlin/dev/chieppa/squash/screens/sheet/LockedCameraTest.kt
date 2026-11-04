@@ -270,4 +270,15 @@ class LockedCameraTest {
     fun theFitMovesOnWhenTheCharacterOutgrowsItsDepth() {
         assertNotSame(fit, keepFit(fit, box, paw, rects, reach = fit.reach + 1f))
     }
+
+    @Test
+    fun aShortenedPartShowsItsStoredOutlineOnItsMesh() {
+        val short = LockedCamera(View.SIDE, leg, fit, 499, 399, socket, drawingScale = 2f, lengthFactor = 0.5f)
+        assertNear(socket + leg.along * 0.4f + leg.up * 0.2f, short.toWorld(CurvePoint(0.4f, 0.1f)))
+        val pixel = short.toPixel(CurvePoint(0.31f, -0.07f))
+        assertTrue(near(0.31f, short.toPlane(pixel).x, 1e-4f) && near(-0.07f, short.toPlane(pixel).y, 1e-4f), "there and back")
+        assertTrue(near(short.planePixel * 2f, short.planePixelX, 1e-6f), "a pixel holds more of x than of y")
+        val front = LockedCamera(View.FRONT, leg, fit, 499, 399, socket, lengthFactor = 0.5f)
+        assertNear(socket + leg.side * 0.4f + leg.up * 0.1f, front.toWorld(CurvePoint(0.4f, 0.1f)))
+    }
 }

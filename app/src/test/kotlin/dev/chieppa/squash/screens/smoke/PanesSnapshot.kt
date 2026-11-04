@@ -40,7 +40,7 @@ internal fun panesInput(
     val cameras = SheetPane.entries.mapNotNull { pane ->
         val body = pane.body ?: return@mapNotNull null
         val view = part.axes.framing.getValue(body)
-        view to LockedCamera(view, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height, part.origin)
+        view to LockedCamera(view, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height, part.origin, selection.drawingScale, part.lengthFactor)
     }.toMap()
     val target = selection.box.center.toGpu()
     val full = CameraView(eye = target + FULL_EYE * selection.box.radius, target = target)

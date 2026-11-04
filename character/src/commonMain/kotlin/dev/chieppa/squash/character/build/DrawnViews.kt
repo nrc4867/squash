@@ -36,6 +36,14 @@ fun OutlineCurve.toPath(): BezierPath = BezierPath(
 
 private fun CurvePoint.vec() = Vec2(x, y)
 
+/** These outlines on a part built [factor] times its length along its axis, which is x on every view but Front. */
+internal fun Map<View, OutlineCurve>.shortenedBy(factor: Float): Map<View, OutlineCurve> {
+    if (factor == 1f) return this
+    return mapValues { (view, outline) ->
+        if (view == View.FRONT) outline else OutlineCurve(outline.points.map { CurvePoint(it.x * factor, it.y) })
+    }
+}
+
 /** What a part's drawn outlines set, each read as the template's views map says. A view with no usable shape sets nothing. */
 internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCurve>, axes: PartAxes, scale: Float) {
     val sizing: ViewSizing?

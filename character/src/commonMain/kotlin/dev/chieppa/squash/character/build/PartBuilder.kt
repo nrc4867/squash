@@ -14,28 +14,39 @@ import dev.chieppa.squash.geom.Patch
 /** Builds a part's patches and mesh from its template, parameter values and drawn outlines. */
 object PartBuilder {
     /**
-     * The patches of [template] with [params] over its defaults, sized by [outlines]. [checkCancelled] runs before each
-     * block and throws to stop a stale run.
+     * The patches of [template] with [params] over its defaults, sized by [outlines], with its length along its axis
+     * multiplied by [lengthFactor]. [checkCancelled] runs before each block and throws to stop a stale run.
      */
     fun build(
         template: PartTemplate,
         params: Map<String, Float> = emptyMap(),
         outlines: Map<View, OutlineCurve> = emptyMap(),
         checkCancelled: () -> Unit = {},
+        lengthFactor: Float = 1f,
     ): List<Patch> {
-        val values = template.defaults + params
-        val active = template.blocks.filter { it.isOn(values) }
-        val context = BuildContext(template, values, active, outlines, checkCancelled)
-        active.forEach {
+        val context = context(template, params, outlines, checkCancelled, lengthFactor)
+        context.blocksOn.forEach {
             checkCancelled()
             context.add(it.build(context))
         }
         return context.built
     }
 
+    /** What the blocks of [template] build from, with nothing built yet. */
+    fun context(
+        template: PartTemplate,
+        params: Map<String, Float> = emptyMap(),
+        outlines: Map<View, OutlineCurve> = emptyMap(),
+        checkCancelled: () -> Unit = {},
+        lengthFactor: Float = 1f,
+    ): BuildContext {
+        val values = template.defaults + params
+        return BuildContext(template, values, template.blocks.filter { it.isOn(values) }, outlines, checkCancelled, lengthFactor)
+    }
+
     /** The patches of a part that resolves to [data]. */
-    fun build(template: PartTemplate, data: PartData, checkCancelled: () -> Unit = {}): List<Patch> =
-        build(template, data.params, data.outlines, checkCancelled)
+    fun build(template: PartTemplate, data: PartData, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): List<Patch> =
+        build(template, data.params, data.outlines, checkCancelled, lengthFactor)
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())

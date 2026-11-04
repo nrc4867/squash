@@ -122,7 +122,7 @@ class StrokeBench(tilted: Boolean = false) {
 
     fun camera(part: SheetPart, view: View): LockedCamera {
         val fit = SheetFit(part.box.center, BENCH_SCALE, part.box.radius * 4f)
-        return LockedCamera(view, part.axes, fit, BENCH_WIDTH, BENCH_HEIGHT, part.origin)
+        return LockedCamera(view, part.axes, fit, BENCH_WIDTH, BENCH_HEIGHT, part.origin, lengthFactor = part.lengthFactor)
     }
 
     fun ComposeUiTest.show(camera: LockedCamera) {

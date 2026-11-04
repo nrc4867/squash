@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.session
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.AssemblyShape
 import dev.chieppa.squash.character.build.BodySurfaceWork
+import dev.chieppa.squash.character.build.LegLengthsOf
 import dev.chieppa.squash.character.build.PartBuild
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PartBuildInput
@@ -15,6 +16,7 @@ import dev.chieppa.squash.character.build.defaultSurfaceNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
+import dev.chieppa.squash.character.build.plannedLengthFactor
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
@@ -45,6 +47,7 @@ class CharacterSession(
     val graph = Graph(scope, dispatcher)
     val document: StateFlow<SquashDocument> get() = history.document
 
+    private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
     private val meshes = mutableMapOf<PartId, Node<PartBuild, PartMesh>>()
     private val surfaces = mutableMapOf<PartId, Node<*, PartSurface>>()
@@ -57,7 +60,7 @@ class CharacterSession(
      * run is pending, and `failure` holds why a part's build failed.
      */
     val assembly: Node<*, AssembledCharacter> = graph.assemblyNode(
-        document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan)) }.distinctUntilChanged(),
+        document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
         templates,
         ::surface,
         ::defaultSurface,
@@ -77,7 +80,7 @@ class CharacterSession(
 
     /** The node deriving [part]'s patches; there is one per part for the session's life. */
     fun patches(part: PartId): Node<PartBuildInput?, PartBuild> =
-        rows.getOrPut(part) { graph.sliceRowNode(document, part, templates) }
+        rows.getOrPut(part) { graph.sliceRowNode(document, part, templates, lengths) }
 
     /**
      * The node deriving [part]'s mesh, in the part's own axes with its socket plane at a = 0; one per part for the
@@ -101,5 +104,5 @@ class CharacterSession(
         works.getOrPut(part) { graph.partSurfaceWorkNode(document, part, ::surface) }
 
     private fun defaultSurface(template: TemplateRef, mirrored: Boolean): Node<*, PartSurface> =
-        defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(templates[template], mirrored) }
+        defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(templates[template], mirrored, plannedLengthFactor(document, template, templates, lengths)) }
 }

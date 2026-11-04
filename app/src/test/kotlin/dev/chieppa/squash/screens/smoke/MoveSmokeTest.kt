@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.smoke
 
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.PlacementParams
@@ -36,6 +37,11 @@ import kotlin.test.assertNotNull
 private const val MOVE_WIDTH = 1440
 private const val MOVE_HEIGHT = 900
 private const val SETTLE_MILLIS = 20_000L
+
+private const val LEANED_DEGREES = 25f
+
+/** How far a paw stands above the ground with a pair leaned, in body units. */
+private const val LEANED_PAW_RESIDUAL = 0.005f
 
 /** A dog's front legs moved back and leaned out, through the real build and scene, with the Move tool's dots over the panes. */
 @Tag("slow")
@@ -80,5 +86,45 @@ class MoveSmokeTest {
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, "the panes")
         assertNotEquals(0, image.countIn(rects[SheetPane.FULL.ordinal], SMOKE_LOOK.active), "the selected leg's dot shows in Full")
+    }
+
+    @Test
+    fun aFrontPairLeanedOutStandsOnTheGroundWithTheOtherLegsShortened() = runComposeUiTest {
+        leanedDog(PlacementParams.OUTWARD, "move-leaned")
+    }
+
+    @Test
+    fun aFrontPairLeanedForwardStandsOnTheGroundWithTheOtherLegsShortened() = runComposeUiTest {
+        leanedDog(PlacementParams.LEAN, "move-leaned-forward")
+    }
+
+    private fun ComposeUiTest.leanedDog(angle: String, image: String) {
+        val folder = TemplateFolder.shipped()
+        val state = AppState(folder, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val plan = folder.plans.first()
+        val new = newCharacter(plan, folder, "Fennec")
+        val session = state.open(new.document)
+        new.commands.forEach(session::send)
+        fun place(name: String) = openSockets(session.document.value, plan, folder).first { it.name == name }.let { socket ->
+            placeOnSocket(socket, assertNotNull(folder.template(socket.takes.first())), session.document.value).also { session.send(AddParts(it)) }
+        }
+        val leg = place("front-leg").first { it.side == Side.LEFT }.id
+        place("back-leg")
+        state.selectedPart.value = leg
+        session.send(SetParameter(leg, angle, LEANED_DEGREES))
+        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+            session.graph.settled.value && session.assembly.output.value?.part(leg)?.placement?.containsKey(angle) == true
+        }
+        val character = assertNotNull(session.assembly.output.value)
+        val paws = character.parts.filter { it.template.id.value == "paw" }
+        assertEquals(4, paws.size)
+        paws.forEach { assertEquals(character.floor, assertNotNull(it.box).low.y, LEANED_PAW_RESIDUAL, "every paw on the ground") }
+        val selection = assertNotNull(sheetSelection(character, leg, emptyMap()))
+        val rects = sheetPaneRects(MOVE_WIDTH, MOVE_HEIGHT, 2)
+        val errors = CopyOnWriteArrayList<String>()
+        val rendered = renderPanes(selection, SMOKE_LOOK, rects, MOVE_WIDTH, MOVE_HEIGHT, errors::add)
+        keepImage(rendered.pixels, rendered.width, image)
+        assertEquals(emptyList(), errors)
+        assertNotBlank(rendered.pixels, "the panes")
     }
 }

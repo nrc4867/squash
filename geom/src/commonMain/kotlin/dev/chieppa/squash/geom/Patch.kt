@@ -1,5 +1,7 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.floor
+
 /** One cross-section of a swept patch. Its section is scaled by half of [width] and [height]. */
 data class Slice(
     val u: Float,
@@ -8,7 +10,13 @@ data class Slice(
     val width: Float,
     val section: ClosedSpline,
     val proxyNormalFrame: Mat3,
-)
+) {
+    /** The point of this ring at [v] around it, as a patch lofted from it holds it. */
+    fun pointAt(v: Float): Vec3 {
+        val around = section.pointAt(v - floor(v))
+        return frame.center + frame.side * (around.x * width / 2f) + frame.up * (around.y * height / 2f)
+    }
+}
 
 /**
  * A named surface: a fixed grid of [nu] rings by [nv] points, closed in v for a tube and open for a sheet. A ring whose

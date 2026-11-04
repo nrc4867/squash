@@ -28,6 +28,8 @@ import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.draw.penPressure
 import dev.chieppa.squash.screens.draw.rememberStrokeLook
 import dev.chieppa.squash.screens.sheet.LockedCamera
+import dev.chieppa.squash.screens.sheet.shownCurve
+import dev.chieppa.squash.screens.sheet.shownPoint
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.polyline
 import dev.chieppa.stretch.frame.OverlayBuilder
@@ -41,8 +43,8 @@ internal class Erasure(val sections: Set<Int>, val curve: OutlineCurve?)
  * What a stroke through [samples] erases of [outline], within [reach]. Erasing a pair's outline from one side has nowhere to
  * write the absence, so whole erasure with [thisSide] only takes back an override, which [overridden] says this side has.
  */
-internal fun erasure(outline: OutlineCurve, samples: List<CurvePoint>, reach: Float, thisSide: Boolean, overridden: Boolean): Erasure? =
-    when (val found = eraseReach(outline.toPath(), samples.map { Vec2(it.x, it.y) }, reach)) {
+internal fun erasure(outline: OutlineCurve, samples: List<CurvePoint>, reach: Float, thisSide: Boolean, overridden: Boolean, shownFrom: OutlineCurve = outline): Erasure? =
+    when (val found = eraseReach(shownFrom.toPath(), samples.map { Vec2(it.x, it.y) }, reach)) {
         EraseReach.Nothing -> null
         EraseReach.Whole -> if (thisSide && !overridden) null else Erasure((0 until outline.toPath().segments.size).toSet(), null)
         is EraseReach.Sections -> outline.withoutSections(found.sections)?.let { Erasure(found.sections, it) }
@@ -93,7 +95,7 @@ class EraseTool(private val state: AppState, var strokeLook: StrokeLook, var loo
         val instance = character.part(part) ?: return null
         val thisSide = state.thisSide && instance.pair != null
         val overridden = view in character.overridesOf(instance).outlines
-        return erasure(outline, strokePoints.toList(), look.grabReach * camera.planePixel, thisSide, overridden)
+        return erasure(outline, strokePoints.map(camera::shownPoint), look.grabReach * camera.planePixel, thisSide, overridden, camera.shownCurve(outline))
     }
 
     private fun selected(): PartId? = state.selectedPart.value

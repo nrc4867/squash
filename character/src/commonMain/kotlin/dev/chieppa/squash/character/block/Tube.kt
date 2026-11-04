@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.model.SectionSpec
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.Slice
 import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.TubeSpec
 import kotlinx.serialization.SerialName
@@ -47,31 +48,35 @@ data class Tube(
 
     override fun patchNames() = listOf(PatchName(name ?: BODY_PATCH))
 
-    override fun build(ctx: BuildContext): List<Patch> {
+    override fun build(ctx: BuildContext): List<Patch> = listOf(SliceBuilder.tube(spec(ctx)))
+
+    override fun ringAt(ctx: BuildContext, u: Float): Slice? {
         val span = span(ctx)
-        return listOf(
-            SliceBuilder.tube(
-                TubeSpec(
-                    name = name ?: BODY_PATCH,
-                    axis = ctx.axis,
-                    uStart = span.start,
-                    uEnd = span.end,
-                    rings = ctx.template.topology.rings,
-                    segments = ctx.template.topology.segments,
-                    section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).cupped(ctx.value(cup)),
-                    radius = ctx.length(radius),
-                    taper = ctx.value(taper),
-                    startClosure = ctx.closure(End.START, span.start),
-                    endClosure = ctx.closure(End.END, span.end),
-                    jointUs = ctx.jointUs,
-                    drop = ctx.length(drop),
-                    socketNormal = ctx.axes.along,
-                    views = ctx.views,
-                    front = ctx.front,
-                    startCovered = ctx.covered(span.start, u),
-                    endCovered = ctx.covered(span.end, u),
-                ),
-            ),
+        return if (u >= span.start && u <= span.end) SliceBuilder.ringAt(spec(ctx), u) else null
+    }
+
+    private fun spec(ctx: BuildContext): TubeSpec {
+        val span = span(ctx)
+        return TubeSpec(
+            name = name ?: BODY_PATCH,
+            axis = ctx.axis,
+            uStart = span.start,
+            uEnd = span.end,
+            rings = ctx.template.topology.rings,
+            segments = ctx.template.topology.segments,
+            section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).cupped(ctx.value(cup)),
+            radius = ctx.length(radius),
+            taper = ctx.value(taper),
+            startClosure = ctx.closure(End.START, span.start),
+            endClosure = ctx.closure(End.END, span.end),
+            jointUs = ctx.jointUs,
+            drop = ctx.length(drop),
+            socketNormal = ctx.axes.along,
+            views = ctx.views,
+            front = ctx.front,
+            startCovered = ctx.covered(span.start, u),
+            endCovered = ctx.covered(span.end, u),
+            up = ctx.template.axis.up?.toVec3(),
         )
     }
 

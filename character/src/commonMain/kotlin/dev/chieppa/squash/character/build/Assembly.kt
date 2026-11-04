@@ -1,7 +1,6 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.BodyPlan
-import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
@@ -17,12 +16,6 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.geom.surfaceAt
-
-/** How far a part's open ring sinks into its parent, as a multiple of that ring's radius in the template. */
-private const val SINK_OF_OPEN_RING = 0.6f
-
-/** How far a part with no open end sinks into its parent, as a multiple of its widest ring's radius in the template. */
-private const val SINK_OF_CLOSED_PART = 0.35f
 
 /** What placing a part reads of it from the document. */
 data class AssemblyPart(
@@ -47,6 +40,8 @@ class PlacedPart(
     val anchor: Vec3? = null,
     /** What the Move tool stored on this part, which its children's sockets read. */
     val placement: Map<String, Float> = emptyMap(),
+    /** What its length along its axis was built at, see [LegLengths]. */
+    val lengthFactor: Float = 1f,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -81,7 +76,7 @@ class AssembledCharacter(val parts: List<PlacedPart>, val sockets: List<PlacedSo
 
 /**
  * Places [parts] on their sockets, and what the empty sockets of [plan] would take. [surfaces] holds each part's build,
- * and [defaults] a template's build with nothing drawn on either side. Roots sit at the origin. See HLD: data-model,
+ * [defaults] a template's build with nothing drawn on either side, and [lengths] what the legs among them were built at. Roots sit at the origin. See HLD: data-model,
  * Placing parts.
  */
 fun assemble(
@@ -90,7 +85,8 @@ fun assemble(
     plan: BodyPlan?,
     templates: TemplateLibrary,
     defaults: (TemplateRef, Boolean) -> PartSurface?,
-): AssembledCharacter = Assembler(parts, surfaces, plan, templates, defaults).assemble()
+    lengths: LegLengths = LegLengths(),
+): AssembledCharacter = Assembler(parts, surfaces, plan, templates, defaults, lengths).assemble()
 
 private class Assembler(
     private val parts: List<AssemblyPart>,
@@ -98,6 +94,7 @@ private class Assembler(
     private val plan: BodyPlan?,
     private val templates: TemplateLibrary,
     private val defaults: (TemplateRef, Boolean) -> PartSurface?,
+    private val lengths: LegLengths,
 ) {
     private val placed = LinkedHashMap<PartId, PlacedPart>()
     private val planned = mutableListOf<PlacedPart>()
@@ -137,7 +134,7 @@ private class Assembler(
         }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
         val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side)) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement)
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id))
     }
 
     private fun socketsOf(template: PartTemplate): List<SocketSpec> =
@@ -157,25 +154,11 @@ private class Assembler(
             Outward.AXIS -> along
             Outward.NORMAL -> parent.normalAt(spec.u, v) ?: along
         }
-        return point - into * sinkOf(template)
+        return point - into * templates.socketSink(template.ref)
     }
 
     private fun socketV(parent: PlacedPart, spec: SocketSpec, side: Side?): Float =
         if (side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
-
-    /**
-     * How far [template]'s socket plane sits inside what it is on. It reads the template, not the drawing, so a stroke on a
-     * part never moves the plane it is drawn from.
-     */
-    private fun sinkOf(template: PartTemplate): Float {
-        val slices = defaults(template.ref, false)?.patches?.firstNotNullOfOrNull { it.slices } ?: return 0f
-        val ring = when (template.openEnd) {
-            End.START -> slices.first()
-            End.END -> slices.last()
-            null -> return slices.maxOf { maxOf(it.height, it.width) } / 2f * SINK_OF_CLOSED_PART
-        }
-        return maxOf(ring.height, ring.width) / 2f * SINK_OF_OPEN_RING
-    }
 
     /**
      * What the empty sockets under [here] would take, each a planned part on its template, and those sockets' places when
@@ -199,6 +182,6 @@ private class Assembler(
 
     private fun plannedPart(template: PartTemplate, side: Side?, parent: PlacedPart, spec: SocketSpec): PlacedPart? {
         val surface = defaults(template.ref, side == Side.RIGHT) ?: return null
-        return PlacedPart(null, template, side, surface, originOn(parent, spec, template, side))
+        return PlacedPart(null, template, side, surface, originOn(parent, spec, template, side), lengthFactor = lengths.ofPlanned(template.ref))
     }
 }

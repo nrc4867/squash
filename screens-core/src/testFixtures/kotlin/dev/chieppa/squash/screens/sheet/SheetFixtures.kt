@@ -19,5 +19,5 @@ fun camerasOn(part: SheetPart, fit: SheetFit, rects: List<PixelRect>): Map<View,
     SheetPane.entries.mapNotNull { pane ->
         val body = pane.body ?: return@mapNotNull null
         val view = part.axes.framing.getValue(body)
-        view to LockedCamera(view, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height, part.origin)
+        view to LockedCamera(view, part.axes, fit, rects[pane.ordinal].width, rects[pane.ordinal].height, part.origin, lengthFactor = part.lengthFactor)
     }.toMap()

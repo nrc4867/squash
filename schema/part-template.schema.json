@@ -104,6 +104,10 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
+        },
+        "bearsWeight": {
+          "description": "Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.",
+          "type": "boolean"
         }
       },
       "required": [

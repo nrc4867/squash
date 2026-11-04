@@ -4,7 +4,7 @@
   "id": "leg",
   "version": 1,
   "name": "Leg",
-  "axis": { "rest": [0, -1, 0], "length": 0.5, "bend": "$stance", "bendAt": 0.55 },
+  "axis": { "rest": [0, -1, 0], "length": 0.5, "bend": "$stance", "bendAt": 0.55, "bearsWeight": true },
   "openEnd": "start",
   "topology": { "rings": 48, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "cap" },

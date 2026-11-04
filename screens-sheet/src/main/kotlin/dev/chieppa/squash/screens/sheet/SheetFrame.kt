@@ -138,7 +138,7 @@ internal fun lockedOverlay(view: View, camera: LockedCamera, selection: SheetSel
             dashed(path.map(camera::toPixel), look.template, look.templateWidth, look.templateDash, look.templateGap)
         }
     }
-    guideLines(paneGuides(camera, sideExtents(selection.outlines[View.SIDE], selection.part.extents, selection.drawingScale)), camera, look)
+    guideLines(paneGuides(camera, sideExtents(selection.outlines[View.SIDE], selection.part.extents, selection.drawingScale, selection.part.lengthFactor)), camera, look)
     if (view == active) {
         val inset = look.activeWidth / 2f
         outline(Rect(inset, inset, camera.width - inset, camera.height - inset), look.active, look.activeWidth)

@@ -87,7 +87,8 @@ fun disagreeOverlay(view: View, camera: LockedCamera, disagreements: List<Disagr
 }
 
 private fun OverlayBuilder.limitLine(found: Disagreement, camera: LockedCamera, look: OutlineLook) {
-    val across = camera.lineAcross(camera.axes.direction(found.axis), found.limit * camera.drawingScale)
+    val scale = if (found.axis == PartAxis.ALONG) camera.alongScale else camera.drawingScale
+    val across = camera.lineAcross(camera.axes.direction(found.axis), found.limit * scale)
     line(across.start, across.end, look.warn, look.limitWidth)
 }
 

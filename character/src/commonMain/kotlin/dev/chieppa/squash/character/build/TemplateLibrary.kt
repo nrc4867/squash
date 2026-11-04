@@ -11,6 +11,7 @@ class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emp
     private val byRef = templates.associateBy { it.ref }
     private val byId = templates.groupBy { it.id }
     private val plansByRef = plans.associateBy { it.ref }
+    private val sinks = byRef.mapValues { (_, template) -> lazy { template.socketSink() } }
 
     operator fun get(ref: TemplateRef): PartTemplate =
         requireNotNull(byRef[ref]) { "No template ${ref.id.value} version ${ref.version}" }
@@ -20,6 +21,9 @@ class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emp
 
     /** The newest loaded template with this id, if any: what an empty socket would take. */
     fun latest(id: TemplateId): PartTemplate? = byId[id]?.maxByOrNull { it.version }
+
+    /** How far a part pinned to [ref] sits inside what it is on. See [socketSink]. */
+    fun socketSink(ref: TemplateRef): Float = requireNotNull(sinks[ref]) { "No template ${ref.id.value} version ${ref.version}" }.value
 
     fun plan(ref: BodyPlanRef): BodyPlan? = plansByRef[ref]
 }

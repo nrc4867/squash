@@ -76,6 +76,12 @@ class LintTest {
     }
 
     @Test
+    fun anAxisThatBearsWeightRestsStraightDown() {
+        val slanted = template(listOf(tube)).copy(axis = AxisSpec(Direction(1f, -1f, 0f), bearsWeight = true))
+        assertEquals(listOf("$.axis.bearsWeight"), paths(slanted))
+    }
+
+    @Test
     fun jointsMustBeOrderedAlongTheAxis() {
         val findings = TemplateLint.lint(template(listOf(tube, joint("knee", 0.6f), joint("hip", 0.1f))))
         assertTrue(findings.single().message.contains("hip"))

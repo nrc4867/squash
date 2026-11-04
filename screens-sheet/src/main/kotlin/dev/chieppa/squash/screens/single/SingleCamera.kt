@@ -73,12 +73,12 @@ class SingleCamera {
         val reach = (selection.box.center - center).length + selection.box.radius
         val fit = SheetFit(center, pixelsPerUnit(orbit.distance, height, orbit.fovY), reach)
         if (current != null && current.view == view && current.fit == fit && current.axes == part.axes &&
-            current.origin == part.origin && current.drawingScale == selection.drawingScale &&
+            current.origin == part.origin && current.drawingScale == selection.drawingScale && current.lengthFactor == part.lengthFactor &&
             current.width == width && current.height == height
         ) {
             return current
         }
-        return LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale).also { held = it }
+        return LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale, part.lengthFactor).also { held = it }
     }
 }
 

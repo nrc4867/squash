@@ -28,10 +28,11 @@ data class PaneLine(val start: Offset, val end: Offset)
 /** Lines across a pane. */
 data class PaneGuides(val lines: List<PaneLine> = emptyList())
 
-/** Side's reach from the socket in body units: its drawn [outline], multiplied by [scale], when there is one, else what the part's mesh [extents] show there. */
-fun sideExtents(outline: OutlineCurve?, extents: PartExtents, scale: Float = 1f): SideExtents {
+/** Side's reach from the socket in body units: its drawn [outline], multiplied by [scale] and along the axis by [lengthFactor], when there is one, else what the part's mesh [extents] show there. */
+fun sideExtents(outline: OutlineCurve?, extents: PartExtents, scale: Float = 1f, lengthFactor: Float = 1f): SideExtents {
     val points = outline?.let(::outlineSamples) ?: return SideExtents(extents.along, extents.up)
-    return SideExtents(Span(points.minOf { it.x } * scale, points.maxOf { it.x } * scale), Span(points.minOf { it.y } * scale, points.maxOf { it.y } * scale))
+    val along = scale * lengthFactor
+    return SideExtents(Span(points.minOf { it.x } * along, points.maxOf { it.x } * along), Span(points.minOf { it.y } * scale, points.maxOf { it.y } * scale))
 }
 
 /** [outline] flattened to a polyline in its view's plane, each join repeated. */

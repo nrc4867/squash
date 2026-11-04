@@ -7,8 +7,12 @@ import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Sets
 import dev.chieppa.squash.character.model.TEMPLATE_FORMAT
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.Vec3
 
 private const val MIN_RINGS_PER_JOINT = 2
+
+/** How close to 1 the cosine of a rest axis's angle from straight down comes for it to count as straight down. */
+private const val STRAIGHT_DOWN = 0.9999f
 private const val PATCH_SEPARATOR = ":"
 private val AXIS_READINGS = setOf(Sets.HEIGHT, Sets.WIDTH)
 private val SECTION_READINGS = setOf(Sets.CAP, Sets.SECTION)
@@ -44,7 +48,13 @@ object TemplateLint {
 
     private fun axis(template: PartTemplate): List<Finding> {
         val context = LintContext(template, "$.axis")
-        return context.param("bend", template.axis.bend) + context.unit("bendAt", template.axis.bendAt)
+        return context.param("bend", template.axis.bend) + context.unit("bendAt", template.axis.bendAt) + bearing(context, template)
+    }
+
+    /** Move's angles keep an axis off the ground only from straight down, so a leg's squareness never reaches 0. */
+    private fun bearing(context: LintContext, template: PartTemplate): List<Finding> {
+        val down = template.axis.rest.toVec3().normalized() dot Vec3.Y
+        return if (template.axis.bearsWeight && down > -STRAIGHT_DOWN) context.finding("bearsWeight", "an axis that bears weight rests straight down") else emptyList()
     }
 
     private fun section(template: PartTemplate) = LintContext(template, "$").section("section", template.section)

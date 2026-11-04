@@ -20,14 +20,14 @@ import dev.chieppa.squash.screens.sheet.sideExtents
  * with this view.
  */
 fun strokeSnapLines(camera: LockedCamera, outlines: Map<View, OutlineCurve>, extents: PartExtents?): List<PaneLine> = buildList {
-    if (camera.view != View.SIDE && extents != null) addAll(paneGuides(camera, sideExtents(outlines[View.SIDE], extents, camera.drawingScale)).lines)
+    if (camera.view != View.SIDE && extents != null) addAll(paneGuides(camera, sideExtents(outlines[View.SIDE], extents, camera.drawingScale, camera.lengthFactor)).lines)
     val top = outlines[View.TOP]?.takeIf { camera.view != View.TOP }?.let(::outlineSamples)
     val front = outlines[View.FRONT]?.takeIf { camera.view != View.FRONT }?.let(::outlineSamples)
     val axes = camera.axes
-    fun across(direction: Vec3, reaches: List<Float>) =
-        listOf(reaches.min(), reaches.max()).forEach { add(camera.lineAcross(direction, it * camera.drawingScale)) }
+    fun across(direction: Vec3, reaches: List<Float>, scale: Float = camera.drawingScale) =
+        listOf(reaches.min(), reaches.max()).forEach { add(camera.lineAcross(direction, it * scale)) }
     if (top != null) {
-        if (camera.view == View.SIDE) across(axes.along, top.map { it.x })
+        if (camera.view == View.SIDE) across(axes.along, top.map { it.x }, camera.alongScale)
         if (camera.view == View.FRONT) across(axes.side, top.map { 0f - it.y })
     }
     if (front != null) {

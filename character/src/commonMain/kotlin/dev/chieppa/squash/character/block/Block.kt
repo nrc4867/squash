@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.Slice
 import kotlinx.serialization.Serializable
 
 /**
@@ -37,6 +38,9 @@ sealed interface Block {
 
     /** The stretch of the axis this block's run of slices covers, if it builds one. */
     fun run(): Span? = null
+
+    /** The ring this block's run stands at [u] before its ends close, if its run reaches there. */
+    fun ringAt(ctx: BuildContext, u: Float): Slice? = null
 
     /** The patches this block builds. */
     fun patchNames(): List<PatchName> = emptyList()

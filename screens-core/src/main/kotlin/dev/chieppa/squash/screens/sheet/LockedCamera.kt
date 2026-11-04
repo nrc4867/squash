@@ -88,7 +88,9 @@ fun bodyCamera(view: BodyView, fit: SheetFit, width: Int, height: Int) = PaneCam
  * corner, and the coordinates an outline for [view] holds. The pane looks straight at the outline's plane, which passes
  * through the part's socket at [origin] along [axes], so the map between them is a rotation and a scale, and a drawing is
  * the mesh's silhouette on screen. [drawingScale] is the part's size parameter, which multiplies a drawing, so a stroke
- * still builds under the pointer at any size. Pure, so a tool's logic is tested without a window.
+ * still builds under the pointer at any size. [lengthFactor] is what the part is built at along its axis, which multiplies an
+ * outline's x on every view but Front, so a stored outline lies on a shortened part and a stroke on one stores what builds
+ * under the pointer. Pure, so a tool's logic is tested without a window.
  */
 class LockedCamera(
     val view: View,
@@ -98,25 +100,35 @@ class LockedCamera(
     val height: Int,
     val origin: Vec3 = Vec3.ZERO,
     val drawingScale: Float = 1f,
+    val lengthFactor: Float = 1f,
 ) {
     val basis: ViewBasis = axes.basis(view)
     private val pane = PaneCamera(basis.screenRight, basis.screenUp, fit, width, height)
 
-    /** A screen pixel's size in the view's plane. */
+    /** What an outline's x is multiplied by on the built part. */
+    val xFactor: Float = if (view == View.FRONT) 1f else lengthFactor
+
+    /** A screen pixel's size in the view's plane, as an outline's y holds it, and both ways in [toShown]'s plane. */
     val planePixel: Float get() = 1f / (fit.pixelsPerUnit * drawingScale)
+
+    /** A screen pixel's size in the view's plane, as an outline's x holds it. */
+    val planePixelX: Float get() = planePixel / xFactor
+
+    /** How many body units from the socket a length along the part's axis, as an outline holds it, reaches. */
+    val alongScale: Float get() = drawingScale * lengthFactor
 
     /** The point in the view's plane under [pixel], in the coordinates an outline for this view holds. */
     fun toPlane(pixel: Offset): CurvePoint {
         val socket = toPixel(origin)
         val onScreen = basis.screenRight * ((pixel.x - socket.x) * planePixel) + basis.screenUp * ((socket.y - pixel.y) * planePixel)
-        return CurvePoint(onScreen dot basis.xAxis, onScreen dot basis.yAxis)
+        return CurvePoint((onScreen dot basis.xAxis) / xFactor, onScreen dot basis.yAxis)
     }
 
     /** The pane pixel showing [plane], a point in the view's plane. */
     fun toPixel(plane: CurvePoint): Offset = toPixel(toWorld(plane))
 
     /** The point in body space at [plane], a point in the view's plane. */
-    fun toWorld(plane: CurvePoint): Vec3 = origin + (basis.xAxis * plane.x + basis.yAxis * plane.y) * drawingScale
+    fun toWorld(plane: CurvePoint): Vec3 = origin + (basis.xAxis * (plane.x * xFactor) + basis.yAxis * plane.y) * drawingScale
 
     /** The point in body space under [pixel], on the view's plane through the socket. */
     fun toWorld(pixel: Offset): Vec3 = toWorld(toPlane(pixel))

@@ -185,6 +185,7 @@ private class HeldCameras {
     private var fit: SheetFit? = null
     private var origin: Vec3? = null
     private var scale: Float? = null
+    private var lengthFactor: Float? = null
     private var axes: PartAxes? = null
     private var navs: Map<View, PaneNav> = emptyMap()
     private var cameras: Map<View, LockedCamera> = emptyMap()
@@ -195,17 +196,18 @@ private class HeldCameras {
         val part = selection.part
         val next = keepFit(fit, part.box, part.axes, rects, depthReach(selection, fit))
         val nextNavs = View.entries.associateWith { navigation[it] }
-        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.axes != axes || nextNavs != navs) {
+        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.lengthFactor != lengthFactor || part.axes != axes || nextNavs != navs) {
             fit = next
             axes = part.axes
             navs = nextNavs
             origin = part.origin
             scale = selection.drawingScale
+            lengthFactor = part.lengthFactor
             cameras = SheetPane.entries.mapNotNull { pane ->
                 val body = pane.body ?: return@mapNotNull null
                 val rect = rects[pane.ordinal]
                 val view = part.axes.framing.getValue(body)
-                view to LockedCamera(view, part.axes, navigation[view].applied(next), rect.width, rect.height, part.origin, selection.drawingScale)
+                view to LockedCamera(view, part.axes, navigation[view].applied(next), rect.width, rect.height, part.origin, selection.drawingScale, part.lengthFactor)
             }.toMap()
         }
         return cameras

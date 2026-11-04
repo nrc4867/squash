@@ -60,6 +60,7 @@ data class Skull(
                     front = ctx.front,
                     startCovered = ctx.covered(u.start, u),
                     endCovered = ctx.covered(u.end, u),
+                    up = ctx.template.axis.up?.toVec3(),
                 ),
             ),
         )
