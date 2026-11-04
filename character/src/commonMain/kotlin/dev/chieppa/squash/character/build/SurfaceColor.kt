@@ -10,8 +10,8 @@ import dev.chieppa.squash.geom.cutShape
 import dev.chieppa.squash.geom.mergedCuts
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** A cut shape in the space of the part it lies on, with its layer's rank. */
-class LandedCut(val rank: Int, val part: PartId, val slot: SlotName, val cut: PatchCut)
+/** A cut shape in the space of the part it lies on, with its layer's rank and what it comes from. */
+class LandedCut(val rank: Int, val part: PartId, val slot: SlotName, val cut: PatchCut, val source: ShapeSource? = null)
 
 /** What one part's surface work draws: its [baseSlot], and its shapes wherever they land, in layer order. */
 class HeldColor(val baseSlot: SlotName?, val cuts: List<LandedCut>)
@@ -37,10 +37,10 @@ class ShapeCuts {
             val surface = surfaces[landed.part] ?: return@mapNotNull null
             val grid = surface.grid(landed.patch) ?: return@mapNotNull null
             val tolerance = if (landed.shape.isCurved) ColorDetail.tolerance(step) else 0f
-            val key = Key(surface, landed.copy(rank = 0, slot = UNSLOTTED), tolerance)
+            val key = Key(surface, landed.copy(rank = 0, slot = UNSLOTTED, source = null), tolerance)
             val cut = now[key] ?: before[key] ?: cutShape(landed.shape, grid, tolerance, checkCancelled)
             now[key] = cut
-            LandedCut(landed.rank, landed.part, landed.slot, cut)
+            LandedCut(landed.rank, landed.part, landed.slot, cut, landed.source)
         }
         held.value = now
         return out

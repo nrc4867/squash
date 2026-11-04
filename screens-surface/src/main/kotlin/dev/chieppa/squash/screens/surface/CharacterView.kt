@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodySurfaceWork
-import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.character.build.SocketCrease
 import dev.chieppa.squash.document.CameraBin
@@ -16,7 +15,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.ColorDetail
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.MeshDraw
@@ -25,6 +23,7 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneView
+import dev.chieppa.squash.screens.sheet.bodySide
 import dev.chieppa.squash.screens.sheet.coloredPartDraw
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.sheet.ribbon
@@ -54,12 +53,6 @@ class CharacterState(
     val creases: List<SocketCrease>,
     val isFur: (ResolvedMark) -> Boolean,
 )
-
-private fun PlacedPart.bodySide(): BodySide? = when {
-    side == null -> null
-    origin.z >= 0f -> BodySide.POSITIVE_Z
-    else -> BodySide.NEGATIVE_Z
-}
 
 private fun MarkGroup.isEye() = roles.any { it.role == MarkRole.LID }
 

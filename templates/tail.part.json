@@ -22,6 +22,9 @@
     { "kind": "joint", "name": "tail3", "u": 0.5, "hinge": "z", "limits": [-40, 40] },
     { "kind": "joint", "name": "tail4", "u": 0.67, "hinge": "z", "limits": [-40, 40] },
     { "kind": "joint", "name": "tail5", "u": 0.83, "hinge": "z", "limits": [-40, 40] },
-    { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "z", "limits": [-40, 40] }
+    { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "z", "limits": [-40, 40] },
+    { "kind": "area",  "name": "tip", "u": [0.8, 1.0], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",  "name": "base", "u": [0.0, 0.25], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",  "name": "underside", "u": [0.0, 0.8], "v": [0.3, 0.7], "tag": "fill" }
   ]
 }

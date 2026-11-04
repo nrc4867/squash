@@ -22,6 +22,10 @@
     { "kind": "joint", "name": "waist",  "u": 0.4, "hinge": "z", "limits": [-20, 20] },
     { "kind": "joint", "name": "ribs",   "u": 0.6, "hinge": "z", "limits": [-20, 20] },
     { "kind": "joint", "name": "chest",  "u": 0.8, "hinge": "z", "limits": [-20, 20] },
-    { "kind": "joint", "name": "withers", "u": 1.0, "hinge": "z", "limits": [-20, 20], "stretch": true }
+    { "kind": "joint", "name": "withers", "u": 1.0, "hinge": "z", "limits": [-20, 20], "stretch": true },
+    { "kind": "area",  "name": "chest", "u": [0.7, 1.0], "v": [0.2, 0.8], "tag": "fill" },
+    { "kind": "area",  "name": "belly", "u": [0.18, 0.7], "v": [0.3, 0.7], "tag": "fill" },
+    { "kind": "area",  "name": "saddle", "u": [0.25, 0.75], "v": [0.85, 0.15], "tag": "fill" },
+    { "kind": "area",  "name": "rump", "u": [0.0, 0.18], "v": [0, 1], "tag": "fill" }
   ]
 }

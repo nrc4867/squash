@@ -29,6 +29,9 @@ object BodyPlanLint {
         plan.slots.forEachIndexed { i, slot ->
             if (slot.on !in templates) add(Finding("$.slots[$i].on", "no template '${slot.on.value}'"))
         }
+        val named = plan.palette.map { it.name }
+        named.groupBy { it }.filter { it.value.size > 1 }.keys.forEach { add(Finding("$.palette", "two slots named '$it'")) }
+        if (plan.base != null && plan.base !in named) add(Finding("$.base", "no palette slot '${plan.base}'"))
         plan.sockets.groupBy { it.name }.filter { it.value.size > 1 }.keys.forEach {
             add(Finding("$.sockets", "two sockets named '$it'"))
         }

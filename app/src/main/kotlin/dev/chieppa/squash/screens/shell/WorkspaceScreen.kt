@@ -17,6 +17,10 @@ import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.spine.rememberSpineWidthTool
+import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
+import dev.chieppa.squash.screens.surface.paint.rememberFillTool
+import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
+import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit_ends
@@ -38,6 +42,10 @@ fun WorkspaceScreen(shell: Shell) {
     val erase = rememberEraseTool(state)
     val smooth = rememberSmoothTool(state)
     val move = rememberMoveTool(state)
+    val region = rememberRegionBorderTool(state)
+    val fill = rememberFillTool(state)
+    val brush = rememberBrushTool(state)
+    val pick = rememberPickColorTool(state)
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
@@ -45,6 +53,10 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE -> erase
         BuildTool.SMOOTH -> smooth
         BuildTool.MOVE -> move
+        BuildTool.REGION_BORDER -> region
+        BuildTool.FILL -> fill
+        BuildTool.BRUSH -> brush
+        BuildTool.PICK_COLOR -> pick
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()

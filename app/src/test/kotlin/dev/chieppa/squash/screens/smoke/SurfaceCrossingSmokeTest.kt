@@ -36,6 +36,8 @@ import kotlin.test.assertTrue
 private val TORSO_ID = PartId("torso")
 private val LEFT_ID = PartId("leg")
 private val RIGHT_ID = PartId("leg-r")
+private const val CROSSING_SAMPLES = 40
+private const val CROSSING_TOLERANCE = 12
 private val OVERSKETCHED = edges(0f to 0.2f, 0.5f to 0.16f, 0.9f to 0.07f, 0.9f to -0.1f, 0.5f to -0.2f, 0f to -0.2f)
 
 /** Paint on a pair, across a socket, over a pole and on a pad, through the real graph and scene, left for a person to read. */
@@ -99,6 +101,44 @@ class SurfaceCrossingSmokeTest {
         val color = assertNotNull(session.bodyColor.output.value)
         assertTrue(color.parts.getValue(TORSO_ID).layers.isNotEmpty(), "the shapes arrive on the parent")
         seamsRender("seams-cross-socket", SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, draws))), errors)
+        finish()
+    }
+
+    /** Along a soft stroke's middle from leg to torso the image holds the stroke's color, with no dip where each run would fade its own end. */
+    @Test
+    fun aSoftStrokeHoldsItsStrengthAcrossTheSocket() {
+        val session = seamsSession(scope, listOf(torso, left, right))
+        (seamsPalette() + SetBaseSlot(LEFT_ID, FUR) + SetBaseSlot(TORSO_ID, FUR)).forEach(session::send)
+        session.settled()
+        val character = assertNotNull(session.assembly.output.value)
+        val leg = assertNotNull(character.part(LEFT_ID))
+        val body = assertNotNull(character.part(TORSO_ID))
+        val toCamera = Vec3(0.55f, 0.25f, if (leg.origin.z >= 0f) 1f else -1f).normalized()
+        val front = leg.vFacing(0.1f, toCamera)
+        val patch = leg.surface.patches.first { it.slices != null }
+        fun onLeg(u: Float) = leg.origin + leg.surface.shown(patch.surfaceAt(u, front).position)
+        val rising = (onLeg(0.02f) - onLeg(0.2f)).normalized()
+        val onTorso = List(4) { body.nearest(onLeg(0.02f) + rising * (0.05f + 0.03f * it)) }
+        val anchors = listOf(0.4f, 0.3f, 0.2f, 0.1f).map { Anchor(LEFT_ID, u = it, v = front) } + onTorso.map { (u, v) -> Anchor(TORSO_ID, u = u, v = v) }
+        session.send(SetBrushStroke(LEFT_ID, BrushStrokeId("soft"), BrushStroke(BrushStrokeId("soft"), anchors, SOCK, 0.12f, 0.8f)))
+        val distance = 1.3f
+        session.showColorAt(pixelsPerUnit(distance))
+        session.settled()
+        val target = leg.origin + Vec3(0f, -0.1f, 0f)
+        val camera = CameraView(eye = (target + toCamera * distance).toGpuVec(), target = target.toGpuVec())
+        val draws = character.parts.filter { it.id != null }.map { seamsDraw(session, it, ObjectShading(), camera.toCameraFrom(target)) }
+        val pixels = seamsRender("seams-soft-cross-socket", SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, draws))), errors)
+        val blue = (assertNotNull(session.document.value.character.palette.color(SOCK)).blue * 255f).toInt()
+        val lastOnLeg = assertNotNull(camera.project(onLeg(0.1f).toGpuVec(), SEAMS_SIZE, SEAMS_SIZE))
+        val torsoPatch = body.surface.patches.first { it.slices != null }
+        val firstOnTorso = body.origin + body.surface.shown(torsoPatch.surfaceAt(onTorso.first().first, onTorso.first().second).position)
+        val firstOnBody = assertNotNull(camera.project(firstOnTorso.toGpuVec(), SEAMS_SIZE, SEAMS_SIZE))
+        val shown = (0..CROSSING_SAMPLES).map { i ->
+            val at = lastOnLeg + (firstOnBody - lastOnLeg) * (i.toFloat() / CROSSING_SAMPLES)
+            pixels[at.y.toInt() * SEAMS_SIZE + at.x.toInt()] and 0xFF
+        }
+        println("SOFT CROSSING blue ${shown.joinToString(" ")} of $blue")
+        assertTrue(shown.all { kotlin.math.abs(it - blue) <= CROSSING_TOLERANCE }, "the stroke's middle holds its color across the socket: $shown of $blue")
         finish()
     }
 

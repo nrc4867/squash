@@ -22,9 +22,16 @@ sealed interface ColorShape {
 
     /**
      * A brush stroke: everything within [radius], in the surface's own units, of the curve through [points]. One point is a dab.
-     * [softness] is the outer share of the radius it fades across, from 0, a hard edge, to 1, a fade from the curve itself.
+     * [softness] is the outer share of the radius it fades across, from 0, a hard edge, to 1, a fade from the curve itself. [openStart]
+     * and [openEnd] say the stroke goes on past that end onto another surface, so a fade keeps its strength there instead of rounding off.
      */
-    data class Brush(val points: List<SurfaceUv>, val radius: Float, val softness: Float = 0f) : ColorShape {
+    data class Brush(
+        val points: List<SurfaceUv>,
+        val radius: Float,
+        val softness: Float = 0f,
+        val openStart: Boolean = false,
+        val openEnd: Boolean = false,
+    ) : ColorShape {
         init {
             require(softness in 0f..1f) { "A brush's softness lies from 0 to 1, not $softness" }
         }

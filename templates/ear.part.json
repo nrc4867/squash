@@ -20,6 +20,8 @@
     { "kind": "joint", "name": "base", "u": 0.0, "hinge": "y", "limits": [-40, 40] },
     { "kind": "joint", "name": "fold", "u": 0.6, "hinge": "x", "limits": [0, 150] },
     { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "x", "limits": [-20, 20] },
-    { "kind": "area",  "name": "inner", "u": [0.1, 0.9], "v": [0.0, 0.5], "tag": "inner" }
+    { "kind": "area",  "name": "inner", "u": [0.1, 0.9], "v": [0.82, 0.18], "tag": "inner", "color": "inner-ear" },
+    { "kind": "area",  "name": "back", "u": [0.1, 0.9], "v": [0.32, 0.68], "tag": "fill" },
+    { "kind": "area",  "name": "tip", "u": [0.8, 1.0], "v": [0, 1], "tag": "fill" }
   ]
 }

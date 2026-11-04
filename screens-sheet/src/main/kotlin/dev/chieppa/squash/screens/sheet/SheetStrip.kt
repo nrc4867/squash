@@ -1,11 +1,12 @@
 package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -23,7 +24,7 @@ import dev.chieppa.stretch.ui.Divider
 import dev.chieppa.stretch.ui.Segmented
 import org.jetbrains.compose.resources.stringResource
 
-/** The strip above the panes: [tools] on the left, the Layout control showing [layout] on the right. */
+/** The strip above the panes: [tools] on the left, scrolling where they run out of room, and the Layout control showing [layout] always whole on the right. */
 @Composable
 fun SheetStrip(
     modifier: Modifier = Modifier,
@@ -38,8 +39,12 @@ fun SheetStrip(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            tools()
-            Spacer(Modifier.weight(1f))
+            Row(
+                Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                content = tools,
+            )
             BasicText(
                 stringResource(Res.string.sheet_layout),
                 Modifier.padding(end = 4.dp),

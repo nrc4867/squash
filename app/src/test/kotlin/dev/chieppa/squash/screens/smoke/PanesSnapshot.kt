@@ -4,6 +4,8 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.OutlineLook
+import dev.chieppa.squash.screens.sheet.PaneColor
+import dev.chieppa.squash.screens.sheet.ShadingPreview
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
 import dev.chieppa.squash.screens.sheet.SheetLayout
@@ -36,6 +38,8 @@ internal fun panesInput(
     hints: SheetHints = SheetHints(),
     outlines: OutlineLook? = null,
     layout: SheetLayout = SheetLayout.SHEET,
+    color: PaneColor? = null,
+    previews: List<ShadingPreview> = emptyList(),
 ): SheetInput {
     val part = selection.part
     val fit = fitSheet(part.box, part.axes, rects, (selection.box.center - part.box.center).length + selection.box.radius)
@@ -47,7 +51,7 @@ internal fun panesInput(
     val target = selection.box.center.toGpu()
     val full = CameraView(eye = target + FULL_EYE * selection.box.radius, target = target)
     val overlays = outlines?.let { paneOutlineOverlays(selection, cameras, null, it) } ?: emptyMap()
-    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints, layout = layout)
+    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints, layout = layout, color = color, previews = previews)
 }
 
 /** [GpuSnapshot.render] for a test's thread, which has nothing else to do while the image renders. */

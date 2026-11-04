@@ -7,11 +7,13 @@ import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.edit.CurveEditState
+import dev.chieppa.squash.screens.edit.PaintEditState
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.character.catalog.OpenSocket
@@ -23,6 +25,7 @@ import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
 import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.catalog.socketFor
+import dev.chieppa.squash.character.catalog.startingData
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.screens.spine.SpineEditState
 import dev.chieppa.stretch.document.DocumentSession
@@ -80,6 +83,9 @@ class AppState(
     /** What the curve tools remember: selection, oversketch settings and readouts. */
     val curves = CurveEditState()
 
+    /** What the paint tools remember: slot, brush and the border picked. */
+    val paint = PaintEditState()
+
     /** The Spine and width tool's stroke, until it is written or dropped. */
     val spine = SpineEditState({ curves.stabilizer }, { curves.snapGuides }) { curves.smooth }
 
@@ -116,6 +122,7 @@ class AppState(
         clearPick()
         curves.clear()
         spine.clear()
+        paint.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
@@ -212,8 +219,9 @@ class AppState(
         val opened = session.value ?: return
         val socket = pickedSocket.value ?: return
         val template = pickedType.value?.let { templates.template(it) } ?: return
-        val parts = placeOnSocket(socket, template, opened.document.value)
-        opened.send(AddParts(parts))
+        val start = templates.plan(opened.document.value.character.bodyPlan)?.startingData() ?: PartData()
+        val parts = placeOnSocket(socket, template, opened.document.value, start)
+        opened.send(AddParts(parts, pairs = parts.mapNotNull { it.pair }.associateWith { start }))
         selectPart(parts.first().id)
     }
 

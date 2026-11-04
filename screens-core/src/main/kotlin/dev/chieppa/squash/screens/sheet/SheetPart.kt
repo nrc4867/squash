@@ -14,6 +14,7 @@ import dev.chieppa.squash.geom.BodyBox
 import dev.chieppa.squash.geom.PartExtents
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.screens.AppState
 
 /** One placed part as the panes draw it: what the graph derived for it, in body space. Never changes once made. */
@@ -23,6 +24,7 @@ class SheetPart(private val placed: PlacedPart) {
     val origin: Vec3 get() = placed.origin
     val mirrored: Boolean get() = placed.mirrored
     val planned: Boolean get() = placed.planned
+    val side: BodySide? get() = placed.bodySide()
     val lengthFactor: Float get() = placed.lengthFactor
     val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored, placed.template.axis.up?.toVec3())
     val box: BodyBox = requireNotNull(placed.box) { "A part with nothing built is not drawn" }

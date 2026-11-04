@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.PairId
+import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Side
@@ -53,11 +54,12 @@ fun placeOnSocket(
     socket: OpenSocket,
     template: PartTemplate,
     document: SquashDocument,
+    start: PartData = PartData(),
     id: () -> String = Ulid::next,
 ): List<PartInstance> {
     val parent = requireNotNull(document.character.part(socket.parent)) { "No part ${socket.parent.value}" }
     fun instance(on: PartId, pair: PairId?, side: Side?) =
-        PartInstance(PartId(id()), template.ref, SocketRef(on, socket.name), pair = pair, side = side)
+        PartInstance(PartId(id()), template.ref, SocketRef(on, socket.name), own = if (pair == null) start else PartData(), pair = pair, side = side)
     if (!socket.paired) return listOf(instance(parent.id, null, null))
     val pair = PairId(id())
     val twin = document.twin(parent)

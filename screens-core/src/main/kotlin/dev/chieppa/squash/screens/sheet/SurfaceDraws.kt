@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartColor
+import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.Palette
@@ -26,6 +27,13 @@ import dev.chieppa.stretch.gpu.Mat4
 
 /** How far along a mark with no width of its own its ends taper, as a share of its length. */
 private const val END_TAPER = 0.25f
+
+/** Which side of the body this part lies on, when it has a side. */
+fun PlacedPart.bodySide(): BodySide? = when {
+    side == null -> null
+    origin.z >= 0f -> BodySide.POSITIVE_Z
+    else -> BodySide.NEGATIVE_Z
+}
 
 /** The color of [slot] in this palette, or null when it has no such slot. */
 fun Palette.colorOf(slot: SlotName?): Color? = slot?.let(::color)?.let { Color(it.red, it.green, it.blue) }

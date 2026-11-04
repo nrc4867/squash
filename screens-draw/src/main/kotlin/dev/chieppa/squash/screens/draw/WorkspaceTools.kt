@@ -14,6 +14,10 @@ import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.rememberPartIsDrawn
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.color_tool_brush
+import dev.chieppa.squash.uidesign.generated.color_tool_fill
+import dev.chieppa.squash.uidesign.generated.color_tool_pick
+import dev.chieppa.squash.uidesign.generated.color_tool_region_border
 import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.draw_tool_hint
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
@@ -31,13 +35,19 @@ import org.jetbrains.compose.resources.stringResource
 private val TOOL_SIZE = 34.dp
 
 /**
- * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn,
- * Spine and width, Edit curves, Erase, Smooth and Move, then Mirror, which only a paired part has any use for, Half outline and Start
- * from template. Pressing the armed tool disarms it.
+ * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn, Spine and width, Edit curves,
+ * Erase, Smooth and Move, then Mirror, which only a paired part has any use for, Half outline and Start from template, then the paint tools. With a paint
+ * tool armed the strip holds the paint tools and Mirror alone, as the Color board draws it. Pressing the armed tool disarms it.
  */
 @Composable
 fun WorkspaceTools(state: AppState) {
     val tool by state.tool.collectAsState()
+    if (tool.paints) {
+        PaintTools(tool, state)
+        ToolbarSeparator()
+        MirrorButton(state)
+        return
+    }
     val drawn = rememberPartIsDrawn(state)
     val draw = stringResource(if (drawn) Res.string.edit_tool_oversketch else Res.string.shell_action_draw)
     ToolItem(
@@ -59,6 +69,16 @@ fun WorkspaceTools(state: AppState) {
     HalfOutlineButton(state)
     ToolbarSeparator()
     StartFromTemplateButton(state)
+    ToolbarSeparator()
+    PaintTools(tool, state)
+}
+
+@Composable
+private fun PaintTools(tool: BuildTool, state: AppState) {
+    ToolItem(BuildTool.REGION_BORDER, SquashIcons.RegionBorder, stringResource(Res.string.color_tool_region_border), "R", tool, state::armTool)
+    ToolItem(BuildTool.FILL, SquashIcons.Fill, stringResource(Res.string.color_tool_fill), "F", tool, state::armTool)
+    ToolItem(BuildTool.BRUSH, SquashIcons.Brush, stringResource(Res.string.color_tool_brush), "B", tool, state::armTool)
+    ToolItem(BuildTool.PICK_COLOR, SquashIcons.PickColor, stringResource(Res.string.color_tool_pick), "I", tool, state::armTool)
 }
 
 /** Half outline: on, a stroke draws one edge and its mirror image across the part's centre line. */

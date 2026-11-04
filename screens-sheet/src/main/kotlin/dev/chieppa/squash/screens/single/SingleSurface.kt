@@ -12,16 +12,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
+import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SceneSurface
+import dev.chieppa.squash.screens.sheet.PreviewPlaces
+import dev.chieppa.squash.screens.sheet.ShadingPreviewTiles
 import dev.chieppa.squash.screens.sheet.SheetHints
+import dev.chieppa.squash.screens.sheet.largestColorScale
 import dev.chieppa.squash.screens.sheet.paneDisagreements
 import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.rememberOutlineLook
+import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.stretch.frame.Toolbar
@@ -65,6 +73,10 @@ internal fun SingleSurface(
         if (snapped != null) state.activeView.value = snapped
     }
     val overlay = locked?.let { paneOutlineOverlays(selection, shownCameras, tool, outlineLook, disagreements)[it.view] } ?: ViewportOverlay.Empty
+    val color = rememberPaneColor(state)
+    val places = remember { PreviewPlaces() }
+    val free = remember(camera, size) { FullView({ camera.orbit.view }, size.width, size.height) }
+    SideEffect { open?.showColorAt(largestColorScale(shownCameras.values, camera.orbit.view, size.height)) }
     val frame = singleFrame(
         SingleInput(
             width = size.width,
@@ -74,12 +86,14 @@ internal fun SingleSurface(
             locked = locked,
             free = camera.orbit.view,
             toolOverlay = overlay,
-            hints = SheetHints(state.curves.templateHint, state.curves.ghost),
+            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true),
+            color = color,
+            previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
         ),
     )
     val fitting = rememberFitting(state)
-    val drawing = if (locked != null) tool?.pointerInput(locked.view, locked) ?: Modifier else Modifier
-    Box(modifier.onSizeChanged { size = it }) {
+    val drawing = if (locked != null) tool?.pointerInput(locked.view, locked) ?: Modifier else tool?.takeIf { it.takesFreeCamera }?.fullInput(free) ?: Modifier
+    Box(modifier.onSizeChanged { size = it }.onGloballyPositioned { places.surface = it.positionInRoot() }) {
         SceneSurface(frame.takeIf { sized }, Modifier.fillMaxSize())
         Viewport(
             Modifier.orbitNavigation(camera.orbit).then(drawing).testTag(SingleTags.VIEWPORT),
@@ -93,6 +107,7 @@ internal fun SingleSurface(
             },
             topEnd = { SingleHud(state, direction) },
             bottomStart = selection?.let {
+                if (tool?.showsPreviews == true) return@let { ShadingPreviewTiles(state, places) }
                 {
                     ThumbnailStrip(
                         it,

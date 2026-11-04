@@ -8,7 +8,6 @@ import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.MeshDraw
-import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
@@ -48,8 +47,9 @@ class SheetInput(
     val toolOverlays: Map<View, ViewportOverlay> = emptyMap(),
     val fullOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val hints: SheetHints = SheetHints(),
-    val shading: ObjectShading = ObjectShading(),
     val layout: SheetLayout = SheetLayout.SHEET,
+    val color: PaneColor? = null,
+    val previews: List<ShadingPreview> = emptyList(),
 )
 
 /**
@@ -58,7 +58,7 @@ class SheetInput(
  * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
-    val views = SheetPane.entries.mapNotNull { sceneView(it, input) }
+    val views = SheetPane.entries.mapNotNull { sceneView(it, input) } + previewViews(input.previews, input.selection, input.full, input.look, input.color)
     val dividers = buildOverlay { paneDividers(input.layout, input.rects, input.width, input.height).forEach { rect(it.toRect(), input.look.divider) } }
     val panes = SheetPane.entries.map { paneOverlay(it, input).clippedTo(input.rects[it.ordinal].toRect()) }
     return SceneFrame(input.look.well, views, panes.fold(dividers, ViewportOverlay::plus))
@@ -74,30 +74,35 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val (planned, placed) = (selection.others + selection.part).partition { it.planned }
         val eye = camera.eye
         val plannedOpacity = if (input.layout == SheetLayout.FULL_FIRST) 1f else PLANNED_OPACITY
+        val toCamera = Vec3(eye.x, eye.y, eye.z) - selection.box.center
         val draws = listOf(fullGround(selection, look)) +
-            placed.map { look.draw(it, look.fullOutline, shading = input.shading) } +
+            placed.map { look.colored(it, input.color, toCamera, look.fullOutline) } +
             planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
-        return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
+        return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws, look.borderRibbons(input.color))
     }
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
-    return SceneView(rect, camera.viewProjection(), lockedDraws(view, body, camera.basis, selection, look, input.hints))
+    return SceneView(rect, camera.viewProjection(), lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color), look.borderRibbons(input.color))
 }
 
 /** What a locked camera on [view] draws, from [basis] in the pane of [body]: the ground, the character ghosted and the selection once [view] is drawn. */
-internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints): List<MeshDraw> = buildList {
+internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null): List<MeshDraw> = buildList {
     lockedGround(body, basis, selection, look)?.let(::add)
-    addAll(ghosts(selection, basis, look, hints))
-    if (view in selection.outlines) add(look.draw(selection.part, look.lockedOutline, layer = DepthLayer.FRONT))
+    if (hints.whole) {
+        (selection.others + selection.part).filter { !it.planned }.forEach { add(look.colored(it, color, basis.back, look.lockedOutline)) }
+        return@buildList
+    }
+    addAll(ghosts(selection, basis, look, hints, color))
+    if (view in selection.outlines) add(look.colored(selection.part, color, basis.back, look.lockedOutline, layer = DepthLayer.FRONT))
 }
 
 /** Everything but the selection, furthest from the viewer first so a nearer ghost blends over a further one. */
-private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints): List<MeshDraw> {
+private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints, color: PaneColor?): List<MeshDraw> {
     val strength = hints.ghost
     if (strength <= 0f) return emptyList()
     return selection.others
         .sortedBy { it.center dot basis.back }
-        .map { look.draw(it, look.ghostOutline, strength) }
+        .map { look.colored(it, color, basis.back, look.ghostOutline, strength) }
 }
 
 /**
@@ -126,7 +131,7 @@ private fun paneOverlay(pane: SheetPane, input: SheetInput): ViewportOverlay {
     val selection = input.selection ?: return ViewportOverlay.Empty
     val body = pane.body
     val inPane = if (body == null) {
-        fullRing(selection.part, input, rect) + input.fullOverlay
+        (if (input.hints.whole) ViewportOverlay.Empty else fullRing(selection.part, input, rect)) + input.fullOverlay
     } else {
         val view = selection.part.axes.framing.getValue(body)
         val camera = input.cameras[view] ?: return ViewportOverlay.Empty
@@ -137,6 +142,7 @@ private fun paneOverlay(pane: SheetPane, input: SheetInput): ViewportOverlay {
 
 /** What a locked camera on [view] draws over the scene: the template's outline until [view] is drawn, Side's guides, and the accent frame when [view] is [active]. */
 internal fun lockedOverlay(view: View, camera: LockedCamera, selection: SheetSelection, look: SheetLook, hints: SheetHints, active: View?): ViewportOverlay = buildOverlay {
+    if (hints.whole) return@buildOverlay
     if (hints.template && view !in selection.outlines) {
         selection.part.silhouette(view).forEach { path ->
             dashed(path.map(camera::toPixel), look.template, look.templateWidth, look.templateDash, look.templateGap)

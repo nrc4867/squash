@@ -86,7 +86,7 @@ fun PartsDrawerContent(state: AppState) {
     }
 }
 
-/** Filled once a part has an outline, hollow until then. */
+/** A part's base color; with none, filled once it has an outline and hollow until then. */
 @Composable
 private fun RowSwatch(row: PartRow) {
     val c = Stretch.colors
@@ -100,7 +100,7 @@ private fun RowSwatch(row: PartRow) {
         Modifier
             .testTag(if (row is PartRow.SideOf) ShellTags.sideRow(row.tagName) else ShellTags.partRow(row.tagName))
             .size(12.dp)
-            .background(if (filled) c.accent else Color.Transparent, shape)
+            .background((row as? PartRow.Placed)?.base?.let { Color(it.red, it.green, it.blue) } ?: if (filled) c.accent else Color.Transparent, shape)
             .border(Stretch.stroke, c.lineStrong, shape),
     )
 }

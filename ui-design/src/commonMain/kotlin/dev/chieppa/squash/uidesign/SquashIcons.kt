@@ -15,6 +15,12 @@ object SquashIcons {
             stroke("M8 3v10M3 8h10")
         }
     }
+    val AddSlot: ImageVector by lazy {
+        icon("add-slot") {
+            stroke("M4 2.5h5A1.5 1.5 0 0 1 10.5 4v5A1.5 1.5 0 0 1 9 10.5H4A1.5 1.5 0 0 1 2.5 9V4A1.5 1.5 0 0 1 4 2.5z")
+            stroke("M12.5 9.5v4M10.5 11.5h4")
+        }
+    }
     val AngleVersions: ImageVector by lazy {
         icon("angle-versions") {
             stroke("M2.5 13.5h11.5M2.5 13.5L12 6.5M2.5 13.5L7 3.5")
@@ -399,6 +405,12 @@ object SquashIcons {
     val RegionBorder: ImageVector by lazy {
         icon("region-border") {
             stroke("M3.0 11.0L2.9 10.36L2.85 9.72M3.33 6.95L3.61 6.37L3.94 5.82M6.05 3.96L6.64 3.69L7.25 3.5M10.06 3.51L10.67 3.72L11.25 4.0M13.08 6.09L13.28 6.71L13.4 7.34M12.95 10.11L12.65 10.67L12.28 11.2M10.06 12.93L9.46 13.18L8.85 13.38M6.04 13.49L5.42 13.32L4.83 13.07")
+        }
+    }
+    val RemoveSlot: ImageVector by lazy {
+        icon("remove-slot") {
+            stroke("M4 2.5h5A1.5 1.5 0 0 1 10.5 4v5A1.5 1.5 0 0 1 9 10.5H4A1.5 1.5 0 0 1 2.5 9V4A1.5 1.5 0 0 1 4 2.5z")
+            stroke("M10.5 11.5h4")
         }
     }
     val Render: ImageVector by lazy {

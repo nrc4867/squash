@@ -9,6 +9,10 @@ import dev.chieppa.squash.screens.draw.startFromTemplate
 import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.color_tool_brush
+import dev.chieppa.squash.uidesign.generated.color_tool_fill
+import dev.chieppa.squash.uidesign.generated.color_tool_pick
+import dev.chieppa.squash.uidesign.generated.color_tool_region_border
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
 import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
@@ -56,6 +60,10 @@ object ShellActions {
     val PART = ActionId("drawer-part")
     val HELP = ActionId("drawer-help")
     val RESET_LAYOUT = ActionId("reset-layout")
+    val REGION_BORDER = ActionId("tool-region-border")
+    val FILL = ActionId("tool-fill")
+    val BRUSH = ActionId("tool-brush")
+    val PICK_COLOR = ActionId("tool-pick-color")
     val DRAW = ActionId("tool-draw")
     val SPINE_WIDTH = ActionId("tool-spine-width")
     val EDIT_CURVES = ActionId("tool-edit")
@@ -91,6 +99,10 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.ERASE to Res.string.edit_tool_erase,
     ShellActions.SMOOTH to Res.string.smooth_tool,
     ShellActions.MOVE to Res.string.move_tool,
+    ShellActions.REGION_BORDER to Res.string.color_tool_region_border,
+    ShellActions.FILL to Res.string.color_tool_fill,
+    ShellActions.BRUSH to Res.string.color_tool_brush,
+    ShellActions.PICK_COLOR to Res.string.color_tool_pick,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
@@ -125,6 +137,10 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "erase" -> SquashIcons.Erase
     "smooth" -> SquashIcons.SmoothCurve
     "move" -> SquashIcons.Move
+    "region-border" -> SquashIcons.RegionBorder
+    "fill" -> SquashIcons.Fill
+    "brush" -> SquashIcons.Brush
+    "pick-color" -> SquashIcons.PickColor
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
@@ -160,7 +176,8 @@ fun Shell.registerActions() {
     action(ShellActions.UNDO, "undo", chord("Ctrl Z"), { state.session.value?.history?.canUndo == true }) { state.undo() }
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
-    action(ShellActions.PARTS, "parts", chord("B"), inFrame) { toggle(DrawerIds.PARTS) }
+    val painting = { inWorkspace() && state.tool.value.paints }
+    action(ShellActions.PARTS, "parts", chord("B"), { inFrame() && !painting() }) { toggle(DrawerIds.PARTS) }
     action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
         if (state.screen.value == Screen.PICK_PART) state.screen.value = Screen.WORKSPACE else state.openPartTypes()
     }
@@ -174,7 +191,11 @@ fun Shell.registerActions() {
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.SMOOTH, "smooth", chord("S"), inWorkspace) { state.armTool(BuildTool.SMOOTH) }
     action(ShellActions.MOVE, "move", chord("V"), inWorkspace) { state.armTool(BuildTool.MOVE) }
-    action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.paneNavigation.fit(state.activeView.value) }
+    action(ShellActions.FIT_PANE, null, chord("F"), { inWorkspace() && !painting() }) { state.paneNavigation.fit(state.activeView.value) }
+    action(ShellActions.REGION_BORDER, "region-border", chord("R"), inWorkspace) { state.armTool(BuildTool.REGION_BORDER) }
+    action(ShellActions.PICK_COLOR, "pick-color", chord("I"), inWorkspace) { state.armTool(BuildTool.PICK_COLOR) }
+    action(ShellActions.FILL, "fill", chord("F"), painting) { state.armTool(BuildTool.FILL) }
+    action(ShellActions.BRUSH, "brush", chord("B"), painting) { state.armTool(BuildTool.BRUSH) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }

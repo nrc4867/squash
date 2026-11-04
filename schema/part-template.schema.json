@@ -3,7 +3,7 @@
   "$ref": "#/$defs/PartTemplate",
   "$defs": {
     "Area": {
-      "description": "A tagged region weights and shading can read.",
+      "description": "A tagged region weights and shading can read, and that Fill colors whole.",
       "type": "object",
       "properties": {
         "kind": {
@@ -34,6 +34,7 @@
           }
         },
         "v": {
+          "description": "Around the surface. An end below its start runs on past 1 to it, crossing the seam at v = 0.",
           "type": "array",
           "minItems": 2,
           "maxItems": 2,
@@ -47,7 +48,23 @@
           "enum": [
             "rigid",
             "soft",
-            "inner"
+            "inner",
+            "fill"
+          ]
+        },
+        "patch": {
+          "description": "The patch it lies on, or every one of a row of patches.",
+          "type": "string"
+        },
+        "color": {
+          "description": "A palette slot it shows until it is filled.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },

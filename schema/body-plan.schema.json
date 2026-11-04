@@ -46,6 +46,24 @@
           "items": {
             "$ref": "#/$defs/PlanSlot"
           }
+        },
+        "palette": {
+          "description": "The palette a new character on this plan starts with.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanColor"
+          }
+        },
+        "base": {
+          "description": "The palette slot a new part on this plan starts with.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -55,6 +73,25 @@
         "name",
         "root",
         "sockets"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "PlanColor": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/$defs/SlotColor"
+        }
+      },
+      "required": [
+        "name",
+        "color"
       ],
       "patternProperties": {
         "^x-": {}
@@ -176,6 +213,29 @@
         "u",
         "v",
         "takes"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "SlotColor": {
+      "type": "object",
+      "properties": {
+        "red": {
+          "type": "number"
+        },
+        "green": {
+          "type": "number"
+        },
+        "blue": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "red",
+        "green",
+        "blue"
       ],
       "patternProperties": {
         "^x-": {}

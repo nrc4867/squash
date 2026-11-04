@@ -319,7 +319,9 @@ A body plan is the same grammar with its own block kinds, so it shares the parse
     { "name": "tail",      "on": "torso", "u": 0.03, "v": 0.02, "takes": ["tail"] },
     { "name": "ruff",      "on": "torso", "u": 0.9,  "v": 0.5, "takes": ["ruff"], "optional": true }
   ],
-  "slots": [ { "name": "paw-claws", "on": "paw", "takes": ["claws"], "default": null } ]
+  "slots": [ { "name": "paw-claws", "on": "paw", "takes": ["claws"], "default": null } ],
+  "palette": [ { "name": "fur", "color": { "red": 0.91, "green": 0.64, "blue": 0.29 } } ],
+  "base": "fur"
 }
 ```
 
@@ -340,7 +342,7 @@ Every block takes `kind`, an optional `name`, `if` (a boolean `$param`) and `x-`
 | `pad` | `u`, `v` or `on` (a toeRow listed earlier), `size`, `color`, `rings`, `segments` | A raised closed lens following the surface on a grid of `rings` by `segments`, a patch named `pad:name` or `pad:name:i` per toe, so none on a row with no toes, with no slices. `v` defaults to underneath. Its vertices take the bone at its site |
 | `joint` | `u`, optional `v`, `hinge` axis, `limits`, `stretch` | A bone boundary; bones are the spans between joints in `u` order |
 | `socket` | `u`, `v`, `outward` (axis or normal: which way the child sinks into this part), `pair`, `takes` | A child attachment point; `pair` makes a mirrored twin. A plan's socket takes `outward` too |
-| `area` | `u` range, `v` range, `tag` (rigid, soft, inner) | A tagged region weights and shading can read |
+| `area` | `u` range, `v` range, whose end below its start crosses the seam, `tag` (rigid, soft, inner, fill), optional `patch` (default `body`; a row's name takes every patch of the row), optional `color` (a palette slot it shows until filled) | A section Fill colors whole; weights and shading read it unless its tag is `fill` |
 | `landmark` | `u`, `v`, `pair` | A named surface point face marks and sets anchor to |
 
 A user-saved template, which comes later, writes the same file from a built part, so there is one format and one validator for shipped and saved templates alike.

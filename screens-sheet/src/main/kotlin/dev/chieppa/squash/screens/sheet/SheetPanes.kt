@@ -19,13 +19,16 @@ import androidx.compose.ui.Modifier
 import dev.chieppa.stretch.frame.ViewportOverlay
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.single.SingleSurface
@@ -102,6 +105,9 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     var refused by remember { mutableStateOf(false) }
     val fullRect = rects[SheetPane.FULL.ordinal]
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
+    val color = rememberPaneColor(state)
+    val places = remember { PreviewPlaces() }
+    SideEffect { open?.showColorAt(largestColorScale(cameras.values, orbit.view, fullRect.height)) }
     val frame = sheetFrame(
         SheetInput(
             rects = rects,
@@ -114,12 +120,13 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             active = shownActive,
             toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook(), disagreements, shownActive),
             fullOverlay = tool?.fullOverlay(fullView) ?: ViewportOverlay.Empty,
-            hints = SheetHints(state.curves.templateHint, state.curves.ghost),
-            shading = rememberObjectShading(state),
+            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true),
             layout = layout,
+            color = color,
+            previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
         ),
     )
-    Box(modifier.onSizeChanged { size = it }) {
+    Box(modifier.onSizeChanged { size = it }.onGloballyPositioned { places.surface = it.positionInRoot() }) {
         SceneSurface(frame.takeIf { size != IntSize.Zero }, Modifier.fillMaxSize())
         SheetPaneGrid(gap, Modifier.fillMaxSize(), layout) { pane ->
             val body = pane.body
@@ -148,7 +155,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
                 input.testTag(sheetPaneTag(pane)),
                 fitError,
                 progress,
-                paneToast?.takeIf { pane == SheetPane.SIDE },
+                if (pane == SheetPane.FULL && tool?.showsPreviews == true) ({ ShadingPreviewTiles(state, places) }) else paneToast?.takeIf { pane == SheetPane.SIDE },
                 zoom,
                 { view?.let(state.paneNavigation::fit) },
                 short = layout == SheetLayout.FULL_FIRST,

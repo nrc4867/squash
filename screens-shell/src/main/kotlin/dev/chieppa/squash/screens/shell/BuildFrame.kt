@@ -44,7 +44,8 @@ private val TYPES_KEYS = listOf("T")
 /** The Build frame every screen but Home sits in: top bar, rails, drawers and status bar around [viewport]. */
 @Composable
 fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, viewport: @Composable BoxScope.() -> Unit) {
-    val shown = shownLayout(shell.layout, screen)
+    val tool by shell.state.tool.collectAsState()
+    val shown = shownLayout(shell.layout, screen, tool)
     StretchApp(
         layout = shown,
         onLayoutChange = { shell.changeLayout(shown, it) },
@@ -57,11 +58,11 @@ fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, view
     )
 }
 
-/** What [layout] shows on [screen]: Part types is open only on Pick, and New character has every drawer shut. */
-private fun shownLayout(layout: FrameLayout, screen: Screen): FrameLayout = when (screen) {
+/** What [layout] shows on [screen]: Part types is open only on Pick, New character has every drawer shut, and a paint [tool] brings up Color. */
+private fun shownLayout(layout: FrameLayout, screen: Screen, tool: BuildTool): FrameLayout = when (screen) {
     Screen.PICK_PART -> layout.open(DrawerIds.TYPES)
     Screen.NEW_CHARACTER -> layout.close(DrawerIds.TYPES).close(DrawerIds.PARTS).close(DrawerIds.PART)
-    else -> layout.close(DrawerIds.TYPES)
+    else -> layout.close(DrawerIds.TYPES).let { if (tool.paints) it.open(DrawerIds.COLOR) else it }
 }
 
 @Composable
@@ -141,7 +142,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         part,
         comingDrawer(DrawerIds.RIG, Res.string.shell_drawer_rig, SquashIcons.Rig),
         comingDrawer(DrawerIds.SLOTS, Res.string.shell_drawer_slots, SquashIcons.Slots),
-        comingDrawer(DrawerIds.COLOR, Res.string.shell_drawer_color, SquashIcons.Color),
+        DrawerSpec(DrawerIds.COLOR, stringResource(Res.string.shell_drawer_color), SquashIcons.Color) { shell.content.colorDrawer(state, open) },
         comingDrawer(DrawerIds.LINES, Res.string.shell_drawer_lines, SquashIcons.Lines),
         comingDrawer(DrawerIds.MARKS, Res.string.shell_drawer_marks, SquashIcons.Marks),
     )

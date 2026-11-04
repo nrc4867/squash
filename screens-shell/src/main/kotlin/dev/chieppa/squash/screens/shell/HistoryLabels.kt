@@ -10,13 +10,25 @@ import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BreakPair
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
+import dev.chieppa.squash.document.SetAreaFill
+import dev.chieppa.squash.document.SetBaseSlot
+import dev.chieppa.squash.document.SetBrushStroke
+import dev.chieppa.squash.document.SetCharacterShading
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetParameters
+import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.color_step_area
+import dev.chieppa.squash.uidesign.generated.color_step_base
+import dev.chieppa.squash.uidesign.generated.color_step_palette
+import dev.chieppa.squash.uidesign.generated.color_step_region
+import dev.chieppa.squash.uidesign.generated.color_step_shading
+import dev.chieppa.squash.uidesign.generated.color_step_stroke
 import dev.chieppa.squash.uidesign.generated.shell_step_add
 import dev.chieppa.squash.uidesign.generated.shell_step_break_pair
 import dev.chieppa.squash.uidesign.generated.shell_step_outline
@@ -41,6 +53,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val moved = stringResource(Res.string.move_step)
+    val palette = stringResource(Res.string.color_step_palette, FIRST)
+    val base = stringResource(Res.string.color_step_base, FIRST)
+    val area = stringResource(Res.string.color_step_area, FIRST)
+    val region = stringResource(Res.string.color_step_region, FIRST)
+    val stroke = stringResource(Res.string.color_step_stroke)
+    val shading = stringResource(Res.string.color_step_shading)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -51,6 +69,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters -> moved
+            is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
+            is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())
+            is SetAreaFill -> area.replace(FIRST, displayName(command.area.substringAfterLast(":")))
+            is SetRegion -> region.replace(FIRST, displayName(command.id.value))
+            is SetBrushStroke -> stroke
+            is SetCharacterShading -> shading
             is SetParameter -> if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             else -> ""
         }

@@ -20,6 +20,8 @@
     { "kind": "joint",  "name": "knee",  "u": 0.55, "hinge": "x", "limits": [0, 140] },
     { "kind": "joint",  "name": "ankle", "u": 1.0,  "hinge": "x", "limits": [-30, 60], "stretch": true },
     { "kind": "socket", "name": "paw",   "u": 1.0,  "v": 0.5, "outward": "normal", "takes": ["paw"] },
-    { "kind": "area",   "name": "knee",  "u": [0.5, 0.6], "v": [0, 1], "tag": "rigid" }
+    { "kind": "area",   "name": "knee",  "u": [0.5, 0.6], "v": [0, 1], "tag": "rigid" },
+    { "kind": "area",  "name": "sock", "u": [0.72, 1.0], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",  "name": "thigh", "u": [0.0, 0.4], "v": [0, 1], "tag": "fill" }
   ]
 }

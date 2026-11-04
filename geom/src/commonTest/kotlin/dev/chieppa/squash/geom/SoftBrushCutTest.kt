@@ -69,6 +69,25 @@ class SoftBrushCutTest {
         assertOnMesh(cut, grid)
     }
 
+    /** A run going on onto another surface keeps its strength one radius past its open end, and a run that stops there fades. */
+    @Test
+    fun aRunOpenAtItsEndKeepsItsStrengthPastIt() {
+        val grid = sheetGrid()
+        val radius = 0.1f
+        val points = listOf(SurfaceUv(0.3f, 0.5f), SurfaceUv(0.5f, 0.5f))
+        val end = grid.positionOn(grid.gridU(0.5), grid.gridV(0.5))
+        val along = (end - grid.positionOn(grid.gridU(0.3), grid.gridV(0.5))).normalized()
+        fun strengthPast(cut: PatchCut): Float {
+            val past = end + along * (radius * 0.7f)
+            return (0 until cut.mesh.vertexCount).minBy { (cut.mesh.position(it) - past).length }.let { cut.alpha(it) }
+        }
+        val stopped = cutShape(ColorShape.Brush(points, radius, 0.8f), grid, FINE_CUT)
+        val open = cutShape(ColorShape.Brush(points, radius, 0.8f, openEnd = true), grid, FINE_CUT)
+        assertTrue(strengthPast(stopped) < 0.5f, "a stopped run fades past its end: ${strengthPast(stopped)}")
+        assertTrue(strengthPast(open) > 0.95f, "an open run does not: ${strengthPast(open)}")
+        assertOnMesh(open, grid)
+    }
+
     @Test
     fun softnessOneFadesFromTheCurveItself() {
         val grid = sheetGrid()

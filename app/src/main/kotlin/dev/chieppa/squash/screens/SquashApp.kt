@@ -22,6 +22,7 @@ import dev.chieppa.squash.screens.shell.WorkspaceScreen
 import dev.chieppa.squash.screens.shell.actionIcon
 import dev.chieppa.squash.screens.shell.actionText
 import dev.chieppa.squash.screens.shell.registerActions
+import dev.chieppa.squash.screens.surface.paint.ColorDrawerContent
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_save_failed
 import dev.chieppa.stretch.document.FileChooser
@@ -41,6 +42,7 @@ private val TOAST_LIFT = 40.dp
 private val BUILD_CONTENT = BuildContent(
     workspace = { shell -> WorkspaceScreen(shell) },
     toolSections = { kind, state, session, part, outlines -> ToolDrawerSections(kind, state, session, part, outlines) },
+    colorDrawer = { state, session -> ColorDrawerContent(state, session) },
 )
 
 /** The window's content: the current screen over [state], with what every screen shares. */

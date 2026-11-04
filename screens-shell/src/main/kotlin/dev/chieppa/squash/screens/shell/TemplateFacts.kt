@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.VIEW_ORDER
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.isDrawnByHand
+import dev.chieppa.squash.character.model.AreaTag
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
@@ -76,10 +77,10 @@ fun ToolKnowsSection(template: PartTemplate, paired: Boolean) {
     }
 }
 
-/** The template's tagged areas, when it has any. */
+/** The template's areas that weights and shading read, when it has any. */
 @Composable
 fun AreasSection(template: PartTemplate) {
-    val areas = template.blocks.flatMap { it.areas() }
+    val areas = template.blocks.flatMap { it.areas() }.filter { it.tag != AreaTag.FILL }
     if (areas.isEmpty()) return
     DrawerSection(stringResource(Res.string.shell_part_areas)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

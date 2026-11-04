@@ -51,4 +51,7 @@ enum class AreaTag {
     @SerialName("rigid") RIGID,
     @SerialName("soft") SOFT,
     @SerialName("inner") INNER,
+
+    /** Only a section to fill: weights and shading read nothing from it. */
+    @SerialName("fill") FILL,
 }

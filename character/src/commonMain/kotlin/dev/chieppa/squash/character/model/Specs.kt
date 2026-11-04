@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.model
 
+import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.TemplateId
 
 /** A bone boundary at [u]; bones are the spans between joints in u order. */
@@ -28,5 +29,8 @@ data class PatchName(val name: String, val repeats: Boolean = false)
 /** A patch, or every one of a row of patches, that a template shows in the palette slot named [slot]. */
 data class PatchSlot(val patch: String, val slot: String)
 
-/** A tagged surface region that weights and shading can read. */
-data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag)
+/** A tagged surface region on [patch] that weights and shading can read and Fill colors; [color] names the slot it shows until filled. */
+data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag, val patch: String = BODY_PATCH, val color: String? = null) {
+    /** Where its v span ends, running on past 1 when it crosses the seam. */
+    val vEnd: Float get() = if (v.end < v.start) v.end + 1f else v.end
+}

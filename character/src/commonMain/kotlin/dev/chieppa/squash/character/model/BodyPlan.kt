@@ -4,6 +4,7 @@ import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.BodyPlanRef
+import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.TemplateId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -35,6 +36,10 @@ data class PlanSlot(
     val default: TemplateId? = null,
 )
 
+/** A palette slot a new character on this plan starts with. */
+@Serializable
+data class PlanColor(val name: String, val color: SlotColor)
+
 /** A graph of sockets from a root spine, in a shipped, versioned file. */
 @Serializable
 @Doc("A body plan: a root part and the sockets and slots hung from it.")
@@ -50,6 +55,10 @@ data class BodyPlan(
     val root: PlanRoot,
     val sockets: List<PlanSocket>,
     val slots: List<PlanSlot> = emptyList(),
+    @Doc("The palette a new character on this plan starts with.")
+    val palette: List<PlanColor> = emptyList(),
+    @Doc("The palette slot a new part on this plan starts with.")
+    val base: String? = null,
 ) {
     val ref: BodyPlanRef get() = BodyPlanRef(id, version)
 

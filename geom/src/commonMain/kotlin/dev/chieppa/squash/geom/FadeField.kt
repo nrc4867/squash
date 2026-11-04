@@ -24,10 +24,30 @@ internal class FadeField(brush: ColorShape.Brush, private val grid: PatchGrid, t
     val width: Float = radius - core
 
     private val curve = flattenedThrough(unwrapped(brush.points, grid.closed), grid, max(tolerance, width * CURVE_FLATNESS))
-    private val centers = curve.map { grid.positionOn(grid.gridU(it.u), grid.gridV(it.v)) }
-    private val aroundV = DoubleArray(curve.size) { grid.gridV(curve[it].v) }
+    private val centers: List<Vec3>
+    private val aroundV: DoubleArray
     private val reachV = BRUSH_V_REACH * grid.columns
-    private val holdsReach = !reachesPole()
+    private val holdsReach: Boolean
+
+    init {
+        val placed = curve.map { grid.positionOn(grid.gridU(it.u), grid.gridV(it.v)) }
+        val around = curve.map { grid.gridV(it.v) }
+        val before = if (brush.openStart) extended(placed, around, fromEnd = false) else null
+        val after = if (brush.openEnd) extended(placed, around, fromEnd = true) else null
+        centers = listOfNotNull(before?.first) + placed + listOfNotNull(after?.first)
+        aroundV = (listOfNotNull(before?.second) + around + listOfNotNull(after?.second)).toDoubleArray()
+        holdsReach = !reachesPole()
+    }
+
+    /** The place one radius on past an open end, along the curve's last direction there, or null for a curve with no direction. */
+    private fun extended(placed: List<Vec3>, around: List<Double>, fromEnd: Boolean): Pair<Vec3, Double>? {
+        val end = if (fromEnd) placed.lastIndex else 0
+        val step = if (fromEnd) -1 else 1
+        val back = placed.indices.drop(1).asSequence().map { end + it * step }.firstOrNull { (placed[it] - placed[end]).length > 0f } ?: return null
+        val along = placed[end] - placed[back]
+        val share = radius / along.length
+        return placed[end] + along * share to around[end] + (around[end] - around[back]) * share
+    }
 
     private fun reachesPole(): Boolean {
         if (!grid.closed) return false
