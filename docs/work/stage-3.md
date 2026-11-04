@@ -90,7 +90,6 @@ Screenshots for the orchestrator come from Stretch's devtools endpoint, never fr
 
 ## Decisions the orchestrator makes and writes into the HLD
 
-- How color lives on the surface without an image texture: per-vertex color on the fixed grid with region borders rendered crisp in anchor space, or a per-patch color grid in u and v at a fixed resolution. Either is allowed by the HLD; the constraint is crisp borders that do not follow triangle edges, and anchors as the only stored form.
 - Camera bins for angle versions and the hysteresis width, as template data on the head or as a character setting.
 - Where the proxy normal frame is computed: it is already a field on `Slice` and is currently the frame rotation; two-tone needs the ellipse normal blended along the axis.
 

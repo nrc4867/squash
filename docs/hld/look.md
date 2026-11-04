@@ -28,7 +28,13 @@ Far parts darken automatically by side: paired parts on the side facing away fro
 
 **Base color first.** A character has a palette of named slots (fur, cream, pads, nose, inner ear, ink by default, from the body plan), and every part carries a base slot, so blocking out the character is choosing a slot per part before any painting: Fill on a part sets its base slot, and the Parts tree shows each part's base color in its row swatch. Template blocks with a `color` field (pads, nose leather, inner ear) name a slot, so they are right as soon as the slot is. Editing a slot recolors everything that names it. Mirrored pairs share base slots like everything else. The default palette is the body plan's, not a constant in code.
 
-No textures. Color is painted on the surface by brush or fill, or bounded by a region border drawn as a curve on the surface for crisp edges. Each border can be inked or not.
+No image textures. Color is painted in sections, and nothing about it depends on the mesh, so no one thinks about vertices:
+
+- **Fill.** The bucket colors a whole section in one click. A section is a part, an area its template names (a paw's pads, an ear's inside), or the closed shape a region border makes. The section stores a palette slot.
+- **Brush.** A section can also be partly painted. A brush stroke is stored in anchor space with its slot and keeps its own edge, however few rings or segments lie under it.
+- **Region border.** A curve drawn on the surface makes a crisp edge and a new section to fill. Each border can be inked or not.
+
+Sections layer in a fixed order: the part's base slot, then filled areas, then regions, then brush strokes in the order drawn. Paint is rendered from a per-patch color grid in u and v at a fixed resolution, rebuilt from the stored strokes, with region borders evaluated per pixel so they stay crisp and never follow triangle edges. Anchors, areas and slots are the only stored form.
 
 ## Lines
 
