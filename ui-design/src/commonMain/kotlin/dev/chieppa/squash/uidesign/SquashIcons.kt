@@ -463,6 +463,13 @@ object SquashIcons {
             stroke("M1.5 9.5c2.2-3.3 4.3-3.3 6.5 0s4.3 3.3 6.5 0")
         }
     }
+    val SpineAndWidth: ImageVector by lazy {
+        icon("spine-and-width") {
+            stroke("M2 14C3 8 8 3 14 2")
+            stroke("M4 4l7.5 7.5")
+            stroke("M11.5 7.5v4h-4")
+        }
+    }
     val StartFromTemplate: ImageVector by lazy {
         icon("start-from-template") {
             stroke("M8 2.5c3.3 0 5.5 2.7 5.5 6v5H8")

@@ -28,6 +28,7 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_history
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
+import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.core.Action
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.stretch.core.KeyChord
@@ -52,6 +53,7 @@ object ShellActions {
     val HELP = ActionId("drawer-help")
     val RESET_LAYOUT = ActionId("reset-layout")
     val DRAW = ActionId("tool-draw")
+    val SPINE_WIDTH = ActionId("tool-spine-width")
     val EDIT_CURVES = ActionId("tool-edit")
     val ERASE = ActionId("tool-erase")
     val MIRROR = ActionId("mirror")
@@ -76,6 +78,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.HELP to Res.string.shell_drawer_help,
     ShellActions.RESET_LAYOUT to Res.string.shell_action_reset_layout,
     ShellActions.DRAW to Res.string.shell_action_draw,
+    ShellActions.SPINE_WIDTH to Res.string.spine_tool,
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
     ShellActions.ERASE to Res.string.edit_tool_erase,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
@@ -105,6 +108,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "part" -> SquashIcons.Part
     "help" -> StretchIcons.Help
     "pen" -> SquashIcons.DrawOutline
+    "spine-and-width" -> SquashIcons.SpineAndWidth
     "edit-curves" -> SquashIcons.EditCurves
     "erase" -> SquashIcons.Erase
     "mirror" -> SquashIcons.Mirror
@@ -150,6 +154,7 @@ fun Shell.registerActions() {
     action(ShellActions.HELP, "help", available = inFrame) { toggle(DrawerIds.HELP) }
     action(ShellActions.RESET_LAYOUT, null, available = inFrame) { layout = DEFAULT_LAYOUT }
     action(ShellActions.DRAW, "pen", chord("D"), inWorkspace) { state.armTool(BuildTool.DRAW_OUTLINE) }
+    action(ShellActions.SPINE_WIDTH, "spine-and-width", chord("W"), inWorkspace) { state.armTool(BuildTool.SPINE_WIDTH) }
     action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }

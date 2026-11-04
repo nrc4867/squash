@@ -346,7 +346,7 @@ class ScreensSmokeTest {
         assertNotBlank(snapped.pixels, "the snapped view")
         assertNotEquals(0, snapped.countIn(whole, paint.part.base), "the drawn part fills")
         assertNotEquals(0, snapped.countIn(whole, paint.part.base.over(paint.well, DEFAULT_GHOST)), "the rest of the character is ghosted")
-        keepSingle(snapped, "single-snapped")
+        keepSingleWorkspace(snapped, "single-snapped")
 
         camera.orbit.orbitBy(FREE_ORBIT_X, FREE_ORBIT_Y)
         assertNull(camera.snap(drawn.part.axes, hold = false))
@@ -355,21 +355,6 @@ class ScreensSmokeTest {
         assertNotEquals(0, free.countIn(whole, paint.part.base), "the part fills from any direction")
         keep(free, "single-free")
         assertEquals(emptyList(), errors)
-    }
-
-    /** The workspace as a person sees it: its window with [image] under the viewport's floating corners. */
-    private fun ComposeUiTest.keepSingle(image: GpuImage, name: String) {
-        val workspace = onNodeWithTag(ShellTags.WORKSPACE)
-        val window = workspace.captureToImage().argbPixels()
-        val width = workspace.fetchSemanticsNode().size.width
-        val bounds = onNodeWithTag(SingleTags.VIEWPORT).fetchSemanticsNode().boundsInWindow
-        window.paste(width, image.pixels, image.width, bounds.left.roundToInt(), bounds.top.roundToInt())
-        for (tag in listOf(SingleTags.TOOLBAR, SingleTags.HUD, SingleTags.THUMBNAILS)) {
-            val corner = onNodeWithTag(tag)
-            val node = corner.fetchSemanticsNode()
-            window.paste(width, corner.captureToImage().argbPixels(), node.size.width, node.boundsInWindow.left.roundToInt(), node.boundsInWindow.top.roundToInt())
-        }
-        keep(window, width, name)
     }
 
     private fun keep(image: GpuImage, name: String) = keep(image.pixels, image.width, name)

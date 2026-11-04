@@ -103,7 +103,9 @@ internal fun SingleSurface(
                         tool?.liveStroke,
                         state.curves.templateHint,
                         { view -> tool?.takeIf { it.drawingIn == null }?.fitErrorPixels(view) },
-                    ) { view -> camera.snapTo(view, it.part.axes) }
+                        { view -> camera.snapTo(view, it.part.axes) },
+                        tool?.liveAlongside.orEmpty(),
+                    )
                 }
             },
             bottomEnd = fitting?.let { { FitProgressBar(it) } },

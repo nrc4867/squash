@@ -14,6 +14,7 @@ import dev.chieppa.squash.screens.edit.rememberEditCurvesTool
 import dev.chieppa.squash.screens.edit.rememberEraseTool
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetPanes
+import dev.chieppa.squash.screens.spine.rememberSpineWidthTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit_ends
@@ -30,14 +31,18 @@ fun WorkspaceScreen(shell: Shell) {
     val state = shell.state
     val armed by state.tool.collectAsState()
     val draw = rememberDrawOutlineTool(state)
+    val spine = rememberSpineWidthTool(state)
     val edit = rememberEditCurvesTool(state)
     val erase = rememberEraseTool(state)
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
+        BuildTool.SPINE_WIDTH -> spine
         BuildTool.EDIT_CURVES -> edit
         BuildTool.ERASE -> erase
         BuildTool.NONE -> null
     }
+    val selected by state.selectedPart.collectAsState()
+    LaunchedEffect(armed, selected) { spine.discard() }
     val refit = state.curves.refit
     LaunchedEffect(refit) {
         if (refit != null) shell.toasts.show(refitMessage(refit), getString(Res.string.shell_action_undo)) { state.undo() }

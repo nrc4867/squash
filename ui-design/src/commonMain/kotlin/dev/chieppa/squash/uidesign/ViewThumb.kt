@@ -28,6 +28,7 @@ val THUMB_WIDTH = 128.dp
 val THUMB_HEIGHT = 88.dp
 
 private val LINE_WIDTH = 2.dp
+private const val PREVIEW_SHADE = 0.24f
 private val EDGE_WIDTH = 2.dp
 private val EDGE_DASH = 5.dp
 private val HINT_DASH = 5.dp
@@ -37,9 +38,9 @@ private val LABEL_GAP = 4.dp
 /** How a view thumbnail's edge reads: nothing, the view on screen, or a view with nothing drawn yet. */
 enum class ThumbEdge { PLAIN, CURRENT, MISSING }
 
-/** A small picture of one view under its [label]: [lines] solid, the [hint] dashed, both in the picture's pixels. */
+/** A small picture of one view under its [label]: [lines] solid, the [hint] dashed and each [preview] shaded inside a dashed edge, all in the picture's pixels. */
 @Composable
-fun ViewThumb(label: String, edge: ThumbEdge, lines: List<List<Offset>>, hint: List<List<Offset>>, modifier: Modifier = Modifier) {
+fun ViewThumb(label: String, edge: ThumbEdge, lines: List<List<Offset>>, hint: List<List<Offset>>, modifier: Modifier = Modifier, preview: List<List<Offset>> = emptyList()) {
     val c = Stretch.colors
     val shape = Stretch.shapes.ctlShape
     val radius = Stretch.shapes.ctl
@@ -47,6 +48,10 @@ fun ViewThumb(label: String, edge: ThumbEdge, lines: List<List<Offset>>, hint: L
         BasicText(label.uppercase(), style = Stretch.type.eyebrow.merge(TextStyle(color = c.inkMuted)))
         Canvas(Modifier.size(THUMB_WIDTH, THUMB_HEIGHT).clip(shape).background(c.surfaceControl)) {
             hint.forEach { path(it, c.inkSubtle, dashed = true) }
+            preview.forEach {
+                shaded(it, c.affected.copy(alpha = PREVIEW_SHADE))
+                path(it, c.inkStrong, dashed = true)
+            }
             lines.forEach { path(it, c.inkStrong, dashed = false) }
             val edgeWidth = EDGE_WIDTH.toPx()
             val inset = Offset(edgeWidth / 2f, edgeWidth / 2f)
@@ -62,6 +67,16 @@ fun ViewThumb(label: String, edge: ThumbEdge, lines: List<List<Offset>>, hint: L
             }
         }
     }
+}
+
+private fun DrawScope.shaded(points: List<Offset>, color: Color) {
+    if (points.size < 3) return
+    val inside = Path().apply {
+        moveTo(points.first().x, points.first().y)
+        points.drop(1).forEach { lineTo(it.x, it.y) }
+        close()
+    }
+    drawPath(inside, color)
 }
 
 private fun DrawScope.path(points: List<Offset>, color: Color, dashed: Boolean) {

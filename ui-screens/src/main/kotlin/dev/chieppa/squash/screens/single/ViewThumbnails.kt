@@ -12,27 +12,38 @@ import dev.chieppa.squash.screens.sheet.outlineSamples
 import dev.chieppa.squash.screens.shell.VIEW_ORDER
 import dev.chieppa.squash.uidesign.ThumbEdge
 
-/** One view's thumbnail: its [edge], the [lines] drawn in it and the template's [hint] where none is, in thumbnail pixels. One not on the view the camera shows [snaps] there. */
+/** One view's thumbnail: its [edge], the [lines] drawn in it, the [preview] of an outline release will write and the template's [hint] where none is, in thumbnail pixels. One not on the view the camera shows [snaps] there. */
 data class ViewThumbnail(
     val view: View,
     val edge: ThumbEdge,
     val lines: List<List<Offset>>,
     val hint: List<List<Offset>>,
+    val preview: List<List<Offset>> = emptyList(),
 ) {
     val snaps: Boolean get() = edge != ThumbEdge.CURRENT
 }
 
 /**
  * [selection]'s views as thumbnails [width] by [height] pixels at one scale, upright as the panes show them: each shows its
- * outline, or [live] in the view being drawn, or else the template's outline when [templateHint] is on. The [current] view
- * is lit and any other with nothing drawn is marked missing.
+ * outline, or [live] or one of [alongside] in the view being drawn, or else the template's outline when [templateHint] is on.
+ * The [current] view is lit and any other with nothing drawn is marked missing.
  */
-fun viewThumbnails(selection: SheetSelection, current: View?, live: LiveStroke?, templateHint: Boolean, width: Int, height: Int): List<ViewThumbnail> {
+fun viewThumbnails(
+    selection: SheetSelection,
+    current: View?,
+    live: LiveStroke?,
+    templateHint: Boolean,
+    width: Int,
+    height: Int,
+    alongside: List<LiveStroke> = emptyList(),
+): List<ViewThumbnail> {
     val part = selection.part
     val fit = fitSheet(part.box, part.axes, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
     return VIEW_ORDER.map { view ->
         val camera = LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale)
-        val drawn = if (live?.view == view) live.points else selection.outlines[view]?.let(::outlineSamples)
+        val stroke = (listOfNotNull(live) + alongside).firstOrNull { it.view == view }
+        val drawn = stroke?.points ?: selection.outlines[view]?.let(::outlineSamples)
+        val previewing = stroke?.preview == true
         ViewThumbnail(
             view,
             when {
@@ -40,8 +51,9 @@ fun viewThumbnails(selection: SheetSelection, current: View?, live: LiveStroke?,
                 drawn == null -> ThumbEdge.MISSING
                 else -> ThumbEdge.PLAIN
             },
-            listOfNotNull(drawn?.map(camera::toPixel)),
+            if (previewing) listOf(stroke.centre.map(camera::toPixel)).filter { it.isNotEmpty() } else listOfNotNull(drawn?.map(camera::toPixel)),
             if (drawn == null && templateHint) part.silhouette(view).map { path -> path.map(camera::toPixel) } else emptyList(),
+            if (previewing) listOf(stroke.points.map(camera::toPixel)) else emptyList(),
         )
     }
 }

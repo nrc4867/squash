@@ -25,6 +25,7 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
 import dev.chieppa.squash.uidesign.generated.shell_drawer_slots
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
 import dev.chieppa.squash.uidesign.generated.shell_part_template
+import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.frame.DrawerSpec
 import dev.chieppa.stretch.frame.FrameLayout
 import dev.chieppa.stretch.frame.HistoryPanel
@@ -85,6 +86,7 @@ private fun partDrawerTitle(state: AppState, kind: PartDrawerKind): String {
         PartDrawerKind.PART -> if (template != null) stringResource(Res.string.shell_part_template, template.name) else stringResource(Res.string.shell_drawer_part)
         PartDrawerKind.OUTLINE -> stringResource(Res.string.draw_drawer_outline)
         PartDrawerKind.OUTLINE_CURVES -> stringResource(Res.string.edit_drawer_curves)
+        PartDrawerKind.SPINE_WIDTH -> stringResource(Res.string.spine_tool)
     }
 }
 
@@ -106,6 +108,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         pickedName != null -> SquashIcons.Part
         kind == PartDrawerKind.OUTLINE -> SquashIcons.DrawOutline
         kind == PartDrawerKind.OUTLINE_CURVES -> SquashIcons.EditCurves
+        kind == PartDrawerKind.SPINE_WIDTH -> SquashIcons.SpineAndWidth
         else -> SquashIcons.Part
     }
     val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = PARTS_KEYS) {

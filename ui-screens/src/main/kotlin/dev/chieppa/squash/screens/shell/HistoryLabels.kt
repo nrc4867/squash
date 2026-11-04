@@ -7,12 +7,14 @@ import dev.chieppa.squash.document.BreakPair
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
 import dev.chieppa.squash.document.SetOutline
+import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_step_add
 import dev.chieppa.squash.uidesign.generated.shell_step_break_pair
 import dev.chieppa.squash.uidesign.generated.shell_step_outline
+import dev.chieppa.squash.uidesign.generated.shell_step_outlines
 import dev.chieppa.squash.uidesign.generated.shell_step_parameter
 import dev.chieppa.squash.uidesign.generated.shell_step_remove
 import dev.chieppa.stretch.core.Command
@@ -21,6 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val FIRST = "\u0001"
 private const val SECOND = "\u0002"
+private const val VIEW_JOIN = " · "
 
 /** How the History drawer names each command, in the app's language. */
 @Composable
@@ -28,6 +31,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val add = stringResource(Res.string.shell_step_add, FIRST)
     val remove = stringResource(Res.string.shell_step_remove, FIRST)
     val outline = stringResource(Res.string.shell_step_outline, FIRST)
+    val outlines = stringResource(Res.string.shell_step_outlines, FIRST)
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
@@ -38,6 +42,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is RemovePart -> remove.replace(FIRST, "")
             is BreakPair -> breakPair
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
+            is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameter -> parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             else -> ""
         }

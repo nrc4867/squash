@@ -44,7 +44,8 @@ internal fun rememberOutlineLook(): OutlineLook {
 /** Where the selected part's views disagree on screen, or nothing while no pane has a camera. */
 fun paneDisagreements(selection: SheetSelection?, cameras: Map<View, LockedCamera>, tool: PaneTool?): List<Disagreement> {
     if (selection == null || cameras.isEmpty()) return emptyList()
-    return viewsDisagree(selection.outlines, tool?.liveStroke, DISAGREE_TOLERANCE_PIXELS * cameras.values.first().planePixel)
+    val replaced = tool?.liveAlongside.orEmpty().map { it.view }
+    return viewsDisagree(selection.outlines - replaced, tool?.liveStroke, DISAGREE_TOLERANCE_PIXELS * cameras.values.first().planePixel)
 }
 
 /**

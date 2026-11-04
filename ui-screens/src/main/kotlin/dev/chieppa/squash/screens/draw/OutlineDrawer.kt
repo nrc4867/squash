@@ -79,18 +79,11 @@ fun HintSection(state: AppState) {
 @Composable
 private fun StrokeSection(state: AppState) {
     val curves = state.curves
-    val smooth = stringResource(Res.string.draw_smooth)
     val snap = stringResource(Res.string.draw_snap_line)
     val close = stringResource(Res.string.draw_close_end)
     val hold = stringResource(Res.string.draw_hold_snap)
     DrawerSection(stringResource(Res.string.draw_stroke)) {
-        SettingRow(smooth) {
-            Slider(curves.smooth, { curves.smooth = it }, smooth, Modifier.weight(1f).testTag(OutlineDrawerTags.SMOOTH))
-            Readout(
-                stringResource(Res.string.edit_percent, (curves.smooth * PERCENT).roundToInt()),
-                Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.SMOOTH_VALUE),
-            )
-        }
+        SmoothRow(state)
         SettingRow(snap) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.snapLine, { curves.snapLine = it }, snap, Modifier.testTag(OutlineDrawerTags.SNAP_LINE))
@@ -103,6 +96,20 @@ private fun StrokeSection(state: AppState) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.holdSnap, { curves.holdSnap = it }, hold, Modifier.testTag(OutlineDrawerTags.HOLD_SNAP))
         }
+    }
+}
+
+/** How much a stroke is smoothed, which every stroke tool shares. */
+@Composable
+internal fun SmoothRow(state: AppState) {
+    val curves = state.curves
+    val smooth = stringResource(Res.string.draw_smooth)
+    SettingRow(smooth) {
+        Slider(curves.smooth, { curves.smooth = it }, smooth, Modifier.weight(1f).testTag(OutlineDrawerTags.SMOOTH))
+        Readout(
+            stringResource(Res.string.edit_percent, (curves.smooth * PERCENT).roundToInt()),
+            Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.SMOOTH_VALUE),
+        )
     }
 }
 

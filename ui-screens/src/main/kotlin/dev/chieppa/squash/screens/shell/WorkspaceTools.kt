@@ -16,6 +16,7 @@ import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.shell_action_draw
 import dev.chieppa.squash.uidesign.generated.shell_action_edit_curves
+import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.frame.ToolbarSeparator
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
@@ -25,8 +26,8 @@ private val TOOL_SIZE = 34.dp
 
 /**
  * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn,
- * Edit curves and Erase, then Mirror, which only a paired part has any use for, and Start from template. Pressing the armed
- * tool disarms it.
+ * Spine and width, Edit curves and Erase, then Mirror, which only a paired part has any use for, and Start from template.
+ * Pressing the armed tool disarms it.
  */
 @Composable
 fun WorkspaceTools(state: AppState) {
@@ -34,6 +35,7 @@ fun WorkspaceTools(state: AppState) {
     val drawn = rememberPartIsDrawn(state)
     val draw = stringResource(if (drawn) Res.string.edit_tool_oversketch else Res.string.shell_action_draw)
     ToolItem(BuildTool.DRAW_OUTLINE, if (drawn) SquashIcons.Oversketch else SquashIcons.DrawOutline, draw, "D", tool, state::armTool)
+    ToolItem(BuildTool.SPINE_WIDTH, SquashIcons.SpineAndWidth, stringResource(Res.string.spine_tool), "W", tool, state::armTool)
     ToolItem(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, stringResource(Res.string.shell_action_edit_curves), "E", tool, state::armTool)
     ToolItem(BuildTool.ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), "X", tool, state::armTool)
     ToolbarSeparator()

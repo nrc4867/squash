@@ -18,6 +18,7 @@ import dev.chieppa.squash.uidesign.generated.shell_status_ready
 import dev.chieppa.squash.uidesign.generated.shell_status_settled
 import dev.chieppa.squash.uidesign.generated.shell_status_view_of
 import dev.chieppa.squash.uidesign.generated.shell_status_working
+import dev.chieppa.squash.uidesign.generated.spine_status_writes
 import dev.chieppa.stretch.frame.StatusBar
 import dev.chieppa.stretch.frame.StatusItem
 import dev.chieppa.stretch.theme.StretchIcons
@@ -43,6 +44,7 @@ fun BuildStatusBar(shell: Shell) {
     val settled by open.graph.settled.collectAsState()
     val progress by open.graph.progress.collectAsState()
     val mirror by state.mirror.collectAsState()
+    val tool by state.tool.collectAsState()
     val pen = state.curves.penPressure
     val drawing = state.curves.drawing
     val plan = state.templates.plan(document.character.bodyPlan)
@@ -63,6 +65,7 @@ fun BuildStatusBar(shell: Shell) {
         end = {
             Box(Modifier.testTag(ShellTags.STATUS_END)) {
                 when {
+                    tool == BuildTool.SPINE_WIDTH && drawing != null && screen == Screen.WORKSPACE -> StatusItem(stringResource(Res.string.spine_status_writes))
                     touched != null -> StatusItem(
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
                     )

@@ -28,6 +28,7 @@ import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.draw.HintSection
 import dev.chieppa.squash.screens.draw.OutlineSections
 import dev.chieppa.squash.screens.edit.OutlineCurvesSections
+import dev.chieppa.squash.screens.spine.SpineSections
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_percent
@@ -114,6 +115,7 @@ private fun SelectedPartDetails(state: AppState) {
             HintSection(state)
         }
         PartDrawerKind.OUTLINE -> OutlineSections(state)
+        PartDrawerKind.SPINE_WIDTH -> SpineSections(state, base.outlines)
         PartDrawerKind.PART -> {
             FitSection(open)
             val hidden = if (mirror) character.overridesOf(part).params else emptyMap()

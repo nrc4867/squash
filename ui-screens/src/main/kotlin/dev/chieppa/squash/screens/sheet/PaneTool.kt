@@ -6,8 +6,11 @@ import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.View
 import dev.chieppa.stretch.frame.ViewportOverlay
 
-/** A stroke in progress in [view], as the points of that view's plane it has passed through. */
-class LiveStroke(val view: View, val points: List<CurvePoint>)
+/**
+ * A stroke in progress in [view], as the points of that view's plane it has passed through. With [preview], [points] are the
+ * outline release will write, around the line [centre] drawn to make it.
+ */
+class LiveStroke(val view: View, val points: List<CurvePoint>, val preview: Boolean = false, val centre: List<CurvePoint> = emptyList())
 
 /**
  * A tool working in the locked panes. Each pane hands it its [LockedCamera], which stays the same object until the sheet
@@ -24,6 +27,9 @@ interface PaneTool {
 
     /** The stroke in progress, which the panes compare with the other views. Compose state read here redraws them. */
     val liveStroke: LiveStroke? get() = null
+
+    /** The outlines of other views the stroke in progress replaces as it goes, which therefore hold it to nothing. Compose state read here redraws them. */
+    val liveAlongside: List<LiveStroke> get() = emptyList()
 
     /** The view a stroke is in progress in, which shows as Drawing. */
     val drawingIn: View? get() = liveStroke?.view

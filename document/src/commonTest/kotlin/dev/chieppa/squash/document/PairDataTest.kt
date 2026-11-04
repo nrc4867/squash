@@ -52,6 +52,32 @@ class PairDataTest {
     }
 
     @Test
+    fun severalOutlinesWriteThePairOrThisSideAloneAsOneStep() {
+        val both = mapOf(View.SIDE to side, View.TOP to top)
+        scenario(placed) {
+            run(SetOutlines(right.id, both))
+            expect {
+                assertEquals(side, it.of(left).outlines[View.SIDE])
+                assertEquals(top, it.of(left).outlines[View.TOP])
+                assertEquals(top, it.of(right).outlines[View.TOP])
+            }
+            run(SetOutlines(right.id, mapOf(View.SIDE to other, View.TOP to other), thisSide = true))
+            expect {
+                assertEquals(side, it.of(left).outlines[View.SIDE])
+                assertEquals(other, it.of(right).outlines[View.SIDE])
+                assertEquals(other, it.of(right).outlines[View.TOP])
+            }
+            undo()
+            expect {
+                assertEquals(side, it.of(right).outlines[View.SIDE])
+                assertEquals(emptyMap(), checkNotNull(it.character.part(right.id)).overrides.outlines)
+            }
+            undo()
+            expect(placed)
+        }
+    }
+
+    @Test
     fun aParameterOnEitherSideWritesThePair() {
         scenario(placed) {
             gesture(SetParameter(right.id, "size", 1.1f), SetParameter(right.id, "size", 1.4f))

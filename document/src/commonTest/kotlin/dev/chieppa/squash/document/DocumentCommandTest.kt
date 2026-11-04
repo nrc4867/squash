@@ -69,6 +69,31 @@ class DocumentCommandTest {
     }
 
     @Test
+    fun settingSeveralOutlinesIsOneUndoStepAndRestoresEachExactly() {
+        val other = OutlineCurve(outline.points.reversed())
+        val front = OutlineCurve(outline.points.map { CurvePoint(it.x, it.y + 1f) })
+        scenario(empty) {
+            run(AddPart(leg), SetOutline(leg.id, View.SIDE, outline), SetOutline(leg.id, View.FRONT, front))
+            run(SetOutlines(leg.id, mapOf(View.SIDE to other, View.TOP to other)))
+            expect {
+                val outlines = it.character.resolved(leg.id)?.outlines
+                assertEquals(other, outlines?.get(View.SIDE))
+                assertEquals(other, outlines?.get(View.TOP))
+                assertEquals(front, outlines?.get(View.FRONT))
+            }
+            undo()
+            expect {
+                val outlines = it.character.resolved(leg.id)?.outlines
+                assertEquals(outline, outlines?.get(View.SIDE))
+                assertNull(outlines?.get(View.TOP))
+                assertEquals(front, outlines?.get(View.FRONT))
+            }
+            redo()
+            expect { assertEquals(other, it.character.resolved(leg.id)?.outlines?.get(View.TOP)) }
+        }
+    }
+
+    @Test
     fun aDragIsOneUndoStep() {
         scenario(empty) {
             run(AddPart(leg))
@@ -92,6 +117,7 @@ class DocumentCommandTest {
             RemovePart(leg.id),
             SetOutline(leg.id, View.TOP, outline),
             SetParameter(leg.id, "size", null),
+            SetOutlines(leg.id, mapOf(View.SIDE to outline, View.TOP to null), thisSide = true),
         )
         for (command in commands) {
             val text = Json.encodeToString(DocumentCommand.serializer(), command)

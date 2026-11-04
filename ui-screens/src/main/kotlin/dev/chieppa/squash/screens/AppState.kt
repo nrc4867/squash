@@ -23,6 +23,7 @@ import dev.chieppa.squash.screens.shell.placeOnSocket
 import dev.chieppa.squash.screens.shell.plan
 import dev.chieppa.squash.screens.shell.socketFor
 import dev.chieppa.squash.screens.shell.template
+import dev.chieppa.squash.screens.spine.SpineEditState
 import dev.chieppa.stretch.document.DocumentSession
 import dev.chieppa.stretch.document.DocumentStorage
 import dev.chieppa.stretch.document.FileStorage
@@ -75,6 +76,9 @@ class AppState(
     /** What the curve tools remember: selection, oversketch settings and readouts. */
     val curves = CurveEditState()
 
+    /** The Spine and width tool's stroke, until it is written or dropped. */
+    val spine = SpineEditState { curves.smooth }
+
     /** What Pick a part type has chosen so far. */
     val pickedSocket = MutableStateFlow<OpenSocket?>(null)
     val pickedType = MutableStateFlow<TemplateId?>(null)
@@ -107,6 +111,7 @@ class AppState(
         activeView.value = View.SIDE
         clearPick()
         curves.clear()
+        spine.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
@@ -135,6 +140,7 @@ class AppState(
         selectedPart.value = null
         clearPick()
         curves.clear()
+        spine.clear()
         screen.value = Screen.HOME
     }
 

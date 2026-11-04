@@ -115,6 +115,7 @@
     <string name="shell_step_remove">Remove %1$s</string>
     <string name="shell_step_break_pair">Break pair</string>
     <string name="shell_step_outline">%1$s outline</string>
+    <string name="shell_step_outlines">%1$s outlines</string>
     <string name="shell_step_parameter">%1$s %2$s</string>
 
     <string name="shell_save_failed">Couldn\'t save: %1$s</string>
@@ -178,6 +179,13 @@
     <string name="draw_pen_width">Width</string>
     <string name="draw_pen_width_shape_only">shape only</string>
 
+    <string name="spine_tool">Spine and width</string>
+    <string name="spine_width">Width</string>
+    <string name="spine_px">px</string>
+    <string name="spine_pen_pressure">width, this tool only</string>
+    <string name="spine_pen_width">drag or pen</string>
+    <string name="spine_to_write">to write</string>
+    <string name="spine_status_writes">Side · writes Side and Top</string>
     <string name="edit_tool_oversketch">Oversketch</string>
     <string name="edit_drawer_curves">Outline curves</string>
     <string name="edit_selected_point">Selected point</string>

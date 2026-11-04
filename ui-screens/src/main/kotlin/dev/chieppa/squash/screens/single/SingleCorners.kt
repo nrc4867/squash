@@ -121,23 +121,24 @@ internal fun ThumbnailStrip(
     templateHint: Boolean,
     fitError: (View) -> Float?,
     onSnap: (View) -> Unit,
+    alongside: List<LiveStroke> = emptyList(),
 ) {
     val density = LocalDensity.current
     val width = with(density) { THUMB_WIDTH.roundToPx() }
     val height = with(density) { THUMB_HEIGHT.roundToPx() }
     Toolbar(Modifier.testTag(SingleTags.THUMBNAILS)) {
         Row(Modifier.padding(THUMBS_INSET), horizontalArrangement = Arrangement.spacedBy(THUMB_GAP)) {
-            for (thumbnail in viewThumbnails(selection, current, live, templateHint, width, height)) {
+            for (thumbnail in viewThumbnails(selection, current, live, templateHint, width, height, alongside)) {
                 val tagged = Modifier.testTag(SingleTags.thumbnail(thumbnail.view))
                 val name = viewLabel(thumbnail.view)
                 val label = fitError(thumbnail.view)?.let { stringResource(Res.string.single_thumb_pixels, name, pixelsLabel(it)) } ?: name
                 if (thumbnail.snaps) {
                     val snapTo = stringResource(snapLabel(thumbnail.view))
                     Tooltip(snapTo) {
-                        ViewThumb(label, thumbnail.edge, thumbnail.lines, thumbnail.hint, tagged.clickable(onClickLabel = snapTo) { onSnap(thumbnail.view) })
+                        ViewThumb(label, thumbnail.edge, thumbnail.lines, thumbnail.hint, tagged.clickable(onClickLabel = snapTo) { onSnap(thumbnail.view) }, thumbnail.preview)
                     }
                 } else {
-                    ViewThumb(label, thumbnail.edge, thumbnail.lines, thumbnail.hint, tagged)
+                    ViewThumb(label, thumbnail.edge, thumbnail.lines, thumbnail.hint, tagged, thumbnail.preview)
                 }
             }
         }

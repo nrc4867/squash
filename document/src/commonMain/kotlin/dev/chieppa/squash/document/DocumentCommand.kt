@@ -95,6 +95,28 @@ data class SetOutline(
 }
 
 /**
+ * Sets the [outlines] of several views as one step, where each goes as [SetOutline] would send it: on the pair for a paired
+ * part, or with [thisSide] as that side's override alone. A null curve clears its view.
+ */
+@Serializable
+@SerialName("setOutlines")
+data class SetOutlines(
+    val part: PartId,
+    val outlines: Map<View, OutlineCurve?>,
+    val thisSide: Boolean = false,
+) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide)
+        val after = outlines.entries.fold(before) { data, (view, curve) -> data.withOutline(view, curve) }
+        return Applied(
+            document.withWritten(instance, thisSide, after),
+            SetOutlines(part, outlines.mapValues { (view, _) -> before.outlines[view] }, thisSide),
+        )
+    }
+}
+
+/**
  * Sets a parameter's value: on the pair for a paired part, or with [thisSide] as that side's override alone. A null
  * [value] returns it to the template's default, and clearing an override returns it to the pair's value. An unpaired
  * part has one place for it.
