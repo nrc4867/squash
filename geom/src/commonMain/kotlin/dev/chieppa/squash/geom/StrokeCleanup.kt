@@ -37,8 +37,13 @@ fun cleanStroke(samples: List<Vec2>, ends: StrokeEnds, pixel: Float, options: St
     val preview = strokePreview(samples, ends, pixel, options.copy(snapLine = false))
     val shape = preview.shape
     if (shape.isEmpty()) return null
-    val segments = fitBetweenCorners(shape, preview.closed, pixel, options.snapLine)
-    return CleanStroke(BezierPath(segments), preview.closed, maxError(shape, segments))
+    return fitCleaned(shape, preview.closed, pixel, options.snapLine)
+}
+
+/** Evenly spaced [shape] fitted between its corners, with how far the fit strays. */
+internal fun fitCleaned(shape: List<Vec2>, closed: Boolean, pixel: Float, snapLine: Boolean = true): CleanStroke {
+    val segments = fitBetweenCorners(shape, closed, pixel, snapLine)
+    return CleanStroke(BezierPath(segments), closed, maxError(shape, segments))
 }
 
 internal fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int): List<Vec2> {

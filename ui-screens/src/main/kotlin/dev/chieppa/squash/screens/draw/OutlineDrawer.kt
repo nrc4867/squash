@@ -10,6 +10,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.Readout
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.draw_close_end
+import dev.chieppa.squash.uidesign.generated.draw_hold_snap
 import dev.chieppa.squash.uidesign.generated.draw_hint
 import dev.chieppa.squash.uidesign.generated.draw_hint_ghost
 import dev.chieppa.squash.uidesign.generated.draw_hint_template
@@ -38,6 +39,7 @@ object OutlineDrawerTags {
     const val SMOOTH_VALUE = "outline.smooth.value"
     const val SNAP_LINE = "outline.snapLine"
     const val CLOSE_END = "outline.closeEnd"
+    const val HOLD_SNAP = "outline.holdSnap"
     const val TEMPLATE = "outline.template"
     const val GHOST = "outline.ghost"
     const val GHOST_VALUE = "outline.ghost.value"
@@ -80,6 +82,7 @@ private fun StrokeSection(state: AppState) {
     val smooth = stringResource(Res.string.draw_smooth)
     val snap = stringResource(Res.string.draw_snap_line)
     val close = stringResource(Res.string.draw_close_end)
+    val hold = stringResource(Res.string.draw_hold_snap)
     DrawerSection(stringResource(Res.string.draw_stroke)) {
         SettingRow(smooth) {
             Slider(curves.smooth, { curves.smooth = it }, smooth, Modifier.weight(1f).testTag(OutlineDrawerTags.SMOOTH))
@@ -95,6 +98,10 @@ private fun StrokeSection(state: AppState) {
         SettingRow(close) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.closeEnd, { curves.closeEnd = it }, close, Modifier.testTag(OutlineDrawerTags.CLOSE_END))
+        }
+        SettingRow(hold) {
+            Spacer(Modifier.weight(1f))
+            Toggle(curves.holdSnap, { curves.holdSnap = it }, hold, Modifier.testTag(OutlineDrawerTags.HOLD_SNAP))
         }
     }
 }

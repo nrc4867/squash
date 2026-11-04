@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.draw.startFromTemplate
+import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
@@ -19,6 +21,7 @@ import dev.chieppa.squash.uidesign.generated.shell_action_redo
 import dev.chieppa.squash.uidesign.generated.shell_action_reset_layout
 import dev.chieppa.squash.uidesign.generated.shell_action_save
 import dev.chieppa.squash.uidesign.generated.shell_action_save_as
+import dev.chieppa.squash.uidesign.generated.shell_action_start_template
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
@@ -52,6 +55,7 @@ object ShellActions {
     val EDIT_CURVES = ActionId("tool-edit")
     val ERASE = ActionId("tool-erase")
     val MIRROR = ActionId("mirror")
+    val START_TEMPLATE = ActionId("start-template")
     val SELECT = ActionId("tool-select")
     val ADD_PART = ActionId("tool-add-part")
 }
@@ -75,6 +79,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
     ShellActions.ERASE to Res.string.edit_tool_erase,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
+    ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.SELECT to Res.string.pick_tool_select,
     ShellActions.ADD_PART to Res.string.pick_tool_add,
 )
@@ -103,6 +108,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "edit-curves" -> SquashIcons.EditCurves
     "erase" -> SquashIcons.Erase
     "mirror" -> SquashIcons.Mirror
+    "start-template" -> SquashIcons.StartFromTemplate
     "select" -> SquashIcons.Select
     "add-part" -> SquashIcons.AddPart
     else -> null
@@ -147,6 +153,7 @@ fun Shell.registerActions() {
     action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
+    action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.SELECT, "select", chord("V"), onPick) { state.pickTool.value = PickTool.SELECT }
     action(ShellActions.ADD_PART, "add-part", chord("A"), onPick) { state.pickTool.value = PickTool.ADD_PART }
 }

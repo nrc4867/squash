@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.character.build.outlineEnds
 import dev.chieppa.squash.character.build.toOutline
 import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.character.model.End
@@ -19,14 +20,8 @@ import dev.chieppa.squash.geom.strokePreview
 /** A stroke as the outline it makes, with how far that strays from the stroke at worst, in screen pixels. */
 data class FittedOutline(val curve: OutlineCurve, val errorPixels: Float)
 
-/**
- * How a stroke in [view] ends on a part whose template opens at [openEnd]. Side and Top run along the axis, so they meet
- * the socket plane at along = 0; Front looks down the axis and never does.
- */
-fun strokeEnds(view: View, openEnd: End?): StrokeEnds = when {
-    view == View.FRONT || openEnd == null -> StrokeEnds.Closed
-    else -> StrokeEnds.CutAtPlane(above = openEnd == End.START)
-}
+/** How a stroke in [view] ends on a part whose template opens at [openEnd]. */
+fun strokeEnds(view: View, openEnd: End?): StrokeEnds = outlineEnds(view, openEnd)
 
 /** [samples] in a view's plane, cleaned up as [ends] says, or null if they make no outline. [pixel] is a screen pixel's size in the plane. */
 fun fittedOutline(samples: List<CurvePoint>, ends: StrokeEnds, pixel: Float, options: StrokeOptions = StrokeOptions()): FittedOutline? {

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.draw.StartFromTemplateButton
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
@@ -24,7 +25,8 @@ private val TOOL_SIZE = 34.dp
 
 /**
  * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn,
- * Edit curves and Erase, then Mirror, which only a paired part has any use for. Pressing the armed tool disarms it.
+ * Edit curves and Erase, then Mirror, which only a paired part has any use for, and Start from template. Pressing the armed
+ * tool disarms it.
  */
 @Composable
 fun WorkspaceTools(state: AppState) {
@@ -36,6 +38,8 @@ fun WorkspaceTools(state: AppState) {
     ToolItem(BuildTool.ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), "X", tool, state::armTool)
     ToolbarSeparator()
     MirrorButton(state)
+    ToolbarSeparator()
+    StartFromTemplateButton(state)
 }
 
 /** Mirror: on, a change writes the pair; off, the selected side alone. */

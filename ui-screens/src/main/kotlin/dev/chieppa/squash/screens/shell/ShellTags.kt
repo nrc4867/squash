@@ -19,6 +19,7 @@ object ShellTags {
     const val STATUS_END = "status.end"
     const val PART_EMPTY = "part.empty"
     const val MIRROR = "tools.mirror"
+    const val START_TEMPLATE = "tools.startTemplate"
     const val HOME_SEARCH = "home.search"
     const val HOME_CAST = "home.cast"
 

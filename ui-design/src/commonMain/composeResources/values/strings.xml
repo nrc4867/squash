@@ -39,6 +39,7 @@
     <string name="shell_action_commands">Commands</string>
     <string name="shell_action_draw">Draw outline</string>
     <string name="shell_action_edit_curves">Edit curves</string>
+    <string name="shell_action_start_template">Start from template</string>
     <string name="shell_action_reset_layout">Reset layout</string>
 
     <string name="shell_drawer_references">References</string>
@@ -167,6 +168,7 @@
     <string name="draw_smooth">Smooth</string>
     <string name="draw_snap_line">Snap line</string>
     <string name="draw_close_end">Close end</string>
+    <string name="draw_hold_snap">Hold to snap</string>
     <string name="draw_hint">Hint</string>
     <string name="draw_hint_template">Template</string>
     <string name="draw_hint_ghost">Ghost</string>

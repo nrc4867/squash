@@ -42,6 +42,7 @@ class CurveEditState {
     var smooth by mutableStateOf(DEFAULT_STROKE_SMOOTH)
     var snapLine by mutableStateOf(true)
     var closeEnd by mutableStateOf(true)
+    var holdSnap by mutableStateOf(true)
 
     /** The Hint section: the template's dashed outline where a view is not drawn, and how strongly the rest of the character shows. */
     var templateHint by mutableStateOf(true)

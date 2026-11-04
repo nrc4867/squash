@@ -29,6 +29,23 @@ class OutlineProfile private constructor(
     /** The midpoint of the crossings at [x], held at the nearest end outside the range. */
     fun midAt(x: Float): Float = (lookup(high, x) + lookup(low, x)) / 2f
 
+    /** The lowest crossing at [x], held at the nearest end outside the range. */
+    fun lowAt(x: Float): Float = lookup(low, x)
+
+    /** The highest crossing at [x], held at the nearest end outside the range. */
+    fun highAt(x: Float): Float = lookup(high, x)
+
+    /** Along the highest crossings from [start] to [end] and back along the lowest, with no point repeated in a row. */
+    fun run(): List<Vec2> {
+        val step = (end - start) / (STATIONS - 1)
+        val upper = List(STATIONS) { Vec2(start + it * step, high[it]) }
+        val lower = List(STATIONS) { Vec2(start + (STATIONS - 1 - it) * step, low[STATIONS - 1 - it]) }
+        return (upper + lower).fold(emptyList()) { kept, point -> if (kept.lastOrNull() == point) kept else kept + point }
+    }
+
+    /** [run] closed, with its first point repeated last. */
+    fun ring(): List<Vec2> = run().let { it + it.first() }
+
     private fun lookup(table: FloatArray, x: Float): Float {
         val position = ((x - start) / (end - start)).coerceIn(0f, 1f) * (STATIONS - 1)
         val i = position.toInt().coerceAtMost(STATIONS - 2)
@@ -51,6 +68,19 @@ class OutlineProfile private constructor(
                 val next = if (i == xs.lastIndex) 0 else i + 1
                 scanEdge(xs[i], ys[i], xs[next], ys[next], start, step, low, high)
             }
+            return if (fillGaps(low, high)) OutlineProfile(start, end, low, high) else null
+        }
+
+        /** The profile of the outermost crossings of [edges], or null if they have no usable extent in x or in y. */
+        fun ofEdges(edges: List<Pair<Vec2, Vec2>>): OutlineProfile? {
+            if (edges.isEmpty()) return null
+            val start = edges.minOf { minOf(it.first.x, it.second.x) }
+            val end = edges.maxOf { maxOf(it.first.x, it.second.x) }
+            if (end - start < MIN_RANGE) return null
+            val low = FloatArray(STATIONS) { Float.POSITIVE_INFINITY }
+            val high = FloatArray(STATIONS) { Float.NEGATIVE_INFINITY }
+            val step = (end - start) / (STATIONS - 1)
+            for ((a, b) in edges) scanEdge(a.x, a.y, b.x, b.y, start, step, low, high)
             return if (fillGaps(low, high)) OutlineProfile(start, end, low, high) else null
         }
 
