@@ -46,7 +46,7 @@ Not a screen, so it has no board in the artifact.
 | A Sheet: zoom in a pane | verifiable | Run: `./gradlew :app:run`. Do: New character, Canine quadruped, Front legs, Draw leg. Scroll in Side over the leg's foot; middle-drag in Side; draw a stroke; press E and drag a point; click Top, then Side, and press F; scroll and middle-drag again, then press the zoom readout; select another part after zooming. See: the point under the pointer stays put as Side zooms, and the other panes do not change; a readout such as 300% sits in the pane's bottom right, and goes when the pane is back at the fit. The stroke lands under the pointer at the zoom, and a point takes the same pixel reach to grab at any zoom. Scrolling mid-stroke changes nothing. F fits the active pane only, the readout fits its own pane, and selecting another part fits them all. Test: `./gradlew :screens-core:test --tests "*PaneNavigation*"`; `./gradlew :screens-core:test --tests "*theWheelZooms*" :app:test --tests "*theWheelZooms*" -Pslow` |
 | A Sheet: views that disagree | verifiable | Run: `./gradlew :app:run`. Do: with a part selected, draw its Side outline, then its Top outline longer than Side, then its Front outline taller than Side, each in the pane holding it. See: past Side's end, Top's outline turns thick warn-edge with a warn line at that end in Top and Side, growing as the stroke does; above Side's height, Front's outline does the same; no message appears; drawn views read a px value and the view past the others has no chip; the status bar counts "1 conflict". Test: `./gradlew :screens-sheet:test --tests "*ViewsDisagree*" --tests "*DisagreeCost*"` |
 | B Focus | planned | |
-| C Full first | planned | |
+| C Full first | building | |
 | A Sheet for face marks | planned | |
 | A Sheet for posing | planned | |
 
@@ -62,8 +62,8 @@ Not a screen, so it has no board in the artifact.
 
 | Board | State | Verify |
 | --- | --- | --- |
-| 9 Color and regions | planned | |
-| 10 Lines and fur | planned | |
+| 9 Color and regions | building | |
+| 10 Lines and fur | building | |
 | 11 Face marks | planned | |
 
 ## Make a shot
