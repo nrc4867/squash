@@ -59,7 +59,6 @@ import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
@@ -83,8 +82,8 @@ private const val SETTLE_MILLIS = 30_000L
 private const val PANE_TAG = "pane"
 
 private object NoChosenFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 /** Hold to snap and Start from template, captured offscreen with the real scene on a real GPU device. */
@@ -99,7 +98,7 @@ class PenShapesSmokeTest {
 
     private fun render(input: SheetInput, name: String) {
         val errors = CopyOnWriteArrayList<String>()
-        val image = GpuSnapshot.render(sheetFrame(input), input.width, input.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(sheetFrame(input), input.width, input.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, name)
         keepImage(image.pixels, image.width, name)

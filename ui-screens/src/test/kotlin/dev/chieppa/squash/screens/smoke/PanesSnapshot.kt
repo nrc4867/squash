@@ -14,10 +14,13 @@ import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.stretch.gpu.CameraView
+import dev.chieppa.stretch.gpu.GpuContext
 import dev.chieppa.stretch.gpu.GpuImage
 import dev.chieppa.stretch.gpu.GpuOptions
+import dev.chieppa.stretch.gpu.GpuScene
 import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.gpu.Vec3
+import kotlinx.coroutines.runBlocking
 
 /** Where Full's camera sits from the character, as multiples of its radius. */
 private val FULL_EYE = Vec3(1.35f, 0.9f, -1.8f)
@@ -45,6 +48,10 @@ internal fun panesInput(
     return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints)
 }
 
+/** [GpuSnapshot.render] for a test's thread, which has nothing else to do while the image renders. */
+internal fun <S> renderSnapshot(state: S, width: Int, height: Int, options: GpuOptions, scene: (GpuContext) -> GpuScene<S>): GpuImage =
+    runBlocking { GpuSnapshot.render(state, width, height, options = options, scene = scene) }
+
 /**
  * Renders the panes' frame for [selection] once with the real scene on a real GPU device, into an image [width] by
  * [height]. WebGPU errors go to [onError].
@@ -58,5 +65,5 @@ internal fun renderPanes(
     onError: (String) -> Unit,
 ): GpuImage {
     val frame = sheetFrame(panesInput(selection, look, rects, width, height))
-    return GpuSnapshot.render(frame, width, height, options = GpuOptions(onError = onError)) { ViewsScene(it) }
+    return renderSnapshot(frame, width, height, options = GpuOptions(onError = onError)) { ViewsScene(it) }
 }

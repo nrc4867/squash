@@ -47,8 +47,8 @@ private const val LOOP_POINTS = 60
 private const val ORBIT_PIXELS = 80f
 
 private object NoFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 @OptIn(ExperimentalTestApi::class)

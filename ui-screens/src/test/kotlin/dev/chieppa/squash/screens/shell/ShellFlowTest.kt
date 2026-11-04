@@ -41,8 +41,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 private object NoFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 private const val SETTLE_MILLIS = 10_000L

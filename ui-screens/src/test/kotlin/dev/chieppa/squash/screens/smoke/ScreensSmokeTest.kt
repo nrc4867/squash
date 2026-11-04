@@ -55,7 +55,6 @@ import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.document.RecentFiles
 import dev.chieppa.stretch.gpu.GpuImage
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.Stretch
 import java.awt.image.BufferedImage
@@ -80,6 +79,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 
 /** The size the app's window opens at. */
@@ -102,8 +102,8 @@ internal val SMOKE_LOOK = SheetLook(
 )
 
 private object NoFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 /**
@@ -150,7 +150,7 @@ class ScreensSmokeTest {
         val file = Files.createTempFile("marsh-hare", ".json").also { it.toFile().deleteOnExit() }
         val format = ScratchFormat()
         val new = newCharacter(templates.plans.first(), templates, "Marsh hare")
-        FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document }))
+        runBlocking { FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document })) }
         show(AppState(templates, scope, RecentFiles(listOf(file.absolutePathString())), format, artist = GpuRestPoseArtist))
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.HOME_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.HOME)
@@ -180,7 +180,7 @@ class ScreensSmokeTest {
         val look = SMOKE_LOOK
         val sockets = character.sockets.map { it.ref }
         val errors = CopyOnWriteArrayList<String>()
-        val image = GpuSnapshot.render(restPoseFrame(character, look, WIDTH, HEIGHT, sockets, sockets.first()), WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(restPoseFrame(character, look, WIDTH, HEIGHT, sockets, sockets.first()), WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, "the rest pose")
         keep(image, "pick")
@@ -339,7 +339,7 @@ class ScreensSmokeTest {
         val locked = camera.lockedCamera(View.SIDE, drawn, size.width, size.height, hold = false)
         val overlay = paneOutlineOverlays(drawn, mapOf(View.SIDE to locked), null, assertNotNull(outlineLook)).getValue(View.SIDE)
         val errors = CopyOnWriteArrayList<String>()
-        fun render(input: SingleInput) = GpuSnapshot.render(singleFrame(input), size.width, size.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        fun render(input: SingleInput) = renderSnapshot(singleFrame(input), size.width, size.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         val whole = PixelRect(0, 0, size.width, size.height)
 
         val snapped = render(SingleInput(size.width, size.height, paint, drawn, locked, camera.orbit.view, overlay))

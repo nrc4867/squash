@@ -49,8 +49,8 @@ private const val GRID_PIXELS = 16
 private const val DRAG_PIXELS = 24f
 
 private object NoDialogs : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 @OptIn(ExperimentalTestApi::class)

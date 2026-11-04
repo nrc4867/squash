@@ -23,8 +23,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 private object NoChooser : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 @OptIn(ExperimentalTestApi::class)

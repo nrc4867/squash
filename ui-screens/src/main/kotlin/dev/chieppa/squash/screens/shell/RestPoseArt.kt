@@ -36,12 +36,12 @@ const val ART_HEIGHT = 840
 
 /** Turns a frame into an image, or null when it cannot. */
 fun interface RestPoseArtist {
-    fun render(frame: SceneFrame, width: Int, height: Int): ImageBitmap?
+    suspend fun render(frame: SceneFrame, width: Int, height: Int): ImageBitmap?
 }
 
 /** Renders offscreen with the real scene, on a GPU device of its own for each image. */
 object GpuRestPoseArtist : RestPoseArtist {
-    override fun render(frame: SceneFrame, width: Int, height: Int): ImageBitmap? = runCatching {
+    override suspend fun render(frame: SceneFrame, width: Int, height: Int): ImageBitmap? = runCatching {
         val image = GpuSnapshot.render(frame, width, height, options = GpuOptions(onError = {})) { ViewsScene(it) }
         BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB).apply { setRGB(0, 0, width, height, image.pixels, 0, width) }.toComposeImageBitmap()
     }.getOrNull()
@@ -77,7 +77,7 @@ fun rememberRestPoseArt(
     return art
 }
 
-private fun renderArt(state: AppState, plan: BodyPlan, document: SquashDocument?, dashed: Boolean, look: SheetLook, width: Int, height: Int): ImageBitmap? {
+private suspend fun renderArt(state: AppState, plan: BodyPlan, document: SquashDocument?, dashed: Boolean, look: SheetLook, width: Int, height: Int): ImageBitmap? {
     val artist = state.artist ?: return null
     val character = restPoseOf(plan, state.templates, document) ?: return null
     return artist.render(restPoseFrame(character, look, width, height, dashed = dashed), width, height)

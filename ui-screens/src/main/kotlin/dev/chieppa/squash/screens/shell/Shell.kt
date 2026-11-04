@@ -47,7 +47,9 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
 
     fun close() = state.whenSaved { state.closeCharacter() }
 
-    fun chooseAndOpen() = state.whenSaved { chooser.chooseOpen(state.format)?.let(::open) }
+    fun chooseAndOpen() = state.whenSaved {
+        scope.launch { chooser.chooseOpen(state.format)?.let(::open) }
+    }
 
     fun open(path: String) = state.whenSaved {
         scope.launch {
@@ -67,8 +69,8 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
     fun save(asNew: Boolean = false) {
         val file = state.file.value ?: return
         val name = state.session.value?.document?.value?.character?.name.orEmpty()
-        val target = file.path.takeUnless { asNew } ?: chooser.chooseSave(state.format, name) ?: return
         scope.launch {
+            val target = file.path.takeUnless { asNew } ?: chooser.chooseSave(state.format, name) ?: return@launch
             runCatching { file.saveTo(target) }
                 .onSuccess { state.recent.add(target) }
                 .onFailure { toasts.show(getString(Res.string.shell_save_failed, it.message.orEmpty())) }

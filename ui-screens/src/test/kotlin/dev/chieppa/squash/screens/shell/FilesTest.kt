@@ -17,6 +17,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlinx.coroutines.runBlocking
 
 class FilesTest {
     private val format = ScratchFormat()
@@ -58,7 +59,7 @@ class FilesTest {
     fun aRecentProjectReadsItsCharacter() {
         val file = Files.createTempFile("fennec", ".json")
         val new = newCharacter(caninePlan, shipped, "Fennec")
-        FileStorage.write(file.absolutePathString(), format.encode(new.document))
+        runBlocking { FileStorage.write(file.absolutePathString(), format.encode(new.document)) }
         val project = assertNotNull(readRecentProject(file.absolutePathString(), format, shipped))
         assertEquals("Fennec", project.name)
         assertEquals(8, project.progress.total)

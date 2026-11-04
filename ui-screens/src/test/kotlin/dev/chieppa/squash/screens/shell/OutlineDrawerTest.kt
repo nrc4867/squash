@@ -32,8 +32,8 @@ import kotlin.test.assertTrue
 private const val TOOLTIP_MILLIS = 600L
 
 private object NoChooser : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 @OptIn(ExperimentalTestApi::class)

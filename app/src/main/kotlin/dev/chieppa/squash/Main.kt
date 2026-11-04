@@ -39,7 +39,7 @@ fun main() {
     DevTools.startIfRequested()
     NativeSurfaces.enable()
     val store = RecentStore(appDataDirectory(APP_ID).resolve(RECENT_FILE))
-    val recent = RecentFiles(store.load()).also { it.prune(FileStorage) }
+    val recent = RecentFiles(store.load()).also { runBlocking { it.prune(FileStorage) } }
     val state = AppState(
         TemplateFolder.shipped(),
         recent = recent,

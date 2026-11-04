@@ -44,7 +44,6 @@ import dev.chieppa.squash.screens.spine.rememberSpineLook
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
@@ -73,8 +72,8 @@ private const val REACH_PIXELS = 220f
 private const val DRAG_PIXELS = 26f
 
 private object NoSpineFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 /** Board 3b composed whole with a width being dragged, with the panes rendered apart on a real GPU device. */
@@ -185,7 +184,7 @@ class SpineSmokeTest {
         val tool = SpineWidthTool(bench.state, looks.spine)
         val overlay = paneOutlineOverlays(selection, mapOf(View.SIDE to camera), tool, looks.outline).getValue(View.SIDE)
         val errors = CopyOnWriteArrayList<String>()
-        val image = GpuSnapshot.render(
+        val image = renderSnapshot(
             singleFrame(SingleInput(viewport.width, viewport.height, looks.sheet, selection, camera, orbit.orbit.view, overlay)),
             viewport.width,
             viewport.height,
@@ -214,7 +213,7 @@ class SpineSmokeTest {
         val overlays = paneOutlineOverlays(selection, framed.cameras, tool, looks.outline, active = View.SIDE)
         val input = SheetInput(rects, width, height, looks.sheet, selection, framed.cameras, framed.full, View.SIDE, overlays)
         val errors = CopyOnWriteArrayList<String>()
-        val image = GpuSnapshot.render(sheetFrame(input), width, height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(sheetFrame(input), width, height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, "the panes")
         keepImage(image.pixels, image.width, name)

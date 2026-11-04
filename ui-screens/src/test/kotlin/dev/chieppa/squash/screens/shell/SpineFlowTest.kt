@@ -37,8 +37,8 @@ private const val STROKE_REACH = 160f
 private const val DRAG_PIXELS = 6f
 
 private object NoSpineDialogs : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 /** Spine and width from the key that arms it, in the whole workspace. */

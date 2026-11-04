@@ -40,7 +40,6 @@ import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
@@ -55,8 +54,8 @@ private const val WIDTH = 1440
 private const val HEIGHT = 900
 
 private object PenAssistsNoFiles : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = null
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
 /** A stroke held down over a real assembled dog, rendered on a real GPU with the theme's colors, one image an assist. */
@@ -106,7 +105,7 @@ class PenAssistsSmokeTest {
         val frame = sheetFrame(
             SheetInput(rects, WIDTH, HEIGHT, SMOKE_LOOK, selection, input.cameras, input.full, active = view, toolOverlays = overlays, hints = SheetHints()),
         )
-        val image = GpuSnapshot.render(frame, WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(frame, WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         keepImage(image.pixels, image.width, name)
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, name)

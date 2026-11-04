@@ -28,7 +28,6 @@ import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.squash.render.ViewsScene
 import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
@@ -109,7 +108,7 @@ class TiltedPanesSmokeTest {
     private fun render(selection: SheetSelection, name: String): dev.chieppa.stretch.gpu.GpuImage {
         val errors = CopyOnWriteArrayList<String>()
         val input = panesInput(selection, SMOKE_LOOK, rects, PANES_WIDTH, PANES_HEIGHT, outlines = OUTLINE_LOOK)
-        val image = GpuSnapshot.render(sheetFrame(input), PANES_WIDTH, PANES_HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(sheetFrame(input), PANES_WIDTH, PANES_HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         keepImage(image.pixels, image.width, name)
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, name)
