@@ -131,7 +131,7 @@ One graph node assembles the character from the built parts, so `Settled` covers
 
 - **The root sits at the origin**, along the plan's rest, which lint holds equal to its template's. Body space has +X forward, +Y up, and -Z the left side.
 - **A socket reads the built surface.** A child's socket plane sits at its socket's (u, v) on the parent's built patches, so a redrawn parent carries its children with it. A paw on a shorter leg rises with the leg's end.
-- **A part sits slightly inside its parent**, so no gap shows. It sinks back along its own axis, or along the surface's normal where the socket says `outward: normal`, by a fraction of its template's first ring. The depth reads the template, never the drawing, so a stroke on a part cannot move the plane it is drawn from.
+- **A part sits slightly inside its parent**, so no gap shows. It sinks back along its own axis, or along the surface's normal where the socket says `outward: normal`, by a fraction of its template's first ring, or of its widest where it has no open end. The depth reads the template, never the drawing, so a stroke on a part cannot move the plane it is drawn from.
 - **Placing is translation.** A part keeps its rest direction whatever it sits on; only pose rotates it.
 - **A part can be moved from where its template puts it.** The Move tool writes parameters under `move.`, so pairs, overrides, undo and saving treat them like any other. A socket's place is stored on its parent, `move.socket.<name>.u` and `.v`, which is why an empty socket and the planned part on it move too. A single parent has one socket for both its children, so with Mirror off a side writes `move.socket.<name>.left.u` and so on, which win over the shared place, and a move of both clears them. A stored v always reads as the left side's. A part's own angles are `move.outward`, away from the body's plane on the left and mirrored on the right, and `move.lean`, toward the part's up, each up to 60 degrees. They turn the template's rest axis before anything builds, keeping the up it had, so drawings keep their meaning, the panes tilt as they do for an ear or a tail, and the topology does not change. `move.joint.<name>` sets where a joint between a part's ends sits. An undrawn part's bend follows the joint on it, and a drawn part keeps its silhouette, its rings shifting along it to keep one on the joint.
 - **The right side mirrors across the body's plane.** Z and the triangle winding flip, and the socket's v reads 1 - v on an unmirrored parent. A mirrored parent already reflects what sits on it, so a socket on it keeps its v. Both sides build from the one `Character.resolved` of the pair.
@@ -238,7 +238,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
 }
 ```
 
-A paw adds the blocks that draw what the user never does, driven by parameters the Part drawer exposes. It starts with no toes, a plain rounded block to draw over, and `fills` carries its tube to the end of the row until the row has toes:
+A paw adds the blocks that draw what the user never does, driven by parameters the Part drawer exposes. It is closed, with no socket plane, so a drawing reaches behind its socket and can take in the end of the leg. It starts with no toes, a plain rounded block to draw over, and `fills` carries its tube to the end of the row until the row has toes:
 
 ```json
 "params": {

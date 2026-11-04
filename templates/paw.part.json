@@ -5,7 +5,7 @@
   "version": 1,
   "name": "Paw",
   "axis": { "rest": [1, 0, 0], "length": 0.3 },
-  "openEnd": "start",
+  "openEnd": null,
   "topology": { "rings": 32, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",
@@ -20,6 +20,7 @@
     { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09, "rings": 16, "segments": 12 },
     { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
     { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+    { "kind": "cap",    "end": "start", "shape": "round" },
     { "kind": "cap",    "end": "end" },
     { "kind": "joint",  "name": "wrist", "u": 0.0, "hinge": "x", "limits": [-45, 45] }
   ]

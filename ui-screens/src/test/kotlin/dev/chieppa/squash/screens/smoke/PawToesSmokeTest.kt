@@ -30,6 +30,7 @@ private const val PAW_HEIGHT = 900
 private const val SETTLE_MILLIS = 20_000L
 
 private val DRAWN_SIDE = edges(0f to 0.1f, 0.15f to 0.11f, 0.26f to 0.07f, 0.3f to 0f, 0.26f to -0.07f, 0.15f to -0.11f, 0f to -0.1f)
+private val AROUND_THE_LEG = edges(-0.12f to 0f, -0.08f to 0.1f, 0.1f to 0.12f, 0.26f to 0.06f, 0.3f to 0f, 0.26f to -0.09f, 0.1f to -0.1f, -0.08f to -0.09f, -0.12f to 0f)
 private val DRAWN_TOP = edges(0f to 0.09f, 0.15f to 0.12f, 0.26f to 0.08f, 0.3f to 0f, 0.26f to -0.08f, 0.15f to -0.12f, 0f to -0.09f)
 
 /** A dog's front paws with no toes, then three, then none and drawn, through the real build and scene, left for a person to read. */
@@ -68,6 +69,9 @@ class PawToesSmokeTest {
         session.send(SetOutline(paw, View.SIDE, DRAWN_SIDE))
         session.send(SetOutline(paw, View.TOP, DRAWN_TOP))
         keep("paw-toes-0-drawn", 0)
+        session.send(SetOutline(paw, View.SIDE, AROUND_THE_LEG))
+        session.send(SetOutline(paw, View.TOP, null))
+        keep("paw-around-the-leg", 0)
         assertEquals(emptyList(), errors)
     }
 }

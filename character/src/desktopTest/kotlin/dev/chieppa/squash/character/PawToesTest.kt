@@ -51,8 +51,10 @@ class PawToesTest {
         assertEquals(0f, slices.last().height)
         assertEquals(paw.axis.length, slices.last().frame.center dot axes.along, 1e-4f)
         val heights = slices.map { it.height }
-        assertEquals(heights.first(), heights[slices.size / 2], 1e-4f, "it keeps its radius, with no waist, up to the cap")
-        assertEquals(heights.sortedDescending(), heights, "and narrows only toward its end")
+        val fullest = heights.indexOf(heights.max())
+        assertEquals(heights.take(fullest + 1).sorted(), heights.take(fullest + 1), "it rounds up from its back to its radius")
+        assertEquals(heights.max(), heights[slices.size / 2], 1e-4f, "keeps that radius, with no waist, up to the cap")
+        assertEquals(heights.drop(fullest).sortedDescending(), heights.drop(fullest), "and narrows only toward its end")
     }
 
     @Test
@@ -80,17 +82,22 @@ class PawToesTest {
     }
 
     @Test
-    fun aFrontOutlineShapesTheEndOfAPawWithoutToesAndNothingOfOneWith() {
+    fun aFrontOutlineShapesThePawsBackAndOnlyAToelessPawsFront() {
         for (toes in listOf(3f, 4f, 5f)) {
             val params = mapOf("toes" to toes)
-            assertEquals(PartBuilder.build(paw, params), PartBuilder.build(paw, params, mapOf(View.FRONT to DRAWN_FRONT)), "$toes toes")
+            val bare = body(PartBuilder.build(paw, params))
+            val shaped = body(PartBuilder.build(paw, params, mapOf(View.FRONT to DRAWN_FRONT)))
+            for (ring in 0 until bare.nu) {
+                val u = bare.slices!![ring].u
+                if (u > 0f) assertEquals(u < 1f / 6f, bare.ring(ring) != shaped.ring(ring), "$toes toes, ring $ring at u = $u")
+            }
         }
         val plain = body(PartBuilder.build(paw))
         val capped = body(PartBuilder.build(paw, outlines = mapOf(View.FRONT to DRAWN_FRONT)))
         assertNotEquals(plain, capped)
         for (ring in 0 until plain.nu) {
             val u = plain.slices!![ring].u
-            if (u < 1f) assertEquals(u > 5f / 6f, plain.ring(ring) != capped.ring(ring), "ring $ring at u = $u")
+            if (u > 0f && u < 1f) assertEquals(u < 1f / 6f || u > 5f / 6f, plain.ring(ring) != capped.ring(ring), "ring $ring at u = $u")
         }
         assertWatertight(paw, PartBuilder.build(paw, outlines = mapOf(View.FRONT to DRAWN_FRONT)), "front only")
     }
