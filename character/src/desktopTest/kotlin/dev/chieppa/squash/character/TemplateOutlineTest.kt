@@ -35,13 +35,13 @@ private const val TOLERANCE = 0.01f
 private const val FRONT_TOLERANCE = 0.03f
 
 /**
- * A drawn paw cannot show its undrawn Side and Top. Its tube closes where its toes begin, which leaves a waist the outline
- * does not set, and drawn toes share the width side by side where undrawn ones fan out to the corners.
+ * A drawn paw with toes cannot show its undrawn Side and Top. Its tube closes where its toes begin, which leaves a waist the
+ * outline does not set, and drawn toes share the width side by side where undrawn ones fan out to the corners.
  */
-private val PAW_TOLERANCE = mapOf(View.SIDE to 0.045f, View.TOP to 0.045f)
+private const val TOED_PAW_TOLERANCE = 0.045f
 
-/** With all three views started, each is held to the others as well, which the paw's fan and the head's proportions show most. */
-private const val IN_TURN_TOLERANCE = 0.05f
+/** With all three views started, each is held to the others as well, which the head's proportions show most. */
+private const val IN_TURN_TOLERANCE = 0.035f
 
 /** Start from template through the real build: the outline it makes rebuilds the silhouette it was made from. */
 class TemplateOutlineTest {
@@ -81,11 +81,7 @@ class TemplateOutlineTest {
     private fun outlineOf(template: PartTemplate, view: View, data: PartData = PartData()): OutlineCurve =
         assertNotNull(templateOutline(template, data, view), "${template.id.value} $view")
 
-    private fun toleranceFor(template: PartTemplate, view: View): Float = when {
-        template.id.value == "paw" && view in PAW_TOLERANCE -> PAW_TOLERANCE.getValue(view)
-        view == View.FRONT -> FRONT_TOLERANCE
-        else -> TOLERANCE
-    }
+    private fun toleranceFor(view: View): Float = if (view == View.FRONT) FRONT_TOLERANCE else TOLERANCE
 
     @Test
     fun theOutlineRebuildsTheUndrawnSilhouetteOnEveryTemplateAndView() {
@@ -98,11 +94,28 @@ class TemplateOutlineTest {
                     assertWatertight(template, built, label)
                     val before = profile(template, undrawn, view)
                     val share = apart(before, profile(template, built, view)) / reach(before)
-                    if (share > toleranceFor(template, view)) add("$label: $share")
+                    if (share > toleranceFor(view)) add("$label: $share")
                 }
             }
         }
         assertEquals(emptyList(), failures)
+    }
+
+    @Test
+    fun aPawWithToesShowsItsWaistAndSharedWidthOnce() {
+        val paw = template("paw")
+        for (toes in listOf(3f, 4f, 5f)) {
+            val params = mapOf("toes" to toes)
+            val data = PartData(params = params)
+            val undrawn = PartBuilder.build(paw, params)
+            for (view in View.entries) {
+                val built = PartBuilder.build(paw, params, mapOf(view to outlineOf(paw, view, data)))
+                assertWatertight(paw, built, "$toes toes $view")
+                val before = profile(paw, undrawn, view)
+                val share = apart(before, profile(paw, built, view)) / reach(before)
+                assertTrue(share <= TOED_PAW_TOLERANCE, "$toes toes $view: $share")
+            }
+        }
     }
 
     @Test

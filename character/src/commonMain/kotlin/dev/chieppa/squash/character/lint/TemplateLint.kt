@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.lint
 
 import dev.chieppa.squash.character.model.End
+import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Sets
@@ -29,7 +30,16 @@ object TemplateLint {
             if (spec.min != null && spec.max != null && spec.min > spec.max) add(Finding(path, "minimum is above maximum"))
             if (spec.min != null && value < spec.min) add(Finding(path, "default $value is below the minimum"))
             if (spec.max != null && value > spec.max) add(Finding(path, "default $value is above the maximum"))
+            spec.values?.let { addAll(values(path, spec, it)) }
         }
+    }
+
+    private fun values(path: String, spec: ParamSpec, values: List<Float>): List<Finding> = buildList {
+        if (spec.default.isFlag) add(Finding(path, "a flag takes no values"))
+        if (spec.min != null || spec.max != null) add(Finding(path, "values set the limits, so min and max are left out"))
+        if (values.isEmpty()) add(Finding(path, "values are empty"))
+        if (values.zipWithNext().any { (a, b) -> a >= b }) add(Finding(path, "values must ascend"))
+        if (!spec.default.isFlag && spec.default.value !in values) add(Finding(path, "default ${spec.default.value} is not one of the values"))
     }
 
     private fun axis(template: PartTemplate): List<Finding> {

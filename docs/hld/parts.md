@@ -28,7 +28,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Teeth, fangs, tongue | Marks on the mouth line by default. A `fang` template on a lip socket; a `teeth` row along the mouth landmark; a `tongue` template on a socket inside the mouth | Later |
 | Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter bends the rest axis, and the joints along it, before anything is drawn | Starter |
 | Arms | The `leg` template with arm joint names and a hanging rest axis: `arm` is a thin template file over the same blocks | First |
-| Paws | `paw` template: tube, toe row, pads underneath, cap | Starter |
+| Paws | `paw` template: tube, a toe row of none or three to five, pads underneath, cap | Starter |
 | Hands, fingers, palms, thumbs | `hand` template: the paw's blocks with a toe row of five long digits, three joints each, and a per-digit override that moves and angles the thumb. The palm is the tube and a pad | First |
 | Feet, toes | `foot` template: a plantigrade paw with a longer tube and a heel | First |
 | Hooves | `hoof` template: a tube with a flat cap and a rigid area; a toe row of two for cloven hooves | First |

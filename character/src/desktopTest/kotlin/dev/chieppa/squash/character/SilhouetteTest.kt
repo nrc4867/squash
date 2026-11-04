@@ -153,7 +153,7 @@ class SilhouetteTest {
         val paw = template("paw")
         val axes = PartBuilder.axes(paw)
         val drawn = sideEdges(blob)
-        val toes = PartBuilder.build(paw, outlines = mapOf(View.SIDE to blob)).filter { it.name.startsWith("toes:") }
+        val toes = PartBuilder.build(paw, mapOf("toes" to 4f), mapOf(View.SIDE to blob)).filter { it.name.startsWith("toes:") }
         for (toe in toes) {
             for ((ring, next) in rings(toe).zipWithNext()) {
                 val highest = toe.ring(ring).maxOf { it dot axes.along }

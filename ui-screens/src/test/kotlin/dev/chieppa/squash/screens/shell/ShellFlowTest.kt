@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.SetOutline
@@ -198,6 +199,43 @@ class ShellFlowTest {
         assertEquals(steps + 1, session.history.steps.value.done.size)
         session.history.undo()
         assertEquals(null, session.document.value.character.resolved(root)?.params?.get("size"))
+    }
+
+    @Test
+    fun theDrawerSaysWhichToesAPawTakes() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        onNodeWithTag(ShellTags.pickTile("paw")).performClick()
+        waitForIdle()
+        onNodeWithText("0, 3\u20135").assertExists()
+    }
+
+    @Test
+    fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        val session = assertNotNull(state.session.value)
+        val plan = shipped.plans.first()
+        fun place(socketName: String) = openSockets(session.document.value, plan, shipped).first { it.name == socketName }.let { socket ->
+            placeOnSocket(socket, assertNotNull(shipped.template(socket.takes.first())), session.document.value).also { session.send(AddParts(it)) }
+        }
+        place("front-leg")
+        val paw = place("paw").first()
+        state.selectedPart.value = paw.id
+        onNodeWithContentDescription("Part").performClick()
+        state.tool.value = BuildTool.NONE
+        waitForIdle()
+        val tagged = onNodeWithTag(ShellTags.parameter("toes"))
+        fun set(to: Float): Float? {
+            tagged.performSemanticsAction(SemanticsActions.SetProgress) { it(to) }
+            waitForIdle()
+            return session.document.value.character.resolved(paw.id)?.params?.get("toes")
+        }
+        assertEquals(3f, set(2f))
+        assertEquals(0f, set(1f))
+        assertEquals(4f, set(3.8f))
+        assertEquals(5f, set(5f))
     }
 
     @Test

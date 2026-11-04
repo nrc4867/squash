@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
+import kotlin.math.abs
 import kotlin.math.round
 
 /** One parameter as the Part drawer shows it: its current value and the limits its template sets. */
@@ -13,12 +14,21 @@ data class ParameterRow(
     val max: Float?,
     val step: Float?,
     val unit: String?,
+    val values: List<Float>? = null,
 ) {
     /** The slider's range; null unless both limits are set. */
     val range: ClosedFloatingPointRange<Float>? get() = if (min != null && max != null) min..max else null
 
-    /** [raw] kept inside the limits and on the template's step. */
+    /** The stretches of consecutive values the template allows, or the whole range where it lists none. */
+    val spans: List<ClosedFloatingPointRange<Float>>
+        get() = values?.fold(emptyList()) { spans, value ->
+            val last = spans.lastOrNull()
+            if (last != null && value - last.endInclusive == (step ?: 1f)) spans.dropLast(1) + (last.start..value) else spans + (value..value)
+        } ?: listOfNotNull(range)
+
+    /** [raw] as the nearest of the template's values, or kept inside the limits and on its step. */
     fun constrain(raw: Float): Float {
+        values?.let { allowed -> return allowed.minBy { abs(it - raw) } }
         val stepped = step?.let { round(((raw - (min ?: 0f)) / it)) * it + (min ?: 0f) } ?: raw
         return stepped.coerceIn(min ?: stepped, max ?: stepped)
     }
@@ -29,4 +39,4 @@ fun parameterRows(template: PartTemplate, params: Map<String, Float> = emptyMap(
     template.params.map { (name, spec) -> spec.row(name, params[name]) }
 
 private fun ParamSpec.row(name: String, set: Float?) =
-    ParameterRow(name, set ?: default.value, default.isFlag, min, max, step, unit)
+    ParameterRow(name, set ?: default.value, default.isFlag, values?.first() ?: min, values?.last() ?: max, step, unit, values)

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.model
 
+import dev.chieppa.squash.annotations.Doc
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
@@ -47,4 +48,6 @@ data class ParamSpec(
     val max: Float? = null,
     val step: Float? = null,
     val unit: String? = null,
+    @Doc("The only values it takes, ascending, in place of min and max. A value between them is never offered.")
+    val values: List<Float>? = null,
 )

@@ -11,12 +11,12 @@
   "section": "circle",
   "params": {
     "size":   { "default": 1.0, "min": 0.4, "max": 2.5 },
-    "toes":   { "default": 4,  "min": 3, "max": 5, "step": 1 },
+    "toes":   { "default": 0,  "values": [0, 3, 4, 5] },
     "spread": { "default": 18, "min": 0, "max": 40, "unit": "deg" },
     "pads":   { "default": true }
   },
   "blocks": [
-    { "kind": "tube",   "u": [0.0, 0.6], "radius": 0.22 },
+    { "kind": "tube",   "u": [0.0, 0.6], "radius": 0.22, "fills": "toes" },
     { "kind": "toeRow", "name": "toes", "u": [0.55, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.09, "rings": 16, "segments": 12 },
     { "kind": "pad",    "name": "palm", "u": 0.45, "v": 0.5, "size": 0.22, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
     { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },

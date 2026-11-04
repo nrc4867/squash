@@ -40,8 +40,8 @@ class ShippedTemplatesTest {
         val random = Random(1)
         for (template in shipped.parts) {
             repeat(RANDOM_BUILDS) {
-                val params = template.params.filterValues { it.min != null && it.max != null }.mapValues { (_, spec) ->
-                    spec.min!! + random.nextFloat() * (spec.max!! - spec.min)
+                val params = template.params.filterValues { it.values != null || (it.min != null && it.max != null) }.mapValues { (_, spec) ->
+                    spec.values?.random(random) ?: (spec.min!! + random.nextFloat() * (spec.max!! - spec.min))
                 }
                 assertBuildHolds(template, params)
             }

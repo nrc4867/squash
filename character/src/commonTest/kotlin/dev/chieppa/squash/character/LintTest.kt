@@ -110,6 +110,25 @@ class LintTest {
     }
 
     @Test
+    fun valuesAscendHoldTheDefaultAndStandInForTheLimits() {
+        fun findings(spec: ParamSpec) = TemplateLint.lint(template(listOf(tube), params = mapOf("toes" to spec))).map { it.message }
+        assertEquals(emptyList(), findings(ParamSpec(ParamDefault(0f), values = listOf(0f, 3f, 4f))))
+        assertEquals(listOf("values must ascend"), findings(ParamSpec(ParamDefault(0f), values = listOf(0f, 4f, 3f))))
+        assertEquals(listOf("default 1.0 is not one of the values"), findings(ParamSpec(ParamDefault(1f), values = listOf(0f, 3f))))
+        assertEquals(listOf("values set the limits, so min and max are left out"), findings(ParamSpec(ParamDefault(0f), min = 0f, values = listOf(0f, 3f))))
+        assertEquals(listOf("a flag takes no values"), findings(ParamSpec(ParamDefault(1f, isFlag = true), values = listOf(1f))))
+    }
+
+    @Test
+    fun aTubeFillsAToeRowThatEndsPastIt() {
+        val row = ToeRow("toes", u = Span(0.5f, 1f), count = Param.of(4f), spread = Param.of(10f), radius = Param.of(0.1f), rings = 10, segments = 8)
+        fun findings(tube: Tube, vararg others: Block) = paths(template(listOf(tube) + others))
+        assertEquals(emptyList(), findings(Tube(u = Span(0f, 0.6f), radius = Param.of(0.2f), fills = "toes"), row))
+        assertEquals(listOf("$.blocks[0].fills"), findings(Tube(u = Span(0f, 1f), radius = Param.of(0.2f), fills = "toes"), row))
+        assertEquals(listOf("$.blocks[0].fills"), findings(Tube(u = Span(0f, 0.6f), radius = Param.of(0.2f), fills = "nothing"), row))
+    }
+
+    @Test
     fun aPairedPointMustSitOffItsMirror() {
         val socket = Socket("ear", u = 0.2f, v = 0.5f, pair = Mirror.X)
         val landmark = Landmark("eye", u = 0.2f, v = 0f, pair = Mirror.X)

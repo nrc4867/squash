@@ -487,6 +487,20 @@
               "type": "null"
             }
           ]
+        },
+        "values": {
+          "description": "The only values it takes, ascending, in place of min and max. A value between them is never offered.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -775,7 +789,7 @@
       "additionalProperties": false
     },
     "ToeRow": {
-      "description": "A row of small tubes fanned across the end, each named for the row and its place in it.",
+      "description": "A row of small tubes fanned across the end, each named for the row and its place in it. A count of 0 builds nothing.",
       "type": "object",
       "properties": {
         "kind": {
@@ -1021,6 +1035,17 @@
             {
               "type": "string",
               "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "fills": {
+          "description": "A toe row whose end this run reaches when the row has no toes.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
             }
           ]
         }

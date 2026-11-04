@@ -18,6 +18,7 @@ class PawAndHeadTest {
     private val head = template("head")
     private val leg = template("leg")
     private val ear = template("ear")
+    private val fourToes = mapOf("toes" to 4f)
 
     private fun List<Patch>.named(name: String) = first { it.name == name }
 
@@ -27,7 +28,7 @@ class PawAndHeadTest {
 
     @Test
     fun aPawHasABodyAToeRowAndPads() {
-        val names = PartBuilder.build(paw).map { it.name }
+        val names = PartBuilder.build(paw, fourToes).map { it.name }
         val toes = List(4) { "toes:$it" }
         val pads = List(4) { "pad:toe:$it" }
         assertEquals(listOf("body") + toes + "pad:palm" + pads, names)
@@ -35,7 +36,7 @@ class PawAndHeadTest {
 
     @Test
     fun thePadsSitUnderneath() {
-        val patches = PartBuilder.build(paw)
+        val patches = PartBuilder.build(paw, fourToes)
         val body = patches.named("body")
         val palm = patches.named("pad:palm")
         assertTrue(palm.maxOf { it.y } < 0f, "the palm pad is on the underside")
@@ -50,7 +51,7 @@ class PawAndHeadTest {
 
     @Test
     fun theToesFanAcrossTheEndAndReachPastTheBody() {
-        val patches = PartBuilder.build(paw)
+        val patches = PartBuilder.build(paw, fourToes)
         val body = patches.named("body")
         val toes = (0 until 4).map { patches.named("toes:$it") }
         assertTrue(toes.all { it.maxOf { p -> p.x } > body.maxOf { p -> p.x } })
@@ -64,7 +65,7 @@ class PawAndHeadTest {
         val five = PartBuilder.build(paw, mapOf("toes" to 5f))
         assertEquals(5, five.count { it.name.startsWith("toes:") })
         assertEquals(5, five.count { it.name.startsWith("pad:toe:") })
-        fun reach(spread: Float) = PartBuilder.build(paw, mapOf("spread" to spread)).named("toes:0").vertices().maxOf { abs(it.z) }
+        fun reach(spread: Float) = PartBuilder.build(paw, fourToes + ("spread" to spread)).named("toes:0").vertices().maxOf { abs(it.z) }
         assertTrue(reach(40f) > reach(0f))
     }
 
@@ -73,7 +74,7 @@ class PawAndHeadTest {
         val axes = PartBuilder.axes(paw)
         val dome = outline(0f to 0f, 0f to 0.4f, 0.5f to 0.5f, 0.9f to 0.2f, 1f to 0f)
         val under = outline(0f to 0.35f, 0.6f to 0.4f, 1f to 0.3f, 1f to -0.3f, 0.6f to -0.4f, 0f to -0.35f)
-        val patches = PartBuilder.build(paw, outlines = mapOf(View.SIDE to dome, View.TOP to under))
+        val patches = PartBuilder.build(paw, fourToes, mapOf(View.SIDE to dome, View.TOP to under))
         val toes = patches.filter { it.name.startsWith("toes:") }
         val height = toes.maxOf { toe -> toe.vertices().maxOf { it dot axes.up } }
         assertTrue(height <= 0.5f + 1e-3f, "toes stay inside the drawn Side outline, reached $height")
@@ -161,7 +162,7 @@ class PawAndHeadTest {
 
     @Test
     fun aPadHasNoSlicesAndAToeDoes() {
-        val patches = PartBuilder.build(paw)
+        val patches = PartBuilder.build(paw, fourToes)
         assertNull(patches.named("pad:palm").slices)
         assertEquals(0.55f, patches.named("toes:0").slices!!.first().u, 1e-5f)
     }

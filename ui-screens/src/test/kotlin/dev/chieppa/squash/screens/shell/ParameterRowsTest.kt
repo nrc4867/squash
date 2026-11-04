@@ -24,17 +24,31 @@ class ParameterRowsTest {
     fun aSetValueWinsOverTheDefault() {
         val row = parameterRows(paw, mapOf("toes" to 5f)).first { it.name == "toes" }
         assertEquals(5f, row.value)
-        assertEquals(4f, rows.getValue("toes").value)
+        assertEquals(0f, rows.getValue("toes").value)
     }
 
     @Test
     fun valuesStayInsideTheLimitsAndOnTheStep() {
-        val toes = rows.getValue("toes")
-        assertEquals(4f, toes.constrain(3.7f))
-        assertEquals(5f, toes.constrain(9f))
-        assertEquals(3f, toes.constrain(-1f))
+        val leg = assertNotNull(shipped.template(TemplateId("leg")))
+        val stance = parameterRows(leg).first { it.name == "stance" }
+        assertEquals(stance.max, stance.constrain(9f))
+        assertEquals(stance.min, stance.constrain(-1f))
         val size = rows.getValue("size")
         assertEquals(1.234f, size.constrain(1.234f))
         assertEquals(0.4f, size.constrain(0f))
+    }
+
+    @Test
+    fun aParameterWithValuesTakesOnlyThose() {
+        val toes = rows.getValue("toes")
+        assertEquals(0f..5f, toes.range)
+        assertEquals(listOf(0f, 0f, 3f, 3f, 3f, 4f, 5f, 5f), listOf(-1f, 1f, 2f, 3f, 3.4f, 3.7f, 5f, 9f).map(toes::constrain))
+    }
+
+    @Test
+    fun spansGroupConsecutiveValues() {
+        assertEquals(listOf(0f..0f, 3f..5f), rows.getValue("toes").spans)
+        assertEquals(listOf(0.4f..2.5f), rows.getValue("size").spans)
+        assertEquals(emptyList(), rows.getValue("pads").spans)
     }
 }

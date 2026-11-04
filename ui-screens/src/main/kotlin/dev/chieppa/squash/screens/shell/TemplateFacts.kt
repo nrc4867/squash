@@ -69,11 +69,13 @@ fun YouDrawSection(template: PartTemplate, outlines: Map<View, OutlineCurve>?) {
 fun ToolKnowsSection(template: PartTemplate, paired: Boolean) {
     DrawerSection(stringResource(Res.string.shell_part_tool_knows)) {
         for (row in parameterRows(template)) {
-            val min = row.min
-            val max = row.max
+            val spans = row.spans.map { span ->
+                if (span.start == span.endInclusive) formatNumber(span.start)
+                else stringResource(Res.string.shell_part_range, formatNumber(span.start), formatNumber(span.endInclusive))
+            }
             val value = when {
                 row.isFlag -> stringResource(if (row.value != 0f) Res.string.shell_part_on else Res.string.shell_part_off)
-                min != null && max != null -> stringResource(Res.string.shell_part_range, formatNumber(min), formatNumber(max))
+                spans.isNotEmpty() -> spans.joinToString(", ")
                 else -> formatNumber(row.value)
             }
             FactRow(displayName(row.name), value)

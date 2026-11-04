@@ -76,6 +76,9 @@ class BuildContext(
         )
     }
 
+    /** Whether the template's [block] is switched on for this build. */
+    fun isOn(block: Block): Boolean = block in blocks
+
     /** Whether a run other than [own] covers [u]. */
     fun covered(u: Float, own: Span): Boolean =
         blocks.any { block -> block.run()?.let { it != own && u >= it.start && u <= it.end } == true }

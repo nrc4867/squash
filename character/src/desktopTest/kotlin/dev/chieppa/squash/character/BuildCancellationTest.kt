@@ -55,7 +55,7 @@ class BuildCancellationTest {
     @Test
     fun aBuildChecksBeforeEveryBlockAndEveryToe() {
         var checks = 0
-        PartBuilder.build(paw, checkCancelled = { checks++ })
+        PartBuilder.build(paw, mapOf("toes" to 4f), checkCancelled = { checks++ })
         val blocks = paw.blocks.size
         val toes = 4
         val toePads = 4
@@ -64,7 +64,7 @@ class BuildCancellationTest {
 
     @Test
     fun theMeshChecksBeforeEveryPatchAndStops() {
-        val patches = PartBuilder.build(paw)
+        val patches = PartBuilder.build(paw, mapOf("toes" to 4f))
         var checks = 0
         assertFailsWith<CancellationException> {
             PartBuilder.mesh(
