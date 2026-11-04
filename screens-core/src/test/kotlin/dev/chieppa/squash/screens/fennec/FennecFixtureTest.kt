@@ -1,10 +1,11 @@
 package dev.chieppa.squash.screens.fennec
 
+import dev.chieppa.squash.screens.shell.ScratchFormat
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private const val SAVED_FILE = "src/testFixtures/resources/$FENNEC_RESOURCE"
+private const val SAVED_FILE = "../examples/$FENNEC_RESOURCE"
 private const val UPDATE_PROPERTY = "squash.updateGoldens"
 
 /** The saved fennec stays what its commands make. Regenerate with ./gradlew :screens-core:test -PupdateGoldens and review the diff. */
@@ -20,5 +21,10 @@ class FennecFixtureTest {
         }
         assertEquals(text, file.readText().replace("\r\n", "\n"))
         assertEquals(fennecDocument(), savedFennec())
+    }
+
+    @Test
+    fun theExampleOpensAsASavedFile() {
+        assertEquals(fennecDocument(), ScratchFormat().decode(File(SAVED_FILE).readBytes()))
     }
 }

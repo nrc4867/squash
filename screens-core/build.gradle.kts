@@ -9,6 +9,8 @@ kotlin {
     jvmToolchain(libs.versions.jvmToolchain.get().toInt())
 }
 
+sourceSets.testFixtures { resources.srcDir(rootProject.layout.projectDirectory.dir("examples")) }
+
 dependencies {
     api(project(":ui-design"))
     api(project(":render"))

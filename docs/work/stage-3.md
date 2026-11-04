@@ -37,11 +37,9 @@ The orchestrator then:
 
 One orchestrating session per sitting. Round 0 is serial and lands on `main` before anything fans out. Later rounds are branches in `.worktrees/`, one per row, landed by rebase, squash and fast-forward with `check` before each landing. The differences table in `docs/work/boards.md` is the list of open bugs; a branch removes each row it fixes. A session that needs a Stretch change lands it in the Stretch repo first and pushes it.
 
-### Round 1 opens with the look probe
-
-Before any tool, one branch, `look-probe`, renders the saved fennec with base colors from the palette, the line rules, one fur patch on the chest, and one eye mark group with its three angle versions, flat and two-tone, through commands in a smoke test, from side, three-quarter and front. The images go under `docs/work/look-probe/` for Nicholas to judge. This is the plan's style test brought forward to the first moment it can be seen: if the look is not right, the stage stops here and the art approach is revisited before the tools are built around it. What it shows wanting is written into the HLD as the fix, not worked around in the probe.
-
 ### Round 1, parallel
+
+The look probe's images are in `docs/work/look-probe/`, drawn from `examples/fennec.json`. The fixes it found are in `docs/hld/look.md`: the shadow tone per slot, fur strokes as filled wedges, tufts as strokes and not outline, the silhouette as ribbons, an eye region frame.
 
 | Branch | Modules | Delivers | Board |
 | --- | --- | --- | --- |
