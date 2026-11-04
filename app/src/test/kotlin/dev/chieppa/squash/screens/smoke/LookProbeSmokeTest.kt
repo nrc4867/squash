@@ -1,12 +1,10 @@
 package dev.chieppa.squash.screens.smoke
-
 import androidx.compose.ui.graphics.Color
-import dev.chieppa.squash.character.build.ResolvedMark
+import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CameraBin
-import dev.chieppa.squash.document.isFur
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.ObjectShading
@@ -28,10 +26,11 @@ import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.surface.AngleBins
 import dev.chieppa.squash.screens.surface.CharacterLook
 import dev.chieppa.squash.screens.surface.CharacterState
-import dev.chieppa.squash.screens.surface.FurRule
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.degreesBetween
 import dev.chieppa.squash.screens.surface.framedCamera
+import dev.chieppa.squash.screens.sheet.furCamera
+import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.GpuOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +65,6 @@ internal val PROBE_LOOK = CharacterLook(
     lines = LineRule(interiorPixels = 2.5f, silhouettePixels = 6f),
     marks = LineRule(interiorPixels = 2.5f, silhouettePixels = 3.5f),
     creases = LineRule(interiorPixels = 2.5f),
-    fur = FurRule(showNear = 0.55f, spacingPixels = 16f, line = LineRule(interiorPixels = 2.5f, silhouettePixels = 3.5f)),
     inkSlot = INK,
     fallback = NO_SLOT,
 )
@@ -79,8 +77,12 @@ internal fun probeAzimuth(degrees: Float): Vec3 {
 private val VIEWS = listOf("side" to probeAzimuth(90f), "three-quarter" to probeAzimuth(45f), "front" to probeAzimuth(0f))
 private val MODES = listOf("flat" to Shading.FLAT, "two-tone" to Shading.TWO_TONE)
 
-/** What the probe's views draw from this session as it stands. */
-internal fun CharacterSession.probeState(): CharacterState {
+private const val PROBE_FUR_VIEW = "probe"
+
+/** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
+internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT): CharacterState {
+    camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height, 1f)) }
+    settled()
     val character = assertNotNull(assembly.output.value)
     return CharacterState(
         character,
@@ -88,9 +90,12 @@ internal fun CharacterSession.probeState(): CharacterState {
         assertNotNull(bodySurfaceWork.output.value),
         document.value.character.palette,
         assertNotNull(bodyLines.output.value),
-        isFur = { mark: ResolvedMark -> mark.id.isFur },
+        fur = if (camera == null) FurView.EMPTY else assertNotNull(furView(PROBE_FUR_VIEW).output.value),
     )
 }
+
+/** This state with [shown] for its fur. */
+internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, color, work, palette, lines, shown, taper)
 
 /** The fennec through commands, the real graph and scene, flat and two-tone from three sides, left for a person to judge. */
 @Tag("slow")
@@ -135,13 +140,14 @@ class LookProbeSmokeTest {
             val close = framedCamera(head, toViewer, WIDTH, HEIGHT, CLOSE_MARGIN)
             session.showColorAt(close.pixelsPerUnit)
             session.settled()
-            val fresh = session.probeState()
+            val fresh = session.probeState(whole.camera)
             for ((modeName, mode) in MODES) {
                 val view = characterView(rect, whole.camera, fresh, PROBE_LOOK, ObjectShading(mode), whole.pixelsPerUnit) { binAt(toViewer) }
                 keep("fennec-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
+            val probed = session.probeState(close.camera)
             for ((modeName, mode) in MODES) {
-                val view = characterView(rect, close.camera, fresh, PROBE_LOOK, ObjectShading(mode), close.pixelsPerUnit) { binAt(toViewer) }
+                val view = characterView(rect, close.camera, probed, PROBE_LOOK, ObjectShading(mode), close.pixelsPerUnit) { binAt(toViewer) }
                 keep("fennec-head-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
         }

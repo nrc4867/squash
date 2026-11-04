@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.document.MarkKind
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -16,7 +17,6 @@ import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.isFur
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -67,7 +67,7 @@ fun markRows(character: Character, templates: TemplateFolder, library: TemplateL
         val surface = character.resolved(part).surface
         val name = partName(part, templates)
         val grouped = surface.groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet()
-        val (furred, plain) = surface.marks.filter { it.id !in grouped }.partition { it.id.isFur }
+        val (furred, plain) = surface.marks.filter { it.id !in grouped }.partition { it.kind == MarkKind.FUR }
         if (plain.isNotEmpty()) strokes += MarkCount(part.id, name, plain.size)
         if (furred.isNotEmpty()) fur += MarkCount(part.id, name, furred.size)
         surface.lineWeights.mapTo(weights) { weight ->

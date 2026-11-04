@@ -13,6 +13,7 @@ class DocumentFormatTest {
     private val formatTwo = File("src/desktopTest/fixtures/format-2.json").readText()
     private val formatThree = File("src/desktopTest/fixtures/format-3.json").readText()
     private val formatFour = File("src/desktopTest/fixtures/format-4.json").readText()
+    private val formatFive = File("src/desktopTest/fixtures/format-5.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
 
     @Test
@@ -93,6 +94,28 @@ class DocumentFormatTest {
         val text = Json.encodeToString(SquashDocument.serializer(), soft)
         assertEquals(soft, readDocument(text))
         assertEquals(0.4f, checkNotNull(readDocument(text).character.resolved(torso)).surface.paint.strokes.single().softness)
+    }
+
+    @Test
+    fun aFormatFiveFurMarkBecomesARootOfItsKind() {
+        val document = readDocument(formatFive)
+        assertEquals(DOCUMENT_FORMAT, document.format)
+        val marks = checkNotNull(document.character.resolved(PartId("torso-1"))).surface.marks.associateBy { it.id.value }
+        val fur = marks.getValue("fur-0-0")
+        assertEquals(MarkKind.FUR, fur.kind)
+        assertEquals(listOf(0.7f), fur.points.map { it.u }, "only its root stays, since the grain sets the rest")
+        val line = marks.getValue("brow")
+        assertEquals(MarkKind.LINE, line.kind)
+        assertEquals(2, line.points.size)
+    }
+
+    @Test
+    fun aLineWritesNoKindAndAFurStrokeRoundTrips() {
+        val saved = readDocument(formatFive)
+        val text = Json.encodeToString(SquashDocument.serializer(), saved)
+        assertEquals(1, Regex("\"kind\":\"fur\"").findAll(text).count())
+        assertTrue("\"line\"" !in text)
+        assertEquals(saved, readDocument(text))
     }
 
     @Test

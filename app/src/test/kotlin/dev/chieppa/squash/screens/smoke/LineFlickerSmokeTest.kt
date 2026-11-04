@@ -1,7 +1,10 @@
 package dev.chieppa.squash.screens.smoke
 
 import androidx.compose.ui.graphics.toArgb
+import dev.chieppa.squash.character.build.FurCamera
+import dev.chieppa.squash.character.build.FurWedge
 import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.character.build.furView
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.geom.Vec3
@@ -16,6 +19,7 @@ import dev.chieppa.squash.screens.fennec.TAIL
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecCommands
 import dev.chieppa.squash.screens.sheet.colorOf
+import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
@@ -31,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.ceil
+import kotlin.math.hypot
 import kotlin.math.tan
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -43,8 +48,8 @@ private const val COLUMNS = 3
 private const val TILE = 520
 private const val MARGIN = 0.1f
 
-/** The most ink a frame may bring from outside any line's travel, or lose there, as a share of the frame's. */
-private const val MOST_UNEXPLAINED_INK = 0.01f
+/** The most ink a frame may bring from outside any line's travel, or lose there, as a share of the frame's. A fur stroke growing into view runs past a line's travel. */
+private const val MOST_UNEXPLAINED_INK = 0.015f
 
 /** Connected pixels from this many up read as a stretch of line. Fewer are the rounding of a line's edge. */
 private const val STRETCH_PIXELS = 12
@@ -76,6 +81,11 @@ class LineFlickerSmokeTest {
     /** The turn that looks from [direction], as [probeAzimuth] reads it. */
     private fun azimuthOf(direction: Vec3): Float = Math.toDegrees(atan2(-direction.z.toDouble(), direction.x.toDouble())).toFloat()
 
+    private fun cameraAt(target: dev.chieppa.stretch.gpu.Vec3, distance: Float, centre: Float, step: Float, frame: Int): CameraView {
+        val turned = probeAzimuth(centre + step * (frame - FRAMES / 2)).normalized().toGpu()
+        return CameraView(eye = target + turned * distance, target = target)
+    }
+
     private fun render(session: CharacterSession, centre: Float, step: Float, name: String): GpuImage {
         val state = session.probeState()
         val parts = state.character.parts.filter { it.id != null }
@@ -83,10 +93,10 @@ class LineFlickerSmokeTest {
         val target = framed.camera.target
         val distance = (framed.camera.eye - target).length
         val views = List(FRAMES) { i ->
-            val turned = probeAzimuth(centre + step * (i - FRAMES / 2)).normalized().toGpu()
-            val camera = CameraView(eye = target + turned * distance, target = target)
+            val camera = cameraAt(target, distance, centre, step, i)
             val rect = PixelRect((i % COLUMNS) * TILE, (i / COLUMNS) * TILE, TILE, TILE)
-            characterView(rect, camera, state, PROBE_LOOK, ObjectShading(), framed.pixelsPerUnit) { BIN_THREE_QUARTER }
+            val fur = furView(assertNotNull(session.bodyFur.output.value), furCamera(camera, TILE, TILE, 1f))
+            characterView(rect, camera, state.withFur(fur), PROBE_LOOK, ObjectShading(), framed.pixelsPerUnit) { BIN_THREE_QUARTER }
         }
         val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * (FRAMES / COLUMNS), GpuOptions(onError = { errors += it })) { ViewsScene(it) }
         keepImage(image.pixels, image.width, name)
@@ -202,12 +212,63 @@ class LineFlickerSmokeTest {
         assertEquals(emptyList(), errors)
     }
 
+    /**
+     * The worst pop as a turn changes which roots win their spacing: of the strokes shown in one frame and not the next, or the other way, how
+     * many there are, and how long the longest stands, in pixels. A stroke that comes in growing from nothing does not pop.
+     */
+    @Test
+    fun aStrokePopsLittleAsTheViewTurns() {
+        val session = session()
+        val fur = assertNotNull(session.bodyFur.output.value)
+        val state = session.probeState()
+        val framed = framedCamera(state.character.parts.filter { it.id != null }, probeAzimuth(0f), TILE, TILE, MARGIN)
+        val target = framed.camera.target
+        val distance = (framed.camera.eye - target).length
+        var worstPixels = 0f
+        var worstCount = 0
+        var total = 0
+        var shown = 0
+        val centres = List(POP_VIEWS) { it * FULL_TURN / POP_VIEWS }
+        for (centre in centres) for (step in STEPS) {
+            val views = List(FRAMES) { furCamera(cameraAt(target, distance, centre, step, it), TILE, TILE, 1f) }
+            val wedges = views.map { camera -> furView(fur, camera).parts.values.flatMap { it.wedges }.associateBy { it.id } to camera }
+            for ((a, b) in wedges.zipWithNext()) {
+                val (now, nowCamera) = a
+                val (next, nextCamera) = b
+                val gone = now.filterKeys { it !in next }.values.map { lengthPixels(it, nowCamera) }
+                val come = next.filterKeys { it !in now }.values.map { lengthPixels(it, nextCamera) }
+                val popped = (gone + come).filter { it >= POP_PIXELS }
+                worstCount = maxOf(worstCount, popped.size)
+                worstPixels = maxOf(worstPixels, (gone + come).maxOrNull() ?: 0f)
+                total += popped.size
+                shown += now.size
+            }
+        }
+        println("FURPOP worst pair of frames: $worstCount strokes of $POP_PIXELS px or more, longest ${"%.1f".format(worstPixels)} px; ${percent(total.toFloat() / shown)}% of strokes shown pop per frame")
+        assertTrue(worstPixels <= MOST_POP_PIXELS, "the longest stroke to pop stands $worstPixels px")
+    }
+
+    private fun lengthPixels(wedge: FurWedge, camera: FurCamera): Float {
+        val root = (wedge.left.first() + wedge.right.first()) * 0.5f
+        val base = assertNotNull(camera.toPixel(root))
+        val tip = assertNotNull(camera.toPixel(wedge.tip))
+        return hypot(tip.x - base.x, tip.y - base.y)
+    }
+
     private fun percent(share: Float) = "%.2f".format(share * PERCENT)
 
     private companion object {
         const val HALF_TURN = 180f
         const val QUARTER_TURN = 90f
         const val PERCENT = 100f
+        const val FULL_TURN = 360f
+        const val POP_VIEWS = 12
+
+        /** A stroke shorter than this coming or going does not read as a pop. */
+        const val POP_PIXELS = 4f
+
+        /** The longest stroke that may come or go between two frames at these steps, shrinking fast, not snapping, against a rule of up to 40 pixels. */
+        const val MOST_POP_PIXELS = 16f
     }
 }
 

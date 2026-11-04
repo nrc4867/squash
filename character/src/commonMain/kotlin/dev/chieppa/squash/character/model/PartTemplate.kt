@@ -64,6 +64,7 @@ data class PartTemplate(
     @Doc("The default section along u, used where no view sets it.")
     val section: SectionSpec = SectionSpec.Named(SectionProfile.CIRCLE),
     val params: Map<String, ParamSpec> = emptyMap(),
+    val grain: GrainSpec = GrainSpec(),
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)

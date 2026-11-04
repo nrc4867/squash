@@ -1,22 +1,23 @@
 package dev.chieppa.squash.screens.fennec
 
+import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.FUR_MARK_PREFIX
-import dev.chieppa.squash.document.Grain
-import dev.chieppa.squash.document.GrainComb
+import dev.chieppa.squash.document.FurRule
 import dev.chieppa.squash.document.GroupRole
 import dev.chieppa.squash.document.LineWeight
 import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkVersion
 import dev.chieppa.squash.document.MarkWidth
-import dev.chieppa.squash.document.SetGrain
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetFurRule
 import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
@@ -24,6 +25,7 @@ import dev.chieppa.squash.document.WidthStop
 import dev.chieppa.squash.document.eyeGroup
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.sin
 
 val BIN_FRONT = CameraBin("front")
@@ -151,44 +153,34 @@ private fun mouth(id: String, v: (Float) -> Float) = Mark(
     MarkWidth(listOf(WidthStop(0.08f, 1f), WidthStop(0.8f, 0.7f))),
 )
 
-/** Where the chest's fur strokes root, and which way they lie, as a comb sets the grain there. */
-private const val FUR_ROWS = 9
-private const val FUR_COLUMNS = 20
-private const val FUR_U_FIRST = 0.66f
-private const val FUR_U_LAST = 0.97f
-private const val FUR_V_FIRST = 0.24f
-private const val FUR_V_LAST = 0.76f
-private const val GRAIN_U = -0.02f
-private const val GRAIN_V = 0.07f
-private const val TIP_LIFT = 0.05f
-
-private fun grainV(v: Float) = if (v < 0.5f) GRAIN_V else -GRAIN_V
-
-/** Fur on the chest: a comb's grain lying down toward the belly, and a stroke at each root along it, with its tip lifting off the surface. */
-private fun chestFur(): List<DocumentCommand> {
-    val combs = listOf(0.2f, 0.4f, 0.6f, 0.8f).map { v -> GrainComb(u = 0.85f, v = v, du = GRAIN_U, dv = grainV(v)) }
-    val strokes = (0 until FUR_ROWS).flatMap { row ->
-        (0 until FUR_COLUMNS).map { column ->
+/** A patch of stroke roots, staggered row by row, around v from [vFirst] to [vLast]. */
+private fun furRows(part: PartId, name: String, rows: Int, columns: Int, uFirst: Float, uLast: Float, vFirst: Float, vLast: Float): List<Mark> =
+    (0 until rows).flatMap { row ->
+        (0 until columns).map { column ->
             val stagger = if (row % 2 == 0) 0f else 0.5f
-            val u = FUR_U_FIRST + (FUR_U_LAST - FUR_U_FIRST) * row / (FUR_ROWS - 1)
-            val v = FUR_V_FIRST + (FUR_V_LAST - FUR_V_FIRST) * (column + stagger) / (FUR_COLUMNS - 1)
-            val points = listOf(
-                Anchor(TORSO, BODY_PATCH, u, v),
-                Anchor(TORSO, BODY_PATCH, u + GRAIN_U * 0.5f, v + grainV(v) * 0.5f, TIP_LIFT * 0.4f),
-                Anchor(TORSO, BODY_PATCH, u + GRAIN_U, v + grainV(v), TIP_LIFT),
-            )
-            val id = MarkId("$FUR_MARK_PREFIX$row-$column")
-            SetMark(TORSO, id, Mark(id, points, MarkWidth(listOf(WidthStop(0f, 0.8f), WidthStop(0.35f, 1f)))))
+            val u = uFirst + (uLast - uFirst) * row / (rows - 1)
+            val v = vFirst + (vLast - vFirst) * (column + stagger) / columns
+            Mark(MarkId("$name-$row-$column"), listOf(Anchor(part, BODY_PATCH, u, v - floor(v))), kind = MarkKind.FUR)
         }
     }
-    return listOf(SetGrain(TORSO, Grain(combs))) + strokes
-}
 
-/** The face's marks on the head and the fur on the chest. */
+/**
+ * The fur: a ruff on the chest, where the torso's template stands it outward, a tuft at the rump, and the tail's tufts, which are strokes
+ * over its smooth outline. Bigger tufts on the tail than on the body.
+ */
+private fun fennecFur(): List<DocumentCommand> = listOf(
+    SetFurRule(TORSO, FurRule(showNear = 0.3f, spacingPixels = 20f, lengthPixels = 30f)),
+    AddMarks(TORSO, furRows(TORSO, "chest", rows = 14, columns = 36, uFirst = 0.66f, uLast = 0.97f, vFirst = 0.2f, vLast = 0.8f)),
+    AddMarks(TORSO, furRows(TORSO, "rump", rows = 6, columns = 40, uFirst = 0.08f, uLast = 0.2f, vFirst = 0f, vLast = 1f)),
+    SetFurRule(TAIL, FurRule(showNear = 0.32f, spacingPixels = 26f, lengthPixels = 40f)),
+    AddMarks(TAIL, furRows(TAIL, "tail", rows = 20, columns = 40, uFirst = 0.22f, uLast = 0.8f, vFirst = 0f, vLast = 1f)),
+)
+
+/** The face's marks on the head and the fur. */
 fun fennecMarks(): List<DocumentCommand> =
     eye(EyeSide("l", left = true)) + eye(EyeSide("r", left = false)) +
         SetMark(HEAD, MarkId("mouth-l"), mouth("mouth-l") { it }) + SetMark(HEAD, MarkId("mouth-r"), mouth("mouth-r") { 1f - it }) +
-        chestFur() + backWeight()
+        fennecFur() + backWeight()
 
 /** The heavier line along the back. */
 val BACK_WEIGHT = LineWeightId("back")

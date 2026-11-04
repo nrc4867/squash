@@ -6,10 +6,11 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodySurfaceWork
-import dev.chieppa.squash.character.build.ResolvedMark
+import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.MarkGroup
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PartId
@@ -26,7 +27,11 @@ import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.screens.sheet.bodySide
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.coloredPartDraw
+import dev.chieppa.squash.screens.sheet.furDraws
 import dev.chieppa.squash.screens.sheet.colorOf
+import dev.chieppa.squash.screens.sheet.ShownFur
+import dev.chieppa.squash.screens.sheet.furDraws
+import dev.chieppa.squash.screens.sheet.furMaterial
 import dev.chieppa.squash.screens.sheet.translation
 import dev.chieppa.stretch.gpu.CameraView
 
@@ -39,19 +44,18 @@ data class CharacterLook(
     val lines: LineRule,
     val marks: LineRule,
     val creases: LineRule,
-    val fur: FurRule,
     val inkSlot: SlotName,
     val fallback: Color,
 )
 
-/** What a view of a character reads from its settled graph. [isFur] tells a fur stroke from the other marks. */
+/** What a view of a character reads from its settled graph. [fur] is what the fur node for this view's camera holds. */
 class CharacterState(
     val character: AssembledCharacter,
     val color: BodyColor,
     val work: BodySurfaceWork,
     val palette: Palette,
     val lines: BodyLines,
-    val isFur: (ResolvedMark) -> Boolean,
+    val fur: FurView,
     val taper: Float = LineRules.DEFAULT_TAPER,
 )
 
@@ -96,9 +100,9 @@ fun characterView(
     state.lines.parts.values.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
     for (part in parts) {
         val work = state.work.parts[requireNotNull(part.id)] ?: continue
-        val (fur, plain) = work.looseMarks().partition(state.isFur)
-        ribbons += furRibbons(fur, look.fur, camera, rect, ink)
-        plain.mapNotNull { it.lineDraw(state.lines.parts[part.id], look.marks, ink, state.taper, DepthLayer.SCENE) }.forEach { ribbons += it }
+        work.looseMarks().filter { it.kind != MarkKind.FUR }.mapNotNull { it.lineDraw(state.lines.parts[part.id], look.marks, ink, state.taper, DepthLayer.SCENE) }.forEach { ribbons += it }
     }
-    return SceneView(rect, camera.viewProjection(rect.width, rect.height), filled, ribbons)
+    val sides = parts.associate { requireNotNull(it.id) to it.bodySide() }
+    val fur = furDraws(ShownFur(state.fur, look.lines), ink) { id, slot -> furMaterial(state.palette, slot, look.fallback, ink, shading, sides[id], eye - center) }
+    return SceneView(rect, camera.viewProjection(rect.width, rect.height), filled + fur.draws, ribbons + fur.ribbons)
 }

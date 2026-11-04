@@ -97,11 +97,11 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
 }
 
 private fun resolveMark(mark: Mark, point: (Anchor) -> ResolvedPoint?): ResolvedMark? {
-    val points = keptPoints(mark.points, MIN_MARK_POINTS, point) ?: return null
+    val points = keptPoints(mark.points, mark.kind.minPoints, point) ?: return null
     val versions = mark.versions.mapNotNull { (bin, version) ->
         keptPoints(version.points, MIN_MARK_POINTS, point)?.let { bin to ResolvedMarkVersion(it, version.width) }
     }.toMap()
-    return ResolvedMark(mark.id, points, mark.width, mark.ink, mark.cameraLocked, versions)
+    return ResolvedMark(mark.id, points, mark.width, mark.ink, mark.cameraLocked, versions, mark.kind)
 }
 
 private fun resolveWeight(weight: LineWeight, point: (Anchor) -> ResolvedPoint?): ResolvedLineWeight? =

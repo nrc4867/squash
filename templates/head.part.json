@@ -12,6 +12,7 @@
   "params": {
     "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
   },
+  "grain": { "toward": "start" },
   "blocks": [
     { "kind": "skull",    "u": [0.0, 0.75], "width": 0.82, "depth": 0.78 },
     { "kind": "tube",     "name": "muzzle", "u": [0.6, 1.0], "radius": 0.2, "taper": 0.7, "drop": 0.08 },

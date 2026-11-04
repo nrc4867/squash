@@ -219,6 +219,14 @@
     <string name="edit_tool_erase">Erase</string>
     <string name="sheet_pane_fit">Fit pane</string>
     <string name="sheet_pane_zoom">%1$d%%</string>
+    <string name="fur_tool">Fur stroke</string>
+    <string name="fur_comb_tool">Comb</string>
+    <string name="fur_section">Fur</string>
+    <string name="fur_show_near">Show near</string>
+    <string name="fur_show_near_value">edge %1$d%</string>
+    <string name="fur_spacing">Spacing</string>
+    <string name="fur_length">Length</string>
+    <string name="fur_pixels_value">%1$d px</string>
     <string name="smooth_tool">Smooth</string>
     <string name="smooth_brush">Brush</string>
     <string name="smooth_size">Size</string>

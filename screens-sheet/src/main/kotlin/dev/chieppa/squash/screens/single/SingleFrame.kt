@@ -8,6 +8,8 @@ import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.ShownFur
+import dev.chieppa.squash.screens.sheet.shownFurDraws
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.ShadingPreview
@@ -42,6 +44,7 @@ class SingleInput(
     val previews: List<ShadingPreview> = emptyList(),
     val surface: SurfaceRibbons? = null,
     val freeOverlay: ViewportOverlay = ViewportOverlay.Empty,
+    val fur: ShownFur = ShownFur.NONE,
 )
 
 /**
@@ -56,20 +59,23 @@ fun singleFrame(input: SingleInput): SceneFrame {
         val body = selection.part.axes.bodyViewOf(locked.view)
         val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, input.surface != null)
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
+        val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
         val previews = previewViews(input.previews, selection, input.free, input.look, input.color)
-        val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface)
-        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons)) + previews, overlay.clippedTo(rect.toRect()))
+        val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface) + fur.ribbons
+        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws + fur.draws, ribbons)) + previews, overlay.clippedTo(rect.toRect()))
     }
     val free = input.free ?: return SceneFrame(input.look.well)
-    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input), freeRibbons(selection, free, rect, input))
+    val toCamera = Vec3(free.eye.x, free.eye.y, free.eye.z) - selection.box.center
+    val fur = shownFurDraws(input.fur, true, toCamera, selection, input.look, input.hints, input.color)
+    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input) + fur.draws, freeRibbons(selection, free, input) + fur.ribbons)
     return SceneFrame(input.look.well, listOf(shown) + previewViews(input.previews, selection, free, input.look, input.color), input.freeOverlay.clippedTo(rect.toRect()))
 }
 
 /** The lines through the free [camera]: the whole figure's when the hints show it whole, else the selection's. */
-private fun freeRibbons(selection: SheetSelection, camera: CameraView, rect: PixelRect, input: SingleInput): List<RibbonDraw> {
+private fun freeRibbons(selection: SheetSelection, camera: CameraView, input: SingleInput): List<RibbonDraw> {
     val surface = input.surface ?: return input.look.borderRibbons(input.color)
     val view = FullView({ camera }, input.width, input.height)
-    if (input.hints.whole) return surface.whole(view, rect)
+    if (input.hints.whole) return surface.figure(view)
     return selection.part.id?.let { surface.selected(it, view) }.orEmpty()
 }
 

@@ -19,12 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.FurViews
 import dev.chieppa.squash.screens.sheet.PaneTool
+import dev.chieppa.squash.screens.sheet.furCamera
+import dev.chieppa.squash.screens.sheet.furDraws
+import dev.chieppa.squash.screens.sheet.rememberFurView
 import dev.chieppa.squash.screens.sheet.SceneSurface
 import dev.chieppa.squash.screens.sheet.PreviewPlaces
 import dev.chieppa.squash.screens.sheet.ShadingPreviewTiles
@@ -83,11 +88,18 @@ internal fun SingleSurface(
     val places = remember { PreviewPlaces() }
     val free = remember(camera, size) { FullView({ camera.orbit.view }, size.width, size.height) }
     SideEffect { open?.showColorAt(largestColorScale(shownCameras.values, camera.orbit.view, size.height)) }
+    val look = rememberSheetLook()
+    val density = LocalDensity.current.density
+    val fur = rememberFurView(
+        open,
+        FurViews.SINGLE,
+        if (!sized || selection == null) null else locked?.let { furCamera(it, density) } ?: furCamera(camera.orbit.view, size.width, size.height, density),
+    )
     val frame = singleFrame(
         SingleInput(
             width = size.width,
             height = size.height,
-            look = rememberSheetLook(),
+            look = look,
             selection = selection,
             locked = locked,
             free = camera.orbit.view,
@@ -97,6 +109,7 @@ internal fun SingleSurface(
             color = color,
             previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
             surface = surface,
+            fur = fur,
         ),
     )
     val fitting = rememberFitting(state)

@@ -37,6 +37,8 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
+import dev.chieppa.squash.uidesign.generated.fur_comb_tool
+import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.smooth_tool
 import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.core.Action
@@ -75,6 +77,8 @@ object ShellActions {
     val LINE_WIDTH = ActionId("tool-line-width")
     val SURFACE_STROKE = ActionId("tool-surface-stroke")
     val SURFACE_ERASE = ActionId("tool-surface-erase")
+    val FUR_STROKE = ActionId("tool-fur-stroke")
+    val COMB = ActionId("tool-comb")
     val FIT_PANE = ActionId("fit-pane")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
@@ -111,6 +115,8 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.LINE_WIDTH to Res.string.lines_tool_width,
     ShellActions.SURFACE_STROKE to Res.string.lines_tool_surface_stroke,
     ShellActions.SURFACE_ERASE to Res.string.edit_tool_erase,
+    ShellActions.FUR_STROKE to Res.string.fur_tool,
+    ShellActions.COMB to Res.string.fur_comb_tool,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
@@ -151,6 +157,8 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "pick-color" -> SquashIcons.PickColor
     "line-width" -> SquashIcons.LineWidth
     "surface-stroke" -> SquashIcons.SurfaceStroke
+    "fur-stroke" -> SquashIcons.FurStroke
+    "comb" -> SquashIcons.Comb
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
@@ -209,6 +217,8 @@ fun Shell.registerActions() {
     action(ShellActions.FILL, "fill", chord("F"), painting) { state.armTool(BuildTool.FILL) }
     action(ShellActions.BRUSH, "brush", chord("B"), painting) { state.armTool(BuildTool.BRUSH) }
     action(ShellActions.LINE_WIDTH, "line-width", chord("W"), inking) { state.armTool(BuildTool.LINE_WIDTH) }
+    action(ShellActions.FUR_STROKE, "fur-stroke", chord("U"), inking) { state.armTool(BuildTool.FUR_STROKE) }
+    action(ShellActions.COMB, "comb", chord("G"), inking) { state.armTool(BuildTool.COMB) }
     action(ShellActions.SURFACE_STROKE, "surface-stroke", chord("D"), inking) { state.armTool(BuildTool.SURFACE_STROKE) }
     action(ShellActions.SURFACE_ERASE, "erase", chord("X"), inking) { state.armTool(BuildTool.SURFACE_ERASE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }

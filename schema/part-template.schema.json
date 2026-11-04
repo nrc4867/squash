@@ -217,6 +217,35 @@
       },
       "additionalProperties": false
     },
+    "GrainSpec": {
+      "description": "How the part's fur lies until a comb changes it.",
+      "type": "object",
+      "properties": {
+        "toward": {
+          "description": "The end of the axis fur runs toward.",
+          "enum": [
+            "start",
+            "end"
+          ]
+        },
+        "lift": {
+          "description": "How far a stroke rises for each unit it runs along the surface, where no ruff says otherwise.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "ruffs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuffSpec"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Joint": {
       "description": "A bone boundary; bones are the spans between joints in u order.",
       "type": "object",
@@ -634,6 +663,9 @@
             "$ref": "#/$defs/ParamSpec"
           }
         },
+        "grain": {
+          "$ref": "#/$defs/GrainSpec"
+        },
         "blocks": {
           "type": "array",
           "items": {
@@ -650,6 +682,47 @@
         "topology",
         "views",
         "blocks"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RuffSpec": {
+      "description": "A stretch of the body patch where fur stands outward from the surface instead of lying along it.",
+      "type": "object",
+      "properties": {
+        "u": {
+          "description": "Along the axis, from 0 to 1.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "v": {
+          "description": "Around the part, from 0 to 1.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "lift": {
+          "description": "How far a stroke rises for each unit it runs along the surface.",
+          "type": "number",
+          "minimum": 0.0
+        }
+      },
+      "required": [
+        "u",
+        "v"
       ],
       "patternProperties": {
         "^x-": {}

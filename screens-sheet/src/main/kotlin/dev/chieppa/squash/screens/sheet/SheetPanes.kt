@@ -106,6 +106,10 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     }
     var refused by remember { mutableStateOf(false) }
     val fullRect = rects[SheetPane.FULL.ordinal]
+    val look = rememberSheetLook()
+    val density = LocalDensity.current.density
+    val fullFur = rememberFurView(open, FurViews.FULL, part?.takeIf { fullRect.width > 0 && fullRect.height > 0 }?.let { furCamera(orbit.view, fullRect.width, fullRect.height, density) })
+    val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it, density) }) }
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val color = rememberPaneColor(state)
     val places = remember { PreviewPlaces() }
@@ -115,7 +119,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             rects = rects,
             width = size.width,
             height = size.height,
-            look = rememberSheetLook(),
+            look = look,
             selection = selection,
             cameras = cameras,
             full = if (part != null) orbit.view else null,
@@ -127,6 +131,8 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             color = color,
             previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
             surface = surface,
+            fullFur = fullFur,
+            lockedFur = lockedFur,
         ),
     )
     Box(modifier.onSizeChanged { size = it }.onGloballyPositioned { places.surface = it.positionInRoot() }) {

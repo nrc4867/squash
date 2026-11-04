@@ -40,7 +40,7 @@ private fun ResolvedSurfaceWork.placedBy(point: (ResolvedPoint) -> ResolvedPoint
 }
 
 private fun ResolvedMark.placedBy(point: (ResolvedPoint) -> ResolvedPoint?): ResolvedMark? {
-    val placed = keptPoints(points, MIN_MARK_POINTS, point) ?: return null
+    val placed = keptPoints(points, kind.minPoints, point) ?: return null
     val placedVersions = versions.mapNotNull { (bin, version) ->
         keptPoints(version.points, MIN_MARK_POINTS, point)?.let { bin to version.copy(points = it) }
     }.toMap()

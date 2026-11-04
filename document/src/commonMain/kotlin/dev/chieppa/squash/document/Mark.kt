@@ -1,8 +1,22 @@
 package dev.chieppa.squash.document
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 const val MIN_MARK_POINTS = 2
+
+/** The one anchor a fur stroke needs: its root. */
+const val MIN_FUR_POINTS = 1
+
+/**
+ * What a mark draws. A [LINE] is an inked polyline along its anchors. A [FUR] stroke is a tapered wedge from its first anchor, the
+ * root, along the part's grain, filled in the slot under it. See HLD: look, Marks.
+ */
+@Serializable
+enum class MarkKind(val minPoints: Int) {
+    @SerialName("line") LINE(MIN_MARK_POINTS),
+    @SerialName("fur") FUR(MIN_FUR_POINTS),
+}
 
 /** A share of the line rule's weight at a place along a mark, 0 to 1 from its start. */
 @Serializable
@@ -20,12 +34,6 @@ data class MarkWidth(val stops: List<WidthStop> = emptyList()) {
         require(stops.zipWithNext().all { (a, b) -> a.at <= b.at }) { "Width stops run along the mark in order" }
     }
 }
-
-/** The prefix of every fur stroke's id. */
-const val FUR_MARK_PREFIX = "fur-"
-
-/** Whether this mark is a fur stroke. */
-val MarkId.isFur: Boolean get() = value.startsWith(FUR_MARK_PREFIX)
 
 /** A mark's shape for one camera bin. */
 @Serializable
@@ -48,9 +56,10 @@ data class Mark(
     val ink: Boolean = true,
     val cameraLocked: Boolean = false,
     val versions: Map<CameraBin, MarkVersion> = emptyMap(),
+    val kind: MarkKind = MarkKind.LINE,
 ) {
     init {
-        require(points.size >= MIN_MARK_POINTS) { "Mark ${id.value} needs at least $MIN_MARK_POINTS anchors, not ${points.size}" }
+        require(points.size >= kind.minPoints) { "Mark ${id.value} needs at least ${kind.minPoints} anchors, not ${points.size}" }
     }
 
     internal fun mapAnchors(transform: (Anchor) -> Anchor): Mark = copy(

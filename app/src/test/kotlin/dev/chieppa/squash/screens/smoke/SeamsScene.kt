@@ -79,7 +79,14 @@ internal fun seamsSession(scope: CoroutineScope, parts: List<PartInstance>): Cha
     return CharacterSession(AddParts(parts).apply(empty).document, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
 }
 
-internal fun CharacterSession.settled() = runBlocking { withTimeout(SETTLE_MILLIS) { graph.settled.first { it } } }
+internal fun CharacterSession.settled() = runBlocking {
+    withTimeout(SETTLE_MILLIS) {
+        do {
+            graph.settled.first { it }
+            viewGraph.settled.first { it }
+        } while (!graph.settled.value)
+    }
+}
 
 internal fun seamsPalette(): List<DocumentCommand> = listOf(
     SetPaletteSlot(FUR, SlotColor(0.91f, 0.63f, 0.29f)),

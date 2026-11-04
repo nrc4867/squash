@@ -1,0 +1,206 @@
+{
+    "character": {
+        "id": "fennec",
+        "name": "Fennec",
+        "bodyPlan": {
+            "id": "canine-quadruped",
+            "version": 1
+        },
+        "parts": [
+            {
+                "id": "torso-1",
+                "template": {
+                    "id": "torso",
+                    "version": 1
+                },
+                "own": {
+                    "surface": {
+                        "paint": {
+                            "strokes": [
+                                {
+                                    "id": "belly",
+                                    "points": [
+                                        {
+                                            "part": "torso-1",
+                                            "u": 0.3,
+                                            "v": 0.5
+                                        },
+                                        {
+                                            "part": "torso-1",
+                                            "u": 0.6,
+                                            "v": 0.5
+                                        }
+                                    ],
+                                    "slot": "cream",
+                                    "radius": 0.08,
+                                    "softness": 0.4
+                                }
+                            ]
+                        },
+                        "marks": [
+                            {
+                                "id": "fur-0-0",
+                                "points": [
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.7,
+                                        "v": 0.3
+                                    },
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.71,
+                                        "v": 0.32,
+                                        "offset": 0.02
+                                    },
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.72,
+                                        "v": 0.34,
+                                        "offset": 0.05
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "brow",
+                                "points": [
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.2,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.3,
+                                        "v": 0.2
+                                    }
+                                ]
+                            }
+                        ],
+                        "lineWeights": [
+                            {
+                                "id": "saddle",
+                                "points": [
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.3,
+                                        "v": 0.0
+                                    },
+                                    {
+                                        "part": "torso-1",
+                                        "u": 0.6,
+                                        "v": 0.0
+                                    }
+                                ],
+                                "radius": 0.2,
+                                "amount": 0.6
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "id": "leg-l",
+                "template": {
+                    "id": "leg",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "torso-1",
+                    "socket": "front-leg"
+                },
+                "pair": "front-legs",
+                "side": "left"
+            },
+            {
+                "id": "leg-r",
+                "template": {
+                    "id": "leg",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "torso-1",
+                    "socket": "front-leg"
+                },
+                "pair": "front-legs",
+                "side": "right",
+                "overrides": {
+                    "surface": {
+                        "paint": {
+                            "strokes": [
+                                {
+                                    "id": "knee",
+                                    "points": [
+                                        {
+                                            "part": "leg-r",
+                                            "u": 0.5,
+                                            "v": 0.25
+                                        },
+                                        {
+                                            "part": "leg-r",
+                                            "u": 0.5,
+                                            "v": 0.75
+                                        }
+                                    ],
+                                    "slot": "cream",
+                                    "radius": 0.04
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "pairs": {
+            "front-legs": {
+                "surface": {
+                    "paint": {
+                        "strokes": [
+                            {
+                                "id": "sock",
+                                "points": [
+                                    {
+                                        "part": "leg-l",
+                                        "u": 0.9,
+                                        "v": 0.2
+                                    }
+                                ],
+                                "slot": "fur",
+                                "radius": 0.05
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "palette": {
+            "slots": [
+                {
+                    "name": "fur",
+                    "color": {
+                        "red": 0.9,
+                        "green": 0.7,
+                        "blue": 0.4
+                    }
+                },
+                {
+                    "name": "cream",
+                    "color": {
+                        "red": 0.99,
+                        "green": 0.94,
+                        "blue": 0.82
+                    }
+                }
+            ]
+        },
+        "shading": {
+            "mode": "twoTone",
+            "farSideDarker": false
+        },
+        "lineRules": {
+            "silhouette": 4.0,
+            "interior": 2.0,
+            "taper": 0.55
+        }
+    },
+    "format": 5
+}

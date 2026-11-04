@@ -87,6 +87,12 @@ object SquashIcons {
             stroke("M8 2a6 6 0 1 0 0 12c1 0 1.5-.7 1.2-1.5-.4-1 .3-2 1.3-2H12a2 2 0 0 0 2-2A6.5 6.5 0 0 0 8 2z")
         }
     }
+    val Comb: ImageVector by lazy {
+        icon("comb") {
+            stroke("M2 4.5h12")
+            stroke("M3 4.5v7M5.5 4.5v7M8 4.5v7M10.5 4.5v7M13 4.5v7")
+        }
+    }
     val Door: ImageVector by lazy {
         icon("door") {
             stroke("M4 14V2.5h8V14M2 14h12")

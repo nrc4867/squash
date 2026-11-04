@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * What is drawn on a part: as a part resolves it, as a pair shares it, or as a side overrides it. Color layers in this order:
  * [baseSlot] colors the whole part, [areaFills] the areas its template names, by area name, then [regions], then [paint]. A
- * null [grain] runs along the axis. Lists run in draw order.
+ * null [grain] is what the template gives, and a null [fur] the default rule. Lists run in draw order.
  */
 @Serializable
 data class SurfaceWork(
@@ -17,6 +17,7 @@ data class SurfaceWork(
     val regions: List<Region> = emptyList(),
     val paint: Paint = Paint(),
     val lineWeights: List<LineWeight> = emptyList(),
+    val fur: FurRule? = null,
 ) {
     init {
         requireUniqueIds("mark", marks.map { it.id.value })
@@ -36,6 +37,7 @@ data class SurfaceWork(
         regions = regions.overlaidWith(overrides.regions) { it.id },
         paint = Paint(paint.strokes.overlaidWith(overrides.paint.strokes) { it.id }),
         lineWeights = lineWeights.overlaidWith(overrides.lineWeights) { it.id },
+        fur = overrides.fur ?: fur,
     )
 
     internal fun mapAnchors(transform: (Anchor) -> Anchor): SurfaceWork = copy(

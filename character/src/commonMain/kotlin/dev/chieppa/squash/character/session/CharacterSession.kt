@@ -5,8 +5,12 @@ import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.character.build.AssemblyShape
 import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodyLines
+import dev.chieppa.squash.character.build.BodyFur
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.ColorSource
+import dev.chieppa.squash.character.build.FurCamera
+import dev.chieppa.squash.character.build.FurCameras
+import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.build.HeldColor
 import dev.chieppa.squash.character.build.LegLengthsOf
 import dev.chieppa.squash.character.build.PartBuild
@@ -18,8 +22,10 @@ import dev.chieppa.squash.character.build.assemblyNode
 import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.build.bodyColorNode
 import dev.chieppa.squash.character.build.bodyLinesNode
+import dev.chieppa.squash.character.build.bodyFurNode
 import dev.chieppa.squash.character.build.bodySurfaceWorkNode
 import dev.chieppa.squash.character.build.defaultSurfaceNode
+import dev.chieppa.squash.character.build.furViewNode
 import dev.chieppa.squash.character.build.partColorInputs
 import dev.chieppa.squash.character.build.partColorNode
 import dev.chieppa.squash.character.build.partMeshNode
@@ -56,6 +62,12 @@ class CharacterSession(
 ) {
     val history = History(initial)
     val graph = Graph(scope, dispatcher)
+
+    /**
+     * The nodes that read a view's camera, which an orbit reruns every frame. They are apart from [graph], whose settled and
+     * progress say the character is being derived; a test that reads a view waits on both.
+     */
+    val viewGraph = Graph(scope, dispatcher)
     val document: StateFlow<SquashDocument> get() = history.document
 
     private val lengths = LegLengthsOf(templates)
@@ -104,6 +116,21 @@ class CharacterSession(
         document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
         ::heldColor,
     )
+
+    /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */
+    val bodyFur: Node<*, BodyFur> = graph.bodyFurNode(document, templates, assembly, bodySurfaceWork)
+
+    private val furCameras = FurCameras()
+    private val furViews = mutableMapOf<String, Node<*, FurView>>()
+
+    /** What fur shows in the view named [view], through the camera [showFurFrom] last gave it; one node per view for the session's life. */
+    fun furView(view: String): Node<*, FurView> = furViews.getOrPut(view) { viewGraph.furViewNode(furCameras.of(view), bodyFur) }
+
+    /** Says what camera the view named [view] looks through. */
+    fun showFurFrom(view: String, camera: FurCamera) {
+        furCameras.of(view).value = camera
+        furView(view)
+    }
 
     /** Says how many pixels a body unit spans on the largest view of color, which re-flattens its curves when that has changed enough. */
     fun showColorAt(pixelsPerUnit: Float) {

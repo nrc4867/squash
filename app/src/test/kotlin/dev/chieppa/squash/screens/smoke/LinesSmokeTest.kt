@@ -12,7 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
-import dev.chieppa.squash.document.isFur
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
@@ -154,7 +154,7 @@ class LinesSmokeTest {
         val full = input.rects[SheetPane.FULL.ordinal]
         val lines = assertNotNull(bench.lines)
         val camera = assertNotNull(input.full)
-        val whole = lines.whole(FullView({ camera }, full.width, full.height), full)
+        val whole = lines.figure(FullView({ camera }, full.width, full.height))
         assertTrue(whole.map { it.rule.interiorPixels }.toSet().size >= 2, "Full has thick and thin lines: ${whole.map { it.rule.interiorPixels }.toSet()}")
         keep(bench, input, "lines-fennec")
         assertTrue(assertNotNull(session.document.value.character.part(TORSO)).id == TORSO)
@@ -167,7 +167,7 @@ class LinesSmokeTest {
         val bench = fennecOpen()
         val state = bench.state
         val session = assertNotNull(state.session.value)
-        fun loose() = session.document.value.character.parts.flatMap { part -> session.document.value.character.resolved(part).surface.marks }.filter { !it.id.isFur && it.id.value.startsWith("stroke-") }
+        fun loose() = session.document.value.character.parts.flatMap { part -> session.document.value.character.resolved(part).surface.marks }.filter { it.kind != MarkKind.FUR && it.id.value.startsWith("stroke-") }
         onNodeWithContentDescription("Lines").performClick()
         waitForIdle()
         state.tool.value = BuildTool.SURFACE_STROKE

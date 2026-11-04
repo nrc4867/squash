@@ -13,7 +13,6 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
-import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.screens.fennec.BACK_WEIGHT
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.HEAD
@@ -198,15 +197,14 @@ class SurfaceToolsTest {
         val ink = androidx.compose.ui.graphics.Color.Black
         val surface = SurfaceLines(lines, work, look, LineRules().taper, ink, 1f)
         val view = free(session, Vec3(0.6f, 0.3f, -1f))
-        val rect = PixelRect(0, 0, PIXELS, PIXELS)
-        val whole = surface.whole(view, rect)
+        val whole = surface.figure(view)
         assertTrue(whole.any { it.layer == DepthLayer.BACK && it.rule.interiorPixels == 6f }, "the thick line shows 4 pixels across with the thin one's inner half")
         assertTrue(whole.any { it.layer == DepthLayer.SCENE && it.rule.interiorPixels == 2f })
         val selected = surface.selected(TORSO, locked(session))
         assertTrue(selected.any { it.layer == DepthLayer.BEHIND_FRONT })
         assertTrue(selected.all { it.layer == DepthLayer.BEHIND_FRONT || it.layer == DepthLayer.FRONT })
-        assertEquals(whole.size, surface.whole(view, rect).size)
-        assertTrue(whole === surface.whole(view, rect), "a camera that holds still costs nothing")
+        assertEquals(whole.size, surface.figure(view).size)
+        assertTrue(whole === surface.figure(view), "a camera that holds still costs nothing")
     }
 
     @Test
@@ -264,7 +262,7 @@ class SurfaceToolsTest {
         assertEquals("Saddle", rows.weights.single().name, "a weight's row names the area it lies on")
         assertEquals(listOf(HEAD), rows.strokes.map { it.part })
         assertEquals(2, rows.strokes.single().count, "the mouth's two lines; the eyes are groups")
-        assertTrue(rows.fur.single().count > 0)
-        assertEquals(TORSO, rows.fur.single().part)
+        assertTrue(rows.fur.all { it.count > 0 })
+        assertEquals(listOf(TORSO, TAIL), rows.fur.map { it.part })
     }
 }

@@ -65,6 +65,31 @@ class SurfaceCommandTest {
     }
 
     @Test
+    fun aFurStrokeIsARootAndALineNeedsTwoPlaces() {
+        assertEquals(1, Mark(MarkId("fur"), anchors(0.1f), kind = MarkKind.FUR).points.size)
+        assertFailsWith<IllegalArgumentException> { Mark(MarkId("line"), anchors(0.1f)) }
+        assertFailsWith<IllegalArgumentException> { Mark(MarkId("none"), emptyList(), kind = MarkKind.FUR) }
+    }
+
+    @Test
+    fun aDragsStrokesAreOneStep() {
+        val strokes = listOf(0.1f, 0.2f, 0.3f).map { Mark(MarkId("fur-$it"), anchors(it), kind = MarkKind.FUR) }
+        assertUndoesAndRedoes(placed, AddMarks(head.id, strokes))
+        assertEquals(strokes, AddMarks(head.id, strokes).apply(placed).document.surface().marks)
+        val held = AddMarks(head.id, strokes).apply(placed).document
+        assertUndoesAndRedoes(held, RemoveMarks(head.id, listOf(strokes[1].id)))
+    }
+
+    @Test
+    fun aFurRuleSetsAndClears() {
+        val rule = FurRule(showNear = 0.5f, spacingPixels = 20f, lengthPixels = 30f)
+        assertUndoesAndRedoes(placed, SetFurRule(head.id, rule), SetFurRule(head.id, null))
+        assertEquals(rule, SetFurRule(head.id, rule).apply(placed).document.surface().fur)
+        assertFailsWith<IllegalArgumentException> { FurRule(showNear = 2f) }
+        assertFailsWith<IllegalArgumentException> { FurRule(spacingPixels = 0f) }
+    }
+
+    @Test
     fun aMarkHoldsItsAngleVersionsThroughUndo() {
         val versions = mapOf(CameraBin("front") to MarkVersion(anchors(0.1f, 0.2f), MarkWidth(listOf(WidthStop(0f, 0f), WidthStop(1f, 1f)))))
         val versioned = mark("lid", 0.3f, 0.4f).copy(versions = versions)

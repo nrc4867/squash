@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.PartId
@@ -30,6 +31,7 @@ data class ResolvedMark(
     val ink: Boolean,
     val cameraLocked: Boolean,
     val versions: Map<CameraBin, ResolvedMarkVersion>,
+    val kind: MarkKind = MarkKind.LINE,
 )
 
 data class ResolvedRegion(val id: RegionId, val border: List<ResolvedPoint>, val slot: SlotName, val ink: Boolean)

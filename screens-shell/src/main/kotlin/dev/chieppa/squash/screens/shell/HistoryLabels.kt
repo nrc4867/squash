@@ -8,9 +8,11 @@ import dev.chieppa.squash.uidesign.generated.lines_step_stroke
 import dev.chieppa.squash.uidesign.generated.lines_step_weight
 import dev.chieppa.squash.uidesign.generated.move_step
 import androidx.compose.runtime.Composable
+import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BreakPair
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
 import dev.chieppa.squash.document.SetAreaFill
@@ -21,6 +23,8 @@ import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetLineWeightAmount
 import dev.chieppa.squash.document.SetMark
+import dev.chieppa.squash.document.SetFurRule
+import dev.chieppa.squash.document.SetGrain
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.character.build.PlacementParams
@@ -36,6 +40,9 @@ import dev.chieppa.squash.uidesign.generated.color_step_palette
 import dev.chieppa.squash.uidesign.generated.color_step_region
 import dev.chieppa.squash.uidesign.generated.color_step_shading
 import dev.chieppa.squash.uidesign.generated.color_step_stroke
+import dev.chieppa.squash.uidesign.generated.fur_comb_tool
+import dev.chieppa.squash.uidesign.generated.fur_section
+import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.shell_step_add
 import dev.chieppa.squash.uidesign.generated.shell_step_break_pair
 import dev.chieppa.squash.uidesign.generated.shell_step_outline
@@ -69,6 +76,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val mark = stringResource(Res.string.lines_step_stroke)
     val lineWeight = stringResource(Res.string.lines_step_weight)
     val lineRules = stringResource(Res.string.lines_step_rules)
+    val furStrokes = stringResource(Res.string.fur_tool)
+    val combed = stringResource(Res.string.fur_comb_tool)
+    val furRule = stringResource(Res.string.fur_section)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -89,6 +99,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetLineWeight, is SetLineWeightAmount -> lineWeight
             is SetLineRules -> lineRules
             is SetParameter -> if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
+            is AddMarks -> if (command.marks.any { it.kind == MarkKind.FUR }) furStrokes else ""
+            is SetGrain -> combed
+            is SetFurRule -> furRule
             else -> ""
         }
     }

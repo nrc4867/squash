@@ -26,6 +26,8 @@ import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
+import dev.chieppa.squash.screens.surface.rememberCombTool
+import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit_ends
@@ -54,6 +56,8 @@ fun WorkspaceScreen(shell: Shell) {
     val lineWidth = rememberLineWidthTool(state)
     val surfaceStroke = rememberSurfaceStrokeTool(state)
     val surfaceErase = rememberSurfaceEraseTool(state)
+    val fur = rememberFurStrokeTool(state)
+    val comb = rememberCombTool(state)
     val linesOpen = shell.showsLineTools
     LaunchedEffect(linesOpen) {
         val tool = state.tool.value
@@ -74,6 +78,8 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.LINE_WIDTH -> lineWidth
         BuildTool.SURFACE_STROKE -> surfaceStroke
         BuildTool.SURFACE_ERASE -> surfaceErase
+        BuildTool.FUR_STROKE -> fur
+        BuildTool.COMB -> comb
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()

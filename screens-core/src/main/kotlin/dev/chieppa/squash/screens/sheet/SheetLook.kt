@@ -38,6 +38,7 @@ data class SheetLook(
     val dotRadius: Float = 5f,
     val pickedDotRadius: Float = 8f,
     val dotEdge: Float = 2f,
+    val furEdge: Float = 2f,
 ) {
     /** The side of a pair away from the viewer, in the shade the boards give it. */
     val farPart: PartMaterial = part.copy(base = part.shade)
@@ -76,5 +77,6 @@ fun rememberSheetLook(): SheetLook {
         dotRadius = px(5),
         pickedDotRadius = px(8),
         dotEdge = px(2),
+        furEdge = px(2),
     )
 }

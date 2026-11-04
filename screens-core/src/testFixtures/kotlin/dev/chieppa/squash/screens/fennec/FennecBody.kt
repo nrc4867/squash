@@ -71,14 +71,12 @@ private val PAW_SIDE = loop(p(0f, 0f), p(0.05f, 0.05f), p(0.15f, 0.06f), p(0.25f
 private val PAW_TOP = loop(p(0f, 0f), p(0.05f, 0.06f), p(0.16f, 0.08f), p(0.26f, 0.05f), p(0.28f, 0f), p(0.26f, -0.05f), p(0.16f, -0.08f), p(0.05f, -0.06f))
 
 private val TAIL_SIDE = drawn(
-    p(0f, 0.05f), p(0.08f, 0.08f), tuft(0.18f, 0.14f), p(0.20f, 0.115f), tuft(0.34f, 0.18f), p(0.36f, 0.14f), tuft(0.50f, 0.18f), p(0.52f, 0.13f),
-    tuft(0.64f, 0.13f), p(0.66f, 0.09f), tuft(0.84f, 0f),
-    p(0.66f, -0.09f), tuft(0.64f, -0.14f), p(0.52f, -0.13f), tuft(0.50f, -0.19f), p(0.36f, -0.15f), tuft(0.34f, -0.19f), p(0.20f, -0.13f), tuft(0.18f, -0.15f), p(0.08f, -0.09f), p(0f, -0.05f),
+    p(0f, 0.05f), p(0.08f, 0.08f), p(0.20f, 0.125f), p(0.36f, 0.16f), p(0.50f, 0.16f), p(0.64f, 0.12f), p(0.76f, 0.06f), tuft(0.84f, 0f),
+    p(0.76f, -0.06f), p(0.64f, -0.12f), p(0.50f, -0.17f), p(0.36f, -0.17f), p(0.20f, -0.135f), p(0.08f, -0.09f), p(0f, -0.05f),
 )
 private val TAIL_TOP = drawn(
-    p(0f, 0.05f), p(0.08f, 0.08f), tuft(0.18f, 0.13f), p(0.20f, 0.11f), tuft(0.34f, 0.16f), p(0.36f, 0.13f), tuft(0.50f, 0.16f), p(0.52f, 0.12f),
-    tuft(0.64f, 0.11f), p(0.66f, 0.08f), tuft(0.84f, 0f),
-    p(0.66f, -0.08f), tuft(0.64f, -0.11f), p(0.52f, -0.12f), tuft(0.50f, -0.16f), p(0.36f, -0.13f), tuft(0.34f, -0.16f), p(0.20f, -0.11f), tuft(0.18f, -0.13f), p(0.08f, -0.08f), p(0f, -0.05f),
+    p(0f, 0.05f), p(0.08f, 0.08f), p(0.20f, 0.115f), p(0.36f, 0.14f), p(0.50f, 0.14f), p(0.64f, 0.105f), p(0.76f, 0.05f), tuft(0.84f, 0f),
+    p(0.76f, -0.05f), p(0.64f, -0.105f), p(0.50f, -0.14f), p(0.36f, -0.14f), p(0.20f, -0.115f), p(0.08f, -0.08f), p(0f, -0.05f),
 )
 
 /** The parts on the canine plan's sockets, drawn from outlines only, with the Move tool's lean on the tail and ears. */

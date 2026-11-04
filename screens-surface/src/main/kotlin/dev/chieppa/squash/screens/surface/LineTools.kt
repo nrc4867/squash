@@ -13,6 +13,8 @@ import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
+import dev.chieppa.squash.uidesign.generated.fur_comb_tool
+import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
 import dev.chieppa.stretch.ui.ToolButton
@@ -21,11 +23,13 @@ import org.jetbrains.compose.resources.stringResource
 
 private val TOOL_SIZE = 34.dp
 
-/** The strip's tool buttons for lines: Line width, Surface stroke and Erase. Pressing the armed tool disarms it. */
+/** The strip's tool buttons for lines and fur: Line width, Fur stroke, Comb, Surface stroke and Erase. Pressing the armed tool disarms it. */
 @Composable
 fun LineTools(state: AppState) {
     val armed by state.tool.collectAsState()
     Item(BuildTool.LINE_WIDTH, SquashIcons.LineWidth, stringResource(Res.string.lines_tool_width), "W", armed, state::armTool)
+    Item(BuildTool.FUR_STROKE, SquashIcons.FurStroke, stringResource(Res.string.fur_tool), "U", armed, state::armTool)
+    Item(BuildTool.COMB, SquashIcons.Comb, stringResource(Res.string.fur_comb_tool), "G", armed, state::armTool)
     Item(BuildTool.SURFACE_STROKE, SquashIcons.SurfaceStroke, stringResource(Res.string.lines_tool_surface_stroke), "D", armed, state::armTool)
     Item(BuildTool.SURFACE_ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), "X", armed, state::armTool)
 }

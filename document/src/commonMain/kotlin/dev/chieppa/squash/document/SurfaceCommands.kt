@@ -54,6 +54,62 @@ data class SetGrain(val part: PartId, val grain: Grain?, val thisSide: Boolean =
     }
 }
 
+/** Sets how a part's fur strokes show. */
+@Serializable
+@SerialName("setFurRule")
+data class SetFurRule(val part: PartId, val rule: FurRule?, val thisSide: Boolean = false) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide).surface
+        return Applied(
+            document.withWrittenSurface(instance, thisSide, before.copy(fur = rule)),
+            SetFurRule(part, before.fur, thisSide),
+        )
+    }
+}
+
+/**
+ * Adds [marks] as one step, as one drag of the Fur stroke tool lays them: after those the part holds, or at [indices] when undoing a
+ * removal, each the place it goes in the list as it stands by then.
+ */
+@Serializable
+@SerialName("addMarks")
+data class AddMarks(
+    val part: PartId,
+    val marks: List<Mark>,
+    val thisSide: Boolean = false,
+    val stored: Boolean = false,
+    val indices: List<Int>? = null,
+) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide).surface
+        val written = marks.map { it.mapAnchors(document.character.writeTransform(instance, thisSide, stored)) }
+        val next = before.marks.toMutableList()
+        written.forEachIndexed { i, mark -> next.add(indices?.get(i) ?: next.size, mark) }
+        return Applied(
+            document.withWrittenSurface(instance, thisSide, before.copy(marks = next)),
+            RemoveMarks(part, marks.map { it.id }, thisSide),
+        )
+    }
+}
+
+/** Removes the marks [ids] as one step. */
+@Serializable
+@SerialName("removeMarks")
+data class RemoveMarks(val part: PartId, val ids: List<MarkId>, val thisSide: Boolean = false) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide).surface
+        val going = ids.toSet()
+        val places = before.marks.indices.filter { before.marks[it].id in going }
+        return Applied(
+            document.withWrittenSurface(instance, thisSide, before.copy(marks = before.marks.filter { it.id !in going })),
+            AddMarks(part, places.map { before.marks[it] }, thisSide, stored = true, indices = places),
+        )
+    }
+}
+
 /** Adds, replaces or removes the mark [id]. */
 @Serializable
 @SerialName("setMark")

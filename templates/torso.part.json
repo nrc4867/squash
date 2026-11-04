@@ -13,6 +13,7 @@
     "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
     "girth": { "default": 0.22,  "min": 0.1, "max": 0.7 }
   },
+  "grain": { "toward": "start", "ruffs": [{ "u": [0.66, 0.98], "v": [0.2, 0.8] }] },
   "blocks": [
     { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth" },
     { "kind": "cap",   "end": "start", "shape": "round" },

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
@@ -74,24 +75,25 @@ fun amountCommand(character: Character, picked: PickedWeight, amount: Float, thi
 /** One line weight in pixels, to a tenth. */
 fun weightLabel(pixels: Float): String = "%.1f".format(java.util.Locale.ROOT, pixels)
 
-/** The Lines drawer: the rules that weigh the character's lines, and what the Line width tool lays down. */
+/** The Lines drawer: the rules that weigh the character's lines, what the Line width tool lays down, and the selected part's fur. */
 @Composable
 fun LinesDrawer(state: AppState) {
     val session by state.session.collectAsState()
     val open = session ?: return
     RulesSection(open)
     WidthToolSection(state, open)
+    FurSection(state, open)
 }
 
 /** One drag on a control is one undo step: the values it passes through are previews of a single command. */
 @Composable
-private fun rememberCommandDrag(session: CharacterSession): CommandDrag {
+internal fun rememberCommandDrag(session: CharacterSession): CommandDrag {
     val drag = remember(session) { CommandDrag(session.history) }
     DisposableEffect(drag) { onDispose { drag.finish() } }
     return drag
 }
 
-private class CommandDrag(private val history: History<SquashDocument>) {
+internal class CommandDrag(private val history: History<SquashDocument>) {
     private var gesture by mutableStateOf<History<SquashDocument>.Transaction?>(null)
 
     fun update(command: DocumentCommand) = (gesture ?: history.begin().also { gesture = it }).update(command)
@@ -135,7 +137,7 @@ private fun WidthToolSection(state: AppState, session: CharacterSession) {
     val size = stringResource(Res.string.lines_size)
     val amount = stringResource(Res.string.lines_amount)
     val thisSide = state.thisSide
-    DrawerSection(stringResource(Res.string.lines_width_tool), divider = false) {
+    DrawerSection(stringResource(Res.string.lines_width_tool)) {
         SettingRow(size) {
             Slider(lines.size, { lines.size = it }, size, Modifier.weight(1f).testTag(LinesDrawerTags.SIZE), MIN_WIDTH_SIZE..MAX_WIDTH_SIZE)
             Readout(stringResource(Res.string.lines_size_value, lines.size.roundToInt()))
@@ -161,6 +163,6 @@ private fun WidthToolSection(state: AppState, session: CharacterSession) {
 }
 
 @Composable
-private fun Readout(text: String) {
-    BasicText(text, Modifier.width(READOUT_WIDTH), style = Stretch.type.body.merge(TextStyle(color = Stretch.colors.inkSubtle)), maxLines = 1)
+internal fun Readout(text: String, width: Dp = READOUT_WIDTH) {
+    BasicText(text, Modifier.width(width), style = Stretch.type.body.merge(TextStyle(color = Stretch.colors.inkSubtle)), maxLines = 1)
 }

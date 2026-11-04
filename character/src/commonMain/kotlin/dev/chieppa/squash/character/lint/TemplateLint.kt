@@ -21,7 +21,12 @@ private val SECTION_READINGS = setOf(Sets.CAP, Sets.SECTION)
 object TemplateLint {
     fun lint(template: PartTemplate): List<Finding> =
         format(template) + params(template) + axis(template) + section(template) + views(template) + openEnd(template) +
-            blocks(template) + joints(template) + names(template) + patchNames(template)
+            blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template)
+
+    private fun grain(template: PartTemplate): List<Finding> = template.grain.ruffs.flatMapIndexed { i, ruff ->
+        val context = LintContext(template, "$.grain.ruffs[$i]")
+        context.unit("u", ruff.u) + context.unit("v", ruff.v)
+    }
 
     private fun format(template: PartTemplate) =
         if (template.format == TEMPLATE_FORMAT) emptyList()
