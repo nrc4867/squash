@@ -7,9 +7,6 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.Mat4
 
-/** How a mesh is lit: one color, or a lit color and a shadow color with a hard edge. */
-enum class Shading { FLAT, TWO_TONE }
-
 /** A mesh's colors. [ink] is its outline. */
 @Immutable
 data class PartMaterial(
@@ -49,7 +46,7 @@ enum class DepthLayer(val scale: Float, val offset: Float) {
 /**
  * One mesh to draw in a view, placed by [model]. With an [outlinePixels] above 0 it has an outline that wide. Below an
  * [opacity] of 1 it blends over what a view drew before it, showing only its own nearest surface, so a view draws such
- * meshes after opaque ones and furthest first.
+ * meshes after opaque ones and furthest first. [layers] draw over a mesh at full opacity straight after it, each over the last.
  */
 @Immutable
 data class MeshDraw(
@@ -59,11 +56,17 @@ data class MeshDraw(
     val outlinePixels: Float = 0f,
     val opacity: Float = 1f,
     val layer: DepthLayer = DepthLayer.SCENE,
+    val layers: List<ColorLayerDraw> = emptyList(),
 )
 
-/** One camera's view: what it sees, drawn into [viewport] with nothing outside it. */
+/** One camera's view: what it sees, drawn into [viewport] with nothing outside it. [ribbons] draw after all of [draws]. */
 @Immutable
-data class SceneView(val viewport: PixelRect, val viewProjection: Mat4, val draws: List<MeshDraw>)
+data class SceneView(
+    val viewport: PixelRect,
+    val viewProjection: Mat4,
+    val draws: List<MeshDraw>,
+    val ribbons: List<RibbonDraw> = emptyList(),
+)
 
 /** One frame of [ViewsScene]: an immutable snapshot, safe to hand to the render thread. */
 @Immutable

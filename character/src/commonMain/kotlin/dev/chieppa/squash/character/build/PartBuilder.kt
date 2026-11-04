@@ -1,7 +1,9 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.block.Block
+import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.End
+import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartData
@@ -47,6 +49,14 @@ object PartBuilder {
     /** The patches of a part that resolves to [data]. */
     fun build(template: PartTemplate, data: PartData, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): List<Patch> =
         build(template, data.params, data.outlines, checkCancelled, lengthFactor)
+
+    /** The areas of [template]'s blocks that are on with [params] over its defaults. */
+    fun areas(template: PartTemplate, params: Map<String, Float>): List<AreaSpec> =
+        (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.areas() } }
+
+    /** The colored patches of [template]'s blocks that are on with [params] over its defaults. */
+    fun patchSlots(template: PartTemplate, params: Map<String, Float>): List<PatchSlot> =
+        (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.patchSlots() } }
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())

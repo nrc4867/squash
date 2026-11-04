@@ -3,7 +3,7 @@ package dev.chieppa.squash.render
 /** Floats in [MESH_WGSL]'s `Draw` uniform. */
 internal const val DRAW_FLOATS = 56
 
-/** WGSL for [MeshPass]: flat and two-tone fills, an outline as the mesh's back faces pushed out by a pixel width, set slightly behind its surface, each in its slice of the depth buffer and at its opacity. */
+/** WGSL for [MeshPass]: flat and two-tone fills shaded by proxy normals, an outline as the mesh's back faces pushed out by a pixel width, set slightly behind its surface, each in its slice of the depth buffer and at its opacity. */
 internal const val MESH_WGSL = """
 struct Draw {
     view_projection: mat4x4<f32>,
@@ -29,24 +29,20 @@ fn in_layer(clip: vec4<f32>) -> vec4<f32> {
 
 struct FillOut {
     @builtin(position) clip: vec4<f32>,
-    @location(0) normal: vec3<f32>,
+    @location(0) proxy: vec3<f32>,
 };
 
 @vertex
-fn vs_fill(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) -> FillOut {
+fn vs_fill(@location(0) position: vec3<f32>, @location(2) proxy: vec3<f32>) -> FillOut {
     var out: FillOut;
     out.clip = in_layer(draw.view_projection * draw.model * vec4<f32>(position, 1.0));
-    out.normal = (draw.model * vec4<f32>(normal, 0.0)).xyz;
+    out.proxy = (draw.model * vec4<f32>(proxy, 0.0)).xyz;
     return out;
 }
 
 @fragment
 fn fs_fill(in: FillOut) -> @location(0) vec4<f32> {
-    let opacity = draw.depth_scale_offset_and_opacity.z;
-    if (draw.to_light_and_two_tone.w > 0.5 && dot(normalize(in.normal), draw.to_light_and_two_tone.xyz) <= 0.0) {
-        return vec4<f32>(draw.shade.rgb, opacity);
-    }
-    return vec4<f32>(draw.base.rgb, opacity);
+    return vec4<f32>(tone(in.proxy, draw.to_light_and_two_tone, draw.base.rgb, draw.shade.rgb), draw.depth_scale_offset_and_opacity.z);
 }
 
 @vertex
@@ -71,4 +67,4 @@ fn vs_outline(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) 
 fn fs_outline() -> @location(0) vec4<f32> {
     return vec4<f32>(draw.ink.rgb, draw.depth_scale_offset_and_opacity.z);
 }
-"""
+""" + TONE_WGSL

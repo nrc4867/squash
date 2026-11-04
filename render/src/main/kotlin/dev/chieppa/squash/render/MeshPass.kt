@@ -18,9 +18,6 @@ import dev.chieppa.stretch.gpu.webgpu.GpuRenderPass
 import dev.chieppa.stretch.gpu.webgpu.GpuRenderPipeline
 import dev.chieppa.stretch.gpu.webgpu.IndexFormat
 import dev.chieppa.stretch.gpu.webgpu.RenderPipelineSpec
-import dev.chieppa.stretch.gpu.webgpu.VertexAttribute
-import dev.chieppa.stretch.gpu.webgpu.VertexBufferLayout
-import dev.chieppa.stretch.gpu.webgpu.VertexFormat
 
 private const val MATRIX_FLOATS = 16
 private const val VECTOR_FLOATS = 4
@@ -60,13 +57,6 @@ internal class GpuMesh(context: GpuContext, val mesh: RenderMesh) : AutoCloseabl
 internal class MeshPass(private val context: GpuContext) : AutoCloseable {
     private val device = context.device
     private val shader = device.createShaderModule(MESH_WGSL, "mesh")
-    private val layout = VertexBufferLayout(
-        (RenderMesh.FLOATS_PER_VERTEX * Float.SIZE_BYTES).toLong(),
-        listOf(
-            VertexAttribute(VertexFormat.Float32x3, 0, 0),
-            VertexAttribute(VertexFormat.Float32x3, (RenderMesh.NORMAL_OFFSET_FLOATS * Float.SIZE_BYTES).toLong(), 1),
-        ),
-    )
     private val fill = pipeline("vs_fill", "fs_fill", CullMode.None)
     private val outline = pipeline("vs_outline", "fs_outline", CullMode.Front)
     private val fillDepth = pipeline("vs_fill", "fs_fill", CullMode.None, DEPTH_ONLY)
@@ -90,7 +80,7 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
         RenderPipelineSpec(
             shader = shader,
             vertexEntry = vertex,
-            buffers = listOf(layout),
+            buffers = listOf(MESH_VERTEX_LAYOUT),
             fragmentEntry = fragment,
             targets = listOf(ColorTarget(context.format, blend)),
             cullMode = cull,

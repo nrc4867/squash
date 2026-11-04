@@ -60,6 +60,19 @@ class PartSurface(
     /** A local point or direction of [patches] as this surface shows it. */
     fun shown(local: Vec3): Vec3 = if (mirrored) local.mirrored else local
 
+    /** The grid of the patch named [name] as this surface's mesh holds it, or null when it has none so named. */
+    fun grid(name: String): PatchGrid? {
+        var first = 0
+        for (patch in patches) {
+            if (patch.name == name) return PatchGrid(patch, mesh, first, mirrored)
+            first += patch.nu * patch.nv
+        }
+        return null
+    }
+
+    /** How long the part's axis is: its first swept patch's length for a whole run of u from 0 to 1, or 0 with none. */
+    val axisLength: Float get() = patches.firstOrNull { it.slices != null }?.lengthPerU() ?: 0f
+
     companion object {
         /** The surface of [built], whose axes are [axes]. [checkCancelled] runs between its steps and throws to stop a stale run. */
         fun of(built: PartMesh, axes: PartAxes, mirrored: Boolean, checkCancelled: () -> Unit = {}): PartSurface {

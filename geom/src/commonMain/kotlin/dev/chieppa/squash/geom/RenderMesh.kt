@@ -8,8 +8,8 @@ private const val DISC_SEGMENTS = 48
 private const val MIN_NORMAL_LENGTH = 1e-9f
 
 /**
- * A mesh as the GPU reads it: [vertices] holds [FLOATS_PER_VERTEX] floats each, position then normal, and [indices] its
- * triangles. Never changes, so a frame can hand it to the render thread.
+ * A mesh as the GPU reads it: [vertices] holds [FLOATS_PER_VERTEX] floats each, position, normal and proxy normal, and
+ * [indices] its triangles. Never changes, so a frame can hand it to the render thread.
  */
 class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
     val vertexCount: Int get() = vertices.size / FLOATS_PER_VERTEX
@@ -26,6 +26,7 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
             val at = v * FLOATS_PER_VERTEX
             flipped[at + 2] = -flipped[at + 2]
             flipped[at + NORMAL_OFFSET_FLOATS + 2] = -flipped[at + NORMAL_OFFSET_FLOATS + 2]
+            flipped[at + PROXY_OFFSET_FLOATS + 2] = -flipped[at + PROXY_OFFSET_FLOATS + 2]
         }
         val wound = indices.copyOf()
         for (t in 0 until wound.size / 3) {
@@ -36,8 +37,9 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
     }
 
     companion object {
-        const val FLOATS_PER_VERTEX = 6
+        const val FLOATS_PER_VERTEX = 9
         const val NORMAL_OFFSET_FLOATS = 3
+        const val PROXY_OFFSET_FLOATS = 6
 
         /** Every patch of [mesh] in one buffer, with smooth normals from the triangles around each vertex. */
         fun of(mesh: PartMesh): RenderMesh {
@@ -62,9 +64,11 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
                 val at = (i + 1) * FLOATS_PER_VERTEX
                 rim[at] = cos(angle).toFloat()
                 rim[at + 1] = sin(angle).toFloat()
-                rim[at + 5] = 1f
+                rim[at + NORMAL_OFFSET_FLOATS + 2] = 1f
+                rim[at + PROXY_OFFSET_FLOATS + 2] = 1f
             }
-            rim[5] = 1f
+            rim[NORMAL_OFFSET_FLOATS + 2] = 1f
+            rim[PROXY_OFFSET_FLOATS + 2] = 1f
             val triangles = IntArray(DISC_SEGMENTS * 3) { corner ->
                 val segment = corner / 3
                 when (corner % 3) {
@@ -78,6 +82,7 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
 
         private fun writeVertices(patch: PatchMesh, out: FloatArray, first: Int) {
             val normals = FloatArray(patch.vertexCount * 3)
+            val proxies = patch.patch.proxyNormals
             for (t in 0 until patch.triangleCount) {
                 val a = patch.indices[t * 3]
                 val b = patch.indices[t * 3 + 1]
@@ -97,9 +102,12 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
                 out[at] = point.x
                 out[at + 1] = point.y
                 out[at + 2] = point.z
-                out[at + 3] = unit.x
-                out[at + 4] = unit.y
-                out[at + 5] = unit.z
+                out[at + NORMAL_OFFSET_FLOATS] = unit.x
+                out[at + NORMAL_OFFSET_FLOATS + 1] = unit.y
+                out[at + NORMAL_OFFSET_FLOATS + 2] = unit.z
+                out[at + PROXY_OFFSET_FLOATS] = proxies?.get(v * 3) ?: unit.x
+                out[at + PROXY_OFFSET_FLOATS + 1] = proxies?.get(v * 3 + 1) ?: unit.y
+                out[at + PROXY_OFFSET_FLOATS + 2] = proxies?.get(v * 3 + 2) ?: unit.z
             }
         }
     }

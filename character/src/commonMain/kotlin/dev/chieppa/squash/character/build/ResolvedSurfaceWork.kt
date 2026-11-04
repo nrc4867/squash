@@ -43,6 +43,8 @@ data class ResolvedExpression(val id: ExpressionId, val name: String, val marks:
  * marks that resolved. See HLD: data-model, Surface work on the mesh.
  */
 data class ResolvedSurfaceWork(
+    val baseSlot: SlotName? = null,
+    val areaFills: Map<String, SlotName> = emptyMap(),
     val marks: List<ResolvedMark> = emptyList(),
     val groups: List<MarkGroup> = emptyList(),
     val regions: List<ResolvedRegion> = emptyList(),

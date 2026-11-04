@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.BuildContext
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.AreaSpec
+import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.character.model.CapShape
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.JointSpec
@@ -35,6 +36,9 @@ sealed interface Block {
 
     fun sockets(): List<SocketSpec> = emptyList()
     fun areas(): List<AreaSpec> = emptyList()
+
+    /** The patches this block shows in a palette slot of their own. */
+    fun patchSlots(): List<PatchSlot> = emptyList()
 
     /** The stretch of the axis this block's run of slices covers, if it builds one. */
     fun run(): Span? = null

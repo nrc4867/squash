@@ -51,11 +51,10 @@ private fun SurfaceWork.anchors(): List<Anchor> =
 private fun Mark.anchors(): List<Anchor> = points + versions.values.flatMap { it.points }
 
 /**
- * Where [anchor] lands on this surface, or null when it holds no such patch or the patch has no rings to read u from. A u
- * past the patch's rings holds at its end ring.
+ * Where [anchor] lands on this surface, or null when it holds no such patch. A u past the patch's rings holds at its end ring.
  */
 fun PartSurface.pointAt(anchor: Anchor): ResolvedPoint? {
-    val patch = patches.firstOrNull { it.name == anchor.patch && it.slices != null } ?: return null
+    val patch = patches.firstOrNull { it.name == anchor.patch } ?: return null
     val normal = patch.surfaceAt(anchor.u, anchor.v).normal
     return ResolvedPoint(anchor, shown(patch.positionAt(anchor.u, anchor.v) + normal * anchor.offset), shown(normal))
 }
@@ -79,6 +78,8 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
     val marks = surface.marks.mapNotNull { checkCancelled(); resolveMark(it, point) }
     val kept = marks.mapTo(hashSetOf()) { it.id }
     return ResolvedSurfaceWork(
+        baseSlot = surface.baseSlot,
+        areaFills = surface.areaFills,
         marks = marks,
         groups = surface.groups.map { it.namingOnly(kept) },
         regions = surface.regions.mapNotNull { checkCancelled(); resolveRegion(it, point) },

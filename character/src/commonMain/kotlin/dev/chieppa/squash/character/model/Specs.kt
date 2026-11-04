@@ -25,5 +25,8 @@ data class SocketSpec(
 /** A patch a block builds: called [name], or `name:i` for each of a row when it [repeats]. */
 data class PatchName(val name: String, val repeats: Boolean = false)
 
+/** A patch, or every one of a row of patches, that a template shows in the palette slot named [slot]. */
+data class PatchSlot(val patch: String, val slot: String)
+
 /** A tagged surface region that weights and shading can read. */
 data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag)

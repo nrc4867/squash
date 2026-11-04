@@ -165,7 +165,7 @@ object SliceBuilder {
                 points[o++] = frame.center.z + side.z * across + frame.up.z * rise
             }
         }
-        return Patch(name, slices.size, segments, closedV = true, slices = slices, points = points)
+        return Patch(name, slices.size, segments, closedV = true, slices = slices, points = points, proxyNormals = proxyNormals(slices, segments))
     }
 
     /**

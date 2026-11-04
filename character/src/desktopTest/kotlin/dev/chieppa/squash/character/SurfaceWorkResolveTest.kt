@@ -180,11 +180,10 @@ class SurfaceWorkResolveTest {
         val good = onLeg(torsoPart)
         val noPart = Anchor(PartId("gone"), u = 0.5f, v = 0.5f)
         val noPatch = on(torsoPart, 0.5f, 0.5f, patch = "wing")
-        val noRings = on(paw, 0.5f, 0.5f, patch = "pad:palm")
         val eye = MarkGroupId("eye")
         val glad = ExpressionId("glad")
         val commands = listOf(
-            SetMark(torsoPart.id, MarkId("kept"), Mark(MarkId("kept"), listOf(good[0], noPart, good[1], noPatch, noRings), versions = mapOf(CameraBin("side") to MarkVersion(listOf(good[0], noPart))))),
+            SetMark(torsoPart.id, MarkId("kept"), Mark(MarkId("kept"), listOf(good[0], noPart, good[1], noPatch), versions = mapOf(CameraBin("side") to MarkVersion(listOf(good[0], noPart))))),
             SetMark(torsoPart.id, MarkId("lost"), line("lost", good[0], noPart)),
             SetMarkGroup(torsoPart.id, eye, MarkGroup(eye, "Eye", listOf(GroupRole(MarkRole.LID, marks = listOf(MarkId("lost"), MarkId("kept")))))),
             SetRegion(torsoPart.id, RegionId("kept"), Region(RegionId("kept"), good + noPatch, fur)),
@@ -196,12 +195,26 @@ class SurfaceWorkResolveTest {
         commands.forEach(session::send)
         session.settle()
 
-        assertNotNull(session.builtSurface(paw).patches.first { it.name == "pad:palm" }).let { assertNull(it.slices) }
         val node = session.surfaceWork(torsoPart.id)
         assertNull(node.failure.value)
         assertDangling(assertNotNull(node.output.value), good)
         assertNull(session.bodySurfaceWork.failure.value)
         assertDangling(assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(torsoPart.id)), good)
+    }
+
+    @Test
+    fun anAnchorOnAPadLandsOnItsGrid() = runTest {
+        val paw = PartInstance(PartId("paw-1"), templateRef("paw"), SocketRef(torsoPart.id, "neck"))
+        val session = surfaceSession(torsoPart, paw)
+        session.settle()
+        val pad = assertNotNull(session.builtSurface(paw).patches.first { it.name == "pad:palm" })
+        assertNull(pad.slices)
+        val anchors = listOf(on(paw, 0.5f, 0f, patch = pad.name), on(paw, 0.5f, 0.25f, patch = pad.name))
+        session.send(SetMark(paw.id, MarkId("on-pad"), Mark(MarkId("on-pad"), anchors)))
+        session.settle()
+        val points = assertNotNull(session.surfaceWork(paw.id).output.value).marks.single().points
+        assertEquals(anchors, points.map { it.anchor })
+        assertClose(pad.positionAt(0.5f, 0.25f), points[1].position)
     }
 
     private fun assertDangling(work: ResolvedSurfaceWork, good: List<Anchor>) {

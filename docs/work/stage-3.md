@@ -26,7 +26,7 @@ The orchestrator then:
 1. **Marks are anchors.** A stroke drawn on the surface from any camera, in Full first or a locked pane, is stored as anchors (part, patch, u, v, offset) through a command, never as positions. After an oversketch of the part, and after Update from library with a template of the same version, the stroke sits on the same place on the skin. A golden test holds the anchors fixed and checks the rendered positions follow the mesh.
 2. **Lines hold from any angle.** Silhouette lines thick, interior lines thin, a line where one part overlaps another, inked by default at sockets. The width tool stores weight on the surface, and the heavier stretch stays heavier as the camera orbits. Tapered strokes and silhouettes do not swim: a smoke test orbits the character through twelve frames and asserts stroke positions move with the surface and nothing flickers.
 3. **Fur follows the grain.** Fur strokes show where their area nears the silhouette, spaced on screen by the drawer's spacing, with the length and show-near controls of board 10. Each part has a default grain along its axis, outward on a ruff, and a comb tool overrides it. Tufts drawn into an outline remain outline work and need nothing here.
-4. **Color without textures.** Blocking out comes first: a character palette of named slots with defaults from the body plan, a base slot per part set by Fill on the part, the Parts tree swatch showing it, editing a slot recolouring every part and region that names it; no colour constant in code decides what a new character looks like. Then paint by brush and fill, a region border drawn as a curve on the surface for a crisp edge, a palette with the template's color slots (pad, nose, inner ear) and per-border ink toggles. A stroke or border crossing a socket continues onto the parent. Paired parts mirror paint, regions and marks by default. No image textures: color lives on the fixed grid and region borders in anchor space, and borders render crisp, not along triangle edges.
+4. **Color without textures.** Blocking out comes first: a character palette of named slots with defaults from the body plan, a base slot per part set by Fill on the part, the Parts tree swatch showing it, editing a slot recolouring every part and region that names it; no colour constant in code decides what a new character looks like. Then paint by brush and fill, a region border drawn as a curve on the surface for a crisp edge, a palette with the template's color slots (pad, nose, inner ear) and per-border ink toggles. A stroke or border crossing a socket continues onto the parent. Paired parts mirror paint, regions and marks by default. No image textures: color is vector shapes in anchor space cut to the mesh, and borders render crisp, not along triangle edges.
 5. **Two-tone falls as shapes.** Per object flat or two-tone, within limits a scene will later set. Two-tone shades from each slice's proxy normal, so a part's shadow is one clean shape, and far paired parts darken by side, switchable. Spike 6 passes on the fennec: crisp edges, clean shadows, flat and two-tone.
 6. **Eyes and mouths act.** An eye is a mark group with the seven roles, draw order and clipping, and per-eye open, expression blend, dilation and gaze offset. The highlight is camera-locked. A mouth is a mark group whose open control drives the jaw joint and a lip morph together. Angle versions switch with hysteresis. Spike 9 passes: with a test gaze target moved around in 3D and open run 1 to 0 and back, from side, three-quarter and front at two head pitches, gaze reads at every angle, pupils stay inside the lid region, both pupils show at three-quarter, blinks are smooth, nothing pops except at a version switch. Spike 7 passes on the same head: the three angle versions of one eye switch without swimming.
 7. **Expressions carry poses.** An expression set holds marks and a face pose. Ears back and ears forward are expressions on the fennec, and switching sets moves the ear joints.
@@ -36,10 +36,6 @@ The orchestrator then:
 ## How the sessions run
 
 One orchestrating session per sitting. Round 0 is serial and lands on `main` before anything fans out. Later rounds are branches in `.worktrees/`, one per row, landed by rebase, squash and fast-forward with `check` before each landing. The differences table in `docs/work/boards.md` is the list of open bugs; a branch removes each row it fixes. A session that needs a Stretch change lands it in the Stretch repo first and pushes it.
-
-### Round 0, serial
-
-- **Render seams**: a stroke ribbon pass (tapered, screen-space width from the line rules and the width tool), a region and paint pass that renders crisp borders in anchor space, and the two-tone shading with proxy normals and far-side darkening. Each behind a small interface in `render` so the branches below fill them in without touching each other's files.
 
 ### Round 1 opens with the look probe
 
@@ -86,7 +82,6 @@ Screenshots for the orchestrator come from Stretch's devtools endpoint, never fr
 ## Decisions the orchestrator makes and writes into the HLD
 
 - Camera bins for angle versions and the hysteresis width, as template data on the head or as a character setting.
-- Where the proxy normal frame is computed: it is already a field on `Slice` and is currently the frame rotation; two-tone needs the ellipse normal blended along the axis.
 
 ## Stretch
 

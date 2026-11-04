@@ -13,15 +13,15 @@ fun Patch.covers(u: Float): Boolean {
 
 private fun Patch.grid(ring: Int, segment: Int): Vec3 = point(index(ring, segment))
 
-/** The position at [u] and [v], interpolated over the grid. [u] is the part's, as this patch's slices give it. */
+/** The position at [u] and [v], interpolated over the grid. [u] is the patch's, as [Patch.ringUs] gives it. */
 fun Patch.positionAt(u: Float, v: Float): Vec3 {
-    val rings = requireNotNull(slices) { "Patch $name has no slices to place a point by" }
+    val rings = ringUs
     var ring = 0
-    while (ring < rings.size - 2 && rings[ring + 1].u < u) ring++
-    val span = rings[ring + 1].u - rings[ring].u
-    val t = if (span > 0f) ((u - rings[ring].u) / span).coerceIn(0f, 1f) else 0f
-    val around = (v - floor(v)) * nv
-    val segment = around.toInt().coerceAtMost(nv - 1)
+    while (ring < rings.size - 2 && rings[ring + 1] < u) ring++
+    val span = rings[ring + 1] - rings[ring]
+    val t = if (span > 0f) ((u - rings[ring]) / span).coerceIn(0f, 1f) else 0f
+    val around = if (closedV) (v - floor(v)) * nv else v.coerceIn(0f, 1f) * segments
+    val segment = around.toInt().coerceAtMost(segments - 1)
     val s = around - segment
     val next = (segment + 1) % nv
     val near = grid(ring, segment) + (grid(ring, next) - grid(ring, segment)) * s
@@ -34,13 +34,15 @@ fun Patch.positionAt(u: Float, v: Float): Vec3 {
  * off the end rings, where a pole has no normal.
  */
 fun Patch.surfaceAt(u: Float, v: Float): SurfacePoint {
-    val rings = requireNotNull(slices) { "Patch $name has no slices to place a point by" }
-    val first = rings.first().u
-    val last = rings.last().u
+    val rings = ringUs
+    val first = rings.first()
+    val last = rings.last()
     val cell = (last - first) / (rings.size - 1)
     val held = u.coerceIn(first + cell, last - cell)
-    val aroundCell = 1f / nv
+    val aroundCell = 1f / segments
+    val before = if (closedV) v - aroundCell else (v - aroundCell).coerceAtLeast(0f)
+    val after = if (closedV) v + aroundCell else (v + aroundCell).coerceAtMost(1f)
     val alongU = (positionAt(held + cell, v) - positionAt(held - cell, v)) * (0.5f / cell)
-    val aroundV = (positionAt(held, v + aroundCell) - positionAt(held, v - aroundCell)) * (0.5f / aroundCell)
+    val aroundV = (positionAt(held, after) - positionAt(held, before)) * (if (closedV) 0.5f / aroundCell else 1f / (after - before))
     return SurfacePoint(positionAt(held, v), (alongU cross aroundV).normalized(), alongU, aroundV)
 }

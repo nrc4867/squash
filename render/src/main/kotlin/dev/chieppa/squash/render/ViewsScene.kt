@@ -12,6 +12,8 @@ import java.util.IdentityHashMap
  */
 class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private val meshes = MeshPass(context)
+    private val colorLayers: ColorLayers = ColorLayerPass(context)
+    private val ribbons: StrokeRibbons = StrokeRibbonPass(context)
     private val uploaded = IdentityHashMap<RenderMesh, GpuMesh>()
     private var lastFrame: SceneFrame? = null
 
@@ -20,12 +22,19 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
         lastFrame = state
         val pass = frame.beginPass(state.background)
         var slot = 0
+        var layerSlot = 0
+        var ribbonSlot = 0
         for (view in state.views) {
             val area = view.viewport.clampedTo(frame.width, frame.height)
             if (area.isEmpty) continue
             pass.setViewport(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat())
             pass.setScissorRect(area.x, area.y, area.width, area.height)
-            for (draw in view.draws) meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
+            for (draw in view.draws) {
+                meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
+                if (draw.opacity < 1f) continue
+                for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer, draw, view)
+            }
+            for (ribbon in view.ribbons) ribbons.draw(pass, ribbonSlot++, ribbon, view)
         }
         pass.setViewport(0f, 0f, frame.width.toFloat(), frame.height.toFloat())
         pass.setScissorRect(0, 0, frame.width, frame.height)
@@ -37,14 +46,22 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private fun uploadedFor(mesh: RenderMesh): GpuMesh = uploaded.getOrPut(mesh) { GpuMesh(context, mesh) }
 
     private fun keepOnly(frame: SceneFrame) {
-        val wanted = frame.views.flatMap { view -> view.draws.map { it.mesh } }
-        val gone = uploaded.keys.filter { kept -> wanted.none { it === kept } }
-        gone.forEach { uploaded.remove(it)?.close() }
+        val wanted = IdentityHashMap<RenderMesh, Unit>()
+        for (view in frame.views) {
+            for (draw in view.draws) {
+                wanted[draw.mesh] = Unit
+                draw.layers.forEach { wanted[it.mesh] = Unit }
+            }
+        }
+        uploaded.keys.filter { it !in wanted }.forEach { uploaded.remove(it)?.close() }
+        ribbons.keepOnly(frame.views.flatMap { view -> view.ribbons.map { it.ribbon } })
     }
 
     override fun close() {
         uploaded.values.forEach { it.close() }
         uploaded.clear()
         meshes.close()
+        colorLayers.close()
+        ribbons.close()
     }
 }

@@ -1,6 +1,5 @@
 package dev.chieppa.squash.geom
 
-private const val POLE_TOLERANCE = 1e-6f
 private const val INDICES_PER_QUAD = 6
 
 /** The triangles of one patch over its grid, with every vertex's bone, u and v. A pole's triangles share one vertex. */
@@ -23,15 +22,15 @@ object MeshBuilder {
     fun build(patch: Patch, boneAt: (Float) -> Int): PatchMesh {
         val nu = patch.nu
         val nv = patch.nv
-        val ringU = FloatArray(nu) { patch.slices?.get(it)?.u ?: (it.toFloat() / (nu - 1)) }
+        val ringU = patch.ringUs
         val vertices = nu * nv
         val us = FloatArray(vertices) { ringU[it / nv] }
-        val vs = FloatArray(vertices) { (it % nv).toFloat() / (if (patch.closedV) nv else nv - 1) }
+        val vs = FloatArray(vertices) { (it % nv).toFloat() / patch.segments }
         val bones = IntArray(vertices) { boneAt(patch.boneU ?: us[it]) }
-        val pole = BooleanArray(nu) { isPole(patch, it) }
+        val pole = BooleanArray(nu) { patch.isPole(it) }
         fun vertex(ring: Int, segment: Int) = patch.index(ring, if (pole[ring]) 0 else segment)
 
-        val segmentCount = if (patch.closedV) nv else nv - 1
+        val segmentCount = patch.segments
         val indices = IntArray((nu - 1) * segmentCount * INDICES_PER_QUAD)
         var o = 0
         fun triangle(x: Int, y: Int, z: Int) {
@@ -51,10 +50,5 @@ object MeshBuilder {
             }
         }
         return PatchMesh(patch, indices.copyOf(o), bones, us, vs)
-    }
-
-    private fun isPole(patch: Patch, ring: Int): Boolean {
-        val first = patch.point(patch.index(ring, 0))
-        return (1 until patch.nv).all { (patch.point(patch.index(ring, it)) - first).length < POLE_TOLERANCE }
     }
 }

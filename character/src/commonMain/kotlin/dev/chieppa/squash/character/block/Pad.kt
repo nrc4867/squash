@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
+import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.geom.PadBuilder
 import dev.chieppa.squash.geom.Patch
 import kotlinx.serialization.SerialName
@@ -45,6 +46,8 @@ data class Pad(
     private val patchName get() = listOfNotNull(PATCH_PREFIX, name ?: on).joinToString(PATCH_SEPARATOR)
 
     override fun patchNames() = listOf(PatchName(patchName, repeats = on != null))
+
+    override fun patchSlots() = color?.let { listOf(PatchSlot(patchName, it)) } ?: emptyList()
 
     override fun build(ctx: BuildContext): List<Patch> {
         val own = patchName

@@ -25,6 +25,8 @@ private fun ResolvedSurfaceWork.placedBy(point: (ResolvedPoint) -> ResolvedPoint
     val placedMarks = marks.mapNotNull { it.placedBy(point) }
     val kept = placedMarks.mapTo(hashSetOf()) { it.id }
     return ResolvedSurfaceWork(
+        baseSlot = baseSlot,
+        areaFills = areaFills,
         marks = placedMarks,
         groups = groups.map { it.namingOnly(kept) },
         regions = regions.mapNotNull { region -> keptPoints(region.border, MIN_BORDER_POINTS, point)?.let { region.copy(border = it) } },

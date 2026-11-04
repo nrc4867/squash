@@ -9,6 +9,7 @@ data class Slice(
     val height: Float,
     val width: Float,
     val section: ClosedSpline,
+    /** The ring's shading frame: its section's axes turned to the axis's direction here. Proxy normals are built in it. */
     val proxyNormalFrame: Mat3,
 ) {
     /** The point of this ring at [v] around it, as a patch lofted from it holds it. */
@@ -21,7 +22,8 @@ data class Slice(
 /**
  * A named surface: a fixed grid of [nu] rings by [nv] points, closed in v for a tube and open for a sheet. A ring whose
  * points all coincide is a pole. [slices] is present for swept patches. [boneU] is the u along the part that every
- * vertex takes its bone from, for a patch whose own u does not run along the part.
+ * vertex takes its bone from, for a patch whose own u does not run along the part. [proxyNormals] holds a swept patch's
+ * shading normal per point, three values each, as the slice build derives them; a patch without them shades by its mesh normal.
  */
 class Patch(
     val name: String,
@@ -31,9 +33,22 @@ class Patch(
     val slices: List<Slice>?,
     val points: FloatArray,
     val boneU: Float? = null,
+    val proxyNormals: FloatArray? = null,
 ) {
     init {
         require(points.size == nu * nv * COMPONENTS) { "Patch $name holds ${points.size} values for a $nu by $nv grid" }
+    }
+
+    /** The u of each ring: its slice's, or evenly spaced from 0 to 1 on a patch with no slices. */
+    val ringUs: FloatArray by lazy { FloatArray(nu) { slices?.get(it)?.u ?: (it.toFloat() / (nu - 1)) } }
+
+    /** How many spans of grid run around v: the wrap to the first point counts on a closed patch. */
+    val segments: Int get() = if (closedV) nv else nv - 1
+
+    /** Whether the points of [ring] all coincide. */
+    fun isPole(ring: Int): Boolean {
+        val first = point(index(ring, 0))
+        return (1 until nv).all { (point(index(ring, it)) - first).length < POLE_TOLERANCE }
     }
 
     fun index(ring: Int, segment: Int): Int = ring * nv + segment
@@ -49,5 +64,6 @@ class Patch(
 
     companion object {
         const val COMPONENTS = 3
+        private const val POLE_TOLERANCE = 1e-6f
     }
 }
