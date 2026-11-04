@@ -21,6 +21,11 @@ import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
 import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
 import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
+import dev.chieppa.squash.screens.surface.LineTools
+import dev.chieppa.squash.screens.surface.rememberLineWidthTool
+import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
+import dev.chieppa.squash.screens.surface.rememberSurfaceLines
+import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit_ends
@@ -46,6 +51,15 @@ fun WorkspaceScreen(shell: Shell) {
     val fill = rememberFillTool(state)
     val brush = rememberBrushTool(state)
     val pick = rememberPickColorTool(state)
+    val lineWidth = rememberLineWidthTool(state)
+    val surfaceStroke = rememberSurfaceStrokeTool(state)
+    val surfaceErase = rememberSurfaceEraseTool(state)
+    val linesOpen = shell.showsLineTools
+    LaunchedEffect(linesOpen) {
+        val tool = state.tool.value
+        if (linesOpen && !tool.inks) state.tool.value = BuildTool.LINE_WIDTH
+        if (!linesOpen && tool.inks) state.tool.value = BuildTool.DRAW_OUTLINE
+    }
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
@@ -57,6 +71,9 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.FILL -> fill
         BuildTool.BRUSH -> brush
         BuildTool.PICK_COLOR -> pick
+        BuildTool.LINE_WIDTH -> lineWidth
+        BuildTool.SURFACE_STROKE -> surfaceStroke
+        BuildTool.SURFACE_ERASE -> surfaceErase
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()
@@ -68,9 +85,10 @@ fun WorkspaceScreen(shell: Shell) {
     SheetPanes(
         state,
         Modifier.fillMaxSize(),
-        tools = { WorkspaceTools(state) },
+        tools = { WorkspaceTools(state) { LineTools(state) } },
         tool = tool,
         paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
+        surface = rememberSurfaceLines(state),
     )
 }
 

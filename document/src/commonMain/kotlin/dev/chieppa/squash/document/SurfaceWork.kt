@@ -16,12 +16,14 @@ data class SurfaceWork(
     val groups: List<MarkGroup> = emptyList(),
     val regions: List<Region> = emptyList(),
     val paint: Paint = Paint(),
+    val lineWeights: List<LineWeight> = emptyList(),
 ) {
     init {
         requireUniqueIds("mark", marks.map { it.id.value })
         requireUniqueIds("mark group", groups.map { it.id.value })
         requireUniqueIds("region", regions.map { it.id.value })
         requireUniqueIds("brush stroke", paint.strokes.map { it.id.value })
+        requireUniqueIds("line weight", lineWeights.map { it.id.value })
     }
 
     /** This work, with [overrides] replacing what it names. An item it does not hold goes after the ones this holds. */
@@ -33,12 +35,14 @@ data class SurfaceWork(
         groups = groups.overlaidWith(overrides.groups) { it.id },
         regions = regions.overlaidWith(overrides.regions) { it.id },
         paint = Paint(paint.strokes.overlaidWith(overrides.paint.strokes) { it.id }),
+        lineWeights = lineWeights.overlaidWith(overrides.lineWeights) { it.id },
     )
 
     internal fun mapAnchors(transform: (Anchor) -> Anchor): SurfaceWork = copy(
         marks = marks.map { it.mapAnchors(transform) },
         regions = regions.map { it.mapAnchors(transform) },
         paint = Paint(paint.strokes.map { it.mapAnchors(transform) }),
+        lineWeights = lineWeights.map { it.mapAnchors(transform) },
     )
 }
 

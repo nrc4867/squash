@@ -5,7 +5,9 @@ import dev.chieppa.squash.document.BrushStroke
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.ExpressionId
 import dev.chieppa.squash.document.MIN_BORDER_POINTS
+import dev.chieppa.squash.document.LineWeight
 import dev.chieppa.squash.document.MIN_MARK_POINTS
+import dev.chieppa.squash.document.MIN_WEIGHT_POINTS
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkGroupId
@@ -46,7 +48,7 @@ fun surfaceWorkInput(character: Character, part: PartId): SurfaceWorkInput {
 }
 
 private fun SurfaceWork.anchors(): List<Anchor> =
-    marks.flatMap { it.anchors() } + regions.flatMap { it.border } + paint.strokes.flatMap { it.points }
+    marks.flatMap { it.anchors() } + regions.flatMap { it.border } + paint.strokes.flatMap { it.points } + lineWeights.flatMap { it.points }
 
 private fun Mark.anchors(): List<Anchor> = points + versions.values.flatMap { it.points }
 
@@ -90,6 +92,7 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
             }
             ResolvedExpression(set.id, set.name, groups)
         },
+        lineWeights = surface.lineWeights.mapNotNull { checkCancelled(); resolveWeight(it, point) },
     )
 }
 
@@ -100,6 +103,9 @@ private fun resolveMark(mark: Mark, point: (Anchor) -> ResolvedPoint?): Resolved
     }.toMap()
     return ResolvedMark(mark.id, points, mark.width, mark.ink, mark.cameraLocked, versions)
 }
+
+private fun resolveWeight(weight: LineWeight, point: (Anchor) -> ResolvedPoint?): ResolvedLineWeight? =
+    keptPoints(weight.points, MIN_WEIGHT_POINTS, point)?.let { ResolvedLineWeight(weight.id, it, weight.radius, weight.amount) }
 
 private fun resolveRegion(region: Region, point: (Anchor) -> ResolvedPoint?): ResolvedRegion? =
     keptPoints(region.border, MIN_BORDER_POINTS, point)?.let { ResolvedRegion(region.id, it, region.slot, region.ink) }

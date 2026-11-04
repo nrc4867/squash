@@ -320,8 +320,8 @@ class ShellFlowTest {
     fun theRailHoldsWhatTheBoardsDrawAndWhatIsNotBuiltDoesNotOpen() = runComposeUiTest {
         val state = AppState(shipped)
         createCharacter(state)
-        for (name in listOf("Parts", "Part types", "History", "Help", "Part", "Color")) onNodeWithContentDescription(name).assertIsEnabled()
-        for (name in listOf("References", "Rig", "Slots", "Lines", "Marks")) onNodeWithContentDescription(name).assertIsNotEnabled()
+        for (name in listOf("Parts", "Part types", "History", "Help", "Part", "Color", "Lines", "Marks")) onNodeWithContentDescription(name).assertIsEnabled()
+        for (name in listOf("References", "Rig", "Slots")) onNodeWithContentDescription(name).assertIsNotEnabled()
     }
 
     @Test

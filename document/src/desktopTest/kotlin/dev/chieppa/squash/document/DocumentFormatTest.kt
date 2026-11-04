@@ -12,6 +12,7 @@ class DocumentFormatTest {
     private val formatOne = File("src/desktopTest/fixtures/format-1.json").readText()
     private val formatTwo = File("src/desktopTest/fixtures/format-2.json").readText()
     private val formatThree = File("src/desktopTest/fixtures/format-3.json").readText()
+    private val formatFour = File("src/desktopTest/fixtures/format-4.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
 
     @Test
@@ -47,6 +48,18 @@ class DocumentFormatTest {
         assertEquals(setOf("sock", "knee"), strokes.getValue("leg-r").map { it.id.value }.toSet(), "a side's override")
         assertEquals(0.08f, strokes.getValue("torso-1").single().radius)
         assertTrue(strokes.values.flatten().all { it.softness == 0f })
+    }
+
+    @Test
+    fun aFormatFourSaveReadsWithNoLineWeightsAndTheDefaultRules() {
+        val document = readDocument(formatFour)
+        assertEquals(DOCUMENT_FORMAT, document.format)
+        val character = document.character
+        assertEquals(LineRules(), character.lineRules)
+        assertEquals(CharacterShading(ShadingMode.TWO_TONE, farSideDarker = false), character.shading)
+        assertEquals(0.4f, character.resolved(PartId("torso-1"))?.surface?.paint?.strokes?.single()?.softness)
+        assertTrue(character.parts.all { character.resolved(it).surface.lineWeights.isEmpty() })
+        assertEquals(document, readDocument(Json.encodeToString(SquashDocument.serializer(), document)))
     }
 
     @Test

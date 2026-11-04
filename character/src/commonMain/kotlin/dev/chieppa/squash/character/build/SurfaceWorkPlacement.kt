@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.MIN_BORDER_POINTS
 import dev.chieppa.squash.document.MIN_MARK_POINTS
+import dev.chieppa.squash.document.MIN_WEIGHT_POINTS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
 
@@ -34,6 +35,7 @@ private fun ResolvedSurfaceWork.placedBy(point: (ResolvedPoint) -> ResolvedPoint
         expressions = expressions.map { set ->
             set.copy(marks = set.marks.mapValues { (_, roles) -> roles.mapValues { (_, held) -> held.mapNotNull { it.placedBy(point) } } })
         },
+        lineWeights = lineWeights.mapNotNull { weight -> keptPoints(weight.points, MIN_WEIGHT_POINTS, point)?.let { weight.copy(points = it) } },
     )
 }
 

@@ -96,7 +96,7 @@ internal class StrokeRibbonPass(context: GpuContext) : StrokeRibbons {
         val rule = draw.rule
         val values = floatArrayOf(
             draw.color.red, draw.color.green, draw.color.blue, draw.color.alpha,
-            rule.interiorPixels, rule.silhouettePixels, rule.silhouetteBand, 0f,
+            rule.interiorPixels, rule.silhouettePixels, rule.silhouetteBand, draw.lift,
             view.viewport.width.toFloat(), view.viewport.height.toFloat(), draw.layer.scale, draw.layer.offset,
         )
         values.copyInto(data, 2 * MATRIX_FLOATS)

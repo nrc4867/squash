@@ -17,7 +17,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.screens.fennec.BIN_FRONT
 import dev.chieppa.squash.screens.fennec.BIN_SIDE
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
-import dev.chieppa.squash.screens.fennec.FUR_MARK_PREFIX
+import dev.chieppa.squash.document.FUR_MARK_PREFIX
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument

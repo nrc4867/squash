@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.character.build.AssemblyShape
 import dev.chieppa.squash.character.build.BodyColor
+import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.ColorSource
 import dev.chieppa.squash.character.build.HeldColor
@@ -16,6 +17,7 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assemblyNode
 import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.build.bodyColorNode
+import dev.chieppa.squash.character.build.bodyLinesNode
 import dev.chieppa.squash.character.build.bodySurfaceWorkNode
 import dev.chieppa.squash.character.build.defaultSurfaceNode
 import dev.chieppa.squash.character.build.partColorInputs
@@ -87,6 +89,12 @@ class CharacterSession(
         assembly,
         ::surfaceWork,
     )
+
+    /**
+     * The character as its lines read it: what a view finds its contours and creases in and a surface tool picks on. Made with the
+     * session, so [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending.
+     */
+    val bodyLines: Node<*, BodyLines> = graph.bodyLinesNode(assembly, bodySurfaceWork)
 
     /**
      * Every part's color, cut to the mesh in each part's surface space. Made with the session, so [Graph.settled] covers it from

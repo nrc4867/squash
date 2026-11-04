@@ -101,7 +101,7 @@ class LockedCamera(
     val origin: Vec3 = Vec3.ZERO,
     val drawingScale: Float = 1f,
     val lengthFactor: Float = 1f,
-) {
+) : SurfaceView {
     val basis: ViewBasis = axes.basis(view)
     private val pane = PaneCamera(basis.screenRight, basis.screenUp, fit, width, height)
 
@@ -134,7 +134,13 @@ class LockedCamera(
     fun toWorld(pixel: Offset): Vec3 = toWorld(toPlane(pixel))
 
     /** The pane pixel showing [point], a point in body space. */
-    fun toPixel(point: Vec3): Offset = pane.toPixel(point)
+    override fun toPixel(point: Vec3): Offset = pane.toPixel(point)
+
+    override fun toViewer(point: Vec3): Vec3 = basis.back
+
+    override fun depthOf(point: Vec3): Float = -(point dot basis.back)
+
+    override fun pixelsPerUnitAt(point: Vec3): Float = fit.pixelsPerUnit
 
     /** The camera as a matrix for this pane's viewport. */
     fun viewProjection(): Mat4 = pane.viewProjection()

@@ -20,7 +20,7 @@ private const val SURFACE_KEY = "surface"
 private const val GRAIN_KEY = "grain"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -37,6 +37,9 @@ fun readDocument(text: String): SquashDocument {
     }
     return Json.decodeFromJsonElement(SquashDocument.serializer(), saved)
 }
+
+/** Format 4 to 5: surface work gains line weights and a character line rules. A save without them has none and the default rules. */
+private fun lineWeightsOnSurfaceWork(document: JsonObject): JsonObject = document
 
 /** Format 3 to 4: a character gains a shading choice and a palette slot a shadow tone. Absent, they read as flat and as the warm default. */
 private fun shadingOnCharacter(document: JsonObject): JsonObject = document

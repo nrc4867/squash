@@ -1,8 +1,9 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.surface.areaAt
+import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.character.build.LandedCut
 import dev.chieppa.squash.character.build.ShapeSource
-import dev.chieppa.squash.character.build.partColorInput
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
@@ -83,18 +84,10 @@ fun CharacterSession.sectionAt(hit: SurfaceHit, reach: FillReach): Section {
         else -> Unit
     }
     if (reach == FillReach.AREA) {
-        val areas = partColorInput(document.value.character, hit.part, templates).areas
-        val area = areas.lastOrNull { area ->
-            val onPatch = hit.patch == area.patch || hit.patch.startsWith(area.patch + PATCH_SEPARATOR)
-            val around = hit.v in area.v.start..area.vEnd || hit.v + 1f in area.v.start..area.vEnd
-            onPatch && around && hit.u in area.u.start..area.u.end
-        }
-        if (area != null) return Section.Named(hit.part, area.name)
+        areaAt(document.value.character, templates, hit.anchor)?.let { return Section.Named(hit.part, it) }
     }
     return Section.Base(hit.part)
 }
-
-private const val PATCH_SEPARATOR = ":"
 
 /** The command coloring [section] with [slot], writing this side alone with [thisSide], or null when the document holds no such section. */
 fun CharacterSession.fillCommand(section: Section, slot: SlotName, thisSide: Boolean): DocumentCommand? {

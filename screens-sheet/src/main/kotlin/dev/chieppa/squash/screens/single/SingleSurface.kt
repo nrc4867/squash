@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.single
 
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +30,7 @@ import dev.chieppa.squash.screens.sheet.PreviewPlaces
 import dev.chieppa.squash.screens.sheet.ShadingPreviewTiles
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.largestColorScale
+import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.paneDisagreements
 import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.rememberOutlineLook
@@ -39,7 +44,7 @@ import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.orbitNavigation
 
 /**
- * The Single layout: one large viewport with [tools] and Snap view floating top-left, the HUD top-right and the thumbnails
+ * The Single layout: one large viewport with [tools], scrolling where they run out of room, and Snap view always whole floating top-left, the HUD top-right and the thumbnails
  * bottom-left, a toast at its foot and the fit's progress bottom-right while the graph works. The camera orbits freely and
  * [tool] takes the pointer only while it is snapped to a view.
  */
@@ -50,6 +55,7 @@ internal fun SingleSurface(
     tools: @Composable RowScope.() -> Unit,
     paneToast: (@Composable () -> Unit)?,
     modifier: Modifier,
+    surface: SurfaceRibbons? = null,
 ) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
@@ -86,9 +92,11 @@ internal fun SingleSurface(
             locked = locked,
             free = camera.orbit.view,
             toolOverlay = overlay,
+            freeOverlay = tool?.takeIf { it.takesFreeCamera && locked == null }?.fullOverlay(free) ?: ViewportOverlay.Empty,
             hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true),
             color = color,
             previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
+            surface = surface,
         ),
     )
     val fitting = rememberFitting(state)
@@ -100,7 +108,7 @@ internal fun SingleSurface(
             nativeContent = true,
             topStart = {
                 Toolbar(Modifier.testTag(SingleTags.TOOLBAR)) {
-                    tools()
+                    Row(Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically, content = tools)
                     ToolbarSeparator()
                     SnapViewControl(direction) { body -> part?.let { camera.snapTo(it.axes.framing.getValue(body), it.axes) } }
                 }

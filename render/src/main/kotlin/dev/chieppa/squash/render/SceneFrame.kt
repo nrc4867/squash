@@ -39,6 +39,9 @@ data class PixelRect(val x: Int, val y: Int, val width: Int, val height: Int) {
 /** Which slice of the depth buffer a draw uses, so a whole layer stays behind or in front of another wherever its parts lie. */
 enum class DepthLayer(val scale: Float, val offset: Float) {
     FRONT(0.1f, 0f),
+
+    /** Behind all of [FRONT] and before all of [SCENE], so what a layer outlines clears it and shows over the rest. */
+    BEHIND_FRONT(0f, 0.1f),
     SCENE(0.8f, 0.1f),
     BACK(0.1f, 0.9f),
 }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.ResolvedPoint
+import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.SlotName
@@ -46,14 +47,16 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
     return coloredPartDraw(part.mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline).copy(opacity = opacity, layer = layer)
 }
 
-/** Every inked border as a ribbon in the character's ink, closed on itself, or nothing with no [PaneColor]. */
+/** The ribbon along each border this surface work inks, closed on itself. */
+fun ResolvedSurfaceWork.inkedBorders(): List<StrokeRibbon> =
+    regions.filter { it.ink }.mapNotNull { StrokeRibbon.along(closedCurve(it.border), markProfile(EVEN_WIDTH)) }
+
+/** Every inked border as a ribbon in the character's ink, or nothing with no [PaneColor]. */
 fun SheetLook.borderRibbons(color: PaneColor?): List<RibbonDraw> {
     val work = color?.borders ?: return emptyList()
     val rule = LineRule(ghostOutline)
     val ink = color.palette.colorOf(INK_SLOT) ?: part.ink
-    return work.parts.values.flatMap { it.regions }.filter { it.ink }.mapNotNull { region ->
-        StrokeRibbon.along(closedCurve(region.border), markProfile(EVEN_WIDTH))?.let { RibbonDraw(it, rule, ink) }
-    }
+    return work.parts.values.flatMap { it.inkedBorders() }.map { RibbonDraw(it, rule, ink) }
 }
 
 /** A smooth closed curve through [points], which meets the mesh's own curve through them closely enough for a line drawn on it. */

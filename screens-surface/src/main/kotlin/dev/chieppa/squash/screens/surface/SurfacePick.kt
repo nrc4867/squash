@@ -1,5 +1,8 @@
-package dev.chieppa.squash.screens.surface.paint
+package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.character.build.partColorInput
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
@@ -7,40 +10,25 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.screens.sheet.FullView
-import dev.chieppa.squash.screens.sheet.LockedCamera
-
-/** How a pane shows body space to a tool on the surface. */
-interface PaneSight {
-    /** The pane pixel showing [point], or null behind the camera. */
-    fun toPixel(point: Vec3): Offset?
-
-    /** How far from the viewer [point] lies; a nearer point is less. */
-    fun depthOf(point: Vec3): Float
-
-    /** How many pixels a body unit spans at [point]. */
-    fun pixelsPerUnitAt(point: Vec3): Float
-}
-
-class LockedSight(private val camera: LockedCamera) : PaneSight {
-    override fun toPixel(point: Vec3): Offset = camera.toPixel(point)
-    override fun depthOf(point: Vec3): Float = -(point dot camera.basis.back)
-    override fun pixelsPerUnitAt(point: Vec3): Float = camera.fit.pixelsPerUnit
-}
-
-class FullSight(private val view: FullView) : PaneSight {
-    override fun toPixel(point: Vec3): Offset? = view.toPixel(point)
-    override fun depthOf(point: Vec3): Float = view.depthOf(point)
-    override fun pixelsPerUnitAt(point: Vec3): Float = view.pixelsPerUnitAt(point)
-}
+import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /** The place on the character under a pixel: which part and patch, its u and v there, and where it lies in body space. */
 data class SurfaceHit(val part: PartId, val patch: String, val u: Float, val v: Float, val position: Vec3) {
     val anchor: Anchor get() = Anchor(part, patch, u, v)
 }
 
+private const val PATCH_SEPARATOR = ":"
+
+/** The name of the template area [anchor] lies in, the last named there as it overdraws the rest, or null outside them all. */
+fun areaAt(character: Character, templates: TemplateLibrary, anchor: Anchor): String? =
+    partColorInput(character, anchor.part, templates).areas.lastOrNull { area ->
+        val onPatch = anchor.patch == area.patch || anchor.patch.startsWith(area.patch + PATCH_SEPARATOR)
+        val around = anchor.v in area.v.start..area.vEnd || anchor.v + 1f in area.v.start..area.vEnd
+        onPatch && around && anchor.u in area.u.start..area.u.end
+    }?.name
+
 /** The nearest place on any placed part of [character] showing at [pixel], or null where none does. */
-fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: PaneSight): SurfaceHit? {
+fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView): SurfaceHit? {
     var best: SurfaceHit? = null
     var nearest = Float.POSITIVE_INFINITY
     for (part in character.parts) {
@@ -56,7 +44,7 @@ fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: PaneSight): 
 }
 
 /** The nearest place of [patch] at [pixel] nearer than [limit], with its depth. */
-private fun hitOn(part: PlacedPart, id: PartId, patch: Patch, pixel: Offset, sight: PaneSight, limit: Float): Pair<SurfaceHit, Float>? {
+private fun hitOn(part: PlacedPart, id: PartId, patch: Patch, pixel: Offset, sight: SurfaceView, limit: Float): Pair<SurfaceHit, Float>? {
     val columns = patch.segments
     val projected = arrayOfNulls<Offset>(patch.nu * patch.nv)
     val placed = arrayOfNulls<Vec3>(patch.nu * patch.nv)

@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.sheet.SurfaceView
+import dev.chieppa.squash.screens.surface.SurfaceTool
+import dev.chieppa.squash.screens.surface.SurfaceHit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
@@ -45,7 +48,7 @@ private const val REGION_ID_PREFIX = "border-"
 class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceTool(state) {
     private val drawn = mutableStateListOf<SurfaceHit>()
 
-    override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: PaneSight) {
+    override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
         drawn.clear()
@@ -73,7 +76,7 @@ class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceT
         }
     }
 
-    override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: PaneSight): Boolean {
+    override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean {
         val session = state.session.value ?: return false
         val picked = state.paint.selectedRegion ?: return false
         val shown = pointsOf(picked) ?: return false
@@ -101,11 +104,11 @@ class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceT
     private fun pointsOf(picked: RegionRef) =
         state.session.value?.bodySurfaceWork?.output?.value?.parts?.get(picked.part)?.regions?.firstOrNull { it.id == picked.id }?.border
 
-    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = shown(LockedSight(camera))
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = shown(camera)
 
-    override fun fullOverlay(view: FullView): ViewportOverlay = shown(FullSight(view))
+    override fun fullOverlay(view: FullView): ViewportOverlay = shown(view)
 
-    private fun shown(sight: PaneSight): ViewportOverlay = buildOverlay {
+    private fun shown(sight: SurfaceView): ViewportOverlay = buildOverlay {
         drawn.mapNotNull { sight.toPixel(it.position) }.zipWithNext().forEach { (a, b) -> line(a, b, look.ring, look.ringWidth) }
         val picked = state.paint.selectedRegion ?: return@buildOverlay
         pointsOf(picked).orEmpty().forEach { point ->
@@ -124,7 +127,7 @@ private fun nextRegionId(document: SquashDocument, part: PartId): RegionId {
 }
 
 /** The places of [drawn] a border keeps, each stretch on one surface thinned alone, so the places either side of a crossing stay. */
-private fun keptAcross(drawn: List<SurfaceHit>, sight: PaneSight): List<SurfaceHit> {
+private fun keptAcross(drawn: List<SurfaceHit>, sight: SurfaceView): List<SurfaceHit> {
     val stretches = ArrayList<MutableList<SurfaceHit>>()
     for (hit in drawn) {
         val last = stretches.lastOrNull()?.last()

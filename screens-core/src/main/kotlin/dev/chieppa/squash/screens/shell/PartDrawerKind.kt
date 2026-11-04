@@ -10,7 +10,7 @@ enum class PartDrawerKind { PART, OUTLINE, OUTLINE_CURVES, SPINE_WIDTH, SMOOTH, 
  * and Move.
  */
 fun partDrawerKind(tool: BuildTool, hasPart: Boolean, drawn: Boolean): PartDrawerKind = when {
-    tool == BuildTool.NONE || tool.paints -> PartDrawerKind.PART
+    tool == BuildTool.NONE || tool.paints || tool.inks -> PartDrawerKind.PART
     hasPart && tool == BuildTool.SPINE_WIDTH -> PartDrawerKind.SPINE_WIDTH
     hasPart && tool == BuildTool.SMOOTH -> PartDrawerKind.SMOOTH
     hasPart && tool == BuildTool.MOVE -> PartDrawerKind.MOVE

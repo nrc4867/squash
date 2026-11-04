@@ -4,8 +4,10 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.PixelRect
+import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
+import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.ShadingPreview
@@ -13,12 +15,14 @@ import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.borderRibbons
+import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.clippedTo
 import dev.chieppa.squash.screens.sheet.colored
 import dev.chieppa.squash.screens.sheet.fullGround
 import dev.chieppa.squash.screens.sheet.lockedDraws
 import dev.chieppa.squash.screens.sheet.lockedOverlay
 import dev.chieppa.squash.screens.sheet.previewViews
+import dev.chieppa.squash.screens.sheet.lockedRibbons
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.squash.screens.sheet.toRect
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -36,6 +40,8 @@ class SingleInput(
     val hints: SheetHints = SheetHints(),
     val color: PaneColor? = null,
     val previews: List<ShadingPreview> = emptyList(),
+    val surface: SurfaceRibbons? = null,
+    val freeOverlay: ViewportOverlay = ViewportOverlay.Empty,
 )
 
 /**
@@ -48,14 +54,23 @@ fun singleFrame(input: SingleInput): SceneFrame {
     val locked = input.locked
     if (locked != null) {
         val body = selection.part.axes.bodyViewOf(locked.view)
-        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color)
+        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, input.surface != null)
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val previews = previewViews(input.previews, selection, input.free, input.look, input.color)
-        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, input.look.borderRibbons(input.color))) + previews, overlay.clippedTo(rect.toRect()))
+        val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface)
+        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons)) + previews, overlay.clippedTo(rect.toRect()))
     }
     val free = input.free ?: return SceneFrame(input.look.well)
-    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input), input.look.borderRibbons(input.color))
-    return SceneFrame(input.look.well, listOf(shown) + previewViews(input.previews, selection, free, input.look, input.color))
+    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input), freeRibbons(selection, free, rect, input))
+    return SceneFrame(input.look.well, listOf(shown) + previewViews(input.previews, selection, free, input.look, input.color), input.freeOverlay.clippedTo(rect.toRect()))
+}
+
+/** The lines through the free [camera]: the whole figure's when the hints show it whole, else the selection's. */
+private fun freeRibbons(selection: SheetSelection, camera: CameraView, rect: PixelRect, input: SingleInput): List<RibbonDraw> {
+    val surface = input.surface ?: return input.look.borderRibbons(input.color)
+    val view = FullView({ camera }, input.width, input.height)
+    if (input.hints.whole) return surface.whole(view, rect)
+    return selection.part.id?.let { surface.selected(it, view) }.orEmpty()
 }
 
 /** Furthest ghost first, so a nearer one blends over it. */
@@ -63,11 +78,12 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val look = input.look
     add(fullGround(selection, look))
     val toCamera = Vec3(camera.eye.x, camera.eye.y, camera.eye.z) - selection.box.center
+    val outline = if (input.surface != null) 0f else look.lockedOutline
     if (input.hints.whole) {
-        (selection.others + selection.part).filter { !it.planned }.forEach { add(look.colored(it, input.color, toCamera, look.lockedOutline)) }
+        (selection.others + selection.part).filter { !it.planned }.forEach { add(look.colored(it, input.color, toCamera, outline)) }
         return@buildList
     }
-    add(look.colored(selection.part, input.color, toCamera, look.lockedOutline, layer = DepthLayer.FRONT))
+    add(look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT))
     if (input.hints.ghost > 0f) {
         selection.others
             .sortedByDescending { (it.center.toGpu() - camera.eye).length }

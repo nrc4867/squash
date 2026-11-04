@@ -36,14 +36,21 @@ private val TOOL_SIZE = 34.dp
 
 /**
  * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn, Spine and width, Edit curves,
- * Erase, Smooth and Move, then Mirror, which only a paired part has any use for, Half outline and Start from template, then the paint tools. With a paint
- * tool armed the strip holds the paint tools and Mirror alone, as the Color board draws it. Pressing the armed tool disarms it.
+ * Erase, Smooth and Move, then Mirror, which only a paired part has any use for, Half outline and Start from template, then the paint tools and
+ * [lineTools]. With a paint or line tool armed the strip holds those tools and Mirror alone, as the Color and Lines boards draw it. Pressing the armed
+ * tool disarms it.
  */
 @Composable
-fun WorkspaceTools(state: AppState) {
+fun WorkspaceTools(state: AppState, lineTools: @Composable () -> Unit = {}) {
     val tool by state.tool.collectAsState()
     if (tool.paints) {
         PaintTools(tool, state)
+        ToolbarSeparator()
+        MirrorButton(state)
+        return
+    }
+    if (tool.inks) {
+        lineTools()
         ToolbarSeparator()
         MirrorButton(state)
         return
@@ -71,6 +78,8 @@ fun WorkspaceTools(state: AppState) {
     StartFromTemplateButton(state)
     ToolbarSeparator()
     PaintTools(tool, state)
+    ToolbarSeparator()
+    lineTools()
 }
 
 @Composable

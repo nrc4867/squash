@@ -3,10 +3,10 @@ package dev.chieppa.squash.screens.smoke
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.character.build.TemplateLibrary
-import dev.chieppa.squash.character.build.socketCreases
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CameraBin
+import dev.chieppa.squash.document.isFur
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.ObjectShading
@@ -21,7 +21,6 @@ import dev.chieppa.squash.screens.fennec.EAR_L
 import dev.chieppa.squash.screens.fennec.EAR_R
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.FRONT_PAW_L
-import dev.chieppa.squash.screens.fennec.FUR_MARK_PREFIX
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.INK
 import dev.chieppa.squash.screens.fennec.fennecCommands
@@ -88,8 +87,8 @@ internal fun CharacterSession.probeState(): CharacterState {
         assertNotNull(bodyColor.output.value),
         assertNotNull(bodySurfaceWork.output.value),
         document.value.character.palette,
-        socketCreases(character),
-        isFur = { mark: ResolvedMark -> mark.id.value.startsWith(FUR_MARK_PREFIX) },
+        assertNotNull(bodyLines.output.value),
+        isFur = { mark: ResolvedMark -> mark.id.isFur },
     )
 }
 
@@ -127,7 +126,8 @@ class LookProbeSmokeTest {
         val floor = state.character.floor
         val paw = assertNotNull(state.character.part(FRONT_PAW_L)?.box)
         assertTrue(paw.low.y - floor < 0.02f, "the paws stand on one ground: ${paw.low.y} and $floor")
-        assertTrue(state.creases.size >= parts.size - 1, "every part meets its parent in a crease: ${state.creases.map { it.part.value }}")
+        val creased = state.lines.parts.values.filter { it.crease.isNotEmpty() }
+        assertTrue(creased.size >= parts.size - 1, "every part meets its parent in a crease: ${creased.map { it.part.id?.value }}")
         val head = parts.filter { it.id == HEAD || it.id == EAR_L || it.id == EAR_R }
         val rect = PixelRect(0, 0, WIDTH, HEIGHT)
         for ((viewName, toViewer) in VIEWS) {

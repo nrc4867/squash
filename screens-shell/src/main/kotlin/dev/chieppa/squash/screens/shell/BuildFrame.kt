@@ -143,7 +143,9 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         comingDrawer(DrawerIds.RIG, Res.string.shell_drawer_rig, SquashIcons.Rig),
         comingDrawer(DrawerIds.SLOTS, Res.string.shell_drawer_slots, SquashIcons.Slots),
         DrawerSpec(DrawerIds.COLOR, stringResource(Res.string.shell_drawer_color), SquashIcons.Color) { shell.content.colorDrawer(state, open) },
-        comingDrawer(DrawerIds.LINES, Res.string.shell_drawer_lines, SquashIcons.Lines),
-        comingDrawer(DrawerIds.MARKS, Res.string.shell_drawer_marks, SquashIcons.Marks),
+        DrawerSpec(DrawerIds.LINES, stringResource(Res.string.shell_drawer_lines), SquashIcons.Lines) { shell.content.linesDrawer(state) },
+        DrawerSpec(DrawerIds.MARKS, stringResource(Res.string.shell_drawer_marks), SquashIcons.Marks) {
+            shell.content.marksDrawer(state) { shell.layout = shell.layout.open(DrawerIds.LINES) }
+        },
     )
 }

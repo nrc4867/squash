@@ -14,7 +14,8 @@ import dev.chieppa.squash.render.StrokeRibbon
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.screens.sheet.markProfile
 
-private val EVEN = requireNotNull(dragProfile(listOf(WidthSample(0f, 1f), WidthSample(1f, 1f)), fromPlane = false))
+/** One weight from end to end. */
+val EVEN_WEIGHT = requireNotNull(dragProfile(listOf(WidthSample(0f, 1f), WidthSample(1f, 1f)), fromPlane = false))
 
 /** This mark's places in [bin]. */
 fun ResolvedMark.pointsIn(bin: CameraBin): List<ResolvedPoint> = versions[bin]?.points ?: points
@@ -27,7 +28,7 @@ fun ribbonThrough(points: List<ResolvedPoint>, profile: WidthProfile, rule: Line
     StrokeRibbon.along(points.map { RibbonPoint(it.position, it.normal) }, profile)?.let { RibbonDraw(it, rule, color) }
 
 /** A ribbon of one weight along [points]. */
-fun evenRibbon(points: List<ResolvedPoint>, rule: LineRule, color: Color): RibbonDraw? = ribbonThrough(points, EVEN, rule, color)
+fun evenRibbon(points: List<ResolvedPoint>, rule: LineRule, color: Color): RibbonDraw? = ribbonThrough(points, EVEN_WEIGHT, rule, color)
 
 /** This mark as a ribbon in [bin], or null when it has none. */
 fun ResolvedMark.ribbonIn(bin: CameraBin, rule: LineRule, color: Color): RibbonDraw? =

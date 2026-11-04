@@ -31,6 +31,9 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
     val keymap = Keymap(registry)
 
     var layout by mutableStateOf(DEFAULT_LAYOUT)
+
+    /** Whether the strip holds the tools for lines, as it does while the Lines or Marks drawer is open. */
+    val showsLineTools: Boolean get() = layout[DrawerIds.LINES]?.open == true || layout[DrawerIds.MARKS]?.open == true
     var palette by mutableStateOf(false)
     var settings by mutableStateOf(false)
     private var shownScreen: Screen? = null

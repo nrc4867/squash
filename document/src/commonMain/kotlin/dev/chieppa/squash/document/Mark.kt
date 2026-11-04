@@ -21,6 +21,12 @@ data class MarkWidth(val stops: List<WidthStop> = emptyList()) {
     }
 }
 
+/** The prefix of every fur stroke's id. */
+const val FUR_MARK_PREFIX = "fur-"
+
+/** Whether this mark is a fur stroke. */
+val MarkId.isFur: Boolean get() = value.startsWith(FUR_MARK_PREFIX)
+
 /** A mark's shape for one camera bin. */
 @Serializable
 data class MarkVersion(val points: List<Anchor>, val width: MarkWidth = MarkWidth()) {

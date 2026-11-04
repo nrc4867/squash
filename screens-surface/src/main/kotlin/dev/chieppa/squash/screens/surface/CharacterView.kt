@@ -4,10 +4,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BodyColor
+import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.ResolvedMark
-import dev.chieppa.squash.character.build.SocketCrease
 import dev.chieppa.squash.document.CameraBin
+import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
@@ -17,16 +18,15 @@ import dev.chieppa.squash.geom.ColorDetail
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
-import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.screens.sheet.bodySide
+import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.coloredPartDraw
 import dev.chieppa.squash.screens.sheet.colorOf
-import dev.chieppa.squash.screens.sheet.ribbon
 import dev.chieppa.squash.screens.sheet.translation
 import dev.chieppa.stretch.gpu.CameraView
 
@@ -50,16 +50,17 @@ class CharacterState(
     val color: BodyColor,
     val work: BodySurfaceWork,
     val palette: Palette,
-    val creases: List<SocketCrease>,
+    val lines: BodyLines,
     val isFur: (ResolvedMark) -> Boolean,
+    val taper: Float = LineRules.DEFAULT_TAPER,
 )
 
 private fun MarkGroup.isEye() = roles.any { it.role == MarkRole.LID }
 
 /**
- * A view of [state] through [camera]. The silhouette is every part's outline in the back of the depth buffer at the silhouette
- * weight, where only what clears the whole figure shows; each part then draws at the interior weight over it. [faceBin] says which
- * camera bin the face shows in each part holding one.
+ * A view of [state] through [camera]. Every part's contour draws as a ribbon at the silhouette weight in the back of the depth
+ * buffer, where only what clears the whole figure shows, and at the interior weight in the scene. [faceBin] says which camera bin
+ * the face shows in each part holding one.
  */
 fun characterView(
     rect: PixelRect,
@@ -77,13 +78,10 @@ fun characterView(
     val parts = state.character.parts.filter { it.id != null }
     val center = state.character.box?.center ?: Vec3.ZERO
     val ribbons = ArrayList<RibbonDraw>()
-    val silhouette = parts.map { part ->
-        MeshDraw(part.surface.mesh, PartMaterial(ink, ink = ink), translation(part.origin), look.lines.silhouettePixels, layer = DepthLayer.BACK)
-    }
     val filled = parts.map { part ->
         val id = requireNotNull(part.id)
         val draw = coloredPartDraw(
-            part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), look.lines.interiorPixels,
+            part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
         )
         val work = state.work.parts[id] ?: return@map draw
         val marks = work.marks.associateBy { it.id }
@@ -93,15 +91,14 @@ fun characterView(
         eyes.forEach { ribbons += it.ribbons }
         draw.copy(layers = draw.layers + eyes.flatMap { it.layers })
     }
-    for (crease in state.creases) {
-        crease.runs.forEach { run -> evenRibbon(run, look.creases, ink)?.let { ribbons += it } }
-    }
+    val view = FullView({ camera }, rect.width, rect.height)
+    contourRibbon(state.lines.parts.values, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, state.character.box?.radius ?: 0f) }
+    state.lines.parts.values.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
     for (part in parts) {
         val work = state.work.parts[requireNotNull(part.id)] ?: continue
-        val grouped = work.groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet()
-        val (fur, plain) = work.marks.filter { it.id !in grouped }.partition(state.isFur)
+        val (fur, plain) = work.looseMarks().partition(state.isFur)
         ribbons += furRibbons(fur, look.fur, camera, rect, ink)
-        plain.mapNotNull { mark -> if (mark.ink) mark.ribbon()?.let { RibbonDraw(it, look.marks, ink) } else null }.forEach { ribbons += it }
+        plain.mapNotNull { it.lineDraw(state.lines.parts[part.id], look.marks, ink, state.taper, DepthLayer.SCENE) }.forEach { ribbons += it }
     }
-    return SceneView(rect, camera.viewProjection(rect.width, rect.height), silhouette + filled, ribbons)
+    return SceneView(rect, camera.viewProjection(rect.width, rect.height), filled, ribbons)
 }

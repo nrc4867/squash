@@ -11,9 +11,12 @@ class BodyRay(val origin: Vec3, val direction: Vec3) {
 }
 
 /** How the Full pane shows body space, [width] by [height] pixels, through whatever [camera] holds at the moment. */
-class FullView(private val camera: () -> CameraView, val width: Int, val height: Int) {
+class FullView(private val camera: () -> CameraView, val width: Int, val height: Int) : SurfaceView {
+    /** The camera as it stands. */
+    val current: CameraView get() = camera()
+
     /** The pane pixel showing [point], or null behind the camera. */
-    fun toPixel(point: Vec3): Offset? = camera().project(point.toGpu(), width, height)
+    override fun toPixel(point: Vec3): Offset? = camera().project(point.toGpu(), width, height)
 
     /** The line of sight through [pixel], as the camera holds it now, for finding what on the surface a pointer is over. */
     fun ray(pixel: Offset): BodyRay {
@@ -22,16 +25,16 @@ class FullView(private val camera: () -> CameraView, val width: Int, val height:
     }
 
     /** How far [point] lies from the eye. */
-    fun depthOf(point: Vec3): Float {
+    override fun depthOf(point: Vec3): Float {
         val eye = camera().eye
         return Vec3(eye.x - point.x, eye.y - point.y, eye.z - point.z).length
     }
 
     /** How many pixels a body unit spans at [point]. */
-    fun pixelsPerUnitAt(point: Vec3): Float = height / (2f * depthOf(point) * tan(camera().fovY / 2f))
+    override fun pixelsPerUnitAt(point: Vec3): Float = height / (2f * depthOf(point) * tan(camera().fovY / 2f))
 
     /** From [point] towards the eye. */
-    fun toViewer(point: Vec3): Vec3 {
+    override fun toViewer(point: Vec3): Vec3 {
         val eye = camera().eye
         return Vec3(eye.x - point.x, eye.y - point.y, eye.z - point.z).normalized()
     }

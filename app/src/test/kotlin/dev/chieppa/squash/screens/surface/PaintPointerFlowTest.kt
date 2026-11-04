@@ -49,12 +49,11 @@ import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.sheet.shadingPreviewTag
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.paint.ColorDrawerContent
-import dev.chieppa.squash.screens.surface.paint.FullSight
 import dev.chieppa.squash.screens.surface.paint.PaintTags
-import dev.chieppa.squash.screens.surface.paint.SurfaceHit
+import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
-import dev.chieppa.squash.screens.surface.paint.surfaceHit
+import dev.chieppa.squash.screens.surface.surfaceHit
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
@@ -131,7 +130,7 @@ class PaintPointerFlowTest {
         val character = assertNotNull(assertNotNull(session.value).assembly.output.value)
         val placed = assertNotNull(character.part(part))
         val patch = placed.surface.patches.first { it.slices != null }
-        val sight = FullSight(view)
+        val sight = view
         return us.flatMap { u ->
             vs.mapNotNull { v ->
                 val pixel = view.toPixel(placed.origin + placed.surface.shown(patch.positionAt(u, v))) ?: return@mapNotNull null
@@ -146,7 +145,7 @@ class PaintPointerFlowTest {
     private fun AppState.upInto(part: PartId, from: Offset): Offset {
         val view = assertNotNull(seen?.view)
         val character = assertNotNull(assertNotNull(session.value).assembly.output.value)
-        val sight = FullSight(view)
+        val sight = view
         val steps = generateSequence(from) { it - Offset(0f, SCAN_STEP.toFloat()) }.takeWhile { it.y > 0f }
         val first = assertNotNull(steps.firstOrNull { surfaceHit(character, it, sight)?.part == part }, "${part.value} shows above $from")
         return first - Offset(0f, INTO_PART)

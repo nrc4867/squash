@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.surface.paint
+package dev.chieppa.squash.screens.surface
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -9,13 +9,18 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.draw.followToRelease
 import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
+import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /** How many halvings find where the pointer crossed between two surfaces, which from a drag's longest step lands within a pixel. */
 private const val CROSSING_STEPS = 8
+
+/** How far the pointer moves on screen before a drag takes another place on the surface, in pixels. */
+private const val ANCHOR_SPACING = 4f
 
 /**
  * A tool working on the surface of the whole character, from a locked pane or a free one alike. A press on no surface is left to the
@@ -27,20 +32,20 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     override val showsPreviews: Boolean get() = true
 
     /** Takes a press on [hit] at [pixel], following it until it lets go. Returns once the gesture is over. */
-    protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: PaneSight)
+    protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView)
 
     /** Takes a press near what the tool shows, ahead of the surface under it; true when it took it. */
-    protected open suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: PaneSight): Boolean = false
+    protected open suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean = false
 
     /** The place under [pixel] on the open character, or null. */
-    protected fun hitAt(pixel: Offset, sight: PaneSight): SurfaceHit? =
+    protected fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
         state.session.value?.assembly?.output?.value?.let { surfaceHit(it, pixel, sight) }
 
-    override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, LockedSight(camera))
+    override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, camera)
 
-    override fun fullInput(view: FullView): Modifier = gestures(view, FullSight(view))
+    override fun fullInput(view: FullView): Modifier = gestures(view, view)
 
-    private fun gestures(key: Any, sight: PaneSight): Modifier = Modifier.pointerInput(this, key) {
+    private fun gestures(key: Any, sight: SurfaceView): Modifier = Modifier.pointerInput(this, key) {
         awaitEachGesture {
             val down = awaitFirstDown()
             if (!isToolPress(down)) return@awaitEachGesture
@@ -52,10 +57,27 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     }
 
     /**
+     * Follows [down], which pressed [hit], until it lets go, handing [taken] each place the drag reaches a spacing on, with those either side of a
+     * crossing, so what it lays down meets the crossing. A place off the surface is passed over. True when the pointer let go in the pane.
+     */
+    protected suspend fun AwaitPointerEventScope.followSurface(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView, taken: (SurfaceHit) -> Unit): Boolean {
+        var last = down.position
+        var lastHit = hit
+        return followToRelease(down.id, {}) { pixel ->
+            if ((pixel - last).getDistance() < ANCHOR_SPACING) return@followToRelease
+            val next = hitAt(pixel, sight) ?: return@followToRelease
+            crossingBetween(lastHit, last, next, pixel, sight).forEach(taken)
+            last = pixel
+            lastHit = next
+            taken(next)
+        }
+    }
+
+    /**
      * The places either side of where the pointer crossed from [from], at [fromPixel], to [to], at [toPixel], on another part or patch, so a stroke
      * or border meets the crossing however fast the pointer went; nothing when both lie on one surface.
      */
-    protected fun crossingBetween(from: SurfaceHit, fromPixel: Offset, to: SurfaceHit, toPixel: Offset, sight: PaneSight): List<SurfaceHit> {
+    protected fun crossingBetween(from: SurfaceHit, fromPixel: Offset, to: SurfaceHit, toPixel: Offset, sight: SurfaceView): List<SurfaceHit> {
         if (from.part == to.part && from.patch == to.patch) return emptyList()
         var nearHit = from
         var nearPixel = fromPixel

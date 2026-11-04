@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.geom.LineGrid
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
@@ -56,5 +57,42 @@ fun Graph.bodySurfaceWorkNode(
         val character = (sources.getValue(BodyWorkKey.PLACED) as BodyWorkSource.Placed).character
         val work = (sources.getValue(BodyWorkKey.PARTS) as BodyWorkSource.Parts).work
         placeSurfaceWork(work, character, cancellationCheck())
+    }
+}
+
+/** What the character's lines read: where the parts sit, their grids and creases, and their surface work. */
+private sealed interface LinesSource {
+    data class Placed(val character: AssembledCharacter) : LinesSource
+
+    data class Grids(val grids: Map<PartId, List<LineGrid>>) : LinesSource
+
+    data class Creases(val creases: List<SocketCrease>) : LinesSource
+
+    data class Work(val work: BodySurfaceWork) : LinesSource
+}
+
+private enum class LinesKey { PLACED, GRIDS, CREASES, WORK }
+
+/**
+ * The character as its lines read it, following [assembly] and [work]. Its grids and creases come from nodes of their own that
+ * follow [assembly] alone, so a surface edit reweighs them and finds neither again.
+ */
+fun Graph.bodyLinesNode(assembly: Node<*, AssembledCharacter>, work: Node<*, BodySurfaceWork>): Node<*, BodyLines> {
+    val placed = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Placed(it) }
+    val grids = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Grids(lineGrids(it, cancellationCheck())) }
+    val creases = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Creases(socketCreases(it, cancellationCheck())) }
+    val held = follow<BodySurfaceWork, LinesSource>(work, stage = BuildStages.SURFACE_WORK) { LinesSource.Work(it) }
+    return gather(
+        MutableStateFlow(Unit),
+        sourcesOf = { mapOf(LinesKey.PLACED to placed, LinesKey.GRIDS to grids, LinesKey.CREASES to creases, LinesKey.WORK to held) },
+        stage = BuildStages.SURFACE_WORK,
+    ) { (_, sources) ->
+        bodyLines(
+            (sources.getValue(LinesKey.PLACED) as LinesSource.Placed).character,
+            (sources.getValue(LinesKey.GRIDS) as LinesSource.Grids).grids,
+            (sources.getValue(LinesKey.CREASES) as LinesSource.Creases).creases,
+            (sources.getValue(LinesKey.WORK) as LinesSource.Work).work,
+            cancellationCheck(),
+        )
     }
 }

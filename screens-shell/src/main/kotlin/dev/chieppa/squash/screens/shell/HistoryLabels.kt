@@ -3,6 +3,9 @@ package dev.chieppa.squash.screens.shell
 import dev.chieppa.squash.character.catalog.VIEW_ORDER
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.partName
+import dev.chieppa.squash.uidesign.generated.lines_step_rules
+import dev.chieppa.squash.uidesign.generated.lines_step_stroke
+import dev.chieppa.squash.uidesign.generated.lines_step_weight
 import dev.chieppa.squash.uidesign.generated.move_step
 import androidx.compose.runtime.Composable
 import dev.chieppa.squash.document.AddPart
@@ -14,6 +17,10 @@ import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetBrushStroke
 import dev.chieppa.squash.document.SetCharacterShading
+import dev.chieppa.squash.document.SetLineRules
+import dev.chieppa.squash.document.SetLineWeight
+import dev.chieppa.squash.document.SetLineWeightAmount
+import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.character.build.PlacementParams
@@ -59,6 +66,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val region = stringResource(Res.string.color_step_region, FIRST)
     val stroke = stringResource(Res.string.color_step_stroke)
     val shading = stringResource(Res.string.color_step_shading)
+    val mark = stringResource(Res.string.lines_step_stroke)
+    val lineWeight = stringResource(Res.string.lines_step_weight)
+    val lineRules = stringResource(Res.string.lines_step_rules)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -75,6 +85,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetRegion -> region.replace(FIRST, displayName(command.id.value))
             is SetBrushStroke -> stroke
             is SetCharacterShading -> shading
+            is SetMark -> mark
+            is SetLineWeight, is SetLineWeightAmount -> lineWeight
+            is SetLineRules -> lineRules
             is SetParameter -> if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             else -> ""
         }

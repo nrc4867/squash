@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
- * [palette], its [expressions] and its [shading].
+ * [palette], its [expressions], its [shading] and the [lineRules] that weigh its lines.
  */
 @Serializable
 data class Character(
@@ -16,6 +16,7 @@ data class Character(
     val palette: Palette = Palette(),
     val expressions: List<ExpressionSet> = emptyList(),
     val shading: CharacterShading = CharacterShading(),
+    val lineRules: LineRules = LineRules(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }

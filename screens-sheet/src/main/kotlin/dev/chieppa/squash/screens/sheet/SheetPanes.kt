@@ -53,7 +53,8 @@ fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
  * [tools] and the control, then Top, Full, Side and Front in one native surface; in Full first, the same panes in that
  * surface with Full large above the other three; in Single, the strip with the control above one viewport, with [tools]
  * floating on it. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
- * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport.
+ * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport. [surface] draws the
+ * character's lines, in place of the meshes' own outlines.
  */
 @Composable
 fun SheetPanes(
@@ -62,22 +63,23 @@ fun SheetPanes(
     tools: @Composable RowScope.() -> Unit = {},
     tool: PaneTool? = null,
     paneToast: (@Composable () -> Unit)? = null,
+    surface: SurfaceRibbons? = null,
 ) {
     val layout by state.layout.collectAsState()
     val pick: (SheetLayout) -> Unit = { state.layout.value = it }
     Column(modifier) {
         if (layout == SheetLayout.SINGLE) {
             SheetStrip(layout = layout, onLayout = pick)
-            SingleSurface(state, tool, tools, paneToast, Modifier.weight(1f).fillMaxWidth())
+            SingleSurface(state, tool, tools, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth())
+            SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
         }
     }
 }
 
 @Composable
-private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier) {
+private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier, surface: SurfaceRibbons?) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
     val orbit = remember { OrbitCamera(yaw = FULL_YAW, pitch = FULL_PITCH) }
@@ -124,6 +126,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             layout = layout,
             color = color,
             previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
+            surface = surface,
         ),
     )
     Box(modifier.onSizeChanged { size = it }.onGloballyPositioned { places.surface = it.positionInRoot() }) {

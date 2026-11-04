@@ -4,9 +4,12 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.FUR_MARK_PREFIX
 import dev.chieppa.squash.document.Grain
 import dev.chieppa.squash.document.GrainComb
 import dev.chieppa.squash.document.GroupRole
+import dev.chieppa.squash.document.LineWeight
+import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
@@ -14,6 +17,7 @@ import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkVersion
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.SetGrain
+import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.WidthStop
@@ -25,9 +29,6 @@ import kotlin.math.sin
 val BIN_FRONT = CameraBin("front")
 val BIN_THREE_QUARTER = CameraBin("three-quarter")
 val BIN_SIDE = CameraBin("side")
-
-/** The prefix of every fur stroke's id. */
-const val FUR_MARK_PREFIX = "fur-"
 
 private const val RING_POINTS = 12
 private const val LID_POINTS = 12
@@ -187,4 +188,21 @@ private fun chestFur(): List<DocumentCommand> {
 fun fennecMarks(): List<DocumentCommand> =
     eye(EyeSide("l", left = true)) + eye(EyeSide("r", left = false)) +
         SetMark(HEAD, MarkId("mouth-l"), mouth("mouth-l") { it }) + SetMark(HEAD, MarkId("mouth-r"), mouth("mouth-r") { 1f - it }) +
-        chestFur()
+        chestFur() + backWeight()
+
+/** The heavier line along the back. */
+val BACK_WEIGHT = LineWeightId("back")
+
+/** A heavier line along the back, as the Lines board draws it. */
+private fun backWeight(): List<DocumentCommand> {
+    val id = BACK_WEIGHT
+    val points = List(BACK_POINTS) { i -> Anchor(TORSO, BODY_PATCH, BACK_FROM + (BACK_TO - BACK_FROM) * i / (BACK_POINTS - 1), BACK_V) }
+    return listOf(SetLineWeight(TORSO, id, LineWeight(id, points, BACK_RADIUS, BACK_AMOUNT)))
+}
+
+private const val BACK_POINTS = 8
+private const val BACK_FROM = 0.2f
+private const val BACK_TO = 0.8f
+private const val BACK_V = 0f
+private const val BACK_RADIUS = 0.2f
+private const val BACK_AMOUNT = 0.6f

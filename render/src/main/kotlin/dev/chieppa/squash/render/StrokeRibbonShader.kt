@@ -5,7 +5,7 @@ internal const val RIBBON_FLOATS = 44
 
 /**
  * WGSL for [StrokeRibbonPass]: a line along a stroke's projected path, as wide in pixels as its line rule and weight say at any
- * distance, sitting a little toward the camera from its surface so it stays over what it is drawn on.
+ * distance, sitting the draw's lift toward the camera from its surface so it stays over what it is drawn on.
  */
 internal const val RIBBON_WGSL = """
 struct Ribbon {
@@ -17,9 +17,6 @@ struct Ribbon {
 };
 
 @group(0) @binding(0) var<uniform> ribbon: Ribbon;
-
-// How far toward the camera a ribbon sits, in body units.
-const RIBBON_LIFT: f32 = 0.006;
 
 fn on_screen(clip: vec4<f32>) -> vec2<f32> {
     return clip.xy / clip.w * ribbon.viewport_and_depth.xy * 0.5;
@@ -44,7 +41,7 @@ fn vs_ribbon(
     let across = length(normal);
     let facing = select(1.0, abs(dot(normal, away)) / max(across, 0.000001), across > 0.000001);
     let pixels = weight * mix(ribbon.rule.y, ribbon.rule.x, smoothstep(0.0, ribbon.rule.z, facing));
-    let nearer = projection * (world - vec4<f32>(away * RIBBON_LIFT, 0.0));
+    let nearer = projection * (world - vec4<f32>(away * ribbon.rule.w, 0.0));
     let shift = side * edge * pixels * 0.5 / (ribbon.viewport_and_depth.xy * 0.5) * at.w;
     return vec4<f32>(at.xy + shift, (nearer.z / nearer.w * ribbon.viewport_and_depth.z + ribbon.viewport_and_depth.w) * at.w, at.w);
 }

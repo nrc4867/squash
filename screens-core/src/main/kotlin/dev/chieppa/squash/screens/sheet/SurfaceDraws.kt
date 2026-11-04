@@ -66,9 +66,11 @@ fun coloredPartDraw(
     return MeshDraw(mesh, material, model, outlinePixels, layers = layers)
 }
 
-/** A mark's weight along it: its stops, or with none the line rule's own weight tapering at both ends. */
-fun markProfile(width: MarkWidth): WidthProfile {
-    val stops = width.stops.map { WidthSample(it.at, it.scale) }.ifEmpty { listOf(WidthSample(END_TAPER, 1f), WidthSample(1f - END_TAPER, 1f)) }
+/**
+ * A mark's weight along it: its stops, or with none the line rule's own weight, its ends narrowing over [endTaper] of its length each.
+ */
+fun markProfile(width: MarkWidth, endTaper: Float = END_TAPER): WidthProfile {
+    val stops = width.stops.map { WidthSample(it.at, it.scale) }.ifEmpty { listOf(WidthSample(endTaper, 1f), WidthSample(1f - endTaper, 1f)) }
     return requireNotNull(dragProfile(stops, fromPlane = false))
 }
 

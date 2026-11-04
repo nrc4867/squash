@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.sheet.SurfaceView
+import dev.chieppa.squash.screens.surface.SurfaceTool
+import dev.chieppa.squash.screens.surface.SurfaceHit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -23,7 +26,6 @@ import dev.chieppa.squash.document.Ulid
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.draw.followToRelease
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
@@ -37,9 +39,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** How far the pointer moves on screen before a stroke takes another anchor, in pixels. */
-private const val ANCHOR_SPACING = 4f
-
 private const val RING_POINTS = 48
 private const val TWO_PI = 6.2831855f
 
@@ -52,22 +51,15 @@ private const val TWO_PI = 6.2831855f
 class BrushTool(state: AppState, private val scope: CoroutineScope, internal var ringColor: Color = Color.Unspecified, internal var ringWidth: Float = 0f) : SurfaceTool(state) {
     private var ringAt by mutableStateOf<Pair<Vec3, Float>?>(null)
 
-    override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: PaneSight) {
+    override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
         val live = LiveStroke(session, hit.part, slot, state.paint.brushRadius, state.paint.softness, state.thisSide, scope)
-        var last = down.position
-        var lastHit = hit
         live.add(hit.anchor)
         showRing(hit, sight)
         var released = false
         try {
-            released = followToRelease(down.id, {}) { pixel ->
-                if ((pixel - last).getDistance() < ANCHOR_SPACING) return@followToRelease
-                val next = hitAt(pixel, sight) ?: return@followToRelease
-                crossingBetween(lastHit, last, next, pixel, sight).forEach { live.add(it.anchor) }
-                last = pixel
-                lastHit = next
+            released = followSurface(hit, down, sight) { next ->
                 live.add(next.anchor)
                 showRing(next, sight)
             }
@@ -77,16 +69,16 @@ class BrushTool(state: AppState, private val scope: CoroutineScope, internal var
         }
     }
 
-    private fun showRing(hit: SurfaceHit, sight: PaneSight) {
+    private fun showRing(hit: SurfaceHit, sight: SurfaceView) {
         val length = state.session.value?.assembly?.output?.value?.part(hit.part)?.surface?.axisLength ?: return
         ringAt = hit.position to state.paint.brushRadius * length * sight.pixelsPerUnitAt(hit.position)
     }
 
-    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = ring(LockedSight(camera))
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = ring(camera)
 
-    override fun fullOverlay(view: FullView): ViewportOverlay = ring(FullSight(view))
+    override fun fullOverlay(view: FullView): ViewportOverlay = ring(view)
 
-    private fun ring(sight: PaneSight): ViewportOverlay {
+    private fun ring(sight: SurfaceView): ViewportOverlay {
         val (at, radius) = ringAt ?: return ViewportOverlay.Empty
         val center = sight.toPixel(at) ?: return ViewportOverlay.Empty
         return buildOverlay {

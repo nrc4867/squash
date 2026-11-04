@@ -4,6 +4,7 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.ExpressionId
+import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
@@ -35,6 +36,9 @@ data class ResolvedRegion(val id: RegionId, val border: List<ResolvedPoint>, val
 
 data class ResolvedBrushStroke(val id: BrushStrokeId, val points: List<ResolvedPoint>, val slot: SlotName, val radius: Float, val softness: Float = 0f)
 
+/** A line weight's anchors as points; [radius] is a fraction of the axis length of the part it lies on. */
+data class ResolvedLineWeight(val id: LineWeightId, val points: List<ResolvedPoint>, val radius: Float, val amount: Float)
+
 /** What an expression gives the mark groups a part holds, by group and role. */
 data class ResolvedExpression(val id: ExpressionId, val name: String, val marks: Map<MarkGroupId, Map<MarkRole, List<ResolvedMark>>>)
 
@@ -50,6 +54,7 @@ data class ResolvedSurfaceWork(
     val regions: List<ResolvedRegion> = emptyList(),
     val strokes: List<ResolvedBrushStroke> = emptyList(),
     val expressions: List<ResolvedExpression> = emptyList(),
+    val lineWeights: List<ResolvedLineWeight> = emptyList(),
 )
 
 /** Every part's surface work in body space, in the document's order of parts. */

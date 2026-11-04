@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.surface.surfaceHit
+import dev.chieppa.squash.screens.surface.SurfaceHit
+import dev.chieppa.squash.screens.sheet.SurfaceView
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.ShapeSource
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -60,13 +63,13 @@ class PaintSectionsTest {
     }
 
     /** A locked view along the body's side with the whole character in it. */
-    private fun sideView(box: BodyBox): PaneSight {
+    private fun sideView(box: BodyBox): SurfaceView {
         val axes = PartAxes.of(Vec3.X)
         val fit = SheetFit(box.center, PANE / (box.radius * 2f), box.radius * 2f)
-        return LockedSight(LockedCamera(View.SIDE, axes, fit, PANE, PANE))
+        return LockedCamera(View.SIDE, axes, fit, PANE, PANE)
     }
 
-    private fun hitOn(id: PartId, sight: PaneSight): SurfaceHit {
+    private fun hitOn(id: PartId, sight: SurfaceView): SurfaceHit {
         val character = assembled()
         val center = assertNotNull(character.part(id)?.box).center
         return assertNotNull(surfaceHit(character, assertNotNull(sight.toPixel(center)), sight), "something shows at the middle of ${id.value}")
