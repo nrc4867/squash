@@ -7,6 +7,8 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
@@ -28,6 +30,9 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.sheet.DEFAULT_GHOST
+import dev.chieppa.squash.screens.sheet.OutlineLook
+import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
+import dev.chieppa.squash.screens.sheet.rememberOutlineLook
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
@@ -36,6 +41,10 @@ import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.squash.screens.sheet.restPoseFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.sheet.toGpu
+import dev.chieppa.squash.screens.single.SingleCamera
+import dev.chieppa.squash.screens.single.SingleInput
+import dev.chieppa.squash.screens.single.SingleTags
+import dev.chieppa.squash.screens.single.singleFrame
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.ScratchFormat
 import dev.chieppa.squash.screens.shell.ShellTags
@@ -48,6 +57,7 @@ import dev.chieppa.stretch.gpu.GpuImage
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.gpu.GpuSnapshot
 import dev.chieppa.stretch.test.setStretchContent
+import dev.chieppa.stretch.theme.Stretch
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
@@ -78,6 +88,10 @@ private const val HEIGHT = 900
 private const val SETTLE_MILLIS = 30_000L
 private const val STROKE_RADIUS = 60f
 private const val STROKE_POINTS = 60
+
+/** A drag that takes Single's camera well away from every view, in pixels. */
+private const val FREE_ORBIT_X = 90f
+private const val FREE_ORBIT_Y = 50f
 
 /** The least share of a pane the part's fill must cover where the part is drawn. */
 private const val MIN_FILL_SHARE = 0.005f
@@ -269,6 +283,96 @@ class ScreensSmokeTest {
 
         assertEquals(0, image.countIn(rects[SheetPane.FRONT.ordinal], paint.part.base), "an undrawn view shows no fill of the selection")
         assertNotEquals(0, image.countIn(rects[SheetPane.FRONT.ordinal], paint.template), "an undrawn view shows the template's outline")
+    }
+
+    @Test
+    fun theSingleLayout() = smoke {
+        val state = AppState(templates, scope)
+        var selection: SheetSelection? = null
+        var look: SheetLook? = null
+        var outlineLook: OutlineLook? = null
+        var warn: Color? = null
+        var accent: Color? = null
+        setStretchContent {
+            SquashApp(state, NoFiles)
+            val selected = rememberSheetSelection(state)
+            val drawing = rememberSheetLook()
+            val outlines = rememberOutlineLook()
+            val colors = Stretch.colors
+            SideEffect {
+                selection = selected
+                look = drawing
+                outlineLook = outlines
+                warn = colors.warnEdge
+                accent = colors.accent
+            }
+        }
+        val session = createCharacter(state)
+        assertSettled(session)
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        assertSettled(session)
+        onNode(hasText("Single") and isSelectable()).performClick()
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
+        val fromTemplate = assertNotNull(selection).part.mesh
+
+        val viewport = onNodeWithTag(SingleTags.VIEWPORT)
+        val size = viewport.fetchSemanticsNode().size
+        val middle = Offset(size.width / 2f, size.height / 2f)
+        viewport.performMouseInput {
+            moveTo(middle + Offset(STROKE_RADIUS, 0f))
+            press()
+            for (i in 1..STROKE_POINTS) {
+                val angle = 2.0 * PI * i / STROKE_POINTS
+                moveTo(middle + Offset(STROKE_RADIUS * cos(angle).toFloat(), 2f * STROKE_RADIUS * sin(angle).toFloat()))
+            }
+            release()
+        }
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
+        assertSettled(session)
+        val drawn = assertNotNull(selection)
+        assertEquals(fromTemplate.vertexCount, drawn.part.mesh.vertexCount, "drawing in Single keeps the template's topology")
+
+        val thumbnails = onNodeWithTag(SingleTags.THUMBNAILS).captureToImage().argbPixels()
+        assertNotEquals(0, thumbnails.countOf(assertNotNull(warn)), "the views not drawn are dashed in warn")
+        assertNotEquals(0, thumbnails.countOf(assertNotNull(accent)), "the view on screen is lit")
+
+        val paint = assertNotNull(look)
+        val camera = SingleCamera().apply { frame(drawn.part.box, drawn.part.axes, size.width, size.height) }
+        val locked = camera.lockedCamera(View.SIDE, drawn, size.width, size.height, hold = false)
+        val overlay = paneOutlineOverlays(drawn, mapOf(View.SIDE to locked), null, assertNotNull(outlineLook)).getValue(View.SIDE)
+        val errors = CopyOnWriteArrayList<String>()
+        fun render(input: SingleInput) = GpuSnapshot.render(singleFrame(input), size.width, size.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val whole = PixelRect(0, 0, size.width, size.height)
+
+        val snapped = render(SingleInput(size.width, size.height, paint, drawn, locked, camera.orbit.view, overlay))
+        assertNotBlank(snapped.pixels, "the snapped view")
+        assertNotEquals(0, snapped.countIn(whole, paint.part.base), "the drawn part fills")
+        assertNotEquals(0, snapped.countIn(whole, paint.part.base.over(paint.well, DEFAULT_GHOST)), "the rest of the character is ghosted")
+        keepSingle(snapped, "single-snapped")
+
+        camera.orbit.orbitBy(FREE_ORBIT_X, FREE_ORBIT_Y)
+        assertNull(camera.snap(drawn.part.axes, hold = false))
+        val free = render(SingleInput(size.width, size.height, paint, drawn, null, camera.orbit.view))
+        assertNotBlank(free.pixels, "the free view")
+        assertNotEquals(0, free.countIn(whole, paint.part.base), "the part fills from any direction")
+        keep(free, "single-free")
+        assertEquals(emptyList(), errors)
+    }
+
+    /** The workspace as a person sees it: its window with [image] under the viewport's floating corners. */
+    private fun ComposeUiTest.keepSingle(image: GpuImage, name: String) {
+        val workspace = onNodeWithTag(ShellTags.WORKSPACE)
+        val window = workspace.captureToImage().argbPixels()
+        val width = workspace.fetchSemanticsNode().size.width
+        val bounds = onNodeWithTag(SingleTags.VIEWPORT).fetchSemanticsNode().boundsInWindow
+        window.paste(width, image.pixels, image.width, bounds.left.roundToInt(), bounds.top.roundToInt())
+        for (tag in listOf(SingleTags.TOOLBAR, SingleTags.HUD, SingleTags.THUMBNAILS)) {
+            val corner = onNodeWithTag(tag)
+            val node = corner.fetchSemanticsNode()
+            window.paste(width, corner.captureToImage().argbPixels(), node.size.width, node.boundsInWindow.left.roundToInt(), node.boundsInWindow.top.roundToInt())
+        }
+        keep(window, width, name)
     }
 
     private fun keep(image: GpuImage, name: String) = keep(image.pixels, image.width, name)

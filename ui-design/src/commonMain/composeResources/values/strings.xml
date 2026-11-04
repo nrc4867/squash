@@ -9,6 +9,17 @@
     <string name="sheet_pane_side">Side · part axes</string>
     <string name="sheet_pane_front">Front · part axes</string>
     <string name="sheet_pane_full">Full · free orbit</string>
+    <string name="single_hud">%1$s · %2$s</string>
+    <string name="single_hud_sided">%1$s · %2$s · %3$s</string>
+    <string name="single_side_left">L</string>
+    <string name="single_side_right">R</string>
+    <string name="single_view_free">free orbit</string>
+    <string name="single_view_side">side</string>
+    <string name="single_view_top">top</string>
+    <string name="single_view_front">front</string>
+    <string name="single_snap_side">Snap to side</string>
+    <string name="single_snap_top">Snap to top</string>
+    <string name="single_snap_front">Snap to front</string>
     <string name="sheet_chip_drawing">Drawing</string>
     <string name="sheet_chip_drawn">Drawn</string>
     <string name="sheet_chip_from_template">From template</string>

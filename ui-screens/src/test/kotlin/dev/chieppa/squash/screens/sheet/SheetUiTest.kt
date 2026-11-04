@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import dev.chieppa.squash.geom.Vec3
 import androidx.compose.ui.test.assertIsEnabled
@@ -60,12 +61,15 @@ class SheetUiTest {
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
     @Test
-    fun sheetIsTheOneLayoutThatCanBePicked() = runComposeUiTest {
-        setStretchContent { SheetStrip() }
+    fun singleAndSheetAreTheLayoutsThatCanBePicked() = runComposeUiTest {
+        var picked: SheetLayout? = null
+        setStretchContent { SheetStrip(onLayout = { picked = it }) }
         onNodeWithText("Layout").assertExists()
         onNodeWithText("Sheet").assertIsSelected()
-        onNodeWithText("Sheet").assertIsEnabled()
-        for (label in listOf("Single", "Focus", "Full first")) onNodeWithText(label).assertIsNotEnabled()
+        for (label in listOf("Single", "Sheet")) onNodeWithText(label).assertIsEnabled()
+        for (label in listOf("Focus", "Full first")) onNodeWithText(label).assertIsNotEnabled()
+        onNodeWithText("Single").performClick()
+        assertEquals(SheetLayout.SINGLE, picked)
     }
 
     @Test

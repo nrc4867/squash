@@ -28,17 +28,22 @@ import dev.chieppa.stretch.ui.Segmented
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** The workspace's layouts, in the Layout control's order. Only Sheet is built. */
+/** The workspace's layouts, in the Layout control's order. */
 enum class SheetLayout(val label: StringResource, val built: Boolean = false) {
-    SINGLE(Res.string.sheet_layout_single),
+    SINGLE(Res.string.sheet_layout_single, built = true),
     FOCUS(Res.string.sheet_layout_focus),
     SHEET(Res.string.sheet_layout_sheet, built = true),
     FULL_FIRST(Res.string.sheet_layout_full_first),
 }
 
-/** The strip above the panes: [tools] on the left, the Layout control on the right. */
+/** The strip above the panes: [tools] on the left, the Layout control showing [layout] on the right. */
 @Composable
-fun SheetStrip(modifier: Modifier = Modifier, tools: @Composable RowScope.() -> Unit = {}) {
+fun SheetStrip(
+    modifier: Modifier = Modifier,
+    layout: SheetLayout = SheetLayout.SHEET,
+    onLayout: (SheetLayout) -> Unit = {},
+    tools: @Composable RowScope.() -> Unit = {},
+) {
     val c = Stretch.colors
     Column(modifier.fillMaxWidth()) {
         Row(
@@ -53,14 +58,14 @@ fun SheetStrip(modifier: Modifier = Modifier, tools: @Composable RowScope.() -> 
                 Modifier.padding(end = 4.dp),
                 style = Stretch.type.value.merge(TextStyle(color = c.inkMuted)),
             )
-            LayoutControl()
+            LayoutControl(layout, onLayout)
         }
         Divider()
     }
 }
 
 @Composable
-private fun LayoutControl() {
+private fun LayoutControl(layout: SheetLayout, onLayout: (SheetLayout) -> Unit) {
     val labels = SheetLayout.entries.associateWith { stringResource(it.label) }
-    Segmented(SheetLayout.entries, SheetLayout.SHEET, {}, { labels.getValue(it) }, enabled = { it.built })
+    Segmented(SheetLayout.entries, layout, onLayout, { labels.getValue(it) }, enabled = { it.built })
 }

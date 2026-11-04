@@ -28,6 +28,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.single.SingleSurface
 import dev.chieppa.stretch.frame.NativeSurface
 import dev.chieppa.stretch.gpu.OrbitCamera
 import dev.chieppa.stretch.gpu.WebGpuRenderer
@@ -50,8 +51,9 @@ private val FIRST_ACTIVE = View.SIDE
 fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 
 /**
- * The workspace's viewport area as the board draws it: the strip with [tools] and the Layout control, then Top, Full,
- * Side and Front in one native surface. A [tool] gets the locked panes' pointer input and overlay.
+ * The workspace's viewport area as the boards draw it, in the layout the Layout control picks. In Sheet, the strip with
+ * [tools] and the control, then Top, Full, Side and Front in one native surface; in Single, the strip with the control
+ * above one viewport, with [tools] floating on it. A [tool] gets a locked view's pointer input and overlay.
  */
 @Composable
 fun SheetPanes(
@@ -60,9 +62,16 @@ fun SheetPanes(
     tools: @Composable RowScope.() -> Unit = {},
     tool: PaneTool? = null,
 ) {
+    val layout by state.layout.collectAsState()
+    val pick: (SheetLayout) -> Unit = { state.layout.value = it }
     Column(modifier) {
-        SheetStrip(tools = tools)
-        SheetSurface(state, tool, Modifier.weight(1f).fillMaxWidth())
+        if (layout == SheetLayout.SINGLE) {
+            SheetStrip(layout = layout, onLayout = pick)
+            SingleSurface(state, tool, tools, Modifier.weight(1f).fillMaxWidth())
+        } else {
+            SheetStrip(layout = layout, onLayout = pick, tools = tools)
+            SheetSurface(state, tool, Modifier.weight(1f).fillMaxWidth())
+        }
     }
 }
 

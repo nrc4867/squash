@@ -51,3 +51,19 @@ fun GpuImage.countIn(rect: PixelRect, color: Color): Int {
 }
 
 private fun close(a: Int, b: Int) = (0..2).all { abs((a shr (it * 8) and 0xFF) - (b shr (it * 8) and 0xFF)) <= CHANNEL_TOLERANCE }
+
+/** How many of these pixels are [color]. */
+fun IntArray.countOf(color: Color): Int {
+    val wanted = color.toArgb()
+    return count { close(it, wanted) }
+}
+
+/** [piece], [pieceWidth] pixels wide, drawn over this image, [width] pixels wide, with its corner at ([x], [y]). */
+fun IntArray.paste(width: Int, piece: IntArray, pieceWidth: Int, x: Int, y: Int) {
+    for (at in piece.indices) {
+        val left = x + at % pieceWidth
+        val top = y + at / pieceWidth
+        val into = top * width + left
+        if (left in 0 until width && into in indices) this[into] = piece[at]
+    }
+}

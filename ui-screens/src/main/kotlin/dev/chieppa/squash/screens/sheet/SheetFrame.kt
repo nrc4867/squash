@@ -95,21 +95,23 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     }
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
-    val draws = buildList {
-        lockedGround(body, selection, look)?.let(::add)
-        addAll(ghosts(selection, body, input))
-        if (view in selection.outlines) add(look.draw(selection.part, look.lockedOutline, layer = DepthLayer.FRONT))
-    }
-    return SceneView(rect, camera.viewProjection(), draws)
+    return SceneView(rect, camera.viewProjection(), lockedDraws(view, body, selection, look, input.hints))
+}
+
+/** What a locked camera on [view], looking from [body], draws: the ground, the character ghosted and the selection once [view] is drawn. */
+internal fun lockedDraws(view: View, body: BodyView, selection: SheetSelection, look: SheetLook, hints: SheetHints): List<MeshDraw> = buildList {
+    lockedGround(body, selection, look)?.let(::add)
+    addAll(ghosts(selection, body, look, hints))
+    if (view in selection.outlines) add(look.draw(selection.part, look.lockedOutline, layer = DepthLayer.FRONT))
 }
 
 /** Everything but the selection, furthest from the viewer first so a nearer ghost blends over a further one. */
-private fun ghosts(selection: SheetSelection, body: BodyView, input: SheetInput): List<MeshDraw> {
-    val strength = input.hints.ghost
+private fun ghosts(selection: SheetSelection, body: BodyView, look: SheetLook, hints: SheetHints): List<MeshDraw> {
+    val strength = hints.ghost
     if (strength <= 0f) return emptyList()
     return selection.others
         .sortedBy { it.center dot body.toViewer }
-        .map { input.look.draw(it, input.look.ghostOutline, strength) }
+        .map { look.draw(it, look.ghostOutline, strength) }
 }
 
 /** The ground as a flat ellipse behind the character, in a pane that looks along it. */
@@ -123,7 +125,7 @@ private fun lockedGround(body: BodyView, selection: SheetSelection, look: SheetL
     return MeshDraw(RenderMesh.UnitDisc, look.groundMaterial, model, layer = DepthLayer.BACK)
 }
 
-private fun fullGround(selection: SheetSelection, look: SheetLook): MeshDraw {
+internal fun fullGround(selection: SheetSelection, look: SheetLook): MeshDraw {
     val radius = selection.box.radius * FULL_GROUND_RADIUS
     val middle = Vec3(selection.box.center.x, selection.floor, selection.box.center.z)
     return MeshDraw(RenderMesh.UnitDisc, look.groundMaterial, placedDisc(middle, Vec3.X * radius, Vec3(0f, 0f, -radius), Vec3.Y), layer = DepthLayer.BACK)
@@ -153,20 +155,20 @@ private fun paneOverlay(pane: SheetPane, input: SheetInput): ViewportOverlay {
     } else {
         val view = selection.part.axes.framing.getValue(body)
         val camera = input.cameras[view] ?: return ViewportOverlay.Empty
-        lockedOverlay(view, camera, selection, input) + (input.toolOverlays[view] ?: ViewportOverlay.Empty)
+        lockedOverlay(view, camera, selection, input.look, input.hints, input.active) + (input.toolOverlays[view] ?: ViewportOverlay.Empty)
     }
     return inPane.translated(Offset(rect.x.toFloat(), rect.y.toFloat()))
 }
 
-private fun lockedOverlay(view: View, camera: LockedCamera, selection: SheetSelection, input: SheetInput): ViewportOverlay = buildOverlay {
-    val look = input.look
-    if (input.hints.template && view !in selection.outlines) {
+/** What a locked camera on [view] draws over the scene: the template's outline until [view] is drawn, Side's guides, and the accent frame when [view] is [active]. */
+internal fun lockedOverlay(view: View, camera: LockedCamera, selection: SheetSelection, look: SheetLook, hints: SheetHints, active: View?): ViewportOverlay = buildOverlay {
+    if (hints.template && view !in selection.outlines) {
         selection.part.silhouette(view).forEach { path ->
             dashed(path.map(camera::toPixel), look.template, look.templateWidth, look.templateDash, look.templateGap)
         }
     }
     guideLines(paneGuides(camera, sideExtents(selection.outlines[View.SIDE], selection.part.extents, selection.drawingScale)), camera, look)
-    if (view == input.active) {
+    if (view == active) {
         val inset = look.activeWidth / 2f
         outline(Rect(inset, inset, camera.width - inset, camera.height - inset), look.active, look.activeWidth)
     }

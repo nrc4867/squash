@@ -27,20 +27,22 @@ sealed interface PartRow {
 }
 
 /**
- * The Parts tree: each placed part under the part it sits on, and each open socket under the part that has it. A
- * part is named for its socket, or for its template at the root.
+ * The Parts tree: each placed part under the part it sits on, and each open socket under the part that has it.
  */
 fun partTree(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder): List<TreeNode<PartRow>> {
     val parts = document.character.parts
     val open = openSockets(document, plan, templates).groupBy { it.parent }
     fun node(part: PartInstance): TreeNode<PartRow> {
-        val name = part.socket?.let { displayName(it.socket) } ?: templates.template(part.template)?.name ?: part.template.id.value
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
         val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, displayName(it.name))) }
-        return TreeNode(PartRow.Placed(part, name, document.isDrawn(part)), placed + waiting)
+        return TreeNode(PartRow.Placed(part, partName(part, templates), document.isDrawn(part)), placed + waiting)
     }
     return parts.filter { it.socket == null }.map(::node)
 }
+
+/** A part's name: its socket's, or its template's at the root. */
+fun partName(part: PartInstance, templates: TemplateFolder): String =
+    part.socket?.let { displayName(it.socket) } ?: templates.template(part.template)?.name ?: part.template.id.value
 
 /** How many of the plan's parts have something drawn: [drawn] of [total], a mirrored pair counting once and a broken one as two. */
 data class PartProgress(val drawn: Int, val total: Int)

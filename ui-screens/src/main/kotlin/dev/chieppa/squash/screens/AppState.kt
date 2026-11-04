@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.edit.CurveEditState
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.OpenSocket
 import dev.chieppa.squash.screens.shell.RestPoseArtist
@@ -52,6 +53,9 @@ class AppState(
     val file = MutableStateFlow<DocumentSession<SquashDocument>?>(null)
 
     val tool = MutableStateFlow(BuildTool.DRAW_OUTLINE)
+
+    /** How the workspace lays out its views. */
+    val layout = MutableStateFlow(SheetLayout.SHEET)
 
     /** What the curve tools remember: selection, oversketch settings and readouts. */
     val curves = CurveEditState()
