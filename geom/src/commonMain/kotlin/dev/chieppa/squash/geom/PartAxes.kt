@@ -15,10 +15,10 @@ data class PartAxes(val along: Vec3, val up: Vec3) {
     fun point(a: Float, b: Float, c: Float): Vec3 = along * a + up * b + side * c
 
     companion object {
-        /** Axes around [rest]; up is body up, or body forward when the rest axis lies within 45 degrees of vertical. */
-        fun of(rest: Vec3): PartAxes {
+        /** Axes around [rest]; up is [towards], else body up, or body forward when the rest axis lies within 45 degrees of vertical. */
+        fun of(rest: Vec3, towards: Vec3? = null): PartAxes {
             val along = rest.normalized()
-            val reference = if (abs(along dot Vec3.Y) > VERTICAL_AXIS_DOT) Vec3.X else Vec3.Y
+            val reference = towards ?: if (abs(along dot Vec3.Y) > VERTICAL_AXIS_DOT) Vec3.X else Vec3.Y
             return PartAxes(along, (reference - along * (reference dot along)).normalized())
         }
     }

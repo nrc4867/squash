@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.move_step
 import androidx.compose.runtime.Composable
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
@@ -8,7 +9,9 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetOutlines
+import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_step_add
@@ -34,6 +37,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val outlines = stringResource(Res.string.shell_step_outlines, FIRST)
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
+    val moved = stringResource(Res.string.move_step)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -43,7 +47,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is BreakPair -> breakPair
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
-            is SetParameter -> parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
+            is SetParameters -> moved
+            is SetParameter -> if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             else -> ""
         }
     }

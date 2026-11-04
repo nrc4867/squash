@@ -29,10 +29,11 @@ fun PartAxes.viewPoint(view: View, point: Vec3): Vec2 = when (view) {
 }
 
 /**
- * The outline of a part of [template] resolving to [data], as the build shows it in [view] with nothing drawn there: its
+ * The outline of a part of [unplaced] resolving to [data], as the build shows it in [view] with nothing drawn there: its
  * template hint as an ordinary curve. Null if the part has no extent in the view.
  */
-fun templateOutline(template: PartTemplate, data: PartData, view: View): OutlineCurve? {
+fun templateOutline(unplaced: PartTemplate, data: PartData, view: View): OutlineCurve? {
+    val template = unplaced.placedBy(data.params)
     val axes = PartBuilder.axes(template)
     val scale = 1f / ((template.defaults + data.params)[SIZE_PARAM] ?: 1f)
     val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template, data.params, data.outlines - view))

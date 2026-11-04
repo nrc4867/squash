@@ -38,7 +38,7 @@ object PartBuilder {
         build(template, data.params, data.outlines, checkCancelled)
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
-    fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3())
+    fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())
 
     /** The mesh of [patches]. [checkCancelled] runs before each patch and throws to stop a stale run. */
     fun mesh(part: String, template: PartTemplate, patches: List<Patch>, checkCancelled: () -> Unit = {}): PartMesh {
@@ -51,6 +51,7 @@ object PartBuilder {
                 checkCancelled()
                 MeshBuilder.build(it, boneAt)
             },
+            axes(template),
         )
     }
 

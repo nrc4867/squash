@@ -11,6 +11,7 @@ import dev.chieppa.squash.screens.edit.Refit
 import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.rememberEditCurvesTool
 import dev.chieppa.squash.screens.edit.rememberEraseTool
+import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.spine.rememberSpineWidthTool
@@ -33,11 +34,13 @@ fun WorkspaceScreen(shell: Shell) {
     val spine = rememberSpineWidthTool(state)
     val edit = rememberEditCurvesTool(state)
     val erase = rememberEraseTool(state)
+    val move = rememberMoveTool(state)
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
         BuildTool.EDIT_CURVES -> edit
         BuildTool.ERASE -> erase
+        BuildTool.MOVE -> move
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()

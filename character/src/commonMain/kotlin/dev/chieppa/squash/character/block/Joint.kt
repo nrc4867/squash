@@ -28,6 +28,8 @@ data class Joint(
 ) : Block {
     override fun joints() = listOf(JointSpec(name, u, v, hinge, limits, stretch))
 
+    override fun withJointAt(name: String, u: Float): Block = if (name == this.name) copy(u = u) else this
+
     override fun lint(ctx: LintContext): List<Finding> {
         val ordered = limits == null || limits.min <= limits.max
         return ctx.unit("u", u) + ctx.unit("v", v) +

@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.move_section
+import dev.chieppa.squash.uidesign.generated.move_outward
+import dev.chieppa.squash.uidesign.generated.move_lean
+import dev.chieppa.squash.uidesign.generated.move_degrees
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameter
@@ -118,6 +123,16 @@ private fun SelectedPartDetails(state: AppState) {
         }
         PartDrawerKind.OUTLINE -> OutlineSections(state)
         PartDrawerKind.SPINE_WIDTH -> SpineSections(state, base.outlines)
+        PartDrawerKind.MOVE -> {
+            if (part.socket != null) {
+                val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
+                DrawerSection(stringResource(Res.string.move_section)) {
+                    AngleControl(open, part.id, PlacementParams.OUTWARD, stringResource(Res.string.move_outward), base.params, !mirror, hidden)
+                    AngleControl(open, part.id, PlacementParams.LEAN, stringResource(Res.string.move_lean), base.params, !mirror, hidden)
+                }
+            }
+            BuiltFromSection(template)
+        }
         PartDrawerKind.PART -> {
             FitSection(open)
             val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
@@ -132,13 +147,19 @@ private fun SelectedPartDetails(state: AppState) {
     }
 }
 
+/** One of the Move tool's angles as a slider, from straight at 0. */
+@Composable
+private fun AngleControl(session: CharacterSession, part: PartId, name: String, label: String, params: Map<String, Float>, thisSide: Boolean, hidden: Map<String, Float>) {
+    val row = ParameterRow(name, params[name] ?: 0f, false, -PlacementParams.MAX_ANGLE, PlacementParams.MAX_ANGLE, null, stringResource(Res.string.move_degrees))
+    key(part, name) { ParameterControl(session, part, row, thisSide, hidden[name], label) }
+}
+
 /**
  * A parameter's control: a toggle for a flag, a slider between limits, a number field otherwise. Every change is a command,
  * to this side alone with [thisSide]. [hidden] is the value this side's override keeps showing over the pair's.
  */
 @Composable
-private fun ParameterControl(session: CharacterSession, part: PartId, row: ParameterRow, thisSide: Boolean, hidden: Float?) {
-    val label = displayName(row.name)
+private fun ParameterControl(session: CharacterSession, part: PartId, row: ParameterRow, thisSide: Boolean, hidden: Float?, label: String = displayName(row.name)) {
     val range = row.range
     val tagged = Modifier.testTag(ShellTags.parameter(row.name))
     SettingRow(label) {

@@ -25,6 +25,12 @@ interface PaneTool {
     /** What the tool draws over [view]'s pane, in pane pixels, clipped to the pane. Compose state read here redraws it. */
     fun overlay(view: View, camera: LockedCamera): ViewportOverlay = ViewportOverlay.Empty
 
+    /** The pointer input for the Full pane, under its orbit. */
+    fun fullInput(view: FullView): Modifier = Modifier
+
+    /** What the tool draws over the Full pane, in pane pixels. Compose state read here redraws it. */
+    fun fullOverlay(view: FullView): ViewportOverlay = ViewportOverlay.Empty
+
     /** The stroke in progress, which the panes compare with the other views. Compose state read here redraws them. */
     val liveStroke: LiveStroke? get() = null
 

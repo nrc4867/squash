@@ -23,7 +23,7 @@ class SheetPart(private val placed: PlacedPart) {
     val origin: Vec3 get() = placed.origin
     val mirrored: Boolean get() = placed.mirrored
     val planned: Boolean get() = placed.planned
-    val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored)
+    val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored, placed.template.axis.up?.toVec3())
     val box: BodyBox = requireNotNull(placed.box) { "A part with nothing built is not drawn" }
     val extents: PartExtents = requireNotNull(placed.surface.extents)
 

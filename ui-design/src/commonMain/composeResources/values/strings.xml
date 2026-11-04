@@ -215,5 +215,11 @@
     <string name="edit_toast_refit_ends">%1$s refit · closed end rebuilt</string>
     <string name="edit_chip_this_side">This side</string>
     <string name="edit_tool_erase">Erase</string>
+    <string name="move_tool">Move</string>
+    <string name="move_section">Placement</string>
+    <string name="move_outward">Outward</string>
+    <string name="move_lean">Lean</string>
+    <string name="move_degrees">°</string>
+    <string name="move_step">Move</string>
     <string name="edit_tool_mirror">Mirror</string>
 </resources>

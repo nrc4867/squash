@@ -26,9 +26,12 @@ fun Graph.sliceRowNode(
 ): Node<PartBuildInput?, PartBuild> =
     node(document.map { it.partBuildInput(part) }.distinctUntilChanged(), stage = BuildStages.SLICES) { input ->
         if (input == null) return@node PartBuild(null, emptyList())
-        val template = templates[input.template]
+        val template = templates[input.template].placedBy(input.data.params)
         PartBuild(template, PartBuilder.build(template, input.data, cancellationCheck()))
     }
 
 private fun SquashDocument.partBuildInput(part: PartId): PartBuildInput? =
-    character.part(part)?.let { PartBuildInput(it.template, character.resolved(it)) }
+    character.part(part)?.let { instance ->
+        val data = character.resolved(instance)
+        PartBuildInput(instance.template, data.copy(params = data.params.filterKeys { !PlacementParams.isSocket(it) }))
+    }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.chieppa.squash.screens.Screen
@@ -57,6 +58,7 @@ object ShellActions {
     val SPINE_WIDTH = ActionId("tool-spine-width")
     val EDIT_CURVES = ActionId("tool-edit")
     val ERASE = ActionId("tool-erase")
+    val MOVE = ActionId("tool-move")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
@@ -83,6 +85,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.SPINE_WIDTH to Res.string.spine_tool,
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
     ShellActions.ERASE to Res.string.edit_tool_erase,
+    ShellActions.MOVE to Res.string.move_tool,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
@@ -114,6 +117,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "spine-and-width" -> SquashIcons.SpineAndWidth
     "edit-curves" -> SquashIcons.EditCurves
     "erase" -> SquashIcons.Erase
+    "move" -> SquashIcons.Move
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
@@ -161,6 +165,7 @@ fun Shell.registerActions() {
     action(ShellActions.SPINE_WIDTH, "spine-and-width", chord("W"), inWorkspace) { state.armTool(BuildTool.SPINE_WIDTH) }
     action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
+    action(ShellActions.MOVE, "move", chord("V"), inWorkspace) { state.armTool(BuildTool.MOVE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }

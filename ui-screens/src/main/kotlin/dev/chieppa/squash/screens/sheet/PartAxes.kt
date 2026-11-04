@@ -59,8 +59,8 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
         )
 
         /** The axes of a template with rest axis [rest], the same ones its swept patches' first slice has, reflected when [mirrored]. */
-        fun of(rest: Vec3, mirrored: Boolean = false): PartAxes {
-            val axes = BuildAxes.of(rest)
+        fun of(rest: Vec3, mirrored: Boolean = false, towards: Vec3? = null): PartAxes {
+            val axes = BuildAxes.of(rest, towards)
             if (!mirrored) return PartAxes(axes.along, axes.up, axes.side)
             return PartAxes(axes.along.mirrored, axes.up.mirrored, axes.side.mirrored)
         }

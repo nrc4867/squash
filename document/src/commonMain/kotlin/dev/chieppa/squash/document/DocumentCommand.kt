@@ -139,6 +139,25 @@ data class SetParameter(
     }
 }
 
+/** Sets several parameters as one step, where each goes as [SetParameter] would send it. A null value clears its name. */
+@Serializable
+@SerialName("setParameters")
+data class SetParameters(
+    val part: PartId,
+    val values: Map<String, Float?>,
+    val thisSide: Boolean = false,
+) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide)
+        val after = values.entries.fold(before) { data, (name, value) -> data.withParam(name, value) }
+        return Applied(
+            document.withWritten(instance, thisSide, after),
+            SetParameters(part, values.mapValues { (name, _) -> before.params[name] }, thisSide),
+        )
+    }
+}
+
 internal fun SquashDocument.requirePart(id: PartId): PartInstance =
     requireNotNull(character.part(id)) { "No part ${id.value}" }
 

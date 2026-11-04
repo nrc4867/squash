@@ -25,7 +25,14 @@ private const val SINK_OF_OPEN_RING = 0.6f
 private const val SINK_OF_CLOSED_PART = 0.35f
 
 /** What placing a part reads of it from the document. */
-data class AssemblyPart(val id: PartId, val template: TemplateRef, val socket: SocketRef?, val pair: PairId?, val side: Side?)
+data class AssemblyPart(
+    val id: PartId,
+    val template: TemplateRef,
+    val socket: SocketRef?,
+    val pair: PairId?,
+    val side: Side?,
+    val placement: Map<String, Float> = emptyMap(),
+)
 
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
 class PlacedPart(
@@ -35,6 +42,11 @@ class PlacedPart(
     val side: Side?,
     val surface: PartSurface,
     val origin: Vec3,
+    /** The socket it sits on, and where that socket lies on its parent's surface. */
+    val socket: SocketRef? = null,
+    val anchor: Vec3? = null,
+    /** What the Move tool stored on this part, which its children's sockets read. */
+    val placement: Map<String, Float> = emptyMap(),
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -115,12 +127,17 @@ private class Assembler(
     }
 
     private fun placedPart(part: AssemblyPart, parent: PlacedPart?): PlacedPart {
-        val template = templates[part.template]
+        val template = templates[part.template].placedBy(part.placement)
         val surface = surfaces.getValue(part.id)
         val socket = part.socket
-        val spec = if (socket != null && parent != null) socketsOf(parent.template).firstOrNull { it.name == socket.socket } else null
+        val spec = if (socket != null && parent != null) {
+            socketsOf(parent.template).firstOrNull { it.name == socket.socket }?.placedBy(parent.placement, part.side)
+        } else {
+            null
+        }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
-        return PlacedPart(part.id, template, part.side, surface, origin)
+        val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side)) else null
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement)
     }
 
     private fun socketsOf(template: PartTemplate): List<SocketSpec> =
@@ -132,7 +149,7 @@ private class Assembler(
      */
     private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?): Vec3 {
         val mirroredHere = side == Side.RIGHT
-        val v = if (mirroredHere && !parent.mirrored) 1f - spec.v else spec.v
+        val v = socketV(parent, spec, side)
         val point = parent.pointOn(spec.u, v) ?: return parent.origin
         val rest = PartBuilder.axes(template).along
         val along = if (mirroredHere) rest.mirrored else rest
@@ -142,6 +159,9 @@ private class Assembler(
         }
         return point - into * sinkOf(template)
     }
+
+    private fun socketV(parent: PlacedPart, spec: SocketSpec, side: Side?): Float =
+        if (side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
 
     /**
      * How far [template]'s socket plane sits inside what it is on. It reads the template, not the drawing, so a stroke on a
@@ -163,14 +183,15 @@ private class Assembler(
      * [twin], carries the right one. [seen] keeps a plan that loops from going round for ever.
      */
     private fun planUnder(here: PlacedPart, twin: PlacedPart?, leader: PartId?, seen: Set<String>) {
-        for (spec in socketsOf(here.template)) {
+        for (unmoved in socketsOf(here.template)) {
+            val spec = unmoved.placedBy(here.placement, null)
             if (leader != null && SocketRef(leader, spec.name) in filled) continue
             val template = spec.takes.firstNotNullOfOrNull { templates.latest(it) } ?: continue
             if (leader != null) here.pointOn(spec.u, spec.v)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
             if (template.id.value in seen) continue
             val paired = spec.pair != null || twin != null
-            val left = plannedPart(template, if (paired) Side.LEFT else null, here, spec) ?: continue
-            val right = if (paired) plannedPart(template, Side.RIGHT, twin ?: here, spec) else null
+            val left = plannedPart(template, if (paired) Side.LEFT else null, here, unmoved.placedBy(here.placement, Side.LEFT)) ?: continue
+            val right = if (paired) plannedPart(template, Side.RIGHT, twin ?: here, unmoved.placedBy((twin ?: here).placement, Side.RIGHT)) else null
             planned += listOfNotNull(left, right)
             planUnder(left, right, null, seen + template.id.value)
         }

@@ -15,8 +15,8 @@ class PatchMesh(
     val triangleCount: Int get() = indices.size / 3
 }
 
-/** One grid per patch of a part. */
-data class PartMesh(val part: String, val patches: List<PatchMesh>)
+/** One grid per patch of a part, built in [axes] where the build says so. */
+data class PartMesh(val part: String, val patches: List<PatchMesh>, val axes: PartAxes? = null)
 
 object MeshBuilder {
     /** Triangulates [patch], with each vertex's bone from [boneAt] of its u. Faces point away from the axis. */

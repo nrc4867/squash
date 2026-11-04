@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.SectionProfile
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 const val TEMPLATE_FORMAT = 1
 
@@ -28,6 +29,8 @@ data class AxisSpec(
     val bend: Param? = null,
     @Doc("Where along the axis it bends.") @Range(min = 0.0, max = 1.0)
     val bendAt: Float = DEFAULT_BEND_AT,
+    /** Where a turned part's up stays, so its drawings keep their meaning. Never in a file. */
+    @Transient val up: Direction? = null,
 )
 
 /** The body patch's fixed grid. */

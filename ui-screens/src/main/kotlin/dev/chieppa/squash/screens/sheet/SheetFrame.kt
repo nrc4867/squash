@@ -46,6 +46,7 @@ class SheetInput(
     val full: CameraView? = null,
     val active: View? = null,
     val toolOverlays: Map<View, ViewportOverlay> = emptyMap(),
+    val fullOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val hints: SheetHints = SheetHints(),
 )
 
@@ -156,7 +157,7 @@ private fun paneOverlay(pane: SheetPane, input: SheetInput): ViewportOverlay {
     val selection = input.selection ?: return ViewportOverlay.Empty
     val body = pane.body
     val inPane = if (body == null) {
-        fullRing(selection.part, input, rect)
+        fullRing(selection.part, input, rect) + input.fullOverlay
     } else {
         val view = selection.part.axes.framing.getValue(body)
         val camera = input.cameras[view] ?: return ViewportOverlay.Empty

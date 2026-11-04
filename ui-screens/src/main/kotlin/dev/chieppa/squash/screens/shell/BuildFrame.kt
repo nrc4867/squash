@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.move_section
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -85,6 +86,7 @@ private fun partDrawerTitle(state: AppState, kind: PartDrawerKind): String {
         PartDrawerKind.OUTLINE -> stringResource(Res.string.draw_drawer_outline)
         PartDrawerKind.OUTLINE_CURVES -> stringResource(Res.string.edit_drawer_curves)
         PartDrawerKind.SPINE_WIDTH -> stringResource(Res.string.spine_tool)
+        PartDrawerKind.MOVE -> stringResource(Res.string.move_section)
     }
 }
 

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,7 +29,7 @@ private val TOOL_SIZE = 34.dp
 
 /**
  * The workspace's tool buttons for the strip above the panes: Draw outline, which is Oversketch once the part is drawn,
- * Spine and width, Edit curves and Erase, then Mirror, which only a paired part has any use for, Half outline and Start
+ * Spine and width, Edit curves, Erase and Move, then Mirror, which only a paired part has any use for, Half outline and Start
  * from template. Pressing the armed tool disarms it.
  */
 @Composable
@@ -48,6 +49,7 @@ fun WorkspaceTools(state: AppState) {
     ToolItem(BuildTool.SPINE_WIDTH, SquashIcons.SpineAndWidth, stringResource(Res.string.spine_tool), "W", tool, state::armTool)
     ToolItem(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, stringResource(Res.string.shell_action_edit_curves), "E", tool, state::armTool)
     ToolItem(BuildTool.ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), "X", tool, state::armTool)
+    ToolItem(BuildTool.MOVE, SquashIcons.Move, stringResource(Res.string.move_tool), "V", tool, state::armTool)
     ToolbarSeparator()
     MirrorButton(state)
     HalfOutlineButton(state)

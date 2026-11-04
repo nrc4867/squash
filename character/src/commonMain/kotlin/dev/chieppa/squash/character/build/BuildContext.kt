@@ -29,7 +29,7 @@ class BuildContext(
     /** Throws if this build's run was cancelled. A block building several patches calls it between them. */
     val checkCancelled: () -> Unit = {},
 ) {
-    val axes: PartAxes = PartAxes.of(template.axis.rest.toVec3())
+    val axes: PartAxes = PartBuilder.axes(template)
 
     private val size: Float = params[SIZE_PARAM] ?: 1f
     private val drawn = DrawnViews(template, outlines, axes, size)

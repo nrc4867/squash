@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import dev.chieppa.stretch.frame.ViewportOverlay
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -95,6 +96,8 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
     LaunchedEffect(open, count, framed != null) {
         if (framed != null) orbit.lookAt(framed.center.toGpu(), framed.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
     }
+    val fullRect = rects[SheetPane.FULL.ordinal]
+    val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val frame = sheetFrame(
         SheetInput(
             rects = rects,
@@ -106,6 +109,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             full = if (part != null) orbit.view else null,
             active = shownActive,
             toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook(), disagreements, shownActive),
+            fullOverlay = tool?.fullOverlay(fullView) ?: ViewportOverlay.Empty,
             hints = SheetHints(state.curves.templateHint, state.curves.ghost),
         ),
     )
@@ -117,7 +121,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             val view = if (body == null) null else axes?.framing?.getValue(body) ?: plainView(body)
             val camera = view?.let { cameras[it] }
             val input = when {
-                body == null -> Modifier.orbitNavigation(orbit)
+                body == null -> Modifier.orbitNavigation(orbit).then(tool?.fullInput(fullView) ?: Modifier)
                 camera == null -> Modifier
                 else -> Modifier.pressed(camera.view) { state.activeView.value = it }.then(tool?.pointerInput(camera.view, camera) ?: Modifier)
             }
@@ -166,6 +170,7 @@ private class HeldCameras {
     private var fit: SheetFit? = null
     private var origin: Vec3? = null
     private var scale: Float? = null
+    private var axes: PartAxes? = null
     private var cameras: Map<View, LockedCamera> = emptyMap()
 
     /** [hold] keeps them still while a stroke or a drag is under way, whatever the part does beneath it. */
@@ -173,8 +178,9 @@ private class HeldCameras {
         if (hold && cameras.isNotEmpty()) return cameras
         val part = selection.part
         val next = keepFit(fit, part.box, part.axes, rects, depthReach(selection, fit))
-        if (next != fit || part.origin != origin || selection.drawingScale != scale) {
+        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.axes != axes) {
             fit = next
+            axes = part.axes
             origin = part.origin
             scale = selection.drawingScale
             cameras = SheetPane.entries.mapNotNull { pane ->

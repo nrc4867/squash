@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 /** The surface of a mesh node's part with axes [axes] on [side], following it. */
 fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?): Node<PartMesh, PartSurface> = follow(meshes, stage = BuildStages.SURFACE) { mesh ->
-    PartSurface.of(mesh, axes, side == Side.RIGHT, cancellationCheck())
+    PartSurface.of(mesh, mesh.axes ?: axes, side == Side.RIGHT, cancellationCheck())
 }
 
 /** A template's surface with nothing drawn, [mirrored] or not. */
@@ -27,8 +27,9 @@ fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean): Node<Pa
     surfaceOf(recipe, PartData(), mirrored, cancellationCheck())
 }
 
-/** The surface of a [template] part that resolves to [data]. */
-fun surfaceOf(template: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}): PartSurface {
+/** The surface of an [unplaced] part that resolves to [data]. */
+fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}): PartSurface {
+    val template = unplaced.placedBy(data.params)
     val patches = PartBuilder.build(template, data, checkCancelled)
     return PartSurface.of(PartBuilder.mesh("", template, patches, checkCancelled), PartBuilder.axes(template), mirrored, checkCancelled)
 }
@@ -38,7 +39,10 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?)
 
 /** The parts of [character], as placing reads them. */
 fun assemblyParts(character: Character): List<AssemblyPart> =
-    character.parts.map { AssemblyPart(it.id, it.template, it.socket, it.pair, it.side) }
+    character.parts.map { part ->
+        val placement = character.resolved(part).params.filterKeys(PlacementParams::isPlacement)
+        AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement)
+    }
 
 /** A surface the character is assembled from: a part's own, or a template's with nothing drawn. */
 sealed interface AssemblySource {

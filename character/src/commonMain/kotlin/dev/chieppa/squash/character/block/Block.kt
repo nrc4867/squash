@@ -28,6 +28,10 @@ sealed interface Block {
     fun build(ctx: BuildContext): List<Patch> = emptyList()
     fun lint(ctx: LintContext): List<Finding> = emptyList()
     fun joints(): List<JointSpec> = emptyList()
+
+    /** This block with joint [name], if it holds it, at [u]. */
+    fun withJointAt(name: String, u: Float): Block = this
+
     fun sockets(): List<SocketSpec> = emptyList()
     fun areas(): List<AreaSpec> = emptyList()
 
