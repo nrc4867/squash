@@ -25,7 +25,6 @@ data class PartInstance(
     val pair: PairId? = null,
     val side: Side? = null,
     internal val overrides: PartData = PartData(),
-    val grain: Grain = Grain(),
 ) {
     init {
         if (pair == null) {

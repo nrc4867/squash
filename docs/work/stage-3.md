@@ -40,10 +40,8 @@ One orchestrating session per sitting. Round 0 is serial and lands on `main` bef
 
 ### Round 0, serial
 
-- **Document types for surface work**, from `docs/hld/data-model.md`: `Mark` (a polyline of anchors with a width profile, ink flag, camera-locked flag, per-angle versions keyed by camera bin), `MarkGroup` with roles and controls, `Region` (a border curve in anchor space, a palette slot, an ink flag), `Paint` (brush strokes in anchor space), `Grain` combs, `ExpressionSet` with marks per role and a face pose, `Palette`. Commands for each, serializable, with inverses. `PartInstance.grain` already exists.
 - **Graph nodes** that turn anchors into positions on the current mesh, and a `Settled` path for them, so every later branch reads positions from the graph and never computes them in composition.
 - **Render seams**: a stroke ribbon pass (tapered, screen-space width from the line rules and the width tool), a region and paint pass that renders crisp borders in anchor space, and the two-tone shading with proxy normals and far-side darkening. Each behind a small interface in `render` so the branches below fill them in without touching each other's files.
-- **`geom`**: curve morphing between two curve versions with equal control-point counts, and clipping one closed curve by another, both needed by the mark groups.
 - **The Move fix** from Before round 1.
 
 ### Round 1 opens with the look probe

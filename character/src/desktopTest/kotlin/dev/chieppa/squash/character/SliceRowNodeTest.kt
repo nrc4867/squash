@@ -10,8 +10,10 @@ import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
+import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
@@ -71,6 +73,20 @@ class SliceRowNodeTest {
         assertEquals(2f * 0.4f * 0.5f, node.output.value!!.patches.single().slices!![5].height, 1e-4f)
 
         history.undo()
+        assertTrue(graph.settled.value)
+        assertSame(before, node.output.value)
+    }
+
+    @Test
+    fun surfaceWorkDoesNotRebuildTheSlices() = runTest {
+        val graph = graph()
+        val history = history(leg)
+        val node = graph.sliceRowNode(history.document, legId, library)
+        runCurrent()
+        val before = node.output.value
+
+        history.execute(SetBaseSlot(legId, SlotName("fur")))
+        runCurrent()
         assertTrue(graph.settled.value)
         assertSame(before, node.output.value)
     }

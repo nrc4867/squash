@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.document.readDocument
 import dev.chieppa.stretch.document.DocumentFormat
 import kotlinx.serialization.json.Json
 
@@ -16,5 +17,5 @@ class ScratchFormat(override val description: String = "") : DocumentFormat<Squa
         json.encodeToString(SquashDocument.serializer(), document).encodeToByteArray()
 
     override fun decode(bytes: ByteArray): SquashDocument =
-        json.decodeFromString(SquashDocument.serializer(), bytes.decodeToString())
+        readDocument(bytes.decodeToString())
 }

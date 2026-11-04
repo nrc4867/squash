@@ -8,20 +8,23 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | --- | --- | --- |
 | Part template | The recipe for a part type: axis, open end, ring and segment counts, blocks, parameter ranges, joints, sockets, tagged areas, which view sets what | Shipped data file, versioned |
 | Body plan | A graph of sockets from a root spine, pair ids for mirrored sockets, the rest pose | Shipped preset, versioned |
-| Character | Body plan, part instances, the data each mirrored pair shares (outlines and params by pair id), slots, palette, face sets, and the library version it came from | Document; also its own library file |
-| Part instance | Template id and version, the socket it sits on, its own outlines and params while unpaired, pair id, side and that side's overrides, base palette slot, grain | Document |
+| Character | Body plan, part instances, the data each mirrored pair shares (outlines, params and surface work by pair id), slots, palette, face sets, and the library version it came from | Document; also its own library file |
+| Part instance | Template id and version, the socket it sits on, its own outlines, params and surface work while unpaired, pair id, side and that side's overrides | Document |
+| Surface work | Base palette slot, area fills by area name, grain, marks, mark groups, regions and paint: what a part resolves to, a pair shares or a side overrides | Document, beside outlines and params |
 | Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
-| Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
+| Mark | A polyline of anchors, a width profile, an ink flag, a camera-locked flag, per-angle versions keyed by camera bin. Held in a part's surface work or in the expression set it belongs to | Document |
 | Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the part's midline, height, width, a closed section spline and a proxy normal | Derived |
 | Part mesh | One grid per patch; every vertex tagged with part, patch, bone, u and v | Derived |
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default); parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
 | Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation). Eyes and mouths are mark groups | Document |
+| Region | A closed curve of anchors, which may run across parts, a palette slot and an ink flag | Document, in surface work |
+| Paint | Brush strokes in the order drawn, each anchors, a palette slot and a radius | Document, in surface work |
 | Eye | A mark group on an eye region or a sphere part: travel limits, pupil shape, convergence limit, camera bias, size compensation, lid-flatten flag | Document, on the character |
 | Gaze | Target (scene point, camera, an anchor on another character, or free), per-eye offsets, open and dilation values, lead frames, auto-blink flag | Document, one per shot key beside the pose |
-| Expression set | Marks per role with angle versions, plus a small face pose (ears, jaw, brows) | Document, on the character |
-| Grain | A direction field in anchor space per part, default along the axis; combed overrides stored as vectors | Document, on the part instance |
+| Expression set | Marks per group and role with angle versions, shared with per-side overrides, plus a small face pose (hinge angles by part and joint name) | Document, on the character |
+| Grain | A direction field in anchor space per part, default along the axis; combed overrides stored as vectors | Document, in surface work |
 | Effect mark | A mark pinned to a landmark or drawn in camera space, keyed over time; sweat drops, shock lines, blush, speed lines, tears | Document, per shot |
 | Scene | Set, backdrop, light, shading limits | Document |
 | Shot | Camera, keys (poses by time), timing per character | Document |
@@ -70,12 +73,12 @@ data class PartInstance(
     internal val own: PartData,            // the part's values while it has no pair; empty while it has one
     val pair: PairId?, val side: Side?,    // the side stays when a pair breaks, since the part still sits there
     internal val overrides: PartData,      // this side's values, replacing the ones they name in the pair's; empty with no pair
-    val grain: Grain,                      // direction field in anchor space, default along the axis
 )
 
 data class PartData(
     val outlines: Map<View, OutlineCurve>, // cubic Beziers in the part's own axes, open at the socket end
     val params: Map<String, Float>,
+    val surface: SurfaceWork,              // base slot, area fills, grain, marks, groups, regions, paint
 )
 
 data class Character(
@@ -125,7 +128,8 @@ Rules the code keeps:
 - **A held stroke becomes a clean shape.** A stroke whose pointer rests is read as a line along its chord, or, if it comes back to its start, as the ellipse of the same area moments or the capsule on the same axis, whichever it strays from least, and stays freehand if it fits none. Where a view has a socket plane and Close end is on, an open stroke whose ends both pass the plane or come within closing reach of it, with nothing else of it on the part's side, is read as the ellipse or capsule that a cut at the plane would leave: the line from the middle of its mouth through the centre of what it encloses is a diameter of the ellipse and the axis of the capsule, and the ellipse's centre is searched along it, so a U that flares or narrows towards the plane still reads. The whole shape reaches behind the plane and takes the usual cut. Short of the plane, in Front or with Close end off, such a stroke stays freehand. The rest is timed around the wait for the next pointer event. Until release the pointer moves a line's end or sizes a closed shape, and the shape then takes the path a stroke takes, so its ends are handled alike and it is stored as an ordinary outline.
 - **Start from template makes an ordinary outline.** It reads the outermost crossings of the part's swept patches, as built with nothing drawn in that view, and fits them as a stroke is fitted, so what follows is an edit like any other. An outline sets only what its view reads, so the view's silhouette comes back within tolerance and the others can move: a Top alone sets a straight axis, which loses a muzzle's drop in Side; a Front sets only a section's shape; and a drawn paw with toes shares its width among them where undrawn ones fan out, with a waist where its tube closes. A paw with no toes comes back as it was.
 - **Heads are blocks too.** Skull is a block whose slices run front to back, with a muzzle Tube and eye and ear sockets. Face marks anchor to Skull's u and v like any other mark.
-- **Mirroring is shared data plus overrides.** A pair stores one set of outlines and params; each side's overrides replace the values they name. `Character.resolved` is the only way to read a part's values, since the fields behind it are internal to `document`, and it is what the slice row node builds from, so both sides rebuild when the pair changes and a part rebuilds only when what it resolves to changes. `SetOutline` and `SetParameter` write the pair for a paired part, or with `thisSide` that side's override; clearing an override shows the pair's value again. Breaking a pair copies the shared data, under each side's overrides, into both and clears the pair id; each part keeps its side. A pair's data is created with its first part and goes with its last.
+- **Mirroring is shared data plus overrides.** A pair stores one set of outlines, params and surface work; each side's overrides replace the values they name. `Character.resolved` is the only way to read a part's values, since the fields behind it are internal to `document`, and it is what the slice row node builds from, so both sides rebuild when the pair changes and a part rebuilds only when what it resolves to changes. `SetOutline` and `SetParameter` write the pair for a paired part, or with `thisSide` that side's override; clearing an override shows the pair's value again. Breaking a pair copies the shared data, under each side's overrides, into both and clears the pair id; each part keeps its side. A pair's data is created with its first part and goes with its last.
+- **Surface work follows the same rule, by item.** Base slot, area fills and grain replace by name; marks, groups, regions and brush strokes replace by id, and an item only a side holds goes after the shared ones. A pair holds its anchors as its left side reads them. `resolved` reads them for the asking side: an anchor on a sided part moves to the twin on that side with v unchanged, and an anchor on a part in the middle of the body reads 1 - v from the right. A write from the right turns them back, so the same drawing stores the same from either side; a command's `stored` flag marks anchors already in that form, as an undo's are, so undo restores them exactly. A side's override holds anchors as that side sees them. An expression's marks keep the same shape, shared with `left` and `right` on top, read through `Character.expressionMarks`, and breaking a pair moves them onto each side. A side cannot hide a shared item, only replace it. The slice row node builds from `PartData.shape`, so surface work never rebuilds a mesh.
 - **Poses stay re-editable.** A pose keeps the body curve as a curve and the planted set as flags, so re-sampling after a character update uses the same inputs. Touch-ups are deltas in anchor space, which is why they survive Update from library.
 - **Detail beyond the sweep is anchored, not modelled.** Branching shapes are other blocks or parts. Grooves and muscle lines are a later shape touch-up layer: push and pull offsets stored in anchor space at build time, the same mechanism as per-shot touch-ups, so they survive refits.
 
@@ -171,7 +175,7 @@ Four rules make saved characters keep working, from the first commit:
 1. **Template versions are immutable and ship forever.** A changed template is a new version file; the old file stays and old characters keep building with it. An upgrade to the new version is offered, never applied by itself.
 2. **A new parameter's default reproduces the old build exactly.** The golden tests build every shipped template version with default parameters and compare against its stored fixture, so a default that moves a vertex fails the build.
 3. **References are by name, never by index.** Poses name bones by part and joint name, anchors name patches, slots name sockets, marks name landmarks. Adding a joint, a patch or a socket to a new template version shifts nothing stored.
-4. **Documents carry a format number and a migration chain.** Each step from one format to the next is one function with a fixture saved in the older format. A document from a newer app is refused with a clear message, never half-read. Shipped templates stay strictly parsed; documents tolerate only what a migration has accounted for.
+4. **Documents carry a format number and a migration chain.** Each step from one format to the next is one function with a fixture saved in the older format, and `readDocument` runs the chain. A document from a newer app is refused with a clear message, never half-read. Shipped templates stay strictly parsed; documents tolerate only what a migration has accounted for.
 
 ## Part template file format
 

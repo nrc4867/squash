@@ -1,0 +1,124 @@
+{
+    "character": {
+        "id": "fennec",
+        "name": "Fennec",
+        "bodyPlan": {
+            "id": "canine-quadruped",
+            "version": 1
+        },
+        "parts": [
+            {
+                "id": "torso-1",
+                "template": {
+                    "id": "torso",
+                    "version": 1
+                },
+                "own": {
+                    "outlines": {
+                        "side": {
+                            "points": [
+                                {
+                                    "x": 0.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "x": 1.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "x": 1.0,
+                                    "y": 1.0
+                                },
+                                {
+                                    "x": 0.0,
+                                    "y": 1.0
+                                }
+                            ]
+                        }
+                    }
+                },
+                "grain": {
+                    "combs": [
+                        {
+                            "u": 0.25,
+                            "v": 0.5,
+                            "du": 0.0,
+                            "dv": 1.0
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "leg-l",
+                "template": {
+                    "id": "leg",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "torso-1",
+                    "socket": "front-leg"
+                },
+                "pair": "front-legs",
+                "side": "left",
+                "grain": {
+                    "combs": [
+                        {
+                            "u": 0.25,
+                            "v": 0.5,
+                            "du": 0.0,
+                            "dv": 1.0
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "leg-r",
+                "template": {
+                    "id": "leg",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "torso-1",
+                    "socket": "front-leg"
+                },
+                "pair": "front-legs",
+                "side": "right",
+                "overrides": {
+                    "params": {
+                        "size": 1.5
+                    }
+                }
+            }
+        ],
+        "pairs": {
+            "front-legs": {
+                "outlines": {
+                    "side": {
+                        "points": [
+                            {
+                                "x": 0.0,
+                                "y": 0.0
+                            },
+                            {
+                                "x": 1.0,
+                                "y": 0.0
+                            },
+                            {
+                                "x": 1.0,
+                                "y": 1.0
+                            },
+                            {
+                                "x": 0.0,
+                                "y": 1.0
+                            }
+                        ]
+                    }
+                },
+                "params": {
+                    "size": 1.2
+                }
+            }
+        }
+    },
+    "format": 1
+}

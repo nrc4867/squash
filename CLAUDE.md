@@ -46,9 +46,9 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
 | Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row graph node, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
-| Core | `document` | The document types (character, part instances, outlines, anchors, grain) and every command that changes them, on `stretch-core`'s undo and registry |
+| Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
-| Core | `geom` | Vectors, curves, slices to meshes, mesh invariants. No dependencies but the standard library |
+| Core | `geom` | Vectors, curves and their morphing and clipping, slices to meshes, mesh invariants. No dependencies but the standard library |
 | Core | `annotations` | `@Range` and `@Doc` only. Depended on by `character` and `schema-gen`, nothing else |
 | Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors |
 

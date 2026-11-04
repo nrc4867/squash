@@ -2,7 +2,10 @@ package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
 
-/** A character: its parts and, in [pairs], the data each mirrored pair shares, held for exactly the pairs its parts name. */
+/**
+ * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
+ * [palette] and its [expressions].
+ */
 @Serializable
 data class Character(
     val id: CharacterId,
@@ -10,6 +13,8 @@ data class Character(
     val bodyPlan: BodyPlanRef,
     val parts: List<PartInstance> = emptyList(),
     internal val pairs: Map<PairId, PartData> = emptyMap(),
+    val palette: Palette = Palette(),
+    val expressions: List<ExpressionSet> = emptyList(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
@@ -18,10 +23,10 @@ data class Character(
 
     fun part(id: PartId): PartInstance? = parts.firstOrNull { it.id == id }
 
-    /** The part's effective outlines and parameters: its pair's with its overrides on top, or its own when unpaired. */
+    /** The part's effective values: its pair's, with anchors read for its side and its overrides on top, or its own when unpaired. */
     fun resolved(part: PartInstance): PartData {
         val pair = part.pair ?: return part.own
-        return pairs.getValue(pair).overlaidWith(part.overrides)
+        return sharedReadBy(pairs.getValue(pair), part).overlaidWith(part.overrides)
     }
 
     /**
@@ -31,12 +36,12 @@ data class Character(
     fun editBase(part: PartInstance, thisSide: Boolean): PartData = when {
         part.pair == null -> part.own
         thisSide -> resolved(part)
-        else -> pairs.getValue(part.pair)
+        else -> sharedReadBy(pairs.getValue(part.pair), part)
     }
 
     /** The values [part] holds for itself over its pair's. */
     fun overridesOf(part: PartInstance): PartData = part.overrides
 
-    /** The part's effective outlines and parameters, or null if it is not in this character. */
+    /** The part's effective values, or null if it is not in this character. */
     fun resolved(id: PartId): PartData? = part(id)?.let { resolved(it) }
 }

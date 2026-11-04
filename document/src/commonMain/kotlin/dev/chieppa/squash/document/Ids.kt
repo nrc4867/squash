@@ -34,3 +34,33 @@ data class BodyPlanRef(val id: BodyPlanId, val version: Int)
 /** A named socket on a parent part. */
 @Serializable
 data class SocketRef(val parent: PartId, val socket: String)
+
+@Serializable
+@JvmInline
+value class MarkId(val value: String)
+
+@Serializable
+@JvmInline
+value class MarkGroupId(val value: String)
+
+@Serializable
+@JvmInline
+value class RegionId(val value: String)
+
+@Serializable
+@JvmInline
+value class BrushStrokeId(val value: String)
+
+@Serializable
+@JvmInline
+value class ExpressionId(val value: String)
+
+/** The name of a palette slot; parts, regions, paint and template color fields hold this, never a color. */
+@Serializable
+@JvmInline
+value class SlotName(val value: String)
+
+/** The name of a range of camera angles a mark has a version for. */
+@Serializable
+@JvmInline
+value class CameraBin(val value: String)

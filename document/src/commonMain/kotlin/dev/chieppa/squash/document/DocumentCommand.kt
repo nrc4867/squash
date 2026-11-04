@@ -173,13 +173,13 @@ private fun SquashDocument.pairDataDropped(next: SquashDocument): Map<PairId, Pa
     character.pairs.filterKeys { it !in next.character.pairs }
 
 /** The values a write to [part] replaces: its pair's, its side's overrides, or its own when unpaired. */
-private fun SquashDocument.writtenData(part: PartInstance, thisSide: Boolean): PartData = when {
+internal fun SquashDocument.writtenData(part: PartInstance, thisSide: Boolean): PartData = when {
     part.pair == null -> part.own
     thisSide -> part.overrides
     else -> character.pairs.getValue(part.pair)
 }
 
-private fun SquashDocument.withWritten(part: PartInstance, thisSide: Boolean, data: PartData): SquashDocument = when {
+internal fun SquashDocument.withWritten(part: PartInstance, thisSide: Boolean, data: PartData): SquashDocument = when {
     part.pair == null -> withPart(part.copy(own = data))
     thisSide -> withPart(part.copy(overrides = data))
     else -> copy(character = character.copy(pairs = character.pairs + (part.pair to data)))
