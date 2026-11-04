@@ -8,6 +8,8 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -173,7 +175,7 @@ class CurveToolsFlowTest {
         onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(CurveDrawerTags.X).assertExists()
-        onNodeWithText("Smooth").assertExists()
+        onAllNodesWithText("Smooth").assertCountEquals(2)
         onNodeWithText("Corner").assertExists()
         val before = session.history.steps.value.done.size
         onNodeWithText("Corner").performClick()

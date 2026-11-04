@@ -76,6 +76,11 @@ internal val TEST_STROKE_LOOK = StrokeLook(
     startRadius = 7f,
     startLitRadius = 13f,
     startRing = 3f,
+    read = Color.Green,
+    caught = Color.Red,
+    caughtWidth = 2f,
+    string = Color.Gray,
+    stringWidth = 2f,
 )
 
 /** A straight-edged outline through [corners], one section per edge. */

@@ -13,8 +13,11 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.DEFAULT_OVERSKETCH_FALLOFF
 import dev.chieppa.squash.geom.DEFAULT_STROKE_SMOOTH
+import dev.chieppa.squash.geom.DEFAULT_STROKE_STABILIZER
 import dev.chieppa.squash.geom.OversketchOptions
+import dev.chieppa.squash.geom.StrokeMark
 import dev.chieppa.squash.geom.StrokeOptions
+import dev.chieppa.squash.screens.draw.centreLine
 import dev.chieppa.squash.screens.sheet.DEFAULT_GHOST
 
 /** The point of an outline that is selected: an index into its points. */
@@ -43,6 +46,9 @@ class CurveEditState {
     var snapLine by mutableStateOf(true)
     var closeEnd by mutableStateOf(true)
     var holdSnap by mutableStateOf(true)
+    var stabilizer by mutableStateOf(DEFAULT_STROKE_STABILIZER)
+    var snapGuides by mutableStateOf(true)
+    var halfOutline by mutableStateOf(false)
 
     /** The Hint section: the template's dashed outline where a view is not drawn, and how strongly the rest of the character shows. */
     var templateHint by mutableStateOf(true)
@@ -74,6 +80,10 @@ class CurveEditState {
     val strokeOptions: StrokeOptions get() = StrokeOptions(smooth, snapLine, closeEnd)
 
     val options: OversketchOptions get() = OversketchOptions(falloff, snapEnds, strokeOptions)
+
+    /** [strokeOptions] for a stroke in [view] with [marks] forced along it. */
+    fun strokeOptions(view: View, marks: List<StrokeMark>): StrokeOptions =
+        strokeOptions.copy(half = centreLine(view).takeIf { halfOutline }, marks = marks)
 
     fun recordFit(curve: OutlineCurve, errorPixels: Float) {
         fitErrors[curve] = errorPixels

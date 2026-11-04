@@ -9,11 +9,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.CentreLine
 import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
@@ -24,6 +26,10 @@ import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+/** Past Stretch's hover wait before a tooltip shows. */
+private const val TOOLTIP_MILLIS = 600L
 
 private object NoChooser : FileChooser {
     override fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -77,6 +83,64 @@ class OutlineDrawerTest {
         waitForIdle()
         assertEquals(StrokeOptions(snapLine = false, closeEnd = false), state.curves.strokeOptions)
         assertEquals(false, state.curves.options.stroke.closeEnd)
+    }
+
+    @Test
+    fun theStrokeAssistsReadAsTheBoardDrawsThemAndSetTheOptions() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithContentDescription("Part").performClick()
+        waitForIdle()
+        onNodeWithTag(OutlineDrawerTags.STABILIZER_VALUE).assertTextContains("20%")
+        assertEquals(true, state.curves.snapGuides)
+        assertEquals(false, state.curves.halfOutline)
+        onNodeWithTag(OutlineDrawerTags.SNAP_GUIDES).performClick()
+        onNodeWithTag(OutlineDrawerTags.HALF_OUTLINE).performClick()
+        waitForIdle()
+        assertEquals(false, state.curves.snapGuides)
+        assertEquals(CentreLine.ALONG_X, state.curves.strokeOptions(View.SIDE, emptyList()).half)
+        assertEquals(CentreLine.ALONG_X, state.curves.strokeOptions(View.TOP, emptyList()).half)
+        assertEquals(CentreLine.ALONG_Y, state.curves.strokeOptions(View.FRONT, emptyList()).half)
+    }
+
+    @Test
+    fun halfOutlineTogglesFromTheStripAndFromHAndIsSessionState() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        val steps = state.session.value?.history?.steps?.value?.done?.size
+        onNodeWithTag(ShellTags.HALF_OUTLINE).performClick()
+        waitForIdle()
+        assertEquals(true, state.curves.halfOutline)
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.H) }
+        waitForIdle()
+        assertEquals(false, state.curves.halfOutline)
+        assertEquals(steps, state.session.value?.history?.steps?.value?.done?.size)
+    }
+
+    @Test
+    fun theDrawToolsTitleNamesItsModifiers() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).performMouseInput { enter(center) }
+        waitForIdle()
+        mainClock.advanceTimeBy(TOOLTIP_MILLIS)
+        waitForIdle()
+        onNodeWithText("Draw outline · Corner (Alt) · Smooth (Shift)").assertExists()
+    }
+
+    @Test
+    fun theStrokeSectionStaysOverOutlineCurvesOnceThePartIsDrawn() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithContentDescription("Part").performClick()
+        checkNotNull(state.session.value).send(SetOutline(checkNotNull(state.selectedPart.value), View.SIDE, LEG_SIDE))
+        waitForIdle()
+        onNodeWithText("Outline curves").assertExists()
+        val stroke = onNodeWithText("STROKE").fetchSemanticsNode().boundsInRoot.top
+        val outlines = onNodeWithText("OUTLINES").fetchSemanticsNode().boundsInRoot.top
+        assertTrue(stroke < outlines, "Stroke sits above the outlines")
+        onNodeWithTag(OutlineDrawerTags.STABILIZER_VALUE).assertTextContains("20%")
+        onNodeWithTag(OutlineDrawerTags.HALF_OUTLINE).assertExists()
     }
 
     @Test

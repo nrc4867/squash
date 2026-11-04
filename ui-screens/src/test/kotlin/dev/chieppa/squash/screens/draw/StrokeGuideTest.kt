@@ -32,7 +32,10 @@ private const val NEAR_PIXELS = 2f
 class StrokeGuideTest {
     private val look = TEST_STROKE_LOOK
 
-    private fun tool(bench: CurveToolBench) = DrawOutlineTool(bench.state, look, TEST_CURVE_LOOK)
+    private fun tool(bench: CurveToolBench): DrawOutlineTool {
+        bench.state.curves.snapGuides = false
+        return DrawOutlineTool(bench.state, look, TEST_CURVE_LOOK)
+    }
 
     private fun CurveToolBench.arc(view: View, turns: Double, cx: Float = 1f, count: Int = POINTS): List<Offset> = List(count) {
         val angle = turns * 2.0 * PI * it / (count - 1)

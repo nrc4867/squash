@@ -2,11 +2,13 @@ package dev.chieppa.squash.screens.draw
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -143,11 +145,15 @@ internal class StrokeBench(tilted: Boolean = false) {
     /** A pane whose camera and tool follow [shown] and [working], so one test can move between views and tools. */
     fun ComposeUiTest.showPanes(first: LockedCamera) {
         shown = first
-        setStretchContent {
-            with(density) {
-                Box(Modifier.size(BENCH_WIDTH.toDp(), BENCH_HEIGHT.toDp())) {
-                    shown?.let { camera -> PaneViewport(camera.view, null, working.pointerInput(camera.view, camera).testTag(BENCH_TAG)) }
-                }
+        setStretchContent { showPanesBody() }
+    }
+
+    /** The pane [showPanes] sets, to compose among other content. */
+    @Composable
+    fun showPanesBody() {
+        with(LocalDensity.current) {
+            Box(Modifier.size(BENCH_WIDTH.toDp(), BENCH_HEIGHT.toDp())) {
+                shown?.let { camera -> PaneViewport(camera.view, null, working.pointerInput(camera.view, camera).testTag(BENCH_TAG)) }
             }
         }
     }

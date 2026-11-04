@@ -27,6 +27,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.draw.HintSection
 import dev.chieppa.squash.screens.draw.OutlineSections
+import dev.chieppa.squash.screens.draw.StrokeSection
 import dev.chieppa.squash.screens.edit.OutlineCurvesSections
 import dev.chieppa.squash.screens.spine.SpineSections
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -111,6 +112,7 @@ private fun SelectedPartDetails(state: AppState) {
     val base = character.editBase(part, !mirror)
     when (partDrawerKind(tool, hasPart = true, drawn = data.outlines.isNotEmpty())) {
         PartDrawerKind.OUTLINE_CURVES -> {
+            StrokeSection(state)
             OutlineCurvesSections(state, open, part, base.outlines)
             HintSection(state)
         }

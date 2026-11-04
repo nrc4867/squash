@@ -13,8 +13,8 @@ private const val NEAR_PIXELS = 24f
 private const val MAX_SMOOTH_PASSES = 8
 
 /** How many samples each side of a point decide whether it is a corner, and the turn it takes: 60 degrees. */
-private const val CORNER_WINDOW = 4
-private const val CORNER_COSINE = 0.5f
+internal const val CORNER_WINDOW = 4
+internal const val CORNER_COSINE = 0.5f
 
 /** How many samples either side of a closed shape's seam give its one direction, past the jitter of the nearest few. */
 private const val TANGENT_REACH = 3
@@ -37,24 +37,26 @@ fun cleanStroke(samples: List<Vec2>, ends: StrokeEnds, pixel: Float, options: St
     val preview = strokePreview(samples, ends, pixel, options.copy(snapLine = false))
     val shape = preview.shape
     if (shape.isEmpty()) return null
-    return fitCleaned(shape, preview.closed, pixel, options.snapLine)
+    val segments = options.half?.let { fitMirrored(shape, preview.closed, it, pixel, options) }
+        ?: fitBetweenCorners(shape, preview.closed, pixel, options)
+    return CleanStroke(BezierPath(segments), preview.closed, maxError(shape, segments))
 }
 
 /** Evenly spaced [shape] fitted between its corners, with how far the fit strays. */
 internal fun fitCleaned(shape: List<Vec2>, closed: Boolean, pixel: Float, snapLine: Boolean = true): CleanStroke {
-    val segments = fitBetweenCorners(shape, closed, pixel, snapLine)
+    val segments = fitBetweenCorners(shape, closed, pixel, StrokeOptions(snapLine = snapLine))
     return CleanStroke(BezierPath(segments), closed, maxError(shape, segments))
 }
 
-internal fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int): List<Vec2> {
-    val corners = cornerIndices(points, CORNER_WINDOW, CORNER_COSINE, closed).toSet()
+internal fun smoothed(points: List<Vec2>, closed: Boolean, passes: Int, marks: List<StrokeMark> = emptyList(), pixel: Float = 0f): List<Vec2> {
+    val corners = strokeCorners(points, closed, marks, pixel).toSet()
     val pinned = if (closed && 0 in corners) corners + points.lastIndex else corners
     return smooth(points, passes, closed, pinned)
 }
 
 /** The sections of [shape] between its corners; null for a closed shape with none, which has no ends to fit from. */
-private fun cornerSections(shape: List<Vec2>, closed: Boolean): List<List<Vec2>>? {
-    val corners = cornerIndices(shape, CORNER_WINDOW, CORNER_COSINE, closed)
+private fun cornerSections(shape: List<Vec2>, closed: Boolean, marks: List<StrokeMark>, pixel: Float): List<List<Vec2>>? {
+    val corners = strokeCorners(shape, closed, marks, pixel)
     if (closed && corners.isEmpty()) return null
     val ring = if (closed) rotatedToStartAt(shape, corners.first()) else shape
     val cuts = if (closed) {
@@ -67,24 +69,24 @@ private fun cornerSections(shape: List<Vec2>, closed: Boolean): List<List<Vec2>>
 }
 
 /** Whether every point of [section] lies so close to its chord that it counts as a straight line. */
-private fun isLine(section: List<Vec2>, pixel: Float): Boolean {
+internal fun isLine(section: List<Vec2>, pixel: Float): Boolean {
     val tolerance = SNAP_LINE_PIXELS * pixel
     return section.first() != section.last() && section.all { distanceToSegment(it, section.first(), section.last()) <= tolerance }
 }
 
 /** [shape] with each section between corners that is a line down to its two ends. */
-internal fun straightened(shape: List<Vec2>, closed: Boolean, pixel: Float): List<Vec2> {
-    val sections = cornerSections(shape, closed) ?: return shape
+internal fun straightened(shape: List<Vec2>, closed: Boolean, pixel: Float, marks: List<StrokeMark> = emptyList()): List<Vec2> {
+    val sections = cornerSections(shape, closed, marks, pixel) ?: return shape
     return buildList {
         add(sections.first().first())
         for (section in sections) if (isLine(section, pixel)) add(section.last()) else addAll(section.drop(1))
     }
 }
 
-private fun fitBetweenCorners(shape: List<Vec2>, closed: Boolean, pixel: Float, snapLine: Boolean): List<CubicBezier> {
-    val sections = cornerSections(shape, closed) ?: return fitSeamless(shape, pixel)
+private fun fitBetweenCorners(shape: List<Vec2>, closed: Boolean, pixel: Float, options: StrokeOptions): List<CubicBezier> {
+    val sections = cornerSections(shape, closed, options.marks, pixel) ?: return fitSeamless(shape, pixel)
     return sections.flatMap { section ->
-        if (snapLine && isLine(section, pixel)) listOf(straightCubic(section.first(), section.last())) else fitSection(section, pixel)
+        if (options.snapLine && isLine(section, pixel)) listOf(straightCubic(section.first(), section.last())) else fitSection(section, pixel)
     }
 }
 
@@ -95,7 +97,7 @@ private fun fitSeamless(ring: List<Vec2>, pixel: Float): List<CubicBezier> {
 }
 
 /** A section's end directions are the first and last edges of its simplified line, long on a straight run. */
-private fun fitSection(section: List<Vec2>, pixel: Float, startTangent: Vec2? = null, endTangent: Vec2? = null): List<CubicBezier> {
+internal fun fitSection(section: List<Vec2>, pixel: Float, startTangent: Vec2? = null, endTangent: Vec2? = null): List<CubicBezier> {
     val line = simplified(section, pixel)
     val start = startTangent ?: (line[1] - line[0]).unit()
     val end = endTangent ?: (line[line.lastIndex - 1] - line.last()).unit()
@@ -133,14 +135,14 @@ internal fun closeGap(pixel: Float): Float = CLOSE_GAP_PIXELS * pixel
 internal fun nearReach(pixel: Float): Float = NEAR_PIXELS * pixel
 
 /** [samples] resampled and smoothed with corners held, both ends where they were. Null for a stroke too short to be one. */
-internal fun smoothedOpenLine(samples: List<Vec2>, pixel: Float, smoothing: Float = DEFAULT_STROKE_SMOOTH): List<Vec2>? {
+internal fun smoothedOpenLine(samples: List<Vec2>, pixel: Float, smoothing: Float = DEFAULT_STROKE_SMOOTH, marks: List<StrokeMark> = emptyList()): List<Vec2>? {
     if (samples.size < 2 || arcLength(samples) < strokeMinLength(pixel)) return null
-    return smoothed(resample(samples, strokeSpacing(pixel)), closed = false, smoothPasses(smoothing))
+    return smoothed(resample(samples, strokeSpacing(pixel)), closed = false, smoothPasses(smoothing), marks, pixel)
 }
 
 /** An open run fitted between its corners. A given tangent leaves that end as [fitCubics] takes it; otherwise the run's own direction does. */
-internal fun fitOpenRun(shape: List<Vec2>, pixel: Float, startTangent: Vec2?, endTangent: Vec2?): CleanStroke {
-    val cuts = listOf(0) + cornerIndices(shape, CORNER_WINDOW, CORNER_COSINE) + shape.lastIndex
+internal fun fitOpenRun(shape: List<Vec2>, pixel: Float, startTangent: Vec2?, endTangent: Vec2?, marks: List<StrokeMark> = emptyList()): CleanStroke {
+    val cuts = listOf(0) + strokeCorners(shape, closed = false, marks, pixel) + shape.lastIndex
     val pieces = cuts.zipWithNext()
     val segments = pieces.flatMapIndexed { i, (from, to) ->
         fitSection(shape.subList(from, to + 1), pixel, startTangent.takeIf { i == 0 }, endTangent.takeIf { i == pieces.lastIndex })

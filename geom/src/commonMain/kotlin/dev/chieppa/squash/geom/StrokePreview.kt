@@ -8,6 +8,10 @@ data class StrokeOptions(
     val snapLine: Boolean = true,
     /** A stroke's ends are joined to each other or to the socket plane. Off, they stay where they are and the build reads the chord. */
     val closeEnd: Boolean = true,
+    /** Draws one edge of a shape, mirrored across this line. */
+    val half: CentreLine? = null,
+    /** What the hand forced along this stroke, in the stroke's own units. */
+    val marks: List<StrokeMark> = emptyList(),
 )
 
 /**
@@ -32,6 +36,7 @@ class StrokePreview(
 
 /** The fit's input and how each part of it came about: the pure first half of [cleanStroke]. */
 fun strokePreview(samples: List<Vec2>, ends: StrokeEnds, pixel: Float, options: StrokeOptions = StrokeOptions()): StrokePreview {
+    options.half?.let { return halfPreview(samples, ends, pixel, options, it) }
     val nothing = StrokePreview(emptyList(), false, emptyList(), emptyList(), listOf(samples), samples.first(), false)
     if (samples.size < 2 || arcLength(samples) < strokeMinLength(pixel)) return nothing
     val spacing = strokeSpacing(pixel)
@@ -43,7 +48,7 @@ fun strokePreview(samples: List<Vec2>, ends: StrokeEnds, pixel: Float, options: 
     val loop = findLoop(dense, closeGap(pixel), spacing)
     if (plane == null) return cleaner.closedLoop(loop ?: chordLoop(dense, spacing))
     if (loop != null) return cleaner.loopOnPlane(loop, plane) ?: nothing
-    val line = smoothed(dense, closed = false, passes)
+    val line = smoothed(dense, closed = false, passes, options.marks, pixel)
     val cut = cutAtPlane(line, closed = false, plane, spacing) ?: return nothing
     if (stubCrossesStroke(cut, closeGap(pixel))) return cleaner.loopOnPlane(chordLoop(dense, spacing), plane) ?: nothing
     return cleaner.cut(cut, emptyList(), line.size) ?: nothing
@@ -54,12 +59,12 @@ private class PreviewBuilder(val start: Vec2, val pixel: Float, val options: Str
 
     /** A loop in a view that keeps it closed. */
     fun closedLoop(loop: StrokeLoop): StrokePreview {
-        val line = smoothed(loop.line, closed = true, passes)
+        val line = smoothed(loop.line, closed = true, passes, options.marks, pixel)
         val shape = resample(line, spacing)
         val drawn = line.subList(0, loop.closingFrom + 1)
         val closing = line.subList(loop.closingFrom, line.size)
         return StrokePreview(
-            if (options.snapLine) straightened(shape, closed = true, pixel) else shape,
+            if (options.snapLine) straightened(shape, closed = true, pixel, options.marks) else shape,
             true,
             listOf(drawn),
             listOfNotNull(closing.takeIf { it.size > 1 }),
@@ -71,7 +76,7 @@ private class PreviewBuilder(val start: Vec2, val pixel: Float, val options: Str
 
     /** A loop opened at a socket plane. */
     fun loopOnPlane(loop: StrokeLoop, plane: StrokeEnds.CutAtPlane): StrokePreview? {
-        val line = smoothed(loop.line, closed = true, passes)
+        val line = smoothed(loop.line, closed = true, passes, options.marks, pixel)
         val cut = cutAtPlane(line, closed = true, plane, spacing) ?: return null
         return cut(cut, loop.overshoot, loop.closingFrom, loop.closes)
     }
@@ -83,7 +88,7 @@ private class PreviewBuilder(val start: Vec2, val pixel: Float, val options: Str
         val shape = resample(line, spacing)
         val isDrawn = { edge: Int -> edge < closingFrom }
         return StrokePreview(
-            if (options.snapLine) straightened(shape, closed = false, pixel) else shape,
+            if (options.snapLine) straightened(shape, closed = false, pixel, options.marks) else shape,
             false,
             pieces(cut.run.kept, isDrawn),
             listOfNotNull(cut.startStub, cut.endStub) + pieces(cut.run.kept) { !isDrawn(it) },
@@ -95,13 +100,13 @@ private class PreviewBuilder(val start: Vec2, val pixel: Float, val options: Str
 
     /** A stroke with Close end off: its own ends, cut only where it passes a socket [plane]. */
     fun leftOpen(dense: List<Vec2>, plane: StrokeEnds.CutAtPlane?): StrokePreview? {
-        val line = smoothed(dense, closed = false, passes)
+        val line = smoothed(dense, closed = false, passes, options.marks, pixel)
         val run = plane?.let { longestRun(line, closed = false, it.plane, if (it.above) 1f else -1f) ?: return null }
         val kept = run?.points ?: line
         if (arcLength(kept) < strokeMinLength(pixel)) return null
         val shape = resample(kept, spacing)
         return StrokePreview(
-            if (options.snapLine) straightened(shape, closed = false, pixel) else shape,
+            if (options.snapLine) straightened(shape, closed = false, pixel, options.marks) else shape,
             false,
             listOf(kept),
             emptyList(),

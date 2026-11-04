@@ -41,15 +41,16 @@ fun oversketch(
     pixel: Float,
     options: OversketchOptions = OversketchOptions(),
 ): Oversketch? {
+    options.stroke.half?.let { return halfOversketch(path, samples, ends, pixel, options, it) }
     val ruler = CurveRuler(path.segments)
     val plane = socketPlane(ruler, ends)
-    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing) ?: return null
+    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing, options.stroke.marks) ?: return null
     wholeRedraw(ruler, dense, samples, plane ?: StrokeEnds.Closed, pixel, options.stroke)?.let { return it }
     val line = keptOfDrawnStroke(dense, plane, pixel) ?: return null
     val span = locateSpan(ruler, line, plane, pixel, options.snapEnds) ?: return null
     val shape = resample(spanLine(span, options.falloff, pixel), strokeSpacing(pixel))
     if (shape.size < 2) return null
-    val fit = fitOpenRun(shape, pixel, startTangent(span), endTangent(span))
+    val fit = fitOpenRun(shape, pixel, startTangent(span), endTangent(span), options.stroke.marks)
     val exact = fit.path.segments.toMutableList().apply {
         this[0] = first().copy(p0 = shape.first())
         this[lastIndex] = last().copy(p3 = shape.last())
@@ -81,7 +82,12 @@ class OversketchPreview(
     val joins: Boolean,
     /** What the stroke would make instead of a span, when it would redraw the whole curve. */
     val whole: StrokePreview?,
-)
+    /** The same preview for the stroke's mirror image, with Half outline on and that image close enough to join. */
+    val mirrored: OversketchPreview? = null,
+) {
+    /** The span [line] stands the stroke in for; null where it stands in for the whole curve. */
+    internal var span: OversketchSpan? = null
+}
 
 /** What [oversketch] would touch if the stroke ended here, or null while its start is too far from [path] to join it. */
 fun oversketchPreview(
@@ -92,8 +98,20 @@ fun oversketchPreview(
     options: OversketchOptions = OversketchOptions(),
 ): OversketchPreview? {
     val ruler = CurveRuler(path.segments)
+    options.stroke.half?.let { return halfOversketchPreview(ruler, samples, ends, pixel, options, it) }
+    return oversketchPreviewOn(ruler, samples, ends, pixel, options)
+}
+
+/** [oversketchPreview] over a [ruler] the caller holds. */
+internal fun oversketchPreviewOn(
+    ruler: CurveRuler,
+    samples: List<Vec2>,
+    ends: StrokeEnds,
+    pixel: Float,
+    options: OversketchOptions,
+): OversketchPreview? {
     val plane = socketPlane(ruler, ends)
-    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing)
+    val dense = smoothedOpenLine(samples, pixel, options.stroke.smoothing, options.stroke.marks)
     if (dense != null && redrawsAll(ruler, dense, pixel)) {
         val whole = strokePreview(samples, plane ?: StrokeEnds.Closed, pixel, options.stroke)
         if (whole.shape.isNotEmpty()) {
@@ -119,7 +137,7 @@ fun oversketchPreview(
         run?.rest?.map { it.line }.orEmpty(),
         joins,
         null,
-    )
+    ).also { it.span = span }
 }
 
 /** The straight runs from the stroke's joined ends to where they meet the curve. */

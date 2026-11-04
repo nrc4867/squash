@@ -167,7 +167,11 @@
     <string name="draw_drawer_outline">Outline</string>
     <string name="draw_stroke">Stroke</string>
     <string name="draw_smooth">Smooth</string>
+    <string name="draw_stabilizer">Stabilizer</string>
     <string name="draw_snap_line">Snap line</string>
+    <string name="draw_snap_guides">Snap to guides</string>
+    <string name="draw_half_outline">Half outline</string>
+    <string name="draw_tool_hint">%1$s · Corner (Alt) · Smooth (Shift)</string>
     <string name="draw_close_end">Close end</string>
     <string name="draw_hold_snap">Hold to snap</string>
     <string name="draw_hint">Hint</string>

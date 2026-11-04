@@ -8,6 +8,7 @@ import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
+import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
 import dev.chieppa.squash.uidesign.generated.pick_tool_add
 import dev.chieppa.squash.uidesign.generated.pick_tool_select
@@ -58,6 +59,7 @@ object ShellActions {
     val ERASE = ActionId("tool-erase")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
+    val HALF_OUTLINE = ActionId("half-outline")
     val SELECT = ActionId("tool-select")
     val ADD_PART = ActionId("tool-add-part")
 }
@@ -83,6 +85,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.ERASE to Res.string.edit_tool_erase,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
+    ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.SELECT to Res.string.pick_tool_select,
     ShellActions.ADD_PART to Res.string.pick_tool_add,
 )
@@ -113,6 +116,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "erase" -> SquashIcons.Erase
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
+    "half-outline" -> SquashIcons.HalfOutline
     "select" -> SquashIcons.Select
     "add-part" -> SquashIcons.AddPart
     else -> null
@@ -159,6 +163,7 @@ fun Shell.registerActions() {
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
+    action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }
     action(ShellActions.SELECT, "select", chord("V"), onPick) { state.pickTool.value = PickTool.SELECT }
     action(ShellActions.ADD_PART, "add-part", chord("A"), onPick) { state.pickTool.value = PickTool.ADD_PART }
 }

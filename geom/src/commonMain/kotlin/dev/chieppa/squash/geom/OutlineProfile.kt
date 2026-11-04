@@ -46,6 +46,9 @@ class OutlineProfile private constructor(
     /** [run] closed, with its first point repeated last. */
     fun ring(): List<Vec2> = run().let { it + it.first() }
 
+    /** The distance along x between one station and the next, the finest thing the table reads. */
+    val stationStep: Float get() = (end - start) / (STATIONS - 1)
+
     private fun lookup(table: FloatArray, x: Float): Float {
         val position = ((x - start) / (end - start)).coerceIn(0f, 1f) * (STATIONS - 1)
         val i = position.toInt().coerceAtMost(STATIONS - 2)

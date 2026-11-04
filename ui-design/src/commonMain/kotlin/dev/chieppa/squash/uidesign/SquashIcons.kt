@@ -160,6 +160,13 @@ object SquashIcons {
             stroke("M8.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0z")
         }
     }
+    val HalfOutline: ImageVector by lazy {
+        icon("half-outline") {
+            stroke("M8 1.5v13")
+            stroke("M8 3C4.6 3 2.5 5.2 2.5 8s2.1 5 5.5 5")
+            stroke("M11 3.6h.01M13.3 6.6h.01M13.3 9.4h.01M11 12.4h.01")
+        }
+    }
     val Join: ImageVector by lazy {
         icon("join") {
             stroke("M8 2.5l6 3-6 3-6-3z")
