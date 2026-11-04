@@ -4,6 +4,7 @@ Decided in principle, not yet scheduled into a spike or a stage. Each names its 
 
 | Item | Mechanism | When |
 | --- | --- | --- |
+| Blank mode | An empty body plan, generic `tube`, `blob` and `sheet` templates, an add action on Move for joints, sockets, landmarks and pairs, re-templating that keeps outlines; boards 1 and 2 redrawn to show Blank and the Generic group. See `docs/hld/parts.md`, Blank mode | After stage 3, before posing |
 | Shot board for eyes and mouth | The gaze gizmo, per-eye and mouth controls and the expression picker in Shot, drawn in Squash flow of work | Before the posing screens |
 | Mark morphing and clipping | Morph between curve versions with equal control-point counts; clip one mark by another, in `geom` | Before spike 9 |
 | Character scale | A character-level scale so a mouse and a horse share a scene; parts stay in character units | First version |

@@ -47,6 +47,10 @@ One orchestrating session per sitting. Round 0 is serial and lands on `main` bef
 - **`geom`**: curve morphing between two curve versions with equal control-point counts, and clipping one closed curve by another, both needed by the mark groups.
 - **The Move fix** from Before round 1.
 
+### Round 1 opens with the look probe
+
+Before any tool, one branch, `look-probe`, renders the saved fennec with base colors from the palette, the line rules, one fur patch on the chest, and one eye mark group with its three angle versions, flat and two-tone, through commands in a smoke test, from side, three-quarter and front. The images go under `docs/work/look-probe/` for Nicholas to judge. This is the plan's style test brought forward to the first moment it can be seen: if the look is not right, the stage stops here and the art approach is revisited before the tools are built around it. What it shows wanting is written into the HLD as the fix, not worked around in the probe.
+
 ### Round 1, parallel
 
 | Branch | Modules | Delivers | Board |
