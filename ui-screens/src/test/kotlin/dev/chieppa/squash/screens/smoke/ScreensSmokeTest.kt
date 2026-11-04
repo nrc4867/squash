@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.smoke
 
+import androidx.compose.ui.test.performMouseInput
+import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -164,6 +166,25 @@ class ScreensSmokeTest {
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.NEW_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.NEW_DIALOG)
         keep(onNodeWithTag(ShellTags.NEW_DIALOG).captureToImage().argbPixels(), onNodeWithTag(ShellTags.NEW_DIALOG).fetchSemanticsNode().size.width, "new")
+    }
+
+    @Test
+    fun theWheelZoomsOnePaneOfTheRealSheetAndItsReadoutFitsItAgain() = smoke {
+        val state = AppState(templates, scope)
+        show(state)
+        assertSettled(createCharacter(state))
+        val side = onNodeWithTag(sheetPaneTag(SheetPane.SIDE))
+        side.performMouseInput {
+            moveTo(center)
+            scroll(-2f)
+        }
+        waitForIdle()
+        assertTrue(state.paneNavigation[View.SIDE].zoom > 1f, "Side zooms")
+        assertEquals(1f, state.paneNavigation[View.TOP].zoom, "Top stays")
+        onNodeWithTag(PANE_ZOOM_TAG).performClick()
+        waitForIdle()
+        assertEquals(1f, state.paneNavigation[View.SIDE].zoom)
+        onNodeWithTag(PANE_ZOOM_TAG).assertDoesNotExist()
     }
 
     @Test

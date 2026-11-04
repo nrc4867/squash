@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens
 
+import dev.chieppa.squash.screens.sheet.PaneNavigation
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
@@ -66,6 +67,9 @@ class AppState(
 
     /** The view the curve tools show their points in, which rings its pane. */
     val activeView = MutableStateFlow(View.SIDE)
+
+    /** Each locked pane's own zoom and pan. */
+    val paneNavigation = PaneNavigation()
 
     /** What a socket's dot does on Pick a part type. */
     val pickTool = MutableStateFlow(PickTool.SELECT)

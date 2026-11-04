@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
 import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,6 +60,7 @@ object ShellActions {
     val EDIT_CURVES = ActionId("tool-edit")
     val ERASE = ActionId("tool-erase")
     val MOVE = ActionId("tool-move")
+    val FIT_PANE = ActionId("fit-pane")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
@@ -86,6 +88,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
     ShellActions.ERASE to Res.string.edit_tool_erase,
     ShellActions.MOVE to Res.string.move_tool,
+    ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
@@ -166,6 +169,7 @@ fun Shell.registerActions() {
     action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
     action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.MOVE, "move", chord("V"), inWorkspace) { state.armTool(BuildTool.MOVE) }
+    action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.paneNavigation.fit(state.activeView.value) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }

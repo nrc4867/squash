@@ -1,5 +1,12 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
+import dev.chieppa.squash.uidesign.generated.sheet_pane_zoom
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.platform.testTag
+import dev.chieppa.stretch.ui.Tooltip
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -37,6 +44,8 @@ internal fun PaneViewport(
     fitError: Float? = null,
     progress: Float = 0f,
     bottomStart: (@Composable () -> Unit)? = null,
+    zoom: Float? = null,
+    onFit: () -> Unit = {},
 ) {
     Viewport(
         modifier,
@@ -44,7 +53,19 @@ internal fun PaneViewport(
         topStart = { PaneLabel(view) },
         topEnd = chip?.let { { PaneChipView(it, fitError, progress) } },
         bottomStart = bottomStart,
+        bottomEnd = zoom?.let { { PaneZoom(it, onFit) } },
     ) {}
+}
+
+/** The pane's zoom while it is away from the fit; pressing it goes back. */
+@Composable
+private fun PaneZoom(zoom: Float, onFit: () -> Unit) {
+    val label = stringResource(Res.string.sheet_pane_fit)
+    Tooltip(label, listOf("F")) {
+        Box(Modifier.testTag(PANE_ZOOM_TAG).clickable(onClick = onFit)) {
+            Hud(stringResource(Res.string.sheet_pane_zoom, (zoom * PERCENT).roundToInt()))
+        }
+    }
 }
 
 @Composable
@@ -81,6 +102,11 @@ private fun PaneChipView(chip: PaneChip, fitError: Float?, progress: Float) {
         PaneChip.HIDES_PAIR -> Chip(stringResource(Res.string.edit_chip_this_side), kind = ChipKind.Warn)
     }
 }
+
+/** The test tag of a pane's zoom readout. */
+const val PANE_ZOOM_TAG = "sheet.pane.zoom"
+
+private const val PERCENT = 100
 
 /** The test tag of the Refit readout's bar. */
 const val REFIT_BAR_TAG = "sheet.refit.bar"

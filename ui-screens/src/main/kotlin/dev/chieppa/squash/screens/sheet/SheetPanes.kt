@@ -83,7 +83,9 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
     val rects = sheetPaneRects(size.width, size.height, gap)
     val held = remember(part?.id, size) { HeldCameras() }
-    val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, tool?.holdsFit == true || tool?.drawingIn != null)
+    val holding = tool?.holdsFit == true || tool?.drawingIn != null
+    LaunchedEffect(part?.id) { state.paneNavigation.fitAll() }
+    val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, holding, state.paneNavigation)
     val refitting = rememberRefitting(state)
     val progress = rememberRefitProgress(state)
     val shownActive = tool?.drawingIn ?: active
@@ -123,7 +125,10 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             val input = when {
                 body == null -> Modifier.orbitNavigation(orbit).then(tool?.fullInput(fullView) ?: Modifier)
                 camera == null -> Modifier
-                else -> Modifier.pressed(camera.view) { state.activeView.value = it }.then(tool?.pointerInput(camera.view, camera) ?: Modifier)
+                else -> Modifier
+                    .paneNavigation(state.paneNavigation, camera, holding)
+                    .pressed(camera.view) { state.activeView.value = it }
+                    .then(tool?.pointerInput(camera.view, camera) ?: Modifier)
             }
             val chip = if (selection == null) {
                 null
@@ -131,7 +136,17 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
                 paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting, selection.overridden, mirror, disagreements.mapTo(mutableSetOf()) { it.view })
             }
             val fitError = if (tool?.drawingIn != null) null else view?.let { tool?.fitErrorPixels(it) }
-            PaneViewport(view, chip, input.testTag(sheetPaneTag(pane)), fitError, progress, paneToast?.takeIf { pane == SheetPane.SIDE })
+            val zoom = view?.takeIf { camera != null }?.let { state.paneNavigation[it] }?.takeIf { it != PaneNav() }?.zoom
+            PaneViewport(
+                view,
+                chip,
+                input.testTag(sheetPaneTag(pane)),
+                fitError,
+                progress,
+                paneToast?.takeIf { pane == SheetPane.SIDE },
+                zoom,
+                { view?.let(state.paneNavigation::fit) },
+            )
         }
     }
 }
@@ -171,23 +186,26 @@ private class HeldCameras {
     private var origin: Vec3? = null
     private var scale: Float? = null
     private var axes: PartAxes? = null
+    private var navs: Map<View, PaneNav> = emptyMap()
     private var cameras: Map<View, LockedCamera> = emptyMap()
 
     /** [hold] keeps them still while a stroke or a drag is under way, whatever the part does beneath it. */
-    fun camerasFor(selection: SheetSelection, rects: List<PixelRect>, hold: Boolean): Map<View, LockedCamera> {
+    fun camerasFor(selection: SheetSelection, rects: List<PixelRect>, hold: Boolean, navigation: PaneNavigation): Map<View, LockedCamera> {
         if (hold && cameras.isNotEmpty()) return cameras
         val part = selection.part
         val next = keepFit(fit, part.box, part.axes, rects, depthReach(selection, fit))
-        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.axes != axes) {
+        val nextNavs = View.entries.associateWith { navigation[it] }
+        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.axes != axes || nextNavs != navs) {
             fit = next
             axes = part.axes
+            navs = nextNavs
             origin = part.origin
             scale = selection.drawingScale
             cameras = SheetPane.entries.mapNotNull { pane ->
                 val body = pane.body ?: return@mapNotNull null
                 val rect = rects[pane.ordinal]
                 val view = part.axes.framing.getValue(body)
-                view to LockedCamera(view, part.axes, next, rect.width, rect.height, part.origin, selection.drawingScale)
+                view to LockedCamera(view, part.axes, navigation[view].applied(next), rect.width, rect.height, part.origin, selection.drawingScale)
             }.toMap()
         }
         return cameras
