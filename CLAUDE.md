@@ -25,6 +25,8 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
 ./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
+./gradlew :screens-core:test -PupdateGoldens  # rewrite the saved fennec fixture from its commands
+./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
 ```
 
 Stop a running app before rebuilding; a rebuild under a running app breaks it. To see the running app, use Stretch's screenshot endpoint as described in `../stretch/.claude/skills/app-screenshot/SKILL.md`, never a desktop screenshot.
@@ -39,7 +41,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces | `screens-shell` | Home, New character, Pick a part type, the Build frame and its chrome |
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
 | Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
-| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions. No sources yet |
+| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |

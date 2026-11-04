@@ -17,7 +17,7 @@ data class PartMaterial(
     val toLight: Vec3 = DEFAULT_TO_LIGHT,
 ) {
     companion object {
-        val DEFAULT_TO_LIGHT = Vec3(-0.4f, 0.8f, 0.5f).normalized()
+        val DEFAULT_TO_LIGHT = Vec3(0.45f, 0.8f, -0.5f).normalized()
     }
 }
 

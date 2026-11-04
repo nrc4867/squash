@@ -30,4 +30,8 @@ tasks.test {
     val templates = rootProject.layout.projectDirectory.dir("templates")
     inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.templates", templates.asFile.path)
+    if (providers.gradleProperty("updateGoldens").isPresent) {
+        systemProperty("squash.updateGoldens", "true")
+        outputs.upToDateWhen { false }
+    }
 }

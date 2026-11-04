@@ -33,6 +33,11 @@ tasks.test {
     val templates = rootProject.layout.projectDirectory.dir("templates")
     inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.templates", templates.asFile.path)
+    // -PlookProbe overwrites the committed look probe images, which a run otherwise leaves alone.
+    if (providers.gradleProperty("lookProbe").isPresent) {
+        systemProperty("squash.lookProbeImages", rootProject.layout.projectDirectory.dir("docs/work/look-probe").asFile.path)
+        outputs.upToDateWhen { false }
+    }
 }
 
 compose.desktop {

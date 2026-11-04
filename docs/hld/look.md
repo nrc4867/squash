@@ -24,6 +24,8 @@ Chosen per object, within limits the scene sets. Flat characters in a shaded wor
 
 In two-tone, each part's shadow falls as a clean drawn shape: the shader reads each slice's proxy normal (the normal of its ellipse, blended along the axis) instead of the mesh normal, which is the edited-normals technique with no hand editing. Automatic from the light; no painted shadows, no lookup image. The slice build computes the proxy normal once, in the ring's proxy normal frame, and carries it to the mesh per vertex, so shading adds nothing to a drawn mesh beyond the build. A ring's slope along the axis turns its normals toward the axis, so a rounded end shades round. A patch with no slices, such as a pad, shades by its mesh normal.
 
+The shadow tone is the slot's own, by default a warm shift of its color rather than a multiply, since a pale slot multiplied turns grey. A head's skull and muzzle are one part with overlapping runs, so across the overlap their proxy normals blend and one shadow edge runs over both; where a run covers another the covered one neither shows color nor fights it.
+
 Far parts darken automatically by side: paired parts on the side facing away from the camera get a darker shade of their color, swapping as the character turns. Subtle in the references, so it can be switched off.
 
 **Base color first.** A character has a palette of named slots (fur, cream, pads, nose, inner ear, ink by default, from the body plan), and every part carries a base slot, so blocking out the character is choosing a slot per part before any painting: Fill on a part sets its base slot, and the Parts tree shows each part's base color in its row swatch. Template blocks with a `color` field (pads, nose leather, inner ear) name a slot, so they are right as soon as the slot is. Editing a slot recolors everything that names it. Mirrored pairs share base slots like everything else. The default palette is the body plan's, not a constant in code.
@@ -48,11 +50,15 @@ Sections layer in a fixed order: the part's base slot, then filled areas, then r
 
 Both modes share the same line rules: thick on the silhouette, thin inside, a line wherever one part overlaps another. The drawn width of an outline means nothing; line rules set rendered weight, and a width tool adjusts it along an outline afterwards. A line-weight adjustment lives on the body surface, so wherever that area is on the silhouette, from any angle, it uses the adjusted weight.
 
-**Where parts meet.** Parts are separate meshes that overlap at their sockets. In flat shading the overlap is invisible, but in two-tone the shadow edge and the silhouette detector both see the crease. So the border at a socket is inked by default, which is also how the reference draws a leg against a body. Switching that ink off is tested in both modes in spike 3.
+**Where parts meet.** Parts are separate meshes that overlap at their sockets. In flat shading the overlap is invisible, but in two-tone the shadow edge and the silhouette detector both see the crease. So the border at a socket is inked by default, which is also how the reference draws a leg against a body. Switching that ink off is tested in both modes in spike 3. The crease is the curve on the part where it leaves its parent, found on the part's grid, and draws as an even ribbon.
+
+**The two weights.** Every part's outline draws in the back slice of the depth buffer at the silhouette weight, so only what clears the whole figure shows it, and again in the scene at the interior weight, so a part standing clear of another has the thin line. The outline is the mesh's back faces pushed out, so it takes the corners of the mesh's rings, and these show on a head at close zoom. The silhouette therefore moves to a ribbon along a smoothed contour of the mesh, with the same two weights. Pads are built with enough segments that a nose is not a polygon.
 
 ## Marks
 
 Fur is mainly strokes drawn on the surface, shown where the area nears the silhouette; big shapes such as a tail tip are drawn into the outline. Graftals' rule for keeping tufts evenly spaced on screen may be reused.
+
+An inked line along the grain reads as a loose hair against a thick silhouette, so a fur stroke is a tapered wedge filled in the slot under it, with ink on its edge, whose tip breaks the silhouette. A sawtooth drawn into an outline is swept round the part as a stack of ridges, which reads as tufts only side on and as a segmented body at three-quarter, so an outline carries a part's mass and its tufts are these strokes.
 
 Face marks are painted on the head's surface, with versions drawn for a few head angles that switch, not blend, as the head turns. Each expression has its own set of angle versions. Each mark's 3D position comes from the body it sits on, never estimated from the drawings. Marks anchor to template coordinates (see [data-model.md](data-model.md), Surface anchor), so they survive refits and oversketches.
 
@@ -61,6 +67,8 @@ Face marks are painted on the head's surface, with versions drawn for a few head
 Eyes carry the acting, so they are not loose marks. An eye is a **mark group** with named roles and controls, and the pupils have a movement system of their own.
 
 **Roles.** Lid outline, white, iris, pupil, highlight, brow, lashes. Each role has its own ink and fill rule and a fixed draw order. The lid outline clips the white, iris and pupil. The highlight is the one mark that is camera-locked: it sits where the light and camera put it, not where it was drawn.
+
+Marks are graphic, so an eye's fills take no shadow tone. Near the head's axis a patch's lines of constant v all run to the nose, so an eye's versions are drawn in a frame of the eye region's own, not the patch's u and v, and a brow that reads level from the side does not turn into a frown from ahead.
 
 **Controls per eye.** Open (0 closed to 1 open, a morph between lid versions with the same control-point count, so blinks and sleepy looks are a value, not a drawing), expression shape (a blend within the expression set for lids and brows; angle versions still switch), pupil dilation, and a gaze offset. Every control is per eye, so one brow can rise alone.
 

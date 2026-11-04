@@ -10,6 +10,9 @@ kotlin {
 
 dependencies {
     api(project(":screens-core"))
+
+    testImplementation(kotlin("test"))
+    testImplementation(testFixtures(project(":screens-core")))
 }
 
 tasks.test {
