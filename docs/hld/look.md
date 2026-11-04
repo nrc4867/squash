@@ -26,6 +26,8 @@ In two-tone, each part's shadow falls as a clean drawn shape: the shader reads e
 
 Far parts darken automatically by side: paired parts on the side facing away from the camera get a darker shade of their color, swapping as the character turns. Subtle in the references, so it can be switched off.
 
+**Base color first.** A character has a palette of named slots (fur, cream, pads, nose, inner ear, ink by default, from the body plan), and every part carries a base slot, so blocking out the character is choosing a slot per part before any painting: Fill on a part sets its base slot, and the Parts tree shows each part's base color in its row swatch. Template blocks with a `color` field (pads, nose leather, inner ear) name a slot, so they are right as soon as the slot is. Editing a slot recolors everything that names it. Mirrored pairs share base slots like everything else. The default palette is the body plan's, not a constant in code.
+
 No textures. Color is painted on the surface by brush or fill, or bounded by a region border drawn as a curve on the surface for crisp edges. Each border can be inked or not.
 
 ## Lines
