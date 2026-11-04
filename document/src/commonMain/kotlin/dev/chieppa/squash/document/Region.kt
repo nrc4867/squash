@@ -2,7 +2,7 @@ package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
 
-private const val MIN_BORDER_POINTS = 3
+const val MIN_BORDER_POINTS = 3
 
 /** An area of color bounded by [border], a closed curve of anchors that may run across parts. [ink] draws the border as a line. */
 @Serializable

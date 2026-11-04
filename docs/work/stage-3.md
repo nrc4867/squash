@@ -40,7 +40,6 @@ One orchestrating session per sitting. Round 0 is serial and lands on `main` bef
 
 ### Round 0, serial
 
-- **Graph nodes** that turn anchors into positions on the current mesh, and a `Settled` path for them, so every later branch reads positions from the graph and never computes them in composition.
 - **Render seams**: a stroke ribbon pass (tapered, screen-space width from the line rules and the width tool), a region and paint pass that renders crisp borders in anchor space, and the two-tone shading with proxy normals and far-side darkening. Each behind a small interface in `render` so the branches below fill them in without touching each other's files.
 - **The Move fix** from Before round 1.
 

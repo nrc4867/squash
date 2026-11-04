@@ -70,6 +70,7 @@
     <string name="shell_stage_mesh">part mesh</string>
     <string name="shell_stage_surface">part surface</string>
     <string name="shell_stage_assembly">character</string>
+    <string name="shell_stage_surface_work">surface work</string>
     <string name="shell_status_parts">%1$d of %2$d parts</string>
     <string name="shell_status_views">%1$d drawn · %2$d from template</string>
     <string name="shell_status_views_drawing">%1$d drawn · 1 drawing · %2$d from template</string>

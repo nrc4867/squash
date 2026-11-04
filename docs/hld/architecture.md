@@ -70,7 +70,7 @@ A project holds a cast and scenes. A scene owns the set, backdrop, light and sha
 
 ### Derived data
 
-Drawing to slices to part mesh to rig and weights to lines and marks to render and thumbnails. Each step is a node in `graph` that declares its inputs. When an input changes, the node recomputes in a coroutine and any older run of it is cancelled. Results are cached by their inputs, so undo is instant.
+Drawing to slices to part mesh to rig and weights to lines and marks to render and thumbnails, with surface work resolved from anchors to positions on the way to lines and marks. Each step is a node in `graph` that declares its inputs. When an input changes, the node recomputes in a coroutine and any older run of it is cancelled. Results are cached by their inputs, so undo is instant.
 
 The graph implements Stretch's `Settled`: settled means nothing dirty and nothing running. Tests, agents and render-to-file wait on it, never on a timer.
 
@@ -95,7 +95,7 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
-| Domain | `character` | Part templates and body plans, the catalog over what is loaded, slice building, the slice row graph node, the open character session |
+| Domain | `character` | Part templates and body plans, the catalog over what is loaded, slice building, the slice row and surface work graph nodes, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain) and commands, on `stretch-core` |
 | Core | `graph` | The derived-data graph and `Settled` |

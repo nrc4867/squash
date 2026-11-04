@@ -44,7 +44,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
-| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row graph node, the open character session |
+| Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row and surface work graph nodes, the open character session |
 | Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
 | Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |

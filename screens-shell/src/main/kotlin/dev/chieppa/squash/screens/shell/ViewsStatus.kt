@@ -8,6 +8,7 @@ import dev.chieppa.squash.uidesign.generated.shell_stage_assembly
 import dev.chieppa.squash.uidesign.generated.shell_stage_mesh
 import dev.chieppa.squash.uidesign.generated.shell_stage_slices
 import dev.chieppa.squash.uidesign.generated.shell_stage_surface
+import dev.chieppa.squash.uidesign.generated.shell_stage_surface_work
 import dev.chieppa.squash.uidesign.generated.shell_status_conflict
 import dev.chieppa.squash.uidesign.generated.shell_status_conflicts
 import dev.chieppa.squash.uidesign.generated.shell_status_views
@@ -54,6 +55,7 @@ fun stageLabel(stage: String?): String = stringResource(
         BuildStages.SLICES -> Res.string.shell_stage_slices
         BuildStages.SURFACE -> Res.string.shell_stage_surface
         BuildStages.ASSEMBLY -> Res.string.shell_stage_assembly
+        BuildStages.SURFACE_WORK -> Res.string.shell_stage_surface_work
         else -> Res.string.shell_stage_mesh
     },
 )

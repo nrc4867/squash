@@ -6,6 +6,7 @@ object BuildStages {
     const val MESH = "mesh"
     const val SURFACE = "surface"
     const val ASSEMBLY = "assembly"
+    const val SURFACE_WORK = "surface work"
 
-    val ORDER = listOf(SLICES, MESH, SURFACE, ASSEMBLY)
+    val ORDER = listOf(SLICES, MESH, SURFACE, ASSEMBLY, SURFACE_WORK)
 }

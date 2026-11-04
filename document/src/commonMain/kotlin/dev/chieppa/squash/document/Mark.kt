@@ -2,7 +2,7 @@ package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
 
-private const val MIN_MARK_POINTS = 2
+const val MIN_MARK_POINTS = 2
 
 /** A share of the line rule's weight at a place along a mark, 0 to 1 from its start. */
 @Serializable

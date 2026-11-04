@@ -2,15 +2,19 @@ package dev.chieppa.squash.character.session
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.AssemblyShape
+import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.PartBuild
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PartBuildInput
+import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assemblyNode
 import dev.chieppa.squash.character.build.assemblyParts
+import dev.chieppa.squash.character.build.bodySurfaceWorkNode
 import dev.chieppa.squash.character.build.defaultSurfaceNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
+import dev.chieppa.squash.character.build.partSurfaceWorkNode
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
@@ -45,6 +49,7 @@ class CharacterSession(
     private val meshes = mutableMapOf<PartId, Node<PartBuild, PartMesh>>()
     private val surfaces = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val defaults = mutableMapOf<Pair<TemplateRef, Boolean>, Node<*, PartSurface>>()
+    private val works = mutableMapOf<PartId, Node<*, ResolvedSurfaceWork>>()
 
     /**
      * The whole character, each part on its socket with the plan's empty sockets filled from their templates. Made with
@@ -56,6 +61,16 @@ class CharacterSession(
         templates,
         ::surface,
         ::defaultSurface,
+    )
+
+    /**
+     * Every part's surface work as positions in body space, through [assembly]'s placement. Made with the session, so
+     * [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending.
+     */
+    val bodySurfaceWork: Node<*, BodySurfaceWork> = graph.bodySurfaceWorkNode(
+        document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
+        assembly,
+        ::surfaceWork,
     )
 
     fun send(command: DocumentCommand) = history.execute(command)
@@ -77,6 +92,13 @@ class CharacterSession(
         val axes = instance?.let { templates.find(it.template) }?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
         graph.partSurfaceNode(mesh(part), axes, instance?.side)
     }
+
+    /**
+     * [part]'s surface work as positions in surface space, each point in the space of the part its anchor names; one per part
+     * for the session's life. A part not in the document holds nothing.
+     */
+    fun surfaceWork(part: PartId): Node<*, ResolvedSurfaceWork> =
+        works.getOrPut(part) { graph.partSurfaceWorkNode(document, part, ::surface) }
 
     private fun defaultSurface(template: TemplateRef, mirrored: Boolean): Node<*, PartSurface> =
         defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(templates[template], mirrored) }

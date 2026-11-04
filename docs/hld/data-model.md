@@ -15,6 +15,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Mark | A polyline of anchors, a width profile, an ink flag, a camera-locked flag, per-angle versions keyed by camera bin. Held in a part's surface work or in the expression set it belongs to | Document |
 | Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the part's midline, height, width, a closed section spline and a proxy normal | Derived |
 | Part mesh | One grid per patch; every vertex tagged with part, patch, bone, u and v | Derived |
+| Resolved surface work | A part's marks, groups, regions, paint and expression marks with every anchor turned into a position and normal on the current mesh | Derived |
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default); parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
@@ -148,6 +149,17 @@ One graph node assembles the character from the built parts, so `Settled` covers
 - **An empty socket shows what it would take.** The plan's empty sockets each place a planned part, its first `takes` template built with nothing drawn, recursively, stopping where a plan would loop. So a character with only a torso shows the whole body in its rest pose. A planned part is never in the document. A character's floor lies under the lowest vertex of everything shown.
 
 The node holds, per part, its mesh, silhouettes and extents, each derived in the graph from the part's build.
+
+## Surface work on the mesh
+
+Positions are never stored and never computed in composition. Two graph nodes derive them, so `Settled` covers them, and everything that draws surface work reads them.
+
+- **`CharacterSession.surfaceWork(part)`** gives one part's `ResolvedSurfaceWork`. It follows what the part resolves to, including its side's reading of a pair's anchors, and the surface of every part its anchors name, so a border that runs onto a parent follows that parent's redraw too. A surface edit reruns this node and no mesh; an outline or template change reaches it through the surface.
+- **`CharacterSession.bodySurfaceWork`** gives every part's work in body space, in the document's order of parts, through the assembly's placement. A redraw of a parent moves a child's work here and leaves the child's own node alone.
+- **The shape keeps the document's.** Marks with their camera bins' versions, regions and brush strokes keep their ids, names, slots, flags and draw order, with each anchor a `ResolvedPoint`: the anchor, its position and its normal. Groups stay the document's `MarkGroup`. Expressions a part shows are listed in the document's order by id and name, then by group and role, for the groups the part holds. Grain has no anchors and stays in the document.
+- **A point lies in the space of the part its anchor names.** In a part's node that is the named part's surface space, mirrored on the right as its mesh is, with `PartSurface.shown`. In the body node it has moved by that part's origin. Placing is translation, so a normal is the same in both.
+- **An anchor lands at `positionAt`, off along `surfaceAt`'s normal by its offset.** The offset is outward when positive, in the part's own units. A u past a patch's rings holds at its end ring.
+- **A dangling anchor drops.** An anchor naming a part not in the document, a patch the part did not build, or a patch with no slices, such as a pad, is left out. An item left too short to be one drops with it: a mark or a mark version under two points, a region under three, a brush stroke with none. A group stops naming a mark that dropped, and keeps its name, roles and controls. The document keeps every anchor, so a part or patch that returns brings them back.
 
 ## How a pane looks at a part
 
