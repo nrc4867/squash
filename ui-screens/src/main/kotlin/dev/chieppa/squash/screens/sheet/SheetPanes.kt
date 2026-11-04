@@ -26,13 +26,9 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.PixelRect
-import dev.chieppa.squash.render.SceneFrame
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.single.SingleSurface
-import dev.chieppa.stretch.frame.NativeSurface
 import dev.chieppa.stretch.gpu.OrbitCamera
-import dev.chieppa.stretch.gpu.WebGpuRenderer
 import dev.chieppa.stretch.gpu.orbitNavigation
 import dev.chieppa.stretch.theme.Stretch
 import kotlin.math.roundToInt
@@ -79,7 +75,6 @@ fun SheetPanes(
 private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
-    val renderer = remember { WebGpuRenderer<SceneFrame> { ViewsScene(it) } }
     val orbit = remember { OrbitCamera(yaw = FULL_YAW, pitch = FULL_PITCH) }
     var size by remember { mutableStateOf(IntSize.Zero) }
     val active by state.activeView.collectAsState()
@@ -115,7 +110,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {
-        NativeSurface(frame, renderer, Modifier.fillMaxSize(), onFailure = { it.printStackTrace() })
+        SceneSurface(frame.takeIf { size != IntSize.Zero }, Modifier.fillMaxSize())
         SheetPaneGrid(gap, Modifier.fillMaxSize()) { pane ->
             val body = pane.body
             val axes = part?.axes

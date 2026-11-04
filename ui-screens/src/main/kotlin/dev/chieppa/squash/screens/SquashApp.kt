@@ -5,22 +5,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.screens.shell.BuildScreens
 import dev.chieppa.squash.screens.shell.HomeScreen
-import dev.chieppa.squash.screens.shell.NewCharacterScreen
-import dev.chieppa.squash.screens.shell.PickPartScreen
 import dev.chieppa.squash.screens.shell.Shell
 import dev.chieppa.squash.screens.shell.ShellActions
-import dev.chieppa.squash.screens.shell.WorkspaceScreen
 import dev.chieppa.squash.screens.shell.actionIcon
 import dev.chieppa.squash.screens.shell.actionText
 import dev.chieppa.squash.screens.shell.registerActions
@@ -47,19 +42,10 @@ fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null))
     val shell = remember(state, chooser) { Shell(state, chooser, ToastState(), scope).apply { registerActions() } }
     val screen by state.screen.collectAsState()
     val file by state.file.collectAsState()
-    var previous by remember { mutableStateOf<Screen?>(null) }
-    LaunchedEffect(screen) {
-        shell.onScreen(screen, previous)
-        previous = screen
-    }
+    remember(screen) { shell.onScreen(screen) }
     CompositionLocalProvider(LocalActionText provides actionText()) {
         Box(Modifier.fillMaxSize().focusHome().actionKeys(shell.keymap, null)) {
-            when (screen) {
-                Screen.HOME -> HomeScreen(shell)
-                Screen.NEW_CHARACTER -> NewCharacterScreen(shell)
-                Screen.PICK_PART -> PickPartScreen(shell)
-                Screen.WORKSPACE -> WorkspaceScreen(shell)
-            }
+            if (screen == Screen.HOME) HomeScreen(shell) else BuildScreens(shell, screen)
             if (screen != Screen.WORKSPACE) ToastHost(shell.toasts, Modifier.align(Alignment.BottomCenter).padding(bottom = TOAST_LIFT))
         }
         CommandPalette(

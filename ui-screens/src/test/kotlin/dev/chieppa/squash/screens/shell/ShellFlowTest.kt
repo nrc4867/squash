@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -15,8 +16,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
@@ -143,6 +146,23 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.PICK_DRAW).assertDoesNotExist()
         onNodeWithContentDescription("Part types").performClick()
         onNodeWithTag(ShellTags.WORKSPACE).assertExists()
+    }
+
+    @Test
+    fun theTypesKeyKeepsWorkingAfterTheTileHoldingFocusIsGone() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        fun pressTypes(tag: String) {
+            onNodeWithTag(tag).performKeyInput { pressKey(Key.T) }
+            waitForIdle()
+        }
+        pressTypes(ShellTags.WORKSPACE)
+        assertEquals(Screen.PICK_PART, state.screen.value)
+        onNodeWithTag(ShellTags.pickTile("torso")).performClick()
+        pressTypes(ShellTags.PICK)
+        assertEquals(Screen.WORKSPACE, state.screen.value)
+        pressTypes(ShellTags.WORKSPACE)
+        assertEquals(Screen.PICK_PART, state.screen.value)
     }
 
     @Test

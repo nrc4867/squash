@@ -33,6 +33,7 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
     var layout by mutableStateOf(DEFAULT_LAYOUT)
     var palette by mutableStateOf(false)
     var settings by mutableStateOf(false)
+    private var shownScreen: Screen? = null
 
     fun newCharacter() {
         state.screen.value = Screen.NEW_CHARACTER
@@ -89,8 +90,13 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
         layout = if (state.screen.value == Screen.NEW_CHARACTER) layout else next
     }
 
-    /** Opens the Part drawer for the Pick screen's type and closes it again on the way back to the panes. */
-    fun onScreen(screen: Screen, previous: Screen?) {
+    /**
+     * Opens the Part drawer for the Pick screen's type and closes it again on the way back to the panes. Called while
+     * composing the new screen, so the drawers change in the same frame as the viewport.
+     */
+    fun onScreen(screen: Screen) {
+        val previous = shownScreen
+        shownScreen = screen
         if (screen == Screen.PICK_PART) layout = layout.open(DrawerIds.PART)
         if (previous == Screen.PICK_PART && screen == Screen.WORKSPACE) layout = layout.close(DrawerIds.PART)
     }

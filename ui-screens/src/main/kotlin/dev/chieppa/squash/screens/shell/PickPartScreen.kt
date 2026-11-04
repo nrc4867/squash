@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.render.SceneFrame
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.sheet.SceneSurface
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.restPoseCamera
 import dev.chieppa.squash.screens.sheet.restPoseFrame
@@ -36,10 +36,8 @@ import dev.chieppa.squash.uidesign.generated.pick_socket_hud_left
 import dev.chieppa.squash.uidesign.generated.pick_tool_add
 import dev.chieppa.squash.uidesign.generated.pick_tool_select
 import dev.chieppa.stretch.frame.Hud
-import dev.chieppa.stretch.frame.NativeSurface
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.Viewport
-import dev.chieppa.stretch.gpu.WebGpuRenderer
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
@@ -48,30 +46,28 @@ private val DOT_TARGET = 28.dp
 private val PICK_TOOL_SIZE = 34.dp
 
 /**
- * Pick a part type: the rest pose with its open sockets as dots, drawn live in a native surface, the tiles in the bottom
+ * Pick a part type: the rest pose with its open sockets as dots, drawn live in the shared surface, the tiles in the bottom
  * panel, the type's facts in the Part drawer. A dot or a row of the Parts tree picks the socket.
  */
 @Composable
 fun PickPartScreen(shell: Shell) {
     val state = shell.state
     val socket by state.pickedSocket.collectAsState()
-    BuildFrame(shell, Modifier.testTag(ShellTags.PICK)) {
-        Box(Modifier.fillMaxSize()) {
-            RestPoseSurface(state)
-            Viewport(
-                nativeContent = true,
-                topStart = { PickTools(state) },
-                topEnd = { Hud(stringResource(Res.string.pick_rest_pose)) },
-                bottomEnd = socket?.let { open ->
-                    {
-                        Box(Modifier.testTag(ShellTags.PICK_SOCKET)) {
-                            val name = displayName(open.name).lowercase()
-                            Hud(stringResource(if (open.paired) Res.string.pick_socket_hud_left else Res.string.pick_socket_hud, name))
-                        }
+    Box(Modifier.fillMaxSize()) {
+        RestPoseSurface(state)
+        Viewport(
+            nativeContent = true,
+            topStart = { PickTools(state) },
+            topEnd = { Hud(stringResource(Res.string.pick_rest_pose)) },
+            bottomEnd = socket?.let { open ->
+                {
+                    Box(Modifier.testTag(ShellTags.PICK_SOCKET)) {
+                        val name = displayName(open.name).lowercase()
+                        Hud(stringResource(if (open.paired) Res.string.pick_socket_hud_left else Res.string.pick_socket_hud, name))
                     }
-                },
-            ) { SocketDots(state) }
-        }
+                }
+            },
+        ) { SocketDots(state) }
     }
 }
 
@@ -109,13 +105,14 @@ private fun RestPoseSurface(state: AppState) {
     val pose = rememberRestPose(state)
     val picked by state.pickedSocket.collectAsState()
     val look = rememberSheetLook()
-    val renderer = remember { WebGpuRenderer<SceneFrame> { ViewsScene(it) } }
     var size by remember { mutableStateOf(IntSize.Zero) }
-    val frame = if (pose == null || size == IntSize.Zero) SceneFrame(look.well) else {
-        restPoseFrame(pose.first, look, size.width, size.height, pose.second.map { it.ref }, picked?.ref)
+    val frame = when {
+        size == IntSize.Zero -> null
+        pose == null -> SceneFrame(look.well)
+        else -> restPoseFrame(pose.first, look, size.width, size.height, pose.second.map { it.ref }, picked?.ref)
     }
     Box(Modifier.fillMaxSize().onSizeChanged { size = it }) {
-        NativeSurface(frame, renderer, Modifier.fillMaxSize(), onFailure = { it.printStackTrace() })
+        SceneSurface(frame, Modifier.fillMaxSize())
     }
 }
 

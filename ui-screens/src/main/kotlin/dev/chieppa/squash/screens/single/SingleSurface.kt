@@ -15,22 +15,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
-import dev.chieppa.squash.render.SceneFrame
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.PaneTool
+import dev.chieppa.squash.screens.sheet.SceneSurface
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.paneDisagreements
 import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.rememberOutlineLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
-import dev.chieppa.stretch.frame.NativeSurface
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.ToolbarSeparator
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.frame.ViewportOverlay
-import dev.chieppa.stretch.gpu.WebGpuRenderer
 import dev.chieppa.stretch.gpu.orbitNavigation
 
 /**
@@ -48,7 +45,6 @@ internal fun SingleSurface(
 ) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
-    val renderer = remember { WebGpuRenderer<SceneFrame> { ViewsScene(it) } }
     val camera = remember { SingleCamera() }
     var size by remember { mutableStateOf(IntSize.Zero) }
     val open by state.session.collectAsState()
@@ -83,7 +79,7 @@ internal fun SingleSurface(
     val fitting = rememberFitting(state)
     val drawing = if (locked != null) tool?.pointerInput(locked.view, locked) ?: Modifier else Modifier
     Box(modifier.onSizeChanged { size = it }) {
-        NativeSurface(frame, renderer, Modifier.fillMaxSize(), onFailure = { it.printStackTrace() })
+        SceneSurface(frame.takeIf { sized }, Modifier.fillMaxSize())
         Viewport(
             Modifier.orbitNavigation(camera.orbit).then(drawing).testTag(SingleTags.VIEWPORT),
             nativeContent = true,

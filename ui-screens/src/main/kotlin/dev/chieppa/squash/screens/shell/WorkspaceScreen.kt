@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.screens.draw.rememberDrawOutlineTool
 import dev.chieppa.squash.screens.edit.Refit
 import dev.chieppa.squash.screens.edit.RefitReach
@@ -25,7 +24,7 @@ import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
 
-/** The Build workspace: the frame's bars and drawers around the panes and their tool strip. */
+/** The Build workspace: the panes and their tool strip, in the frame's viewport. */
 @Composable
 fun WorkspaceScreen(shell: Shell) {
     val state = shell.state
@@ -47,15 +46,13 @@ fun WorkspaceScreen(shell: Shell) {
     LaunchedEffect(refit) {
         if (refit != null) shell.toasts.show(refitMessage(refit), getString(Res.string.shell_action_undo)) { state.undo() }
     }
-    BuildFrame(shell, Modifier.testTag(ShellTags.WORKSPACE)) {
-        SheetPanes(
-            state,
-            Modifier.fillMaxSize(),
-            tools = { WorkspaceTools(state) },
-            tool = tool,
-            paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
-        )
-    }
+    SheetPanes(
+        state,
+        Modifier.fillMaxSize(),
+        tools = { WorkspaceTools(state) },
+        tool = tool,
+        paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
+    )
 }
 
 /** What a refit changed, counting sections from one as a person does. */

@@ -66,9 +66,7 @@ fun NewCharacterScreen(shell: Shell) {
     val backdrop = rememberRestPoseArt(state, chosen, dashed = true)
     val art = rememberRestPoseArt(state, chosen, dashed = true, width = PREVIEW_WIDTH, height = PREVIEW_HEIGHT)
     val description = stringResource(Res.string.rest_pose_art)
-    BuildFrame(shell) {
-        Viewport { if (backdrop != null) RestPoseImage(backdrop, description, Modifier.fillMaxSize()) }
-    }
+    Viewport { if (backdrop != null) RestPoseImage(backdrop, description, Modifier.fillMaxSize()) }
     StretchDialog(
         title = stringResource(Res.string.new_title),
         onDismiss = shell::dismissNew,

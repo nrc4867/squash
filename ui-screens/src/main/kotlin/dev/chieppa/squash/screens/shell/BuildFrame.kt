@@ -40,9 +40,7 @@ private val TYPES_KEYS = listOf("T")
 
 /** The Build frame every screen but Home sits in: top bar, rails, drawers and status bar around [viewport]. */
 @Composable
-fun BuildFrame(shell: Shell, modifier: Modifier = Modifier, viewport: @Composable BoxScope.() -> Unit) {
-    val state = shell.state
-    val screen by state.screen.collectAsState()
+fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, viewport: @Composable BoxScope.() -> Unit) {
     val shown = shownLayout(shell.layout, screen)
     StretchApp(
         layout = shown,
