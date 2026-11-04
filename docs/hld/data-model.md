@@ -176,6 +176,15 @@ A locked pane looks straight along the normal of its view's plane, so an outline
 - **Guides are the part's own lines.** A guide or a disagreement's limit is the line square to a part direction at a point of the outline's extent, and it is drawn at whatever angle that makes on screen. In the tail's Side the guides run on the diagonal.
 - **Where a stroke cannot land by construction, the view sets something else.** The axis stays in the plane of a and b, so Top's and Front's midpoints in c are not read: a lopsided Top stroke builds evenly about the axis. A Front outline alone leaves the sizes to the template, and a `cap` Front shapes only the last sixth of the axis, so it reaches a paw's tube when the paw has no toes and nothing on a paw with them, whose tube stops short and whose toes keep their own section.
 
+## Which pane takes which tool
+
+An outline is drawn in the locked camera of its own plane, so only a locked pane takes one. Surface work lands from any camera, so Full takes it too.
+
+- **A tool says so.** `PaneTool.takesFreeCamera` is off by default, and the pane calls `fullInput` only when it is on. Surface tools and Move turn it on.
+- **A refused press shows in place.** With any other tool armed, Full first lights its Surface strokes only chip for as long as the press is held, and nothing is written.
+- **The orbit keeps its own input.** Stretch's `orbitNavigation` takes the middle button, the wheel and two fingers, consuming them first; the left button, one finger and the pen are the tool's, as `isToolPress` reads them. Neither ever sees the other's drag.
+- **A pointer becomes a ray.** `FullView.ray` gives the line of sight through a pane pixel in body space, through the camera as it is at that moment. A part's triangles lie at `SheetPart.origin` plus `SheetPart.mesh`.
+
 ## Adding parts without refactoring
 
 A new part is one of three things, and each slots in without touching what exists or what is saved.

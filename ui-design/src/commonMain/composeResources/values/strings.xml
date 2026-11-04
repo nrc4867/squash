@@ -24,6 +24,7 @@
     <string name="sheet_chip_drawn">Drawn</string>
     <string name="sheet_chip_from_template">From template</string>
     <string name="sheet_chip_live">Updates live</string>
+    <string name="sheet_chip_surface_only">Surface strokes only</string>
 
     <string name="shell_menu_file">File</string>
     <string name="shell_menu_edit">Edit</string>

@@ -6,6 +6,7 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
@@ -34,6 +35,7 @@ internal fun panesInput(
     height: Int,
     hints: SheetHints = SheetHints(),
     outlines: OutlineLook? = null,
+    layout: SheetLayout = SheetLayout.SHEET,
 ): SheetInput {
     val part = selection.part
     val fit = fitSheet(part.box, part.axes, rects, (selection.box.center - part.box.center).length + selection.box.radius)
@@ -45,7 +47,7 @@ internal fun panesInput(
     val target = selection.box.center.toGpu()
     val full = CameraView(eye = target + FULL_EYE * selection.box.radius, target = target)
     val overlays = outlines?.let { paneOutlineOverlays(selection, cameras, null, it) } ?: emptyMap()
-    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints)
+    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints, layout = layout)
 }
 
 /** [GpuSnapshot.render] for a test's thread, which has nothing else to do while the image renders. */

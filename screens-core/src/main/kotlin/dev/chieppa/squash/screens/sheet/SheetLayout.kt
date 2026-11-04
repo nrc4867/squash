@@ -12,5 +12,5 @@ enum class SheetLayout(val label: StringResource, val built: Boolean = false) {
     SINGLE(Res.string.sheet_layout_single, built = true),
     FOCUS(Res.string.sheet_layout_focus),
     SHEET(Res.string.sheet_layout_sheet, built = true),
-    FULL_FIRST(Res.string.sheet_layout_full_first),
+    FULL_FIRST(Res.string.sheet_layout_full_first, built = true),
 }

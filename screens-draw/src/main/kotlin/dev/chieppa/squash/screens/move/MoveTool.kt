@@ -48,6 +48,8 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
 
     override val holdsFit: Boolean get() = dragging
 
+    override val takesFreeCamera: Boolean get() = true
+
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
         val handles = LockedHandleView(camera)
         awaitEachGesture {

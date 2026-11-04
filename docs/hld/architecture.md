@@ -44,7 +44,7 @@ The renderer goes through a thin seam of our own (mesh, material, pass) so the c
 
 Copying GPU frames into Compose is too slow (about 43 fps and 60 ms of delay at 2882x1660). A `NativeSurface` inside Stretch's `Viewport` is a native child window rendered by WebGPU on its own thread at display rate. Compose draws the panels around it, popups over it open as OS-level windows, and gizmos and stroke previews over the view are drawn by our renderer through the overlay pass. Mouse, pen and touch pass through to the Compose UI.
 
-The Sheet layout is one `NativeSurface` drawing four viewports in one frame, with scissor and a camera per pane. Four surfaces would mean four swapchains and four sets of popups. Every screen but Home sits in one Build frame, and the screens that draw in 3D share one surface: it moves with the screen, so its GPU device and uploaded meshes stay.
+The Sheet and Full first layouts are one `NativeSurface` drawing four viewports in one frame, with scissor and a camera per pane, and differ only in the rectangles. Four surfaces would mean four swapchains and four sets of popups. Every screen but Home sits in one Build frame, and the screens that draw in 3D share one surface: it moves with the screen, so its GPU device and uploaded meshes stay.
 
 ## Architecture
 

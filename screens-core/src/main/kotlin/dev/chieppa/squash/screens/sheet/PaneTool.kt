@@ -13,9 +13,10 @@ import dev.chieppa.stretch.frame.ViewportOverlay
 class LiveStroke(val view: View, val points: List<CurvePoint>, val preview: Boolean = false, val centre: List<CurvePoint> = emptyList())
 
 /**
- * A tool working in the locked panes. Each pane hands it its [LockedCamera], which stays the same object until the sheet
+ * A tool working in the panes. Each locked pane hands it its [LockedCamera], which stays the same object until the sheet
  * fit or the panes' size changes, and takes its pointer input and overlay. Pointer positions reach the tool in pane
- * pixels, which [LockedCamera.toPlane] and [LockedCamera.toPart] turn into part space.
+ * pixels, which [LockedCamera.toPlane] and [LockedCamera.toPart] turn into part space. Full hands it a [FullView] instead
+ * when it [takesFreeCamera].
  */
 @Stable
 interface PaneTool {
@@ -25,7 +26,18 @@ interface PaneTool {
     /** What the tool draws over [view]'s pane, in pane pixels, clipped to the pane. Compose state read here redraws it. */
     fun overlay(view: View, camera: LockedCamera): ViewportOverlay = ViewportOverlay.Empty
 
-    /** The pointer input for the Full pane, under its orbit. */
+    /**
+     * Whether the tool works through Full's free camera. Without this the pane never calls [fullInput], and Full first shows
+     * a press there as refused: a tool writing an outline needs the locked camera of that outline's plane.
+     */
+    val takesFreeCamera: Boolean get() = false
+
+    /**
+     * The pointer input for the Full pane, under its orbit, when [takesFreeCamera]. The orbit keeps the middle button, the
+     * wheel and two fingers, consuming them first, so the tool answers to the left button, one finger and the pen: a press
+     * [dev.chieppa.squash.screens.draw.isToolPress] accepts from an unconsumed `awaitFirstDown`. [FullView.ray] turns a pane
+     * pixel into a line of sight through the camera as it is at that moment.
+     */
     fun fullInput(view: FullView): Modifier = Modifier
 
     /** What the tool draws over the Full pane, in pane pixels. Compose state read here redraws it. */

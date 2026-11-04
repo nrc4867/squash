@@ -9,8 +9,8 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 
-/** Whether [down] is a press the curve tools answer to: a mouse's primary button, or a pen or finger tip. */
-internal fun AwaitPointerEventScope.isToolPress(down: PointerInputChange): Boolean = when (down.type) {
+/** Whether [down] is a press a tool answers to: a mouse's primary button, or a pen or finger tip. */
+fun AwaitPointerEventScope.isToolPress(down: PointerInputChange): Boolean = when (down.type) {
     PointerType.Eraser -> false
     PointerType.Mouse -> currentEvent.buttons.isPrimaryPressed
     else -> true
@@ -24,7 +24,7 @@ fun penPressure(change: PointerInputChange): Float? = change.pressure.takeIf { c
  * each change, and [onPoint] each position it passed through.
  */
 @OptIn(ExperimentalComposeUiApi::class)
-internal suspend fun AwaitPointerEventScope.followToRelease(id: PointerId, onMove: (PointerInputChange) -> Unit, onPoint: (Offset) -> Unit): Boolean {
+suspend fun AwaitPointerEventScope.followToRelease(id: PointerId, onMove: (PointerInputChange) -> Unit, onPoint: (Offset) -> Unit): Boolean {
     while (true) {
         val event = awaitPointerEvent()
         val change = event.changes.firstOrNull { it.id == id } ?: return false
@@ -37,5 +37,5 @@ internal suspend fun AwaitPointerEventScope.followToRelease(id: PointerId, onMov
 }
 
 /** Whether [change], in [event], has let go of what it held. */
-internal fun isToolRelease(event: PointerEvent, change: PointerInputChange): Boolean =
+fun isToolRelease(event: PointerEvent, change: PointerInputChange): Boolean =
     if (change.type == PointerType.Mouse) !event.buttons.isPrimaryPressed else !change.pressed

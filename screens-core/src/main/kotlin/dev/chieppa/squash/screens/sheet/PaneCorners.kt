@@ -22,10 +22,14 @@ import dev.chieppa.squash.uidesign.generated.sheet_chip_drawing
 import dev.chieppa.squash.uidesign.generated.sheet_chip_drawn
 import dev.chieppa.squash.uidesign.generated.sheet_chip_from_template
 import dev.chieppa.squash.uidesign.generated.sheet_chip_live
+import dev.chieppa.squash.uidesign.generated.sheet_chip_surface_only
 import dev.chieppa.squash.uidesign.generated.sheet_pane_front
 import dev.chieppa.squash.uidesign.generated.sheet_pane_full
 import dev.chieppa.squash.uidesign.generated.sheet_pane_side
 import dev.chieppa.squash.uidesign.generated.sheet_pane_top
+import dev.chieppa.squash.uidesign.generated.shell_view_front
+import dev.chieppa.squash.uidesign.generated.shell_view_side
+import dev.chieppa.squash.uidesign.generated.shell_view_top
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.theme.StretchIcons
@@ -35,7 +39,10 @@ import dev.chieppa.stretch.ui.ProgressBar
 import java.util.Locale
 import org.jetbrains.compose.resources.stringResource
 
-/** A pane over the surface, which shows through it: its label names the [body] direction it looks from, null for Full, its chip floats in the other corner, and [modifier] takes its pointer. */
+/**
+ * A pane over the surface, which shows through it: its label names the [body] direction it looks from, null for Full, its
+ * chip floats in the other corner, and [modifier] takes its pointer. A [short] label drops what the pane's camera follows.
+ */
 @Composable
 fun PaneViewport(
     body: BodyView?,
@@ -46,12 +53,13 @@ fun PaneViewport(
     bottomStart: (@Composable () -> Unit)? = null,
     zoom: Float? = null,
     onFit: () -> Unit = {},
+    short: Boolean = false,
 ) {
     Viewport(
         modifier,
         nativeContent = true,
-        topStart = { PaneLabel(body) },
-        topEnd = chip?.let { { PaneChipView(it, fitError, progress) } },
+        topStart = { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneLabel(body, short) } },
+        topEnd = chip?.let { { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneChipView(it, fitError, progress) } } },
         bottomStart = bottomStart,
         bottomEnd = zoom?.let { { PaneZoom(it, onFit) } },
     ) {}
@@ -69,14 +77,14 @@ private fun PaneZoom(zoom: Float, onFit: () -> Unit) {
 }
 
 @Composable
-private fun PaneLabel(body: BodyView?) {
+private fun PaneLabel(body: BodyView?, short: Boolean) {
     Hud(
         stringResource(
             when (body) {
-                BodyView.TOP -> Res.string.sheet_pane_top
+                BodyView.TOP -> if (short) Res.string.shell_view_top else Res.string.sheet_pane_top
                 null -> Res.string.sheet_pane_full
-                BodyView.SIDE -> Res.string.sheet_pane_side
-                BodyView.FRONT -> Res.string.sheet_pane_front
+                BodyView.SIDE -> if (short) Res.string.shell_view_side else Res.string.sheet_pane_side
+                BodyView.FRONT -> if (short) Res.string.shell_view_front else Res.string.sheet_pane_front
             },
         ),
     )
@@ -100,8 +108,16 @@ private fun PaneChipView(chip: PaneChip, fitError: Float?, progress: Float) {
         }
         PaneChip.THIS_SIDE -> Chip(stringResource(Res.string.edit_chip_this_side), icon = SquashIcons.PairOverride)
         PaneChip.HIDES_PAIR -> Chip(stringResource(Res.string.edit_chip_this_side), kind = ChipKind.Warn)
+        PaneChip.SURFACE_ONLY -> Chip(stringResource(Res.string.sheet_chip_surface_only))
+        PaneChip.SURFACE_REFUSED -> Box(Modifier.testTag(SURFACE_REFUSED_TAG)) { Chip(stringResource(Res.string.sheet_chip_surface_only), kind = ChipKind.Warn) }
     }
 }
+
+/** The test tag of every pane's label and chip. */
+const val PANE_CORNER_TAG = "sheet.pane.corner"
+
+/** The test tag of Full first's chip while a tool is refused in Full. */
+const val SURFACE_REFUSED_TAG = "sheet.pane.surfaceRefused"
 
 /** The test tag of a pane's zoom readout. */
 const val PANE_ZOOM_TAG = "sheet.pane.zoom"

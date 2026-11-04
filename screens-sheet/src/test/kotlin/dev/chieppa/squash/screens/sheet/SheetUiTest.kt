@@ -62,15 +62,17 @@ class SheetUiTest {
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
     @Test
-    fun singleAndSheetAreTheLayoutsThatCanBePicked() = runComposeUiTest {
+    fun singleSheetAndFullFirstAreTheLayoutsThatCanBePicked() = runComposeUiTest {
         var picked: SheetLayout? = null
         setStretchContent { SheetStrip(onLayout = { picked = it }) }
         onNodeWithText("Layout").assertExists()
         onNodeWithText("Sheet").assertIsSelected()
-        for (label in listOf("Single", "Sheet")) onNodeWithText(label).assertIsEnabled()
-        for (label in listOf("Focus", "Full first")) onNodeWithText(label).assertIsNotEnabled()
+        for (label in listOf("Single", "Sheet", "Full first")) onNodeWithText(label).assertIsEnabled()
+        onNodeWithText("Focus").assertIsNotEnabled()
         onNodeWithText("Single").performClick()
         assertEquals(SheetLayout.SINGLE, picked)
+        onNodeWithText("Full first").performClick()
+        assertEquals(SheetLayout.FULL_FIRST, picked)
     }
 
     @Test

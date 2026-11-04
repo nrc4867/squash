@@ -47,9 +47,10 @@ fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 
 /**
  * The workspace's viewport area as the boards draw it, in the layout the Layout control picks. In Sheet, the strip with
- * [tools] and the control, then Top, Full, Side and Front in one native surface; in Single, the strip with the control
- * above one viewport, with [tools] floating on it. A [tool] gets a locked view's pointer input and overlay. [paneToast]
- * shows over the surface, at the bottom left of the panes or the foot of the one viewport.
+ * [tools] and the control, then Top, Full, Side and Front in one native surface; in Full first, the same panes in that
+ * surface with Full large above the other three; in Single, the strip with the control above one viewport, with [tools]
+ * floating on it. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
+ * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport.
  */
 @Composable
 fun SheetPanes(
@@ -67,13 +68,13 @@ fun SheetPanes(
             SingleSurface(state, tool, tools, paneToast, Modifier.weight(1f).fillMaxWidth())
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SheetSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth())
+            SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier) {
+private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
     val orbit = remember { OrbitCamera(yaw = FULL_YAW, pitch = FULL_PITCH) }
@@ -81,8 +82,8 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
     val active by state.activeView.collectAsState()
     val mirror by state.mirror.collectAsState()
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
-    val rects = sheetPaneRects(size.width, size.height, gap)
-    val held = remember(part?.id, size) { HeldCameras() }
+    val rects = paneRects(layout, size.width, size.height, gap)
+    val held = remember(part?.id, size, layout) { HeldCameras() }
     val holding = tool?.holdsFit == true || tool?.drawingIn != null
     LaunchedEffect(part?.id) { state.paneNavigation.fitAll() }
     val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, holding, state.paneNavigation)
@@ -98,6 +99,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
     LaunchedEffect(open, count, framed != null) {
         if (framed != null) orbit.lookAt(framed.center.toGpu(), framed.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
     }
+    var refused by remember { mutableStateOf(false) }
     val fullRect = rects[SheetPane.FULL.ordinal]
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val frame = sheetFrame(
@@ -114,17 +116,18 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             fullOverlay = tool?.fullOverlay(fullView) ?: ViewportOverlay.Empty,
             hints = SheetHints(state.curves.templateHint, state.curves.ghost),
             shading = rememberObjectShading(state),
+            layout = layout,
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {
         SceneSurface(frame.takeIf { size != IntSize.Zero }, Modifier.fillMaxSize())
-        SheetPaneGrid(gap, Modifier.fillMaxSize()) { pane ->
+        SheetPaneGrid(gap, Modifier.fillMaxSize(), layout) { pane ->
             val body = pane.body
             val axes = part?.axes
             val view = if (body == null) null else axes?.framing?.getValue(body) ?: plainView(body)
             val camera = view?.let { cameras[it] }
             val input = when {
-                body == null -> Modifier.orbitNavigation(orbit).then(tool?.fullInput(fullView) ?: Modifier)
+                body == null -> Modifier.orbitNavigation(orbit).then(freePaneInput(tool, fullView, layout) { refused = it })
                 camera == null -> Modifier
                 else -> Modifier
                     .paneNavigation(state.paneNavigation, camera, holding)
@@ -137,16 +140,18 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
                 paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting, selection.overridden, mirror, disagreements.mapTo(mutableSetOf()) { it.view })
             }
             val fitError = if (tool?.drawingIn != null) null else view?.let { tool?.fitErrorPixels(it) }
+            val shownChip = if (layout == SheetLayout.FULL_FIRST) fullFirstChip(chip, refused && body == null, fitError) else chip
             val zoom = view?.takeIf { camera != null }?.let { state.paneNavigation[it] }?.takeIf { it != PaneNav() }?.zoom
             PaneViewport(
                 body,
-                chip,
+                shownChip,
                 input.testTag(sheetPaneTag(pane)),
                 fitError,
                 progress,
                 paneToast?.takeIf { pane == SheetPane.SIDE },
                 zoom,
                 { view?.let(state.paneNavigation::fit) },
+                short = layout == SheetLayout.FULL_FIRST,
             )
         }
     }

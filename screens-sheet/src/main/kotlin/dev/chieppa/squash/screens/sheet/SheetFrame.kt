@@ -49,16 +49,17 @@ class SheetInput(
     val fullOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val hints: SheetHints = SheetHints(),
     val shading: ObjectShading = ObjectShading(),
+    val layout: SheetLayout = SheetLayout.SHEET,
 )
 
 /**
- * One immutable frame of the panes for the render thread. Full always shows the whole character; a locked pane shows the
- * selection filled once its view is drawn and as the mesh's dashed outline until then, with everything else ghosted behind
- * it. A pane with no part stays empty.
+ * One immutable frame of the panes for the render thread. Full always shows the whole character, with what is not placed yet
+ * faded except in Full first, which is there to judge the whole; a locked pane shows the selection filled once its view is
+ * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
     val views = SheetPane.entries.mapNotNull { sceneView(it, input) }
-    val dividers = buildOverlay { sheetDividers(input.rects, input.width, input.height).forEach { rect(it.toRect(), input.look.divider) } }
+    val dividers = buildOverlay { paneDividers(input.layout, input.rects, input.width, input.height).forEach { rect(it.toRect(), input.look.divider) } }
     val panes = SheetPane.entries.map { paneOverlay(it, input).clippedTo(input.rects[it.ordinal].toRect()) }
     return SceneFrame(input.look.well, views, panes.fold(dividers, ViewportOverlay::plus))
 }
@@ -72,9 +73,10 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val camera = input.full ?: return null
         val (planned, placed) = (selection.others + selection.part).partition { it.planned }
         val eye = camera.eye
+        val plannedOpacity = if (input.layout == SheetLayout.FULL_FIRST) 1f else PLANNED_OPACITY
         val draws = listOf(fullGround(selection, look)) +
             placed.map { look.draw(it, look.fullOutline, shading = input.shading) } +
-            planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, PLANNED_OPACITY) }
+            planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
         return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
     }
     val view = selection.part.axes.framing.getValue(body)

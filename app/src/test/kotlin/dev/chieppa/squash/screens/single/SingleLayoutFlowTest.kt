@@ -109,12 +109,12 @@ class SingleLayoutFlowTest {
         assertNotNull(session.document.value.character.resolved(assertNotNull(state.selectedPart.value))).outlines
 
     @Test
-    fun theLayoutControlOffersSingleAndSheetAndTheChoiceIsNotInTheDocument() = runComposeUiTest {
+    fun theLayoutControlOffersItsBuiltLayoutsAndTheChoiceIsNotInTheDocument() = runComposeUiTest {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
         val before = session.document.value
-        for (label in listOf("Focus", "Full first")) segment(label).assertIsNotEnabled()
+        segment("Focus").assertIsNotEnabled()
 
         pickSingle()
         assertEquals(SheetLayout.SINGLE, state.layout.value)
