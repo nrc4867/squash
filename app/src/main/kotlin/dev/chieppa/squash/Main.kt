@@ -1,6 +1,8 @@
 package dev.chieppa.squash
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
@@ -53,7 +55,8 @@ fun main() {
             LaunchedEffect(recent) {
                 snapshotFlow { recent.entries }.drop(1).collect { withContext(Dispatchers.IO) { store.save(it) } }
             }
-            StretchTheme(StretchThemes.Ink) {
+            val dark by state.darkTheme.collectAsState()
+            StretchTheme(if (dark) StretchThemes.InkDark else StretchThemes.Ink) {
                 SquashApp(state, rememberFileChooser(window))
             }
         }

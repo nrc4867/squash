@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
@@ -15,34 +17,50 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.graph.StageCount
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.draw.HintSection
 import dev.chieppa.squash.screens.draw.OutlineSections
 import dev.chieppa.squash.screens.edit.OutlineCurvesSections
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.pick_draw
+import dev.chieppa.squash.uidesign.generated.shell_part_built_from
+import dev.chieppa.squash.uidesign.generated.shell_part_fit
+import dev.chieppa.squash.uidesign.generated.shell_part_fit_done
+import dev.chieppa.squash.uidesign.generated.shell_part_fit_from_template
+import dev.chieppa.squash.uidesign.generated.shell_part_fit_skeleton
+import dev.chieppa.squash.uidesign.generated.shell_part_fit_surface
+import dev.chieppa.squash.uidesign.generated.shell_part_fit_unseen
 import dev.chieppa.squash.uidesign.generated.shell_part_none
 import dev.chieppa.squash.uidesign.generated.shell_part_parameters
+import dev.chieppa.squash.uidesign.generated.shell_part_this_side
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
+import dev.chieppa.stretch.ui.Chip
+import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.EmptyState
 import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Toggle
 import dev.chieppa.stretch.ui.formatNumber
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 
 private const val FLAG_ON = 1f
 private const val FLAG_OFF = 0f
+private const val PERCENT = 100f
 private val READOUT_WIDTH = 52.dp
 
 /** The Part drawer: the picked type on Pick a part type, the selected part's views and parameters elsewhere. */
@@ -87,22 +105,35 @@ private fun SelectedPartDetails(state: AppState) {
         return
     }
     val tool by state.tool.collectAsState()
+    val mirror by state.mirror.collectAsState()
+    val character = document?.character ?: return
+    val base = character.editBase(part, !mirror)
     when (partDrawerKind(tool, hasPart = true, drawn = data.outlines.isNotEmpty())) {
-        PartDrawerKind.OUTLINE_CURVES -> OutlineCurvesSections(state, open, part, data.outlines)
+        PartDrawerKind.OUTLINE_CURVES -> {
+            OutlineCurvesSections(state, open, part, base.outlines)
+            HintSection(state)
+        }
         PartDrawerKind.OUTLINE -> OutlineSections(state)
-        PartDrawerKind.PART -> YouDrawSection(template, data.outlines)
-    }
-    val rows = parameterRows(template, data.params)
-    if (rows.isNotEmpty()) {
-        DrawerSection(stringResource(Res.string.shell_part_parameters), divider = false) {
-            rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row) } }
+        PartDrawerKind.PART -> {
+            FitSection(open)
+            val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
+            val rows = parameterRows(template, base.params)
+            if (rows.isNotEmpty()) {
+                DrawerSection(stringResource(Res.string.shell_part_parameters)) {
+                    rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
+                }
+            }
+            BuiltFromSection(template)
         }
     }
 }
 
-/** A parameter's control: a toggle for a flag, a slider between limits, a number field otherwise. Every change is a command. */
+/**
+ * A parameter's control: a toggle for a flag, a slider between limits, a number field otherwise. Every change is a command,
+ * to this side alone with [thisSide]. [hidden] is the value this side's override keeps showing over the pair's.
+ */
 @Composable
-private fun ParameterControl(session: CharacterSession, part: PartId, row: ParameterRow) {
+private fun ParameterControl(session: CharacterSession, part: PartId, row: ParameterRow, thisSide: Boolean, hidden: Float?) {
     val label = displayName(row.name)
     val range = row.range
     val tagged = Modifier.testTag(ShellTags.parameter(row.name))
@@ -110,10 +141,12 @@ private fun ParameterControl(session: CharacterSession, part: PartId, row: Param
         when {
             row.isFlag -> {
                 Spacer(Modifier.weight(1f))
-                Toggle(row.value != 0f, { session.send(SetParameter(part, row.name, if (it) FLAG_ON else FLAG_OFF)) }, label, tagged)
+                HiddenValue(hidden)
+                Toggle(row.value != 0f, { session.send(SetParameter(part, row.name, if (it) FLAG_ON else FLAG_OFF, thisSide)) }, label, tagged)
             }
             range != null -> {
-                ParameterSlider(session, part, row, label, range, tagged.weight(1f))
+                ParameterSlider(session, part, row, label, range, thisSide, tagged.weight(1f))
+                HiddenValue(hidden)
                 BasicText(
                     formatNumber(row.value) + row.unit?.let { " $it" }.orEmpty(),
                     Modifier.width(READOUT_WIDTH),
@@ -123,15 +156,49 @@ private fun ParameterControl(session: CharacterSession, part: PartId, row: Param
             }
             else -> {
                 Spacer(Modifier.weight(1f))
+                HiddenValue(hidden)
                 NumberField(
                     row.value,
-                    { session.send(SetParameter(part, row.name, row.constrain(it))) },
+                    { session.send(SetParameter(part, row.name, row.constrain(it), thisSide)) },
                     label,
                     tagged,
                     unit = row.unit.orEmpty(),
                     step = row.step ?: 1f,
                 )
             }
+        }
+    }
+}
+
+/** What this side keeps showing where its override hides a change to the pair. */
+@Composable
+private fun HiddenValue(value: Float?) {
+    if (value == null) return
+    Chip(stringResource(Res.string.shell_part_this_side, formatNumber(value)), kind = ChipKind.Warn, mono = true)
+}
+
+/** The stages of the part's fit, with the graph's own count of the one under way. */
+@Composable
+private fun FitSection(session: CharacterSession) {
+    val progress by session.graph.progress.collectAsState()
+    val done = stringResource(Res.string.shell_part_fit_done)
+    DrawerSection(stringResource(Res.string.shell_part_fit)) {
+        FactRow(stringResource(Res.string.shell_part_fit_skeleton), fitValue(progress.count(FitStages.SKELETON), done))
+        FactRow(stringResource(Res.string.shell_part_fit_surface), fitValue(progress.count(FitStages.SURFACE), done))
+        FactRow(stringResource(Res.string.shell_part_fit_unseen), stringResource(Res.string.shell_part_fit_from_template))
+    }
+}
+
+@Composable
+private fun fitValue(count: StageCount, done: String): String =
+    if (count.finished) done else stringResource(Res.string.edit_percent, (count.fraction * PERCENT).roundToInt())
+
+/** What the template builds the part from. */
+@Composable
+private fun BuiltFromSection(template: PartTemplate) {
+    DrawerSection(stringResource(Res.string.shell_part_built_from), divider = false) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            template.blocks.map(::blockLabel).distinct().forEach { Chip(it, mono = true) }
         }
     }
 }
@@ -144,6 +211,7 @@ private fun ParameterSlider(
     row: ParameterRow,
     label: String,
     range: ClosedFloatingPointRange<Float>,
+    thisSide: Boolean,
     modifier: Modifier,
 ) {
     var gesture by remember { mutableStateOf<History<SquashDocument>.Transaction?>(null) }
@@ -152,7 +220,7 @@ private fun ParameterSlider(
         row.value,
         { value ->
             val open = gesture ?: session.history.begin().also { gesture = it }
-            open.update(SetParameter(part, row.name, row.constrain(value)))
+            open.update(SetParameter(part, row.name, row.constrain(value), thisSide))
         },
         label,
         modifier,

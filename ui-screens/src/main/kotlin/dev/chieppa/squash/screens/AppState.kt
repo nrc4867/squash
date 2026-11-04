@@ -5,13 +5,16 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.edit.CurveEditState
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.OpenSocket
+import dev.chieppa.squash.screens.shell.PickTool
 import dev.chieppa.squash.screens.shell.RestPoseArtist
 import dev.chieppa.squash.screens.shell.ScratchFormat
 import dev.chieppa.squash.screens.shell.newCharacter
@@ -57,6 +60,18 @@ class AppState(
     /** How the workspace lays out its views. */
     val layout = MutableStateFlow(SheetLayout.SHEET)
 
+    /** Whether edits of a paired part write the pair, which both sides share, or only the selected side's overrides. */
+    val mirror = MutableStateFlow(true)
+
+    /** The view the curve tools show their points in, which rings its pane. */
+    val activeView = MutableStateFlow(View.SIDE)
+
+    /** What a socket's dot does on Pick a part type. */
+    val pickTool = MutableStateFlow(PickTool.SELECT)
+
+    /** Whether the theme is the dark one. */
+    val darkTheme = MutableStateFlow(false)
+
     /** What the curve tools remember: selection, oversketch settings and readouts. */
     val curves = CurveEditState()
 
@@ -65,6 +80,16 @@ class AppState(
     val pickedType = MutableStateFlow<TemplateId?>(null)
 
     private var sessionJob: Job? = null
+
+    /** Whether an edit writes the selected side alone, as [mirror] off asks. */
+    val thisSide: Boolean get() = !mirror.value
+
+    /** What an edit of the selected part in [view] starts from, which is where the edit will land. */
+    fun editedOutline(view: View): OutlineCurve? {
+        val character = session.value?.document?.value?.character ?: return null
+        val part = selectedPart.value?.let(character::part) ?: return null
+        return character.editBase(part, thisSide).outlines[view]
+    }
 
     /** Makes [document] the open character. Throws when it pins a body plan or template that is not loaded. */
     fun open(document: SquashDocument, path: String? = null): CharacterSession {
@@ -78,6 +103,8 @@ class AppState(
         file.value = DocumentSession(format, document, storage, path, opened.history)
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
+        mirror.value = true
+        activeView.value = View.SIDE
         clearPick()
         curves.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
@@ -149,6 +176,19 @@ class AppState(
             pickedType.value = templates.parts.firstOrNull()?.id
             screen.value = Screen.PICK_PART
         }
+    }
+
+    /** Arms [next], or disarms the tool when it is already armed, which leaves the panes to look at and the template's drawer. */
+    fun armTool(next: BuildTool) {
+        tool.value = if (tool.value == next) BuildTool.NONE else next
+    }
+
+    /** Places the chosen type on [socket], or the first it takes when it takes no such type. */
+    fun placeOn(socket: OpenSocket) {
+        val chosen = pickedType.value?.takeIf { it in socket.takes }
+        chooseSocket(socket)
+        if (chosen != null) pickedType.value = chosen
+        placePicked()
     }
 
     /** Chooses a type, moving to a socket that takes it; with no such socket, nothing can be placed. */

@@ -53,8 +53,9 @@ fun OutlineSections(state: AppState) {
     PenSection()
 }
 
+/** How strongly the panes hint at what is around the part, which holds whatever the armed tool. */
 @Composable
-private fun HintSection(state: AppState) {
+fun HintSection(state: AppState) {
     val curves = state.curves
     val template = stringResource(Res.string.draw_hint_template)
     val ghost = stringResource(Res.string.draw_hint_ghost)

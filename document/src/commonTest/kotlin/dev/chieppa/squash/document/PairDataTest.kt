@@ -8,6 +8,23 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class PairDataTest {
+    @Test
+    fun anEditStartsFromWhereItWillLand() {
+        val shared = OutlineCurve(List(4) { CurvePoint(it.toFloat(), 1f) })
+        val own = OutlineCurve(List(4) { CurvePoint(it.toFloat(), 2f) })
+        val pair = PairId("pair")
+        val left = PartInstance(PartId("l"), TemplateRef(TemplateId("leg"), 1), pair = pair, side = Side.LEFT)
+        val right = PartInstance(PartId("r"), TemplateRef(TemplateId("leg"), 1), pair = pair, side = Side.RIGHT)
+        val blank = SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1), listOf(left, right), mapOf(pair to PartData())))
+        val document = SetOutline(right.id, View.SIDE, own, thisSide = true).apply(SetOutline(left.id, View.SIDE, shared).apply(blank).document).document
+        val character = document.character
+        val rightNow = checkNotNull(character.part(right.id))
+        assertEquals(shared, character.editBase(rightNow, thisSide = false).outlines[View.SIDE], "Mirror on lands on the pair, under the override")
+        assertEquals(own, character.editBase(rightNow, thisSide = true).outlines[View.SIDE])
+        assertEquals(setOf(View.SIDE), character.overridesOf(rightNow).outlines.keys)
+        assertEquals(shared, character.editBase(checkNotNull(character.part(left.id)), thisSide = true).outlines[View.SIDE], "a side with no override starts from the pair")
+    }
+
     private val pair = PairId("front-legs")
     private val left = PartInstance(PartId("leg-l"), TemplateRef(TemplateId("leg"), 1), pair = pair, side = Side.LEFT)
     private val right = PartInstance(PartId("leg-r"), TemplateRef(TemplateId("leg"), 1), pair = pair, side = Side.RIGHT)

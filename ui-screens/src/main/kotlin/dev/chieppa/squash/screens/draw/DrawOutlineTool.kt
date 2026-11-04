@@ -8,10 +8,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.character.build.oversketchedOutline
 import dev.chieppa.squash.document.CurvePoint
@@ -26,7 +23,8 @@ import dev.chieppa.squash.screens.edit.CurveLook
 import dev.chieppa.squash.screens.edit.Refit
 import dev.chieppa.squash.screens.edit.affected
 import dev.chieppa.squash.screens.edit.curvePoints
-import dev.chieppa.squash.screens.edit.reachesWholePart
+import dev.chieppa.squash.screens.edit.RefitReach
+import dev.chieppa.squash.screens.edit.refitReach
 import dev.chieppa.squash.screens.edit.rememberCurveLook
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.LockedCamera
@@ -42,7 +40,11 @@ import dev.chieppa.stretch.frame.buildOverlay
  * pane loses midway sends nothing.
  */
 class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var curveLook: CurveLook) : PaneTool {
-    private var strokeView by mutableStateOf<View?>(null)
+    private var strokeView: View?
+        get() = state.curves.drawing
+        set(value) {
+            state.curves.drawing = value
+        }
     private val strokePoints = mutableStateListOf<CurvePoint>()
     private var strokeCamera: LockedCamera? = null
 
@@ -59,10 +61,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
 
     override fun fitErrorPixels(view: View): Float? = state.curves.fitError(outline(view))
 
-    private fun outline(view: View): OutlineCurve? {
-        val part = state.selectedPart.value ?: return null
-        return state.session.value?.document?.value?.character?.resolved(part)?.outlines?.get(view)
-    }
+    private fun outline(view: View): OutlineCurve? = state.editedOutline(view)
 
     private fun preview(view: View, outline: OutlineCurve, points: List<CurvePoint>): OversketchPreview? {
         val camera = strokeCamera ?: return null
@@ -79,27 +78,17 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
             down.consume()
             strokeCamera = camera
             strokeView = view
+            state.curves.penPressure = penPressure(down)
             add(camera.toPlane(down.position))
             try {
-                if (followToRelease(down.id, camera)) finish(view, camera)
+                val released = followToRelease(down.id, { state.curves.penPressure = penPressure(it) }) { add(camera.toPlane(it)) }
+                if (released) finish(view, camera)
             } finally {
                 strokeView = null
                 strokeCamera = null
                 strokePoints.clear()
+                state.curves.penPressure = null
             }
-        }
-    }
-
-    /** Collects the stroke until its pointer lets go, which returns true, or goes away, which returns false. */
-    @OptIn(ExperimentalComposeUiApi::class)
-    private suspend fun AwaitPointerEventScope.followToRelease(id: PointerId, camera: LockedCamera): Boolean {
-        while (true) {
-            val event = awaitPointerEvent()
-            val change = event.changes.firstOrNull { it.id == id } ?: return false
-            change.historical.forEach { add(camera.toPlane(it.position)) }
-            add(camera.toPlane(change.position))
-            change.consume()
-            if (isToolRelease(event, change)) return true
         }
     }
 
@@ -114,24 +103,26 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val ends = strokeEnds(view, session.templates[instance.template].openEnd)
         val pixel = camera.planePixel
         val curves = state.curves
-        val existing = session.document.value.character.resolved(instance).outlines[view]
+        val existing = state.editedOutline(view)
         if (existing == null) {
             val fitted = fittedOutline(strokePoints.toList(), ends, pixel, curves.strokeOptions) ?: return
             curves.recordFit(fitted.curve, fitted.errorPixels)
-            session.send(SetOutline(part, view, fitted.curve))
+            session.send(SetOutline(part, view, fitted.curve, state.thisSide))
             return
         }
         val done = oversketchedOutline(existing, strokePoints.toList(), ends, pixel, curves.options) ?: return
         curves.recordFit(done.curve, maxOf(done.errorPixels, curves.fitError(existing) ?: 0f))
-        val wholePart = done.replaced == existing.sections || reachesWholePart(view, existing, done.curve)
-        curves.refit = Refit(part, view, done.curve, done.firstSection, done.replaced, wholePart)
+        val reach = refitReach(view, existing, done.curve, session.templates[instance.template]).let {
+            if (it == RefitReach.SECTIONS && done.replaced == existing.sections) RefitReach.WHOLE_PART else it
+        }
+        curves.refit = Refit(part, view, done.curve, done.firstSection, done.replaced, reach)
         curves.selection = null
-        session.send(SetOutline(part, view, done.curve))
+        session.send(SetOutline(part, view, done.curve, state.thisSide))
     }
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
         val outline = outline(view)
-        val points = outline?.let { curvePoints(it, null, camera, curveLook) } ?: ViewportOverlay.Empty
+        val points = outline?.takeIf { view == state.activeView.value }?.let { curvePoints(it, null, camera, curveLook) } ?: ViewportOverlay.Empty
         if (strokeView != view || strokePoints.isEmpty()) return points
         val stroke = strokePoints.toList()
         val over = outline?.let { preview(view, it, stroke) }

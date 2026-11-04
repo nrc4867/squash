@@ -6,23 +6,27 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_status_section
 import dev.chieppa.squash.uidesign.generated.edit_status_sections
-import dev.chieppa.squash.uidesign.generated.shell_status_building
 import dev.chieppa.squash.uidesign.generated.shell_status_parts
+import dev.chieppa.squash.uidesign.generated.shell_status_pen
 import dev.chieppa.squash.uidesign.generated.shell_status_ready
 import dev.chieppa.squash.uidesign.generated.shell_status_settled
-import dev.chieppa.squash.uidesign.generated.shell_status_views
+import dev.chieppa.squash.uidesign.generated.shell_status_view_of
+import dev.chieppa.squash.uidesign.generated.shell_status_working
 import dev.chieppa.stretch.frame.StatusBar
 import dev.chieppa.stretch.frame.StatusItem
 import dev.chieppa.stretch.theme.StretchIcons
+import java.util.Locale
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The Build frame's status bar: whether the graph has settled, then the selected part's views in the workspace or the
- * character's part count elsewhere.
+ * The Build frame's status bar: the pen's pressure while one draws, or what the graph is working on, or that it has settled;
+ * then the selected part's views and where they disagree in the workspace, or the character's part count elsewhere.
  */
 @Composable
 fun BuildStatusBar(shell: Shell) {
@@ -37,18 +41,22 @@ fun BuildStatusBar(shell: Shell) {
     }
     val document by open.document.collectAsState()
     val settled by open.graph.settled.collectAsState()
+    val progress by open.graph.progress.collectAsState()
+    val mirror by state.mirror.collectAsState()
+    val pen = state.curves.penPressure
+    val drawing = state.curves.drawing
     val plan = state.templates.plan(document.character.bodyPlan)
     val part = selected?.let(document.character::part)
     val template = part?.let { state.templates.template(it.template) }
-    val outlines = part?.let { document.character.resolved(it).outlines }
+    val outlines = part?.let { document.character.editBase(it, !mirror).outlines }
     val touched = state.curves.refit?.takeIf { screen == Screen.WORKSPACE && it.part == part?.id && outlines?.get(it.view) == it.curve }
     StatusBar(
         start = {
             Box(Modifier.testTag(ShellTags.STATUS_START)) {
-                if (settled) {
-                    StatusItem(stringResource(Res.string.shell_status_settled), StretchIcons.Check)
-                } else {
-                    StatusItem(stringResource(Res.string.shell_status_building))
+                when {
+                    pen != null -> StatusItem(stringResource(Res.string.shell_status_pen, pressureLabel(pen)), SquashIcons.DrawOutline)
+                    settled -> StatusItem(stringResource(Res.string.shell_status_settled), StretchIcons.Check)
+                    else -> StatusItem(stringResource(Res.string.shell_status_working, stageLabel(progress.working(BuildStages.ORDER))))
                 }
             }
         },
@@ -59,8 +67,13 @@ fun BuildStatusBar(shell: Shell) {
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
                     )
                     screen == Screen.WORKSPACE && outlines != null && template != null -> {
-                        val counts = viewCounts(template, outlines)
-                        StatusItem(stringResource(Res.string.shell_status_views, counts.drawn, counts.fromTemplate))
+                        val counts = countsWhileDrawing(viewCounts(template, outlines), drawing != null && drawing !in outlines)
+                        val snapped = state.curves.snapped
+                        if (snapped != null && settled && drawing == null && state.curves.conflicts == 0) {
+                            StatusItem(stringResource(Res.string.shell_status_view_of, viewLabel(snapped), counts.drawn, counts.drawn + counts.fromTemplate))
+                        } else {
+                            StatusItem(viewsStatusText(counts, viewsLine(counts, drawing != null, !settled), state.curves.conflicts))
+                        }
                     }
                     plan != null -> {
                         val progress = partProgress(document, plan, state.templates)
@@ -71,3 +84,6 @@ fun BuildStatusBar(shell: Shell) {
         },
     )
 }
+
+/** A pen's pressure as the status bar reads it, to two decimals. */
+fun pressureLabel(pressure: Float): String = "%.2f".format(Locale.ROOT, pressure)

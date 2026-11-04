@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.single
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
@@ -143,6 +144,8 @@ class SingleLayoutFlowTest {
         assertEquals(setOf(View.SIDE), outlines(state, session).keys)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
         onNodeWithText("Front leg · L · side").assertExists()
+        onNodeWithText("Side · 1 of 3 views").assertExists()
+        onNodeWithText("SIDE · ", substring = true).assertTextContains(" PX", substring = true)
 
         state.undo()
         waitForIdle()

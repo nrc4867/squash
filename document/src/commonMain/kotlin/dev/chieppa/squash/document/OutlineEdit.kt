@@ -118,6 +118,33 @@ fun OutlineCurve.changedSections(other: OutlineCurve): IntRange? {
     return if (changed.isEmpty()) null else changed.first()..changed.last()
 }
 
+/**
+ * This curve with each run of [erased] sections replaced by one straight section between the anchors around it, so the
+ * curve stays whole and its ends stay where they are. Null when that would take every section.
+ */
+fun OutlineCurve.withoutSections(erased: Set<Int>): OutlineCurve? {
+    if ((0 until sections).all { it in erased }) return null
+    val next = mutableListOf(points.first())
+    var section = 0
+    while (section < sections) {
+        val from = section * PER_SEGMENT
+        if (section in erased) {
+            while (section < sections && section in erased) section++
+            val to = points[section * PER_SEGMENT]
+            val step = (to - points[from]) * (1f / PER_SEGMENT)
+            next += points[from] + step
+            next += to - step
+            next += to
+        } else {
+            next += points.subList(from + 1, from + PER_SEGMENT + 1)
+            section++
+        }
+    }
+    return OutlineCurve(next)
+}
+
+private operator fun CurvePoint.times(by: Float) = CurvePoint(x * by, y * by)
+
 private operator fun CurvePoint.minus(o: CurvePoint) = CurvePoint(x - o.x, y - o.y)
 
 private operator fun CurvePoint.plus(o: CurvePoint) = CurvePoint(x + o.x, y + o.y)

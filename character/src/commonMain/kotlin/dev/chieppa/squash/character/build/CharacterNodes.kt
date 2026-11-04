@@ -18,12 +18,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** The surface of a mesh node's part with axes [axes] on [side], following it. */
-fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?): Node<PartMesh, PartSurface> = follow(meshes) { mesh ->
+fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?): Node<PartMesh, PartSurface> = follow(meshes, stage = BuildStages.SURFACE) { mesh ->
     PartSurface.of(mesh, axes, side == Side.RIGHT, cancellationCheck())
 }
 
 /** A template's surface with nothing drawn, [mirrored] or not. */
-fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean): Node<PartTemplate, PartSurface> = node(MutableStateFlow(template)) { recipe ->
+fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean): Node<PartTemplate, PartSurface> = node(MutableStateFlow(template), stage = BuildStages.SURFACE) { recipe ->
     surfaceOf(recipe, PartData(), mirrored, cancellationCheck())
 }
 
@@ -77,6 +77,7 @@ fun Graph.assemblyNode(
         }
         owned + planned
     },
+    stage = BuildStages.ASSEMBLY,
 ) { (current, values) ->
     assemble(
         current.parts,

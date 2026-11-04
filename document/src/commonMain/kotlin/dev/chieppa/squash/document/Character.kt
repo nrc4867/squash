@@ -24,6 +24,19 @@ data class Character(
         return pairs.getValue(pair).overlaidWith(part.overrides)
     }
 
+    /**
+     * What an edit of [part] starts from: with [thisSide], what the side shows, which is what its override will become;
+     * otherwise what its pair shares, which an override on this side can hide. An unpaired part has one place for both.
+     */
+    fun editBase(part: PartInstance, thisSide: Boolean): PartData = when {
+        part.pair == null -> part.own
+        thisSide -> resolved(part)
+        else -> pairs.getValue(part.pair)
+    }
+
+    /** The values [part] holds for itself over its pair's. */
+    fun overridesOf(part: PartInstance): PartData = part.overrides
+
     /** The part's effective outlines and parameters, or null if it is not in this character. */
     fun resolved(id: PartId): PartData? = part(id)?.let { resolved(it) }
 }

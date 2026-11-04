@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetHints
+import dev.chieppa.squash.screens.sheet.paneDisagreements
 import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.rememberOutlineLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
@@ -33,10 +35,17 @@ import dev.chieppa.stretch.gpu.orbitNavigation
 
 /**
  * The Single layout: one large viewport with [tools] and Snap view floating top-left, the HUD top-right and the thumbnails
- * bottom-left. The camera orbits freely and [tool] takes the pointer only while it is snapped to a view.
+ * bottom-left, a toast at its foot and the fit's progress bottom-right while the graph works. The camera orbits freely and
+ * [tool] takes the pointer only while it is snapped to a view.
  */
 @Composable
-internal fun SingleSurface(state: AppState, tool: PaneTool?, tools: @Composable RowScope.() -> Unit, modifier: Modifier) {
+internal fun SingleSurface(
+    state: AppState,
+    tool: PaneTool?,
+    tools: @Composable RowScope.() -> Unit,
+    paneToast: (@Composable () -> Unit)?,
+    modifier: Modifier,
+) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
     val renderer = remember { WebGpuRenderer<SceneFrame> { ViewsScene(it) } }
@@ -51,7 +60,14 @@ internal fun SingleSurface(state: AppState, tool: PaneTool?, tools: @Composable 
     val snapped = part?.let { camera.snap(it.axes, hold) }
     val locked = if (selection != null && snapped != null && sized) camera.lockedCamera(snapped, selection, size.width, size.height, hold) else null
     val outlineLook = rememberOutlineLook()
-    val overlay = locked?.let { paneOutlineOverlays(selection, mapOf(it.view to it), tool, outlineLook)[it.view] } ?: ViewportOverlay.Empty
+    val shownCameras = locked?.let { mapOf(it.view to it) }.orEmpty()
+    val disagreements = paneDisagreements(selection, shownCameras, tool)
+    SideEffect {
+        state.curves.snapped = snapped
+        state.curves.conflicts = disagreements.size
+        if (snapped != null) state.activeView.value = snapped
+    }
+    val overlay = locked?.let { paneOutlineOverlays(selection, shownCameras, tool, outlineLook, disagreements)[it.view] } ?: ViewportOverlay.Empty
     val frame = singleFrame(
         SingleInput(
             width = size.width,
@@ -64,6 +80,7 @@ internal fun SingleSurface(state: AppState, tool: PaneTool?, tools: @Composable 
             hints = SheetHints(state.curves.templateHint, state.curves.ghost),
         ),
     )
+    val fitting = rememberFitting(state)
     val drawing = if (locked != null) tool?.pointerInput(locked.view, locked) ?: Modifier else Modifier
     Box(modifier.onSizeChanged { size = it }) {
         NativeSurface(frame, renderer, Modifier.fillMaxSize(), onFailure = { it.printStackTrace() })
@@ -80,9 +97,17 @@ internal fun SingleSurface(state: AppState, tool: PaneTool?, tools: @Composable 
             topEnd = { SingleHud(state, snapped) },
             bottomStart = selection?.let {
                 {
-                    ThumbnailStrip(it, snapped, tool?.liveStroke, state.curves.templateHint) { view -> camera.snapTo(view, it.part.axes) }
+                    ThumbnailStrip(
+                        it,
+                        snapped,
+                        tool?.liveStroke,
+                        state.curves.templateHint,
+                        { view -> tool?.takeIf { it.drawingIn == null }?.fitErrorPixels(view) },
+                    ) { view -> camera.snapTo(view, it.part.axes) }
                 }
             },
+            bottomEnd = fitting?.let { { FitProgressBar(it) } },
+            bottomCenter = paneToast,
         ) {}
     }
 }

@@ -6,8 +6,8 @@ const val DEFAULT_OVERSKETCH_FALLOFF = 0.3f
 /** However small the falloff, a joined end eases in over this many screen pixels. */
 private const val MIN_BLEND_PIXELS = 8f
 
-/** A closed stroke over this share of a curve redraws all of it. */
-private const val WHOLE_CURVE_COVERAGE = 0.75f
+/** A closed stroke over this share of a curve redraws all of it, and an eraser's stroke over this share erases it. */
+internal const val WHOLE_CURVE_COVERAGE = 0.75f
 
 /**
  * What a redrawn stretch does at its ends: [falloff] is the share of the stroke easing in, [snapEnds] pulls an end onto a

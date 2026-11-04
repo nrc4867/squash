@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -27,17 +28,24 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.restPoseCamera
 import dev.chieppa.squash.screens.sheet.restPoseFrame
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.pick_rest_pose
 import dev.chieppa.squash.uidesign.generated.pick_socket_hud
 import dev.chieppa.squash.uidesign.generated.pick_socket_hud_left
+import dev.chieppa.squash.uidesign.generated.pick_tool_add
+import dev.chieppa.squash.uidesign.generated.pick_tool_select
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.NativeSurface
+import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.gpu.WebGpuRenderer
+import dev.chieppa.stretch.ui.ToolButton
+import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
 
 private val DOT_TARGET = 28.dp
+private val PICK_TOOL_SIZE = 34.dp
 
 /**
  * Pick a part type: the rest pose with its open sockets as dots, drawn live in a native surface, the tiles in the bottom
@@ -52,6 +60,7 @@ fun PickPartScreen(shell: Shell) {
             RestPoseSurface(state)
             Viewport(
                 nativeContent = true,
+                topStart = { PickTools(state) },
                 topEnd = { Hud(stringResource(Res.string.pick_rest_pose)) },
                 bottomEnd = socket?.let { open ->
                     {
@@ -63,6 +72,23 @@ fun PickPartScreen(shell: Shell) {
                 },
             ) { SocketDots(state) }
         }
+    }
+}
+
+/** Select and Add part: what pressing a socket's dot does. */
+@Composable
+private fun PickTools(state: AppState) {
+    val armed by state.pickTool.collectAsState()
+    Toolbar {
+        PickToolButton(PickTool.SELECT, SquashIcons.Select, stringResource(Res.string.pick_tool_select), "V", armed) { state.pickTool.value = it }
+        PickToolButton(PickTool.ADD_PART, SquashIcons.AddPart, stringResource(Res.string.pick_tool_add), "A", armed) { state.pickTool.value = it }
+    }
+}
+
+@Composable
+private fun PickToolButton(tool: PickTool, icon: ImageVector, label: String, key: String, armed: PickTool, onArm: (PickTool) -> Unit) {
+    Tooltip(label, listOf(key)) {
+        ToolButton(icon, label, tool == armed, { onArm(tool) }, Modifier.testTag(ShellTags.pickTool(tool)), size = PICK_TOOL_SIZE)
     }
 }
 
@@ -111,7 +137,9 @@ private fun BoxScope.SocketDots(state: AppState) {
                 .offset { IntOffset((at.x - half).toInt(), (at.y - half).toInt()) }
                 .size(DOT_TARGET)
                 .testTag(ShellTags.socketDot(socket.name))
-                .clickable(remember { MutableInteractionSource() }, indication = null) { state.chooseSocket(socket) },
+                .clickable(remember { MutableInteractionSource() }, indication = null) {
+                    if (state.pickTool.value == PickTool.ADD_PART) state.placeOn(socket) else state.chooseSocket(socket)
+                },
         )
     }
 }

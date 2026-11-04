@@ -5,6 +5,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_tool_erase
+import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
+import dev.chieppa.squash.uidesign.generated.pick_tool_add
+import dev.chieppa.squash.uidesign.generated.pick_tool_select
 import dev.chieppa.squash.uidesign.generated.shell_action_close
 import dev.chieppa.squash.uidesign.generated.shell_action_commands
 import dev.chieppa.squash.uidesign.generated.shell_action_draw
@@ -46,6 +50,10 @@ object ShellActions {
     val RESET_LAYOUT = ActionId("reset-layout")
     val DRAW = ActionId("tool-draw")
     val EDIT_CURVES = ActionId("tool-edit")
+    val ERASE = ActionId("tool-erase")
+    val MIRROR = ActionId("mirror")
+    val SELECT = ActionId("tool-select")
+    val ADD_PART = ActionId("tool-add-part")
 }
 
 private val texts: Map<ActionId, StringResource> = mapOf(
@@ -65,6 +73,10 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.RESET_LAYOUT to Res.string.shell_action_reset_layout,
     ShellActions.DRAW to Res.string.shell_action_draw,
     ShellActions.EDIT_CURVES to Res.string.shell_action_edit_curves,
+    ShellActions.ERASE to Res.string.edit_tool_erase,
+    ShellActions.MIRROR to Res.string.edit_tool_mirror,
+    ShellActions.SELECT to Res.string.pick_tool_select,
+    ShellActions.ADD_PART to Res.string.pick_tool_add,
 )
 
 /** The labels for [dev.chieppa.stretch.frame.LocalActionText]. */
@@ -89,6 +101,10 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "help" -> StretchIcons.Help
     "pen" -> SquashIcons.DrawOutline
     "edit-curves" -> SquashIcons.EditCurves
+    "erase" -> SquashIcons.Erase
+    "mirror" -> SquashIcons.Mirror
+    "select" -> SquashIcons.Select
+    "add-part" -> SquashIcons.AddPart
     else -> null
 }
 
@@ -99,6 +115,12 @@ fun Shell.registerActions() {
     val inFrame = { state.screen.value != Screen.HOME }
     val hasCharacter = { state.session.value != null }
     val inWorkspace = { state.screen.value == Screen.WORKSPACE }
+    val onPick = { state.screen.value == Screen.PICK_PART }
+    val selectedIsPaired = {
+        inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
+            state.selectedPart.value?.let(character::part)?.pair
+        } != null
+    }
     fun action(id: ActionId, icon: String?, keys: List<KeyChord> = emptyList(), available: () -> Boolean = { true }, run: () -> Unit) =
         registry.register(Action(id, id.value, icon, keys, isAvailable = available, run = run))
     fun toggle(drawer: String) {
@@ -110,8 +132,8 @@ fun Shell.registerActions() {
     action(ShellActions.SAVE, "save", chord("Ctrl S"), hasCharacter) { save() }
     action(ShellActions.SAVE_AS, null, chord("Ctrl Shift S"), hasCharacter) { save(asNew = true) }
     action(ShellActions.CLOSE, null, available = hasCharacter) { close() }
-    action(ShellActions.UNDO, "undo", chord("Ctrl Z"), hasCharacter) { state.undo() }
-    action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), hasCharacter) { state.redo() }
+    action(ShellActions.UNDO, "undo", chord("Ctrl Z"), { state.session.value?.history?.canUndo == true }) { state.undo() }
+    action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
     action(ShellActions.PARTS, "parts", chord("B"), inFrame) { toggle(DrawerIds.PARTS) }
     action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
@@ -121,6 +143,10 @@ fun Shell.registerActions() {
     action(ShellActions.PART, "part", available = inFrame) { toggle(DrawerIds.PART) }
     action(ShellActions.HELP, "help", available = inFrame) { toggle(DrawerIds.HELP) }
     action(ShellActions.RESET_LAYOUT, null, available = inFrame) { layout = DEFAULT_LAYOUT }
-    action(ShellActions.DRAW, "pen", chord("D"), inWorkspace) { state.tool.value = BuildTool.DRAW_OUTLINE }
-    action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.tool.value = BuildTool.EDIT_CURVES }
+    action(ShellActions.DRAW, "pen", chord("D"), inWorkspace) { state.armTool(BuildTool.DRAW_OUTLINE) }
+    action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), inWorkspace) { state.armTool(BuildTool.EDIT_CURVES) }
+    action(ShellActions.ERASE, "erase", chord("X"), inWorkspace) { state.armTool(BuildTool.ERASE) }
+    action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
+    action(ShellActions.SELECT, "select", chord("V"), onPick) { state.pickTool.value = PickTool.SELECT }
+    action(ShellActions.ADD_PART, "add-part", chord("A"), onPick) { state.pickTool.value = PickTool.ADD_PART }
 }

@@ -18,6 +18,9 @@ object ShellTags {
     const val STATUS_START = "status.start"
     const val STATUS_END = "status.end"
     const val PART_EMPTY = "part.empty"
+    const val MIRROR = "tools.mirror"
+    const val HOME_SEARCH = "home.search"
+    const val HOME_CAST = "home.cast"
 
     fun newPlan(id: String) = "new.plan.$id"
     fun recent(name: String) = "home.recent.$name"
@@ -26,6 +29,8 @@ object ShellTags {
     fun pickTile(id: String) = "pick.tile.$id"
     fun socketDot(name: String) = "pick.dot.$name"
     fun tool(tool: BuildTool) = "tools.${tool.name}"
+    fun pickTool(tool: PickTool) = "pick.tool.${tool.name}"
+    fun sideRow(name: String) = "parts.side.$name"
     fun parameter(name: String) = "part.parameter.$name"
     fun viewChip(view: String) = "part.view.$view"
 }

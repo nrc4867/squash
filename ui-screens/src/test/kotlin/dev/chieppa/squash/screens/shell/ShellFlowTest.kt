@@ -3,9 +3,12 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,7 +18,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
+import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.SetOutline
+import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
@@ -158,7 +166,9 @@ class ShellFlowTest {
     fun theSliderIsOneUndoStepAndStaysInItsLimits() = runComposeUiTest {
         val state = AppState(shipped)
         createCharacter(state)
-        onNodeWithContentDescription("Outline").performClick()
+        onNodeWithContentDescription("Part").performClick()
+        state.tool.value = BuildTool.NONE
+        waitForIdle()
         val session = assertNotNull(state.session.value)
         val root = session.document.value.character.parts.single().id
         val steps = session.history.steps.value.done.size
@@ -189,7 +199,7 @@ class ShellFlowTest {
         show(state)
         onNodeWithTag(ShellTags.HOME).assertExists()
         onNodeWithTag(ShellTags.recent(file.nameWithoutExtension)).assertExists()
-        waitUntil { onNodeWithText("Marsh hare").runCatching { assertExists() }.isSuccess }
+        waitUntil { onAllNodesWithText("Marsh hare").fetchSemanticsNodes().isNotEmpty() }
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
         waitUntil { state.session.value != null && state.screen.value == Screen.WORKSPACE }
         assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
@@ -212,5 +222,88 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
         waitUntil { state.recent.entries.isEmpty() }
         assertEquals(Screen.HOME, state.screen.value)
+    }
+
+    @Test
+    fun everyScreenHasTheFourMenusAndCantUndoWithNothingToTakeBack() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        for (title in listOf("File", "Edit", "View", "Help")) onNodeWithText(title).assertExists()
+        val undo = onNodeWithContentDescription("Undo")
+        undo.assertExists()
+        onNodeWithContentDescription("Commands").assertExists()
+        onNodeWithText("Shot").assertIsNotEnabled()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Erase").assertExists()
+        onNodeWithText("Mirror").assertIsNotEnabled()
+    }
+
+    @Test
+    fun theStatusBarShowsHomesOwnFactsAfterTheWorkspace() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("0 drawn · 3 from template")
+        state.closeCharacter()
+        waitForIdle()
+        onNodeWithTag(ShellTags.HOME).assertExists()
+        onNodeWithTag(ShellTags.STATUS_END).assertDoesNotExist()
+        assertEquals(0, onAllNodesWithText("0 drawn · 3 from template").fetchSemanticsNodes().size)
+        onNodeWithText("Ready").assertExists()
+        onNodeWithContentDescription("Settings").assertExists()
+        onNodeWithContentDescription("Undo").assertDoesNotExist()
+    }
+
+    @Test
+    fun theRailHoldsWhatTheBoardsDrawAndWhatIsNotBuiltDoesNotOpen() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        for (name in listOf("Parts", "Part types", "History", "Help", "Part")) onNodeWithContentDescription(name).assertIsEnabled()
+        for (name in listOf("References", "Rig", "Slots", "Color", "Lines", "Marks")) onNodeWithContentDescription(name).assertIsNotEnabled()
+    }
+
+    @Test
+    fun mirrorDecidesWhereAnEditLandsAndAnOverrideShowsItself() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        onNodeWithTag(ShellTags.tool(BuildTool.ERASE)).assertExists()
+        onNodeWithTag(ShellTags.MIRROR).assertIsNotEnabled()
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.MIRROR).assertIsEnabled()
+        onAllNodesWithTag(ShellTags.sideRow("front-leg.left")).assertCountEquals(0)
+
+        onNodeWithTag(ShellTags.MIRROR).performClick()
+        waitForIdle()
+        assertEquals(false, state.mirror.value)
+        onNodeWithTag(ShellTags.sideRow("front-leg.right")).performClick()
+        waitForIdle()
+        val session = assertNotNull(state.session.value)
+        val right = assertNotNull(session.document.value.character.part(assertNotNull(state.selectedPart.value)))
+        assertEquals(Side.RIGHT, right.side)
+
+        val curve = OutlineCurve(List(4) { CurvePoint(it * 0.1f, 0.2f) })
+        session.send(SetOutline(right.id, View.SIDE, curve, state.thisSide))
+        val left = assertNotNull(session.document.value.twin(right))
+        assertEquals(null, session.document.value.character.resolved(left).outlines[View.SIDE], "the other side keeps what it had")
+        onNodeWithTag(ShellTags.MIRROR).performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.sideRow("front-leg.right")).assertExists()
+        onNodeWithText("differs").assertExists()
+    }
+
+    @Test
+    fun addPartPlacesTheChosenTypeOnTheSocketItIsPressedOn() = runComposeUiTest {
+        val state = AppState(shipped)
+        createCharacter(state)
+        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        waitForIdle()
+        val before = assertNotNull(state.session.value).document.value.character.parts.size
+        val socket = assertNotNull(state.pickedSocket.value)
+        state.pickTool.value = PickTool.ADD_PART
+        state.placeOn(socket)
+        waitForIdle()
+        assertEquals(Screen.WORKSPACE, state.screen.value)
+        assertTrue(assertNotNull(state.session.value).document.value.character.parts.size > before)
     }
 }

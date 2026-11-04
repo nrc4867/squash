@@ -16,12 +16,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.model.PartTemplate
-import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.stretch.frame.DrawerPosition
@@ -59,20 +57,13 @@ private fun PartTile(template: PartTemplate, selected: Boolean, onClick: () -> U
     Card(Modifier.size(TILE).testTag(ShellTags.pickTile(template.id.value)), onClick, selected) {
         Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Icon(templateIcon(template.id), c.inkControl, size = TILE_ICON)
+                if (hasTileArt(template.id.value)) {
+                    PartTileArt(template.id.value, Modifier.fillMaxSize())
+                } else {
+                    Icon(SquashIcons.Parts, c.inkControl, size = TILE_ICON)
+                }
             }
             BasicText(template.name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink)), maxLines = 1)
         }
     }
-}
-
-/** The tile art for a template, or the general parts icon for a template without its own. */
-private fun templateIcon(id: TemplateId): ImageVector = when (id.value) {
-    "torso" -> SquashIcons.PartTorso
-    "leg" -> SquashIcons.PartLeg
-    "paw" -> SquashIcons.PartPaw
-    "head" -> SquashIcons.PartHead
-    "ear" -> SquashIcons.PartEar
-    "tail" -> SquashIcons.PartTail
-    else -> SquashIcons.Parts
 }

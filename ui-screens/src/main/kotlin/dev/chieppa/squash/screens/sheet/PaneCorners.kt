@@ -1,10 +1,15 @@
 package dev.chieppa.squash.screens.sheet
 
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_chip_pixels
+import dev.chieppa.squash.uidesign.generated.edit_chip_this_side
 import dev.chieppa.squash.uidesign.generated.edit_refit
 import dev.chieppa.squash.uidesign.generated.sheet_chip_drawing
 import dev.chieppa.squash.uidesign.generated.sheet_chip_drawn
@@ -19,17 +24,26 @@ import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Chip
 import dev.chieppa.stretch.ui.ChipKind
-import org.jetbrains.compose.resources.stringResource
+import dev.chieppa.stretch.ui.ProgressBar
 import java.util.Locale
+import org.jetbrains.compose.resources.stringResource
 
 /** A pane over the surface, which shows through it: its label names the [view] it holds, null for Full, its chip floats in the other corner, and [modifier] takes its pointer. */
 @Composable
-internal fun PaneViewport(view: View?, chip: PaneChip?, modifier: Modifier = Modifier, fitError: Float? = null) {
+internal fun PaneViewport(
+    view: View?,
+    chip: PaneChip?,
+    modifier: Modifier = Modifier,
+    fitError: Float? = null,
+    progress: Float = 0f,
+    bottomStart: (@Composable () -> Unit)? = null,
+) {
     Viewport(
         modifier,
         nativeContent = true,
         topStart = { PaneLabel(view) },
-        topEnd = chip?.let { { PaneChipView(it, fitError) } },
+        topEnd = chip?.let { { PaneChipView(it, fitError, progress) } },
+        bottomStart = bottomStart,
     ) {}
 }
 
@@ -48,7 +62,7 @@ private fun PaneLabel(view: View?) {
 }
 
 @Composable
-private fun PaneChipView(chip: PaneChip, fitError: Float?) {
+private fun PaneChipView(chip: PaneChip, fitError: Float?, progress: Float) {
     when (chip) {
         PaneChip.DRAWING -> Chip(stringResource(Res.string.sheet_chip_drawing), kind = ChipKind.On)
         PaneChip.DRAWN ->
@@ -59,9 +73,19 @@ private fun PaneChipView(chip: PaneChip, fitError: Float?) {
             }
         PaneChip.FROM_TEMPLATE -> Chip(stringResource(Res.string.sheet_chip_from_template))
         PaneChip.LIVE -> Chip(stringResource(Res.string.sheet_chip_live))
-        PaneChip.REFIT -> Hud(stringResource(Res.string.edit_refit))
+        PaneChip.REFIT -> {
+            val refit = stringResource(Res.string.edit_refit)
+            Hud(refit, leading = { ProgressBar(progress, refit, Modifier.width(REFIT_BAR_WIDTH).testTag(REFIT_BAR_TAG)) })
+        }
+        PaneChip.THIS_SIDE -> Chip(stringResource(Res.string.edit_chip_this_side), icon = SquashIcons.PairOverride)
+        PaneChip.HIDES_PAIR -> Chip(stringResource(Res.string.edit_chip_this_side), kind = ChipKind.Warn)
     }
 }
+
+/** The test tag of the Refit readout's bar. */
+const val REFIT_BAR_TAG = "sheet.refit.bar"
+
+private val REFIT_BAR_WIDTH = 72.dp
 
 /** A pixel error as the chip reads it, to one decimal. */
 fun pixelsLabel(pixels: Float): String = "%.1f".format(Locale.ROOT, pixels)

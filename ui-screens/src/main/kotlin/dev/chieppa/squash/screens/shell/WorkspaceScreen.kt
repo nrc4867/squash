@@ -9,15 +9,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.screens.draw.rememberDrawOutlineTool
 import dev.chieppa.squash.screens.edit.Refit
+import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.rememberEditCurvesTool
+import dev.chieppa.squash.screens.edit.rememberEraseTool
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
+import dev.chieppa.squash.uidesign.generated.edit_toast_refit_ends
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit_whole
 import dev.chieppa.squash.uidesign.generated.edit_toast_section
 import dev.chieppa.squash.uidesign.generated.edit_toast_sections
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
+import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
 
 /** The Build workspace: the frame's bars and drawers around the panes and their tool strip. */
@@ -27,9 +31,12 @@ fun WorkspaceScreen(shell: Shell) {
     val armed by state.tool.collectAsState()
     val draw = rememberDrawOutlineTool(state)
     val edit = rememberEditCurvesTool(state)
-    val tool: PaneTool = when (armed) {
+    val erase = rememberEraseTool(state)
+    val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.EDIT_CURVES -> edit
+        BuildTool.ERASE -> erase
+        BuildTool.NONE -> null
     }
     val refit = state.curves.refit
     LaunchedEffect(refit) {
@@ -41,6 +48,7 @@ fun WorkspaceScreen(shell: Shell) {
             Modifier.fillMaxSize(),
             tools = { WorkspaceTools(state) },
             tool = tool,
+            paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
         )
     }
 }
@@ -53,5 +61,10 @@ private suspend fun refitMessage(refit: Refit): String {
     } else {
         getString(Res.string.edit_toast_sections, first, first + refit.sections - 1)
     }
-    return getString(if (refit.wholePart) Res.string.edit_toast_refit_whole else Res.string.edit_toast_refit, sections)
+    val message = when (refit.reach) {
+        RefitReach.SECTIONS -> Res.string.edit_toast_refit
+        RefitReach.CLOSED_ENDS -> Res.string.edit_toast_refit_ends
+        RefitReach.WHOLE_PART -> Res.string.edit_toast_refit_whole
+    }
+    return getString(message, sections)
 }

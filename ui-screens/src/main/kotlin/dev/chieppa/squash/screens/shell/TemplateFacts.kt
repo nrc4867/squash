@@ -97,7 +97,7 @@ fun AreasSection(template: PartTemplate) {
 }
 
 @Composable
-private fun FactRow(label: String, value: String) {
+internal fun FactRow(label: String, value: String) {
     SettingRow(label) {
         Spacer(Modifier.weight(1f))
         BasicText(value, style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)), maxLines = 1)

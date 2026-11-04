@@ -12,6 +12,7 @@ import dev.chieppa.squash.screens.edit.CurveToolBench
 import dev.chieppa.squash.screens.edit.EditCurvesTool
 import dev.chieppa.squash.screens.edit.LEG_SIDE
 import dev.chieppa.squash.screens.edit.PANE_TAG
+import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.TEST_STROKE_LOOK
 import dev.chieppa.squash.screens.edit.edges
@@ -136,7 +137,7 @@ class OversketchToolTest {
         val refit = assertNotNull(bench.state.curves.refit)
         assertEquals(1, refit.firstSection)
         assertEquals(1, refit.sections)
-        assertEquals(false, refit.wholePart)
+        assertEquals(RefitReach.SECTIONS, refit.reach)
         assertEquals(bench.outline(), refit.curve)
         assertNotEquals(0f, assertNotNull(bench.state.curves.fitError(refit.curve)))
     }

@@ -121,6 +121,9 @@ class SheetPureTest {
         assertEquals(PaneChip.FROM_TEMPLATE, paneChip(View.TOP, setOf(View.SIDE), null))
         assertEquals(PaneChip.DRAWN, paneChip(View.SIDE, setOf(View.SIDE), null))
         assertEquals(PaneChip.DRAWING, paneChip(View.SIDE, setOf(View.SIDE), View.SIDE))
+        assertEquals(PaneChip.HIDES_PAIR, paneChip(View.SIDE, setOf(View.SIDE), null, overridden = setOf(View.SIDE)), "an edit lands under the override")
+        assertEquals(PaneChip.THIS_SIDE, paneChip(View.SIDE, setOf(View.SIDE), null, overridden = setOf(View.SIDE), mirror = false))
+        assertEquals(null, paneChip(View.FRONT, setOf(View.FRONT), null, conflicted = setOf(View.FRONT)), "the highlight has the corner")
     }
 
     @Test

@@ -4,12 +4,35 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private fun curve(vararg values: Pair<Float, Float>) = OutlineCurve(values.map { CurvePoint(it.first, it.second) })
 
 class OutlineEditTest {
+    @Test
+    fun erasedSectionsBecomeOneStraightSectionBetweenTheirAnchors() {
+        val curve = OutlineCurve(List(13) { CurvePoint(it.toFloat(), (it % 3).toFloat()) })
+        val erased = assertNotNull(curve.withoutSections(setOf(1, 2)))
+        assertEquals(3 * 3 + 1, erased.points.size)
+        assertEquals(curve.points.subList(0, 4), erased.points.subList(0, 4), "the section before is the old curve's")
+        assertEquals(curve.points.last(), erased.points.last(), "the far end stays")
+        val (from, to) = erased.points[3] to erased.points[6]
+        assertEquals(CurvePoint(from.x + (to.x - from.x) / 3f, from.y + (to.y - from.y) / 3f), erased.points[4], "the bridge runs straight")
+        assertEquals(null, curve.withoutSections(setOf(0, 1, 2, 3)), "taking all of it leaves nothing")
+    }
+
+    @Test
+    fun erasingKeepsAClosedCurveClosed() {
+        val a = CurvePoint(0f, 0f)
+        val curve = OutlineCurve(listOf(a) + List(8) { CurvePoint(it + 1f, 3f) } + a)
+        val erased = assertNotNull(curve.withoutSections(setOf(0)))
+        assertEquals(a, erased.points.first())
+        assertEquals(a, erased.points.last())
+        assertEquals(curve.sections, erased.sections)
+    }
+
     /** Two sections with a smooth anchor at (2, 0). */
     private val two = curve(0f to 1f, 1f to 1f, 1f to 0f, 2f to 0f, 3f to 0f, 3f to 1f, 4f to 1f)
 

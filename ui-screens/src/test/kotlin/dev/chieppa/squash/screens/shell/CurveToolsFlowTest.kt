@@ -26,6 +26,7 @@ import dev.chieppa.squash.screens.edit.CurveDrawerTags
 import dev.chieppa.squash.screens.edit.CurveSelection
 import dev.chieppa.squash.screens.edit.LEG_SIDE
 import dev.chieppa.squash.screens.edit.Refit
+import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
@@ -151,7 +152,7 @@ class CurveToolsFlowTest {
         workspace(state)
         state.drawSide()
         waitForIdle()
-        onNodeWithContentDescription("Outline curves").performClick()
+        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(CurveDrawerTags.outline(View.SIDE)).assertTextContains("7 pts")
         onNodeWithTag(CurveDrawerTags.outline(View.FRONT)).assertTextContains("none")
@@ -169,7 +170,7 @@ class CurveToolsFlowTest {
         val session = checkNotNull(state.session.value)
         state.curves.selection = CurveSelection(part, View.SIDE, 3)
         waitForIdle()
-        onNodeWithContentDescription("Outline curves").performClick()
+        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(CurveDrawerTags.X).assertExists()
         onNodeWithText("Smooth").assertExists()
@@ -190,7 +191,7 @@ class CurveToolsFlowTest {
         val session = checkNotNull(state.session.value)
         val curve = LEG_SIDE.copy(points = LEG_SIDE.points.mapIndexed { i, p -> if (i == 4) CurvePoint(p.x, p.y + 0.1f) else p })
         session.send(SetOutline(part, View.SIDE, curve))
-        state.curves.refit = Refit(part, View.SIDE, curve, 1, 1, false)
+        state.curves.refit = Refit(part, View.SIDE, curve, 1, 1, RefitReach.SECTIONS)
         waitForIdle()
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 section touched")
         onNodeWithText("Section 2 refit · other sections unchanged").assertExists()

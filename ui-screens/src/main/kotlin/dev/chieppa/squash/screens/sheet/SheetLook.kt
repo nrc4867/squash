@@ -8,9 +8,9 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.stretch.theme.Stretch
 
 /** The part fill the board draws until a character has colors of its own. */
-private val PART_BASE = Color(0xFFE9A24B)
+internal val PART_BASE = Color(0xFFE9A24B)
 private val PART_SHADE = Color(0xFFC27F35)
-private val PART_INK = Color(0xFF1C1517)
+internal val PART_INK = Color(0xFF1C1517)
 
 /** The colors and pixel widths of the panes' drawing. */
 data class SheetLook(

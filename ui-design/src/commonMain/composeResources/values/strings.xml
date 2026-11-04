@@ -41,6 +41,12 @@
     <string name="shell_action_edit_curves">Edit curves</string>
     <string name="shell_action_reset_layout">Reset layout</string>
 
+    <string name="shell_drawer_references">References</string>
+    <string name="shell_drawer_rig">Rig</string>
+    <string name="shell_drawer_slots">Slots</string>
+    <string name="shell_drawer_color">Color</string>
+    <string name="shell_drawer_lines">Lines</string>
+    <string name="shell_drawer_marks">Marks</string>
     <string name="shell_drawer_parts">Parts</string>
     <string name="shell_drawer_part">Part</string>
     <string name="shell_drawer_types">Part types</string>
@@ -57,13 +63,28 @@
     <string name="shell_status_ready">Ready</string>
     <string name="shell_status_saved">Saved</string>
     <string name="shell_status_settled">Settled</string>
-    <string name="shell_status_building">Building</string>
+    <string name="shell_status_working">Working · %1$s</string>
+    <string name="shell_status_pen">Pen · %1$s</string>
+    <string name="shell_stage_slices">part slices</string>
+    <string name="shell_stage_mesh">part mesh</string>
+    <string name="shell_stage_surface">part surface</string>
+    <string name="shell_stage_assembly">character</string>
     <string name="shell_status_parts">%1$d of %2$d parts</string>
     <string name="shell_status_views">%1$d drawn · %2$d from template</string>
+    <string name="shell_status_views_drawing">%1$d drawn · 1 drawing · %2$d from template</string>
+    <string name="single_thumb_pixels">%1$s · %2$s px</string>
+    <string name="shell_status_view_of">%1$s · %2$d of %3$d views</string>
+    <string name="shell_status_views_all">%1$d views drawn</string>
+    <string name="shell_status_views_of">%1$d of %2$d views drawn</string>
+    <string name="shell_status_conflict">%1$s · 1 conflict</string>
+    <string name="shell_status_conflicts">%1$s · %2$d conflicts</string>
     <string name="shell_layout_label">Layout</string>
 
     <string name="shell_tree_to_draw">to draw</string>
     <string name="shell_tree_pair">×%1$d</string>
+    <string name="shell_tree_left">Left</string>
+    <string name="shell_tree_right">Right</string>
+    <string name="shell_tree_differs">differs</string>
 
     <string name="shell_view_side">Side</string>
     <string name="shell_view_top">Top</string>
@@ -71,7 +92,16 @@
     <string name="shell_part_you_draw">You draw</string>
     <string name="shell_part_tool_knows">Tool knows</string>
     <string name="shell_part_areas">Areas</string>
-    <string name="shell_part_parameters">Parameters</string>
+    <string name="shell_part_template">%1$s template</string>
+    <string name="shell_part_parameters">Shape</string>
+    <string name="shell_part_fit">Fit</string>
+    <string name="shell_part_fit_skeleton">Skeleton</string>
+    <string name="shell_part_fit_surface">Surface</string>
+    <string name="shell_part_fit_unseen">Unseen</string>
+    <string name="shell_part_fit_done">done</string>
+    <string name="shell_part_fit_from_template">from template</string>
+    <string name="shell_part_built_from">Built from</string>
+    <string name="shell_part_this_side">This side %1$s</string>
     <string name="shell_part_joints">Joints</string>
     <string name="shell_part_pair">Pair</string>
     <string name="shell_part_mirrored">mirrored</string>
@@ -95,7 +125,17 @@
     <string name="home_new_project">New project</string>
     <string name="home_open_file">Open file</string>
     <string name="home_drop_title">Open a project</string>
-    <string name="home_drop_kinds">JSON</string>
+    <string name="home_drop_kinds">Drop a file or click</string>
+    <string name="home_search">Search</string>
+    <string name="home_stats">1 character</string>
+    <string name="home_show">Show</string>
+    <string name="home_show_cast">Cast</string>
+    <string name="home_show_objects">Objects</string>
+    <string name="home_show_sets">Sets</string>
+    <string name="home_cast_detail">%1$d of %2$d</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_light">Ink and paper</string>
+    <string name="settings_theme_dark">Dark</string>
     <string name="home_drop_over">Drop to open</string>
     <string name="home_drop_reject">Not a Squash save</string>
     <string name="home_new">New</string>
@@ -117,6 +157,8 @@
     <string name="pick_socket_hud">Socket · %1$s</string>
     <string name="pick_socket_hud_left">Socket · %1$s L</string>
     <string name="pick_rest_pose">Rest pose · standing square</string>
+    <string name="pick_tool_select">Select</string>
+    <string name="pick_tool_add">Add part</string>
     <string name="rest_pose_art">Rest pose</string>
     <string name="pick_draw">Draw %1$s</string>
 
@@ -156,4 +198,8 @@
     <string name="edit_toast_sections">Sections %1$d–%2$d</string>
     <string name="edit_toast_refit">%1$s refit · other sections unchanged</string>
     <string name="edit_toast_refit_whole">%1$s refit · whole part rebuilt</string>
+    <string name="edit_toast_refit_ends">%1$s refit · closed end rebuilt</string>
+    <string name="edit_chip_this_side">This side</string>
+    <string name="edit_tool_erase">Erase</string>
+    <string name="edit_tool_mirror">Mirror</string>
 </resources>

@@ -60,7 +60,7 @@ fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null))
                 Screen.PICK_PART -> PickPartScreen(shell)
                 Screen.WORKSPACE -> WorkspaceScreen(shell)
             }
-            ToastHost(shell.toasts, Modifier.align(Alignment.BottomCenter).padding(bottom = TOAST_LIFT))
+            if (screen != Screen.WORKSPACE) ToastHost(shell.toasts, Modifier.align(Alignment.BottomCenter).padding(bottom = TOAST_LIFT))
         }
         CommandPalette(
             shell.palette,

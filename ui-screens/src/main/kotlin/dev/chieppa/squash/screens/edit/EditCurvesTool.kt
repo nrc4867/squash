@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
+import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CurveLimit
 import dev.chieppa.squash.document.CurvePoint
@@ -20,6 +21,7 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.changedSections
 import dev.chieppa.squash.document.isAnchor
 import dev.chieppa.squash.document.moved
+import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.draw.isToolRelease
@@ -28,10 +30,9 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
-import dev.chieppa.squash.geom.StrokeEnds
 
 /** Where in the document a drag is working. */
-private class DragTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val index: Int, val limit: CurveLimit?)
+private class DragTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val index: Int, val limit: CurveLimit?, val thisSide: Boolean, val template: PartTemplate)
 
 /**
  * Edit curves: a locked pane shows the stored outline's anchors and handles, and a press on one selects it and drags it.
@@ -44,10 +45,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
 
     override fun fitErrorPixels(view: View): Float? = state.curves.fitError(outline(view))
 
-    private fun outline(view: View): OutlineCurve? {
-        val part = state.selectedPart.value ?: return null
-        return state.session.value?.document?.value?.character?.resolved(part)?.outlines?.get(view)
-    }
+    private fun outline(view: View): OutlineCurve? = state.editedOutline(view)
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
         awaitEachGesture {
@@ -65,7 +63,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
         val session = state.session.value ?: return null
         val part = state.selectedPart.value ?: return null
         val instance = session.document.value.character.part(part) ?: return null
-        val curve = session.document.value.character.resolved(instance).outlines[view] ?: return null
+        val curve = state.editedOutline(view) ?: return null
         val selected = state.curves.selectionIn(part, view, curve)?.index
         val index = curve.pointAt(pixel, look.grabReach, selected, camera::toPixel)
         if (index == null) {
@@ -74,7 +72,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
         }
         val limit = (strokeEnds(view, session.templates[instance.template].openEnd) as? StrokeEnds.CutAtPlane)
             ?.let { CurveLimit(it.plane, it.above) }
-        return DragTarget(session, part, view, curve, index, limit)
+        return DragTarget(session, part, view, curve, index, limit, state.thisSide, session.templates[instance.template])
     }
 
     /** Follows [id] until it lets go, which commits what it moved, or goes away, which restores the start. */
@@ -98,7 +96,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
                 val to = CurvePoint(start.x + plane.x - grabbed.x, start.y + plane.y - grabbed.y)
                 last = target.curve.moved(target.index, to, target.limit, corner)
                 val open = gesture ?: target.session.history.begin().also { gesture = it }
-                open.update(SetOutline(target.part, target.view, last))
+                open.update(SetOutline(target.part, target.view, last, target.thisSide))
             }
         } finally {
             state.curves.dragging = false
@@ -122,12 +120,12 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
             curve,
             sections.first,
             sections.last - sections.first + 1,
-            reachesWholePart(target.view, target.curve, curve),
+            refitReach(target.view, target.curve, curve, target.template),
         )
     }
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
-        val curve = outline(view) ?: return ViewportOverlay.Empty
+        val curve = outline(view)?.takeIf { view == state.activeView.value } ?: return ViewportOverlay.Empty
         val part = state.selectedPart.value ?: return ViewportOverlay.Empty
         return curvePoints(curve, state.curves.selectionIn(part, view, curve)?.index, camera, look)
     }

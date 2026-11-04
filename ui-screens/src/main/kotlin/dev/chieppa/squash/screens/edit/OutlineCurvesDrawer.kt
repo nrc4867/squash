@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -25,6 +27,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.strokeEnds
 import dev.chieppa.squash.screens.shell.VIEW_ORDER
 import dev.chieppa.squash.screens.shell.viewLabel
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_falloff
 import dev.chieppa.squash.uidesign.generated.edit_handle
@@ -40,14 +43,17 @@ import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.edit_x
 import dev.chieppa.squash.uidesign.generated.edit_y
 import dev.chieppa.stretch.frame.DrawerSection
+import dev.chieppa.stretch.frame.ListRow
+import dev.chieppa.stretch.frame.RowIcon
+import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Toggle
-import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.stringResource
 
 private const val PERCENT = 100f
 private const val COORDINATE_STEP = 0.01f
@@ -70,15 +76,16 @@ private enum class HandleKind { SMOOTH, CORNER }
 fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     SelectedPointSection(state, session, part, outlines)
     OversketchSection(state)
+    val active by state.activeView.collectAsState()
     DrawerSection(stringResource(Res.string.edit_outlines)) {
         VIEW_ORDER.forEach { view ->
-            val curve = outlines[view]
-            val anchors = curve?.anchors?.size
-            SettingRow(viewLabel(view)) {
-                Spacer(Modifier.weight(1f))
-                Readout(
+            val anchors = outlines[view]?.anchors?.size
+            ListRow(view == active, { state.activeView.value = view }, Modifier.testTag(CurveDrawerTags.outline(view))) {
+                RowIcon(SquashIcons.EditCurves)
+                RowText(viewLabel(view), Modifier.weight(1f))
+                RowText(
                     if (anchors != null) stringResource(Res.string.edit_points, anchors) else stringResource(Res.string.edit_none),
-                    Modifier.testTag(CurveDrawerTags.outline(view)),
+                    subtle = true,
                 )
             }
         }
@@ -97,7 +104,7 @@ private fun SelectedPointSection(state: AppState, session: CharacterSession, par
     val ends = strokeEnds(selection.view, session.templates[part.template].openEnd) as? StrokeEnds.CutAtPlane
     val limit = ends?.let { CurveLimit(it.plane, it.above) }
     val point = curve.points[selection.index]
-    fun moveTo(to: CurvePoint) = session.send(SetOutline(part.id, selection.view, curve.moved(selection.index, to, limit)))
+    fun moveTo(to: CurvePoint) = session.send(SetOutline(part.id, selection.view, curve.moved(selection.index, to, limit), state.thisSide))
     DrawerSection(stringResource(Res.string.edit_selected_point)) {
         val x = stringResource(Res.string.edit_x)
         val y = stringResource(Res.string.edit_y)
@@ -139,7 +146,7 @@ private fun HandleRow(
             { kind ->
                 state.curves.markCorner(key, kind == HandleKind.CORNER)
                 if (kind == HandleKind.SMOOTH && !curve.isSmooth(anchor)) {
-                    session.send(SetOutline(part.id, selection.view, curve.smoothed(anchor, limit)))
+                    session.send(SetOutline(part.id, selection.view, curve.smoothed(anchor, limit), state.thisSide))
                 }
             },
             { labels.getValue(it) },

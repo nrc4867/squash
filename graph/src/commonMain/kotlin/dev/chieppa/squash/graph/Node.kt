@@ -22,6 +22,7 @@ class Node<I, O : Any> internal constructor(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
     private val cacheSize: Int,
+    internal val stage: String?,
     private val compute: suspend (I) -> O,
     private val changed: () -> Unit,
 ) {

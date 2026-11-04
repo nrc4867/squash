@@ -54,6 +54,8 @@ class SheetPart(private val placed: PlacedPart) {
 /**
  * What the panes draw from one assembled character: the [part] selected with the outlines the document holds for it, the
  * [others] around it, the [box] everything fills, the height of the [floor] and the [drawingScale] its size parameter sets.
+ * [overridden] is the views this side holds for itself, and [hidden] what the pair holds under those while an edit lands on
+ * the pair.
  */
 class SheetSelection(
     val part: SheetPart,
@@ -62,14 +64,23 @@ class SheetSelection(
     val box: BodyBox = part.box,
     val floor: Float = part.box.low.y,
     val drawingScale: Float = 1f,
+    val overridden: Set<View> = emptySet(),
+    val hidden: Map<View, OutlineCurve> = emptyMap(),
 )
 
 /** [character] as the panes draw it with [selected] picked out, or null while that part has built nothing. */
-fun sheetSelection(character: AssembledCharacter, selected: PartId, outlines: Map<View, OutlineCurve>, drawingScale: Float = 1f): SheetSelection? {
+fun sheetSelection(
+    character: AssembledCharacter,
+    selected: PartId,
+    outlines: Map<View, OutlineCurve>,
+    drawingScale: Float = 1f,
+    overridden: Set<View> = emptySet(),
+    hidden: Map<View, OutlineCurve> = emptyMap(),
+): SheetSelection? {
     val shown = character.parts.filter { it.box != null }.map(::SheetPart)
     val part = shown.firstOrNull { it.id == selected } ?: return null
     val box = character.box ?: return null
-    return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale)
+    return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale, overridden, hidden)
 }
 
 /** The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet. */
@@ -82,9 +93,12 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val document by remember(open) { open.document }.collectAsState()
     val instance = document.character.part(selected) ?: return null
     val character by remember(open) { open.assembly.output }.collectAsState()
+    val mirror by state.mirror.collectAsState()
     val data = document.character.resolved(instance)
     val outlines = data.outlines
     val scale = data.params[SIZE_PARAM] ?: 1f
+    val overridden = document.character.overridesOf(instance).outlines.keys
+    val hidden = if (mirror) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
     val assembled = character ?: return null
-    return remember(assembled, selected, outlines, scale) { sheetSelection(assembled, selected, outlines, scale) }
+    return remember(assembled, selected, outlines, scale, overridden, hidden) { sheetSelection(assembled, selected, outlines, scale, overridden, hidden) }
 }

@@ -12,8 +12,8 @@ enum class Side {
 /**
  * One part on the character. Slices are derived from it and its template and are never saved. [socket] is null for the
  * root part. [own] holds a part's values while it has no [pair] and stays empty while it has one; [overrides] are the
- * values this [side] replaces in its pair's. Both stay inside this module: [Character.resolved] is how anything reads
- * them. [side] outlasts a broken pair, since the part still sits on that side.
+ * values this [side] replaces in its pair's. Both stay inside this module: [Character.resolved], [Character.editBase]
+ * and [Character.overridesOf] are how anything reads them. [side] outlasts a broken pair, since the part still sits on that side.
  * See HLD: data-model, Mirroring is shared data plus overrides.
  */
 @Serializable

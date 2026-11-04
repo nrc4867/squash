@@ -17,12 +17,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.shell_tree_differs
+import dev.chieppa.squash.uidesign.generated.shell_tree_left
 import dev.chieppa.squash.uidesign.generated.shell_tree_pair
+import dev.chieppa.squash.uidesign.generated.shell_tree_right
 import dev.chieppa.squash.uidesign.generated.shell_tree_to_draw
 import dev.chieppa.stretch.frame.DrawerSection
+import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Tree
 import dev.chieppa.stretch.ui.flattenTree
@@ -42,12 +48,16 @@ fun PartsDrawerContent(state: AppState) {
     val screen by state.screen.collectAsState()
     var collapsed by remember { mutableStateOf(emptySet<Any>()) }
 
-    val roots = partTree(document, plan, state.templates)
+    val mirror by state.mirror.collectAsState()
+    val left = stringResource(Res.string.shell_tree_left)
+    val right = stringResource(Res.string.shell_tree_right)
+    val roots = partTree(document, plan, state.templates, mirror) { if (it == Side.LEFT) left else right }
     val rows = flattenTree(roots) { true }.map { it.node.item }
-    val current = rows.firstOrNull {
+    val current = rows.firstOrNull { it is PartRow.SideOf && screen != Screen.PICK_PART && it.part.id == selected } ?: rows.firstOrNull {
         when (it) {
-            is PartRow.Placed -> screen != Screen.PICK_PART && it.part.id == selected
+            is PartRow.Placed -> screen != Screen.PICK_PART && (it.part.id == selected || document.twin(it.part)?.id == selected)
             is PartRow.Open -> screen == Screen.PICK_PART && it.socket == socket
+            is PartRow.SideOf -> false
         }
     }
     DrawerSection(plan.name, divider = false) {
@@ -62,6 +72,7 @@ fun PartsDrawerContent(state: AppState) {
                 val key = keys.lastOrNull { it != current?.key } ?: keys.lastOrNull()
                 when (val row = rows.firstOrNull { it.key == key }) {
                     is PartRow.Placed -> state.selectPart(row.part.id)
+                    is PartRow.SideOf -> state.selectPart(row.part.id)
                     is PartRow.Open -> state.chooseSocket(row.socket)
                     null -> Unit
                 }
@@ -78,9 +89,13 @@ private fun RowSwatch(row: PartRow) {
     val c = Stretch.colors
     val shape = SWATCH_SHAPE
     val filled = row is PartRow.Placed && row.drawn
+    if (row is PartRow.SideOf) {
+        Icon(if (row.differs) SquashIcons.PairOverride else SquashIcons.Mirror, c.inkMuted, Modifier.testTag(ShellTags.sideRow(row.tagName)), size = 12.dp)
+        return
+    }
     Box(
         Modifier
-            .testTag(ShellTags.partRow(row.tagName))
+            .testTag(if (row is PartRow.SideOf) ShellTags.sideRow(row.tagName) else ShellTags.partRow(row.tagName))
             .size(12.dp)
             .background(if (filled) c.accent else Color.Transparent, shape)
             .border(Stretch.stroke, c.lineStrong, shape),
@@ -90,6 +105,7 @@ private fun RowSwatch(row: PartRow) {
 @Composable
 private fun RowState(row: PartRow) {
     val text = when {
+        row is PartRow.SideOf -> if (row.differs) stringResource(Res.string.shell_tree_differs) else null
         row is PartRow.Placed && row.drawn -> if (row.part.pair != null) stringResource(Res.string.shell_tree_pair, PAIR_SIZE) else null
         else -> stringResource(Res.string.shell_tree_to_draw)
     } ?: return

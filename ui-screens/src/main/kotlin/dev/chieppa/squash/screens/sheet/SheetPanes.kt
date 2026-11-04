@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,16 +45,14 @@ private const val FULL_PITCH = 0.35f
 /** Room around the character in Full's view, as a multiple of what fits it exactly. */
 private const val ORBIT_MARGIN = 0.9f
 
-/** The view that shows as active until a pane is pressed. */
-private val FIRST_ACTIVE = View.SIDE
-
 /** The test tag of [pane] in the sheet. */
 fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 
 /**
  * The workspace's viewport area as the boards draw it, in the layout the Layout control picks. In Sheet, the strip with
  * [tools] and the control, then Top, Full, Side and Front in one native surface; in Single, the strip with the control
- * above one viewport, with [tools] floating on it. A [tool] gets a locked view's pointer input and overlay.
+ * above one viewport, with [tools] floating on it. A [tool] gets a locked view's pointer input and overlay. [paneToast]
+ * shows over the surface, at the bottom left of the panes or the foot of the one viewport.
  */
 @Composable
 fun SheetPanes(
@@ -61,33 +60,40 @@ fun SheetPanes(
     modifier: Modifier = Modifier,
     tools: @Composable RowScope.() -> Unit = {},
     tool: PaneTool? = null,
+    paneToast: (@Composable () -> Unit)? = null,
 ) {
     val layout by state.layout.collectAsState()
     val pick: (SheetLayout) -> Unit = { state.layout.value = it }
     Column(modifier) {
         if (layout == SheetLayout.SINGLE) {
             SheetStrip(layout = layout, onLayout = pick)
-            SingleSurface(state, tool, tools, Modifier.weight(1f).fillMaxWidth())
+            SingleSurface(state, tool, tools, paneToast, Modifier.weight(1f).fillMaxWidth())
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SheetSurface(state, tool, Modifier.weight(1f).fillMaxWidth())
+            SheetSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
+private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
     val renderer = remember { WebGpuRenderer<SceneFrame> { ViewsScene(it) } }
     val orbit = remember { OrbitCamera(yaw = FULL_YAW, pitch = FULL_PITCH) }
     var size by remember { mutableStateOf(IntSize.Zero) }
-    var active by remember { mutableStateOf(FIRST_ACTIVE) }
+    val active by state.activeView.collectAsState()
+    val mirror by state.mirror.collectAsState()
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
     val rects = sheetPaneRects(size.width, size.height, gap)
     val held = remember(part?.id, size) { HeldCameras() }
     val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, tool?.holdsFit == true || tool?.drawingIn != null)
     val refitting = rememberRefitting(state)
+    val progress = rememberRefitProgress(state)
+    val shownActive = tool?.drawingIn ?: active
+    SideEffect { state.curves.snapped = null }
+    val disagreements = paneDisagreements(selection, cameras, tool)
+    SideEffect { state.curves.conflicts = disagreements.size }
     val framed = selection?.box
     val open by state.session.collectAsState()
     val count = selection?.others?.count { !it.planned }
@@ -103,8 +109,8 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
             selection = selection,
             cameras = cameras,
             full = if (part != null) orbit.view else null,
-            active = tool?.drawingIn ?: active,
-            toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook()),
+            active = shownActive,
+            toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook(), disagreements, shownActive),
             hints = SheetHints(state.curves.templateHint, state.curves.ghost),
         ),
     )
@@ -118,10 +124,15 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
             val input = when {
                 body == null -> Modifier.orbitNavigation(orbit)
                 camera == null -> Modifier
-                else -> Modifier.pressed(camera.view) { active = it }.then(tool?.pointerInput(camera.view, camera) ?: Modifier)
+                else -> Modifier.pressed(camera.view) { state.activeView.value = it }.then(tool?.pointerInput(camera.view, camera) ?: Modifier)
             }
-            val chip = if (selection == null) null else paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting)
-            PaneViewport(view, chip, input.testTag(sheetPaneTag(pane)), view?.let { tool?.fitErrorPixels(it) })
+            val chip = if (selection == null) {
+                null
+            } else {
+                paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting, selection.overridden, mirror, disagreements.mapTo(mutableSetOf()) { it.view })
+            }
+            val fitError = if (tool?.drawingIn != null) null else view?.let { tool?.fitErrorPixels(it) }
+            PaneViewport(view, chip, input.testTag(sheetPaneTag(pane)), fitError, progress, paneToast?.takeIf { pane == SheetPane.SIDE })
         }
     }
 }
@@ -131,6 +142,13 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, modifier: Modifier) {
 private fun rememberRefitting(state: AppState): Boolean {
     val session by state.session.collectAsState()
     return session?.graph?.settled?.collectAsState()?.value == false
+}
+
+/** How far through its refit the open character's graph is, as the graph counts it. */
+@Composable
+private fun rememberRefitProgress(state: AppState): Float {
+    val session by state.session.collectAsState()
+    return session?.graph?.progress?.collectAsState()?.value?.fraction ?: 1f
 }
 
 /** Reports a press in the pane without taking it from anything else. */

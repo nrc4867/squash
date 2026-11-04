@@ -47,7 +47,7 @@ fun ShellTopBar(shell: Shell) {
         appName = stringResource(Res.string.app_name),
         document = document,
         edited = !home && edited,
-        menus = { BarMenus(shellMenus(shell, home)) },
+        menus = { BarMenus(shellMenus(shell)) },
         modes = {
             if (!home) {
                 val build = stringResource(Res.string.shell_mode_build)
@@ -56,49 +56,52 @@ fun ShellTopBar(shell: Shell) {
             }
         },
         actions = {
-            val history = session?.history
+            val steps = session?.history?.steps?.collectAsState()?.value
             TopBarActions(
-                onUndo = history?.takeUnless { home }?.let { { state.undo() } },
-                onRedo = history?.takeUnless { home }?.let { { state.redo() } },
+                onUndo = if (home) null else ({ state.undo() }),
+                onRedo = if (home) null else ({ state.redo() }),
                 onCommands = { shell.palette = true },
+                onSettings = if (home) ({ shell.settings = true }) else null,
+                undoEnabled = steps?.done?.isNotEmpty() == true,
+                redoEnabled = steps?.undone?.isNotEmpty() == true,
+                settingsPopup = { SettingsPopover(shell) },
             )
         },
     )
 }
 
-/** The menus with something to do on this screen; what has no action here is left out. */
+/** The menus the boards draw on every screen. What cannot act here stays in its place, faint. */
 @Composable
-private fun shellMenus(shell: Shell, home: Boolean): List<BarMenu> {
-    val hasCharacter = shell.state.session.collectAsState().value != null
-    val file = BarMenu(stringResource(Res.string.shell_menu_file)) { close ->
+private fun shellMenus(shell: Shell): List<BarMenu> = listOf(
+    BarMenu(stringResource(Res.string.shell_menu_file)) { close ->
         Item(shell, ShellActions.NEW, close)
         Item(shell, ShellActions.OPEN, close)
-        if (hasCharacter) {
-            Item(shell, ShellActions.SAVE, close)
-            Item(shell, ShellActions.SAVE_AS, close)
-            Item(shell, ShellActions.CLOSE, close)
-        }
+        Item(shell, ShellActions.SAVE, close)
+        Item(shell, ShellActions.SAVE_AS, close)
+        Item(shell, ShellActions.CLOSE, close)
         MenuDivider()
         RecentFilesMenuItems(shell.state.recent, FileStorage, shell::open, close)
-    }
-    if (home) return listOf(file)
-    val edit = BarMenu(stringResource(Res.string.shell_menu_edit)) { close ->
+    },
+    BarMenu(stringResource(Res.string.shell_menu_edit)) { close ->
         Item(shell, ShellActions.UNDO, close)
         Item(shell, ShellActions.REDO, close)
-    }
-    val view = BarMenu(stringResource(Res.string.shell_menu_view)) { close ->
+        MenuDivider()
+        Item(shell, ShellActions.DRAW, close)
+        Item(shell, ShellActions.EDIT_CURVES, close)
+        Item(shell, ShellActions.ERASE, close)
+        MenuDivider()
+        Item(shell, ShellActions.MIRROR, close)
+    },
+    BarMenu(stringResource(Res.string.shell_menu_view)) { close ->
         Item(shell, ShellActions.PARTS, close)
-        if (hasCharacter) {
-            Item(shell, ShellActions.TYPES, close)
-            Item(shell, ShellActions.HISTORY, close)
-        }
+        Item(shell, ShellActions.TYPES, close)
+        Item(shell, ShellActions.HISTORY, close)
         Item(shell, ShellActions.PART, close)
         MenuDivider()
         Item(shell, ShellActions.RESET_LAYOUT, close)
-    }
-    val help = BarMenu(stringResource(Res.string.shell_menu_help)) { close -> Item(shell, ShellActions.HELP, close) }
-    return if (hasCharacter) listOf(file, edit, view, help) else listOf(file, view, help)
-}
+    },
+    BarMenu(stringResource(Res.string.shell_menu_help)) { close -> Item(shell, ShellActions.HELP, close) },
+)
 
 @Composable
 private fun Item(shell: Shell, id: ActionId, close: () -> Unit) {

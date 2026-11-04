@@ -190,7 +190,7 @@ class EditCurvesToolTest {
         assertEquals(0, refit.firstSection)
         assertEquals(2, refit.sections, "an anchor shapes the sections either side")
         assertEquals(bench.outline(), refit.curve)
-        assertFalse(refit.wholePart)
+        assertEquals(RefitReach.SECTIONS, refit.reach)
     }
 
     @Test

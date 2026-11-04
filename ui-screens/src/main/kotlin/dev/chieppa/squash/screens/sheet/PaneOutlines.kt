@@ -27,6 +27,9 @@ data class OutlineLook(
     val warn: Color,
     val limitWidth: Float,
     val spanWidth: Float,
+    val hiddenWidth: Float = limitWidth,
+    val hiddenDash: Float = spanWidth,
+    val hiddenGap: Float = spanWidth,
 )
 
 /** The outlines' drawing in the current theme and pixel density. */
@@ -38,23 +41,37 @@ internal fun rememberOutlineLook(): OutlineLook {
     return OutlineLook(curve = c.inkMuted, curveWidth = px(4), warn = c.warnEdge, limitWidth = px(4), spanWidth = px(8))
 }
 
+/** Where the selected part's views disagree on screen, or nothing while no pane has a camera. */
+fun paneDisagreements(selection: SheetSelection?, cameras: Map<View, LockedCamera>, tool: PaneTool?): List<Disagreement> {
+    if (selection == null || cameras.isEmpty()) return emptyList()
+    return viewsDisagree(selection.outlines, tool?.liveStroke, DISAGREE_TOLERANCE_PIXELS * cameras.values.first().planePixel)
+}
+
 /**
- * What each locked pane shows over its guides: its stored outline, then [tool]'s overlay, then where the views disagree,
- * so the highlight stays on top of a live stroke and shows under any tool.
+ * What each locked pane shows over its guides: in the [active] pane its stored outline, then what an edit would land on
+ * under this side's override, then [tool]'s overlay, then where the views disagree, so the highlight stays on top of a live
+ * stroke and shows under any tool. With no [active] pane, every pane shows its outline.
  */
 fun paneOutlineOverlays(
     selection: SheetSelection?,
     cameras: Map<View, LockedCamera>,
     tool: PaneTool?,
     look: OutlineLook,
+    disagreements: List<Disagreement> = paneDisagreements(selection, cameras, tool),
+    active: View? = null,
 ): Map<View, ViewportOverlay> {
     if (selection == null || cameras.isEmpty()) return emptyMap()
-    val tolerance = DISAGREE_TOLERANCE_PIXELS * cameras.values.first().planePixel
-    val disagreements = viewsDisagree(selection.outlines, tool?.liveStroke, tolerance)
     return cameras.mapValues { (view, camera) ->
         val tooled = tool?.overlay(view, camera) ?: ViewportOverlay.Empty
-        storedOutline(selection.outlines[view], camera, look) + tooled + disagreeOverlay(view, camera, disagreements, look)
+        val stored = if (active == null || view == active) storedOutline(selection.outlines[view], camera, look) else ViewportOverlay.Empty
+        stored + hiddenOutline(selection.hidden[view], camera, look) + tooled + disagreeOverlay(view, camera, disagreements, look)
     }
+}
+
+/** The pair's outline under this side's override, dashed, so an edit landing on it shows though the side's own does not move. */
+private fun hiddenOutline(outline: OutlineCurve?, camera: LockedCamera, look: OutlineLook): ViewportOverlay {
+    if (outline == null) return ViewportOverlay.Empty
+    return buildOverlay { dashed(outlineSamples(outline).map(camera::toPixel), look.warn, look.hiddenWidth, look.hiddenDash, look.hiddenGap) }
 }
 
 private fun storedOutline(outline: OutlineCurve?, camera: LockedCamera, look: OutlineLook): ViewportOverlay {

@@ -215,6 +215,38 @@ class GraphTest {
     }
 
     @Test
+    fun progressCountsTheNodesARunDirtied() = runTest {
+        val graph = graph()
+        val input = MutableStateFlow(1)
+        val unrelated = graph.node(MutableStateFlow(9), stage = "other") { it }
+        val gate = CompletableDeferred<Unit>()
+        val first = graph.node(input, stage = "first") { it }
+        val second = graph.follow(first, stage = "second") {
+            if (it == 2) gate.await()
+            it
+        }
+        runCurrent()
+        assertEquals(GraphProgress.SETTLED, graph.progress.value)
+        assertEquals(9, unrelated.output.value)
+
+        input.value = 2
+        assertEquals(GraphProgress(0, 2, mapOf("first" to StageCount(0, 1), "second" to StageCount(0, 1))), graph.progress.value)
+        assertEquals("first", graph.progress.value.working(listOf("first", "second")))
+        runCurrent()
+        assertEquals(1, graph.progress.value.done, "the first node is done and the second waits")
+        assertEquals(0.5f, graph.progress.value.fraction)
+        assertEquals("second", graph.progress.value.working(listOf("first", "second")))
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(2, second.output.value)
+        assertEquals(GraphProgress.SETTLED, graph.progress.value)
+
+        input.value = 3
+        assertEquals(2, graph.progress.value.total, "the next run counts from nothing again")
+        runCurrent()
+    }
+
+    @Test
     fun aGatheredNodeWaitsForEverySourceAndRerunsWithAny() = runTest {
         val graph = graph()
         val a = MutableStateFlow(1)

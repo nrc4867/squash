@@ -32,6 +32,7 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
 
     var layout by mutableStateOf(DEFAULT_LAYOUT)
     var palette by mutableStateOf(false)
+    var settings by mutableStateOf(false)
 
     fun newCharacter() {
         state.screen.value = Screen.NEW_CHARACTER

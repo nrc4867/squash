@@ -24,7 +24,7 @@ fun Graph.sliceRowNode(
     part: PartId,
     templates: TemplateLibrary,
 ): Node<PartBuildInput?, PartBuild> =
-    node(document.map { it.partBuildInput(part) }.distinctUntilChanged()) { input ->
+    node(document.map { it.partBuildInput(part) }.distinctUntilChanged(), stage = BuildStages.SLICES) { input ->
         if (input == null) return@node PartBuild(null, emptyList())
         val template = templates[input.template]
         PartBuild(template, PartBuilder.build(template, input.data, cancellationCheck()))

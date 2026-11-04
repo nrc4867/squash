@@ -2,12 +2,16 @@ package dev.chieppa.squash.screens.edit
 
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.moved
 import dev.chieppa.squash.screens.sheet.PaneChip
 import dev.chieppa.squash.screens.sheet.paneChip
 import dev.chieppa.squash.screens.sheet.pixelsLabel
+import dev.chieppa.squash.screens.shell.shipped
+import dev.chieppa.squash.screens.shell.template
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -71,14 +75,26 @@ class CurveReadoutsTest {
         assertEquals(3, closed.owningAnchor(4))
     }
 
+    private fun template(id: String) = checkNotNull(shipped.template(TemplateId(id)))
+
+    private fun reach(view: View, before: OutlineCurve, after: OutlineCurve) = refitReach(view, before, after, template("leg"))
+
+    @Test
+    fun aFrontSectionRebuildsThePartAndAFrontCapOnlyTheClosedEnds() {
+        val leg = LEG_SIDE
+        val moved = leg.moved(4, CurvePoint(0.7f, 0.9f))
+        assertEquals(RefitReach.CLOSED_ENDS, refitReach(View.FRONT, leg, moved, template("paw")))
+        assertEquals(RefitReach.WHOLE_PART, refitReach(View.FRONT, leg, moved, template("torso")))
+    }
+
     @Test
     fun aSpanInsideTheRangeStaysLocalAndTheFarEndAndFrontDoNot() {
         val leg = LEG_SIDE
-        assertFalse(reachesWholePart(View.SIDE, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
-        assertFalse(reachesWholePart(View.TOP, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
+        assertEquals(RefitReach.SECTIONS, reach(View.SIDE, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
+        assertEquals(RefitReach.SECTIONS, reach(View.TOP, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
         val tip = leg.points.indexOf(CurvePoint(2f, 0f))
-        assertTrue(reachesWholePart(View.SIDE, leg, leg.moved(tip, CurvePoint(2.4f, 0f))))
-        assertTrue(reachesWholePart(View.FRONT, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
+        assertEquals(RefitReach.WHOLE_PART, reach(View.SIDE, leg, leg.moved(tip, CurvePoint(2.4f, 0f))))
+        assertEquals(RefitReach.CLOSED_ENDS, reach(View.FRONT, leg, leg.moved(4, CurvePoint(0.7f, 0.9f))))
     }
 
     @Test
