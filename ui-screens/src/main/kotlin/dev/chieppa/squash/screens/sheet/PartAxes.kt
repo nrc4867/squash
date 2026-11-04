@@ -25,11 +25,18 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
         View.FRONT -> side to up
     }
 
-    /** How locked [view] sits in the body. */
+    /**
+     * How [view] sits on screen: looking straight at its plane from the side of its pane's body view, with the pane's up
+     * as up as the plane lets it be. [framing] never gives a pane the view whose normal is that pane's up, since swapping
+     * that view with the pane looking along its up shows every view more squarely.
+     */
     fun basis(view: View): ViewBasis {
         val pane = bodyViewOf(view)
         val (x, y) = planeOf(view)
-        return ViewBasis(xAxis = x, yAxis = y, screenRight = pane.right, screenUp = pane.up)
+        val normal = (x cross y).normalized()
+        val toViewer = if ((normal dot pane.toViewer) < 0f) normal * -1f else normal
+        val up = (pane.up - toViewer * (pane.up dot toViewer)).normalized()
+        return ViewBasis(xAxis = x, yAxis = y, screenRight = up cross toViewer, screenUp = up)
     }
 
     /** How little [view]'s plane is foreshortened in [body]: 1 when it faces it, 0 when seen edge on. */
@@ -63,7 +70,7 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
 /**
  * How a locked view sits in the body. A point in the view's plane is (x, y) along [xAxis] and [yAxis]; those are the
  * coordinates an [dev.chieppa.squash.document.OutlineCurve] for the view holds. [screenRight] and [screenUp] are where the
- * pane's right and up point, and they follow the body, not the part, so x and y run whichever way the part lies.
+ * pane's right and up point, in the view's plane, so x and y keep their length on screen and turn whichever way the part lies.
  */
 data class ViewBasis(val xAxis: Vec3, val yAxis: Vec3, val screenRight: Vec3, val screenUp: Vec3) {
     /** From the part towards the viewer. */

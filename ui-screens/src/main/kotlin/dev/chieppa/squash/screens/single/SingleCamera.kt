@@ -44,7 +44,7 @@ class SingleCamera {
 
     /** Aims at [box], fitted to a [width] by [height] view as a Sheet pane fits it, keeping the direction; the first time, on [FIRST_VIEW] of [axes]. */
     fun frame(box: BodyBox, axes: PartAxes, width: Int, height: Int) {
-        val fit = fitSheet(box, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
+        val fit = fitSheet(box, axes, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
         orbit.lookAt(box.center.toGpu(), height / (2f * fit.pixelsPerUnit * tan(orbit.fovY / 2f)))
         if (!opened) snapTo(FIRST_VIEW, axes)
         opened = true

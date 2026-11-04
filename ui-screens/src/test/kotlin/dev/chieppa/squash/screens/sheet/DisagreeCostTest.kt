@@ -65,7 +65,7 @@ class DisagreeCostTest {
 
         val part = legPart()
         val rects = sheetPaneRects(1400, 800, 2)
-        val cameras = camerasOn(part, fitSheet(part.box, rects), rects)
+        val cameras = camerasOn(part, fitSheet(part.box, part.axes, rects), rects)
         val look = OutlineLook(Color.Gray, 4f, Color.Red, 4f, 8f)
         val tool = object : PaneTool {
             override fun pointerInput(view: View, camera: LockedCamera) = Modifier

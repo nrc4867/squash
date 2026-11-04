@@ -24,6 +24,7 @@ import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -47,7 +48,7 @@ class SheetFrameTest {
         others: List<SheetPart> = emptyList(),
         hints: SheetHints = SheetHints(),
     ): SheetInput {
-        val cameras = camerasOn(part, fitSheet(part.box, rects), rects)
+        val cameras = camerasOn(part, fitSheet(part.box, part.axes, rects), rects)
         val full = CameraView(eye = part.center.toGpu() + GpuVec3(3f, 2f, -4f), target = part.center.toGpu())
         val box = others.fold(part.box) { box, other -> box.union(other.box) }
         val selection = SheetSelection(part, outlines, others, box, box.low.y)
@@ -235,6 +236,34 @@ class SheetFrameTest {
         val beside = rects[SheetPane.FRONT.ordinal].toRect()
         assertTrue(frame.overlay.lines.filter { it.color == look.active }.all { beside.contains(it.from) })
         assertEquals(View.TOP, leg.axes.framing[BodyView.FRONT])
+    }
+
+    @Test
+    fun aTiltedPartsGhostsAndGroundGoThroughTheCameraThatLooksAlongItsNormal() {
+        val tail = part(template("tail"))
+        val torso = sheetPartOf(template("torso"), Vec3(0f, -0.2f, 0f), id = "torso")
+        val paw = sheetPartOf(template("paw"), Vec3(0.2f, -0.8f, 0f), id = "paw")
+        val base = input(tail, others = listOf(paw, torso))
+        val frame = sheetFrame(base)
+        for (pane in listOf(SheetPane.TOP, SheetPane.SIDE, SheetPane.FRONT)) {
+            val view = tail.axes.framing.getValue(assertNotNull(pane.body))
+            val camera = base.cameras.getValue(view)
+            val matrix = viewIn(frame, pane).viewProjection
+            assertEquals(camera.viewProjection(), matrix, "$pane")
+            val order = viewIn(frame, pane).draws.filter { it.mesh === torso.mesh || it.mesh === paw.mesh }
+            val nearestLast = listOf(torso, paw).sortedBy { it.center dot camera.basis.back }
+            assertEquals(nearestLast.map { it.mesh }, order.map { it.mesh }, "$pane: furthest from the tilted viewer first")
+        }
+        val front = base.cameras.getValue(View.FRONT)
+        val ground = viewIn(frame, SheetPane.FRONT).draws.first()
+        val selection = assertNotNull(base.selection)
+        val middle = ground.model.project(GpuVec3(0f, 0f, 0f))!!
+        assertTrue((Vec3(middle.x, middle.y, middle.z) - Vec3(selection.box.center.x, selection.floor, selection.box.center.z)).length < 1e-3f)
+        val edge = ground.model.project(GpuVec3(0f, 1f, 0f))!!
+        val reach = Vec3(edge.x, edge.y, edge.z) - Vec3(middle.x, middle.y, middle.z)
+        assertTrue(abs(reach dot front.basis.back) < 1e-3f, "the disc stays square to the tilted viewer")
+        val tilt = abs(front.basis.back.y)
+        assertTrue(reach.length >= selection.box.spanAlong(front.basis.screenRight cross Vec3.Y) * 0.56f * tilt - 1e-3f, "the ground opens by the camera's tilt: $reach")
     }
 
     @Test

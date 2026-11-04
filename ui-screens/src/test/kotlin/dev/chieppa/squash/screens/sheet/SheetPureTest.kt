@@ -63,12 +63,46 @@ class SheetPureTest {
         val top = paneGuides(camera(View.TOP), side)
         val front = paneGuides(camera(View.FRONT), side)
         val own = paneGuides(camera(View.SIDE), side)
-        assertEquals(own.verticals, top.verticals)
-        assertTrue(top.horizontals.isEmpty())
-        assertEquals(own.horizontals, front.horizontals)
-        assertTrue(front.verticals.isEmpty())
-        assertEquals(listOf(250f, 150f), own.verticals, "the socket on the right, 100 pixels a unit")
-        assertEquals(listOf(175f, 125f), own.horizontals)
+        val columns = own.lines.take(2)
+        val rows = own.lines.drop(2)
+        assertEquals(columns.map { it.start.x }, top.lines.map { it.start.x })
+        assertEquals(rows.map { it.start.y }, front.lines.map { it.start.y })
+        assertEquals(listOf(250f, 150f), columns.map { it.start.x }, "the socket on the right, 100 pixels a unit")
+        assertEquals(columns.map { it.start.x }, columns.map { it.end.x })
+        assertEquals(listOf(0f, 300f), columns.first().run { listOf(start.y, end.y) }.sorted(), "the pane's whole height")
+        assertEquals(listOf(175f, 125f), rows.map { it.start.y })
+        assertEquals(rows.map { it.start.y }, rows.map { it.end.y })
+        assertEquals(listOf(0f, 400f), rows.first().run { listOf(start.x, end.x) }.sorted(), "the pane's whole width")
+    }
+
+    @Test
+    fun aTiltedPartsGuidesAreTrueLinesOfItsExtentsInEveryView() {
+        val side = SideExtents(Span(0f, 0.6f), Span(-0.1f, 0.2f))
+        for (rest in listOf(Vec3(-0.8f, 0.6f, 0f), Vec3(0f, 0.96f, -0.28f))) {
+            for (mirrored in listOf(false, true)) {
+                val tilted = PartAxes.of(rest, mirrored)
+                val center = LockedCamera(View.SIDE, tilted, fit, 400, 300, Vec3(0.5f, 0f, 0f)).origin
+                for (view in View.entries) {
+                    val camera = LockedCamera(view, tilted, fit, 400, 300, center)
+                    val guides = paneGuides(camera, side).lines
+                    val expected = when (view) {
+                        View.SIDE -> listOf(0 to 0f, 0 to 0.6f, 1 to -0.1f, 1 to 0.2f)
+                        View.TOP -> listOf(0 to 0f, 0 to 0.6f)
+                        View.FRONT -> listOf(1 to -0.1f, 1 to 0.2f)
+                    }
+                    assertEquals(expected.size, guides.size, "$view")
+                    for ((line, wanted) in guides.zip(expected)) {
+                        val (coordinate, value) = wanted
+                        val ends = listOf(camera.toPlane(line.start), camera.toPlane(line.end))
+                        for (end in ends) {
+                            val along = if (coordinate == 0) end.x else end.y
+                            assertTrue(abs(along - value) < 1e-3f, "$rest $view: $end should have $value")
+                        }
+                        assertTrue(listOf(line.start, line.end).all { it.x in -0.01f..400.01f && it.y in -0.01f..300.01f }, "$rest $view: $line stays in the pane")
+                    }
+                }
+            }
+        }
     }
 
     @Test

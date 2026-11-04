@@ -8,6 +8,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ViewSizingTest {
+    @Test
+    fun endsAHairApartOnTheSocketPlaneStillCrossAtThePlane() {
+        for (hair in listOf(0f, -3e-8f, 3e-8f, 3e-6f)) {
+            val profile = checkNotNull(OutlineProfile.of(Polyline2(floatArrayOf(0f, 0.5f, 1f, 0.5f, hair), floatArrayOf(0.1f, 0.1f, 0f, -0.1f, -0.1f))))
+            assertEquals(0.2f, profile.extentAt(minOf(0f, hair)), 1e-3f, "$hair")
+        }
+    }
+
     private val axes = PartAxes.of(Vec3(0f, -1f, 0f))
     private val round = SectionProfile.CIRCLE.spline(16)
 

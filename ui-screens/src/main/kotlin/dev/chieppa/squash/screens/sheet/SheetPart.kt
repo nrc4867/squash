@@ -11,7 +11,6 @@ import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyBox
-import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.PartExtents
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
@@ -35,11 +34,21 @@ class SheetPart(private val placed: PlacedPart) {
     val radius: Float get() = box.radius
 
     /** The outline of the part as [view]'s pane sees it, as paths of points in body space. */
-    fun silhouette(view: View): List<List<Vec3>> = silhouetteFrom(axes.bodyViewOf(view))
+    fun silhouette(view: View): List<List<Vec3>> {
+        val outlines = placed.surface.silhouettes
+        return inBody(
+            when (view) {
+                View.SIDE -> outlines.side
+                View.TOP -> outlines.up
+                View.FRONT -> outlines.along
+            },
+        )
+    }
 
-    /** The outline of the part seen from [body], as paths of points in body space. */
-    fun silhouetteFrom(body: BodyView): List<List<Vec3>> =
-        placed.surface.silhouettes.getValue(body).map { path -> path.map { origin + it } }
+    /** The outline of the part seen from the body's side, as paths of points in body space. */
+    fun silhouetteFromBodySide(): List<List<Vec3>> = inBody(placed.surface.silhouettes.bodySide)
+
+    private fun inBody(paths: List<List<Vec3>>) = paths.map { path -> path.map { origin + it } }
 }
 
 /**

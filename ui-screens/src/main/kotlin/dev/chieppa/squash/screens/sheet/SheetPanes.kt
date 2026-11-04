@@ -159,7 +159,7 @@ private class HeldCameras {
     fun camerasFor(selection: SheetSelection, rects: List<PixelRect>, hold: Boolean): Map<View, LockedCamera> {
         if (hold && cameras.isNotEmpty()) return cameras
         val part = selection.part
-        val next = keepFit(fit, part.box, rects, depthReach(selection, fit))
+        val next = keepFit(fit, part.box, part.axes, rects, depthReach(selection, fit))
         if (next != fit || part.origin != origin || selection.drawingScale != scale) {
             fit = next
             origin = part.origin

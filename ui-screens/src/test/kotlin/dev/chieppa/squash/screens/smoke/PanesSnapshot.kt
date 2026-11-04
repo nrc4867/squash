@@ -3,12 +3,14 @@ package dev.chieppa.squash.screens.smoke
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.sheet.LockedCamera
+import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.fitSheet
+import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.stretch.gpu.CameraView
@@ -21,9 +23,17 @@ import dev.chieppa.stretch.gpu.Vec3
 private val FULL_EYE = Vec3(1.35f, 0.9f, -1.8f)
 
 /** The panes' input for [selection], framed as the running app frames them. */
-internal fun panesInput(selection: SheetSelection, look: SheetLook, rects: List<PixelRect>, width: Int, height: Int, hints: SheetHints = SheetHints()): SheetInput {
+internal fun panesInput(
+    selection: SheetSelection,
+    look: SheetLook,
+    rects: List<PixelRect>,
+    width: Int,
+    height: Int,
+    hints: SheetHints = SheetHints(),
+    outlines: OutlineLook? = null,
+): SheetInput {
     val part = selection.part
-    val fit = fitSheet(part.box, rects, (selection.box.center - part.box.center).length + selection.box.radius)
+    val fit = fitSheet(part.box, part.axes, rects, (selection.box.center - part.box.center).length + selection.box.radius)
     val cameras = SheetPane.entries.mapNotNull { pane ->
         val body = pane.body ?: return@mapNotNull null
         val view = part.axes.framing.getValue(body)
@@ -31,7 +41,8 @@ internal fun panesInput(selection: SheetSelection, look: SheetLook, rects: List<
     }.toMap()
     val target = selection.box.center.toGpu()
     val full = CameraView(eye = target + FULL_EYE * selection.box.radius, target = target)
-    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, hints = hints)
+    val overlays = outlines?.let { paneOutlineOverlays(selection, cameras, null, it) } ?: emptyMap()
+    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints)
 }
 
 /**

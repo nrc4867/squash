@@ -41,7 +41,7 @@ fun singleFrame(input: SingleInput): SceneFrame {
     val locked = input.locked
     if (locked != null) {
         val body = selection.part.axes.bodyViewOf(locked.view)
-        val draws = lockedDraws(locked.view, body, selection, input.look, input.hints)
+        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints)
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws)), overlay.clippedTo(rect.toRect()))
     }

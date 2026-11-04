@@ -30,7 +30,7 @@ class SingleCameraTest {
         val camera = framed()
         assertEquals(View.SIDE, camera.snap(part.axes, hold = false))
         val locked = camera.lockedCamera(View.SIDE, selection, WIDTH, HEIGHT, hold = false)
-        val expected = fitSheet(part.box, List(4) { PixelRect(0, 0, WIDTH, HEIGHT) }).pixelsPerUnit
+        val expected = fitSheet(part.box, part.axes, List(4) { PixelRect(0, 0, WIDTH, HEIGHT) }).pixelsPerUnit
         assertEquals(expected, locked.fit.pixelsPerUnit, expected * 0.001f)
     }
 

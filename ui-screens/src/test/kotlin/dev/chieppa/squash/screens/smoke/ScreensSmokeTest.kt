@@ -96,10 +96,7 @@ private const val FREE_ORBIT_Y = 50f
 /** The least share of a pane the part's fill must cover where the part is drawn. */
 private const val MIN_FILL_SHARE = 0.005f
 
-/** Where each run leaves what it rendered, for a person to look at. */
-private const val IMAGES = "build/smoke-images"
-
-private val SMOKE_LOOK = SheetLook(
+internal val SMOKE_LOOK = SheetLook(
     Color(0xFFEDE7DC), Color(0xFF9A9087), Color(0xFF6E6560), Color(0xFF6E6561), Color(0xFFD9772B), Color(0xFF2E6FD8), Color(0xFFD9D2C4),
     PartMaterial(Color(0xFFE9A24B), Color(0xFFC27F35), Color(0xFF1C1517)), 2f, 8f, 3f, 10f, 8f, 2f, 3f, 8f, 6f, 4f, 3f, 2f,
 )
@@ -377,11 +374,5 @@ class ScreensSmokeTest {
 
     private fun keep(image: GpuImage, name: String) = keep(image.pixels, image.width, name)
 
-    private fun keep(pixels: IntArray, width: Int, name: String) {
-        val folder = File(IMAGES).apply { mkdirs() }
-        val height = pixels.size / width
-        val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-        out.setRGB(0, 0, width, height, pixels, 0, width)
-        ImageIO.write(out, "png", File(folder, "$name.png"))
-    }
+    private fun keep(pixels: IntArray, width: Int, name: String) = keepImage(pixels, width, name)
 }

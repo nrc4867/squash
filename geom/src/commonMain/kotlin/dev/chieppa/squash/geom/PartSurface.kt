@@ -1,5 +1,7 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.abs
+
 /** A range along one axis. */
 data class Span(val min: Float, val max: Float) {
     val length: Float get() = max - min
@@ -20,6 +22,12 @@ data class BodyBox(val low: Vec3, val high: Vec3) {
     /** The radius of a sphere around [center] that holds the box. */
     val radius: Float get() = size.length / 2f
 
+    val corners: List<Vec3>
+        get() = listOf(low.x, high.x).flatMap { x -> listOf(low.y, high.y).flatMap { y -> listOf(low.z, high.z).map { z -> Vec3(x, y, z) } } }
+
+    /** How long the box's shadow is on a line along [axis], a unit direction. */
+    fun spanAlong(axis: Vec3): Float = abs(size.x * axis.x) + abs(size.y * axis.y) + abs(size.z * axis.z)
+
     fun moved(by: Vec3) = BodyBox(low + by, high + by)
 
     fun union(other: BodyBox) = BodyBox(
@@ -28,16 +36,24 @@ data class BodyBox(val low: Vec3, val high: Vec3) {
     )
 }
 
+/** A part's outlines as paths of points: looking straight [along], [up] and [side] its own axes, and from the body's side. */
+class PartSilhouettes(
+    val along: List<List<Vec3>>,
+    val up: List<List<Vec3>>,
+    val side: List<List<Vec3>>,
+    val bodySide: List<List<Vec3>>,
+)
+
 /**
- * What a built part shows, relative to its socket plane: the GPU's [mesh] and each [BodyView]'s [silhouettes] of its swept
- * patches, mirrored across the body's plane when [mirrored], and how far it reaches. [patches] stay in the part's own axes, so a socket on
+ * What a built part shows, relative to its socket plane: the GPU's [mesh] and the [silhouettes] of its swept patches,
+ * mirrored across the body's plane when [mirrored], and how far it reaches. [patches] stay in the part's own axes, so a socket on
  * it reads the same (u, v) on either side. Never changes once made.
  */
 class PartSurface(
     val patches: List<Patch>,
     val mirrored: Boolean,
     val mesh: RenderMesh,
-    val silhouettes: Map<BodyView, List<List<Vec3>>>,
+    val silhouettes: PartSilhouettes,
     val box: BodyBox?,
     val extents: PartExtents?,
 ) {
@@ -51,11 +67,13 @@ class PartSurface(
             checkCancelled()
             val mesh = if (mirrored) own.mirrored() else own
             val swept = PartMesh(built.part, built.patches.filter { it.patch.slices != null })
-            val silhouettes = BodyView.entries.associateWith { view ->
+            fun outline(ownToViewer: Vec3): List<List<Vec3>> {
                 checkCancelled()
-                if (mirrored) silhouette(swept, view.toViewer.mirrored).map { path -> path.map { it.mirrored } }
-                else silhouette(swept, view.toViewer)
+                val paths = silhouette(swept, ownToViewer)
+                return if (mirrored) paths.map { path -> path.map { it.mirrored } } else paths
             }
+            val bodySide = BodyView.SIDE.toViewer.let { if (mirrored) it.mirrored else it }
+            val silhouettes = PartSilhouettes(outline(axes.along), outline(axes.up), outline(axes.side), outline(bodySide))
             return PartSurface(built.patches.map { it.patch }, mirrored, mesh, silhouettes, boxOf(mesh), extentsOf(own, axes))
         }
 

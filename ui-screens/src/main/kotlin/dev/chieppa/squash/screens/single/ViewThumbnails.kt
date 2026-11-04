@@ -29,7 +29,7 @@ data class ViewThumbnail(
  */
 fun viewThumbnails(selection: SheetSelection, current: View?, live: LiveStroke?, templateHint: Boolean, width: Int, height: Int): List<ViewThumbnail> {
     val part = selection.part
-    val fit = fitSheet(part.box, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
+    val fit = fitSheet(part.box, part.axes, List(SheetPane.entries.size) { PixelRect(0, 0, width, height) })
     return VIEW_ORDER.map { view ->
         val camera = LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale)
         val drawn = if (live?.view == view) live.points else selection.outlines[view]?.let(::outlineSamples)

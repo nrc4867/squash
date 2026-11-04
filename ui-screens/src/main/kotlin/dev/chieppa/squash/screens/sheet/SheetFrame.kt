@@ -19,6 +19,7 @@ import dev.chieppa.stretch.gpu.Mat4
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 
 private const val RING_SEGMENTS = 64
@@ -95,33 +96,37 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     }
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
-    return SceneView(rect, camera.viewProjection(), lockedDraws(view, body, selection, look, input.hints))
+    return SceneView(rect, camera.viewProjection(), lockedDraws(view, body, camera.basis, selection, look, input.hints))
 }
 
-/** What a locked camera on [view], looking from [body], draws: the ground, the character ghosted and the selection once [view] is drawn. */
-internal fun lockedDraws(view: View, body: BodyView, selection: SheetSelection, look: SheetLook, hints: SheetHints): List<MeshDraw> = buildList {
-    lockedGround(body, selection, look)?.let(::add)
-    addAll(ghosts(selection, body, look, hints))
+/** What a locked camera on [view] draws, from [basis] in the pane of [body]: the ground, the character ghosted and the selection once [view] is drawn. */
+internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints): List<MeshDraw> = buildList {
+    lockedGround(body, basis, selection, look)?.let(::add)
+    addAll(ghosts(selection, basis, look, hints))
     if (view in selection.outlines) add(look.draw(selection.part, look.lockedOutline, layer = DepthLayer.FRONT))
 }
 
 /** Everything but the selection, furthest from the viewer first so a nearer ghost blends over a further one. */
-private fun ghosts(selection: SheetSelection, body: BodyView, look: SheetLook, hints: SheetHints): List<MeshDraw> {
+private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints): List<MeshDraw> {
     val strength = hints.ghost
     if (strength <= 0f) return emptyList()
     return selection.others
-        .sortedBy { it.center dot body.toViewer }
+        .sortedBy { it.center dot basis.back }
         .map { look.draw(it, look.ghostOutline, strength) }
 }
 
-/** The ground as a flat ellipse behind the character, in a pane that looks along it. */
-private fun lockedGround(body: BodyView, selection: SheetSelection, look: SheetLook): MeshDraw? {
+/**
+ * The ground as an ellipse behind the character, in a pane that looks along it: the disc under the character as [basis] sees
+ * it from its tilt off the ground, and no flatter than a thin ellipse. A pane looking along the body's up has none.
+ */
+private fun lockedGround(body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook): MeshDraw? {
     if (body == BodyView.TOP) return null
     val box = selection.box
-    val across = abs(box.size dot body.right) * GROUND_ACROSS
-    val tall = abs(box.size dot body.up) * GROUND_TALL
+    val across = box.spanAlong(basis.screenRight) * GROUND_ACROSS
+    val deep = box.spanAlong(basis.screenRight cross Vec3.Y) * GROUND_ACROSS * abs(basis.back.y)
+    val tall = max(box.spanAlong(basis.screenUp) * GROUND_TALL, deep)
     val middle = Vec3(box.center.x, selection.floor, box.center.z)
-    val model = placedDisc(middle, body.right * across, body.up * tall, body.toViewer)
+    val model = placedDisc(middle, basis.screenRight * across, basis.screenUp * tall, basis.back)
     return MeshDraw(RenderMesh.UnitDisc, look.groundMaterial, model, layer = DepthLayer.BACK)
 }
 
@@ -175,10 +180,7 @@ internal fun lockedOverlay(view: View, camera: LockedCamera, selection: SheetSel
 }
 
 private fun OverlayBuilder.guideLines(guides: PaneGuides, camera: LockedCamera, look: SheetLook) {
-    val right = camera.width.toFloat()
-    val bottom = camera.height.toFloat()
-    guides.verticals.forEach { dashed(listOf(Offset(it, 0f), Offset(it, bottom)), look.guide, look.guideWidth, look.guideDash, look.guideDash) }
-    guides.horizontals.forEach { dashed(listOf(Offset(0f, it), Offset(right, it)), look.guide, look.guideWidth, look.guideDash, look.guideDash) }
+    guides.lines.forEach { dashed(listOf(it.start, it.end), look.guide, look.guideWidth, look.guideDash, look.guideDash) }
 }
 
 /** The dashed ring around the selected part in Full, in pane pixels. */

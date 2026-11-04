@@ -1,11 +1,16 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 private const val STATIONS = 129
 private const val MIN_RANGE = 1e-4f
 private const val MIN_CROSSING_GAP = 1e-5f
+
+/** An edge with both ends within this share of a station's spacing from that station crosses it at both, as the chord between two ends on the socket plane does. */
+private const val SHEER_OF_STEP = 1e-3f
 
 /**
  * A drawn outline read along its x: at each station, the lowest and highest y where the outline crosses that x. An open
@@ -59,18 +64,20 @@ class OutlineProfile private constructor(
             low: FloatArray,
             high: FloatArray,
         ) {
+            val nearest = ((x0 - start) / step).roundToInt().coerceIn(0, STATIONS - 1)
+            val offStation = maxOf(abs(start + nearest * step - x0), abs(start + nearest * step - x1))
+            if (offStation < step * SHEER_OF_STEP) {
+                low[nearest] = minOf(low[nearest], y0, y1)
+                high[nearest] = maxOf(high[nearest], y0, y1)
+                return
+            }
             val first = ceil((minOf(x0, x1) - start) / step).toInt().coerceAtLeast(0)
             val last = floor((maxOf(x0, x1) - start) / step).toInt().coerceAtMost(STATIONS - 1)
             for (s in first..last) {
-                val across = x1 - x0
-                val t = if (across == 0f) 0f else ((start + s * step - x0) / across).coerceIn(0f, 1f)
+                val t = ((start + s * step - x0) / (x1 - x0)).coerceIn(0f, 1f)
                 val y = y0 + (y1 - y0) * t
                 if (y < low[s]) low[s] = y
                 if (y > high[s]) high[s] = y
-                if (across == 0f) {
-                    if (y1 < low[s]) low[s] = y1
-                    if (y1 > high[s]) high[s] = y1
-                }
             }
         }
 

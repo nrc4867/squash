@@ -7,8 +7,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.stretch.gpu.GpuImage
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import kotlin.math.abs
 import kotlin.test.assertTrue
+
+/** Where each run leaves what it rendered. */
+private const val IMAGES = "build/smoke-images"
 
 /** How far a channel may be from the color a pixel is matched against. */
 private const val CHANNEL_TOLERANCE = 2
@@ -22,6 +28,15 @@ fun assertNotBlank(pixels: IntArray, name: String) {
     val counts = pixels.asIterable().groupingBy { it }.eachCount()
     val drawn = 1f - counts.values.max().toFloat() / pixels.size
     assertTrue(counts.size >= MIN_COLORS && drawn >= MIN_DRAWN_SHARE, "$name is blank: ${counts.size} colors, $drawn drawn")
+}
+
+/** Leaves an image in the smoke images, for a person to look at. */
+internal fun keepImage(pixels: IntArray, width: Int, name: String) {
+    val folder = File(IMAGES).apply { mkdirs() }
+    val height = pixels.size / width
+    val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    out.setRGB(0, 0, width, height, pixels, 0, width)
+    ImageIO.write(out, "png", File(folder, "$name.png"))
 }
 
 fun ImageBitmap.argbPixels(): IntArray {

@@ -69,7 +69,7 @@ class SnapViewTest {
 
     @Test
     fun anglesPointAnOrbitCameraAlongADirection() {
-        for (axes in listOf(leg, lying)) {
+        for (axes in listOf(leg, lying, PartAxes.of(Vec3(-0.8f, 0.6f, 0f)), PartAxes.of(Vec3(0f, 0.96f, -0.28f)))) {
             for (view in VIEW_ORDER) {
                 val direction = axes.viewDirection(view)
                 val (yaw, pitch) = orbitAngles(direction, axes.basis(view).screenUp)

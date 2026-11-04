@@ -74,13 +74,8 @@ fun disagreeOverlay(view: View, camera: LockedCamera, disagreements: List<Disagr
 }
 
 private fun OverlayBuilder.limitLine(found: Disagreement, camera: LockedCamera, look: OutlineLook) {
-    val direction = camera.axes.direction(found.axis)
-    val at = camera.toPixel(camera.origin + direction * (found.limit * camera.drawingScale))
-    if (camera.runsAcross(direction)) {
-        line(Offset(at.x, 0f), Offset(at.x, camera.height.toFloat()), look.warn, look.limitWidth)
-    } else {
-        line(Offset(0f, at.y), Offset(camera.width.toFloat(), at.y), look.warn, look.limitWidth)
-    }
+    val across = camera.lineAcross(camera.axes.direction(found.axis), found.limit * camera.drawingScale)
+    line(across.start, across.end, look.warn, look.limitWidth)
 }
 
 private fun PartAxes.direction(axis: PartAxis): Vec3 = when (axis) {

@@ -132,6 +132,16 @@ One graph node assembles the character from the built parts, so `Settled` covers
 
 The node holds, per part, its mesh, silhouettes and extents, each derived in the graph from the part's build.
 
+## How a pane looks at a part
+
+A locked pane looks straight along the normal of its view's plane, so an outline's plane is never foreshortened and the map from plane to pane is a rotation and a scale. Rings stand on planes a = constant, so a Side or Top outline drawn there is the mesh's silhouette on screen. `PartAxes.framing` says which pane holds which view, the arrangement that shows every view's plane the most squarely; `PartAxes.basis` gives the pane's axes.
+
+- **The camera tilts with the part.** Each pane looks along the normal of its view's plane, from the side of its plain body view, with that body view's up made as up as the plane lets it be. A part square to the body gets the plain body views exactly. A tail 37 degrees above horizontal runs diagonally in Side, whose plane is the body's, runs straight across in Top, seen from 37 degrees off vertical, and shows Front from below the ground, looking up its axis. An ear 16 degrees off vertical stands straight in Side, leans in Top, whose plane is the body's front, and shows Front from 16 degrees off vertical.
+- **Everything goes through the one camera.** The selection, the ghosts, their depth order, the template hint, the outlines, a tool's strokes and handles all do. Silhouettes are derived along the part's own axes, so a hint is the silhouette of the view's own camera. The ground is the disc under the character as the camera's tilt shows it, never flatter than the thin ellipse a level camera has, and is always drawn behind. The pane looking along the body's up has none.
+- **Each pane shows the part's middle at its own middle.** That point lines up across panes, and every pane keeps one scale. Other points line up only as far as the two planes share a direction: a plane tilted from its neighbour's shows the same length longer than the neighbour's projection of it, so a tilted part gives up the row or column it does not share. The ear's height direction is one screen axis in Front and Side, so that column holds; its Top leans, so the row with Side does not hold. The tail keeps neither. A stretched pane that held the alignment would be foreshortened again, and a stroke would not land.
+- **Guides are the part's own lines.** A guide or a disagreement's limit is the line square to a part direction at a point of the outline's extent, and it is drawn at whatever angle that makes on screen. In the tail's Side the guides run on the diagonal.
+- **Where a stroke cannot land by construction, the view sets something else.** The axis stays in the plane of a and b, so Top's and Front's midpoints in c are not read: a lopsided Top stroke builds evenly about the axis. A Front outline alone leaves the sizes to the template, and a `cap` Front shapes only the last sixth of the axis.
+
 ## Adding parts without refactoring
 
 A new part is one of three things, and each slots in without touching what exists or what is saved.

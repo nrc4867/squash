@@ -24,12 +24,12 @@ private const val GROUND_ACROSS = 0.54f
 private const val GROUND_TALL = 0.05f
 
 /** The camera that shows all of [box] from the side in a [width] by [height] image, as the boards draw the rest pose. */
-fun restPoseCamera(box: BodyBox, width: Int, height: Int): BodyCamera {
+fun restPoseCamera(box: BodyBox, width: Int, height: Int): PaneCamera {
     val view = BodyView.SIDE
     val across = abs(box.size dot view.right)
     val tall = abs(box.size dot view.up)
     val scale = min(width * REST_POSE_FILL / across, height * REST_POSE_FILL / tall)
-    return BodyCamera(view, SheetFit(box.center, scale, box.radius), width, height)
+    return bodyCamera(view, SheetFit(box.center, scale, box.radius), width, height)
 }
 
 /**
@@ -63,7 +63,7 @@ fun restPoseFrame(
     val draws = listOf(ground) + solid.sortedBy { it.center dot BodyView.SIDE.toViewer }.map { look.draw(it, look.fullOutline) }
     val overlay = buildOverlay {
         for (part in hinted) {
-            for (path in part.silhouetteFrom(BodyView.SIDE)) {
+            for (path in part.silhouetteFromBodySide()) {
                 dashed(path.map(camera::toPixel), look.template, look.templateWidth, look.templateDash, look.templateGap)
             }
         }

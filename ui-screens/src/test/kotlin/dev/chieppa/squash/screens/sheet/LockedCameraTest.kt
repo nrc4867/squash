@@ -20,7 +20,7 @@ class LockedCameraTest {
     private val ear = PartAxes.of(Vec3(0f, 0.96f, -0.28f))
     private val box = BodyBox(Vec3(0f, -0.25f, -0.5f), Vec3(1f, 0.25f, 0.5f))
     private val rects = sheetPaneRects(1000, 800, 2)
-    private val fit = fitSheet(box, rects)
+    private val fit = fitSheet(box, paw, rects)
     private val socket = Vec3(0.3f, -0.1f, -0.2f)
 
     private fun camera(view: View, axes: PartAxes = paw, origin: Vec3 = Vec3.ZERO) = LockedCamera(view, axes, fit, 499, 399, origin)
@@ -119,14 +119,14 @@ class LockedCameraTest {
 
     @Test
     fun theShapeFitsTheTightestPaneDirectionWithRoomAroundIt() {
-        val tight = fitSheet(box, sheetPaneRects(2000, 200, 0))
+        val tight = fitSheet(box, paw, sheetPaneRects(2000, 200, 0))
         assertTrue(near(tight.pixelsPerUnit, 100 * 0.6f / 1f), "height limits it: ${tight.pixelsPerUnit}")
     }
 
     @Test
-    fun sideLinesUpWithTopInItsColumnAndFrontInItsRowForEveryPart() {
+    fun sideLinesUpWithTopInItsColumnAndFrontInItsRowForAPartSquareToTheBody() {
         val point = Vec3(0.8f, 0.2f, 0.1f)
-        for (axes in listOf(paw, leg, tail, ear)) {
+        for (axes in listOf(paw, leg)) {
             val side = camera(View.SIDE, axes)
             val above = camera(axes.framing.getValue(BodyView.TOP), axes)
             val beside = camera(axes.framing.getValue(BodyView.FRONT), axes)
@@ -137,7 +137,7 @@ class LockedCameraTest {
 
     @Test
     fun theMatrixAgreesWithThePixelMappingForEveryPart() {
-        for (axes in listOf(paw, leg, tail)) {
+        for (axes in listOf(paw, leg, tail, ear, PartAxes.of(Vec3(0f, 0.96f, -0.28f), mirrored = true))) {
             for (view in View.entries) {
                 val camera = camera(view, axes)
                 val point = Vec3(0.7f, 0.1f, -0.2f)
@@ -148,6 +148,102 @@ class LockedCameraTest {
                 assertTrue(near(x, pixel.x, 0.05f) && near(y, pixel.y, 0.05f), "$view: $x, $y and $pixel")
                 assertTrue(clip.z in 0f..1f, "$view: inside the depth range: ${clip.z}")
             }
+        }
+    }
+
+    private val tilted = listOf(
+        tail,
+        ear,
+        PartAxes.of(Vec3(-0.8f, 0.6f, 0f), mirrored = true),
+        PartAxes.of(Vec3(0f, 0.96f, -0.28f), mirrored = true),
+    )
+
+    @Test
+    fun everyPaneLooksStraightAlongItsViewsNormalSoTheMapIsARotationAndAScale() {
+        for (axes in tilted + listOf(paw, leg)) {
+            for (view in View.entries) {
+                val camera = camera(view, axes, socket)
+                val basis = camera.basis
+                val normal = basis.xAxis cross basis.yAxis
+                assertNear(basis.back * (basis.back dot normal), normal)
+                assertTrue((basis.back dot axes.bodyViewOf(view).toViewer) > 0f, "$axes $view: seen from its pane's side")
+                val zero = camera.toPixel(CurvePoint(0f, 0f))
+                val x = camera.toPixel(CurvePoint(1f, 0f)) - zero
+                val y = camera.toPixel(CurvePoint(0f, 1f)) - zero
+                val scale = fit.pixelsPerUnit
+                assertTrue(near(x.getDistance(), scale, 0.02f) && near(y.getDistance(), scale, 0.02f), "$axes $view: $x, $y at $scale")
+                assertTrue(near(x.x * y.x + x.y * y.y, 0f, 0.5f), "$axes $view: square: $x, $y")
+            }
+        }
+    }
+
+    @Test
+    fun aTiltedPaneKeepsBodyUpAsUpAsThePlaneLetsItBe() {
+        for (axes in tilted) {
+            for (view in View.entries) {
+                val pane = axes.bodyViewOf(view)
+                val basis = axes.basis(view)
+                assertTrue(near(basis.screenRight dot pane.up, 0f), "$axes $view: up tips neither way: ${basis.screenRight}")
+                assertTrue((basis.screenUp dot pane.up) > 0.5f, "$axes $view: ${basis.screenUp}")
+                assertTrue((basis.screenRight dot pane.right) > 0.5f, "$axes $view: ${basis.screenRight}")
+            }
+        }
+    }
+
+    @Test
+    fun aPartSquareToTheBodyHasThePlainBodyViews() {
+        for (axes in listOf(paw, leg)) {
+            for (view in View.entries) {
+                val pane = axes.bodyViewOf(view)
+                val basis = axes.basis(view)
+                assertNear(pane.right, basis.screenRight)
+                assertNear(pane.up, basis.screenUp)
+                assertNear(pane.toViewer, basis.back)
+            }
+        }
+    }
+
+    @Test
+    fun theTailRunsDiagonallyInSideAndStraightAcrossInItsOtherPlane() {
+        val side = camera(View.SIDE, tail).basis
+        assertNear(BodyView.SIDE.right, side.screenRight)
+        assertNear(BodyView.SIDE.up, side.screenUp)
+        val top = camera(View.TOP, tail).basis
+        assertNear(tail.along, top.screenRight)
+        assertNear(BodyView.TOP.up, top.screenUp)
+        val front = camera(View.FRONT, tail).basis
+        assertNear(tail.up, front.screenUp)
+    }
+
+    @Test
+    fun theEarTiltsInItsSideAndFrontAndItsTopRunsDiagonally() {
+        val side = camera(View.SIDE, ear).basis
+        assertNear(ear.along, side.screenUp)
+        assertNear(BodyView.SIDE.right, side.screenRight)
+        val top = camera(View.TOP, ear).basis
+        assertNear(BodyView.FRONT.up, top.screenUp)
+        assertNear(BodyView.FRONT.right, top.screenRight)
+        val front = camera(View.FRONT, ear).basis
+        assertNear(BodyView.TOP.right, front.screenRight)
+        assertNear(ear.side, front.screenUp)
+    }
+
+    @Test
+    fun aTiltedPartsPanesShowItsMiddleAndAllOfItsBox() {
+        for (axes in tilted) {
+            val own = fitSheet(box, axes, rects)
+            for (pane in SheetPane.entries) {
+                val body = pane.body ?: continue
+                val rect = rects[pane.ordinal]
+                val camera = LockedCamera(axes.framing.getValue(body), axes, own, rect.width, rect.height)
+                val middle = camera.toPixel(box.center)
+                assertTrue(near(middle.x, rect.width / 2f) && near(middle.y, rect.height / 2f), "$axes $pane: $middle")
+                for (corner in box.corners) {
+                    val at = camera.toPixel(corner)
+                    assertTrue(at.x in 0f..rect.width.toFloat() && at.y in 0f..rect.height.toFloat(), "$axes $pane: $corner at $at")
+                }
+            }
+            assertSame(own, keepFit(own, box, axes, rects))
         }
     }
 
@@ -163,15 +259,15 @@ class LockedCameraTest {
 
     @Test
     fun theFitHoldsWhileThePartStaysInView() {
-        val kept = keepFit(fit, BodyBox(Vec3(0.1f, -0.2f, -0.4f), Vec3(0.9f, 0.2f, 0.4f)), rects)
+        val kept = keepFit(fit, BodyBox(Vec3(0.1f, -0.2f, -0.4f), Vec3(0.9f, 0.2f, 0.4f)), paw, rects)
         assertSame(fit, kept)
-        val moved = keepFit(fit, BodyBox(Vec3(-3f, -0.25f, -0.5f), Vec3(5f, 0.25f, 0.5f)), rects)
+        val moved = keepFit(fit, BodyBox(Vec3(-3f, -0.25f, -0.5f), Vec3(5f, 0.25f, 0.5f)), paw, rects)
         assertNotSame(fit, moved)
         assertTrue(moved.pixelsPerUnit < fit.pixelsPerUnit)
     }
 
     @Test
     fun theFitMovesOnWhenTheCharacterOutgrowsItsDepth() {
-        assertNotSame(fit, keepFit(fit, box, rects, reach = fit.reach + 1f))
+        assertNotSame(fit, keepFit(fit, box, paw, rects, reach = fit.reach + 1f))
     }
 }
