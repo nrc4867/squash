@@ -4,14 +4,16 @@ import kotlin.math.floor
 
 /**
  * A shape cut to a patch's mesh: [mesh]'s triangles lie exactly on the part's mesh triangles, wound as they are, and each of its
- * vertices keeps its place on [patch] in [us] and [vs]. Never changes, so a frame can hand it to the render thread.
+ * vertices keeps its place on [patch] in [us] and [vs]. A cut that fades holds each vertex's opacity in [alphas]; null means solid.
+ * Never changes, so a frame can hand it to the render thread.
  */
-class PatchCut(val patch: String, val mesh: RenderMesh, val us: FloatArray, val vs: FloatArray) {
+class PatchCut(val patch: String, val mesh: RenderMesh, val us: FloatArray, val vs: FloatArray, val alphas: FloatArray? = null) {
     val isEmpty: Boolean get() = mesh.indices.isEmpty()
 }
 
 /** What [shape] covers of [grid]'s surface, cut along the mesh's triangles. Independent of every other shape. */
 fun cutShape(shape: ColorShape, grid: PatchGrid, tolerance: Float, checkCancelled: () -> Unit = {}): PatchCut {
+    if (shape is ColorShape.Brush && shape.softness > 0f) return cutSoftBrush(shape, grid, tolerance, checkCancelled)
     val pieces = GridPieces(grid.rings, grid.columns, grid.closed, grid::isPoleCell)
     shape.outlines(grid, tolerance).forEach(pieces::add)
     val out = CutOutput(grid)
@@ -58,7 +60,7 @@ private fun addPart(ring: Int, column: Int, part: CellPart, pieces: GridPieces, 
 }
 
 /** The cut's growing buffers, with each place on the grid held once, so that neighbouring triangles share its vertex. */
-private class CutOutput(private val grid: PatchGrid) {
+internal class CutOutput(private val grid: PatchGrid) {
     private var vertices = FloatArray(INITIAL_VERTICES * RenderMesh.FLOATS_PER_VERTEX)
     private var us = FloatArray(INITIAL_VERTICES)
     private var vs = FloatArray(INITIAL_VERTICES)

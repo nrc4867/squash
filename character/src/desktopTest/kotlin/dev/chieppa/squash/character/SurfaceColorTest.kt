@@ -106,6 +106,36 @@ class SurfaceColorTest {
     }
 
     @Test
+    fun softnessReachesTheCutAndSoftStrokesHoldTheirPlaceBetweenHardOnes() = runTest {
+        val session = surfaceSession(leftLeg)
+        val order = listOf("hard-a" to 0f, "hard-b" to 0f, "soft-a" to 0.5f, "soft-b" to 1f, "hard-c" to 0f)
+        order.forEachIndexed { i, (id, softness) ->
+            val brush = stroke(leftLeg, id, cream, 0.2f + i * 0.1f).copy(softness = softness)
+            session.send(SetBrushStroke(leftLeg.id, brush.id, brush))
+        }
+        session.settle()
+        val layers = session.color().parts.getValue(leftLeg.id).layers
+        assertEquals(listOf(false, true, true, false), layers.map { it.cut.alphas != null }, "two hard as one, each soft alone, a hard after them")
+    }
+
+    @Test
+    fun aPaletteChangeCutsNoSoftStrokeAndSoftnessCutsAgain() = runTest {
+        val session = surfaceSession(leftLeg)
+        val soft = stroke(leftLeg, "soft", cream).copy(softness = 0.5f)
+        session.send(SetPaletteSlot(cream, SlotColor(0.9f, 0.9f, 0.8f)))
+        session.send(SetBrushStroke(leftLeg.id, soft.id, soft))
+        session.settle()
+        val color = session.color()
+        session.send(SetPaletteSlot(cream, SlotColor(0.1f, 0.2f, 0.3f)))
+        session.settle()
+        assertSame(color, session.color())
+        val before = assertNotNull(session.heldColor(leftLeg.id).output.value).cuts.single().cut
+        session.send(SetBrushStroke(leftLeg.id, soft.id, soft.copy(softness = 0.9f)))
+        session.settle()
+        assertNotSame(before, assertNotNull(session.heldColor(leftLeg.id).output.value).cuts.single().cut)
+    }
+
+    @Test
     fun layersRunInTheDocumentedOrderAndNeighboursMerge() = runTest {
         val session = surfaceSession(leftLeg)
         val knee = "knee"

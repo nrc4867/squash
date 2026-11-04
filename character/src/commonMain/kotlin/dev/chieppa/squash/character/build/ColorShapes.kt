@@ -105,7 +105,7 @@ private fun closingOf(points: List<ResolvedPoint>, patch: Patch?): BorderClosing
 
 /** A stroke keeps one width wherever it lands: its radius is a share of [holderLength], the axis of the part that holds it. */
 private fun strokeShapes(stroke: ResolvedBrushStroke, holderLength: Float): List<LandedShape> = runsAlong(stroke.points).map { run ->
-    landed(RANK_STROKE, stroke.slot, run, ColorShape.Brush(run.onPatch(), stroke.radius * holderLength))
+    landed(RANK_STROKE, stroke.slot, run, ColorShape.Brush(run.onPatch(), stroke.radius * holderLength, stroke.softness))
 }
 
 private fun landed(rank: Int, slot: SlotName, points: List<ResolvedPoint>, shape: ColorShape) =

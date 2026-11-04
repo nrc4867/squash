@@ -173,6 +173,9 @@ class SurfaceCommandTest {
         assertFailsWith<IllegalArgumentException> { MarkVersion(anchors(0.1f)) }
         assertFailsWith<IllegalArgumentException> { Region(RegionId("r"), anchors(0.1f, 0.2f), fur) }
         assertFailsWith<IllegalArgumentException> { BrushStroke(BrushStrokeId("s"), emptyList(), fur, 0.1f) }
+        assertFailsWith<IllegalArgumentException> { stroke("s").copy(softness = 1.5f) }
+        assertFailsWith<IllegalArgumentException> { stroke("s").copy(softness = -0.1f) }
+        assertFailsWith<IllegalArgumentException> { stroke("s").copy(softness = Float.NaN) }
         assertFailsWith<IllegalArgumentException> { MarkWidth(listOf(WidthStop(0.5f, 1f), WidthStop(0.2f, 1f))) }
         assertFailsWith<IllegalArgumentException> { SlotColor(1.5f, 0f, 0f) }
         assertFailsWith<IllegalArgumentException> { Palette(listOf(PaletteSlot(fur, SlotColor(0f, 0f, 0f)), PaletteSlot(fur, SlotColor(1f, 1f, 1f)))) }
@@ -207,6 +210,7 @@ class SurfaceCommandTest {
             SetMarkControls(head.id, group.id, MarkControls(open = 0.5f, width = 1.2f)),
             SetRegion(head.id, RegionId("r"), region("r"), thisSide = true),
             SetBrushStroke(head.id, BrushStrokeId("s"), stroke("s")),
+            SetBrushStroke(head.id, BrushStrokeId("soft"), stroke("soft").copy(softness = 0.75f)),
             SetPaletteSlot(fur, SlotColor(0.1f, 0.2f, 0.3f), index = 0),
             SetExpression(ExpressionId("glad"), ExpressionSet(ExpressionId("glad"), "Glad", pose = FacePose(listOf(JointAngle(head.id, "jaw", 12f))))),
             SetExpressionMarks(ExpressionId("glad"), head.id, group.id, MarkRole.LIP_LINE, listOf(mark("lip", 0.1f, 0.2f))),

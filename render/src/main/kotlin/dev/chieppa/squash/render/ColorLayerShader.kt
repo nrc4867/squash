@@ -22,19 +22,24 @@ struct Layer {
 @group(0) @binding(0) var<uniform> layer: Layer;
 
 // Pixels of depth a layer is pulled forward by, facing the camera and for each unit of the surface's slope, whose count is held to
-// MAX_SLOPE; the least it moves in the depth buffer's own range, about four steps of 24 bits.
+// MAX_SLOPE; the least it moves in the depth buffer's own range, about twenty-five steps of 24 bits, which clears the rounding of a part far from the origin under a close zoom.
 const LIFT_PIXELS: f32 = 0.015;
 const SLOPE_LIFT_PIXELS: f32 = 0.015;
 const MAX_SLOPE: f32 = 40.0;
-const MIN_DEPTH_LIFT: f32 = 0.00000025;
+const MIN_DEPTH_LIFT: f32 = 0.0000015;
 
 struct LayerOut {
     @builtin(position) clip: vec4<f32>,
     @location(0) proxy: vec3<f32>,
 };
 
-@vertex
-fn vs_layer(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @location(2) proxy: vec3<f32>) -> LayerOut {
+struct FadingOut {
+    @builtin(position) clip: vec4<f32>,
+    @location(0) proxy: vec3<f32>,
+    @location(1) alpha: f32,
+};
+
+fn lifted(position: vec3<f32>, normal: vec3<f32>, proxy: vec3<f32>) -> LayerOut {
     let projection = layer.view_projection;
     let away = normalize(vec3<f32>(projection[0][2], projection[1][2], projection[2][2]));
     let world = layer.model * vec4<f32>(position, 1.0);
@@ -52,8 +57,28 @@ fn vs_layer(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @l
     return out;
 }
 
+@vertex
+fn vs_layer(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @location(2) proxy: vec3<f32>) -> LayerOut {
+    return lifted(position, normal, proxy);
+}
+
 @fragment
 fn fs_layer(in: LayerOut) -> @location(0) vec4<f32> {
     return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), 1.0);
+}
+
+@vertex
+fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @location(2) proxy: vec3<f32>, @location(3) alpha: f32) -> FadingOut {
+    let layered = lifted(position, normal, proxy);
+    var out: FadingOut;
+    out.clip = layered.clip;
+    out.proxy = layered.proxy;
+    out.alpha = alpha;
+    return out;
+}
+
+@fragment
+fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
+    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), in.alpha);
 }
 """ + TONE_WGSL

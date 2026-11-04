@@ -20,7 +20,7 @@ private const val SURFACE_KEY = "surface"
 private const val GRAIN_KEY = "grain"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -37,6 +37,9 @@ fun readDocument(text: String): SquashDocument {
     }
     return Json.decodeFromJsonElement(SquashDocument.serializer(), saved)
 }
+
+/** Format 2 to 3: a brush stroke gains a softness. A stroke saved without one is hard, which is what an absent softness reads as. */
+private fun softnessOnBrushStrokes(document: JsonObject): JsonObject = document
 
 /** Format 1 to 2: a part's grain moves from the part to its surface work, its own or, on a paired part, its side's override. */
 private fun grainIntoSurfaceWork(document: JsonObject): JsonObject {

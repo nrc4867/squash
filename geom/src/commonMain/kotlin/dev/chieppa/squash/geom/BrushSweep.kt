@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 private const val TWO_PI = 2.0 * PI
 
 /** The most a brush's edge reaches around v from its curve, as a share of a turn, however close a pole brings the rings together. */
-private const val MAX_V_REACH = 0.24
+internal const val BRUSH_V_REACH = 0.24
 
 /** The widest step around an arc of a brush's edge, in radians, for a brush no wider than its tolerance. */
 private const val WIDEST_STEP = PI / 4.0
@@ -46,7 +46,7 @@ internal fun sweptBrush(points: List<UnwrappedUv>, radius: Float, grid: PatchGri
     }
     val path = OutlineBuilder(grid)
     val step = arcStep(radius, tolerance)
-    val reachV = MAX_V_REACH * grid.columns
+    val reachV = BRUSH_V_REACH * grid.columns
     walkSide(stations, 0.0, radius, step, reachV, grid, path)
     walkSide(stations.asReversed(), PI, radius, step, reachV, grid, path)
     path.closeOnFirst()

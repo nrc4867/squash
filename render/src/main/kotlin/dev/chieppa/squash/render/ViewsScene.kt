@@ -4,6 +4,7 @@ import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
 import dev.chieppa.stretch.gpu.GpuFrame
 import dev.chieppa.stretch.gpu.GpuScene
+import dev.chieppa.stretch.gpu.webgpu.GpuBuffer
 import java.util.IdentityHashMap
 
 /**
@@ -15,6 +16,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private val colorLayers: ColorLayers = ColorLayerPass(context)
     private val ribbons: StrokeRibbons = StrokeRibbonPass(context)
     private val uploaded = IdentityHashMap<RenderMesh, GpuMesh>()
+    private val uploadedAlphas = IdentityHashMap<FloatArray, GpuBuffer>()
     private var lastFrame: SceneFrame? = null
 
     override fun render(frame: GpuFrame, state: SceneFrame): Boolean {
@@ -32,7 +34,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
             for (draw in view.draws) {
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
                 if (draw.opacity < 1f) continue
-                for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer, draw, view)
+                for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.alphas?.let(::uploadedAlphasFor), layer, draw, view)
             }
             for (ribbon in view.ribbons) ribbons.draw(pass, ribbonSlot++, ribbon, view)
         }
@@ -45,21 +47,30 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
 
     private fun uploadedFor(mesh: RenderMesh): GpuMesh = uploaded.getOrPut(mesh) { GpuMesh(context, mesh) }
 
+    private fun uploadedAlphasFor(alphas: FloatArray): GpuBuffer = uploadedAlphas.getOrPut(alphas) { alphaBuffer(context, alphas) }
+
     private fun keepOnly(frame: SceneFrame) {
         val wanted = IdentityHashMap<RenderMesh, Unit>()
+        val wantedAlphas = IdentityHashMap<FloatArray, Unit>()
         for (view in frame.views) {
             for (draw in view.draws) {
                 wanted[draw.mesh] = Unit
-                draw.layers.forEach { wanted[it.mesh] = Unit }
+                for (layer in draw.layers) {
+                    wanted[layer.mesh] = Unit
+                    layer.alphas?.let { wantedAlphas[it] = Unit }
+                }
             }
         }
         uploaded.keys.filter { it !in wanted }.forEach { uploaded.remove(it)?.close() }
+        uploadedAlphas.keys.filter { it !in wantedAlphas }.forEach { uploadedAlphas.remove(it)?.close() }
         ribbons.keepOnly(frame.views.flatMap { view -> view.ribbons.map { it.ribbon } })
     }
 
     override fun close() {
         uploaded.values.forEach { it.close() }
         uploaded.clear()
+        uploadedAlphas.values.forEach { it.close() }
+        uploadedAlphas.clear()
         meshes.close()
         colorLayers.close()
         ribbons.close()

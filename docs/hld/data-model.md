@@ -21,7 +21,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default); parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
 | Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation). Eyes and mouths are mark groups | Document |
 | Region | A closed curve of anchors, which may run across parts, a palette slot and an ink flag | Document, in surface work |
-| Paint | Brush strokes in the order drawn, each anchors, a palette slot and a radius | Document, in surface work |
+| Paint | Brush strokes in the order drawn, each anchors, a palette slot, a radius and a softness from 0, a hard edge, to 1, a fade across the whole radius | Document, in surface work |
 | Eye | A mark group on an eye region or a sphere part: travel limits, pupil shape, convergence limit, camera bias, size compensation, lid-flatten flag | Document, on the character |
 | Gaze | Target (scene point, camera, an anchor on another character, or free), per-eye offsets, open and dilation values, lead frames, auto-blink flag | Document, one per shot key beside the pose |
 | Expression set | Marks per group and role with angle versions, shared with per-side overrides, plus a small face pose (hinge angles by part and joint name) | Document, on the character |

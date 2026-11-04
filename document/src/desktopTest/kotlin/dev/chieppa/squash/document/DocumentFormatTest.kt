@@ -1,5 +1,6 @@
 package dev.chieppa.squash.document
 
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,6 +10,7 @@ import kotlin.test.assertTrue
 /** Reads saves as an older app wrote them. Each format step has one fixture here, written by the app of that format. */
 class DocumentFormatTest {
     private val formatOne = File("src/desktopTest/fixtures/format-1.json").readText()
+    private val formatTwo = File("src/desktopTest/fixtures/format-2.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
 
     @Test
@@ -30,6 +32,32 @@ class DocumentFormatTest {
         assertEquals(combs, character.resolved(PartId("torso-1"))?.surface?.grain, "an unpaired part holds it as its own")
         assertEquals(combs, character.resolved(PartId("leg-l"))?.surface?.grain, "a paired part holds it as its side's override")
         assertEquals(null, character.resolved(PartId("leg-r"))?.surface?.grain, "a part with no combs has none")
+    }
+
+    @Test
+    fun aFormatTwoSaveReadsWithEveryStrokeHard() {
+        val document = readDocument(formatTwo)
+        assertEquals(DOCUMENT_FORMAT, document.format)
+        val strokes = listOf("torso-1", "leg-l", "leg-r").associateWith { part ->
+            checkNotNull(document.character.resolved(PartId(part))).surface.paint.strokes
+        }
+        assertEquals(listOf("belly"), strokes.getValue("torso-1").map { it.id.value }, "an unpaired part's own")
+        assertEquals(listOf("sock"), strokes.getValue("leg-l").map { it.id.value }, "what a pair shares")
+        assertEquals(setOf("sock", "knee"), strokes.getValue("leg-r").map { it.id.value }.toSet(), "a side's override")
+        assertEquals(0.08f, strokes.getValue("torso-1").single().radius)
+        assertTrue(strokes.values.flatten().all { it.softness == 0f })
+    }
+
+    @Test
+    fun aSoftStrokeSurvivesASaveAndAHardOneWritesNoSoftness() {
+        val saved = readDocument(formatTwo)
+        val torso = PartId("torso-1")
+        val hard = checkNotNull(saved.character.resolved(torso)).surface.paint.strokes.single()
+        assertTrue("softness" !in Json.encodeToString(SquashDocument.serializer(), saved))
+        val soft = SetBrushStroke(torso, hard.id, hard.copy(softness = 0.4f)).apply(saved).document
+        val text = Json.encodeToString(SquashDocument.serializer(), soft)
+        assertEquals(soft, readDocument(text))
+        assertEquals(0.4f, checkNotNull(readDocument(text).character.resolved(torso)).surface.paint.strokes.single().softness)
     }
 
     @Test

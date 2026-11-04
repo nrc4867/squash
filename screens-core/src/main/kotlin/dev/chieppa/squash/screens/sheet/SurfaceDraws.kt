@@ -49,7 +49,7 @@ fun coloredPartDraw(
 ): MeshDraw {
     val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, shading, side, toCamera)
     val layers = color?.layers.orEmpty().mapNotNull { layer ->
-        palette.colorOf(layer.slot)?.let { ColorLayerDraw(layer.cut.mesh, rule.tones(it, shading, side, toCamera)) }
+        palette.colorOf(layer.slot)?.let { ColorLayerDraw(layer.cut.mesh, rule.tones(it, shading, side, toCamera), layer.cut.alphas) }
     }
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
     return MeshDraw(mesh, material, model, outlinePixels, layers = layers)

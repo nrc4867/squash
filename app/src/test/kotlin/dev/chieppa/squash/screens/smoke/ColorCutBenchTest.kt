@@ -10,6 +10,7 @@ import dev.chieppa.squash.geom.ColorDetail
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.SurfaceUv
+import dev.chieppa.squash.geom.cutShape
 import dev.chieppa.squash.geom.positionAt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +86,31 @@ class ColorCutBenchTest {
         val single = (0 until ROUNDS).minOf { measureTime { ShapeCuts().cuts(listOf(one), surfaces, ColorDetail.START) } }
         println("BENCH one stroke at step ${ColorDetail.START}: ${single.inWholeMicroseconds} us")
         parts.forEach { println("BENCH bilinear gap on ${it.id.value}: ${bilinearGap(surfaces.getValue(it.id))} over a body of ${surfaces.getValue(it.id).axisLength}") }
+        scope.cancel()
+    }
+
+    @Test
+    fun aSoftStrokeCostsThisAgainstAHardOne() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val torso = PartInstance(PartId("torso"), seamsRef("torso"))
+        val session = seamsSession(scope, listOf(torso))
+        session.settled()
+        val surface = assertNotNull(session.surface(torso.id).output.value)
+        val grid = requireNotNull(surface.grid(BODY_PATCH))
+        val long = List(POINTS_PER_STROKE) { i -> SurfaceUv(0.3f + 0.05f * sin(i * 0.4f), 0.2f + i * 0.012f) }
+        val dab = listOf(SurfaceUv(0.5f, 0.25f))
+        for ((name, points, radius) in listOf(Triple("long thin", long, BRUSH), Triple("long wide", long, 0.15f), Triple("dab", dab, 0.15f))) {
+            for (step in listOf(ColorDetail.START, 12, 14)) {
+                for (softness in listOf(0f, 0.5f, 1f)) {
+                    val shape = ColorShape.Brush(points, radius, softness)
+                    val tolerance = ColorDetail.tolerance(step)
+                    repeat(ROUNDS) { cutShape(shape, grid, tolerance) }
+                    val best = (0 until ROUNDS).minOf { measureTime { cutShape(shape, grid, tolerance) } }
+                    val cut = cutShape(shape, grid, tolerance)
+                    println("BENCH $name step=$step softness=$softness: ${best.inWholeMicroseconds} us, ${cut.mesh.vertexCount} vertices, ${cut.mesh.indices.size / 3} triangles")
+                }
+            }
+        }
         scope.cancel()
     }
 

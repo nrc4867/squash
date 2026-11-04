@@ -105,4 +105,4 @@ private fun resolveRegion(region: Region, point: (Anchor) -> ResolvedPoint?): Re
     keptPoints(region.border, MIN_BORDER_POINTS, point)?.let { ResolvedRegion(region.id, it, region.slot, region.ink) }
 
 private fun resolveStroke(stroke: BrushStroke, point: (Anchor) -> ResolvedPoint?): ResolvedBrushStroke? =
-    keptPoints(stroke.points, MIN_STROKE_POINTS, point)?.let { ResolvedBrushStroke(stroke.id, it, stroke.slot, stroke.radius) }
+    keptPoints(stroke.points, MIN_STROKE_POINTS, point)?.let { ResolvedBrushStroke(stroke.id, it, stroke.slot, stroke.radius, stroke.softness) }

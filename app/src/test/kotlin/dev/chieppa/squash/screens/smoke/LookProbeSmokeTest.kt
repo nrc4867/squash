@@ -61,9 +61,9 @@ private const val RAISE = 0.08f
 /** The probe's call on where a face's versions switch, in degrees off the head's axis. */
 private val PROBE_BINS = AngleBins(listOf(BIN_FRONT, BIN_THREE_QUARTER, BIN_SIDE), listOf(35f, 70f), 6f)
 
-private val GROUND = Color(0xFFF2EEE6)
+internal val PROBE_GROUND = Color(0xFFF2EEE6)
 private val NO_SLOT = Color(0xFFB0B0B0)
-private val PROBE_LOOK = CharacterLook(
+internal val PROBE_LOOK = CharacterLook(
     lines = LineRule(interiorPixels = 2.5f, silhouettePixels = 6f),
     marks = LineRule(interiorPixels = 2.5f, silhouettePixels = 3.5f),
     creases = LineRule(interiorPixels = 2.5f),
@@ -72,13 +72,26 @@ private val PROBE_LOOK = CharacterLook(
     fallback = NO_SLOT,
 )
 
-private fun azimuth(degrees: Float): Vec3 {
+internal fun probeAzimuth(degrees: Float): Vec3 {
     val radians = Math.toRadians(degrees.toDouble())
     return Vec3(kotlin.math.cos(radians).toFloat(), RAISE, -kotlin.math.sin(radians).toFloat())
 }
 
-private val VIEWS = listOf("side" to azimuth(90f), "three-quarter" to azimuth(45f), "front" to azimuth(0f))
+private val VIEWS = listOf("side" to probeAzimuth(90f), "three-quarter" to probeAzimuth(45f), "front" to probeAzimuth(0f))
 private val MODES = listOf("flat" to Shading.FLAT, "two-tone" to Shading.TWO_TONE)
+
+/** What the probe's views draw from this session as it stands. */
+internal fun CharacterSession.probeState(): CharacterState {
+    val character = assertNotNull(assembly.output.value)
+    return CharacterState(
+        character,
+        assertNotNull(bodyColor.output.value),
+        assertNotNull(bodySurfaceWork.output.value),
+        document.value.character.palette,
+        socketCreases(character),
+        isFur = { mark: ResolvedMark -> mark.id.value.startsWith(FUR_MARK_PREFIX) },
+    )
+}
 
 /** The fennec through commands, the real graph and scene, flat and two-tone from three sides, left for a person to judge. */
 @Tag("slow")
@@ -92,18 +105,6 @@ class LookProbeSmokeTest {
         fennecCommands().forEach(session::send)
         session.settled()
         return session
-    }
-
-    private fun CharacterSession.state(): CharacterState {
-        val character = assertNotNull(assembly.output.value)
-        return CharacterState(
-            character,
-            assertNotNull(bodyColor.output.value),
-            assertNotNull(bodySurfaceWork.output.value),
-            document.value.character.palette,
-            socketCreases(character),
-            isFur = { mark: ResolvedMark -> mark.id.value.startsWith(FUR_MARK_PREFIX) },
-        )
     }
 
     private fun keep(name: String, frame: SceneFrame, width: Int = WIDTH, height: Int = HEIGHT) {
@@ -121,7 +122,7 @@ class LookProbeSmokeTest {
     fun theFennecRendersFlatAndTwoToneFromThreeSides() {
         val session = session()
         assertEquals(savedFennec(), session.document.value, "the saved fixture is what the commands make")
-        val state = session.state()
+        val state = session.probeState()
         val parts = state.character.parts.filter { it.id != null }
         val floor = state.character.floor
         val paw = assertNotNull(state.character.part(FRONT_PAW_L)?.box)
@@ -134,13 +135,13 @@ class LookProbeSmokeTest {
             val close = framedCamera(head, toViewer, WIDTH, HEIGHT, CLOSE_MARGIN)
             session.showColorAt(close.pixelsPerUnit)
             session.settled()
-            val fresh = session.state()
+            val fresh = session.probeState()
             for ((modeName, mode) in MODES) {
                 val view = characterView(rect, whole.camera, fresh, PROBE_LOOK, ObjectShading(mode), whole.pixelsPerUnit) { binAt(toViewer) }
-                keep("fennec-$modeName-$viewName", SceneFrame(GROUND, listOf(view)))
+                keep("fennec-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
             val view = characterView(rect, close.camera, fresh, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { binAt(toViewer) }
-            keep("fennec-head-flat-$viewName", SceneFrame(GROUND, listOf(view)))
+            keep("fennec-head-flat-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
         }
         scope.cancel()
         assertEquals(emptyList(), errors)
@@ -149,7 +150,7 @@ class LookProbeSmokeTest {
     @Test
     fun theEyeSwitchesVersionsWithHysteresisOnASweep() {
         val session = session()
-        val state = session.state()
+        val state = session.probeState()
         val head = state.character.parts.filter { it.id == HEAD || it.id == EAR_L || it.id == EAR_R }
         val tile = WIDTH / SWEEP_COLUMNS
         var held: CameraBin? = null
@@ -157,7 +158,7 @@ class LookProbeSmokeTest {
         val views = List(SWEEP_TILES) { i ->
             val half = SWEEP_TILES / 2
             val degrees = if (i < half) SWEEP_LAST_DEGREES * i / (half - 1) else SWEEP_LAST_DEGREES * (SWEEP_TILES - 1 - i) / (half - 1)
-            val toViewer = azimuth(degrees)
+            val toViewer = probeAzimuth(degrees)
             val rect = PixelRect((i % SWEEP_COLUMNS) * tile, (i / SWEEP_COLUMNS) * tile, tile, tile)
             val framed = framedCamera(head, toViewer, tile, tile, CLOSE_MARGIN)
             val bin = binAt(toViewer, held)
@@ -165,7 +166,7 @@ class LookProbeSmokeTest {
             shown += bin
             characterView(rect, framed.camera, state, PROBE_LOOK, ObjectShading(), framed.pixelsPerUnit) { bin }
         }
-        keep("fennec-head-sweep", SceneFrame(GROUND, views), WIDTH, tile * (SWEEP_TILES / SWEEP_COLUMNS))
+        keep("fennec-head-sweep", SceneFrame(PROBE_GROUND, views), WIDTH, tile * (SWEEP_TILES / SWEEP_COLUMNS))
         assertEquals(setOf(BIN_FRONT, BIN_THREE_QUARTER, BIN_SIDE), shown.toSet())
         assertEquals(BIN_FRONT, shown.first())
         assertEquals(BIN_FRONT, shown.last())

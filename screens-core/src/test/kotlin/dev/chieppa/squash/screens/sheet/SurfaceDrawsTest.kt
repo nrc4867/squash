@@ -49,6 +49,15 @@ class SurfaceDrawsTest {
     }
 
     @Test
+    fun aFadingCutCarriesItsOpacitiesToItsLayerAndASolidOneNone() {
+        val alphas = FloatArray(0)
+        val fading = SlottedCut(fur, PatchCut("body", RenderMesh(FloatArray(0), IntArray(0)), FloatArray(0), FloatArray(0), alphas))
+        val layers = draw(PartColor(null, listOf(layer(fur), fading))).layers
+        assertEquals(null, layers[0].alphas)
+        assertTrue(layers[1].alphas === alphas)
+    }
+
+    @Test
     fun aFarSideAndTwoToneReachBothTheBaseAndItsLayers() {
         val near = draw(PartColor(fur, listOf(layer(fur))), shading = ObjectShading(Shading.TWO_TONE), side = BodySide.POSITIVE_Z)
         val far = draw(PartColor(fur, listOf(layer(fur))), shading = ObjectShading(Shading.TWO_TONE), side = BodySide.NEGATIVE_Z)

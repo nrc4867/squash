@@ -33,7 +33,7 @@ data class ResolvedMark(
 
 data class ResolvedRegion(val id: RegionId, val border: List<ResolvedPoint>, val slot: SlotName, val ink: Boolean)
 
-data class ResolvedBrushStroke(val id: BrushStrokeId, val points: List<ResolvedPoint>, val slot: SlotName, val radius: Float)
+data class ResolvedBrushStroke(val id: BrushStrokeId, val points: List<ResolvedPoint>, val slot: SlotName, val radius: Float, val softness: Float = 0f)
 
 /** What an expression gives the mark groups a part holds, by group and role. */
 data class ResolvedExpression(val id: ExpressionId, val name: String, val marks: Map<MarkGroupId, Map<MarkRole, List<ResolvedMark>>>)
