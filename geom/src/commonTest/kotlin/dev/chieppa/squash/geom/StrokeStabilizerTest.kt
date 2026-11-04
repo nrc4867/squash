@@ -34,4 +34,28 @@ class StrokeStabilizerTest {
         assertTrue(anchors.any { (it - Vec2(1f, 0.5f)).magnitude < 6f * TEST_PIXEL }, "a corner near the first turn: $anchors")
         assertTrue(anchors.any { (it - Vec2(1f, -0.5f)).magnitude < 6f * TEST_PIXEL }, "a corner near the second turn: $anchors")
     }
+
+    @Test
+    fun aSpineTrailsItsSamplesAndKeepsThePressureThatDrewEachPoint() {
+        val samples = List(11) { SpineSample(Vec2(it * 0.1f, 0f), it / 10f) }
+        val line = trailedSpine(samples, 0.25f)
+        assertEquals(samples.first(), line.first())
+        assertEquals(0.75f, line.last().point.x, 1e-4f, "the string's length behind the pointer")
+        assertEquals(1f, line.last().pressure)
+        assertEquals(samples.drop(3).map { it.pressure }, line.drop(1).map { it.pressure })
+    }
+
+    @Test
+    fun noStringLeavesASpineAsDrawn() {
+        val samples = List(11) { SpineSample(Vec2(it * 0.1f, 0f)) }
+        assertEquals(samples, trailedSpine(samples, 0f))
+    }
+
+    @Test
+    fun aSpinesFarEndIsTheOneAwayFromThePlane() {
+        val out = listOf(Vec2(0f, 0f), Vec2(1f, 0f))
+        assertEquals(out.last(), spineFarEnd(out, StrokeEnds.CutAtPlane()))
+        assertEquals(out.last(), spineFarEnd(out.reversed(), StrokeEnds.CutAtPlane()))
+        assertEquals(out.first(), spineFarEnd(out.reversed(), StrokeEnds.Closed))
+    }
 }

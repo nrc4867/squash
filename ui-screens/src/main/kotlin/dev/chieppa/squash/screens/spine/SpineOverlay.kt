@@ -10,7 +10,9 @@ import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.geom.ReadSpan
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.screens.draw.StrokeGuide
 import dev.chieppa.squash.screens.draw.StrokeLook
+import dev.chieppa.squash.screens.draw.trailing
 import dev.chieppa.squash.screens.draw.rememberStrokeLook
 import dev.chieppa.squash.screens.edit.CurveLook
 import dev.chieppa.squash.screens.edit.rememberCurveLook
@@ -69,8 +71,8 @@ private fun OverlayBuilder.shading(spans: List<ReadSpan>, camera: LockedCamera, 
     }
 }
 
-/** What release writes in Side: the part shaded, the outline dashed where the build reads it and dropped where it would not, the spine on top. */
-internal fun OverlayBuilder.sidePreview(preview: SpinePreview, camera: LockedCamera, look: SpineLook, plane: StrokeEnds.CutAtPlane?) {
+/** What release writes in Side: the part shaded, the outline dashed where the build reads it and dropped where it would not, the spine on top, with [string] thin between the trailing line and the pointer. */
+internal fun OverlayBuilder.sidePreview(preview: SpinePreview, camera: LockedCamera, look: SpineLook, plane: StrokeEnds.CutAtPlane?, string: Pair<Vec2, Vec2>?) {
     val stroke = look.stroke
     shading(preview.sideSpans, camera, look)
     val line = preview.shape.line.points
@@ -81,7 +83,11 @@ internal fun OverlayBuilder.sidePreview(preview: SpinePreview, camera: LockedCam
     }
     for (run in preview.unread) dashed(run.map { camera.toPixel(it.inPlane()) }, stroke.dropped, stroke.droppedWidth, stroke.droppedDash, stroke.droppedGap)
     for (run in preview.read) dashed(run.map { camera.toPixel(it.inPlane()) }, stroke.connector, stroke.connectorWidth, stroke.connectorDash, stroke.connectorGap)
-    polyline(line.map { it.inPlane() }, camera, stroke.ink, stroke.width)
+    val guide = StrokeGuide(listOf(line), emptyList(), emptyList(), line.first(), false).let {
+        if (string != null) it.trailing(string.first, string.second, camera.planePixel) else it
+    }
+    guide.drawn.forEach { run -> polyline(run.map { it.inPlane() }, camera, stroke.ink, stroke.width) }
+    polyline(guide.string.map { it.inPlane() }, camera, stroke.string, stroke.stringWidth)
     val start = camera.toPixel(line.first().inPlane())
     dot(start, stroke.startRadius + stroke.startRing, stroke.ink)
     dot(start, stroke.startRadius, stroke.startFill)

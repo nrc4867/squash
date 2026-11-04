@@ -97,21 +97,13 @@ fun HintSection(state: AppState) {
 @Composable
 fun StrokeSection(state: AppState) {
     val curves = state.curves
-    val stabilizer = stringResource(Res.string.draw_stabilizer)
-    val guides = stringResource(Res.string.draw_snap_guides)
     val half = stringResource(Res.string.draw_half_outline)
     val snap = stringResource(Res.string.draw_snap_line)
     val close = stringResource(Res.string.draw_close_end)
     val hold = stringResource(Res.string.draw_hold_snap)
     DrawerSection(stringResource(Res.string.draw_stroke)) {
         SmoothRow(state)
-        SettingRow(stabilizer) {
-            Slider(curves.stabilizer, { curves.stabilizer = it }, stabilizer, Modifier.weight(1f).testTag(OutlineDrawerTags.STABILIZER))
-            Readout(
-                stringResource(Res.string.edit_percent, (curves.stabilizer * PERCENT).roundToInt()),
-                Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.STABILIZER_VALUE),
-            )
-        }
+        StabilizerRow(state)
         SettingRow(snap) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.snapLine, { curves.snapLine = it }, snap, Modifier.testTag(OutlineDrawerTags.SNAP_LINE))
@@ -120,9 +112,7 @@ fun StrokeSection(state: AppState) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.closeEnd, { curves.closeEnd = it }, close, Modifier.testTag(OutlineDrawerTags.CLOSE_END))
         }
-        LongLabelRow(guides) {
-            Toggle(curves.snapGuides, { curves.snapGuides = it }, guides, Modifier.testTag(OutlineDrawerTags.SNAP_GUIDES))
-        }
+        SnapGuidesRow(state)
         SettingRow(half) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.halfOutline, { curves.halfOutline = it }, half, Modifier.testTag(OutlineDrawerTags.HALF_OUTLINE))
@@ -144,6 +134,30 @@ internal fun SmoothRow(state: AppState) {
             stringResource(Res.string.edit_percent, (curves.smooth * PERCENT).roundToInt()),
             Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.SMOOTH_VALUE),
         )
+    }
+}
+
+/** How far a stroke trails the pointer, which every stroke tool shares. */
+@Composable
+internal fun StabilizerRow(state: AppState) {
+    val curves = state.curves
+    val stabilizer = stringResource(Res.string.draw_stabilizer)
+    SettingRow(stabilizer) {
+        Slider(curves.stabilizer, { curves.stabilizer = it }, stabilizer, Modifier.weight(1f).testTag(OutlineDrawerTags.STABILIZER))
+        Readout(
+            stringResource(Res.string.edit_percent, (curves.stabilizer * PERCENT).roundToInt()),
+            Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.STABILIZER_VALUE),
+        )
+    }
+}
+
+/** Whether a stroke catches the guides, which every stroke tool shares. */
+@Composable
+internal fun SnapGuidesRow(state: AppState) {
+    val curves = state.curves
+    val guides = stringResource(Res.string.draw_snap_guides)
+    LongLabelRow(guides) {
+        Toggle(curves.snapGuides, { curves.snapGuides = it }, guides, Modifier.testTag(OutlineDrawerTags.SNAP_GUIDES))
     }
 }
 

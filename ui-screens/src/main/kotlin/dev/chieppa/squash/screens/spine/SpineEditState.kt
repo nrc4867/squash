@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.ReadSpan
+import dev.chieppa.squash.geom.SnapGuide
 import dev.chieppa.squash.geom.SpineLine
 import dev.chieppa.squash.geom.SpineSample
 import dev.chieppa.squash.geom.SpineShape
@@ -16,12 +17,18 @@ import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.WidthProfile
 import dev.chieppa.squash.geom.WidthSample
 import dev.chieppa.squash.geom.dragProfile
+import dev.chieppa.squash.geom.guideSnap
 import dev.chieppa.squash.geom.pressureProfile
 import dev.chieppa.squash.geom.readSpans
 import dev.chieppa.squash.geom.readStretches
+import dev.chieppa.squash.geom.spineFarEnd
 import dev.chieppa.squash.geom.spineLine
 import dev.chieppa.squash.geom.spineShape
+import dev.chieppa.squash.geom.stabilizerString
+import dev.chieppa.squash.geom.trailedSpine
 import dev.chieppa.squash.geom.unreadStretches
+import dev.chieppa.squash.screens.draw.SNAP_GUIDE_PIXELS
+import dev.chieppa.squash.screens.sheet.PaneLine
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -55,16 +62,27 @@ class SpinePreview(
     val topSpans: List<ReadSpan>,
 )
 
-private class SpineSetup(val part: PartId, val ends: StrokeEnds, val pixel: Float)
+/** The lines in a pane a spine can catch, and the same lines in its plane. */
+class SpineGuides(val lines: List<PaneLine>, val inPlane: List<SnapGuide>)
+
+private class SpineSetup(val part: PartId, val ends: StrokeEnds, val pixel: Float, val guides: SpineGuides?)
+
+/** The stroke as the settings leave it: its [samples], where the trailing line has got to, and the guides its far end holds to. */
+private class HeldStroke(val samples: List<SpineSample>, val lineEnd: Vec2, val caught: List<PaneLine>)
 
 private class WidthGrip(val half: Float, val distance: Float)
 
 /**
  * A centre stroke and its width, between the press that starts it and the release that writes it. Never saved or undone; the
- * document only ever receives the outlines. [smoothing] is read live, so the drawer's Smooth reshapes a stroke in hand.
+ * document only ever receives the outlines. The pointer's own places are what is kept, and the settings are read live, so the
+ * drawer's [smoothing], [stabilizer] and [snapGuides] reshape a stroke in hand.
  */
 @Stable
-class SpineEditState(private val smoothing: () -> Float) {
+class SpineEditState(
+    private val stabilizer: () -> Float = { 0f },
+    private val snapGuides: () -> Boolean = { false },
+    private val smoothing: () -> Float,
+) {
     private var setup by mutableStateOf<SpineSetup?>(null)
     private val samples = mutableStateListOf<SpineSample>()
     private val drags = mutableStateListOf<WidthSample>()
@@ -94,14 +112,37 @@ class SpineEditState(private val smoothing: () -> Float) {
     /** Whether pressure set this stroke's width, so that nothing is left to drag. */
     val byPen: Boolean get() = samples.any { it.pressure != null }
 
-    private val line: SpineLine? by derivedStateOf {
-        setup?.let { spineLine(samples.toList(), it.ends, it.pixel, smoothing()) }
+    private val held: HeldStroke? by derivedStateOf {
+        val stroke = setup ?: return@derivedStateOf null
+        val tip = samples.lastOrNull() ?: return@derivedStateOf null
+        val trail = trailedSpine(samples.toList(), stabilizerString(stabilizer(), stroke.pixel))
+        val drawn = if (trail.last().point == tip.point) trail else trail + tip
+        val guides = stroke.guides?.takeIf { snapGuides() }
+        val points = drawn.map { it.point }
+        val snap = guideSnap(points, guides?.inPlane.orEmpty(), SNAP_GUIDE_PIXELS * stroke.pixel, only = spineFarEnd(points, stroke.ends))
+        HeldStroke(drawn.map { it.copy(point = snap.moved(it.point)) }, snap.moved(trail.last().point), guides?.let { found -> snap.caught.map(found.lines::get) }.orEmpty())
     }
+
+    private val line: SpineLine? by derivedStateOf {
+        val stroke = setup ?: return@derivedStateOf null
+        held?.let { spineLine(it.samples, stroke.ends, stroke.pixel, smoothing()) }
+    }
+
+    /** The guides the spine's far end holds to. */
+    val caughtGuides: List<PaneLine> get() = held?.caught.orEmpty()
+
+    /** While the stroke grows, the string from where the trailing line has got to on to the pointer; null when the two meet. */
+    val string: Pair<Vec2, Vec2>?
+        get() {
+            val stroke = held?.takeIf { stroking } ?: return null
+            val tip = stroke.samples.last().point
+            return if (stroke.lineEnd == tip) null else stroke.lineEnd to tip
+        }
 
     private val width: WidthProfile? by derivedStateOf {
         val spine = line ?: return@derivedStateOf null
         val fromPlane = ends is StrokeEnds.CutAtPlane
-        val pressures = spine.pressureWidths(samples.toList(), FULL_PRESSURE_HALF_PIXELS * pixel)
+        val pressures = spine.pressureWidths(held?.samples.orEmpty(), FULL_PRESSURE_HALF_PIXELS * pixel)
         when {
             pressures.isNotEmpty() -> pressureProfile(pressures, fromPlane)
             drags.isNotEmpty() -> dragProfile(drags.toList(), fromPlane)
@@ -132,10 +173,10 @@ class SpineEditState(private val smoothing: () -> Float) {
             return 2f * profile.at(if (byPen) 1f else handleAt) / pixel
         }
 
-    /** Starts a stroke for [part], dropping any in hand. */
-    fun begin(part: PartId, ends: StrokeEnds, pixel: Float) {
+    /** Starts a stroke for [part], dropping any in hand. Its far end can catch [guides]. */
+    fun begin(part: PartId, ends: StrokeEnds, pixel: Float, guides: SpineGuides? = null) {
         clear()
-        setup = SpineSetup(part, ends, pixel)
+        setup = SpineSetup(part, ends, pixel, guides)
         stroking = true
     }
 

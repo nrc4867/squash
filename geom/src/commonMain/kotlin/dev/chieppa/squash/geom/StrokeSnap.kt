@@ -37,12 +37,13 @@ class GuideSnap internal constructor(private val warps: List<FamilyWarp>, val ca
  * How [guides] catch a stroke through [samples]: its ends and its widest points square to each set of parallel guides,
  * within [reach] of one. The stroke's coordinate across those guides stretches between what is caught and what is not, so
  * the stroke moves with no break and never by more than [reach]. A function of the samples alone, so a preview and a
- * release of the same samples agree.
+ * release of the same samples agree. Given [only], that one point of the samples alone is caught, and the rest of the stroke
+ * stretches to follow it.
  */
-fun guideSnap(samples: List<Vec2>, guides: List<SnapGuide>, reach: Float): GuideSnap {
+fun guideSnap(samples: List<Vec2>, guides: List<SnapGuide>, reach: Float, only: Vec2? = null): GuideSnap {
     if (samples.isEmpty()) return GuideSnap(emptyList(), emptySet())
     val caught = mutableSetOf<Int>()
-    val warps = families(guides).mapNotNull { family -> familyWarp(samples, family, reach, caught) }
+    val warps = families(guides).mapNotNull { family -> familyWarp(samples, family, reach, only, caught) }
     return GuideSnap(warps, caught)
 }
 
@@ -59,7 +60,7 @@ private fun families(guides: List<SnapGuide>): List<GuideFamily> {
     return families
 }
 
-private fun familyWarp(samples: List<Vec2>, family: GuideFamily, reach: Float, caught: MutableSet<Int>): FamilyWarp? {
+private fun familyWarp(samples: List<Vec2>, family: GuideFamily, reach: Float, only: Vec2?, caught: MutableSet<Int>): FamilyWarp? {
     val normal = family.normal
     var low = Float.POSITIVE_INFINITY
     var high = Float.NEGATIVE_INFINITY
@@ -69,11 +70,12 @@ private fun familyWarp(samples: List<Vec2>, family: GuideFamily, reach: Float, c
         if (at > high) high = at
     }
     val sources = listOf(low, high, samples.first() dotWith normal, samples.last() dotWith normal).distinct().sorted()
+    val catchable = only?.let { it dotWith normal }
     var any = false
     val targets = FloatArray(sources.size) { i ->
         val source = sources[i]
         val nearest = family.offsets.indices.minBy { abs(family.offsets[it] - source) }
-        if (abs(family.offsets[nearest] - source) <= reach) {
+        if ((catchable == null || source == catchable) && abs(family.offsets[nearest] - source) <= reach) {
             caught += family.guides[nearest]
             any = true
             family.offsets[nearest]

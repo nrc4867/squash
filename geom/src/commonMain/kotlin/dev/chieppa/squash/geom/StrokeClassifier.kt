@@ -31,22 +31,26 @@ private const val WORST_STRAY_PIXELS = 3f
 private const val CAPSULE_PREFERENCE = 0.75f
 
 /** A capsule's straight run is at least this share of its radius; shorter is an ellipse. */
-private const val MIN_CAPSULE_RUN_OF_RADIUS = 0.25f
+internal const val MIN_CAPSULE_RUN_OF_RADIUS = 0.25f
 
 /** A uniform ellipse's second moment along a half axis is a quarter of that half axis squared. */
 private const val ELLIPSE_MOMENT_DIVISOR = 4f
 
 /**
  * The clean shape a stroke best reads as, or null if it should stay freehand. [samples] are in the plane and [pixel] is a
- * screen pixel's size there. An open stroke lying along its chord is a line. A stroke that comes back to its start is
- * compared with the ellipse of the same area and moments and with the capsule on the same axis, by how far the stroke
- * strays from each.
+ * screen pixel's size there. An open stroke lying along its chord is a line. With a [plane] that a stroke's ends are joined
+ * to, a stroke that does not come back to its start is read as the shape a cut there would leave, see [shapeAcrossPlane]. A
+ * stroke that comes back to its start is compared with the ellipse of the same area and moments and with the capsule on the
+ * same axis, by how far the stroke strays from each.
  */
-fun classifyStroke(samples: List<Vec2>, pixel: Float): StrokeShape? {
+fun classifyStroke(samples: List<Vec2>, pixel: Float, plane: StrokeEnds.CutAtPlane? = null): StrokeShape? {
     val line = smoothedOpenLine(samples, pixel, READING_SMOOTH) ?: return null
     val length = arcLength(line)
     if (length < MIN_SHAPE_PIXELS * pixel) return null
-    return straightLine(line, length, pixel) ?: closedShape(line, length, pixel)
+    straightLine(line, length, pixel)?.let { return it }
+    val loop = findLoop(line, closeGap(pixel), strokeSpacing(pixel))
+    if (loop == null && plane != null) shapeAcrossPlane(line, plane, pixel)?.let { return it }
+    return closedShape(line, loop, length, pixel)
 }
 
 /** [this] as points for the pipeline a stroke takes, at the spacing strokes are resampled to for a screen pixel of size [pixel]. */
@@ -61,19 +65,20 @@ private fun straightLine(line: List<Vec2>, length: Float, pixel: Float): LineSha
     return if (line.all { distanceToSegment(it, from, to) <= allowed }) LineShape(from, to) else null
 }
 
-private fun closedShape(line: List<Vec2>, length: Float, pixel: Float): StrokeShape? {
-    val spacing = strokeSpacing(pixel)
+private fun closedShape(line: List<Vec2>, loop: StrokeLoop?, length: Float, pixel: Float): StrokeShape? {
     val gap = (line.last() - line.first()).magnitude
-    val ring = findLoop(line, closeGap(pixel), spacing)?.line
-        ?: if (gap <= LOOP_GAP_OF_LENGTH * length) chordLoop(line, spacing).line else return null
+    val ring = loop?.line ?: if (gap <= LOOP_GAP_OF_LENGTH * length) chordLoop(line, strokeSpacing(pixel)).line else return null
     val moments = RingMoments.of(ring) ?: return null
-    val size = sqrt(moments.area)
+    return betterFit(ring, moments.ellipse(line.first()), moments.capsule(ring, line.first()), sqrt(moments.area), pixel)
+}
+
+/** Of [ellipse] and [capsule], the one that [points] of a shape of [size] stray from acceptably; if both, the capsule only when clearly closer. */
+internal fun betterFit(points: List<Vec2>, ellipse: EllipseShape, capsule: CapsuleShape?, size: Float, pixel: Float): StrokeShape? {
+    val spacing = strokeSpacing(pixel)
     fun Stray.fits() = rms <= max(RMS_STRAY_OF_SIZE * size, RMS_STRAY_PIXELS * pixel) &&
         worst <= max(WORST_STRAY_OF_SIZE * size, WORST_STRAY_PIXELS * pixel)
-    val ellipse = moments.ellipse(line.first())
-    val capsule = moments.capsule(ring, line.first())
-    val ellipseStray = Stray.of(ring, ellipse.outline(spacing))
-    val capsuleStray = capsule?.let { Stray.of(ring, it.outline(spacing)) }
+    val ellipseStray = Stray.of(points, ellipse.outline(spacing))
+    val capsuleStray = capsule?.let { Stray.of(points, it.outline(spacing)) }
     return when {
         capsuleStray != null && capsuleStray.fits() && (!ellipseStray.fits() || capsuleStray.rms < CAPSULE_PREFERENCE * ellipseStray.rms) -> capsule
         ellipseStray.fits() -> ellipse
@@ -82,7 +87,7 @@ private fun closedShape(line: List<Vec2>, length: Float, pixel: Float): StrokeSh
 }
 
 /** How far a stroke's points lie from a polyline. */
-private class Stray(val rms: Float, val worst: Float) {
+internal class Stray(val rms: Float, val worst: Float) {
     companion object {
         fun of(points: List<Vec2>, outline: List<Vec2>): Stray {
             var squares = 0f
@@ -98,7 +103,7 @@ private class Stray(val rms: Float, val worst: Float) {
 }
 
 /** A closed polyline's enclosed [area], its centre and principal [axis], and its second area moments along and across that axis. */
-private class RingMoments(
+internal class RingMoments(
     val area: Float,
     val counterClockwise: Boolean,
     val center: Vec2,

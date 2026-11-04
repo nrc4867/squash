@@ -22,6 +22,7 @@ import dev.chieppa.squash.screens.draw.StrokeBench
 import dev.chieppa.squash.screens.draw.StrokeParts
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.TEST_STROKE_LOOK
+import dev.chieppa.squash.screens.edit.edges
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.SheetSelection
@@ -42,6 +43,8 @@ import kotlin.test.assertTrue
 
 private const val PIXEL = 1f / BENCH_SCALE
 private const val SLACK_PIXELS = 4f
+
+private val TOP_TO_GUIDE = edges(0f to 0.1f, 0.4f to 0.1f, 0.4f to -0.1f, 0f to -0.1f)
 
 internal val TEST_SPINE_LOOK = SpineLook(TEST_STROKE_LOOK, TEST_CURVE_LOOK, Color.Blue, 3f, 9f, 3f, 9f, 3f, 2f, 7f, 7f)
 
@@ -79,6 +82,87 @@ class SpineWidthToolTest {
         bench.session.document.value.character.resolved(id)?.outlines?.get(view)
 
     private fun steps(bench: StrokeBench) = bench.session.history.steps.value.done.size
+
+    /** A drawn Top out to x = 0.4, whose end is a guide in Side, and a centre stroke reaching [past] pixels beyond it. */
+    private fun ComposeUiTest.strokeTowardsTopsEnd(bench: StrokeBench, camera: LockedCamera, past: Float) {
+        bench.session.send(SetOutline(StrokeParts.tail.id, View.TOP, TOP_TO_GUIDE))
+        with(bench) { settled() }
+        val reach = 0.4f + past * camera.planePixel
+        pointer(bench, List(61) { camera.toPixel(CurvePoint(reach * it / 60f, 0.02f * sin(it / 20f))) })
+    }
+
+    private fun farEnd(bench: StrokeBench) = assertNotNull(bench.state.spine.preview).shape.line.points.last()
+
+    @Test
+    fun theSpinesFarEndCatchesAGuideAndWritesThere() = withTool(StrokeParts.tail.id) { bench, tool, camera ->
+        bench.state.curves.stabilizer = 0f
+        strokeTowardsTopsEnd(bench, camera, 5f)
+        assertEquals(0.4f, farEnd(bench).x, 1e-3f, "on the guide")
+        assertTrue(bench.state.spine.caughtGuides.isNotEmpty())
+        assertTrue(tool.overlay(View.SIDE, camera).lines.any { it.color == TEST_STROKE_LOOK.caught }, "the guide lights")
+        val end = heldEnd(bench, camera)
+        pointer(bench, listOf(end, end + Offset(4f, 4f)))
+        with(bench) { settled() }
+        val side = assertNotNull(outlineOf(bench, StrokeParts.tail.id, View.SIDE))
+        assertEquals(0.4f, outlineSamples(side).maxOf { it.x }, 2f * camera.planePixel, "written on the guide")
+    }
+
+    @Test
+    fun snapToGuidesOffLeavesTheSpineWhereItWasDrawn() = withTool(StrokeParts.tail.id) { bench, tool, camera ->
+        bench.state.curves.stabilizer = 0f
+        bench.state.curves.snapGuides = false
+        strokeTowardsTopsEnd(bench, camera, 5f)
+        assertEquals(0.4f + 5f * camera.planePixel, farEnd(bench).x, 1e-3f)
+        assertTrue(tool.overlay(View.SIDE, camera).lines.none { it.color == TEST_STROKE_LOOK.caught })
+    }
+
+    @Test
+    fun aGrowingSpineTrailsThePointerOnAStringThatReleaseTakesUp() = runComposeUiTest {
+        val bench = StrokeBench(tilted = true)
+        with(bench) {
+            settled()
+            state.selectedPart.value = StrokeParts.tail.id
+            state.curves.stabilizer = 1f
+            state.curves.snapGuides = false
+            val tool = SpineWidthTool(state, TEST_SPINE_LOOK)
+            working = tool
+            val camera = camera(part(StrokeParts.tail.id), View.SIDE)
+            showPanes(camera)
+            val path = centre.map(camera::toPixel)
+            onNodeWithTag(BENCH_TAG).performMouseInput {
+                moveTo(path.first())
+                press()
+                path.drop(1).forEach { moveTo(it) }
+            }
+            waitForIdle()
+            val thin = tool.overlay(View.SIDE, camera).lines.filter { it.color == TEST_STROKE_LOOK.string && it.width == TEST_STROKE_LOOK.stringWidth }
+            assertTrue(thin.isNotEmpty(), "the string shows")
+            assertEquals(24f, (thin.last().to - thin.first().from).getDistance(), 3f, "as long as the slider says")
+            assertTrue((thin.last().to - path.last()).getDistance() < 1f, "and ends at the pointer")
+            onNodeWithTag(BENCH_TAG).performMouseInput { release() }
+            waitForIdle()
+            assertTrue(tool.overlay(View.SIDE, camera).lines.none { it.color == TEST_STROKE_LOOK.string && it.width == TEST_STROKE_LOOK.stringWidth }, "release takes it up")
+            assertEquals(centre.last().x, farEnd(bench).x, 2f * camera.planePixel, "the stroke finishes at the pointer")
+        }
+        bench.close()
+    }
+
+    @Test
+    fun theWidthDragIsNotStabilized() = withTool(StrokeParts.tail.id) { bench, _, camera ->
+        bench.state.curves.stabilizer = 1f
+        pointer(bench, centre.map(camera::toPixel))
+        val before = assertNotNull(bench.state.spine.widthPixels)
+        val end = heldEnd(bench, camera)
+        onNodeWithTag(BENCH_TAG).performMouseInput {
+            moveTo(end)
+            press()
+            moveTo(end + Offset(0f, 6f))
+        }
+        waitForIdle()
+        assertNotEquals(before, bench.state.spine.widthPixels, "six pixels moves it, well inside a full string")
+        onNodeWithTag(BENCH_TAG).performMouseInput { release() }
+        waitForIdle()
+    }
 
     @Test
     fun aMouseStrokeWaitsForItsWidthAndItsDragWritesBothOutlinesAsOneStep() = withTool(StrokeParts.tail.id) { bench, tool, camera ->

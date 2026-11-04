@@ -19,6 +19,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.draw.OutlineDrawerTags
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.spine.SpineDrawerTags
@@ -87,6 +88,23 @@ class SpineFlowTest {
         onNodeWithTag(SpineDrawerTags.PRESSURE).assertTextContains("width, this tool only")
         onNodeWithTag(SpineDrawerTags.PEN_WIDTH).assertTextContains("drag or pen")
         onNodeWithTag(SpineDrawerTags.WIDTH).assertTextContains("none")
+        onNodeWithText("Smooth").assertExists()
+        onNodeWithText("Stabilizer").assertExists()
+        onNodeWithTag(OutlineDrawerTags.STABILIZER_VALUE).assertTextContains("20%")
+        onNodeWithText("Snap to guides").assertExists()
+        assertEquals(0, onAllNodesWithText("Hold to snap").fetchSemanticsNodes().size, "Draw outline's alone")
+    }
+
+    @Test
+    fun theDrawersRowsShareDrawOutlinesSettings() = runComposeUiTest {
+        val state = AppState(shipped)
+        workspace(state)
+        onNodeWithTag(OutlineDrawerTags.SNAP_GUIDES).performClick()
+        waitForIdle()
+        assertFalse(state.curves.snapGuides)
+        state.curves.stabilizer = 0.5f
+        waitForIdle()
+        onNodeWithTag(OutlineDrawerTags.STABILIZER_VALUE).assertTextContains("50%")
     }
 
     @Test

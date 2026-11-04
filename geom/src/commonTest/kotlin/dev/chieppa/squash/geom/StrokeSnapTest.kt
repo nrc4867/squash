@@ -46,6 +46,17 @@ class StrokeSnapTest {
     }
 
     @Test
+    fun onlyTheNamedPointIsCaughtAndTheStartHolds() {
+        val line = through(0f to 0f, 0.5f to 0.4f, 1f to 0f)
+        val guides = listOf(SnapGuide(Vec2(1.02f, -1f), Vec2(1.02f, 1f)), SnapGuide(Vec2(0f, 0.42f), Vec2(2f, 0.42f)))
+        val snap = guideSnap(line, guides, 8f * TEST_PIXEL, only = line.last())
+        assertEquals(setOf(0), snap.caught, "the far end's guide, and not the one by the stroke's widest point")
+        assertEquals(1.02f, snap.moved(line.last()).x, 1e-4f)
+        assertEquals(line.first(), snap.moved(line.first()))
+        assertEquals(0.4f, line.map(snap::moved).maxOf { it.y }, 1e-3f)
+    }
+
+    @Test
     fun aSnappedStrokeReleasesOnItsGuide() {
         val edge = arc(1f, 0f, 0.5f, PI, from = -PI / 2.0 + PI / 2.0)
         val snap = guideSnap(edge, listOf(SnapGuide(Vec2(1.53f, -2f), Vec2(1.53f, 2f))), 8f * TEST_PIXEL)

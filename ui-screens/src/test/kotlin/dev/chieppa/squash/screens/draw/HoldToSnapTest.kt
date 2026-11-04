@@ -155,6 +155,120 @@ class HoldToSnapTest {
         assertTrue(path.xs.all { it >= -1e-3f }, "nothing behind the plane")
     }
 
+    /** A slightly wobbly leg's U in the plane: in along y = [half] from x = [from], round a cap reaching x = [far], back to x = [backTo]. */
+    private fun wobblyU(camera: LockedCamera, far: Float, half: Float, from: Float, backTo: Float = from): List<Offset> {
+        val turn = far - half
+        val inward = List(30) { CurvePoint(from + (turn - from) * it / 30f, half) }
+        val cap = List(30) {
+            val angle = PI / 2.0 - PI * it / 30.0
+            CurvePoint(turn + half * cos(angle).toFloat(), half * sin(angle).toFloat())
+        }
+        val back = List(31) { CurvePoint(turn + (backTo - turn) * it / 30f, -half) }
+        return (inward + cap + back).mapIndexed { i, p -> camera.toPixel(p) + Offset(0f, if (i == 0 || i == 90) 0f else 1.2f * sin(i * 1.7f)) }
+    }
+
+    private fun halfOfSpanY(curve: OutlineCurve) = curve.toPath().flatten().ys.let { (it.max() - it.min()) / 2f }
+
+    @Test
+    fun aHeldOpenUAcrossThePlaneBecomesTheCleanShapeCutThereAsOneStep() = bench(View.SIDE) { bench, camera ->
+        mainClock.autoAdvance = false
+        val before = undoSteps(bench)
+        pressAlong(wobblyU(camera, 0.45f, 0.1f, -0.05f))
+        val drawn = live(bench)
+        rest()
+        val shape = live(bench)
+        assertNotEquals(drawn, shape, "the U snapped")
+        assertEquals(shape.first(), shape.last(), "to the whole shape, which the cut then opens")
+        let_go()
+        val curve = bench.outline(StrokeParts.leftLeg.id, View.SIDE)
+        assertEquals(before + 1, undoSteps(bench))
+        val path = curve.toPath().flatten()
+        assertEquals(0f, path.xs.first())
+        assertEquals(0f, path.xs.last())
+        assertTrue(path.xs.all { it >= -1e-3f }, "nothing behind the plane")
+        assertEquals(0.45f, path.xs.max(), NEAR_PIXELS * 2f * camera.planePixel, "it reaches as far as the U")
+        assertEquals(0.1f, halfOfSpanY(curve), NEAR_PIXELS * 2f * camera.planePixel, "and is as wide")
+        assertMatches(curve, shape.filter { it.x >= 0f }, camera)
+    }
+
+    @Test
+    fun aHeldUGrowsWithThePointerAroundThePlane() = bench(View.SIDE) { bench, camera ->
+        mainClock.autoAdvance = false
+        val stroke = wobblyU(camera, 0.45f, 0.1f, -0.05f)
+        pressAlong(stroke)
+        rest()
+        val small = live(bench)
+        val centre = camera.toPixel(CurvePoint(0f, 0f))
+        moveTo(centre + (stroke.last() - centre) * 1.5f)
+        val large = live(bench)
+        assertEquals(1.5f, large.spanY() / small.spanY(), 0.1f)
+        let_go()
+        val path = bench.outline(StrokeParts.leftLeg.id, View.SIDE).toPath().flatten()
+        assertEquals(0f, path.xs.first())
+        assertEquals(0f, path.xs.last())
+    }
+
+    @Test
+    fun aHeldUReadsInTopToo() = bench(View.TOP) { bench, camera ->
+        mainClock.autoAdvance = false
+        pressAlong(wobblyU(camera, 0.45f, 0.1f, -0.05f))
+        val drawn = live(bench)
+        rest()
+        assertNotEquals(drawn, live(bench))
+        let_go()
+        val path = bench.outline(StrokeParts.leftLeg.id, View.TOP).toPath().flatten()
+        assertEquals(0f, path.xs.first())
+        assertEquals(0f, path.xs.last())
+    }
+
+    @Test
+    fun aHeldUOverADrawnOutlineRedrawsItAsOneStep() = bench(View.SIDE) { bench, camera ->
+        val drawn = PlaneStroke(View.SIDE, 0.25f, 0f, 0.3f, 0.12f)
+        with(bench) { stroke(drawn.points().map(camera::toPixel)) }
+        with(bench) { settled() }
+        val steps = undoSteps(bench)
+        mainClock.autoAdvance = false
+        pressAlong(wobblyU(camera, 0.6f, 0.08f, -0.05f))
+        rest()
+        let_go()
+        assertEquals(steps + 1, undoSteps(bench))
+        val path = bench.outline(StrokeParts.leftLeg.id, View.SIDE).toPath().flatten()
+        assertEquals(0.6f, path.xs.max(), NEAR_PIXELS * 2f * camera.planePixel)
+        assertEquals(0f, path.xs.first())
+        assertEquals(0f, path.xs.last())
+    }
+
+    @Test
+    fun aHeldUShortOfThePlaneStaysAsDrawn() = bench(View.SIDE) { bench, camera ->
+        mainClock.autoAdvance = false
+        pressAlong(wobblyU(camera, 0.45f, 0.1f, 0.12f))
+        val drawn = live(bench)
+        rest()
+        assertEquals(drawn, live(bench))
+        let_go()
+    }
+
+    @Test
+    fun aHeldUWithCloseEndOffStaysAsDrawn() = bench(View.SIDE) { bench, camera ->
+        mainClock.autoAdvance = false
+        bench.state.curves.closeEnd = false
+        pressAlong(wobblyU(camera, 0.45f, 0.1f, -0.05f))
+        val drawn = live(bench)
+        rest()
+        assertEquals(drawn, live(bench))
+        let_go()
+    }
+
+    @Test
+    fun aHeldUInFrontStaysAsDrawn() = bench(View.FRONT) { bench, camera ->
+        mainClock.autoAdvance = false
+        pressAlong(wobblyU(camera, 0.45f, 0.1f, -0.05f))
+        val drawn = live(bench)
+        rest()
+        assertEquals(drawn, live(bench))
+        let_go()
+    }
+
     @Test
     fun aRestingPointerThatJittersStillSnaps() = bench(View.FRONT) { bench, _ ->
         mainClock.autoAdvance = false

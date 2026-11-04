@@ -12,6 +12,8 @@ import dev.chieppa.squash.document.anchors
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.HintSection
 import dev.chieppa.squash.screens.draw.SmoothRow
+import dev.chieppa.squash.screens.draw.SnapGuidesRow
+import dev.chieppa.squash.screens.draw.StabilizerRow
 import dev.chieppa.squash.screens.edit.Readout
 import dev.chieppa.squash.screens.sheet.pixelsLabel
 import dev.chieppa.squash.screens.shell.VIEW_ORDER
@@ -50,7 +52,11 @@ object SpineDrawerTags {
 /** The Spine and width drawer's sections: Stroke, Width, Hint, Pen and the outlines it writes. */
 @Composable
 fun SpineSections(state: AppState, outlines: Map<View, OutlineCurve>) {
-    DrawerSection(stringResource(Res.string.draw_stroke)) { SmoothRow(state) }
+    DrawerSection(stringResource(Res.string.draw_stroke)) {
+        SmoothRow(state)
+        StabilizerRow(state)
+        SnapGuidesRow(state)
+    }
     WidthSection(state)
     HintSection(state)
     PenSection()

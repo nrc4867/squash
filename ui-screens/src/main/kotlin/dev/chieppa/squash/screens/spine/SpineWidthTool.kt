@@ -17,10 +17,13 @@ import dev.chieppa.squash.geom.SpineSample
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.draw.caughtGuides
 import dev.chieppa.squash.screens.draw.followToRelease
+import dev.chieppa.squash.screens.draw.guideInPlane
 import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.draw.penPressure
 import dev.chieppa.squash.screens.draw.strokeEnds
+import dev.chieppa.squash.screens.draw.strokeSnapLines
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -35,7 +38,8 @@ private fun CurvePoint.vec() = Vec2(x, y)
  * Spine and width: a centre stroke in Side, its thickness set by a pen's pressure as it draws or by a drag across it after, and
  * on release the Side and Top outlines through one [SetOutlines], so one step to undo. A pen's release writes; a mouse's stroke
  * waits for its drag, whose release writes, and a press clear of the shape starts over. The spine is not kept: what remains
- * are ordinary curves. Only Side takes a stroke, since the width's reference is the spine drawn there.
+ * are ordinary curves. Only Side takes a stroke, since the width's reference is the spine drawn there. The stroke trails the
+ * pointer and its far end catches the guides as the drawer says; the width drag answers to the pointer alone.
  */
 class SpineWidthTool(private val state: AppState, var look: SpineLook) : PaneTool {
     private val spine get() = state.spine
@@ -82,7 +86,8 @@ class SpineWidthTool(private val state: AppState, var look: SpineLook) : PaneToo
         val part = state.selectedPart.value ?: return
         val session = state.session.value ?: return
         val instance = session.document.value.character.part(part) ?: return
-        spine.begin(part, strokeEnds(View.SIDE, session.templates[instance.template].openEnd), camera.planePixel)
+        val lines = state.strokeSnapLines(camera)
+        spine.begin(part, strokeEnds(View.SIDE, session.templates[instance.template].openEnd), camera.planePixel, SpineGuides(lines, lines.map(camera::guideInPlane)))
         state.curves.drawing = View.SIDE
         var pressure = penPressure(down)
         state.curves.penPressure = pressure
@@ -128,7 +133,8 @@ class SpineWidthTool(private val state: AppState, var look: SpineLook) : PaneToo
         val preview = spine.preview ?: return ViewportOverlay.Empty
         return when (view) {
             View.SIDE -> buildOverlay {
-                sidePreview(preview, camera, look, spine.ends as? StrokeEnds.CutAtPlane)
+                sidePreview(preview, camera, look, spine.ends as? StrokeEnds.CutAtPlane, spine.string)
+                caughtGuides(spine.caughtGuides, look.stroke)
                 if (!spine.stroking && !spine.byPen) widthHandle(preview.shape.across(spine.handleAt), spine.handleLeft, camera, look)
             }
             View.TOP -> buildOverlay { topPreview(preview, camera, look) }

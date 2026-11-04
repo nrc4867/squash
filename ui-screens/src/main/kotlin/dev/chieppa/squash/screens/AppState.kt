@@ -81,7 +81,7 @@ class AppState(
     val curves = CurveEditState()
 
     /** The Spine and width tool's stroke, until it is written or dropped. */
-    val spine = SpineEditState { curves.smooth }
+    val spine = SpineEditState({ curves.stabilizer }, { curves.snapGuides }) { curves.smooth }
 
     /** What Pick a part type has chosen so far. */
     val pickedSocket = MutableStateFlow<OpenSocket?>(null)

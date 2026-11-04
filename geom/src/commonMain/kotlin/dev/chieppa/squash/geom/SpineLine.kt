@@ -48,6 +48,25 @@ class SpineLine internal constructor(val points: List<Vec2>, val drawnAt: FloatA
     }
 }
 
+/** The line trailing [samples] on a string of length [string], each point with the pressure of the sample that drew it there. The pointer's last place is on it only with the string taut. */
+fun trailedSpine(samples: List<SpineSample>, string: Float): List<SpineSample> {
+    if (samples.isEmpty()) return samples
+    val line = mutableListOf(samples.first())
+    for (sample in samples.drop(1)) {
+        val next = trailed(line.last().point, sample.point, string)
+        if (next != line.last().point) line += SpineSample(next, sample.pressure)
+    }
+    return line
+}
+
+/** Whether a stroke through [points] runs towards [plane], so that its start is the spine's far end. */
+private fun drawnTowards(points: List<Vec2>, plane: StrokeEnds.CutAtPlane?): Boolean =
+    plane != null && abs(points.first().x - plane.plane) > abs(points.last().x - plane.plane)
+
+/** The end of a stroke through [points] that is the far end of the spine [spineLine] makes of it. */
+fun spineFarEnd(points: List<Vec2>, ends: StrokeEnds): Vec2 =
+    if (drawnTowards(points, ends as? StrokeEnds.CutAtPlane)) points.first() else points.last()
+
 /**
  * [samples] as a centre line, smoothed as a stroke is, or null for a stroke too short to be one or with nothing on the kept
  * side of the plane. With [ends] open at a plane the line starts on it: a stroke drawn towards the plane is turned round, what
@@ -56,8 +75,9 @@ class SpineLine internal constructor(val points: List<Vec2>, val drawnAt: FloatA
 fun spineLine(samples: List<SpineSample>, ends: StrokeEnds, pixel: Float, smoothing: Float = DEFAULT_STROKE_SMOOTH): SpineLine? {
     if (samples.size < 2) return null
     val plane = ends as? StrokeEnds.CutAtPlane
-    val reversed = plane != null && abs(samples.first().point.x - plane.plane) > abs(samples.last().point.x - plane.plane)
-    val raw = samples.map { it.point }.let { if (reversed) it.reversed() else it }
+    val points = samples.map { it.point }
+    val reversed = drawnTowards(points, plane)
+    val raw = if (reversed) points.reversed() else points
     val line = smoothedOpenLine(raw, pixel, smoothing) ?: return null
     val total = arcLength(raw)
     val spacing = strokeSpacing(pixel)

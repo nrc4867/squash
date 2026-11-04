@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.smoke
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -242,6 +244,8 @@ class SpineSmokeTest {
         strokeAndHoldWidth(sheetPaneTag(SheetPane.SIDE), bench, camera, tailStroke, DRAG_PIXELS)
         val input = panes(bench, "spine-sheet")
         assertTrue(input.toolOverlays[View.TOP]?.lines.orEmpty().isNotEmpty(), "Top shows what it will write")
+        onNodeWithText("Stabilizer").assertIsDisplayed()
+        onNodeWithText("Snap to guides").assertIsDisplayed()
         keepImage(onNodeWithTag(ShellTags.WORKSPACE).captureToImage().argbPixels(), WIDTH, "spine-sheet-frame")
         onNodeWithTag(sheetPaneTag(SheetPane.SIDE)).performMouseInput { release() }
         waitForIdle()

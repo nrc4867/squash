@@ -6,6 +6,7 @@ import dev.chieppa.squash.geom.PartExtents
 import dev.chieppa.squash.geom.SnapGuide
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneLine
 import dev.chieppa.squash.screens.sheet.lineAcross
@@ -36,6 +37,13 @@ fun strokeSnapLines(camera: LockedCamera, outlines: Map<View, OutlineCurve>, ext
         if (camera.view == View.SIDE) across(axes.up, front.map { it.y })
         if (camera.view == View.TOP) across(axes.side, front.map { it.x })
     }
+}
+
+/** The lines in [camera]'s pane a stroke on the selected part can catch, from its other outlines and its built extents. */
+internal fun AppState.strokeSnapLines(camera: LockedCamera): List<PaneLine> {
+    val others = View.entries.filter { it != camera.view }.mapNotNull { other -> editedOutline(other)?.let { other to it } }.toMap()
+    val extents = selectedPart.value?.let { id -> session.value?.assembly?.output?.value?.part(id)?.surface?.extents }
+    return strokeSnapLines(camera, others, extents)
 }
 
 /** [line] in [camera]'s plane, where a stroke's samples lie. */

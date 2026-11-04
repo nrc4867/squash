@@ -22,6 +22,7 @@ import dev.chieppa.squash.document.sections
 import dev.chieppa.squash.geom.OversketchOptions
 import dev.chieppa.squash.geom.OversketchPreview
 import dev.chieppa.squash.geom.SnapGuide
+import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.geom.StrokeMarkKind
 import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.geom.StrokePreview
@@ -119,7 +120,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
             strokeCamera = camera
             strokeView = view
             state.curves.penPressure = penPressure(down)
-            snapLines = strokeSnapLines(camera, otherOutlines(view), selectedExtents())
+            snapLines = state.strokeSnapLines(camera)
             snapGuides = snapLines.map(camera::guideInPlane)
             val modifiers = currentEvent.keyboardModifiers
             capture.begin(camera.toPlane(down.position).vec(), stabilizerString(state.curves.stabilizer, camera.planePixel), modifiers.isAltPressed, modifiers.isShiftPressed)
@@ -153,12 +154,6 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
 
     private fun CurvePoint.vec() = Vec2(x, y)
 
-    private fun otherOutlines(view: View): Map<View, OutlineCurve> =
-        View.entries.filter { it != view }.mapNotNull { other -> outline(other)?.let { other to it } }.toMap()
-
-    private fun selectedExtents() =
-        state.selectedPart.value?.let { id -> state.session.value?.assembly?.output?.value?.part(id)?.surface?.extents }
-
     private fun add(point: CurvePoint) {
         val shape = held
         if (shape != null) shape.pointer = point else capture.moveTo(point.vec())
@@ -167,7 +162,8 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
     private fun snap(camera: LockedCamera) {
         if (!state.curves.holdSnap || held != null) return
         val samples = capture.samples
-        val shape = classifyStroke(samples, camera.planePixel) ?: return
+        val plane = selectedTemplate()?.takeIf { state.curves.closeEnd }?.let { strokeEnds(camera.view, it.openEnd) as? StrokeEnds.CutAtPlane }
+        val shape = classifyStroke(samples, camera.planePixel, plane) ?: return
         held = HeldShape(shape, samples.last().let { CurvePoint(it.x, it.y) })
     }
 
