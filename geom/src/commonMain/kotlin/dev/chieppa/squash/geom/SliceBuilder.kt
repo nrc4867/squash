@@ -7,13 +7,17 @@ import kotlin.math.sqrt
 private const val CAP_RING_DIVISOR = 6
 private const val MIN_CAP_RINGS = 2
 
+/** How large a run's first ring is, where it starts inside another run. */
+private const val COVERED_START_SCALE = 0.8f
+
 /** How a run of slices ends. */
 enum class EndClosure { OPEN, FLAT, ROUND, POINTED }
 
 /**
  * A run of slices along [axis] between [uStart] and [uEnd]. Without [views], [radius], [taper], [widthRatio] and [drop]
  * size them; with [views], the drawing does. [roundRings] sets how far a round end reaches when nothing is drawn.
- * A ring on an open end faces [socketNormal].
+ * A ring on an open end faces [socketNormal]. [startCovered] and [endCovered] say another run of the part covers that end,
+ * which is how a drawing makes the two read as one surface.
  */
 data class TubeSpec(
     val name: String,
@@ -34,6 +38,8 @@ data class TubeSpec(
     val socketNormal: Vec3? = null,
     val views: ViewSizing? = null,
     val front: FrontSection? = null,
+    val startCovered: Boolean = false,
+    val endCovered: Boolean = false,
 )
 
 /**
@@ -66,14 +72,23 @@ object SliceBuilder {
 
     private fun sectionAt(spec: TubeSpec, u: Float) = spec.front?.at(u, spec.section) ?: spec.section
 
-    /** A drawing closes the ends of the part itself, so only their last ring closes; a run's inner end still rounds off. */
+    /**
+     * A drawing closes the ends of the part itself, so only their last ring closes. Where one run hands over to another, the
+     * earlier keeps the drawing's size up to its end and the later rises to it from inside, so no end stands proud of the
+     * surface. A run's inner end that nothing covers still rounds off.
+     */
     private fun drawnSlices(spec: TubeSpec, views: ViewSizing, us: List<Float>): List<Slice> {
         val capRings = defaultCapRings(us.size)
         fun scale(fromEnd: Int, reachesPartEnd: Boolean, closure: EndClosure) =
             if (reachesPartEnd) drawnEndScale(fromEnd, closure) else endScale(fromEnd, capRings, closure)
+        val startScale = { ring: Int ->
+            if (spec.startCovered) risingScale(ring, capRings) else scale(ring, spec.uStart <= 0f, spec.startClosure)
+        }
+        val endScale = { fromEnd: Int ->
+            if (spec.endCovered) drawnEndScale(fromEnd, EndClosure.FLAT) else scale(fromEnd, spec.uEnd >= 1f, spec.endClosure)
+        }
         return us.mapIndexed { ring, u ->
-            val closure = scale(ring, spec.uStart <= 0f, spec.startClosure) *
-                scale(us.size - 1 - ring, spec.uEnd >= 1f, spec.endClosure)
+            val closure = startScale(ring) * endScale(us.size - 1 - ring)
             views.slice(u, sectionAt(spec, u), closure)
         }
     }
@@ -172,6 +187,13 @@ object SliceBuilder {
     /** The scale of the ring [fromEnd] rings from an end the drawing shapes: only a closed end's last ring closes. */
     private fun drawnEndScale(fromEnd: Int, closure: EndClosure): Float =
         if (closure != EndClosure.OPEN && fromEnd == 0) 0f else 1f
+
+    /** The scale of the ring [fromEnd] rings from an end inside another run, closed there and rising to full size. */
+    private fun risingScale(fromEnd: Int, capRings: Int): Float {
+        if (fromEnd == 0) return 0f
+        if (fromEnd >= capRings) return 1f
+        return COVERED_START_SCALE + (1f - COVERED_START_SCALE) * fromEnd / capRings
+    }
 
     /** The scale of the ring [fromEnd] rings away from an end closed by [closure]. */
     private fun endScale(fromEnd: Int, capRings: Int, closure: EndClosure): Float {

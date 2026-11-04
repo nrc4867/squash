@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.character.block.Block
 import dev.chieppa.squash.character.model.CapShape
 import dev.chieppa.squash.character.model.End
@@ -74,6 +75,10 @@ class BuildContext(
             floatArrayOf(0f, at, 1f),
         )
     }
+
+    /** Whether a run other than [own] covers [u]. */
+    fun covered(u: Float, own: Span): Boolean =
+        blocks.any { block -> block.run()?.let { it != own && u >= it.start && u <= it.end } == true }
 
     /** How a run that stops at [u] closes [end]: open on the socket plane, else with that end's cap, else flat. */
     fun closure(end: End, u: Float): EndClosure {

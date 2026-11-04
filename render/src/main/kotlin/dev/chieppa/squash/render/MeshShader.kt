@@ -3,7 +3,7 @@ package dev.chieppa.squash.render
 /** Floats in [MESH_WGSL]'s `Draw` uniform. */
 internal const val DRAW_FLOATS = 56
 
-/** WGSL for [MeshPass]: flat and two-tone fills, an outline as the mesh's back faces pushed out by a pixel width, each in its slice of the depth buffer and at its opacity. */
+/** WGSL for [MeshPass]: flat and two-tone fills, an outline as the mesh's back faces pushed out by a pixel width, set slightly behind its surface, each in its slice of the depth buffer and at its opacity. */
 internal const val MESH_WGSL = """
 struct Draw {
     view_projection: mat4x4<f32>,
@@ -17,6 +17,10 @@ struct Draw {
 };
 
 @group(0) @binding(0) var<uniform> draw: Draw;
+
+// How far an outline sits behind its surface, in body units, so a line shows where a shape stands clear of what is behind it
+// and not where it barely breaks a surface.
+const OUTLINE_SINK: f32 = 0.02;
 
 fn in_layer(clip: vec4<f32>) -> vec4<f32> {
     let layer = draw.depth_scale_offset_and_opacity;
@@ -47,7 +51,12 @@ fn fs_fill(in: FillOut) -> @location(0) vec4<f32> {
 
 @vertex
 fn vs_outline(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) -> @builtin(position) vec4<f32> {
-    let clip = draw.view_projection * draw.model * vec4<f32>(position, 1.0);
+    let projection = draw.view_projection;
+    let away = normalize(vec3<f32>(projection[0][2], projection[1][2], projection[2][2])) * OUTLINE_SINK;
+    let world = draw.model * vec4<f32>(position, 1.0);
+    let at = projection * world;
+    let behind = projection * (world + vec4<f32>(away, 0.0));
+    let clip = vec4<f32>(at.xy, behind.z / behind.w * at.w, at.w);
     let viewport = draw.outline_width_and_viewport.yz;
     let along = (draw.view_projection * draw.model * vec4<f32>(normal, 0.0)).xy * viewport;
     let reach = length(along);

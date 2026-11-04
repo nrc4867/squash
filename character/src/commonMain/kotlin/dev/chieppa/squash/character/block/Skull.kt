@@ -58,6 +58,8 @@ data class Skull(
                     socketNormal = ctx.axes.along,
                     views = ctx.views,
                     front = ctx.front,
+                    startCovered = ctx.covered(u.start, u),
+                    endCovered = ctx.covered(u.end, u),
                 ),
             ),
         )
