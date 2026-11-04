@@ -9,7 +9,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Part template | The recipe for a part type: axis, open end, ring and segment counts, blocks, parameter ranges, joints, sockets, tagged areas, which view sets what | Shipped data file, versioned |
 | Body plan | A graph of sockets from a root spine, pair ids for mirrored sockets, the rest pose | Shipped preset, versioned |
 | Character | Body plan, part instances, the data each mirrored pair shares (outlines and params by pair id), slots, palette, face sets, and the library version it came from | Document; also its own library file |
-| Part instance | Template id and version, the socket it sits on, its own outlines and params while unpaired, pair id, side and that side's overrides | Document |
+| Part instance | Template id and version, the socket it sits on, its own outlines and params while unpaired, pair id, side and that side's overrides, base palette slot, grain | Document |
 | Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
 | Mark | A polyline of anchors, a width profile, an ink flag, per-angle versions keyed by camera bin, and the expression set it belongs to | Document |
 | Patches | One or more named surfaces per part, each a fixed grid of points, closed in v (a tube) or open (a sheet); a swept patch also keeps its slices: for each u a frame on the part's midline, height, width, a closed section spline and a proxy normal | Derived |
