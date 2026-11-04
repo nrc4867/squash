@@ -181,14 +181,15 @@ class SingleLayoutFlowTest {
         pickSingle()
 
         onNodeWithTag(SingleTags.thumbnail(View.TOP)).performClick()
-        waitForHud("top")
-        segment("Top").assertIsSelected()
+        waitForHud("front")
+        segment("Front").assertIsSelected()
         stroke()
         waitUntil(timeoutMillis = SETTLE_MILLIS) { View.TOP in outlines(state, session) }
         assertEquals(setOf(View.TOP), outlines(state, session).keys)
 
-        segment("Front").performClick()
-        waitForHud("front")
+        segment("Top").performClick()
+        waitForHud("top")
+        assertEquals(View.FRONT, state.activeView.value, "looking down a leg shows its Front outline")
         segment("Side").performClick()
         waitForHud("side")
     }

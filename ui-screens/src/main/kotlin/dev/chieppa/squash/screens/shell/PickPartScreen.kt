@@ -100,8 +100,9 @@ private fun rememberRestPose(state: AppState): Pair<AssembledCharacter, List<Ope
     return assembled to openSockets(document, plan, state.templates)
 }
 
+/** The rest pose with its open sockets as dots, at the size it is given, in the shared surface. */
 @Composable
-private fun RestPoseSurface(state: AppState) {
+internal fun RestPoseSurface(state: AppState) {
     val pose = rememberRestPose(state)
     val picked by state.pickedSocket.collectAsState()
     val look = rememberSheetLook()

@@ -16,15 +16,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.pixelsLabel
 import dev.chieppa.squash.screens.shell.FitStages
-import dev.chieppa.squash.screens.shell.VIEW_ORDER
+import dev.chieppa.squash.screens.shell.DIRECTION_ORDER
+import dev.chieppa.squash.screens.shell.directionLabel
 import dev.chieppa.squash.screens.shell.count
 import dev.chieppa.squash.screens.shell.partName
-import dev.chieppa.squash.screens.shell.viewLabel
 import dev.chieppa.squash.uidesign.THUMB_HEIGHT
 import dev.chieppa.squash.uidesign.THUMB_WIDTH
 import dev.chieppa.squash.uidesign.ViewThumb
@@ -81,16 +82,16 @@ internal fun FitProgressBar(fraction: Float) {
     }
 }
 
-/** Snap view: which view the camera is on, none while free; picking one turns the camera there. */
+/** Snap view: which direction the camera looks from, none while free; picking one turns the camera there. */
 @Composable
-internal fun SnapViewControl(snapped: View?, onSnap: (View) -> Unit) {
-    val labels = VIEW_ORDER.associateWith { viewLabel(it) }
-    Segmented<View?>(VIEW_ORDER, snapped, { it?.let(onSnap) }, { labels[it].orEmpty() })
+internal fun SnapViewControl(snapped: BodyView?, onSnap: (BodyView) -> Unit) {
+    val labels = DIRECTION_ORDER.associateWith { directionLabel(it) }
+    Segmented<BodyView?>(DIRECTION_ORDER, snapped, { it?.let(onSnap) }, { labels[it].orEmpty() })
 }
 
-/** The part, its side and the view the camera is on, as the board's HUD reads them. */
+/** The part, its side and the direction the camera looks from, as the board's HUD reads them. */
 @Composable
-internal fun SingleHud(state: AppState, snapped: View?) {
+internal fun SingleHud(state: AppState, snapped: BodyView?) {
     val session by state.session.collectAsState()
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value ?: return
@@ -99,9 +100,9 @@ internal fun SingleHud(state: AppState, snapped: View?) {
     val view = stringResource(
         when (snapped) {
             null -> Res.string.single_view_free
-            View.SIDE -> Res.string.single_view_side
-            View.TOP -> Res.string.single_view_top
-            View.FRONT -> Res.string.single_view_front
+            BodyView.SIDE -> Res.string.single_view_side
+            BodyView.TOP -> Res.string.single_view_top
+            BodyView.FRONT -> Res.string.single_view_front
         },
     )
     val text = when (part.side) {
@@ -112,7 +113,7 @@ internal fun SingleHud(state: AppState, snapped: View?) {
     Hud(text, Modifier.testTag(SingleTags.HUD))
 }
 
-/** A thumbnail per view, with its fit error once a stroke has one; one not on the view on screen turns the camera to its own. */
+/** A thumbnail per view, named for the direction it is looked at from, with its fit error once a stroke has one; one not on the view on screen turns the camera to its own. */
 @Composable
 internal fun ThumbnailStrip(
     selection: SheetSelection,
@@ -130,10 +131,10 @@ internal fun ThumbnailStrip(
         Row(Modifier.padding(THUMBS_INSET), horizontalArrangement = Arrangement.spacedBy(THUMB_GAP)) {
             for (thumbnail in viewThumbnails(selection, current, live, templateHint, width, height, alongside)) {
                 val tagged = Modifier.testTag(SingleTags.thumbnail(thumbnail.view))
-                val name = viewLabel(thumbnail.view)
+                val name = directionLabel(thumbnail.body)
                 val label = fitError(thumbnail.view)?.let { stringResource(Res.string.single_thumb_pixels, name, pixelsLabel(it)) } ?: name
                 if (thumbnail.snaps) {
-                    val snapTo = stringResource(snapLabel(thumbnail.view))
+                    val snapTo = stringResource(snapLabel(thumbnail.body))
                     Tooltip(snapTo) {
                         ViewThumb(label, thumbnail.edge, thumbnail.lines, thumbnail.hint, tagged.clickable(onClickLabel = snapTo) { onSnap(thumbnail.view) }, thumbnail.preview)
                     }
@@ -145,8 +146,8 @@ internal fun ThumbnailStrip(
     }
 }
 
-private fun snapLabel(view: View) = when (view) {
-    View.SIDE -> Res.string.single_snap_side
-    View.TOP -> Res.string.single_snap_top
-    View.FRONT -> Res.string.single_snap_front
+private fun snapLabel(body: BodyView) = when (body) {
+    BodyView.SIDE -> Res.string.single_snap_side
+    BodyView.TOP -> Res.string.single_snap_top
+    BodyView.FRONT -> Res.string.single_snap_front
 }

@@ -129,7 +129,7 @@ internal class StrokeBench(tilted: Boolean = false) {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(BENCH_WIDTH.toDp(), BENCH_HEIGHT.toDp())) {
-                    PaneViewport(camera.view, null, tool.pointerInput(camera.view, camera).testTag(BENCH_TAG))
+                    PaneViewport(camera.axes.bodyViewOf(camera.view), null, tool.pointerInput(camera.view, camera).testTag(BENCH_TAG))
                 }
             }
         }
@@ -153,7 +153,7 @@ internal class StrokeBench(tilted: Boolean = false) {
     fun showPanesBody() {
         with(LocalDensity.current) {
             Box(Modifier.size(BENCH_WIDTH.toDp(), BENCH_HEIGHT.toDp())) {
-                shown?.let { camera -> PaneViewport(camera.view, null, working.pointerInput(camera.view, camera).testTag(BENCH_TAG)) }
+                shown?.let { camera -> PaneViewport(camera.axes.bodyViewOf(camera.view), null, working.pointerInput(camera.view, camera).testTag(BENCH_TAG)) }
             }
         }
     }

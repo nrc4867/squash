@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -98,7 +99,7 @@ class SheetUiTest {
     @Test
     fun aPaneShowsItsLabelAndChipInPopupsOverTheSurface() = runComposeUiTest {
         setStretchContent {
-            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(View.SIDE, PaneChip.FROM_TEMPLATE) }
+            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(BodyView.SIDE, PaneChip.FROM_TEMPLATE) }
         }
         onNodeWithText("Side · part axes").assertExists()
         onNodeWithText("From template").assertExists()
@@ -122,7 +123,7 @@ class SheetUiTest {
                 camera?.let { locked ->
                     SheetPaneGrid(2, Modifier.fillMaxSize()) { pane ->
                         val input = if (pane == SheetPane.SIDE) tool.pointerInput(View.SIDE, locked).testTag("side") else Modifier
-                        PaneViewport(if (pane == SheetPane.SIDE) View.SIDE else null, null, input)
+                        PaneViewport(if (pane == SheetPane.SIDE) BodyView.SIDE else null, null, input)
                     }
                 }
             }

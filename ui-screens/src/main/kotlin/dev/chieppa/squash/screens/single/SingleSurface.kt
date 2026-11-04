@@ -54,6 +54,7 @@ internal fun SingleSurface(
     }
     val hold = tool?.holdsFit == true || tool?.drawingIn != null
     val snapped = part?.let { camera.snap(it.axes, hold) }
+    val direction = if (part != null && snapped != null) part.axes.bodyViewOf(snapped) else null
     val locked = if (selection != null && snapped != null && sized) camera.lockedCamera(snapped, selection, size.width, size.height, hold) else null
     val outlineLook = rememberOutlineLook()
     val shownCameras = locked?.let { mapOf(it.view to it) }.orEmpty()
@@ -87,10 +88,10 @@ internal fun SingleSurface(
                 Toolbar(Modifier.testTag(SingleTags.TOOLBAR)) {
                     tools()
                     ToolbarSeparator()
-                    SnapViewControl(snapped) { view -> part?.let { camera.snapTo(view, it.axes) } }
+                    SnapViewControl(direction) { body -> part?.let { camera.snapTo(it.axes.framing.getValue(body), it.axes) } }
                 }
             },
-            topEnd = { SingleHud(state, snapped) },
+            topEnd = { SingleHud(state, direction) },
             bottomStart = selection?.let {
                 {
                     ThumbnailStrip(

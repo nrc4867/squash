@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.sheetPartOf
+import dev.chieppa.squash.screens.shell.DIRECTION_ORDER
 import dev.chieppa.squash.screens.shell.VIEW_ORDER
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.squash.uidesign.ThumbEdge
@@ -29,8 +30,16 @@ class ViewThumbnailsTest {
     ) = viewThumbnails(SheetSelection(part, outlines), current, live, templateHint, WIDTH, HEIGHT).associateBy { it.view }
 
     @Test
-    fun thereIsOneThumbnailPerViewInTheBoardsOrder() {
-        assertEquals(VIEW_ORDER, viewThumbnails(SheetSelection(part, emptyMap()), null, null, true, WIDTH, HEIGHT).map { it.view })
+    fun thereIsOneThumbnailPerViewInTheBoardsOrderOfDirections() {
+        val shown = viewThumbnails(SheetSelection(part, emptyMap()), null, null, true, WIDTH, HEIGHT)
+        assertEquals(DIRECTION_ORDER, shown.map { it.body })
+        assertEquals(listOf(View.SIDE, View.FRONT, View.TOP), shown.map { it.view }, "a leg looks at its Front from above")
+    }
+
+    @Test
+    fun aPartAlongTheBodyShowsEachViewFromItsOwnDirection() {
+        val paw = sheetPartOf(shipped.parts.first { it.id.value == "paw" })
+        assertEquals(VIEW_ORDER, viewThumbnails(SheetSelection(paw, emptyMap()), null, null, true, WIDTH, HEIGHT).map { it.view })
     }
 
     @Test

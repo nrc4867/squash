@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_part_areas
 import dev.chieppa.squash.uidesign.generated.shell_part_joints
@@ -41,6 +42,16 @@ fun viewLabel(view: View): String = stringResource(
         View.SIDE -> Res.string.shell_view_side
         View.TOP -> Res.string.shell_view_top
         View.FRONT -> Res.string.shell_view_front
+    },
+)
+
+/** The name of the direction a camera looks at the body from. */
+@Composable
+fun directionLabel(body: BodyView): String = stringResource(
+    when (body) {
+        BodyView.SIDE -> Res.string.shell_view_side
+        BodyView.TOP -> Res.string.shell_view_top
+        BodyView.FRONT -> Res.string.shell_view_front
     },
 )
 

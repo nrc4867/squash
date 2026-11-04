@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_chip_pixels
@@ -35,10 +35,10 @@ import dev.chieppa.stretch.ui.ProgressBar
 import java.util.Locale
 import org.jetbrains.compose.resources.stringResource
 
-/** A pane over the surface, which shows through it: its label names the [view] it holds, null for Full, its chip floats in the other corner, and [modifier] takes its pointer. */
+/** A pane over the surface, which shows through it: its label names the [body] direction it looks from, null for Full, its chip floats in the other corner, and [modifier] takes its pointer. */
 @Composable
 internal fun PaneViewport(
-    view: View?,
+    body: BodyView?,
     chip: PaneChip?,
     modifier: Modifier = Modifier,
     fitError: Float? = null,
@@ -50,7 +50,7 @@ internal fun PaneViewport(
     Viewport(
         modifier,
         nativeContent = true,
-        topStart = { PaneLabel(view) },
+        topStart = { PaneLabel(body) },
         topEnd = chip?.let { { PaneChipView(it, fitError, progress) } },
         bottomStart = bottomStart,
         bottomEnd = zoom?.let { { PaneZoom(it, onFit) } },
@@ -69,14 +69,14 @@ private fun PaneZoom(zoom: Float, onFit: () -> Unit) {
 }
 
 @Composable
-private fun PaneLabel(view: View?) {
+private fun PaneLabel(body: BodyView?) {
     Hud(
         stringResource(
-            when (view) {
-                View.TOP -> Res.string.sheet_pane_top
+            when (body) {
+                BodyView.TOP -> Res.string.sheet_pane_top
                 null -> Res.string.sheet_pane_full
-                View.SIDE -> Res.string.sheet_pane_side
-                View.FRONT -> Res.string.sheet_pane_front
+                BodyView.SIDE -> Res.string.sheet_pane_side
+                BodyView.FRONT -> Res.string.sheet_pane_front
             },
         ),
     )

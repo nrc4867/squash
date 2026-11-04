@@ -13,7 +13,7 @@ That is boards Home, 1, 2, 3, 4, 5 and the Sheet layouts A (both), plus spikes 1
 Stage 1 is done when all of these hold, in this order of importance:
 
 1. A drawn Side outline alone produces a leg mesh with the leg template's fixed topology through the real build: the axis is a spline through the Side midline, each slice's section is a closed spline, and the patch is lofted from them. Top adds width. No placeholder mesh anywhere.
-2. Oversketching a section of an outline, or dragging a handle, refits only the touched span of slices. Verified by a golden test that compares vertex positions outside the span before and after.
+2. Oversketching a section of an outline, or dragging a handle, refits only the touched span of slices. Verified by a golden test that compares vertex positions outside the span before and after. For now, moving the far end, a span holding the outline's lowest or highest x, or a Front section outline may move every ring.
 3. The six starter templates (torso, leg, paw, head, ear, tail) load, pass schema, lint and the golden build with default parameters and no outlines. The paw has pads underneath; the head reads as skull and muzzle.
 4. The Sheet layout runs four viewports in one `NativeSurface` at display rate, with the views-disagree highlight updating at stroke rate.
 5. Every screen matches its board under the Build to the boards rule, with the drift noted in `docs/work/boards.md` where the board itself is wrong.

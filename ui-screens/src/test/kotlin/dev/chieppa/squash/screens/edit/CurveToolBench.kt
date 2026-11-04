@@ -131,7 +131,7 @@ internal fun ComposeUiTest.showPane(tool: PaneTool, camera: LockedCamera) {
     setStretchContent {
         with(density) {
             Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                PaneViewport(camera.view, null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
+                PaneViewport(camera.axes.bodyViewOf(camera.view), null, tool.pointerInput(camera.view, camera).testTag(PANE_TAG))
             }
         }
     }

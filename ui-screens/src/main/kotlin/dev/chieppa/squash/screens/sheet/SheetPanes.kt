@@ -138,7 +138,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             val fitError = if (tool?.drawingIn != null) null else view?.let { tool?.fitErrorPixels(it) }
             val zoom = view?.takeIf { camera != null }?.let { state.paneNavigation[it] }?.takeIf { it != PaneNav() }?.zoom
             PaneViewport(
-                view,
+                body,
                 chip,
                 input.testTag(sheetPaneTag(pane)),
                 fitError,

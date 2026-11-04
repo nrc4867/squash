@@ -3,6 +3,15 @@ package dev.chieppa.squash.screens.smoke
 import androidx.compose.ui.test.performMouseInput
 import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.CompositionLocalProvider
+import dev.chieppa.squash.screens.shell.openSockets
+import dev.chieppa.squash.screens.shell.plan
+import dev.chieppa.squash.screens.shell.RestPoseSurface
+import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
+import dev.chieppa.squash.screens.sheet.LocalSceneSurface
+import dev.chieppa.squash.render.SceneFrame
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ComposeUiTest
@@ -40,7 +49,7 @@ import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
-import dev.chieppa.squash.screens.sheet.restPoseFrame
+import dev.chieppa.squash.screens.sheet.restPoseCamera
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.squash.screens.single.SingleCamera
@@ -190,7 +199,15 @@ class ScreensSmokeTest {
     @Test
     fun pickAPartType() = smoke {
         val state = AppState(templates, scope)
-        show(state)
+        var frame: SceneFrame? = null
+        var look: SheetLook? = null
+        val recorder: SceneSurfaceContent = { shown, _ -> SideEffect { if (shown != null) frame = shown } }
+        setStretchContent {
+            SquashApp(state, NoFiles)
+            look = rememberSheetLook()
+            val screen by state.screen.collectAsState()
+            if (screen == Screen.PICK_PART) CompositionLocalProvider(LocalSceneSurface provides recorder) { RestPoseSurface(state) }
+        }
         val session = createCharacter(state)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         assertSettled(session)
@@ -198,17 +215,29 @@ class ScreensSmokeTest {
         onNodeWithTag(ShellTags.socketDot("tail")).assertExists()
         assertCaptured(ShellTags.PICK)
         val character = assertNotNull(session.assembly.output.value)
-        val look = SMOKE_LOOK
-        val sockets = character.sockets.map { it.ref }
+        val drawing = assertNotNull(look)
+        val rest = assertNotNull(frame)
+        val area = rest.views.single().viewport
         val errors = CopyOnWriteArrayList<String>()
-        val image = renderSnapshot(restPoseFrame(character, look, WIDTH, HEIGHT, sockets, sockets.first()), WIDTH, HEIGHT, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
+        val image = renderSnapshot(rest, area.width, area.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, "the rest pose")
         keep(image, "pick")
-        val whole = PixelRect(0, 0, WIDTH, HEIGHT)
-        assertNotEquals(0, image.countIn(whole, look.part.base), "the placed torso is filled")
-        assertNotEquals(0, image.countIn(whole, look.template), "the parts to come are dashed")
-        assertNotEquals(0, image.countIn(whole, look.active), "the picked socket's dot")
+        assertNotEquals(0, image.countIn(area, drawing.part.base), "the placed torso is filled")
+        assertNotEquals(0, image.countIn(area, drawing.template), "the parts to come are dashed")
+
+        val document = session.document.value
+        val open = openSockets(document, assertNotNull(templates.plan(document.character.bodyPlan)), templates)
+        val picked = assertNotNull(state.pickedSocket.value)
+        assertEquals(setOf("neck", "front-leg", "back-leg", "tail"), open.map { it.name }.toSet())
+        assertEquals(open.size * 2, rest.overlay.dots.size, "an edge and a fill on each open socket, none on what is not")
+        val camera = restPoseCamera(assertNotNull(character.box), area.width, area.height)
+        for (socket in open) {
+            val at = camera.toPixel(character.sockets.first { it.ref == socket.ref }.position)
+            val middle = PixelRect(at.x.roundToInt(), at.y.roundToInt(), 1, 1)
+            val fill = if (socket.ref == picked.ref) drawing.active else drawing.dotFill
+            assertEquals(1, image.countIn(middle, fill), "the dot on ${socket.name} in the rendered image")
+        }
     }
 
     @Test

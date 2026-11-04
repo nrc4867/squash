@@ -4,8 +4,8 @@ import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.render.PixelRect
 
 /**
- * The Sheet layout's panes in reading order, two by two, each named for how it looks at the body. Which of a part's views
- * each holds comes from the part's axes. Full has no locked [body] view.
+ * The Sheet layout's panes in reading order, two by two, each named and labelled for how it looks at the body. Which of a part's
+ * views each holds comes from the part's axes. Full has no locked [body] view.
  */
 enum class SheetPane(val body: BodyView?) {
     TOP(BodyView.TOP),

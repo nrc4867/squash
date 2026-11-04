@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.smoke
 
+import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.SideEffect
@@ -202,7 +203,7 @@ class PenShapesSmokeTest {
                 val pane = rects[SheetPane.SIDE.ordinal]
                 with(density) {
                     Box(Modifier.size(pane.width.toDp(), pane.height.toDp())) {
-                        PaneViewport(View.SIDE, null, drawing.pointerInput(View.SIDE, camera).testTag(PANE_TAG))
+                        PaneViewport(BodyView.SIDE, null, drawing.pointerInput(View.SIDE, camera).testTag(PANE_TAG))
                     }
                 }
             }

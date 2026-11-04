@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
@@ -86,7 +87,7 @@ class DrawOutlineToolTest {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                    PaneViewport(View.SIDE, null, tool.pointerInput(camera.view, camera).testTag(TAG))
+                    PaneViewport(BodyView.SIDE, null, tool.pointerInput(camera.view, camera).testTag(TAG))
                 }
             }
         }
@@ -250,7 +251,7 @@ class DrawOutlineToolTest {
         setStretchContent {
             with(density) {
                 Box(Modifier.size(PANE_WIDTH.toDp(), PANE_HEIGHT.toDp())) {
-                    PaneViewport(View.SIDE, null, bench.tool.pointerInput(camera.view, camera).testTag(TAG))
+                    PaneViewport(BodyView.SIDE, null, bench.tool.pointerInput(camera.view, camera).testTag(TAG))
                 }
             }
         }
