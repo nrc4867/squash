@@ -4,6 +4,11 @@ The state of every screen against its board in [Squash flow of work](https://cla
 
 Verify is what a person runs to see the board working: a run configuration or Gradle task, then the actions to take, then what must be true.
 
+## Decisions
+
+- **Locality.** Moving an outline's far end, a span holding its lowest or highest x, or a Front section outline may move every ring, since the ring count is fixed. See HLD: data-model, Refits are local.
+- **Legs that lean.** When a leg leans, the other legs shorten to match and the body drops, so all paws stay on the ground. A lean changes no stored length, so leaning back restores every leg. See HLD: data-model, Placing parts.
+
 ## Foundation
 
 Not a screen, so it has no board in the artifact.
@@ -106,4 +111,4 @@ Where a screen is built differently from its board, and why. A row stays only wh
 | Move | A leg leaned out reaches less far down, so its paw sits above the ground. |
 | A zoom | No board draws it yet. Single keeps its own zoom, and Full its orbit; a zoomed pane no longer lines up with the others, though guides still project into it. |
 | A disagree | Front past Top's width is also highlighted, by analogy; no board draws it. |
-| 5 | Only the touched section changes for spans inside a Side or Top outline. Moving the far end, or any span holding the outline's lowest or highest x, moves every ring; a Front section outline moves every ring but the closed ends; the toast says which, as exit criterion 2 allows for now. A stroke crossing the socket plane twice redraws the whole outline. The Sheet has no one viewport corner, so the toast sits at the bottom left of Side; in Single the thumbnails hold that corner, so it sits at the foot. |
+| 5 | Only the touched section changes for spans inside a Side or Top outline. Moving the far end, or any span holding the outline's lowest or highest x, moves every ring; a Front section outline moves every ring but the closed ends; the toast says which. A stroke crossing the socket plane twice redraws the whole outline. The Sheet has no one viewport corner, so the toast sits at the bottom left of Side; in Single the thumbnails hold that corner, so it sits at the foot. |

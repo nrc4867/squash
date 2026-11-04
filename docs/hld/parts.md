@@ -53,8 +53,6 @@ When: starter is spike 1, first is the first version, later is after it.
 
 ## What this adds to the data model
 
-None of it is needed before stage 1 ships except the first two.
-
 - Built-in section profiles `circle`, `egg`, `keel` and `lens`; `lens` is needed by the starter ear.
 - A per-template **view remap**, so a wing's planform drawn in Top can set height along its chord. The `views` map already allows it; the ear and wing templates use it.
 - The **toe row** grows per-digit overrides (position, angle, joint count), and exposes a tip socket per digit for claws.
