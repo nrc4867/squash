@@ -12,6 +12,7 @@ import dev.chieppa.squash.geom.MeshBuilder
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.blendedOverlaps
 
 /** Builds a part's patches and mesh from its template, parameter values and drawn outlines. */
 object PartBuilder {
@@ -31,7 +32,15 @@ object PartBuilder {
             checkCancelled()
             context.add(it.build(context))
         }
-        return context.built
+        return shadedAsOne(context)
+    }
+
+    /** What [context] built, with the runs of its blocks shading as one surface where they overlap. */
+    private fun shadedAsOne(context: BuildContext): List<Patch> {
+        val runNames = context.blocksOn.filter { it.run() != null }.flatMap { it.patchNames() }.map { it.name }.toSet()
+        val runs = context.built.filter { it.name in runNames }.sortedBy { it.ringUs.first() }
+        val blended = blendedOverlaps(runs).associateBy { it.name }
+        return context.built.map { blended[it.name] ?: it }
     }
 
     /** What the blocks of [template] build from, with nothing built yet. */

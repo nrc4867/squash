@@ -74,8 +74,8 @@ data class Tube(
             socketNormal = ctx.axes.along,
             views = ctx.views,
             front = ctx.front,
-            startCovered = ctx.covered(span.start, u),
-            endCovered = ctx.covered(span.end, u),
+            startHandover = ctx.handover(span.start, u),
+            endHandover = ctx.handover(span.end, u),
             up = ctx.template.axis.up?.toVec3(),
         )
     }

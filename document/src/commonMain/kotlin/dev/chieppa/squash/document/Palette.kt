@@ -10,8 +10,9 @@ data class SlotColor(val red: Float, val green: Float, val blue: Float) {
     }
 }
 
+/** A named color. [shadow] is the slot's own shadow tone; with none, the look shifts [color] warm for its shadow. */
 @Serializable
-data class PaletteSlot(val name: SlotName, val color: SlotColor)
+data class PaletteSlot(val name: SlotName, val color: SlotColor, val shadow: SlotColor? = null)
 
 /** A character's named colors, in the order they are listed. */
 @Serializable
@@ -22,4 +23,7 @@ data class Palette(val slots: List<PaletteSlot> = emptyList()) {
 
     /** The color of slot [name], or null if no slot holds that name. */
     fun color(name: SlotName): SlotColor? = slots.firstOrNull { it.name == name }?.color
+
+    /** The shadow tone slot [name] carries of its own, or null if it has none or no slot holds that name. */
+    fun shadow(name: SlotName): SlotColor? = slots.firstOrNull { it.name == name }?.shadow
 }

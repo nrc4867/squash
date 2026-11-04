@@ -103,3 +103,62 @@ private fun blendedAround(normals: Array<Array<Vec3>>, ring: Int, segment: Int, 
 }
 
 private fun Vec3.unitOr(fallback: Vec3): Vec3 = if (length < MIN_LENGTH) fallback else normalized()
+
+/**
+ * [runs], in the order they lie along the axis, with their proxy normals blended where one overlaps the next: at each ring of the
+ * overlap both take the same mix of the two, all the first's at the overlap's start and all the next's at its end, so a shadow's
+ * edge crosses from one run to the other as one line. Runs with no overlap, or different point counts around, stay as they are.
+ */
+fun blendedOverlaps(runs: List<Patch>): List<Patch> {
+    val out = runs.toMutableList()
+    for (i in 0 until out.lastIndex) {
+        val first = out[i]
+        val next = out[i + 1]
+        val start = next.ringUs.first()
+        val end = first.ringUs.last()
+        if (end <= start || first.nv != next.nv) continue
+        val firstNormals = first.proxyNormals ?: continue
+        val nextNormals = next.proxyNormals ?: continue
+        out[i] = first.withProxyNormals(mixedOver(first, firstNormals, next, nextNormals, start, end, ownShareRises = false))
+        out[i + 1] = next.withProxyNormals(mixedOver(next, nextNormals, first, firstNormals, start, end, ownShareRises = true))
+    }
+    return out
+}
+
+/** [own]'s normals, with the rings between [start] and [end] mixed with [other]'s at the same u and v. */
+private fun mixedOver(own: Patch, ownNormals: FloatArray, other: Patch, otherNormals: FloatArray, start: Float, end: Float, ownShareRises: Boolean): FloatArray {
+    val out = ownNormals.copyOf()
+    for (ring in 0 until own.nu) {
+        val u = own.ringUs[ring]
+        if (u < start || u > end) continue
+        val t = (u - start) / (end - start)
+        val rising = t * t * (3f - 2f * t)
+        val ownShare = if (ownShareRises) rising else 1f - rising
+        for (segment in 0 until own.nv) {
+            val mine = normalAt(ownNormals, own, ring, segment)
+            val mixed = (mine * ownShare + normalBetweenRings(other, otherNormals, u, segment) * (1f - ownShare)).unitOr(mine)
+            val at = own.index(ring, segment) * Patch.COMPONENTS
+            out[at] = mixed.x
+            out[at + 1] = mixed.y
+            out[at + 2] = mixed.z
+        }
+    }
+    return out
+}
+
+private fun normalAt(normals: FloatArray, patch: Patch, ring: Int, segment: Int): Vec3 {
+    val at = patch.index(ring, segment) * Patch.COMPONENTS
+    return Vec3(normals[at], normals[at + 1], normals[at + 2])
+}
+
+private fun normalBetweenRings(patch: Patch, normals: FloatArray, u: Float, segment: Int): Vec3 {
+    val us = patch.ringUs
+    val above = us.indexOfFirst { it >= u }.let { if (it < 0) patch.nu - 1 else it }
+    val below = (above - 1).coerceAtLeast(0)
+    val low = normalAt(normals, patch, below, segment)
+    val high = normalAt(normals, patch, above, segment)
+    val span = us[above] - us[below]
+    if (span < MIN_LENGTH) return high
+    val t = ((u - us[below]) / span).coerceIn(0f, 1f)
+    return (low * (1f - t) + high * t).unitOr(high)
+}

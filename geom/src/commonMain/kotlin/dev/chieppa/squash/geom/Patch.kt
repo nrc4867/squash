@@ -56,6 +56,9 @@ class Patch(
     fun point(index: Int): Vec3 =
         Vec3(points[index * COMPONENTS], points[index * COMPONENTS + 1], points[index * COMPONENTS + 2])
 
+    /** This patch shading by [normals], three values per point. */
+    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals)
+
     override fun equals(other: Any?): Boolean =
         other is Patch && name == other.name && nu == other.nu && nv == other.nv && closedV == other.closedV &&
             slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU

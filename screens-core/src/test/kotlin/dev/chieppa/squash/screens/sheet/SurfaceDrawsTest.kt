@@ -3,6 +3,14 @@ package dev.chieppa.squash.screens.sheet
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartColor
 import dev.chieppa.squash.document.MarkWidth
+import dev.chieppa.squash.document.BodyPlanId
+import dev.chieppa.squash.document.BodyPlanRef
+import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.CharacterId
+import dev.chieppa.squash.document.CharacterShading
+import dev.chieppa.squash.document.SetSlotShadow
+import dev.chieppa.squash.document.ShadingMode
+import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PaletteSlot
 import dev.chieppa.squash.document.SlotColor
@@ -65,6 +73,25 @@ class SurfaceDrawsTest {
         assertTrue(far.material.base.red < near.material.base.red)
         assertTrue(far.layers.single().tones.lit.red < near.layers.single().tones.lit.red)
         assertTrue(near.layers.single().tones.shadow.red < near.layers.single().tones.lit.red)
+    }
+
+    @Test
+    fun aSlotsOwnShadowIsItsShadowToneOnTheBaseAndItsLayers() {
+        val tone = SlotColor(0.5f, 0.3f, 0.2f)
+        val shaded = SetSlotShadow(fur, tone).apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("p"), 1), palette = palette))).document.character.palette
+        val drawn = draw(PartColor(fur, listOf(layer(fur))), from = shaded, shading = ObjectShading(Shading.TWO_TONE))
+        val expected = Color(tone.red, tone.green, tone.blue)
+        assertEquals(expected, drawn.material.shade)
+        assertEquals(expected, drawn.layers.single().tones.shadow)
+    }
+
+    @Test
+    fun theStoredChoiceIsWhatTheRendererTakes() {
+        val shading = CharacterShading(ShadingMode.TWO_TONE, farSideDarker = false).objectShading()
+        assertEquals(Shading.TWO_TONE, shading.mode)
+        assertEquals(false, shading.farSide.enabled)
+        assertEquals(Shading.FLAT, CharacterShading().objectShading().mode)
+        assertEquals(true, CharacterShading().objectShading().farSide.enabled)
     }
 
     @Test

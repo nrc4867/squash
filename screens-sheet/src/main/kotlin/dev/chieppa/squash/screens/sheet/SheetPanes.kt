@@ -113,6 +113,7 @@ private fun SheetSurface(state: AppState, tool: PaneTool?, paneToast: (@Composab
             toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook(), disagreements, shownActive),
             fullOverlay = tool?.fullOverlay(fullView) ?: ViewportOverlay.Empty,
             hints = SheetHints(state.curves.templateHint, state.curves.ghost),
+            shading = rememberObjectShading(state),
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {

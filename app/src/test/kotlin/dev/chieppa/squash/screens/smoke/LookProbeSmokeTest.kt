@@ -140,8 +140,10 @@ class LookProbeSmokeTest {
                 val view = characterView(rect, whole.camera, fresh, PROBE_LOOK, ObjectShading(mode), whole.pixelsPerUnit) { binAt(toViewer) }
                 keep("fennec-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
-            val view = characterView(rect, close.camera, fresh, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { binAt(toViewer) }
-            keep("fennec-head-flat-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
+            for ((modeName, mode) in MODES) {
+                val view = characterView(rect, close.camera, fresh, PROBE_LOOK, ObjectShading(mode), close.pixelsPerUnit) { binAt(toViewer) }
+                keep("fennec-head-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
+            }
         }
         scope.cancel()
         assertEquals(emptyList(), errors)

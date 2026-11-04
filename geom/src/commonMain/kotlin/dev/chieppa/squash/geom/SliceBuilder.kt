@@ -7,8 +7,8 @@ import kotlin.math.sqrt
 private const val CAP_RING_DIVISOR = 6
 private const val MIN_CAP_RINGS = 2
 
-/** How large a run's first ring is, where it starts inside another run. */
-private const val COVERED_START_SCALE = 0.8f
+/** How large a ring is, as a share of the drawing, at the deep end of the stretch of a run that lies inside another. */
+private const val COVERED_SCALE = 0.8f
 
 /** How a run of slices ends. */
 enum class EndClosure { OPEN, FLAT, ROUND, POINTED }
@@ -16,8 +16,8 @@ enum class EndClosure { OPEN, FLAT, ROUND, POINTED }
 /**
  * A run of slices along [axis] between [uStart] and [uEnd]. Without [views], [radius], [taper], [widthRatio] and [drop]
  * size them; with [views], the drawing does. [roundRings] sets how far a round end reaches when nothing is drawn.
- * A ring on an open end faces [socketNormal]. [startCovered] and [endCovered] say another run of the part covers that end,
- * which is how a drawing makes the two read as one surface.
+ * A ring on an open end faces [socketNormal]. [startHandover] and [endHandover] say another run of the part covers that end, and
+ * at what u the surface passes from one run to the other, which is how a drawing makes the two read as one surface.
  */
 data class TubeSpec(
     val name: String,
@@ -38,8 +38,8 @@ data class TubeSpec(
     val socketNormal: Vec3? = null,
     val views: ViewSizing? = null,
     val front: FrontSection? = null,
-    val startCovered: Boolean = false,
-    val endCovered: Boolean = false,
+    val startHandover: Float? = null,
+    val endHandover: Float? = null,
     /** Where an undrawn run's rings take their up from, or null for what the axis's own direction gives. */
     val up: Vec3? = null,
 )
@@ -69,7 +69,7 @@ object SliceBuilder {
         }
         val us = ringUs(spec)
         val slices = spec.views?.let { drawnSlices(spec, it, us) } ?: restSlices(spec, us)
-        return loft(spec.name, slices, spec.segments)
+        return loft(spec.name, slices, spec.segments, spec.views?.let { shadedSlices(spec, it, us, slices) } ?: slices)
     }
 
     /** The ring [spec] stands at [u] before either end closes, with no grid around it. */
@@ -88,22 +88,32 @@ object SliceBuilder {
 
     /**
      * A drawing closes the ends of the part itself, so only their last ring closes. Where one run hands over to another, the
-     * earlier keeps the drawing's size up to its end and the later rises to it from inside, so no end stands proud of the
-     * surface. A run's inner end that nothing covers still rounds off.
+     * later rises from inside to the drawing's size at the handover and the earlier sinks inside right after it, so the two cross
+     * once, on one line, and neither fights the other across the overlap. A run's inner end that nothing covers still rounds off.
      */
     private fun drawnSlices(spec: TubeSpec, views: ViewSizing, us: List<Float>): List<Slice> {
         val capRings = defaultCapRings(us.size)
         fun scale(fromEnd: Int, reachesPartEnd: Boolean, closure: EndClosure) =
             if (reachesPartEnd) drawnEndScale(fromEnd, closure) else endScale(fromEnd, capRings, closure)
         val startScale = { ring: Int ->
-            if (spec.startCovered) risingScale(ring, capRings) else scale(ring, spec.uStart <= 0f, spec.startClosure)
+            val handover = spec.startHandover
+            if (handover != null) risingScale(ring, us[ring], spec.uStart, handover) else scale(ring, spec.uStart <= 0f, spec.startClosure)
         }
-        val endScale = { fromEnd: Int ->
-            if (spec.endCovered) drawnEndScale(fromEnd, EndClosure.FLAT) else scale(fromEnd, spec.uEnd >= 1f, spec.endClosure)
+        val endScale = { ring: Int ->
+            val handover = spec.endHandover
+            val fromEnd = us.size - 1 - ring
+            if (handover != null) sinkingScale(fromEnd, ring > 0 && us[ring - 1] >= handover) else scale(fromEnd, spec.uEnd >= 1f, spec.endClosure)
         }
+        return us.mapIndexed { ring, u -> views.slice(u, sectionAt(spec, u), startScale(ring) * endScale(ring)) }
+    }
+
+    /** The rings a run's shading reads: the drawing's own wherever another run covers the end, so hiding a stretch inside that run does not turn the shading. */
+    private fun shadedSlices(spec: TubeSpec, views: ViewSizing, us: List<Float>, slices: List<Slice>): List<Slice> {
+        val start = spec.startHandover
+        val end = spec.endHandover
+        if (start == null && end == null) return slices
         return us.mapIndexed { ring, u ->
-            val closure = startScale(ring) * endScale(us.size - 1 - ring)
-            views.slice(u, sectionAt(spec, u), closure)
+            if ((start != null && u < start) || (end != null && u >= end)) views.slice(u, sectionAt(spec, u), 1f) else slices[ring]
         }
     }
 
@@ -144,8 +154,8 @@ object SliceBuilder {
         return loft(spec.name, slices, spec.section.controlPoints.size)
     }
 
-    /** The grid sampled from [slices] at fixed v. */
-    fun loft(name: String, slices: List<Slice>, segments: Int): Patch {
+    /** The grid sampled from [slices] at fixed v, with its shading normals from [shaded]. */
+    fun loft(name: String, slices: List<Slice>, segments: Int, shaded: List<Slice> = slices): Patch {
         val points = FloatArray(slices.size * segments * Patch.COMPONENTS)
         var o = 0
         var sampledSection: ClosedSpline? = null
@@ -165,7 +175,7 @@ object SliceBuilder {
                 points[o++] = frame.center.z + side.z * across + frame.up.z * rise
             }
         }
-        return Patch(name, slices.size, segments, closedV = true, slices = slices, points = points, proxyNormals = proxyNormals(slices, segments))
+        return Patch(name, slices.size, segments, closedV = true, slices = slices, points = points, proxyNormals = proxyNormals(shaded, segments))
     }
 
     /**
@@ -202,11 +212,18 @@ object SliceBuilder {
     private fun drawnEndScale(fromEnd: Int, closure: EndClosure): Float =
         if (closure != EndClosure.OPEN && fromEnd == 0) 0f else 1f
 
-    /** The scale of the ring [fromEnd] rings from an end inside another run, closed there and rising to full size. */
-    private fun risingScale(fromEnd: Int, capRings: Int): Float {
-        if (fromEnd == 0) return 0f
-        if (fromEnd >= capRings) return 1f
-        return COVERED_START_SCALE + (1f - COVERED_START_SCALE) * fromEnd / capRings
+    /** The scale of [ring], at [u], of a run starting at [uStart] inside another: closed at its first ring and rising to full size at [handover]. */
+    private fun risingScale(ring: Int, u: Float, uStart: Float, handover: Float): Float {
+        if (ring == 0) return 0f
+        if (u >= handover || handover <= uStart) return 1f
+        return COVERED_SCALE + (1f - COVERED_SCALE) * (u - uStart) / (handover - uStart)
+    }
+
+    /** The scale of the ring [fromEnd] rings from an end inside another run: closed at its last ring, and sunk [pastHandover]. */
+    private fun sinkingScale(fromEnd: Int, pastHandover: Boolean): Float = when {
+        fromEnd == 0 -> 0f
+        pastHandover -> COVERED_SCALE
+        else -> 1f
     }
 
     /** The scale of the ring [fromEnd] rings away from an end closed by [closure]. */

@@ -10780,13 +10780,13 @@
                                         "part": "head",
                                         "patch": "muzzle",
                                         "u": 0.62,
-                                        "v": 0.3
+                                        "v": 0.31
                                     },
                                     {
                                         "part": "head",
                                         "patch": "muzzle",
                                         "u": 0.74,
-                                        "v": 0.22
+                                        "v": 0.235
                                     },
                                     {
                                         "part": "head",
@@ -10822,13 +10822,13 @@
                                         "part": "head",
                                         "patch": "muzzle",
                                         "u": 0.74,
-                                        "v": 0.78
+                                        "v": 0.765
                                     },
                                     {
                                         "part": "head",
                                         "patch": "muzzle",
                                         "u": 0.62,
-                                        "v": 0.7
+                                        "v": 0.69
                                     }
                                 ],
                                 "slot": "cream"
@@ -12743,5 +12743,5 @@
             ]
         }
     },
-    "format": 3
+    "format": 4
 }

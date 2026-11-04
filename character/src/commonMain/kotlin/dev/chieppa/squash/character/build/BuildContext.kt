@@ -88,9 +88,11 @@ class BuildContext(
     /** Whether the template's [block] is switched on for this build. */
     fun isOn(block: Block): Boolean = block in blocksOn
 
-    /** Whether a run other than [own] covers [u]. */
-    fun covered(u: Float, own: Span): Boolean =
-        blocksOn.any { block -> block.run()?.let { it != own && u >= it.start && u <= it.end } == true }
+    /** Where the surface passes between [own] and the run covering its end at [u], the middle of their overlap, or null when no other run covers it. */
+    fun handover(u: Float, own: Span): Float? =
+        blocksOn.firstNotNullOfOrNull { block -> block.run()?.takeIf { it != own && u >= it.start && u <= it.end } }?.let { cover ->
+            (maxOf(own.start, cover.start) + minOf(own.end, cover.end)) / 2f
+        }
 
     /** How a run that stops at [u] closes [end]: open on the socket plane, else with that end's cap, else flat. */
     fun closure(end: End, u: Float): EndClosure {

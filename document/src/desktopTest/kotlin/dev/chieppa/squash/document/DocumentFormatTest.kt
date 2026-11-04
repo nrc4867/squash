@@ -11,6 +11,7 @@ import kotlin.test.assertTrue
 class DocumentFormatTest {
     private val formatOne = File("src/desktopTest/fixtures/format-1.json").readText()
     private val formatTwo = File("src/desktopTest/fixtures/format-2.json").readText()
+    private val formatThree = File("src/desktopTest/fixtures/format-3.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
 
     @Test
@@ -46,6 +47,27 @@ class DocumentFormatTest {
         assertEquals(setOf("sock", "knee"), strokes.getValue("leg-r").map { it.id.value }.toSet(), "a side's override")
         assertEquals(0.08f, strokes.getValue("torso-1").single().radius)
         assertTrue(strokes.values.flatten().all { it.softness == 0f })
+    }
+
+    @Test
+    fun aFormatThreeSaveReadsFlatWithNoSlotShadows() {
+        val document = readDocument(formatThree)
+        assertEquals(DOCUMENT_FORMAT, document.format)
+        assertEquals(CharacterShading(), document.character.shading)
+        assertTrue(document.character.palette.slots.all { it.shadow == null })
+    }
+
+    @Test
+    fun theShadingChoiceAndASlotsShadowSurviveASave() {
+        val cream = SlotName("cream")
+        val tone = SlotColor(0.85f, 0.7f, 0.5f)
+        val commands = listOf(
+            SetPaletteSlot(cream, SlotColor(0.99f, 0.94f, 0.82f)),
+            SetSlotShadow(cream, tone),
+            SetCharacterShading(CharacterShading(ShadingMode.TWO_TONE, farSideDarker = false)),
+        )
+        val shaded = commands.fold(readDocument(formatThree)) { document, command -> command.apply(document).document }
+        assertEquals(shaded, readDocument(Json.encodeToString(SquashDocument.serializer(), shaded)))
     }
 
     @Test

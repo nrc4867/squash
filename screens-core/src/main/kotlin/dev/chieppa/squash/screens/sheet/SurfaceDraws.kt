@@ -30,6 +30,9 @@ private const val END_TAPER = 0.25f
 /** The color of [slot] in this palette, or null when it has no such slot. */
 fun Palette.colorOf(slot: SlotName?): Color? = slot?.let(::color)?.let { Color(it.red, it.green, it.blue) }
 
+/** The shadow tone [slot] carries of its own in this palette, or null when it has none. */
+fun Palette.shadowOf(slot: SlotName?): Color? = slot?.let(::shadow)?.let { Color(it.red, it.green, it.blue) }
+
 /**
  * A part's draw with its color from [palette]. Its base shows the slot its work names; with none named, or one the palette does
  * not hold, [fallback]'s base, the look's own part color. A layer whose slot the palette does not hold is not drawn, so what is
@@ -47,9 +50,9 @@ fun coloredPartDraw(
     outlinePixels: Float,
     rule: ToneRule = DefaultToneRule,
 ): MeshDraw {
-    val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, shading, side, toCamera)
+    val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, palette.shadowOf(color?.baseSlot), shading, side, toCamera)
     val layers = color?.layers.orEmpty().mapNotNull { layer ->
-        palette.colorOf(layer.slot)?.let { ColorLayerDraw(layer.cut.mesh, rule.tones(it, shading, side, toCamera), layer.cut.alphas) }
+        palette.colorOf(layer.slot)?.let { ColorLayerDraw(layer.cut.mesh, rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
     }
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
     return MeshDraw(mesh, material, model, outlinePixels, layers = layers)

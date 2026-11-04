@@ -8,6 +8,7 @@ import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.MeshDraw
+import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
@@ -47,6 +48,7 @@ class SheetInput(
     val toolOverlays: Map<View, ViewportOverlay> = emptyMap(),
     val fullOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val hints: SheetHints = SheetHints(),
+    val shading: ObjectShading = ObjectShading(),
 )
 
 /**
@@ -71,7 +73,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val (planned, placed) = (selection.others + selection.part).partition { it.planned }
         val eye = camera.eye
         val draws = listOf(fullGround(selection, look)) +
-            placed.map { look.draw(it, look.fullOutline) } +
+            placed.map { look.draw(it, look.fullOutline, shading = input.shading) } +
             planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, PLANNED_OPACITY) }
         return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
     }

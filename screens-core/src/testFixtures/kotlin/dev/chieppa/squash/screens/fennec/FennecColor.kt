@@ -43,7 +43,7 @@ fun fennecColor(): List<DocumentCommand> = listOf(
     ),
     region(
         HEAD, "muzzle", CREAM, MUZZLE_PATCH, uv = arrayOf(
-            0.62f to 0.30f, 0.74f to 0.22f, 0.86f to 0.20f, 0.97f to 0.24f, 0.99f to 0.50f, 0.97f to 0.76f, 0.86f to 0.80f, 0.74f to 0.78f, 0.62f to 0.70f,
+            0.62f to 0.31f, 0.74f to 0.235f, 0.86f to 0.20f, 0.97f to 0.24f, 0.99f to 0.50f, 0.97f to 0.76f, 0.86f to 0.80f, 0.74f to 0.765f, 0.62f to 0.69f,
         ),
     ),
     region(
