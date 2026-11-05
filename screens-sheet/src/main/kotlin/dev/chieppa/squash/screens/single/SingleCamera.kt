@@ -50,9 +50,9 @@ class SingleCamera {
         opened = true
     }
 
-    /** Turns the camera to look along [view] of [axes]. */
-    fun snapTo(view: View, axes: PartAxes) {
-        val angles = orbitAngles(axes.viewDirection(view), axes.basis(view).screenUp)
+    /** Turns the camera to look along [view] of [axes], from its other side when [flipped]. */
+    fun snapTo(view: View, axes: PartAxes, flipped: Boolean = false) {
+        val angles = orbitAngles(axes.viewDirection(view) * (if (flipped) -1f else 1f), axes.basis(view).screenUp)
         orbit = OrbitCamera(orbit.target, angles.yaw, angles.pitch, orbit.distance, orbit.distanceRange, orbit.fovY)
     }
 
@@ -62,23 +62,27 @@ class SingleCamera {
         return snapped
     }
 
+    /** Whether the camera looks at [view] of [axes] from its other side. */
+    fun isFlipped(view: View, axes: PartAxes): Boolean = (toViewer() dot axes.viewDirection(view)) < 0f
+
     private fun toViewer(): Vec3 = (orbit.eye - orbit.target).toBody().normalized()
 
     /** [view]'s camera for a [width] by [height] view, the same object until something it holds changes. [hold] keeps it still whatever changes. */
     fun lockedCamera(view: View, selection: SheetSelection, width: Int, height: Int, hold: Boolean): LockedCamera {
         val current = held
         if (hold && current?.view == view) return current
+        val flipped = isFlipped(view, selection.part.axes)
         val part = selection.part
         val center = orbit.target.toBody()
         val reach = (selection.box.center - center).length + selection.box.radius
         val fit = SheetFit(center, pixelsPerUnit(orbit.distance, height, orbit.fovY), reach)
         if (current != null && current.view == view && current.fit == fit && current.axes == part.axes &&
             current.origin == part.origin && current.drawingScale == selection.drawingScale && current.lengthFactor == part.lengthFactor &&
-            current.width == width && current.height == height
+            current.width == width && current.height == height && current.flipped == flipped
         ) {
             return current
         }
-        return LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale, part.lengthFactor).also { held = it }
+        return LockedCamera(view, part.axes, fit, width, height, part.origin, selection.drawingScale, part.lengthFactor, flipped).also { held = it }
     }
 }
 

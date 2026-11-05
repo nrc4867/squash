@@ -123,9 +123,9 @@ class CurveReadoutsTest {
 
     @Test
     fun fullShowsRefitOnlyWhileTheGraphWorks() {
-        assertEquals(PaneChip.LIVE, paneChip(null, emptySet(), null, refitting = false))
-        assertEquals(PaneChip.REFIT, paneChip(null, emptySet(), null, refitting = true))
-        assertEquals(PaneChip.DRAWN, paneChip(View.SIDE, setOf(View.SIDE), null, refitting = true))
+        assertEquals(null, paneChip(null, refitting = false))
+        assertEquals(PaneChip.REFIT, paneChip(null, refitting = true))
+        assertEquals(null, paneChip(View.SIDE, refitting = true))
     }
 
     @Test

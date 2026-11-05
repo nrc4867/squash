@@ -49,8 +49,6 @@ fun strokeCommand(character: Character, anchors: List<Anchor>, thisSide: Boolean
 class SurfaceStrokeTool(state: AppState, var ink: Color, var lineWidth: Float) : SurfaceTool(state) {
     private val live = mutableStateListOf<Vec3>()
 
-    override val showsPreviews: Boolean get() = false
-
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         val anchors = arrayListOf(hit.anchor)

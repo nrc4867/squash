@@ -116,14 +116,16 @@ class SheetPureTest {
     }
 
     @Test
-    fun chipsReadTheOutlinesAndTheStroke() {
-        assertEquals(PaneChip.LIVE, paneChip(null, emptySet(), null))
-        assertEquals(PaneChip.FROM_TEMPLATE, paneChip(View.TOP, setOf(View.SIDE), null))
-        assertEquals(PaneChip.DRAWN, paneChip(View.SIDE, setOf(View.SIDE), null))
-        assertEquals(PaneChip.DRAWING, paneChip(View.SIDE, setOf(View.SIDE), View.SIDE))
-        assertEquals(PaneChip.HIDES_PAIR, paneChip(View.SIDE, setOf(View.SIDE), null, overridden = setOf(View.SIDE)), "an edit lands under the override")
-        assertEquals(PaneChip.THIS_SIDE, paneChip(View.SIDE, setOf(View.SIDE), null, overridden = setOf(View.SIDE), mirror = false))
-        assertEquals(null, paneChip(View.FRONT, setOf(View.FRONT), null, conflicted = setOf(View.FRONT)), "the highlight has the corner")
+    fun chipsShowOnlyWhatIsHappeningInAPane() {
+        assertEquals(null, paneChip(null))
+        assertEquals(null, paneChip(View.SIDE), "a pane at rest has no chip")
+        assertEquals(PaneChip.SURFACE_REFUSED, paneChip(null, refused = true))
+        assertEquals(PaneChip.REFIT, paneChip(null, refitting = true))
+        assertEquals(PaneChip.FIT_ERROR, paneChip(View.SIDE, fitError = 1.5f), "a fit's error still reads")
+        assertEquals(PaneChip.DRAWING, paneChip(View.SIDE, View.SIDE))
+        assertEquals(PaneChip.HIDES_PAIR, paneChip(View.SIDE, overridden = setOf(View.SIDE)), "an edit lands under the override")
+        assertEquals(PaneChip.THIS_SIDE, paneChip(View.SIDE, overridden = setOf(View.SIDE), mirror = false))
+        assertEquals(null, paneChip(View.FRONT, conflicted = setOf(View.FRONT), fitError = 1.5f), "the highlight has the corner")
     }
 
     @Test

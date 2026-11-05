@@ -90,7 +90,8 @@ fun bodyCamera(view: BodyView, fit: SheetFit, width: Int, height: Int) = PaneCam
  * the mesh's silhouette on screen. [drawingScale] is the part's size parameter, which multiplies a drawing, so a stroke
  * still builds under the pointer at any size. [lengthFactor] is what the part is built at along its axis, which multiplies an
  * outline's x on every view but Front, so a stored outline lies on a shortened part and a stroke on one stores what builds
- * under the pointer. Pure, so a tool's logic is tested without a window.
+ * under the pointer. A [flipped] camera looks at the same plane from its other side, so what is drawn there lands in the same outline. Pure, so a
+ * tool's logic is tested without a window.
  */
 class LockedCamera(
     val view: View,
@@ -101,8 +102,9 @@ class LockedCamera(
     val origin: Vec3 = Vec3.ZERO,
     val drawingScale: Float = 1f,
     val lengthFactor: Float = 1f,
+    val flipped: Boolean = false,
 ) : SurfaceView {
-    val basis: ViewBasis = axes.basis(view)
+    val basis: ViewBasis = axes.basis(view).let { if (flipped) it.flipped else it }
     private val pane = PaneCamera(basis.screenRight, basis.screenUp, fit, width, height)
 
     /** What an outline's x is multiplied by on the built part. */

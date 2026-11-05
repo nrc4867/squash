@@ -28,7 +28,10 @@ class PaintEditState {
     var softness by mutableFloatStateOf(0f)
     var fillReach by mutableStateOf(FillReach.PART)
 
-    /** The border whose points show, for dragging. */
+    /** Which slots show in the drawer. */
+    val shelf = SlotShelf()
+
+    /** The border being edited, whose points show for dragging; with none, Region border draws a new one. */
     var selectedRegion by mutableStateOf<RegionRef?>(null)
 
     /** The slot the tools paint with in [palette], or null when it holds none. */
@@ -40,5 +43,6 @@ class PaintEditState {
         softness = 0f
         fillReach = FillReach.PART
         selectedRegion = null
+        shelf.clear()
     }
 }

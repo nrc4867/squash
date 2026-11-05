@@ -44,6 +44,9 @@ private const val COMB_STEP_PIXELS = 18f
 /** A comb replaces those already within this share of its reach. */
 private const val COMB_REPLACES_WITHIN = 0.5f
 
+/** How far past the surface a comb still takes the nearest place on it, in body units: about the longest tuft the fur rule's Length allows, twice over. */
+private const val COMB_REACH_UNITS = 0.35f
+
 /** A comb's drag on the surface smaller than this says nothing about which way, in u and v. */
 private const val MIN_COMB_STEP = 1e-4f
 
@@ -55,7 +58,6 @@ abstract class SurfaceDragTool(state: AppState, var ink: Color, var lineWidth: F
     protected val live = mutableStateListOf<Vec3>()
 
     override val takesFreeCamera: Boolean get() = true
-    override val showsPreviews: Boolean get() = false
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = shown(camera)
 
@@ -112,10 +114,14 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
 }
 
 /**
- * Comb: a drag lays the part's grain along it, anchored as vectors in u and v, on the part under its start. Fur follows it as the drag
- * goes, as previews of one step, which release commits and a lost drag takes back.
+ * Comb: a drag lays the part's grain along it, anchored as vectors in u and v, on the part under its start. A press or drag on the fur past the
+ * body, or in the space around it, combs the nearest place on the surface. Fur follows it as the drag goes, as previews of one step, which release
+ * commits and a lost drag takes back.
  */
 class CombTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDragTool(state, ink, lineWidth) {
+    override fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
+        state.session.value?.assembly?.output?.value?.let { surfaceHitWithin(it, pixel, sight, COMB_REACH_UNITS) }
+
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         val character = session.document.value.character

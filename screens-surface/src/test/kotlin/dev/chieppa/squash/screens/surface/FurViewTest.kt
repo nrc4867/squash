@@ -22,6 +22,7 @@ import dev.chieppa.squash.screens.fennec.INK
 import dev.chieppa.squash.screens.fennec.TAIL
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
+import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.squash.screens.sheet.ShownFur
 import dev.chieppa.squash.screens.sheet.furDraws
@@ -86,6 +87,19 @@ class FurViewTest {
         roots.forEachIndexed { i, a ->
             roots.drop(i + 1).forEach { b -> assertTrue((a - b).length >= spacing * SPACING_HELD, "$a and $b are too close") }
         }
+    }
+
+    @Test
+    fun aPressOffTheBodyTakesTheNearestPlaceOnItWithinReach() {
+        val character = assertNotNull(session.assembly.output.value)
+        val camera = sideCamera(center(TAIL), Vec3(3f, 1f, -4f))
+        val sight = FullView({ camera }, VIEW_PIXELS, VIEW_PIXELS)
+        val middle = assertNotNull(sight.toPixel(center(TAIL)))
+        val away = generateSequence(middle) { it + androidx.compose.ui.geometry.Offset(0f, -4f) }.first { surfaceHit(character, it, sight) == null } + androidx.compose.ui.geometry.Offset(0f, -8f)
+        val taken = assertNotNull(surfaceHitWithin(character, away, sight, 1f))
+        val shown = assertNotNull(sight.toPixel(taken.position))
+        assertTrue(hypot(shown.x - away.x, shown.y - away.y) < 24f, "it lies at the edge next to the press")
+        assertEquals(null, surfaceHitWithin(character, androidx.compose.ui.geometry.Offset(0f, 0f), sight, 0.01f), "out of reach takes nothing")
     }
 
     @Test

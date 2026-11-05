@@ -75,4 +75,7 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
 data class ViewBasis(val xAxis: Vec3, val yAxis: Vec3, val screenRight: Vec3, val screenUp: Vec3) {
     /** From the part towards the viewer. */
     val back: Vec3 get() = screenRight cross screenUp
+
+    /** The same plane looked at from its other side, with the same up. */
+    val flipped: ViewBasis get() = copy(screenRight = screenRight * -1f)
 }

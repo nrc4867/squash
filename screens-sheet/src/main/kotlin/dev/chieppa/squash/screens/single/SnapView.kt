@@ -26,12 +26,12 @@ private val SNAP_OUT_COSINE = cosineOf(SNAP_OUT_DEGREES)
 fun PartAxes.viewDirection(view: View): Vec3 = basis(view).back
 
 /**
- * The view a camera at [toViewer], a unit vector from what it looks at to its eye, shows: [current] until it turns further
+ * The view a camera at [toViewer], a unit vector from what it looks at to its eye, shows from either side: [current] until it turns further
  * than [SNAP_OUT_DEGREES] from it, the nearest view within [SNAP_IN_DEGREES], or null for a free camera. The gap between
  * the two keeps a slow orbit from flickering at the edge of a snap.
  */
 fun snappedView(current: View?, toViewer: Vec3, axes: PartAxes): View? {
-    fun closeness(view: View) = toViewer dot axes.viewDirection(view)
+    fun closeness(view: View) = abs(toViewer dot axes.viewDirection(view))
     if (current != null && closeness(current) >= SNAP_OUT_COSINE) return current
     return VIEW_ORDER.maxBy(::closeness).takeIf { closeness(it) >= SNAP_IN_COSINE }
 }

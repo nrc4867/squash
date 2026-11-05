@@ -55,8 +55,8 @@ class SnapViewTest {
     }
 
     @Test
-    fun aCameraBehindAViewIsFree() {
-        for (view in VIEW_ORDER) assertNull(snappedView(null, leg.viewDirection(view) * -1f, leg), "behind $view")
+    fun aCameraBehindAViewSnapsToItFromTheOtherSide() {
+        for (view in VIEW_ORDER) assertEquals(view, snappedView(null, leg.viewDirection(view) * -1f, leg), "behind $view")
     }
 
     @Test

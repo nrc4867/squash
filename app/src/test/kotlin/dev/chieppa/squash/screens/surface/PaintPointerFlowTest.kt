@@ -15,19 +15,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BrushStroke
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.ShadingMode
+import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.render.Shading
@@ -46,7 +52,6 @@ import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetPanes
-import dev.chieppa.squash.screens.sheet.shadingPreviewTag
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.paint.ColorDrawerContent
 import dev.chieppa.squash.screens.surface.paint.PaintTags
@@ -66,6 +71,7 @@ private const val SETTLE_MILLIS = 60_000L
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
 private const val DRAWER_WIDTH = 300
+private const val MANY_SLOTS = 30
 
 /** The pixels between looks up the free pane for a part. */
 private const val SCAN_STEP = 6
@@ -269,15 +275,106 @@ class PaintPointerFlowTest {
         waitForIdle()
         assertEquals(true, chest().ink, "the toggle inks it")
 
-        onNodeWithTag(shadingPreviewTag(Shading.TWO_TONE)).performClick()
+        onNodeWithText("Two-tone").performScrollTo().performMouseInput { click() }
         waitForIdle()
-        assertEquals(ShadingMode.TWO_TONE, session.document.value.character.shading.mode, "the tile writes the character")
+        assertEquals(ShadingMode.TWO_TONE, session.document.value.character.shading.mode, "the control writes the character")
         onNodeWithTag(PaintTags.FAR_PARTS).performScrollTo().performMouseInput { click() }
         waitForIdle()
         assertEquals(false, session.document.value.character.shading.farSideDarker, "and so does the far parts toggle")
         runOnIdle { state.undo() }
         waitForIdle()
         assertEquals(true, session.document.value.character.shading.farSideDarker, "each is one step")
+    }
+
+    @Test
+    fun aRegionsSwatchChangesItsColorAsOneStepAndDeletesIt() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.SHEET)
+        val session = assertNotNull(state.session.value)
+        show(state) { rememberBrushTool(state) }
+        fun regions() = assertNotNull(session.document.value.character.resolved(TORSO)).surface.regions
+        val steps = session.history.steps.value.done.size
+        onNodeWithTag(PaintTags.region("chest")).performScrollTo().performMouseInput { click() }
+        waitForIdle()
+        onNodeWithTag(PaintTags.regionSlot("chest", "ink")).performMouseInput { click() }
+        waitForIdle()
+        assertEquals(SlotName("ink"), regions().first { it.id.value == "chest" }.slot)
+        assertEquals(steps + 1, session.history.steps.value.done.size)
+        onNodeWithTag(PaintTags.region("chest")).performScrollTo().performMouseInput { click() }
+        waitForIdle()
+        onNodeWithTag(PaintTags.regionDelete("chest")).performMouseInput { click() }
+        waitForIdle()
+        assertTrue(regions().none { it.id.value == "chest" })
+    }
+
+    @Test
+    fun newRegionDrawsAndARowsPenEditsThatRegion() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.SHEET)
+        show(state) { rememberBrushTool(state) }
+        onNodeWithTag(PaintTags.regionEdit("chest")).performScrollTo().performMouseInput { click() }
+        waitForIdle()
+        assertEquals(BuildTool.REGION_BORDER, state.tool.value)
+        assertEquals("chest", state.paint.selectedRegion?.id?.value)
+        onNodeWithTag(PaintTags.NEW_REGION).performScrollTo().performMouseInput { click() }
+        waitForIdle()
+        assertEquals(BuildTool.REGION_BORDER, state.tool.value, "the tool stays, now for a new one")
+        assertEquals(null, state.paint.selectedRegion)
+        onNodeWithTag(PaintTags.NEW_REGION).performMouseInput { click() }
+        waitForIdle()
+        assertEquals(BuildTool.NONE, state.tool.value, "pressing it again stops")
+    }
+
+    @Test
+    fun aDoubleClickNamesASlotAsOneStepAndWhatNamesItHolds() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.SHEET)
+        val session = assertNotNull(state.session.value)
+        show(state) { rememberFillTool(state) }
+        state.paint.slot = CREAM
+        waitForIdle()
+        fun slot() = session.document.value.character.palette.slots.first { it.name == CREAM }
+        onNodeWithTag(PaintTags.SLOT_NAME).performMouseInput { doubleClick() }
+        waitForIdle()
+        onNodeWithTag(PaintTags.SLOT_NAME_FIELD).performTextReplacement("Belly white")
+        onNodeWithTag(PaintTags.SLOT_NAME_FIELD).performImeAction()
+        waitForIdle()
+        assertEquals("Belly white", slot().label)
+        onNodeWithText("Belly white").assertExists()
+        session.history.undo()
+        assertEquals(null, slot().label)
+    }
+
+    @Test
+    fun deletingASlotMakesTheOneBeforeItCurrent() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.SHEET)
+        val session = assertNotNull(state.session.value)
+        show(state) { rememberFillTool(state) }
+        val names = session.document.value.character.palette.slots.map { it.name }
+        state.paint.slot = names[2]
+        waitForIdle()
+        onNodeWithTag(PaintTags.REMOVE_SLOT).performMouseInput { click() }
+        waitForIdle()
+        assertEquals(names[1], state.paint.slot)
+    }
+
+    @Test
+    fun aLongPaletteKeepsToTwoLinesAndAHiddenSlotComesBackWhenPicked() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.SHEET)
+        val session = assertNotNull(state.session.value)
+        show(state) { rememberFillTool(state) }
+        runOnIdle { repeat(MANY_SLOTS) { session.send(SetPaletteSlot(SlotName("extra-$it"), SlotColor(0.5f, 0.5f, 0.5f))) } }
+        waitForIdle()
+        val tops = session.document.value.character.palette.slots.mapNotNull { slot ->
+            onAllNodesWithTag(PaintTags.slot(slot.name.value)).fetchSemanticsNodes().firstOrNull()?.boundsInRoot?.top
+        }.distinct()
+        assertEquals(2, tops.size, "two lines at most")
+        val hidden = session.document.value.character.palette.slots.last().name
+        onNodeWithTag(PaintTags.slot(hidden.value)).assertDoesNotExist()
+        onNodeWithTag(PaintTags.ALL_SLOTS).performMouseInput { click() }
+        waitForIdle()
+        onNodeWithTag(PaintTags.slot(hidden.value)).performMouseInput { click() }
+        waitForIdle()
+        assertEquals(hidden, state.paint.slot)
+        onNodeWithTag(PaintTags.slot(hidden.value)).assertExists()
+        onNodeWithTag(PaintTags.ALL_SLOTS).assertExists()
     }
 
     @Test

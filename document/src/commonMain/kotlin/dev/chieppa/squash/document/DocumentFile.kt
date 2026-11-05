@@ -30,7 +30,7 @@ private const val SHOW_NEAR_KEY = "showNear"
 private const val FUR_ID_PREFIX = "fur-"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -59,6 +59,9 @@ private fun furMarksGainAKind(document: JsonObject): JsonObject = withEverySurfa
     val marks = surface[MARKS_KEY] as? JsonArray ?: return@withEverySurface surface
     JsonObject(surface + (MARKS_KEY to JsonArray(marks.map(::markWithFurKind))))
 }
+
+/** Format 7 to 8: a palette slot gains a label. A slot saved without one reads as its name. */
+private fun labelsOnPaletteSlots(document: JsonObject): JsonObject = document
 
 /** Format 6 to 7: a fur rule drops its show near, since a tuft stands on the body from every camera. */
 private fun furRulesLoseShowNear(document: JsonObject): JsonObject = withEverySurface(document) { surface ->

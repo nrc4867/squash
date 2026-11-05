@@ -71,11 +71,11 @@ class FullFirstSmokeTest {
         }
         val session = runOnIdle { state.open(savedFennec()).also { state.screen.value = Screen.WORKSPACE } }
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && selection != null }
-        onNode(hasText("Full first") and isSelectable()).performClick()
+        runOnIdle { state.layout.value = SheetLayout.FULL_FIRST }
         waitForIdle()
         assertEquals(SheetLayout.FULL_FIRST, state.layout.value)
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value)
-        onAllNodesWithText("Surface strokes only").fetchSemanticsNodes().single()
+        assertTrue(onAllNodesWithText("Surface strokes only").fetchSemanticsNodes().isEmpty(), "Full says so only when a tool is refused")
 
         val drawn = assertNotNull(selection)
         val paint = assertNotNull(look)

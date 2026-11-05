@@ -30,6 +30,7 @@ import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetPaletteSlot
+import dev.chieppa.squash.document.SetSlotLabel
 import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SquashDocument
@@ -90,6 +91,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters -> moved
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
+            is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))
             is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())
             is SetAreaFill -> area.replace(FIRST, displayName(command.area.substringAfterLast(":")))
             is SetRegion -> region.replace(FIRST, displayName(command.id.value))

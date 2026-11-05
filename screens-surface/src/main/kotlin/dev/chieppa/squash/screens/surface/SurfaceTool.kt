@@ -29,7 +29,6 @@ private const val ANCHOR_SPACING = 4f
 abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     override val takesFreeCamera: Boolean get() = true
     override val showsWhole: Boolean get() = true
-    override val showsPreviews: Boolean get() = true
 
     /** Takes a press on [hit] at [pixel], following it until it lets go. Returns once the gesture is over. */
     protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView)
@@ -38,7 +37,7 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     protected open suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean = false
 
     /** The place under [pixel] on the open character, or null. */
-    protected fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
+    protected open fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
         state.session.value?.assembly?.output?.value?.let { surfaceHit(it, pixel, sight) }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, camera)

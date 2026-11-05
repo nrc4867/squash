@@ -22,6 +22,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.SheetInput
@@ -171,7 +172,7 @@ class SpineSmokeTest {
     @Test
     fun theBoardInSingleWithAWidthBeingDragged() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val bench = tailInWorkspace()
-        onNode(hasText("Single") and isSelectable()).performClick()
+        runOnIdle { bench.state.layout.value = SheetLayout.SINGLE }
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Tail · side").fetchSemanticsNodes().isNotEmpty() }
         val viewport = onNodeWithTag(SingleTags.VIEWPORT).fetchSemanticsNode().size
         val selection = assertNotNull(bench.selection)

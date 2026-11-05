@@ -185,7 +185,7 @@ A locked pane looks straight along the normal of its view's plane, so an outline
 An outline is drawn in the locked camera of its own plane, so only a locked pane takes one. Surface work lands from any camera, so Full takes it too.
 
 - **A tool says so.** `PaneTool.takesFreeCamera` is off by default, and the pane calls `fullInput` only when it is on. Surface tools and Move turn it on.
-- **A refused press shows in place.** With any other tool armed, Full first lights its Surface strokes only chip for as long as the press is held, and nothing is written.
+- **A refused press shows in place.** With any other tool armed, Full first shows a Surface strokes only chip for as long as the press is held, and nothing is written.
 - **The orbit keeps its own input.** Stretch's `orbitNavigation` takes the middle button, the wheel and two fingers, consuming them first; the left button, one finger and the pen are the tool's, as `isToolPress` reads them. Neither ever sees the other's drag.
 - **A pointer becomes a ray.** `FullView.ray` gives the line of sight through a pane pixel in body space, through the camera as it is at that moment. A part's triangles lie at `SheetPart.origin` plus `SheetPart.mesh`.
 

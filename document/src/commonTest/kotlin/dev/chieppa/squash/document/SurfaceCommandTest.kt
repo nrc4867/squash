@@ -92,6 +92,18 @@ class SurfaceCommandTest {
     }
 
     @Test
+    fun aSlotsLabelSurvivesRecoloringAndRemovingAndUndoing() {
+        val named = SetPaletteSlot(SlotName("cloud"), SlotColor(0.5f, 0.5f, 0.5f)).apply(placed).document
+        val labelled = SetSlotLabel(SlotName("cloud"), "Cloud white").apply(named).document
+        fun SquashDocument.label() = character.palette.slots.firstOrNull { it.name == SlotName("cloud") }?.label
+        assertEquals("Cloud white", labelled.label())
+        assertEquals("Cloud white", SetPaletteSlot(SlotName("cloud"), SlotColor(0.1f, 0.1f, 0.1f)).apply(labelled).document.label())
+        val removed = SetPaletteSlot(SlotName("cloud"), null).apply(labelled)
+        assertEquals("Cloud white", removed.undo.apply(removed.document).document.label())
+        assertUndoesAndRedoes(named, SetSlotLabel(SlotName("cloud"), "Cloud white"))
+    }
+
+    @Test
     fun aFurRuleSetsAndClears() {
         val rule = FurRule(spacingPixels = 20f, lengthPixels = 30f)
         assertUndoesAndRedoes(placed, SetFurRule(head.id, rule), SetFurRule(head.id, null))

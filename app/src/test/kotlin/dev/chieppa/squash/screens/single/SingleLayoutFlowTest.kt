@@ -16,7 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
@@ -109,7 +109,7 @@ class SingleLayoutFlowTest {
         assertNotNull(session.document.value.character.resolved(assertNotNull(state.selectedPart.value))).outlines
 
     @Test
-    fun theLayoutControlOffersItsBuiltLayoutsAndTheChoiceIsNotInTheDocument() = runComposeUiTest {
+    fun theLayoutControlOffersItsBuiltLayoutsAndTheChoiceIsNotInTheDocument() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
@@ -133,7 +133,7 @@ class SingleLayoutFlowTest {
     }
 
     @Test
-    fun aStrokeInSingleProducesAnOutlineOnTheViewSnappedTo() = runComposeUiTest {
+    fun aStrokeInSingleProducesAnOutlineOnTheViewSnappedTo() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
@@ -153,7 +153,7 @@ class SingleLayoutFlowTest {
     }
 
     @Test
-    fun drawingWorksOnlyWhileSnapped() = runComposeUiTest {
+    fun drawingWorksOnlyWhileSnapped() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
@@ -174,7 +174,7 @@ class SingleLayoutFlowTest {
     }
 
     @Test
-    fun aMissingViewsThumbnailAndSnapViewBothTurnTheCameraThere() = runComposeUiTest {
+    fun aMissingViewsThumbnailAndSnapViewBothTurnTheCameraThere() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
@@ -195,7 +195,22 @@ class SingleLayoutFlowTest {
     }
 
     @Test
-    fun theLayoutOutlivesTheCharacter() = runComposeUiTest {
+    fun pressingTheSnapViewTheCameraIsOnLooksFromItsOtherSide() = runDesktopComposeUiTest(1900, 900) {
+        val state = AppState(shipped)
+        val session = workspaceOnALeg(state)
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        pickSingle()
+        waitForHud("side")
+        segment("Side").performClick()
+        waitForHud("far side")
+        segment("Side").assertIsSelected()
+        segment("Side").performClick()
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("far side", substring = true).fetchSemanticsNodes().isEmpty() }
+        waitForHud("side")
+    }
+
+    @Test
+    fun theLayoutOutlivesTheCharacter() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }

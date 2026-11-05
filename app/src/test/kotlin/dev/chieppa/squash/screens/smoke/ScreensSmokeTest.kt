@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.smoke
 
 import androidx.compose.ui.test.performMouseInput
 import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
@@ -353,7 +354,7 @@ class ScreensSmokeTest {
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         onNodeWithTag(ShellTags.PICK_DRAW).performClick()
         assertSettled(session)
-        onNode(hasText("Single") and isSelectable()).performClick()
+        runOnIdle { state.layout.value = SheetLayout.SINGLE }
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
         val fromTemplate = assertNotNull(selection).part.mesh
 

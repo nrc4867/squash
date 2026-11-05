@@ -42,7 +42,6 @@ fun erasedAt(work: BodySurfaceWork, view: SurfaceView, pixel: Offset, reach: Flo
 
 /** Erase on the surface: a press or a drag takes away the strokes and line weights it crosses, each one undo step. */
 class SurfaceEraseTool(state: AppState, var reach: Float) : SurfaceTool(state) {
-    override val showsPreviews: Boolean get() = false
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return

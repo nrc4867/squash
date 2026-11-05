@@ -160,7 +160,7 @@ class FullFirstUiTest {
         val tool = LockedOnlyTool()
         show(state, tool)
         settle(state) { tool.fullView }
-        onNodeWithText("Surface strokes only").assertExists()
+        onNodeWithText("Surface strokes only").assertDoesNotExist()
         onNodeWithTag(SURFACE_REFUSED_TAG).assertDoesNotExist()
 
         full().performMouseInput {

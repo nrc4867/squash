@@ -40,6 +40,9 @@ import dev.chieppa.squash.uidesign.generated.single_snap_front
 import dev.chieppa.squash.uidesign.generated.single_snap_side
 import dev.chieppa.squash.uidesign.generated.single_snap_top
 import dev.chieppa.squash.uidesign.generated.single_thumb_pixels
+import dev.chieppa.squash.uidesign.generated.single_view_back
+import dev.chieppa.squash.uidesign.generated.single_view_bottom
+import dev.chieppa.squash.uidesign.generated.single_view_far_side
 import dev.chieppa.squash.uidesign.generated.single_view_free
 import dev.chieppa.squash.uidesign.generated.single_view_front
 import dev.chieppa.squash.uidesign.generated.single_view_side
@@ -91,7 +94,7 @@ internal fun SnapViewControl(snapped: BodyView?, onSnap: (BodyView) -> Unit) {
 
 /** The part, its side and the direction the camera looks from, as the board's HUD reads them. */
 @Composable
-internal fun SingleHud(state: AppState, snapped: BodyView?) {
+internal fun SingleHud(state: AppState, snapped: BodyView?, flipped: Boolean = false) {
     val session by state.session.collectAsState()
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value ?: return
@@ -100,9 +103,9 @@ internal fun SingleHud(state: AppState, snapped: BodyView?) {
     val view = stringResource(
         when (snapped) {
             null -> Res.string.single_view_free
-            BodyView.SIDE -> Res.string.single_view_side
-            BodyView.TOP -> Res.string.single_view_top
-            BodyView.FRONT -> Res.string.single_view_front
+            BodyView.SIDE -> if (flipped) Res.string.single_view_far_side else Res.string.single_view_side
+            BodyView.TOP -> if (flipped) Res.string.single_view_bottom else Res.string.single_view_top
+            BodyView.FRONT -> if (flipped) Res.string.single_view_back else Res.string.single_view_front
         },
     )
     val text = when (part.side) {

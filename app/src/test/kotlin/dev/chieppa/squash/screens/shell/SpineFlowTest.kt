@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.draw.OutlineDrawerTags
@@ -74,7 +75,7 @@ class SpineFlowTest {
     private fun ComposeUiTest.statusEnd(text: String) = onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains(text)
 
     @Test
-    fun theKeyArmsTheToolAndTheDrawerReadsAsTheBoardDrawsIt() = runComposeUiTest {
+    fun theKeyArmsTheToolAndTheDrawerReadsAsTheBoardDrawsIt() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         workspace(state)
         assertEquals(BuildTool.SPINE_WIDTH, state.tool.value)

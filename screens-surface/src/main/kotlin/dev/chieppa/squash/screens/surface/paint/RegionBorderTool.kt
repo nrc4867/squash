@@ -41,8 +41,8 @@ private const val GRAB_REACH = 10f
 private const val REGION_ID_PREFIX = "border-"
 
 /**
- * Draws a closed border on the surface, however many parts it crosses, as a new region held by the part it starts on. The region picked in the
- * Color drawer shows its points, which drag along the surface.
+ * Draws a closed border on the surface, however many parts it crosses, as a new region held by the part it starts on, which is then the one being
+ * edited. The region being edited shows its points, which drag along the surface, and while there is one a press elsewhere does nothing.
  */
 @Stable
 class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceTool(state) {
@@ -50,6 +50,7 @@ class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceT
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
+        if (state.paint.selectedRegion?.let(::pointsOf) != null) return
         val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
         drawn.clear()
         drawn += hit

@@ -31,6 +31,7 @@ object ShellTags {
     fun pickTile(id: String) = "pick.tile.$id"
     fun socketDot(name: String) = "pick.dot.$name"
     fun tool(tool: BuildTool) = "tools.${tool.name}"
+    fun section(name: String) = "tools.section.$name"
     fun pickTool(tool: PickTool) = "pick.tool.${tool.name}"
     fun sideRow(name: String) = "parts.side.$name"
     fun parameter(name: String) = "part.parameter.$name"

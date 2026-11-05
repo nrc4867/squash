@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.sheet.ToolSection
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
@@ -17,6 +18,7 @@ import dev.chieppa.squash.uidesign.generated.fur_comb_tool
 import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
+import dev.chieppa.squash.uidesign.generated.shell_tools_lines
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
@@ -32,6 +34,21 @@ fun LineTools(state: AppState) {
     Item(BuildTool.COMB, SquashIcons.Comb, stringResource(Res.string.fur_comb_tool), "G", armed, state::armTool)
     Item(BuildTool.SURFACE_STROKE, SquashIcons.SurfaceStroke, stringResource(Res.string.lines_tool_surface_stroke), "D", armed, state::armTool)
     Item(BuildTool.SURFACE_ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), "X", armed, state::armTool)
+}
+
+/** The lines and fur tools as a section of the strip. */
+@Composable
+fun lineToolSection(state: AppState): ToolSection {
+    val armed by state.tool.collectAsState()
+    val icons = mapOf(
+        BuildTool.LINE_WIDTH to SquashIcons.LineWidth,
+        BuildTool.FUR_STROKE to SquashIcons.FurStroke,
+        BuildTool.COMB to SquashIcons.Comb,
+        BuildTool.SURFACE_STROKE to SquashIcons.SurfaceStroke,
+        BuildTool.SURFACE_ERASE to SquashIcons.Erase,
+    )
+    val held = armed.takeIf { it in icons }
+    return ToolSection(ShellTags.section("lines"), stringResource(Res.string.shell_tools_lines), icons[held] ?: SquashIcons.LineWidth, icons.size, held) { LineTools(state) }
 }
 
 @Composable

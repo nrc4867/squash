@@ -50,7 +50,6 @@ class SheetInput(
     val hints: SheetHints = SheetHints(),
     val layout: SheetLayout = SheetLayout.SHEET,
     val color: PaneColor? = null,
-    val previews: List<ShadingPreview> = emptyList(),
     val surface: SurfaceRibbons? = null,
     val fullFur: ShownFur = ShownFur.NONE,
     val lockedFur: Map<View, ShownFur> = emptyMap(),
@@ -62,7 +61,7 @@ class SheetInput(
  * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
-    val views = SheetPane.entries.mapNotNull { sceneView(it, input) } + previewViews(input.previews, input.selection, input.full, input.look, input.color)
+    val views = SheetPane.entries.mapNotNull { sceneView(it, input) }
     val dividers = buildOverlay { paneDividers(input.layout, input.rects, input.width, input.height).forEach { rect(it.toRect(), input.look.divider) } }
     val panes = SheetPane.entries.map { paneOverlay(it, input).clippedTo(input.rects[it.ordinal].toRect()) }
     return SceneFrame(input.look.well, views, panes.fold(dividers, ViewportOverlay::plus))

@@ -204,6 +204,7 @@ class AppState(
     /** Arms [next], or disarms the tool when it is already armed, which leaves the panes to look at and the template's drawer. */
     fun armTool(next: BuildTool) {
         tool.value = if (tool.value == next) BuildTool.NONE else next
+        if (tool.value != BuildTool.REGION_BORDER) paint.selectedRegion = null
     }
 
     /** Places the chosen type on [socket], or the first it takes when it takes no such type. */

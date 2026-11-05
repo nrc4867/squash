@@ -61,7 +61,6 @@ fun weightRadius(character: AssembledCharacter, hit: SurfaceHit, view: SurfaceVi
 class LineWidthTool(state: AppState, var ring: Color, var ringWidth: Float) : SurfaceTool(state) {
     private var spot by mutableStateOf<Pair<Any, Offset>?>(null)
 
-    override val showsPreviews: Boolean get() = false
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier =
         Modifier.pointerInput(this, view) { followSpot(view) }.then(super.pointerInput(view, camera))

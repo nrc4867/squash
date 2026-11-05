@@ -31,8 +31,8 @@ import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
 import dev.chieppa.squash.screens.sheet.SheetPanes
-import dev.chieppa.squash.screens.sheet.ShadingPreview
 import dev.chieppa.squash.screens.sheet.SheetHints
+import dev.chieppa.squash.screens.single.SingleTags
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
@@ -40,8 +40,6 @@ import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
-import dev.chieppa.squash.screens.sheet.shadingPreviewLabelTag
-import dev.chieppa.squash.screens.sheet.shadingPreviewTag
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.shell.BuildTool
@@ -131,32 +129,20 @@ class ColorPanesSmokeTest {
     }
 
     /** The window as a person sees it, with the panes' real frame under its floating corners. */
-    private fun ComposeUiTest.keepWorkspace(name: String, whole: Boolean, shading: Shading = Shading.FLAT, previews: Boolean = false): IntArray {
+    private fun ComposeUiTest.keepWorkspace(name: String, whole: Boolean, shading: Shading = Shading.FLAT): IntArray {
         val rects = paneRects()
         val width = rects.maxOf { it.right }
         val height = rects.maxOf { it.bottom }
         val paneBounds = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInRoot }
         val originX = paneBounds.minOf { it.left }
         val originY = paneBounds.minOf { it.top }
-        val tiles = if (!previews) emptyList() else Shading.entries.map { mode ->
-            val tile = onNodeWithTag(shadingPreviewTag(mode)).fetchSemanticsNode().boundsInRoot
-            val shaded = assertNotNull(color).shading.copy(mode = mode)
-            ShadingPreview(PixelRect((tile.left - originX).roundToInt(), (tile.top - originY).roundToInt(), tile.width.roundToInt(), tile.height.roundToInt()), shaded)
-        }
         val shown = assertNotNull(color).let { PaneColor(it.body, it.palette, it.shading.copy(mode = shading), it.borders) }
-        val base = panesInput(assertNotNull(selection), assertNotNull(look), rects, width, height, SheetHints(whole = whole), color = shown, previews = tiles)
+        val base = panesInput(assertNotNull(selection), assertNotNull(look), rects, width, height, SheetHints(whole = whole), color = shown)
         val image = renderSnapshot(sheetFrame(base), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
         val workspace = onNodeWithTag(ShellTags.WORKSPACE)
         val window = workspace.captureToImage().argbPixels()
         val windowWidth = workspace.fetchSemanticsNode().size.width
         window.paste(windowWidth, image.pixels, image.width, originX.roundToInt(), originY.roundToInt())
-        if (previews) {
-            for (mode in Shading.entries) {
-                val label = onNodeWithTag(shadingPreviewLabelTag(mode))
-                val node = label.fetchSemanticsNode()
-                window.paste(windowWidth, label.captureToImage().argbPixels(), node.size.width, node.boundsInRoot.left.roundToInt(), node.boundsInRoot.top.roundToInt())
-            }
-        }
         keepImage(window, windowWidth, name)
         assertNotBlank(image.pixels, name)
         return image.pixels
@@ -239,7 +225,7 @@ class ColorPanesSmokeTest {
         settle(state)
         val strokes = session.document.value.character.parts.sumOf { session.document.value.character.resolved(it).surface.paint.strokes.size }
         assertTrue(strokes > strokesBefore, "the drag left a stroke")
-        keepWorkspace("color-brush-drawer", whole = true, previews = true)
+        keepWorkspace("color-brush-drawer", whole = true)
 
         onNodeWithTag(ShellTags.tool(BuildTool.FILL)).performClick()
         waitForIdle()
@@ -252,7 +238,7 @@ class ColorPanesSmokeTest {
         }
         settle(state)
         assertNotEquals(before, session.document.value, "the press filled a section")
-        keepWorkspace("color-fill", whole = true, Shading.TWO_TONE, previews = true)
+        keepWorkspace("color-fill", whole = true, Shading.TWO_TONE)
         runOnIdle { state.undo() }
         settle(state)
         assertEquals(before, session.document.value, "a fill is one undo step")
@@ -287,7 +273,7 @@ class ColorPanesSmokeTest {
         settle(state)
         assertTrue(regions() > regionsBefore, "the drag closed a region")
         assertNotNull(state.paint.selectedRegion, "and it is picked")
-        keepWorkspace("color-region-border", whole = true, previews = true)
+        keepWorkspace("color-region-border", whole = true)
 
         onNodeWithTag(ShellTags.tool(BuildTool.PICK_COLOR)).performClick()
         waitForIdle()
@@ -302,15 +288,16 @@ class ColorPanesSmokeTest {
     }
 
     @Test
-    fun theSingleLayoutShowsTheColorDrawerAndPreviewsTiles() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun theSingleLayoutKeepsTheToolsInTheStripAndNoPreviewsOnTheView() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = openFennec()
         runOnIdle {
             state.layout.value = SheetLayout.SINGLE
             state.tool.value = BuildTool.REGION_BORDER
         }
         waitForIdle()
-        onNodeWithTag(shadingPreviewTag(Shading.TWO_TONE)).performClick()
-        waitForIdle()
-        assertEquals(ShadingMode.TWO_TONE, assertNotNull(state.session.value).document.value.character.shading.mode, "pressing a preview chooses its shading")
+        val tool = onNodeWithTag(ShellTags.tool(BuildTool.FILL)).fetchSemanticsNode().boundsInRoot
+        val view = onNodeWithTag(SingleTags.VIEWPORT).fetchSemanticsNode().boundsInRoot
+        assertTrue(tool.bottom <= view.top, "the tools sit above the view")
+        onNodeWithTag(SingleTags.THUMBNAILS).assertExists()
     }
 }

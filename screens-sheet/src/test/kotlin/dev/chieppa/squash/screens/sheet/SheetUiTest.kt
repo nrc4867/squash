@@ -26,6 +26,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -62,7 +63,18 @@ class SheetUiTest {
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
     @Test
-    fun singleSheetAndFullFirstAreTheLayoutsThatCanBePicked() = runComposeUiTest {
+    fun aNarrowStripFoldsTheLayoutControlIntoADropdown() = runDesktopComposeUiTest(700, 300) {
+        var picked: SheetLayout? = null
+        setStretchContent { SheetStrip(onLayout = { picked = it }) }
+        onNodeWithText("Layout").assertDoesNotExist()
+        onNodeWithText("Sheet").performClick()
+        waitForIdle()
+        onNodeWithText("Single").performClick()
+        assertEquals(SheetLayout.SINGLE, picked)
+    }
+
+    @Test
+    fun singleSheetAndFullFirstAreTheLayoutsThatCanBePicked() = runDesktopComposeUiTest(1900, 900) {
         var picked: SheetLayout? = null
         setStretchContent { SheetStrip(onLayout = { picked = it }) }
         onNodeWithText("Layout").assertExists()
@@ -101,10 +113,23 @@ class SheetUiTest {
     @Test
     fun aPaneShowsItsLabelAndChipInPopupsOverTheSurface() = runComposeUiTest {
         setStretchContent {
-            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(BodyView.SIDE, PaneChip.FROM_TEMPLATE) }
+            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(BodyView.SIDE, PaneChip.DRAWING, zoom = 0.86f) }
         }
         onNodeWithText("Side · part axes").assertExists()
-        onNodeWithText("From template").assertExists()
+        onNodeWithText("Drawing").assertExists()
+        onNodeWithText("86%").assertExists()
+    }
+
+    @Test
+    fun aFlippedPaneNamesTheSideItLooksFromAndItsLabelFlipsIt() = runComposeUiTest {
+        var flips = 0
+        setStretchContent {
+            Box(Modifier.size(400.dp, 300.dp)) { PaneViewport(BodyView.TOP, null, flipped = true, onFlip = { flips++ }) }
+        }
+        onNodeWithText("Bottom · part axes").assertExists()
+        onNodeWithTag(paneFlipTag(BodyView.TOP)).performClick()
+        waitForIdle()
+        assertEquals(1, flips)
     }
 
     @Test

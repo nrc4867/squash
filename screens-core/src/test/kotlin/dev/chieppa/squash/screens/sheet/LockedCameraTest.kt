@@ -14,6 +14,23 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class LockedCameraTest {
+    @Test
+    fun aFlippedCameraLooksFromTheOtherSideAndDrawsIntoTheSameOutline() {
+        val axes = PartAxes.of(Vec3(1f, 0f, 0f))
+        val fit = SheetFit(Vec3(0.2f, 0.1f, 0f), 100f, 1f)
+        for (view in View.entries) {
+            val near = LockedCamera(view, axes, fit, 400, 300)
+            val far = LockedCamera(view, axes, fit, 400, 300, flipped = true)
+            assertEquals(0f, (near.basis.back + far.basis.back).length, 1e-5f)
+            assertEquals(near.basis.screenUp, far.basis.screenUp)
+            val point = dev.chieppa.squash.document.CurvePoint(0.3f, 0.2f)
+            val shown = far.toPixel(point)
+            val back = far.toPlane(shown)
+            assertEquals(point.x, back.x, 1e-3f)
+            assertEquals(point.y, back.y, 1e-3f)
+        }
+    }
+
     private val paw = PartAxes.of(Vec3(1f, 0f, 0f))
     private val leg = PartAxes.of(Vec3(0f, -1f, 0f))
     private val tail = PartAxes.of(Vec3(-0.8f, 0.6f, 0f))

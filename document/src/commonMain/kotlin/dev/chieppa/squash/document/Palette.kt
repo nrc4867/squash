@@ -10,9 +10,12 @@ data class SlotColor(val red: Float, val green: Float, val blue: Float) {
     }
 }
 
-/** A named color. [shadow] is the slot's own shadow tone; with none, the look shifts [color] warm for its shadow. */
+/**
+ * A named color. [name] is what the character's parts refer to it by and never changes; [label] is what the person calls it, the name's own
+ * reading if none. [shadow] is the slot's own shadow tone; with none, the look shifts [color] warm for its shadow.
+ */
 @Serializable
-data class PaletteSlot(val name: SlotName, val color: SlotColor, val shadow: SlotColor? = null)
+data class PaletteSlot(val name: SlotName, val color: SlotColor, val shadow: SlotColor? = null, val label: String? = null)
 
 /** A character's named colors, in the order they are listed. */
 @Serializable

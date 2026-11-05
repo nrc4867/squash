@@ -19,16 +19,13 @@ import androidx.compose.ui.Modifier
 import dev.chieppa.stretch.frame.ViewportOverlay
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.single.SingleSurface
@@ -51,8 +48,7 @@ fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 /**
  * The workspace's viewport area as the boards draw it, in the layout the Layout control picks. In Sheet, the strip with
  * [tools] and the control, then Top, Full, Side and Front in one native surface; in Full first, the same panes in that
- * surface with Full large above the other three; in Single, the strip with the control above one viewport, with [tools]
- * floating on it. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
+ * surface with Full large above the other three; in Single, the strip with [tools] and the control above one viewport. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
  * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport. [surface] draws the
  * character's lines, in place of the meshes' own outlines.
  */
@@ -69,8 +65,8 @@ fun SheetPanes(
     val pick: (SheetLayout) -> Unit = { state.layout.value = it }
     Column(modifier) {
         if (layout == SheetLayout.SINGLE) {
-            SheetStrip(layout = layout, onLayout = pick)
-            SingleSurface(state, tool, tools, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
+            SheetStrip(layout = layout, onLayout = pick, tools = tools)
+            SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
             SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
@@ -111,7 +107,6 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it) }) }
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val color = rememberPaneColor(state)
-    val places = remember { PreviewPlaces() }
     SideEffect { open?.showColorAt(largestColorScale(cameras.values, orbit.view, fullRect.height)) }
     val frame = sheetFrame(
         SheetInput(
@@ -128,13 +123,12 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true),
             layout = layout,
             color = color,
-            previews = places.previews(tool?.showsPreviews == true, color?.shading ?: ObjectShading()),
             surface = surface,
             fullFur = fullFur,
             lockedFur = lockedFur,
         ),
     )
-    Box(modifier.onSizeChanged { size = it }.onGloballyPositioned { places.surface = it.positionInRoot() }) {
+    Box(modifier.onSizeChanged { size = it }) {
         SceneSurface(frame.takeIf { size != IntSize.Zero }, Modifier.fillMaxSize())
         SheetPaneGrid(gap, Modifier.fillMaxSize(), layout) { pane ->
             val body = pane.body
@@ -149,24 +143,23 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
                     .pressed(camera.view) { state.activeView.value = it }
                     .then(tool?.pointerInput(camera.view, camera) ?: Modifier)
             }
-            val chip = if (selection == null) {
-                null
-            } else {
-                paneChip(view, selection.outlines.keys, tool?.drawingIn, refitting, selection.overridden, mirror, disagreements.mapTo(mutableSetOf()) { it.view })
-            }
             val fitError = if (tool?.drawingIn != null) null else view?.let { tool?.fitErrorPixels(it) }
-            val shownChip = if (layout == SheetLayout.FULL_FIRST) fullFirstChip(chip, refused && body == null, fitError) else chip
+            val chip = selection?.let {
+                paneChip(view, tool?.drawingIn, refitting, it.overridden, mirror, disagreements.mapTo(mutableSetOf()) { conflict -> conflict.view }, fitError, refused && layout == SheetLayout.FULL_FIRST)
+            }
             val zoom = view?.takeIf { camera != null }?.let { state.paneNavigation[it] }?.takeIf { it != PaneNav() }?.zoom
             PaneViewport(
                 body,
-                shownChip,
+                chip,
                 input.testTag(sheetPaneTag(pane)),
                 fitError,
                 progress,
-                if (pane == SheetPane.FULL && tool?.showsPreviews == true) ({ ShadingPreviewTiles(state, places) }) else paneToast?.takeIf { pane == SheetPane.SIDE },
+                paneToast?.takeIf { pane == SheetPane.SIDE },
                 zoom,
                 { view?.let(state.paneNavigation::fit) },
                 short = layout == SheetLayout.FULL_FIRST,
+                flipped = body in state.paneNavigation.flips,
+                onFlip = { body?.let(state.paneNavigation::flip) },
             )
         }
     }
@@ -209,6 +202,7 @@ private class HeldCameras {
     private var lengthFactor: Float? = null
     private var axes: PartAxes? = null
     private var navs: Map<View, PaneNav> = emptyMap()
+    private var flips: Set<BodyView> = emptySet()
     private var cameras: Map<View, LockedCamera> = emptyMap()
 
     /** [hold] keeps them still while a stroke or a drag is under way, whatever the part does beneath it. */
@@ -217,10 +211,11 @@ private class HeldCameras {
         val part = selection.part
         val next = keepFit(fit, part.box, part.axes, rects, depthReach(selection, fit))
         val nextNavs = View.entries.associateWith { navigation[it] }
-        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.lengthFactor != lengthFactor || part.axes != axes || nextNavs != navs) {
+        if (next != fit || part.origin != origin || selection.drawingScale != scale || part.lengthFactor != lengthFactor || part.axes != axes || nextNavs != navs || navigation.flips != flips) {
             fit = next
             axes = part.axes
             navs = nextNavs
+            flips = navigation.flips
             origin = part.origin
             scale = selection.drawingScale
             lengthFactor = part.lengthFactor
@@ -228,7 +223,7 @@ private class HeldCameras {
                 val body = pane.body ?: return@mapNotNull null
                 val rect = rects[pane.ordinal]
                 val view = part.axes.framing.getValue(body)
-                view to LockedCamera(view, part.axes, navigation[view].applied(next), rect.width, rect.height, part.origin, selection.drawingScale, part.lengthFactor)
+                view to LockedCamera(view, part.axes, navigation[view].applied(next), rect.width, rect.height, part.origin, selection.drawingScale, part.lengthFactor, body in navigation.flips)
             }.toMap()
         }
         return cameras

@@ -44,19 +44,4 @@ class FullFirstPureTest {
         assertEquals(fullFirstPaneRects(1000, 800, 3), paneRects(SheetLayout.FULL_FIRST, 1000, 800, 3))
     }
 
-    @Test
-    fun fullSaysItTakesSurfaceStrokesAndLightsUpWhenARefusedToolPresses() {
-        assertEquals(PaneChip.SURFACE_ONLY, fullFirstChip(PaneChip.LIVE, refused = false, fitError = null))
-        assertEquals(PaneChip.SURFACE_REFUSED, fullFirstChip(PaneChip.LIVE, refused = true, fitError = null))
-        assertEquals(PaneChip.REFIT, fullFirstChip(PaneChip.REFIT, refused = false, fitError = null))
-    }
-
-    @Test
-    fun aSheetShowsOnlyWhatIsHappeningInIt() {
-        assertNull(fullFirstChip(PaneChip.DRAWN, refused = false, fitError = null))
-        assertNull(fullFirstChip(PaneChip.FROM_TEMPLATE, refused = false, fitError = null))
-        assertEquals(PaneChip.DRAWING, fullFirstChip(PaneChip.DRAWING, refused = false, fitError = null))
-        assertEquals(PaneChip.DRAWN, fullFirstChip(PaneChip.DRAWN, refused = false, fitError = 1.5f), "a fit's error still reads")
-        assertEquals(PaneChip.HIDES_PAIR, fullFirstChip(PaneChip.HIDES_PAIR, refused = false, fitError = null))
-    }
 }

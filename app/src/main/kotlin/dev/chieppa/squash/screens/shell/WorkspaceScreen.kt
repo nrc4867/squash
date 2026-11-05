@@ -21,7 +21,7 @@ import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
 import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
 import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
-import dev.chieppa.squash.screens.surface.LineTools
+import dev.chieppa.squash.screens.surface.lineToolSection
 import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
@@ -91,7 +91,7 @@ fun WorkspaceScreen(shell: Shell) {
     SheetPanes(
         state,
         Modifier.fillMaxSize(),
-        tools = { WorkspaceTools(state) { LineTools(state) } },
+        tools = { WorkspaceTools(state, lineToolSection(state)) },
         tool = tool,
         paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
         surface = rememberSurfaceLines(state),

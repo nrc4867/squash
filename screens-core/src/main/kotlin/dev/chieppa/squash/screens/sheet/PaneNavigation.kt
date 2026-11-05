@@ -14,6 +14,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.stretch.frame.twoFingerGestures
 import kotlin.math.exp
@@ -47,6 +48,15 @@ data class PaneNav(val zoom: Float = 1f, val offset: Vec3 = Vec3.ZERO) {
 @Stable
 class PaneNavigation {
     private var navs by mutableStateOf(emptyMap<View, PaneNav>())
+
+    /** The panes looking from the other side of what they hold. */
+    var flips by mutableStateOf(emptySet<BodyView>())
+        private set
+
+    /** Turns the pane looking from [body] to look from the other side. */
+    fun flip(body: BodyView) {
+        flips = if (body in flips) flips - body else flips + body
+    }
 
     operator fun get(view: View): PaneNav = navs[view] ?: PaneNav()
 

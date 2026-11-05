@@ -19,6 +19,9 @@ data class SurfaceHit(val part: PartId, val patch: String, val u: Float, val v: 
 
 private const val PATCH_SEPARATOR = ":"
 
+/** How many halvings find the edge of what shows between a pixel off the surface and one on it. */
+private const val EDGE_STEPS = 6
+
 /** The name of the template area [anchor] lies in, the last named there as it overdraws the rest, or null outside them all. */
 fun areaAt(character: Character, templates: TemplateLibrary, anchor: Anchor): String? =
     partColorInput(character, anchor.part, templates).areas.lastOrNull { area ->
@@ -41,6 +44,44 @@ fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView)
         }
     }
     return best
+}
+
+/**
+ * The place on [character] showing at [pixel], or, where none does, the one showing nearest it within [reach] body units on screen. It is found along
+ * the line from [pixel] to the closest of the surface's points, so it lies on what the viewer sees of the surface.
+ */
+fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, reach: Float): SurfaceHit? {
+    surfaceHit(character, pixel, sight)?.let { return it }
+    var closest: Offset? = null
+    var nearest = Float.POSITIVE_INFINITY
+    for (part in character.parts) {
+        if (part.id == null) continue
+        for (patch in part.surface.patches) {
+            for (index in 0 until patch.nu * patch.nv) {
+                val point = part.origin + part.surface.shown(patch.point(index))
+                val shown = sight.toPixel(point) ?: continue
+                val distance = (shown - pixel).getDistance()
+                if (distance < nearest && distance <= reach * sight.pixelsPerUnitAt(point)) {
+                    nearest = distance
+                    closest = shown
+                }
+            }
+        }
+    }
+    var inside = closest ?: return null
+    var hit = surfaceHit(character, inside, sight)
+    var outside = pixel
+    repeat(EDGE_STEPS) {
+        val middle = (inside + outside) / 2f
+        val there = surfaceHit(character, middle, sight)
+        if (there != null) {
+            hit = there
+            inside = middle
+        } else {
+            outside = middle
+        }
+    }
+    return hit
 }
 
 /** The nearest place of [patch] at [pixel] nearer than [limit], with its depth. */

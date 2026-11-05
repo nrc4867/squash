@@ -60,7 +60,4 @@ interface PaneTool {
 
     /** Whether the panes show the whole character in full, with no ghosts, outlines or guides, since the tool works across parts. */
     val showsWhole: Boolean get() = false
-
-    /** Whether the panes show the Flat and Two-tone previews. */
-    val showsPreviews: Boolean get() = false
 }
