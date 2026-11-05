@@ -37,19 +37,7 @@ The orchestrator then:
 
 One orchestrating session per sitting. Round 0 is serial and lands on `main` before anything fans out. Later rounds are branches in `.worktrees/`, one per row, landed by rebase, squash and fast-forward with `check` before each landing. The differences table in `docs/work/boards.md` is the list of open bugs; a branch removes each row it fixes. A session that needs a Stretch change lands it in the Stretch repo first and pushes it.
 
-### Round 1, parallel
-
-The look probe's images are in `docs/work/look-probe/`, drawn from `examples/fennec.json`. The fixes it found are in `docs/hld/look.md`: the shadow tone per slot, fur strokes as filled wedges, tufts as strokes and not outline, the silhouette as ribbons, an eye region frame.
-
-| Branch | Modules | Delivers | Board |
-| --- | --- | --- | --- |
-| `surface-strokes` | `screens-surface`, `render`, `geom` | Drawing a stroke on the surface from any camera into anchors; the Surface stroke tool; line rules (silhouette, interior, overlap inked at sockets, taper); the Line width tool and its drawer rows; the Lines and Marks drawers' list rows; the orbit smoke test | 10 |
-| `regions-paint` | `screens-surface`, `render`, `document` | The palette with slot editing and the body plan's defaults; a base slot per part, set by Fill on the part, shown in the Parts tree swatch; Brush, Fill, Region border and Pick color tools; the Color drawer with palette, template color slots, per-border ink toggles; strokes and borders crossing sockets; mirrored pairs mirroring surface work; the Flat and Two-tone previews; the Color drawer's Softness control for the Brush, setting a stroke's softness | 9 |
-| `two-tone` | `render`, `character` | Proxy normals per slice carried to the mesh; two-tone shading with one clean shadow per part; far-side darkening by pair side; the per-object shading choice | 9 |
-| `fur-grain` | `screens-surface`, `character`, `render` | The grain field with defaults per template and the comb tool; the Fur stroke tool with show-near, spacing and length; fur strokes near the silhouette from any angle | 10 |
-| `full-first` | `screens-sheet` | Layout C: the large free pane that takes surface strokes, three locked sheets beside it, the Layout control enabling it | C |
-
-### Round 2, parallel, after round 1 lands
+### Round 2, parallel
 
 | Branch | Modules | Delivers | Board |
 | --- | --- | --- | --- |
