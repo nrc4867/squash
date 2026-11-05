@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.render.ObjectShading
@@ -89,11 +88,10 @@ internal fun SingleSurface(
     val free = remember(camera, size) { FullView({ camera.orbit.view }, size.width, size.height) }
     SideEffect { open?.showColorAt(largestColorScale(shownCameras.values, camera.orbit.view, size.height)) }
     val look = rememberSheetLook()
-    val density = LocalDensity.current.density
     val fur = rememberFurView(
         open,
         FurViews.SINGLE,
-        if (!sized || selection == null) null else locked?.let { furCamera(it, density) } ?: furCamera(camera.orbit.view, size.width, size.height, density),
+        if (!sized || selection == null) null else locked?.let { furCamera(it) } ?: furCamera(camera.orbit.view, size.width, size.height),
     )
     val frame = singleFrame(
         SingleInput(

@@ -47,6 +47,9 @@ private const val LENGTH_SLACK = 1.5f
 /** Turns of the view a stroke is held to through. */
 private const val ORBIT_FRAMES = 12
 
+/** How far a tuft's tip may show from where its fixed point does, in pixels, for rounding. */
+private const val TIP_HELD_PIXELS = 0.05f
+
 /** How far a stroke's size may move through an orbit, for rounding. */
 private const val SIZE_HELD = 1e-3f
 
@@ -62,7 +65,7 @@ class FurViewTest {
     private fun center(part: PartId): Vec3 = assertNotNull(session.assembly.output.value?.part(part)?.box?.center)
 
     private fun shown(offset: Vec3 = Vec3(0f, 0f, -5f)): Pair<FurView, FurCamera> {
-        val camera = furCamera(sideCamera(center(TORSO), offset), VIEW_PIXELS, VIEW_PIXELS, 1f)
+        val camera = furCamera(sideCamera(center(TORSO), offset), VIEW_PIXELS, VIEW_PIXELS)
         session.showFurFrom(VIEW, camera)
         session.settle()
         return assertNotNull(session.furView(VIEW).output.value) to camera
@@ -74,39 +77,44 @@ class FurViewTest {
     }
 
     @Test
-    fun onlyRootsNearTheSilhouetteShow() {
-        val (view, camera) = shown()
-        val tail = assertNotNull(view.parts[TAIL])
-        val rule = assertNotNull(session.document.value.character.resolved(TAIL)?.surface?.fur)
-        assertTrue(tail.wedges.isNotEmpty())
-        val roots = assertNotNull(session.bodyFur.output.value?.parts?.get(TAIL)).roots
-        assertTrue(tail.wedges.size < roots.size, "most of the tail's strokes are not at its edge")
-        tail.wedges.forEach { wedge ->
-            val facing = wedge.normal dot camera.toViewerFrom(wedge.root)
-            assertTrue(kotlin.math.abs(facing) < rule.showNear, "${wedge.id.value} faces the camera by $facing")
-        }
-    }
-
-    @Test
-    fun showNearWidensTheBand() {
-        rule(TAIL, FurRule(showNear = 0.1f, spacingPixels = TIGHT_SPACING))
-        val narrow = assertNotNull(shown().first.parts[TAIL]).wedges.size
-        rule(TAIL, FurRule(showNear = 0.9f, spacingPixels = TIGHT_SPACING))
-        val wide = assertNotNull(shown().first.parts[TAIL]).wedges.size
-        assertTrue(narrow < wide, "$narrow strokes in a narrow band, $wide in a wide one")
-    }
-
-    @Test
     fun largeStrokesStaySpacedOnTheBody() {
-        rule(TAIL, FurRule(showNear = 0.9f, spacingPixels = WIDE_SPACING))
-        val (view, camera) = shown()
-        val perUnit = assertNotNull(camera.pixelsPerUnitAt(assertNotNull(session.bodyFur.output.value).figureCenter))
-        val spacing = WIDE_SPACING / maxOf(perUnit, FULL_SCALE)
+        rule(TAIL, FurRule(spacingPixels = WIDE_SPACING))
+        val (view, _) = shown()
+        val spacing = WIDE_SPACING / FULL_SCALE
         val roots = assertNotNull(view.parts[TAIL]).wedges.filter { it.size > MOSTLY_GROWN }.map { it.root }
         assertTrue(roots.size > 1)
         roots.forEachIndexed { i, a ->
             roots.drop(i + 1).forEach { b -> assertTrue((a - b).length >= spacing * SPACING_HELD, "$a and $b are too close") }
         }
+    }
+
+    @Test
+    fun lengthSetsHowLongATuftStandsOnTheBody() {
+        val length = 40f
+        rule(TAIL, FurRule(spacingPixels = TIGHT_SPACING, lengthPixels = length))
+        val longest = assertNotNull(shown(CLOSE).first.parts[TAIL]).wedges.maxOf { it.run.length }
+        assertTrue(longest <= length / FULL_SCALE * LENGTH_SLACK, "the longest is $longest")
+        assertTrue(longest >= length / FULL_SCALE / LENGTH_SLACK, "the longest is $longest")
+    }
+
+    @Test
+    fun aTuftShowsWhereItsFixedTipDoesFromEveryCamera() {
+        val fur = assertNotNull(session.bodyFur.output.value)
+        val center = center(TORSO)
+        val runs = HashMap<String, Vec3>()
+        repeat(ORBIT_FRAMES) { frame ->
+            val turn = frame * 2.0 * Math.PI / ORBIT_FRAMES
+            val offset = Vec3(5f * kotlin.math.sin(turn).toFloat(), 1f, -5f * kotlin.math.cos(turn).toFloat())
+            val camera = furCamera(sideCamera(center, offset), VIEW_PIXELS, VIEW_PIXELS)
+            furView(fur, camera).parts.values.flatMap { it.wedges }.forEach { wedge ->
+                val run = runs.getOrPut(wedge.id.value) { wedge.run }
+                assertEquals(0f, (wedge.run - run).length, SIZE_HELD, "${wedge.id.value} at frame $frame")
+                val fixed = assertNotNull(camera.toPixel(wedge.root + run))
+                val shown = assertNotNull(camera.toPixel(wedge.tip))
+                assertTrue(hypot(fixed.x - shown.x, fixed.y - shown.y) < TIP_HELD_PIXELS, "${wedge.id.value} at frame $frame")
+            }
+        }
+        assertTrue(runs.isNotEmpty())
     }
 
     @Test
@@ -118,7 +126,7 @@ class FurViewTest {
         repeat(ORBIT_FRAMES) { frame ->
             val turn = frame * 2.0 * Math.PI / ORBIT_FRAMES
             val offset = Vec3(5f * kotlin.math.sin(turn).toFloat(), 0f, -5f * kotlin.math.cos(turn).toFloat())
-            val camera = furCamera(sideCamera(center, offset), VIEW_PIXELS, VIEW_PIXELS, 1f)
+            val camera = furCamera(sideCamera(center, offset), VIEW_PIXELS, VIEW_PIXELS)
             furView(fur, camera).parts.values.flatMap { it.wedges }.forEach { wedge ->
                 seen += wedge.id.value
                 assertEquals(sizes.getOrPut(wedge.id.value) { wedge.size }, wedge.size, SIZE_HELD, "${wedge.id.value} at frame $frame")
@@ -128,30 +136,8 @@ class FurViewTest {
     }
 
     @Test
-    fun aCloserViewBringsInMoreStrokes() {
-        rule(TAIL, FurRule(showNear = 0.9f, spacingPixels = 20f))
-        val far = assertNotNull(shown(FAR).first.parts[TAIL]).wedges.map { it.id }.toSet()
-        val close = assertNotNull(shown(CLOSE).first.parts[TAIL]).wedges.map { it.id }.toSet()
-        assertTrue(close.size > far.size, "${far.size} far, ${close.size} close")
-    }
-
-    @Test
-    fun lengthSetsHowLongAStrokeShows() {
-        val length = 40f
-        rule(TAIL, FurRule(showNear = 0.3f, spacingPixels = TIGHT_SPACING, lengthPixels = length))
-        val (view, camera) = shown(CLOSE)
-        val lengths = assertNotNull(view.parts[TAIL]).wedges.map { wedge ->
-            val base = assertNotNull(camera.toPixel((wedge.left.first() + wedge.right.first()) * 0.5f))
-            val tip = assertNotNull(camera.toPixel(wedge.tip))
-            hypot(tip.x - base.x, tip.y - base.y)
-        }
-        assertTrue(lengths.max() <= length * LENGTH_SLACK, "the longest is ${lengths.max()} pixels")
-        assertTrue(lengths.max() >= length / LENGTH_SLACK, "the longest is ${lengths.max()} pixels")
-    }
-
-    @Test
     fun aSmallerViewShrinksAStrokeWithTheBody() {
-        rule(TAIL, FurRule(showNear = 0.3f, spacingPixels = TIGHT_SPACING, lengthPixels = 40f))
+        rule(TAIL, FurRule(spacingPixels = TIGHT_SPACING, lengthPixels = 40f))
         fun longest(offset: Vec3): Float {
             val (view, camera) = shown(offset)
             return assertNotNull(view.parts[TAIL]).wedges.maxOf { wedge ->
@@ -181,16 +167,9 @@ class FurViewTest {
     @Test
     fun aViewsCameraLeavesTheCharactersGraphAlone() {
         shown()
-        session.showFurFrom(VIEW, furCamera(sideCamera(center(TORSO), Vec3(3f, 1f, -4f)), VIEW_PIXELS, VIEW_PIXELS, 1f))
+        session.showFurFrom(VIEW, furCamera(sideCamera(center(TORSO), Vec3(3f, 1f, -4f)), VIEW_PIXELS, VIEW_PIXELS))
         assertTrue(session.graph.settled.value, "an orbit does not read as a refit")
         session.settle()
-    }
-
-    @Test
-    fun aViewFollowsTheCamera() {
-        val side = assertNotNull(shown().first.parts[TAIL]).wedges.map { it.id }.toSet()
-        val behind = assertNotNull(shown(Vec3(-5f, 0.5f, -0.5f)).first.parts[TAIL]).wedges.map { it.id }.toSet()
-        assertFalse(side == behind, "another camera picks other strokes")
     }
 
     @Test

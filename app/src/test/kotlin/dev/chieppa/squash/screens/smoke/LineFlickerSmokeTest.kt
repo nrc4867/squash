@@ -95,7 +95,7 @@ class LineFlickerSmokeTest {
         val views = List(FRAMES) { i ->
             val camera = cameraAt(target, distance, centre, step, i)
             val rect = PixelRect((i % COLUMNS) * TILE, (i / COLUMNS) * TILE, TILE, TILE)
-            val fur = furView(assertNotNull(session.bodyFur.output.value), furCamera(camera, TILE, TILE, 1f))
+            val fur = furView(assertNotNull(session.bodyFur.output.value), furCamera(camera, TILE, TILE))
             characterView(rect, camera, state.withFur(fur), PROBE_LOOK, ObjectShading(), framed.pixelsPerUnit) { BIN_THREE_QUARTER }
         }
         val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * (FRAMES / COLUMNS), GpuOptions(onError = { errors += it })) { ViewsScene(it) }
@@ -241,7 +241,7 @@ class LineFlickerSmokeTest {
         var worstClearingRun = 0f
         for (view in 0 until POP_VIEWS) {
             val centre = view * FULL_TURN / POP_VIEWS
-            val cameras = List(FRAMES) { furCamera(cameraAt(target, distance, centre, 1f, it), TILE, TILE, 1f) }
+            val cameras = List(FRAMES) { furCamera(cameraAt(target, distance, centre, 1f, it), TILE, TILE) }
             val shown = cameras.map { camera -> furView(fur, camera).parts.values.flatMap { it.wedges }.associateBy { it.id } }
             shownMost = maxOf(shownMost, shown.maxOf { it.size })
             for (i in 0 until FRAMES - 1) {
@@ -269,8 +269,8 @@ class LineFlickerSmokeTest {
     }
 
     /**
-     * How far past the edge the tail's strokes reach from each of a full turn of views, in pixels: of the strokes rooted close to the rim, the
-     * mean run outward from base to tip. Spikiness that depends on the angle shows as a wide gap between the views.
+     * How far past the edge the tail's strokes reach from each of a full turn of views, in body units: of the strokes rooted close to the rim,
+     * the mean run outward from base to tip. Spikiness that depends on the angle shows as a wide gap between the views.
      */
     @Test
     fun theTailReachesAsFarPastItsEdgeFromEveryAngle() {
@@ -281,19 +281,19 @@ class LineFlickerSmokeTest {
         val target = framed.camera.target
         val distance = (framed.camera.eye - target).length
         val reaches = List(POP_VIEWS) { view ->
-            val camera = furCamera(cameraAt(target, distance, view * FULL_TURN / POP_VIEWS, 0f, 0), TILE, TILE, 1f)
+            val camera = furCamera(cameraAt(target, distance, view * FULL_TURN / POP_VIEWS, 0f, 0), TILE, TILE)
             val tail = assertNotNull(furView(fur, camera).parts[TAIL]).wedges.mapNotNull { wedge ->
                 val toViewer = camera.toViewerFrom(wedge.root)
                 val facing = wedge.normal dot toViewer
                 if (abs(facing) >= NEAR_THE_RIM) return@mapNotNull null
                 val base = (wedge.left.first() + wedge.right.first()) * 0.5f
-                ((wedge.tip - base) dot (wedge.normal - toViewer * facing).normalized()) * assertNotNull(camera.pixelsPerUnitAt(wedge.root))
+                (wedge.tip - base) dot (wedge.normal - toViewer * facing).normalized()
             }
             if (tail.isEmpty()) 0f else tail.average().toFloat()
         }
-        println("FURREACH by view: ${reaches.joinToString { "%.1f".format(it) }}")
+        println("FURREACH by view: ${reaches.joinToString { "%.3f".format(it) }}")
         val shown = reaches.filter { it > 0f }
-        assertTrue(shown.max() <= shown.min() * MOST_REACH_GAP, "the tail's strokes reach from ${shown.min()} to ${shown.max()} px by view")
+        assertTrue(shown.max() <= shown.min() * MOST_REACH_GAP, "the tail's strokes reach from ${shown.min()} to ${shown.max()} by view")
     }
 
     private fun pixelsBetween(a: dev.chieppa.squash.geom.Vec2, b: dev.chieppa.squash.geom.Vec2) = hypot(a.x - b.x, a.y - b.y)

@@ -222,8 +222,6 @@
     <string name="fur_tool">Fur stroke</string>
     <string name="fur_comb_tool">Comb</string>
     <string name="fur_section">Fur</string>
-    <string name="fur_show_near">Show near</string>
-    <string name="fur_show_near_value">edge %1$d%</string>
     <string name="fur_spacing">Spacing</string>
     <string name="fur_length">Length</string>
     <string name="fur_pixels_value">%1$d px</string>

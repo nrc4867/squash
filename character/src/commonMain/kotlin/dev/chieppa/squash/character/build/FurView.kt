@@ -14,10 +14,9 @@ private const val SIDE_FROM_UP = 0.9f
 
 /**
  * What a view's fur reads of its camera: a [matrix] from body space to clip space, column by column, on a [width] by [height] surface.
- * A perspective camera has an [eye]; a camera with none looks along [toViewer] from everywhere. [density] says how many of its pixels make one
- * of the rule's.
+ * A perspective camera has an [eye]; a camera with none looks along [toViewer] from everywhere.
  */
-data class FurCamera(val matrix: List<Float>, val width: Int, val height: Int, val eye: Vec3?, val toViewer: Vec3, val density: Float = 1f) {
+data class FurCamera(val matrix: List<Float>, val width: Int, val height: Int, val eye: Vec3?, val toViewer: Vec3) {
     /** From [point] toward the viewer, with length 1. */
     fun toViewerFrom(point: Vec3): Vec3 = eye?.let { (it - point).normalized() } ?: toViewer
 
@@ -41,9 +40,9 @@ data class FurCamera(val matrix: List<Float>, val width: Int, val height: Int, v
 }
 
 /**
- * One fur stroke as a view shows it, in body space: from the two corners of its base along [left] and [right], which meet at [tip].
- * Each edge runs base to tip, for the ink. [size] is its share of its full length, which
- * its ink follows, and which only a change of zoom changes.
+ * One fur tuft as a view shows it: from the two corners of its base along [left] and [right], which meet at [tip]. Each edge runs base to tip,
+ * for the ink. [run] is the tuft on the body from its root to its tip, the same from every camera, and its tip shows where the root plus [run]
+ * shows. [size] is its share of its full length, which its ink follows.
  */
 data class FurWedge(
     val id: MarkId,
@@ -53,6 +52,7 @@ data class FurWedge(
     val left: List<Vec3>,
     val right: List<Vec3>,
     val size: Float,
+    val run: Vec3,
 ) {
     val tip: Vec3 get() = left.last()
 }
@@ -77,29 +77,22 @@ private const val BASE_SHARE = 0.6f
 private const val BEND_AT = 0.5f
 private const val HOOK_SHARE = 0.16f
 
-/** How sharply a wedge's bow swings to its other side as the surface turns under it, so it never snaps there. */
-private const val HOOK_TURN = 5f
+/** How much of a tuft's length must run across the view for it to show its whole width. */
+private const val FULL_WIDTH_FROM = 0.35f
 
 /** Points along one edge of a wedge. */
 private const val EDGE_STEPS = 4
 
-/**
- * How many pixels a body unit spans at the figure for strokes to show their rule's whole length and spacing. A smaller view scales both down
- * in proportion, so a tuft keeps its size against the part and the same strokes show; a closer one keeps them in pixels, so more strokes show,
- * as a line keeps its weight.
- */
-private const val FULL_SCALE_PIXELS_PER_UNIT = 280f
+/** How many pixels make one body unit in a rule's length and spacing, which hold on the body from every camera at every zoom. */
+private const val RULE_PIXELS_PER_UNIT = 280f
 
 /** Where a stroke's size starts, as its room against the spacing: it reaches full size at a room of the spacing itself. */
 private const val LEAST_ROOM_SHARE = 0.7f
 
-/** Where along the band, from the silhouette to its edge, a stroke starts drawing back behind the rim to stand hidden at the edge. */
-private const val DRAW_BACK_FROM = 0.75f
-
 /** A stroke smaller than this share of its length is not drawn, too short to read. */
 private const val LEAST_SIZE = 0.08f
 
-/** How far every stroke leans outward from the surface, so its tip clears the silhouette. */
+/** How far every tuft rises from the surface beyond its grain, so its tip clears the silhouette. */
 private const val OUTWARD_LEAN = 0.3f
 
 /** A stroke's length varies by this share either way, from its id, so a row does not read as a saw. */
@@ -120,19 +113,15 @@ private const val INDICES_PER_STEP = 6
 private const val MIN_LENGTH = 1e-5f
 
 /**
- * What [fur] shows through [camera]: of each part's strokes those whose root faces the viewer, or away, by under their rule's show near, and
- * that have room for the spacing at this zoom. Turning the camera changes neither a stroke's length nor which strokes have room, so a stroke
- * holds its size through an orbit: only the part's rim hides it. A wedge turns its width to the viewer and runs along the grain as the viewer
- * sees it. It sits back along its line of sight, past the rim of the part it roots on, so that part's surface covers all of it but what breaks
- * the silhouette, while it stays in front of what lies behind the part. Near the band's edge it draws back behind the rim, so it comes and goes
- * unseen.
+ * What [fur] shows through [camera]. A tuft is a fixed shape on the body, a blade from its root along its grain, so an orbit shows it turn as
+ * the body turns: only the side its width faces, and how far back it sits, read the camera. It sits back along each point's line of sight, past
+ * the rim that makes the part's outline, so that part's surface covers all of it but what breaks the silhouette, while it stays in front of
+ * what lies behind the part.
  */
 fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): FurView {
-    val figure = camera.pixelsPerUnitAt(fur.figureCenter)?.takeIf { it > 0f } ?: return FurView.EMPTY
-    val scale = (figure / (FULL_SCALE_PIXELS_PER_UNIT * camera.density)).coerceAtMost(1f)
     val views = fur.parts.mapValues { (_, part) ->
         checkCancelled()
-        val wedges = shownWedges(part, camera, scale, figure, fur.figureRadius * BEFORE_RIM_SHARE)
+        val wedges = shownWedges(part, camera, fur.figureRadius * BEFORE_RIM_SHARE)
         PartFurView(wedges, wedges.groupBy { it.slot }.map { (slot, held) -> FurFill(slot, wedgeMesh(held)) })
     }
     return FurView(views.entries.sortedBy { (_, view) -> nearness(view, camera) }.associate { it.key to it.value })
@@ -142,9 +131,9 @@ fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): F
 private fun nearness(view: PartFurView, camera: FurCamera): Float =
     if (view.wedges.isEmpty()) 0f else view.wedges.map { it.root dot camera.toViewer }.average().toFloat()
 
-private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: Float, beforeRim: Float): List<FurWedge> {
+private fun shownWedges(part: PartFur, camera: FurCamera, beforeRim: Float): List<FurWedge> {
     val rule = part.rule
-    val spacing = rule.spacingPixels * camera.density * scale / figure
+    val spacing = rule.spacingPixels / RULE_PIXELS_PER_UNIT
     val rims = part.rims.mapNotNull { rim ->
         val center = camera.toPixel(rim.center) ?: return@mapNotNull null
         val perUnit = camera.pixelsPerUnitAt(rim.center) ?: return@mapNotNull null
@@ -155,13 +144,15 @@ private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: 
         if (size < LEAST_SIZE) return@mapNotNull null
         val toViewer = camera.toViewerFrom(root.position)
         val facing = root.normal dot toViewer
-        if (kotlin.math.abs(facing) >= rule.showNear) return@mapNotNull null
         val at = camera.toPixel(root.position) ?: return@mapNotNull null
-        val drawnBack = smoothStep((kotlin.math.abs(facing) / rule.showNear - DRAW_BACK_FROM) / (1f - DRAW_BACK_FROM))
         val out = camera.toPixel(root.position + (root.normal - toViewer * facing))?.let { Vec2(it.x - at.x, it.y - at.y) } ?: Vec2(0f, 0f)
         val ownRim = -root.radius * facing
-        val rimDepth = outlineRim(rims, at, out)?.let { minOf((it.center - root.position) dot toViewer, ownRim) } ?: ownRim
-        wedge(root, rule.lengthPixels * camera.density * scale * size * spreadOf(root.id), size, drawnBack, toViewer, at, camera, beforeRim + rimDepth * RIM_MARGIN)
+        val length = rule.lengthPixels / RULE_PIXELS_PER_UNIT * size * spreadOf(root.id)
+        val run = runOf(root, length)
+        val tipAt = camera.toPixel(root.position + run) ?: return@mapNotNull null
+        val rim = outlineRim(rims, at, out)?.let { (it.center - root.position) dot toViewer } ?: ownRim
+        val covering = rims.filter { pixelsBetween(it.center, tipAt) < it.radius }.minOfOrNull { (it.rim.center - root.position) dot toViewer } ?: rim
+        tuft(root, run, length, size, toViewer, camera, beforeRim + minOf(ownRim, rim, covering) * RIM_MARGIN)
     }
 }
 
@@ -201,44 +192,31 @@ private fun spreadOf(id: MarkId): Float {
     return 1f + LENGTH_SPREAD * (2f * step / (SPREAD_STEPS - 1) - 1f)
 }
 
-/** The grain at [root] as the viewer sees it, foreshortened, leaning outward from the surface. How far it runs outward depends only on how far the root lies from the rim, so a stroke clears the edge alike from every side. */
-private fun seenDirection(root: FurRoot, toViewer: Vec3): Vec3 {
-    val flat = root.direction - toViewer * (root.direction dot toViewer)
-    val outward = root.normal - toViewer * (root.normal dot toViewer)
-    return flat + outward * OUTWARD_LEAN
-}
+/** The way a tuft of [length] stands from its root: along the grain and rising from the surface, a little under [length] long. */
+private fun runOf(root: FurRoot, length: Float): Vec3 = (root.direction + root.normal * OUTWARD_LEAN) * (length / (1f + OUTWARD_LEAN))
 
-private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, drawnBack: Float, toViewer: Vec3, at: Vec2, camera: FurCamera, back: Float): FurWedge? {
-    val seen = seenDirection(root, toViewer)
+/**
+ * The tuft of [length] on the body at [root], running along [run]: a blade from a base sunk into the surface to its tip, bowed away from the
+ * surface. Its width turns to the viewer, narrowing to a point as the tuft runs straight at them. It shows through [camera] where it stands and
+ * lies [back] along each point's line of sight.
+ */
+private fun tuft(root: FurRoot, run: Vec3, length: Float, size: Float, toViewer: Vec3, camera: FurCamera, back: Float): FurWedge? {
+    if (run.length < MIN_LENGTH) return null
+    val seen = run - toViewer * (run dot toViewer)
     val crossing = seen cross toViewer
-    if (crossing.length < MIN_LENGTH || lengthPixels <= 0f) return null
-    val along = seen.normalized()
-    val across = crossing.normalized()
-    val behind = toViewer * back
-    val perUnit = camera.toPixel(root.position + behind + across)?.let { pixelsBetween(it, at) }?.takeIf { it > 0f } ?: return null
-    val length = lengthPixels * seen.length / (1f + OUTWARD_LEAN) / perUnit
-    val halfBase = across * (length * BASE_SHARE / 2f)
-    val origin = root.position + behind - tuck(root, toViewer, halfBase) - behindRim(root, toViewer, along * length) * drawnBack
-    val tip = origin + along * length
-    val hook = across * (length * BASE_SHARE * HOOK_SHARE * ((across dot root.normal) * HOOK_TURN).coerceIn(-1f, 1f))
-    val middle = origin + along * (length * BEND_AT) + hook
-    return FurWedge(root.id, root.position, root.normal, root.slot, edge(origin + halfBase, middle + halfBase * BEND_AT, tip), edge(origin - halfBase, middle - halfBase * BEND_AT, tip), size)
-}
-
-/** How far inward a wedge moves for the outer corner of its base to sit where its root does, with no blunt corner past the rim. */
-private fun tuck(root: FurRoot, toViewer: Vec3, halfBase: Vec3): Vec3 {
-    val outward = root.normal - toViewer * (root.normal dot toViewer)
-    if (outward.length < MIN_LENGTH) return Vec3.ZERO
-    val out = outward.normalized()
-    return out * kotlin.math.abs(halfBase dot out)
-}
-
-/** How far inward a wedge running along [run] moves for its tip to sit no further out than its root. */
-private fun behindRim(root: FurRoot, toViewer: Vec3, run: Vec3): Vec3 {
-    val outward = root.normal - toViewer * (root.normal dot toViewer)
-    if (outward.length < MIN_LENGTH) return Vec3.ZERO
-    val out = outward.normalized()
-    return out * (run dot out).coerceAtLeast(0f)
+    if (crossing.length < MIN_LENGTH) return null
+    val width = length * BASE_SHARE * smoothStep(seen.length / run.length / FULL_WIDTH_FROM) / 2f
+    val half = crossing.normalized() * width
+    val base = root.position - root.normal * (length * BASE_SHARE / 2f)
+    val tip = root.position + run
+    val middle = (base + tip) * BEND_AT + root.normal * (length * BASE_SHARE * HOOK_SHARE)
+    fun shown(point: Vec3) = point + camera.toViewerFrom(point) * back
+    return FurWedge(
+        root.id, root.position, root.normal, root.slot,
+        edge(base + half, middle + half * BEND_AT, tip).map(::shown),
+        edge(base - half, middle - half * BEND_AT, tip).map(::shown),
+        size, run,
+    )
 }
 
 private fun edge(base: Vec3, bend: Vec3, tip: Vec3): List<Vec3> = List(EDGE_STEPS + 1) { step ->

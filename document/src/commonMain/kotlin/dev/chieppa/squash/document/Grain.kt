@@ -21,19 +21,17 @@ data class GrainComb(
 data class Grain(val combs: List<GrainComb> = emptyList())
 
 /**
- * How a part's fur strokes show. A stroke shows where its root's facing, as the cosine between normal and view, is under [showNear],
- * with room on the body for [spacingPixels] at the view's zoom, and [lengthPixels] long, both less on a view too small to hold them. See HLD: look, Marks.
+ * How a part's fur tufts stand on the body: with room for [spacingPixels] and [lengthPixels] long, both as a view of 280 pixels to a body unit
+ * shows them. See HLD: look, Marks.
  */
 @Serializable
-data class FurRule(val showNear: Float = DEFAULT_SHOW_NEAR, val spacingPixels: Float = DEFAULT_SPACING, val lengthPixels: Float = DEFAULT_LENGTH) {
+data class FurRule(val spacingPixels: Float = DEFAULT_SPACING, val lengthPixels: Float = DEFAULT_LENGTH) {
     init {
-        require(showNear in 0f..1f) { "Show near is a share of the way from the edge, not $showNear" }
         require(spacingPixels > 0f) { "Fur spacing is above 0 pixels, not $spacingPixels" }
         require(lengthPixels > 0f) { "Fur length is above 0 pixels, not $lengthPixels" }
     }
 
     private companion object {
-        const val DEFAULT_SHOW_NEAR = 0.8f
         const val DEFAULT_SPACING = 12f
         const val DEFAULT_LENGTH = 9f
     }

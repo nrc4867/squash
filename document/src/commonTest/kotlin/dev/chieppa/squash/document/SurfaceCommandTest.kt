@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SurfaceCommandTest {
     private val head = PartInstance(PartId("head-1"), TemplateRef(TemplateId("head"), 1))
@@ -81,11 +82,20 @@ class SurfaceCommandTest {
     }
 
     @Test
+    fun aFurRuleSavedWithShowNearReadsWithoutIt() {
+        val rule = FurRule(spacingPixels = 20f, lengthPixels = 30f)
+        val saved = Json.encodeToString(SquashDocument.serializer(), SetFurRule(head.id, rule).apply(placed).document)
+        assertTrue("\"fur\":{" in saved)
+        val before = saved.replace("\"fur\":{", "\"fur\":{\"showNear\":0.5,")
+        val inOldFormat = if ("\"format\":$DOCUMENT_FORMAT" in before) before.replace("\"format\":$DOCUMENT_FORMAT", "\"format\":6") else before.replaceFirst("{", "{\"format\":6,")
+        assertEquals(rule, readDocument(inOldFormat).surface().fur)
+    }
+
+    @Test
     fun aFurRuleSetsAndClears() {
-        val rule = FurRule(showNear = 0.5f, spacingPixels = 20f, lengthPixels = 30f)
+        val rule = FurRule(spacingPixels = 20f, lengthPixels = 30f)
         assertUndoesAndRedoes(placed, SetFurRule(head.id, rule), SetFurRule(head.id, null))
         assertEquals(rule, SetFurRule(head.id, rule).apply(placed).document.surface().fur)
-        assertFailsWith<IllegalArgumentException> { FurRule(showNear = 2f) }
         assertFailsWith<IllegalArgumentException> { FurRule(spacingPixels = 0f) }
     }
 

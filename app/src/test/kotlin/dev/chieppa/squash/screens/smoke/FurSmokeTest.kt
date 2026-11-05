@@ -125,7 +125,7 @@ class FurSmokeTest {
         onNodeWithTag(ShellTags.tool(BuildTool.FUR_STROKE)).performClick()
         waitForIdle()
         assertEquals(BuildTool.FUR_STROKE, state.tool.value)
-        for (tag in listOf(FurDrawerTags.SHOW_NEAR, FurDrawerTags.SPACING, FurDrawerTags.LENGTH)) onNodeWithTag(tag).assertExists()
+        for (tag in listOf(FurDrawerTags.SPACING, FurDrawerTags.LENGTH)) onNodeWithTag(tag).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.COMB)).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.SPINE_WIDTH)).assertDoesNotExist()
         val window = onNodeWithTag(ShellTags.WORKSPACE).captureToImage().argbPixels()

@@ -68,15 +68,15 @@ class ShownFur(val view: FurView, val edge: LineRule) {
     }
 }
 
-/** The camera a free view's fur reads, on a surface of [density] pixels to the density independent one. */
-fun furCamera(camera: CameraView, width: Int, height: Int, density: Float): FurCamera {
+/** The camera a free view's fur reads. */
+fun furCamera(camera: CameraView, width: Int, height: Int): FurCamera {
     val eye = Vec3(camera.eye.x, camera.eye.y, camera.eye.z)
-    return FurCamera(camera.viewProjection(width, height).floats(), width, height, eye, (eye - Vec3(camera.target.x, camera.target.y, camera.target.z)).normalized(), density)
+    return FurCamera(camera.viewProjection(width, height).floats(), width, height, eye, (eye - Vec3(camera.target.x, camera.target.y, camera.target.z)).normalized())
 }
 
-/** The camera a locked pane's fur reads, on a surface of [density] pixels to the density independent one. */
-fun furCamera(camera: LockedCamera, density: Float): FurCamera =
-    FurCamera(camera.viewProjection().floats(), camera.width, camera.height, null, camera.basis.back, density)
+/** The camera a locked pane's fur reads. */
+fun furCamera(camera: LockedCamera): FurCamera =
+    FurCamera(camera.viewProjection().floats(), camera.width, camera.height, null, camera.basis.back)
 
 private fun Mat4.floats(): List<Float> = FloatArray(MATRIX_FLOATS).also { copyInto(it, 0) }.toList()
 

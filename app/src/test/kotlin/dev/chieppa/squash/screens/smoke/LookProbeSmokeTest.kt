@@ -81,7 +81,7 @@ private const val PROBE_FUR_VIEW = "probe"
 
 /** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
 internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT): CharacterState {
-    camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height, 1f)) }
+    camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height)) }
     settled()
     val character = assertNotNull(assembly.output.value)
     return CharacterState(

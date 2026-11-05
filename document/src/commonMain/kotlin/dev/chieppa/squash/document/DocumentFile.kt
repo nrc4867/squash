@@ -25,10 +25,12 @@ private const val POINTS_KEY = "points"
 private const val ID_KEY = "id"
 private const val KIND_KEY = "kind"
 private const val FUR_KIND = "fur"
+private const val FUR_RULE_KEY = "fur"
+private const val SHOW_NEAR_KEY = "showNear"
 private const val FUR_ID_PREFIX = "fur-"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -53,21 +55,31 @@ private fun lineWeightsOnSurfaceWork(document: JsonObject): JsonObject = documen
 private fun shadingOnCharacter(document: JsonObject): JsonObject = document
 
 /** Format 5 to 6: a mark whose id said it was a fur stroke becomes one, a root alone; every other mark is a line, which an absent kind reads as. */
-private fun furMarksGainAKind(document: JsonObject): JsonObject {
-    val character = document.getValue(CHARACTER_KEY).jsonObject
-    val parts = character[PARTS_KEY]?.jsonArray?.let { held ->
-        JsonArray(held.map { part -> JsonObject(part.jsonObject.mapValues { (key, value) -> if (key == OWN_KEY || key == OVERRIDES_KEY) dataWithFurKinds(value) else value }) })
-    }
-    val pairs = character[PAIRS_KEY]?.jsonObject?.let { held -> JsonObject(held.mapValues { (_, data) -> dataWithFurKinds(data) }) }
-    val moved = character + listOfNotNull(parts?.let { PARTS_KEY to it }, pairs?.let { PAIRS_KEY to it })
-    return JsonObject(document + (CHARACTER_KEY to JsonObject(moved)))
+private fun furMarksGainAKind(document: JsonObject): JsonObject = withEverySurface(document) { surface ->
+    val marks = surface[MARKS_KEY] as? JsonArray ?: return@withEverySurface surface
+    JsonObject(surface + (MARKS_KEY to JsonArray(marks.map(::markWithFurKind))))
 }
 
-private fun dataWithFurKinds(data: JsonElement): JsonElement {
-    val held = data as? JsonObject ?: return data
-    val surface = held[SURFACE_KEY] as? JsonObject ?: return data
-    val marks = surface[MARKS_KEY] as? JsonArray ?: return data
-    return JsonObject(held + (SURFACE_KEY to JsonObject(surface + (MARKS_KEY to JsonArray(marks.map(::markWithFurKind))))))
+/** Format 6 to 7: a fur rule drops its show near, since a tuft stands on the body from every camera. */
+private fun furRulesLoseShowNear(document: JsonObject): JsonObject = withEverySurface(document) { surface ->
+    val rule = surface[FUR_RULE_KEY] as? JsonObject ?: return@withEverySurface surface
+    JsonObject(surface + (FUR_RULE_KEY to JsonObject(rule - SHOW_NEAR_KEY)))
+}
+
+/** [document] with [change] made to the surface work of every part's own data and overrides, and of every pair. */
+private fun withEverySurface(document: JsonObject, change: (JsonObject) -> JsonObject): JsonObject {
+    fun changed(data: JsonElement): JsonElement {
+        val held = data as? JsonObject ?: return data
+        val surface = held[SURFACE_KEY] as? JsonObject ?: return data
+        return JsonObject(held + (SURFACE_KEY to change(surface)))
+    }
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    val parts = character[PARTS_KEY]?.jsonArray?.let { held ->
+        JsonArray(held.map { part -> JsonObject(part.jsonObject.mapValues { (key, value) -> if (key == OWN_KEY || key == OVERRIDES_KEY) changed(value) else value }) })
+    }
+    val pairs = character[PAIRS_KEY]?.jsonObject?.let { held -> JsonObject(held.mapValues { (_, data) -> changed(data) }) }
+    val moved = character + listOfNotNull(parts?.let { PARTS_KEY to it }, pairs?.let { PAIRS_KEY to it })
+    return JsonObject(document + (CHARACTER_KEY to JsonObject(moved)))
 }
 
 private fun markWithFurKind(mark: JsonElement): JsonElement {

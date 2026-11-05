@@ -169,10 +169,10 @@ private fun furRows(part: PartId, name: String, rows: Int, columns: Int, uFirst:
  * over its smooth outline. Bigger tufts on the tail than on the body.
  */
 private fun fennecFur(): List<DocumentCommand> = listOf(
-    SetFurRule(TORSO, FurRule(showNear = 0.8f, spacingPixels = 20f, lengthPixels = 30f)),
+    SetFurRule(TORSO, FurRule(spacingPixels = 20f, lengthPixels = 30f)),
     AddMarks(TORSO, furRows(TORSO, "chest", rows = 14, columns = 36, uFirst = 0.66f, uLast = 0.97f, vFirst = 0.2f, vLast = 0.8f)),
     AddMarks(TORSO, furRows(TORSO, "rump", rows = 6, columns = 40, uFirst = 0.08f, uLast = 0.2f, vFirst = 0f, vLast = 1f)),
-    SetFurRule(TAIL, FurRule(showNear = 0.8f, spacingPixels = 26f, lengthPixels = 40f)),
+    SetFurRule(TAIL, FurRule(spacingPixels = 26f, lengthPixels = 40f)),
     AddMarks(TAIL, furRows(TAIL, "tail", rows = 20, columns = 40, uFirst = 0.22f, uLast = 0.8f, vFirst = 0f, vLast = 1f)),
 )
 

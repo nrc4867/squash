@@ -27,7 +27,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Gaze | Target (scene point, camera, an anchor on another character, or free), per-eye offsets, open and dilation values, lead frames, auto-blink flag | Document, one per shot key beside the pose |
 | Expression set | Marks per group and role with angle versions, shared with per-side overrides, plus a small face pose (hinge angles by part and joint name) | Document, on the character |
 | Grain | A direction field in anchor space per part, default from its template; combed overrides stored as vectors | Document, in surface work |
-| Fur rule | Show near, spacing and length for a part's fur strokes; the board's defaults when a part sets none | Document, in surface work |
+| Fur rule | Spacing and length for a part's fur tufts; the board's defaults when a part sets none | Document, in surface work |
 | Effect mark | A mark pinned to a landmark or drawn in camera space, keyed over time; sweat drops, shock lines, blush, speed lines, tears | Document, per shot |
 | Scene | Set, backdrop, light, shading limits | Document |
 | Shot | Camera, keys (poses by time), timing per character | Document |
