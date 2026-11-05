@@ -21,6 +21,7 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.DepthLayer
+import dev.chieppa.squash.render.FurLayerDraw
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.ObjectShading
@@ -48,10 +49,13 @@ private val EDGE_PROFILES = List(EDGE_LEVELS + 1) { level ->
 
 private const val MATRIX_FLOATS = 16
 
-/** What a view's fur adds to its scene. */
-class FurDraws(val draws: List<MeshDraw>, val ribbons: List<RibbonDraw>) {
+/** A part's fills cover the inner half of its ink, so its ink draws this much wider to show the width its rule says. */
+private const val INK_WIDENS = 2f
+
+/** What a view's fur adds to its scene, part by part, furthest first. */
+class FurDraws(val layers: List<FurLayerDraw>) {
     companion object {
-        val NONE = FurDraws(emptyList(), emptyList())
+        val NONE = FurDraws(emptyList())
     }
 }
 
@@ -76,12 +80,16 @@ fun furCamera(camera: LockedCamera, density: Float): FurCamera =
 
 private fun Mat4.floats(): List<Float> = FloatArray(MATRIX_FLOATS).also { copyInto(it, 0) }.toList()
 
-/** [fur] as draws: each part's fills in what [material] gives for its slot, in [layer], and its ink edges. [parts] says which parts it shows, every one when null. */
+/** [fur] as draws: each part's ink edges, and its fills over them in what [material] gives for its slot, in [layer]. [parts] says which parts it shows, every one when null. */
 fun furDraws(fur: ShownFur, ink: Color, layer: DepthLayer = DepthLayer.SCENE, parts: Set<PartId>? = null, material: (PartId, SlotName?) -> PartMaterial): FurDraws {
     val shown = fur.view.parts.filterKeys { parts == null || it in parts }
     if (shown.isEmpty()) return FurDraws.NONE
-    val draws = shown.flatMap { (part, held) -> held.fills.map { MeshDraw(it.mesh, material(part, it.slot), layer = layer) } }
-    return FurDraws(draws, shown.keys.mapNotNull { fur.edges[it] }.map { RibbonDraw(it, fur.edge, ink, layer = layer) })
+    val rule = fur.edge.copy(interiorPixels = fur.edge.interiorPixels * INK_WIDENS, silhouettePixels = fur.edge.silhouettePixels * INK_WIDENS)
+    return FurDraws(
+        shown.map { (part, held) ->
+            FurLayerDraw(fur.edges[part]?.let { RibbonDraw(it, rule, ink, layer = layer) }, held.fills.map { MeshDraw(it.mesh, material(part, it.slot), layer = layer) })
+        },
+    )
 }
 
 /** What fur over [slot] fills with: its palette color and shadow as a part's surface takes them, on [side], with the camera at [toCamera]. A wedge's mesh carries its root's normal, so two-tone reads the surface there. */

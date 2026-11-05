@@ -89,7 +89,7 @@ class FurSmokeTest {
                 SheetPanes(state, Modifier.fillMaxSize(), tool = rememberFurStrokeTool(state))
             }
         }
-        settled(session) { frame?.views?.any { it.ribbons.isNotEmpty() } == true }
+        settled(session) { frame?.views?.any { it.fur.isNotEmpty() } == true }
         waitForIdle()
         val before = furMarks(session)
         val full = assertNotNull(frame).views[SheetPane.FULL.ordinal]

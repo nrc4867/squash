@@ -104,5 +104,5 @@ fun characterView(
     }
     val sides = parts.associate { requireNotNull(it.id) to it.bodySide() }
     val fur = furDraws(ShownFur(state.fur, look.lines), ink) { id, slot -> furMaterial(state.palette, slot, look.fallback, ink, shading, sides[id], eye - center) }
-    return SceneView(rect, camera.viewProjection(rect.width, rect.height), filled + fur.draws, ribbons + fur.ribbons)
+    return SceneView(rect, camera.viewProjection(rect.width, rect.height), filled, ribbons, fur.layers)
 }

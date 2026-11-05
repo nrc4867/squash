@@ -62,13 +62,21 @@ data class MeshDraw(
     val layers: List<ColorLayerDraw> = emptyList(),
 )
 
-/** One camera's view: what it sees, drawn into [viewport] with nothing outside it. [ribbons] draw after all of [draws]. */
+/** One part's fur: its [ink] and then its [fills] over it, so strokes that overlap read as one shape with one outline. */
+@Immutable
+data class FurLayerDraw(val ink: RibbonDraw?, val fills: List<MeshDraw>)
+
+/**
+ * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [fur] draws after all of [draws] and in its order, furthest
+ * part first, and [ribbons] after that.
+ */
 @Immutable
 data class SceneView(
     val viewport: PixelRect,
     val viewProjection: Mat4,
     val draws: List<MeshDraw>,
     val ribbons: List<RibbonDraw> = emptyList(),
+    val fur: List<FurLayerDraw> = emptyList(),
 )
 
 /** One frame of [ViewsScene]: an immutable snapshot, safe to hand to the render thread. */

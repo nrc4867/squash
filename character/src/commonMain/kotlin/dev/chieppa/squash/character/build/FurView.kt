@@ -42,7 +42,7 @@ data class FurCamera(val matrix: List<Float>, val width: Int, val height: Int, v
 
 /**
  * One fur stroke as a view shows it, in body space: from the two corners of its base along [left] and [right], which meet at [tip].
- * Each edge runs base to tip, for the ink; its fill lies [fillBehind] further from the viewer. [size] is its share of its full length, which
+ * Each edge runs base to tip, for the ink. [size] is its share of its full length, which
  * its ink follows, and which only a change of zoom changes.
  */
 data class FurWedge(
@@ -53,7 +53,6 @@ data class FurWedge(
     val left: List<Vec3>,
     val right: List<Vec3>,
     val size: Float,
-    val fillBehind: Vec3,
 ) {
     val tip: Vec3 get() = left.last()
 }
@@ -64,7 +63,7 @@ class FurFill(val slot: SlotName?, val mesh: RenderMesh)
 /** What one part's fur shows in a view. */
 class PartFurView(val wedges: List<FurWedge>, val fills: List<FurFill>)
 
-/** What every part's fur shows in a view. */
+/** What every part's fur shows in a view, furthest part first. */
 class FurView(val parts: Map<PartId, PartFurView>) {
     companion object {
         val EMPTY = FurView(emptyMap())
@@ -116,9 +115,6 @@ private const val RIM_MARGIN = 1.05f
  */
 private const val BEFORE_RIM_SHARE = 0.0095f
 
-/** How far behind its ink a wedge's fill sits, in pixels, so ink wins over its own fill. */
-private const val FILL_BEHIND_INK_PIXELS = 0.5f
-
 private const val FLOATS_PER_CORNER = RenderMesh.FLOATS_PER_VERTEX
 private const val INDICES_PER_STEP = 6
 private const val MIN_LENGTH = 1e-5f
@@ -134,14 +130,17 @@ private const val MIN_LENGTH = 1e-5f
 fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): FurView {
     val figure = camera.pixelsPerUnitAt(fur.figureCenter)?.takeIf { it > 0f } ?: return FurView.EMPTY
     val scale = (figure / (FULL_SCALE_PIXELS_PER_UNIT * camera.density)).coerceAtMost(1f)
-    return FurView(
-        fur.parts.mapValues { (_, part) ->
-            checkCancelled()
-            val wedges = shownWedges(part, camera, scale, figure, fur.figureRadius * BEFORE_RIM_SHARE)
-            PartFurView(wedges, wedges.groupBy { it.slot }.map { (slot, held) -> FurFill(slot, wedgeMesh(held)) })
-        },
-    )
+    val views = fur.parts.mapValues { (_, part) ->
+        checkCancelled()
+        val wedges = shownWedges(part, camera, scale, figure, fur.figureRadius * BEFORE_RIM_SHARE)
+        PartFurView(wedges, wedges.groupBy { it.slot }.map { (slot, held) -> FurFill(slot, wedgeMesh(held)) })
+    }
+    return FurView(views.entries.sortedBy { (_, view) -> nearness(view, camera) }.associate { it.key to it.value })
 }
+
+/** How far toward the viewer a part's strokes lie, on average. */
+private fun nearness(view: PartFurView, camera: FurCamera): Float =
+    if (view.wedges.isEmpty()) 0f else view.wedges.map { it.root dot camera.toViewer }.average().toFloat()
 
 private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: Float, beforeRim: Float): List<FurWedge> {
     val rule = part.rule
@@ -223,7 +222,7 @@ private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, drawnBack: Fl
     val tip = origin + along * length
     val hook = across * (length * BASE_SHARE * HOOK_SHARE * ((across dot root.normal) * HOOK_TURN).coerceIn(-1f, 1f))
     val middle = origin + along * (length * BEND_AT) + hook
-    return FurWedge(root.id, root.position, root.normal, root.slot, edge(origin + halfBase, middle + halfBase * BEND_AT, tip), edge(origin - halfBase, middle - halfBase * BEND_AT, tip), size, toViewer * -(FILL_BEHIND_INK_PIXELS / perUnit))
+    return FurWedge(root.id, root.position, root.normal, root.slot, edge(origin + halfBase, middle + halfBase * BEND_AT, tip), edge(origin - halfBase, middle - halfBase * BEND_AT, tip), size)
 }
 
 /** How far inward a wedge moves for the outer corner of its base to sit where its root does, with no blunt corner past the rim. */
@@ -257,8 +256,8 @@ private fun wedgeMesh(wedges: List<FurWedge>): RenderMesh {
     wedges.forEachIndexed { w, wedge ->
         val first = w * cornersEach
         for (step in 0..EDGE_STEPS) {
-            at = vertices.putCorner(at, wedge.left[step] + wedge.fillBehind, wedge.normal)
-            at = vertices.putCorner(at, wedge.right[step] + wedge.fillBehind, wedge.normal)
+            at = vertices.putCorner(at, wedge.left[step], wedge.normal)
+            at = vertices.putCorner(at, wedge.right[step], wedge.normal)
         }
         for (step in 0 until EDGE_STEPS) {
             val low = first + step * 2

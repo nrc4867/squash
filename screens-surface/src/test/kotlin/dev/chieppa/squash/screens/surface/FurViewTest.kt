@@ -204,9 +204,9 @@ class FurViewTest {
         val (view, _) = shown()
         val draws = furDraws(ShownFur(view, LineRule(2f)), Color.Black) { _, _ -> PartMaterial(Color.White) }
         val parts = view.parts.values
-        assertEquals(parts.sumOf { it.fills.size }, draws.draws.size)
-        assertEquals(parts.count { it.wedges.isNotEmpty() }, draws.ribbons.size)
+        assertEquals(parts.sumOf { it.fills.size }, draws.layers.sumOf { it.fills.size })
+        assertEquals(parts.count { it.wedges.isNotEmpty() }, draws.layers.count { it.ink != null })
         val edges = parts.sumOf { it.wedges.size } * 2
-        assertTrue(draws.ribbons.sumOf { it.ribbon.indices.size } >= edges * 6, "every edge of every wedge is in them")
+        assertTrue(draws.layers.sumOf { it.ink?.ribbon?.indices?.size ?: 0 } >= edges * 6, "every edge of every wedge is in them")
     }
 }

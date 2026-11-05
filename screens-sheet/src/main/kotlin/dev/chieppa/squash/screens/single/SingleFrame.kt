@@ -61,13 +61,13 @@ fun singleFrame(input: SingleInput): SceneFrame {
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
         val previews = previewViews(input.previews, selection, input.free, input.look, input.color)
-        val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface) + fur.ribbons
-        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws + fur.draws, ribbons)) + previews, overlay.clippedTo(rect.toRect()))
+        val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface)
+        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons, fur.layers)) + previews, overlay.clippedTo(rect.toRect()))
     }
     val free = input.free ?: return SceneFrame(input.look.well)
     val toCamera = Vec3(free.eye.x, free.eye.y, free.eye.z) - selection.box.center
     val fur = shownFurDraws(input.fur, true, toCamera, selection, input.look, input.hints, input.color)
-    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input) + fur.draws, freeRibbons(selection, free, input) + fur.ribbons)
+    val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input), freeRibbons(selection, free, input), fur.layers)
     return SceneFrame(input.look.well, listOf(shown) + previewViews(input.previews, selection, free, input.look, input.color), input.freeOverlay.clippedTo(rect.toRect()))
 }
 

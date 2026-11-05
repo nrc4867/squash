@@ -85,13 +85,13 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
             planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
         val ribbons = input.surface?.figure(FullView({ camera }, rect.width, rect.height)) ?: look.borderRibbons(input.color)
         val fur = look.furDraws(input.fullFur, input.color, toCamera, selection)
-        return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws + fur.draws, ribbons + fur.ribbons)
+        return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws, ribbons, fur.layers)
     }
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
     val fur = input.lockedFur[view]?.let { shownFurDraws(it, view in selection.outlines, camera.basis.back, selection, look, input.hints, input.color) } ?: FurDraws.NONE
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, input.surface != null)
-    return SceneView(rect, camera.viewProjection(), draws + fur.draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, input.surface) + fur.ribbons)
+    return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, input.surface), fur.layers)
 }
 
 /** What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show it whole, else the selection's in front when [drawn]. */

@@ -36,6 +36,10 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
                 if (draw.opacity < 1f) continue
                 for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.alphas?.let(::uploadedAlphasFor), layer, draw, view)
             }
+            for (layer in view.fur) {
+                layer.ink?.let { ribbons.draw(pass, ribbonSlot++, it, view) }
+                for (fill in layer.fills) meshes.draw(pass, slot++, uploadedFor(fill.mesh), fill, view)
+            }
             for (ribbon in view.ribbons) ribbons.draw(pass, ribbonSlot++, ribbon, view)
         }
         pass.setViewport(0f, 0f, frame.width.toFloat(), frame.height.toFloat())
@@ -61,9 +65,10 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
                 }
             }
         }
+        for (view in frame.views) for (layer in view.fur) for (fill in layer.fills) wanted[fill.mesh] = Unit
         uploaded.keys.filter { it !in wanted }.forEach { uploaded.remove(it)?.close() }
         uploadedAlphas.keys.filter { it !in wantedAlphas }.forEach { uploadedAlphas.remove(it)?.close() }
-        ribbons.keepOnly(frame.views.flatMap { view -> view.ribbons.map { it.ribbon } })
+        ribbons.keepOnly(frame.views.flatMap { view -> view.ribbons.map { it.ribbon } + view.fur.mapNotNull { it.ink?.ribbon } })
     }
 
     override fun close() {
