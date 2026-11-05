@@ -268,6 +268,34 @@ class LineFlickerSmokeTest {
         assertTrue(worstClearingRun <= MOST_TIP_RUN, "the tip of $worstClearing ran $worstClearingRun px past its root in a degree")
     }
 
+    /**
+     * How far past the edge the tail's strokes reach from each of a full turn of views, in pixels: of the strokes rooted close to the rim, the
+     * mean run outward from base to tip. Spikiness that depends on the angle shows as a wide gap between the views.
+     */
+    @Test
+    fun theTailReachesAsFarPastItsEdgeFromEveryAngle() {
+        val session = session()
+        val fur = assertNotNull(session.bodyFur.output.value)
+        val state = session.probeState()
+        val framed = framedCamera(state.character.parts.filter { it.id != null }, probeAzimuth(0f), TILE, TILE, MARGIN)
+        val target = framed.camera.target
+        val distance = (framed.camera.eye - target).length
+        val reaches = List(POP_VIEWS) { view ->
+            val camera = furCamera(cameraAt(target, distance, view * FULL_TURN / POP_VIEWS, 0f, 0), TILE, TILE, 1f)
+            val tail = assertNotNull(furView(fur, camera).parts[TAIL]).wedges.mapNotNull { wedge ->
+                val toViewer = camera.toViewerFrom(wedge.root)
+                val facing = wedge.normal dot toViewer
+                if (abs(facing) >= NEAR_THE_RIM) return@mapNotNull null
+                val base = (wedge.left.first() + wedge.right.first()) * 0.5f
+                ((wedge.tip - base) dot (wedge.normal - toViewer * facing).normalized()) * assertNotNull(camera.pixelsPerUnitAt(wedge.root))
+            }
+            if (tail.isEmpty()) 0f else tail.average().toFloat()
+        }
+        println("FURREACH by view: ${reaches.joinToString { "%.1f".format(it) }}")
+        val shown = reaches.filter { it > 0f }
+        assertTrue(shown.max() <= shown.min() * MOST_REACH_GAP, "the tail's strokes reach from ${shown.min()} to ${shown.max()} px by view")
+    }
+
     private fun pixelsBetween(a: dev.chieppa.squash.geom.Vec2, b: dev.chieppa.squash.geom.Vec2) = hypot(a.x - b.x, a.y - b.y)
 
     private fun lengthPixels(wedge: FurWedge, camera: FurCamera): Float {
@@ -288,6 +316,12 @@ class LineFlickerSmokeTest {
 
         /** The most a stroke's length may change in a degree of orbit, in pixels, against a rule of up to 40. */
         const val MOST_LENGTH_CHANGE = 1f
+
+        /** How closely a root faces away from the viewer to count as on the rim, as a cosine. */
+        const val NEAR_THE_RIM = 0.2f
+
+        /** How many times further the tail's strokes may reach past its edge from one view than from another. */
+        const val MOST_REACH_GAP = 1.5f
 
         /** The furthest the tip of a stroke clearing the rim may run past its root in a degree of orbit, in pixels. */
         const val MOST_TIP_RUN = 5f

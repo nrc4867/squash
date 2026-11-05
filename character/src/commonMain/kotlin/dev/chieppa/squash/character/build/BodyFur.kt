@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.positionAt
 
@@ -21,6 +22,19 @@ private const val ORDER_SHIFT = 15
 private fun orderOf(id: MarkId): Int {
     val mixed = id.value.hashCode() * ORDER_MIX
     return mixed xor (mixed ushr ORDER_SHIFT)
+}
+
+private const val RIMS_ALONG = 24
+private const val RIM_POINTS = 8
+
+/** Balls along each patch of [surface] that closes round: at each place, around the middle of its ring, as wide as the ring. */
+private fun rimsOf(surface: PartSurface): List<FurRim> = surface.patches.filter { it.closedV }.flatMap { patch ->
+    List(RIMS_ALONG + 1) { along ->
+        val u = along.toFloat() / RIMS_ALONG
+        val ring = List(RIM_POINTS) { patch.positionAt(u, it.toFloat() / RIM_POINTS) }
+        val center = ring.reduce { sum, point -> sum + point } * (1f / RIM_POINTS)
+        FurRim(surface.shown(center), ring.maxOf { (it - center).length })
+    }
 }
 
 /**
@@ -55,8 +69,11 @@ fun furInputs(character: Character, templates: TemplateLibrary): Map<PartId, Par
  */
 data class FurRoot(val id: MarkId, val position: Vec3, val normal: Vec3, val direction: Vec3, val slot: SlotName?, val radius: Float, val room: Float = Float.POSITIVE_INFINITY)
 
-/** A part's fur strokes and the rule they show by. */
-data class PartFur(val rule: FurRule, val roots: List<FurRoot>)
+/** A ball that stands in for one stretch of a part: from any camera the part's outline is the outline of its balls together. */
+data class FurRim(val center: Vec3, val radius: Float)
+
+/** A part's fur strokes, the rule they show by, and the [rims] that make its outline. */
+data class PartFur(val rule: FurRule, val roots: List<FurRoot>, val rims: List<FurRim> = emptyList())
 
 /** Every part's fur, camera aside, on a figure of [figureRadius] around [figureCenter]. */
 data class BodyFur(val parts: Map<PartId, PartFur>, val figureRadius: Float = 0f, val figureCenter: Vec3 = Vec3.ZERO)
@@ -79,7 +96,7 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
                 val radius = (patch.positionAt(root.anchor.u, root.anchor.v) - patch.positionAt(root.anchor.u, root.anchor.v + HALF_WAY_ROUND)).length / 2f
                 FurRoot(mark.id, root.position, root.normal, direction, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV), radius)
             }
-            if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }))
+            if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }), placed[id]?.surface?.let(::rimsOf).orEmpty())
         }.toMap(),
         character.box?.radius ?: 0f,
         character.box?.center ?: Vec3.ZERO,

@@ -103,14 +103,11 @@ private const val LEAST_SIZE = 0.08f
 /** How far every stroke leans outward from the surface, so its tip clears the silhouette. */
 private const val OUTWARD_LEAN = 0.3f
 
-/** How much further a grain running toward the viewer turns outward, so a stroke stays a stroke on a foreshortened part. */
-private const val FORESHORTENED_OUTWARD = 0.5f
-
 /** A stroke's length varies by this share either way, from its id, so a row does not read as a saw. */
 private const val LENGTH_SPREAD = 0.3f
 private const val SPREAD_STEPS = 64
 
-/** How far back a wedge sits, as a share of how far its root lies before the part's rim: at the rim's depth, so the surface inside the rim covers it and the part's outline shell, just past the rim, does not. */
+/** How far back a wedge sits, as a share of how far its root lies before the rim it clears: at the rim's depth, so the surface inside the rim covers it and the part's outline shell, just past the rim, does not. */
 private const val RIM_MARGIN = 1.05f
 
 /**
@@ -149,6 +146,11 @@ fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): F
 private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: Float, beforeRim: Float): List<FurWedge> {
     val rule = part.rule
     val spacing = rule.spacingPixels * camera.density * scale / figure
+    val rims = part.rims.mapNotNull { rim ->
+        val center = camera.toPixel(rim.center) ?: return@mapNotNull null
+        val perUnit = camera.pixelsPerUnitAt(rim.center) ?: return@mapNotNull null
+        SeenRim(rim, center, rim.radius * perUnit)
+    }
     return part.roots.mapNotNull { root ->
         val size = sizeWithRoom(root.room / spacing)
         if (size < LEAST_SIZE) return@mapNotNull null
@@ -157,8 +159,35 @@ private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: 
         if (kotlin.math.abs(facing) >= rule.showNear) return@mapNotNull null
         val at = camera.toPixel(root.position) ?: return@mapNotNull null
         val drawnBack = smoothStep((kotlin.math.abs(facing) / rule.showNear - DRAW_BACK_FROM) / (1f - DRAW_BACK_FROM))
-        wedge(root, rule.lengthPixels * camera.density * scale * size * spreadOf(root.id), size, facing, drawnBack, toViewer, at, camera, beforeRim)
+        val out = camera.toPixel(root.position + (root.normal - toViewer * facing))?.let { Vec2(it.x - at.x, it.y - at.y) } ?: Vec2(0f, 0f)
+        val ownRim = -root.radius * facing
+        val rimDepth = outlineRim(rims, at, out)?.let { minOf((it.center - root.position) dot toViewer, ownRim) } ?: ownRim
+        wedge(root, rule.lengthPixels * camera.density * scale * size * spreadOf(root.id), size, drawnBack, toViewer, at, camera, beforeRim + rimDepth * RIM_MARGIN)
     }
+}
+
+/** A rim as a camera shows it: a circle of [radius] pixels at [center]. */
+private class SeenRim(val rim: FurRim, val center: Vec2, val radius: Float)
+
+/** Of [rims], the one a line from [at] heading along [out] leaves last: the one that makes the part's outline that way. */
+private fun outlineRim(rims: List<SeenRim>, at: Vec2, out: Vec2): FurRim? {
+    val length = kotlin.math.hypot(out.x, out.y)
+    if (length < MIN_LENGTH) return null
+    var furthest = Float.NEGATIVE_INFINITY
+    var outline: FurRim? = null
+    for (seen in rims) {
+        val x = seen.center.x - at.x
+        val y = seen.center.y - at.y
+        val ahead = (x * out.x + y * out.y) / length
+        val room = seen.radius * seen.radius - (x * x + y * y - ahead * ahead)
+        if (room < 0f) continue
+        val leaves = ahead + kotlin.math.sqrt(room)
+        if (leaves > furthest) {
+            furthest = leaves
+            outline = seen.rim
+        }
+    }
+    return outline
 }
 
 private fun smoothStep(share: Float): Float {
@@ -173,22 +202,22 @@ private fun spreadOf(id: MarkId): Float {
     return 1f + LENGTH_SPREAD * (2f * step / (SPREAD_STEPS - 1) - 1f)
 }
 
-/** The grain at [root] as the viewer sees it, turning outward from the surface as much as the grain runs toward the viewer. */
+/** The grain at [root] as the viewer sees it, foreshortened, leaning outward from the surface. How far it runs outward depends only on how far the root lies from the rim, so a stroke clears the edge alike from every side. */
 private fun seenDirection(root: FurRoot, toViewer: Vec3): Vec3 {
     val flat = root.direction - toViewer * (root.direction dot toViewer)
     val outward = root.normal - toViewer * (root.normal dot toViewer)
-    return flat + outward * (OUTWARD_LEAN + FORESHORTENED_OUTWARD * (1f - flat.length).coerceAtLeast(0f))
+    return flat + outward * OUTWARD_LEAN
 }
 
-private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, facing: Float, drawnBack: Float, toViewer: Vec3, at: Vec2, camera: FurCamera, beforeRim: Float): FurWedge? {
+private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, drawnBack: Float, toViewer: Vec3, at: Vec2, camera: FurCamera, back: Float): FurWedge? {
     val seen = seenDirection(root, toViewer)
     val crossing = seen cross toViewer
     if (crossing.length < MIN_LENGTH || lengthPixels <= 0f) return null
     val along = seen.normalized()
     val across = crossing.normalized()
-    val perUnit = camera.toPixel(root.position + across)?.let { pixelsBetween(it, at) }?.takeIf { it > 0f } ?: return null
-    val length = lengthPixels / perUnit
-    val behind = toViewer * (beforeRim - root.radius * facing * RIM_MARGIN)
+    val behind = toViewer * back
+    val perUnit = camera.toPixel(root.position + behind + across)?.let { pixelsBetween(it, at) }?.takeIf { it > 0f } ?: return null
+    val length = lengthPixels * seen.length / (1f + OUTWARD_LEAN) / perUnit
     val halfBase = across * (length * BASE_SHARE / 2f)
     val origin = root.position + behind - tuck(root, toViewer, halfBase) - behindRim(root, toViewer, along * length) * drawnBack
     val tip = origin + along * length
