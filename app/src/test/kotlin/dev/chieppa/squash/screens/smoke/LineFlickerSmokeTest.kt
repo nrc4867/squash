@@ -48,8 +48,8 @@ private const val COLUMNS = 3
 private const val TILE = 520
 private const val MARGIN = 0.1f
 
-/** The most ink a frame may bring from outside any line's travel, or lose there, as a share of the frame's. A fur stroke growing into view runs past a line's travel. */
-private const val MOST_UNEXPLAINED_INK = 0.015f
+/** The most ink a frame may bring from outside any line's travel, or lose there, as a share of the frame's. */
+private const val MOST_UNEXPLAINED_INK = 0.01f
 
 /** Connected pixels from this many up read as a stretch of line. Fewer are the rounding of a line's edge. */
 private const val STRETCH_PIXELS = 12
@@ -213,40 +213,62 @@ class LineFlickerSmokeTest {
     }
 
     /**
-     * The worst pop as a turn changes which roots win their spacing: of the strokes shown in one frame and not the next, or the other way, how
-     * many there are, and how long the longest stands, in pixels. A stroke that comes in growing from nothing does not pop.
+     * What an orbit does to the strokes both frames show: how far a stroke's length changes, and how far the tip of one clearing the rim runs, in pixels per
+     * degree, past what its root runs. The rim is estimated from the part's radius there.
      */
     @Test
-    fun aStrokePopsLittleAsTheViewTurns() {
+    fun aStrokeHoldsItsSizeAsTheViewTurns() {
         val session = session()
         val fur = assertNotNull(session.bodyFur.output.value)
         val state = session.probeState()
         val framed = framedCamera(state.character.parts.filter { it.id != null }, probeAzimuth(0f), TILE, TILE, MARGIN)
         val target = framed.camera.target
         val distance = (framed.camera.eye - target).length
-        var worstPixels = 0f
-        var worstCount = 0
-        var total = 0
-        var shown = 0
-        val centres = List(POP_VIEWS) { it * FULL_TURN / POP_VIEWS }
-        for (centre in centres) for (step in STEPS) {
-            val views = List(FRAMES) { furCamera(cameraAt(target, distance, centre, step, it), TILE, TILE, 1f) }
-            val wedges = views.map { camera -> furView(fur, camera).parts.values.flatMap { it.wedges }.associateBy { it.id } to camera }
-            for ((a, b) in wedges.zipWithNext()) {
-                val (now, nowCamera) = a
-                val (next, nextCamera) = b
-                val gone = now.filterKeys { it !in next }.values.map { lengthPixels(it, nowCamera) }
-                val come = next.filterKeys { it !in now }.values.map { lengthPixels(it, nextCamera) }
-                val popped = (gone + come).filter { it >= POP_PIXELS }
-                worstCount = maxOf(worstCount, popped.size)
-                worstPixels = maxOf(worstPixels, (gone + come).maxOrNull() ?: 0f)
-                total += popped.size
-                shown += now.size
+        var worstChange = 0f
+        var worstRun = 0f
+        var shownMost = 0
+        val runs = ArrayList<Float>()
+        val rootsById = fur.parts.values.flatMap { it.roots }.associateBy { it.id }
+        fun clearsTheRim(wedge: FurWedge, camera: FurCamera): Boolean {
+            val root = assertNotNull(rootsById[wedge.id])
+            val toViewer = camera.toViewerFrom(root.position)
+            val facing = root.normal dot toViewer
+            val outward = root.normal - toViewer * facing
+            if (outward.length <= 0f) return false
+            return ((wedge.tip - root.position) dot outward.normalized()) > root.radius * (1f - outward.length)
+        }
+        var worstClearing = ""
+        var worstClearingRun = 0f
+        for (view in 0 until POP_VIEWS) {
+            val centre = view * FULL_TURN / POP_VIEWS
+            val cameras = List(FRAMES) { furCamera(cameraAt(target, distance, centre, 1f, it), TILE, TILE, 1f) }
+            val shown = cameras.map { camera -> furView(fur, camera).parts.values.flatMap { it.wedges }.associateBy { it.id } }
+            shownMost = maxOf(shownMost, shown.maxOf { it.size })
+            for (i in 0 until FRAMES - 1) {
+                for ((id, now) in shown[i]) {
+                    val next = shown[i + 1][id] ?: continue
+                    worstChange = maxOf(worstChange, abs(lengthPixels(next, cameras[i + 1]) - lengthPixels(now, cameras[i])))
+                    val root = pixelsBetween(assertNotNull(cameras[i].toPixel(now.root)), assertNotNull(cameras[i + 1].toPixel(next.root)))
+                    val tip = pixelsBetween(assertNotNull(cameras[i].toPixel(now.tip)), assertNotNull(cameras[i + 1].toPixel(next.tip)))
+                    val run = (tip - root).coerceAtLeast(0f)
+                    worstRun = maxOf(worstRun, run)
+                    if (clearsTheRim(now, cameras[i]) || clearsTheRim(next, cameras[i + 1])) {
+                        runs += run
+                        if (run > worstClearingRun) {
+                            worstClearingRun = run
+                            worstClearing = id.value
+                        }
+                    }
+                }
             }
         }
-        println("FURPOP worst pair of frames: $worstCount strokes of $POP_PIXELS px or more, longest ${"%.1f".format(worstPixels)} px; ${percent(total.toFloat() / shown)}% of strokes shown pop per frame")
-        assertTrue(worstPixels <= MOST_POP_PIXELS, "the longest stroke to pop stands $worstPixels px")
+        runs.sort()
+        println("FURHOLD at most $shownMost strokes; length change per degree, worst ${"%.2f".format(worstChange)} px; tip run past its root per degree, median ${"%.2f".format(runs[runs.size / 2])}, 99th ${"%.2f".format(runs[runs.size * 99 / 100])}, worst hidden or not ${"%.2f".format(worstRun)} px, worst clearing the rim ${"%.2f".format(worstClearingRun)} px on $worstClearing")
+        assertTrue(worstChange <= MOST_LENGTH_CHANGE, "a stroke's length changed $worstChange px in a degree")
+        assertTrue(worstClearingRun <= MOST_TIP_RUN, "the tip of $worstClearing ran $worstClearingRun px past its root in a degree")
     }
+
+    private fun pixelsBetween(a: dev.chieppa.squash.geom.Vec2, b: dev.chieppa.squash.geom.Vec2) = hypot(a.x - b.x, a.y - b.y)
 
     private fun lengthPixels(wedge: FurWedge, camera: FurCamera): Float {
         val root = (wedge.left.first() + wedge.right.first()) * 0.5f
@@ -264,11 +286,11 @@ class LineFlickerSmokeTest {
         const val FULL_TURN = 360f
         const val POP_VIEWS = 12
 
-        /** A stroke shorter than this coming or going does not read as a pop. */
-        const val POP_PIXELS = 4f
+        /** The most a stroke's length may change in a degree of orbit, in pixels, against a rule of up to 40. */
+        const val MOST_LENGTH_CHANGE = 1f
 
-        /** The longest stroke that may come or go between two frames at these steps, shrinking fast, not snapping, against a rule of up to 40 pixels. */
-        const val MOST_POP_PIXELS = 16f
+        /** The furthest the tip of a stroke clearing the rim may run past its root in a degree of orbit, in pixels. */
+        const val MOST_TIP_RUN = 5f
     }
 }
 

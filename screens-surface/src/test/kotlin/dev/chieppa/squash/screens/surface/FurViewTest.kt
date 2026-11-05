@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.surface
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.FurCamera
 import dev.chieppa.squash.character.build.FurView
+import dev.chieppa.squash.character.build.furView
 import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
@@ -34,7 +35,6 @@ import kotlin.test.assertTrue
 private const val VIEW = "test"
 private const val WIDE_SPACING = 80f
 private const val TIGHT_SPACING = 4f
-private const val SPACING_SLACK = 0.49f
 
 /** Two strokes this large cannot share the room within half the spacing. */
 private const val MOSTLY_GROWN = 0.5f
@@ -44,8 +44,17 @@ private val FAR = Vec3(0f, 0f, -10f)
 /** A stroke's length varies by under this either way, with perspective on top. */
 private const val LENGTH_SLACK = 1.5f
 
-/** A stroke shrinks away by this cosine past the silhouette. */
-private const val PAST_THE_SILHOUETTE = 0.15f
+/** Turns of the view a stroke is held to through. */
+private const val ORBIT_FRAMES = 12
+
+/** How far a stroke's size may move through an orbit, for rounding. */
+private const val SIZE_HELD = 1e-3f
+
+/** How many pixels a body unit spans for the spacing to hold in pixels. */
+private const val FULL_SCALE = 280f
+
+/** Strokes this large hold at least this share of the spacing between them, on the body. */
+private const val SPACING_HELD = 0.85f
 
 class FurViewTest {
     private val session = openSession(fennecDocument())
@@ -74,7 +83,7 @@ class FurViewTest {
         assertTrue(tail.wedges.size < roots.size, "most of the tail's strokes are not at its edge")
         tail.wedges.forEach { wedge ->
             val facing = wedge.normal dot camera.toViewerFrom(wedge.root)
-            assertTrue(facing > -PAST_THE_SILHOUETTE && facing < rule.showNear, "${wedge.id.value} faces the camera by $facing")
+            assertTrue(kotlin.math.abs(facing) < rule.showNear, "${wedge.id.value} faces the camera by $facing")
         }
     }
 
@@ -88,14 +97,42 @@ class FurViewTest {
     }
 
     @Test
-    fun largeStrokesStaySpacedOnScreen() {
+    fun largeStrokesStaySpacedOnTheBody() {
         rule(TAIL, FurRule(showNear = 0.9f, spacingPixels = WIDE_SPACING))
         val (view, camera) = shown()
-        val roots = assertNotNull(view.parts[TAIL]).wedges.filter { it.size > MOSTLY_GROWN }.map { assertNotNull(camera.toPixel(it.root)) }
+        val perUnit = assertNotNull(camera.pixelsPerUnitAt(assertNotNull(session.bodyFur.output.value).figureCenter))
+        val spacing = WIDE_SPACING / maxOf(perUnit, FULL_SCALE)
+        val roots = assertNotNull(view.parts[TAIL]).wedges.filter { it.size > MOSTLY_GROWN }.map { it.root }
         assertTrue(roots.size > 1)
         roots.forEachIndexed { i, a ->
-            roots.drop(i + 1).forEach { b -> assertTrue(hypot(a.x - b.x, a.y - b.y) >= WIDE_SPACING * SPACING_SLACK, "$a and $b are too close") }
+            roots.drop(i + 1).forEach { b -> assertTrue((a - b).length >= spacing * SPACING_HELD, "$a and $b are too close") }
         }
+    }
+
+    @Test
+    fun anOrbitChangesNoStrokesSize() {
+        val center = center(TORSO)
+        val fur = assertNotNull(session.bodyFur.output.value)
+        val sizes = HashMap<String, Float>()
+        val seen = HashSet<String>()
+        repeat(ORBIT_FRAMES) { frame ->
+            val turn = frame * 2.0 * Math.PI / ORBIT_FRAMES
+            val offset = Vec3(5f * kotlin.math.sin(turn).toFloat(), 0f, -5f * kotlin.math.cos(turn).toFloat())
+            val camera = furCamera(sideCamera(center, offset), VIEW_PIXELS, VIEW_PIXELS, 1f)
+            furView(fur, camera).parts.values.flatMap { it.wedges }.forEach { wedge ->
+                seen += wedge.id.value
+                assertEquals(sizes.getOrPut(wedge.id.value) { wedge.size }, wedge.size, SIZE_HELD, "${wedge.id.value} at frame $frame")
+            }
+        }
+        assertTrue(seen.isNotEmpty())
+    }
+
+    @Test
+    fun aCloserViewBringsInMoreStrokes() {
+        rule(TAIL, FurRule(showNear = 0.9f, spacingPixels = 20f))
+        val far = assertNotNull(shown(FAR).first.parts[TAIL]).wedges.map { it.id }.toSet()
+        val close = assertNotNull(shown(CLOSE).first.parts[TAIL]).wedges.map { it.id }.toSet()
+        assertTrue(close.size > far.size, "${far.size} far, ${close.size} close")
     }
 
     @Test

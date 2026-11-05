@@ -9,6 +9,9 @@ import dev.chieppa.squash.geom.Vec3
 
 private const val CLIP_COMPONENTS = 4
 
+/** Past this share of the view running along up, the sideways direction is found from another axis. */
+private const val SIDE_FROM_UP = 0.9f
+
 /**
  * What a view's fur reads of its camera: a [matrix] from body space to clip space, column by column, on a [width] by [height] surface.
  * A perspective camera has an [eye]; a camera with none looks along [toViewer] from everywhere. [density] says how many of its pixels make one
@@ -25,14 +28,22 @@ data class FurCamera(val matrix: List<Float>, val width: Int, val height: Int, v
         return Vec2((clip(point, 0) / w + 1f) / 2f * width, (1f - clip(point, 1) / w) / 2f * height)
     }
 
+    /** How many pixels one body unit across the view spans at [point], or null when it lies behind the camera. */
+    fun pixelsPerUnitAt(point: Vec3): Float? {
+        val at = toPixel(point) ?: return null
+        val side = toViewer cross if (kotlin.math.abs(toViewer.y) < SIDE_FROM_UP) Vec3(0f, 1f, 0f) else Vec3(1f, 0f, 0f)
+        val beside = toPixel(point + side.normalized()) ?: return null
+        return kotlin.math.hypot(at.x - beside.x, at.y - beside.y)
+    }
+
     private fun clip(point: Vec3, row: Int): Float =
         matrix[row] * point.x + matrix[CLIP_COMPONENTS + row] * point.y + matrix[2 * CLIP_COMPONENTS + row] * point.z + matrix[3 * CLIP_COMPONENTS + row]
 }
 
 /**
  * One fur stroke as a view shows it, in body space: from the two corners of its base along [left] and [right], which meet at [tip].
- * Each edge runs base to tip, for the ink; its fill lies [fillBehind] further from the viewer. [size] is its share of its full length, as
- * it grows entering the band, which its ink follows.
+ * Each edge runs base to tip, for the ink; its fill lies [fillBehind] further from the viewer. [size] is its share of its full length, which
+ * its ink follows, and which only a change of zoom changes.
  */
 data class FurWedge(
     val id: MarkId,
@@ -67,23 +78,24 @@ private const val BASE_SHARE = 0.6f
 private const val BEND_AT = 0.5f
 private const val HOOK_SHARE = 0.16f
 
+/** How sharply a wedge's bow swings to its other side as the surface turns under it, so it never snaps there. */
+private const val HOOK_TURN = 5f
+
 /** Points along one edge of a wedge. */
 private const val EDGE_STEPS = 4
 
-/** Where a stroke reaches its full size as its root turns away from the band's edge, as a share of the band. */
-private const val FULL_SIZE_AT = 0.8f
-
 /**
- * How many pixels a body unit spans at the root for a stroke to show its rule's whole length. A smaller view shrinks it in proportion, so
- * a tuft keeps its size against the part; a closer one keeps it, as a line keeps its weight.
+ * How many pixels a body unit spans at the figure for strokes to show their rule's whole length and spacing. A smaller view scales both down
+ * in proportion, so a tuft keeps its size against the part and the same strokes show; a closer one keeps them in pixels, so more strokes show,
+ * as a line keeps its weight.
  */
-private const val FULL_LENGTH_PIXELS_PER_UNIT = 280f
+private const val FULL_SCALE_PIXELS_PER_UNIT = 280f
 
-/** How far past the silhouette a root's stroke lasts, as the cosine by which it faces away, shrinking to nothing there. */
-private const val BEHIND_BAND = 0.15f
+/** Where a stroke's size starts, as its room against the spacing: it reaches full size at a room of the spacing itself. */
+private const val LEAST_ROOM_SHARE = 0.7f
 
-/** How close on screen a full stroke leaves no room for the next, as a share of the spacing; from there to the spacing, room opens smoothly. */
-private const val NO_ROOM_SHARE = 0.5f
+/** Where along the band, from the silhouette to its edge, a stroke starts drawing back behind the rim to stand hidden at the edge. */
+private const val DRAW_BACK_FROM = 0.75f
 
 /** A stroke smaller than this share of its length is not drawn, too short to read. */
 private const val LEAST_SIZE = 0.08f
@@ -115,34 +127,37 @@ private const val INDICES_PER_STEP = 6
 private const val MIN_LENGTH = 1e-5f
 
 /**
- * What [fur] shows through [camera]: of each part's strokes those whose root faces the viewer by under their rule's show near. Strokes
- * take room on screen in the order [bodyFur] gives them, one that seeds from their ids, so what falls where varies from stroke to stroke
- * and holds as the view turns. A stroke's size is smooth in the camera: it grows from nothing at the band's inner edge, shrinks to
- * nothing just past the silhouette, and shrinks by as much of the room as those before it, within the spacing, take in proportion to
- * their own size. So no stroke pops as the view turns. A wedge turns its width to the viewer and runs along the grain as the viewer sees
- * it. It sits back along its line of sight, past the rim of the part it roots on, so that part's surface covers all of it but what
- * breaks the silhouette, while it stays in front of what lies behind the part.
+ * What [fur] shows through [camera]: of each part's strokes those whose root faces the viewer, or away, by under their rule's show near, and
+ * that have room for the spacing at this zoom. Turning the camera changes neither a stroke's length nor which strokes have room, so a stroke
+ * holds its size through an orbit: only the part's rim hides it. A wedge turns its width to the viewer and runs along the grain as the viewer
+ * sees it. It sits back along its line of sight, past the rim of the part it roots on, so that part's surface covers all of it but what breaks
+ * the silhouette, while it stays in front of what lies behind the part. Near the band's edge it draws back behind the rim, so it comes and goes
+ * unseen.
  */
-fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): FurView = FurView(
-    fur.parts.mapValues { (_, part) ->
-        checkCancelled()
-        val wedges = shownWedges(part, camera, fur.figureRadius * BEFORE_RIM_SHARE)
-        PartFurView(wedges, wedges.groupBy { it.slot }.map { (slot, held) -> FurFill(slot, wedgeMesh(held)) })
-    },
-)
+fun furView(fur: BodyFur, camera: FurCamera, checkCancelled: () -> Unit = {}): FurView {
+    val figure = camera.pixelsPerUnitAt(fur.figureCenter)?.takeIf { it > 0f } ?: return FurView.EMPTY
+    val scale = (figure / (FULL_SCALE_PIXELS_PER_UNIT * camera.density)).coerceAtMost(1f)
+    return FurView(
+        fur.parts.mapValues { (_, part) ->
+            checkCancelled()
+            val wedges = shownWedges(part, camera, scale, figure, fur.figureRadius * BEFORE_RIM_SHARE)
+            PartFurView(wedges, wedges.groupBy { it.slot }.map { (slot, held) -> FurFill(slot, wedgeMesh(held)) })
+        },
+    )
+}
 
-private fun shownWedges(part: PartFur, camera: FurCamera, beforeRim: Float): List<FurWedge> {
+private fun shownWedges(part: PartFur, camera: FurCamera, scale: Float, figure: Float, beforeRim: Float): List<FurWedge> {
     val rule = part.rule
-    val room = RoomOnScreen(rule.spacingPixels * camera.density)
+    val spacing = rule.spacingPixels * camera.density * scale / figure
     return part.roots.mapNotNull { root ->
+        val size = sizeWithRoom(root.room / spacing)
+        if (size < LEAST_SIZE) return@mapNotNull null
         val toViewer = camera.toViewerFrom(root.position)
         val facing = root.normal dot toViewer
-        if (facing <= -BEHIND_BAND || facing >= rule.showNear) return@mapNotNull null
+        if (kotlin.math.abs(facing) >= rule.showNear) return@mapNotNull null
         val at = camera.toPixel(root.position) ?: return@mapNotNull null
-        val size = sizeIn(facing, rule.showNear) * room.at(at)
-        if (size < LEAST_SIZE) return@mapNotNull null
-        room.take(at, size)
-        wedge(root, rule.lengthPixels * camera.density * size * spreadOf(root.id), size, facing, toViewer, at, camera, beforeRim)
+        val drawnBack = smoothStep((kotlin.math.abs(facing) / rule.showNear - DRAW_BACK_FROM) / (1f - DRAW_BACK_FROM))
+        wedge(root, rule.lengthPixels * camera.density * scale * size * spreadOf(root.id), size, facing, drawnBack, toViewer, at, camera, beforeRim)
     }
 }
 
@@ -151,8 +166,7 @@ private fun smoothStep(share: Float): Float {
     return held * held * (3f - 2f * held)
 }
 
-private fun sizeIn(facing: Float, showNear: Float): Float =
-    smoothStep((showNear - facing) / (showNear * FULL_SIZE_AT)) * smoothStep((facing + BEHIND_BAND) / BEHIND_BAND)
+private fun sizeWithRoom(room: Float): Float = smoothStep((room - LEAST_ROOM_SHARE) / (1f - LEAST_ROOM_SHARE))
 
 private fun spreadOf(id: MarkId): Float {
     val step = (id.value.hashCode() and Int.MAX_VALUE) % SPREAD_STEPS
@@ -166,19 +180,19 @@ private fun seenDirection(root: FurRoot, toViewer: Vec3): Vec3 {
     return flat + outward * (OUTWARD_LEAN + FORESHORTENED_OUTWARD * (1f - flat.length).coerceAtLeast(0f))
 }
 
-private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, facing: Float, toViewer: Vec3, at: Vec2, camera: FurCamera, beforeRim: Float): FurWedge? {
+private fun wedge(root: FurRoot, lengthPixels: Float, size: Float, facing: Float, drawnBack: Float, toViewer: Vec3, at: Vec2, camera: FurCamera, beforeRim: Float): FurWedge? {
     val seen = seenDirection(root, toViewer)
     val crossing = seen cross toViewer
     if (crossing.length < MIN_LENGTH || lengthPixels <= 0f) return null
     val along = seen.normalized()
     val across = crossing.normalized()
     val perUnit = camera.toPixel(root.position + across)?.let { pixelsBetween(it, at) }?.takeIf { it > 0f } ?: return null
-    val length = lengthPixels * (perUnit / (FULL_LENGTH_PIXELS_PER_UNIT * camera.density)).coerceAtMost(1f) / perUnit
+    val length = lengthPixels / perUnit
     val behind = toViewer * (beforeRim - root.radius * facing * RIM_MARGIN)
     val halfBase = across * (length * BASE_SHARE / 2f)
-    val origin = root.position + behind - tuck(root, toViewer, halfBase)
+    val origin = root.position + behind - tuck(root, toViewer, halfBase) - behindRim(root, toViewer, along * length) * drawnBack
     val tip = origin + along * length
-    val hook = across * (length * BASE_SHARE * HOOK_SHARE * if ((across dot root.normal) >= 0f) 1f else -1f)
+    val hook = across * (length * BASE_SHARE * HOOK_SHARE * ((across dot root.normal) * HOOK_TURN).coerceIn(-1f, 1f))
     val middle = origin + along * (length * BEND_AT) + hook
     return FurWedge(root.id, root.position, root.normal, root.slot, edge(origin + halfBase, middle + halfBase * BEND_AT, tip), edge(origin - halfBase, middle - halfBase * BEND_AT, tip), size, toViewer * -(FILL_BEHIND_INK_PIXELS / perUnit))
 }
@@ -189,6 +203,14 @@ private fun tuck(root: FurRoot, toViewer: Vec3, halfBase: Vec3): Vec3 {
     if (outward.length < MIN_LENGTH) return Vec3.ZERO
     val out = outward.normalized()
     return out * kotlin.math.abs(halfBase dot out)
+}
+
+/** How far inward a wedge running along [run] moves for its tip to sit no further out than its root. */
+private fun behindRim(root: FurRoot, toViewer: Vec3, run: Vec3): Vec3 {
+    val outward = root.normal - toViewer * (root.normal dot toViewer)
+    if (outward.length < MIN_LENGTH) return Vec3.ZERO
+    val out = outward.normalized()
+    return out * (run dot out).coerceAtLeast(0f)
 }
 
 private fun edge(base: Vec3, bend: Vec3, tip: Vec3): List<Vec3> = List(EDGE_STEPS + 1) { step ->
@@ -225,34 +247,6 @@ private fun FloatArray.putCorner(at: Int, position: Vec3, normal: Vec3): Int {
         this[o++] = v.z
     }
     return o
-}
-
-/** The strokes that have taken room on screen so far, looked up by the cells of a grid as wide as the spacing. */
-private class RoomOnScreen(private val spacing: Float) {
-    private class Taken(val at: Vec2, val size: Float)
-
-    private val cells = HashMap<Long, MutableList<Taken>>()
-
-    /** The share of a stroke's size that those so far leave it at [at]. */
-    fun at(at: Vec2): Float {
-        val column = kotlin.math.floor(at.x / spacing).toInt()
-        val row = kotlin.math.floor(at.y / spacing).toInt()
-        var room = 1f
-        for (x in column - 1..column + 1) {
-            for (y in row - 1..row + 1) {
-                cells[key(x, y)]?.forEach { room *= 1f - it.size * crowding(pixelsBetween(it.at, at)) }
-            }
-        }
-        return room
-    }
-
-    fun take(at: Vec2, size: Float) {
-        cells.getOrPut(key(kotlin.math.floor(at.x / spacing).toInt(), kotlin.math.floor(at.y / spacing).toInt())) { ArrayList() } += Taken(at, size)
-    }
-
-    private fun crowding(distance: Float): Float = 1f - smoothStep((distance / spacing - NO_ROOM_SHARE) / (1f - NO_ROOM_SHARE))
-
-    private fun key(column: Int, row: Int) = (column.toLong() shl Int.SIZE_BITS) xor (row.toLong() and 0xFFFFFFFFL)
 }
 
 private fun pixelsBetween(a: Vec2, b: Vec2): Float = kotlin.math.hypot(a.x - b.x, a.y - b.y)

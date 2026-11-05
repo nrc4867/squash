@@ -22,7 +22,7 @@ data class Grain(val combs: List<GrainComb> = emptyList())
 
 /**
  * How a part's fur strokes show. A stroke shows where its root's facing, as the cosine between normal and view, is under [showNear],
- * at least [spacingPixels] on screen from the next, and [lengthPixels] long, less on a view too small to hold that. See HLD: look, Marks.
+ * with room on the body for [spacingPixels] at the view's zoom, and [lengthPixels] long, both less on a view too small to hold them. See HLD: look, Marks.
  */
 @Serializable
 data class FurRule(val showNear: Float = DEFAULT_SHOW_NEAR, val spacingPixels: Float = DEFAULT_SPACING, val lengthPixels: Float = DEFAULT_LENGTH) {
@@ -33,7 +33,7 @@ data class FurRule(val showNear: Float = DEFAULT_SHOW_NEAR, val spacingPixels: F
     }
 
     private companion object {
-        const val DEFAULT_SHOW_NEAR = 0.3f
+        const val DEFAULT_SHOW_NEAR = 0.8f
         const val DEFAULT_SPACING = 12f
         const val DEFAULT_LENGTH = 9f
     }
