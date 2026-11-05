@@ -32,6 +32,8 @@ data class ResolvedMark(
     val cameraLocked: Boolean,
     val versions: Map<CameraBin, ResolvedMarkVersion>,
     val kind: MarkKind = MarkKind.LINE,
+    val source: MarkId = id,
+    val slot: SlotName? = null,
 )
 
 data class ResolvedRegion(val id: RegionId, val border: List<ResolvedPoint>, val slot: SlotName, val ink: Boolean)

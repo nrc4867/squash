@@ -12,12 +12,15 @@ import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.document.expressionMarks
+import dev.chieppa.squash.document.mirrorOf
 import dev.chieppa.squash.geom.PartSurface
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.geom.surfaceAt
 
@@ -27,11 +30,12 @@ internal const val MIN_STROKE_POINTS = 1
 /** What an expression gives the mark groups a part holds, as that part reads them. */
 data class ExpressionWork(val id: ExpressionId, val name: String, val marks: Map<MarkGroupId, Map<MarkRole, List<Mark>>>)
 
-/** What a part's resolved surface work reads from the document, and the parts it names that exist, the part itself among them. */
+/** What a part's resolved surface work reads from the document, and the parts it names that exist, the part itself among them. [mirrors] are the other sides of its mirrored marks, by the mark each mirrors. */
 data class SurfaceWorkInput(
     val surface: SurfaceWork = SurfaceWork(),
     val expressions: List<ExpressionWork> = emptyList(),
     val parts: Set<PartId> = emptySet(),
+    val mirrors: Map<MarkId, Mark> = emptyMap(),
 )
 
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
@@ -43,8 +47,9 @@ fun surfaceWorkInput(character: Character, part: PartId): SurfaceWorkInput {
         if (marks.isEmpty()) null else ExpressionWork(set.id, set.name, marks)
     }
     val expressionMarks = expressions.flatMap { set -> set.marks.values.flatMap { roles -> roles.values.flatten() } }
-    val named = (surface.anchors() + expressionMarks.flatMap { it.anchors() }).mapTo(linkedSetOf()) { it.part }
-    return SurfaceWorkInput(surface, expressions, setOf(part) + named.filter { character.part(it) != null })
+    val mirrors = if (instance.pair == null && instance.side == null) surface.marks.filter { it.mirrored }.associate { it.id to character.mirrorOf(it) } else emptyMap()
+    val named = (surface.anchors() + expressionMarks.flatMap { it.anchors() } + mirrors.values.flatMap { it.anchors() }).mapTo(linkedSetOf()) { it.part }
+    return SurfaceWorkInput(surface, expressions, setOf(part) + named.filter { character.part(it) != null }, mirrors)
 }
 
 private fun SurfaceWork.anchors(): List<Anchor> =
@@ -77,7 +82,11 @@ internal fun MarkGroup.namingOnly(kept: Set<MarkId>): MarkGroup =
 fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurface>, checkCancelled: () -> Unit = {}): ResolvedSurfaceWork {
     val point = { anchor: Anchor -> surfaces[anchor.part]?.pointAt(anchor) }
     val surface = input.surface
-    val marks = surface.marks.mapNotNull { checkCancelled(); resolveMark(it, point) }
+    val place = FlightPlaces(point) { anchor -> surfaces[anchor.part]?.frameAt(anchor) }
+    val marks = surface.marks.flatMap { mark ->
+        checkCancelled()
+        listOfNotNull(resolveMark(mark, place), input.mirrors[mark.id]?.let { resolveMark(it, place, mark.id) })
+    }
     val kept = marks.mapTo(hashSetOf()) { it.id }
     return ResolvedSurfaceWork(
         baseSlot = surface.baseSlot,
@@ -88,7 +97,7 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
         strokes = surface.paint.strokes.mapNotNull { checkCancelled(); resolveStroke(it, point) },
         expressions = input.expressions.map { set ->
             val groups = set.marks.mapValues { (_, roles) ->
-                roles.mapValues { (_, held) -> held.mapNotNull { checkCancelled(); resolveMark(it, point) } }
+                roles.mapValues { (_, held) -> held.mapNotNull { checkCancelled(); resolveMark(it, place) } }
             }
             ResolvedExpression(set.id, set.name, groups)
         },
@@ -96,12 +105,23 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
     )
 }
 
-private fun resolveMark(mark: Mark, point: (Anchor) -> ResolvedPoint?): ResolvedMark? {
-    val points = keptPoints(mark.points, mark.kind.minPoints, point) ?: return null
+/** Where anchors land, and the directions at them that a floating mark is held in. */
+private class FlightPlaces(val point: (Anchor) -> ResolvedPoint?, val frame: (Anchor) -> SurfaceFrame?)
+
+/** A floating mark's places in the air, from its root on. Having no surface under them, they carry no normal, so they hold the line's interior weight from every side. */
+private fun floatingPoints(mark: Mark, place: FlightPlaces): List<ResolvedPoint>? {
+    val root = place.point(mark.points.first()) ?: return null
+    val frame = place.frame(root.anchor) ?: return null
+    return (listOf(root.position) + mark.flight.map { frame.placed(root.position, it) }).map { ResolvedPoint(root.anchor, it, Vec3.ZERO) }
+}
+
+private fun resolveMark(mark: Mark, place: FlightPlaces, source: MarkId = mark.id): ResolvedMark? {
+    val point = place.point
+    val points = (if (mark.kind == MarkKind.FLOATING) floatingPoints(mark, place) else keptPoints(mark.points, mark.kind.minPoints, point)) ?: return null
     val versions = mark.versions.mapNotNull { (bin, version) ->
         keptPoints(version.points, MIN_MARK_POINTS, point)?.let { bin to ResolvedMarkVersion(it, version.width) }
     }.toMap()
-    return ResolvedMark(mark.id, points, mark.width, mark.ink, mark.cameraLocked, versions, mark.kind)
+    return ResolvedMark(mark.id, points, mark.width, mark.ink, mark.cameraLocked, versions, mark.kind, source, mark.slot)
 }
 
 private fun resolveWeight(weight: LineWeight, point: (Anchor) -> ResolvedPoint?): ResolvedLineWeight? =

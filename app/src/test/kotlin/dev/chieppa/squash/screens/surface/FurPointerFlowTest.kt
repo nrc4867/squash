@@ -169,6 +169,21 @@ class FurPointerFlowTest {
     }
 
     @Test
+    fun aFloatingStrokeStartsOnTheBodyLeavesItAndMirrorsAcrossTheMiddle() = runDesktopComposeUiTest(PANES_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.FULL_FIRST, TAIL)
+        state.lines.floats = true
+        show(state) { rememberSurfaceStrokeTool(state) }
+        val session = assertNotNull(state.session.value)
+        val (from, to) = state.across(TAIL)
+        val steps = session.history.steps.value.done.size
+        drag(SheetPane.FULL, from, to + (to - from) * 2f)
+        val floating = state.work(TAIL).marks.single { it.kind == MarkKind.FLOATING }
+        assertTrue(floating.flight.size > 1, "it passed through the air")
+        assertEquals(true, floating.mirrored, "Mirror is on and the tail lies in the middle")
+        assertEquals(steps + 1, session.history.steps.value.done.size, "one undo step")
+    }
+
+    @Test
     fun aCombDragStoresAnchorVectorsThatTurnTheGrainAsOneStep() = runDesktopComposeUiTest(PANES_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.FULL_FIRST, TAIL)
         show(state) { rememberCombTool(state) }

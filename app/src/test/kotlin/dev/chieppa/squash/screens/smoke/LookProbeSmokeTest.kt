@@ -5,6 +5,8 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CameraBin
+import dev.chieppa.squash.document.MarkFlight
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.ObjectShading
@@ -26,7 +28,9 @@ import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.surface.AngleBins
 import dev.chieppa.squash.screens.surface.CharacterLook
 import dev.chieppa.squash.screens.surface.CharacterState
+import dev.chieppa.squash.screens.surface.StrokeLook
 import dev.chieppa.squash.screens.surface.characterView
+import dev.chieppa.squash.screens.surface.floatingCommand
 import dev.chieppa.squash.screens.surface.degreesBetween
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.squash.screens.sheet.furCamera
@@ -78,6 +82,9 @@ private val VIEWS = listOf("side" to probeAzimuth(90f), "three-quarter" to probe
 private val MODES = listOf("flat" to Shading.FLAT, "two-tone" to Shading.TWO_TONE)
 
 private const val PROBE_FUR_VIEW = "probe"
+
+/** How much of the view the head fills, leaving room for whiskers to reach into. */
+private const val WHISKER_MARGIN = 0.7f
 
 /** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
 internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT): CharacterState {
@@ -152,6 +159,25 @@ class LookProbeSmokeTest {
             }
         }
         scope.cancel()
+        assertEquals(emptyList(), errors)
+    }
+
+    @Test
+    fun whiskersFloatOffTheMuzzleOnBothSides() {
+        val session = session()
+        val mouth = assertNotNull(session.document.value.character.resolved(HEAD)).surface.marks.first { it.kind == MarkKind.LINE && it.points.size > 1 }.points.first()
+        for ((rise, reach) in listOf(0.02f to 0.28f, -0.04f to 0.3f, -0.1f to 0.26f)) {
+            val flight = (1..4).map { step -> MarkFlight(-0.06f * step, rise * step, reach * step / 4f) }
+            session.send(assertNotNull(floatingCommand(session.document.value.character, mouth, flight, thisSide = false, StrokeLook(mirrored = true))))
+        }
+        for ((viewName, toViewer) in VIEWS) {
+            val rect = PixelRect(0, 0, WIDTH, HEIGHT)
+            val state = session.probeState()
+            val close = framedCamera(listOfNotNull(state.character.part(HEAD)), toViewer, WIDTH, HEIGHT, WHISKER_MARGIN)
+            val shown = session.probeState(close.camera)
+            val view = characterView(rect, close.camera, shown, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { binAt(toViewer) }
+            keepImage(renderSnapshot(SceneFrame(PROBE_GROUND, listOf(view)), WIDTH, HEIGHT, GpuOptions(onError = { errors += it })) { ViewsScene(it) }.pixels, WIDTH, "whiskers-$viewName")
+        }
         assertEquals(emptyList(), errors)
     }
 

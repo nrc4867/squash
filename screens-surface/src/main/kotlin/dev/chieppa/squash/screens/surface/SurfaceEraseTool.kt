@@ -12,6 +12,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.followToRelease
 import dev.chieppa.squash.screens.sheet.SurfaceView
@@ -19,9 +20,9 @@ import dev.chieppa.squash.screens.sheet.SurfaceView
 /** How close to a mark's line a press takes it, in density independent pixels. */
 private const val ERASE_REACH = 8f
 
-/** Whether any of [points] that face the viewer shows within [reach] of [pixel]. */
+/** Whether any of [points] that face the viewer, or float with no surface to face it, shows within [reach] of [pixel]. */
 private fun SurfaceView.touches(points: List<ResolvedPoint>, pixel: Offset, reach: Float): Boolean = points.any { point ->
-    (point.normal dot toViewer(point.position)) > 0f && toPixel(point.position)?.let { (it - pixel).getDistance() <= reach } == true
+    (point.normal == Vec3.ZERO || (point.normal dot toViewer(point.position)) > 0f) && toPixel(point.position)?.let { (it - pixel).getDistance() <= reach } == true
 }
 
 /**
@@ -32,7 +33,7 @@ fun erasedAt(work: BodySurfaceWork, view: SurfaceView, pixel: Offset, reach: Flo
     buildList {
         for ((part, held) in work.parts) {
             for (mark in held.looseMarks()) {
-                if (view.touches(mark.points, pixel, reach) && seen.add(mark.id.value)) add(SetMark(part, mark.id, null, thisSide(part)))
+                if (view.touches(mark.points, pixel, reach) && seen.add(mark.source.value)) add(SetMark(part, mark.source, null, thisSide(part)))
             }
             for (weight in held.lineWeights) {
                 if (view.touches(weight.points, pixel, reach) && seen.add(weight.id.value)) add(SetLineWeight(part, weight.id, null, thisSide(part)))

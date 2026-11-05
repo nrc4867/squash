@@ -149,7 +149,7 @@ class LinesSmokeTest {
         onNodeWithText("body surface").assertExists()
         onNodeWithContentDescription("Marks").performClick()
         waitForIdle()
-        onNodeWithTag(MarksDrawerTags.SILHOUETTE).assertExists()
+        onNodeWithTag(MarksDrawerTags.fur(TORSO)).assertExists()
         val input = panes(bench)
         val full = input.rects[SheetPane.FULL.ordinal]
         val lines = assertNotNull(bench.lines)

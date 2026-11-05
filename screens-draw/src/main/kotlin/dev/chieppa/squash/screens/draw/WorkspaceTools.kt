@@ -135,14 +135,15 @@ private fun HalfOutlineButton(state: AppState) {
     }
 }
 
-/** Mirror: on, a change writes the pair; off, the selected side alone. */
+/** Mirror: on, a change writes the pair, off, the selected side alone. Fur and surface strokes follow it on a part in the middle of the body too, across the middle. */
 @Composable
 private fun MirrorButton(state: AppState) {
     val mirror by state.mirror.collectAsState()
     val session by state.session.collectAsState()
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value
-    val paired = selected?.let { document?.character?.part(it) }?.pair != null
+    val tool by state.tool.collectAsState()
+    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FUR_STROKE
     val label = stringResource(Res.string.edit_tool_mirror)
     Tooltip(label, listOf("M")) {
         ToolButton(

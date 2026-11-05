@@ -10,13 +10,19 @@ const val MIN_FUR_POINTS = 1
 
 /**
  * What a mark draws. A [LINE] is an inked polyline along its anchors. A [FUR] stroke is a tapered wedge from its first anchor, the
- * root, along the part's grain, filled in the slot under it. See HLD: look, Marks.
+ * root, along the part's grain, filled in the slot under it. A [FLOATING] line is inked from its first anchor, the root, on through its flight off the
+ * surface. See HLD: look, Marks.
  */
 @Serializable
 enum class MarkKind(val minPoints: Int) {
     @SerialName("line") LINE(MIN_MARK_POINTS),
     @SerialName("fur") FUR(MIN_FUR_POINTS),
+    @SerialName("floating") FLOATING(MIN_FUR_POINTS),
 }
+
+/** A place a floating mark passes through, in body units from its root: [along] the surface as u grows, [across] it as v grows, and [out] of it. */
+@Serializable
+data class MarkFlight(val along: Float, val across: Float, val out: Float)
 
 /** A share of the line rule's weight at a place along a mark, 0 to 1 from its start. */
 @Serializable
@@ -45,8 +51,8 @@ data class MarkVersion(val points: List<Anchor>, val width: MarkWidth = MarkWidt
 
 /**
  * A line on the surface: a polyline of anchors with a width along it. [versions] replace its shape in the camera bins they
- * name, and [points] and [width] hold in every other. A [cameraLocked] mark sits where the light and camera put it.
- * See HLD: look, Marks.
+ * name, and [points] and [width] hold in every other. A [cameraLocked] mark sits where the light and camera put it. A [mirrored] mark on a part in the
+ * middle of the body shows on both sides of the middle. [slot] is its color, the ink's if none. See HLD: look, Marks.
  */
 @Serializable
 data class Mark(
@@ -57,8 +63,12 @@ data class Mark(
     val cameraLocked: Boolean = false,
     val versions: Map<CameraBin, MarkVersion> = emptyMap(),
     val kind: MarkKind = MarkKind.LINE,
+    val flight: List<MarkFlight> = emptyList(),
+    val mirrored: Boolean = false,
+    val slot: SlotName? = null,
 ) {
     init {
+        require(kind != MarkKind.FLOATING || flight.isNotEmpty()) { "Floating mark ${id.value} goes nowhere" }
         require(points.size >= kind.minPoints) { "Mark ${id.value} needs at least ${kind.minPoints} anchors, not ${points.size}" }
     }
 

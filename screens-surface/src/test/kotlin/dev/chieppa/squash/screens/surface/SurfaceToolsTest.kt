@@ -260,8 +260,7 @@ class SurfaceToolsTest {
         assertEquals(listOf(BACK_WEIGHT), rows.weights.map { it.id })
         assertEquals(0.6f, rows.weights.single().amount)
         assertEquals("Saddle", rows.weights.single().name, "a weight's row names the area it lies on")
-        assertEquals(listOf(HEAD), rows.strokes.map { it.part })
-        assertEquals(2, rows.strokes.single().count, "the mouth's two lines; the eyes are groups")
+        assertEquals(listOf(HEAD, HEAD), rows.strokes.map { it.part }, "the mouth's two lines; the eyes are groups")
         assertTrue(rows.fur.all { it.count > 0 })
         assertEquals(listOf(TORSO, TAIL), rows.fur.map { it.part })
     }

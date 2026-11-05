@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.screens.AppState
@@ -23,6 +25,7 @@ import dev.chieppa.squash.screens.fennec.BACK_WEIGHT
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.lines.PickedMark
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
@@ -93,21 +96,31 @@ class LinesFlowTest {
     }
 
     @Test
-    fun theMarksDrawerListsRulesWeightsStrokesAndFur() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun theMarksDrawerListsStrokesWeightsAndFur() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
         onNodeWithContentDescription("Marks").performClick()
         waitForIdle()
-        onNodeWithTag(MarksDrawerTags.SILHOUETTE).assertExists()
-        onNodeWithTag(MarksDrawerTags.strokes(HEAD)).assertExists()
-        onNodeWithTag(MarksDrawerTags.fur(TORSO)).assertExists()
+        val stroke = assertNotNull(session.document.value.character.resolved(HEAD)).surface.marks.first { it.kind == MarkKind.LINE && it.id !in assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.flatMap { g -> g.roles.flatMap { r -> r.marks } } }.id
+        onNodeWithTag(MarksDrawerTags.stroke(stroke)).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(PickedMark(HEAD, stroke), state.lines.pickedMark, "a row picks its stroke")
+        onNodeWithTag(MarksDrawerTags.STROKE_MIRROR).performScrollTo().performClick()
+        waitForIdle()
+        fun mark() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.marks.firstOrNull { it.id == stroke }
+        assertEquals(true, mark()?.mirrored, "the head lies in the middle, so it can mirror")
+        onNodeWithTag(MarksDrawerTags.STROKE_DELETE).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(null, mark())
+        session.history.undo()
+        session.history.undo()
+        waitForIdle()
+        onNodeWithTag(MarksDrawerTags.fur(TORSO)).performScrollTo().assertExists()
         onNodeWithText("+60%").assertExists()
         onNodeWithText("Saddle weight").performClick()
         assertEquals(PickedWeight(TORSO, BACK_WEIGHT), state.lines.picked)
-        session.send(SetLineRules(LineRules(silhouette = 5f)))
-        waitForIdle()
-        onNodeWithText("5.0 px").assertExists()
-        onNodeWithTag(MarksDrawerTags.SILHOUETTE).performClick()
+        onNodeWithTag(MarksDrawerTags.WEIGHT_AMOUNT).assertExists()
+        onNodeWithTag(MarksDrawerTags.fur(TORSO)).performClick()
         waitForIdle()
         onNodeWithText("Taper").assertExists()
     }

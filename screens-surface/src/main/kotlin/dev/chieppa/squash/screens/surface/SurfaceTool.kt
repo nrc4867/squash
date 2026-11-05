@@ -30,6 +30,10 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     override val takesFreeCamera: Boolean get() = true
     override val showsWhole: Boolean get() = true
 
+    /** Whether a mark drawn on [part] shows on both sides of the body's middle, where Mirror is on and the part lies in the middle. */
+    protected fun mirrorsOn(character: dev.chieppa.squash.document.Character, part: dev.chieppa.squash.document.PartId): Boolean =
+        state.mirror.value && character.part(part)?.let { it.pair == null && it.side == null } == true
+
     /** Takes a press on [hit] at [pixel], following it until it lets go. Returns once the gesture is over. */
     protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView)
 
@@ -59,10 +63,10 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
      * Follows [down], which pressed [hit], until it lets go, handing [taken] each place the drag reaches a spacing on, with those either side of a
      * crossing, so what it lays down meets the crossing. A place off the surface is passed over. True when the pointer let go in the pane.
      */
-    protected suspend fun AwaitPointerEventScope.followSurface(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView, taken: (SurfaceHit) -> Unit): Boolean {
+    protected suspend fun AwaitPointerEventScope.followSurface(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView, onMove: (PointerInputChange) -> Unit = {}, taken: (SurfaceHit) -> Unit): Boolean {
         var last = down.position
         var lastHit = hit
-        return followToRelease(down.id, {}) { pixel ->
+        return followToRelease(down.id, onMove) { pixel ->
             if ((pixel - last).getDistance() < ANCHOR_SPACING) return@followToRelease
             val next = hitAt(pixel, sight) ?: return@followToRelease
             crossingBetween(lastHit, last, next, pixel, sight).forEach(taken)

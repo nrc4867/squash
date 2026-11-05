@@ -23,10 +23,19 @@ import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.document.SetLineWeightAmount
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.stretch.ui.Toggle
+import dev.chieppa.squash.screens.surface.paint.SlotChoice
+import dev.chieppa.squash.screens.sheet.INK_SLOT
+import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.lines.MAX_WIDTH_SIZE
 import dev.chieppa.squash.screens.lines.MIN_WIDTH_SIZE
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.draw_pen_pressure
+import dev.chieppa.squash.uidesign.generated.lines_float
+import dev.chieppa.squash.uidesign.generated.lines_pressure_width
+import dev.chieppa.squash.uidesign.generated.lines_stroke_color
+import dev.chieppa.squash.uidesign.generated.lines_stroke_tool
 import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.lines_amount
 import dev.chieppa.squash.uidesign.generated.lines_amount_value
@@ -62,6 +71,10 @@ object LinesDrawerTags {
     const val SIZE = "lines.size"
     const val AMOUNT = "lines.amount"
     const val LIVES_ON = "lines.livesOn"
+    const val FLOAT = "lines.float"
+    const val STROKE_COLOR = "lines.strokeColor"
+
+    fun strokeSlot(slot: String) = "lines.strokeSlot.$slot"
 }
 
 /** The command setting [picked]'s amount, or null when an undo or an erase has taken it from where an edit would land. */
@@ -80,7 +93,9 @@ fun weightLabel(pixels: Float): String = "%.1f".format(java.util.Locale.ROOT, pi
 fun LinesDrawer(state: AppState) {
     val session by state.session.collectAsState()
     val open = session ?: return
+    val tool by state.tool.collectAsState()
     RulesSection(open)
+    if (tool == BuildTool.SURFACE_STROKE) StrokeToolSection(state, open)
     WidthToolSection(state, open)
     FurSection(state, open)
 }
@@ -126,6 +141,31 @@ private fun RulesSection(session: CharacterSession) {
         SettingRow(taper) {
             Slider(rules.taper, { drag.update(SetLineRules(rules.copy(taper = it))) }, taper, Modifier.weight(1f).testTag(LinesDrawerTags.TAPER), onValueChangeFinished = drag::finish)
             Readout(stringResource(Res.string.edit_percent, (rules.taper * PERCENT).roundToInt()))
+        }
+    }
+}
+
+/** How Surface stroke draws: its color, whether it floats off the surface, and what a pen's pressure sets. */
+@Composable
+private fun StrokeToolSection(state: AppState, session: CharacterSession) {
+    val document by session.document.collectAsState()
+    val lines = state.lines
+    val color = stringResource(Res.string.lines_stroke_color)
+    val float = stringResource(Res.string.lines_float)
+    DrawerSection(stringResource(Res.string.lines_stroke_tool)) {
+        SettingRow(color) {
+            Spacer(Modifier.weight(1f))
+            SlotChoice(document.character.palette, lines.strokeSlot ?: INK_SLOT, color, LinesDrawerTags.STROKE_COLOR, { LinesDrawerTags.strokeSlot(it.value) }, { slot ->
+                lines.strokeSlot = slot.takeUnless { it == INK_SLOT }
+            })
+        }
+        SettingRow(float) {
+            Spacer(Modifier.weight(1f))
+            Toggle(lines.floats, { lines.floats = it }, float, Modifier.testTag(LinesDrawerTags.FLOAT))
+        }
+        SettingRow(stringResource(Res.string.draw_pen_pressure)) {
+            Spacer(Modifier.weight(1f))
+            Readout(stringResource(Res.string.lines_pressure_width))
         }
     }
 }

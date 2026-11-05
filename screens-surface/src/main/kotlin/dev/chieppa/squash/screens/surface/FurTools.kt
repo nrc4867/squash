@@ -83,6 +83,8 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
         val character = session.document.value.character
         val spacing = (character.resolved(part)?.surface?.fur ?: FurRule()).spacingPixels
         val step = spacing * ROW_STEP_SHARE
+        val mirrored = mirrorsOn(character, part)
+        fun furMark(on: SurfaceHit) = Mark(MarkId(Ulid.next()), listOf(on.anchor), kind = MarkKind.FUR, mirrored = mirrored)
         val laid = arrayListOf(furMark(hit))
         var last = down.position
         live += hit.position
@@ -93,7 +95,7 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
                 while ((pixel - last).getDistance() >= step) {
                     val along = pixel - last
                     val row = last + along / along.getDistance() * step
-                    laid += rowAcross(sight, part, last, row, spacing)
+                    laid += rowAcross(sight, part, last, row, spacing).map(::furMark)
                     last = row
                 }
             }
@@ -103,13 +105,11 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
         }
     }
 
-    private fun furMark(hit: SurfaceHit) = Mark(MarkId(Ulid.next()), listOf(hit.anchor), kind = MarkKind.FUR)
-
-    /** A row across the drag from [from] to [to], its strokes rooted where their pixels land on [part]. A pixel off it lays nothing. */
-    private fun rowAcross(sight: SurfaceView, part: PartId, from: Offset, to: Offset, spacing: Float): List<Mark> {
+    /** A row across the drag from [from] to [to], the places on [part] its strokes root at. A pixel off it lays nothing. */
+    private fun rowAcross(sight: SurfaceView, part: PartId, from: Offset, to: Offset, spacing: Float): List<SurfaceHit> {
         val along = to - from
         val across = Offset(-along.y, along.x) / along.getDistance() * (spacing * ACROSS_STEP_SHARE)
-        return (-ROW_REACH..ROW_REACH).mapNotNull { step -> hitAt(to + across * step.toFloat(), sight)?.takeIf { it.part == part }?.let(::furMark) }
+        return (-ROW_REACH..ROW_REACH).mapNotNull { step -> hitAt(to + across * step.toFloat(), sight)?.takeIf { it.part == part } }
     }
 }
 

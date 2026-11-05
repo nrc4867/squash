@@ -11,6 +11,8 @@ import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.document.LineRules
+import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.render.DepthLayer
@@ -25,12 +27,16 @@ import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.sheet.inkedBorders
+import dev.chieppa.stretch.theme.Stretch
 
 /** A mark's weight where the surface turns away, as a multiple of the interior weight. */
 private const val MARK_EDGE_WEIGHT = 1.4f
 
 /** How many cameras' lines a [SurfaceLines] keeps, a pane for each and room for those a zoom passes through. */
 private const val KEPT_VIEWS = 8
+
+/** How much wider a picked stroke draws than its own weight. */
+private const val PICKED_WIDENS = 1.75f
 
 /** How a character's lines are drawn under [rules], in pixels at [density]. */
 fun characterLook(rules: LineRules, density: Float): CharacterLook {
@@ -55,6 +61,8 @@ class SurfaceLines(
     private val taper: Float,
     private val ink: Color,
     private val figureRadius: Float,
+    private val palette: Palette = Palette(),
+    private val picked: PickedStroke? = null,
 ) : SurfaceRibbons {
     private val kept = object : LinkedHashMap<Any, List<RibbonDraw>>(KEPT_VIEWS, 1f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
@@ -87,10 +95,19 @@ class SurfaceLines(
 
     /** What is inked on [id]'s surface at the interior weight: its strokes, tapered, and its region borders, closed. */
     private fun interiorInk(id: PartId, held: ResolvedSurfaceWork, layer: DepthLayer): List<RibbonDraw> = buildList {
-        held.looseMarks().filterNot { it.kind == MarkKind.FUR }.mapNotNullTo(this) { it.lineDraw(lines.parts[id], look.marks, ink, taper, layer) }
+        held.looseMarks().filterNot { it.kind == MarkKind.FUR }.mapNotNullTo(this) { mark ->
+            if (mark.source == picked?.id) {
+                mark.lineDraw(lines.parts[id], look.marks.copy(interiorPixels = look.marks.interiorPixels * PICKED_WIDENS, silhouettePixels = look.marks.silhouettePixels * PICKED_WIDENS), picked.color, taper, DepthLayer.FRONT)
+            } else {
+                mark.lineDraw(lines.parts[id], look.marks, mark.slot?.let(palette::colorOf) ?: ink, taper, layer)
+            }
+        }
         held.inkedBorders().mapTo(this) { RibbonDraw(it, look.creases, ink, layer = layer) }
     }
 }
+
+/** The stroke [id] shown on the model in [color], as the Marks drawer picked it. */
+data class PickedStroke(val id: MarkId, val color: Color)
 
 /** The marks that stand alone, outside any mark group. */
 fun ResolvedSurfaceWork.looseMarks() = groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet().let { grouped -> marks.filter { it.id !in grouped } }
@@ -107,10 +124,12 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
     val rules = document.character.lineRules
     val ink = document.character.palette.colorOf(INK_SLOT) ?: PART_INK
     val density = LocalDensity.current.density
-    return remember(lines, work, character, rules, ink, density) {
+    val palette = document.character.palette
+    val picked = state.lines.pickedMark?.let { PickedStroke(it.id, Stretch.colors.accent) }
+    return remember(lines, work, character, rules, ink, density, palette, picked) {
         val shown = lines
         val held = work
         val radius = character?.box?.radius
-        if (shown == null || held == null || radius == null) null else SurfaceLines(shown, held, characterLook(rules, density), rules.taper, ink, radius)
+        if (shown == null || held == null || radius == null) null else SurfaceLines(shown, held, characterLook(rules, density), rules.taper, ink, radius, palette, picked)
     }
 }
