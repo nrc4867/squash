@@ -21,6 +21,8 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default), each with an optional shadow color of its own; parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
 | Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation, gaze offset, width, mouth shape). Eyes and mouths are mark groups | Document |
 | Character shading | Flat or two-tone, and whether far parts darken | Document, on the character |
+| Reference image | An image file's bytes as added, its pixel size, where it sits on the References board, and the palette slots picked from it. It never reaches a render | Document, beside the character |
+| Trace | A reference image placed in one of the character's views: where it was first fitted over the character, its scale, offset and turn from there, flip, opacity, behind or over, shown and locked | Document, on the character, one per view |
 | Region | A closed curve of anchors, which may run across parts, a palette slot and an ink flag | Document, in surface work |
 | Paint | Brush strokes in the order drawn, each anchors, a palette slot, a radius and a softness from 0, a hard edge, to 1, a fade across the whole radius | Document, in surface work |
 | Eye | A mark group on an eye region or a sphere part: travel limits, pupil shape, convergence limit, camera bias, size compensation, lid-flatten flag | Document, on the character |
@@ -33,6 +35,8 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Shot | Camera, keys (poses by time), timing per character | Document |
 | Project | The cast (character copies, each with its library version) and scenes | Document file |
 | Library | Characters, later objects and sets, each as a chain of versions | Library files |
+
+A character saves as a `.squash` file: a zip holding the document as `character.json`, with each reference image beside it under `images/` in its own encoding, so a file carries everything it shows. Plain JSON, with images inline as base64, reads too; the example characters are kept that way.
 
 Identity and versions: every entity has a ULID. A part instance pins its template id and version, and a character pins its body plan version, so a shipped template can change without silently changing saved characters. A template version that changes its ring or segment count is a migration, since anchors would otherwise land on different vertices.
 
@@ -179,6 +183,10 @@ A locked pane looks straight along the normal of its view's plane, so an outline
 - **Each pane shows the part's middle at its own middle.** That point lines up across panes, and every pane keeps one scale. Other points line up only as far as the two planes share a direction: a plane tilted from its neighbour's shows the same length longer than the neighbour's projection of it, so a tilted part gives up the row or column it does not share. The ear's height direction is one screen axis in Front and Side, so that column holds; its Top leans, so the row with Side does not hold. The tail keeps neither. A stretched pane that held the alignment would be foreshortened again, and a stroke would not land.
 - **Guides are the part's own lines.** A guide or a disagreement's limit is the line square to a part direction at a point of the outline's extent, and it is drawn at whatever angle that makes on screen. In the tail's Side the guides run on the diagonal.
 - **Where a stroke cannot land by construction, the view sets something else.** The axis stays in the plane of a and b, so Top's and Front's midpoints in c are not read: a lopsided Top stroke builds evenly about the axis. A Front outline alone leaves the sizes to the template, and a `cap` Front shapes only the last sixth of the axis, so it reaches a paw's tube when the paw has no toes and nothing on a paw with them, whose tube stops short and whose toes keep their own section.
+
+## Trace images
+
+A trace lies flat in the plane of one of the character's views, side, top or front, through the character's middle, so it lines up with the body in rest pose. A locked pane shows the trace of the view its camera faces most squarely, so a part that sits at an angle, such as an ear, shows it at the part's angle and it still lines up with the body; Full shows none. It draws in grey at its opacity, behind the character or over it, and only the outlines are read by the build, so nothing depends on having an image. A new trace is fitted as tall as the character stands in that view, centred across it, its bottom on the lowest point; Scale, X and Y are kept from that first fit, X and Y in the image's own pixels at that size, so drawing a part over it never moves it. The panes keep each image at most 1024 pixels on its long side.
 
 ## Which pane takes which tool
 

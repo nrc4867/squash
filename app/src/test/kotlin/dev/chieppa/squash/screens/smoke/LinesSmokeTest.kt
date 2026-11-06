@@ -11,6 +11,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import dev.chieppa.squash.screens.references.ReferencesTags
+import dev.chieppa.squash.screens.references.decodeImage
+import dev.chieppa.squash.screens.references.newImageCommand
+import dev.chieppa.squash.screens.references.sketchPng
+import dev.chieppa.squash.screens.references.traceDraws
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.render.PixelRect
@@ -159,6 +164,26 @@ class LinesSmokeTest {
         assertTrue(whole.map { it.rule.interiorPixels }.toSet().size >= 2, "Full has thick and thin lines: ${whole.map { it.rule.interiorPixels }.toSet()}")
         keep(bench, input, "lines-fennec")
         assertTrue(assertNotNull(session.document.value.character.part(TORSO)).id == TORSO)
+        scope.cancel()
+        assertEquals(emptyList(), errors)
+    }
+
+    @Test
+    fun aTracedSketchShowsInTheReferencesDrawerAndItsPanes() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val bench = fennecOpen()
+        val session = assertNotNull(bench.state.session.value)
+        val png = sketchPng()
+        val decoded = assertNotNull(decodeImage(png))
+        val add = newImageCommand(session.document.value, "Side sheet", png, decoded.width, decoded.height)
+        session.send(add)
+        onNodeWithContentDescription("References").performClick()
+        waitForIdle()
+        onNodeWithTag(ReferencesTags.image(add.id)).performClick()
+        onNodeWithText("Side").performClick()
+        onNodeWithContentDescription("Trace").performClick()
+        waitForIdle()
+        settle(bench)
+        keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, color = it.color, surface = it.surface, traces = { toViewer -> traceDraws(session.document.value, bench.state.images, toViewer) }) }, "references")
         scope.cancel()
         assertEquals(emptyList(), errors)
     }

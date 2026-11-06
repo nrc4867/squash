@@ -17,11 +17,14 @@ import dev.chieppa.squash.screens.edit.PaintEditState
 import dev.chieppa.squash.screens.lines.FaceEditState
 import dev.chieppa.squash.screens.lines.LineEditState
 import dev.chieppa.squash.screens.sheet.SheetLayout
+import dev.chieppa.squash.screens.sheet.SheetPane
+import dev.chieppa.squash.screens.references.ReferenceEditState
+import dev.chieppa.squash.screens.references.ReferenceImageCache
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.screens.shell.PickTool
 import dev.chieppa.squash.screens.shell.RestPoseArtist
-import dev.chieppa.squash.screens.shell.ScratchFormat
+import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
@@ -50,7 +53,7 @@ class AppState(
     val templates: TemplateFolder,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     val recent: RecentFiles = RecentFiles(),
-    val format: ScratchFormat = ScratchFormat(),
+    val format: SquashFormat = SquashFormat(),
     private val storage: DocumentStorage = FileStorage,
     /** What renders rest pose art offscreen; with none, a screen shows no art. */
     val artist: RestPoseArtist? = null,
@@ -66,6 +69,19 @@ class AppState(
 
     /** How the workspace lays out its views. */
     val layout = MutableStateFlow(SheetLayout.SHEET)
+
+    /** The pane Focus shows large, and the pane under the pointer, which Space swaps into its place. */
+    val focused = MutableStateFlow(SheetPane.SIDE)
+
+    /** The reference images decoded for the drawers and panes. */
+    val images = ReferenceImageCache()
+    val references = ReferenceEditState()
+    val hoveredPane = MutableStateFlow<SheetPane?>(null)
+
+    /** Puts the pane under the pointer in Focus's large place. */
+    fun swapPane() {
+        hoveredPane.value?.let { focused.value = it }
+    }
 
     /** Whether edits of a paired part write the pair, which both sides share, or only the selected side's overrides. */
     val mirror = MutableStateFlow(true)
@@ -132,6 +148,7 @@ class AppState(
         spine.clear()
         paint.clear()
         lines.clear()
+        references.clear()
         face.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
@@ -163,6 +180,7 @@ class AppState(
         curves.clear()
         spine.clear()
         lines.clear()
+        references.clear()
         face.clear()
         screen.value = Screen.HOME
     }

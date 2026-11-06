@@ -71,4 +71,4 @@ Expected gaps, landed in the Stretch repo first: the free pane taking strokes wh
 
 ## Out of scope
 
-Rig and weights (board 7), mirror and join beyond inked overlaps (board 6), garments, posing and the Shot workspace, the Shot board for eyes, scenes, render to file, the library and versions, imported images, objects and sets, export.
+Rig and weights (board 7), mirror and join beyond inked overlaps (board 6), garments, posing and the Shot workspace, the Shot board for eyes, scenes, render to file, the library and versions, objects and sets, export.

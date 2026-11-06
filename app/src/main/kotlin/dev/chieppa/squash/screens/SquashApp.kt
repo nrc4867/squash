@@ -12,6 +12,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.screens.references.PlaceImageDrawer
+import dev.chieppa.squash.screens.references.ReferencesDrawer
+import dev.chieppa.squash.screens.references.TraceDrawer
 import dev.chieppa.squash.screens.draw.ToolDrawerSections
 import dev.chieppa.squash.screens.shell.BuildContent
 import dev.chieppa.squash.screens.shell.BuildScreens
@@ -53,6 +56,9 @@ private val BUILD_CONTENT = BuildContent(
     expressionsDrawer = { state -> ExpressionsDrawer(state) },
     expressionActions = { state -> ExpressionActions(state) },
     angleVersionsDrawer = { state -> AngleVersionsDrawer(state) },
+    referencesDrawer = { state -> ReferencesDrawer(state) },
+    traceDrawer = { state -> TraceDrawer(state) },
+    placeImageDrawer = { state -> PlaceImageDrawer(state) },
 )
 
 /** The window's content: the current screen over [state], with what every screen shares. */

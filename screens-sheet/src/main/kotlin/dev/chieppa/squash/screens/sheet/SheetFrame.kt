@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.screens.references.TraceDraws
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import dev.chieppa.squash.document.View
@@ -53,6 +54,7 @@ class SheetInput(
     val surface: SurfaceRibbons? = null,
     val fullFur: ShownFur = ShownFur.NONE,
     val lockedFur: Map<View, ShownFur> = emptyMap(),
+    val traces: (toViewer: Vec3) -> TraceDraws = { TraceDraws.None },
 )
 
 /**
@@ -91,7 +93,8 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val camera = input.cameras[view] ?: return null
     val fur = input.lockedFur[view]?.let { shownFurDraws(it, view in selection.outlines, camera.basis.back, selection, look, input.hints, input.color) } ?: FurDraws.NONE
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, camera) }
-    return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, input.surface), fur.layers)
+    val traces = input.traces(camera.basis.back)
+    return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, input.surface), fur.layers, traces.behind, traces.over)
 }
 
 /** What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show it whole, else the selection's in front when [drawn]. */

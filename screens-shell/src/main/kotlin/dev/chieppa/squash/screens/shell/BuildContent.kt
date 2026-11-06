@@ -13,7 +13,8 @@ typealias ToolSections = @Composable (kind: PartDrawerKind, state: AppState, ses
 
 /**
  * What the Build frame holds from the screens beside the shell: the workspace in its viewport, the tools' Part drawer sections, the Color
- * drawer, the Lines and Marks drawers, and the Expressions and Angle versions drawers. [marksDrawer] takes what opens the Lines drawer.
+ * drawer, the Lines and Marks drawers, the Expressions and Angle versions drawers, and the References, Trace and Place image drawers.
+ * [marksDrawer] takes what opens the Lines drawer.
  */
 class BuildContent(
     val workspace: @Composable (Shell) -> Unit,
@@ -24,4 +25,7 @@ class BuildContent(
     val expressionsDrawer: @Composable (AppState) -> Unit = {},
     val expressionActions: @Composable RowScope.(AppState) -> Unit = {},
     val angleVersionsDrawer: @Composable (AppState) -> Unit = {},
+    val referencesDrawer: @Composable (AppState) -> Unit = {},
+    val traceDrawer: @Composable (AppState) -> Unit = {},
+    val placeImageDrawer: @Composable (AppState) -> Unit = {},
 )

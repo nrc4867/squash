@@ -7,7 +7,7 @@ import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
-import dev.chieppa.squash.screens.shell.ScratchFormat
+import dev.chieppa.squash.screens.shell.SquashFormat
 
 /** Where the saved document lies among the test fixtures' resources, which take in the project's examples folder. */
 const val FENNEC_RESOURCE = "fennec.json"
@@ -22,7 +22,7 @@ fun fennecCommands(): List<DocumentCommand> = fennecBody() + fennecColor() + fen
 fun fennecDocument(): SquashDocument = fennecCommands().fold(EMPTY_FENNEC) { document, command -> command.apply(document).document }
 
 /** [document] as the example file holds it: what File, Save writes. */
-fun fennecText(document: SquashDocument): String = ScratchFormat().encode(document).decodeToString() + "\n"
+fun fennecText(document: SquashDocument): String = SquashFormat().plainText(document) + "\n"
 
 /** The fennec from the example file. */
 fun savedFennec(): SquashDocument =

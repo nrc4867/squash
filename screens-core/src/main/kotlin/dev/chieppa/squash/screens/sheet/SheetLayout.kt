@@ -10,7 +10,7 @@ import org.jetbrains.compose.resources.StringResource
 /** The workspace's layouts, in the Layout control's order. */
 enum class SheetLayout(val label: StringResource, val built: Boolean = false) {
     SINGLE(Res.string.sheet_layout_single, built = true),
-    FOCUS(Res.string.sheet_layout_focus),
+    FOCUS(Res.string.sheet_layout_focus, built = true),
     SHEET(Res.string.sheet_layout_sheet, built = true),
     FULL_FIRST(Res.string.sheet_layout_full_first, built = true),
 }

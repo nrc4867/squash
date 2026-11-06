@@ -15,6 +15,9 @@ import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_status_section
 import dev.chieppa.squash.uidesign.generated.edit_status_sections
+import dev.chieppa.squash.uidesign.generated.refs_status_image
+import dev.chieppa.squash.uidesign.generated.refs_status_images
+import dev.chieppa.squash.uidesign.generated.sheet_status_swap
 import dev.chieppa.squash.uidesign.generated.shell_status_parts
 import dev.chieppa.squash.uidesign.generated.shell_status_pen
 import dev.chieppa.squash.uidesign.generated.shell_status_ready
@@ -22,6 +25,7 @@ import dev.chieppa.squash.uidesign.generated.shell_status_settled
 import dev.chieppa.squash.uidesign.generated.shell_status_view_of
 import dev.chieppa.squash.uidesign.generated.shell_status_working
 import dev.chieppa.squash.uidesign.generated.spine_status_writes
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.stretch.frame.StatusBar
 import dev.chieppa.stretch.frame.StatusItem
 import dev.chieppa.stretch.theme.StretchIcons
@@ -30,7 +34,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Build frame's status bar: the pen's pressure while one draws, or what the graph is working on, or that it has settled;
- * then the selected part's views and where they disagree in the workspace, or the character's part count elsewhere.
+ * then the reference images' count with References open, Swap pane in Focus, or the selected part's views and where they disagree in
+ * the workspace, or the character's part count elsewhere.
  */
 @Composable
 fun BuildStatusBar(shell: Shell) {
@@ -48,6 +53,7 @@ fun BuildStatusBar(shell: Shell) {
     val progress by open.graph.progress.collectAsState()
     val mirror by state.mirror.collectAsState()
     val tool by state.tool.collectAsState()
+    val layout by state.layout.collectAsState()
     val pen = state.curves.penPressure
     val drawing = state.curves.drawing
     val plan = state.templates.plan(document.character.bodyPlan)
@@ -69,6 +75,11 @@ fun BuildStatusBar(shell: Shell) {
             Box(Modifier.testTag(ShellTags.STATUS_END)) {
                 when {
                     tool == BuildTool.SPINE_WIDTH && drawing != null && screen == Screen.WORKSPACE -> StatusItem(stringResource(Res.string.spine_status_writes))
+                    screen == Screen.WORKSPACE && shell.layout[DrawerIds.REFERENCES]?.open == true -> {
+                        val count = document.references.images.size
+                        StatusItem(if (count == 1) stringResource(Res.string.refs_status_image) else stringResource(Res.string.refs_status_images, count))
+                    }
+                    screen == Screen.WORKSPACE && layout == SheetLayout.FOCUS -> StatusItem(stringResource(Res.string.sheet_status_swap))
                     touched != null -> StatusItem(
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
                     )

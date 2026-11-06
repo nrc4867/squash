@@ -3,6 +3,9 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -22,6 +25,8 @@ import dev.chieppa.squash.screens.surface.paint.rememberFillTool
 import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
 import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
 import dev.chieppa.squash.screens.surface.lineToolSection
+import dev.chieppa.squash.screens.references.placeToolSection
+import dev.chieppa.squash.screens.references.rememberPlaceImageTool
 import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
@@ -69,11 +74,34 @@ fun WorkspaceScreen(shell: Shell) {
     val editMark = rememberEditMarkTool(state)
     val eraseMark = rememberEraseMarkTool(state)
     val gazeTarget = rememberGazeTargetTool(state)
+    val placeImage = rememberPlaceImageTool(state)
+    val rotateImage = rememberPlaceImageTool(state, rotates = true)
     val linesOpen = shell.showsLineTools
     LaunchedEffect(linesOpen) {
         val tool = state.tool.value
-        if (linesOpen && !tool.inks && !tool.faces) state.tool.value = BuildTool.LINE_WIDTH
+        if (linesOpen && !tool.inks && !tool.faces && !tool.places) state.tool.value = BuildTool.LINE_WIDTH
         if (!linesOpen && (tool.inks || tool.faces)) state.tool.value = BuildTool.DRAW_OUTLINE
+    }
+    val referencesOpen = shell.layout[DrawerIds.REFERENCES]?.open == true
+    var partsHidden by remember { mutableStateOf(false) }
+    LaunchedEffect(referencesOpen) {
+        val partsOpen = shell.layout[DrawerIds.PARTS]?.open == true
+        if (referencesOpen && partsOpen) {
+            shell.layout = shell.layout.close(DrawerIds.PARTS)
+            partsHidden = true
+        }
+        if (!referencesOpen && partsHidden) {
+            shell.layout = shell.layout.open(DrawerIds.PARTS)
+            partsHidden = false
+        }
+    }
+    val placing = armed.places
+    LaunchedEffect(placing) {
+        shell.layout = if (placing) shell.layout.open(DrawerIds.PLACE_IMAGE) else shell.layout.close(DrawerIds.PLACE_IMAGE)
+    }
+    val placeOpen = shell.layout[DrawerIds.PLACE_IMAGE]?.open == true
+    LaunchedEffect(placeOpen) {
+        if (!placeOpen && state.tool.value.places) state.tool.value = BuildTool.DRAW_OUTLINE
     }
     val facing = armed.faces
     LaunchedEffect(facing) {
@@ -106,6 +134,8 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.EDIT_MARK -> editMark
         BuildTool.ERASE_MARK -> eraseMark
         BuildTool.GAZE_TARGET -> gazeTarget
+        BuildTool.PLACE_IMAGE -> placeImage
+        BuildTool.ROTATE_IMAGE -> rotateImage
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()
@@ -117,7 +147,7 @@ fun WorkspaceScreen(shell: Shell) {
     SheetPanes(
         state,
         Modifier.fillMaxSize(),
-        tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state)) },
+        tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
         tool = tool,
         paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
         surface = rememberSurfaceLines(state),

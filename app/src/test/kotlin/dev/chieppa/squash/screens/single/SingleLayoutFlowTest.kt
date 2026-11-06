@@ -5,7 +5,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
@@ -114,7 +114,7 @@ class SingleLayoutFlowTest {
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
         val before = session.document.value
-        segment("Focus").assertIsNotEnabled()
+        segment("Focus").assertIsEnabled()
 
         pickSingle()
         assertEquals(SheetLayout.SINGLE, state.layout.value)

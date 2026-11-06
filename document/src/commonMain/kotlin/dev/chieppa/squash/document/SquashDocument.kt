@@ -3,14 +3,14 @@ package dev.chieppa.squash.document
 import kotlinx.serialization.Required
 import kotlinx.serialization.Serializable
 
-const val DOCUMENT_FORMAT = 10
+const val DOCUMENT_FORMAT = 11
 
 /**
- * The whole document. [format] numbers its grammar and is always written; only the current format decodes, and [readDocument]
+ * The whole document: the [character] and the [references] kept beside it. [format] numbers its grammar and is always written; only the current format decodes, and [readDocument]
  * brings an older save forward. See HLD: data-model, Adding parts without refactoring.
  */
 @Serializable
-data class SquashDocument(val character: Character, @Required val format: Int = DOCUMENT_FORMAT) {
+data class SquashDocument(val character: Character, val references: References = References(), @Required val format: Int = DOCUMENT_FORMAT) {
     init {
         require(format == DOCUMENT_FORMAT) { "This app reads document format $DOCUMENT_FORMAT, not $format" }
     }

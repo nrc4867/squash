@@ -12,7 +12,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.RecentStore
-import dev.chieppa.squash.screens.shell.ScratchFormat
+import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.app_name
 import dev.chieppa.squash.uidesign.generated.shell_file_type
@@ -43,7 +43,7 @@ fun main() {
     val state = AppState(
         TemplateFolder.shipped(),
         recent = recent,
-        format = ScratchFormat(runBlocking { getString(Res.string.shell_file_type) }),
+        format = SquashFormat(runBlocking { getString(Res.string.shell_file_type) }),
         artist = GpuRestPoseArtist,
     )
     application {

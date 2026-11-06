@@ -1,6 +1,16 @@
 package dev.chieppa.squash.screens.smoke
 
 import androidx.compose.ui.test.performMouseInput
+import dev.chieppa.squash.document.BoardPlace
+import dev.chieppa.squash.document.ImageBytes
+import dev.chieppa.squash.document.ImageId
+import dev.chieppa.squash.document.ReferenceImage
+import dev.chieppa.squash.render.ImageDraw
+import dev.chieppa.squash.screens.references.TraceDraws
+import dev.chieppa.squash.screens.references.decodeImage
+import dev.chieppa.squash.screens.references.fittedTrace
+import dev.chieppa.squash.screens.references.sketchPng
+import dev.chieppa.squash.screens.references.traceCorners
 import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import androidx.compose.runtime.SideEffect
@@ -57,7 +67,7 @@ import dev.chieppa.squash.screens.single.SingleInput
 import dev.chieppa.squash.screens.single.SingleTags
 import dev.chieppa.squash.screens.single.singleFrame
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
-import dev.chieppa.squash.screens.shell.ScratchFormat
+import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.stretch.document.DocumentFormat
@@ -154,7 +164,7 @@ class ScreensSmokeTest {
     @Test
     fun home() = smoke {
         val file = Files.createTempFile("marsh-hare", ".json").also { it.toFile().deleteOnExit() }
-        val format = ScratchFormat()
+        val format = SquashFormat()
         val new = newCharacter(templates.plans.first(), templates, "Marsh hare")
         runBlocking { FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document })) }
         show(AppState(templates, scope, RecentFiles(listOf(file.absolutePathString())), format, artist = GpuRestPoseArtist))
@@ -392,6 +402,18 @@ class ScreensSmokeTest {
         assertNotEquals(0, snapped.countIn(whole, paint.part.base), "the drawn part fills")
         assertNotEquals(0, snapped.countIn(whole, paint.part.base.over(paint.well, DEFAULT_GHOST)), "the rest of the character is ghosted")
         keepSingleWorkspace(snapped, "single-snapped")
+
+        val png = sketchPng()
+        val sketch = assertNotNull(decodeImage(png))
+        val reference = ReferenceImage(ImageId("sketch"), "Sketch", ImageBytes(png), sketch.width, sketch.height, BoardPlace(0f, 0f, 100f))
+        val trace = fittedTrace(reference, View.SIDE, drawn.part.box)
+        val draw = ImageDraw(sketch.trace, traceCorners(trace, View.SIDE, sketch.width, sketch.height), 0.6f)
+        for ((name, traces) in listOf("single-trace-over" to TraceDraws(over = listOf(draw)), "single-trace-behind" to TraceDraws(behind = listOf(draw)))) {
+            val traced = render(SingleInput(size.width, size.height, paint, drawn, locked, camera.orbit.view, overlay, traces = { traces }))
+            keepSingleWorkspace(traced, name)
+            assertTrue(traced.pixels.indices.any { traced.pixels[it] != snapped.pixels[it] }, "$name shows the image")
+        }
+        assertEquals(emptyList(), errors.toList(), "the image pass compiles and draws")
 
         camera.orbit.orbitBy(FREE_ORBIT_X, FREE_ORBIT_Y)
         assertNull(camera.snap(drawn.part.axes, hold = false))

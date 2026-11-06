@@ -1,9 +1,13 @@
 package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
+import dev.chieppa.squash.uidesign.generated.place_tool
+import dev.chieppa.squash.uidesign.generated.rotate_tool
+import dev.chieppa.squash.uidesign.generated.sheet_pane_swap
 import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.draw.startFromTemplate
 import dev.chieppa.squash.screens.draw.templateStartView
@@ -89,6 +93,9 @@ object ShellActions {
     val ERASE_MARK = ActionId("tool-erase-mark")
     val GAZE_TARGET = ActionId("tool-gaze-target")
     val FIT_PANE = ActionId("fit-pane")
+    val SWAP_PANE = ActionId("swap-pane")
+    val PLACE_IMAGE = ActionId("tool-place-image")
+    val ROTATE_IMAGE = ActionId("tool-rotate-image")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
@@ -133,6 +140,9 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.ERASE_MARK to Res.string.edit_tool_erase,
     ShellActions.GAZE_TARGET to Res.string.face_tool_gaze,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
+    ShellActions.SWAP_PANE to Res.string.sheet_pane_swap,
+    ShellActions.PLACE_IMAGE to Res.string.place_tool,
+    ShellActions.ROTATE_IMAGE to Res.string.rotate_tool,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
@@ -194,7 +204,8 @@ fun Shell.registerActions() {
     val onPick = { state.screen.value == Screen.PICK_PART }
     val inking = { inWorkspace() && state.tool.value.inks }
     val facing = { inWorkspace() && state.tool.value.faces }
-    val onOutlines = { inWorkspace() && !inking() && !facing() }
+    val placing = { inWorkspace() && state.tool.value.places }
+    val onOutlines = { inWorkspace() && !inking() && !facing() && !placing() }
     val selectedIsPaired = {
         inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
             state.selectedPart.value?.let(character::part)?.pair
@@ -229,8 +240,9 @@ fun Shell.registerActions() {
     action(ShellActions.ERASE, "erase", chord("X"), onOutlines) { state.armTool(BuildTool.ERASE) }
     action(ShellActions.SMOOTH, "smooth", chord("S"), onOutlines) { state.armTool(BuildTool.SMOOTH) }
     action(ShellActions.MOVE, "move", chord("V"), onOutlines) { state.armTool(BuildTool.MOVE) }
+    action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
     action(ShellActions.FIT_PANE, null, chord("F"), { inWorkspace() && !painting() }) { state.paneNavigation.fit(state.activeView.value) }
-    action(ShellActions.REGION_BORDER, "region-border", chord("R"), inWorkspace) { state.armTool(BuildTool.REGION_BORDER) }
+    action(ShellActions.REGION_BORDER, "region-border", chord("R"), { inWorkspace() && !placing() }) { state.armTool(BuildTool.REGION_BORDER) }
     action(ShellActions.PICK_COLOR, "pick-color", chord("I"), inWorkspace) { state.armTool(BuildTool.PICK_COLOR) }
     action(ShellActions.FILL, "fill", chord("F"), painting) { state.armTool(BuildTool.FILL) }
     action(ShellActions.BRUSH, "brush", chord("B"), painting) { state.armTool(BuildTool.BRUSH) }
@@ -245,6 +257,8 @@ fun Shell.registerActions() {
     action(ShellActions.EDIT_MARK, "edit-curves", chord("E"), facing) { state.armTool(BuildTool.EDIT_MARK) }
     action(ShellActions.ERASE_MARK, "erase", chord("X"), facing) { state.armTool(BuildTool.ERASE_MARK) }
     action(ShellActions.GAZE_TARGET, "gaze-target", chord("G"), facing) { state.armTool(BuildTool.GAZE_TARGET) }
+    action(ShellActions.PLACE_IMAGE, "place-image", chord("G"), placing) { state.armTool(BuildTool.PLACE_IMAGE) }
+    action(ShellActions.ROTATE_IMAGE, "rotate-image", chord("R"), placing) { state.armTool(BuildTool.ROTATE_IMAGE) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }

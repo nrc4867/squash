@@ -2,7 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 /** The tool armed in the workspace's tool strip. */
 enum class BuildTool {
-    DRAW_OUTLINE, SPINE_WIDTH, EDIT_CURVES, ERASE, SMOOTH, MOVE, REGION_BORDER, FILL, BRUSH, PICK_COLOR, LINE_WIDTH, FUR_STROKE, COMB, SURFACE_STROKE, FLOATING_STROKE, SURFACE_ERASE, DRAW_MARK, FLOATING_MARK, EDIT_MARK, ERASE_MARK, GAZE_TARGET, NONE;
+    DRAW_OUTLINE, SPINE_WIDTH, EDIT_CURVES, ERASE, SMOOTH, MOVE, REGION_BORDER, FILL, BRUSH, PICK_COLOR, LINE_WIDTH, FUR_STROKE, COMB, SURFACE_STROKE, FLOATING_STROKE, SURFACE_ERASE, DRAW_MARK, FLOATING_MARK, EDIT_MARK, ERASE_MARK, GAZE_TARGET, PLACE_IMAGE, ROTATE_IMAGE, NONE;
 
     /** Whether it works on the surface's color, with the Color drawer. */
     val paints: Boolean get() = this == REGION_BORDER || this == FILL || this == BRUSH || this == PICK_COLOR
@@ -12,6 +12,9 @@ enum class BuildTool {
 
     /** Whether it works on a face's mark groups, with the Marks drawer's Face section. */
     val faces: Boolean get() = this == DRAW_MARK || this == FLOATING_MARK || this == EDIT_MARK || this == ERASE_MARK || this == GAZE_TARGET
+
+    /** Whether it places a trace image, with the Place image drawer. */
+    val places: Boolean get() = this == PLACE_IMAGE || this == ROTATE_IMAGE
 
     /** Whether it draws a stroke that starts on the body and leaves it, such as a whisker. */
     val floats: Boolean get() = this == FLOATING_STROKE || this == FLOATING_MARK

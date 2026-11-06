@@ -74,13 +74,14 @@ class SheetUiTest {
     }
 
     @Test
-    fun singleSheetAndFullFirstAreTheLayoutsThatCanBePicked() = runDesktopComposeUiTest(1900, 900) {
+    fun everyLayoutCanBePicked() = runDesktopComposeUiTest(1900, 900) {
         var picked: SheetLayout? = null
         setStretchContent { SheetStrip(onLayout = { picked = it }) }
         onNodeWithText("Layout").assertExists()
         onNodeWithText("Sheet").assertIsSelected()
-        for (label in listOf("Single", "Sheet", "Full first")) onNodeWithText(label).assertIsEnabled()
-        onNodeWithText("Focus").assertIsNotEnabled()
+        for (label in listOf("Single", "Focus", "Sheet", "Full first")) onNodeWithText(label).assertIsEnabled()
+        onNodeWithText("Focus").performClick()
+        assertEquals(SheetLayout.FOCUS, picked)
         onNodeWithText("Single").performClick()
         assertEquals(SheetLayout.SINGLE, picked)
         onNodeWithText("Full first").performClick()

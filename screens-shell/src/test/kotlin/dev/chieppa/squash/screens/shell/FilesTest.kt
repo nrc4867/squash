@@ -1,5 +1,12 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.document.BoardPlace
+import dev.chieppa.squash.document.ImageBytes
+import dev.chieppa.squash.document.ImageId
+import dev.chieppa.squash.document.ReferenceImage
+import dev.chieppa.squash.document.SetReferenceImage
+import java.io.ByteArrayInputStream
+import java.util.zip.ZipInputStream
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
@@ -24,7 +31,7 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.runBlocking
 
 class FilesTest {
-    private val format = ScratchFormat()
+    private val format = SquashFormat()
 
     @Test
     fun aScratchSaveReadsBackTheSameDocument() {
@@ -44,6 +51,25 @@ class FilesTest {
         val read = format.decode(format.encode(document))
         assertEquals(document, read)
         assertEquals(curve, read.character.resolved(legs.last().id)?.outlines?.get(View.SIDE))
+    }
+
+    @Test
+    fun aSaveIsAZipWithItsImagesAsFilesOfTheirOwn() {
+        val new = newCharacter(caninePlan, shipped, "Fennec")
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 9, 9, 9)
+        val image = ReferenceImage(ImageId("sheet"), "Side sheet", ImageBytes(png), 64, 48, BoardPlace(0f, 0f, 120f))
+        val document = SetReferenceImage(image.id, image).apply(new.commands.fold(new.document) { d, c -> c.apply(d).document }).document
+        val bytes = format.encode(document)
+        val names = ZipInputStream(ByteArrayInputStream(bytes)).use { zip -> generateSequence { zip.nextEntry }.map { it.name }.toList() }
+        assertEquals(listOf("character.json", "images/sheet.png"), names)
+        assertEquals(document, format.decode(bytes))
+    }
+
+    @Test
+    fun aPlainJsonSaveStillReads() {
+        val new = newCharacter(caninePlan, shipped, "Fennec")
+        val document = new.commands.fold(new.document) { d, c -> c.apply(d).document }
+        assertEquals(document, format.decode(format.plainText(document).encodeToByteArray()))
     }
 
     @Test

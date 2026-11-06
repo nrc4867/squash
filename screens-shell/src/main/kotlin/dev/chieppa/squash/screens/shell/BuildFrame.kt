@@ -25,7 +25,9 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_expressions
 import dev.chieppa.squash.uidesign.generated.shell_drawer_marks
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
+import dev.chieppa.squash.uidesign.generated.shell_drawer_place_image
 import dev.chieppa.squash.uidesign.generated.shell_drawer_references
+import dev.chieppa.squash.uidesign.generated.shell_drawer_trace
 import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
 import dev.chieppa.squash.uidesign.generated.shell_drawer_slots
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
@@ -138,7 +140,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     return listOf(
         parts,
         types,
-        comingDrawer(DrawerIds.REFERENCES, Res.string.shell_drawer_references, SquashIcons.References),
+        DrawerSpec(DrawerIds.REFERENCES, stringResource(Res.string.shell_drawer_references), SquashIcons.References) { shell.content.referencesDrawer(state) },
         history,
         help,
         part,
@@ -149,6 +151,8 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         DrawerSpec(DrawerIds.MARKS, stringResource(Res.string.shell_drawer_marks), SquashIcons.Marks) {
             shell.content.marksDrawer(state) { shell.layout = shell.layout.open(DrawerIds.LINES) }
         },
+        DrawerSpec(DrawerIds.TRACE, stringResource(Res.string.shell_drawer_trace), SquashIcons.Trace) { shell.content.traceDrawer(state) },
+        DrawerSpec(DrawerIds.PLACE_IMAGE, stringResource(Res.string.shell_drawer_place_image), SquashIcons.PlaceImage) { shell.content.placeImageDrawer(state) },
         DrawerSpec(DrawerIds.EXPRESSIONS, stringResource(Res.string.shell_drawer_expressions), SquashIcons.Expressions, actions = { shell.content.expressionActions(this, state) }) { shell.content.expressionsDrawer(state) },
         DrawerSpec(DrawerIds.ANGLE_VERSIONS, stringResource(Res.string.shell_drawer_angle_versions), SquashIcons.AngleVersions) { shell.content.angleVersionsDrawer(state) },
     )

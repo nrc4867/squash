@@ -15,6 +15,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private val meshes = MeshPass(context)
     private val colorLayers: ColorLayers = ColorLayerPass(context)
     private val ribbons: StrokeRibbons = StrokeRibbonPass(context)
+    private val images = ImagePass(context)
     private val uploaded = IdentityHashMap<RenderMesh, GpuMesh>()
     private val uploadedAlphas = IdentityHashMap<FloatArray, GpuBuffer>()
     private var lastFrame: SceneFrame? = null
@@ -26,11 +27,13 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
         var slot = 0
         var layerSlot = 0
         var ribbonSlot = 0
+        var imageSlot = 0
         for (view in state.views) {
             val area = view.viewport.clampedTo(frame.width, frame.height)
             if (area.isEmpty) continue
             pass.setViewport(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat())
             pass.setScissorRect(area.x, area.y, area.width, area.height)
+            for (image in view.behind) images.draw(pass, imageSlot++, image, view)
             for (draw in view.draws) {
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
                 if (draw.opacity < 1f) continue
@@ -41,6 +44,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
                 for (fill in layer.fills) meshes.draw(pass, slot++, uploadedFor(fill.mesh), fill, view)
             }
             for (ribbon in view.ribbons) ribbons.draw(pass, ribbonSlot++, ribbon, view)
+            for (image in view.over) images.draw(pass, imageSlot++, image, view)
         }
         pass.setViewport(0f, 0f, frame.width.toFloat(), frame.height.toFloat())
         pass.setScissorRect(0, 0, frame.width, frame.height)
@@ -68,6 +72,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
         for (view in frame.views) for (layer in view.fur) for (fill in layer.fills) wanted[fill.mesh] = Unit
         uploaded.keys.filter { it !in wanted }.forEach { uploaded.remove(it)?.close() }
         uploadedAlphas.keys.filter { it !in wantedAlphas }.forEach { uploadedAlphas.remove(it)?.close() }
+        images.keepOnly(frame.views.flatMap { view -> (view.behind + view.over).map { it.pixels } })
         ribbons.keepOnly(frame.views.flatMap { view -> view.ribbons.map { it.ribbon } + view.fur.mapNotNull { it.ink?.ribbon } })
     }
 
@@ -79,5 +84,6 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
         meshes.close()
         colorLayers.close()
         ribbons.close()
+        images.close()
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.references.rememberTraces
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.FurViews
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -97,6 +98,7 @@ internal fun SingleSurface(
             color = color,
             surface = surface,
             fur = fur,
+            traces = rememberTraces(state),
         ),
     )
     val fitting = rememberFitting(state)

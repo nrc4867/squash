@@ -16,6 +16,12 @@ enum class SheetPane(val body: BodyView?) {
 
 private const val COLUMNS = 2
 
+/** The share of Focus's width its column of small panes takes. */
+private const val FOCUS_COLUMN_SHARE = 0.25f
+
+/** The order Focus stacks its small panes in, top to bottom, leaving out the large one. */
+private val FOCUS_STACK = listOf(SheetPane.TOP, SheetPane.SIDE, SheetPane.FRONT, SheetPane.FULL)
+
 /** How many sheets sit in Full first's lower row, which holds this share of the height. */
 private const val FULL_FIRST_SHEETS = 3
 
@@ -76,10 +82,41 @@ fun fullFirstDividers(rects: List<PixelRect>, width: Int): List<PixelRect> {
     )
 }
 
-/** Each pane's rectangle in [layout], in [SheetPane] order. */
-fun paneRects(layout: SheetLayout, width: Int, height: Int, gap: Int): List<PixelRect> =
-    if (layout == SheetLayout.FULL_FIRST) fullFirstPaneRects(width, height, gap) else sheetPaneRects(width, height, gap)
+/** Each pane's rectangle in Focus: [large] filling the left, the other three stacked in a narrow column on the right, in [SheetPane] order. */
+fun focusPaneRects(width: Int, height: Int, gap: Int, large: SheetPane): List<PixelRect> {
+    val columnWidth = (width * FOCUS_COLUMN_SHARE).toInt()
+    val columnX = width - columnWidth
+    val stack = FOCUS_STACK - large
+    val smallHeight = (height - (stack.size - 1) * gap) / stack.size
+    return SheetPane.entries.map { pane ->
+        val row = stack.indexOf(pane)
+        when {
+            pane == large -> PixelRect(0, 0, columnX - gap, height)
+            row == stack.lastIndex -> PixelRect(columnX, row * (smallHeight + gap), columnWidth, height - row * (smallHeight + gap))
+            else -> PixelRect(columnX, row * (smallHeight + gap), columnWidth, smallHeight)
+        }
+    }
+}
+
+/** The bars between Focus's panes [rects] of a [height] tall area: the one beside the large pane, then those between the small ones. */
+fun focusDividers(rects: List<PixelRect>, height: Int): List<PixelRect> {
+    val large = rects.maxBy { it.width.toLong() * it.height }
+    val stack = rects.filter { it != large }.sortedBy { it.y }
+    val columnX = stack.firstOrNull()?.x ?: large.right
+    return listOf(PixelRect(large.right, 0, columnX - large.right, height)) +
+        stack.zipWithNext { above, below -> PixelRect(columnX, above.bottom, above.width, below.y - above.bottom) }
+}
+
+/** Each pane's rectangle in [layout], in [SheetPane] order, with [focused] the large pane in Focus. */
+fun paneRects(layout: SheetLayout, width: Int, height: Int, gap: Int, focused: SheetPane = SheetPane.SIDE): List<PixelRect> = when (layout) {
+    SheetLayout.FULL_FIRST -> fullFirstPaneRects(width, height, gap)
+    SheetLayout.FOCUS -> focusPaneRects(width, height, gap, focused)
+    else -> sheetPaneRects(width, height, gap)
+}
 
 /** The bars between [layout]'s panes [rects] of a [width] by [height] area. */
-fun paneDividers(layout: SheetLayout, rects: List<PixelRect>, width: Int, height: Int): List<PixelRect> =
-    if (layout == SheetLayout.FULL_FIRST) fullFirstDividers(rects, width) else sheetDividers(rects, width, height)
+fun paneDividers(layout: SheetLayout, rects: List<PixelRect>, width: Int, height: Int): List<PixelRect> = when (layout) {
+    SheetLayout.FULL_FIRST -> fullFirstDividers(rects, width)
+    SheetLayout.FOCUS -> focusDividers(rects, height)
+    else -> sheetDividers(rects, width, height)
+}

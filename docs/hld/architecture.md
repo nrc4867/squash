@@ -9,7 +9,7 @@ It is a character maker that knows anatomy, a posing and animation studio for th
 | Question | Decision |
 | --- | --- |
 | Output | Stills rendered in the app first, animation next. glTF export later; a feature may be in-app-only if it does not rule out export, so files keep source data such as curves and marks |
-| First version | Creatures, posing and rendered stills. Garments and slots, timing and animation, objects and sets, imported images and export come after |
+| First version | Creatures, posing and rendered stills, with reference and trace images. Garments and slots, timing and animation, objects and sets and export come after |
 | Input | Pen tablet and mouse, both first-class. Pressure and tilt with a pen, sensible defaults without |
 | Platforms | Windows first, then Linux. Android and iPad later, so core code stays portable |
 | Language | Kotlin on the JVM. Not web, not Rust |

@@ -1,6 +1,6 @@
 package dev.chieppa.squash.screens.fennec
 
-import dev.chieppa.squash.screens.shell.ScratchFormat
+import dev.chieppa.squash.screens.shell.SquashFormat
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,6 +25,6 @@ class FennecFixtureTest {
 
     @Test
     fun theExampleOpensAsASavedFile() {
-        assertEquals(fennecDocument(), ScratchFormat().decode(File(SAVED_FILE).readBytes()))
+        assertEquals(fennecDocument(), SquashFormat().decode(File(SAVED_FILE).readBytes()))
     }
 }

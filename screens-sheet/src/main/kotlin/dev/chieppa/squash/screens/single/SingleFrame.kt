@@ -7,6 +7,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
+import dev.chieppa.squash.screens.references.TraceDraws
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.ShownFur
 import dev.chieppa.squash.screens.sheet.shownFurDraws
@@ -43,6 +44,7 @@ class SingleInput(
     val surface: SurfaceRibbons? = null,
     val freeOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val fur: ShownFur = ShownFur.NONE,
+    val traces: (toViewer: Vec3) -> TraceDraws = { TraceDraws.None },
 )
 
 /**
@@ -59,7 +61,8 @@ fun singleFrame(input: SingleInput): SceneFrame {
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
         val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface)
-        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons, fur.layers)), overlay.clippedTo(rect.toRect()))
+        val traces = input.traces(locked.basis.back)
+        return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons, fur.layers, traces.behind, traces.over)), overlay.clippedTo(rect.toRect()))
     }
     val free = input.free ?: return SceneFrame(input.look.well)
     val toCamera = Vec3(free.eye.x, free.eye.y, free.eye.z) - selection.box.center

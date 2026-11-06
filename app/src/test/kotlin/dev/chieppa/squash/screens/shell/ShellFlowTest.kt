@@ -255,7 +255,7 @@ class ShellFlowTest {
     @Test
     fun homeListsARecentFileAndContinues() = runComposeUiTest {
         val file = Files.createTempFile("marsh-hare", ".json")
-        val format = ScratchFormat()
+        val format = SquashFormat()
         val new = newCharacter(caninePlan, shipped, "Marsh hare")
         FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document }))
         val state = AppState(shipped, recent = RecentFiles(listOf(file.absolutePathString())))
@@ -321,7 +321,7 @@ class ShellFlowTest {
         val state = AppState(shipped)
         createCharacter(state)
         for (name in listOf("Parts", "Part types", "History", "Help", "Part", "Color", "Lines", "Marks")) onNodeWithContentDescription(name).assertIsEnabled()
-        for (name in listOf("References", "Rig", "Slots")) onNodeWithContentDescription(name).assertIsNotEnabled()
+        for (name in listOf("Rig", "Slots")) onNodeWithContentDescription(name).assertIsNotEnabled()
     }
 
     @Test

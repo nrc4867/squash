@@ -67,8 +67,8 @@ data class MeshDraw(
 data class FurLayerDraw(val ink: RibbonDraw?, val fills: List<MeshDraw>)
 
 /**
- * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [fur] draws after all of [draws] and in its order, furthest
- * part first, and [ribbons] after that.
+ * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [behind] draws first, then [draws], then [fur] in its order,
+ * furthest part first, [ribbons] after that and [over] last.
  */
 @Immutable
 data class SceneView(
@@ -77,6 +77,8 @@ data class SceneView(
     val draws: List<MeshDraw>,
     val ribbons: List<RibbonDraw> = emptyList(),
     val fur: List<FurLayerDraw> = emptyList(),
+    val behind: List<ImageDraw> = emptyList(),
+    val over: List<ImageDraw> = emptyList(),
 )
 
 /** One frame of [ViewsScene]: an immutable snapshot, safe to hand to the render thread. */

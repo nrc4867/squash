@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import dev.chieppa.stretch.frame.ViewportOverlay
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -28,6 +29,7 @@ import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.references.rememberTraces
 import dev.chieppa.squash.screens.single.SingleSurface
 import dev.chieppa.stretch.gpu.OrbitCamera
 import dev.chieppa.stretch.gpu.orbitNavigation
@@ -84,8 +86,9 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     val active by state.activeView.collectAsState()
     val mirror by state.mirror.collectAsState()
     val gap = with(LocalDensity.current) { Stretch.stroke.toPx() }.roundToInt().coerceAtLeast(1)
-    val rects = paneRects(layout, size.width, size.height, gap)
-    val held = remember(part?.id, size, layout) { HeldCameras() }
+    val focused by state.focused.collectAsState()
+    val rects = paneRects(layout, size.width, size.height, gap, focused)
+    val held = remember(part?.id, size, layout, focused) { HeldCameras() }
     val holding = tool?.holdsFit == true || tool?.drawingIn != null
     LaunchedEffect(part?.id) { state.paneNavigation.fitAll() }
     val cameras = if (selection == null || size == IntSize.Zero) emptyMap() else held.camerasFor(selection, rects, holding, state.paneNavigation)
@@ -127,11 +130,12 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             surface = surface,
             fullFur = fullFur,
             lockedFur = lockedFur,
+            traces = rememberTraces(state),
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {
         SceneSurface(frame.takeIf { size != IntSize.Zero }, Modifier.fillMaxSize())
-        SheetPaneGrid(gap, Modifier.fillMaxSize(), layout) { pane ->
+        SheetPaneGrid(gap, Modifier.fillMaxSize(), layout, focused) { pane ->
             val body = pane.body
             val axes = part?.axes
             val view = if (body == null) null else axes?.framing?.getValue(body) ?: plainView(body)
@@ -152,13 +156,13 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             PaneViewport(
                 body,
                 chip,
-                input.testTag(sheetPaneTag(pane)),
+                input.hovered(pane, state).testTag(sheetPaneTag(pane)),
                 fitError,
                 progress,
                 paneToast?.takeIf { pane == SheetPane.SIDE },
                 zoom,
                 { view?.let(state.paneNavigation::fit) },
-                short = layout == SheetLayout.FULL_FIRST,
+                short = layout == SheetLayout.FULL_FIRST || (layout == SheetLayout.FOCUS && pane != focused),
                 flipped = body in state.paneNavigation.flips,
                 onFlip = { body?.let(state.paneNavigation::flip) },
             )
@@ -178,6 +182,18 @@ private fun rememberRefitting(state: AppState): Boolean {
 private fun rememberRefitProgress(state: AppState): Float {
     val session by state.session.collectAsState()
     return session?.graph?.progress?.collectAsState()?.value?.fraction ?: 1f
+}
+
+/** Keeps [AppState.hoveredPane] on [pane] while the pointer is over it. */
+private fun Modifier.hovered(pane: SheetPane, state: AppState): Modifier = pointerInput(pane) {
+    awaitPointerEventScope {
+        while (true) {
+            when (awaitPointerEvent(PointerEventPass.Initial).type) {
+                PointerEventType.Enter, PointerEventType.Move -> state.hoveredPane.value = pane
+                PointerEventType.Exit -> if (state.hoveredPane.value == pane) state.hoveredPane.value = null
+            }
+        }
+    }
 }
 
 /** Reports a press in the pane without taking it from anything else. */
