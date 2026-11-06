@@ -6,6 +6,8 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.centerY
 import androidx.compose.ui.test.onNodeWithTag
@@ -30,6 +32,14 @@ import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.surface.ExpressionTags
 import dev.chieppa.squash.screens.surface.FaceTags
 import dev.chieppa.squash.screens.surface.FACE_FRONT
+import dev.chieppa.squash.screens.surface.FACE_WRITES_TAG
+import dev.chieppa.squash.screens.sheet.SheetPane
+import dev.chieppa.squash.screens.sheet.sheetPaneTag
+import dev.chieppa.squash.document.MouthShape
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotSelected
 import dev.chieppa.squash.screens.surface.HeadAngleTags
 import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
@@ -79,9 +89,13 @@ class FaceFlowTest {
         waitForIdle()
         assertEquals(Stage.FACE, state.stage.value)
         assertEquals(BuildTool.DRAW_MARK, state.tool.value, "the Face stage opens on its tools")
-        onNodeWithTag(FaceTags.EYE).performScrollTo().performClick()
+        assertEquals(MarkGroupId("eye-l"), state.face.group?.id, "and on the head's first eye")
+        assertEquals(MarkRole.LID, state.face.role)
+    }
+
+    private fun ComposeUiTest.stage(key: Key) {
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(key) }
         waitForIdle()
-        assertEquals(BuildTool.DRAW_MARK, state.tool.value, "picking a face row leaves the tool as it was")
     }
 
     @Test
@@ -90,8 +104,9 @@ class FaceFlowTest {
         val session = assertNotNull(state.session.value)
         pickEye(state)
         assertEquals(MarkGroupId("eye-l"), state.face.group?.id)
-        assertEquals(HEAD, state.selectedPart.value)
+        assertEquals(HEAD, state.face.group?.part)
         onNodeWithTag(ShellTags.tool(BuildTool.GAZE_TARGET)).assertExists()
+        onNodeWithTag(ShellTags.section("mirror")).assertDoesNotExist()
         onNodeWithTag(FaceTags.OPEN).performScrollTo().assertExists()
         onNodeWithTag(FaceTags.DILATION).performScrollTo().assertExists()
         onNodeWithTag(ExpressionTags.NEUTRAL).assertExists()
@@ -101,12 +116,22 @@ class FaceFlowTest {
         onNodeWithTag(FaceTags.role(MarkRole.IRIS)).performScrollTo().performClick()
         waitForIdle()
         assertEquals(MarkRole.IRIS, state.face.role)
+        onNodeWithTag(FaceTags.role(MarkRole.LID), useUnmergedTree = true).performScrollTo().assertExists()
 
         onNodeWithTag(FaceTags.OPEN).performScrollTo().performMouseInput { click(Offset(1f, centerY)) }
         waitForIdle()
         fun open(id: String) = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id.value == id }.controls.open
         assertTrue(open("eye-l") < 0.5f, "Open closes the eye, at ${open("eye-l")}")
-        assertTrue(open("eye-r") < 0.5f, "with Mirror on, both")
+        assertTrue(open("eye-r") < 0.5f, "with Both, both")
+
+        onNode(hasText("Right") and hasAnyAncestor(hasTestTag(FaceTags.WHICH_EYE))).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(false, state.face.bothEyes)
+        assertEquals(MarkGroupId("eye-r"), state.face.group?.id)
+        onNodeWithTag(FaceTags.OPEN).performScrollTo().performMouseInput { click(Offset(width - 1f, centerY)) }
+        waitForIdle()
+        assertTrue(open("eye-r") > 0.5f, "Right opens the right eye")
+        assertTrue(open("eye-l") < 0.5f, "and leaves the left")
 
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.G) }
         waitForIdle()
@@ -144,12 +169,59 @@ class FaceFlowTest {
     }
 
     @Test
+    fun theMouthShowsNoShapeUntilOneIsPicked() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen()
+        val session = assertNotNull(state.session.value)
+        pickEye(state)
+        onNode(hasText("Mouth") and hasAnyAncestor(hasTestTag(FaceTags.FEATURE))).performScrollTo().performClick()
+        waitForIdle()
+        val mouth = assertNotNull(state.face.group)
+        assertEquals(MarkRole.LIP_LINE, state.face.role)
+        fun shape() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == mouth.id }.controls.mouthShape
+        assertEquals(null, shape())
+        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).assertIsNotSelected()
+        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).performClick()
+        waitForIdle()
+        assertEquals(MouthShape.SMILE, shape())
+        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).assertIsSelected()
+    }
+
+    @Test
+    fun aLockedVersionAndTheTestGazeLastOnlyWhileFaceIsUp() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen()
+        pickEye(state)
+        onNodeWithTag(ExpressionTags.LOCK).assertIsNotEnabled()
+        onNodeWithTag(ExpressionTags.version(FACE_FRONT)).performClick()
+        waitForIdle()
+        assertEquals(FACE_FRONT, state.face.version)
+        onNodeWithTag(ExpressionTags.LOCK).assertIsEnabled().performClick()
+        waitForIdle()
+        assertEquals(FACE_FRONT, state.face.lockedVersion)
+        val chips = onAllNodes(hasTestTag(FACE_WRITES_TAG), true).fetchSemanticsNodes().size
+        assertTrue(chips > 1, "every pane names the version a stroke writes")
+        assertEquals(chips, onAllNodes(hasText("Writes Front version"), true).fetchSemanticsNodes().size)
+
+        stage(Key.G)
+        assertEquals(BuildTool.GAZE_TARGET, state.tool.value)
+        onNodeWithTag(sheetPaneTag(SheetPane.FULL)).performMouseInput { click(center + Offset(width / 4f, 0f)) }
+        waitForIdle()
+        assertNotNull(state.face.gazeTarget, "the Gaze tool moves the handle")
+
+        stage(Key.One)
+        assertEquals(Stage.SHAPE, state.stage.value)
+        assertEquals(null, state.face.version, "the picked version goes with the band")
+        assertEquals(false, state.face.locked)
+        assertEquals(null, state.face.gazeTarget, "and the test gaze")
+    }
+
+    @Test
     fun theHeadAngleShowsOverSingleWhileAFaceIsPicked() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         state.layout.value = SheetLayout.SINGLE
         waitForIdle()
         onNodeWithTag(HeadAngleTags.SLIDER).assertDoesNotExist()
         pickEye(state)
+        onNodeWithTag(FACE_WRITES_TAG, useUnmergedTree = true).assertExists()
         onNodeWithTag(HeadAngleTags.SLIDER).performMouseInput { click(center) }
         waitForIdle()
         onNodeWithTag(HeadAngleTags.VERSION).assertExists()

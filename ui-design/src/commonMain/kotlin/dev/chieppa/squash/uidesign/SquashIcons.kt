@@ -243,6 +243,12 @@ object SquashIcons {
             stroke("M2 14c4-4 7-5 12-5")
         }
     }
+    val LockVersion: ImageVector by lazy {
+        icon("lock-version") {
+            stroke("M4.5 7.5h7v6h-7z")
+            stroke("M6 7.5V5.5a2 2 0 0 1 4 0v2")
+        }
+    }
     val Marks: ImageVector by lazy {
         icon("marks") {
             stroke("M5.5 4v3M10.5 4v3")

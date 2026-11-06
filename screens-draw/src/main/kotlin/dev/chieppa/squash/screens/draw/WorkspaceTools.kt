@@ -71,7 +71,7 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
         )
         Stage.COLOR -> listOf(paintSection(tool, state), mirror)
         Stage.LINES -> listOfNotNull(lines, mirror)
-        Stage.FACE -> listOfNotNull(faces, mirror)
+        Stage.FACE -> listOfNotNull(faces)
     }
     ToolSections(sections, Modifier.fillMaxWidth())
 }

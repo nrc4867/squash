@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,15 +38,33 @@ private val HEADER_INSET = 12.dp
 /** The room the three angle versions' tiles take. */
 private val VERSIONS_WIDTH = 300.dp
 
-/** The Face inspector: the eyes and the mouth, and the picked one's controls, roles and test gaze. */
+/** The Face inspector: Eyes or Mouth, and the picked one's controls, layers and gaze. */
 @Composable
 fun FaceInspector(state: AppState, session: CharacterSession) {
     FaceSection(state, session)
 }
 
-/** The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions. */
+/**
+ * The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions. While it is up the face tools
+ * work on the head's eyes from the start; once it goes, the picked version, its lock and the test gaze go with it.
+ */
 @Composable
 fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
+    val open by state.session.collectAsState()
+    val document = open?.document?.collectAsState()?.value
+    val head = document?.character?.faceHead()
+    LaunchedEffect(head, document?.character?.let { character -> head?.let { groupsOn(character, it).size } }) {
+        val character = document?.character ?: return@LaunchedEffect
+        val at = head ?: return@LaunchedEffect
+        if (state.face.group?.let(character::groupOf) == null) state.pickFeature(character, at, state.face.feature)
+    }
+    DisposableEffect(state) {
+        onDispose {
+            state.face.version = null
+            state.face.locked = false
+            state.face.gazeTarget = null
+        }
+    }
     Column(modifier.fillMaxWidth().background(Stretch.colors.surfacePanel).testTag(ShellTags.FACE_BAND)) {
         Divider()
         Row(Modifier.height(BAND_HEIGHT)) {
@@ -54,7 +74,7 @@ fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
             }
             VerticalDivider()
             Column(Modifier.width(VERSIONS_WIDTH)) {
-                BandHeader(stringResource(Res.string.shell_drawer_angle_versions)) {}
+                BandHeader(stringResource(Res.string.shell_drawer_angle_versions)) { AngleVersionActions(state) }
                 AngleVersionsDrawer(state)
             }
         }

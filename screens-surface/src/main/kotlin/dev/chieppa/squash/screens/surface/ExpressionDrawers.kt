@@ -20,9 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.character.build.shownSet
@@ -43,9 +46,7 @@ import dev.chieppa.squash.uidesign.generated.face_delete_expression
 import dev.chieppa.squash.uidesign.generated.face_expression_name
 import dev.chieppa.squash.uidesign.generated.face_neutral
 import dev.chieppa.squash.uidesign.generated.face_new_expression
-import dev.chieppa.squash.uidesign.generated.face_version_front
-import dev.chieppa.squash.uidesign.generated.face_version_side
-import dev.chieppa.squash.uidesign.generated.face_version_three_quarter
+import dev.chieppa.squash.uidesign.generated.face_lock
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Card
 import dev.chieppa.stretch.ui.IconButton
@@ -58,6 +59,7 @@ private val TILE = 88.dp
 private val GAP = 6.dp
 private val TILE_PAD = 6.dp
 private const val MARK_STROKE = 1.5f
+private const val DASH = 4f
 
 private const val NEW_ID_PREFIX = "expression-"
 
@@ -70,15 +72,12 @@ object ExpressionTags {
     const val NEW = "expressions.new"
     const val DELETE = "expressions.delete"
 
+    const val LOCK = "versions.lock"
+
     fun tile(id: ExpressionId) = "expressions.tile.${id.value}"
     fun version(bin: CameraBin) = "versions.tile.${bin.value}"
+    fun undrawn(bin: CameraBin) = "versions.tile.${bin.value}.undrawn"
 }
-
-private val VERSION_NAMES = mapOf(
-    FACE_SIDE to Res.string.face_version_side,
-    FACE_THREE_QUARTER to Res.string.face_version_three_quarter,
-    FACE_FRONT to Res.string.face_version_front,
-)
 
 /** How a view of a version looks at the head, in the head's forward [forward]: side on, three-quarter or ahead, as the bins read. */
 private fun toViewerIn(bin: CameraBin, forward: Vec3): Vec3 {
@@ -122,28 +121,48 @@ private fun FaceThumbnail(work: ResolvedSurfaceWork?, expressed: ExpressionId?, 
     }
 }
 
+/** A tile of the band; one whose drawing is [undrawn] shows what stands in for it inside a dashed edge, tagged [undrawnTag]. */
 @Composable
-private fun Tile(name: String, selected: Boolean, tag: String, onClick: () -> Unit, art: @Composable (Modifier) -> Unit) {
+private fun Tile(name: String, selected: Boolean, tag: String, onClick: () -> Unit, undrawn: Boolean = false, undrawnTag: String = "", art: @Composable (Modifier) -> Unit) {
     val c = Stretch.colors
     Card(Modifier.size(TILE).testTag(tag), onClick, selected) {
         Column(Modifier.fillMaxSize().padding(TILE_PAD), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(Modifier.fillMaxWidth().weight(1f)) { art(Modifier.fillMaxSize()) }
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                art(Modifier.fillMaxSize())
+                if (undrawn) DashedEdge(c.lineStrong, Modifier.fillMaxSize().testTag(undrawnTag))
+            }
             BasicText(name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink)), maxLines = 1)
         }
     }
 }
 
-/** The part holding the character's face, its work and which way it faces. */
+@Composable
+private fun DashedEdge(color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        drawRect(color, style = Stroke(MARK_STROKE, pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH, DASH))))
+    }
+}
+
+/** The head's work and which way it faces. */
 private class FaceHolder(val work: ResolvedSurfaceWork?, val forward: Vec3)
 
 @Composable
 private fun rememberFaceHolder(session: CharacterSession): FaceHolder {
     val work by session.bodySurfaceWork.output.collectAsState()
     val assembled by session.assembly.output.collectAsState()
-    val entry = work?.parts?.entries?.firstOrNull { it.value.groups.isNotEmpty() }
-    val part = entry?.let { assembled?.part(it.key) }
-    val forward = part?.let { dev.chieppa.squash.character.build.PartBuilder.axes(it.template).along } ?: Vec3.X
-    return FaceHolder(entry?.value, forward)
+    val document by session.document.collectAsState()
+    val head = document.character.faceHead()
+    val part = head?.let { assembled?.part(it) }
+    val forward = part?.let { PartBuilder.axes(it.template).along } ?: Vec3.X
+    return FaceHolder(head?.let { work?.parts?.get(it) }, forward)
+}
+
+/** Whether [work] draws anything of its own in [bin], under [expressed]: a mark of the head with that version, or the expression's. */
+private fun drawsIn(work: ResolvedSurfaceWork?, expressed: ExpressionId?, bin: CameraBin): Boolean {
+    val held = work ?: return false
+    val set = held.expressions.firstOrNull { it.id == expressed }
+    val marks = set?.marks?.values?.flatMap { roles -> roles.values.flatten() } ?: held.marks
+    return marks.any { bin in it.versions }
 }
 
 /** The band's expressions: Neutral and each of the character's expressions, as tiles that show the expression on the character. */
@@ -198,7 +217,10 @@ private fun freeExpressionId(character: Character): ExpressionId {
     return generateSequence(1) { it + 1 }.map { "$NEW_ID_PREFIX$it" }.first { it !in held }.let(::ExpressionId)
 }
 
-/** The band's angle versions: the shown expression's three versions, whose tiles choose which the face tools draw in; picking the chosen one lets the view choose again. */
+/**
+ * The band's angle versions: the shown expression's three versions, whose tiles choose which the face tools draw in; picking the chosen one lets
+ * the view choose again. A version with nothing drawn of its own shows what stands in for it inside a dashed edge.
+ */
 @Composable
 fun AngleVersionsDrawer(state: AppState) {
     val open by state.session.collectAsState()
@@ -209,9 +231,22 @@ fun AngleVersionsDrawer(state: AppState) {
     val ink = Stretch.colors.ink
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(GAP), horizontalArrangement = Arrangement.spacedBy(GAP)) {
         FACE_BINS.bins.forEach { bin ->
-            Tile(stringResource(VERSION_NAMES.getValue(bin)), state.face.version == bin, ExpressionTags.version(bin), { state.face.version = bin.takeUnless { state.face.version == it } }) {
+            val pick = {
+                val again = state.face.version == bin
+                state.face.version = bin.takeUnless { again }
+                if (again) state.face.locked = false
+            }
+            Tile(stringResource(versionName(bin)), state.face.version == bin, ExpressionTags.version(bin), pick, !drawsIn(holder.work, shown, bin), ExpressionTags.undrawn(bin)) {
                 FaceThumbnail(holder.work, shown, bin, holder.forward, ink, it)
             }
         }
     }
+}
+
+/** The angle versions' header: Lock, which holds the picked version in the view from any camera. */
+@Composable
+fun RowScope.AngleVersionActions(state: AppState) {
+    val version = state.face.version
+    val lock = stringResource(Res.string.face_lock, version?.let { stringResource(versionName(it)) }.orEmpty())
+    IconButton(SquashIcons.LockVersion, lock, { state.face.locked = !state.face.locked }, Modifier.testTag(ExpressionTags.LOCK), on = state.face.locked, enabled = version != null)
 }

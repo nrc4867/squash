@@ -18,6 +18,11 @@ import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.expressionMarks
 import dev.chieppa.squash.document.eyeGroup
+import dev.chieppa.squash.document.GroupRole
+import dev.chieppa.squash.document.SlotName
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.document.mouthGroup
 import dev.chieppa.squash.screens.lines.PickedGroup
@@ -102,11 +107,54 @@ fun erasedMarkCommand(character: Character, picked: PickedGroup, role: MarkRole,
     return Together(listOf(SetMarkGroup(picked.part, group.id, without), SetMark(picked.part, mark.id, null)))
 }
 
-/** The command adding a pair of empty eyes to [part], or null when it has eyes. */
+/** The id of the template a head is built from, which the Face stage works on. */
+private const val HEAD_TEMPLATE = "head"
+
+/** The part the Face stage works on: the head, else the first part holding a face, whatever is selected. */
+fun Character.faceHead(): PartId? =
+    parts.firstOrNull { it.template.id.value == HEAD_TEMPLATE }?.id ?: parts.firstOrNull { resolved(it).surface.groups.isNotEmpty() }?.id
+
+/** Where a starter eye sits on the head and how wide its lid is, in u and v; the other eye mirrors it across the middle. */
+private const val STARTER_U = 0.6f
+private const val STARTER_V = 0.185f
+private const val STARTER_HALF_U = 0.075f
+private const val STARTER_HALF_V = 0.052f
+private const val STARTER_WHITE = 1.15f
+private const val STARTER_PUPIL = 0.45f
+private const val RING_POINTS = 12
+private const val LID_UNDER = 0.72f
+
+/** The slots a starter eye fills its white and its pupil with, where the palette holds them. */
+private val STARTER_WHITE_SLOT = SlotName("cream")
+private val STARTER_PUPIL_SLOT = SlotName("ink")
+
+/** A closed ring of places about [u], [v] on [part], [left] as drawn or mirrored across the middle. */
+private fun ring(part: PartId, left: Boolean, u: Float, v: Float, halfU: Float, halfV: Float, under: Float = 1f): List<Anchor> = List(RING_POINTS + 1) { i ->
+    val angle = 2.0 * PI * (i % RING_POINTS) / RING_POINTS
+    val over = sin(angle).toFloat()
+    val at = v - halfV * over * (if (over > 0f) 1f else under)
+    Anchor(part, u = u - halfU * cos(angle).toFloat(), v = if (left) at else 1f - at)
+}
+
+/** One starter eye: an inked lid, a filled white inside it and a filled pupil, enough for the eye's controls to move something at once. */
+private fun starterEye(character: Character, part: PartId, id: String, left: Boolean): List<DocumentCommand> {
+    val held = { slot: SlotName -> slot.takeIf { character.palette.color(it) != null } }
+    val lid = Mark(MarkId("$id-lid"), ring(part, left, STARTER_U, STARTER_V, STARTER_HALF_U, STARTER_HALF_V, LID_UNDER))
+    val white = Mark(MarkId("$id-white"), ring(part, left, STARTER_U, STARTER_V, STARTER_HALF_U * STARTER_WHITE, STARTER_HALF_V * STARTER_WHITE), ink = false)
+    val pupil = Mark(MarkId("$id-pupil"), ring(part, left, STARTER_U, STARTER_V, STARTER_HALF_U * STARTER_PUPIL, STARTER_HALF_V * STARTER_PUPIL), ink = false)
+    val drawn = mapOf(MarkRole.LID to GroupRole(MarkRole.LID, marks = listOf(lid.id)),
+        MarkRole.WHITE to GroupRole(MarkRole.WHITE, ink = false, fill = held(STARTER_WHITE_SLOT), marks = listOf(white.id)),
+        MarkRole.PUPIL to GroupRole(MarkRole.PUPIL, ink = false, fill = held(STARTER_PUPIL_SLOT), marks = listOf(pupil.id)))
+    val empty = eyeGroup(MarkGroupId(id), id)
+    val group = empty.copy(roles = empty.roles.map { drawn[it.role] ?: it })
+    return listOf(lid, white, pupil).map { SetMark(part, it.id, it) } + SetMarkGroup(part, group.id, group)
+}
+
+/** The command adding a pair of starter eyes to [part], or null when it has eyes. */
 fun newEyesCommand(character: Character, part: PartId): DocumentCommand? {
     val groups = character.part(part)?.let { character.resolved(it) }?.surface?.groups ?: return null
     if (groups.any { it.isEye }) return null
-    return Together(listOf(EYE_LEFT, EYE_RIGHT).map { id -> SetMarkGroup(part, MarkGroupId(id), eyeGroup(MarkGroupId(id), id)) })
+    return Together(starterEye(character, part, EYE_LEFT, left = true) + starterEye(character, part, EYE_RIGHT, left = false))
 }
 
 /** The command adding an empty mouth to [part]. */

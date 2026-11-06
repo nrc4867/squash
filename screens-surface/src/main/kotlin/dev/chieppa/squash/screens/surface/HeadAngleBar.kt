@@ -14,13 +14,9 @@ import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_degrees
 import dev.chieppa.squash.uidesign.generated.face_head_angle
 import dev.chieppa.squash.uidesign.generated.face_showing
-import dev.chieppa.squash.uidesign.generated.face_version_front
-import dev.chieppa.squash.uidesign.generated.face_version_side
-import dev.chieppa.squash.uidesign.generated.face_version_three_quarter
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.ui.Chip
-import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.Slider
 import kotlin.math.PI
 import kotlin.math.cos
@@ -41,7 +37,7 @@ object HeadAngleTags {
 
 /**
  * The Head angle control over Single while a face group is picked: how far the head has turned to the view [toViewer], 0 side on to 90 ahead, which [turn] moves, keeping the side the
- * camera is on, and the version that angle shows.
+ * camera is on, the version the view shows, and the version a stroke writes.
  */
 @Composable
 fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
@@ -54,11 +50,7 @@ fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
     val side = (Vec3.Y cross forward).normalized().let { if ((it dot toViewer) < 0f) it * -1f else it }
     val label = stringResource(Res.string.face_head_angle)
     val bin = FACE_BINS.binFor(angle)
-    val version = stringResource(when (bin) {
-        FACE_FRONT -> Res.string.face_version_front
-        FACE_THREE_QUARTER -> Res.string.face_version_three_quarter
-        else -> Res.string.face_version_side
-    })
+    val version = stringResource(versionName(state.face.lockedVersion ?: bin))
     Toolbar {
         RowText(label)
         Slider(
@@ -73,6 +65,7 @@ fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
             valueRange = 0f..RIGHT_ANGLE,
         )
         RowText(stringResource(Res.string.face_degrees, angle.roundToInt()))
-        Chip(stringResource(Res.string.face_showing, version), Modifier.testTag(HeadAngleTags.VERSION), kind = ChipKind.On)
+        Chip(stringResource(Res.string.face_showing, version), Modifier.testTag(HeadAngleTags.VERSION))
+        FaceVersionChip(state.face.version ?: bin)
     }
 }

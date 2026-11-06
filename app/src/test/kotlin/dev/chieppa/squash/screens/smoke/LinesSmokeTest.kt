@@ -191,10 +191,9 @@ class LinesSmokeTest {
     @Test
     fun aPickedEyeShowsItsDrawerStripsAndFace() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val bench = fennecOpen()
-        onNodeWithContentDescription("Marks").performClick()
+        bench.state.tool.value = BuildTool.DRAW_MARK
         waitForIdle()
-        onNodeWithTag(FaceTags.EYE).performClick()
-        waitForIdle()
+        onNodeWithTag(FaceTags.FEATURE).assertExists()
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, hints = SheetHints(whole = true), color = it.color, surface = it.surface) }, "face-eye")
         scope.cancel()

@@ -21,6 +21,7 @@ import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.shell.Stage
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.INK_SLOT
 import dev.chieppa.squash.screens.sheet.PART_BASE
@@ -141,11 +142,14 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
     val picked = state.lines.pickedMark?.let { PickedStroke(it.id, Stretch.colors.accent) }
     val pickedWeight = state.lines.picked?.let { PickedLineWeight(it.id, Stretch.colors.accent) }
     val toLight = rememberObjectShading(state).toLight
-    val target = state.face.gazeTarget.takeIf { state.face.gazeOn }
+    val stage by state.stage.collectAsState()
+    val facing = stage == Stage.FACE
+    val target = state.face.gazeTarget.takeIf { facing }
+    val locked = state.face.lockedVersion.takeIf { facing }
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
     val cheats = document.character.gazeCheats
-    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, expression, cheats) {
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats) {
         val shown = lines
         val held = work
         val whole = character
@@ -155,7 +159,7 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
         } else {
             val look = characterLook(rules, density)
             val parts = whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
-            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper, bins::binOf)
+            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view -> locked ?: bins.binOf(part, view) }
             SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight)
         }
     }

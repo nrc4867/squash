@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import dev.chieppa.squash.document.CurvePoint
@@ -60,4 +61,7 @@ interface PaneTool {
 
     /** Whether the panes show the whole character in full, with no ghosts, outlines or guides, since the tool works across parts. */
     val showsWhole: Boolean get() = false
+
+    /** What the tool names in a pane's bottom corner about its work through that pane's sight, if anything. */
+    val paneNote: (@Composable (SurfaceView) -> Unit)? get() = null
 }
