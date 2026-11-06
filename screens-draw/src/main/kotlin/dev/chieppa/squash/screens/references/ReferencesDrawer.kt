@@ -43,6 +43,7 @@ import dev.chieppa.squash.uidesign.generated.refs_choose_images
 import dev.chieppa.squash.uidesign.generated.refs_delete
 import dev.chieppa.squash.uidesign.generated.refs_drop_over
 import dev.chieppa.squash.uidesign.generated.refs_drop_reject
+import dev.chieppa.squash.uidesign.generated.refs_image_kind
 import dev.chieppa.squash.uidesign.generated.refs_none
 import dev.chieppa.squash.uidesign.generated.refs_pick_color
 import dev.chieppa.squash.uidesign.generated.refs_picked
@@ -224,7 +225,7 @@ private fun AddImages(state: AppState, session: CharacterSession) {
             stringResource(Res.string.refs_add_kinds),
             IMAGE_EXTENSIONS,
             ::add,
-            { scope.launch { add(pickFiles(getString(Res.string.refs_choose_images), IMAGE_EXTENSIONS)) } },
+            { scope.launch { add(pickFiles(getString(Res.string.refs_choose_images), IMAGE_EXTENSIONS, kindName = getString(Res.string.refs_image_kind))) } },
             stringResource(Res.string.refs_drop_over),
             stringResource(Res.string.refs_drop_reject),
             Modifier.fillMaxWidth().testTag(ReferencesTags.ADD),

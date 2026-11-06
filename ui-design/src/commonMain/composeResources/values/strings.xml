@@ -378,6 +378,7 @@
     <string name="refs_drop_over">Drop to add</string>
     <string name="refs_drop_reject">Not an image</string>
     <string name="refs_choose_images">Add images</string>
+    <string name="refs_image_kind">Images</string>
     <string name="refs_delete">Delete</string>
     <string name="refs_status_images">%1$d images</string>
     <string name="refs_status_image">1 image</string>
