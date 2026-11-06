@@ -35,6 +35,7 @@ import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
+import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import dev.chieppa.squash.screens.surface.FaceBand
 import dev.chieppa.squash.screens.surface.HeadAngleBar
 import dev.chieppa.squash.screens.surface.faceToolSection
@@ -79,7 +80,7 @@ fun WorkspaceScreen(shell: Shell) {
     val paintErase = rememberPaintEraseTool(state)
     val lineWidth = rememberLineWidthTool(state)
     val surfaceStroke = rememberSurfaceStrokeTool(state)
-    val floatingStroke = rememberSurfaceStrokeTool(state, floats = true)
+    val lineEdit = rememberLineEditTool(state)
     val surfaceErase = rememberSurfaceEraseTool(state)
     val fur = rememberFurStrokeTool(state)
     val comb = rememberCombTool(state)
@@ -106,7 +107,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.PAINT_ERASE -> paintErase
         BuildTool.LINE_WIDTH -> lineWidth
         BuildTool.SURFACE_STROKE -> surfaceStroke
-        BuildTool.FLOATING_STROKE, BuildTool.FLOATING_MARK -> floatingStroke
+        BuildTool.LINE_EDIT -> lineEdit
         BuildTool.SURFACE_ERASE -> surfaceErase
         BuildTool.FUR_STROKE -> fur
         BuildTool.COMB -> comb

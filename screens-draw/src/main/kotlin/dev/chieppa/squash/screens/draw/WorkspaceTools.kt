@@ -152,7 +152,7 @@ private fun MirrorButton(state: AppState) {
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value
     val tool by state.tool.collectAsState()
-    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool.floats || tool == BuildTool.FUR_STROKE || tool.faces
+    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FUR_STROKE || tool.faces
     val label = stringResource(Res.string.edit_tool_mirror)
     Tooltip(label, LocalActionKeys.current(ActionKeys.MIRROR)) {
         ToolButton(

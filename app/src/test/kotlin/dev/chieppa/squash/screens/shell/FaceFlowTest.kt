@@ -116,9 +116,8 @@ class FaceFlowTest {
         assertEquals(BuildTool.DRAW_MARK, state.tool.value, "D draws a mark here, not an outline")
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.L) }
         waitForIdle()
-        assertEquals(BuildTool.FLOATING_MARK, state.tool.value, "L draws a whisker from the face")
+        assertEquals(BuildTool.DRAW_MARK, state.tool.value, "whiskers are Lines work, so L arms nothing here")
         onNodeWithTag(ShellTags.tool(BuildTool.GAZE_TARGET)).assertExists()
-        onNodeWithTag(LinesDrawerTags.STROKE_COLOR).performScrollTo().assertExists()
     }
 
     @Test

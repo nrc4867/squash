@@ -22,7 +22,7 @@ data class PickedMark(val part: PartId, val id: MarkId)
 
 /**
  * What the line tools remember between strokes: the ring's [size] in pixels, the [amount] it adds, the weight [picked], which Amount edits, the [strokeSlot]
- * a stroke draws in, the ink's if none, and the [pickedMark] that shows on the model.
+ * a stroke draws in, the ink's if none, whether a stroke is [floating], leaving the skin from where it starts, and the [pickedMark] that shows on the model.
  */
 @Stable
 class LineEditState {
@@ -30,6 +30,7 @@ class LineEditState {
     var amount by mutableStateOf(DEFAULT_WIDTH_AMOUNT)
     var picked by mutableStateOf<PickedWeight?>(null)
     var strokeSlot by mutableStateOf<SlotName?>(null)
+    var floating by mutableStateOf(false)
     var pickedMark by mutableStateOf<PickedMark?>(null)
 
     fun clear() {

@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.uidesign.generated.lines_stroke_floating
+import dev.chieppa.squash.uidesign.generated.lines_stroke_on_surface
+import dev.chieppa.stretch.ui.Segmented
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
@@ -70,6 +73,7 @@ object LinesDrawerTags {
     const val AMOUNT = "lines.amount"
     const val LIVES_ON = "lines.livesOn"
     const val STROKE_COLOR = "lines.strokeColor"
+    const val FLOATING = "lines.floating"
 
     fun strokeSlot(slot: String) = "lines.strokeSlot.$slot"
 }
@@ -91,8 +95,8 @@ fun LinesInspector(state: AppState) {
     val session by state.session.collectAsState()
     val open = session ?: return
     val tool by state.tool.collectAsState()
-    if (tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FLOATING_STROKE) StrokeToolSection(state, open)
-    WidthToolSection(state, open)
+    if (tool == BuildTool.SURFACE_STROKE) StrokeToolSection(state, open)
+    if (tool == BuildTool.LINE_WIDTH) WidthToolSection(state, open)
     MarkLists(state)
     RulesSection(open)
     FurSection(state, open)
@@ -143,13 +147,16 @@ private fun RulesSection(session: CharacterSession) {
     }
 }
 
-/** How a stroke draws: its color and what a pen's pressure sets. */
+/** How a stroke draws: on the surface or floating from it, its color and what a pen's pressure sets. */
 @Composable
 internal fun StrokeToolSection(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val lines = state.lines
     val color = stringResource(Res.string.lines_stroke_color)
+    val onSurface = stringResource(Res.string.lines_stroke_on_surface)
+    val floating = stringResource(Res.string.lines_stroke_floating)
     DrawerSection(stringResource(Res.string.lines_stroke_tool)) {
+        Segmented(listOf(false, true), lines.floating, { lines.floating = it }, { if (it) floating else onSurface }, Modifier.testTag(LinesDrawerTags.FLOATING), fill = true)
         SettingRow(color) {
             Spacer(Modifier.weight(1f))
             SlotChoice(document.character.palette, lines.strokeSlot ?: INK_SLOT, color, LinesDrawerTags.STROKE_COLOR, { LinesDrawerTags.strokeSlot(it.value) }, { slot ->

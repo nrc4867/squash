@@ -4,6 +4,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.build.ResolvedMark
+import dev.chieppa.squash.character.build.ResolvedLineWeight
+import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.character.build.WeightedRun
 import dev.chieppa.squash.geom.ContourPoint
 import dev.chieppa.squash.geom.ContourRun
@@ -118,3 +120,7 @@ fun ResolvedMark.lineDraw(part: PartLines?, rule: LineRule, color: Color, taper:
 }
 
 private const val HALF = 0.5f
+
+/** This line weight's path, picked in the Lines inspector, drawn over the line it weighs in [color]. */
+fun ResolvedLineWeight.litDraw(rule: LineRule, color: Color): RibbonDraw? =
+    StrokeRibbon.along(points.map { RibbonPoint(it.position, it.normal) }, markProfile(MarkWidth()))?.let { RibbonDraw(it, rule, color, layer = DepthLayer.FRONT) }

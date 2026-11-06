@@ -39,9 +39,7 @@ private val VERSIONS_WIDTH = 300.dp
 /** The Face inspector: the eyes and the mouth, and the picked one's controls, roles and test gaze. */
 @Composable
 fun FaceInspector(state: AppState, session: CharacterSession) {
-    val tool by state.tool.collectAsState()
     FaceSection(state, session)
-    if (tool == BuildTool.FLOATING_MARK) StrokeToolSection(state, session)
 }
 
 /** The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions. */

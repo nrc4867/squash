@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.LineWeightId
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.MarkKind
@@ -66,6 +67,7 @@ class SurfaceLines(
     private val palette: Palette = Palette(),
     private val picked: PickedStroke? = null,
     private val faces: FaceWork? = null,
+    private val pickedWeight: PickedLineWeight? = null,
 ) : SurfaceRibbons {
     private val kept = object : LinkedHashMap<Any, List<RibbonDraw>>(KEPT_VIEWS, 1f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
@@ -110,11 +112,15 @@ class SurfaceLines(
             }
         }
         held.inkedBorders().mapTo(this) { RibbonDraw(it, look.creases, ink, layer = layer) }
+        pickedWeight?.let { lit -> held.lineWeights.filter { it.id == lit.id }.mapNotNullTo(this) { it.litDraw(look.marks.copy(interiorPixels = look.marks.interiorPixels * PICKED_WIDENS, silhouettePixels = look.marks.silhouettePixels * PICKED_WIDENS), lit.color) } }
     }
 }
 
 /** The stroke [id] shown on the model in [color], as the Lines inspector picked it. */
 data class PickedStroke(val id: MarkId, val color: Color)
+
+/** The line weight [id] lit on the model in [color], as the Lines inspector picked it. */
+data class PickedLineWeight(val id: LineWeightId, val color: Color)
 
 /** The marks that stand alone, outside any mark group. */
 fun ResolvedSurfaceWork.looseMarks() = groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet().let { grouped -> marks.filter { it.id !in grouped } }
@@ -133,12 +139,13 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
     val density = LocalDensity.current.density
     val palette = document.character.palette
     val picked = state.lines.pickedMark?.let { PickedStroke(it.id, Stretch.colors.accent) }
+    val pickedWeight = state.lines.picked?.let { PickedLineWeight(it.id, Stretch.colors.accent) }
     val toLight = rememberObjectShading(state).toLight
     val target = state.face.gazeTarget.takeIf { state.face.gazeOn }
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
     val cheats = document.character.gazeCheats
-    return remember(lines, work, character, rules, ink, density, palette, picked, toLight, target, expression, cheats) {
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, expression, cheats) {
         val shown = lines
         val held = work
         val whole = character
@@ -149,7 +156,7 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
             val look = characterLook(rules, density)
             val parts = whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
             val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper, bins::binOf)
-            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces)
+            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight)
         }
     }
 }

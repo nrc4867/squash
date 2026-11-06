@@ -242,8 +242,7 @@
     <string name="smooth_size_value">%1$d px</string>
     <string name="move_tool">Move</string>
     <string name="lines_tool_width">Line width</string>
-    <string name="lines_tool_surface_stroke">Surface stroke</string>
-    <string name="lines_tool_floating_stroke">Floating stroke</string>
+    <string name="lines_tool_surface_stroke">Stroke</string>
     <string name="lines_rules">Rules</string>
     <string name="lines_silhouette">Silhouette</string>
     <string name="lines_interior">Interior</string>
@@ -317,7 +316,12 @@
     <string name="marks_weights">Line weights</string>
     <string name="marks_mirror">Mirror</string>
     <string name="marks_delete">Delete stroke</string>
-    <string name="lines_stroke_tool">Surface stroke</string>
+    <string name="lines_stroke_tool">Stroke</string>
+    <string name="lines_stroke_on_surface">On surface</string>
+    <string name="lines_stroke_floating">Floating</string>
+    <string name="marks_on_character">On the character</string>
+    <string name="marks_floating">floating</string>
+    <string name="marks_fur_of">%1$s fur</string>
     <string name="lines_stroke_color">Color</string>
     <string name="lines_pressure_width">width</string>
     <string name="marks_fur">Fur</string>

@@ -64,11 +64,12 @@ fun floatingCommand(character: Character, root: Anchor, flight: List<MarkFlight>
 }
 
 /**
- * Surface stroke: a drag across the character from any camera lays a line on its skin, stored through one command as anchors and so
- * held by the surface under every later view and redraw. A tool that [floats] draws a stroke that starts on the skin and leaves it, on the plane through
- * its start that faces the viewer, the line held from there as the surface turns. A pen's pressure sets its width. One the pane loses stores nothing.
+ * Stroke: a drag across the character from any camera lays a line on its skin, stored through one command as anchors and so held by the surface
+ * under every later view and redraw. With [dev.chieppa.squash.screens.lines.LineEditState.floating] on, it draws a stroke that starts on the skin and
+ * leaves it, such as a whisker, on the plane through its start that faces the viewer, the line held from there as the surface turns. A pen's pressure
+ * sets its width. One the pane loses stores nothing.
  */
-class SurfaceStrokeTool(state: AppState, var ink: Color, var lineWidth: Float, val floats: Boolean = false) : SurfaceTool(state) {
+class SurfaceStrokeTool(state: AppState, var ink: Color, var lineWidth: Float) : SurfaceTool(state) {
     private val live = mutableStateListOf<Vec3>()
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
@@ -78,7 +79,7 @@ class SurfaceStrokeTool(state: AppState, var ink: Color, var lineWidth: Float, v
         val pressures = arrayListOf(pressure)
         live += hit.position
         try {
-            if (floats) {
+            if (state.lines.floating) {
                 val frame = session.assembly.output.value?.part(hit.part)?.surface?.frameAt(hit.anchor) ?: return
                 var last = down.position
                 val flight = ArrayList<MarkFlight>()
@@ -118,7 +119,7 @@ class SurfaceStrokeTool(state: AppState, var ink: Color, var lineWidth: Float, v
 }
 
 @Composable
-fun rememberSurfaceStrokeTool(state: AppState, floats: Boolean = false): SurfaceStrokeTool {
+fun rememberSurfaceStrokeTool(state: AppState): SurfaceStrokeTool {
     val width = LIVE_WIDTH * LocalDensity.current.density
-    return remember(state, floats) { SurfaceStrokeTool(state, PART_INK, width, floats) }.also { it.lineWidth = width }
+    return remember(state) { SurfaceStrokeTool(state, PART_INK, width) }.also { it.lineWidth = width }
 }

@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.surface.surfaceHit
+import dev.chieppa.squash.screens.surface.strokeCommand
+import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -169,9 +172,33 @@ class FurPointerFlowTest {
     }
 
     @Test
+    fun editCurvesDragsAStrokesPointOverTheSurfaceAsOneStep() = runDesktopComposeUiTest(PANES_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.FULL_FIRST)
+        show(state) { rememberLineEditTool(state) }
+        val session = assertNotNull(state.session.value)
+        val (from, to) = state.across(TORSO)
+        val view = assertNotNull(seen?.view)
+        val character = assertNotNull(session.assembly.output.value)
+        val anchors = listOf(from, (from + to) / 2f, to).map { assertNotNull(surfaceHit(character, it, view)).anchor }
+        val command = assertNotNull(strokeCommand(session.document.value.character, anchors, thisSide = false))
+        runOnIdle { session.send(command) }
+        settle(session)
+        val steps = session.history.steps.value.done.size
+        val target = from + (to - from) * 0.25f
+        drag(SheetPane.FULL, from, target)
+        settle(session)
+        val moved = state.work(TORSO).marks.single { it.id == command.id }
+        assertEquals(command.id, state.lines.pickedMark?.id, "the press picked the stroke")
+        assertTrue(moved.points.first() != anchors.first(), "its first point moved")
+        assertEquals(anchors.drop(1), moved.points.drop(1), "and only that one")
+        assertEquals(steps + 1, session.history.steps.value.done.size, "one undo step")
+    }
+
+    @Test
     fun aFloatingStrokeStartsOnTheBodyLeavesItAndMirrorsAcrossTheMiddle() = runDesktopComposeUiTest(PANES_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.FULL_FIRST, TAIL)
-        show(state) { rememberSurfaceStrokeTool(state, floats = true) }
+        state.lines.floating = true
+        show(state) { rememberSurfaceStrokeTool(state) }
         val session = assertNotNull(state.session.value)
         val (from, to) = state.across(TAIL)
         val steps = session.history.steps.value.done.size

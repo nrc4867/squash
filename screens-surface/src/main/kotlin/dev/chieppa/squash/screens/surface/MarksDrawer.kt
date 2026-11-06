@@ -31,11 +31,11 @@ import dev.chieppa.squash.uidesign.generated.lines_amount
 import dev.chieppa.squash.uidesign.generated.lines_amount_value
 import dev.chieppa.squash.uidesign.generated.lines_stroke_color
 import dev.chieppa.squash.uidesign.generated.marks_delete
-import dev.chieppa.squash.uidesign.generated.marks_fur
 import dev.chieppa.squash.uidesign.generated.marks_mirror
-import dev.chieppa.squash.uidesign.generated.marks_surface_strokes
+import dev.chieppa.squash.uidesign.generated.marks_on_character
+import dev.chieppa.squash.uidesign.generated.marks_floating
+import dev.chieppa.squash.uidesign.generated.marks_fur_of
 import dev.chieppa.squash.uidesign.generated.marks_weight
-import dev.chieppa.squash.uidesign.generated.marks_weights
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.ListRow
 import dev.chieppa.stretch.frame.RowIcon
@@ -97,8 +97,8 @@ fun markRows(character: Character, templates: TemplateFolder, library: TemplateL
 }
 
 /**
- * What is drawn on the character's lines: every stroke, which picking shows on the model and opens below the list for its color, its mirror and deleting it;
- * every line weight, with its Amount once picked; and each part's fur, whose row selects the part, which shows its fur rule.
+ * What is drawn on the character's lines, in one list: every line weight, with its Amount once picked; every stroke, which opens below its row for its
+ * color, its mirror and deleting it; and each part's fur, whose row selects the part, which shows its fur rule. A picked weight or stroke lights on the body.
  */
 @Composable
 fun MarkLists(state: AppState) {
@@ -108,36 +108,32 @@ fun MarkLists(state: AppState) {
     val character = document.character
     val rows = markRows(character, state.templates, open.templates)
     val selected by state.selectedPart.collectAsState()
-    Column {
-        if (rows.strokes.isNotEmpty()) StrokesSection(state, open, character, rows.strokes)
-        if (rows.weights.isNotEmpty()) WeightsSection(state, open, rows.weights)
-        if (rows.fur.isNotEmpty()) {
-            DrawerSection(stringResource(Res.string.marks_fur), divider = false) {
-                rows.fur.forEach { row ->
-                    ListRow(selected == row.part, { state.selectPart(row.part) }, Modifier.testTag(MarksDrawerTags.fur(row.part))) {
-                        RowIcon(SquashIcons.FurStroke)
-                        RowText(row.name, Modifier.weight(1f))
-                        RowText(row.count.toString(), subtle = true)
-                    }
-                }
+    if (rows.weights.isEmpty() && rows.strokes.isEmpty() && rows.fur.isEmpty()) return
+    DrawerSection(stringResource(Res.string.marks_on_character)) {
+        WeightRows(state, open, rows.weights)
+        StrokeRows(state, open, character, rows.strokes)
+        rows.fur.forEach { row ->
+            ListRow(selected == row.part, { state.selectPart(row.part) }, Modifier.testTag(MarksDrawerTags.fur(row.part))) {
+                RowIcon(SquashIcons.FurStroke)
+                RowText(stringResource(Res.string.marks_fur_of, row.name), Modifier.weight(1f))
+                RowText(row.count.toString(), subtle = true)
             }
         }
     }
 }
 
 @Composable
-private fun StrokesSection(state: AppState, session: CharacterSession, character: Character, strokes: List<StrokeRow>) {
+private fun StrokeRows(state: AppState, session: CharacterSession, character: Character, strokes: List<StrokeRow>) {
     val lines = state.lines
-    DrawerSection(stringResource(Res.string.marks_surface_strokes)) {
-        strokes.forEach { row ->
-            val picked = PickedMark(row.part, row.mark.id)
-            ListRow(lines.pickedMark == picked, { lines.pickedMark = picked.takeUnless { lines.pickedMark == it } }, Modifier.testTag(MarksDrawerTags.stroke(row.mark.id))) {
-                RowIcon(SquashIcons.SurfaceStroke)
-                RowText(row.name, Modifier.weight(1f))
-                RowText(row.partName, subtle = true)
-            }
+    val floating = stringResource(Res.string.marks_floating)
+    strokes.forEach { row ->
+        val picked = PickedMark(row.part, row.mark.id)
+        ListRow(lines.pickedMark == picked, { lines.pickedMark = picked.takeUnless { lines.pickedMark == it } }, Modifier.testTag(MarksDrawerTags.stroke(row.mark.id))) {
+            RowIcon(SquashIcons.SurfaceStroke)
+            RowText(row.name, Modifier.weight(1f))
+            RowText(if (row.mark.kind == MarkKind.FLOATING) floating else row.partName, subtle = true)
         }
-        strokes.firstOrNull { PickedMark(it.part, it.mark.id) == lines.pickedMark }?.let { PickedStroke(state, session, character, it) }
+        if (lines.pickedMark == picked) PickedStroke(state, session, character, row)
     }
 }
 
@@ -177,14 +173,14 @@ private fun PickedStroke(state: AppState, session: CharacterSession, character: 
 }
 
 @Composable
-private fun WeightsSection(state: AppState, session: CharacterSession, weights: List<WeightRow>) {
+private fun WeightRows(state: AppState, session: CharacterSession, weights: List<WeightRow>) {
     val lines = state.lines
     val drag = rememberCommandDrag(session)
     val amount = stringResource(Res.string.lines_amount)
-    DrawerSection(stringResource(Res.string.marks_weights)) {
+    run {
         weights.forEach { row ->
             val picked = PickedWeight(row.part, row.id)
-            ListRow(lines.picked == picked, { lines.picked = picked; lines.amount = row.amount }, Modifier.testTag(MarksDrawerTags.weight(row.id))) {
+            ListRow(lines.picked == picked, { lines.picked = picked.takeUnless { lines.picked == it }; lines.amount = row.amount }, Modifier.testTag(MarksDrawerTags.weight(row.id))) {
                 RowIcon(SquashIcons.Lines)
                 RowText(stringResource(Res.string.marks_weight, row.name), Modifier.weight(1f))
                 RowText(stringResource(Res.string.lines_amount_value, (row.amount * PERCENT).roundToInt()), subtle = true)

@@ -42,7 +42,6 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_lines
 import dev.chieppa.squash.uidesign.generated.stage_face
 import dev.chieppa.squash.uidesign.generated.stage_shape
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
-import dev.chieppa.squash.uidesign.generated.lines_tool_floating_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
 import dev.chieppa.squash.uidesign.generated.face_tool_draw
@@ -90,8 +89,7 @@ object ShellActions {
     val MOVE = ActionId(BuildTool.MOVE.actionId)
     val LINE_WIDTH = ActionId(BuildTool.LINE_WIDTH.actionId)
     val SURFACE_STROKE = ActionId(BuildTool.SURFACE_STROKE.actionId)
-    val FLOATING_STROKE = ActionId(BuildTool.FLOATING_STROKE.actionId)
-    val FLOATING_MARK = ActionId(BuildTool.FLOATING_MARK.actionId)
+    val LINE_EDIT = ActionId(BuildTool.LINE_EDIT.actionId)
     val SURFACE_ERASE = ActionId(BuildTool.SURFACE_ERASE.actionId)
     val FUR_STROKE = ActionId(BuildTool.FUR_STROKE.actionId)
     val COMB = ActionId(BuildTool.COMB.actionId)
@@ -141,8 +139,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.PAINT_ERASE to Res.string.edit_tool_erase,
     ShellActions.LINE_WIDTH to Res.string.lines_tool_width,
     ShellActions.SURFACE_STROKE to Res.string.lines_tool_surface_stroke,
-    ShellActions.FLOATING_STROKE to Res.string.lines_tool_floating_stroke,
-    ShellActions.FLOATING_MARK to Res.string.lines_tool_floating_stroke,
+    ShellActions.LINE_EDIT to Res.string.shell_action_edit_curves,
     ShellActions.SURFACE_ERASE to Res.string.edit_tool_erase,
     ShellActions.FUR_STROKE to Res.string.fur_tool,
     ShellActions.COMB to Res.string.fur_comb_tool,
@@ -273,13 +270,12 @@ fun Shell.registerActions() {
 
     tool(BuildTool.LINE_WIDTH, "line-width", "W")
     tool(BuildTool.SURFACE_STROKE, "surface-stroke", "D")
-    tool(BuildTool.FLOATING_STROKE, "floating-stroke", "L")
+    tool(BuildTool.LINE_EDIT, "edit-curves", "E")
     tool(BuildTool.FUR_STROKE, "fur-stroke", "U")
     tool(BuildTool.COMB, "comb", "C")
     tool(BuildTool.SURFACE_ERASE, "erase", "X")
 
     tool(BuildTool.DRAW_MARK, "draw-mark", "D")
-    tool(BuildTool.FLOATING_MARK, "floating-stroke", "L")
     tool(BuildTool.EDIT_MARK, "edit-curves", "E")
     tool(BuildTool.ERASE_MARK, "erase", "X")
     tool(BuildTool.GAZE_TARGET, "gaze-target", "G")
