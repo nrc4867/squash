@@ -20,6 +20,9 @@ import dev.chieppa.squash.screens.shell.Shell
 import dev.chieppa.squash.screens.shell.ShellActions
 import dev.chieppa.squash.screens.shell.WorkspaceScreen
 import dev.chieppa.squash.screens.shell.actionIcon
+import dev.chieppa.squash.screens.surface.AngleVersionsDrawer
+import dev.chieppa.squash.screens.surface.ExpressionActions
+import dev.chieppa.squash.screens.surface.ExpressionsDrawer
 import dev.chieppa.squash.screens.surface.LinesDrawer
 import dev.chieppa.squash.screens.surface.MarksDrawer
 import dev.chieppa.squash.screens.shell.actionText
@@ -47,6 +50,9 @@ private val BUILD_CONTENT = BuildContent(
     colorDrawer = { state, session -> ColorDrawerContent(state, session) },
     linesDrawer = { state -> LinesDrawer(state) },
     marksDrawer = { state, onOpenLines -> MarksDrawer(state, onOpenLines) },
+    expressionsDrawer = { state -> ExpressionsDrawer(state) },
+    expressionActions = { state -> ExpressionActions(state) },
+    angleVersionsDrawer = { state -> AngleVersionsDrawer(state) },
 )
 
 /** The window's content: the current screen over [state], with what every screen shares. */

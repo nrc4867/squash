@@ -56,6 +56,15 @@ class SingleCamera {
         orbit = OrbitCamera(orbit.target, angles.yaw, angles.pitch, orbit.distance, orbit.distanceRange, orbit.fovY)
     }
 
+    /** Which way from what the camera looks at it stands. */
+    fun toViewerNow(): Vec3 = toViewer()
+
+    /** Turns the camera to stand [toViewer] from what it looks at, level. */
+    fun turnTo(toViewer: Vec3) {
+        val angles = orbitAngles(toViewer, Vec3.Y)
+        orbit = OrbitCamera(orbit.target, angles.yaw, angles.pitch, orbit.distance, orbit.distanceRange, orbit.fovY)
+    }
+
     /** The view the camera is on now, null when free. [hold] keeps it, while a stroke or a drag is under way. */
     fun snap(axes: PartAxes, hold: Boolean): View? {
         if (!hold) snapped = snappedView(snapped, toViewer(), axes)

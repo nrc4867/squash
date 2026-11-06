@@ -17,6 +17,8 @@ object DrawerIds {
     const val COLOR = "color"
     const val LINES = "lines"
     const val MARKS = "marks"
+    const val EXPRESSIONS = "expressions"
+    const val ANGLE_VERSIONS = "angle-versions"
 }
 
 private const val LEFT_WIDTH = FrameLayout.MIN_WIDTH
@@ -35,5 +37,7 @@ val DEFAULT_LAYOUT = FrameLayout(
         DrawerPlacement(DrawerIds.COLOR, Side.Right, width = RIGHT_WIDTH),
         DrawerPlacement(DrawerIds.LINES, Side.Right, width = RIGHT_WIDTH),
         DrawerPlacement(DrawerIds.MARKS, Side.Right, width = RIGHT_WIDTH),
+        DrawerPlacement(DrawerIds.EXPRESSIONS, Side.Left, width = LEFT_WIDTH, bottom = true, railTop = true),
+        DrawerPlacement(DrawerIds.ANGLE_VERSIONS, Side.Right, width = RIGHT_WIDTH, bottom = true, railTop = true),
     ),
 )

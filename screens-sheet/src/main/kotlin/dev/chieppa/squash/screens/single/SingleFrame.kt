@@ -21,6 +21,7 @@ import dev.chieppa.squash.screens.sheet.clippedTo
 import dev.chieppa.squash.screens.sheet.colored
 import dev.chieppa.squash.screens.sheet.fullGround
 import dev.chieppa.squash.screens.sheet.lockedDraws
+import dev.chieppa.squash.screens.sheet.withFace
 import dev.chieppa.squash.screens.sheet.lockedOverlay
 import dev.chieppa.squash.screens.sheet.lockedRibbons
 import dev.chieppa.squash.screens.sheet.toGpu
@@ -54,7 +55,7 @@ fun singleFrame(input: SingleInput): SceneFrame {
     val locked = input.locked
     if (locked != null) {
         val body = selection.part.axes.bodyViewOf(locked.view)
-        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, input.surface != null)
+        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, locked) }
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
         val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, input.surface)
@@ -82,10 +83,10 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val toCamera = Vec3(camera.eye.x, camera.eye.y, camera.eye.z) - selection.box.center
     val outline = if (input.surface != null) 0f else look.lockedOutline
     if (input.hints.whole) {
-        (selection.others + selection.part).filter { !it.planned }.forEach { add(look.colored(it, input.color, toCamera, outline)) }
+        (selection.others + selection.part).filter { !it.planned }.forEach { add(look.colored(it, input.color, toCamera, outline).withFace(it, input.surface, FullView({ camera }, input.width, input.height))) }
         return@buildList
     }
-    add(look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT))
+    add(look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT).withFace(selection.part, input.surface, FullView({ camera }, input.width, input.height)))
     if (input.hints.ghost > 0f) {
         selection.others
             .sortedByDescending { (it.center.toGpu() - camera.eye).length }

@@ -15,6 +15,7 @@ import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.MarkKind
+import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.RibbonDraw
@@ -26,6 +27,7 @@ import dev.chieppa.squash.screens.sheet.PART_INK
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.colorOf
+import dev.chieppa.squash.screens.sheet.rememberObjectShading
 import dev.chieppa.squash.screens.sheet.inkedBorders
 import dev.chieppa.stretch.theme.Stretch
 
@@ -63,6 +65,7 @@ class SurfaceLines(
     private val figureRadius: Float,
     private val palette: Palette = Palette(),
     private val picked: PickedStroke? = null,
+    private val faces: FaceWork? = null,
 ) : SurfaceRibbons {
     private val kept = object : LinkedHashMap<Any, List<RibbonDraw>>(KEPT_VIEWS, 1f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
@@ -76,6 +79,7 @@ class SurfaceLines(
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
         work.parts.forEach { (id, held) ->
             addAll(interiorInk(id, held, DepthLayer.SCENE))
+            faces?.let { addAll(it.draws(id, view).ribbons) }
         }
     }
 
@@ -91,7 +95,10 @@ class SurfaceLines(
         contourRibbon(listOf(held), view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.SELECTION, figureRadius)) }
         addAll(creaseDraws(held, look.creases, ink, DepthLayer.FRONT))
         work.parts[part]?.let { addAll(interiorInk(part, it, DepthLayer.FRONT)) }
+        faces?.let { held -> held.draws(part, view).ribbons.mapTo(this) { it.copy(layer = DepthLayer.FRONT) } }
     }
+
+    override fun faceLayers(part: PartId, view: SurfaceView): List<ColorLayerDraw> = faces?.draws(part, view)?.layers.orEmpty()
 
     /** What is inked on [id]'s surface at the interior weight: its strokes, tapered, and its region borders, closed. */
     private fun interiorInk(id: PartId, held: ResolvedSurfaceWork, layer: DepthLayer): List<RibbonDraw> = buildList {
@@ -126,10 +133,23 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
     val density = LocalDensity.current.density
     val palette = document.character.palette
     val picked = state.lines.pickedMark?.let { PickedStroke(it.id, Stretch.colors.accent) }
-    return remember(lines, work, character, rules, ink, density, palette, picked) {
+    val toLight = rememberObjectShading(state).toLight
+    val target = state.face.gazeTarget.takeIf { state.face.gazeOn }
+    val bins = remember(open) { FaceBinsHeld() }
+    val expression = document.character.shownExpression
+    val cheats = document.character.gazeCheats
+    return remember(lines, work, character, rules, ink, density, palette, picked, toLight, target, expression, cheats) {
         val shown = lines
         val held = work
-        val radius = character?.box?.radius
-        if (shown == null || held == null || radius == null) null else SurfaceLines(shown, held, characterLook(rules, density), rules.taper, ink, radius, palette, picked)
+        val whole = character
+        val radius = whole?.box?.radius
+        if (shown == null || held == null || whole == null || radius == null) {
+            null
+        } else {
+            val look = characterLook(rules, density)
+            val parts = whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
+            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper, bins::binOf)
+            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces)
+        }
     }
 }

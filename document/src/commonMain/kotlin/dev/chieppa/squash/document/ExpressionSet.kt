@@ -37,6 +37,10 @@ data class FacePose(val joints: List<JointAngle> = emptyList()) {
     }
 }
 
+/** How the character's pupils cheat: [cameraBias] pulls them that share toward the camera, and [sizeCompensation] keeps the far one as large to the eye as the near one. See HLD: look, Eyes and gaze. */
+@Serializable
+data class GazeCheats(val cameraBias: Float = 0.25f, val sizeCompensation: Boolean = true)
+
 /** A named expression: the marks it gives each group, by role, and its [pose]. See HLD: look, Surface work rules. */
 @Serializable
 data class ExpressionSet(

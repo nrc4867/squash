@@ -30,6 +30,7 @@ import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.MarksDrawerTags
+import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
@@ -85,6 +86,9 @@ class LinesFlowTest {
         onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).assertDoesNotExist()
         press(Key.D)
         assertEquals(BuildTool.SURFACE_STROKE, state.tool.value, "with it D is Surface stroke")
+        press(Key.L)
+        assertEquals(BuildTool.FLOATING_STROKE, state.tool.value, "and L is Floating stroke")
+        onNodeWithTag(LinesDrawerTags.STROKE_COLOR).assertExists()
         press(Key.W)
         assertEquals(BuildTool.LINE_WIDTH, state.tool.value, "and W is Line width")
         onNodeWithText("Silhouette").assertIsDisplayed()

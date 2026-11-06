@@ -171,8 +171,7 @@ class FurPointerFlowTest {
     @Test
     fun aFloatingStrokeStartsOnTheBodyLeavesItAndMirrorsAcrossTheMiddle() = runDesktopComposeUiTest(PANES_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.FULL_FIRST, TAIL)
-        state.lines.floats = true
-        show(state) { rememberSurfaceStrokeTool(state) }
+        show(state) { rememberSurfaceStrokeTool(state, floats = true) }
         val session = assertNotNull(state.session.value)
         val (from, to) = state.across(TAIL)
         val steps = session.history.steps.value.done.size

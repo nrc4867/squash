@@ -30,7 +30,7 @@ private const val SHOW_NEAR_KEY = "showNear"
 private const val FUR_ID_PREFIX = "fur-"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -59,6 +59,9 @@ private fun furMarksGainAKind(document: JsonObject): JsonObject = withEverySurfa
     val marks = surface[MARKS_KEY] as? JsonArray ?: return@withEverySurface surface
     JsonObject(surface + (MARKS_KEY to JsonArray(marks.map(::markWithFurKind))))
 }
+
+/** Format 9 to 10: a character gains a shown expression and gaze cheats, and a group's controls a mouth shape. Saved without them it shows its own marks at the default cheats. */
+private fun shownExpressionAndCheats(document: JsonObject): JsonObject = document
 
 /** Format 8 to 9: a mark gains a flight, a mirror and a color. A mark saved without them lies on the surface, shows once and is in ink. */
 private fun floatMirrorAndColorOnMarks(document: JsonObject): JsonObject = document

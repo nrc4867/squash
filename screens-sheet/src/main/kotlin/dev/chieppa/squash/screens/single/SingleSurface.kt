@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.FurViews
@@ -48,6 +49,7 @@ internal fun SingleSurface(
     paneToast: (@Composable () -> Unit)?,
     modifier: Modifier,
     surface: SurfaceRibbons? = null,
+    foot: (@Composable (toViewer: Vec3, turn: (Vec3) -> Unit) -> Unit)? = null,
 ) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
@@ -126,7 +128,7 @@ internal fun SingleSurface(
                 }
             },
             bottomEnd = fitting?.let { { FitProgressBar(it) } },
-            bottomCenter = paneToast,
+            bottomCenter = if (foot != null) ({ foot(camera.toViewerNow()) { camera.turnTo(it) } }) else paneToast,
         ) {}
     }
 }

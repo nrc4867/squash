@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CameraBin
+import dev.chieppa.squash.document.ExpressionId
 import dev.chieppa.squash.document.MarkFlight
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.geom.Vec3
@@ -87,7 +88,7 @@ private const val PROBE_FUR_VIEW = "probe"
 private const val WHISKER_MARGIN = 0.7f
 
 /** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
-internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT): CharacterState {
+internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT, shown: ExpressionId? = null, target: Vec3? = null): CharacterState {
     camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height)) }
     settled()
     val character = assertNotNull(assembly.output.value)
@@ -98,6 +99,8 @@ internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int 
         document.value.character.palette,
         assertNotNull(bodyLines.output.value),
         fur = if (camera == null) FurView.EMPTY else assertNotNull(furView(PROBE_FUR_VIEW).output.value),
+        shown = shown,
+        target = target,
     )
 }
 

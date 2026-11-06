@@ -22,6 +22,7 @@ import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.lines.PickedMark
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.screens.sheet.INK_SLOT
@@ -108,7 +109,10 @@ fun MarksDrawer(state: AppState, onOpenLines: () -> Unit) {
     val character = document.character
     val rows = markRows(character, state.templates, open.templates)
     val selected by state.selectedPart.collectAsState()
+    val tool by state.tool.collectAsState()
     Column {
+        FaceSection(state, open)
+        if (tool == BuildTool.FLOATING_MARK) StrokeToolSection(state, open)
         if (rows.strokes.isNotEmpty()) StrokesSection(state, open, character, rows.strokes)
         if (rows.weights.isNotEmpty()) WeightsSection(state, open, rows.weights)
         if (rows.fur.isNotEmpty()) {

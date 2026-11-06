@@ -17,6 +17,8 @@ data class Character(
     val expressions: List<ExpressionSet> = emptyList(),
     val shading: CharacterShading = CharacterShading(),
     val lineRules: LineRules = LineRules(),
+    val shownExpression: ExpressionId? = null,
+    val gazeCheats: GazeCheats = GazeCheats(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }

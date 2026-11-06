@@ -15,18 +15,24 @@ data class GroupRole(
 @Serializable
 data class RoleClip(val by: MarkRole, val clipped: MarkRole)
 
+/** The shape a mouth's lip line takes from its drawing. */
+@Serializable
+enum class MouthShape { SMILE, FROWN, O, GRIMACE }
+
 /**
- * A group's controls. [open] runs 0 closed to 1 open, [expressionBlend] 0 to 1 within the expression set, [gazeU] and [gazeV]
- * offset in the group's own u and v, and [width] scales a mouth across. See HLD: look, Eyes and gaze and Mouth.
+ * A group's controls. [open] runs 0 closed to 1 open, [expressionBlend] 0 at the group's own marks to 1 at the shown expression's, [dilation] adds to the
+ * pupil's size as a share of it, [gazeU] and [gazeV] offset in the group's own u and v, [width] scales a mouth across, and [mouthShape] bends its lip line.
+ * See HLD: look, Eyes and gaze and Mouth.
  */
 @Serializable
 data class MarkControls(
     val open: Float = 1f,
-    val expressionBlend: Float = 0f,
+    val expressionBlend: Float = 1f,
     val dilation: Float = 0f,
     val gazeU: Float = 0f,
     val gazeV: Float = 0f,
     val width: Float = 1f,
+    val mouthShape: MouthShape? = null,
 )
 
 /** Marks acting together, as an eye or a mouth does. [roles] run in draw order, first drawn first. */

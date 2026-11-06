@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.OutlineCurve
@@ -12,7 +13,7 @@ typealias ToolSections = @Composable (kind: PartDrawerKind, state: AppState, ses
 
 /**
  * What the Build frame holds from the screens beside the shell: the workspace in its viewport, the tools' Part drawer sections, the Color
- * drawer, and the Lines and Marks drawers. [marksDrawer] takes what opens the Lines drawer.
+ * drawer, the Lines and Marks drawers, and the Expressions and Angle versions drawers. [marksDrawer] takes what opens the Lines drawer.
  */
 class BuildContent(
     val workspace: @Composable (Shell) -> Unit,
@@ -20,4 +21,7 @@ class BuildContent(
     val colorDrawer: @Composable (AppState, CharacterSession) -> Unit = { _, _ -> },
     val linesDrawer: @Composable (AppState) -> Unit = {},
     val marksDrawer: @Composable (AppState, onOpenLines: () -> Unit) -> Unit = { _, _ -> },
+    val expressionsDrawer: @Composable (AppState) -> Unit = {},
+    val expressionActions: @Composable RowScope.(AppState) -> Unit = {},
+    val angleVersionsDrawer: @Composable (AppState) -> Unit = {},
 )

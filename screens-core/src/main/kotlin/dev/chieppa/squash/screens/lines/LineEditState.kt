@@ -21,15 +21,14 @@ data class PickedWeight(val part: PartId, val id: LineWeightId)
 data class PickedMark(val part: PartId, val id: MarkId)
 
 /**
- * What the line tools remember between strokes: the ring's [size] in pixels, the [amount] it adds, the weight [picked], which Amount edits, whether Surface
- * stroke [floats] off the surface and the [strokeSlot] it draws in, the ink's if none, and the [pickedMark] that shows on the model.
+ * What the line tools remember between strokes: the ring's [size] in pixels, the [amount] it adds, the weight [picked], which Amount edits, the [strokeSlot]
+ * a stroke draws in, the ink's if none, and the [pickedMark] that shows on the model.
  */
 @Stable
 class LineEditState {
     var size by mutableStateOf(DEFAULT_WIDTH_SIZE)
     var amount by mutableStateOf(DEFAULT_WIDTH_AMOUNT)
     var picked by mutableStateOf<PickedWeight?>(null)
-    var floats by mutableStateOf(false)
     var strokeSlot by mutableStateOf<SlotName?>(null)
     var pickedMark by mutableStateOf<PickedMark?>(null)
 

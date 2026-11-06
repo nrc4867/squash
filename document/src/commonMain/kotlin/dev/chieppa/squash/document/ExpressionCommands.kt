@@ -69,6 +69,26 @@ data class SetFacePose(val expression: ExpressionId, val pose: FacePose) : Docum
     }
 }
 
+/** Shows the expression [id] on the character, its own marks with none. */
+@Serializable
+@SerialName("showExpression")
+data class ShowExpression(val id: ExpressionId?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val character = document.character
+        return Applied(document.copy(character = character.copy(shownExpression = id)), ShowExpression(character.shownExpression))
+    }
+}
+
+/** Sets how the character's pupils cheat. */
+@Serializable
+@SerialName("setGazeCheats")
+data class SetGazeCheats(val cheats: GazeCheats) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val character = document.character
+        return Applied(document.copy(character = character.copy(gazeCheats = cheats)), SetGazeCheats(character.gazeCheats))
+    }
+}
+
 private fun Character.requireExpression(id: ExpressionId): ExpressionSet =
     requireNotNull(expressions.firstOrNull { it.id == id }) { "No expression ${id.value}" }
 

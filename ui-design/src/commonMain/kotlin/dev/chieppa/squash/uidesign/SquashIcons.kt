@@ -159,6 +159,14 @@ object SquashIcons {
             stroke("M13.5 11c.8 1 1 1.5 1 2a1 1 0 0 1-2 0c0-.5.2-1 1-2z")
         }
     }
+    val FloatingStroke: ImageVector by lazy {
+        icon("floating-stroke") {
+            stroke("M5.5 1.5a6.5 6.5 0 0 0 0 13")
+            stroke("M7 7c2.5-1.5 5-2 7.5-2")
+            stroke("M7 9.5c2.5.5 5 1.5 7.5 3")
+            fill("M4.75 8.25a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+        }
+    }
     val FrameAll: ImageVector by lazy {
         icon("frame-all") {
             stroke("M2.5 6V3.5a1 1 0 0 1 1-1H6")
@@ -175,6 +183,12 @@ object SquashIcons {
     val Garment: ImageVector by lazy {
         icon("garment") {
             stroke("M5.5 2.5L2 5l1.5 3L5 7v6.5h6V7l1.5 1L14 5l-3.5-2.5a2.5 2.5 0 0 1-5 0z")
+        }
+    }
+    val GazeTarget: ImageVector by lazy {
+        icon("gaze-target") {
+            stroke("M4.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0z")
+            stroke("M8 1.5v3.5M8 11v3.5M1.5 8h3.5M11 8h3.5")
         }
     }
     val HalfOutline: ImageVector by lazy {

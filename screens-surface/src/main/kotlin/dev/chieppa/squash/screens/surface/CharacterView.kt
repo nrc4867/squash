@@ -8,14 +8,13 @@ import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.document.CameraBin
+import dev.chieppa.squash.document.ExpressionId
+import dev.chieppa.squash.document.GazeCheats
 import dev.chieppa.squash.document.LineRules
-import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkKind
-import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
-import dev.chieppa.squash.geom.ColorDetail
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
@@ -57,9 +56,10 @@ class CharacterState(
     val lines: BodyLines,
     val fur: FurView,
     val taper: Float = LineRules.DEFAULT_TAPER,
+    val shown: ExpressionId? = null,
+    val target: Vec3? = null,
+    val cheats: GazeCheats = GazeCheats(),
 )
-
-private fun MarkGroup.isEye() = roles.any { it.role == MarkRole.LID }
 
 /**
  * A view of [state] through [camera]. Every part's contour draws as a ribbon at the silhouette weight in the back of the depth
@@ -72,14 +72,18 @@ fun characterView(
     state: CharacterState,
     look: CharacterLook,
     shading: ObjectShading,
-    pixelsPerUnit: Float,
+    @Suppress("UNUSED_PARAMETER") pixelsPerUnit: Float,
     faceBin: (PartId) -> CameraBin,
 ): SceneView {
     val ink = state.palette.colorOf(look.inkSlot) ?: look.fallback
     val fallback = PartMaterial(look.fallback, ink = ink)
-    val eye = Vec3(camera.eye.x, camera.eye.y, camera.eye.z)
-    val tolerance = ColorDetail.tolerance(ColorDetail.stepFor(pixelsPerUnit, ColorDetail.COARSEST))
     val parts = state.character.parts.filter { it.id != null }
+    val eye = Vec3(camera.eye.x, camera.eye.y, camera.eye.z)
+    val view = FullView({ camera }, rect.width, rect.height)
+    val faces = FaceWork(
+        FaceInput(parts.associateBy { requireNotNull(it.id) }, state.work, state.lines, state.palette, shading.toLight, state.shown, state.target, state.cheats),
+        look.marks, ink, state.taper,
+    ) { part, _ -> faceBin(requireNotNull(part.id)) }
     val center = state.character.box?.center ?: Vec3.ZERO
     val ribbons = ArrayList<RibbonDraw>()
     val filled = parts.map { part ->
@@ -87,15 +91,10 @@ fun characterView(
         val draw = coloredPartDraw(
             part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
         )
-        val work = state.work.parts[id] ?: return@map draw
-        val marks = work.marks.associateBy { it.id }
-        val eyes = work.groups.filter { it.isEye() }.map { group ->
-            eyeDraws(group, marks, part.surface, faceBin(id), state.palette, shading.toLight, eye - part.origin, tolerance, look.marks, ink)
-        }
-        eyes.forEach { ribbons += it.ribbons }
-        draw.copy(layers = draw.layers + eyes.flatMap { it.layers })
+        val face = faces.draws(id, view)
+        ribbons += face.ribbons
+        draw.copy(layers = draw.layers + face.layers)
     }
-    val view = FullView({ camera }, rect.width, rect.height)
     contourRibbon(state.lines.parts.values, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, state.character.box?.radius ?: 0f) }
     state.lines.parts.values.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
     for (part in parts) {

@@ -20,6 +20,8 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_color
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
 import dev.chieppa.squash.uidesign.generated.shell_drawer_lines
+import dev.chieppa.squash.uidesign.generated.shell_drawer_angle_versions
+import dev.chieppa.squash.uidesign.generated.shell_drawer_expressions
 import dev.chieppa.squash.uidesign.generated.shell_drawer_marks
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
@@ -147,5 +149,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         DrawerSpec(DrawerIds.MARKS, stringResource(Res.string.shell_drawer_marks), SquashIcons.Marks) {
             shell.content.marksDrawer(state) { shell.layout = shell.layout.open(DrawerIds.LINES) }
         },
+        DrawerSpec(DrawerIds.EXPRESSIONS, stringResource(Res.string.shell_drawer_expressions), SquashIcons.Expressions, actions = { shell.content.expressionActions(this, state) }) { shell.content.expressionsDrawer(state) },
+        DrawerSpec(DrawerIds.ANGLE_VERSIONS, stringResource(Res.string.shell_drawer_angle_versions), SquashIcons.AngleVersions) { shell.content.angleVersionsDrawer(state) },
     )
 }

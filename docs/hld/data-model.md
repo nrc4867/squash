@@ -19,7 +19,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Rig | Bones from template joints, weights seeded from part ownership and blended only at seams, stretch weights | Derived |
 | Pose | Per-bone transform and stretch, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default), each with an optional shadow color of its own; parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
-| Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation). Eyes and mouths are mark groups | Document |
+| Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation, gaze offset, width, mouth shape). Eyes and mouths are mark groups | Document |
 | Character shading | Flat or two-tone, and whether far parts darken | Document, on the character |
 | Region | A closed curve of anchors, which may run across parts, a palette slot and an ink flag | Document, in surface work |
 | Paint | Brush strokes in the order drawn, each anchors, a palette slot, a radius and a softness from 0, a hard edge, to 1, a fade across the whole radius | Document, in surface work |

@@ -17,7 +17,7 @@
   "blocks": [
     { "kind": "tube",  "u": [0.0, 1.0], "radius": "$width", "taper": 0.4, "cup": "$cup" },
     { "kind": "cap",   "end": "end", "shape": "pointed" },
-    { "kind": "joint", "name": "base", "u": 0.0, "hinge": "y", "limits": [-40, 40] },
+    { "kind": "joint", "name": "base", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
     { "kind": "joint", "name": "fold", "u": 0.6, "hinge": "x", "limits": [0, 150] },
     { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "x", "limits": [-20, 20] },
     { "kind": "area",  "name": "inner", "u": [0.1, 0.9], "v": [0.82, 0.18], "tag": "inner", "color": "inner-ear" },

@@ -25,8 +25,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
-import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.PixelRect
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.single.SingleSurface
 import dev.chieppa.stretch.gpu.OrbitCamera
@@ -60,13 +60,14 @@ fun SheetPanes(
     tool: PaneTool? = null,
     paneToast: (@Composable () -> Unit)? = null,
     surface: SurfaceRibbons? = null,
+    singleFoot: (@Composable (toViewer: Vec3, turn: (Vec3) -> Unit) -> Unit)? = null,
 ) {
     val layout by state.layout.collectAsState()
     val pick: (SheetLayout) -> Unit = { state.layout.value = it }
     Column(modifier) {
         if (layout == SheetLayout.SINGLE) {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)
+            SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, singleFoot)
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
             SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface)

@@ -26,7 +26,13 @@ import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
+import dev.chieppa.squash.screens.surface.HeadAngleBar
+import dev.chieppa.squash.screens.surface.faceToolSection
 import dev.chieppa.squash.screens.surface.rememberCombTool
+import dev.chieppa.squash.screens.surface.rememberDrawMarkTool
+import dev.chieppa.squash.screens.surface.rememberEditMarkTool
+import dev.chieppa.squash.screens.surface.rememberEraseMarkTool
+import dev.chieppa.squash.screens.surface.rememberGazeTargetTool
 import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
@@ -55,14 +61,29 @@ fun WorkspaceScreen(shell: Shell) {
     val pick = rememberPickColorTool(state)
     val lineWidth = rememberLineWidthTool(state)
     val surfaceStroke = rememberSurfaceStrokeTool(state)
+    val floatingStroke = rememberSurfaceStrokeTool(state, floats = true)
     val surfaceErase = rememberSurfaceEraseTool(state)
     val fur = rememberFurStrokeTool(state)
     val comb = rememberCombTool(state)
+    val drawMark = rememberDrawMarkTool(state)
+    val editMark = rememberEditMarkTool(state)
+    val eraseMark = rememberEraseMarkTool(state)
+    val gazeTarget = rememberGazeTargetTool(state)
     val linesOpen = shell.showsLineTools
     LaunchedEffect(linesOpen) {
         val tool = state.tool.value
-        if (linesOpen && !tool.inks) state.tool.value = BuildTool.LINE_WIDTH
-        if (!linesOpen && tool.inks) state.tool.value = BuildTool.DRAW_OUTLINE
+        if (linesOpen && !tool.inks && !tool.faces) state.tool.value = BuildTool.LINE_WIDTH
+        if (!linesOpen && (tool.inks || tool.faces)) state.tool.value = BuildTool.DRAW_OUTLINE
+    }
+    val facing = armed.faces
+    LaunchedEffect(facing) {
+        shell.layout = if (facing) {
+            shell.layout.open(DrawerIds.EXPRESSIONS).open(DrawerIds.ANGLE_VERSIONS)
+        } else {
+            state.face.group = null
+            state.face.role = null
+            shell.layout.close(DrawerIds.EXPRESSIONS).close(DrawerIds.ANGLE_VERSIONS)
+        }
     }
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
@@ -77,9 +98,14 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.PICK_COLOR -> pick
         BuildTool.LINE_WIDTH -> lineWidth
         BuildTool.SURFACE_STROKE -> surfaceStroke
+        BuildTool.FLOATING_STROKE, BuildTool.FLOATING_MARK -> floatingStroke
         BuildTool.SURFACE_ERASE -> surfaceErase
         BuildTool.FUR_STROKE -> fur
         BuildTool.COMB -> comb
+        BuildTool.DRAW_MARK -> drawMark
+        BuildTool.EDIT_MARK -> editMark
+        BuildTool.ERASE_MARK -> eraseMark
+        BuildTool.GAZE_TARGET -> gazeTarget
         BuildTool.NONE -> null
     }
     val selected by state.selectedPart.collectAsState()
@@ -91,10 +117,11 @@ fun WorkspaceScreen(shell: Shell) {
     SheetPanes(
         state,
         Modifier.fillMaxSize(),
-        tools = { WorkspaceTools(state, lineToolSection(state)) },
+        tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state)) },
         tool = tool,
         paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
         surface = rememberSurfaceLines(state),
+        singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
     )
 }
 

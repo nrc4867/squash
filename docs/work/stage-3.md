@@ -65,10 +65,6 @@ Test: ./gradlew :screens-surface:test --tests "*FurStroke*"
 
 Screenshots for the orchestrator come from Stretch's devtools endpoint, never from the desktop.
 
-## Decisions the orchestrator makes and writes into the HLD
-
-- Camera bins for angle versions and the hysteresis width, as template data on the head or as a character setting.
-
 ## Stretch
 
 Expected gaps, landed in the Stretch repo first: the free pane taking strokes while three locked panes stay live, a tile strip for expressions and angle versions if `stretch-ui` lacks one, and the color picker and swatch row wired to a palette model. Check `stretch-ui` first; it already has a color picker, swatches, a curve editor and a shading ramp.

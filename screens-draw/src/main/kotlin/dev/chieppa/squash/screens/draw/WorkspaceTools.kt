@@ -48,13 +48,14 @@ private const val SYMMETRY_TOOLS = 2
  * draw it. Pressing the armed tool disarms it.
  */
 @Composable
-fun WorkspaceTools(state: AppState, lines: ToolSection? = null) {
+fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null) {
     val tool by state.tool.collectAsState()
     val paint = paintSection(tool, state)
     val mirror = ToolSection(ShellTags.section("mirror"), stringResource(Res.string.edit_tool_mirror), SquashIcons.Mirror, 1) { MirrorButton(state) }
     val sections = when {
         tool.paints -> listOf(paint, mirror)
         tool.inks -> listOfNotNull(lines, mirror)
+        tool.faces -> listOfNotNull(faces, mirror)
         else -> listOfNotNull(
             outlineSection(tool, state),
             ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {
@@ -143,7 +144,7 @@ private fun MirrorButton(state: AppState) {
     val selected by state.selectedPart.collectAsState()
     val document = session?.document?.collectAsState()?.value
     val tool by state.tool.collectAsState()
-    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FUR_STROKE
+    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool.floats || tool == BuildTool.FUR_STROKE || tool.faces
     val label = stringResource(Res.string.edit_tool_mirror)
     Tooltip(label, listOf("M")) {
         ToolButton(

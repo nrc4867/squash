@@ -36,6 +36,7 @@ import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.surface.LinesDrawerTags
+import dev.chieppa.squash.screens.surface.FaceTags
 import dev.chieppa.squash.screens.surface.MarksDrawerTags
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.stretch.document.DocumentFormat
@@ -158,6 +159,19 @@ class LinesSmokeTest {
         assertTrue(whole.map { it.rule.interiorPixels }.toSet().size >= 2, "Full has thick and thin lines: ${whole.map { it.rule.interiorPixels }.toSet()}")
         keep(bench, input, "lines-fennec")
         assertTrue(assertNotNull(session.document.value.character.part(TORSO)).id == TORSO)
+        scope.cancel()
+        assertEquals(emptyList(), errors)
+    }
+
+    @Test
+    fun aPickedEyeShowsItsDrawerStripsAndFace() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val bench = fennecOpen()
+        onNodeWithContentDescription("Marks").performClick()
+        waitForIdle()
+        onNodeWithTag(FaceTags.EYE).performClick()
+        waitForIdle()
+        settle(bench)
+        keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, hints = SheetHints(whole = true), color = it.color, surface = it.surface) }, "face-eye")
         scope.cancel()
         assertEquals(emptyList(), errors)
     }

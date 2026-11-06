@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.edit.CurveEditState
 import dev.chieppa.squash.screens.edit.PaintEditState
+import dev.chieppa.squash.screens.lines.FaceEditState
 import dev.chieppa.squash.screens.lines.LineEditState
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.shell.BuildTool
@@ -93,6 +94,9 @@ class AppState(
     /** What the Line width tool remembers. */
     val lines = LineEditState()
 
+    /** What the face tools remember and the test gaze. */
+    val face = FaceEditState()
+
     /** What Pick a part type has chosen so far. */
     val pickedSocket = MutableStateFlow<OpenSocket?>(null)
     val pickedType = MutableStateFlow<TemplateId?>(null)
@@ -128,6 +132,7 @@ class AppState(
         spine.clear()
         paint.clear()
         lines.clear()
+        face.clear()
         // Undo can remove the selected part or a picked socket's parent, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
@@ -158,6 +163,7 @@ class AppState(
         curves.clear()
         spine.clear()
         lines.clear()
+        face.clear()
         screen.value = Screen.HOME
     }
 

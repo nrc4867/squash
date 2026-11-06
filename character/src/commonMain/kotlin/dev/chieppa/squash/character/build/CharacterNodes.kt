@@ -1,5 +1,8 @@
 package dev.chieppa.squash.character.build
 
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.distinctUntilChanged
+import dev.chieppa.squash.geom.bent
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.Character
@@ -17,8 +20,14 @@ import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 
 /** The surface of a mesh node's part with axes [axes] on [side], following it. */
-fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?): Node<PartMesh, PartSurface> = follow(meshes, stage = BuildStages.SURFACE) { mesh ->
-    PartSurface.of(mesh, mesh.axes ?: axes, side == Side.RIGHT, cancellationCheck())
+fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?, joints: Flow<Map<String, Float>> = flowOf(emptyMap()), template: PartTemplate? = null): Node<*, PartSurface> = gather(
+    joints.distinctUntilChanged(),
+    sourcesOf = { mapOf(Unit to meshes) },
+    stage = BuildStages.SURFACE,
+) { (held, built) ->
+    val mesh = built.getValue(Unit)
+    val own = mesh.axes ?: axes
+    PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, side == Side.RIGHT, cancellationCheck())
 }
 
 /** A template's surface with nothing drawn, [mirrored] or not, at each of [lengthFactor]'s values. */

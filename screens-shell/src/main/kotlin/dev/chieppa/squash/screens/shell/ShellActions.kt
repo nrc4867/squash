@@ -35,8 +35,11 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_history
 import dev.chieppa.squash.uidesign.generated.shell_drawer_part
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
+import dev.chieppa.squash.uidesign.generated.lines_tool_floating_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
+import dev.chieppa.squash.uidesign.generated.face_tool_draw
+import dev.chieppa.squash.uidesign.generated.face_tool_gaze
 import dev.chieppa.squash.uidesign.generated.fur_comb_tool
 import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.smooth_tool
@@ -76,9 +79,15 @@ object ShellActions {
     val MOVE = ActionId("tool-move")
     val LINE_WIDTH = ActionId("tool-line-width")
     val SURFACE_STROKE = ActionId("tool-surface-stroke")
+    val FLOATING_STROKE = ActionId("tool-floating-stroke")
+    val FLOATING_MARK = ActionId("tool-floating-mark")
     val SURFACE_ERASE = ActionId("tool-surface-erase")
     val FUR_STROKE = ActionId("tool-fur-stroke")
     val COMB = ActionId("tool-comb")
+    val DRAW_MARK = ActionId("tool-draw-mark")
+    val EDIT_MARK = ActionId("tool-edit-mark")
+    val ERASE_MARK = ActionId("tool-erase-mark")
+    val GAZE_TARGET = ActionId("tool-gaze-target")
     val FIT_PANE = ActionId("fit-pane")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
@@ -114,9 +123,15 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.PICK_COLOR to Res.string.color_tool_pick,
     ShellActions.LINE_WIDTH to Res.string.lines_tool_width,
     ShellActions.SURFACE_STROKE to Res.string.lines_tool_surface_stroke,
+    ShellActions.FLOATING_STROKE to Res.string.lines_tool_floating_stroke,
+    ShellActions.FLOATING_MARK to Res.string.lines_tool_floating_stroke,
     ShellActions.SURFACE_ERASE to Res.string.edit_tool_erase,
     ShellActions.FUR_STROKE to Res.string.fur_tool,
     ShellActions.COMB to Res.string.fur_comb_tool,
+    ShellActions.DRAW_MARK to Res.string.face_tool_draw,
+    ShellActions.EDIT_MARK to Res.string.shell_action_edit_curves,
+    ShellActions.ERASE_MARK to Res.string.edit_tool_erase,
+    ShellActions.GAZE_TARGET to Res.string.face_tool_gaze,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
@@ -159,6 +174,8 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "surface-stroke" -> SquashIcons.SurfaceStroke
     "fur-stroke" -> SquashIcons.FurStroke
     "comb" -> SquashIcons.Comb
+    "draw-mark" -> SquashIcons.DrawMark
+    "gaze-target" -> SquashIcons.GazeTarget
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
@@ -176,7 +193,8 @@ fun Shell.registerActions() {
     val inWorkspace = { state.screen.value == Screen.WORKSPACE }
     val onPick = { state.screen.value == Screen.PICK_PART }
     val inking = { inWorkspace() && state.tool.value.inks }
-    val onOutlines = { inWorkspace() && !inking() }
+    val facing = { inWorkspace() && state.tool.value.faces }
+    val onOutlines = { inWorkspace() && !inking() && !facing() }
     val selectedIsPaired = {
         inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
             state.selectedPart.value?.let(character::part)?.pair
@@ -220,7 +238,13 @@ fun Shell.registerActions() {
     action(ShellActions.FUR_STROKE, "fur-stroke", chord("U"), inking) { state.armTool(BuildTool.FUR_STROKE) }
     action(ShellActions.COMB, "comb", chord("G"), inking) { state.armTool(BuildTool.COMB) }
     action(ShellActions.SURFACE_STROKE, "surface-stroke", chord("D"), inking) { state.armTool(BuildTool.SURFACE_STROKE) }
+    action(ShellActions.FLOATING_STROKE, "floating-stroke", chord("L"), inking) { state.armTool(BuildTool.FLOATING_STROKE) }
     action(ShellActions.SURFACE_ERASE, "erase", chord("X"), inking) { state.armTool(BuildTool.SURFACE_ERASE) }
+    action(ShellActions.DRAW_MARK, "draw-mark", chord("D"), facing) { state.armTool(BuildTool.DRAW_MARK) }
+    action(ShellActions.FLOATING_MARK, "floating-stroke", chord("L"), facing) { state.armTool(BuildTool.FLOATING_MARK) }
+    action(ShellActions.EDIT_MARK, "edit-curves", chord("E"), facing) { state.armTool(BuildTool.EDIT_MARK) }
+    action(ShellActions.ERASE_MARK, "erase", chord("X"), facing) { state.armTool(BuildTool.ERASE_MARK) }
+    action(ShellActions.GAZE_TARGET, "gaze-target", chord("G"), facing) { state.armTool(BuildTool.GAZE_TARGET) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }

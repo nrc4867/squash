@@ -32,6 +32,7 @@ import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
 import dev.chieppa.squash.character.build.plannedLengthFactor
+import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
@@ -153,8 +154,10 @@ class CharacterSession(
     /** What [part] shows on its side, derived from its mesh; one per part for the session's life, since a part keeps its side. */
     fun surface(part: PartId): Node<*, PartSurface> = surfaces.getOrPut(part) {
         val instance = document.value.character.part(part)
-        val axes = instance?.let { templates.find(it.template) }?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
-        graph.partSurfaceNode(mesh(part), axes, instance?.side)
+        val template = instance?.let { templates.find(it.template) }
+        val axes = template?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
+        val joints = document.map { doc -> template?.let { shownJoints(doc.character, part, it) }.orEmpty() }
+        graph.partSurfaceNode(mesh(part), axes, instance?.side, joints, template)
     }
 
     /**
