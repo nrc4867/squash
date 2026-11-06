@@ -42,6 +42,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 private const val SETTLE_MILLIS = 60_000L
 private const val PANE = 800
@@ -96,23 +97,36 @@ class PaintSectionsTest {
     }
 
     @Test
-    fun partReachFillsThePartAndAreaReachTheAreaThatHoldsThePlace() {
+    fun underThePointerFillsWhatShowsThereAndWholePartTheBase() {
         val character = assembled()
         val sight = sideView(assertNotNull(character.box))
         val hit = hitOn(TORSO, sight)
         val chest = hit.copy(u = 0.75f, v = 0.5f)
-        assertEquals(Section.Base(TORSO), session.sectionAt(hit.copy(u = 0.5f, v = 0.25f), FillReach.PART))
-        assertEquals(Section.Named(TORSO, "belly"), session.sectionAt(hit.copy(u = 0.5f, v = 0.5f), FillReach.AREA))
-        assertIs<Section.Border>(session.sectionAt(chest.copy(u = 0.85f), FillReach.PART), "the fennec's chest is a region")
+        val belly = hit.copy(u = 0.5f, v = 0.5f)
+        assertEquals(Section.Named(TORSO, "belly"), session.sectionAt(belly, FillReach.UNDER_POINTER), "an area the template names counts though nothing has filled it")
+        assertEquals(Section.Base(TORSO), session.sectionAt(belly, FillReach.WHOLE_PART))
+        assertIs<Section.Border>(session.sectionAt(chest.copy(u = 0.85f), FillReach.UNDER_POINTER), "the fennec's chest is a region")
+        assertEquals(Section.Base(TORSO), session.sectionAt(chest.copy(u = 0.85f), FillReach.WHOLE_PART))
     }
 
     @Test
-    fun aFilledAreaShowsWithoutTheAreaReachAndAcrossTheSeam() {
+    fun eraseFindsTheRegionOnTopAndTakesItAwayAsOneCommand() {
+        val character = assembled()
+        val sight = sideView(assertNotNull(character.box))
+        val chest = hitOn(TORSO, sight).copy(u = 0.85f, v = 0.5f)
+        val found = assertIs<ShapeSource.Border>(session.erasableAt(chest))
+        assertNull(session.erasableAt(hitOn(TORSO, sight).copy(u = 0.5f, v = 0.25f)), "the base is no stroke or region")
+        session.send(assertNotNull(session.eraseCommand(found, thisSide = false)))
+        assertTrue(assertNotNull(session.document.value.character.resolved(TORSO)).surface.regions.none { it.id == found.id })
+    }
+
+    @Test
+    fun aFilledAreaShowsUnderThePointerAndAcrossTheSeam() {
         session.send(SetAreaFill(TORSO, "saddle", CREAM))
         settled()
         val hit = hitOn(TORSO, sideView(assertNotNull(assembled().box)))
-        assertEquals(Section.Named(TORSO, "saddle"), session.sectionAt(hit.copy(u = 0.5f, v = 0.95f), FillReach.PART))
-        assertEquals(Section.Named(TORSO, "saddle"), session.sectionAt(hit.copy(u = 0.5f, v = 0.05f), FillReach.PART))
+        assertEquals(Section.Named(TORSO, "saddle"), session.sectionAt(hit.copy(u = 0.5f, v = 0.95f), FillReach.UNDER_POINTER))
+        assertEquals(Section.Named(TORSO, "saddle"), session.sectionAt(hit.copy(u = 0.5f, v = 0.05f), FillReach.UNDER_POINTER))
         assertEquals(CREAM, session.slotAt(hit.copy(u = 0.5f, v = 0.05f)))
         assertEquals(FUR, session.slotAt(hit.copy(u = 0.5f, v = 0.25f)))
     }

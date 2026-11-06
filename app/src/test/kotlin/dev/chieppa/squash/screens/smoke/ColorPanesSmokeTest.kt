@@ -61,6 +61,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val WIDTH = 1440
@@ -272,7 +273,7 @@ class ColorPanesSmokeTest {
         }
         settle(state)
         assertTrue(regions() > regionsBefore, "the drag closed a region")
-        assertNotNull(state.paint.selectedRegion, "and it is picked")
+        assertNull(state.paint.selectedRegion, "and none is picked, so the next drag draws another")
         keepWorkspace("color-region-border", whole = true)
 
         onNodeWithTag(ShellTags.tool(BuildTool.PICK_COLOR)).performClick()

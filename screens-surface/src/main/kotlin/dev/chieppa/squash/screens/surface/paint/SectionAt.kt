@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
+import dev.chieppa.squash.document.SetBrushStroke
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.PatchCut
@@ -72,10 +73,11 @@ fun CharacterSession.slotAt(hit: SurfaceHit): SlotName? {
 }
 
 /**
- * The section Fill colors at [hit]: what shows there, a brush stroke being no section, so a region, a filled area or a colored block, and
- * otherwise the part. With [FillReach.AREA] an area the template names there counts though nothing has filled it.
+ * The section Fill colors at [hit]. Under the pointer, it is what shows there, a brush stroke being no section, so a region, a filled area or a
+ * colored block, then an area the template names there though nothing has filled it, and otherwise the part's base. The whole part is its base.
  */
 fun CharacterSession.sectionAt(hit: SurfaceHit, reach: FillReach): Section {
+    if (reach == FillReach.WHOLE_PART) return Section.Base(hit.part)
     val top = cutsUnder(hit).lastOrNull { it.source !is ShapeSource.Stroke && it.cut.holds(hit.u, hit.v) }
     when (val source = top?.source) {
         is ShapeSource.Border -> return Section.Border(source)
@@ -83,9 +85,7 @@ fun CharacterSession.sectionAt(hit: SurfaceHit, reach: FillReach): Section {
         is ShapeSource.TemplateBlock -> return Section.Named(source.holder, source.block)
         else -> Unit
     }
-    if (reach == FillReach.AREA) {
-        areaAt(document.value.character, templates, hit.anchor)?.let { return Section.Named(hit.part, it) }
-    }
+    areaAt(document.value.character, templates, hit.anchor)?.let { return Section.Named(hit.part, it) }
     return Section.Base(hit.part)
 }
 
@@ -101,5 +101,20 @@ fun CharacterSession.fillCommand(section: Section, slot: SlotName, thisSide: Boo
             val region = character.editBase(holder, side(holder.id)).surface.regions.firstOrNull { it.id == section.source.id } ?: return null
             SetRegion(holder.id, region.id, region.copy(slot = slot), side(holder.id))
         }
+    }
+}
+
+/** The brush stroke or region showing on top at [hit], which Erase takes away, or null where neither shows. */
+fun CharacterSession.erasableAt(hit: SurfaceHit): ShapeSource? =
+    cutsUnder(hit).lastOrNull { (it.source is ShapeSource.Stroke || it.source is ShapeSource.Border) && it.cut.holds(hit.u, hit.v) }?.source
+
+/** The command taking [source], a brush stroke or a region, off the part holding it, this side alone with [thisSide]. */
+fun CharacterSession.eraseCommand(source: ShapeSource, thisSide: Boolean): DocumentCommand? {
+    val character = document.value.character
+    fun side(part: PartId) = thisSide && character.part(part)?.pair != null
+    return when (source) {
+        is ShapeSource.Stroke -> SetBrushStroke(source.holder, source.id, null, side(source.holder))
+        is ShapeSource.Border -> SetRegion(source.holder, source.id, null, side(source.holder))
+        else -> null
     }
 }

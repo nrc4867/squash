@@ -45,6 +45,9 @@ import dev.chieppa.squash.screens.fennec.FUR
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
+import dev.chieppa.squash.document.SetBrushStroke
+import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -67,6 +70,8 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/** A dab big enough that a press on its anchor lands inside it, as a share of the part's axis. */
+private const val ERASE_DAB_RADIUS = 0.08f
 private const val SETTLE_MILLIS = 60_000L
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
@@ -198,6 +203,26 @@ class PaintPointerFlowTest {
     }
 
     @Test
+    fun eraseTakesAwayTheBrushStrokeUnderAPressInOneStep() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+        val state = opened(SheetLayout.FULL_FIRST)
+        val session = assertNotNull(state.session.value)
+        state.tool.value = BuildTool.PAINT_ERASE
+        show(state) { rememberPaintEraseTool(state) }
+        val (at, hit) = state.showing(TORSO, listOf(0.5f), AROUND).first()
+        val id = BrushStrokeId("dab")
+        runOnIdle { session.send(SetBrushStroke(TORSO, id, BrushStroke(id, listOf(hit.anchor), CREAM, ERASE_DAB_RADIUS))) }
+        settle(session)
+        val before = session.strokesOn(TORSO).size
+        press(at)
+        settle(session)
+        assertEquals(before - 1, session.strokesOn(TORSO).size)
+        assertTrue(session.strokesOn(TORSO).none { it.id == id })
+        runOnIdle { state.undo() }
+        settle(session)
+        assertTrue(session.strokesOn(TORSO).any { it.id == id }, "one undo brings it back")
+    }
+
+    @Test
     fun aDragFromALegUpOntoTheTorsoLandsOnBothAndMirrors() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.FULL_FIRST)
         val session = assertNotNull(state.session.value)
@@ -218,7 +243,7 @@ class PaintPointerFlowTest {
     }
 
     @Test
-    fun theAreaSettingFillsAnAreaThroughThePointerAndThePartSettingTheBase() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+    fun underThePointerFillsTheAreaThereAndWholePartTheBase() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.SHEET)
         val session = assertNotNull(state.session.value)
         state.tool.value = BuildTool.FILL
@@ -227,17 +252,16 @@ class PaintPointerFlowTest {
         val (saddle, _) = state.showing(TORSO, listOf(0.5f), listOf(0f, 0.03f, 0.97f, 0.06f, 0.94f)).first()
         press(saddle)
         settle(session)
-        assertEquals(CREAM, assertNotNull(session.document.value.character.resolved(TORSO)).surface.baseSlot, "Part reach fills the part")
+        val under = assertNotNull(session.document.value.character.resolved(TORSO)).surface
+        assertEquals(FUR, under.baseSlot, "under the pointer leaves the base")
+        assertEquals(CREAM, under.areaFills["saddle"], "and fills the area under the press")
         runOnIdle { state.undo() }
         settle(session)
-        assertEquals(FUR, assertNotNull(session.document.value.character.resolved(TORSO)).surface.baseSlot)
-        onNodeWithText("Area").performClick()
+        onNodeWithText("Whole part").performClick()
         waitForIdle()
         press(saddle)
         settle(session)
-        val after = assertNotNull(session.document.value.character.resolved(TORSO)).surface
-        assertEquals(FUR, after.baseSlot, "Area reach leaves the base")
-        assertEquals(CREAM, after.areaFills["saddle"], "and fills the area under the press")
+        assertEquals(CREAM, assertNotNull(session.document.value.character.resolved(TORSO)).surface.baseSlot, "the whole part fills its base")
     }
 
     @Test
@@ -307,20 +331,16 @@ class PaintPointerFlowTest {
     }
 
     @Test
-    fun newRegionDrawsAndARowsPenEditsThatRegion() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
+    fun aRegionRowPicksItWithoutArmingATool() = runDesktopComposeUiTest(PANES_WIDTH + DRAWER_WIDTH, PANES_HEIGHT) {
         val state = opened(SheetLayout.SHEET)
+        state.tool.value = BuildTool.FILL
         show(state) { rememberBrushTool(state) }
-        onNodeWithTag(PaintTags.regionEdit("chest")).performScrollTo().performMouseInput { click() }
+        onNodeWithTag(PaintTags.row(PaintTags.region("chest"))).performScrollTo().performMouseInput { click(Offset(width - 2f, centerY)) }
         waitForIdle()
-        assertEquals(BuildTool.REGION_BORDER, state.tool.value)
         assertEquals("chest", state.paint.selectedRegion?.id?.value)
-        onNodeWithTag(PaintTags.NEW_REGION).performScrollTo().performMouseInput { click() }
-        waitForIdle()
-        assertEquals(BuildTool.REGION_BORDER, state.tool.value, "the tool stays, now for a new one")
-        assertEquals(null, state.paint.selectedRegion)
-        onNodeWithTag(PaintTags.NEW_REGION).performMouseInput { click() }
-        waitForIdle()
-        assertEquals(BuildTool.NONE, state.tool.value, "pressing it again stops")
+        assertEquals(BuildTool.FILL, state.tool.value, "picking a row arms nothing")
+        onNodeWithTag(PaintTags.row(PaintTags.BASE)).assertExists()
+        onNodeWithTag(PaintTags.row(PaintTags.section("belly"))).assertExists()
     }
 
     @Test

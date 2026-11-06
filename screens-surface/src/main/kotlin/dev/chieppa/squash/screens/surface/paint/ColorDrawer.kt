@@ -42,15 +42,14 @@ import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.color_far_amount
 import dev.chieppa.squash.uidesign.generated.color_far_parts
-import dev.chieppa.squash.uidesign.generated.color_fill_area
-import dev.chieppa.squash.uidesign.generated.color_fill_part
+import dev.chieppa.squash.uidesign.generated.color_fill_under
+import dev.chieppa.squash.uidesign.generated.color_fill_whole
 import dev.chieppa.squash.uidesign.generated.color_picker_eyedropper
 import dev.chieppa.squash.uidesign.generated.color_picker_hex
 import dev.chieppa.squash.uidesign.generated.color_picker_hue
 import dev.chieppa.squash.uidesign.generated.color_picker_invalid_hex
 import dev.chieppa.squash.uidesign.generated.color_picker_square
 import dev.chieppa.squash.uidesign.generated.color_section_paint
-import dev.chieppa.squash.uidesign.generated.color_section_sections
 import dev.chieppa.squash.uidesign.generated.color_section_shading
 import dev.chieppa.squash.uidesign.generated.color_shading_flat
 import dev.chieppa.squash.uidesign.generated.color_shading_two_tone
@@ -74,14 +73,13 @@ private const val MIN_BRUSH_RADIUS = 0.005f
 private const val PATCH_SEPARATOR = ":"
 private val READOUT_WIDTH = 44.dp
 
-/** The Color inspector: the palette and the tool's controls, the selected part's sections, every border's ink, and shading. */
+/** The Color inspector: the palette and the tool's controls, what is painted on the selected part, and shading. */
 @Composable
 fun ColorDrawerContent(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val tool by state.tool.collectAsState()
     PaintSection(state, session, document, tool)
-    SectionsSection(state, session, document)
-    RegionsSection(state, session, document.character)
+    PartPaintSection(state, session, document)
     ShadingSection(state)
 }
 
@@ -154,53 +152,14 @@ private fun BrushRows(state: AppState) {
 
 @Composable
 private fun FillRow(state: AppState) {
-    val part = stringResource(Res.string.color_fill_part)
-    val area = stringResource(Res.string.color_fill_area)
-    Segmented(FillReach.entries, state.paint.fillReach, { state.paint.fillReach = it }, { if (it == FillReach.PART) part else area }, Modifier.testTag(PaintTags.FILL_REACH), fill = true)
+    val under = stringResource(Res.string.color_fill_under)
+    val whole = stringResource(Res.string.color_fill_whole)
+    Segmented(FillReach.entries, state.paint.fillReach, { state.paint.fillReach = it }, { if (it == FillReach.UNDER_POINTER) under else whole }, Modifier.testTag(PaintTags.FILL_REACH), fill = true)
 }
 
 @Composable
 private fun Readout(text: String) {
     BasicText(text, Modifier.width(READOUT_WIDTH), style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)), maxLines = 1)
-}
-
-/**
- * What the selected part's template lets Fill color by name: its colored blocks, each showing the slot it names, and its areas. A swatch takes the
- * current slot; pressed again it goes back to what the template shows there.
- */
-@Composable
-private fun SectionsSection(state: AppState, session: CharacterSession, document: SquashDocument) {
-    val selected by state.selectedPart.collectAsState()
-    val character = document.character
-    val part = selected?.let(character::part) ?: return
-    val sections = partSections(session, part)
-    if (sections.isEmpty()) return
-    val thisSide = state.thisSide && part.pair != null
-    val current = state.paint.slotIn(character.palette)
-    val fills = character.resolved(part).surface.areaFills
-    DrawerSection(stringResource(Res.string.color_section_sections)) {
-        sections.forEach { section ->
-            val filled = fills[section.name]
-            val shows = filled ?: section.templateSlot
-            SettingRow(displayName(section.name.substringAfterLast(PATCH_SEPARATOR))) {
-                Spacer(Modifier.weight(1f))
-                Swatch(
-                    character.palette.colorOf(shows) ?: Color.Transparent,
-                    shows?.let(character.palette::shownName) ?: displayName(section.name),
-                    filled != null,
-                    { session.send(SetAreaFill(part.id, section.name, if (filled == current) null else current, thisSide)) },
-                    Modifier.testTag(PaintTags.section(section.name)),
-                )
-            }
-        }
-    }
-}
-
-private class NamedSection(val name: String, val templateSlot: SlotName?)
-
-private fun partSections(session: CharacterSession, part: PartInstance): List<NamedSection> {
-    val input = partColorInput(session.document.value.character, part.id, session.templates)
-    return input.patchSlots.map { NamedSection(it.patch, SlotName(it.slot)) } + input.areas.map { area -> NamedSection(area.name, area.color?.let(::SlotName)) }
 }
 
 @Composable

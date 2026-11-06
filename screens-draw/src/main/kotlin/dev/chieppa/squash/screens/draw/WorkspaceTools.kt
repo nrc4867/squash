@@ -109,10 +109,11 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
 @Composable
 private fun paintSection(tool: BuildTool, state: AppState): ToolSection {
     val icons = mapOf(
-        BuildTool.REGION_BORDER to SquashIcons.RegionBorder,
         BuildTool.FILL to SquashIcons.Fill,
         BuildTool.BRUSH to SquashIcons.Brush,
+        BuildTool.REGION_BORDER to SquashIcons.RegionBorder,
         BuildTool.PICK_COLOR to SquashIcons.PickColor,
+        BuildTool.PAINT_ERASE to SquashIcons.Erase,
     )
     val armed = tool.takeIf { it in icons }
     return ToolSection(ShellTags.section("paint"), stringResource(Res.string.shell_tools_color), icons[armed] ?: SquashIcons.Fill, icons.size, armed) { PaintTools(tool, state) }
@@ -120,10 +121,11 @@ private fun paintSection(tool: BuildTool, state: AppState): ToolSection {
 
 @Composable
 private fun PaintTools(tool: BuildTool, state: AppState) {
-    StripTool(BuildTool.REGION_BORDER, SquashIcons.RegionBorder, stringResource(Res.string.color_tool_region_border), tool, state::armTool)
     StripTool(BuildTool.FILL, SquashIcons.Fill, stringResource(Res.string.color_tool_fill), tool, state::armTool)
     StripTool(BuildTool.BRUSH, SquashIcons.Brush, stringResource(Res.string.color_tool_brush), tool, state::armTool)
+    StripTool(BuildTool.REGION_BORDER, SquashIcons.RegionBorder, stringResource(Res.string.color_tool_region_border), tool, state::armTool)
     StripTool(BuildTool.PICK_COLOR, SquashIcons.PickColor, stringResource(Res.string.color_tool_pick), tool, state::armTool)
+    StripTool(BuildTool.PAINT_ERASE, SquashIcons.Erase, stringResource(Res.string.edit_tool_erase), tool, state::armTool)
 }
 
 /** Half outline: on, a stroke draws one edge and its mirror image across the part's centre line. */

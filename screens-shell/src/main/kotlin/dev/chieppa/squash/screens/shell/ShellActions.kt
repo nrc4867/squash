@@ -81,6 +81,7 @@ object ShellActions {
     val FILL = ActionId(BuildTool.FILL.actionId)
     val BRUSH = ActionId(BuildTool.BRUSH.actionId)
     val PICK_COLOR = ActionId(BuildTool.PICK_COLOR.actionId)
+    val PAINT_ERASE = ActionId(BuildTool.PAINT_ERASE.actionId)
     val DRAW = ActionId(BuildTool.DRAW_OUTLINE.actionId)
     val SPINE_WIDTH = ActionId(BuildTool.SPINE_WIDTH.actionId)
     val EDIT_CURVES = ActionId(BuildTool.EDIT_CURVES.actionId)
@@ -137,6 +138,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.FILL to Res.string.color_tool_fill,
     ShellActions.BRUSH to Res.string.color_tool_brush,
     ShellActions.PICK_COLOR to Res.string.color_tool_pick,
+    ShellActions.PAINT_ERASE to Res.string.edit_tool_erase,
     ShellActions.LINE_WIDTH to Res.string.lines_tool_width,
     ShellActions.SURFACE_STROKE to Res.string.lines_tool_surface_stroke,
     ShellActions.FLOATING_STROKE to Res.string.lines_tool_floating_stroke,
@@ -267,6 +269,7 @@ fun Shell.registerActions() {
     tool(BuildTool.BRUSH, "brush", "B")
     tool(BuildTool.REGION_BORDER, "region-border", "R")
     tool(BuildTool.PICK_COLOR, "pick-color", "I")
+    tool(BuildTool.PAINT_ERASE, "erase", "X")
 
     tool(BuildTool.LINE_WIDTH, "line-width", "W")
     tool(BuildTool.SURFACE_STROKE, "surface-stroke", "D")

@@ -13,8 +13,8 @@ import dev.chieppa.squash.document.SlotName
 /** The Brush's radius at the start, as a share of the axis of the part it lands on. */
 const val DEFAULT_BRUSH_RADIUS = 0.05f
 
-/** What Fill colors under the pointer: what shows there, or down to an area its template names that nothing has filled. */
-enum class FillReach { PART, AREA }
+/** What Fill colors: what shows under the pointer, down to an area its template names there, or the whole part's base. */
+enum class FillReach { UNDER_POINTER, WHOLE_PART }
 
 /** A region by the part that holds it. */
 data class RegionRef(val part: PartId, val id: RegionId)
@@ -26,12 +26,12 @@ class PaintEditState {
     var slot by mutableStateOf<SlotName?>(null)
     var brushRadius by mutableFloatStateOf(DEFAULT_BRUSH_RADIUS)
     var softness by mutableFloatStateOf(0f)
-    var fillReach by mutableStateOf(FillReach.PART)
+    var fillReach by mutableStateOf(FillReach.UNDER_POINTER)
 
     /** Which slots show in the drawer. */
     val shelf = SlotShelf()
 
-    /** The border being edited, whose points show for dragging; with none, Region border draws a new one. */
+    /** The region picked in the inspector, whose points Region shows for dragging; with none, Region draws a new one. */
     var selectedRegion by mutableStateOf<RegionRef?>(null)
 
     /** The slot the tools paint with in [palette], or null when it holds none. */
@@ -41,7 +41,7 @@ class PaintEditState {
         slot = null
         brushRadius = DEFAULT_BRUSH_RADIUS
         softness = 0f
-        fillReach = FillReach.PART
+        fillReach = FillReach.UNDER_POINTER
         selectedRegion = null
         shelf.clear()
     }

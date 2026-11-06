@@ -26,6 +26,7 @@ import dev.chieppa.squash.screens.spine.rememberSpineWidthTool
 import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
 import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
+import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
 import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
 import dev.chieppa.squash.screens.surface.lineToolSection
 import dev.chieppa.squash.screens.references.placeToolSection
@@ -75,6 +76,7 @@ fun WorkspaceScreen(shell: Shell) {
     val fill = rememberFillTool(state)
     val brush = rememberBrushTool(state)
     val pick = rememberPickColorTool(state)
+    val paintErase = rememberPaintEraseTool(state)
     val lineWidth = rememberLineWidthTool(state)
     val surfaceStroke = rememberSurfaceStrokeTool(state)
     val floatingStroke = rememberSurfaceStrokeTool(state, floats = true)
@@ -101,6 +103,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.FILL -> fill
         BuildTool.BRUSH -> brush
         BuildTool.PICK_COLOR -> pick
+        BuildTool.PAINT_ERASE -> paintErase
         BuildTool.LINE_WIDTH -> lineWidth
         BuildTool.SURFACE_STROKE -> surfaceStroke
         BuildTool.FLOATING_STROKE, BuildTool.FLOATING_MARK -> floatingStroke

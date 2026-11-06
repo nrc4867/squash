@@ -24,14 +24,14 @@ import dev.chieppa.stretch.ui.Swatch
 private val SLOT_GAP = 6.dp
 
 /**
- * A swatch showing [slot] of [palette], which opens the palette under [title] to pick another. [tagOf] names each choice for tests, and [footer] adds to
+ * A swatch showing [slot] of [palette], or none, which opens the palette under [title] to pick another. [tagOf] names each choice for tests, and [footer] adds to
  * the popover, given what closes it.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SlotChoice(
     palette: Palette,
-    slot: SlotName,
+    slot: SlotName?,
     title: String,
     tag: String,
     tagOf: (SlotName) -> String,
@@ -40,7 +40,7 @@ internal fun SlotChoice(
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
-        Swatch(palette.colorOf(slot) ?: Color.Transparent, palette.shownName(slot), false, { open = true }, Modifier.testTag(tag))
+        Swatch(slot?.let(palette::colorOf) ?: Color.Transparent, slot?.let(palette::shownName) ?: title, false, { open = true }, Modifier.testTag(tag))
         Popover(open, { open = false }, title) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(SLOT_GAP), verticalArrangement = Arrangement.spacedBy(SLOT_GAP)) {
                 palette.slots.forEach { choice ->
