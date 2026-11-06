@@ -135,7 +135,6 @@ class PenShapesSmokeTest {
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         settled(session)
-        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         fun keepWorkspace(name: String) {
             val node = onNodeWithTag(ShellTags.WORKSPACE)

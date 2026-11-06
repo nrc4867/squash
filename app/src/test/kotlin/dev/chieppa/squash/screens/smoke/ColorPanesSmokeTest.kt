@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.smoke
 
+import dev.chieppa.squash.screens.edit.FillReach
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -13,6 +17,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.CharacterShading
@@ -70,6 +75,8 @@ private const val SETTLE_MILLIS = 60_000L
 
 /** How far a stroke runs across a pane, as a share of its size. */
 private const val STROKE_REACH = 0.08f
+private const val PRESS_RINGS = 5
+private const val PRESS_STEPS = 20f
 
 private object NoColorFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -149,6 +156,15 @@ class ColorPanesSmokeTest {
         return image.pixels
     }
 
+    /**
+     * Where a press in a pane of [width] might land on the character, nearest [middle] first: the free camera frames the whole fennec, whose
+     * middle can fall between its parts.
+     */
+    private fun pressPlaces(middle: Offset, width: Float): List<Offset> {
+        val ways = listOf(Offset(0f, 1f), Offset(0f, -1f), Offset(1f, 0f), Offset(-1f, 0f), Offset(1f, 1f), Offset(-1f, 1f), Offset(1f, -1f), Offset(-1f, -1f))
+        return listOf(middle) + (1..PRESS_RINGS).flatMap { ring -> ways.map { middle + it * (ring * width / PRESS_STEPS) } }
+    }
+
     private fun slotColor(name: String): Color {
         val slot = assertNotNull(assertNotNull(color).palette.color(SlotName(name)))
         return Color(slot.red, slot.green, slot.blue)
@@ -202,6 +218,8 @@ class ColorPanesSmokeTest {
         val size = full.fetchSemanticsNode().size
         val middle = Offset(size.width / 2f, size.height / 2f)
 
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Two) }
+        waitForIdle()
         onNodeWithTag(ShellTags.tool(BuildTool.BRUSH)).performClick()
         waitForIdle()
         onNodeWithTag(PaintTags.slot("cream")).performMouseInput { click() }
@@ -216,16 +234,25 @@ class ColorPanesSmokeTest {
         state.paint.slot = SlotName("iris")
         state.paint.softness = 0.8f
         state.paint.brushRadius = 0.12f
-        val strokesBefore = session.document.value.character.parts.sumOf { session.document.value.character.resolved(it).surface.paint.strokes.size }
-        full.performMouseInput {
-            moveTo(middle)
-            press()
-            for (i in 1..12) moveTo(middle + Offset(size.width * STROKE_REACH * i / 12f, 0f))
-            release()
+        assertEquals(BuildTool.BRUSH, state.tool.value, "Brush is still armed after the palette clicks")
+        fun strokes() = session.document.value.character.parts.sumOf { session.document.value.character.resolved(it).surface.paint.strokes.size }
+        val strokesBefore = strokes()
+        var onBody: Offset? = null
+        for (at in pressPlaces(middle, size.width.toFloat())) {
+            full.performMouseInput {
+                moveTo(at)
+                press()
+                for (i in 1..12) moveTo(at + Offset(size.width * STROKE_REACH * i / 12f, 0f))
+                release()
+            }
+            settle(state)
+            if (strokes() > strokesBefore) {
+                onBody = at
+                break
+            }
         }
-        settle(state)
-        val strokes = session.document.value.character.parts.sumOf { session.document.value.character.resolved(it).surface.paint.strokes.size }
-        assertTrue(strokes > strokesBefore, "the drag left a stroke")
+        val body = assertNotNull(onBody, "a drag across the fennec in Full left a stroke")
+        assertEquals(strokesBefore + 1, strokes(), "one stroke, where the drag crossed the body")
         keepWorkspace("color-brush-drawer", whole = true)
 
         onNodeWithTag(ShellTags.tool(BuildTool.FILL)).performClick()
@@ -233,7 +260,7 @@ class ColorPanesSmokeTest {
         state.paint.slot = SlotName("nose")
         val before = session.document.value
         full.performMouseInput {
-            moveTo(middle)
+            moveTo(body)
             press()
             release()
         }
@@ -248,26 +275,28 @@ class ColorPanesSmokeTest {
         val pane = inPane.fetchSemanticsNode().size
         val mid = Offset(pane.width / 2f, pane.height / 2f)
         val base = { session.document.value.character.part(assertNotNull(state.selectedPart.value))?.let { session.document.value.character.resolved(it).surface.baseSlot } }
+        state.paint.fillReach = FillReach.WHOLE_PART
         inPane.performMouseInput {
             moveTo(mid)
             press()
             release()
         }
         settle(state)
-        assertEquals(SlotName("nose"), base(), "a locked pane fills its part too")
+        assertEquals(SlotName("nose"), base(), "a locked pane fills its part too, the whole part with Whole part")
         runOnIdle { state.undo() }
         settle(state)
+        state.paint.fillReach = FillReach.UNDER_POINTER
 
         onNodeWithTag(ShellTags.tool(BuildTool.REGION_BORDER)).performClick()
         waitForIdle()
         val regions = { session.document.value.character.parts.sumOf { session.document.value.character.resolved(it).surface.regions.size } }
         val regionsBefore = regions()
         full.performMouseInput {
-            moveTo(middle)
+            moveTo(body)
             press()
             for (i in 1..40) {
                 val angle = 2.0 * Math.PI * i / 40
-                moveTo(middle + Offset(30f * kotlin.math.cos(angle).toFloat(), 22f * kotlin.math.sin(angle).toFloat()) - Offset(30f, 0f))
+                moveTo(body + Offset(30f * kotlin.math.cos(angle).toFloat(), 22f * kotlin.math.sin(angle).toFloat()) - Offset(30f, 0f))
             }
             release()
         }
@@ -280,7 +309,7 @@ class ColorPanesSmokeTest {
         waitForIdle()
         state.paint.slot = SlotName("cream")
         full.performMouseInput {
-            moveTo(middle + Offset(0f, 2f))
+            moveTo(body + Offset(0f, 2f))
             press()
             release()
         }

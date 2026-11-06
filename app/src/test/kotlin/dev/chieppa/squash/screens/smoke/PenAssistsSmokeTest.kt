@@ -176,7 +176,6 @@ class PenAssistsSmokeTest {
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
-        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         keep("pen-assists-drawer-outline")
         checkNotNull(state.session.value).send(SetOutline(checkNotNull(state.selectedPart.value), View.SIDE, LEG_SIDE))

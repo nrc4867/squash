@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.smoke
 
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -52,7 +55,6 @@ private const val HEIGHT = 900
 private const val SETTLE_MILLIS = 30_000L
 private const val DRAG_PIXELS = 90f
 private const val DRAG_STEPS = 15
-private const val LINES_DRAWER = "Lines"
 
 private object NoFurFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -120,7 +122,7 @@ class FurSmokeTest {
         val session = assertNotNull(state.session.value)
         setStretchContent { SquashApp(state, NoFurFiles) }
         settled(session)
-        onNodeWithContentDescription(LINES_DRAWER).performClick()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Three) }
         waitForIdle()
         onNodeWithTag(ShellTags.tool(BuildTool.FUR_STROKE)).performClick()
         waitForIdle()

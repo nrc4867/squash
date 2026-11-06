@@ -1,5 +1,11 @@
 package dev.chieppa.squash.screens.smoke
 
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
@@ -146,14 +152,11 @@ class LinesSmokeTest {
         val bench = fennecOpen()
         val state = bench.state
         val session = assertNotNull(state.session.value)
-        onNodeWithContentDescription("Lines").performClick()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Three) }
         waitForIdle()
-        assertEquals(BuildTool.LINE_WIDTH, state.tool.value, "the Lines drawer brings its tools")
+        assertEquals(BuildTool.LINE_WIDTH, state.tool.value, "the Lines stage opens on Line width")
         onNodeWithTag(ShellTags.tool(BuildTool.LINE_WIDTH)).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.SURFACE_STROKE)).assertExists()
-        onNodeWithText("body surface").assertExists()
-        onNodeWithContentDescription("Marks").performClick()
-        waitForIdle()
         onNodeWithTag(MarksDrawerTags.fur(TORSO)).assertExists()
         val input = panes(bench)
         val full = input.rects[SheetPane.FULL.ordinal]
@@ -178,9 +181,9 @@ class LinesSmokeTest {
         onNodeWithContentDescription("References").performClick()
         waitForIdle()
         onNodeWithTag(ReferencesTags.image(add.id)).performClick()
-        onNodeWithText("Side").performClick()
-        onNodeWithContentDescription("Trace").performClick()
+        onNode(hasText("Side") and hasAnyAncestor(hasTestTag(ReferencesTags.TRACE_IN))).performClick()
         waitForIdle()
+        assertEquals(add.id, session.document.value.character.traces[dev.chieppa.squash.document.View.SIDE]?.image, "the sketch is traced in Side")
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, color = it.color, surface = it.surface, traces = { toViewer -> traceDraws(session.document.value, bench.state.images, toViewer) }) }, "references")
         scope.cancel()
@@ -205,7 +208,7 @@ class LinesSmokeTest {
         val state = bench.state
         val session = assertNotNull(state.session.value)
         fun loose() = session.document.value.character.parts.flatMap { part -> session.document.value.character.resolved(part).surface.marks }.filter { it.kind != MarkKind.FUR && it.id.value.startsWith("stroke-") }
-        onNodeWithContentDescription("Lines").performClick()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Three) }
         waitForIdle()
         state.tool.value = BuildTool.SURFACE_STROKE
         waitForIdle()

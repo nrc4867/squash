@@ -117,7 +117,6 @@ class SpineSmokeTest {
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         settled(bench)
-        onNodeWithContentDescription("Part").performClick()
         bench.state.tool.value = BuildTool.SPINE_WIDTH
         waitForIdle()
         return bench
