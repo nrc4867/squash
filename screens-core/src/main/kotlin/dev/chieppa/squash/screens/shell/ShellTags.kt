@@ -2,6 +2,12 @@ package dev.chieppa.squash.screens.shell
 
 /** Test tags for the shell's screens. */
 object ShellTags {
+    /** The Start from template button on [view]'s outline row. */
+    fun startTemplate(view: dev.chieppa.squash.document.View) = "tools.startTemplate.${view.name}"
+
+    /** Draw outline's row for [view]'s outline. */
+    fun outlineRow(view: dev.chieppa.squash.document.View) = "outline.row.${view.name}"
+
     const val HOME = "home"
     const val HOME_CONTINUE = "home.continue"
     const val HOME_NEW = "home.new"
@@ -21,7 +27,6 @@ object ShellTags {
     const val STATUS_END = "status.end"
     const val PART_EMPTY = "part.empty"
     const val MIRROR = "tools.mirror"
-    const val START_TEMPLATE = "tools.startTemplate"
     const val HALF_OUTLINE = "tools.halfOutline"
     const val HOME_SEARCH = "home.search"
     const val HOME_CAST = "home.cast"

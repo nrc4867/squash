@@ -75,8 +75,7 @@ class OutlineDrawerTest {
         workspace(state)
         waitForIdle()
         onNodeWithTag(OutlineDrawerTags.SMOOTH_VALUE).assertTextContains("45%")
-        onNodeWithTag(OutlineDrawerTags.PRESSURE).assertTextContains("not used")
-        onNodeWithTag(OutlineDrawerTags.WIDTH).assertTextContains("shape only")
+        onNodeWithText("Pressure").assertDoesNotExist()
         assertEquals(StrokeOptions(), state.curves.strokeOptions)
         onNodeWithTag(OutlineDrawerTags.CLOSE_END).performClick()
         onNodeWithTag(OutlineDrawerTags.SNAP_LINE).performClick()
@@ -159,8 +158,9 @@ class OutlineDrawerTest {
         state.tool.value = BuildTool.NONE
         waitForIdle()
         onNodeWithText("OUTLINES").assertDoesNotExist()
-        onNodeWithText("FIT").assertExists()
-        onNodeWithText("BUILT FROM").assertExists()
+        onNodeWithText("FIT").assertDoesNotExist()
+        onNodeWithText("BUILT FROM").assertDoesNotExist()
+        onNodeWithText("TORSO TEMPLATE").assertExists()
         onNodeWithContentDescription("Inspector").assertExists()
     }
 }

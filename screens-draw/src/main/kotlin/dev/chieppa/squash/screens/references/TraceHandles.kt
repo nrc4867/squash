@@ -33,22 +33,29 @@ private const val GROUND_SNAP_PIXELS = 12f
 /** The smallest an image is scaled to, as a share of its first fit. */
 private const val MIN_SCALE = 0.05f
 
-/** What a press takes hold of: the image's middle, which moves it, or one of its eight handles, which scale it. */
+/** How far, in pane pixels, the turning handle stands out past the middle of the image's top edge. */
+private const val TURN_HANDLE_OUT = 24f
+
+/** What a press takes hold of: the image's middle, which moves it, one of its eight handles, which scale it, or the turning handle. */
 private sealed interface Grip {
     data object Body : Grip
+
+    data object Turn : Grip
 
     data class Handle(val at: Offset) : Grip
 }
 
 /**
- * Place image and Rotate image: in a pane looking at the trace's view, a drag on the image moves it, on one of its eight handles
- * scales it about its middle, and with [rotates] a drag anywhere turns it about its middle, each one undo step. With snapping on,
- * an upright image's bottom holds to the ground near it. A locked trace stays put.
+ * The handles of the trace the References drawer shows, while it shows it unlocked ([ReferenceEditState.handles]): in a pane looking at the
+ * trace's view, a drag on the image moves it, on one of its eight handles scales it about its middle, and on the turning handle above its top
+ * edge turns it about its middle, each one undo step. With snapping on, an upright image's bottom holds to the ground near it. They sit over
+ * whatever tool is armed, through [over].
  */
-class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotates: Boolean) : PaneTool {
+class TraceHandles(internal val state: AppState, var look: SheetLook) {
     private fun document(): SquashDocument? = state.session.value?.document?.value
 
     private fun placed(camera: LockedCamera): Pair<View, Trace>? {
+        if (!state.references.handles) return null
         val view = state.references.view
         if (viewFacing(camera.basis.back) != view) return null
         val trace = document()?.character?.traces?.get(view) ?: return null
@@ -60,7 +67,7 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
         return traceCorners(trace, view, image.width, image.height).map(camera::toPixel)
     }
 
-    override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
+    fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
         awaitEachGesture {
             val down = awaitFirstDown()
             if (!isToolPress(down)) return@awaitEachGesture
@@ -76,12 +83,12 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
             var released = false
             try {
                 released = followToRelease(down.id, {}) { pixel ->
-                    val moved = when {
-                        rotates -> start.copy(rotation = start.rotation + angleBetween(down.position - center, pixel - center))
-                        grip is Grip.Handle -> scaled(start, center, grip.at, pixel)
-                        else -> shifted(start, plane, down.position, pixel)
+                    val moved = when (grip) {
+                        Grip.Turn -> start.copy(rotation = start.rotation + angleBetween(down.position - center, pixel - center))
+                        is Grip.Handle -> scaled(start, center, grip.at, pixel)
+                        Grip.Body -> shifted(start, plane, down.position, pixel)
                     }
-                    val held = if (state.references.snapGround && !rotates) grounded(moved, traceView, camera, plane) else moved
+                    val held = if (state.references.snapGround && grip != Grip.Turn) grounded(moved, traceView, camera, plane) else moved
                     (gesture ?: session.history.begin().also { gesture = it }).update(SetTrace(traceView, held))
                 }
             } finally {
@@ -91,9 +98,10 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
     }
 
     private fun gripAt(corners: List<Offset>, pixel: Offset): Grip? {
+        if ((turnHandleOf(corners) - pixel).getDistance() <= HANDLE_REACH) return Grip.Turn
         val handles = handlesOf(corners)
         handles.firstOrNull { (it - pixel).getDistance() <= HANDLE_REACH }?.let { return Grip.Handle(it) }
-        return if (rotates || inside(corners, pixel)) Grip.Body else null
+        return if (inside(corners, pixel)) Grip.Body else null
     }
 
     private fun shifted(start: Trace, plane: PlaneMap, from: Offset, to: Offset): Trace {
@@ -118,10 +126,11 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
         return if (pixels <= GROUND_SNAP_PIXELS) trace.copy(y = trace.y + gap / trace.fitUnits) else trace
     }
 
-    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
+    fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
         val (traceView, trace) = placed(camera) ?: return ViewportOverlay.Empty
         val corners = corners(traceView, trace, camera) ?: return ViewportOverlay.Empty
-        val color = if (trace.locked) look.ring else look.active
+        if (trace.locked) return ViewportOverlay.Empty
+        val color = look.active
         return buildOverlay {
             if (state.references.snapGround && traceView != View.TOP) {
                 state.session.value?.assembly?.output?.value?.floor?.let { floor ->
@@ -130,8 +139,10 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
                 }
             }
             (corners + corners.first()).zipWithNext().forEach { (a, b) -> line(a, b, color, look.activeWidth) }
-            if (trace.locked) return@buildOverlay
-            for (handle in handlesOf(corners)) {
+            val top = (corners[0] + corners[1]) / 2f
+            val turn = turnHandleOf(corners)
+            line(top, turn, color, look.activeWidth)
+            for (handle in handlesOf(corners) + turn) {
                 dot(handle, look.dotRadius + look.dotEdge, color)
                 dot(handle, look.dotRadius, look.dotFill)
             }
@@ -141,6 +152,15 @@ class PlaceImageTool(private val state: AppState, var look: SheetLook, val rotat
     private companion object {
         const val ROUND_TURN = 360f
     }
+}
+
+/** The turning handle: out past the middle of the top edge, away from the image's middle. */
+private fun turnHandleOf(corners: List<Offset>): Offset {
+    val top = (corners[0] + corners[1]) / 2f
+    val middle = (corners[0] + corners[2]) / 2f
+    val out = top - middle
+    val length = out.getDistance()
+    return if (length == 0f) top else top + out / length * TURN_HANDLE_OUT
 }
 
 /** The four corners and the middles of the four edges. */
@@ -178,7 +198,18 @@ private class PlaneMap(private val camera: LockedCamera, private val view: View)
 }
 
 @Composable
-fun rememberPlaceImageTool(state: AppState, rotates: Boolean = false): PlaceImageTool {
+fun rememberTraceHandles(state: AppState): TraceHandles {
     val look = rememberSheetLook()
-    return remember(state, rotates) { PlaceImageTool(state, look, rotates) }.also { it.look = look }
+    return remember(state) { TraceHandles(state, look) }.also { it.look = look }
 }
+
+/** [tool] with [handles] over it in the panes, which take a press on the trace first. */
+private class WithTraceHandles(private val tool: PaneTool, private val handles: TraceHandles) : PaneTool by tool {
+    override fun pointerInput(view: View, camera: LockedCamera): Modifier = tool.pointerInput(view, camera).then(handles.pointerInput(view, camera))
+
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = tool.overlay(view, camera) + handles.overlay(view, camera)
+}
+
+/** [tool], with the trace handles over it while they show. */
+@Composable
+fun TraceHandles.over(tool: PaneTool): PaneTool = if (state.references.handles) remember(tool, this) { WithTraceHandles(tool, this) } else tool

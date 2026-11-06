@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -17,35 +16,26 @@ import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
-import dev.chieppa.squash.document.anchors
 import dev.chieppa.squash.document.handlesAt
 import dev.chieppa.squash.document.isSmooth
 import dev.chieppa.squash.document.moved
 import dev.chieppa.squash.document.smoothed
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.draw.OutlineRowsSection
 import dev.chieppa.squash.screens.draw.strokeEnds
-import dev.chieppa.squash.character.catalog.VIEW_ORDER
-import dev.chieppa.squash.screens.shell.viewLabel
-import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_falloff
 import dev.chieppa.squash.uidesign.generated.edit_handle
 import dev.chieppa.squash.uidesign.generated.edit_handle_corner
 import dev.chieppa.squash.uidesign.generated.edit_handle_smooth
-import dev.chieppa.squash.uidesign.generated.edit_none
-import dev.chieppa.squash.uidesign.generated.edit_outlines
 import dev.chieppa.squash.uidesign.generated.edit_percent
-import dev.chieppa.squash.uidesign.generated.edit_points
 import dev.chieppa.squash.uidesign.generated.edit_selected_point
 import dev.chieppa.squash.uidesign.generated.edit_snap_ends
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.edit_x
 import dev.chieppa.squash.uidesign.generated.edit_y
 import dev.chieppa.stretch.frame.DrawerSection
-import dev.chieppa.stretch.frame.ListRow
-import dev.chieppa.stretch.frame.RowIcon
-import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.NumberField
@@ -76,20 +66,7 @@ private enum class HandleKind { SMOOTH, CORNER }
 fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     SelectedPointSection(state, session, part, outlines)
     OversketchSection(state)
-    val active by state.activeView.collectAsState()
-    DrawerSection(stringResource(Res.string.edit_outlines)) {
-        VIEW_ORDER.forEach { view ->
-            val anchors = outlines[view]?.anchors?.size
-            ListRow(view == active, { state.activeView.value = view }, Modifier.testTag(CurveDrawerTags.outline(view))) {
-                RowIcon(SquashIcons.EditCurves)
-                RowText(viewLabel(view), Modifier.weight(1f))
-                RowText(
-                    if (anchors != null) stringResource(Res.string.edit_points, anchors) else stringResource(Res.string.edit_none),
-                    subtle = true,
-                )
-            }
-        }
-    }
+    OutlineRowsSection(state, outlines, CurveDrawerTags::outline)
 }
 
 @Composable

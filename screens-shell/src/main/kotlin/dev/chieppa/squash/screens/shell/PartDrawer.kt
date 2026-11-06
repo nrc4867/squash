@@ -1,16 +1,13 @@
 package dev.chieppa.squash.screens.shell
 
-import dev.chieppa.squash.character.catalog.FitStages
-import dev.chieppa.squash.character.catalog.blockLabel
-import dev.chieppa.squash.character.catalog.count
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.uidesign.generated.move_section
 import dev.chieppa.squash.uidesign.generated.move_outward
 import dev.chieppa.squash.uidesign.generated.move_lean
 import dev.chieppa.squash.uidesign.generated.move_degrees
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
@@ -24,24 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
-import dev.chieppa.squash.graph.StageCount
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
-import dev.chieppa.squash.uidesign.generated.edit_percent
-import dev.chieppa.squash.uidesign.generated.shell_part_built_from
-import dev.chieppa.squash.uidesign.generated.shell_part_fit
-import dev.chieppa.squash.uidesign.generated.shell_part_fit_done
-import dev.chieppa.squash.uidesign.generated.shell_part_fit_from_template
-import dev.chieppa.squash.uidesign.generated.shell_part_fit_skeleton
-import dev.chieppa.squash.uidesign.generated.shell_part_fit_surface
-import dev.chieppa.squash.uidesign.generated.shell_part_fit_unseen
 import dev.chieppa.squash.uidesign.generated.shell_part_none
 import dev.chieppa.squash.uidesign.generated.shell_part_this_side
 import dev.chieppa.stretch.core.History
@@ -55,11 +42,8 @@ import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Toggle
 import dev.chieppa.stretch.ui.formatNumber
-import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import dev.chieppa.squash.uidesign.generated.shell_part_template
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 
 private const val FLAG_ON = 1f
 private const val FLAG_OFF = 0f
@@ -108,7 +92,7 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
                 }
             }
         }
-        PartDrawerKind.PART -> FitSection(open)
+        PartDrawerKind.PART -> Unit
     }
     val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
     val rows = parameterRows(template, base.params)
@@ -117,7 +101,6 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }
     }
-    BuiltFromSection(template)
 }
 
 /** One of the Move tool's angles as a slider, from straight at 0. */
@@ -173,32 +156,6 @@ private fun ParameterControl(session: CharacterSession, part: PartId, row: Param
 private fun HiddenValue(value: Float?) {
     if (value == null) return
     Chip(stringResource(Res.string.shell_part_this_side, formatNumber(value)), kind = ChipKind.Warn, mono = true)
-}
-
-/** The stages of the part's fit, with the graph's own count of the one under way. */
-@Composable
-private fun FitSection(session: CharacterSession) {
-    val progress by session.graph.progress.collectAsState()
-    val done = stringResource(Res.string.shell_part_fit_done)
-    DrawerSection(stringResource(Res.string.shell_part_fit)) {
-        FactRow(stringResource(Res.string.shell_part_fit_skeleton), fitValue(progress.count(FitStages.SKELETON), done))
-        FactRow(stringResource(Res.string.shell_part_fit_surface), fitValue(progress.count(FitStages.SURFACE), done))
-        FactRow(stringResource(Res.string.shell_part_fit_unseen), stringResource(Res.string.shell_part_fit_from_template))
-    }
-}
-
-@Composable
-private fun fitValue(count: StageCount, done: String): String =
-    if (count.finished) done else stringResource(Res.string.edit_percent, (count.fraction * PERCENT).roundToInt())
-
-/** What the template builds the part from. */
-@Composable
-private fun BuiltFromSection(template: PartTemplate) {
-    DrawerSection(stringResource(Res.string.shell_part_built_from), divider = false) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            template.blocks.map(::blockLabel).distinct().forEach { Chip(it, mono = true) }
-        }
-    }
 }
 
 /** One drag is one undo step: the values it passes through are previews of a single [SetParameter]. */

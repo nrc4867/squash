@@ -99,10 +99,15 @@ class ReferencesFlowTest {
         assertTrue(trace.locked, "a new trace stays put")
 
         onNodeWithTag(TraceTags.row(View.SIDE)).performScrollTo().performClick()
-        onNodeWithTag(TraceTags.PLACE).performScrollTo().performClick()
         waitForIdle()
-        assertEquals(BuildTool.PLACE_IMAGE, state.tool.value)
-        assertEquals(false, session.document.value.character.traces[View.SIDE]?.locked, "Place image frees it")
+        assertEquals(false, state.references.handles, "a locked trace shows no handles")
+        onNodeWithTag(TraceTags.SCALE).assertDoesNotExist()
+        val armed = state.tool.value
+        onNodeWithTag(TraceTags.LOCK).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(false, session.document.value.character.traces[View.SIDE]?.locked)
+        assertEquals(true, state.references.handles, "unlocked, its handles show")
+        assertEquals(armed, state.tool.value, "and no tool is armed for it")
         onNodeWithTag(TraceTags.SCALE).performScrollTo().assertExists()
 
         val before = assertNotNull(session.document.value.character.traces[View.SIDE])
@@ -119,9 +124,13 @@ class ReferencesFlowTest {
         state.undo()
         assertEquals(before, session.document.value.character.traces[View.SIDE], "one undo step")
 
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.R) }
+        onNodeWithTag(TraceTags.LOCK).performScrollTo().performClick()
         waitForIdle()
-        assertEquals(BuildTool.ROTATE_IMAGE, state.tool.value, "R turns the image while placing")
+        assertEquals(false, state.references.handles, "locking it again puts the handles away")
+        onNodeWithContentDescription("References").performClick()
+        waitForIdle()
+        onNodeWithTag(TraceTags.LOCK).assertDoesNotExist()
+        assertEquals(false, state.references.handles)
     }
 
     @Test

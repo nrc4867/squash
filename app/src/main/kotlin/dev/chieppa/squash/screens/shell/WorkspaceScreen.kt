@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -29,8 +30,8 @@ import dev.chieppa.squash.screens.surface.paint.rememberPickColorTool
 import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
 import dev.chieppa.squash.screens.surface.paint.rememberRegionBorderTool
 import dev.chieppa.squash.screens.surface.lineToolSection
-import dev.chieppa.squash.screens.references.placeToolSection
-import dev.chieppa.squash.screens.references.rememberPlaceImageTool
+import dev.chieppa.squash.screens.references.over
+import dev.chieppa.squash.screens.references.rememberTraceHandles
 import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
@@ -56,7 +57,6 @@ import dev.chieppa.squash.uidesign.generated.edit_toast_sections
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
-import androidx.compose.runtime.getValue
 
 /** Where Add part's popover opens over the panes: below the strip, at the right, as the board draws it. */
 private val POPOVER_TOP = 44.dp
@@ -88,12 +88,11 @@ fun WorkspaceScreen(shell: Shell) {
     val editMark = rememberEditMarkTool(state)
     val eraseMark = rememberEraseMarkTool(state)
     val gazeTarget = rememberGazeTargetTool(state)
-    val placeImage = rememberPlaceImageTool(state)
-    val rotateImage = rememberPlaceImageTool(state, rotates = true)
+    val traceHandles = rememberTraceHandles(state)
     val selectPart = rememberSelectPartTool(state)
     val addPart = rememberAddPartTool(state)
     val stage by state.stage.collectAsState()
-    val tool: PaneTool = when (armed) {
+    val armedTool: PaneTool = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
         BuildTool.EDIT_CURVES -> edit
@@ -115,11 +114,10 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.EDIT_MARK -> editMark
         BuildTool.ERASE_MARK -> eraseMark
         BuildTool.GAZE_TARGET -> gazeTarget
-        BuildTool.PLACE_IMAGE -> placeImage
-        BuildTool.ROTATE_IMAGE -> rotateImage
         BuildTool.ADD_PART -> addPart
         BuildTool.NONE -> selectPart
     }
+    val tool = traceHandles.over(armedTool)
     val selected by state.selectedPart.collectAsState()
     LaunchedEffect(armed, selected) { spine.discard() }
     val refit = state.curves.refit
@@ -132,7 +130,7 @@ fun WorkspaceScreen(shell: Shell) {
             SheetPanes(
                 state,
                 Modifier.fillMaxSize(),
-                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
+                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state)) },
                 tool = tool,
                 paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
                 surface = rememberSurfaceLines(state),

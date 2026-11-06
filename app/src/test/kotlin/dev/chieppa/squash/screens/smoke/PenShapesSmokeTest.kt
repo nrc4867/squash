@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -152,7 +153,7 @@ class PenShapesSmokeTest {
         val undrawn = assertNotNull(selection)
         render(panesInput(undrawn, assertNotNull(look), pixels, width, height, outlines = outlines), "pen-shapes-template-hint")
 
-        onNodeWithTag(ShellTags.START_TEMPLATE).performClick()
+        onNodeWithTag(ShellTags.startTemplate(View.SIDE)).performScrollTo().performClick()
         val before = undrawn.part.mesh
         waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== before && session.graph.settled.value }
         waitForIdle()

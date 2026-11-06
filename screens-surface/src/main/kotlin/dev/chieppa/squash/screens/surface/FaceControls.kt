@@ -30,8 +30,6 @@ import dev.chieppa.squash.uidesign.generated.face_mouth_smile
 import dev.chieppa.squash.uidesign.generated.face_open
 import dev.chieppa.squash.uidesign.generated.face_shape
 import dev.chieppa.squash.uidesign.generated.face_size_compensation
-import dev.chieppa.squash.uidesign.generated.face_switches
-import dev.chieppa.squash.uidesign.generated.face_switches_value
 import dev.chieppa.squash.uidesign.generated.face_value
 import dev.chieppa.squash.uidesign.generated.face_width
 import dev.chieppa.stretch.frame.DrawerSection
@@ -45,7 +43,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private const val HUNDREDTHS = 100f
-private const val ANGLE_LIMIT = 90
 
 /** How far a dilation slider reaches either way, as a share of the pupil's size. */
 private const val MOST_DILATION = 1f
@@ -71,11 +68,6 @@ internal fun EyeControls(state: AppState, session: CharacterSession, picked: Pic
         ControlSlider(Res.string.face_open, group.controls.open, FaceTags.OPEN, drag::finish) { value -> set { it.copy(open = value) } }
         ControlSlider(Res.string.face_shape, group.controls.expressionBlend, FaceTags.SHAPE, drag::finish) { value -> set { it.copy(expressionBlend = value) } }
         ControlSlider(Res.string.face_dilation, group.controls.dilation, FaceTags.DILATION, drag::finish, -MOST_DILATION..MOST_DILATION, shown = { ((1f + it) * HUNDREDTHS).roundToInt() / HUNDREDTHS }) { value -> set { it.copy(dilation = value) } }
-        val switches = stringResource(Res.string.face_switches)
-        SettingRow(switches) {
-            Spacer(Modifier.weight(1f))
-            RowText(stringResource(Res.string.face_switches_value, FACE_BINS.edges[0].roundToInt(), FACE_BINS.edges[1].roundToInt().coerceAtMost(ANGLE_LIMIT)), subtle = true)
-        }
     }
 }
 

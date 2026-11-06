@@ -60,6 +60,13 @@ fun BodyPlan.chips(templates: TemplateFolder): List<PlanChip> {
     return placed.groupBy({ it.first.name }, { it.second }).map { (name, counts) -> PlanChip(name, counts.sum()) }
 }
 
-/** A part's name: its socket's, or its template's at the root. */
-fun partName(part: PartInstance, templates: TemplateFolder): String =
-    part.socket?.let { displayName(it.socket) } ?: templates.template(part.template)?.name ?: part.template.id.value
+/**
+ * A part's name: its type's, so a head on a neck socket reads Head, unless its socket names the type more closely, as front-leg does a leg, when
+ * it reads Front leg.
+ */
+fun partName(part: PartInstance, templates: TemplateFolder): String {
+    val type = part.template.id.value
+    val socket = part.socket?.socket
+    if (socket != null && (socket == type || socket.endsWith("-$type"))) return displayName(socket)
+    return templates.template(part.template)?.name ?: displayName(type)
+}

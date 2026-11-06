@@ -100,6 +100,14 @@ class SocketsTest {
         assertTrue(leg.children.single().item is PartRow.Open)
     }
 
+    @Test
+    fun theTreeNamesAPartByItsTypeUnlessItsSocketNamesItCloser() {
+        val roots = partTree(rooted().place("neck", "head").place("front-leg", "leg"), caninePlan, shipped)
+        val labels = roots.single().children.map { it.item.label }
+        assertTrue("Head" in labels, "a head on the neck reads Head, in $labels")
+        assertTrue("Front leg" in labels, "a leg on the front-leg socket reads Front leg, in $labels")
+    }
+
     private val curve = OutlineCurve(List(4) { CurvePoint(it.toFloat(), 0f) })
 
     private fun SquashDocument.legs(): List<PartInstance> = character.parts.filter { it.socket?.socket == "front-leg" }

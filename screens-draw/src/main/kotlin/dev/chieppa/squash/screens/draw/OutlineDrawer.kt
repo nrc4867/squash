@@ -22,11 +22,6 @@ import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.draw_hint
 import dev.chieppa.squash.uidesign.generated.draw_hint_ghost
 import dev.chieppa.squash.uidesign.generated.draw_hint_template
-import dev.chieppa.squash.uidesign.generated.draw_pen
-import dev.chieppa.squash.uidesign.generated.draw_pen_pressure
-import dev.chieppa.squash.uidesign.generated.draw_pen_pressure_not_used
-import dev.chieppa.squash.uidesign.generated.draw_pen_width
-import dev.chieppa.squash.uidesign.generated.draw_pen_width_shape_only
 import dev.chieppa.squash.uidesign.generated.draw_smooth
 import dev.chieppa.squash.uidesign.generated.draw_snap_line
 import dev.chieppa.squash.uidesign.generated.draw_snap_guides
@@ -60,8 +55,6 @@ object OutlineDrawerTags {
     const val TEMPLATE = "outline.template"
     const val GHOST = "outline.ghost"
     const val GHOST_VALUE = "outline.ghost.value"
-    const val PRESSURE = "outline.pressure"
-    const val WIDTH = "outline.width"
 }
 
 /** The Outline drawer's sections: Stroke, Hint and Pen. */
@@ -69,7 +62,6 @@ object OutlineDrawerTags {
 fun OutlineSections(state: AppState) {
     StrokeSection(state)
     HintSection(state)
-    PenSection()
 }
 
 /** How strongly the panes hint at what is around the part, which holds whatever the armed tool. */
@@ -175,16 +167,3 @@ private fun LongLabelRow(label: String, control: @Composable () -> Unit) {
     }
 }
 
-@Composable
-private fun PenSection() {
-    DrawerSection(stringResource(Res.string.draw_pen)) {
-        SettingRow(stringResource(Res.string.draw_pen_pressure)) {
-            Spacer(Modifier.weight(1f))
-            Readout(stringResource(Res.string.draw_pen_pressure_not_used), Modifier.testTag(OutlineDrawerTags.PRESSURE))
-        }
-        SettingRow(stringResource(Res.string.draw_pen_width)) {
-            Spacer(Modifier.weight(1f))
-            Readout(stringResource(Res.string.draw_pen_width_shape_only), Modifier.testTag(OutlineDrawerTags.WIDTH))
-        }
-    }
-}

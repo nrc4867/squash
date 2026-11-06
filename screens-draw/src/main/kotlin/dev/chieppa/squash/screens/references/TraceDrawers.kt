@@ -1,15 +1,14 @@
 package dev.chieppa.squash.screens.references
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.character.session.CharacterSession
@@ -20,7 +19,6 @@ import dev.chieppa.squash.document.TraceOrder
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.Readout
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_percent
@@ -30,6 +28,7 @@ import dev.chieppa.squash.uidesign.generated.place_percent
 import dev.chieppa.squash.uidesign.generated.place_px
 import dev.chieppa.squash.uidesign.generated.place_rotate
 import dev.chieppa.squash.uidesign.generated.place_scale
+import dev.chieppa.squash.uidesign.generated.place_section
 import dev.chieppa.squash.uidesign.generated.place_snap_ground
 import dev.chieppa.squash.uidesign.generated.place_x
 import dev.chieppa.squash.uidesign.generated.place_y
@@ -42,7 +41,6 @@ import dev.chieppa.squash.uidesign.generated.trace_none
 import dev.chieppa.squash.uidesign.generated.trace_opacity
 import dev.chieppa.squash.uidesign.generated.trace_order
 import dev.chieppa.squash.uidesign.generated.trace_over
-import dev.chieppa.squash.uidesign.generated.trace_place
 import dev.chieppa.squash.uidesign.generated.trace_show
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
@@ -50,7 +48,6 @@ import dev.chieppa.stretch.frame.ListRow
 import dev.chieppa.stretch.frame.RowIcon
 import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
-import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
@@ -68,14 +65,12 @@ object TraceTags {
     const val OPACITY = "trace.opacity"
     const val ORDER = "trace.order"
     const val LOCK = "trace.lock"
-    const val PLACE = "trace.place"
     const val SCALE = "place.scale"
     const val X = "place.x"
     const val Y = "place.y"
     const val ROTATE = "place.rotate"
     const val FLIP = "place.flip"
     const val SNAP_GROUND = "place.snapGround"
-    const val PLACE_OPACITY = "place.opacity"
 
     fun row(view: View) = "trace.row.${view.name.lowercase()}"
 }
@@ -110,7 +105,7 @@ private fun viewName(view: View): String = stringResource(
 
 /**
  * The References drawer's traces: the character's views, each with the image traced in it or none, and the picked view's trace shown or not, at
- * an opacity, behind or over the character, locked or free, with Place image, which frees it and arms the tool that moves it.
+ * an opacity, behind or over the character, locked or free. Unlocked, it shows its handles in the panes and its placing by its numbers.
  */
 @Composable
 fun TraceDrawer(state: AppState) {
@@ -158,25 +153,17 @@ fun TraceDrawer(state: AppState) {
                 Toggle(trace.locked, { set(trace.copy(locked = it)) }, lock, Modifier.testTag(TraceTags.LOCK))
             }
         }
-        DrawerSection(divider = false) {
-            Button(stringResource(Res.string.trace_place), {
-                if (trace.locked) set(trace.copy(locked = false))
-                state.armTool(BuildTool.PLACE_IMAGE)
-            }, Modifier.fillMaxWidth().testTag(TraceTags.PLACE), icon = SquashIcons.PlaceImage)
+        DisposableEffect(view, trace.locked) {
+            state.references.handles = !trace.locked
+            onDispose { state.references.handles = false }
         }
+        if (!trace.locked) PlaceFields(state, open, view, trace)
     }
 }
 
-/** The References drawer's fields while placing: the placed view's trace by its numbers, Scale, X, Y and Rotate, then Flip, Snap ground and Opacity. */
+/** An unlocked trace's placing by its numbers: Scale, X, Y and Rotate, then Flip and Snap ground. */
 @Composable
-fun PlaceImageDrawer(state: AppState) {
-    val session by state.session.collectAsState()
-    val open = session ?: return
-    val document by open.document.collectAsState()
-    val view = state.references.view
-    val trace = document.character.traces[view] ?: return
-    val name = document.references.image(trace.image)?.name ?: return
-    val drag = rememberTraceDrag(open)
+private fun PlaceFields(state: AppState, open: CharacterSession, view: View, trace: Trace) {
     fun set(next: Trace) = open.send(SetTrace(view, next))
     val scale = stringResource(Res.string.place_scale)
     val x = stringResource(Res.string.place_x)
@@ -184,10 +171,9 @@ fun PlaceImageDrawer(state: AppState) {
     val rotate = stringResource(Res.string.place_rotate)
     val flip = stringResource(Res.string.place_flip)
     val snap = stringResource(Res.string.place_snap_ground)
-    val opacity = stringResource(Res.string.trace_opacity)
     val px = stringResource(Res.string.place_px)
     Column {
-        DrawerSection(name) {
+        DrawerSection(stringResource(Res.string.place_section)) {
             SettingRow(scale) {
                 Spacer(Modifier.weight(1f))
                 NumberField(trace.scale * PERCENT, { set(trace.copy(scale = (it / PERCENT).coerceAtLeast(MIN_FIELD_SCALE))) }, scale, Modifier.testTag(TraceTags.SCALE), unit = stringResource(Res.string.place_percent), format = ::whole)
@@ -213,10 +199,6 @@ fun PlaceImageDrawer(state: AppState) {
             SettingRow(snap) {
                 Spacer(Modifier.weight(1f))
                 Toggle(state.references.snapGround, { state.references.snapGround = it }, snap, Modifier.testTag(TraceTags.SNAP_GROUND))
-            }
-            SettingRow(opacity) {
-                Slider(trace.opacity, { drag.update(SetTrace(view, trace.copy(opacity = it))) }, opacity, Modifier.weight(1f).testTag(TraceTags.PLACE_OPACITY), onValueChangeFinished = drag::finish)
-                Readout(stringResource(Res.string.edit_percent, (trace.opacity * PERCENT).roundToInt()))
             }
         }
     }

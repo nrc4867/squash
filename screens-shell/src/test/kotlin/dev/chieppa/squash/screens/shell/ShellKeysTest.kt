@@ -56,6 +56,21 @@ class ShellKeysTest {
     }
 
     @Test
+    fun mirrorsKeyAnswersExactlyWhenItsButtonIsEnabled() {
+        val shell = shell()
+        val state = shell.state
+        fun answers() = shell.resolve("M", state.stage.value) == ShellActions.MIRROR.value
+        assertEquals(false, state.mirrorApplies(), "the torso has no pair")
+        assertEquals(false, answers())
+        state.armTool(BuildTool.SURFACE_STROKE)
+        assertEquals(true, state.mirrorApplies(), "a stroke mirrors across the middle")
+        assertEquals(true, answers())
+        state.armTool(BuildTool.DRAW_MARK)
+        assertEquals(false, state.mirrorApplies(), "Face chooses the eyes another way")
+        assertEquals(false, answers())
+    }
+
+    @Test
     fun keymapChangesComeBackOnTheNextRun() {
         val file = Files.createTempDirectory("keymap").resolve("keymap.txt")
         val first = shell(KeymapStore(file))

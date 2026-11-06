@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.draw
 
+import androidx.compose.runtime.getValue
 import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -14,6 +15,7 @@ import dev.chieppa.squash.screens.shell.LocalActionKeys
 import dev.chieppa.squash.screens.shell.Stage
 import dev.chieppa.squash.screens.sheet.StripTool
 import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.shell.mirrorApplies
 import dev.chieppa.squash.screens.shell.rememberPartIsDrawn
 import dev.chieppa.squash.screens.sheet.ToolSection
 import dev.chieppa.squash.screens.sheet.ToolSections
@@ -31,7 +33,6 @@ import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.shell_action_draw
 import dev.chieppa.squash.uidesign.generated.shell_action_edit_curves
-import dev.chieppa.squash.uidesign.generated.shell_action_start_template
 import dev.chieppa.squash.uidesign.generated.shell_tools_color
 import dev.chieppa.squash.uidesign.generated.shell_tools_outline
 import dev.chieppa.squash.uidesign.generated.shell_tools_symmetry
@@ -40,18 +41,17 @@ import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.runtime.getValue
 
 private val TOOL_SIZE = 34.dp
 private const val SYMMETRY_TOOLS = 2
 
 /**
  * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
- * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part, then Start from template, and
- * [places] while a trace image is being placed. Color holds the paint tools, Lines holds [lines] and Face holds [faces], each with Mirror.
+ * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part. Color holds
+ * the paint tools and Lines holds [lines], each with Mirror; Face holds [faces].
  */
 @Composable
-fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, places: ToolSection? = null) {
+fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null) {
     val tool by state.tool.collectAsState()
     val stage by state.stage.collectAsState()
     val addPart = stringResource(Res.string.add_part)
@@ -66,8 +66,6 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
             ToolSection(ShellTags.section("add"), addPart, SquashIcons.AddPart, 1, tool.takeIf { it == BuildTool.ADD_PART }) {
                 StripTool(BuildTool.ADD_PART, SquashIcons.AddPart, addPart, tool, state::armTool)
             },
-            ToolSection(ShellTags.section("template"), stringResource(Res.string.shell_action_start_template), SquashIcons.StartFromTemplate, 1) { StartFromTemplateButton(state) },
-            places.takeIf { tool.places },
         )
         Stage.COLOR -> listOf(paintSection(tool, state), mirror)
         Stage.LINES -> listOfNotNull(lines, mirror)
@@ -144,15 +142,15 @@ private fun HalfOutlineButton(state: AppState) {
     }
 }
 
-/** Mirror: on, a change writes the pair, off, the selected side alone. Fur and surface strokes follow it on a part in the middle of the body too, across the middle. */
+/** Mirror: on, a change writes the pair, off, the selected side alone, enabled by [mirrorApplies] as its key is. */
 @Composable
 private fun MirrorButton(state: AppState) {
     val mirror by state.mirror.collectAsState()
-    val session by state.session.collectAsState()
-    val selected by state.selectedPart.collectAsState()
-    val document = session?.document?.collectAsState()?.value
-    val tool by state.tool.collectAsState()
-    val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FUR_STROKE || tool.faces
+    state.session.collectAsState().value?.document?.collectAsState()?.value
+    state.selectedPart.collectAsState().value
+    state.tool.collectAsState().value
+    state.stage.collectAsState().value
+    val paired = state.mirrorApplies()
     val label = stringResource(Res.string.edit_tool_mirror)
     Tooltip(label, LocalActionKeys.current(ActionKeys.MIRROR)) {
         ToolButton(

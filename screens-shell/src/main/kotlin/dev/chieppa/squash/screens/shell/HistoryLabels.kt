@@ -109,5 +109,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     }
 }
 
-private fun partName(part: PartInstance): String =
-    part.socket?.let { displayName(it.socket) } ?: displayName(part.template.id.value)
+private fun partName(part: PartInstance): String {
+    val type = part.template.id.value
+    val socket = part.socket?.socket
+    return displayName(if (socket != null && (socket == type || socket.endsWith("-$type"))) socket else type)
+}

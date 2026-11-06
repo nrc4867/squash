@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.View
@@ -41,27 +42,24 @@ class StartFromTemplateTest {
     }
 
     @Test
-    fun itSetsTheActiveViewsOutlineAsOneUndoStepAndThenFaints() = runComposeUiTest {
+    fun anUndrawnViewsRowSetsItsOutlineAsOneUndoStep() = runComposeUiTest {
         val state = AppState(shipped)
         workspace(state)
-        val button = onNodeWithTag(ShellTags.START_TEMPLATE)
         val history = assertNotNull(state.session.value).history
-        button.assertIsEnabled()
+        onNodeWithTag(ShellTags.startTemplate(View.SIDE)).performScrollTo().assertIsEnabled()
         val steps = history.steps.value.done.size
-        button.performClick()
+        onNodeWithTag(ShellTags.startTemplate(View.SIDE)).performClick()
         waitForIdle()
         assertNotNull(state.outline(View.SIDE))
         assertEquals(steps + 1, history.steps.value.done.size)
-        button.assertIsNotEnabled()
-        state.activeView.value = View.TOP
-        waitForIdle()
-        button.assertIsEnabled()
+        onNodeWithTag(ShellTags.startTemplate(View.SIDE)).assertDoesNotExist()
+        onNodeWithTag(ShellTags.startTemplate(View.TOP)).assertIsEnabled()
         assertNull(state.outline(View.TOP))
+        onNodeWithTag(ShellTags.section("template")).assertDoesNotExist()
         state.undo()
-        assertNull(state.outline(View.SIDE))
-        state.activeView.value = View.SIDE
         waitForIdle()
-        button.assertIsEnabled()
+        assertNull(state.outline(View.SIDE))
+        onNodeWithTag(ShellTags.startTemplate(View.SIDE)).assertExists()
     }
 
     @Test

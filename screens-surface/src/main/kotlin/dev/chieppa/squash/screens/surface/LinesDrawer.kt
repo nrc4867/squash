@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import dev.chieppa.squash.uidesign.generated.lines_stroke_floating
 import dev.chieppa.squash.uidesign.generated.lines_stroke_on_surface
 import dev.chieppa.stretch.ui.Segmented
@@ -31,16 +33,12 @@ import dev.chieppa.squash.screens.lines.MAX_WIDTH_SIZE
 import dev.chieppa.squash.screens.lines.MIN_WIDTH_SIZE
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.uidesign.generated.Res
-import dev.chieppa.squash.uidesign.generated.draw_pen_pressure
-import dev.chieppa.squash.uidesign.generated.lines_pressure_width
 import dev.chieppa.squash.uidesign.generated.lines_stroke_color
 import dev.chieppa.squash.uidesign.generated.lines_stroke_tool
 import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.lines_amount
 import dev.chieppa.squash.uidesign.generated.lines_amount_value
-import dev.chieppa.squash.uidesign.generated.lines_body_surface
 import dev.chieppa.squash.uidesign.generated.lines_interior
-import dev.chieppa.squash.uidesign.generated.lines_lives_on
 import dev.chieppa.squash.uidesign.generated.lines_px
 import dev.chieppa.squash.uidesign.generated.lines_rules
 import dev.chieppa.squash.uidesign.generated.lines_silhouette
@@ -56,8 +54,6 @@ import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Slider
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 
 private const val PERCENT = 100f
 private const val WEIGHT_STEP = 0.5f
@@ -71,7 +67,6 @@ object LinesDrawerTags {
     const val TAPER = "lines.taper"
     const val SIZE = "lines.size"
     const val AMOUNT = "lines.amount"
-    const val LIVES_ON = "lines.livesOn"
     const val STROKE_COLOR = "lines.strokeColor"
     const val FLOATING = "lines.floating"
 
@@ -163,10 +158,6 @@ internal fun StrokeToolSection(state: AppState, session: CharacterSession) {
                 lines.strokeSlot = slot.takeUnless { it == INK_SLOT }
             })
         }
-        SettingRow(stringResource(Res.string.draw_pen_pressure)) {
-            Spacer(Modifier.weight(1f))
-            Readout(stringResource(Res.string.lines_pressure_width))
-        }
     }
 }
 
@@ -194,10 +185,6 @@ private fun WidthToolSection(state: AppState, session: CharacterSession) {
                 onValueChangeFinished = drag::finish,
             )
             Readout(stringResource(Res.string.lines_amount_value, (lines.amount * PERCENT).roundToInt()))
-        }
-        SettingRow(stringResource(Res.string.lines_lives_on)) {
-            Spacer(Modifier.weight(1f))
-            BasicText(stringResource(Res.string.lines_body_surface), Modifier.testTag(LinesDrawerTags.LIVES_ON), style = Stretch.type.body.merge(TextStyle(color = Stretch.colors.inkSubtle)))
         }
     }
 }

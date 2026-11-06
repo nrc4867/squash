@@ -151,7 +151,6 @@ class LinesSmokeTest {
         assertEquals(BuildTool.LINE_WIDTH, state.tool.value, "the Lines drawer brings its tools")
         onNodeWithTag(ShellTags.tool(BuildTool.LINE_WIDTH)).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.SURFACE_STROKE)).assertExists()
-        onNodeWithTag(LinesDrawerTags.LIVES_ON).assertExists()
         onNodeWithText("body surface").assertExists()
         onNodeWithContentDescription("Marks").performClick()
         waitForIdle()

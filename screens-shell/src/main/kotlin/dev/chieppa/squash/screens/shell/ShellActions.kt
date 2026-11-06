@@ -1,8 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
-import dev.chieppa.squash.uidesign.generated.place_tool
-import dev.chieppa.squash.uidesign.generated.rotate_tool
 import dev.chieppa.squash.uidesign.generated.sheet_pane_swap
 import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
@@ -100,8 +98,6 @@ object ShellActions {
     val FIT_PANE = ActionId("fit-pane")
     val PUT_DOWN = ActionId("put-down")
     val SWAP_PANE = ActionId("swap-pane")
-    val PLACE_IMAGE = ActionId(BuildTool.PLACE_IMAGE.actionId)
-    val ROTATE_IMAGE = ActionId(BuildTool.ROTATE_IMAGE.actionId)
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
@@ -150,8 +146,6 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.PUT_DOWN to Res.string.shell_action_put_down,
     ShellActions.SWAP_PANE to Res.string.sheet_pane_swap,
-    ShellActions.PLACE_IMAGE to Res.string.place_tool,
-    ShellActions.ROTATE_IMAGE to Res.string.rotate_tool,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
@@ -213,12 +207,6 @@ fun Shell.registerActions() {
     val inFrame = { state.screen.value != Screen.HOME }
     val hasCharacter = { state.session.value != null }
     val inWorkspace = { state.screen.value == Screen.WORKSPACE }
-    val placing = { inWorkspace() && state.tool.value.places }
-    val selectedIsPaired = {
-        inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
-            state.selectedPart.value?.let(character::part)?.pair
-        } != null
-    }
     fun action(id: ActionId, icon: String?, keys: List<KeyChord> = emptyList(), available: () -> Boolean = { true }, mode: String? = null, run: () -> Unit) =
         registry.register(Action(id, id.value, icon, keys, mode, available, run))
     fun tool(tool: BuildTool, icon: String, key: String, available: () -> Boolean = inWorkspace) =
@@ -249,7 +237,7 @@ fun Shell.registerActions() {
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
-    action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
+    action(ShellActions.MIRROR, "mirror", chord("M"), { inWorkspace() && state.mirrorApplies() }) { state.mirror.value = !state.mirror.value }
 
     tool(BuildTool.DRAW_OUTLINE, "pen", "D")
     tool(BuildTool.SPINE_WIDTH, "spine-and-width", "W")
@@ -257,8 +245,6 @@ fun Shell.registerActions() {
     tool(BuildTool.ERASE, "erase", "X")
     tool(BuildTool.SMOOTH, "smooth", "S")
     tool(BuildTool.MOVE, "move", "V")
-    tool(BuildTool.PLACE_IMAGE, "place-image", "G", placing)
-    tool(BuildTool.ROTATE_IMAGE, "rotate-image", "R", placing)
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }, mode = Stage.SHAPE.keyMode) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.SHAPE.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }
 
