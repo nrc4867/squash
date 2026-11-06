@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -71,6 +72,14 @@ class PaneNavigation {
 
     fun fitAll() {
         navs = emptyMap()
+    }
+
+    /** How many times a free camera has been asked to frame the part again; Full and Single follow it. */
+    var freeFits by mutableIntStateOf(0)
+        private set
+
+    fun fitFree() {
+        freeFits++
     }
 }
 

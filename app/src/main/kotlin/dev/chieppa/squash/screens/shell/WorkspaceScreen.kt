@@ -37,6 +37,7 @@ import dev.chieppa.squash.screens.surface.rememberDrawMarkTool
 import dev.chieppa.squash.screens.surface.rememberEditMarkTool
 import dev.chieppa.squash.screens.surface.rememberEraseMarkTool
 import dev.chieppa.squash.screens.surface.rememberGazeTargetTool
+import dev.chieppa.squash.screens.surface.rememberSelectPartTool
 import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
@@ -76,8 +77,9 @@ fun WorkspaceScreen(shell: Shell) {
     val gazeTarget = rememberGazeTargetTool(state)
     val placeImage = rememberPlaceImageTool(state)
     val rotateImage = rememberPlaceImageTool(state, rotates = true)
+    val selectPart = rememberSelectPartTool(state)
     val stage by state.stage.collectAsState()
-    val tool: PaneTool? = when (armed) {
+    val tool: PaneTool = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
         BuildTool.EDIT_CURVES -> edit
@@ -100,7 +102,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.GAZE_TARGET -> gazeTarget
         BuildTool.PLACE_IMAGE -> placeImage
         BuildTool.ROTATE_IMAGE -> rotateImage
-        BuildTool.NONE -> null
+        BuildTool.NONE -> selectPart
     }
     val selected by state.selectedPart.collectAsState()
     LaunchedEffect(armed, selected) { spine.discard() }

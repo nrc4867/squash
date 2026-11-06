@@ -80,14 +80,14 @@ fun PickPartScreen(shell: Shell) {
 private fun PickTools(state: AppState) {
     val armed by state.pickTool.collectAsState()
     Toolbar {
-        PickToolButton(PickTool.SELECT, SquashIcons.Select, stringResource(Res.string.pick_tool_select), "V", armed) { state.pickTool.value = it }
-        PickToolButton(PickTool.ADD_PART, SquashIcons.AddPart, stringResource(Res.string.pick_tool_add), "A", armed) { state.pickTool.value = it }
+        PickToolButton(PickTool.SELECT, SquashIcons.Select, stringResource(Res.string.pick_tool_select), "tool-select", armed) { state.pickTool.value = it }
+        PickToolButton(PickTool.ADD_PART, SquashIcons.AddPart, stringResource(Res.string.pick_tool_add), "tool-add-part", armed) { state.pickTool.value = it }
     }
 }
 
 @Composable
-private fun PickToolButton(tool: PickTool, icon: ImageVector, label: String, key: String, armed: PickTool, onArm: (PickTool) -> Unit) {
-    Tooltip(label, listOf(key)) {
+private fun PickToolButton(tool: PickTool, icon: ImageVector, label: String, action: String, armed: PickTool, onArm: (PickTool) -> Unit) {
+    Tooltip(label, LocalActionKeys.current(action)) {
         ToolButton(icon, label, tool == armed, { onArm(tool) }, Modifier.testTag(ShellTags.pickTool(tool)), size = PICK_TOOL_SIZE)
     }
 }

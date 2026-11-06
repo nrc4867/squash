@@ -101,7 +101,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     val framed = selection?.box
     val open by state.session.collectAsState()
     val count = selection?.others?.count { !it.planned }
-    LaunchedEffect(open, count, framed != null) {
+    LaunchedEffect(open, count, framed != null, state.paneNavigation.freeFits) {
         if (framed != null) orbit.lookAt(framed.center.toGpu(), framed.radius / sin(orbit.fovY / 2f) * ORBIT_MARGIN)
     }
     var refused by remember { mutableStateOf(false) }
@@ -156,7 +156,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             PaneViewport(
                 body,
                 chip,
-                input.hovered(pane, state).testTag(sheetPaneTag(pane)),
+                input.hovered(pane, view.takeIf { camera != null }, state).testTag(sheetPaneTag(pane)),
                 fitError,
                 progress,
                 paneToast?.takeIf { pane == SheetPane.SIDE },
@@ -184,13 +184,19 @@ private fun rememberRefitProgress(state: AppState): Float {
     return session?.graph?.progress?.collectAsState()?.value?.fraction ?: 1f
 }
 
-/** Keeps [AppState.hoveredPane] on [pane] while the pointer is over it. */
-private fun Modifier.hovered(pane: SheetPane, state: AppState): Modifier = pointerInput(pane) {
+/** Keeps [AppState.hoveredPane] on [pane], and [AppState.hoveredView] on the [view] it holds, while the pointer is over it. */
+internal fun Modifier.hovered(pane: SheetPane, view: View?, state: AppState): Modifier = pointerInput(pane, view) {
     awaitPointerEventScope {
         while (true) {
             when (awaitPointerEvent(PointerEventPass.Initial).type) {
-                PointerEventType.Enter, PointerEventType.Move -> state.hoveredPane.value = pane
-                PointerEventType.Exit -> if (state.hoveredPane.value == pane) state.hoveredPane.value = null
+                PointerEventType.Enter, PointerEventType.Move -> {
+                    state.hoveredPane.value = pane
+                    state.hoveredView.value = view
+                }
+                PointerEventType.Exit -> if (state.hoveredPane.value == pane) {
+                    state.hoveredPane.value = null
+                    state.hoveredView.value = null
+                }
             }
         }
     }

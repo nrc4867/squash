@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.shell.BuildContent
 import dev.chieppa.squash.screens.shell.BuildScreens
 import dev.chieppa.squash.screens.shell.HomeScreen
+import dev.chieppa.squash.screens.shell.KeymapStore
 import dev.chieppa.squash.screens.shell.Shell
 import dev.chieppa.squash.screens.shell.ShellActions
 import dev.chieppa.squash.screens.shell.WorkspaceScreen
@@ -50,11 +51,11 @@ private val BUILD_CONTENT = BuildContent(
     referencesDrawer = { state -> ReferenceDrawers(state) },
 )
 
-/** The window's content: the current screen over [state], with what every screen shares. */
+/** The window's content: the current screen over [state], with what every screen shares, and the keymap kept in [keys]. */
 @Composable
-fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null)) {
+fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null), keys: KeymapStore? = null) {
     val scope = rememberCoroutineScope()
-    val shell = remember(state, chooser) { Shell(state, chooser, ToastState(), scope, BUILD_CONTENT).apply { registerActions() } }
+    val shell = remember(state, chooser) { Shell(state, chooser, ToastState(), scope, BUILD_CONTENT, keys).apply { registerActions() } }
     val screen by state.screen.collectAsState()
     val file by state.file.collectAsState()
     val stage by state.stage.collectAsState()

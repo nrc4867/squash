@@ -24,11 +24,26 @@ import kotlin.io.path.nameWithoutExtension
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 
-/** What the window's screens share: file handling, the drawer layout, the action registry and the toasts. */
+/**
+ * What the window's screens share: file handling, the drawer layout, the action registry and the toasts. The keymap starts from
+ * what [keys] kept, and [keymapChanged] keeps it again.
+ */
 @Stable
-class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastState, private val scope: CoroutineScope, val content: BuildContent) {
+class Shell(
+    val state: AppState,
+    val chooser: FileChooser,
+    val toasts: ToastState,
+    private val scope: CoroutineScope,
+    val content: BuildContent,
+    private val keys: KeymapStore? = null,
+) {
     val registry = ActionRegistry()
-    val keymap = Keymap(registry)
+    val keymap = Keymap(registry, keys?.load().orEmpty())
+
+    /** Keeps the keymap's changes for the next run. */
+    fun keymapChanged() {
+        keys?.save(keymap.changes)
+    }
 
     var layout by mutableStateOf(DEFAULT_LAYOUT)
     var palette by mutableStateOf(false)

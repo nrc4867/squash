@@ -28,9 +28,6 @@ import dev.chieppa.squash.uidesign.generated.stage_face
 import dev.chieppa.squash.uidesign.generated.stage_shape
 import androidx.compose.runtime.getValue
 
-private val PARTS_KEYS = listOf("B")
-private val TYPES_KEYS = listOf("T")
-
 /** The Build frame every screen but Home sits in: top bar, rails, drawers and status bar around [viewport]. */
 @Composable
 fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, viewport: @Composable BoxScope.() -> Unit) {
@@ -69,9 +66,10 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val session by state.session.collectAsState()
     val picked by state.pickedType.collectAsState()
     val stage by state.stage.collectAsState()
+    val keys = LocalActionKeys.current
     val open = session
     val pickedName = picked.takeIf { screen == Screen.PICK_PART }?.let { state.templates.template(it) }?.name
-    val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = PARTS_KEYS) {
+    val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = keys(ActionKeys.PARTS)) {
         PartsDrawerContent(state)
     }
     val inspector = DrawerSpec(
@@ -83,11 +81,11 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
         if (open == null || screen != Screen.WORKSPACE) PickedTypeOrNone(state) else shell.content.inspector(this, state, open, stage)
     }
     val help = DrawerSpec(DrawerIds.HELP, stringResource(Res.string.shell_drawer_help), StretchIcons.Help) {
-        KeymapEditor(shell.keymap, shell.registry.all.toList())
+        KeymapEditor(shell.keymap, shell.registry.all.toList(), onChange = shell::keymapChanged)
     }
     if (open == null) return listOf(parts, help, inspector)
     val labels = historyLabels()
-    val types = DrawerSpec(DrawerIds.TYPES, stringResource(Res.string.shell_drawer_types), SquashIcons.PartTypes, keys = TYPES_KEYS) {
+    val types = DrawerSpec(DrawerIds.TYPES, stringResource(Res.string.shell_drawer_types), SquashIcons.PartTypes, keys = keys(ActionKeys.TYPES)) {
         PartTypesDrawerContent(state, it)
     }
     val history = DrawerSpec(DrawerIds.HISTORY, stringResource(Res.string.shell_drawer_history), StretchIcons.Clock) {

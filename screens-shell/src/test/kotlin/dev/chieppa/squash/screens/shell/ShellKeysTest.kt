@@ -1,0 +1,70 @@
+package dev.chieppa.squash.screens.shell
+
+import dev.chieppa.squash.screens.AppState
+import dev.chieppa.stretch.core.ActionId
+import dev.chieppa.stretch.core.KeyChord
+import dev.chieppa.stretch.document.DocumentFormat
+import dev.chieppa.stretch.document.FileChooser
+import dev.chieppa.stretch.frame.ToastState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import java.nio.file.Files
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class ShellKeysTest {
+    private object NoChooser : FileChooser {
+        override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+        override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
+    }
+
+    private fun shell(keys: KeymapStore? = null): Shell {
+        val state = AppState(shipped).also { it.createCharacter(caninePlan, "Fennec") }
+        return Shell(state, NoChooser, ToastState(), CoroutineScope(Dispatchers.Unconfined), BuildContent({}), keys).apply { registerActions() }
+    }
+
+    private fun Shell.resolve(key: String, stage: Stage): String? = keymap.resolve(KeyChord.parse(key), stage.keyMode)?.id?.value
+
+    @Test
+    fun noTwoActionsShareAKeyInAnyStage() {
+        assertEquals(emptyList(), shell().keymap.conflicts())
+    }
+
+    @Test
+    fun eachStageGivesALetterItsOwnTool() {
+        val shell = shell()
+        assertEquals(BuildTool.FILL.actionId, shell.resolve("G", Stage.COLOR))
+        assertEquals(BuildTool.BRUSH.actionId, shell.resolve("B", Stage.COLOR))
+        assertEquals(BuildTool.GAZE_TARGET.actionId, shell.resolve("G", Stage.FACE))
+        assertEquals(BuildTool.COMB.actionId, shell.resolve("C", Stage.LINES))
+        assertNull(shell.resolve("B", Stage.SHAPE), "B opens no drawer")
+        for (stage in Stage.entries) {
+            assertEquals(ShellActions.FIT_PANE.value, shell.resolve("F", stage))
+        }
+    }
+
+    @Test
+    fun escPutsTheToolDownAndThenAnswersNoMore() {
+        val shell = shell()
+        val esc = shell.keymap.resolve(KeyChord("Esc"), Stage.SHAPE.keyMode)
+        assertEquals(ShellActions.PUT_DOWN, esc?.id)
+        esc?.run()
+        assertEquals(BuildTool.NONE, shell.state.tool.value)
+        assertNull(shell.keymap.resolve(KeyChord("Esc"), Stage.SHAPE.keyMode))
+    }
+
+    @Test
+    fun keymapChangesComeBackOnTheNextRun() {
+        val file = Files.createTempDirectory("keymap").resolve("keymap.txt")
+        val first = shell(KeymapStore(file))
+        first.keymap.rebind(ShellActions.UNDO, listOf(KeyChord("U", ctrl = true, alt = true)))
+        first.keymap.rebind(ShellActions.MIRROR, emptyList())
+        first.keymapChanged()
+        val next = shell(KeymapStore(file))
+        assertEquals(listOf(KeyChord("U", ctrl = true, alt = true)), next.keymap.keysFor(ShellActions.UNDO))
+        assertTrue(next.keymap.keysFor(ShellActions.MIRROR).isEmpty())
+        assertEquals(listOf(KeyChord.parse("D")), next.keymap.keysFor(ActionId(BuildTool.DRAW_OUTLINE.actionId)))
+    }
+}

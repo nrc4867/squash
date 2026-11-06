@@ -27,6 +27,8 @@ import dev.chieppa.squash.screens.sheet.SceneSurface
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.largestColorScale
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
+import dev.chieppa.squash.screens.sheet.SheetPane
+import dev.chieppa.squash.screens.sheet.hovered
 import dev.chieppa.squash.screens.sheet.paneDisagreements
 import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
 import dev.chieppa.squash.screens.sheet.rememberOutlineLook
@@ -58,7 +60,7 @@ internal fun SingleSurface(
     var size by remember { mutableStateOf(IntSize.Zero) }
     val open by state.session.collectAsState()
     val sized = size != IntSize.Zero
-    LaunchedEffect(open, part?.id, sized) {
+    LaunchedEffect(open, part?.id, sized, state.paneNavigation.freeFits) {
         if (part != null && sized) camera.frame(part.box, part.axes, size.width, size.height)
     }
     val hold = tool?.holdsFit == true || tool?.drawingIn != null
@@ -106,7 +108,7 @@ internal fun SingleSurface(
     Box(modifier.onSizeChanged { size = it }) {
         SceneSurface(frame.takeIf { sized }, Modifier.fillMaxSize())
         Viewport(
-            Modifier.orbitNavigation(camera.orbit).then(drawing).testTag(SingleTags.VIEWPORT),
+            Modifier.orbitNavigation(camera.orbit).then(drawing).hovered(SheetPane.FULL, null, state).testTag(SingleTags.VIEWPORT),
             nativeContent = true,
             topStart = {
                 Toolbar(Modifier.testTag(SingleTags.TOOLBAR)) {

@@ -46,6 +46,7 @@
     <string name="shell_action_edit_curves">Edit curves</string>
     <string name="shell_action_start_template">Start from template</string>
     <string name="shell_action_reset_layout">Reset layout</string>
+    <string name="shell_action_put_down">Put the tool down</string>
 
     <string name="shell_drawer_references">References</string>
     <string name="shell_drawer_rig">Rig</string>

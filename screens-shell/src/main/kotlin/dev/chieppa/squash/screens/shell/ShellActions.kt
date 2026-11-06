@@ -30,6 +30,7 @@ import dev.chieppa.squash.uidesign.generated.shell_action_new
 import dev.chieppa.squash.uidesign.generated.shell_action_open
 import dev.chieppa.squash.uidesign.generated.shell_action_redo
 import dev.chieppa.squash.uidesign.generated.shell_action_reset_layout
+import dev.chieppa.squash.uidesign.generated.shell_action_put_down
 import dev.chieppa.squash.uidesign.generated.shell_action_save
 import dev.chieppa.squash.uidesign.generated.shell_action_save_as
 import dev.chieppa.squash.uidesign.generated.shell_action_start_template
@@ -101,6 +102,7 @@ object ShellActions {
     val ERASE_MARK = ActionId(BuildTool.ERASE_MARK.actionId)
     val GAZE_TARGET = ActionId(BuildTool.GAZE_TARGET.actionId)
     val FIT_PANE = ActionId("fit-pane")
+    val PUT_DOWN = ActionId("put-down")
     val SWAP_PANE = ActionId("swap-pane")
     val PLACE_IMAGE = ActionId(BuildTool.PLACE_IMAGE.actionId)
     val ROTATE_IMAGE = ActionId(BuildTool.ROTATE_IMAGE.actionId)
@@ -152,6 +154,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.ERASE_MARK to Res.string.edit_tool_erase,
     ShellActions.GAZE_TARGET to Res.string.face_tool_gaze,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
+    ShellActions.PUT_DOWN to Res.string.shell_action_put_down,
     ShellActions.SWAP_PANE to Res.string.sheet_pane_swap,
     ShellActions.PLACE_IMAGE to Res.string.place_tool,
     ShellActions.ROTATE_IMAGE to Res.string.rotate_tool,
@@ -246,7 +249,7 @@ fun Shell.registerActions() {
     action(ShellActions.UNDO, "undo", chord("Ctrl Z"), { state.session.value?.history?.canUndo == true }) { state.undo() }
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
-    action(ShellActions.PARTS, "parts", chord("B"), inFrame) { toggle(DrawerIds.PARTS) }
+    action(ShellActions.PARTS, "parts", available = inFrame) { toggle(DrawerIds.PARTS) }
     action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
         if (state.screen.value == Screen.PICK_PART) state.screen.value = Screen.WORKSPACE else state.openPartTypes()
     }
@@ -259,7 +262,8 @@ fun Shell.registerActions() {
     stage(ShellActions.STAGE_LINES, "3", Stage.LINES)
     stage(ShellActions.STAGE_FACE, "4", Stage.FACE)
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
-    action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.paneNavigation.fit(state.activeView.value) }
+    action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
+    action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
 
     tool(BuildTool.DRAW_OUTLINE, "pen", "D")
@@ -273,7 +277,7 @@ fun Shell.registerActions() {
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }, mode = Stage.SHAPE.keyMode) { state.startFromTemplate() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.SHAPE.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }
 
-    tool(BuildTool.FILL, "fill", "F")
+    tool(BuildTool.FILL, "fill", "G")
     tool(BuildTool.BRUSH, "brush", "B")
     tool(BuildTool.REGION_BORDER, "region-border", "R")
     tool(BuildTool.PICK_COLOR, "pick-color", "I")
@@ -282,7 +286,7 @@ fun Shell.registerActions() {
     tool(BuildTool.SURFACE_STROKE, "surface-stroke", "D")
     tool(BuildTool.FLOATING_STROKE, "floating-stroke", "L")
     tool(BuildTool.FUR_STROKE, "fur-stroke", "U")
-    tool(BuildTool.COMB, "comb", "G")
+    tool(BuildTool.COMB, "comb", "C")
     tool(BuildTool.SURFACE_ERASE, "erase", "X")
 
     tool(BuildTool.DRAW_MARK, "draw-mark", "D")

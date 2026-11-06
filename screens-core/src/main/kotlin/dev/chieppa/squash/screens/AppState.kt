@@ -87,9 +87,19 @@ class AppState(
     val references = ReferenceEditState()
     val hoveredPane = MutableStateFlow<SheetPane?>(null)
 
+    /** The view the locked pane under the pointer holds, or null over Full, Single's free camera or nothing. */
+    val hoveredView = MutableStateFlow<View?>(null)
+
     /** Puts the pane under the pointer in Focus's large place. */
     fun swapPane() {
         hoveredPane.value?.let { focused.value = it }
+    }
+
+    /** Shows the pane under the pointer at its fit: a locked pane's zoom and pan go, and a free camera frames the part again. */
+    fun fitUnderPointer() {
+        if (hoveredPane.value == null) return
+        val view = hoveredView.value
+        if (view != null) paneNavigation.fit(view) else paneNavigation.fitFree()
     }
 
     /** Whether edits of a paired part write the pair, which both sides share, or only the selected side's overrides. */
@@ -255,6 +265,12 @@ class AppState(
     fun armTool(next: BuildTool) {
         tool.value = if (tool.value == next) BuildTool.NONE else next
         if (tool.value != BuildTool.REGION_BORDER) paint.selectedRegion = null
+    }
+
+    /** Puts the armed tool down, which leaves a press on the character to select its part. */
+    fun putToolDown() {
+        tool.value = BuildTool.NONE
+        paint.selectedRegion = null
     }
 
     /** Places the chosen type on [socket], or the first it takes when it takes no such type. */

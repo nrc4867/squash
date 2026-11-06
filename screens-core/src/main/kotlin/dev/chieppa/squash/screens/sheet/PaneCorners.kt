@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.screens.shell.LocalActionKeys
+import dev.chieppa.squash.screens.shell.ActionKeys
 import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
 import dev.chieppa.squash.uidesign.generated.sheet_pane_zoom
 import androidx.compose.foundation.clickable
@@ -75,7 +77,7 @@ fun PaneViewport(
 @Composable
 private fun PaneZoom(zoom: Float, onFit: () -> Unit) {
     val label = stringResource(Res.string.sheet_pane_fit)
-    Tooltip(label, listOf("F")) {
+    Tooltip(label, LocalActionKeys.current(ActionKeys.FIT_PANE)) {
         Box(Modifier.testTag(PANE_ZOOM_TAG).clickable(onClick = onFit)) {
             Hud(stringResource(Res.string.sheet_pane_zoom, (zoom * PERCENT).roundToInt()))
         }

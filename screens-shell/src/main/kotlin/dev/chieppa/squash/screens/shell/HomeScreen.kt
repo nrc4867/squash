@@ -140,8 +140,8 @@ private fun ProjectsDrawer(shell: Shell, recent: List<String>, current: String?,
         Modifier.width(PROJECTS_WIDTH).fillMaxHeight(),
         style = DrawerStyle.Docked,
         actions = {
-            HeaderAction(StretchIcons.Plus, stringResource(Res.string.home_new_project), listOf("Ctrl", "N"), shell::newCharacter)
-            HeaderAction(StretchIcons.Folder, stringResource(Res.string.home_open_file), listOf("Ctrl", "O"), shell::chooseAndOpen)
+            HeaderAction(StretchIcons.Plus, stringResource(Res.string.home_new_project), LocalActionKeys.current(ActionKeys.NEW), shell::newCharacter)
+            HeaderAction(StretchIcons.Folder, stringResource(Res.string.home_open_file), LocalActionKeys.current(ActionKeys.OPEN), shell::chooseAndOpen)
         },
     ) {
         if (recent.isNotEmpty()) DrawerSection(stringResource(Res.string.home_recent_files)) {

@@ -12,6 +12,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.RecentStore
+import dev.chieppa.squash.screens.shell.KeymapStore
 import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.app_name
@@ -34,11 +35,13 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val APP_ID = "dev.chieppa.squash"
 private const val RECENT_FILE = "recent.txt"
+private const val KEYMAP_FILE = "keymap.txt"
 
 fun main() {
     DevTools.startIfRequested()
     NativeSurfaces.enable()
     val store = RecentStore(appDataDirectory(APP_ID).resolve(RECENT_FILE))
+    val keys = KeymapStore(appDataDirectory(APP_ID).resolve(KEYMAP_FILE))
     val recent = RecentFiles(store.load()).also { runBlocking { it.prune(FileStorage) } }
     val state = AppState(
         TemplateFolder.shipped(),
@@ -57,7 +60,7 @@ fun main() {
             }
             val dark by state.darkTheme.collectAsState()
             StretchTheme(if (dark) StretchThemes.InkDark else StretchThemes.Ink) {
-                SquashApp(state, rememberFileChooser(window))
+                SquashApp(state, rememberFileChooser(window), keys)
             }
         }
     }
