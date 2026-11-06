@@ -31,8 +31,6 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
@@ -40,7 +38,7 @@ import dev.chieppa.stretch.frame.buildOverlay
 /**
  * Move: a dot on every socket and on the selected part's joints, in the locked panes and Full. Dragging a socket's dot slides
  * it over its parent's surface, and a joint's along its part, as one undo step, on the pair or with Mirror off on that side.
- * Pressing a socket's dot without moving selects the part on it, or picks a type for an empty one. A drag the pane loses
+ * Pressing a socket's dot without moving selects the part on it, or opens Add part's popover on an empty one. A drag the pane loses
  * restores what was there.
  */
 class MoveTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
@@ -131,22 +129,9 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
             state.selectPart(handle.child)
             return
         }
-        val session = state.session.value ?: return
-        val document = session.document.value
-        val plan = state.templates.plan(document.character.bodyPlan) ?: return
-        val socket = openSockets(document, plan, state.templates).firstOrNull { it.ref.parent == handle.parent.id && it.ref.socket == handle.socket }
-        if (socket != null) state.chooseSocket(socket)
+        state.openSocketsNow().firstOrNull { it.ref.parent == handle.parent.id && it.ref.socket == handle.socket }?.let(state::offerSocket)
     }
 
-    private class LockedHandleView(private val camera: LockedCamera) : HandleView {
-        override fun toPixel(point: Vec3): Offset = camera.toPixel(point)
-        override fun toViewer(point: Vec3): Vec3 = camera.basis.back
-    }
-
-    private class FullHandleView(private val view: FullView) : HandleView {
-        override fun toPixel(point: Vec3): Offset? = view.toPixel(point)
-        override fun toViewer(point: Vec3): Vec3 = view.toViewer(point)
-    }
 }
 
 @Composable

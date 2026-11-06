@@ -37,7 +37,6 @@ import org.jetbrains.compose.resources.getString
 import dev.chieppa.squash.screens.shell.LocalActionKeys
 import dev.chieppa.stretch.frame.caps
 import dev.chieppa.stretch.core.ActionId
-import dev.chieppa.squash.screens.shell.PICK_KEY_MODE
 import dev.chieppa.squash.screens.shell.keyMode
 import dev.chieppa.squash.screens.shell.ReferenceDrawers
 import dev.chieppa.squash.screens.shell.StageInspector
@@ -59,11 +58,7 @@ fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null),
     val screen by state.screen.collectAsState()
     val file by state.file.collectAsState()
     val stage by state.stage.collectAsState()
-    val mode = when (screen) {
-        Screen.WORKSPACE -> stage.keyMode
-        Screen.PICK_PART -> PICK_KEY_MODE
-        else -> null
-    }
+    val mode = if (screen == Screen.WORKSPACE) stage.keyMode else null
     val keys: (String) -> List<String> = { id -> shell.keymap.keysFor(ActionId(id)).firstOrNull()?.caps().orEmpty() }
     CompositionLocalProvider(LocalActionText provides actionText(), LocalActionKeys provides keys) {
         Box(Modifier.fillMaxSize().focusHome().actionKeys(shell.keymap, mode)) {

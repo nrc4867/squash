@@ -19,7 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.plan
-import dev.chieppa.squash.screens.shell.RestPoseSurface
+import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.render.SceneFrame
@@ -202,47 +202,19 @@ class ScreensSmokeTest {
     }
 
     @Test
-    fun pickAPartType() = smoke {
+    fun addPartOverTheWorkspace() = smoke {
         val state = AppState(templates, scope)
-        var frame: SceneFrame? = null
-        var look: SheetLook? = null
-        val recorder: SceneSurfaceContent = { shown, _ -> SideEffect { if (shown != null) frame = shown } }
-        setStretchContent {
-            SquashApp(state, NoFiles)
-            look = rememberSheetLook()
-            val screen by state.screen.collectAsState()
-            if (screen == Screen.PICK_PART) CompositionLocalProvider(LocalSceneSurface provides recorder) { RestPoseSurface(state) }
-        }
+        show(state)
         val session = createCharacter(state)
-        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         assertSettled(session)
-        onNodeWithTag(ShellTags.PICK_SOCKET).assertExists()
-        onNodeWithTag(ShellTags.socketDot("tail")).assertExists()
-        assertCaptured(ShellTags.PICK)
-        val character = assertNotNull(session.assembly.output.value)
-        val drawing = assertNotNull(look)
-        val rest = assertNotNull(frame)
-        val area = rest.views.single().viewport
-        val errors = CopyOnWriteArrayList<String>()
-        val image = renderSnapshot(rest, area.width, area.height, options = GpuOptions(onError = errors::add)) { ViewsScene(it) }
-        assertEquals(emptyList(), errors)
-        assertNotBlank(image.pixels, "the rest pose")
-        keep(image, "pick")
-        assertNotEquals(0, image.countIn(area, drawing.part.base), "the placed torso is filled")
-        assertNotEquals(0, image.countIn(area, drawing.template), "the parts to come are dashed")
-
+        state.armTool(BuildTool.ADD_PART)
         val document = session.document.value
         val open = openSockets(document, assertNotNull(templates.plan(document.character.bodyPlan)), templates)
-        val picked = assertNotNull(state.pickedSocket.value)
         assertEquals(setOf("neck", "front-leg", "back-leg", "tail"), open.map { it.name }.toSet())
-        assertEquals(open.size * 2, rest.overlay.dots.size, "an edge and a fill on each open socket, none on what is not")
-        val camera = restPoseCamera(assertNotNull(character.box), area.width, area.height)
-        for (socket in open) {
-            val at = camera.toPixel(character.sockets.first { it.ref == socket.ref }.position)
-            val middle = PixelRect(at.x.roundToInt(), at.y.roundToInt(), 1, 1)
-            val fill = if (socket.ref == picked.ref) drawing.active else drawing.dotFill
-            assertEquals(1, image.countIn(middle, fill), "the dot on ${socket.name} in the rendered image")
-        }
+        for (socket in open) onNodeWithTag(ShellTags.addSocket(socket.name)).assertExists()
+        onNodeWithTag(ShellTags.addSocket("front-leg")).performClick()
+        assertCaptured(ShellTags.ADD_PART)
+        assertCaptured(ShellTags.WORKSPACE)
     }
 
     @Test
@@ -262,7 +234,7 @@ class ScreensSmokeTest {
         val session = createCharacter(state)
         assertSettled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         assertSettled(session)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.part?.id == state.selectedPart.value && selection != null }
         val leg = assertNotNull(selection)
@@ -362,7 +334,7 @@ class ScreensSmokeTest {
         val session = createCharacter(state)
         assertSettled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         assertSettled(session)
         runOnIdle { state.layout.value = SheetLayout.SINGLE }
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }

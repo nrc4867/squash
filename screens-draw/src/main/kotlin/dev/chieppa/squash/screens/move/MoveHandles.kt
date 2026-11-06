@@ -7,6 +7,8 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.floor
+import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.LockedCamera
 
 private const val SEARCH_STEPS = 48
 private const val REFINE_STEPS = 8
@@ -23,6 +25,18 @@ private const val SAME_SPOT = 3f
 interface HandleView {
     fun toPixel(point: Vec3): Offset?
     fun toViewer(point: Vec3): Vec3
+}
+
+/** A locked pane as a [HandleView]. */
+internal class LockedHandleView(private val camera: LockedCamera) : HandleView {
+    override fun toPixel(point: Vec3): Offset = camera.toPixel(point)
+    override fun toViewer(point: Vec3): Vec3 = camera.basis.back
+}
+
+/** Full's free camera as a [HandleView]. */
+internal class FullHandleView(private val view: FullView) : HandleView {
+    override fun toPixel(point: Vec3): Offset? = view.toPixel(point)
+    override fun toViewer(point: Vec3): Vec3 = view.toViewer(point)
 }
 
 /** Something the Move tool drags. */

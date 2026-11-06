@@ -24,19 +24,11 @@ import dev.chieppa.squash.screens.sheet.rememberSceneSurface
 fun BuildScreens(shell: Shell, screen: Screen) {
     val home = remember { FocusRequester() }
     LaunchedEffect(screen) { home.requestFocus() }
-    val tagged = when (screen) {
-        Screen.PICK_PART -> Modifier.testTag(ShellTags.PICK)
-        Screen.WORKSPACE -> Modifier.testTag(ShellTags.WORKSPACE)
-        else -> Modifier
-    }
+    val tagged = if (screen == Screen.WORKSPACE) Modifier.testTag(ShellTags.WORKSPACE) else Modifier
     CompositionLocalProvider(LocalSceneSurface provides rememberSceneSurface()) {
         BuildFrame(shell, screen, tagged) {
             Box(Modifier.fillMaxSize().focusRequester(home).focusable()) {
-                when (screen) {
-                    Screen.NEW_CHARACTER -> NewCharacterScreen(shell)
-                    Screen.PICK_PART -> PickPartScreen(shell)
-                    else -> shell.content.workspace(shell)
-                }
+                if (screen == Screen.NEW_CHARACTER) NewCharacterScreen(shell) else shell.content.workspace(shell)
             }
         }
     }

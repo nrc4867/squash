@@ -92,15 +92,8 @@ class Shell(
         }
     }
 
-    /**
-     * Takes a layout from the frame. The Part types drawer is the Pick screen: opening it from the rail goes there and
-     * closing it comes back.
-     */
-    fun changeLayout(shown: FrameLayout, next: FrameLayout) {
-        val typesOpen = next[DrawerIds.TYPES]?.open == true
-        if (typesOpen != (shown[DrawerIds.TYPES]?.open == true)) {
-            if (typesOpen) state.openPartTypes() else state.screen.value = Screen.WORKSPACE
-        }
-        layout = if (state.screen.value == Screen.NEW_CHARACTER) layout else next
+    /** Takes a layout from the frame, except on New character, which shows every drawer shut. */
+    fun changeLayout(next: FrameLayout) {
+        if (state.screen.value != Screen.NEW_CHARACTER) layout = next
     }
 }

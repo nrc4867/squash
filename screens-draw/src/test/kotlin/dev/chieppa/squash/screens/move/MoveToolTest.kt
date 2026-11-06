@@ -171,7 +171,7 @@ class MoveToolTest {
     }
 
     @Test
-    fun pressingAPlacedPartsDotSelectsItAndAnEmptyOnePicksAType() = runComposeUiTest {
+    fun pressingAPlacedPartsDotSelectsItAndAnEmptyOneOpensAddPart() = runComposeUiTest {
         val bench = Bench()
         settled(bench)
         val camera = bench.camera()
@@ -180,7 +180,25 @@ class MoveToolTest {
         val tail = handles.first { it.socket == "tail" }
         showPane(tool(bench), camera)
         mouseDrag(listOf(view.toPixel(tail.position)))
-        assertEquals(Screen.PICK_PART, bench.state.screen.value)
-        assertEquals("tail", bench.state.pickedSocket.value?.name)
+        assertEquals(Screen.WORKSPACE, bench.state.screen.value)
+        assertEquals("tail", bench.state.addingSocket.value?.name)
+    }
+
+    @Test
+    fun addPartPutsADotOnEachOpenSocketAloneAndAPressOpensItsPopover() = runComposeUiTest {
+        val bench = Bench()
+        settled(bench)
+        val camera = bench.camera()
+        val view = Locked(camera)
+        val open = moveHandles(bench.character, bench.leg).filterIsInstance<SocketHandle>()
+        val leg = open.first { it.socket == "front-leg" }
+        val tail = open.first { it.socket == "tail" }
+        val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
+        showPane(add, camera)
+        mouseDrag(listOf(view.toPixel(leg.position)))
+        assertEquals(null, bench.state.addingSocket.value, "a placed part's socket has no dot to press")
+        mouseDrag(listOf(view.toPixel(tail.position)))
+        assertEquals("tail", bench.state.addingSocket.value?.name)
+        assertEquals(bench.leg, bench.state.selectedPart.value, "and the selection stays")
     }
 }

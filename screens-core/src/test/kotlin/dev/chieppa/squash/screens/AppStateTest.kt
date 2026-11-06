@@ -46,30 +46,33 @@ class AppStateTest {
     }
 
     @Test
-    fun placingAPickedSocketSelectsTheLeftSide() {
+    fun addingOnAPairedSocketPlacesBothSidesInOneStepAndSelectsTheLeft() {
         val state = created()
         val session = assertNotNull(state.session.value)
         val socket = openSockets(session.document.value, caninePlan, shipped).first { it.name == "front-leg" }
-        state.chooseSocket(socket)
-        assertEquals(Screen.PICK_PART, state.screen.value)
-        assertEquals(TemplateId("leg"), state.pickedType.value)
-        state.placePicked()
+        state.offerSocket(socket)
+        assertEquals(TemplateId("leg"), state.addingType.value, "the popover opens on the first type the socket takes")
+        state.addPart()
         val parts = session.document.value.character.parts.filter { it.socket?.socket == "front-leg" }
         assertEquals(2, parts.size)
         assertEquals(parts.first { it.isLeader }.id, state.selectedPart.value)
         assertEquals(Screen.WORKSPACE, state.screen.value)
-        assertNull(state.pickedSocket.value)
+        assertNull(state.addingSocket.value, "and the popover closes")
+        session.history.undo()
+        assertTrue(session.document.value.character.parts.none { it.socket?.socket == "front-leg" }, "a pair is one undo step")
     }
 
     @Test
-    fun choosingATypeMovesToASocketThatTakesIt() {
+    fun aTypeTheSocketDoesNotTakeAddsNothing() {
         val state = created()
-        state.openPartTypes()
-        assertEquals("neck", state.pickedSocket.value?.name)
-        state.chooseType(TemplateId("tail"))
-        assertEquals("tail", state.pickedSocket.value?.name)
-        state.chooseType(TemplateId("torso"))
-        assertNull(state.pickedSocket.value)
+        val session = assertNotNull(state.session.value)
+        val socket = openSockets(session.document.value, caninePlan, shipped).first { it.name == "tail" }
+        state.offerSocket(socket)
+        state.addingType.value = TemplateId("leg")
+        val before = session.document.value
+        state.addPart()
+        assertEquals(before, session.document.value)
+        assertEquals(socket, state.addingSocket.value)
     }
 
     @Test
@@ -77,8 +80,8 @@ class AppStateTest {
         val state = created()
         val session = assertNotNull(state.session.value)
         val socket = openSockets(session.document.value, caninePlan, shipped).first { it.name == "tail" }
-        state.chooseSocket(socket)
-        state.placePicked()
+        state.offerSocket(socket)
+        state.addPart()
         val root = session.document.value.character.parts.first().id
         session.history.undo()
         assertEquals(root, state.selectedPart.value)

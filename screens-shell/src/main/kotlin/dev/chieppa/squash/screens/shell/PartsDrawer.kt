@@ -22,7 +22,6 @@ import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.catalog.twin
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_tree_differs
@@ -39,7 +38,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private val SWATCH_SHAPE = RoundedCornerShape(3.dp)
 
-/** The open character's parts and empty sockets: a part selects, a socket goes to Pick a part type. */
+/** The open character's parts and empty sockets: a part selects, and a socket, shown as a row to add, opens Add part's popover on it. */
 @Composable
 fun PartsDrawerContent(state: AppState) {
     val session by state.session.collectAsState()
@@ -47,8 +46,7 @@ fun PartsDrawerContent(state: AppState) {
     val document by open.document.collectAsState()
     val plan = state.templates.plan(document.character.bodyPlan) ?: return
     val selected by state.selectedPart.collectAsState()
-    val socket by state.pickedSocket.collectAsState()
-    val screen by state.screen.collectAsState()
+    val socket by state.addingSocket.collectAsState()
     var collapsed by remember { mutableStateOf(emptySet<Any>()) }
 
     val mirror by state.mirror.collectAsState()
@@ -56,12 +54,8 @@ fun PartsDrawerContent(state: AppState) {
     val right = stringResource(Res.string.shell_tree_right)
     val roots = partTree(document, plan, state.templates, mirror) { if (it == Side.LEFT) left else right }
     val rows = flattenTree(roots) { true }.map { it.node.item }
-    val current = rows.firstOrNull { it is PartRow.SideOf && screen != Screen.PICK_PART && it.part.id == selected } ?: rows.firstOrNull {
-        when (it) {
-            is PartRow.Placed -> screen != Screen.PICK_PART && (it.part.id == selected || document.twin(it.part)?.id == selected)
-            is PartRow.Open -> screen == Screen.PICK_PART && it.socket == socket
-            is PartRow.SideOf -> false
-        }
+    val current = rows.firstOrNull { it is PartRow.Open && it.socket == socket } ?: rows.firstOrNull { it is PartRow.SideOf && it.part.id == selected } ?: rows.firstOrNull {
+        it is PartRow.Placed && (it.part.id == selected || document.twin(it.part)?.id == selected)
     }
     DrawerSection(plan.name, divider = false) {
         Tree(
@@ -76,7 +70,7 @@ fun PartsDrawerContent(state: AppState) {
                 when (val row = rows.firstOrNull { it.key == key }) {
                     is PartRow.Placed -> state.selectPart(row.part.id)
                     is PartRow.SideOf -> state.selectPart(row.part.id)
-                    is PartRow.Open -> state.chooseSocket(row.socket)
+                    is PartRow.Open -> state.offerSocket(row.socket)
                     null -> Unit
                 }
             },
@@ -96,6 +90,10 @@ private fun RowSwatch(row: PartRow) {
         Icon(if (row.differs) SquashIcons.PairOverride else SquashIcons.Mirror, c.inkMuted, Modifier.testTag(ShellTags.sideRow(row.tagName)), size = 12.dp)
         return
     }
+    if (row is PartRow.Open) {
+        Icon(SquashIcons.AddPart, c.inkControl, Modifier.testTag(ShellTags.partRow(row.tagName)), size = 12.dp)
+        return
+    }
     Box(
         Modifier
             .testTag(if (row is PartRow.SideOf) ShellTags.sideRow(row.tagName) else ShellTags.partRow(row.tagName))
@@ -110,6 +108,7 @@ private fun RowState(row: PartRow) {
     val text = when {
         row is PartRow.SideOf -> if (row.differs) stringResource(Res.string.shell_tree_differs) else null
         row is PartRow.Placed && row.drawn -> if (row.part.pair != null) stringResource(Res.string.shell_tree_pair, PAIR_SIZE) else null
+        row is PartRow.Open -> openSocketCount(row.socket)
         else -> stringResource(Res.string.shell_tree_to_draw)
     } ?: return
     BasicText(

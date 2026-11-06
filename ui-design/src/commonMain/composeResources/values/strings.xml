@@ -53,7 +53,6 @@
     <string name="shell_drawer_color">Color</string>
     <string name="shell_drawer_lines">Lines</string>
     <string name="shell_drawer_parts">Parts</string>
-    <string name="shell_drawer_types">Part types</string>
     <string name="shell_drawer_history">History</string>
     <string name="shell_drawer_help">Help</string>
 
@@ -170,13 +169,12 @@
     <string name="new_open_file">Open file</string>
     <string name="new_create">Create character</string>
 
-    <string name="pick_socket_hud">Socket · %1$s</string>
-    <string name="pick_socket_hud_left">Socket · %1$s L</string>
-    <string name="pick_rest_pose">Rest pose · standing square</string>
-    <string name="pick_tool_select">Select</string>
-    <string name="pick_tool_add">Add part</string>
+    <string name="add_part">Add part</string>
+    <string name="add_part_title">Add to %1$s socket</string>
+    <string name="add_part_add">Add %1$s</string>
+    <string name="add_part_pair">pair</string>
+    <string name="add_part_one">1</string>
     <string name="rest_pose_art">Rest pose</string>
-    <string name="pick_draw">Draw %1$s</string>
 
     <string name="draw_stroke">Stroke</string>
     <string name="draw_smooth">Smooth</string>

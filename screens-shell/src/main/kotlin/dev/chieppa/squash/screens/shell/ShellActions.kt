@@ -20,8 +20,7 @@ import dev.chieppa.squash.uidesign.generated.color_tool_region_border
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
 import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
-import dev.chieppa.squash.uidesign.generated.pick_tool_add
-import dev.chieppa.squash.uidesign.generated.pick_tool_select
+import dev.chieppa.squash.uidesign.generated.add_part
 import dev.chieppa.squash.uidesign.generated.shell_action_close
 import dev.chieppa.squash.uidesign.generated.shell_action_commands
 import dev.chieppa.squash.uidesign.generated.shell_action_draw
@@ -43,7 +42,6 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_lines
 import dev.chieppa.squash.uidesign.generated.stage_face
 import dev.chieppa.squash.uidesign.generated.stage_shape
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
-import dev.chieppa.squash.uidesign.generated.shell_drawer_types
 import dev.chieppa.squash.uidesign.generated.lines_tool_floating_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
@@ -71,7 +69,6 @@ object ShellActions {
     val REDO = ActionId("redo")
     val COMMANDS = ActionId("commands")
     val PARTS = ActionId("drawer-parts")
-    val TYPES = ActionId("drawer-types")
     val HISTORY = ActionId("drawer-history")
     val INSPECTOR = ActionId("drawer-inspector")
     val STAGE_SHAPE = ActionId("stage-shape")
@@ -109,8 +106,7 @@ object ShellActions {
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
-    val SELECT = ActionId("tool-select")
-    val ADD_PART = ActionId("tool-add-part")
+    val ADD_PART = ActionId(BuildTool.ADD_PART.actionId)
 }
 
 private val texts: Map<ActionId, StringResource> = mapOf(
@@ -123,7 +119,6 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.REDO to Res.string.shell_action_redo,
     ShellActions.COMMANDS to Res.string.shell_action_commands,
     ShellActions.PARTS to Res.string.shell_drawer_parts,
-    ShellActions.TYPES to Res.string.shell_drawer_types,
     ShellActions.HISTORY to Res.string.shell_drawer_history,
     ShellActions.INSPECTOR to Res.string.shell_drawer_inspector,
     ShellActions.STAGE_SHAPE to Res.string.stage_shape,
@@ -161,8 +156,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
-    ShellActions.SELECT to Res.string.pick_tool_select,
-    ShellActions.ADD_PART to Res.string.pick_tool_add,
+    ShellActions.ADD_PART to Res.string.add_part,
 )
 
 /** The labels for [dev.chieppa.stretch.frame.LocalActionText]. */
@@ -181,7 +175,6 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "redo" -> StretchIcons.Redo
     "command" -> StretchIcons.Command
     "parts" -> SquashIcons.Parts
-    "types" -> SquashIcons.PartTypes
     "history" -> StretchIcons.Clock
     "part" -> SquashIcons.Part
     "help" -> StretchIcons.Help
@@ -204,7 +197,6 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
-    "select" -> SquashIcons.Select
     "add-part" -> SquashIcons.AddPart
     else -> null
 }
@@ -214,9 +206,6 @@ private fun chord(keys: String) = listOf(KeyChord.parse(keys))
 /** The key mode of a stage, which scopes its tools' keys so a key means one thing in each stage. */
 val Stage.keyMode: String get() = name.lowercase()
 
-/** The key mode of Pick a part type. */
-const val PICK_KEY_MODE = "pick"
-
 /**
  * Registers everything a key, a menu or the palette can do. A stage's tools are scoped to it, and where a stage's tool and an action of every
  * screen share a key the stage's tool answers; everything else answers on every screen it is available on.
@@ -225,7 +214,6 @@ fun Shell.registerActions() {
     val inFrame = { state.screen.value != Screen.HOME }
     val hasCharacter = { state.session.value != null }
     val inWorkspace = { state.screen.value == Screen.WORKSPACE }
-    val onPick = { state.screen.value == Screen.PICK_PART }
     val placing = { inWorkspace() && state.tool.value.places }
     val selectedIsPaired = {
         inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
@@ -250,9 +238,7 @@ fun Shell.registerActions() {
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
     action(ShellActions.PARTS, "parts", available = inFrame) { toggle(DrawerIds.PARTS) }
-    action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
-        if (state.screen.value == Screen.PICK_PART) state.screen.value = Screen.WORKSPACE else state.openPartTypes()
-    }
+    action(ShellActions.ADD_PART, "add-part", chord("T"), inWorkspace) { state.armTool(BuildTool.ADD_PART) }
     action(ShellActions.HISTORY, "history", available = hasCharacter) { toggle(DrawerIds.HISTORY) }
     action(ShellActions.INSPECTOR, "part", chord("Tab"), inFrame) { toggle(DrawerIds.INSPECTOR) }
     action(ShellActions.HELP, "help", available = inFrame) { toggle(DrawerIds.HELP) }
@@ -295,6 +281,4 @@ fun Shell.registerActions() {
     tool(BuildTool.ERASE_MARK, "erase", "X")
     tool(BuildTool.GAZE_TARGET, "gaze-target", "G")
 
-    action(ShellActions.SELECT, "select", chord("V"), onPick, PICK_KEY_MODE) { state.pickTool.value = PickTool.SELECT }
-    action(ShellActions.ADD_PART, "add-part", chord("A"), onPick, PICK_KEY_MODE) { state.pickTool.value = PickTool.ADD_PART }
 }

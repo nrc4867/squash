@@ -38,7 +38,7 @@ class PaneLabelsTest {
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
         onNodeWithTag(ShellTags.partRow(row)).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         waitForIdle()
         val session = assertNotNull(state.session.value)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }

@@ -19,6 +19,7 @@ import dev.chieppa.squash.screens.sheet.ToolSection
 import dev.chieppa.squash.screens.sheet.ToolSections
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.add_part
 import dev.chieppa.squash.uidesign.generated.color_tool_brush
 import dev.chieppa.squash.uidesign.generated.color_tool_fill
 import dev.chieppa.squash.uidesign.generated.color_tool_pick
@@ -46,13 +47,14 @@ private const val SYMMETRY_TOOLS = 2
 
 /**
  * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
- * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Start from template, and
+ * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part, then Start from template, and
  * [places] while a trace image is being placed. Color holds the paint tools, Lines holds [lines] and Face holds [faces], each with Mirror.
  */
 @Composable
 fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, places: ToolSection? = null) {
     val tool by state.tool.collectAsState()
     val stage by state.stage.collectAsState()
+    val addPart = stringResource(Res.string.add_part)
     val mirror = ToolSection(ShellTags.section("mirror"), stringResource(Res.string.edit_tool_mirror), SquashIcons.Mirror, 1) { MirrorButton(state) }
     val sections = when (stage) {
         Stage.SHAPE -> listOfNotNull(
@@ -60,6 +62,9 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
             ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {
                 MirrorButton(state)
                 HalfOutlineButton(state)
+            },
+            ToolSection(ShellTags.section("add"), addPart, SquashIcons.AddPart, 1, tool.takeIf { it == BuildTool.ADD_PART }) {
+                StripTool(BuildTool.ADD_PART, SquashIcons.AddPart, addPart, tool, state::armTool)
             },
             ToolSection(ShellTags.section("template"), stringResource(Res.string.shell_action_start_template), SquashIcons.StartFromTemplate, 1) { StartFromTemplateButton(state) },
             places.takeIf { tool.places },

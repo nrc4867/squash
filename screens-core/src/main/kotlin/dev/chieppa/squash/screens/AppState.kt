@@ -22,7 +22,6 @@ import dev.chieppa.squash.screens.references.ReferenceEditState
 import dev.chieppa.squash.screens.references.ReferenceImageCache
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.character.catalog.OpenSocket
-import dev.chieppa.squash.screens.shell.PickTool
 import dev.chieppa.squash.screens.shell.RestPoseArtist
 import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.screens.shell.Stage
@@ -31,7 +30,6 @@ import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
 import dev.chieppa.squash.character.catalog.plan
-import dev.chieppa.squash.character.catalog.socketFor
 import dev.chieppa.squash.character.catalog.startingData
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.screens.spine.SpineEditState
@@ -111,9 +109,6 @@ class AppState(
     /** Each locked pane's own zoom and pan. */
     val paneNavigation = PaneNavigation()
 
-    /** What a socket's dot does on Pick a part type. */
-    val pickTool = MutableStateFlow(PickTool.SELECT)
-
     /** Whether the theme is the dark one. */
     val darkTheme = MutableStateFlow(false)
 
@@ -132,9 +127,9 @@ class AppState(
     /** What the face tools remember and the test gaze. */
     val face = FaceEditState()
 
-    /** What Pick a part type has chosen so far. */
-    val pickedSocket = MutableStateFlow<OpenSocket?>(null)
-    val pickedType = MutableStateFlow<TemplateId?>(null)
+    /** The open socket Add part's popover is open on, and the type it would add there. */
+    val addingSocket = MutableStateFlow<OpenSocket?>(null)
+    val addingType = MutableStateFlow<TemplateId?>(null)
 
     private var sessionJob: Job? = null
 
@@ -179,19 +174,19 @@ class AppState(
         selectedPart.value = document.character.parts.firstOrNull()?.id
         mirror.value = true
         activeView.value = View.SIDE
-        clearPick()
+        closeAddPart()
         curves.clear()
         spine.clear()
         paint.clear()
         lines.clear()
         references.clear()
         face.clear()
-        // Undo can remove the selected part or a picked socket's parent, so both follow the document.
+        // Undo can remove the selected part or the parent of the socket Add part is open on, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
                 if (selectedPart.value?.let(current.character::part) == null) selectedPart.value = current.character.parts.firstOrNull()?.id
                 val plan = templates.plan(current.character.bodyPlan)
-                if (plan != null && pickedSocket.value?.let { it in openSockets(current, plan, templates) } == false) pickedSocket.value = null
+                if (plan != null && addingSocket.value?.let { it in openSockets(current, plan, templates) } == false) closeAddPart()
             }
         }
         return opened
@@ -212,7 +207,7 @@ class AppState(
         session.value = null
         file.value = null
         selectedPart.value = null
-        clearPick()
+        closeAddPart()
         curves.clear()
         spine.clear()
         lines.clear()
@@ -239,26 +234,25 @@ class AppState(
 
     fun selectPart(part: PartId) {
         selectedPart.value = part
-        clearPick()
         screen.value = Screen.WORKSPACE
     }
 
-    /** Goes to Pick a part type for [socket], with the first type it takes chosen. */
-    fun chooseSocket(socket: OpenSocket) {
-        pickedSocket.value = socket
-        pickedType.value = socket.takes.first()
-        screen.value = Screen.PICK_PART
+    /** Opens Add part's popover on [socket], with the first type it takes chosen. */
+    fun offerSocket(socket: OpenSocket) {
+        addingSocket.value = socket
+        addingType.value = socket.takes.first()
     }
 
-    /** Goes to Pick a part type from the rail: the first open socket, or just the first type when none is open. */
-    fun openPartTypes() {
-        val socket = currentSockets().firstOrNull()
-        if (socket != null) {
-            chooseSocket(socket)
-        } else {
-            pickedType.value = templates.parts.firstOrNull()?.id
-            screen.value = Screen.PICK_PART
-        }
+    fun closeAddPart() {
+        addingSocket.value = null
+        addingType.value = null
+    }
+
+    /** The sockets of the open character with nothing on them. */
+    fun openSocketsNow(): List<OpenSocket> {
+        val document = session.value?.document?.value ?: return emptyList()
+        val plan = templates.plan(document.character.bodyPlan) ?: return emptyList()
+        return openSockets(document, plan, templates)
     }
 
     /** Arms [next], showing its stage, or puts the tool down when it is already armed, which leaves the panes to look at. */
@@ -273,39 +267,18 @@ class AppState(
         paint.selectedRegion = null
     }
 
-    /** Places the chosen type on [socket], or the first it takes when it takes no such type. */
-    fun placeOn(socket: OpenSocket) {
-        val chosen = pickedType.value?.takeIf { it in socket.takes }
-        chooseSocket(socket)
-        if (chosen != null) pickedType.value = chosen
-        placePicked()
-    }
-
-    /** Chooses a type, moving to a socket that takes it; with no such socket, nothing can be placed. */
-    fun chooseType(type: TemplateId) {
-        pickedType.value = type
-        pickedSocket.value = socketFor(type, currentSockets(), pickedSocket.value)
-    }
-
-    /** Sends the picked type onto the picked socket, all sides in one step, selects it and goes to the workspace. */
-    fun placePicked() {
+    /**
+     * Adds the type chosen in Add part's popover on its socket, both sides of a pair in one step, selects it and closes the popover.
+     * Only a type the socket takes is added.
+     */
+    fun addPart() {
         val opened = session.value ?: return
-        val socket = pickedSocket.value ?: return
-        val template = pickedType.value?.let { templates.template(it) } ?: return
+        val socket = addingSocket.value ?: return
+        val template = addingType.value?.takeIf { it in socket.takes }?.let { templates.template(it) } ?: return
         val start = templates.plan(opened.document.value.character.bodyPlan)?.startingData() ?: PartData()
         val parts = placeOnSocket(socket, template, opened.document.value, start)
         opened.send(AddParts(parts, pairs = parts.mapNotNull { it.pair }.associateWith { start }))
+        closeAddPart()
         selectPart(parts.first().id)
-    }
-
-    private fun currentSockets(): List<OpenSocket> {
-        val document = session.value?.document?.value ?: return emptyList()
-        val plan = templates.plan(document.character.bodyPlan) ?: return emptyList()
-        return openSockets(document, plan, templates)
-    }
-
-    private fun clearPick() {
-        pickedSocket.value = null
-        pickedType.value = null
     }
 }

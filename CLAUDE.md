@@ -39,7 +39,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Layer | Module | Holds |
 | --- | --- | --- |
 | App | `app` | Entry point; `SquashApp`, which wires the screens together and registers modes, drawers and commands with the Stretch frame |
-| Interfaces | `screens-shell` | Home, New character, Pick a part type, the Build frame and its chrome |
+| Interfaces | `screens-shell` | Home, New character, the Build frame and its chrome, Add part's popover |
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
 | Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
 | Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions |

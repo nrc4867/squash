@@ -103,20 +103,22 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aSocketRowLeadsToThePickerAndDrawingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
+    fun aSocketRowOpensAddPartAndAddingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
+        onNodeWithTag(ShellTags.partRowState("front-leg")).assertTextContains("pair")
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-
-        onNodeWithTag(ShellTags.PICK).assertExists()
-        onNodeWithTag(ShellTags.PICK_SOCKET).assertExists()
-        assertEquals(TemplateId("leg"), state.pickedType.value)
-        onNodeWithTag(ShellTags.pickTile("leg")).assertExists()
-        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("0 of 8 parts")
-
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
         waitForIdle()
-        onNodeWithTag(ShellTags.WORKSPACE).assertExists()
+        onNodeWithTag(ShellTags.ADD_PART).assertExists()
+        assertEquals(TemplateId("leg"), state.addingType.value)
+        onNodeWithTag(ShellTags.addTile("leg")).assertExists()
+        onNodeWithTag(ShellTags.addTile("tail")).assertDoesNotExist()
+        onNodeWithText("Add to Front leg socket").assertExists()
+        assertEquals(Screen.WORKSPACE, state.screen.value, "the workspace stays")
+
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.ADD_PART).assertDoesNotExist()
         val document = assertNotNull(state.session.value).document.value
         val legs = document.character.parts.filter { it.socket?.socket == "front-leg" }
         assertEquals(2, legs.size)
@@ -125,53 +127,27 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aDotOnTheRestPosePicksItsSocketAndTheTreeStillDoes() = runDesktopComposeUiTest(1600, 900) {
+    fun tListsTheOpenSocketsAndEnterAddsWhileEscCloses() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
-        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.T) }
+        waitForIdle()
+        assertEquals(BuildTool.ADD_PART, state.tool.value)
+        onNodeWithTag(ShellTags.tool(BuildTool.ADD_PART)).assertExists()
+        onNodeWithTag(ShellTags.addSocket("tail")).performClick()
+        waitForIdle()
+        assertEquals("tail", state.addingSocket.value?.name)
+        onNodeWithTag(ShellTags.ADD_PART).performKeyInput { pressKey(Key.Escape) }
+        waitForIdle()
+        assertEquals(null, state.addingSocket.value)
+        assertEquals(BuildTool.ADD_PART, state.tool.value, "Esc closes the popover and leaves the tool")
+        onNodeWithTag(ShellTags.addSocket("tail")).performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.ADD_PART).performKeyInput { pressKey(Key.Enter) }
+        waitForIdle()
         val session = assertNotNull(state.session.value)
-        waitUntil(timeoutMillis = 20_000) { session.assembly.output.value != null && onAllNodesWithTag(ShellTags.socketDot("tail")).fetchSemanticsNodes().isNotEmpty() }
-        assertEquals("front-leg", state.pickedSocket.value?.name)
-
-        onNodeWithTag(ShellTags.socketDot("tail")).performClick()
-        waitForIdle()
-        assertEquals("tail", state.pickedSocket.value?.name)
-        assertEquals(TemplateId("tail"), state.pickedType.value)
-        onNodeWithTag(ShellTags.PICK).assertExists()
-
-        onNodeWithTag(ShellTags.partRow("back-leg")).performClick()
-        waitForIdle()
-        assertEquals("back-leg", state.pickedSocket.value?.name)
-    }
-
-    @Test
-    fun aTileWithNoOpenSocketOffersNothingToDraw() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
-        createCharacter(state)
-        onNodeWithContentDescription("Part types").performClick()
-        onNodeWithTag(ShellTags.PICK).assertExists()
-        onNodeWithTag(ShellTags.PICK_DRAW).assertExists()
-        onNodeWithTag(ShellTags.pickTile("torso")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).assertDoesNotExist()
-        onNodeWithContentDescription("Part types").performClick()
-        onNodeWithTag(ShellTags.WORKSPACE).assertExists()
-    }
-
-    @Test
-    fun theTypesKeyKeepsWorkingAfterTheTileHoldingFocusIsGone() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
-        createCharacter(state)
-        fun pressTypes(tag: String) {
-            onNodeWithTag(tag).performKeyInput { pressKey(Key.T) }
-            waitForIdle()
-        }
-        pressTypes(ShellTags.WORKSPACE)
-        assertEquals(Screen.PICK_PART, state.screen.value)
-        onNodeWithTag(ShellTags.pickTile("torso")).performClick()
-        pressTypes(ShellTags.PICK)
-        assertEquals(Screen.WORKSPACE, state.screen.value)
-        pressTypes(ShellTags.WORKSPACE)
-        assertEquals(Screen.PICK_PART, state.screen.value)
+        assertTrue(session.document.value.character.parts.any { it.socket?.socket == "tail" })
+        onNodeWithTag(ShellTags.addSocket("tail")).assertDoesNotExist()
     }
 
     @Test
@@ -179,7 +155,7 @@ class ShellFlowTest {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         val session = assertNotNull(state.session.value)
         waitForIdle()
         assertEquals(2, session.document.value.character.parts.size)
@@ -209,13 +185,19 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theDrawerSaysWhichToesAPawTakes() = runDesktopComposeUiTest(1600, 900) {
+    fun aSocketOffersOnlyTheTypesItTakesWithWhatYouDraw() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
-        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.pickTile("paw")).performClick()
+        val session = assertNotNull(state.session.value)
+        val plan = shipped.plans.first()
+        val socket = openSockets(session.document.value, plan, shipped).first { it.name == "front-leg" }
+        session.send(AddParts(placeOnSocket(socket, assertNotNull(shipped.template(socket.takes.first())), session.document.value)))
         waitForIdle()
-        onNodeWithText("0, 3\u20135").assertExists()
+        onNodeWithTag(ShellTags.partRow("paw")).performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.addTile("paw")).assertExists()
+        onNodeWithTag(ShellTags.addTile("leg")).assertDoesNotExist()
+        onNodeWithTag(ShellTags.viewChip("SIDE")).assertExists()
     }
 
     @Test
@@ -321,7 +303,8 @@ class ShellFlowTest {
     fun theRailsHoldTheDrawersAndTheStagesNotBuiltDoNotOpen() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
-        for (name in listOf("Parts", "Part types", "History", "Help", "Inspector")) onNodeWithContentDescription(name).assertIsEnabled()
+        for (name in listOf("Parts", "References", "History", "Help", "Inspector")) onNodeWithContentDescription(name).assertIsEnabled()
+        onNodeWithContentDescription("Part types").assertDoesNotExist()
         for (name in listOf("Color", "Lines", "Face")) onNode(hasText(name) and isSelectable()).assertIsEnabled()
         for (name in listOf("Rig", "Dress")) onNode(hasText(name) and isSelectable()).assertIsNotEnabled()
         onNode(hasText("Color") and isSelectable()).performClick()
@@ -341,7 +324,7 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.tool(BuildTool.ERASE)).assertExists()
         onNodeWithTag(ShellTags.MIRROR).assertIsNotEnabled()
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         waitForIdle()
         onNodeWithTag(ShellTags.MIRROR).assertIsEnabled()
         onAllNodesWithTag(ShellTags.sideRow("front-leg.left")).assertCountEquals(0)
@@ -365,18 +348,4 @@ class ShellFlowTest {
         onNodeWithText("differs").assertExists()
     }
 
-    @Test
-    fun addPartPlacesTheChosenTypeOnTheSocketItIsPressedOn() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
-        createCharacter(state)
-        onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        waitForIdle()
-        val before = assertNotNull(state.session.value).document.value.character.parts.size
-        val socket = assertNotNull(state.pickedSocket.value)
-        state.pickTool.value = PickTool.ADD_PART
-        state.placeOn(socket)
-        waitForIdle()
-        assertEquals(Screen.WORKSPACE, state.screen.value)
-        assertTrue(assertNotNull(state.session.value).document.value.character.parts.size > before)
-    }
 }

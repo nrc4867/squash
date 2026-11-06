@@ -1,6 +1,10 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -14,6 +18,7 @@ import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.rememberEditCurvesTool
 import dev.chieppa.squash.screens.edit.rememberEraseTool
 import dev.chieppa.squash.screens.edit.rememberSmoothTool
+import dev.chieppa.squash.screens.move.rememberAddPartTool
 import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetPanes
@@ -38,6 +43,7 @@ import dev.chieppa.squash.screens.surface.rememberEditMarkTool
 import dev.chieppa.squash.screens.surface.rememberEraseMarkTool
 import dev.chieppa.squash.screens.surface.rememberGazeTargetTool
 import dev.chieppa.squash.screens.surface.rememberSelectPartTool
+import dev.chieppa.squash.screens.shell.AddPartPopover
 import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
@@ -49,6 +55,10 @@ import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
 import androidx.compose.runtime.getValue
+
+/** Where Add part's popover opens over the panes: below the strip, at the right, as the board draws it. */
+private val POPOVER_TOP = 44.dp
+private val POPOVER_END = 24.dp
 
 /** The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. */
 @Composable
@@ -78,6 +88,7 @@ fun WorkspaceScreen(shell: Shell) {
     val placeImage = rememberPlaceImageTool(state)
     val rotateImage = rememberPlaceImageTool(state, rotates = true)
     val selectPart = rememberSelectPartTool(state)
+    val addPart = rememberAddPartTool(state)
     val stage by state.stage.collectAsState()
     val tool: PaneTool = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
@@ -102,6 +113,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.GAZE_TARGET -> gazeTarget
         BuildTool.PLACE_IMAGE -> placeImage
         BuildTool.ROTATE_IMAGE -> rotateImage
+        BuildTool.ADD_PART -> addPart
         BuildTool.NONE -> selectPart
     }
     val selected by state.selectedPart.collectAsState()
@@ -112,15 +124,18 @@ fun WorkspaceScreen(shell: Shell) {
     }
     val facing = stage == Stage.FACE
     Column(Modifier.fillMaxSize()) {
-        SheetPanes(
-            state,
-            Modifier.weight(1f).fillMaxWidth(),
-            tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
-            tool = tool,
-            paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
-            surface = rememberSurfaceLines(state),
-            singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
-        )
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            SheetPanes(
+                state,
+                Modifier.fillMaxSize(),
+                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
+                tool = tool,
+                paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
+                surface = rememberSurfaceLines(state),
+                singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
+            )
+            Box(Modifier.align(Alignment.TopEnd).padding(top = POPOVER_TOP, end = POPOVER_END)) { AddPartPopover(state) }
+        }
         if (facing) FaceBand(state)
     }
 }

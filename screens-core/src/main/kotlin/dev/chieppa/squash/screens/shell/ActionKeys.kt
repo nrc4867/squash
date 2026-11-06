@@ -11,7 +11,7 @@ object ActionKeys {
     const val HALF_OUTLINE = "half-outline"
     const val FIT_PANE = "fit-pane"
     const val PARTS = "drawer-parts"
-    const val TYPES = "drawer-types"
+    const val ADD_PART = "tool-add-part"
     const val INSPECTOR = "drawer-inspector"
     const val NEW = "new"
     const val OPEN = "open"

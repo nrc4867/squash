@@ -32,11 +32,9 @@ import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.graph.StageCount
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_percent
-import dev.chieppa.squash.uidesign.generated.pick_draw
 import dev.chieppa.squash.uidesign.generated.shell_part_built_from
 import dev.chieppa.squash.uidesign.generated.shell_part_fit
 import dev.chieppa.squash.uidesign.generated.shell_part_fit_done
@@ -50,8 +48,6 @@ import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
-import dev.chieppa.stretch.ui.Button
-import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.Chip
 import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.EmptyState
@@ -73,39 +69,15 @@ private val READOUT_WIDTH = 52.dp
 /** The Shape inspector: the armed tool's sections first, then the selected part's parameters. */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
+    val tool by state.tool.collectAsState()
+    if (tool == BuildTool.ADD_PART) AddPartSection(state)
     SelectedPartDetails(state, toolSections)
 }
 
-/** The inspector off the workspace: the picked type on Pick a part type, and nothing to show elsewhere. */
+/** The inspector off the workspace, where it has nothing to show. */
 @Composable
-internal fun PickedTypeOrNone(state: AppState) {
-    val screen by state.screen.collectAsState()
-    if (screen == Screen.PICK_PART) {
-        PickedTypeDetails(state)
-    } else {
-        EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
-    }
-}
-
-@Composable
-private fun PickedTypeDetails(state: AppState) {
-    val type by state.pickedType.collectAsState()
-    val socket by state.pickedSocket.collectAsState()
-    val template = type?.let { state.templates.template(it) } ?: return
-    YouDrawSection(template, null)
-    ToolKnowsSection(template, socket?.paired == true)
-    AreasSection(template)
-    if (socket != null) {
-        DrawerSection(divider = false) {
-            Button(
-                stringResource(Res.string.pick_draw, template.name.lowercase()),
-                { state.placePicked() },
-                Modifier.testTag(ShellTags.PICK_DRAW),
-                kind = ButtonKind.Primary,
-                icon = SquashIcons.DrawOutline,
-            )
-        }
-    }
+internal fun NoPart() {
+    EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
 }
 
 @Composable

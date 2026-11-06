@@ -61,7 +61,7 @@ class SingleLayoutFlowTest {
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         waitForIdle()
         return assertNotNull(state.session.value)
     }

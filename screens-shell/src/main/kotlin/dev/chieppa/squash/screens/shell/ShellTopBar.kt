@@ -112,12 +112,12 @@ private fun shellMenus(shell: Shell): List<BarMenu> = listOf(
         Item(shell, ShellActions.EDIT_CURVES, close)
         Item(shell, ShellActions.ERASE, close)
         Item(shell, ShellActions.SMOOTH, close)
+        Item(shell, ShellActions.ADD_PART, close)
         MenuDivider()
         Item(shell, ShellActions.MIRROR, close)
     },
     BarMenu(stringResource(Res.string.shell_menu_view)) { close ->
         Item(shell, ShellActions.PARTS, close)
-        Item(shell, ShellActions.TYPES, close)
         Item(shell, ShellActions.HISTORY, close)
         Item(shell, ShellActions.INSPECTOR, close)
         MenuDivider()

@@ -132,7 +132,7 @@ class PenShapesSmokeTest {
         val session = assertNotNull(state.session.value)
         settled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.PICK_DRAW).performClick()
+        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         settled(session)
         onNodeWithContentDescription("Part").performClick()
         waitForIdle()
