@@ -74,7 +74,7 @@ private const val MIN_BRUSH_RADIUS = 0.005f
 private const val PATCH_SEPARATOR = ":"
 private val READOUT_WIDTH = 44.dp
 
-/** The Color drawer: the palette and the tool's controls, the selected part's sections, every border's ink, and shading. */
+/** The Color inspector: the palette and the tool's controls, the selected part's sections, every border's ink, and shading. */
 @Composable
 fun ColorDrawerContent(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()

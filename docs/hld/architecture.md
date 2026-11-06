@@ -89,7 +89,7 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | App | `app` | Entry point; `SquashApp`, which wires the screens together and registers modes, drawers and commands with the Stretch frame |
 | Interfaces | `screens-shell` | Home, New character, Pick a part type, the Build frame and its chrome |
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
-| Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
+| Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their inspector sections |
 | Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions. No sources yet |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
@@ -106,6 +106,10 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 Stretch's modules sit below all of these.
 
 The `screens-*` modules never depend on each other. What they share is in `screens-core`, or in `character` where it is plain domain. `screens-core` exists because `AppState`, `PaneTool` and the locked cameras use both `ui-design` and `render`, which sit beside each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent`, and `app` supplies it.
+
+### Stages
+
+Build has four stages: Shape, Color, Lines and Face. `AppState.stage` holds the one on screen and follows the armed tool, since every tool belongs to one stage (`BuildTool.stage`). Each stage remembers the tool it was left holding, and `AppState.showStage` arms it again. The stage alone decides three things: the tools on the strip, the key mode the tools' actions are scoped to, and what the inspector holds. The inspector is one drawer on the right, titled with the stage, whose content `app` assembles from the screens' modules with the armed tool's sections first. Parts, References, History, Help and the inspector are drawers that only show and hide: none arms a tool, and no tool opens or closes one.
 
 ### Principles
 

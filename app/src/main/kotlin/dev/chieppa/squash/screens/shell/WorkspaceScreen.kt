@@ -1,13 +1,11 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import dev.chieppa.squash.screens.draw.WorkspaceTools
 import dev.chieppa.squash.screens.draw.rememberDrawOutlineTool
@@ -31,6 +29,7 @@ import dev.chieppa.squash.screens.surface.rememberLineWidthTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceEraseTool
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
+import dev.chieppa.squash.screens.surface.FaceBand
 import dev.chieppa.squash.screens.surface.HeadAngleBar
 import dev.chieppa.squash.screens.surface.faceToolSection
 import dev.chieppa.squash.screens.surface.rememberCombTool
@@ -48,8 +47,9 @@ import dev.chieppa.squash.uidesign.generated.edit_toast_sections
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
+import androidx.compose.runtime.getValue
 
-/** The Build workspace: the panes and their tool strip, in the frame's viewport. */
+/** The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. */
 @Composable
 fun WorkspaceScreen(shell: Shell) {
     val state = shell.state
@@ -76,43 +76,7 @@ fun WorkspaceScreen(shell: Shell) {
     val gazeTarget = rememberGazeTargetTool(state)
     val placeImage = rememberPlaceImageTool(state)
     val rotateImage = rememberPlaceImageTool(state, rotates = true)
-    val linesOpen = shell.showsLineTools
-    LaunchedEffect(linesOpen) {
-        val tool = state.tool.value
-        if (linesOpen && !tool.inks && !tool.faces && !tool.places) state.tool.value = BuildTool.LINE_WIDTH
-        if (!linesOpen && (tool.inks || tool.faces)) state.tool.value = BuildTool.DRAW_OUTLINE
-    }
-    val referencesOpen = shell.layout[DrawerIds.REFERENCES]?.open == true
-    var partsHidden by remember { mutableStateOf(false) }
-    LaunchedEffect(referencesOpen) {
-        val partsOpen = shell.layout[DrawerIds.PARTS]?.open == true
-        if (referencesOpen && partsOpen) {
-            shell.layout = shell.layout.close(DrawerIds.PARTS)
-            partsHidden = true
-        }
-        if (!referencesOpen && partsHidden) {
-            shell.layout = shell.layout.open(DrawerIds.PARTS)
-            partsHidden = false
-        }
-    }
-    val placing = armed.places
-    LaunchedEffect(placing) {
-        shell.layout = if (placing) shell.layout.open(DrawerIds.PLACE_IMAGE) else shell.layout.close(DrawerIds.PLACE_IMAGE)
-    }
-    val placeOpen = shell.layout[DrawerIds.PLACE_IMAGE]?.open == true
-    LaunchedEffect(placeOpen) {
-        if (!placeOpen && state.tool.value.places) state.tool.value = BuildTool.DRAW_OUTLINE
-    }
-    val facing = armed.faces
-    LaunchedEffect(facing) {
-        shell.layout = if (facing) {
-            shell.layout.open(DrawerIds.EXPRESSIONS).open(DrawerIds.ANGLE_VERSIONS)
-        } else {
-            state.face.group = null
-            state.face.role = null
-            shell.layout.close(DrawerIds.EXPRESSIONS).close(DrawerIds.ANGLE_VERSIONS)
-        }
-    }
+    val stage by state.stage.collectAsState()
     val tool: PaneTool? = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
@@ -144,15 +108,19 @@ fun WorkspaceScreen(shell: Shell) {
     LaunchedEffect(refit) {
         if (refit != null) shell.toasts.show(refitMessage(refit), getString(Res.string.shell_action_undo)) { state.undo() }
     }
-    SheetPanes(
-        state,
-        Modifier.fillMaxSize(),
-        tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
-        tool = tool,
-        paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
-        surface = rememberSurfaceLines(state),
-        singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
-    )
+    val facing = stage == Stage.FACE
+    Column(Modifier.fillMaxSize()) {
+        SheetPanes(
+            state,
+            Modifier.weight(1f).fillMaxWidth(),
+            tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), placeToolSection(state)) },
+            tool = tool,
+            paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
+            surface = rememberSurfaceLines(state),
+            singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
+        )
+        if (facing) FaceBand(state)
+    }
 }
 
 /** What a refit changed, counting sections from one as a person does. */

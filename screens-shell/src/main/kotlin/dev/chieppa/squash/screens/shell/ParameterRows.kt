@@ -5,7 +5,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import kotlin.math.abs
 import kotlin.math.round
 
-/** One parameter as the Part drawer shows it: its current value and the limits its template sets. */
+/** One parameter as the Shape inspector shows it: its current value and the limits its template sets. */
 data class ParameterRow(
     val name: String,
     val value: Float,

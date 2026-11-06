@@ -113,7 +113,7 @@ class SurfaceLines(
     }
 }
 
-/** The stroke [id] shown on the model in [color], as the Marks drawer picked it. */
+/** The stroke [id] shown on the model in [color], as the Lines inspector picked it. */
 data class PickedStroke(val id: MarkId, val color: Color)
 
 /** The marks that stand alone, outside any mark group. */

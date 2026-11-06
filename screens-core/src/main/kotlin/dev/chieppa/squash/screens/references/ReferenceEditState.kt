@@ -9,7 +9,7 @@ import dev.chieppa.squash.document.View
 
 /**
  * What the reference drawers remember: the board image [picked], whether a click on it [picks] a color, the view whose trace the
- * Trace drawer shows and Place image moves, and whether placing snaps an image's bottom to the ground.
+ * References drawer shows and Place image moves, and whether placing snaps an image's bottom to the ground.
  */
 @Stable
 class ReferenceEditState {

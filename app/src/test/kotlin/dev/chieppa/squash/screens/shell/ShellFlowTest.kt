@@ -20,7 +20,6 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
@@ -48,6 +47,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.runDesktopComposeUiTest
+import dev.chieppa.squash.screens.shell.Stage
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.hasText
 
 private object NoFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -69,7 +72,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun firstLaunchGoesFromNewCharacterToTheWorkspace() = runComposeUiTest {
+    fun firstLaunchGoesFromNewCharacterToTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         show(state)
         onNodeWithTag(ShellTags.NEW_DIALOG).assertExists()
@@ -91,7 +94,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun anEmptyNameFallsBackToUntitled() = runComposeUiTest {
+    fun anEmptyNameFallsBackToUntitled() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         show(state)
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
@@ -100,7 +103,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aSocketRowLeadsToThePickerAndDrawingSelectsThePart() = runComposeUiTest {
+    fun aSocketRowLeadsToThePickerAndDrawingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
@@ -122,7 +125,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aDotOnTheRestPosePicksItsSocketAndTheTreeStillDoes() = runComposeUiTest {
+    fun aDotOnTheRestPosePicksItsSocketAndTheTreeStillDoes() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
@@ -142,7 +145,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aTileWithNoOpenSocketOffersNothingToDraw() = runComposeUiTest {
+    fun aTileWithNoOpenSocketOffersNothingToDraw() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithContentDescription("Part types").performClick()
@@ -155,7 +158,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theTypesKeyKeepsWorkingAfterTheTileHoldingFocusIsGone() = runComposeUiTest {
+    fun theTypesKeyKeepsWorkingAfterTheTileHoldingFocusIsGone() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         fun pressTypes(tag: String) {
@@ -172,7 +175,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun undoInTheTopBarTakesBackAPlacedPart() = runComposeUiTest {
+    fun undoInTheTopBarTakesBackAPlacedPart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
@@ -189,10 +192,9 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theSliderIsOneUndoStepAndStaysInItsLimits() = runComposeUiTest {
+    fun theSliderIsOneUndoStepAndStaysInItsLimits() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
-        onNodeWithContentDescription("Part").performClick()
         state.tool.value = BuildTool.NONE
         waitForIdle()
         val session = assertNotNull(state.session.value)
@@ -207,7 +209,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theDrawerSaysWhichToesAPawTakes() = runComposeUiTest {
+    fun theDrawerSaysWhichToesAPawTakes() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
@@ -217,7 +219,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runComposeUiTest {
+    fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         val session = assertNotNull(state.session.value)
@@ -228,7 +230,6 @@ class ShellFlowTest {
         place("front-leg")
         val paw = place("paw").first()
         state.selectedPart.value = paw.id
-        onNodeWithContentDescription("Part").performClick()
         state.tool.value = BuildTool.NONE
         waitForIdle()
         val tagged = onNodeWithTag(ShellTags.parameter("toes"))
@@ -244,7 +245,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theMenusRunActions() = runComposeUiTest {
+    fun theMenusRunActions() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithText("View").performClick()
@@ -253,7 +254,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun homeListsARecentFileAndContinues() = runComposeUiTest {
+    fun homeListsARecentFileAndContinues() = runDesktopComposeUiTest(1600, 900) {
         val file = Files.createTempFile("marsh-hare", ".json")
         val format = SquashFormat()
         val new = newCharacter(caninePlan, shipped, "Marsh hare")
@@ -269,7 +270,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun clearingTheRecentListShowsTheEmptyHome() = runComposeUiTest {
+    fun clearingTheRecentListShowsTheEmptyHome() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, recent = RecentFiles(listOf("gone.json")))
         show(state)
         onNodeWithText("Clear recent files").performClick()
@@ -279,7 +280,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aFileThatWillNotOpenLeavesTheRecentList() = runComposeUiTest {
+    fun aFileThatWillNotOpenLeavesTheRecentList() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, recent = RecentFiles(listOf("gone.json")))
         show(state)
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
@@ -288,7 +289,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun everyScreenHasTheFourMenusAndCantUndoWithNothingToTakeBack() = runComposeUiTest {
+    fun everyScreenHasTheFourMenusAndCantUndoWithNothingToTakeBack() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         for (title in listOf("File", "Edit", "View", "Help")) onNodeWithText(title).assertExists()
@@ -302,7 +303,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theStatusBarShowsHomesOwnFactsAfterTheWorkspace() = runComposeUiTest {
+    fun theStatusBarShowsHomesOwnFactsAfterTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("0 drawn · 3 from template")
@@ -317,15 +318,24 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theRailHoldsWhatTheBoardsDrawAndWhatIsNotBuiltDoesNotOpen() = runComposeUiTest {
+    fun theRailsHoldTheDrawersAndTheStagesNotBuiltDoNotOpen() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
-        for (name in listOf("Parts", "Part types", "History", "Help", "Part", "Color", "Lines", "Marks")) onNodeWithContentDescription(name).assertIsEnabled()
-        for (name in listOf("Rig", "Slots")) onNodeWithContentDescription(name).assertIsNotEnabled()
+        for (name in listOf("Parts", "Part types", "History", "Help", "Inspector")) onNodeWithContentDescription(name).assertIsEnabled()
+        for (name in listOf("Color", "Lines", "Face")) onNode(hasText(name) and isSelectable()).assertIsEnabled()
+        for (name in listOf("Rig", "Dress")) onNode(hasText(name) and isSelectable()).assertIsNotEnabled()
+        onNode(hasText("Color") and isSelectable()).performClick()
+        waitForIdle()
+        assertEquals(Stage.COLOR, state.stage.value)
+        assertEquals(BuildTool.FILL, state.tool.value, "a stage opens on its first tool")
+        onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).assertDoesNotExist()
+        onNode(hasText("Shape") and isSelectable()).performClick()
+        waitForIdle()
+        assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value, "and comes back holding the tool it was left with")
     }
 
     @Test
-    fun mirrorDecidesWhereAnEditLandsAndAnOverrideShowsItself() = runComposeUiTest {
+    fun mirrorDecidesWhereAnEditLandsAndAnOverrideShowsItself() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.tool(BuildTool.ERASE)).assertExists()
@@ -356,7 +366,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun addPartPlacesTheChosenTypeOnTheSocketItIsPressedOn() = runComposeUiTest {
+    fun addPartPlacesTheChosenTypeOnTheSocketItIsPressedOn() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()

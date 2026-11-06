@@ -25,6 +25,8 @@ import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.screens.shell.PickTool
 import dev.chieppa.squash.screens.shell.RestPoseArtist
 import dev.chieppa.squash.screens.shell.SquashFormat
+import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.screens.shell.stage
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
@@ -43,6 +45,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.util.EnumMap
 import kotlinx.coroutines.plus
 
 /**
@@ -66,6 +69,12 @@ class AppState(
     val file = MutableStateFlow<DocumentSession<SquashDocument>?>(null)
 
     val tool = MutableStateFlow(BuildTool.DRAW_OUTLINE)
+
+    /** The stage of Build on screen, which follows the armed tool and decides the strip, the keys and the inspector. */
+    val stage = MutableStateFlow(Stage.SHAPE)
+
+    /** The tool each stage was left holding, which coming back to the stage arms again. */
+    private val armedIn = Stage.entries.associateWithTo(EnumMap(Stage::class.java)) { it.first }
 
     /** How the workspace lays out its views. */
     val layout = MutableStateFlow(SheetLayout.SHEET)
@@ -118,6 +127,23 @@ class AppState(
     val pickedType = MutableStateFlow<TemplateId?>(null)
 
     private var sessionJob: Job? = null
+
+    init {
+        scope.launch(Dispatchers.Unconfined) {
+            tool.collect { armed ->
+                armed.stage?.let { stage.value = it }
+                armedIn[stage.value] = armed
+            }
+        }
+    }
+
+    /** Shows [next], arming the tool it was left holding. */
+    fun showStage(next: Stage) {
+        if (next == stage.value) return
+        paint.selectedRegion = null
+        stage.value = next
+        tool.value = armedIn.getValue(next)
+    }
 
     /** Whether an edit writes the selected side alone, as [mirror] off asks. */
     val thisSide: Boolean get() = !mirror.value
@@ -225,7 +251,7 @@ class AppState(
         }
     }
 
-    /** Arms [next], or disarms the tool when it is already armed, which leaves the panes to look at and the template's drawer. */
+    /** Arms [next], showing its stage, or puts the tool down when it is already armed, which leaves the panes to look at. */
     fun armTool(next: BuildTool) {
         tool.value = if (tool.value == next) BuildTool.NONE else next
         if (tool.value != BuildTool.REGION_BORDER) paint.selectedRegion = null

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -22,7 +21,6 @@ import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.lines.PickedMark
 import dev.chieppa.squash.screens.lines.PickedWeight
 import dev.chieppa.squash.screens.sheet.INK_SLOT
@@ -49,10 +47,11 @@ import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Toggle
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.runtime.getValue
 
 private const val PERCENT = 100f
 
-/** Test tags for the Marks drawer's rows. */
+/** Test tags for the rows listing what is drawn on the character's lines. */
 object MarksDrawerTags {
     const val STROKE_COLOR = "marks.stroke.color"
     const val STROKE_MIRROR = "marks.stroke.mirror"
@@ -65,7 +64,7 @@ object MarksDrawerTags {
     fun fur(part: PartId) = "marks.fur.${part.value}"
 }
 
-/** A part's row of a list in the Marks drawer: its name and how many it holds. */
+/** A part's row in the list of fur: its name and how many strokes it holds. */
 data class MarkCount(val part: PartId, val name: String, val count: Int)
 
 /** A stroke's row: the part holding it and what it is called there. */
@@ -74,10 +73,10 @@ data class StrokeRow(val part: PartId, val partName: String, val mark: Mark, val
 /** A line weight's row: the part it lies on, the area's name it lies in or else the part's, its id and what it adds. */
 data class WeightRow(val part: PartId, val name: String, val id: LineWeightId, val amount: Float)
 
-/** What the Marks drawer lists of [character], a mirrored pair counting once, as the Parts tree reads it. */
+/** What the Lines inspector lists of [character], a mirrored pair counting once, as the Parts tree reads it. */
 class MarkRows(val weights: List<WeightRow>, val strokes: List<StrokeRow>, val fur: List<MarkCount>)
 
-/** The Marks drawer's rows for [character]: the marks outside any group, one row for each stroke and one for each part's fur, and every line weight. */
+/** The Lines inspector's rows for [character]: the marks outside any group, one row for each stroke and one for each part's fur, and every line weight. */
 fun markRows(character: Character, templates: TemplateFolder, library: TemplateLibrary): MarkRows {
     val weights = ArrayList<WeightRow>()
     val strokes = ArrayList<StrokeRow>()
@@ -98,27 +97,24 @@ fun markRows(character: Character, templates: TemplateFolder, library: TemplateL
 }
 
 /**
- * The Marks drawer: every stroke on the character, which picking shows on the model and opens below the list for its color, its mirror and deleting it;
- * every line weight, with its Amount once picked; and each part's fur, whose row selects the part and opens its fur rule in [onOpenLines].
+ * What is drawn on the character's lines: every stroke, which picking shows on the model and opens below the list for its color, its mirror and deleting it;
+ * every line weight, with its Amount once picked; and each part's fur, whose row selects the part, which shows its fur rule.
  */
 @Composable
-fun MarksDrawer(state: AppState, onOpenLines: () -> Unit) {
+fun MarkLists(state: AppState) {
     val session by state.session.collectAsState()
     val open = session ?: return
     val document by open.document.collectAsState()
     val character = document.character
     val rows = markRows(character, state.templates, open.templates)
     val selected by state.selectedPart.collectAsState()
-    val tool by state.tool.collectAsState()
     Column {
-        FaceSection(state, open)
-        if (tool == BuildTool.FLOATING_MARK) StrokeToolSection(state, open)
         if (rows.strokes.isNotEmpty()) StrokesSection(state, open, character, rows.strokes)
         if (rows.weights.isNotEmpty()) WeightsSection(state, open, rows.weights)
         if (rows.fur.isNotEmpty()) {
             DrawerSection(stringResource(Res.string.marks_fur), divider = false) {
                 rows.fur.forEach { row ->
-                    ListRow(selected == row.part, { state.selectPart(row.part); onOpenLines() }, Modifier.testTag(MarksDrawerTags.fur(row.part))) {
+                    ListRow(selected == row.part, { state.selectPart(row.part) }, Modifier.testTag(MarksDrawerTags.fur(row.part))) {
                         RowIcon(SquashIcons.FurStroke)
                         RowText(row.name, Modifier.weight(1f))
                         RowText(row.count.toString(), subtle = true)

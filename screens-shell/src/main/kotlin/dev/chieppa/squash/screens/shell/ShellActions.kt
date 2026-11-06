@@ -36,7 +36,11 @@ import dev.chieppa.squash.uidesign.generated.shell_action_start_template
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
-import dev.chieppa.squash.uidesign.generated.shell_drawer_part
+import dev.chieppa.squash.uidesign.generated.shell_drawer_inspector
+import dev.chieppa.squash.uidesign.generated.shell_drawer_color
+import dev.chieppa.squash.uidesign.generated.shell_drawer_lines
+import dev.chieppa.squash.uidesign.generated.stage_face
+import dev.chieppa.squash.uidesign.generated.stage_shape
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.shell_drawer_types
 import dev.chieppa.squash.uidesign.generated.lines_tool_floating_stroke
@@ -68,34 +72,38 @@ object ShellActions {
     val PARTS = ActionId("drawer-parts")
     val TYPES = ActionId("drawer-types")
     val HISTORY = ActionId("drawer-history")
-    val PART = ActionId("drawer-part")
+    val INSPECTOR = ActionId("drawer-inspector")
+    val STAGE_SHAPE = ActionId("stage-shape")
+    val STAGE_COLOR = ActionId("stage-color")
+    val STAGE_LINES = ActionId("stage-lines")
+    val STAGE_FACE = ActionId("stage-face")
     val HELP = ActionId("drawer-help")
     val RESET_LAYOUT = ActionId("reset-layout")
-    val REGION_BORDER = ActionId("tool-region-border")
-    val FILL = ActionId("tool-fill")
-    val BRUSH = ActionId("tool-brush")
-    val PICK_COLOR = ActionId("tool-pick-color")
-    val DRAW = ActionId("tool-draw")
-    val SPINE_WIDTH = ActionId("tool-spine-width")
-    val EDIT_CURVES = ActionId("tool-edit")
-    val ERASE = ActionId("tool-erase")
-    val SMOOTH = ActionId("tool-smooth")
-    val MOVE = ActionId("tool-move")
-    val LINE_WIDTH = ActionId("tool-line-width")
-    val SURFACE_STROKE = ActionId("tool-surface-stroke")
-    val FLOATING_STROKE = ActionId("tool-floating-stroke")
-    val FLOATING_MARK = ActionId("tool-floating-mark")
-    val SURFACE_ERASE = ActionId("tool-surface-erase")
-    val FUR_STROKE = ActionId("tool-fur-stroke")
-    val COMB = ActionId("tool-comb")
-    val DRAW_MARK = ActionId("tool-draw-mark")
-    val EDIT_MARK = ActionId("tool-edit-mark")
-    val ERASE_MARK = ActionId("tool-erase-mark")
-    val GAZE_TARGET = ActionId("tool-gaze-target")
+    val REGION_BORDER = ActionId(BuildTool.REGION_BORDER.actionId)
+    val FILL = ActionId(BuildTool.FILL.actionId)
+    val BRUSH = ActionId(BuildTool.BRUSH.actionId)
+    val PICK_COLOR = ActionId(BuildTool.PICK_COLOR.actionId)
+    val DRAW = ActionId(BuildTool.DRAW_OUTLINE.actionId)
+    val SPINE_WIDTH = ActionId(BuildTool.SPINE_WIDTH.actionId)
+    val EDIT_CURVES = ActionId(BuildTool.EDIT_CURVES.actionId)
+    val ERASE = ActionId(BuildTool.ERASE.actionId)
+    val SMOOTH = ActionId(BuildTool.SMOOTH.actionId)
+    val MOVE = ActionId(BuildTool.MOVE.actionId)
+    val LINE_WIDTH = ActionId(BuildTool.LINE_WIDTH.actionId)
+    val SURFACE_STROKE = ActionId(BuildTool.SURFACE_STROKE.actionId)
+    val FLOATING_STROKE = ActionId(BuildTool.FLOATING_STROKE.actionId)
+    val FLOATING_MARK = ActionId(BuildTool.FLOATING_MARK.actionId)
+    val SURFACE_ERASE = ActionId(BuildTool.SURFACE_ERASE.actionId)
+    val FUR_STROKE = ActionId(BuildTool.FUR_STROKE.actionId)
+    val COMB = ActionId(BuildTool.COMB.actionId)
+    val DRAW_MARK = ActionId(BuildTool.DRAW_MARK.actionId)
+    val EDIT_MARK = ActionId(BuildTool.EDIT_MARK.actionId)
+    val ERASE_MARK = ActionId(BuildTool.ERASE_MARK.actionId)
+    val GAZE_TARGET = ActionId(BuildTool.GAZE_TARGET.actionId)
     val FIT_PANE = ActionId("fit-pane")
     val SWAP_PANE = ActionId("swap-pane")
-    val PLACE_IMAGE = ActionId("tool-place-image")
-    val ROTATE_IMAGE = ActionId("tool-rotate-image")
+    val PLACE_IMAGE = ActionId(BuildTool.PLACE_IMAGE.actionId)
+    val ROTATE_IMAGE = ActionId(BuildTool.ROTATE_IMAGE.actionId)
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
     val HALF_OUTLINE = ActionId("half-outline")
@@ -115,7 +123,11 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.PARTS to Res.string.shell_drawer_parts,
     ShellActions.TYPES to Res.string.shell_drawer_types,
     ShellActions.HISTORY to Res.string.shell_drawer_history,
-    ShellActions.PART to Res.string.shell_drawer_part,
+    ShellActions.INSPECTOR to Res.string.shell_drawer_inspector,
+    ShellActions.STAGE_SHAPE to Res.string.stage_shape,
+    ShellActions.STAGE_COLOR to Res.string.shell_drawer_color,
+    ShellActions.STAGE_LINES to Res.string.shell_drawer_lines,
+    ShellActions.STAGE_FACE to Res.string.stage_face,
     ShellActions.HELP to Res.string.shell_drawer_help,
     ShellActions.RESET_LAYOUT to Res.string.shell_action_reset_layout,
     ShellActions.DRAW to Res.string.shell_action_draw,
@@ -196,23 +208,32 @@ fun actionIcon(key: String): ImageVector? = when (key) {
 
 private fun chord(keys: String) = listOf(KeyChord.parse(keys))
 
-/** Registers everything a key, a menu or the palette can do. */
+/** The key mode of a stage, which scopes its tools' keys so a key means one thing in each stage. */
+val Stage.keyMode: String get() = name.lowercase()
+
+/** The key mode of Pick a part type. */
+const val PICK_KEY_MODE = "pick"
+
+/**
+ * Registers everything a key, a menu or the palette can do. A stage's tools are scoped to it, and where a stage's tool and an action of every
+ * screen share a key the stage's tool answers; everything else answers on every screen it is available on.
+ */
 fun Shell.registerActions() {
     val inFrame = { state.screen.value != Screen.HOME }
     val hasCharacter = { state.session.value != null }
     val inWorkspace = { state.screen.value == Screen.WORKSPACE }
     val onPick = { state.screen.value == Screen.PICK_PART }
-    val inking = { inWorkspace() && state.tool.value.inks }
-    val facing = { inWorkspace() && state.tool.value.faces }
     val placing = { inWorkspace() && state.tool.value.places }
-    val onOutlines = { inWorkspace() && !inking() && !facing() && !placing() }
     val selectedIsPaired = {
         inWorkspace() && state.session.value?.document?.value?.character?.let { character ->
             state.selectedPart.value?.let(character::part)?.pair
         } != null
     }
-    fun action(id: ActionId, icon: String?, keys: List<KeyChord> = emptyList(), available: () -> Boolean = { true }, run: () -> Unit) =
-        registry.register(Action(id, id.value, icon, keys, isAvailable = available, run = run))
+    fun action(id: ActionId, icon: String?, keys: List<KeyChord> = emptyList(), available: () -> Boolean = { true }, mode: String? = null, run: () -> Unit) =
+        registry.register(Action(id, id.value, icon, keys, mode, available, run))
+    fun tool(tool: BuildTool, icon: String, key: String, available: () -> Boolean = inWorkspace) =
+        action(ActionId(tool.actionId), icon, chord(key), available, tool.stage?.keyMode) { state.armTool(tool) }
+    fun stage(id: ActionId, key: String, stage: Stage) = action(id, null, chord(key), inWorkspace) { state.showStage(stage) }
     fun toggle(drawer: String) {
         layout = layout.toggle(drawer)
     }
@@ -225,43 +246,51 @@ fun Shell.registerActions() {
     action(ShellActions.UNDO, "undo", chord("Ctrl Z"), { state.session.value?.history?.canUndo == true }) { state.undo() }
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
-    val painting = { inWorkspace() && state.tool.value.paints }
-    action(ShellActions.PARTS, "parts", chord("B"), { inFrame() && !painting() }) { toggle(DrawerIds.PARTS) }
+    action(ShellActions.PARTS, "parts", chord("B"), inFrame) { toggle(DrawerIds.PARTS) }
     action(ShellActions.TYPES, "types", chord("T"), hasCharacter) {
         if (state.screen.value == Screen.PICK_PART) state.screen.value = Screen.WORKSPACE else state.openPartTypes()
     }
     action(ShellActions.HISTORY, "history", available = hasCharacter) { toggle(DrawerIds.HISTORY) }
-    action(ShellActions.PART, "part", available = inFrame) { toggle(DrawerIds.PART) }
+    action(ShellActions.INSPECTOR, "part", chord("Tab"), inFrame) { toggle(DrawerIds.INSPECTOR) }
     action(ShellActions.HELP, "help", available = inFrame) { toggle(DrawerIds.HELP) }
     action(ShellActions.RESET_LAYOUT, null, available = inFrame) { layout = DEFAULT_LAYOUT }
-    action(ShellActions.DRAW, "pen", chord("D"), onOutlines) { state.armTool(BuildTool.DRAW_OUTLINE) }
-    action(ShellActions.SPINE_WIDTH, "spine-and-width", chord("W"), onOutlines) { state.armTool(BuildTool.SPINE_WIDTH) }
-    action(ShellActions.EDIT_CURVES, "edit-curves", chord("E"), onOutlines) { state.armTool(BuildTool.EDIT_CURVES) }
-    action(ShellActions.ERASE, "erase", chord("X"), onOutlines) { state.armTool(BuildTool.ERASE) }
-    action(ShellActions.SMOOTH, "smooth", chord("S"), onOutlines) { state.armTool(BuildTool.SMOOTH) }
-    action(ShellActions.MOVE, "move", chord("V"), onOutlines) { state.armTool(BuildTool.MOVE) }
+    stage(ShellActions.STAGE_SHAPE, "1", Stage.SHAPE)
+    stage(ShellActions.STAGE_COLOR, "2", Stage.COLOR)
+    stage(ShellActions.STAGE_LINES, "3", Stage.LINES)
+    stage(ShellActions.STAGE_FACE, "4", Stage.FACE)
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
-    action(ShellActions.FIT_PANE, null, chord("F"), { inWorkspace() && !painting() }) { state.paneNavigation.fit(state.activeView.value) }
-    action(ShellActions.REGION_BORDER, "region-border", chord("R"), { inWorkspace() && !placing() }) { state.armTool(BuildTool.REGION_BORDER) }
-    action(ShellActions.PICK_COLOR, "pick-color", chord("I"), inWorkspace) { state.armTool(BuildTool.PICK_COLOR) }
-    action(ShellActions.FILL, "fill", chord("F"), painting) { state.armTool(BuildTool.FILL) }
-    action(ShellActions.BRUSH, "brush", chord("B"), painting) { state.armTool(BuildTool.BRUSH) }
-    action(ShellActions.LINE_WIDTH, "line-width", chord("W"), inking) { state.armTool(BuildTool.LINE_WIDTH) }
-    action(ShellActions.FUR_STROKE, "fur-stroke", chord("U"), inking) { state.armTool(BuildTool.FUR_STROKE) }
-    action(ShellActions.COMB, "comb", chord("G"), inking) { state.armTool(BuildTool.COMB) }
-    action(ShellActions.SURFACE_STROKE, "surface-stroke", chord("D"), inking) { state.armTool(BuildTool.SURFACE_STROKE) }
-    action(ShellActions.FLOATING_STROKE, "floating-stroke", chord("L"), inking) { state.armTool(BuildTool.FLOATING_STROKE) }
-    action(ShellActions.SURFACE_ERASE, "erase", chord("X"), inking) { state.armTool(BuildTool.SURFACE_ERASE) }
-    action(ShellActions.DRAW_MARK, "draw-mark", chord("D"), facing) { state.armTool(BuildTool.DRAW_MARK) }
-    action(ShellActions.FLOATING_MARK, "floating-stroke", chord("L"), facing) { state.armTool(BuildTool.FLOATING_MARK) }
-    action(ShellActions.EDIT_MARK, "edit-curves", chord("E"), facing) { state.armTool(BuildTool.EDIT_MARK) }
-    action(ShellActions.ERASE_MARK, "erase", chord("X"), facing) { state.armTool(BuildTool.ERASE_MARK) }
-    action(ShellActions.GAZE_TARGET, "gaze-target", chord("G"), facing) { state.armTool(BuildTool.GAZE_TARGET) }
-    action(ShellActions.PLACE_IMAGE, "place-image", chord("G"), placing) { state.armTool(BuildTool.PLACE_IMAGE) }
-    action(ShellActions.ROTATE_IMAGE, "rotate-image", chord("R"), placing) { state.armTool(BuildTool.ROTATE_IMAGE) }
+    action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.paneNavigation.fit(state.activeView.value) }
     action(ShellActions.MIRROR, "mirror", chord("M"), selectedIsPaired) { state.mirror.value = !state.mirror.value }
-    action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }) { state.startFromTemplate() }
-    action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace) { state.curves.halfOutline = !state.curves.halfOutline }
-    action(ShellActions.SELECT, "select", chord("V"), onPick) { state.pickTool.value = PickTool.SELECT }
-    action(ShellActions.ADD_PART, "add-part", chord("A"), onPick) { state.pickTool.value = PickTool.ADD_PART }
+
+    tool(BuildTool.DRAW_OUTLINE, "pen", "D")
+    tool(BuildTool.SPINE_WIDTH, "spine-and-width", "W")
+    tool(BuildTool.EDIT_CURVES, "edit-curves", "E")
+    tool(BuildTool.ERASE, "erase", "X")
+    tool(BuildTool.SMOOTH, "smooth", "S")
+    tool(BuildTool.MOVE, "move", "V")
+    tool(BuildTool.PLACE_IMAGE, "place-image", "G", placing)
+    tool(BuildTool.ROTATE_IMAGE, "rotate-image", "R", placing)
+    action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }, mode = Stage.SHAPE.keyMode) { state.startFromTemplate() }
+    action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.SHAPE.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }
+
+    tool(BuildTool.FILL, "fill", "F")
+    tool(BuildTool.BRUSH, "brush", "B")
+    tool(BuildTool.REGION_BORDER, "region-border", "R")
+    tool(BuildTool.PICK_COLOR, "pick-color", "I")
+
+    tool(BuildTool.LINE_WIDTH, "line-width", "W")
+    tool(BuildTool.SURFACE_STROKE, "surface-stroke", "D")
+    tool(BuildTool.FLOATING_STROKE, "floating-stroke", "L")
+    tool(BuildTool.FUR_STROKE, "fur-stroke", "U")
+    tool(BuildTool.COMB, "comb", "G")
+    tool(BuildTool.SURFACE_ERASE, "erase", "X")
+
+    tool(BuildTool.DRAW_MARK, "draw-mark", "D")
+    tool(BuildTool.FLOATING_MARK, "floating-stroke", "L")
+    tool(BuildTool.EDIT_MARK, "edit-curves", "E")
+    tool(BuildTool.ERASE_MARK, "erase", "X")
+    tool(BuildTool.GAZE_TARGET, "gaze-target", "G")
+
+    action(ShellActions.SELECT, "select", chord("V"), onPick, PICK_KEY_MODE) { state.pickTool.value = PickTool.SELECT }
+    action(ShellActions.ADD_PART, "add-part", chord("A"), onPick, PICK_KEY_MODE) { state.pickTool.value = PickTool.ADD_PART }
 }

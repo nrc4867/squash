@@ -6,10 +6,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -55,13 +53,15 @@ import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Slider
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 private const val PERCENT = 100f
 private const val WEIGHT_STEP = 0.5f
 private val READOUT_WIDTH = 48.dp
 private val WEIGHT_RANGE = 0f..40f
 
-/** Test tags for the Lines drawer's controls. */
+/** Test tags for the Lines inspector's controls. */
 object LinesDrawerTags {
     const val SILHOUETTE = "lines.silhouette"
     const val INTERIOR = "lines.interior"
@@ -85,15 +85,16 @@ fun amountCommand(character: Character, picked: PickedWeight, amount: Float, thi
 /** One line weight in pixels, to a tenth. */
 fun weightLabel(pixels: Float): String = "%.1f".format(java.util.Locale.ROOT, pixels)
 
-/** The Lines drawer: the rules that weigh the character's lines, what the Line width tool lays down, and the selected part's fur. */
+/** The Lines inspector: the armed tool's options, what is drawn on the character's lines, the rules that weigh them, and the selected part's fur. */
 @Composable
-fun LinesDrawer(state: AppState) {
+fun LinesInspector(state: AppState) {
     val session by state.session.collectAsState()
     val open = session ?: return
     val tool by state.tool.collectAsState()
-    RulesSection(open)
     if (tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FLOATING_STROKE) StrokeToolSection(state, open)
     WidthToolSection(state, open)
+    MarkLists(state)
+    RulesSection(open)
     FurSection(state, open)
 }
 

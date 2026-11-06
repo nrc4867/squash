@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
@@ -27,6 +25,11 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.opensOnPress
+import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.shell.actionId
+import dev.chieppa.squash.screens.shell.LocalActionKeys
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 private val TOOL_SIZE = 34.dp
 private val TOOL_GAP = 4.dp
@@ -34,6 +37,9 @@ private val SEPARATOR_ROOM = 13.dp
 private val POPOVER_INSET = 26.dp
 private val CORNER_SIZE = 6.dp
 private val CORNER_INSET = 3.dp
+
+/** The room the armed tool's name takes beside its icon. */
+private val LABEL_ROOM = 120.dp
 
 /**
  * A run of tools in the strip. Where the strip has room it shows [content], its [tools] buttons; where it has not, one button with [icon] and a
@@ -68,13 +74,22 @@ fun collapsedSections(tools: List<Int>, armed: Set<Int>, room: Dp, step: Dp = TO
 fun ToolSections(sections: List<ToolSection>, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier) {
         val armed = sections.indices.filterTo(hashSetOf()) { sections[it].armed != null }
-        val collapsed = if (constraints.hasBoundedWidth) collapsedSections(sections.map { it.tools }, armed, maxWidth) else emptySet()
+        val room = if (armed.isEmpty()) maxWidth else maxWidth - LABEL_ROOM
+        val collapsed = if (constraints.hasBoundedWidth) collapsedSections(sections.map { it.tools }, armed, room) else emptySet()
         Row(horizontalArrangement = Arrangement.spacedBy(TOOL_GAP), verticalAlignment = Alignment.CenterVertically) {
             sections.forEachIndexed { index, section ->
                 if (index > 0) ToolbarSeparator()
                 if (index in collapsed) CollapsedSection(section) else section.content()
             }
         }
+    }
+}
+
+/** A tool's button on the strip: its icon, with its name beside it while it is armed. Its tooltip names its key. Pressing the armed tool puts it down. */
+@Composable
+fun StripTool(tool: BuildTool, icon: ImageVector, label: String, armed: BuildTool, onArm: (BuildTool) -> Unit, hint: String = label) {
+    Tooltip(hint, LocalActionKeys.current(tool.actionId)) {
+        ToolButton(icon, label, tool == armed, { onArm(tool) }, Modifier.testTag(ShellTags.tool(tool)), size = TOOL_SIZE, label = label.takeIf { tool == armed })
     }
 }
 

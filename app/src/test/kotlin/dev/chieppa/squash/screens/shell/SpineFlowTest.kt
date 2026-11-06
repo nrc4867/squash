@@ -8,7 +8,6 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,7 +15,6 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
@@ -51,7 +49,6 @@ class SpineFlowTest {
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
-        onNodeWithContentDescription("Part").performClick()
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.W) }
         waitForIdle()
     }
@@ -97,7 +94,7 @@ class SpineFlowTest {
     }
 
     @Test
-    fun theDrawersRowsShareDrawOutlinesSettings() = runComposeUiTest {
+    fun theDrawersRowsShareDrawOutlinesSettings() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         onNodeWithTag(OutlineDrawerTags.SNAP_GUIDES).performClick()
@@ -109,7 +106,7 @@ class SpineFlowTest {
     }
 
     @Test
-    fun aStrokeInHandShowsInTheStatusBarAndTheOutlineRowsAndItsWidthWrites() = runComposeUiTest {
+    fun aStrokeInHandShowsInTheStatusBarAndTheOutlineRowsAndItsWidthWrites() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         strokeInSide()
@@ -140,7 +137,7 @@ class SpineFlowTest {
     }
 
     @Test
-    fun anotherToolDropsTheStrokeInHand() = runComposeUiTest {
+    fun anotherToolDropsTheStrokeInHand() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         strokeInSide()

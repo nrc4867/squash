@@ -11,16 +11,7 @@ object DrawerIds {
     const val REFERENCES = "references"
     const val HISTORY = "history"
     const val HELP = "help"
-    const val PART = "part"
-    const val RIG = "rig"
-    const val SLOTS = "slots"
-    const val COLOR = "color"
-    const val LINES = "lines"
-    const val MARKS = "marks"
-    const val EXPRESSIONS = "expressions"
-    const val ANGLE_VERSIONS = "angle-versions"
-    const val TRACE = "trace"
-    const val PLACE_IMAGE = "place-image"
+    const val INSPECTOR = "inspector"
 }
 
 private const val LEFT_WIDTH = FrameLayout.MIN_WIDTH
@@ -36,15 +27,6 @@ val DEFAULT_LAYOUT = FrameLayout(
         DrawerPlacement(DrawerIds.REFERENCES, Side.Left, width = REFERENCES_WIDTH),
         DrawerPlacement(DrawerIds.HISTORY, Side.Left, width = LEFT_WIDTH),
         DrawerPlacement(DrawerIds.HELP, Side.Left, width = LEFT_WIDTH, bottom = true),
-        DrawerPlacement(DrawerIds.PART, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.RIG, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.SLOTS, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.COLOR, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.LINES, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.MARKS, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.TRACE, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.PLACE_IMAGE, Side.Right, width = RIGHT_WIDTH),
-        DrawerPlacement(DrawerIds.EXPRESSIONS, Side.Left, width = LEFT_WIDTH, bottom = true, railTop = true),
-        DrawerPlacement(DrawerIds.ANGLE_VERSIONS, Side.Right, width = RIGHT_WIDTH, bottom = true, railTop = true),
+        DrawerPlacement(DrawerIds.INSPECTOR, Side.Right, width = RIGHT_WIDTH, open = true),
     ),
 )

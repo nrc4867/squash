@@ -10,7 +10,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,7 +19,6 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
@@ -45,6 +43,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.runDesktopComposeUiTest
 
 private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 60f
@@ -73,7 +72,7 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theDAndEKeysArmTheTools() = runComposeUiTest {
+    fun theDAndEKeysArmTheTools() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value)
@@ -86,7 +85,7 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theSKeyArmsSmoothAndItsDrawerSetsTheBrush() = runComposeUiTest {
+    fun theSKeyArmsSmoothAndItsDrawerSetsTheBrush() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.S) }
@@ -96,7 +95,6 @@ class CurveToolsFlowTest {
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.S) } }
         waitForIdle()
         assertEquals(BuildTool.SMOOTH, state.tool.value, "Ctrl S saves and leaves the tool armed")
-        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(SmoothDrawerTags.SIZE_VALUE).assertTextContains("60 px")
         onNodeWithTag(SmoothDrawerTags.STRENGTH_VALUE).assertTextContains("50%")
@@ -107,7 +105,7 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theRealPanesTakeAStrokeAHandleDragAndAStrayStroke() = runComposeUiTest {
+    fun theRealPanesTakeAStrokeAHandleDragAndAStrayStroke() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         val part = checkNotNull(state.selectedPart.value)
@@ -174,12 +172,11 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theDrawerShowsTheOutlineCurvesOnceAPartIsDrawn() = runComposeUiTest {
+    fun theDrawerShowsTheOutlineCurvesOnceAPartIsDrawn() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         state.drawSide()
         waitForIdle()
-        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(CurveDrawerTags.outline(View.SIDE)).assertTextContains("7 pts")
         onNodeWithTag(CurveDrawerTags.outline(View.FRONT)).assertTextContains("none")
@@ -189,7 +186,7 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theSelectedPointsFieldsReadAndSetItAsACommand() = runComposeUiTest {
+    fun theSelectedPointsFieldsReadAndSetItAsACommand() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         state.drawSide()
@@ -197,7 +194,6 @@ class CurveToolsFlowTest {
         val session = checkNotNull(state.session.value)
         state.curves.selection = CurveSelection(part, View.SIDE, 3)
         waitForIdle()
-        onNodeWithContentDescription("Part").performClick()
         waitForIdle()
         onNodeWithTag(CurveDrawerTags.X).assertExists()
         onAllNodesWithText("Smooth").assertCountEquals(2)
@@ -210,7 +206,7 @@ class CurveToolsFlowTest {
     }
 
     @Test
-    fun theStatusBarCountsTheSectionsARefitTouchedWhileItStands() = runComposeUiTest {
+    fun theStatusBarCountsTheSectionsARefitTouchedWhileItStands() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         workspace(state)
         state.drawSide()

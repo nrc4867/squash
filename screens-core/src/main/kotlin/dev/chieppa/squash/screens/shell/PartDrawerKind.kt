@@ -1,10 +1,10 @@
 package dev.chieppa.squash.screens.shell
 
-/** What the right drawer holds for a selected part. */
+/** What the Shape inspector holds first for a selected part. */
 enum class PartDrawerKind { PART, OUTLINE, OUTLINE_CURVES, SPINE_WIDTH, SMOOTH, MOVE }
 
 /**
- * The boards' one right drawer, by the armed tool: the part's template with no tool or a paint tool armed; Outline curves once the part
+ * The Shape inspector's first sections, by the armed tool: the part's fit with no tool armed; Outline curves once the part
  * has an outline, under Oversketch and Edit curves alike; Outline while Draw outline waits for a part's first stroke; Part
  * otherwise. Spine and width has its own whatever the part holds, since it writes the outlines afresh, and so have Smooth
  * and Move.

@@ -1,9 +1,7 @@
 package dev.chieppa.squash.screens.shell
 
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.app_name
@@ -27,6 +25,12 @@ import dev.chieppa.stretch.frame.TopBarActions
 import dev.chieppa.stretch.frame.WindowTopBar
 import dev.chieppa.stretch.ui.Segmented
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.Modifier
+import dev.chieppa.squash.uidesign.generated.stage_dress
+import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
+import dev.chieppa.squash.screens.AppState
+import androidx.compose.runtime.getValue
 
 /** The window's top bar on every screen: menus, the open character, the mode and the bar's actions. */
 @Composable
@@ -53,6 +57,7 @@ fun ShellTopBar(shell: Shell) {
                 val build = stringResource(Res.string.shell_mode_build)
                 val shot = stringResource(Res.string.shell_mode_shot)
                 Segmented(listOf(build, shot), build, {}, { it }, mode = true, enabled = { it == build })
+                if (screen == Screen.WORKSPACE) StageSwitcher(state)
             }
         },
         actions = {
@@ -67,6 +72,22 @@ fun ShellTopBar(shell: Shell) {
                 settingsPopup = { SettingsPopover(shell) },
             )
         },
+    )
+}
+
+/** The stages of Build, the one on screen lit, with the stages not built yet faint after them. */
+@Composable
+private fun StageSwitcher(state: AppState) {
+    val stage by state.stage.collectAsState()
+    val built = Stage.entries.associateBy { stringResource(it.label) }
+    val later = listOf(stringResource(Res.string.shell_drawer_rig), stringResource(Res.string.stage_dress))
+    Segmented(
+        built.keys.toList() + later,
+        stringResource(stage.label),
+        { name -> built[name]?.let(state::showStage) },
+        { it },
+        Modifier.testTag(ShellTags.STAGES),
+        enabled = { it in built },
     )
 }
 
@@ -98,7 +119,7 @@ private fun shellMenus(shell: Shell): List<BarMenu> = listOf(
         Item(shell, ShellActions.PARTS, close)
         Item(shell, ShellActions.TYPES, close)
         Item(shell, ShellActions.HISTORY, close)
-        Item(shell, ShellActions.PART, close)
+        Item(shell, ShellActions.INSPECTOR, close)
         MenuDivider()
         Item(shell, ShellActions.RESET_LAYOUT, close)
     },

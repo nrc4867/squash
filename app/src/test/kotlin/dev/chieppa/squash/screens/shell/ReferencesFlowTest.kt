@@ -40,6 +40,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
 
 private const val SETTLE_MILLIS = 30_000L
 private const val WIDTH = 1440
@@ -88,20 +92,18 @@ class ReferencesFlowTest {
         waitForIdle()
         assertEquals(image.id, state.references.picked)
         onNodeWithTag(ReferencesTags.TRACE_IN).assertExists()
-        onNodeWithText("Side").performClick()
+        onNode(hasText("Side") and hasAnyAncestor(hasTestTag(ReferencesTags.TRACE_IN))).performClick()
         waitForIdle()
         val trace = assertNotNull(session.document.value.character.traces[View.SIDE])
         assertEquals(image.id, trace.image)
         assertTrue(trace.locked, "a new trace stays put")
 
-        onNodeWithContentDescription("Trace").performClick()
-        waitForIdle()
-        onNodeWithTag(TraceTags.row(View.SIDE)).performClick()
-        onNodeWithTag(TraceTags.PLACE).performClick()
+        onNodeWithTag(TraceTags.row(View.SIDE)).performScrollTo().performClick()
+        onNodeWithTag(TraceTags.PLACE).performScrollTo().performClick()
         waitForIdle()
         assertEquals(BuildTool.PLACE_IMAGE, state.tool.value)
         assertEquals(false, session.document.value.character.traces[View.SIDE]?.locked, "Place image frees it")
-        onNodeWithTag(TraceTags.SCALE).assertExists()
+        onNodeWithTag(TraceTags.SCALE).performScrollTo().assertExists()
 
         val before = assertNotNull(session.document.value.character.traces[View.SIDE])
         onNodeWithTag(sheetPaneTag(SheetPane.SIDE)).performMouseInput {
@@ -131,7 +133,7 @@ class ReferencesFlowTest {
         onNodeWithContentDescription("References").performClick()
         waitForIdle()
         onNodeWithTag(ReferencesTags.image(image.id)).performClick()
-        onNodeWithText("Front").performClick()
+        onNode(hasText("Front") and hasAnyAncestor(hasTestTag(ReferencesTags.TRACE_IN))).performClick()
         waitForIdle()
         assertNotNull(session.document.value.character.traces[View.FRONT])
         onNodeWithTag(ReferencesTags.DELETE).performClick()

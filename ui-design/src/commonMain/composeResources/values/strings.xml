@@ -49,17 +49,18 @@
 
     <string name="shell_drawer_references">References</string>
     <string name="shell_drawer_rig">Rig</string>
-    <string name="shell_drawer_slots">Slots</string>
     <string name="shell_drawer_color">Color</string>
     <string name="shell_drawer_lines">Lines</string>
-    <string name="shell_drawer_marks">Marks</string>
     <string name="shell_drawer_parts">Parts</string>
-    <string name="shell_drawer_part">Part</string>
     <string name="shell_drawer_types">Part types</string>
     <string name="shell_drawer_history">History</string>
     <string name="shell_drawer_help">Help</string>
 
     <string name="shell_mode_build">Build</string>
+    <string name="stage_shape">Shape</string>
+    <string name="stage_face">Face</string>
+    <string name="stage_dress">Dress</string>
+    <string name="shell_drawer_inspector">Inspector</string>
     <string name="shell_mode_shot">Shot</string>
     <string name="shell_no_character">No character open</string>
     <string name="shell_draft">%1$s · draft</string>
@@ -107,7 +108,6 @@
     <string name="shell_part_tool_knows">Tool knows</string>
     <string name="shell_part_areas">Areas</string>
     <string name="shell_part_template">%1$s template</string>
-    <string name="shell_part_parameters">Shape</string>
     <string name="shell_part_fit">Fit</string>
     <string name="shell_part_fit_skeleton">Skeleton</string>
     <string name="shell_part_fit_surface">Surface</string>
@@ -177,7 +177,6 @@
     <string name="rest_pose_art">Rest pose</string>
     <string name="pick_draw">Draw %1$s</string>
 
-    <string name="draw_drawer_outline">Outline</string>
     <string name="draw_stroke">Stroke</string>
     <string name="draw_smooth">Smooth</string>
     <string name="draw_stabilizer">Stabilizer</string>
@@ -204,7 +203,6 @@
     <string name="spine_to_write">to write</string>
     <string name="spine_status_writes">Side · writes Side and Top</string>
     <string name="edit_tool_oversketch">Oversketch</string>
-    <string name="edit_drawer_curves">Outline curves</string>
     <string name="edit_selected_point">Selected point</string>
     <string name="edit_x">X</string>
     <string name="edit_y">Y</string>
@@ -382,7 +380,6 @@
     <string name="refs_delete">Delete</string>
     <string name="refs_status_images">%1$d images</string>
     <string name="refs_status_image">1 image</string>
-    <string name="shell_drawer_trace">Trace</string>
     <string name="trace_show">Show</string>
     <string name="trace_opacity">Opacity</string>
     <string name="trace_order">Order</string>
@@ -392,7 +389,6 @@
     <string name="trace_place">Place image</string>
     <string name="trace_none">none</string>
     <string name="trace_no_image">No image</string>
-    <string name="shell_drawer_place_image">Place image</string>
     <string name="place_scale">Scale</string>
     <string name="place_x">X</string>
     <string name="place_y">Y</string>

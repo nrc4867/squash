@@ -17,11 +17,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -47,7 +45,6 @@ import dev.chieppa.squash.uidesign.generated.shell_part_fit_skeleton
 import dev.chieppa.squash.uidesign.generated.shell_part_fit_surface
 import dev.chieppa.squash.uidesign.generated.shell_part_fit_unseen
 import dev.chieppa.squash.uidesign.generated.shell_part_none
-import dev.chieppa.squash.uidesign.generated.shell_part_parameters
 import dev.chieppa.squash.uidesign.generated.shell_part_this_side
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
@@ -64,17 +61,30 @@ import dev.chieppa.stretch.ui.Toggle
 import dev.chieppa.stretch.ui.formatNumber
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
+import dev.chieppa.squash.uidesign.generated.shell_part_template
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 private const val FLAG_ON = 1f
 private const val FLAG_OFF = 0f
 private const val PERCENT = 100f
 private val READOUT_WIDTH = 52.dp
 
-/** The Part drawer: the picked type on Pick a part type, the selected part's views and parameters elsewhere. */
+/** The Shape inspector: the armed tool's sections first, then the selected part's parameters. */
 @Composable
-fun PartDrawerContent(state: AppState, toolSections: ToolSections) {
+fun ShapeInspector(state: AppState, toolSections: ToolSections) {
+    SelectedPartDetails(state, toolSections)
+}
+
+/** The inspector off the workspace: the picked type on Pick a part type, and nothing to show elsewhere. */
+@Composable
+internal fun PickedTypeOrNone(state: AppState) {
     val screen by state.screen.collectAsState()
-    if (screen == Screen.PICK_PART) PickedTypeDetails(state) else SelectedPartDetails(state, toolSections)
+    if (screen == Screen.PICK_PART) {
+        PickedTypeDetails(state)
+    } else {
+        EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
+    }
 }
 
 @Composable
@@ -125,20 +135,17 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
                     AngleControl(open, part.id, PlacementParams.LEAN, stringResource(Res.string.move_lean), base.params, !mirror, hidden)
                 }
             }
-            BuiltFromSection(template)
         }
-        PartDrawerKind.PART -> {
-            FitSection(open)
-            val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
-            val rows = parameterRows(template, base.params)
-            if (rows.isNotEmpty()) {
-                DrawerSection(stringResource(Res.string.shell_part_parameters)) {
-                    rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
-                }
-            }
-            BuiltFromSection(template)
+        PartDrawerKind.PART -> FitSection(open)
+    }
+    val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
+    val rows = parameterRows(template, base.params)
+    if (rows.isNotEmpty()) {
+        DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
+            rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }
     }
+    BuiltFromSection(template)
 }
 
 /** One of the Move tool's angles as a slider, from straight at 0. */

@@ -32,7 +32,7 @@ object FurDrawerTags {
     const val LENGTH = "fur.length"
 }
 
-/** The Lines drawer's Fur section for the selected part, which holds the rule: Spacing and Length, each drag one step. */
+/** The Lines inspector's Fur section for the selected part, which holds the rule: Spacing and Length, each drag one step. */
 @Composable
 internal fun FurSection(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()

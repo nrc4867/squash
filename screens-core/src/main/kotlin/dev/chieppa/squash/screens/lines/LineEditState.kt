@@ -14,7 +14,7 @@ const val MAX_WIDTH_SIZE = 60f
 const val DEFAULT_WIDTH_SIZE = 24f
 const val DEFAULT_WIDTH_AMOUNT = 0.6f
 
-/** A line weight picked in the Marks drawer, on the part that shows it. */
+/** A line weight picked in the Lines inspector, on the part that shows it. */
 data class PickedWeight(val part: PartId, val id: LineWeightId)
 
 /** A stroke by the part that holds it. */

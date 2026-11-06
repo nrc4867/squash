@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
@@ -38,6 +37,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 
 private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 60f
@@ -64,10 +66,19 @@ class SingleLayoutFlowTest {
         return assertNotNull(state.session.value)
     }
 
-    private fun ComposeUiTest.segment(label: String) = onNode(hasText(label) and isSelectable())
+    /** A segment of a control in the view, which unlike the inspector's rows carries no tag. */
+    private fun ComposeUiTest.segment(label: String) =
+        onNode(hasText(label) and isSelectable() and SemanticsMatcher("has no tag") { SemanticsProperties.TestTag !in it.config })
+
+    private fun ComposeUiTest.pickLayout(label: String) {
+        onNodeWithTag(ShellTags.LAYOUT).performClick()
+        waitForIdle()
+        onAllNodesWithText(label).onLast().performClick()
+        waitForIdle()
+    }
 
     private fun ComposeUiTest.pickSingle() {
-        segment("Single").performClick()
+        pickLayout("Single")
         waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
     }
 
@@ -114,18 +125,16 @@ class SingleLayoutFlowTest {
         val session = workspaceOnALeg(state)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
         val before = session.document.value
-        segment("Focus").assertIsEnabled()
 
         pickSingle()
         assertEquals(SheetLayout.SINGLE, state.layout.value)
-        segment("Single").assertIsSelected()
         onNodeWithTag(sheetPaneTag(SheetPane.SIDE)).assertDoesNotExist()
         onNodeWithTag(SingleTags.TOOLBAR).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).assertExists()
         onNodeWithTag(SingleTags.THUMBNAILS).assertExists()
         segment("Side").assertIsSelected()
 
-        segment("Sheet").performClick()
+        pickLayout("Sheet")
         waitForIdle()
         onNodeWithTag(SingleTags.VIEWPORT).assertDoesNotExist()
         onNodeWithTag(sheetPaneTag(SheetPane.SIDE)).assertExists()

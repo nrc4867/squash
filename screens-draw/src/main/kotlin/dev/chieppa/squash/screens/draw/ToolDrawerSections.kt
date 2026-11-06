@@ -11,7 +11,7 @@ import dev.chieppa.squash.screens.edit.SmoothSections
 import dev.chieppa.squash.screens.shell.PartDrawerKind
 import dev.chieppa.squash.screens.spine.SpineSections
 
-/** The Part drawer's sections for the kinds the drawing tools own. */
+/** The Shape inspector's sections for the kinds the drawing tools own. */
 @Composable
 fun ToolDrawerSections(kind: PartDrawerKind, state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     when (kind) {

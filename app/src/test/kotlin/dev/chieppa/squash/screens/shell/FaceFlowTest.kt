@@ -8,7 +8,6 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.centerY
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -46,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import dev.chieppa.squash.screens.shell.Stage
 
 private const val SETTLE_MILLIS = 30_000L
 private const val WIDTH = 1440
@@ -56,7 +56,7 @@ private object NoFaceFiles : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
-/** The face tools, the Marks drawer's Face section and the Expressions and Angle versions drawers in the app whole, over the saved fennec. */
+/** The Face stage in the app whole, over the saved fennec: its tools, its inspector and the band of expressions and angle versions. */
 @OptIn(ExperimentalTestApi::class)
 class FaceFlowTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -75,11 +75,13 @@ class FaceFlowTest {
     }
 
     private fun ComposeUiTest.pickEye(state: AppState) {
-        onNodeWithContentDescription("Marks").performClick()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Four) }
         waitForIdle()
+        assertEquals(Stage.FACE, state.stage.value)
+        assertEquals(BuildTool.DRAW_MARK, state.tool.value, "the Face stage opens on its tools")
         onNodeWithTag(FaceTags.EYE).performScrollTo().performClick()
         waitForIdle()
-        assertEquals(BuildTool.DRAW_MARK, state.tool.value, "picking a face row arms its tools")
+        assertEquals(BuildTool.DRAW_MARK, state.tool.value, "picking a face row leaves the tool as it was")
     }
 
     @Test
@@ -125,11 +127,11 @@ class FaceFlowTest {
         val session = assertNotNull(state.session.value)
         pickEye(state)
         val before = assertNotNull(session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f))
-        onNodeWithTag(ExpressionTags.tile(EARS_BACK)).performClick()
+        onNodeWithTag(ExpressionTags.tile(EARS_BACK)).performScrollTo().performClick()
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f) != before }
         assertEquals(EARS_BACK, session.document.value.character.shownExpression)
         assertNotEquals(before, session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f))
-        onNodeWithTag(ExpressionTags.NEUTRAL).performClick()
+        onNodeWithTag(ExpressionTags.NEUTRAL).performScrollTo().performClick()
         waitForIdle()
         assertEquals(null, session.document.value.character.shownExpression)
 

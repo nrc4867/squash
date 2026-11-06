@@ -60,7 +60,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val PERCENT = 100f
 
-/** The Trace drawer's rows, in the board's order. */
+/** The References drawer's trace rows, in the board's order. */
 private val TRACE_ROWS = listOf(View.SIDE, View.FRONT, View.TOP)
 
 object TraceTags {
@@ -109,7 +109,7 @@ private fun viewName(view: View): String = stringResource(
 )
 
 /**
- * The Trace drawer: the character's views, each with the image traced in it or none, and the picked view's trace shown or not, at
+ * The References drawer's traces: the character's views, each with the image traced in it or none, and the picked view's trace shown or not, at
  * an opacity, behind or over the character, locked or free, with Place image, which frees it and arms the tool that moves it.
  */
 @Composable
@@ -167,7 +167,7 @@ fun TraceDrawer(state: AppState) {
     }
 }
 
-/** The Place image drawer: the placed view's trace by its numbers, Scale, X, Y and Rotate, then Flip, Snap ground and Opacity. */
+/** The References drawer's fields while placing: the placed view's trace by its numbers, Scale, X, Y and Rotate, then Flip, Snap ground and Opacity. */
 @Composable
 fun PlaceImageDrawer(state: AppState) {
     val session by state.session.collectAsState()

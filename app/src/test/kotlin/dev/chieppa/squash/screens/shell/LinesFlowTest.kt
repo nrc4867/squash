@@ -16,8 +16,6 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.MarkKind
-import dev.chieppa.squash.document.LineRules
-import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
@@ -43,6 +41,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import dev.chieppa.squash.screens.shell.Stage
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
 
 private const val SETTLE_MILLIS = 30_000L
 private const val WIDTH = 1440
@@ -78,14 +79,15 @@ class LinesFlowTest {
         val state = fennecOpen()
         onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).assertExists()
         press(Key.W)
-        assertEquals(BuildTool.SPINE_WIDTH, state.tool.value, "with no line tool armed W is Spine and width")
-        onNodeWithContentDescription("Lines").performClick()
+        assertEquals(BuildTool.SPINE_WIDTH, state.tool.value, "in Shape W is Spine and width")
+        press(Key.Three)
         waitForIdle()
+        assertEquals(Stage.LINES, state.stage.value)
         assertEquals(BuildTool.LINE_WIDTH, state.tool.value)
         onNodeWithTag(ShellTags.tool(BuildTool.SURFACE_STROKE)).assertExists()
         onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).assertDoesNotExist()
         press(Key.D)
-        assertEquals(BuildTool.SURFACE_STROKE, state.tool.value, "with it D is Surface stroke")
+        assertEquals(BuildTool.SURFACE_STROKE, state.tool.value, "in Lines D is Surface stroke")
         press(Key.L)
         assertEquals(BuildTool.FLOATING_STROKE, state.tool.value, "and L is Floating stroke")
         onNodeWithTag(LinesDrawerTags.STROKE_COLOR).assertExists()
@@ -94,16 +96,19 @@ class LinesFlowTest {
         onNodeWithText("Silhouette").assertIsDisplayed()
         onNodeWithText("Taper").assertIsDisplayed()
         onNodeWithText("body surface").assertIsDisplayed()
-        onNodeWithContentDescription("Lines").performClick()
+        onNodeWithContentDescription("Inspector").performClick()
         waitForIdle()
-        assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value, "closing it leaves the surface tools")
+        assertEquals(BuildTool.LINE_WIDTH, state.tool.value, "closing the inspector changes no tool")
+        press(Key.One)
+        waitForIdle()
+        assertEquals(BuildTool.SPINE_WIDTH, state.tool.value, "Shape comes back holding the tool it was left with")
     }
 
     @Test
-    fun theMarksDrawerListsStrokesWeightsAndFur() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun theLinesInspectorListsStrokesWeightsAndFur() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
-        onNodeWithContentDescription("Marks").performClick()
+        press(Key.Three)
         waitForIdle()
         val stroke = assertNotNull(session.document.value.character.resolved(HEAD)).surface.marks.first { it.kind == MarkKind.LINE && it.id !in assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.flatMap { g -> g.roles.flatMap { r -> r.marks } } }.id
         onNodeWithTag(MarksDrawerTags.stroke(stroke)).performScrollTo().performClick()
@@ -120,7 +125,7 @@ class LinesFlowTest {
         session.history.undo()
         waitForIdle()
         onNodeWithTag(MarksDrawerTags.fur(TORSO)).performScrollTo().assertExists()
-        onNodeWithText("+60%").assertExists()
+        onAllNodesWithText("+60%").onFirst().assertExists()
         onNodeWithText("Saddle weight").performClick()
         assertEquals(PickedWeight(TORSO, BACK_WEIGHT), state.lines.picked)
         onNodeWithTag(MarksDrawerTags.WEIGHT_AMOUNT).assertExists()
@@ -133,7 +138,7 @@ class LinesFlowTest {
     fun aDragWithLineWidthStoresOneWeightThroughOneUndoStep() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
-        onNodeWithContentDescription("Lines").performClick()
+        press(Key.Three)
         waitForIdle()
         val before = session.document.value
         val full = onNodeWithTag(sheetPaneTag(SheetPane.FULL))

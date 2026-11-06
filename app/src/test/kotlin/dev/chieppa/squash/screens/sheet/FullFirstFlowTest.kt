@@ -8,8 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -39,6 +37,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onAllNodesWithText
 
 private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 30f
@@ -66,7 +66,12 @@ class FullFirstFlowTest {
         return assertNotNull(state.session.value)
     }
 
-    private fun ComposeUiTest.segment(label: String) = onNode(hasText(label) and isSelectable())
+    private fun ComposeUiTest.pickLayout(label: String) {
+        onNodeWithTag(ShellTags.LAYOUT).performClick()
+        waitForIdle()
+        onAllNodesWithText(label).onLast().performClick()
+        waitForIdle()
+    }
 
     private fun ComposeUiTest.loopIn(pane: SheetPane) {
         val node = onNodeWithTag(sheetPaneTag(pane))
@@ -88,7 +93,7 @@ class FullFirstFlowTest {
     fun drawOutlineWritesNothingInFullAndAnOutlineInASheetOfFullFirst() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
-        segment("Full first").performClick()
+        pickLayout("Full first")
         waitForIdle()
         assertEquals(SheetLayout.FULL_FIRST, state.layout.value)
         val leg = assertNotNull(state.selectedPart.value)
@@ -108,15 +113,15 @@ class FullFirstFlowTest {
     fun aSwitchToSingleAndBackKeepsTheSelectionAndTheOutlines() = runDesktopComposeUiTest(1900, 900) {
         val state = AppState(shipped)
         val session = workspaceOnALeg(state)
-        segment("Full first").performClick()
+        pickLayout("Full first")
         waitForIdle()
         loopIn(SheetPane.SIDE)
         val leg = state.selectedPart.value
         val document = session.document.value
-        segment("Single").performClick()
+        pickLayout("Single")
         waitForIdle()
         assertEquals(leg, state.selectedPart.value)
-        segment("Full first").performClick()
+        pickLayout("Full first")
         waitForIdle()
         assertEquals(leg, state.selectedPart.value)
         assertSame(document, session.document.value)

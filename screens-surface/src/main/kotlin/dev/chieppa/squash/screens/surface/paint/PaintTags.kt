@@ -1,6 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
-/** Test tags for the Color drawer. */
+/** Test tags for the Color inspector. */
 object PaintTags {
     const val ADD_SLOT = "color.addSlot"
     const val REMOVE_SLOT = "color.removeSlot"

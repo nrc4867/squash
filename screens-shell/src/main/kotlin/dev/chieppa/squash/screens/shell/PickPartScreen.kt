@@ -51,7 +51,7 @@ private val PICK_TOOL_SIZE = 34.dp
 
 /**
  * Pick a part type: the rest pose with its open sockets as dots, drawn live in the shared surface, the tiles in the bottom
- * panel, the type's facts in the Part drawer. A dot or a row of the Parts tree picks the socket.
+ * panel, the type's facts in the inspector. A dot or a row of the Parts tree picks the socket.
  */
 @Composable
 fun PickPartScreen(shell: Shell) {

@@ -176,7 +176,7 @@ Positions are never stored and never computed in composition. Graph nodes derive
 
 A locked pane looks straight along the normal of its view's plane, so an outline's plane is never foreshortened and the map from plane to pane is a rotation and a scale. Rings stand on planes a = constant, so a Side or Top outline drawn there is the mesh's silhouette on screen. `PartAxes.framing` says which pane holds which view, the arrangement that shows every view's plane the most squarely; `PartAxes.basis` gives the pane's axes.
 
-- **A label names the direction, not the outline.** A Sheet pane's label, and Single's Snap view, HUD and thumbnails, name the direction looked from, so Top is always the top-left pane. The drawers' outline rows and the status bar name outlines, so a leg's or an ear's Top pane writes its Front outline, and its Front pane its Top outline.
+- **A label names the direction, not the outline.** A Sheet pane's label, and Single's Snap view, HUD and thumbnails, name the direction looked from, so Top is always the top-left pane. The inspector's outline rows and the status bar name outlines, so a leg's or an ear's Top pane writes its Front outline, and its Front pane its Top outline.
 - **The camera tilts with the part.** Each pane looks along the normal of its view's plane, from the side of its plain body view, with that body view's up made as up as the plane lets it be. A part square to the body gets the plain body views exactly. A tail 37 degrees above horizontal runs diagonally in Side, whose plane is the body's, runs straight across in Top, seen from 37 degrees off vertical, and shows Front from below the ground, looking up its axis. An ear 16 degrees off vertical stands straight in Side, leans in Top, whose plane is the body's front, and shows Front from 16 degrees off vertical.
 - **Everything goes through the one camera.** The selection, the ghosts, their depth order, the template hint, the outlines, a tool's strokes and handles all do. Silhouettes are derived along the part's own axes, so a hint is the silhouette of the view's own camera. The ground is the disc under the character as the camera's tilt shows it, never flatter than the thin ellipse a level camera has, and is always drawn behind. The pane looking along the body's up has none.
 - **A shortened leg's outlines stay in stored coordinates.** A locked camera takes the factor its part was built at, see Legs stay level as they lean, and multiplies an outline's x by it on Side and Top. Front has no length along the axis and takes none. Every outline, handle, stroke and pointer position crossing to a pane passes through that one map, so the outline lies on the mesh, a stroke builds under the pointer, and what is stored is the leg's length before the factor. Comparing views compares stored curves, so it is unchanged by the factor; what those comparisons and the guides draw takes the factor on the way to the pane. A tool that measures reach on the curve, Smooth and Erase, works in the camera's shown plane, where x already has the factor and a pixel is the same both ways, so what it touches is what its ring shows; sections it leaves keep their stored values exactly. Other tools' tolerances in plane units are in y's pixels, so along a shortened axis they cover that much less of the screen.
@@ -203,7 +203,7 @@ A new part is one of three things, and each slots in without touching what exist
 
 | New part is | What changes | Old characters |
 | --- | --- | --- |
-| A template file over existing blocks (arm, hand, hoof, nose, horn) | Nothing in code. The part picker lists templates from the folder and the Part drawer renders parameters from the template's metadata | Untouched; they pin their own template ids and versions |
+| A template file over existing blocks (arm, hand, hoof, nose, horn) | Nothing in code. The part picker lists templates from the folder and the Shape inspector renders parameters from the template's metadata | Untouched; they pin their own template ids and versions |
 | A block kind (membrane, socket row, per-digit overrides) | One sealed subclass with its `build`, `lint`, `joints`, `sockets` and `areas`, and the schema regenerates. No `when` over block kinds exists outside the block classes and the schema generator, so nothing else changes | Untouched; their files never mention the kind |
 | A surface that is not a sweep (a membrane between fingers, a sphere eye) | A block whose `build` returns a patch that is open in v, or closed with poles. Anchors, marks, weights and lines already address patches by name, u and v | Untouched; their anchors name the body patch |
 
@@ -286,7 +286,7 @@ A template is a few kilobytes. All of them parse once at startup into immutable 
 }
 ```
 
-A paw adds the blocks that draw what the user never does, driven by parameters the Part drawer exposes. It is closed, with no socket plane, so a drawing reaches behind its socket and can take in the end of the leg. It starts with no toes, a plain rounded block to draw over, and `fills` carries its tube to the end of the row until the row has toes:
+A paw adds the blocks that draw what the user never does, driven by parameters the Shape inspector exposes. It is closed, with no socket plane, so a drawing reaches behind its socket and can take in the end of the leg. It starts with no toes, a plain rounded block to draw over, and `fills` carries its tube to the end of the row until the row has toes:
 
 ```json
 "params": {
@@ -340,7 +340,7 @@ A body plan is the same grammar with its own block kinds, so it shares the parse
 
 ### Parameters
 
-A parameter has a `default`, a number or a flag, and optionally `unit`. A number either moves between `min` and `max`, on `step` if it has one, or takes only the ascending `values` it lists, which stand in for the limits. The Part drawer's slider runs from the lowest to the highest and lands on the nearest allowed value, so a list with gaps skips them, and Tool knows reads a list by its stretches: `[0, 3, 4, 5]` as 0, 3–5.
+A parameter has a `default`, a number or a flag, and optionally `unit`. A number either moves between `min` and `max`, on `step` if it has one, or takes only the ascending `values` it lists, which stand in for the limits. The Shape inspector's slider runs from the lowest to the highest and lands on the nearest allowed value, so a list with gaps skips them, and Tool knows reads a list by its stretches: `[0, 3, 4, 5]` as 0, 3–5.
 
 ### Block reference
 

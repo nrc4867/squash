@@ -3,14 +3,16 @@ package dev.chieppa.squash.screens.draw
 import dev.chieppa.squash.uidesign.generated.move_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.shell.ActionKeys
 import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.shell.LocalActionKeys
+import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.screens.sheet.StripTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.rememberPartIsDrawn
 import dev.chieppa.squash.screens.sheet.ToolSection
@@ -37,36 +39,34 @@ import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.runtime.getValue
 
 private val TOOL_SIZE = 34.dp
 private const val SYMMETRY_TOOLS = 2
 
 /**
- * The workspace's tools for the strip above the panes, in sections that collapse where the strip runs short: Draw outline, which is Oversketch once the
- * part is drawn, Spine and width, Edit curves, Erase, Smooth and Move; Mirror, which only a paired part has any use for, and Half outline; Start from
- * template; the paint tools; and [lines]. With a paint or line tool armed the strip holds those tools and Mirror alone, as the Color and Lines boards
- * draw it. Pressing the armed tool disarms it.
+ * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
+ * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Start from template, and
+ * [places] while a trace image is being placed. Color holds the paint tools, Lines holds [lines] and Face holds [faces], each with Mirror.
  */
 @Composable
 fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, places: ToolSection? = null) {
     val tool by state.tool.collectAsState()
-    val paint = paintSection(tool, state)
+    val stage by state.stage.collectAsState()
     val mirror = ToolSection(ShellTags.section("mirror"), stringResource(Res.string.edit_tool_mirror), SquashIcons.Mirror, 1) { MirrorButton(state) }
-    val sections = when {
-        tool.paints -> listOf(paint, mirror)
-        tool.inks -> listOfNotNull(lines, mirror)
-        tool.faces -> listOfNotNull(faces, mirror)
-        tool.places -> listOfNotNull(places)
-        else -> listOfNotNull(
+    val sections = when (stage) {
+        Stage.SHAPE -> listOfNotNull(
             outlineSection(tool, state),
             ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {
                 MirrorButton(state)
                 HalfOutlineButton(state)
             },
             ToolSection(ShellTags.section("template"), stringResource(Res.string.shell_action_start_template), SquashIcons.StartFromTemplate, 1) { StartFromTemplateButton(state) },
-            paint,
-            lines,
+            places.takeIf { tool.places },
         )
+        Stage.COLOR -> listOf(paintSection(tool, state), mirror)
+        Stage.LINES -> listOfNotNull(lines, mirror)
+        Stage.FACE -> listOfNotNull(faces, mirror)
     }
     ToolSections(sections, Modifier.fillMaxWidth())
 }
@@ -92,12 +92,12 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
     )
     val armed = tool.takeIf { it in icons }
     return ToolSection(ShellTags.section("outline"), stringResource(Res.string.shell_tools_outline), icons[armed] ?: drawIcon, icons.size, armed) {
-        ToolItem(BuildTool.DRAW_OUTLINE, drawIcon, draw, "D", tool, state::armTool, hint = drawHint)
-        ToolItem(BuildTool.SPINE_WIDTH, SquashIcons.SpineAndWidth, spine, "W", tool, state::armTool)
-        ToolItem(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, curves, "E", tool, state::armTool)
-        ToolItem(BuildTool.ERASE, SquashIcons.Erase, erase, "X", tool, state::armTool)
-        ToolItem(BuildTool.SMOOTH, SquashIcons.SmoothCurve, smooth, "S", tool, state::armTool)
-        ToolItem(BuildTool.MOVE, SquashIcons.Move, move, "V", tool, state::armTool)
+        StripTool(BuildTool.DRAW_OUTLINE, drawIcon, draw, tool, state::armTool, hint = drawHint)
+        StripTool(BuildTool.SPINE_WIDTH, SquashIcons.SpineAndWidth, spine, tool, state::armTool)
+        StripTool(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, curves, tool, state::armTool)
+        StripTool(BuildTool.ERASE, SquashIcons.Erase, erase, tool, state::armTool)
+        StripTool(BuildTool.SMOOTH, SquashIcons.SmoothCurve, smooth, tool, state::armTool)
+        StripTool(BuildTool.MOVE, SquashIcons.Move, move, tool, state::armTool)
     }
 }
 
@@ -115,17 +115,17 @@ private fun paintSection(tool: BuildTool, state: AppState): ToolSection {
 
 @Composable
 private fun PaintTools(tool: BuildTool, state: AppState) {
-    ToolItem(BuildTool.REGION_BORDER, SquashIcons.RegionBorder, stringResource(Res.string.color_tool_region_border), "R", tool, state::armTool)
-    ToolItem(BuildTool.FILL, SquashIcons.Fill, stringResource(Res.string.color_tool_fill), "F", tool, state::armTool)
-    ToolItem(BuildTool.BRUSH, SquashIcons.Brush, stringResource(Res.string.color_tool_brush), "B", tool, state::armTool)
-    ToolItem(BuildTool.PICK_COLOR, SquashIcons.PickColor, stringResource(Res.string.color_tool_pick), "I", tool, state::armTool)
+    StripTool(BuildTool.REGION_BORDER, SquashIcons.RegionBorder, stringResource(Res.string.color_tool_region_border), tool, state::armTool)
+    StripTool(BuildTool.FILL, SquashIcons.Fill, stringResource(Res.string.color_tool_fill), tool, state::armTool)
+    StripTool(BuildTool.BRUSH, SquashIcons.Brush, stringResource(Res.string.color_tool_brush), tool, state::armTool)
+    StripTool(BuildTool.PICK_COLOR, SquashIcons.PickColor, stringResource(Res.string.color_tool_pick), tool, state::armTool)
 }
 
 /** Half outline: on, a stroke draws one edge and its mirror image across the part's centre line. */
 @Composable
 private fun HalfOutlineButton(state: AppState) {
     val label = stringResource(Res.string.draw_half_outline)
-    Tooltip(label, listOf("H")) {
+    Tooltip(label, LocalActionKeys.current(ActionKeys.HALF_OUTLINE)) {
         ToolButton(
             SquashIcons.HalfOutline,
             label,
@@ -147,7 +147,7 @@ private fun MirrorButton(state: AppState) {
     val tool by state.tool.collectAsState()
     val paired = selected?.let { document?.character?.part(it) }?.pair != null || tool == BuildTool.SURFACE_STROKE || tool.floats || tool == BuildTool.FUR_STROKE || tool.faces
     val label = stringResource(Res.string.edit_tool_mirror)
-    Tooltip(label, listOf("M")) {
+    Tooltip(label, LocalActionKeys.current(ActionKeys.MIRROR)) {
         ToolButton(
             SquashIcons.Mirror,
             label,
@@ -157,12 +157,5 @@ private fun MirrorButton(state: AppState) {
             size = TOOL_SIZE,
             enabled = paired,
         )
-    }
-}
-
-@Composable
-private fun ToolItem(tool: BuildTool, icon: ImageVector, label: String, key: String, armed: BuildTool, onArm: (BuildTool) -> Unit, hint: String = label) {
-    Tooltip(hint, listOf(key)) {
-        ToolButton(icon, label, tool == armed, { onArm(tool) }, Modifier.testTag(ShellTags.tool(tool)), size = TOOL_SIZE)
     }
 }

@@ -28,7 +28,6 @@ import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.lines.PickedGroup
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.sheet.INK_SLOT
 import dev.chieppa.squash.screens.surface.paint.SlotChoice
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -97,7 +96,7 @@ private const val MOST_DILATION = 1f
 /** How wide a mouth's width control reaches. */
 private val WIDTH_RANGE = 0.5f..1.5f
 
-/** Test tags for the Marks drawer's Face section. */
+/** Test tags for the Face inspector. */
 object FaceTags {
     const val EYE = "face.eye"
     const val MOUTH = "face.mouth"
@@ -153,7 +152,7 @@ private fun faceHolder(character: Character, picked: PickedGroup?, selected: Par
     picked?.part ?: character.parts.firstOrNull { groupsOn(character, it.id).isNotEmpty() }?.id ?: selected
 
 /**
- * The Marks drawer's Face section: an Eye row and a Mouth row. Picking one arms the face tools and opens its controls, its roles, the test gaze and what its expression poses
+ * The Face inspector's rows: an Eye row and a Mouth row. Picking one opens its controls, its roles, the test gaze and what its expression poses
  * below; an eye's controls are that eye's, and with Mirror on both eyes'.
  */
 @Composable
@@ -171,12 +170,10 @@ fun FaceSection(state: AppState, session: CharacterSession) {
         if (group == null || face.group?.id == group.id) {
             face.group = null
             face.role = null
-            state.armTool(BuildTool.LINE_WIDTH)
         } else {
             face.group = PickedGroup(holder, group.id)
             face.role = if (group.isEye) MarkRole.LID else MarkRole.LIP_LINE
             state.selectPart(holder)
-            if (!state.tool.value.faces) state.armTool(BuildTool.DRAW_MARK)
         }
     }
     DrawerSection(stringResource(Res.string.face_section)) {

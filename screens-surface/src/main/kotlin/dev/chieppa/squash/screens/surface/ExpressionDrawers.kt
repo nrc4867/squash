@@ -64,7 +64,7 @@ private const val NEW_ID_PREFIX = "expression-"
 /** What a thumbnail leaves out, since a small drawing of plain lines reads better without rings inside rings. */
 private val THUMBNAIL_SKIPS = setOf(MarkRole.WHITE, MarkRole.PUPIL, MarkRole.HIGHLIGHT, MarkRole.TONGUE)
 
-/** Test tags for the Expressions and Angle versions drawers. */
+/** Test tags for the Face stage's band. */
 object ExpressionTags {
     const val NEUTRAL = "expressions.neutral"
     const val NEW = "expressions.new"
@@ -146,7 +146,7 @@ private fun rememberFaceHolder(session: CharacterSession): FaceHolder {
     return FaceHolder(entry?.value, forward)
 }
 
-/** The Expressions drawer: Neutral and each of the character's expressions, as tiles that show the expression on the character. */
+/** The band's expressions: Neutral and each of the character's expressions, as tiles that show the expression on the character. */
 @Composable
 fun ExpressionsDrawer(state: AppState) {
     val open by state.session.collectAsState()
@@ -168,7 +168,7 @@ fun ExpressionsDrawer(state: AppState) {
     }
 }
 
-/** The Expressions drawer's header: add an expression, and delete the shown one. */
+/** The expressions' header: add an expression, and delete the shown one. */
 @Composable
 fun RowScope.ExpressionActions(state: AppState) {
     val open by state.session.collectAsState()
@@ -198,7 +198,7 @@ private fun freeExpressionId(character: Character): ExpressionId {
     return generateSequence(1) { it + 1 }.map { "$NEW_ID_PREFIX$it" }.first { it !in held }.let(::ExpressionId)
 }
 
-/** The Angle versions drawer: the shown expression's three versions, whose tiles choose which the face tools draw in; picking the chosen one lets the view choose again. */
+/** The band's angle versions: the shown expression's three versions, whose tiles choose which the face tools draw in; picking the chosen one lets the view choose again. */
 @Composable
 fun AngleVersionsDrawer(state: AppState) {
     val open by state.session.collectAsState()

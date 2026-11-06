@@ -4,9 +4,7 @@ import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
@@ -21,9 +19,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import dev.chieppa.squash.geom.Vec3
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -57,35 +52,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import dev.chieppa.squash.screens.shell.ShellTags
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalTestApi::class)
 class SheetUiTest {
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
     @Test
-    fun aNarrowStripFoldsTheLayoutControlIntoADropdown() = runDesktopComposeUiTest(700, 300) {
+    fun theLayoutDropdownOffersEveryBuiltLayout() = runDesktopComposeUiTest(700, 300) {
         var picked: SheetLayout? = null
         setStretchContent { SheetStrip(onLayout = { picked = it }) }
-        onNodeWithText("Layout").assertDoesNotExist()
-        onNodeWithText("Sheet").performClick()
-        waitForIdle()
-        onNodeWithText("Single").performClick()
-        assertEquals(SheetLayout.SINGLE, picked)
-    }
-
-    @Test
-    fun everyLayoutCanBePicked() = runDesktopComposeUiTest(1900, 900) {
-        var picked: SheetLayout? = null
-        setStretchContent { SheetStrip(onLayout = { picked = it }) }
-        onNodeWithText("Layout").assertExists()
-        onNodeWithText("Sheet").assertIsSelected()
-        for (label in listOf("Single", "Focus", "Sheet", "Full first")) onNodeWithText(label).assertIsEnabled()
-        onNodeWithText("Focus").performClick()
-        assertEquals(SheetLayout.FOCUS, picked)
-        onNodeWithText("Single").performClick()
-        assertEquals(SheetLayout.SINGLE, picked)
-        onNodeWithText("Full first").performClick()
-        assertEquals(SheetLayout.FULL_FIRST, picked)
+        onNodeWithText("Sheet").assertExists()
+        for (layout in listOf("Single" to SheetLayout.SINGLE, "Focus" to SheetLayout.FOCUS, "Full first" to SheetLayout.FULL_FIRST)) {
+            onNodeWithTag(ShellTags.LAYOUT).performClick()
+            waitForIdle()
+            onNodeWithText(layout.first).performClick()
+            waitForIdle()
+            assertEquals(layout.second, picked)
+        }
     }
 
     @Test

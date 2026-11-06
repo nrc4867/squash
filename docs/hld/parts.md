@@ -56,7 +56,7 @@ When: starter is spike 1, first is the first version, later is after it.
 Templates are accelerators, not the only way in. A character can start from an empty body plan and generic parts, with anatomy added by hand.
 
 - **Blank** is a body plan with one root part and the default palette, offered beside the species plans.
-- **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks with nothing preset: one tube, skull or lens-section run, one bone from end to end, open end, section profile and views chosen in the Part drawer.
+- **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks with nothing preset: one tube, skull or lens-section run, one bone from end to end, open end, section profile and views chosen in the Shape inspector.
 - **Anatomy by hand.** Move adds joints, sockets, landmarks and pair flags on any part, so a generic tube becomes a leg when its bend and its paw socket are placed.
 - **Re-templating keeps the drawing.** Outlines live in part axes under the same views grammar, so a generic part can take a typed template later, or a typed part can drop to generic, and the outlines stay.
 - **Save as template** turns a hand-built part, with its joints and sockets, into a template file.

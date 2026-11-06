@@ -1,9 +1,7 @@
 package dev.chieppa.squash.screens.shell
 
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
@@ -23,6 +21,8 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import kotlin.io.path.Path
 import kotlin.io.path.nameWithoutExtension
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /** What the window's screens share: file handling, the drawer layout, the action registry and the toasts. */
 @Stable
@@ -31,12 +31,8 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
     val keymap = Keymap(registry)
 
     var layout by mutableStateOf(DEFAULT_LAYOUT)
-
-    /** Whether the strip holds the tools for lines, as it does while the Lines or Marks drawer is open. */
-    val showsLineTools: Boolean get() = layout[DrawerIds.LINES]?.open == true || layout[DrawerIds.MARKS]?.open == true
     var palette by mutableStateOf(false)
     var settings by mutableStateOf(false)
-    private var shownScreen: Screen? = null
 
     fun newCharacter() {
         state.screen.value = Screen.NEW_CHARACTER
@@ -91,16 +87,5 @@ class Shell(val state: AppState, val chooser: FileChooser, val toasts: ToastStat
             if (typesOpen) state.openPartTypes() else state.screen.value = Screen.WORKSPACE
         }
         layout = if (state.screen.value == Screen.NEW_CHARACTER) layout else next
-    }
-
-    /**
-     * Opens the Part drawer for the Pick screen's type and closes it again on the way back to the panes. Called while
-     * composing the new screen, so the drawers change in the same frame as the viewport.
-     */
-    fun onScreen(screen: Screen) {
-        val previous = shownScreen
-        shownScreen = screen
-        if (screen == Screen.PICK_PART) layout = layout.open(DrawerIds.PART)
-        if (previous == Screen.PICK_PART && screen == Screen.WORKSPACE) layout = layout.close(DrawerIds.PART)
     }
 }

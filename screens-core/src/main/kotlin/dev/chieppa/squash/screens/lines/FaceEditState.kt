@@ -14,7 +14,7 @@ import dev.chieppa.squash.geom.Vec3
 data class PickedGroup(val part: PartId, val id: MarkGroupId)
 
 /**
- * What the face tools remember: the [group] picked in the Marks drawer and the [role] Draw mark and Edit curves work in, the angle version [version] they write, the one the view
+ * What the face tools remember: the [group] picked in the Face inspector and the [role] Draw mark and Edit curves work in, the angle version [version] they write, the one the view
  * shows if none, and the test gaze: whether it is [gazeOn] and its [gazeTarget] in body space, which is not part of the character.
  */
 @Stable
