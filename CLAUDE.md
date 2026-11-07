@@ -26,6 +26,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
 ./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
+./gradlew :rig:desktopTest -PupdateGoldens        # rewrite the rig's golden fixtures
 ./gradlew :screens-core:test -PupdateGoldens  # rewrite examples/fennec.json, the example character, from its commands
 ./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
 ```
@@ -47,15 +48,16 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
+| Domain | `anim` | Later: clips and timing |
+| Domain | `rig` | The rig derived from the assembled character: bones from template joints in the socket tree, weights from part ownership with joint and seam bands and the `SeamPaint` seam, linear blend skinning by a `Pose`, the session's rig node |
 | Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row and surface work graph nodes, the open character session |
-| Domain | `rig`, `anim` | Later: weights, IK, stretch; clips and timing |
-| Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions) and every command that changes them, on `stretch-core`'s undo and registry |
+| Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions, pose) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
 | Core | `geom` | Vectors, curves and their morphing and clipping, slices to meshes, mesh invariants. No dependencies but the standard library |
 | Core | `annotations` | `@Range` and `@Doc` only. Depended on by `character` and `schema-gen`, nothing else |
 | Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors |
 
-Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it. The `screens-*` modules reach `ui-design`, `render`, `character` and Stretch through `screens-core` and never depend on each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent` that `app` supplies.
+Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it. Within Domain, `rig` sits above `character` and uses it, and `anim` will sit above `rig`. The `screens-*` modules reach `ui-design`, `render`, `character` and Stretch through `screens-core` and never depend on each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent` that `app` supplies.
 
 A test lives with the module it tests. Tests that need two `screens-*` modules at once, and the smoke tier, are in `app`'s test source set. Helpers tests share are in the `testFixtures` of `screens-core` and `screens-draw`.
 

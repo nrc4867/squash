@@ -77,7 +77,7 @@ private fun sideShare(v: Float, joint: Float?): Float {
 private fun smooth(t: Float) = t * t * (3f - 2f * t)
 
 /** The middle of this patch's ring nearest [u]. */
-private fun Patch.ringMiddle(u: Float): Vec3 {
+fun Patch.ringMiddle(u: Float): Vec3 {
     val held = u.coerceIn(ringUs.first(), ringUs.last())
     val around = (0 until nv).map { positionAt(held, it.toFloat() / segments) }
     return around.reduce { sum, point -> sum + point } * (1f / around.size)

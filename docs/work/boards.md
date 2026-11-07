@@ -68,7 +68,7 @@ Not a screen, so it has no board in the artifact.
 | Board | State | Verify |
 | --- | --- | --- |
 | 6 Mirror and join | planned | |
-| 7 Rig and weights | planned | |
+| 7 Rig and weights | building | |
 | 8 Garments and slots | planned | |
 
 ## The look

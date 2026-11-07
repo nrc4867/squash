@@ -42,6 +42,8 @@ class PlacedPart(
     val placement: Map<String, Float> = emptyMap(),
     /** What its length along its axis was built at, see [LegLengths]. */
     val lengthFactor: Float = 1f,
+    /** The socket it sits on as placed on its parent, moved where the Move tool moved it, or null for a root. */
+    val socketSpec: SocketSpec? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -134,7 +136,7 @@ private class Assembler(
         }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
         val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side)) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id))
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec)
     }
 
     private fun socketsOf(template: PartTemplate): List<SocketSpec> =
