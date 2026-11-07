@@ -58,6 +58,7 @@ Templates are accelerators, not the only way in. A character can start from an e
 - **Blank** is a body plan with one root part and the default palette, offered beside the species plans.
 - **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks with nothing preset: one tube, skull or lens-section run, one bone from end to end, open end, section profile and views chosen in the Shape inspector.
 - **Anatomy by hand.** Move adds joints, sockets, landmarks and pair flags on any part, so a generic tube becomes a leg when its bend and its paw socket are placed.
+- **A generic part's role is guessed.** A generic template gives no role, so a part placed from it has its role guessed from where it sits, a tube hanging from the root's rear end a tail, one hanging down a leg, one on the head's top an ear, and the Shape inspector's role chip shows the guess dashed until it is chosen. The pose tools read the role. See [data-model.md](data-model.md), Roles.
 - **Re-templating keeps the drawing.** Outlines live in part axes under the same views grammar, so a generic part can take a typed template later, or a typed part can drop to generic, and the outlines stay.
 - **Save as template** turns a hand-built part, with its joints and sockets, into a template file.
 

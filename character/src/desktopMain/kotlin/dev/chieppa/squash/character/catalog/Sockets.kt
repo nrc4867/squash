@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.catalog
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.role.PartRoles
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
@@ -25,14 +26,14 @@ val PartInstance.isLeader: Boolean get() = pair == null || side != Side.RIGHT
 fun SquashDocument.twin(part: PartInstance): PartInstance? =
     part.pair?.let { pair -> character.parts.firstOrNull { it.pair == pair && it.id != part.id } }
 
-/** Every socket with nothing on it, on the document's parts, offering only templates that are loaded. */
+/** Every socket with nothing on it, on the document's parts, offering the loaded templates it takes, or every loaded template when it names none. */
 fun openSockets(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder): List<OpenSocket> {
     val parts = document.character.parts
     val filled = parts.mapNotNull { it.socket }.toSet()
     return parts.filter { it.isLeader }.flatMap { part ->
         val template = templates.template(part.template) ?: return@flatMap emptyList()
         plan.socketsOn(template).mapNotNull { spec ->
-            val takes = spec.takes.filter { templates.template(it) != null }
+            val takes = if (spec.takes.isEmpty()) templates.newest.map { it.id } else spec.takes.filter { templates.template(it) != null }
             when {
                 takes.isEmpty() || SocketRef(part.id, spec.name) in filled -> null
                 else -> OpenSocket(part.id, spec.name, takes, spec.pair != null || part.pair != null)
@@ -48,18 +49,24 @@ fun socketFor(template: TemplateId, sockets: List<OpenSocket>, current: OpenSock
 /**
  * The instances [template] makes on [socket]. A part on a paired parent pairs up across the parent's two sides; a
  * paired socket on a single parent makes both sides there; anything else is one part. The left side comes first and
- * is the one selected. See HLD: data-model, Mirroring is shared data plus overrides.
+ * is the one selected. Each takes the role [roles] gives it there, guessed for a template with none, or the template's
+ * own without [roles]. See HLD: data-model, Mirroring is shared data plus overrides, and Roles.
  */
 fun placeOnSocket(
     socket: OpenSocket,
     template: PartTemplate,
     document: SquashDocument,
     start: PartData = PartData(),
+    roles: PartRoles? = null,
     id: () -> String = Ulid::next,
 ): List<PartInstance> {
     val parent = requireNotNull(document.character.part(socket.parent)) { "No part ${socket.parent.value}" }
-    fun instance(on: PartId, pair: PairId?, side: Side?) =
-        PartInstance(PartId(id()), template.ref, SocketRef(on, socket.name), own = if (pair == null) start else PartData(), pair = pair, side = side)
+    val role = roles?.placed(template, socket.ref) ?: template.role
+    val guessed = template.role == null && role != null
+    fun instance(on: PartId, pair: PairId?, side: Side?) = PartInstance(
+        PartId(id()), template.ref, SocketRef(on, socket.name), own = if (pair == null) start else PartData(), pair = pair, side = side,
+        role = role, roleGuessed = guessed,
+    )
     if (!socket.paired) return listOf(instance(parent.id, null, null))
     val pair = PairId(id())
     val twin = document.twin(parent)

@@ -3,6 +3,14 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import dev.chieppa.squash.character.catalog.roles
+import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.uidesign.ChoiceChip
+import dev.chieppa.squash.uidesign.generated.role_guessed
+import dev.chieppa.squash.uidesign.generated.role_title
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -37,6 +45,7 @@ import dev.chieppa.stretch.ui.flattenTree
 import org.jetbrains.compose.resources.stringResource
 
 private val SWATCH_SHAPE = RoundedCornerShape(3.dp)
+private val TRAILING_GAP = 6.dp
 
 /** The open character's parts and empty sockets: a part selects, and a socket, shown as a row to add, opens Add part's popover on it. */
 @Composable
@@ -53,6 +62,7 @@ fun PartsDrawerContent(state: AppState) {
     val left = stringResource(Res.string.shell_tree_left)
     val right = stringResource(Res.string.shell_tree_right)
     val roots = partTree(document, plan, state.templates, mirror) { if (it == Side.LEFT) left else right }
+    val guesses = roleLabels(state.templates.roles(document.character).fourLegged)
     val rows = flattenTree(roots) { true }.map { it.node.item }
     val current = rows.firstOrNull { it is PartRow.Open && it.socket == socket } ?: rows.firstOrNull { it is PartRow.SideOf && it.part.id == selected } ?: rows.firstOrNull {
         it is PartRow.Placed && (it.part.id == selected || document.twin(it.part)?.id == selected)
@@ -75,7 +85,12 @@ fun PartsDrawerContent(state: AppState) {
                 }
             },
             leading = { RowSwatch(it) },
-            trailing = { RowState(it) },
+            trailing = {
+                Row(horizontalArrangement = Arrangement.spacedBy(TRAILING_GAP), verticalAlignment = Alignment.CenterVertically) {
+                    RowRole(it, guesses)
+                    RowState(it)
+                }
+            },
         )
     }
 }
@@ -101,6 +116,13 @@ private fun RowSwatch(row: PartRow) {
             .background((row as? PartRow.Placed)?.base?.let { Color(it.red, it.green, it.blue) } ?: if (filled) c.accent else Color.Transparent, shape)
             .border(Stretch.stroke, c.lineStrong, shape),
     )
+}
+
+/** A part's role while it is a guess, as a dashed chip; nothing once it is confirmed. */
+@Composable
+private fun RowRole(row: PartRow, labels: (Role) -> String) {
+    val guessed = (row as? PartRow.Placed)?.guessed ?: return
+    ChoiceChip(stringResource(Res.string.role_guessed, labels(guessed)), Modifier.testTag(ShellTags.partRowRole(row.tagName)), tentative = true, description = stringResource(Res.string.role_title))
 }
 
 @Composable

@@ -6,11 +6,13 @@ import dev.chieppa.squash.character.catalog.isLeader
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.catalog.partName
+import dev.chieppa.squash.character.catalog.roles
 import dev.chieppa.squash.character.catalog.twin
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.SquashDocument
@@ -24,7 +26,8 @@ sealed interface PartRow {
     /** The name its test tag ends with: a socket's, or the root's template id. */
     val tagName: String
 
-    data class Placed(val part: PartInstance, override val label: String, val drawn: Boolean, val base: SlotColor? = null) : PartRow {
+    /** A placed part; [guessed] is its role while that is a guess not yet confirmed. */
+    data class Placed(val part: PartInstance, override val label: String, val drawn: Boolean, val base: SlotColor? = null, val guessed: Role? = null) : PartRow {
         override val key get() = part.id.value
         override val tagName get() = part.socket?.socket ?: part.template.id.value
     }
@@ -55,10 +58,13 @@ fun partTree(
 ): List<TreeNode<PartRow>> {
     val parts = document.character.parts
     val open = openSockets(document, plan, templates).groupBy { it.parent }
+    val roles = templates.roles(document.character)
     fun node(part: PartInstance): TreeNode<PartRow> {
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
         val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, displayName(it.name))) }
-        return TreeNode(PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part)), document.sideRows(part, mirror, sideLabel) + placed + waiting)
+        val guessed = roles.resolved(part).takeIf { roles.isGuess(part) }
+        val row = PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part), guessed)
+        return TreeNode(row, document.sideRows(part, mirror, sideLabel) + placed + waiting)
     }
     return parts.filter { it.socket == null }.map(::node)
 }

@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.Side
@@ -35,10 +36,10 @@ private fun ref(id: String): TemplateRef = requireNotNull(shippedTemplates.templ
 
 private val shippedTemplates by lazy { TemplateFolder.shipped() }
 
-private fun pair(id: String, template: String, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
+private fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
     listOf(
-        PartInstance(left, ref(template), SocketRef(leftOn, socket), pair = PairId(id), side = Side.LEFT),
-        PartInstance(right, ref(template), SocketRef(rightOn, socket), pair = PairId(id), side = Side.RIGHT),
+        PartInstance(left, ref(template), SocketRef(leftOn, socket), pair = PairId(id), side = Side.LEFT, role = role),
+        PartInstance(right, ref(template), SocketRef(rightOn, socket), pair = PairId(id), side = Side.RIGHT, role = role),
     ),
 )
 
@@ -84,15 +85,18 @@ private val TAIL_TOP = drawn(
     p(0.76f, -0.05f), p(0.64f, -0.105f), p(0.50f, -0.14f), p(0.36f, -0.14f), p(0.20f, -0.115f), p(0.08f, -0.08f), p(0f, -0.05f),
 )
 
-/** The parts on the canine plan's sockets, drawn from outlines only, with the Move tool's lean on the tail and ears. */
+/**
+ * The parts on the canine plan's sockets, drawn from outlines only, with the Move tool's lean on the tail and ears. Each takes the role
+ * Add part gives it there: its template's, with the front legs and paws a four-legged body's arms and hands.
+ */
 fun fennecBody(): List<DocumentCommand> = listOf(
-    AddParts(listOf(PartInstance(TORSO, ref("torso")))),
-    AddParts(listOf(PartInstance(HEAD, ref("head"), SocketRef(TORSO, "neck")), PartInstance(TAIL, ref("tail"), SocketRef(TORSO, "tail")))),
-    pair("ears", "ear", EAR_L, HEAD, EAR_R, HEAD, "ear"),
-    pair("front-legs", "leg", FRONT_LEG_L, TORSO, FRONT_LEG_R, TORSO, "front-leg"),
-    pair("back-legs", "leg", BACK_LEG_L, TORSO, BACK_LEG_R, TORSO, "back-leg"),
-    pair("front-paws", "paw", FRONT_PAW_L, FRONT_LEG_L, FRONT_PAW_R, FRONT_LEG_R, "paw"),
-    pair("back-paws", "paw", BACK_PAW_L, BACK_LEG_L, BACK_PAW_R, BACK_LEG_R, "paw"),
+    AddParts(listOf(PartInstance(TORSO, ref("torso"), role = Role.BODY))),
+    AddParts(listOf(PartInstance(HEAD, ref("head"), SocketRef(TORSO, "neck"), role = Role.HEAD), PartInstance(TAIL, ref("tail"), SocketRef(TORSO, "tail"), role = Role.TAIL))),
+    pair("ears", "ear", Role.EAR, EAR_L, HEAD, EAR_R, HEAD, "ear"),
+    pair("front-legs", "leg", Role.ARM, FRONT_LEG_L, TORSO, FRONT_LEG_R, TORSO, "front-leg"),
+    pair("back-legs", "leg", Role.LEG, BACK_LEG_L, TORSO, BACK_LEG_R, TORSO, "back-leg"),
+    pair("front-paws", "paw", Role.HAND, FRONT_PAW_L, FRONT_LEG_L, FRONT_PAW_R, FRONT_LEG_R, "paw"),
+    pair("back-paws", "paw", Role.FOOT, BACK_PAW_L, BACK_LEG_L, BACK_PAW_R, BACK_LEG_R, "paw"),
     SetOutlines(TORSO, mapOf(View.SIDE to TORSO_SIDE, View.TOP to TORSO_TOP, View.FRONT to TORSO_FRONT)),
     SetOutlines(HEAD, mapOf(View.SIDE to HEAD_SIDE, View.TOP to HEAD_TOP)),
     SetParameter(HEAD, "size", 1.12f),

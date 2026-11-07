@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.model
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.block.Block
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
@@ -56,6 +57,8 @@ data class PartTemplate(
     @Doc("The template's own version; changes when its topology or joints change.") @Range(min = 1.0)
     val version: Int,
     val name: String,
+    @Doc("What a part of this type is to the body, which a part placed from it takes; none for a generic part, whose role is guessed from where it sits.")
+    val role: Role? = null,
     val axis: AxisSpec,
     @Doc("The end that sits on the socket plane; null for a closed part.")
     val openEnd: End? = null,

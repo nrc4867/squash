@@ -1,10 +1,15 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.abs
 
 /** How close two bones' pivots must mirror each other across the body's plane to make a pair. */
 private const val TWIN_TOLERANCE = 1e-3f
+
+/** The roles of a part a body curve bends behind the root part, and ahead of it. */
+private val BEHIND = setOf(Role.TAIL)
+private val AHEAD = setOf(Role.SPINE, Role.NECK, Role.HEAD)
 
 /** A step of the body chain, from rest point [from] to [to], both carried by the bone [owner], a place in [Rig.bones]. */
 internal class ChainLink(val owner: Int, val from: Vec3, val to: Vec3, val ahead: Boolean)
@@ -12,9 +17,9 @@ internal class ChainLink(val owner: Int, val from: Vec3, val to: Vec3, val ahead
 /**
  * The bones a body curve bends, as steps from the end of the part behind the root part to the end of the part ahead of it:
  * on the fennec from the tail's tip through the tail, the torso's joints and the head's base to the head's end. The root
- * part is the root bone's; behind and ahead are its unpaired children with joints, hanging from its first and last carrying
- * bones. [root] is the first step on the root part. Steps on the part ahead are [ChainLink.ahead]. A bone's span stretches
- * with the curve's length when it is in [stretched].
+ * part is the root bone's; behind it is its unpaired child of role tail, and ahead its unpaired child of role spine, neck or head,
+ * each hanging from the root part's bone that carries it. [root] is the first step on the root part. Steps on the part ahead are
+ * [ChainLink.ahead]. A bone's span stretches with the curve's length when it is in [stretched].
  */
 internal class BodyChain(val links: List<ChainLink>, val root: Int, val stretched: Set<Int>)
 
@@ -22,11 +27,12 @@ internal fun bodyChain(rig: Rig): BodyChain? {
     val rootBone = rig.parents.indexOfFirst { it < 0 }.takeIf { it >= 0 } ?: return null
     val rootPart = rig.bones[rootBone].name.part
     val spine = rig.bones.indices.filter { rig.bones[it].name.part == rootPart }
+    val roles = rig.parts.associate { it.id to it.role }
     val children = rig.bones.indices
         .filter { rig.bones[it].name.part != rootPart && rig.parents[it] in spine && firstOfPart(rig, it) && !hasTwin(rig, it) }
         .sortedBy { spine.indexOf(rig.parents[it]) }
-    val behind = children.firstOrNull()?.takeIf { children.size >= 2 }
-    val ahead = children.lastOrNull()
+    val behind = children.firstOrNull { roles[rig.bones[it].name.part] in BEHIND }
+    val ahead = children.lastOrNull { roles[rig.bones[it].name.part] in AHEAD }
     val start = behind?.let { spine.indexOf(rig.parents[it]) } ?: 0
     val end = ahead?.let { spine.indexOf(rig.parents[it]) } ?: spine.lastIndex
     val links = mutableListOf<ChainLink>()

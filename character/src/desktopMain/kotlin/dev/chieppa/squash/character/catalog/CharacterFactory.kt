@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.PaletteSlot
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
@@ -25,7 +26,7 @@ data class NewCharacter(val document: SquashDocument, val commands: List<Documen
 /** Builds a character from [plan]: no parts in the document, and an [AddPart] for the plan's root. */
 fun newCharacter(plan: BodyPlan, templates: TemplateFolder, name: String, id: () -> String = Ulid::next): NewCharacter {
     val template = requireNotNull(templates.template(plan.root.template)) { "No template ${plan.root.template.value}" }
-    val root = PartInstance(PartId(id()), template.ref, own = plan.startingData())
+    val root = PartInstance(PartId(id()), template.ref, own = plan.startingData(), role = template.role ?: Role.BODY, roleGuessed = template.role == null)
     val palette = Palette(plan.palette.map { PaletteSlot(SlotName(it.name), it.color) })
     val character = Character(CharacterId(id()), name, plan.ref, palette = palette)
     return NewCharacter(SquashDocument(character), listOf(AddPart(root)), root.id)

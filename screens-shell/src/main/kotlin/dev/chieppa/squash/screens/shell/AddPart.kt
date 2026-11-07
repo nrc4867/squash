@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.screens.addPart
+import dev.chieppa.squash.screens.openSocketsNow
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -126,7 +128,8 @@ private fun TypeTile(template: PartTemplate, selected: Boolean, onClick: () -> U
     Card(Modifier.size(TILE).testTag(ShellTags.addTile(template.id.value)), onClick, selected) {
         Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                if (hasTileArt(template.id.value)) PartTileArt(template.id.value, Modifier.fillMaxSize()) else Icon(SquashIcons.Parts, c.inkControl, size = TILE_ICON)
+                val role = template.role
+                if (role != null && hasTileArt(role)) PartTileArt(role, Modifier.fillMaxSize()) else Icon(SquashIcons.Parts, c.inkControl, size = TILE_ICON)
             }
             BasicText(template.name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink)), maxLines = 1)
         }

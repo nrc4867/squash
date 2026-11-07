@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.character.build.shownSet
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.CameraBin
@@ -107,12 +109,9 @@ fun erasedMarkCommand(character: Character, picked: PickedGroup, role: MarkRole,
     return Together(listOf(SetMarkGroup(picked.part, group.id, without), SetMark(picked.part, mark.id, null)))
 }
 
-/** The id of the template a head is built from, which the Face stage works on. */
-private const val HEAD_TEMPLATE = "head"
-
-/** The part the Face stage works on: the head, else the first part holding a face, whatever is selected. */
-fun Character.faceHead(): PartId? =
-    parts.firstOrNull { it.template.id.value == HEAD_TEMPLATE }?.id ?: parts.firstOrNull { resolved(it).surface.groups.isNotEmpty() }?.id
+/** The part the Face stage works on: the part whose role, its own or its template's in [templates], is the head, else the first part holding a face, whatever is selected. */
+fun Character.faceHead(templates: TemplateLibrary): PartId? =
+    parts.firstOrNull { (it.role ?: templates.find(it.template)?.role) == Role.HEAD }?.id ?: parts.firstOrNull { resolved(it).surface.groups.isNotEmpty() }?.id
 
 /** Where a starter eye sits on the head and how wide its lid is, in u and v; the other eye mirrors it across the middle. */
 private const val STARTER_U = 0.6f

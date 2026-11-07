@@ -592,6 +592,33 @@
         "name": {
           "type": "string"
         },
+        "role": {
+          "description": "What a part of this type is to the body, which a part placed from it takes; none for a generic part, whose role is guessed from where it sits.",
+          "anyOf": [
+            {
+              "enum": [
+                "body",
+                "spine",
+                "neck",
+                "head",
+                "jaw",
+                "ear",
+                "arm",
+                "hand",
+                "leg",
+                "foot",
+                "tail",
+                "wing",
+                "fin",
+                "horn",
+                "other"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "axis": {
           "$ref": "#/$defs/AxisSpec"
         },

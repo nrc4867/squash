@@ -14,7 +14,8 @@ enum class Side {
  * root part. [own] holds a part's values while it has no [pair] and stays empty while it has one; [overrides] are the
  * values this [side] replaces in its pair's. Both stay inside this module: [Character.resolved], [Character.editBase]
  * and [Character.overridesOf] are how anything reads them. [side] outlasts a broken pair, since the part still sits on that side.
- * See HLD: data-model, Mirroring is shared data plus overrides.
+ * [role] is what the part is to the body, which both sides of a pair share; [roleGuessed] says it was guessed and not yet confirmed.
+ * See HLD: data-model, Mirroring is shared data plus overrides, and Roles.
  */
 @Serializable
 data class PartInstance(
@@ -25,6 +26,8 @@ data class PartInstance(
     val pair: PairId? = null,
     val side: Side? = null,
     internal val overrides: PartData = PartData(),
+    val role: Role? = null,
+    val roleGuessed: Boolean = false,
 ) {
     init {
         if (pair == null) {

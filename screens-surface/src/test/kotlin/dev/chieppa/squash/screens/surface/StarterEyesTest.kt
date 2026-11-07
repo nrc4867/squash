@@ -28,7 +28,7 @@ class StarterEyesTest {
 
     @Test
     fun theFaceStageWorksOnTheHead() {
-        assertEquals(HEAD, character.faceHead())
+        assertEquals(HEAD, character.faceHead(session.templates))
     }
 
     @Test

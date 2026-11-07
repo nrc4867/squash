@@ -52,7 +52,7 @@ fun FaceInspector(state: AppState, session: CharacterSession) {
 fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
     val open by state.session.collectAsState()
     val document = open?.document?.collectAsState()?.value
-    val head = document?.character?.faceHead()
+    val head = open?.let { document?.character?.faceHead(it.templates) }
     LaunchedEffect(head, document?.character?.let { character -> head?.let { groupsOn(character, it).size } }) {
         val character = document?.character ?: return@LaunchedEffect
         val at = head ?: return@LaunchedEffect

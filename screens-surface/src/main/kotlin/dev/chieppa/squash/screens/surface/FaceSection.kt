@@ -80,7 +80,7 @@ fun FaceSection(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val character = document.character
     val face = state.face
-    val holder = character.faceHead() ?: return
+    val holder = character.faceHead(session.templates) ?: return
     val groups = groupsOn(character, holder)
     val eyes = groups.filter { it.isEye }
     val mouth = groups.firstOrNull { it.isMouth }

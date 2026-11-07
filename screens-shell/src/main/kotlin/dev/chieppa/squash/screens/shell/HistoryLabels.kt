@@ -52,6 +52,9 @@ import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.AddSeamStrokes
 import dev.chieppa.squash.document.PutSeamStrokes
 import dev.chieppa.squash.document.ResetSeam
+import dev.chieppa.squash.document.SetRole
+import dev.chieppa.squash.character.catalog.placeOf
+import dev.chieppa.squash.uidesign.generated.role_step
 import dev.chieppa.squash.document.SeamToTwin
 import dev.chieppa.squash.document.SetSeamStroke
 import dev.chieppa.squash.character.build.RigParams
@@ -121,6 +124,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val rides = stringResource(Res.string.pose_step_rides)
     val resetPose = stringResource(Res.string.pose_step_reset)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
+    val roleStep = stringResource(Res.string.role_step, FIRST)
+    val roleNames = roleLabels(fourLegged = false)
     return { command ->
         when (command) {
             is AddPart -> add.replace(FIRST, partName(command.part))
@@ -151,6 +156,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is AddSeamStrokes -> tidy
             is SeamToTwin -> twin
             is ResetSeam -> reset
+            is SetRole -> roleStep.replace(FIRST, command.role?.let(roleNames).orEmpty())
             is SetParameter -> if (RigParams.isRig(command.name)) reach.replace(FIRST, RigParams.reachJoint(command.name).orEmpty()) else if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             is AddMarks -> if (command.marks.any { it.kind == MarkKind.FUR }) furStrokes else ""
             is SetGrain -> combed
@@ -160,8 +166,5 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     }
 }
 
-private fun partName(part: PartInstance): String {
-    val type = part.template.id.value
-    val socket = part.socket?.socket
-    return displayName(if (socket != null && (socket == type || socket.endsWith("-$type"))) socket else type)
-}
+/** A part's name as its step reads: its type's, led by the place its socket names. */
+private fun partName(part: PartInstance): String = displayName(listOfNotNull(placeOf(part.socket?.socket), part.template.id.value).joinToString("-"))

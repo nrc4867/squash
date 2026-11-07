@@ -6,9 +6,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.rig.SessionPose
-import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
@@ -31,9 +29,7 @@ import dev.chieppa.squash.screens.shell.Stage
 import dev.chieppa.squash.screens.shell.stage
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.placeOnSocket
 import dev.chieppa.squash.character.catalog.plan
-import dev.chieppa.squash.character.catalog.startingData
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.screens.spine.SpineEditState
 import dev.chieppa.stretch.document.DocumentSession
@@ -265,13 +261,6 @@ class AppState(
         addingType.value = null
     }
 
-    /** The sockets of the open character with nothing on them. */
-    fun openSocketsNow(): List<OpenSocket> {
-        val document = session.value?.document?.value ?: return emptyList()
-        val plan = templates.plan(document.character.bodyPlan) ?: return emptyList()
-        return openSockets(document, plan, templates)
-    }
-
     /** Arms [next], showing its stage, or puts the tool down when it is already armed, which leaves the panes to look at. */
     fun armTool(next: BuildTool) {
         tool.value = if (tool.value == next) BuildTool.NONE else next
@@ -282,20 +271,5 @@ class AppState(
     fun putToolDown() {
         tool.value = BuildTool.NONE
         paint.selectedRegion = null
-    }
-
-    /**
-     * Adds the type chosen in Add part's popover on its socket, both sides of a pair in one step, selects it and closes the popover.
-     * Only a type the socket takes is added.
-     */
-    fun addPart() {
-        val opened = session.value ?: return
-        val socket = addingSocket.value ?: return
-        val template = addingType.value?.takeIf { it in socket.takes }?.let { templates.template(it) } ?: return
-        val start = templates.plan(opened.document.value.character.bodyPlan)?.startingData() ?: PartData()
-        val parts = placeOnSocket(socket, template, opened.document.value, start)
-        opened.send(AddParts(parts, pairs = parts.mapNotNull { it.pair }.associateWith { start }))
-        closeAddPart()
-        selectPart(parts.first().id)
     }
 }

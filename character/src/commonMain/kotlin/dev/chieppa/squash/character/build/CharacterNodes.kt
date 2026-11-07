@@ -49,7 +49,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 fun assemblyParts(character: Character): List<AssemblyPart> =
     character.parts.map { part ->
         val placement = character.resolvedShape(part).params.filterKeys(PlacementParams::isPlacement)
-        AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement)
+        AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement, part.role)
     }
 
 /** A surface the character is assembled from: a part's own, or a template's with nothing drawn. */

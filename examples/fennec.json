@@ -8779,7 +8779,8 @@
                             "lengthPixels": 30.0
                         }
                     }
-                }
+                },
+                "role": "body"
             },
             {
                 "id": "head",
@@ -13134,7 +13135,8 @@
                             }
                         ]
                     }
-                }
+                },
+                "role": "head"
             },
             {
                 "id": "tail",
@@ -22401,7 +22403,8 @@
                             "lengthPixels": 40.0
                         }
                     }
-                }
+                },
+                "role": "tail"
             },
             {
                 "id": "ear-l",
@@ -22414,7 +22417,8 @@
                     "socket": "ear"
                 },
                 "pair": "ears",
-                "side": "left"
+                "side": "left",
+                "role": "ear"
             },
             {
                 "id": "ear-r",
@@ -22427,7 +22431,8 @@
                     "socket": "ear"
                 },
                 "pair": "ears",
-                "side": "right"
+                "side": "right",
+                "role": "ear"
             },
             {
                 "id": "front-leg-l",
@@ -22440,7 +22445,8 @@
                     "socket": "front-leg"
                 },
                 "pair": "front-legs",
-                "side": "left"
+                "side": "left",
+                "role": "arm"
             },
             {
                 "id": "front-leg-r",
@@ -22453,7 +22459,8 @@
                     "socket": "front-leg"
                 },
                 "pair": "front-legs",
-                "side": "right"
+                "side": "right",
+                "role": "arm"
             },
             {
                 "id": "back-leg-l",
@@ -22466,7 +22473,8 @@
                     "socket": "back-leg"
                 },
                 "pair": "back-legs",
-                "side": "left"
+                "side": "left",
+                "role": "leg"
             },
             {
                 "id": "back-leg-r",
@@ -22479,7 +22487,8 @@
                     "socket": "back-leg"
                 },
                 "pair": "back-legs",
-                "side": "right"
+                "side": "right",
+                "role": "leg"
             },
             {
                 "id": "front-paw-l",
@@ -22492,7 +22501,8 @@
                     "socket": "paw"
                 },
                 "pair": "front-paws",
-                "side": "left"
+                "side": "left",
+                "role": "hand"
             },
             {
                 "id": "front-paw-r",
@@ -22505,7 +22515,8 @@
                     "socket": "paw"
                 },
                 "pair": "front-paws",
-                "side": "right"
+                "side": "right",
+                "role": "hand"
             },
             {
                 "id": "back-paw-l",
@@ -22518,7 +22529,8 @@
                     "socket": "paw"
                 },
                 "pair": "back-paws",
-                "side": "left"
+                "side": "left",
+                "role": "foot"
             },
             {
                 "id": "back-paw-r",
@@ -22531,7 +22543,8 @@
                     "socket": "paw"
                 },
                 "pair": "back-paws",
-                "side": "right"
+                "side": "right",
+                "role": "foot"
             }
         ],
         "pairs": {
@@ -24830,5 +24843,5 @@
             }
         ]
     },
-    "format": 12
+    "format": 13
 }

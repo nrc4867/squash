@@ -64,23 +64,28 @@ fun BodyPlan.chips(templates: TemplateFolder): List<PlanChip> {
 }
 
 /**
- * A part's name: its type's, so a head on a neck socket reads Head, unless its socket names the type more closely, as front-leg does a leg, when
- * it reads Front leg.
+ * A part's name: its type's, so a head on a neck socket reads Head, led by the place its socket names before the type, as front-leg
+ * does, when it reads Front leg.
  */
-fun partName(part: PartInstance, templates: TemplateFolder): String {
-    val type = part.template.id.value
-    val socket = part.socket?.socket
-    if (socket != null && (socket == type || socket.endsWith("-$type"))) return displayName(socket)
-    return templates.template(part.template)?.name ?: displayName(type)
-}
+fun partName(part: PartInstance, templates: TemplateFolder): String = named(part.socket?.socket, part, templates) ?: typeName(part, templates)
 
 /**
- * A part's name taking the place its [parent] names: a paw on a front leg reads Front paw, as the front-leg socket names the leg. A
- * parent whose socket names nothing more than its type leaves the part its own name.
+ * A part's name taking the place its [parent]'s socket names when its own names none: a paw on a front leg reads Front paw, as the
+ * front-leg socket names the leg's place.
  */
-fun partNameOn(part: PartInstance, parent: PartInstance?, templates: TemplateFolder): String {
-    val socket = parent?.socket?.socket ?: return partName(part, templates)
-    val type = parent.template.id.value
-    if (!socket.endsWith("-$type")) return partName(part, templates)
-    return displayName(socket.removeSuffix(type) + part.template.id.value)
+fun partNameOn(part: PartInstance, parent: PartInstance?, templates: TemplateFolder): String =
+    named(part.socket?.socket, part, templates) ?: named(parent?.socket?.socket, part, templates) ?: typeName(part, templates)
+
+/** [part]'s type's name led by the place [socket] names, or null when it names none. */
+private fun named(socket: String?, part: PartInstance, templates: TemplateFolder): String? {
+    val place = placeOf(socket) ?: return null
+    return displayName(place) + " " + typeName(part, templates).lowercase()
 }
+
+/** The place a socket's name gives before what it takes, front in front-leg, or null when it names none. */
+fun placeOf(socket: String?): String? = socket?.substringBeforeLast(PLACE_SEPARATOR, "")?.takeIf { it.isNotEmpty() }
+
+private fun typeName(part: PartInstance, templates: TemplateFolder): String = templates.template(part.template)?.name ?: displayName(part.template.id.value)
+
+/** What separates the place a socket's name gives from the rest, as in front-leg. */
+private const val PLACE_SEPARATOR = '-'

@@ -4,6 +4,7 @@
   "id": "torso",
   "version": 2,
   "name": "Torso",
+  "role": "body",
   "axis": { "rest": [1, 0, 0] },
   "openEnd": null,
   "topology": { "rings": 64, "segments": 24 },

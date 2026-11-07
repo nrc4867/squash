@@ -4,6 +4,7 @@
   "id": "tail",
   "version": 2,
   "name": "Tail",
+  "role": "tail",
   "axis": { "rest": [-0.8, 0.6, 0], "length": 0.55 },
   "openEnd": "start",
   "topology": { "rings": 56, "segments": 16 },

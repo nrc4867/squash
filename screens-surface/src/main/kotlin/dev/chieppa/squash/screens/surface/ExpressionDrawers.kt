@@ -151,7 +151,7 @@ private fun rememberFaceHolder(session: CharacterSession): FaceHolder {
     val work by session.bodySurfaceWork.output.collectAsState()
     val assembled by session.assembly.output.collectAsState()
     val document by session.document.collectAsState()
-    val head = document.character.faceHead()
+    val head = document.character.faceHead(session.templates)
     val part = head?.let { assembled?.part(it) }
     val forward = part?.let { PartBuilder.axes(it.template).along } ?: Vec3.X
     return FaceHolder(head?.let { work?.parts?.get(it) }, forward)

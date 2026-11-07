@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateRef
@@ -26,6 +27,7 @@ data class AssemblyPart(
     val pair: PairId?,
     val side: Side?,
     val placement: Map<String, Float> = emptyMap(),
+    val role: Role? = null,
 )
 
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
@@ -47,6 +49,8 @@ class PlacedPart(
     val socketSpec: SocketSpec? = null,
     /** How a pose has turned it, by the bone at its root; [Mat3.IDENTITY] at rest. */
     val turn: Mat3 = Mat3.IDENTITY,
+    /** What it is to the body: its own role, else its template's. */
+    val role: Role? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -64,7 +68,7 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits. */
     fun showing(surface: PartSurface, turn: Mat3): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role)
 }
 
 /** An empty socket on a placed part, in body space. */
@@ -143,7 +147,7 @@ private class Assembler(
         }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
         val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side)) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec)
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role)
     }
 
     private fun socketsOf(template: PartTemplate): List<SocketSpec> =
@@ -191,6 +195,6 @@ private class Assembler(
 
     private fun plannedPart(template: PartTemplate, side: Side?, parent: PlacedPart, spec: SocketSpec): PlacedPart? {
         val surface = defaults(template.ref, side == Side.RIGHT) ?: return null
-        return PlacedPart(null, template, side, surface, originOn(parent, spec, template, side), lengthFactor = lengths.ofPlanned(template.ref))
+        return PlacedPart(null, template, side, surface, originOn(parent, spec, template, side), lengthFactor = lengths.ofPlanned(template.ref), role = template.role)
     }
 }

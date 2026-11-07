@@ -30,6 +30,13 @@ class DocumentFormatTest {
     }
 
     @Test
+    fun aSaveFromBeforeRolesReadsWithNone() {
+        val parts = readDocument(formatFive).character.parts
+        assertTrue(parts.isNotEmpty())
+        assertTrue(parts.all { it.role == null && !it.roleGuessed }, "a part with no role reads its template's")
+    }
+
+    @Test
     fun aPartsGrainMovesToItsSurfaceWork() {
         val character = readDocument(formatOne).character
         assertEquals(combs, character.resolved(PartId("torso-1"))?.surface?.grain, "an unpaired part holds it as its own")

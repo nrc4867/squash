@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.move
 
+import dev.chieppa.squash.screens.openSocketsNow
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable

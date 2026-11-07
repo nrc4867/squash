@@ -4,6 +4,7 @@
   "id": "head",
   "version": 2,
   "name": "Head",
+  "role": "head",
   "axis": { "rest": [1, 0, 0], "length": 0.55 },
   "openEnd": null,
   "topology": { "rings": 48, "segments": 24 },

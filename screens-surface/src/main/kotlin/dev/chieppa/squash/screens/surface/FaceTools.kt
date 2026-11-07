@@ -56,7 +56,7 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
 
     private fun headIn(body: AssembledCharacter?): PlacedPart? {
         val session = state.session.value ?: return null
-        val part = picked?.part ?: session.document.value.character.faceHead() ?: return null
+        val part = picked?.part ?: session.document.value.character.faceHead(session.templates) ?: return null
         return body?.part(part)
     }
 

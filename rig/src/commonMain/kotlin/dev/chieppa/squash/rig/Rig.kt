@@ -3,13 +3,14 @@ package dev.chieppa.squash.rig
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 
 /**
  * A part of the rig: its vertices in body space at rest, with the bones each vertex follows, each one's address as the bands
  * weigh it in [vertices] and the anchor landing on it in [anchors], and the [mesh] they come from as the renderer draws it, in
- * the part's own space at [origin]. A part that [bearsWeight] is a leg, which a pose plants and reaches with.
+ * the part's own space at [origin]. Its [role] is what the pose's handles read: a leg or an arm is a limb a pose reaches with.
  */
 class RigPart(
     val id: PartId,
@@ -20,7 +21,7 @@ class RigPart(
     val origin: Vec3,
     val vertices: List<SeamVertex> = emptyList(),
     val anchors: List<Anchor> = emptyList(),
-    val bearsWeight: Boolean = false,
+    val role: Role? = null,
 ) {
     val vertexCount: Int get() = rest.size / 3
 }
@@ -83,7 +84,7 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
         val weights = weightsOf(part, carrierOf(part, byId), parent, children[part.id].orEmpty(), index, paint, checkCancelled, reach, vertices)
         RigPart(
             part.id, restPositions(part), part.placed.surface.mesh.indices, weights, part.placed.surface.mesh, part.placed.origin,
-            vertices.addresses, vertices.anchors, part.placed.template.axis.bearsWeight,
+            vertices.addresses, vertices.anchors, part.placed.role,
         )
     }
     return Rig(bones, rigged, seamsOf(parts, byId, index, reach))
