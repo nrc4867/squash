@@ -6,6 +6,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -29,6 +30,7 @@ import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.MarksDrawerTags
 import dev.chieppa.squash.screens.surface.LinesDrawerTags
+import dev.chieppa.squash.screens.surface.paint.PaintTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
@@ -141,6 +143,31 @@ class LinesFlowTest {
     }
 
     @Test
+    fun aStrokesColorOpensTheReducedPalette() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen()
+        val session = assertNotNull(state.session.value)
+        press(Key.Three)
+        press(Key.D)
+        waitForIdle()
+        onNodeWithTag(LinesDrawerTags.STROKE_COLOR).performClick()
+        waitForIdle()
+        onNodeWithTag(PaintTags.CHOICE_PICKER).assertExists("the ink slot's picker shows under the slots")
+        val before = session.document.value.character.palette.slots.map { it.name }.toSet()
+        onNodeWithTag(PaintTags.CHOICE_ADD_SLOT).performClick()
+        waitForIdle()
+        val palette = session.document.value.character.palette
+        val added = assertNotNull((palette.slots.map { it.name }.toSet() - before).singleOrNull(), "New color adds one slot")
+        assertEquals(added, state.lines.strokeSlot, "and the stroke takes it")
+        onNodeWithTag(LinesDrawerTags.strokeSlot(added.value)).assertExists("the popover stays open on the new slot")
+        onNodeWithTag(PaintTags.CHOICE_PICKER).performMouseInput { click(Offset(PICKER_INSET, PICKER_INSET)) }
+        waitForIdle()
+        val edited = assertNotNull(session.document.value.character.palette.color(added))
+        assertTrue(edited != palette.color(added), "the picker edits the new slot in place")
+        state.undo()
+        assertEquals(palette.color(added), session.document.value.character.palette.color(added), "one undo step per picker gesture")
+    }
+
+    @Test
     fun aDragWithLineWidthStoresOneWeightThroughOneUndoStep() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
@@ -171,5 +198,6 @@ class LinesFlowTest {
         const val DRAG_BELOW = 30f
         const val DRAG_STEPS = 10
         const val DRAG_STEP = 8f
+        const val PICKER_INSET = 12f
     }
 }

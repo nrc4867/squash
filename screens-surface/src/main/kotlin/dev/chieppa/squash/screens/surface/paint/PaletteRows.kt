@@ -71,7 +71,7 @@ import dev.chieppa.stretch.ui.holdsTyping
 import dev.chieppa.stretch.ui.opensOnPress
 import org.jetbrains.compose.resources.stringResource
 
-private const val NEW_SLOT_GREY = 0.6f
+internal const val NEW_SLOT_GREY = 0.6f
 private const val SHELF_LINES = 2
 private val SWATCH_SIZE = 30.dp
 private val SLOT_GAP = 6.dp
@@ -168,7 +168,7 @@ internal fun slotBefore(palette: Palette, slot: SlotName): SlotName? {
 }
 
 /** A slot's name not yet in [character]'s palette, from [base] with a number when it must. */
-private fun freshSlotName(character: Character, base: String): SlotName =
+internal fun freshSlotName(character: Character, base: String): SlotName =
     generateSequence(1) { it + 1 }.map { SlotName(if (it == 1) base else "$base-$it") }.first { character.palette.color(it) == null }
 
 /** [slot]'s name, which a double click opens for typing. Enter or leaving keeps what was typed, Escape what was there, and an empty name goes back to the slot's own. */

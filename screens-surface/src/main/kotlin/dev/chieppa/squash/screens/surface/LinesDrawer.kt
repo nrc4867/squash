@@ -156,7 +156,7 @@ internal fun StrokeToolSection(state: AppState, session: CharacterSession) {
             Spacer(Modifier.weight(1f))
             SlotChoice(document.character.palette, lines.strokeSlot ?: INK_SLOT, color, LinesDrawerTags.STROKE_COLOR, { LinesDrawerTags.strokeSlot(it.value) }, { slot ->
                 lines.strokeSlot = slot.takeUnless { it == INK_SLOT }
-            })
+            }, editor = session)
         }
     }
 }

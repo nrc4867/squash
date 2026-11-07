@@ -92,7 +92,7 @@ internal fun LayersSection(state: AppState, session: CharacterSession, character
                 if (role in CLOSED_ROLES && role != MarkRole.LID) {
                     SlotChoice(character.palette, held.fill, name, FaceTags.roleFill(role), { FaceTags.fillSlot(it.value) }, { slot ->
                         session.send(SetMarkGroup(picked.part, group.id, group.withRole(held.copy(fill = slot))))
-                    })
+                    }, editor = session)
                 } else {
                     LayerDot(if (drawn) character.palette.colorOf(INK_SLOT) else null)
                 }

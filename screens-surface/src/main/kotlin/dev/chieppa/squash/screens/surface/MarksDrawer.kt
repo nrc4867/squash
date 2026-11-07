@@ -151,7 +151,7 @@ private fun PickedStroke(state: AppState, session: CharacterSession, character: 
         Spacer(Modifier.weight(1f))
         SlotChoice(character.palette, row.mark.slot ?: INK_SLOT, color, MarksDrawerTags.STROKE_COLOR, { MarksDrawerTags.strokeSlot(it.value) }, { slot ->
             edited { it.copy(slot = slot.takeUnless { chosen -> chosen == INK_SLOT }) }
-        })
+        }, editor = session)
     }
     if (part.pair == null && part.side == null) {
         val mirror = stringResource(Res.string.marks_mirror)

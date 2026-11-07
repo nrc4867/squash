@@ -9,6 +9,8 @@ object PaintTags {
     const val SLOT_NAME = "color.slotName"
     const val SLOT_NAME_FIELD = "color.slotNameField"
     const val PICKER = "color.picker"
+    const val CHOICE_PICKER = "color.choicePicker"
+    const val CHOICE_ADD_SLOT = "color.choiceAddSlot"
     const val BRUSH_SIZE = "color.brushSize"
     const val SOFTNESS = "color.softness"
     const val FILL_REACH = "color.fillReach"
