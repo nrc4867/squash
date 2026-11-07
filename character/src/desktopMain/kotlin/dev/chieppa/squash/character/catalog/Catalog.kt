@@ -52,11 +52,11 @@ fun BodyPlan.templateOrder(templates: TemplateFolder): List<PartTemplate> {
 /** A template and how many instances of it a plan places directly: what New character lists as chips. */
 data class PlanChip(val name: String, val count: Int)
 
-/** The root and the plan's own sockets, grouped by the template each takes, in plan order. */
+/** The root and the plan's own sockets on it, grouped by the template each takes, in plan order. */
 fun BodyPlan.chips(templates: TemplateFolder): List<PlanChip> {
     val placed = buildList {
         templates.template(root.template)?.let { add(it.nameAs(root = true) to 1) }
-        for (socket in sockets) {
+        for (socket in sockets.filter { it.on == root.template }) {
             val child = socket.takes.firstNotNullOfOrNull { templates.template(it) } ?: continue
             add(child.name to if (socket.pair != null) PAIR_SIZE else 1)
         }
@@ -97,3 +97,9 @@ private const val ROOT_NAME = "body"
 
 /** What separates the place a socket's name gives from the rest, as in front-leg. */
 private const val PLACE_SEPARATOR = '-'
+
+/** How far up a plan's root must rest for the plan to stand upright, as its rest's upward share. */
+private const val UPRIGHT = 0.7f
+
+/** Whether this plan stands upright, its root resting up, as the biped's torso does. */
+fun BodyPlan.isUpright(): Boolean = root.rest.y >= UPRIGHT

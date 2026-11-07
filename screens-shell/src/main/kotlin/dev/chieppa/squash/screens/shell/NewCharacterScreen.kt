@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.chips
 import dev.chieppa.squash.character.catalog.displayName
+import dev.chieppa.squash.character.catalog.isUpright
 import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -33,6 +34,7 @@ import dev.chieppa.squash.uidesign.generated.new_name
 import dev.chieppa.squash.uidesign.generated.new_open_file
 import dev.chieppa.squash.uidesign.generated.new_plan_blank
 import dev.chieppa.squash.uidesign.generated.new_plan_parts
+import dev.chieppa.squash.uidesign.generated.new_plan_upright
 import dev.chieppa.squash.uidesign.generated.new_recent
 import dev.chieppa.squash.uidesign.generated.new_title
 import dev.chieppa.squash.uidesign.generated.rest_pose_art
@@ -136,14 +138,29 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
     }
 }
 
-/** A body plan to start from: a species plan with its part count, or one that places nothing past its root, Blank, read as one tube. */
+/**
+ * A body plan to start from: a species plan with its part count, an upright one, the biped, with a standing figure and what it
+ * stands on, or one that places nothing past its root, Blank, read as one tube.
+ */
 @Composable
 private fun PlanRow(shell: Shell, plan: BodyPlan, selected: Boolean, onClick: () -> Unit) {
     val blank = plan.sockets.isEmpty()
+    val upright = !blank && plan.isUpright()
     ListRow(selected, onClick, Modifier.testTag(ShellTags.newPlan(plan.id.value))) {
-        RowIcon(if (blank) SquashIcons.PlanBlank else SquashIcons.BodyPlan)
+        RowIcon(
+            when {
+                blank -> SquashIcons.PlanBlank
+                upright -> SquashIcons.PlanBiped
+                else -> SquashIcons.BodyPlan
+            },
+        )
         RowText(plan.name, Modifier.weight(1f))
-        RowText(if (blank) stringResource(Res.string.new_plan_blank) else stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates)), subtle = true)
+        val note = when {
+            blank -> stringResource(Res.string.new_plan_blank)
+            upright -> stringResource(Res.string.new_plan_upright)
+            else -> stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates))
+        }
+        RowText(note, subtle = true)
     }
 }
 

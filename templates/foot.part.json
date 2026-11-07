@@ -1,0 +1,31 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "foot",
+  "version": 1,
+  "name": "Foot",
+  "role": "foot",
+  "axis": { "rest": [1, 0, 0], "length": 0.42 },
+  "openEnd": null,
+  "topology": { "rings": 32, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":   { "default": 1.0, "min": 0.4, "max": 2.5 },
+    "toes":   { "default": 5,  "values": [0, 3, 4, 5] },
+    "spread": { "default": 12, "min": 0, "max": 30, "unit": "deg" },
+    "pads":   { "default": false }
+  },
+  "blocks": [
+    { "kind": "tube",   "name": "heel", "u": [0.0, 0.3], "radius": 0.2, "drop": 0.06 },
+    { "kind": "tube",   "u": [0.15, 0.82], "radius": 0.18, "drop": 0.05, "fills": "toes" },
+    { "kind": "toeRow", "name": "toes", "u": [0.8, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.05, "rings": 12, "segments": 12 },
+    { "kind": "pad",    "name": "sole", "u": 0.45, "v": 0.5, "size": 0.2, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+    { "kind": "cap",    "end": "start", "shape": "round" },
+    { "kind": "cap",    "end": "end" },
+    { "kind": "joint",  "name": "ankle", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "area",   "name": "top", "u": [0.15, 0.82], "v": [0.75, 0.25], "tag": "fill" },
+    { "kind": "area",   "name": "sole", "u": [0.0, 0.82], "v": [0.35, 0.65], "tag": "fill" },
+    { "kind": "area",   "name": "toes", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "toes" }
+  ]
+}

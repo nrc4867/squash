@@ -10,7 +10,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Neck | Part of the torso's spine chain for short necks; a `neck` template on the neck socket for horses, giraffes, birds | Starter, `neck` first |
 | Canine head | `head` template: skull block, muzzle tube, jaw joint, ear sockets, eye and nose landmarks | Starter |
 | Horse, deer, fox head | The same `head` template: the muzzle tube's Side outline sets length and droop, its section (round, boxy, tapered to a point) and cap set the breed. Nostrils are marks | Starter |
-| Human-like head | `head-round` template: skull with a short face block, a `nose` socket, forward eye landmarks, ear sockets at the sides. Hair is a `hair` shell part with tufts, as a mane is | First |
+| Human-like head | `head-round` template, role head: one skull block from the back of the head to the face with no muzzle, a `neck` joint at its base and a jaw joint, ear sockets at the sides that name no template, and `eye`, `nose` and `mouth` landmarks placed for a round face; Add eyes sets the starter eyes about its `eye` landmark. Its Side outline drawn above the axis sits the head up on the shoulders. Hair is a `hair` shell part with tufts, as a mane is; until it ships, a blob on a socket placed by hand on the crown | First; `head-round` ships |
 | Muzzle, snout, pointed nose | The head's muzzle block: length from Side, section from Front, cap shape round, flat (pig) or pointed (fox). A `pad` block at the tip is the nose leather, with its own palette slot | Starter |
 | Human nose | `nose` template, a small tube with a rounded cap on the face socket, since it protrudes from a flat face | First |
 | Beak | `beak` template on the muzzle socket: upper and lower tubes with pointed caps, sharing the jaw joint | Later |
@@ -26,11 +26,11 @@ When: starter is spike 1, first is the first version, later is after it.
 | Eyes | A mark group with roles (lid, white, iris, pupil, highlight, brow, lashes) on the skull's eye region, with per-eye open, expression and dilation controls and a gaze system that moves the pupils toward a target. Bulging eyes are an `eye` sphere part carrying the same group. See [look.md](look.md), Eyes and gaze | First (spike 9) |
 | Mouth | A mark group with roles (lip line, inner, teeth, tongue, corners), an open control that drives the jaw and a lip morph together, and expression shapes; the line wraps the muzzle so it reads from the side. See [look.md](look.md), Mouth | First (spike 9) |
 | Teeth, fangs, tongue | Marks on the mouth line by default. A `fang` template on a lip socket; a `teeth` row along the mouth landmark; a `tongue` template on a socket inside the mouth | Later |
-| Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter bends the rest axis, and the joints along it, before anything is drawn | Starter |
-| Arms | The `leg` template with arm joint names and a hanging rest axis: `arm` is a thin template file over the same blocks | First |
+| Legs, digitigrade or plantigrade | One `leg` template. The drawn Side outline bends the axis spline at the hock or not; a `stance` parameter bends the rest axis, and the joints along it, before anything is drawn. A biped's leg keeps `stance` at 0, its default: it hangs straight down from the hip, and the knee's limits, 0 to 140 degrees about the hinge across the leg, fold the shin back so the knee comes forward. On the biped plan its end socket takes `foot` first | Starter |
+| Arms | `arm` template, role arm: the leg's blocks with joints shoulder at its base, elbow halfway and wrist at its end, the wrist offering a stretch as the ankle does, resting down and slightly forward, bearing no weight, with a `hand` socket at its end. The elbow's limits, -145 to 0 degrees, fold the forearm forward so the elbow goes back | First; ships |
 | Paws | `paw` template: tube, a toe row of none or three to five, pads underneath, cap | Starter |
-| Hands, fingers, palms, thumbs | `hand` template: the paw's blocks with a toe row of five long digits, three joints each, and a per-digit override that moves and angles the thumb. The palm is the tube and a pad | First |
-| Feet, toes | `foot` template: a plantigrade paw with a longer tube and a heel | First |
+| Hands, fingers, palms, thumbs | `hand` template, role hand: the paw's blocks hanging down, a palm tube and a pad that is off by default, and a toe row of five long fingers whose first digit's override starts it lower on the palm, outside the row and turned out, a thumb. The fingers bend with the wrist; three joints a finger and a tip socket per digit come with per-digit joints | First; ships without finger joints |
+| Feet, toes | `foot` template, role foot: the paw's blocks as a plantigrade foot resting forward, a heel run under the ankle, a longer sole and a row of five short toes flat underneath, which a shoe sets to none. It ends a leg that bears weight, so the floor rule stands it on the ground | First; ships |
 | Hooves | `hoof` template: a tube with a flat cap and a rigid area; a toe row of two for cloven hooves | First |
 | Claws, fingernails | `claw` template, a short tube with a pointed cap, in the paw's claws slot; it attaches at each digit's tip socket, which the toe row exposes. Nails are the same part with a flat section, or a painted region on the digit tip | First |
 | Tail | `tail` template: a tube on a bone chain, with an optional tufted tip in the outline | Starter |
@@ -44,6 +44,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Horns, antlers, tusks | `horn` template, a tube with a pointed cap; antlers chain `horn` parts through a tip socket | Later |
 | Shells, armor plates | A rigid garment shell over the torso | Later, with garments |
 | Snakes, tentacles, antennae | Tail-like templates; a body plan with no leg sockets | Later |
+| Upright bodies, people | The `biped` plan: a `torso-upright` root resting up, a neck socket on top taking `head-round` or `head`, paired shoulder sockets taking `arm` with `hand` on their ends, paired hip sockets taking `leg` with `foot` on their ends, no tail socket, and a palette with a skin slot. Pose names its limbs Left foot, Right hand, plants the feet and reaches with the hands | First; ships |
 | Six legs, extra limbs, segmented bodies | Body plan sockets; a second torso chained through a socket | Later |
 | Clothing, collars, glasses | Garments and slots | Later, with garments |
 | Holding things | A hold socket on the palm of the hand and paw templates, with a grip pose library per template; a held prop attaches to the socket and rides with the hand | First |
@@ -69,9 +70,9 @@ Face mark groups on a generic head anchor to a landmark placed by hand, which is
 - Built-in section profiles `circle`, `egg`, `keel` and `lens`, which a generic part chooses between; `lens` is the ear's, the wing's and the sheet's.
 - A tube run open in v (`openV`), a sheet with two faces and an edge, and the `generic` template field.
 - A per-template **view remap**, so a wing's planform drawn in Top can set height along its chord. The `views` map already allows it; the ear and wing templates use it.
-- The **toe row** grows per-digit overrides (position, angle, joint count), and exposes a tip socket per digit for claws.
+- The **toe row**'s per-digit overrides, `digits`, set a digit's span, place across the row and angle; a joint count per digit and a tip socket per digit for claws are still to come.
 - A **socket row**: sockets repeated along a curve on a parent, for spines and frills.
 - A **tip socket** on tubes, for antlers chained from horns.
 - A **membrane** block, a surface spanned between digits or parts, for bat wings and webbed feet.
 - The skull's jaw block tags the mouth interior as an `inner` area with a color.
-- New template files, each a data file over existing blocks: `arm`, `hand`, `foot`, `hoof`, `claw`, `nose`, `eye`, `neck`, `hair`, `head-round` in the first version; `beak`, `fang`, `teeth`, `tongue`, `horn`, `wing-membrane`, `fin` later; `wing-feathered` ships.
+- New template files, each a data file over existing blocks: `hoof`, `claw`, `nose`, `eye`, `neck`, `hair` in the first version; `beak`, `fang`, `teeth`, `tongue`, `horn`, `wing-membrane`, `fin` later; `wing-feathered`, `arm`, `hand`, `foot`, `head-round` and `torso-upright` ship.

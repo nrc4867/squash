@@ -42,14 +42,14 @@ class SchemasTest {
     @Test
     fun everyShippedTemplatePassesItsSchema() {
         val parts = templates.listDirectoryEntries("*.part.json")
-        assertEquals(13, parts.size)
+        assertEquals(18, parts.size)
         for (file in parts) assertEquals(emptySet(), errors("part-template.schema.json", file.readText()), file.name)
     }
 
     @Test
     fun everyShippedPlanPassesItsSchema() {
         val plans = templates.resolve("plans").listDirectoryEntries("*.plan.json")
-        assertEquals(2, plans.size)
+        assertEquals(3, plans.size)
         for (file in plans) assertEquals(emptySet(), errors("body-plan.schema.json", file.readText()), file.name)
     }
 

@@ -13,6 +13,7 @@ import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -57,7 +58,8 @@ class BodyCurveFit(val pose: Pose, val scale: Float, val offset: Vec2, val paws:
  * scaled so the chain's spans, laid along it as chords from its start, end at its end, at the curve's length factor: every
  * span of the tail and the root part stretches by that factor and narrows by its square root, the head keeping its size. From the root part's first step outward each joint lands
  * on the stroke one span's chord from the last, each bone turning about its hinge, within its limits, to lie along its chord;
- * the part ahead lies along the stroke's end tangent. The root bone keeps its place, so the stroke is carried to meet it. The Top
+ * the part ahead lies along the stroke's end tangent turned as it is turned from the root part's run at rest, which an upright body's
+ * forward-facing head is. The root bone keeps its place, so the stroke is carried to meet it. The Top
  * stroke then leans each bone of the chain across its hinge the same way, onto the stroke seen from above, keeping the Side bend;
  * with no Side stroke the chain keeps the bend it had. Legs, the jaw and the ears keep their pose.
  */
@@ -86,9 +88,10 @@ private fun sideFit(rig: Rig, chain: BodyChain, pose: Pose, stroke: BodyStroke, 
     var s = before
     val start = path.pointAt(s)
     var point = start
+    val headTurn = aheadTurn(rig, chain)
     for (i in chain.root until chain.links.size) {
         val chord = if (chain.links[i].ahead) {
-            path.endTangent
+            rotate(path.endTangent, headTurn)
         } else {
             s = path.reach(point, s, vectors[i].size)
             path.pointAt(s) - point
@@ -207,6 +210,22 @@ internal fun ArcPath.runningAlong(along: Vec2): ArcPath {
 }
 
 private val Vec3.flat: Vec2 get() = Vec2(x, y)
+
+/**
+ * The turn from the way the root part rests to the way the part ahead runs at rest, seen from the side: none on a body whose head
+ * continues its spine, a quarter turn on an upright one whose head faces forward. The part ahead keeps it to the stroke's end tangent.
+ */
+private fun aheadTurn(rig: Rig, chain: BodyChain): Float {
+    val ahead = chain.links.firstOrNull { it.ahead } ?: return 0f
+    val run = (rig.rootPart?.axis ?: return 0f).flat
+    val head = (ahead.to - ahead.from).flat
+    if (run.size <= 0f || head.size <= 0f) return 0f
+    val turn = wrapped(atan2(head.y, head.x) - atan2(run.y, run.x))
+    return if (abs(turn) < AHEAD_TURN_FLOOR) 0f else turn
+}
+
+/** Below this, in radians, the part ahead is taken to continue the root part's run. */
+private const val AHEAD_TURN_FLOOR = 0.35f
 
 internal val Vec2.size: Float get() = hypot(x, y)
 

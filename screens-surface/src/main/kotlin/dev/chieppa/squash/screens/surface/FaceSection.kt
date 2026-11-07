@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.character.face.eyeLandmark
+import dev.chieppa.squash.character.face.newEyesCommand
+import dev.chieppa.squash.character.face.newMouthCommand
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width

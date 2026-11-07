@@ -163,6 +163,7 @@
     <string name="new_open_file">Open file</string>
     <string name="new_create">Create character</string>
     <string name="new_plan_blank">One tube, anatomy by hand</string>
+    <string name="new_plan_upright">Two legs, two arms, upright</string>
 
     <string name="add_part">Add part</string>
     <string name="add_part_title">Add to %1$s socket</string>
@@ -515,6 +516,9 @@
     <string name="pose_chain_head">Head</string>
     <string name="pose_chain_tail">Tail</string>
     <string name="pose_status_curve">Length %1$d% · %2$d paws planted</string>
+    <string name="pose_status_curve_feet">Length %1$d% · %2$d feet planted</string>
+    <string name="pose_status_feet_lifted">%1$s lifted · %2$d feet planted</string>
+    <string name="pose_status_feet_planted">%1$d feet planted</string>
     <string name="generic_title">Generic</string>
     <string name="generic_section">Section</string>
     <string name="generic_views">Views</string>
@@ -544,4 +548,12 @@
     <string name="role_other">Other</string>
     <string name="role_front_leg">Front leg</string>
     <string name="role_front_paw">Front paw</string>
+    <string name="role_left_arm">Left arm</string>
+    <string name="role_right_arm">Right arm</string>
+    <string name="role_left_hand">Left hand</string>
+    <string name="role_right_hand">Right hand</string>
+    <string name="role_left_leg">Left leg</string>
+    <string name="role_right_leg">Right leg</string>
+    <string name="role_left_foot">Left foot</string>
+    <string name="role_right_foot">Right foot</string>
 </resources>

@@ -26,6 +26,7 @@ import dev.chieppa.squash.document.SetPlanted
 import dev.chieppa.squash.rig.BoneName
 import dev.chieppa.squash.rig.PoseSolver
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.rig.limbNames
 import dev.chieppa.squash.screens.rig.rememberRig
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.surface.rig.RigNames

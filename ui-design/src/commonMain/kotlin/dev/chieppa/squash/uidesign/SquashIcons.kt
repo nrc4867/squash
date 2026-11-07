@@ -365,6 +365,11 @@ object SquashIcons {
             stroke("M5.5 8h5")
         }
     }
+    val PartArm: ImageVector by lazy {
+        icon("part-arm") {
+            stroke("M6 2.5h3.5L9 8l2.5 4.5q.5 1.5-1 1.5t-2-1.5L6 8.5z")
+        }
+    }
     val PartBlob: ImageVector by lazy {
         icon("part-blob") {
             stroke("M3 8.5C3 5 5.3 2.5 8.5 2.5s5 2.6 5 5.6-2.2 5.4-5.6 5.4S3 11.6 3 8.5z")
@@ -374,6 +379,12 @@ object SquashIcons {
     val PartEar: ImageVector by lazy {
         icon("part-ear") {
             stroke("M4 12.4L8 3.2L12 12.4Z")
+        }
+    }
+    val PartHand: ImageVector by lazy {
+        icon("part-hand") {
+            stroke("M5.5 13.5v-4.75L4 6.5M5.5 9V3.5M7.75 8.5V2.5M10 8.5V3M12 9V4.5")
+            stroke("M5.5 13.5h5q1.5 0 1.5-1.5V9")
         }
     }
     val PartHead: ImageVector by lazy {
@@ -475,6 +486,14 @@ object SquashIcons {
             stroke("M2 11.5l2.5-2 2 1.5 1.5-1 3.5 2.5")
             stroke("M14.5 1.5L9.5 6.5")
             stroke("M9.5 3.5v3h3")
+        }
+    }
+    val PlanBiped: ImageVector by lazy {
+        icon("plan-biped") {
+            stroke("M6.25 3a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 1 0 -3.5 0z")
+            stroke("M8 5.5v5")
+            stroke("M5 7l3-1 3 1")
+            stroke("M6 14.25l2-3.75 2 3.75")
         }
     }
     val PlanBlank: ImageVector by lazy {

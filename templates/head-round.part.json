@@ -1,0 +1,29 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "head-round",
+  "version": 1,
+  "name": "Round head",
+  "role": "head",
+  "axis": { "rest": [1, 0, 0], "length": 0.5 },
+  "openEnd": null,
+  "topology": { "rings": 40, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "circle",
+  "params": {
+    "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
+  },
+  "grain": { "toward": "start" },
+  "blocks": [
+    { "kind": "skull",    "u": [0.0, 1.0], "width": 0.9, "depth": 0.96 },
+    { "kind": "joint",    "name": "neck",  "u": 0.0,            "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint",    "name": "jaw",   "u": 0.7, "v": 0.5,  "hinge": "x", "limits": [0, 25] },
+    { "kind": "socket",   "name": "ear",   "u": 0.45, "v": 0.26, "pair": "x", "outward": "normal" },
+    { "kind": "landmark", "name": "eye",   "u": 0.9, "v": 0.21, "pair": "x" },
+    { "kind": "landmark", "name": "nose",  "u": 1.0,  "v": 0.0 },
+    { "kind": "landmark", "name": "mouth", "u": 0.86, "v": 0.5 },
+    { "kind": "area",  "name": "face", "u": [0.6, 1.0], "v": [0.85, 0.15], "tag": "fill" },
+    { "kind": "area",  "name": "crown", "u": [0.0, 0.6], "v": [0.8, 0.2], "tag": "fill" },
+    { "kind": "area",  "name": "chin", "u": [0.6, 1.0], "v": [0.35, 0.65], "tag": "fill" }
+  ]
+}

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.load
 
+import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import java.nio.file.Path
@@ -19,8 +20,8 @@ private const val SHIPPED_INDEX = "index.txt"
 data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null) {
     companion object {
         /**
-         * Loads every `*.part.json` in [folder] and every `*.plan.json` in its plans folder, in name order, except that a plan whose
-         * root holds no sockets, as Blank's does, comes after those that place parts.
+         * Loads every `*.part.json` in [folder] in name order and every `*.plan.json` in its plans folder, the plans placing the most
+         * parts first and by name among equals, so Blank, which places its root alone, comes last.
          */
         fun load(folder: Path): TemplateFolder {
             val parts = folder.listDirectoryEntries().map { it.name }
@@ -36,8 +37,8 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
                 .map { TemplateLoader.loadPart(it, read(it)) }
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
-                .sortedBy { it.sockets.isEmpty() }
-            return TemplateFolder(parts, plans)
+            val unordered = TemplateFolder(parts, plans)
+            return unordered.copy(plans = plans.sortedWith(compareByDescending<BodyPlan> { it.partCount(unordered) }.thenBy { it.name }))
         }
 
         private fun shippedResource(name: String): String {

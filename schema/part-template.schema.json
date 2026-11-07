@@ -238,6 +238,68 @@
       },
       "additionalProperties": false
     },
+    "Digit": {
+      "description": "One digit of a toe row moved and angled apart from the fan, as a thumb is; a field left out keeps the row's.",
+      "type": "object",
+      "properties": {
+        "index": {
+          "description": "The digit's place in the row, from 0.",
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "u": {
+          "description": "Where the digit runs along the axis, in place of the row's span.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "across": {
+          "description": "Where across the row the digit's root sits, -1 at the first side and 1 at the last.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.5,
+              "maximum": 1.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "angle": {
+          "description": "Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -90.0,
+              "maximum": 90.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "GenericSpec": {
       "description": "A generic template: each part chooses its section profile, the views that set it, and its rings and segments; the template's section, views and topology are the defaults.",
       "type": "object",
@@ -1063,6 +1125,13 @@
           "description": "Control points of each toe's section.",
           "type": "integer",
           "minimum": 3.0
+        },
+        "digits": {
+          "description": "Digits moved and angled apart from the fan, by their place in the row.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Digit"
+          }
         }
       },
       "required": [

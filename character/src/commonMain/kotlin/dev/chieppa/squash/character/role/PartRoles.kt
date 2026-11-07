@@ -52,6 +52,10 @@ class PartRoles(private val character: Character, private val templates: (Templa
     val fourLegged: Boolean
         get() = character.parts.any { of(it) == Role.ARM && templates(it.template)?.axis?.bearsWeight == true }
 
+    /** Whether the character stands upright: its root part rests up, as a biped's torso does, so its arms reach and its legs stand. */
+    val upright: Boolean
+        get() = character.parts.firstOrNull { it.socket == null }?.let { templates(it.template) }?.axis?.rest?.let { it.y >= HANGS } ?: false
+
     /**
      * The role a part from [template] takes on [socket]: the template's, where a leg on the front half of the body is an arm and a
      * foot on an arm a hand, so a four-legged plan's front limbs are its arms; or, for a template with none, the [guess].

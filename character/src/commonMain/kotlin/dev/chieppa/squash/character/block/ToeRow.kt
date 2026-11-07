@@ -50,6 +50,8 @@ data class ToeRow(
     @Doc("Control points of each toe's section.")
     @Range(min = 3.0)
     val segments: Int,
+    @Doc("Digits moved and angled apart from the fan, by their place in the row.")
+    val digits: List<Digit> = emptyList(),
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
@@ -58,29 +60,37 @@ data class ToeRow(
     /** How many toes this build makes, none when the row is switched off. */
     fun toeCount(ctx: BuildContext): Int = if (ctx.isOn(this)) ctx.value(count).roundToInt().coerceAtLeast(0) else 0
 
-    /** A drawn Side fills each toe to the outline; a drawn Top shares its width among the toes. */
+    /**
+     * A drawn Side fills each toe to the outline; a drawn Top shares its width among the toes. A [Digit] runs along its own span, from
+     * its own place across the row, at its own angle and thickness, whatever is drawn, and the drawn width is shared among the others.
+     */
     override fun build(ctx: BuildContext): List<Patch> {
         val toes = toeCount(ctx)
         val thickness = ctx.length(radius) * 2f
-        val root = ctx.axis.pointAt(u.start)
-        val run = ctx.runAt(u.start)
-        val toward = run?.positionAt(u.start, v ?: V_UNDER)?.minus(root)
-        val rest = toward?.let { it * (1f - thickness / 2f / it.length).coerceAtLeast(0f) } ?: Vec3.ZERO
-        val rowHalf = run?.let { (it.positionAt(u.start, V_SIDE) - root).length - thickness / 2f } ?: (toes * thickness / 2f)
         val fan = ctx.value(spread) * DEGREES_TO_RADIANS
         val section = SectionProfile.CIRCLE.spline(segments)
-        val us = FloatArray(rings) { u.start + (u.end - u.start) * it / (rings - 1) }
+        val overrides = digits.associateBy { it.index }
+        val sharing = (0 until toes).filter { it !in overrides }
         return List(toes) { i ->
-            val place = if (toes == 1) 0f else 2f * i / (toes - 1) - 1f
-            val fanOut = tan(fan * place) * ctx.axisLength
+            val digit = overrides[i]
+            val span = digit?.u ?: u
+            val root = ctx.axis.pointAt(span.start)
+            val run = ctx.runAt(span.start)
+            val toward = run?.positionAt(span.start, v ?: V_UNDER)?.minus(root)
+            val rest = toward?.let { it * (1f - thickness / 2f / it.length).coerceAtLeast(0f) } ?: Vec3.ZERO
+            val rowHalf = run?.let { (it.positionAt(span.start, V_SIDE) - root).length - thickness / 2f } ?: (toes * thickness / 2f)
+            val us = FloatArray(rings) { span.start + (span.end - span.start) * it / (rings - 1) }
+            val place = digit?.across ?: if (toes == 1) 0f else 2f * i / (toes - 1) - 1f
+            val angle = digit?.angle?.let { it * DEGREES_TO_RADIANS } ?: (fan * place)
+            val fanOut = tan(angle) * ctx.axisLength
             ctx.checkCancelled()
             val heights = FloatArray(rings) { ctx.views?.heightAt(us[it]) ?: thickness }
             val widths = FloatArray(rings) { ring ->
-                ctx.views?.widthAt(us[ring])?.let { it / toes * DRAWN_TOE_OVERLAP } ?: thickness
+                ctx.views?.widthAt(us[ring])?.takeIf { digit == null }?.let { it / sharing.size * DRAWN_TOE_OVERLAP } ?: thickness
             }
             val centres = us.map { at ->
-                val share = ctx.views?.widthAt(at)?.let { it * ((i + 0.5f) / toes - 0.5f) }
-                val across = share ?: (rowHalf * place + fanOut * (at - u.start))
+                val share = ctx.views?.widthAt(at)?.takeIf { digit == null }?.let { it * ((sharing.indexOf(i) + 0.5f) / sharing.size - 0.5f) }
+                val across = share ?: (rowHalf * place + fanOut * (at - span.start))
                 val base = (ctx.views?.centreAt(at) ?: ctx.axis.pointAt(at)) + ctx.axes.side * across
                 if (ctx.views?.heightAt(at) != null) base else base + rest
             }
@@ -95,5 +105,7 @@ data class ToeRow(
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) +
-            ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS)
+            ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS) +
+            digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") } +
+            digits.groupBy { it.index }.filter { it.value.size > 1 }.keys.flatMap { ctx.finding("digits", "two digits at index $it") }
 }

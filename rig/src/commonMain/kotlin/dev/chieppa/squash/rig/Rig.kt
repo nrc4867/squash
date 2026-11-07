@@ -10,7 +10,8 @@ import dev.chieppa.squash.geom.Vec3
 /**
  * A part of the rig: its vertices in body space at rest, with the bones each vertex follows, each one's address as the bands
  * weigh it in [vertices] and the anchor landing on it in [anchors], and the [mesh] they come from as the renderer draws it, in
- * the part's own space at [origin]. Its [role] is what the pose's handles read: a leg or an arm is a limb a pose reaches with.
+ * the part's own space at [origin]. Its [role] is what the pose's handles read: a leg or an arm is a limb a pose reaches with. Its
+ * [axis] is the direction it rests in, its template's as placed, from its socket end toward its tip.
  */
 class RigPart(
     val id: PartId,
@@ -22,6 +23,7 @@ class RigPart(
     val vertices: List<SeamVertex> = emptyList(),
     val anchors: List<Anchor> = emptyList(),
     val role: Role? = null,
+    val axis: Vec3 = Vec3.X,
 ) {
     val vertexCount: Int get() = rest.size / 3
 }
@@ -84,7 +86,7 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
         val weights = weightsOf(part, carrierOf(part, byId), parent, children[part.id].orEmpty(), index, paint, checkCancelled, reach, vertices)
         RigPart(
             part.id, restPositions(part), part.placed.surface.mesh.indices, weights, part.placed.surface.mesh, part.placed.origin,
-            vertices.addresses, vertices.anchors, part.placed.role,
+            vertices.addresses, vertices.anchors, part.placed.role, part.placed.template.axis.rest.toVec3().normalized(),
         )
     }
     return Rig(bones, rigged, seamsOf(parts, byId, index, reach))

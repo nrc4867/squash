@@ -6,7 +6,7 @@ import dev.chieppa.squash.document.Role
 /**
  * A leg, an arm or a wing as a pose reaches with it, by places in [Rig.bones]: its [upper] and [lower] bones, the [end] joint its paw
  * hangs from, and the paw's own bone, [foot], when a paw sits there. It is named by its paw, [id], which the planted set holds. A limb
- * that [plants] stands on the ground and can be pinned there; a wing cannot.
+ * that [plants] stands on the ground and can be pinned there; a wing cannot, nor can an arm on an upright body, which reaches with its hand.
  */
 class Limb(val leg: PartId, val paw: PartId?, val upper: Int, val lower: Int, val end: Int, val foot: Int?, val plants: Boolean = true) {
     val id: PartId get() = paw ?: leg
@@ -39,12 +39,13 @@ fun poseChains(rig: Rig): PoseChains {
     val parentPart = bonesOf.mapValues { (_, bones) -> rig.parents[bones.first()].takeIf { it >= 0 }?.let { rig.bones[it].name.part } }
     val children = parentPart.entries.filter { it.value != null }.groupBy({ it.value!! }, { it.key })
     val roles = rig.parts.associate { it.id to it.role }
+    val upright = rig.isUpright
     fun withRole(of: Set<Role>) = rig.parts.filter { roles[it.id] in of && it.id in bonesOf }.map { it.id }
     val limbs = withRole(Role.LIMBS).mapNotNull { leg ->
         val bones = bonesOf.getValue(leg).takeIf { it.size >= LIMB_JOINTS } ?: return@mapNotNull null
         val end = bones[2]
         val paw = children[leg].orEmpty().firstOrNull { roles[it] in Role.LIMB_ENDS && rig.parents[bonesOf.getValue(it).first()] == end }
-        Limb(leg, paw, bones[0], bones[1], end, paw?.let { bonesOf.getValue(it).first() }, roles[leg] in Role.PLANTING)
+        Limb(leg, paw, bones[0], bones[1], end, paw?.let { bonesOf.getValue(it).first() }, plants(roles[leg], upright))
     }
     val tails = withRole(setOf(Role.TAIL)).filter { bonesOf.getValue(it).size >= 2 }.map { Tail(it, bonesOf.getValue(it)) }
     val look = withRole(setOf(Role.HEAD)).firstOrNull()?.let { head ->
@@ -55,6 +56,20 @@ fun poseChains(rig: Rig): PoseChains {
     }
     return PoseChains(root, limbs, tails, look)
 }
+
+/** Whether a limb of [role] stands on the ground: a leg does, and an arm does on a body that is not [upright]; a wing never does. */
+fun plants(role: Role?, upright: Boolean): Boolean = role == Role.LEG || role == Role.ARM && !upright
+
+/** How far up the root part must rest for the body to stand upright, as its rest axis's upward share. */
+private const val UPRIGHT = 0.7f
+
+/** The part the root bone belongs to, the body every other part hangs from. */
+val Rig.rootPart: RigPart?
+    get() = parents.indexOfFirst { it < 0 }.takeIf { it >= 0 }?.let { part(bones[it].name.part) }
+
+/** Whether the body stands upright, its root part resting up, as a biped's torso does; its arms then reach and never plant. */
+val Rig.isUpright: Boolean
+    get() = (rootPart?.axis?.y ?: 0f) >= UPRIGHT
 
 /** A limb's hip, knee and the end its paw hangs from. */
 private const val LIMB_JOINTS = 3

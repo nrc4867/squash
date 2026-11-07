@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.character.face.eyeLandmark
+import dev.chieppa.squash.character.face.newEyesCommand
+import dev.chieppa.squash.character.face.newMouthCommand
+
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkRole
