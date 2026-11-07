@@ -18,6 +18,7 @@ import dev.chieppa.squash.uidesign.generated.edit_none
 import dev.chieppa.squash.uidesign.generated.edit_outlines
 import dev.chieppa.squash.uidesign.generated.edit_points
 import dev.chieppa.squash.uidesign.generated.shell_action_start_template
+import dev.chieppa.squash.uidesign.generated.shell_part_off
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.ListRow
 import dev.chieppa.stretch.frame.RowIcon
@@ -27,8 +28,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The selected part's outlines, a row a view: each says how many points its outline has, or none, and picking one makes that view the active
- * one. An undrawn view's row offers Start from template, which turns the template's outline there into the part's own. [status] says what a row
- * reads in place of its count, if anything.
+ * one. An undrawn view's row offers Start from template, which turns the template's outline there into the part's own. A view the part does not
+ * read, as a generic part's view turned off, reads off. [status] says what a row reads in place of its count, if anything.
  */
 @Composable
 fun OutlineRowsSection(
@@ -39,15 +40,21 @@ fun OutlineRowsSection(
     status: @Composable (View) -> String? = { null },
 ) {
     val active by state.activeView.collectAsState()
+    val session by state.session.collectAsState()
+    val document = session?.document?.collectAsState()?.value
+    val selected by state.selectedPart.collectAsState()
+    val read = selected?.let { document?.character?.part(it) }?.let { session?.builtTemplate(it)?.views?.keys }
+    val off = stringResource(Res.string.shell_part_off)
     val start = stringResource(Res.string.shell_action_start_template)
     DrawerSection(stringResource(Res.string.edit_outlines), divider = divider) {
         VIEW_ORDER.forEach { view ->
             val anchors = outlines[view]?.anchors?.size
+            val unread = read != null && view !in read
             ListRow(view == active, { state.activeView.value = view }, Modifier.testTag(tag(view))) {
                 RowIcon(SquashIcons.EditCurves)
                 RowText(viewLabel(view), Modifier.weight(1f))
-                RowText(status(view) ?: if (anchors != null) stringResource(Res.string.edit_points, anchors) else stringResource(Res.string.edit_none), subtle = true)
-                if (anchors == null) {
+                RowText(status(view) ?: if (unread) off else if (anchors != null) stringResource(Res.string.edit_points, anchors) else stringResource(Res.string.edit_none), subtle = true)
+                if (anchors == null && !unread) {
                     IconButton(SquashIcons.StartFromTemplate, start, { state.startFromTemplate(view) }, Modifier.testTag(ShellTags.startTemplate(view)), enabled = state.canStartFromTemplate(view))
                 }
             }

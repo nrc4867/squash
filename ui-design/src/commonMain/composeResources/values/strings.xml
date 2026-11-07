@@ -162,6 +162,7 @@
     <string name="new_recent">Recent</string>
     <string name="new_open_file">Open file</string>
     <string name="new_create">Create character</string>
+    <string name="new_plan_blank">One tube, anatomy by hand</string>
 
     <string name="add_part">Add part</string>
     <string name="add_part_title">Add to %1$s socket</string>
@@ -480,6 +481,15 @@
     <string name="pose_chain_head">Head</string>
     <string name="pose_chain_tail">Tail</string>
     <string name="pose_status_curve">Length %1$d% · %2$d paws planted</string>
+    <string name="generic_title">Generic</string>
+    <string name="generic_section">Section</string>
+    <string name="generic_views">Views</string>
+    <string name="generic_rings">Rings</string>
+    <string name="generic_segments">Segments</string>
+    <string name="generic_circle">Circle</string>
+    <string name="generic_egg">Egg</string>
+    <string name="generic_keel">Keel</string>
+    <string name="generic_lens">Lens</string>
     <string name="role_title">Role</string>
     <string name="role_guessed">%1$s?</string>
     <string name="role_step">Role %1$s</string>

@@ -34,7 +34,7 @@ class LineGrid private constructor(
     /**
      * Where this surface turns edge on to a viewer that [toViewer] gives the direction of from any point: the mesh's edges between a
      * triangle facing the viewer and one facing away, so a line along them lies on the edge the fill shows, sawteeth and all. A closed patch's end rings count against the faces that close them. An edge of an open
-     * patch has one triangle and is no contour. Ends of runs meeting at a pole are joined.
+     * patch has one triangle and is no contour, unless its faces meet round it ([Patch.meetsAround]), as a sheet's do at its edge. Ends of runs meeting at a pole are joined.
      */
     fun contours(toViewer: (Vec3) -> Vec3): List<ContourRun> {
         val facing = BooleanArray(faceNormals.size) { face -> (faceNormals[face] dot toViewer(positions[faceCorner(face)])) > 0f }
@@ -67,10 +67,10 @@ class LineGrid private constructor(
                 val d = patch.index(ring + 1, next)
                 if (facing[first(ring, segment)] != facing[second(ring, segment)]) add(a to d)
                 if (ring > 0 && facing[first(ring, segment)] != facing[second(ring - 1, segment)]) add(a to patch.index(ring, next))
-                val before = if (segment > 0) segment - 1 else if (patch.closedV) segments - 1 else -1
+                val before = if (segment > 0) segment - 1 else if (patch.meetsAround) segments - 1 else -1
                 if (before >= 0 && facing[second(ring, segment)] != facing[first(ring, before)]) add(a to c)
-                if (patch.closedV && ring == 0 && facing[first(ring, segment)] != facing[startCap]) add(a to patch.index(ring, next))
-                if (patch.closedV && ring == patch.nu - 2 && facing[second(ring, segment)] != facing[endCap]) add(c to d)
+                if (patch.meetsAround && ring == 0 && facing[first(ring, segment)] != facing[startCap]) add(a to patch.index(ring, next))
+                if (patch.meetsAround && ring == patch.nu - 2 && facing[second(ring, segment)] != facing[endCap]) add(c to d)
             }
         }
     }

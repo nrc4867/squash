@@ -68,6 +68,8 @@ data class PartTemplate(
     val section: SectionSpec = SectionSpec.Named(SectionProfile.CIRCLE),
     val params: Map<String, ParamSpec> = emptyMap(),
     val grain: GrainSpec = GrainSpec(),
+    @Doc("Present on a generic template, whose parts choose their own section, views, rings and segments.")
+    val generic: GenericSpec? = null,
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)
@@ -84,6 +86,9 @@ data class PartTemplate(
         Sets.WIDTH -> View.TOP
         else -> view
     }
+
+    /** Whether a part of this type is a sheet, two faces meeting at an edge, as a fin is. */
+    val isSheet: Boolean get() = blocks.any { it.isSheet() }
 
     /** The views drawn in another view's plane, by [planeOf]. */
     val viewPlanes: Map<View, View> get() = View.entries.associateWith(::planeOf).filter { (view, plane) -> view != plane }

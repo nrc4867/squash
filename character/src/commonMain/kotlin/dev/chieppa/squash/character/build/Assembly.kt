@@ -157,7 +157,7 @@ private class Assembler(
     }
 
     private fun placedPart(part: AssemblyPart, parent: PlacedPart?): PlacedPart {
-        val template = templates[part.template].placedBy(part.placement)
+        val template = templates[part.template].asBuilt(part.placement, onSocket = part.socket != null)
         val surface = surfaces.getValue(part.id)
         val socket = part.socket
         val spec = if (socket != null && parent != null) {

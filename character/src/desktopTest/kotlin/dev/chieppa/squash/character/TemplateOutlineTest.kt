@@ -138,13 +138,14 @@ class TemplateOutlineTest {
     fun startingEveryViewInTurnStaysWatertight() {
         for (template in shipped.parts) {
             var data = PartData()
-            for (view in View.entries) {
+            val read = View.entries.filter { it in template.views }
+            for (view in read) {
                 data = PartData(outlines = data.outlines + (view to outlineOf(template, view, data)))
                 assertWatertight(template, PartBuilder.build(template, outlines = data.outlines), "${template.id.value} up to $view")
             }
             val undrawn = PartBuilder.build(template)
             val built = PartBuilder.build(template, outlines = data.outlines)
-            for (view in View.entries) {
+            for (view in read) {
                 val before = profile(template, undrawn, view)
                 val share = apart(before, profile(template, built, view)) / reach(before)
                 assertTrue(share <= IN_TURN_TOLERANCE, "${template.id.value} $view with all three started: $share")

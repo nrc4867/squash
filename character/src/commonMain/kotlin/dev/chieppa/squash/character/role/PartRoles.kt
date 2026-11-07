@@ -68,7 +68,8 @@ class PartRoles(private val character: Character, private val templates: (Templa
 
     /**
      * What [part] most likely is from where it sits: the root is the body; on the body or a spine, a part hanging down is a leg, or an
-     * arm on the front half, a part leaving the rear end along the body a tail and one leaving the front end along it a head; on a
+     * arm on the front half, a part leaving the rear end along the body a tail, one leaving the front end along it a head, and a sheet
+     * on its top or sides a fin; on a
      * neck, one leaving its end is a head; on a head, a part on its top is an ear and one under its muzzle a jaw; on a limb's end, a
      * foot, or a hand on an arm; on a tail's end, more tail. Anything else is [Role.OTHER].
      */
@@ -86,6 +87,7 @@ class PartRoles(private val character: Character, private val templates: (Templa
                 -rest.y >= HANGS -> if (isForelimb(parent, socket.socket)) Role.ARM else Role.LEG
                 atStart && along <= -ALONG -> Role.TAIL
                 atEnd && along >= ALONG -> Role.HEAD
+                template.isSheet && abs(spec.v - MIDDLE) > UNDER -> Role.FIN
                 else -> Role.OTHER
             }
             Role.NECK -> if (atEnd && along >= ALONG) Role.HEAD else Role.OTHER

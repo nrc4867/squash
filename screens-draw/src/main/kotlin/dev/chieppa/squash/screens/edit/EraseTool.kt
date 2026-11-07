@@ -111,7 +111,7 @@ class EraseTool(private val state: AppState, var strokeLook: StrokeLook, var loo
         curves.selection = null
         curves.refit = after?.let {
             val first = done.sections.min()
-            val reach = refitReach(view, outline, it, session.templates[instance.template])
+            val reach = refitReach(view, outline, it, session.builtTemplate(instance))
             Refit(part, view, it, first, done.sections.size, reach)
         }
         session.send(SetOutline(part, view, after, state.thisSide))

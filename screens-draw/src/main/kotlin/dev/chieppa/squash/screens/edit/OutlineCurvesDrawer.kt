@@ -78,7 +78,7 @@ internal fun Readout(text: String, modifier: Modifier = Modifier) {
 private fun SelectedPointSection(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     val selection = state.curves.selection?.takeIf { it.part == part.id } ?: return
     val curve = outlines[selection.view]?.takeIf { selection.index in it.points.indices } ?: return
-    val ends = strokeEnds(selection.view, session.templates[part.template].openEnd) as? StrokeEnds.CutAtPlane
+    val ends = strokeEnds(selection.view, session.builtTemplate(part).openEnd) as? StrokeEnds.CutAtPlane
     val limit = ends?.let { CurveLimit(it.plane, it.above) }
     val point = curve.points[selection.index]
     fun moveTo(to: CurvePoint) = session.send(SetOutline(part.id, selection.view, curve.moved(selection.index, to, limit), state.thisSide))

@@ -18,7 +18,10 @@ private const val SHIPPED_INDEX = "index.txt"
 /** Everything in a templates folder. */
 data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>) {
     companion object {
-        /** Loads every `*.part.json` in [folder] and every `*.plan.json` in its plans folder, in name order. */
+        /**
+         * Loads every `*.part.json` in [folder] and every `*.plan.json` in its plans folder, in name order, except that a plan whose
+         * root holds no sockets, as Blank's does, comes after those that place parts.
+         */
         fun load(folder: Path): TemplateFolder {
             val parts = folder.listDirectoryEntries().map { it.name }
             val plans = folder.resolve(PLANS_FOLDER).listDirectoryEntries().map { "$PLANS_FOLDER/${it.name}" }
@@ -33,6 +36,7 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
                 .map { TemplateLoader.loadPart(it, read(it)) }
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
+                .sortedBy { it.sockets.isEmpty() }
             return TemplateFolder(parts, plans)
         }
 

@@ -108,7 +108,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
     }
 
     private fun selectedTemplate() = state.session.value?.let { session ->
-        state.selectedPart.value?.let(session.document.value.character::part)?.let { session.templates[it.template] }
+        state.selectedPart.value?.let(session.document.value.character::part)?.let(session::builtTemplate)
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -171,7 +171,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val session = state.session.value ?: return
         val part = state.selectedPart.value ?: return
         val instance = session.document.value.character.part(part) ?: return
-        val ends = strokeEnds(view, session.templates[instance.template].openEnd)
+        val ends = strokeEnds(view, session.builtTemplate(instance).openEnd)
         val pixel = camera.planePixel
         val curves = state.curves
         val existing = state.editedOutline(view)
@@ -184,7 +184,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         }
         val done = oversketchedOutline(existing, stroke.samples, ends, pixel, oversketchOptions(view, stroke)) ?: return
         curves.recordFit(done.curve, maxOf(done.errorPixels, curves.fitError(existing) ?: 0f))
-        val reach = refitReach(view, existing, done.curve, session.templates[instance.template]).let {
+        val reach = refitReach(view, existing, done.curve, session.builtTemplate(instance)).let {
             if (it == RefitReach.SECTIONS && done.replaced == existing.sections) RefitReach.WHOLE_PART else it
         }
         curves.refit = Refit(part, view, done.curve, done.firstSection, done.replaced, reach)

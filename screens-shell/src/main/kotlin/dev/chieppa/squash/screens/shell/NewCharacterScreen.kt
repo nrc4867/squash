@@ -31,6 +31,7 @@ import dev.chieppa.squash.uidesign.generated.new_chip_count
 import dev.chieppa.squash.uidesign.generated.new_create
 import dev.chieppa.squash.uidesign.generated.new_name
 import dev.chieppa.squash.uidesign.generated.new_open_file
+import dev.chieppa.squash.uidesign.generated.new_plan_blank
 import dev.chieppa.squash.uidesign.generated.new_plan_parts
 import dev.chieppa.squash.uidesign.generated.new_recent
 import dev.chieppa.squash.uidesign.generated.new_title
@@ -135,12 +136,14 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
     }
 }
 
+/** A body plan to start from: a species plan with its part count, or one that places nothing past its root, Blank, read as one tube. */
 @Composable
 private fun PlanRow(shell: Shell, plan: BodyPlan, selected: Boolean, onClick: () -> Unit) {
+    val blank = plan.sockets.isEmpty()
     ListRow(selected, onClick, Modifier.testTag(ShellTags.newPlan(plan.id.value))) {
-        RowIcon(SquashIcons.BodyPlan)
+        RowIcon(if (blank) SquashIcons.PlanBlank else SquashIcons.BodyPlan)
         RowText(plan.name, Modifier.weight(1f))
-        RowText(stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates)), subtle = true)
+        RowText(if (blank) stringResource(Res.string.new_plan_blank) else stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates)), subtle = true)
     }
 }
 

@@ -157,7 +157,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SeamToTwin -> twin
             is ResetSeam -> reset
             is SetRole -> roleStep.replace(FIRST, command.role?.let(roleNames).orEmpty())
-            is SetParameter -> if (RigParams.isRig(command.name)) reach.replace(FIRST, RigParams.reachJoint(command.name).orEmpty()) else if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
+            is SetParameter -> if (RigParams.isRig(command.name)) reach.replace(FIRST, RigParams.reachJoint(command.name).orEmpty()) else if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name.substringAfterLast(PARAM_SEPARATOR))).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             is AddMarks -> if (command.marks.any { it.kind == MarkKind.FUR }) furStrokes else ""
             is SetGrain -> combed
             is SetFurRule -> furRule
@@ -168,3 +168,6 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
 
 /** A part's name as its step reads: its type's, led by the place its socket names. */
 private fun partName(part: PartInstance): String = displayName(listOfNotNull(placeOf(part.socket?.socket), part.template.id.value).joinToString("-"))
+
+/** What separates a parameter's group from its own name, as in generic.rings. */
+private const val PARAM_SEPARATOR = '.'

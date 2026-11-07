@@ -51,4 +51,7 @@ sealed interface Block {
 
     /** The shape this block closes [end] with, if it closes it. */
     fun capShape(end: End): CapShape? = null
+
+    /** Whether the run this block builds is a sheet: open in v, its two faces meeting at an edge. */
+    fun isSheet(): Boolean = false
 }

@@ -1,0 +1,18 @@
+{
+  "$schema": "../../schema/body-plan.schema.json",
+  "format": 1,
+  "id": "blank",
+  "version": 1,
+  "name": "Blank",
+  "root": { "template": "tube", "rest": [1, 0, 0] },
+  "sockets": [],
+  "palette": [
+    { "name": "fur",       "color": { "red": 0.91, "green": 0.64, "blue": 0.29 } },
+    { "name": "cream",     "color": { "red": 0.96, "green": 0.90, "blue": 0.78 } },
+    { "name": "pad",       "color": { "red": 0.91, "green": 0.60, "blue": 0.65 } },
+    { "name": "nose",      "color": { "red": 0.16, "green": 0.11, "blue": 0.12 } },
+    { "name": "inner-ear", "color": { "red": 0.91, "green": 0.60, "blue": 0.65 } },
+    { "name": "ink",       "color": { "red": 0.11, "green": 0.08, "blue": 0.09 } }
+  ],
+  "base": "fur"
+}

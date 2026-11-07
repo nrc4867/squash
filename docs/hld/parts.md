@@ -55,10 +55,10 @@ When: starter is spike 1, first is the first version, later is after it.
 
 Templates are accelerators, not the only way in. A character can start from an empty body plan and generic parts, with anatomy added by hand.
 
-- **Blank** is a body plan with one root part and the default palette, offered beside the species plans.
-- **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks with nothing preset: one tube, skull or lens-section run, one bone from end to end, open end, section profile and views chosen in the Shape inspector.
+- **Blank** is a body plan, `blank`, with one root `tube` named Body, no sockets and the default palette, listed in New character after the species plans as One tube, anatomy by hand. Its root has no socket plane, so the tube's open end closes round on it.
+- **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks, each with one joint at its start, so one bone from end to end, and no role: `tube` one tube run with an open start and a round cap, resting forward; `blob` a skull run closed with a pole at each end, a sphere when nothing is drawn; `sheet` a lens-section tube run open in v (`openV`), two faces meeting at an edge, thin by default, resting back along the body. Their `generic` field makes each part choose its section profile, which views set it, and its rings and segments, in the Shape inspector's Generic section, the template's own being the defaults. Move's angles turn a sheet into place: up for a dorsal fin, out for a side fin, down for a fin underneath.
 - **Anatomy by hand.** Move adds sockets on any part: Add socket places one where it is pressed, with an outward angle and a pair flag, and Add part offers every template on it. Joints, landmarks and pair flags on two parts are not built yet; with them a generic tube becomes a leg when its bend and its paw socket are placed.
-- **A generic part's role is guessed.** A generic template gives no role, so a part placed from it has its role guessed from where it sits, a tube hanging from the root's rear end a tail, one hanging down a leg, one on the head's top an ear, and the Shape inspector's role chip shows the guess dashed until it is chosen. The pose tools read the role. See [data-model.md](data-model.md), Roles.
+- **A generic part's role is guessed.** A generic template gives no role, so a part placed from it has its role guessed from where it sits: a part leaving the root's rear end back along it a tail, one hanging down a leg, a sheet on the body's top or sides a fin, one on the head's top an ear. The Shape inspector's role chip shows the guess dashed until it is chosen. A generic tube rests forward, as Blank's root must, so a tube on the rear end is guessed other; the pose tools read the role. See [data-model.md](data-model.md), Roles.
 - **Re-templating keeps the drawing.** Outlines live in part axes under the same views grammar, so a generic part can take a typed template later, or a typed part can drop to generic, and the outlines stay.
 - **Save as template** turns a hand-built part, with its joints and sockets, into a template file.
 
@@ -66,7 +66,8 @@ Face mark groups on a generic head anchor to a landmark placed by hand, which is
 
 ## What this adds to the data model
 
-- Built-in section profiles `circle`, `egg`, `keel` and `lens`; `lens` is needed by the starter ear.
+- Built-in section profiles `circle`, `egg`, `keel` and `lens`, which a generic part chooses between; `lens` is the ear's, the wing's and the sheet's.
+- A tube run open in v (`openV`), a sheet with two faces and an edge, and the `generic` template field.
 - A per-template **view remap**, so a wing's planform drawn in Top can set height along its chord. The `views` map already allows it; the ear and wing templates use it.
 - The **toe row** grows per-digit overrides (position, angle, joint count), and exposes a tip socket per digit for claws.
 - A **socket row**: sockets repeated along a curve on a parent, for spines and frills.

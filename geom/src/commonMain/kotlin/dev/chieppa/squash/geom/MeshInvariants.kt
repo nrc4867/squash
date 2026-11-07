@@ -4,7 +4,7 @@ private const val MIN_TRIANGLE_AREA = 1e-9f
 
 /** Mesh checks. [check] returns what it found wrong, empty when the mesh holds. */
 object MeshInvariants {
-    /** Finite points, no degenerate triangles, and no holes except along the rings in [openRings]. */
+    /** Finite points, no degenerate triangles, and no holes except along the rings in [openRings] and an open patch's first and last columns. */
     fun check(mesh: PatchMesh, openRings: Set<Int>): List<String> =
         finite(mesh) + degenerate(mesh) + watertight(mesh, openRings)
 
@@ -19,10 +19,11 @@ object MeshInvariants {
         return if (count == 0) emptyList() else listOf("${mesh.patch.name}: $count degenerate triangles")
     }
 
-    /** Every edge is used once in each direction, except edges along an open ring, which have no reverse. */
+    /** Every edge is used once in each direction, except edges along an open ring or an open patch's edge columns, which have no reverse. */
     private fun watertight(mesh: PatchMesh, openRings: Set<Int>): List<String> {
         val uses = HashMap<Long, Int>()
         val nv = mesh.patch.nv
+        val edgeColumns = setOf(0, nv - 1)
         for (t in 0 until mesh.triangleCount) {
             for (corner in 0 until 3) {
                 val key = edge(mesh.indices[t * 3 + corner], mesh.indices[t * 3 + (corner + 1) % 3])
@@ -33,7 +34,8 @@ object MeshInvariants {
             val from = (key ushr Int.SIZE_BITS).toInt()
             val to = key.toInt()
             val onOpenRing = from / nv == to / nv && from / nv in openRings
-            if (count == 1 && (edge(to, from) in uses || onOpenRing)) null
+            val onEdge = !mesh.patch.closedV && from % nv in edgeColumns && to % nv in edgeColumns
+            if (count == 1 && (edge(to, from) in uses || onOpenRing || onEdge)) null
             else "${mesh.patch.name}: edge $from to $to is used $count times without a match"
         }
     }

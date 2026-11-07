@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.ui.graphics.vector.ImageVector
+
+import dev.chieppa.squash.character.build.isGeneric
+
 import dev.chieppa.squash.screens.addPart
 import dev.chieppa.squash.screens.openSocketsNow
 import androidx.compose.foundation.focusable
@@ -172,9 +176,17 @@ private fun TypeTile(template: PartTemplate, selected: Boolean, modifier: Modifi
         Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 val role = template.role
-                if (role != null && hasTileArt(role)) PartTileArt(role, Modifier.fillMaxSize()) else Icon(SquashIcons.Parts, c.inkControl, size = TILE_ICON)
+                if (role != null && hasTileArt(role)) PartTileArt(role, Modifier.fillMaxSize()) else Icon(tileIcon(template), c.inkControl, size = TILE_ICON)
             }
             BasicText(template.name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink)), maxLines = 1)
         }
     }
+}
+
+/** The icon a template with no art of its own shows: a generic sheet, blob or tube by its shape, else the general parts icon. */
+private fun tileIcon(template: PartTemplate): ImageVector = when {
+    !template.isGeneric -> SquashIcons.Parts
+    template.isSheet -> SquashIcons.PartSheet
+    template.openEnd == null -> SquashIcons.PartBlob
+    else -> SquashIcons.PartTube
 }

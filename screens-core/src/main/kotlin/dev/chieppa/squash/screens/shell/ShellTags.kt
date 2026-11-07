@@ -32,6 +32,10 @@ object ShellTags {
     const val STATUS_STAGE = "status.stage"
     const val PART_EMPTY = "part.empty"
     const val ROLE_CHIP = "part.role"
+    const val GENERIC = "part.generic"
+    const val GENERIC_SECTION = "part.generic.section"
+    const val GENERIC_RINGS = "part.generic.rings"
+    const val GENERIC_SEGMENTS = "part.generic.segments"
     const val MIRROR = "tools.mirror"
     const val HALF_OUTLINE = "tools.halfOutline"
     const val HOME_SEARCH = "home.search"
@@ -49,4 +53,5 @@ object ShellTags {
     fun sideRow(name: String) = "parts.side.$name"
     fun parameter(name: String) = "part.parameter.$name"
     fun viewChip(view: String) = "part.view.$view"
+    fun genericView(view: String) = "part.generic.view.$view"
 }

@@ -33,14 +33,14 @@ private const val SAME = 1e-5f
 
 /** The fennec poses by its parts' roles: with every template id renamed, its rig, handles and solves are the same. */
 class RolesNotTemplatesTest {
-    private val renamed = mapOf("torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g")
+    private val renamed = mapOf("torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g", "tube" to "kind-h", "blob" to "kind-i", "sheet" to "kind-j")
     private val templates: Path = Path.of(System.getProperty("squash.templates"))
 
     @Test
     fun theFennecWithEveryTemplateIdRenamedPosesTheSame() {
         val folder = renamedFolder()
         val document = readDocument(rename(Json.parseToJsonElement(Path.of(System.getProperty("squash.examples"), "fennec.json").readText()), Spot.DOCUMENT).toString())
-        assertEquals((renamed - "wing-feathered").values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
+        assertEquals((renamed - setOf("wing-feathered", "tube", "blob", "sheet")).values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
         val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
         val shipped = fennec.rig
 

@@ -35,9 +35,9 @@ fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean, lengthFa
     surfaceOf(template, PartData(), mirrored, cancellationCheck(), factor)
 }
 
-/** The surface of an [unplaced] part that resolves to [data], built at [lengthFactor] of its length. */
-fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): PartSurface {
-    val template = unplaced.placedBy(data.params)
+/** The surface of an [unplaced] part that resolves to [data], built at [lengthFactor] of its length, on a socket unless it is a root. */
+fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f, onSocket: Boolean = true): PartSurface {
+    val template = unplaced.asBuilt(data.params, onSocket)
     val patches = PartBuilder.build(template, data, checkCancelled, lengthFactor)
     return PartSurface.of(PartBuilder.mesh("", template, patches, checkCancelled), PartBuilder.axes(template), mirrored, checkCancelled)
 }
@@ -48,7 +48,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 /** The parts of [character], as placing reads them. */
 fun assemblyParts(character: Character): List<AssemblyPart> =
     character.parts.map { part ->
-        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) }
+        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) }
         AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement, part.role)
     }
 
@@ -106,6 +106,6 @@ fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: Bod
     val lengths = legLengths(parts, data, plan, templates)
     val defaults = HashMap<Pair<TemplateRef, Boolean>, PartSurface>()
     fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) { surfaceOf(templates[ref], PartData(), mirrored, lengthFactor = lengths.ofPlanned(ref)) }
-    val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id)) }
+    val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
     return assemble(parts, surfaces, plan, templates, ::default, lengths)
 }

@@ -87,7 +87,7 @@ class SpineWidthTool(private val state: AppState, var look: SpineLook) : PaneToo
         val session = state.session.value ?: return
         val instance = session.document.value.character.part(part) ?: return
         val lines = state.strokeSnapLines(camera)
-        spine.begin(part, strokeEnds(View.SIDE, session.templates[instance.template].openEnd), camera.planePixel, SpineGuides(lines, lines.map(camera::guideInPlane)))
+        spine.begin(part, strokeEnds(View.SIDE, session.builtTemplate(instance).openEnd), camera.planePixel, SpineGuides(lines, lines.map(camera::guideInPlane)))
         state.curves.drawing = View.SIDE
         var pressure = penPressure(down)
         state.curves.penPressure = pressure

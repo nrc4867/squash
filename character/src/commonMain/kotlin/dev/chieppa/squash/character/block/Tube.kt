@@ -37,8 +37,12 @@ data class Tube(
     val drop: Param = Param.of(0f),
     @Doc("A toe row whose end this run reaches when the row has no toes.")
     val fills: String? = null,
+    @Doc("Cut open at v = 0, so the run is a sheet: two faces meeting at an edge where v = 0 and v = 1 lie together.")
+    val openV: Boolean = false,
 ) : Block {
     override fun run() = u
+
+    override fun isSheet() = openV
 
     /** The stretch this build's slices cover: the file's u, out to the end of a row it fills that has no toes. */
     private fun span(ctx: BuildContext): Span {
@@ -48,7 +52,7 @@ data class Tube(
 
     override fun patchNames() = listOf(PatchName(name ?: BODY_PATCH))
 
-    override fun build(ctx: BuildContext): List<Patch> = listOf(SliceBuilder.tube(spec(ctx)))
+    override fun build(ctx: BuildContext): List<Patch> = listOf(SliceBuilder.tube(spec(ctx)).let { if (openV) it.openedInV() else it })
 
     override fun ringAt(ctx: BuildContext, u: Float): Slice? {
         val span = span(ctx)

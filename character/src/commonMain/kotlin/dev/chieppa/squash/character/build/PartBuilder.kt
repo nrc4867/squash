@@ -52,7 +52,8 @@ object PartBuilder {
         lengthFactor: Float = 1f,
     ): BuildContext {
         val values = template.defaults + params
-        return BuildContext(template, values, template.blocks.filter { it.isOn(values) }, outlines, checkCancelled, lengthFactor)
+        val shaped = template.shapedBy(values)
+        return BuildContext(shaped, values, shaped.blocks.filter { it.isOn(values) }, outlines, checkCancelled, lengthFactor)
     }
 
     /** The patches of a part that resolves to [data]. */

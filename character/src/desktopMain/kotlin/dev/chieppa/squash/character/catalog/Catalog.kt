@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.catalog
 
+import dev.chieppa.squash.character.build.isGeneric
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
@@ -54,13 +55,13 @@ data class PlanChip(val name: String, val count: Int)
 /** The root and the plan's own sockets, grouped by the template each takes, in plan order. */
 fun BodyPlan.chips(templates: TemplateFolder): List<PlanChip> {
     val placed = buildList {
-        templates.template(root.template)?.let { add(it to 1) }
+        templates.template(root.template)?.let { add(it.nameAs(root = true) to 1) }
         for (socket in sockets) {
             val child = socket.takes.firstNotNullOfOrNull { templates.template(it) } ?: continue
-            add(child to if (socket.pair != null) PAIR_SIZE else 1)
+            add(child.name to if (socket.pair != null) PAIR_SIZE else 1)
         }
     }
-    return placed.groupBy({ it.first.name }, { it.second }).map { (name, counts) -> PlanChip(name, counts.sum()) }
+    return placed.groupBy({ it.first }, { it.second }).map { (name, counts) -> PlanChip(name, counts.sum()) }
 }
 
 /**
@@ -85,7 +86,14 @@ private fun named(socket: String?, part: PartInstance, templates: TemplateFolder
 /** The place a socket's name gives before what it takes, front in front-leg, or null when it names none. */
 fun placeOf(socket: String?): String? = socket?.substringBeforeLast(PLACE_SEPARATOR, "")?.takeIf { it.isNotEmpty() }
 
-private fun typeName(part: PartInstance, templates: TemplateFolder): String = templates.template(part.template)?.name ?: displayName(part.template.id.value)
+private fun typeName(part: PartInstance, templates: TemplateFolder): String =
+    templates.template(part.template)?.nameAs(root = part.socket == null) ?: displayName(part.template.id.value)
+
+/** What a part of this template is called: a generic root is the body, whatever its type. */
+private fun PartTemplate.nameAs(root: Boolean): String = if (root && isGeneric) displayName(ROOT_NAME) else name
+
+/** What the root of a plan over a generic template is called. */
+private const val ROOT_NAME = "body"
 
 /** What separates the place a socket's name gives from the rest, as in front-leg. */
 private const val PLACE_SEPARATOR = '-'

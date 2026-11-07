@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /** What a part's build reads: its template, what the part resolves to and the length the character's other legs leave it. */
-data class PartBuildInput(val template: TemplateRef, val data: PartData, val lengthFactor: Float = 1f)
+data class PartBuildInput(val template: TemplateRef, val data: PartData, val lengthFactor: Float = 1f, val onSocket: Boolean = true)
 
 /**
  * The derived step from what one part resolves to, its parameters and outlines, to its patches and their slices. A
@@ -27,12 +27,12 @@ fun Graph.sliceRowNode(
 ): Node<PartBuildInput?, PartBuild> =
     node(document.map { it.partBuildInput(part, lengths) }.distinctUntilChanged(), stage = BuildStages.SLICES) { input ->
         if (input == null) return@node PartBuild(null, emptyList())
-        val template = templates[input.template].placedBy(input.data.params)
+        val template = templates[input.template].asBuilt(input.data.params, input.onSocket)
         PartBuild(template, PartBuilder.build(template, input.data, cancellationCheck(), input.lengthFactor))
     }
 
 private fun SquashDocument.partBuildInput(part: PartId, lengths: LegLengthsOf): PartBuildInput? =
     character.part(part)?.let { instance ->
         val data = character.resolved(instance)
-        PartBuildInput(instance.template, data.shape.copy(params = data.params.filterKeys { !PlacementParams.isSocket(it) && !HandSockets.isHandSocket(it) && !RigParams.isRig(it) }), lengths.of(character).ofPart(part))
+        PartBuildInput(instance.template, data.shape.copy(params = data.params.filterKeys { !PlacementParams.isSocket(it) && !HandSockets.isHandSocket(it) && !RigParams.isRig(it) }), lengths.of(character).ofPart(part), instance.socket != null)
     }

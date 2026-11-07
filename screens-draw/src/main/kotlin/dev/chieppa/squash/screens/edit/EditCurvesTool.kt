@@ -70,9 +70,9 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
             state.curves.selection = null
             return null
         }
-        val limit = (strokeEnds(view, session.templates[instance.template].openEnd) as? StrokeEnds.CutAtPlane)
+        val limit = (strokeEnds(view, session.builtTemplate(instance).openEnd) as? StrokeEnds.CutAtPlane)
             ?.let { CurveLimit(it.plane, it.above) }
-        return DragTarget(session, part, view, curve, index, limit, state.thisSide, session.templates[instance.template])
+        return DragTarget(session, part, view, curve, index, limit, state.thisSide, session.builtTemplate(instance))
     }
 
     /** Follows [id] until it lets go, which commits what it moved, or goes away, which restores the start. */

@@ -102,7 +102,7 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
         val part = state.selectedPart.value ?: return null
         val instance = session.document.value.character.part(part) ?: return null
         val curve = state.editedOutline(view) ?: return null
-        return SmoothTarget(session, part, view, curve, state.thisSide, session.templates[instance.template])
+        return SmoothTarget(session, part, view, curve, state.thisSide, session.builtTemplate(instance))
     }
 
     /** Follows [down] until it lets go, which commits what it smoothed, or goes away, which restores the start. */

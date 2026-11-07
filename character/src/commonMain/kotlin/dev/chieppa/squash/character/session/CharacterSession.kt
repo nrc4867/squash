@@ -1,5 +1,9 @@
 package dev.chieppa.squash.character.session
 
+import dev.chieppa.squash.character.build.builtTemplate
+import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.character.model.PartTemplate
+
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.character.build.AssemblyShape
@@ -175,6 +179,9 @@ class CharacterSession(
     }
 
     fun send(command: DocumentCommand) = history.execute(command)
+
+    /** The template [part] builds with, as the document holds it now: turned by Move, shaped by a generic part's choices. See [asBuilt]. */
+    fun builtTemplate(part: PartInstance): PartTemplate = document.value.character.builtTemplate(part, templates[part.template])
 
     /** The node deriving [part]'s patches; there is one per part for the session's life. */
     fun patches(part: PartId): Node<PartBuildInput?, PartBuild> =

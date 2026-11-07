@@ -217,6 +217,49 @@
       },
       "additionalProperties": false
     },
+    "CountRange": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 2.0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 2.0
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "GenericSpec": {
+      "description": "A generic template: each part chooses its section profile, the views that set it, and its rings and segments; the template's section, views and topology are the defaults.",
+      "type": "object",
+      "properties": {
+        "rings": {
+          "description": "The fewest and most rings a part may take.",
+          "$ref": "#/$defs/CountRange"
+        },
+        "segments": {
+          "description": "The fewest and most control points a part's section may take.",
+          "$ref": "#/$defs/CountRange"
+        }
+      },
+      "required": [
+        "rings",
+        "segments"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "GrainSpec": {
       "description": "How the part's fur lies until a comb changes it.",
       "type": "object",
@@ -692,6 +735,17 @@
         },
         "grain": {
           "$ref": "#/$defs/GrainSpec"
+        },
+        "generic": {
+          "description": "Present on a generic template, whose parts choose their own section, views, rings and segments.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GenericSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "blocks": {
           "type": "array",
@@ -1169,6 +1223,10 @@
               "type": "null"
             }
           ]
+        },
+        "openV": {
+          "description": "Cut open at v = 0, so the run is a sheet: two faces meeting at an edge where v = 0 and v = 1 lie together.",
+          "type": "boolean"
         }
       },
       "required": [

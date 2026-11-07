@@ -45,6 +45,14 @@ class Patch(
     /** How many spans of grid run around v: the wrap to the first point counts on a closed patch. */
     val segments: Int get() = if (closedV) nv else nv - 1
 
+    /**
+     * Whether the surface goes all the way round: closed in v, or open with its first and last columns on one edge, as a sheet's
+     * two faces meet there. Such an edge turns edge on like any other place round a closed patch.
+     */
+    val meetsAround: Boolean by lazy {
+        closedV || (0 until nu).all { ring -> (point(index(ring, 0)) - point(index(ring, nv - 1))).length < POLE_TOLERANCE }
+    }
+
     /** Whether the points of [ring] all coincide. */
     fun isPole(ring: Int): Boolean {
         val first = point(index(ring, 0))
@@ -55,6 +63,20 @@ class Patch(
 
     fun point(index: Int): Vec3 =
         Vec3(points[index * COMPONENTS], points[index * COMPONENTS + 1], points[index * COMPONENTS + 2])
+
+    /**
+     * This closed patch cut open at v = 0: a column more, the last on the first, so v = 0 and v = 1 lie on one edge and the patch is a
+     * sheet whose two faces meet there. Every point and shading normal stays where it was. An open patch is returned as it is.
+     */
+    fun openedInV(): Patch {
+        if (!closedV) return this
+        val columns = nv + 1
+        fun reopened(values: FloatArray) = FloatArray(nu * columns * COMPONENTS) { i ->
+            val point = i / COMPONENTS
+            values[((point / columns) * nv + (point % columns) % nv) * COMPONENTS + i % COMPONENTS]
+        }
+        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened))
+    }
 
     /** This patch shading by [normals], three values per point. */
     fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals)

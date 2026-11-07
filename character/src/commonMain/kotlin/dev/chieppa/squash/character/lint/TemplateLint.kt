@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character.lint
 
+import dev.chieppa.squash.character.build.GenericParams
+import dev.chieppa.squash.character.build.sectionProfile
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
@@ -10,6 +12,7 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 
 private const val MIN_RINGS_PER_JOINT = 2
+private const val MIN_SEGMENTS = 3
 
 /** How close to 1 the cosine of a rest axis's angle from straight down comes for it to count as straight down. */
 private const val STRAIGHT_DOWN = 0.9999f
@@ -21,7 +24,28 @@ private val SECTION_READINGS = setOf(Sets.CAP, Sets.SECTION)
 object TemplateLint {
     fun lint(template: PartTemplate): List<Finding> =
         format(template) + params(template) + axis(template) + section(template) + views(template) + openEnd(template) +
-            blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template)
+            blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template) + generic(template)
+
+    /**
+     * A generic part's choices keep the template's limits: its topology inside them, enough of the fewest rings for its joints, a
+     * named section to start from, and each view setting what it sets when a part turns it on.
+     */
+    private fun generic(template: PartTemplate): List<Finding> {
+        val generic = template.generic ?: return emptyList()
+        return buildList {
+            if (generic.rings.min > generic.rings.max) add(Finding("$.generic.rings", "the fewest rings are above the most"))
+            if (generic.segments.min > generic.segments.max) add(Finding("$.generic.segments", "the fewest segments are above the most"))
+            if (generic.segments.min < MIN_SEGMENTS) add(Finding("$.generic.segments", "a section needs at least $MIN_SEGMENTS control points"))
+            if (template.topology.rings !in generic.rings) add(Finding("$.topology.rings", "${template.topology.rings} rings are outside the generic limits"))
+            if (template.topology.segments !in generic.segments) add(Finding("$.topology.segments", "${template.topology.segments} segments are outside the generic limits"))
+            val needed = template.blocks.sumOf { it.joints().size } * MIN_RINGS_PER_JOINT
+            if (generic.rings.min < needed) add(Finding("$.generic.rings", "${generic.rings.min} rings for its joints needs at least $needed"))
+            if (template.sectionProfile() == null) add(Finding("$.section", "a generic template starts from a named section"))
+            template.views.forEach { (view, sets) ->
+                if (GenericParams.READINGS[view] != sets) add(Finding("$.views.${view.name.lowercase()}", "a generic part's ${view.name.lowercase()} sets ${GenericParams.READINGS[view]?.name?.lowercase()}"))
+            }
+        }
+    }
 
     private fun grain(template: PartTemplate): List<Finding> = template.grain.ruffs.flatMapIndexed { i, ruff ->
         val context = LintContext(template, "$.grain.ruffs[$i]")

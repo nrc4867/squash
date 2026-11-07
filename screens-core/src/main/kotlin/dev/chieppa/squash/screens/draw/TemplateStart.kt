@@ -25,7 +25,7 @@ fun AppState.startFromTemplate(view: View) {
     val opened = session.value ?: return
     val id = selectedPart.value ?: return
     val part = opened.document.value.character.part(id) ?: return
-    val curve = templateOutline(opened.templates[part.template], opened.document.value.character.resolved(part), view) ?: return
+    val curve = templateOutline(opened.builtTemplate(part), opened.document.value.character.resolved(part), view) ?: return
     opened.send(SetOutline(id, view, curve, thisSide))
 }
 

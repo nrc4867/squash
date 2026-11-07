@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import dev.chieppa.squash.character.build.isGeneric
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.template
 import androidx.compose.foundation.layout.Spacer
@@ -45,7 +46,7 @@ private const val FLAG_OFF = 0f
 private const val PERCENT = 100f
 private val READOUT_WIDTH = 52.dp
 
-/** The Shape inspector: the armed tool's sections first, then the selected part's role and parameters. */
+/** The Shape inspector: the armed tool's sections first, then the selected part's role, a generic part's own shape, and its parameters. */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
     val tool by state.tool.collectAsState()
@@ -83,6 +84,12 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
     }
     val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
     val rows = parameterRows(template, base.params)
+    if (template.isGeneric) {
+        DrawerSection(stringResource(Res.string.shell_part_template, template.name)) { RoleRow(state, open, character, part) }
+        GenericSection(open, part.id, template, base.params, !mirror)
+        DrawerSection { rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } } }
+        return
+    }
     DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
         RoleRow(state, open, character, part)
         rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }

@@ -23,10 +23,10 @@ fun BodyPlan.startingData(): PartData = PartData(surface = SurfaceWork(baseSlot 
 /** A character to open: its empty document, the commands that place its root part, and that part. */
 data class NewCharacter(val document: SquashDocument, val commands: List<DocumentCommand>, val root: PartId)
 
-/** Builds a character from [plan]: no parts in the document, and an [AddPart] for the plan's root. */
+/** Builds a character from [plan]: no parts in the document, and an [AddPart] for the plan's root, which is the body unless its template says otherwise. */
 fun newCharacter(plan: BodyPlan, templates: TemplateFolder, name: String, id: () -> String = Ulid::next): NewCharacter {
     val template = requireNotNull(templates.template(plan.root.template)) { "No template ${plan.root.template.value}" }
-    val root = PartInstance(PartId(id()), template.ref, own = plan.startingData(), role = template.role ?: Role.BODY, roleGuessed = template.role == null)
+    val root = PartInstance(PartId(id()), template.ref, own = plan.startingData(), role = template.role ?: Role.BODY)
     val palette = Palette(plan.palette.map { PaletteSlot(SlotName(it.name), it.color) })
     val character = Character(CharacterId(id()), name, plan.ref, palette = palette)
     return NewCharacter(SquashDocument(character), listOf(AddPart(root)), root.id)
