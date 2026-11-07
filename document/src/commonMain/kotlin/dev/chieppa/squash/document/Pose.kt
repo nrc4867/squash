@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * One bone of a pose, the bone named by part and joint name: its turn in [degrees] about the joint's hinge, and how far the
- * joint sits from the one before it on the part, as a [stretch] factor, which only a joint whose template says `stretch` reads.
+ * joint sits from the one before it on the part, as a [stretch] factor. A template's `stretch` marks the joints a stretch
+ * handle offers; the body curve's length stretches every joint along the spine and tail.
  */
 @Serializable
 data class BonePose(val part: PartId, val joint: String, val degrees: Float = 0f, val stretch: Float = 1f) {
@@ -13,12 +14,12 @@ data class BonePose(val part: PartId, val joint: String, val degrees: Float = 0f
 }
 
 /**
- * A pose: the [bones] it sets, each named for itself, and the paws it has [planted], by part, which stay where they stand
- * while the rest of the body moves. A bone it does not name rests. The body curve and touch-ups join it as fields of their
- * own. See HLD: data-model, Entities.
+ * A pose: the [bones] it sets, each named for itself, the paws it has [planted], by part, which stay where they stand
+ * while the rest of the body moves, and the body [curve] its spine and tail were last bent to, if any. A bone it does not name
+ * rests; the curve moves nothing by itself, the bones it was solved into do. See HLD: data-model, Entities.
  */
 @Serializable
-data class Pose(val bones: List<BonePose> = emptyList(), val planted: Set<PartId> = emptySet()) {
+data class Pose(val bones: List<BonePose> = emptyList(), val planted: Set<PartId> = emptySet(), val curve: BodyCurve? = null) {
     init {
         val named = bones.map { it.part to it.joint }
         require(named.size == named.toSet().size) { "A pose sets a bone twice: $named" }

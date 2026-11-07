@@ -13,7 +13,7 @@ data class BoneName(val part: PartId, val joint: String) {
  * A bone of the rig in rest pose, in body space. It turns about [hinge] through [pivot], the middle of its part's ring at the
  * joint, and reaches [length] along [direction] to the next joint of its part, or to the part's end for the last bone that
  * owns any of it. A part's end joint owns none of its part and has no length; it carries what sits there. Its turn is held to
- * [limits] in degrees, and when [stretch] is set a pose may move it away from the joint before it on its part.
+ * [limits] in degrees, and [stretch] marks it as one a stretch handle moves away from the joint before it on its part.
  */
 data class Bone(
     val name: BoneName,

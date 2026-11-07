@@ -22,8 +22,8 @@ class PosedCharacter(val parts: Map<PartId, FloatArray>, val meshes: Map<PartId,
 /**
  * Where each bone of [rig] takes a rest point under [pose], parents first. A bone turns by its pose's degrees, held to its
  * limits, about its hinge as its parent has turned it, through its pivot as its parent has carried it. A bone whose span
- * ends at a stretching joint also lengthens along its span by that joint's stretch and narrows across it to keep volume,
- * which carries the stretching joint and everything past it.
+ * ends at a joint also lengthens along its span by that joint's stretch and narrows across it to keep volume,
+ * which carries that joint and everything past it.
  */
 fun boneTransforms(rig: Rig, pose: Pose): List<Affine> {
     val turns = ArrayList<Mat3>(rig.bones.size)

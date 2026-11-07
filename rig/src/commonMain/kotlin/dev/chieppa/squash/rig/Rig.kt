@@ -53,11 +53,11 @@ class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSe
     val parents: IntArray = IntArray(bones.size) { i -> bones[i].parent?.let { byName[it] } ?: -1 }
 
     /**
-     * For each bone, the bone whose distance from it a stretch scales, or -1: the next joint of its part when that joint
-     * stretches, since a stretching joint moves away from the one before it.
+     * For each bone, the bone whose distance from it a stretch scales, or -1: the next joint of its part, since a stretched
+     * joint moves away from the one before it.
      */
     val stretchedBy: IntArray = IntArray(bones.size) { i ->
-        bones.indices.firstOrNull { j -> bones[j].stretch && parents[j] == i && bones[j].name.part == bones[i].name.part } ?: -1
+        bones.indices.firstOrNull { j -> parents[j] == i && bones[j].name.part == bones[i].name.part } ?: -1
     }
 
     companion object {
