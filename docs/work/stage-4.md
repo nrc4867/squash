@@ -6,7 +6,7 @@ A working note for the sessions that build stage 4. Folded into the HLD or delet
 
 The built character gets bones and weights without anyone rigging it, and poses for the first time. The rig comes from the templates: every part already names its joints, their hinge axes, limits and which bone stretches, and the body plan gives the tree. Weights are seeded from part ownership, so only the seams between parts are guessed, and a Rig stage under Build shows the result and lets a seam be painted where the guess is wrong. Posing is the Shot workspace's first screen: drag a paw and the leg follows, planted paws stay put, one stroke bends the spine and tail, and the pose reads from every camera.
 
-That is board 7 and boards 12, 13 and 14, with spikes 4 and 8 behind them. Spike 5, contact, waits.
+That is board 7 and boards 12 and 13, with spikes 4 and 8 behind them; board 14 comes after. Spike 5, contact, waits.
 
 ## What the design already holds
 
@@ -33,17 +33,17 @@ lego-viewer fits a skeleton to a mesh in four steps (Body, Joints, Check, Roles)
 | Pose library: starters by body shape, flip, a pose put on another model by its aims | Boards 12 to 14 need a Library drawer; the starters come per body plan. |
 | Pose bar: Mirror, Limits, Floor, Show | The Shot strip, in the restructure's shape: the armed tool's options first, no key caps. |
 
+## Decided
+
+- **In stage 4:** the Rig stage (the Check step), the Drag tool with pins and pole targets, the Turn rings with the role controls, and the body curve. Correct pose and the pose library wait for a later stage; the data model needs nothing from them now.
+- **Posing lives in a Pose stage under Build** until the Shot boards are drawn. A stage is one `Stage` entry and one inspector, so it moves to Shot whole.
+- **Seam strokes are shared by a pair with per-side overrides,** the rule surface work follows: one stroke serves both sides mirrored, and painting with This side on writes that side's override.
+
 ## Before round 1
 
-Nicholas decides, and the orchestrator does not start until it is written down in `docs/work/boards.md`:
+The orchestrator:
 
-- **Which rows of the table above are in.** The Check step and the Drag tool are the heart of it; the rest can wait for a later stage without changing the data model.
-- **Where posing lives first.** The Shot workspace does not exist. Either stage 4 builds its shell (a Shot tab beside Build, its own strip and inspector, a Pose stage) or the first pose is a Pose stage under Build until the Shot boards are drawn. The second is faster to a pose on screen and throws nothing away, since a stage is one `Stage` entry and an inspector.
-- **Weights for a pair.** Whether a painted seam stroke is shared by a pair like surface work, with per-side overrides, or lives per side. Shared is the data model's rule everywhere else.
-
-The orchestrator then:
-
-- Redraws board 7 and boards 12, 13 and 14 in Squash flow of work · restructure, as stages with a strip and one inspector, before any code. Nothing else in either artifact changes.
+- Redraws board 7 and boards 12 and 13 in Squash flow of work · restructure, as stages with a strip and one inspector, before any code. Board 14 stays as it is. Nothing else in either artifact changes.
 - Writes the verify steps for board 7 into `docs/work/boards.md` at "building".
 
 ## Exit criteria
@@ -53,9 +53,8 @@ The orchestrator then:
 3. **The Rig stage.** Under Build, lit now, with the part colours over the character, a heat map on hover, wiggle on click, Reach per joint, and Paint, Erase and Smooth strokes that are commands, replayed on a rebuild and mirrored across a pair. Tidy and To twin are one undo step each. The stage arms no drawer and no drawer arms it.
 4. **A first pose.** Drag a paw and the leg follows through IK; planted paws stay; the body centre moves the character and, with Alt, stops where the planted paws reach; a ring turns one joint within its limits, Mirror turning the twin. The pose is a document value, one per shot key, and saves and loads.
 5. **The body curve.** One stroke in Side poses tail, spine, neck and head while planted paws stay put; spike 8 passes.
-6. **Correct pose.** Settle, balance, relax and volume each run on a stretched pose as one undo step with a before and after.
-7. **Boards match.** Board 7 and the posing boards match under the Build to the boards rule.
-8. **Tiers hold.** `./gradlew check` under two minutes without the smoke tier; the smoke tier renders the Rig stage and a posed fennec.
+6. **Boards match.** Board 7 and boards 12 and 13 match under the Build to the boards rule.
+7. **Tiers hold.** `./gradlew check` under two minutes without the smoke tier; the smoke tier renders the Rig stage and a posed fennec.
 
 ## How the sessions run
 
@@ -68,8 +67,7 @@ As stage 3: one orchestrating session per sitting, round 0 serial on `main`, lat
 | 1 | `pose-data` | The pose as a document value and the commands that set a bone, a stretch and the planted set; skinning in `render` |
 | 2 | `pose-drag` | The Drag tool, handles, pins, Alt and Shift, the pole targets; the Turn rings |
 | 2 | `body-curve` | The body curve stroke, re-sampling the spine's slices; spike 8 |
-| 3 | `correct-pose` | Settle, balance, relax, volume, and the before and after |
-| 3 | `pose-boards` | Every remaining row of the differences table for boards 7 and 12 to 14 |
+| 3 | `pose-boards` | Every remaining row of the differences table for boards 7, 12 and 13 |
 
 ## Stretch
 
@@ -77,4 +75,4 @@ Expected gaps, landed in the Stretch repo first: a ring gizmo drawn by the rende
 
 ## Out of scope
 
-Contact and squash against the ground or another body (spike 5), garments, timing and clips, scenes and render to file, Blank mode's role step, foot roll, the idle layer.
+Correct pose and the pose library (board 14), contact and squash against the ground or another body (spike 5), garments, timing and clips, scenes and render to file, Blank mode's role step, foot roll, the idle layer.
