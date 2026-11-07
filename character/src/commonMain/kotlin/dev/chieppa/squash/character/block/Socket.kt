@@ -25,8 +25,10 @@ data class Socket(
     val outward: Outward = Outward.NORMAL,
     val pair: Mirror? = null,
     val takes: List<TemplateId> = emptyList(),
+    @Doc("Degrees the outward normal turns toward the part's end.") @Range(min = -90.0, max = 90.0)
+    val tilt: Float = 0f,
 ) : Block {
-    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes))
+    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes, tilt))
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair) + ctx.onTheSurface("u", u, condition)

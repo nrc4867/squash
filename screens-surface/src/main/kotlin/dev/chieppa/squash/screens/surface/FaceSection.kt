@@ -91,7 +91,8 @@ fun FaceSection(state: AppState, session: CharacterSession) {
         when {
             face.feature == FaceFeature.EYES && eyes.isEmpty() ->
                 Button(stringResource(Res.string.face_new_eyes), {
-                    newEyesCommand(character, holder)?.let(session::send)
+                    val at = character.part(holder)?.let { eyeLandmark(session.builtTemplate(it)) }
+                    newEyesCommand(character, holder, at)?.let(session::send)
                     state.pickFeature(session.document.value.character, holder, FaceFeature.EYES)
                 }, Modifier.fillMaxWidth().testTag(FaceTags.NEW_EYES), kind = ButtonKind.Quiet, icon = SquashIcons.Marks)
             face.feature == FaceFeature.MOUTH && mouth == null ->

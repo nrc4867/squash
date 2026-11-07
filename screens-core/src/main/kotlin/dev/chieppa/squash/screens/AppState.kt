@@ -203,7 +203,7 @@ class AppState(
                 if (selectedPart.value?.let(current.character::part) == null) selectedPart.value = current.character.parts.firstOrNull()?.id
                 val plan = templates.plan(current.character.bodyPlan)
                 if (plan != null && addingSocket.value?.let { it in openSockets(current, plan, templates) } == false) closeAddPart()
-                if (move.picked.value?.let { hasHandSocket(current, it) } != true) move.picked.value = null
+                move.follow(current)
             }
         }
         return opened

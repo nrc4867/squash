@@ -88,16 +88,9 @@ private fun jointHandles(part: PlacedPart): List<JointHandle> {
         if (joint.u <= 0f || joint.u >= 1f) return@mapIndexedNotNull null
         val low = (joints.getOrNull(i - 1)?.u ?: 0f) + JOINT_GAP
         val high = (joints.getOrNull(i + 1)?.u ?: 1f) - JOINT_GAP
-        val at = axisPoint(part, joint.u) ?: return@mapIndexedNotNull null
+        val at = axisMiddle(part, joint.u) ?: return@mapIndexedNotNull null
         JointHandle(part, joint.name, joint.u, low..high.coerceAtLeast(low), at)
     }
-}
-
-/** The middle of [part] at [u], between its surface's top and underside. */
-private fun axisPoint(part: PlacedPart, u: Float): Vec3? {
-    val top = part.pointOn(u, 0f) ?: return null
-    val under = part.pointOn(u, 0.5f) ?: return null
-    return (top + under) * 0.5f
 }
 
 /** The handle under [pixel], within [reach] pixels: the nearest, and of those on one spot the one nearest the viewer. */
@@ -115,7 +108,7 @@ fun jointUnder(handle: JointHandle, pixel: Offset, view: HandleView): Float {
     val range = handle.range
     val samples = (0..JOINT_SAMPLES).map { range.start + (range.endInclusive - range.start) * it / JOINT_SAMPLES }
     return samples.minByOrNull { u ->
-        val at = axisPoint(handle.part, u)?.let(view::toPixel)
+        val at = axisMiddle(handle.part, u)?.let(view::toPixel)
         if (at == null) Float.POSITIVE_INFINITY else (at - pixel).getDistance()
     } ?: handle.u
 }

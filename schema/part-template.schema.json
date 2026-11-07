@@ -950,6 +950,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "tilt": {
+          "description": "Degrees the outward normal turns toward the part's end.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
         }
       },
       "required": [

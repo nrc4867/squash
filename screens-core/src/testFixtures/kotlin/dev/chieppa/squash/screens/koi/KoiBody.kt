@@ -1,6 +1,9 @@
 package dev.chieppa.squash.screens.koi
 
+import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.model.Hinge
+import dev.chieppa.squash.character.model.Limits
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.DocumentCommand
@@ -29,6 +32,9 @@ val PECTORAL_R = PartId("pectoral-r")
 val ANAL = PartId("anal")
 val EYE_L = PartId("eye-l")
 val EYE_R = PartId("eye-r")
+
+/** How far each of the body's hand-made joints bends either way, in degrees. */
+private val BODY_BEND = Limits(-35f, 35f)
 
 /** The hand-made sockets on the body, by number. */
 const val DORSAL_SOCKET = 1
@@ -83,7 +89,8 @@ private val PECTORAL_TOP = drawn(p(0f, 0.03f), p(0.05f, 0.05f), p(0.10f, 0.045f)
 private val ANAL_SIDE = drawn(p(0f, 0.05f), p(0.04f, 0.045f), p(0.075f, 0.02f), p(0.08f, -0.01f), p(0.05f, -0.03f), p(0f, -0.035f))
 
 /**
- * The koi's shape on the Blank plan: its body tube drawn in Side and Top, hand-made sockets on it for a dorsal fin on the back, a
+ * The koi's shape on the Blank plan: its body tube drawn in Side and Top with three hand-made joints along it, so the body curve
+ * bends it along its length, hand-made sockets on it for a dorsal fin on the back, a
  * pair of pectoral fins low on the sides behind the head, an anal fin underneath and a tail fin at the rear, each a sheet drawn as a
  * planform in its best view and its thickness in the other, turned into place with Move's angles; and a pair of blob eyes on the
  * head. Every part's role is the guess Add part gives it, then chosen.
@@ -91,6 +98,9 @@ private val ANAL_SIDE = drawn(p(0f, 0.05f), p(0.04f, 0.045f), p(0.075f, 0.02f), 
 fun koiBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(PartInstance(KOI_BODY, ref("tube"), role = Role.BODY))),
     SetOutlines(KOI_BODY, mapOf(View.SIDE to BODY_SIDE, View.TOP to BODY_TOP)),
+    HandJoints.add(KOI_BODY, 1, 0.3f, Hinge.X, BODY_BEND, stretch = false),
+    HandJoints.add(KOI_BODY, 2, 0.5f, Hinge.X, BODY_BEND, stretch = false),
+    HandJoints.add(KOI_BODY, 3, 0.7f, Hinge.X, BODY_BEND, stretch = false),
     HandSockets.add(KOI_BODY, DORSAL_SOCKET, 0.56f, 0.0f, 0f, paired = false),
     HandSockets.add(KOI_BODY, TAIL_SOCKET, 0.0f, 0.0f, 0f, paired = false),
     HandSockets.add(KOI_BODY, PECTORAL_SOCKET, 0.74f, 0.36f, 0f, paired = true),

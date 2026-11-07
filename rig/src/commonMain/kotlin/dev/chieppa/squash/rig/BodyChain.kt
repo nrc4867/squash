@@ -34,7 +34,7 @@ internal fun bodyChain(rig: Rig): BodyChain? {
     val behind = children.firstOrNull { roles[rig.bones[it].name.part] in BEHIND }
     val ahead = children.lastOrNull { roles[rig.bones[it].name.part] in AHEAD }
     val start = behind?.let { spine.indexOf(rig.parents[it]) } ?: 0
-    val end = ahead?.let { spine.indexOf(rig.parents[it]) } ?: spine.lastIndex
+    val end = ahead?.let { spine.indexOf(rig.parents[it]) } ?: spine.indexOfLast { rig.bones[it].length > 0f }.coerceAtLeast(0)
     val links = mutableListOf<ChainLink>()
     val stretched = mutableSetOf<Int>()
     if (behind != null) {

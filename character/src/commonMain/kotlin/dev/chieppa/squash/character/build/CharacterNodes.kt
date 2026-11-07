@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.distinctUntilChanged
 import dev.chieppa.squash.geom.bent
@@ -19,15 +20,16 @@ import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 
-/** The surface of a mesh node's part with axes [axes] on [side], following it. */
-fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Side?, joints: Flow<Map<String, Float>> = flowOf(emptyMap()), template: PartTemplate? = null): Node<*, PartSurface> = gather(
-    joints.distinctUntilChanged(),
+/** The surface of a mesh node's part with axes [axes] on the side [side] follows, following it; a part joining a pair takes a side. */
+fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Flow<Side?>, joints: Flow<Map<String, Float>> = flowOf(emptyMap()), template: PartTemplate? = null): Node<*, PartSurface> = gather(
+    combine(joints, side) { held, on -> held to on }.distinctUntilChanged(),
     sourcesOf = { mapOf(Unit to meshes) },
     stage = BuildStages.SURFACE,
-) { (held, built) ->
+) { (shown, built) ->
+    val (held, on) = shown
     val mesh = built.getValue(Unit)
     val own = mesh.axes ?: axes
-    PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, side == Side.RIGHT, cancellationCheck())
+    PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, on == Side.RIGHT, cancellationCheck())
 }
 
 /** A template's surface with nothing drawn, [mirrored] or not, at each of [lengthFactor]'s values. */
@@ -48,7 +50,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 /** The parts of [character], as placing reads them. */
 fun assemblyParts(character: Character): List<AssemblyPart> =
     character.parts.map { part ->
-        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) }
+        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) }
         AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement, part.role)
     }
 

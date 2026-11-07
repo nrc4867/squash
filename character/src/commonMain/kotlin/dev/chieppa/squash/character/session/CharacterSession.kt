@@ -194,13 +194,13 @@ class CharacterSession(
      */
     fun mesh(part: PartId): Node<PartBuild, PartMesh> = meshes.getOrPut(part) { graph.partMeshNode(patches(part), part) }
 
-    /** What [part] shows on its side, derived from its mesh; one per part for the session's life, since a part keeps its side. */
+    /** What [part] shows on its side, derived from its mesh; one per part for the session's life, following its side. */
     fun surface(part: PartId): Node<*, PartSurface> = surfaces.getOrPut(part) {
         val instance = document.value.character.part(part)
         val template = instance?.let { templates.find(it.template) }
         val axes = template?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
         val joints = document.map { doc -> template?.let { shownJoints(doc.character, part, it) }.orEmpty() }
-        graph.partSurfaceNode(mesh(part), axes, instance?.side, joints, template)
+        graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template)
     }
 
     /**

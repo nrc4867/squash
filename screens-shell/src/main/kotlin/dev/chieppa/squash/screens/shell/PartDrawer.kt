@@ -46,7 +46,7 @@ private const val FLAG_OFF = 0f
 private const val PERCENT = 100f
 private val READOUT_WIDTH = 52.dp
 
-/** The Shape inspector: the armed tool's sections first, then the selected part's role, a generic part's own shape, and its parameters. */
+/** The Shape inspector: the armed tool's sections first, then the selected part's role and template, a generic part's own shape, its parameters and its anatomy. */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
     val tool by state.tool.collectAsState()
@@ -79,21 +79,26 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
     val base = character.editBase(part, !mirror)
     when (val kind = partDrawerKind(tool, hasPart = true, drawn = data.outlines.isNotEmpty())) {
         PartDrawerKind.OUTLINE_CURVES, PartDrawerKind.OUTLINE, PartDrawerKind.SPINE_WIDTH, PartDrawerKind.SMOOTH -> toolSections(kind, state, open, part, base.outlines)
-        PartDrawerKind.MOVE -> MoveSection(state, open, part, base.params, !mirror, if (mirror) character.overridesOf(part).params else emptyMap())
+        PartDrawerKind.MOVE -> MoveSection(state, open, part, template, base.params, !mirror, if (mirror) character.overridesOf(part).params else emptyMap())
         PartDrawerKind.PART -> Unit
     }
     val hidden = if (mirror) character.overridesOf(part).params else emptyMap()
     val rows = parameterRows(template, base.params)
     if (template.isGeneric) {
-        DrawerSection(stringResource(Res.string.shell_part_template, template.name)) { RoleRow(state, open, character, part) }
+        DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
+            RoleRow(state, open, character, part)
+            TemplateRow(state, part.id, template)
+        }
         GenericSection(open, part.id, template, base.params, !mirror)
         DrawerSection { rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } } }
-        return
+    } else {
+        DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
+            RoleRow(state, open, character, part)
+            TemplateRow(state, part.id, template)
+            rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
+        }
     }
-    DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
-        RoleRow(state, open, character, part)
-        rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
-    }
+    AnatomySection(state, open, part)
 }
 
 /**

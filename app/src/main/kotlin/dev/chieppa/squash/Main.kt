@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.character.load.withSaved
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
@@ -36,6 +37,7 @@ import org.jetbrains.compose.resources.stringResource
 private const val APP_ID = "dev.chieppa.squash"
 private const val RECENT_FILE = "recent.txt"
 private const val KEYMAP_FILE = "keymap.txt"
+private const val SAVED_TEMPLATES = "templates"
 
 fun main() {
     DevTools.startIfRequested()
@@ -44,7 +46,7 @@ fun main() {
     val keys = KeymapStore(appDataDirectory(APP_ID).resolve(KEYMAP_FILE))
     val recent = RecentFiles(store.load()).also { runBlocking { it.prune(FileStorage) } }
     val state = AppState(
-        TemplateFolder.shipped(),
+        TemplateFolder.shipped().withSaved(appDataDirectory(APP_ID).resolve(SAVED_TEMPLATES)),
         recent = recent,
         format = SquashFormat(runBlocking { getString(Res.string.shell_file_type) }),
         artist = GpuRestPoseArtist,

@@ -393,6 +393,18 @@
                         }
                     },
                     "params": {
+                        "joint.1.hinge": 0.0,
+                        "joint.1.low": -35.0,
+                        "joint.1.high": 35.0,
+                        "joint.1.u": 0.3,
+                        "joint.2.hinge": 0.0,
+                        "joint.2.low": -35.0,
+                        "joint.2.high": 35.0,
+                        "joint.2.u": 0.5,
+                        "joint.3.hinge": 0.0,
+                        "joint.3.low": -35.0,
+                        "joint.3.high": 35.0,
+                        "joint.3.u": 0.7,
                         "socket.1.u": 0.56,
                         "socket.1.v": 0.0,
                         "socket.1.outward": 0.0,

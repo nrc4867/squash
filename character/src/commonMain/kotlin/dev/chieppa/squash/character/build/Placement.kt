@@ -7,7 +7,10 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetParameters
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.tan
 
 private const val PREFIX = "move."
@@ -26,6 +29,9 @@ object PlacementParams {
 
     /** How far either angle may go. */
     const val MAX_ANGLE = 60f
+
+    /** The place among [RestDirection]'s entries of the direction a part rests in, in place of its template's; see [restIn]. */
+    const val REST = "${PREFIX}rest"
 
     /** Where joint [name] sits along the part. */
     fun joint(name: String) = "$JOINT_PREFIX$name"
@@ -48,6 +54,28 @@ object PlacementParams {
     }
 }
 
+/**
+ * A direction a part can rest in of its own, from its socket end toward its tip, in body space: [OUT] is away from the body's
+ * plane on the left, which the right side mirrors.
+ */
+enum class RestDirection(val direction: Direction) {
+    FORWARD(Direction(1f, 0f, 0f)),
+    BACK(Direction(-1f, 0f, 0f)),
+    UP(Direction(0f, 1f, 0f)),
+    DOWN(Direction(0f, -1f, 0f)),
+    OUT(Direction(0f, 0f, -1f)),
+    ;
+
+    companion object {
+        /** The direction [params] give a part to rest in, or null where they leave its template's. */
+        fun of(params: Map<String, Float>): RestDirection? = params[PlacementParams.REST]?.roundToInt()?.let(entries::getOrNull)
+
+        /** The command that gives [part] [direction] to rest in, or its template's with null: one undo step. */
+        fun restIn(part: PartId, direction: RestDirection?, thisSide: Boolean = false) =
+            SetParameters(part, mapOf(PlacementParams.REST to direction?.ordinal?.toFloat()), thisSide)
+    }
+}
+
 /** This socket where [placement], a parent part's placement values, puts it for [side]. */
 internal fun SocketSpec.placedBy(placement: Map<String, Float>, side: Side?): SocketSpec {
     val u = placement[PlacementParams.socketU(name, side)] ?: placement[PlacementParams.socketU(name)] ?: u
@@ -62,7 +90,13 @@ internal fun SocketSpec.placedBy(placement: Map<String, Float>, side: Side?): So
  */
 fun PartTemplate.placedBy(params: Map<String, Float>): PartTemplate {
     if (params.keys.none { PlacementParams.isPlacement(it) && !PlacementParams.isSocket(it) }) return this
-    return turnedBy(params).jointsMovedBy(params)
+    return restingBy(params).turnedBy(params).jointsMovedBy(params)
+}
+
+/** This template resting the way [params] say, its up following the new rest, or as it is when they say nothing. */
+private fun PartTemplate.restingBy(params: Map<String, Float>): PartTemplate {
+    val rest = RestDirection.of(params)?.direction ?: return this
+    return if (rest == axis.rest) this else copy(axis = axis.copy(rest = rest, up = null))
 }
 
 private fun PartTemplate.turnedBy(params: Map<String, Float>): PartTemplate {

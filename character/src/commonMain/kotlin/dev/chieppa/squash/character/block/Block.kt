@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.character.model.CapShape
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.JointSpec
+import dev.chieppa.squash.character.model.LandmarkSpec
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SocketSpec
@@ -35,6 +36,7 @@ sealed interface Block {
     fun withJointAt(name: String, u: Float): Block = this
 
     fun sockets(): List<SocketSpec> = emptyList()
+    fun landmarks(): List<LandmarkSpec> = emptyList()
     fun areas(): List<AreaSpec> = emptyList()
 
     /** The patches this block shows in a palette slot of their own. */

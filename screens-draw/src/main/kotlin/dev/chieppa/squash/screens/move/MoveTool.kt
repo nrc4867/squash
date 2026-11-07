@@ -3,7 +3,13 @@ package dev.chieppa.squash.screens.move
 import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.addSocket
 import dev.chieppa.squash.screens.pickSocket
+import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.screens.addJoint
+import dev.chieppa.squash.screens.addLandmark
+import dev.chieppa.squash.screens.jointPlace
+import dev.chieppa.squash.screens.pickJoint
 import dev.chieppa.squash.character.catalog.twin
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.sheet.SurfaceView
@@ -48,7 +54,8 @@ import dev.chieppa.stretch.frame.buildOverlay
  * it over its parent's surface, and a joint's along its part, as one undo step, on the pair or with Mirror off on that side.
  * Pressing a socket's dot without moving selects the part on it, or opens Add part's popover on an empty one, and picks a hand-made
  * one. In Add socket a press on a part's surface places a socket there, previewed under the pointer, and a press on a hand-made
- * socket's dot picks it. A drag the pane loses restores what was there.
+ * socket's dot picks it. In Add joint a press on a part places a joint at that u on its axis, and a press on a dot of the selected
+ * part's joints picks it; in Add landmark a press places a landmark there. A drag the pane loses restores what was there.
  */
 class MoveTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
     private var dragging by mutableStateOf(false)
@@ -76,15 +83,29 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                 val down = awaitFirstDown()
                 if (dragging || !isToolPress(down)) return@awaitEachGesture
                 val handle = handleAt(handles(), down.position, curves.grabReach, handles)
-                if (state.move.mode.value == MoveMode.ADD_SOCKET) {
-                    if (handle is SocketHandle && HandSockets.idOf(handle.socket) != null) {
+                val mode = state.move.mode.value
+                if (mode == MoveMode.ADD_SOCKET && handle is SocketHandle && HandSockets.idOf(handle.socket) != null) {
+                    down.consume()
+                    handle.owner?.let { state.pickSocket(it, handle.socket) }
+                    return@awaitEachGesture
+                }
+                if (mode == MoveMode.ADD_JOINT) {
+                    val joint = jointDotAt(down.position, handles)
+                    if (joint != null) {
                         down.consume()
-                        handle.owner?.let { state.pickSocket(it, handle.socket) }
+                        joint.first.id?.let { state.pickJoint(it, joint.second) }
                         return@awaitEachGesture
                     }
+                }
+                if (mode != MoveMode.PLACE_PART) {
                     val place = assembled()?.let { socketPlaceAt(it, down.position, sight, handles) } ?: return@awaitEachGesture
+                    val part = place.part.id ?: return@awaitEachGesture
                     down.consume()
-                    state.addSocket(place.part, place.u, place.v, place.onRight)
+                    when (mode) {
+                        MoveMode.ADD_SOCKET -> state.addSocket(place.part, place.u, place.v, place.onRight)
+                        MoveMode.ADD_JOINT -> state.addJoint(part, place.u)
+                        else -> state.addLandmark(part, place.u, place.v)
+                    }
                     return@awaitEachGesture
                 }
                 handle ?: return@awaitEachGesture
@@ -96,7 +117,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
             awaitPointerEventScope {
                 while (true) {
                     val event = awaitPointerEvent()
-                    val adding = state.move.mode.value == MoveMode.ADD_SOCKET && event.type != PointerEventType.Exit
+                    val adding = state.move.mode.value != MoveMode.PLACE_PART && event.type != PointerEventType.Exit
                     val pointer = event.changes.firstOrNull()?.position
                     hover = when {
                         adding && pointer != null -> Hover(pane, assembled()?.let { socketPlaceAt(it, pointer, sight, handles) })
@@ -107,11 +128,32 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
             }
         }
 
-    /** The socket a press would place under the pointer in this [pane], and its twin while Pair is on. */
+    /**
+     * What a press would place under the pointer in this [pane]: a socket and its twin while Pair is on, a joint on the axis with the
+     * selected part's joints on its dashed axis, or a landmark with the selected part's landmarks.
+     */
     private fun preview(pane: Any, sight: SurfaceView): ViewportOverlay = buildOverlay {
-        if (state.move.mode.value != MoveMode.ADD_SOCKET) return@buildOverlay
-        val place = hover?.takeIf { it.pane == pane }?.place ?: return@buildOverlay
+        val mode = state.move.mode.value
         val character = assembled() ?: return@buildOverlay
+        val selected = state.selectedPart.value?.let(character::part)
+        val place = hover?.takeIf { it.pane == pane }?.place
+        if (mode == MoveMode.ADD_JOINT) {
+            if (selected != null) {
+                dashedAxis(selected, sight, look)
+                val picked = state.move.pickedJoint.value
+                for (joint in selected.template.blocks.flatMap { it.joints() }) {
+                    jointDot(selected, joint.u, sight, look, picked?.part == selected.id && picked?.joint == joint.name)
+                }
+            }
+            place?.let { jointMark(it.part, jointPlace(it.u, emptyList()) ?: it.u, sight, look) }
+            return@buildOverlay
+        }
+        if (mode == MoveMode.ADD_LANDMARK) {
+            selected?.template?.blocks?.flatMap { it.landmarks() }?.forEach { landmarkDot(selected, it.u, it.v, sight, look, look.dotFill) }
+            place?.let { landmarkDot(it.part, it.u, it.v, sight, look, look.active) }
+            return@buildOverlay
+        }
+        if (mode != MoveMode.ADD_SOCKET || place == null) return@buildOverlay
         val document = state.session.value?.document?.value ?: return@buildOverlay
         val twin = placedTwin(character, place.part) { id -> document.character.part(id)?.let { document.twin(it)?.id } }
         val (own, other) = socketMarks(place, state.move.outward.value, state.move.pair.value, twin) ?: return@buildOverlay
@@ -121,12 +163,22 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
 
     private fun assembled(): AssembledCharacter? = state.session.value?.assembly?.output?.value
 
+    /** The selected part's joint whose dot shows under [pixel], within reach, as the part and the joint's name. */
+    private fun jointDotAt(pixel: Offset, view: HandleView): Pair<PlacedPart, String>? {
+        val part = state.selectedPart.value?.let { assembled()?.part(it) } ?: return null
+        return part.template.blocks.flatMap { it.joints() }.mapNotNull { joint ->
+            val at = axisMiddle(part, joint.u)?.let(view::toPixel) ?: return@mapNotNull null
+            (at - pixel).getDistance().takeIf { it <= curves.grabReach }?.let { joint.name to it }
+        }.minByOrNull { it.second }?.let { part to it.first }
+    }
+
     private fun handles(): List<MoveHandle> = assembled()?.let { moveHandles(it, state.selectedPart.value) }.orEmpty()
 
     private fun drawn(view: HandleView): ViewportOverlay = buildOverlay {
         val selected = state.selectedPart.value
         val socket = state.move.picked.value
         for (handle in handles()) {
+            if (handle is JointHandle && state.move.mode.value == MoveMode.ADD_JOINT) continue
             val at = view.toPixel(handle.position) ?: continue
             val held = handle is SocketHandle && handle.child != null && handle.child == selected
             val picked = held || (handle is SocketHandle && handle.child == null && handle.owner == socket?.parent && handle.socket == socket?.socket)
@@ -172,7 +224,8 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
         is JointHandle -> {
             val part = handle.part.id ?: return null
             val thisSide = state.thisSide && session.document.value.character.part(part)?.pair != null
-            SetParameter(part, PlacementParams.joint(handle.name), jointUnder(handle, pixel, view), thisSide)
+            val name = HandJoints.idOf(handle.name)?.let(HandJoints::u) ?: PlacementParams.joint(handle.name)
+            SetParameter(part, name, jointUnder(handle, pixel, view), thisSide)
         }
     }
 

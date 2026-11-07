@@ -64,7 +64,7 @@ fun BuildStatusBar(shell: Shell) {
     val rig = rememberRig(state)
     val rigging = screen == Screen.WORKSPACE && stage == Stage.RIG
     val moveMode by state.move.mode.collectAsState()
-    val addingSocket = screen == Screen.WORKSPACE && stage == Stage.SHAPE && tool == BuildTool.MOVE && moveMode == MoveMode.ADD_SOCKET
+    val adding = screen == Screen.WORKSPACE && stage == Stage.SHAPE && tool == BuildTool.MOVE && moveMode != MoveMode.PLACE_PART
     val posing = screen == Screen.WORKSPACE && stage == Stage.POSE
     val pen = state.curves.penPressure
     val drawing = state.curves.drawing
@@ -98,7 +98,7 @@ fun BuildStatusBar(shell: Shell) {
                     }
                     screen == Screen.WORKSPACE && layout == SheetLayout.FOCUS -> StatusItem(stringResource(Res.string.sheet_status_swap))
                     posing -> PoseStatusPaws(state, document.character)
-                    addingSocket && part != null -> AddSocketStatus(state, document, part)
+                    adding && part != null -> AddingStatus(state, document, part, moveMode)
                     rigging && rig != null -> StatusItem(stringResource(Res.string.rig_status_counts, rig.bones.size, rig.parts.size, paintedSeams(rig, document.character)))
                     touched != null -> StatusItem(
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),

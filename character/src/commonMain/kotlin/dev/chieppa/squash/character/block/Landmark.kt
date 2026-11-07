@@ -4,6 +4,7 @@ import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
+import dev.chieppa.squash.character.model.LandmarkSpec
 import dev.chieppa.squash.character.model.Mirror
 import dev.chieppa.squash.character.model.ParamRef
 import kotlinx.serialization.SerialName
@@ -21,5 +22,7 @@ data class Landmark(
     val v: Float,
     val pair: Mirror? = null,
 ) : Block {
+    override fun landmarks() = listOf(LandmarkSpec(name, u, v))
+
     override fun lint(ctx: LintContext): List<Finding> = ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair)
 }

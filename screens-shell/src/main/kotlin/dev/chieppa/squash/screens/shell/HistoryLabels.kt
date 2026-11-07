@@ -28,6 +28,11 @@ import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BreakPair
+import dev.chieppa.squash.document.JoinPair
+import dev.chieppa.squash.document.Together
+import dev.chieppa.squash.document.SetTemplate
+import dev.chieppa.squash.uidesign.generated.anatomy_step_pair
+import dev.chieppa.squash.uidesign.generated.anatomy_step_template
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
@@ -98,6 +103,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val outlines = stringResource(Res.string.shell_step_outlines, FIRST)
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
+    val joinPair = stringResource(Res.string.anatomy_step_pair)
+    val retemplated = stringResource(Res.string.anatomy_step_template, FIRST)
     val moved = stringResource(Res.string.move_step)
     val palette = stringResource(Res.string.color_step_palette, FIRST)
     val base = stringResource(Res.string.color_step_base, FIRST)
@@ -126,12 +133,15 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     val roleStep = stringResource(Res.string.role_step, FIRST)
     val roleNames = roleLabels(fourLegged = false)
-    return { command ->
+    fun label(command: Command<SquashDocument>): String =
         when (command) {
+            is Together -> command.commands.firstOrNull()?.let(::label).orEmpty()
             is AddPart -> add.replace(FIRST, partName(command.part))
             is AddParts -> add.replace(FIRST, command.parts.firstOrNull()?.let(::partName).orEmpty())
             is RemovePart -> remove.replace(FIRST, "")
             is BreakPair -> breakPair
+            is JoinPair -> joinPair
+            is SetTemplate -> retemplated.replace(FIRST, displayName(command.template.id.value))
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters -> moved
@@ -163,7 +173,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetFurRule -> furRule
             else -> ""
         }
-    }
+    return ::label
 }
 
 /** A part's name as its step reads: its type's, led by the place its socket names. */

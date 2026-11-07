@@ -220,6 +220,18 @@ object SquashIcons {
             stroke("M6.25 8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0z")
         }
     }
+    val Joint: ImageVector by lazy {
+        icon("joint") {
+            stroke("M5 8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0z")
+            stroke("M2 8h3M11 8h3")
+        }
+    }
+    val Landmark: ImageVector by lazy {
+        icon("landmark") {
+            stroke("M3.5 8a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z")
+            fill("M7 8a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z")
+        }
+    }
     val Leaves: ImageVector by lazy {
         icon("leaves") {
             stroke("M13.5 2.5c-6 0-11 2-11 7a4 4 0 0 0 4 4c5 0 7-5 7-11z")
@@ -344,6 +356,13 @@ object SquashIcons {
             stroke("M8 1.5v13")
             stroke("M5.5 4.5l-4 7h4z")
             stroke("M9.25 8a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0z")
+        }
+    }
+    val PairWith: ImageVector by lazy {
+        icon("pair-with") {
+            stroke("M6.5 5H5a3 3 0 0 0 0 6h1.5")
+            stroke("M9.5 5H11a3 3 0 0 1 0 6H9.5")
+            stroke("M5.5 8h5")
         }
     }
     val PartBlob: ImageVector by lazy {
@@ -544,6 +563,13 @@ object SquashIcons {
         icon("rotate") {
             stroke("M13 8a5 5 0 1 1-1.5-3.5")
             stroke("M13 2.5v3h-3")
+        }
+    }
+    val SaveTemplate: ImageVector by lazy {
+        icon("save-template") {
+            stroke("M4 1.5h5l3 3v10H4z")
+            stroke("M9 1.5v3h3")
+            stroke("M8 7v5M6 10l2 2 2-2")
         }
     }
     val SaveToLibrary: ImageVector by lazy {

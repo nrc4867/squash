@@ -24,6 +24,9 @@ data class SocketSpec(
     val tilt: Float = 0f,
 )
 
+/** A named surface point on a part, at [u] and [v], that face marks and sets anchor to. */
+data class LandmarkSpec(val name: String, val u: Float, val v: Float)
+
 /** A patch a block builds: called [name], or `name:i` for each of a row when it [repeats]. */
 data class PatchName(val name: String, val repeats: Boolean = false)
 

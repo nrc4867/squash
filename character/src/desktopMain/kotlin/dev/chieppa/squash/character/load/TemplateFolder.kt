@@ -7,7 +7,7 @@ import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
 
-private const val PART_SUFFIX = ".part.json"
+internal const val PART_SUFFIX = ".part.json"
 private const val PLAN_SUFFIX = ".plan.json"
 private const val PLANS_FOLDER = "plans"
 
@@ -15,8 +15,8 @@ private const val PLANS_FOLDER = "plans"
 private const val SHIPPED_ROOT = "dev/chieppa/squash/templates"
 private const val SHIPPED_INDEX = "index.txt"
 
-/** Everything in a templates folder. */
-data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>) {
+/** Everything in a templates folder, and [saved], the folder templates saved from parts are written to and loaded from, if any. */
+data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null) {
     companion object {
         /**
          * Loads every `*.part.json` in [folder] and every `*.plan.json` in its plans folder, in name order, except that a plan whose

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.role
 
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.placedBy
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
@@ -71,9 +72,9 @@ class PartRoles(private val character: Character, private val templates: (Templa
      * arm on the front half, a part leaving the rear end along the body a tail, one leaving the front end along it a head, and a sheet
      * on its top or sides a fin; on a
      * neck, one leaving its end is a head; on a head, a part on its top is an ear and one under its muzzle a jaw; on a limb's end, a
-     * foot, or a hand on an arm; on a tail's end, more tail. Anything else is [Role.OTHER].
+     * foot, or a hand on an arm; on a tail's end, more tail. Anything else is [Role.OTHER]. A part rests the way Move has set it.
      */
-    fun guess(part: PartInstance, template: PartTemplate? = templates(part.template)): Role {
+    fun guess(part: PartInstance, template: PartTemplate? = templates(part.template)?.placedBy(character.resolvedShape(part).params)): Role {
         val socket = part.socket ?: return Role.BODY
         val parent = character.part(socket.parent) ?: return Role.OTHER
         val parentTemplate = templates(parent.template) ?: return Role.OTHER

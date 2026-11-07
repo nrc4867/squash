@@ -8,11 +8,11 @@ import dev.chieppa.squash.document.PartInstance
 
 /**
  * This template as a part with [params] builds it: turned and its joints moved by Move ([placedBy]), with a generic part's own
- * section, views, rings and segments ([shapedBy]), and, for a generic part on no socket, as Blank's root is, its open end closed
+ * section, views, rings and segments ([shapedBy]), with the joints and landmarks placed on it by hand ([withHandAnatomy]), and, for a generic part on no socket, as Blank's root is, its open end closed
  * round, since it has no socket plane to sit on. Everything that reads a part's template reads this one.
  */
 fun PartTemplate.asBuilt(params: Map<String, Float>, onSocket: Boolean): PartTemplate =
-    placedBy(params).shapedBy(params).let { if (onSocket || !it.isGeneric) it else it.withEndsClosed() }
+    placedBy(params).shapedBy(params).withHandAnatomy(params).let { if (onSocket || !it.isGeneric) it else it.withEndsClosed() }
 
 /** The template [part] of [character] builds with, from [unplaced], the template it pins. See [asBuilt]. */
 fun Character.builtTemplate(part: PartInstance, unplaced: PartTemplate): PartTemplate =
