@@ -1,0 +1,62 @@
+# Stage 5: any shape
+
+A working note for the sessions that build stage 5. Folded into the HLD or deleted when the stage lands.
+
+## Goal
+
+A character is whatever its parts make it, not one of the shipped body plans. Any part takes an extra part anywhere on its surface, so a fox grows wings. A character starts from nothing when wanted: an empty plan and generic parts whose anatomy is placed by hand, so a fish, a dragon or a creature with no name is drawn the same way as a fox. The species plans are presets over those pieces, and more of them ship: a biped, a bird, a lizard, a fish. Everything downstream, the rig, the pose tools, lines, marks and fur, works per part and per role, never per species.
+
+That is `docs/hld/parts.md`, Blank mode and its "What this adds to the data model", which this note schedules.
+
+## What the design already holds
+
+`parts.md` names the pieces: Blank as a plan with one root part; generic `tube`, `blob` and `sheet` templates over existing blocks; anatomy by hand through Move (joints, sockets, landmarks, pair flags); re-templating that keeps outlines; Save as template; the per-template view remap, the membrane block, the socket row and the tip socket; the later template files (`arm`, `hand`, `wing-feathered`, `wing-membrane`, `beak`, `fin`). `data-model.md` says a patch may be open in v or closed with poles, and that anchors, weights and lines address patches by name, u and v, so a sheet or a blob needs nothing of them. The Move tool already writes `move.` parameters per part and stores a socket's place on its parent, which is where a hand-made socket goes too.
+
+What it does not hold: roles. Stage 4 skipped lego-viewer's Roles step because a template is a role: a `leg` ends in a paw that plants, a `tail` curls, a `head` looks. A hand-placed generic part is nothing until it is told, and the Pose tools (pins, the tail arc, the look-at, the chain the body curve bends) and Add part (which templates a socket takes) read roles today through the plan.
+
+## Decided
+
+- **Roles are a part's own value,** `role` on the part instance, with a closed list in the data model (body, spine, neck, head, jaw, ear, arm, hand, leg, foot, tail, wing, fin, horn, other), set by a command. A typed template sets the role when the part is added. A generic part's role is guessed from where it sits (a tube hanging from the root's rear end is a tail, one reaching the ground is a leg, one on the head's top is an ear or a horn) and shown as a chip in the Shape inspector that opens the list; a guess the user has not confirmed is drawn as a guess. Pose, Add part and the rig read roles, never template ids.
+- **A hand-made socket is a part parameter on its parent,** beside the `move.socket.` parameters the Move tool writes, so pairs, overrides, undo and saving treat it like any other; it has no `takes` list, so Add part offers every template.
+- **Order:** extra parts on an existing character first, Blank mode second, plans third. Each round delivers one creature as an example file with a fixture and a golden, the fennec's way.
+- **Rounds are serial.** Each builds on the last and each touches the Shape stage's inspector and Add part.
+
+## Before each round
+
+The orchestrator draws the round's boards on Squash flow of work · restructure before any code (the status protocol), as stages with a strip and one inspector, and writes the verify steps into `docs/work/boards.md` at "building".
+
+## Rounds
+
+| Round | Branch | Delivers | Creature | Boards |
+| --- | --- | --- | --- | --- |
+| 1 | `roles` | `role` on parts, the closed list, the command, the guess for a hand-placed part, the chip in Shape's inspector; Pose's pins, tail arc, look-at and the body curve's chain read roles; Add part reads a socket's `takes` or, with none, everything | none; the fennec's roles come from its templates and every pose test still passes | Shape inspector: the role chip |
+| 1 | `add-socket` | Add socket on the Move tool: a press on a part's surface places a socket at (u, v) with an outward angle and a pair flag, stored on the parent; dots for hand-made sockets like the plan's; Add part on one lists every template; delete a hand-made socket that holds nothing | wings on the fennec: a `wing-feathered` template (the leg blocks with shoulder, elbow and wrist, the `lens` section, a view remap so the planform drawn in Top sets each slice's chord) on two hand-made sockets on the torso, feathered with strokes; saved as `examples/fennec-winged.json` | W1 Shape with Move's Add socket; W2 Add part on a hand-made socket |
+| 2 | `generic-parts` | The `tube`, `blob` and `sheet` templates over existing blocks (a blob is a skull-style closed run with poles; a sheet is a lens run open in v), each with one bone end to end, section profile and views chosen in the Shape inspector; the Blank plan beside the species plans in New character | a koi: a tube body, sheet fins and tail, a blob eye, no legs; the pose tools bend its spine with the body curve | S01 New character with Blank; W1 Shape's generic part section |
+| 2 | `anatomy-by-hand` | Move adds joints and landmarks on any part (a joint at u with hinge and limits, a landmark for a face), pair flags on two parts, and Save as template writes a template file from a hand-built part; re-templating keeps outlines | a lizard: a tube body with four hand-jointed tube legs and a long tail, or the quadruped plan with a hand-placed longer tail if that proves enough, whichever shows more | W1 Shape with Move's Add joint and Add landmark; Save as template |
+| 3 | `biped-plan` | `arm`, `hand` and `foot` templates, a biped plan with an upright rest, Pose's handles and pins on hands and feet by role | a person | boards 1 and 2 as they stand, with the new plan |
+| 3 | `bird-plan` | `beak` on the muzzle socket, a bird plan over `wing-feathered`, two legs and a tail | a toucan | the same |
+| 3 | `fish-plan` | `fin` as a named sheet template, a fish plan over the koi's parts | the koi again, from its plan | the same |
+
+Later, not in stage 5: `wing-membrane` and the membrane block (dragons and bats), the socket row (spines and frills), the tip socket (antlers), horns and claws as templates.
+
+## Exit criteria
+
+1. **Roles, not species.** No code outside the templates and plans switches on a template id. The pose tools, Add part and the rig read `role`. A test holds it: the fennec with every template id renamed poses the same.
+2. **Any part anywhere.** A socket placed by hand on the fennec's torso takes a wing, the wing rigs, poses, takes lines and strokes, mirrors as a pair, and survives Update from library of the torso. The winged fennec is an example file.
+3. **From nothing.** A character started from Blank with one tube is drawn, built, rigged and posed with no template but the generic ones. The koi is an example file, and its fins are real sheet meshes through the slice build that take anchors, lines and the two-tone shading.
+4. **Anatomy by hand.** A tube given a joint and a socket by Move behaves as a leg: the joint bends in Pose within its limits, the socket takes a part. Save as template writes a file that loads and lints clean.
+5. **Plans are presets.** The biped, bird and fish plans are data files over the templates, and the person, toucan and koi are example files, each built from commands by a fixture.
+6. **Boards match** under the Build to the boards rule.
+7. **Tiers hold.** `./gradlew check` under three minutes on this machine without the smoke tier; the smoke tier renders each example creature posed.
+
+## How the sessions run
+
+As stage 4: one orchestrating session per sitting, boards before code, one worktree branch per row landed by rebase, squash and fast-forward with `check` before each landing, a creature fixture and golden per round. Rounds are serial; the two rows of a round may run in parallel where the table shows them apart.
+
+## Stretch
+
+Nothing expected. A chip that opens a list and a segmented control exist.
+
+## Out of scope
+
+Membrane wings, socket rows, tip sockets, garments, the Shot workspace, Correct pose and the pose library, contact with the ground.
