@@ -10,6 +10,7 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.geom.BodyBox
+import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
@@ -44,6 +45,8 @@ class PlacedPart(
     val lengthFactor: Float = 1f,
     /** The socket it sits on as placed on its parent, moved where the Move tool moved it, or null for a root. */
     val socketSpec: SocketSpec? = null,
+    /** How a pose has turned it, by the bone at its root; [Mat3.IDENTITY] at rest. */
+    val turn: Mat3 = Mat3.IDENTITY,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -58,14 +61,18 @@ class PlacedPart(
     val box: BodyBox? get() = surface.box?.moved(origin)
 
     private fun runAt(u: Float): Patch? = surface.patches.firstOrNull { it.covers(u) }
+
+    /** This part showing [surface], turned by [turn], where it sits. */
+    fun showing(surface: PartSurface, turn: Mat3): PlacedPart =
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn)
 }
 
 /** An empty socket on a placed part, in body space. */
 data class PlacedSocket(val ref: SocketRef, val position: Vec3)
 
 /**
- * The whole character standing in its rest pose: every placed part on its socket, what the empty sockets of the plan
- * would take, the empty sockets of the placed parts, and the height of the ground under the lowest vertex.
+ * The whole character: every placed part on its socket, what the empty sockets of the plan would take, the empty sockets of the
+ * placed parts, and the height of the ground under the lowest vertex. As assembled it stands in its rest pose; [posedBy] shows it in a pose.
  */
 class AssembledCharacter(val parts: List<PlacedPart>, val sockets: List<PlacedSocket>) {
     fun part(id: PartId): PlacedPart? = parts.firstOrNull { it.id == id }

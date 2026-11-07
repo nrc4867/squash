@@ -15,6 +15,7 @@ import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SurfaceView
+import dev.chieppa.squash.screens.sheet.bodyThrough
 
 /** How many halvings find where the pointer crossed between two surfaces, which from a drag's longest step lands within a pixel. */
 private const val CROSSING_STEPS = 8
@@ -42,7 +43,7 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
 
     /** The place under [pixel] on the open character, or null. */
     protected open fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
-        state.session.value?.assembly?.output?.value?.let { surfaceHit(it, pixel, sight) }
+        state.bodyThrough(sight)?.let { surfaceHit(it, pixel, sight) }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, camera)
 

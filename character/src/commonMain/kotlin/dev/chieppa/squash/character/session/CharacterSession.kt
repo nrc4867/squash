@@ -11,11 +11,14 @@ import dev.chieppa.squash.character.build.ColorSource
 import dev.chieppa.squash.character.build.FurCamera
 import dev.chieppa.squash.character.build.FurCameras
 import dev.chieppa.squash.character.build.FurView
+import dev.chieppa.squash.character.build.Held
 import dev.chieppa.squash.character.build.HeldColor
 import dev.chieppa.squash.character.build.LegLengthsOf
 import dev.chieppa.squash.character.build.PartBuild
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PartBuildInput
+import dev.chieppa.squash.character.build.PosedParts
+import dev.chieppa.squash.character.build.PosedState
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assemblyNode
@@ -26,12 +29,17 @@ import dev.chieppa.squash.character.build.bodyFurNode
 import dev.chieppa.squash.character.build.bodySurfaceWorkNode
 import dev.chieppa.squash.character.build.defaultSurfaceNode
 import dev.chieppa.squash.character.build.furViewNode
+import dev.chieppa.squash.character.build.held
 import dev.chieppa.squash.character.build.partColorInputs
 import dev.chieppa.squash.character.build.partColorNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
 import dev.chieppa.squash.character.build.plannedLengthFactor
+import dev.chieppa.squash.character.build.posedBodyNode
+import dev.chieppa.squash.character.build.posedFurNode
+import dev.chieppa.squash.character.build.posedLinesNode
+import dev.chieppa.squash.character.build.posedStateNode
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.document.DocumentCommand
@@ -121,11 +129,39 @@ class CharacterSession(
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */
     val bodyFur: Node<*, BodyFur> = graph.bodyFurNode(document, templates, assembly, bodySurfaceWork)
 
-    private val furCameras = FurCameras()
-    private val furViews = mutableMapOf<String, Node<*, FurView>>()
+    private val pose = MutableStateFlow<Node<*, Held>?>(null)
 
-    /** What fur shows in the view named [view], through the camera [showFurFrom] last gave it; one node per view for the session's life. */
-    fun furView(view: String): Node<*, FurView> = furViews.getOrPut(view) { viewGraph.furViewNode(furCameras.of(view), bodyFur) }
+    /**
+     * The character in the pose [showPose] gave: [assembly] with each part the pose moves on its posed mesh, or [assembly]'s own result
+     * while the pose leaves every part at rest. What follows a pose reads this, so `settled` covers it. See HLD: data-model, The rig.
+     */
+    val posedBody: Node<*, AssembledCharacter> = graph.posedBodyNode(assembly, pose)
+
+    private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork)
+
+    /** [bodySurfaceWork] resolved on [posedBody]'s grids: its own result while the pose leaves every part at rest. */
+    val posedSurfaceWork: Node<*, BodySurfaceWork> = graph.follow(posedState, cacheSize = 1) { it.work }
+
+    /** [bodyLines] on [posedBody], with [posedSurfaceWork]: its own result while the pose leaves every part at rest. */
+    val posedLines: Node<*, BodyLines> = graph.posedLinesNode(posedState, bodyLines)
+
+    /** [bodyFur] rooted on [posedBody], with [posedSurfaceWork]: its own result while the pose leaves every part at rest. */
+    val posedFur: Node<*, BodyFur> = graph.posedFurNode(document, templates, posedState, bodyFur)
+
+    /** Shows the character in the pose [posed] derives, a node of [graph]; the rig gives it. */
+    fun showPose(posed: Node<*, out PosedParts>) {
+        pose.value = graph.held(posed)
+    }
+
+    private val furCameras = FurCameras()
+    private val furViews = mutableMapOf<Pair<String, Boolean>, Node<*, FurView>>()
+
+    /**
+     * What fur shows in the view named [view], through the camera [showFurFrom] last gave it, on the posed body when [posed]; one node
+     * per view for the session's life.
+     */
+    fun furView(view: String, posed: Boolean = false): Node<*, FurView> =
+        furViews.getOrPut(view to posed) { viewGraph.furViewNode(furCameras.of(view), if (posed) posedFur else bodyFur) }
 
     /** Says what camera the view named [view] looks through. */
     fun showFurFrom(view: String, camera: FurCamera) {

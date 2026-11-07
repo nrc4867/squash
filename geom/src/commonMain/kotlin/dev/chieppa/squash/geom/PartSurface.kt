@@ -90,7 +90,7 @@ class PartSurface(
             return PartSurface(built.patches.map { it.patch }, mirrored, mesh, silhouettes, boxOf(mesh), extentsOf(own, axes))
         }
 
-        private fun boxOf(mesh: RenderMesh): BodyBox? {
+        internal fun boxOf(mesh: RenderMesh): BodyBox? {
             if (mesh.vertexCount == 0) return null
             val x = spanOf(mesh, Vec3.X)
             val y = spanOf(mesh, Vec3.Y)

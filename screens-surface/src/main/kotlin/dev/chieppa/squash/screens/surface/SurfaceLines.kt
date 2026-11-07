@@ -126,14 +126,17 @@ data class PickedLineWeight(val id: LineWeightId, val color: Color)
 /** The marks that stand alone, outside any mark group. */
 fun ResolvedSurfaceWork.looseMarks() = groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet().let { grouped -> marks.filter { it.id !in grouped } }
 
-/** The open character's lines, or null until its graph has built them. */
+/**
+ * The open character's lines, on its posed surface when [posed] and at rest otherwise, or null until its graph has built them. The
+ * face's parts are the ones the lines were found on, so the face and the lines always lie on the same surface.
+ */
 @Composable
-fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
+fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbons? {
     val session by state.session.collectAsState()
     val open = session ?: return null
-    val lines by remember(open) { open.bodyLines.output }.collectAsState()
-    val work by remember(open) { open.bodySurfaceWork.output }.collectAsState()
-    val character by remember(open) { open.assembly.output }.collectAsState()
+    val lines by remember(open, posed) { (if (posed) open.posedLines else open.bodyLines).output }.collectAsState()
+    val work by remember(open, posed) { (if (posed) open.posedSurfaceWork else open.bodySurfaceWork).output }.collectAsState()
+    val character by remember(open, posed) { (if (posed) open.posedBody else open.assembly).output }.collectAsState()
     val document by remember(open) { open.document }.collectAsState()
     val rules = document.character.lineRules
     val ink = document.character.palette.colorOf(INK_SLOT) ?: PART_INK
@@ -158,7 +161,7 @@ fun rememberSurfaceLines(state: AppState): SurfaceRibbons? {
             null
         } else {
             val look = characterLook(rules, density)
-            val parts = whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
+            val parts = shown.parts.mapValues { it.value.part }
             val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view -> locked ?: bins.binOf(part, view) }
             SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight)
         }

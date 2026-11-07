@@ -103,12 +103,15 @@ private fun PartFurView.edgeRibbons(): List<StrokeRibbon> = wedges.flatMap { wed
     listOf(wedge.left, wedge.right).mapNotNull { line -> StrokeRibbon.along(line.map { RibbonPoint(it, wedge.normal) }, profile) }
 }
 
-/** What the fur node for the view named [key] holds, once it has told that node the [camera] it looks through, inked as the figure's outline is. */
+/**
+ * What the fur node for the view named [key] holds, on the posed body when [posed], once it has told that node the [camera] it looks
+ * through, inked as the figure's outline is.
+ */
 @Composable
-fun rememberFurView(session: CharacterSession?, key: String, camera: FurCamera?): ShownFur {
+fun rememberFurView(session: CharacterSession?, key: String, camera: FurCamera?, posed: Boolean = false): ShownFur {
     if (session == null) return ShownFur.NONE
     SideEffect { camera?.let { session.showFurFrom(key, it) } }
-    val shown by remember(session, key) { session.furView(key).output }.collectAsState()
+    val shown by remember(session, key, posed) { session.furView(key, posed).output }.collectAsState()
     val document by remember(session) { session.document }.collectAsState()
     val rules = document.character.lineRules
     val density = LocalDensity.current.density

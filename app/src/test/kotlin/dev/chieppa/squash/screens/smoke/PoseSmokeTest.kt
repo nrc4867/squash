@@ -37,6 +37,12 @@ import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.rig.rigNow
 import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.FurViews
+import dev.chieppa.squash.screens.sheet.ShownFur
+import dev.chieppa.squash.screens.sheet.SurfaceRibbons
+import dev.chieppa.squash.screens.sheet.furCamera
+import dev.chieppa.squash.render.LineRule
+import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
@@ -85,7 +91,8 @@ private object NoPoseFiles : FileChooser {
 
 /**
  * The saved fennec in the Pose stage: with Drag armed, its front left paw lifted forward and three paws planted, as board 13 draws it;
- * with Body curve armed, bowed and swayed to a Side and a Top stroke over four planted paws, as board 12 draws it.
+ * with Body curve armed, bowed and swayed to a Side and a Top stroke over four planted paws, as board 12 draws it. Every pane shows
+ * the posed body with its lines, face and fur found on the posed surface.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
@@ -101,6 +108,7 @@ class PoseSmokeTest {
         var look: SheetLook? = null
         var color: PaneColor? = null
         var tools: PoseTools? = null
+        var surface: SurfaceRibbons? = null
     }
 
     private fun ComposeUiTest.paneRects(): List<PixelRect> {
@@ -122,7 +130,9 @@ class PoseSmokeTest {
             val look = rememberSheetLook()
             val color = rememberPaneColor(state)
             val tools = rememberPoseTools(state)
+            val surface = rememberSurfaceLines(state, posed = true)
             SideEffect {
+                bench.surface = surface
                 bench.selection = selection
                 bench.look = look
                 bench.color = color
@@ -138,7 +148,7 @@ class PoseSmokeTest {
     /** Renders the Sheet with [tool]'s handles over it and keeps the panes and the window as [name]. */
     private fun ComposeUiTest.keepSheet(bench: Bench, tool: PaneTool, name: String) {
         val session = assertNotNull(bench.state.session.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && bench.selection?.posed != null }
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && bench.selection?.posed != null && bench.surface != null }
         waitForIdle()
         val rects = paneRects()
         val width = rects.maxOf { it.right }
@@ -146,11 +156,19 @@ class PoseSmokeTest {
         val framed = panesInput(assertNotNull(bench.selection), assertNotNull(bench.look), rects, width, height)
         val fullRect = rects[SheetPane.FULL.ordinal]
         val camera = assertNotNull(framed.full)
+        session.showFurFrom(FurViews.FULL, furCamera(camera, fullRect.width, fullRect.height))
+        framed.cameras.forEach { (view, locked) -> session.showFurFrom(FurViews.locked(view), furCamera(locked)) }
+        val furViews = (listOf(FurViews.FULL) + framed.cameras.keys.map(FurViews::locked)).map { session.furView(it, posed = true) }
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.viewGraph.settled.value && furViews.all { it.output.value != null } }
+        val rules = session.document.value.character.lineRules
+        fun fur(key: String) = ShownFur(assertNotNull(session.furView(key, posed = true).output.value), LineRule(rules.interior, rules.silhouette))
         val input = SheetInput(
             rects, width, height, framed.look, framed.selection, framed.cameras, camera,
             toolOverlays = framed.cameras.mapValues { (view, locked) -> tool.overlay(view, locked) },
             fullOverlay = tool.fullOverlay(FullView({ camera }, fullRect.width, fullRect.height)),
             hints = SheetHints(whole = true), color = bench.color, posedPanes = true,
+            fullFur = fur(FurViews.FULL), lockedFur = framed.cameras.keys.associateWith { fur(FurViews.locked(it)) },
+            posedSurface = assertNotNull(bench.surface),
         )
         val image = renderSnapshot(sheetFrame(input), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
         assertNotBlank(image.pixels, name)

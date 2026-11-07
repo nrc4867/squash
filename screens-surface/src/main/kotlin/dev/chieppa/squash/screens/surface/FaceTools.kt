@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.platform.LocalDensity
-import dev.chieppa.squash.character.build.PartBuilder
+import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.MarkRole
@@ -22,6 +22,7 @@ import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PART_INK
 import dev.chieppa.squash.screens.sheet.SurfaceView
+import dev.chieppa.squash.screens.sheet.bodyThrough
 import dev.chieppa.stretch.frame.OverlayBuilder
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
@@ -50,33 +51,35 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
     protected val picked: PickedGroup? get() = state.face.group
     protected val role: MarkRole? get() = state.face.role
 
-    /** The placed head: the part holding the picked group, else the part the Face stage works on. */
-    protected fun head(): PlacedPart? {
+    /** The placed head as [sight]'s pane shows it, posed or at rest: the part holding the picked group, else the part the Face stage works on. */
+    protected fun head(sight: SurfaceView): PlacedPart? = headIn(state.bodyThrough(sight))
+
+    private fun headIn(body: AssembledCharacter?): PlacedPart? {
         val session = state.session.value ?: return null
         val part = picked?.part ?: session.document.value.character.faceHead() ?: return null
-        return session.assembly.output.value?.part(part)
+        return body?.part(part)
     }
 
-    /** Where the gaze handle is: the test target once moved, else ahead of the head. */
-    protected fun gazeAt(): Vec3? = state.face.gazeTarget ?: head()?.let { part ->
+    /** Where the gaze handle is: the test target once moved, else ahead of the head in its pose, the way it faces. */
+    protected fun gazeAt(): Vec3? = state.face.gazeTarget ?: headIn(state.session.value?.posedBody?.output?.value)?.let { part ->
         val box = part.box ?: return@let null
-        box.center + PartBuilder.axes(part.template).along * (box.radius * GAZE_REACH)
+        box.center + part.facing * (box.radius * GAZE_REACH)
     }
 
     /** The version the tool works in through [sight]: the one picked, else the one the view shows. */
     protected fun binThrough(sight: SurfaceView): CameraBin? =
-        state.face.version ?: head()?.let { FACE_BINS.binFor(headAngle(it, sight.toViewer(it.box?.center ?: it.origin))) }
+        state.face.version ?: head(sight)?.let { FACE_BINS.binFor(headAngle(it, sight.toViewer(it.box?.center ?: it.origin))) }
 
     /** Whether an eye's work writes both eyes. */
     protected val mirrors: Boolean get() = state.face.bothEyes
 
-    /** Where the places of what the role draws in [bin] show in body space. */
-    protected fun placesIn(bin: CameraBin): List<Vec3> {
+    /** Where the places of what the role draws in [bin] show in body space, on the head as [sight]'s pane shows it. */
+    protected fun placesIn(bin: CameraBin, sight: SurfaceView): List<Vec3> {
         val session = state.session.value ?: return emptyList()
         val character = session.document.value.character
         val group = picked?.let(character::groupOf) ?: return emptyList()
         val at = picked?.part ?: return emptyList()
-        val part = head() ?: return emptyList()
+        val part = head(sight) ?: return emptyList()
         val mark = role?.let { character.markIn(group, it, at) } ?: return emptyList()
         return (mark.versions[bin]?.points ?: mark.points).mapNotNull { anchor ->
             part.surface.patches.firstOrNull { it.name == anchor.patch }?.let { part.origin + part.surface.shown(it.positionAt(anchor.u, anchor.v)) }
@@ -153,7 +156,7 @@ class EditMarkTool(state: AppState, accent: Color, density: Float) : FaceTool(st
         val group = picked ?: return false
         val editing = role ?: return false
         val bin = binThrough(sight) ?: return false
-        val index = sight.pixelsOf(placesIn(bin)).withIndex()
+        val index = sight.pixelsOf(placesIn(bin, sight)).withIndex()
             .mapNotNull { (i, pixel) -> pixel?.let { i to (it - down.position).getDistance() } }
             .filter { it.second <= reach }
             .minByOrNull { it.second }?.first ?: return false
@@ -172,7 +175,7 @@ class EditMarkTool(state: AppState, accent: Color, density: Float) : FaceTool(st
     override fun OverlayBuilder.drawn(sight: SurfaceView) {
         val bin = binThrough(sight) ?: return
         val half = HANDLE_SIZE * density
-        sight.pixelsOf(placesIn(bin)).filterNotNull().forEach { at ->
+        sight.pixelsOf(placesIn(bin, sight)).filterNotNull().forEach { at ->
             line(at + Offset(-half, 0f), at + Offset(half, 0f), accent, half)
         }
     }
@@ -187,7 +190,7 @@ class EraseMarkTool(state: AppState, accent: Color, density: Float) : FaceTool(s
         val group = picked ?: return
         val erasing = role ?: return
         val bin = binThrough(sight) ?: return
-        val near = sight.pixelsOf(placesIn(bin)).filterNotNull().any { (it - down.position).getDistance() <= reach }
+        val near = sight.pixelsOf(placesIn(bin, sight)).filterNotNull().any { (it - down.position).getDistance() <= reach }
         if (near) erasedMarkCommand(session.document.value.character, group, erasing, bin)?.let(session::send)
     }
 }

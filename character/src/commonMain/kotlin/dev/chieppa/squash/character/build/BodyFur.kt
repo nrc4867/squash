@@ -92,13 +92,36 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
                 val root = mark.points.first()
                 val surface = placed[root.anchor.part]?.surface ?: return@mapNotNull null
                 val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return@mapNotNull null
-                val direction = surface.shown(field.directionAt(patch, root.anchor.u, root.anchor.v))
-                val radius = (patch.positionAt(root.anchor.u, root.anchor.v) - patch.positionAt(root.anchor.u, root.anchor.v + HALF_WAY_ROUND)).length / 2f
-                FurRoot(mark.id, root.position, root.normal, direction, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV), radius)
+                rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))
             }
             if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }), placed[id]?.surface?.let(::rimsOf).orEmpty())
         }.toMap(),
         character.box?.radius ?: 0f,
         character.box?.center ?: Vec3.ZERO,
     )
+}
+
+/** [mark]'s root on [surface], its grain from [field] and the slot under it [slot], or null when [surface] holds no patch it names. */
+private fun rootOn(mark: ResolvedMark, surface: PartSurface, field: GrainField, slot: SlotName?): FurRoot? {
+    val root = mark.points.first()
+    val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return null
+    val direction = surface.shown(field.directionAt(patch, root.anchor.u, root.anchor.v))
+    val radius = (patch.positionAt(root.anchor.u, root.anchor.v) - patch.positionAt(root.anchor.u, root.anchor.v + HALF_WAY_ROUND)).length / 2f
+    return FurRoot(mark.id, root.position, root.normal, direction, slot, radius)
+}
+
+/**
+ * [rest], a part's fur, rooted again on [character], a pose of the body it was found on, from [held], the part's surface work there: each
+ * stroke's root, normal, grain and radius follow the posed surface while its room, its slot and its place in the order stay, since
+ * they are the body's own. The rims come from the posed surface. A stroke whose mark or patch is not there drops.
+ */
+fun PartFur.rootedOn(id: PartId, input: PartFurInput, held: ResolvedSurfaceWork, character: AssembledCharacter): PartFur {
+    val field = GrainField(input.spec, input.grain)
+    val marks = held.marks.associateBy { it.id }
+    val moved = roots.mapNotNull { root ->
+        val mark = marks[root.id] ?: return@mapNotNull null
+        val surface = character.part(mark.points.first().anchor.part)?.surface ?: return@mapNotNull null
+        rootOn(mark, surface, field, root.slot)?.copy(room = root.room)
+    }
+    return copy(roots = moved, rims = character.part(id)?.surface?.let(::rimsOf).orEmpty())
 }

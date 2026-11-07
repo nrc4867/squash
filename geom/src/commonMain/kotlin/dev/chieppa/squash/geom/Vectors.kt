@@ -31,6 +31,10 @@ data class Vec3(val x: Float, val y: Float, val z: Float) {
 /** A rotation as its three columns: the images of x, y and z. */
 data class Mat3(val x: Vec3, val y: Vec3, val z: Vec3) {
     operator fun times(v: Vec3): Vec3 = x * v.x + y * v.y + z * v.z
+
+    companion object {
+        val IDENTITY = Mat3(Vec3.X, Vec3.Y, Vec3.Z)
+    }
 }
 
 /** A point on an axis with its orientation: [tangent] along the axis, [up] at v = 0, [side] at v = 0.25. */

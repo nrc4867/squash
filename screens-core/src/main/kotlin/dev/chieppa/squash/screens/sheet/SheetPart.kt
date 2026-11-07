@@ -102,13 +102,17 @@ fun sheetSelection(
     return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale, overridden, hidden, posed)
 }
 
-/** Each part's mesh in the open character's pose, or null while [atRest] or before the posed node has run. */
+/**
+ * Each part's mesh in the open character's pose, as its posed lines were found on it so the two always agree, or null while [atRest]
+ * or before the posed lines have been found.
+ */
 @Composable
 private fun rememberPosedMeshes(state: AppState, atRest: Boolean): Map<PartId, RenderMesh>? {
-    val posing by state.posing.collectAsState()
-    val node = posing?.posed ?: return null
-    val posed by remember(node) { node.output }.collectAsState()
-    return if (atRest) null else posed?.meshes
+    val session by state.session.collectAsState()
+    val open = session ?: return null
+    val lines by remember(open) { open.posedLines.output }.collectAsState()
+    val meshes = remember(lines) { lines?.parts?.mapValues { it.value.part.surface.mesh } }
+    return if (atRest) null else meshes
 }
 
 /** The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet. */

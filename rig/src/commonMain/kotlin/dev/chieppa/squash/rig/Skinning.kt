@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.character.build.PosedParts
 import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
@@ -12,10 +13,14 @@ const val MIN_STRETCH = 0.1f
 
 /**
  * Every rigged part posed, by part: its vertices in body space, three floats a vertex in the order of [Rig.parts]' meshes, in
- * [parts]; and in [meshes] the mesh the renderer draws, in the part's own space at its origin with its normals turned to match.
- * A part the pose leaves where it rests keeps its rest mesh itself.
+ * [parts]; in [meshes] the mesh the renderer draws, in the part's own space at its origin with its normals turned to match; and in
+ * [turns] how its first bone turns, for a part the pose moves. A part the pose leaves where it rests keeps its rest mesh itself.
  */
-class PosedCharacter(val parts: Map<PartId, FloatArray>, val meshes: Map<PartId, RenderMesh>)
+class PosedCharacter(
+    val parts: Map<PartId, FloatArray>,
+    override val meshes: Map<PartId, RenderMesh>,
+    override val turns: Map<PartId, Mat3> = emptyMap(),
+) : PosedParts
 
 /**
  * Where each bone of [rig] takes a rest point under [pose], parents first. A bone turns by its pose's angles, held to its limits
@@ -62,9 +67,11 @@ private fun stretchOf(rig: Rig, bone: Int, pose: Pose, along: Vec3): Mat3? {
  * normal turns by the same blend of the bones' maps for normals, so a stretch tilts it as the surface tilts, and is made unit again.
  */
 fun Rig.posed(pose: Pose): PosedCharacter {
-    val transforms = boneTransforms(this, pose)
+    val frames = boneFrames(this, pose)
+    val transforms = frames.transforms
     val positions = HashMap<PartId, FloatArray>(parts.size)
     val meshes = HashMap<PartId, RenderMesh>(parts.size)
+    val turns = HashMap<PartId, Mat3>()
     for (part in parts) {
         if (part.restsUnder(transforms)) {
             positions[part.id] = part.rest.copyOf()
@@ -73,9 +80,10 @@ fun Rig.posed(pose: Pose): PosedCharacter {
             val skinned = part.skinnedBy(transforms)
             positions[part.id] = skinned.positions
             meshes[part.id] = skinned.mesh
+            bones.indexOfFirst { it.name.part == part.id }.takeIf { it >= 0 }?.let { turns[part.id] = frames.turns[it] }
         }
     }
-    return PosedCharacter(positions, meshes)
+    return PosedCharacter(positions, meshes, turns)
 }
 
 private fun RigPart.restsUnder(transforms: List<Affine>): Boolean =

@@ -153,6 +153,7 @@ fun WorkspaceScreen(shell: Shell) {
                 tool = tool,
                 paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
                 surface = rememberSurfaceLines(state),
+                posedSurface = rememberSurfaceLines(state, posed = true),
                 singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
                 rig = if (rigging) rememberRigShading(state) else null,
             )

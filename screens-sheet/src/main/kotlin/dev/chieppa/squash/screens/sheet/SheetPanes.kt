@@ -53,7 +53,8 @@ fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
  * [tools] and the control, then Top, Full, Side and Front in one native surface; in Full first, the same panes in that
  * surface with Full large above the other three; in Single, the strip with [tools] and the control above one viewport. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
  * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport. [surface] draws the
- * character's lines, in place of the meshes' own outlines. With [rig] every view shows the whole character as the Rig stage colors it.
+ * character's lines, in place of the meshes' own outlines, and [posedSurface] its lines on the posed surface, for the panes that show the
+ * pose. With [rig] every view shows the whole character as the Rig stage colors it.
  */
 @Composable
 fun SheetPanes(
@@ -65,6 +66,7 @@ fun SheetPanes(
     surface: SurfaceRibbons? = null,
     singleFoot: (@Composable (toViewer: Vec3, turn: (Vec3) -> Unit) -> Unit)? = null,
     rig: RigShading? = null,
+    posedSurface: SurfaceRibbons? = null,
 ) {
     val layout by state.layout.collectAsState()
     val pick: (SheetLayout) -> Unit = { state.layout.value = it }
@@ -74,13 +76,13 @@ fun SheetPanes(
             SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, singleFoot, rig)
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, rig)
+            SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, rig, posedSurface)
         }
     }
 }
 
 @Composable
-private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier, surface: SurfaceRibbons?, rig: RigShading?) {
+private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, paneToast: (@Composable () -> Unit)?, modifier: Modifier, surface: SurfaceRibbons?, rig: RigShading?, posedSurface: SurfaceRibbons?) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
     val orbit = remember { OrbitCamera(yaw = FULL_YAW, pitch = FULL_PITCH) }
@@ -109,11 +111,11 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     var refused by remember { mutableStateOf(false) }
     val fullRect = rects[SheetPane.FULL.ordinal]
     val look = rememberSheetLook()
-    val fullFur = rememberFurView(open, FurViews.FULL, part?.takeIf { fullRect.width > 0 && fullRect.height > 0 }?.let { furCamera(orbit.view, fullRect.width, fullRect.height) })
-    val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it) }) }
+    val posedPanes = state.stage.collectAsState().value == Stage.POSE
+    val fullFur = rememberFurView(open, FurViews.FULL, part?.takeIf { fullRect.width > 0 && fullRect.height > 0 }?.let { furCamera(orbit.view, fullRect.width, fullRect.height) }, posed = true)
+    val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it) }, posedPanes) }
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val color = rememberPaneColor(state)
-    val posedPanes = state.stage.collectAsState().value == Stage.POSE
     SideEffect { open?.showColorAt(largestColorScale(cameras.values, orbit.view, fullRect.height)) }
     val frame = sheetFrame(
         SheetInput(
@@ -136,6 +138,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             traces = rememberTraces(state),
             rig = rig,
             posedPanes = posedPanes,
+            posedSurface = posedSurface,
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {

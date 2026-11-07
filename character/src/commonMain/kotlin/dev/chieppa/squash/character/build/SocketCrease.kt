@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.geom.NearestPoints
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Vec3
@@ -23,11 +24,26 @@ private const val NEAREST_POINTS = 4
 private const val DISTANCE_FLOOR = 1e-4f
 
 /** Every placed part's crease with its parent, leaving out the parts that do not meet theirs. [checkCancelled] runs before each part. */
-fun socketCreases(character: AssembledCharacter, checkCancelled: () -> Unit = {}): List<SocketCrease> = character.parts.mapNotNull { placed ->
-    val id = placed.id ?: return@mapNotNull null
-    val parent = placed.socket?.parent?.let(character::part) ?: return@mapNotNull null
-    checkCancelled()
-    val within = parent.sweptPatches().map { PlacedGrid(parent, it) }
+fun socketCreases(character: AssembledCharacter, checkCancelled: () -> Unit = {}): List<SocketCrease> {
+    val parents = CreaseParents()
+    return character.parts.mapNotNull { placed ->
+        checkCancelled()
+        socketCrease(character, placed, parents)
+    }
+}
+
+/** The parents creases are found against, each read once however many parts sit on it. */
+class CreaseParents {
+    private val held = HashMap<PlacedPart, List<PlacedGrid>>()
+
+    internal fun of(parent: PlacedPart): List<PlacedGrid> = held.getOrPut(parent) { parent.sweptPatches().map { PlacedGrid(parent, it) } }
+}
+
+/** Where [placed] comes out of its parent in [character], or null for a part that does not meet one. */
+fun socketCrease(character: AssembledCharacter, placed: PlacedPart, parents: CreaseParents = CreaseParents()): SocketCrease? {
+    val id = placed.id ?: return null
+    val parent = placed.socket?.parent?.let(character::part) ?: return null
+    val within = parents.of(parent)
     fun inBody(local: Vec3) = placed.origin + placed.surface.shown(local)
     val runs = placed.sweptPatches().flatMap { patch ->
         patch.zeroCurves { local -> within.minOf { it.outsideBy(inBody(local)) } }.map { run ->
@@ -37,7 +53,7 @@ fun socketCreases(character: AssembledCharacter, checkCancelled: () -> Unit = {}
             }
         }
     }
-    if (runs.isEmpty()) null else SocketCrease(id, runs)
+    return if (runs.isEmpty()) null else SocketCrease(id, runs)
 }
 
 /** [run] with each place moved toward the middle of its neighbours across any wrap of v. A closed run stays closed; an open one keeps its ends. */
@@ -66,27 +82,18 @@ private fun calmedPlaces(run: List<SurfaceUv>, closedV: Boolean): List<SurfaceUv
 private fun PlacedPart.sweptPatches() = surface.patches.filter { it.slices != null }
 
 /** A patch's grid in body space, which tells how far a point lies outside it along the normals of the nearest of its points. */
-private class PlacedGrid(part: PlacedPart, patch: Patch) {
+internal class PlacedGrid(part: PlacedPart, patch: Patch) {
     private val points = Array(patch.nu * patch.nv) { part.origin + part.surface.shown(patch.point(it)) }
     private val normals = Array(points.size) { i ->
         part.surface.shown(patch.surfaceAt(patch.ringUs[i / patch.nv], (i % patch.nv).toFloat() / patch.segments).normal)
     }
 
+    private val tree = NearestPoints(points)
+    private val nearest = IntArray(NEAREST_POINTS)
+    private val distances = FloatArray(NEAREST_POINTS)
+
     fun outsideBy(point: Vec3): Float {
-        val nearest = IntArray(NEAREST_POINTS) { -1 }
-        val distances = FloatArray(NEAREST_POINTS) { Float.MAX_VALUE }
-        for (i in points.indices) {
-            val distance = (points[i] - point).length
-            var at = NEAREST_POINTS - 1
-            if (distance >= distances[at]) continue
-            while (at > 0 && distance < distances[at - 1]) {
-                distances[at] = distances[at - 1]
-                nearest[at] = nearest[at - 1]
-                at--
-            }
-            distances[at] = distance
-            nearest[at] = i
-        }
+        tree.nearest(point, nearest, distances)
         var total = 0f
         var side = 0f
         for (k in 0 until NEAREST_POINTS) {
