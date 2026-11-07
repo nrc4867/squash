@@ -73,3 +73,14 @@ fun partName(part: PartInstance, templates: TemplateFolder): String {
     if (socket != null && (socket == type || socket.endsWith("-$type"))) return displayName(socket)
     return templates.template(part.template)?.name ?: displayName(type)
 }
+
+/**
+ * A part's name taking the place its [parent] names: a paw on a front leg reads Front paw, as the front-leg socket names the leg. A
+ * parent whose socket names nothing more than its type leaves the part its own name.
+ */
+fun partNameOn(part: PartInstance, parent: PartInstance?, templates: TemplateFolder): String {
+    val socket = parent?.socket?.socket ?: return partName(part, templates)
+    val type = parent.template.id.value
+    if (!socket.endsWith("-$type")) return partName(part, templates)
+    return displayName(socket.removeSuffix(type) + part.template.id.value)
+}

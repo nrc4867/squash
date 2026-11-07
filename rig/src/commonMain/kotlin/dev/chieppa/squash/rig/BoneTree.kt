@@ -56,6 +56,7 @@ private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {
             hinge = hingeOf(joint.hinge, axes, part.placed.mirrored),
             limits = joint.limits,
             stretch = joint.stretch,
+            mirrored = part.placed.mirrored,
         )
     }
 }

@@ -48,10 +48,10 @@ private const val SYMMETRY_TOOLS = 2
 /**
  * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
  * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part. Color holds
- * the paint tools and Lines holds [lines] and Rig [rigs], each with Mirror; Face holds [faces].
+ * the paint tools and Lines holds [lines], Rig [rigs] and Pose [poses], each with Mirror; Face holds [faces].
  */
 @Composable
-fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, rigs: ToolSection? = null) {
+fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, rigs: ToolSection? = null, poses: ToolSection? = null) {
     val tool by state.tool.collectAsState()
     val stage by state.stage.collectAsState()
     val addPart = stringResource(Res.string.add_part)
@@ -71,6 +71,7 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
         Stage.LINES -> listOfNotNull(lines, mirror)
         Stage.FACE -> listOfNotNull(faces)
         Stage.RIG -> listOfNotNull(rigs, mirror)
+        Stage.POSE -> listOfNotNull(poses, mirror)
     }
     ToolSections(sections, Modifier.fillMaxWidth())
 }

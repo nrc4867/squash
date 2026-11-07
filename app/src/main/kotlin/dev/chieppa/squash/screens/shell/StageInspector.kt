@@ -9,6 +9,7 @@ import dev.chieppa.squash.screens.references.TraceDrawer
 import dev.chieppa.squash.screens.surface.FaceInspector
 import dev.chieppa.squash.screens.surface.LinesInspector
 import dev.chieppa.squash.screens.surface.rig.RigInspector
+import dev.chieppa.squash.screens.surface.pose.PoseInspector
 import dev.chieppa.squash.screens.surface.paint.ColorDrawerContent
 
 /** The inspector for [stage]: the armed tool's options first, then what the stage works on. */
@@ -20,6 +21,7 @@ fun StageInspector(state: AppState, session: CharacterSession, stage: Stage) {
         Stage.LINES -> LinesInspector(state)
         Stage.FACE -> FaceInspector(state, session)
         Stage.RIG -> RigInspector(state, session)
+        Stage.POSE -> PoseInspector(state, session)
     }
 }
 

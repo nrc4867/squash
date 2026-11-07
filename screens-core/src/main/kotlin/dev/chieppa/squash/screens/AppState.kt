@@ -18,6 +18,7 @@ import dev.chieppa.squash.screens.edit.PaintEditState
 import dev.chieppa.squash.screens.lines.FaceEditState
 import dev.chieppa.squash.screens.lines.LineEditState
 import dev.chieppa.squash.screens.rig.RigEditState
+import dev.chieppa.squash.screens.pose.PoseEditState
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.references.ReferenceEditState
@@ -135,6 +136,9 @@ class AppState(
     /** What the Rig stage remembers: the picked bone and seam, the brush and the wiggle playing. */
     val rig = RigEditState()
 
+    /** What the Pose stage remembers: Drag's options, the limb and bone picked and the handle under the pointer. */
+    val pose = PoseEditState()
+
     /** The open socket Add part's popover is open on, and the type it would add there. */
     val addingSocket = MutableStateFlow<OpenSocket?>(null)
     val addingType = MutableStateFlow<TemplateId?>(null)
@@ -179,6 +183,7 @@ class AppState(
         val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope)
         file.value = DocumentSession(format, document, storage, path, opened.history)
         rig.clear()
+        pose.clear()
         posing.value = SessionPose(opened, held = rig.held)
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
@@ -224,6 +229,7 @@ class AppState(
         references.clear()
         face.clear()
         rig.clear()
+        pose.clear()
         screen.value = Screen.HOME
     }
 

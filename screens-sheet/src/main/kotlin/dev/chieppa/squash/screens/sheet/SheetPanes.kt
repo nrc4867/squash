@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -112,6 +113,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it) }) }
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val color = rememberPaneColor(state)
+    val posedPanes = state.stage.collectAsState().value == Stage.POSE
     SideEffect { open?.showColorAt(largestColorScale(cameras.values, orbit.view, fullRect.height)) }
     val frame = sheetFrame(
         SheetInput(
@@ -133,6 +135,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             lockedFur = lockedFur,
             traces = rememberTraces(state),
             rig = rig,
+            posedPanes = posedPanes,
         ),
     )
     Box(modifier.onSizeChanged { size = it }) {

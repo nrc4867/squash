@@ -1,13 +1,11 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
-import kotlin.math.PI
-
-private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
 
 /** The shortest a stretch makes a span, as a factor of its rest length. */
 const val MIN_STRETCH = 0.1f
@@ -20,33 +18,43 @@ const val MIN_STRETCH = 0.1f
 class PosedCharacter(val parts: Map<PartId, FloatArray>, val meshes: Map<PartId, RenderMesh>)
 
 /**
- * Where each bone of [rig] takes a rest point under [pose], parents first. A bone turns by its pose's degrees, held to its
- * limits, about its hinge as its parent has turned it, through its pivot as its parent has carried it. A bone whose span
- * ends at a joint also lengthens along its span by that joint's stretch and narrows across it to keep volume,
- * which carries that joint and everything past it.
+ * Where each bone of [rig] takes a rest point under [pose], parents first. A bone turns by its pose's angles, held to its limits
+ * unless the pose frees it, tip about its hinge, lean and turn about its own axes, as its parent has turned it, through its pivot as
+ * its parent has carried it; a root's pivot moves by the pose's offset. A bone whose span ends at a joint also lengthens along its
+ * span by that joint's stretch and, while the joint keeps volume, narrows across it, which carries that joint and everything past it.
  */
-fun boneTransforms(rig: Rig, pose: Pose): List<Affine> {
+fun boneTransforms(rig: Rig, pose: Pose): List<Affine> = boneFrames(rig, pose).transforms
+
+/** Each bone's transform under a pose, with the rotation alone that carries its children, in [turns]. */
+class BoneFrames(val transforms: List<Affine>, val turns: List<Mat3>)
+
+/** [boneTransforms] with each bone's rotation alone beside it. */
+fun boneFrames(rig: Rig, pose: Pose): BoneFrames {
     val turns = ArrayList<Mat3>(rig.bones.size)
     val result = ArrayList<Affine>(rig.bones.size)
+    val offset = pose.offset.let { Vec3(it.x, it.y, it.z) }
     for ((i, bone) in rig.bones.withIndex()) {
         val parent = rig.parents[i]
-        val degrees = pose.of(bone.name.part, bone.name.joint)?.degrees ?: 0f
-        val held = bone.limits?.let { degrees.coerceIn(it.min, it.max) } ?: degrees
-        val own = rotation(bone.hinge, held * DEGREES_TO_RADIANS)
+        val set = pose.of(bone.name.part, bone.name.joint)
+        val own = localTurn(bone, held(set.angles(), bone.limits, set?.mode ?: JointMode.LIMITED))
         val turned = if (parent >= 0) turns[parent] * own else own
-        val pivot = if (parent >= 0) result[parent](bone.pivot) else bone.pivot
+        val pivot = if (parent >= 0) result[parent](bone.pivot) else bone.pivot + offset
         val stretcher = rig.stretchedBy[i]
-        val factor = if (stretcher >= 0) stretchOf(rig, stretcher, pose) else 1f
-        val linear = if (factor != 1f) turned * stretchAlong(bone.direction, factor) else turned
+        val stretched = if (stretcher >= 0) stretchOf(rig, stretcher, pose, bone.direction) else null
+        val linear = if (stretched != null) turned * stretched else turned
         turns += turned
         result += Affine(linear, pivot - linear * bone.pivot)
     }
-    return result
+    return BoneFrames(result, turns)
 }
 
-private fun stretchOf(rig: Rig, bone: Int, pose: Pose): Float {
+/** The stretch [bone]'s joint puts on the span before it along [along], or null at its rest length. */
+private fun stretchOf(rig: Rig, bone: Int, pose: Pose, along: Vec3): Mat3? {
     val name = rig.bones[bone].name
-    return (pose.of(name.part, name.joint)?.stretch ?: 1f).coerceAtLeast(MIN_STRETCH)
+    val set = pose.of(name.part, name.joint)
+    val factor = (set?.stretch ?: 1f).coerceAtLeast(MIN_STRETCH)
+    if (factor == 1f) return null
+    return if (set?.keepVolume == false) lengthenAlong(along, factor) else stretchAlong(along, factor)
 }
 
 /**

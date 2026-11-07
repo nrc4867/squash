@@ -12,6 +12,8 @@ import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.WidthStop
+import dev.chieppa.squash.geom.PatchCut
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
@@ -38,13 +40,16 @@ class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectSh
 
 /**
  * [part] as a pane draws it. With [color], its base and layers show their slots at the shading the pane reads, darkened by side seen with the
- * camera at [toCamera]; a part nothing has been placed on, or a character with no color, draws as the look's own.
+ * camera at [toCamera]; a part nothing has been placed on, or a character with no color, draws as the look's own. With [posed], the
+ * part's mesh in a pose, it draws on that mesh with its layers laid on it, since a layer keeps its place on the patch.
  */
-fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE): MeshDraw {
+fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: RenderMesh? = null): MeshDraw {
     val id = part.id
-    if (color == null || id == null) return draw(part, outline, opacity, layer)
+    if (color == null || id == null) return draw(part, outline, opacity, layer).let { if (posed != null) it.copy(mesh = posed) else it }
     val fallback = this.part.copy(ink = color.palette.colorOf(INK_SLOT) ?: this.part.ink)
-    return coloredPartDraw(part.mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline).copy(opacity = opacity, layer = layer)
+    val mesh = posed ?: part.mesh
+    val cuts: (PatchCut) -> RenderMesh = if (posed == null) ({ it.mesh }) else ({ part.posedCut(it, posed) })
+    return coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
 }
 
 /** The ribbon along each border this surface work inks, closed on itself. */

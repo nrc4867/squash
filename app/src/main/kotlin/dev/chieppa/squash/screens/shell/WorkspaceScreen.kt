@@ -43,6 +43,8 @@ import dev.chieppa.squash.screens.surface.rig.RigWiggle
 import dev.chieppa.squash.screens.surface.rig.rememberRigShading
 import dev.chieppa.squash.screens.surface.rig.rememberSeamStrokeTool
 import dev.chieppa.squash.screens.surface.rig.rigToolSection
+import dev.chieppa.squash.screens.surface.pose.poseToolSection
+import dev.chieppa.squash.screens.surface.pose.rememberPoseTools
 import dev.chieppa.squash.screens.surface.HeadAngleBar
 import dev.chieppa.squash.screens.surface.faceToolSection
 import dev.chieppa.squash.screens.surface.rememberCombTool
@@ -67,7 +69,10 @@ import org.jetbrains.compose.resources.getString
 private val POPOVER_TOP = 44.dp
 private val POPOVER_END = 24.dp
 
-/** The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. In Rig the panes show the rig. */
+/**
+ * The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. In Rig the panes
+ * show the rig, and in Pose every pane shows the character in its pose.
+ */
 @Composable
 fun WorkspaceScreen(shell: Shell) {
     val state = shell.state
@@ -99,8 +104,9 @@ fun WorkspaceScreen(shell: Shell) {
     val paintWeight = rememberSeamStrokeTool(state, SeamBrush.PAINT)
     val eraseWeight = rememberSeamStrokeTool(state, SeamBrush.ERASE)
     val smoothWeight = rememberSeamStrokeTool(state, SeamBrush.SMOOTH)
+    val poseTools = rememberPoseTools(state)
     val stage by state.stage.collectAsState()
-    val armedTool: PaneTool = when (armed) {
+    val armedTool: PaneTool = poseTools.of(armed) ?: when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
         BuildTool.SPINE_WIDTH -> spine
         BuildTool.EDIT_CURVES -> edit
@@ -126,7 +132,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
-        BuildTool.NONE -> selectPart
+        BuildTool.DRAG, BuildTool.TURN, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> selectPart
     }
     val tool = traceHandles.over(armedTool)
     val selected by state.selectedPart.collectAsState()
@@ -143,7 +149,7 @@ fun WorkspaceScreen(shell: Shell) {
             SheetPanes(
                 state,
                 Modifier.fillMaxSize(),
-                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), rigToolSection(state)) },
+                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), rigToolSection(state), poseToolSection(state)) },
                 tool = tool,
                 paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
                 surface = rememberSurfaceLines(state),

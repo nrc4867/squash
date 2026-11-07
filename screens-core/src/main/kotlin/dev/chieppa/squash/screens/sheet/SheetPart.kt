@@ -12,7 +12,12 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyBox
 import dev.chieppa.squash.geom.PartExtents
+import dev.chieppa.squash.geom.PatchCut
 import dev.chieppa.squash.geom.RenderMesh
+import dev.chieppa.squash.geom.laidOn
+import dev.chieppa.squash.geom.showing
+import java.util.Collections
+import java.util.IdentityHashMap
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.screens.AppState
@@ -52,6 +57,15 @@ class SheetPart(private val placed: PlacedPart) {
     fun silhouetteFromBodySide(): List<List<Vec3>> = inBody(placed.surface.silhouettes.bodySide)
 
     private fun inBody(paths: List<List<Vec3>>) = paths.map { path -> path.map { origin + it } }
+
+    private val posedCuts = Collections.synchronizedMap(IdentityHashMap<PatchCut, Pair<RenderMesh, RenderMesh>>())
+
+    /** [cut], a color layer on this part, laid on [posed], this part's mesh in a pose; kept while the pose holds. */
+    fun posedCut(cut: PatchCut, posed: RenderMesh): RenderMesh {
+        posedCuts[cut]?.takeIf { it.first === posed }?.let { return it.second }
+        val grid = placed.surface.showing(posed).grid(cut.patch) ?: return cut.mesh
+        return cut.laidOn(grid).also { posedCuts[cut] = posed to it }
+    }
 }
 
 /**

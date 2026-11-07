@@ -43,6 +43,12 @@ class ShellKeysTest {
         assertEquals(BuildTool.ERASE_WEIGHT.actionId, shell.resolve("X", Stage.RIG))
         assertEquals(BuildTool.SMOOTH_WEIGHT.actionId, shell.resolve("S", Stage.RIG))
         assertEquals(ShellActions.STAGE_RIG.value, shell.resolve("5", Stage.SHAPE))
+        assertEquals(ShellActions.STAGE_POSE.value, shell.resolve("6", Stage.RIG))
+        assertEquals(BuildTool.DRAG.actionId, shell.resolve("D", Stage.POSE))
+        assertEquals(BuildTool.TURN.actionId, shell.resolve("E", Stage.POSE))
+        assertEquals(BuildTool.PIN.actionId, shell.resolve("P", Stage.POSE))
+        assertEquals(BuildTool.LOOK.actionId, shell.resolve("L", Stage.POSE))
+        assertNull(shell.resolve("P", Stage.SHAPE), "P pins only in Pose")
         assertNull(shell.resolve("B", Stage.SHAPE), "B opens no drawer")
         for (stage in Stage.entries) {
             assertEquals(ShellActions.FIT_PANE.value, shell.resolve("F", stage))

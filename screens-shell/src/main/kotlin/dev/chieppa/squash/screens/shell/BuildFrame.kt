@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.stage_pose
 import dev.chieppa.squash.uidesign.generated.shell_drawer_color
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
 import dev.chieppa.squash.uidesign.generated.shell_drawer_history
@@ -55,10 +56,15 @@ val Stage.label: StringResource
         Stage.LINES -> Res.string.shell_drawer_lines
         Stage.FACE -> Res.string.stage_face
         Stage.RIG -> Res.string.shell_drawer_rig
+        Stage.POSE -> Res.string.stage_pose
     }
 
 /** The icon heading a stage's inspector. */
-val Stage.icon get() = if (this == Stage.RIG) SquashIcons.Rig else SquashIcons.Part
+val Stage.icon get() = when (this) {
+    Stage.RIG -> SquashIcons.Rig
+    Stage.POSE -> SquashIcons.Pose
+    else -> SquashIcons.Part
+}
 
 @Composable
 private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {

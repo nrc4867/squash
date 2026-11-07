@@ -57,13 +57,15 @@ class SheetInput(
     val lockedFur: Map<View, ShownFur> = emptyMap(),
     val traces: (toViewer: Vec3) -> TraceDraws = { TraceDraws.None },
     val rig: RigShading? = null,
+    val posedPanes: Boolean = false,
 )
 
 /**
  * One immutable frame of the panes for the render thread. Full always shows the whole character, with what is not placed yet
  * faded except in Full first, which is there to judge the whole, and in its pose when the pose moves a bone; a locked pane shows the selection filled once its view is
  * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. With a [SheetInput.rig] every pane shows
- * the whole character as the Rig stage colors it, in its pose. A pane with no part stays empty.
+ * the whole character as the Rig stage colors it, in its pose. With [SheetInput.posedPanes] every pane shows the whole character in
+ * its pose while the pose moves a bone; otherwise the locked panes keep the rest pose to draw on. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
     val views = SheetPane.entries.mapNotNull { sceneView(it, input) }
@@ -103,6 +105,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
     input.rig?.let { rig -> return SceneView(rect, camera.viewProjection(), rigDraws(body, camera.basis, selection, look, rig)) }
+    if (input.posedPanes) selection.posed?.let { posed -> return SceneView(rect, camera.viewProjection(), posedLockedDraws(body, camera.basis, selection, look, posed, input.color)) }
     val fur = input.lockedFur[view]?.let { shownFurDraws(it, view in selection.outlines, camera.basis.back, selection, look, input.hints, input.color) } ?: FurDraws.NONE
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, camera) }
     val traces = input.traces(camera.basis.back)
@@ -110,13 +113,16 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
 }
 
 /**
- * [part] in the character's pose, from [posed]: filled in its base color with the mesh's own outline. Color layers, lines, marks
- * and fur lie on the rest surface, so a posed Full leaves them out.
+ * [part] in the character's pose, from [posed]: its base color and color layers on the posed mesh, with the mesh's own outline
+ * [outline] wide. Lines, the face, marks and fur lie on the rest surface, so a posed pane leaves them out.
  */
-private fun SheetLook.posedDraw(part: SheetPart, posed: Map<PartId, RenderMesh>, color: PaneColor?, toCamera: Vec3): MeshDraw {
-    val draw = colored(part, color, toCamera, fullOutline)
-    return draw.copy(mesh = part.id?.let(posed::get) ?: draw.mesh, layers = emptyList())
-}
+private fun SheetLook.posedDraw(part: SheetPart, posed: Map<PartId, RenderMesh>, color: PaneColor?, toCamera: Vec3, outline: Float = fullOutline): MeshDraw =
+    colored(part, color, toCamera, outline, posed = part.id?.let(posed::get))
+
+/** What a locked camera from [basis] in the pane of [body] draws of the character in its pose: the ground and every placed part posed. */
+private fun posedLockedDraws(body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, posed: Map<PartId, RenderMesh>, color: PaneColor?): List<MeshDraw> =
+    listOfNotNull(lockedGround(body, basis, selection, look)) +
+        (selection.others + selection.part).filter { !it.planned }.map { look.posedDraw(it, posed, color, basis.back, look.lockedOutline) }
 
 /** What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show it whole, else the selection's in front when [drawn]. */
 internal fun shownFurDraws(fur: ShownFur, drawn: Boolean, toCamera: Vec3, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor?): FurDraws = when {

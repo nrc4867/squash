@@ -147,6 +147,11 @@ class PoseCommandTest {
             SetPlanted(PAW, true),
             ResetPose,
             SetPose(Pose(listOf(BonePose(TORSO, "waist", 5f)), setOf(PAW))),
+            SetBoneTurn(LEFT, "hip", 10f, -4f, 6f, bothSides = true),
+            SetBoneMode(LEFT, "knee", JointMode.LOCKED),
+            SetKeepVolume(LEFT, "ankle", false),
+            SetRiding(PAW, false),
+            SetPose(Pose(offset = BodyPoint(0.1f, 0f, 0f), lookAt = BodyPoint(1f, 0.5f, 0f), still = setOf(PAW))),
         )
         for (command in commands) {
             val text = Json.encodeToString(DocumentCommand.serializer(), command)
@@ -154,5 +159,46 @@ class PoseCommandTest {
         }
         val posed = commands.take(4).fold(document()) { doc, command -> command.apply(doc).document }
         assertEquals(posed, readDocument(Json.encodeToString(SquashDocument.serializer(), posed)))
+    }
+
+    @Test
+    fun aLockedBoneKeepsItsLockThroughAResetAndItsUndo() {
+        val start = document()
+        scenario(start) {
+            run(SetBoneMode(LEFT, "knee", JointMode.LOCKED, bothSides = true))
+            run(SetBoneTurn(LEFT, "knee", 30f, 0f, 2f))
+            run(ResetBone(LEFT, "knee"))
+            expect { assertEquals(BonePose(LEFT, "knee", mode = JointMode.LOCKED), it.pose.of(LEFT, "knee")) }
+            expect { assertEquals(JointMode.LOCKED, it.pose.of(RIGHT, "knee")?.mode) }
+            expect { assertTrue(it.pose.isRest) }
+            run(SetBoneMode(LEFT, "knee", JointMode.LIMITED))
+            expect { assertEquals(null, it.pose.of(LEFT, "knee")) }
+            undo(4)
+            expect(start)
+        }
+    }
+
+    @Test
+    fun aDragsPreviewsAreOneStep() {
+        val start = document()
+        val lifted = Pose(listOf(BonePose(LEFT, "hip", 20f), BonePose(LEFT, "knee", 40f)), offset = BodyPoint(0f, -0.02f, 0f))
+        val further = lifted.with(BonePose(LEFT, "knee", 60f)).withPlanted(PAW, false)
+        scenario(start) {
+            run(SetPlanted(PAW, true))
+            gesture(SetPose(lifted), SetPose(further))
+            expect { assertEquals(further, it.pose) }
+            undo()
+            expect { assertEquals(Pose(planted = setOf(PAW)), it.pose) }
+        }
+    }
+
+    @Test
+    fun aPawThatStaysPutDoesNotRide() {
+        scenario(document()) {
+            run(SetRiding(PAW, false))
+            expect { assertEquals(setOf(PAW), it.pose.still) }
+            run(SetRiding(PAW, true))
+            expect { assertTrue(it.pose.still.isEmpty()) }
+        }
     }
 }

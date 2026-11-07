@@ -99,6 +99,14 @@ object SquashIcons {
             stroke("M9.75 8.5h.01")
         }
     }
+    val Drag: ImageVector by lazy {
+        icon("drag") {
+            stroke("M1.5 1.75l3.2 3.55")
+            stroke("M4 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
+            stroke("M5.3 8.9L4.2 13.5H1.5")
+            stroke("M12 3v10M10 5l2-2 2 2M10 11l2 2 2-2")
+        }
+    }
     val DrawGarment: ImageVector by lazy {
         icon("draw-garment") {
             stroke("M5.5 2.5L1.75 5l1.5 3L5 7v6.5h6.5V10")
@@ -247,6 +255,12 @@ object SquashIcons {
         icon("lock-version") {
             stroke("M4.5 7.5h7v6h-7z")
             stroke("M6 7.5V5.5a2 2 0 0 1 4 0v2")
+        }
+    }
+    val Look: ImageVector by lazy {
+        icon("look") {
+            stroke("M1.5 8c1.8-3 4-4.5 6.5-4.5s4.7 1.5 6.5 4.5c-1.8 3-4 4.5-6.5 4.5S3.3 11 1.5 8z")
+            stroke("M6 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
         }
     }
     val Marks: ImageVector by lazy {
@@ -398,6 +412,13 @@ object SquashIcons {
             stroke("M2 10.5l6 3 6-3")
         }
     }
+    val Pin: ImageVector by lazy {
+        icon("pin") {
+            stroke("M5.75 2.5h4.5")
+            stroke("M6.5 2.5L6 6.5 4 9h8l-2-2.5-.5-4")
+            stroke("M8 9v4.5")
+        }
+    }
     val PlaceImage: ImageVector by lazy {
         icon("place-image") {
             stroke("M9 5.5H3a1 1 0 0 0-1 1V12.5a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V9")
@@ -412,6 +433,15 @@ object SquashIcons {
             fill("M2.25 6.75a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
             fill("M6.6 3.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0z")
             fill("M11.25 6.75a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+        }
+    }
+    val Pose: ImageVector by lazy {
+        icon("pose") {
+            stroke("M8.25 2.75a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+            stroke("M9 5l-2.5 3.5 3 2-1 4")
+            stroke("M6.5 8.5L3.5 10")
+            stroke("M9 5l3 2.5")
+            stroke("M9.5 10.5l3.5 1")
         }
     }
     val Push: ImageVector by lazy {
@@ -606,6 +636,12 @@ object SquashIcons {
         icon("trunk") {
             stroke("M5.5 2.5c.6 4 .3 8-2 11h9c-2.3-3-2.6-7-2-11z")
             stroke("M8 13.5v-3")
+        }
+    }
+    val Turn: ImageVector by lazy {
+        icon("turn") {
+            stroke("M8 1.5v13")
+            stroke("M2 8a6 2.5 0 1 0 12 0a6 2.5 0 1 0 -12 0z")
         }
     }
     val UpdateFromLibrary: ImageVector by lazy {

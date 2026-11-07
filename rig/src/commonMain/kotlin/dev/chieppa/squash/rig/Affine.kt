@@ -43,3 +43,9 @@ internal fun stretchAlong(along: Vec3, factor: Float): Mat3 {
     }
     return Mat3(scaled(Vec3.X), scaled(Vec3.Y), scaled(Vec3.Z))
 }
+
+/** Lengthening by [factor] along the unit direction [along], leaving every direction across it as it is. */
+internal fun lengthenAlong(along: Vec3, factor: Float): Mat3 {
+    fun scaled(v: Vec3): Vec3 = v + along * ((along dot v) * (factor - 1f))
+    return Mat3(scaled(Vec3.X), scaled(Vec3.Y), scaled(Vec3.Z))
+}

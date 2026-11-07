@@ -23,7 +23,7 @@ data class SetBoneStretch(val part: PartId, val joint: String, val stretch: Floa
         document.posed(part, bothSides) { pose, id -> pose.with((pose.of(id, joint) ?: BonePose(id, joint)).copy(stretch = stretch)) }
 }
 
-/** Returns the bone at [joint] on [part] to rest, its angle and its stretch; [bothSides] as [SetBoneAngle]. */
+/** Returns the bone at [joint] on [part] to rest, its angles and its stretch, keeping how its limits hold it; [bothSides] as [SetBoneAngle]. */
 @Serializable
 @SerialName("resetBone")
 data class ResetBone(val part: PartId, val joint: String, val bothSides: Boolean = false) : DocumentCommand {
@@ -39,7 +39,7 @@ data class SetPlanted(val part: PartId, val planted: Boolean) : DocumentCommand 
         document.posed(part, bothSides = false) { pose, id -> pose.withPlanted(id, planted) }
 }
 
-/** Returns every bone to rest and frees every paw. */
+/** Returns every bone to rest, the body to where it stands, the head to looking ahead, and frees every paw. */
 @Serializable
 @SerialName("resetPose")
 data object ResetPose : DocumentCommand {
@@ -55,7 +55,7 @@ data class SetPose(val pose: Pose) : DocumentCommand {
 }
 
 /** This document with [change] made to its pose for [part], and with [bothSides] for its twin too. */
-private fun SquashDocument.posed(part: PartId, bothSides: Boolean, change: (Pose, PartId) -> Pose): Applied<SquashDocument> {
+internal fun SquashDocument.posed(part: PartId, bothSides: Boolean, change: (Pose, PartId) -> Pose): Applied<SquashDocument> {
     val instance = requirePart(part)
     val twin = if (bothSides) character.twinOf(instance) else null
     val ids = listOfNotNull(instance.id, twin?.id)

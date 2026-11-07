@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.geom.PatchCut
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.WidthProfile
@@ -57,10 +58,11 @@ fun coloredPartDraw(
     model: Mat4,
     outlinePixels: Float,
     rule: ToneRule = DefaultToneRule,
+    cutMesh: (PatchCut) -> RenderMesh = { it.mesh },
 ): MeshDraw {
     val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, palette.shadowOf(color?.baseSlot), shading, side, toCamera)
     val layers = color?.layers.orEmpty().mapNotNull { layer ->
-        palette.colorOf(layer.slot)?.let { ColorLayerDraw(layer.cut.mesh, rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
+        palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
     }
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
     return MeshDraw(mesh, material, model, outlinePixels, layers = layers)

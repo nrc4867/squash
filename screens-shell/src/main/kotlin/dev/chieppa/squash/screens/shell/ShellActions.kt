@@ -43,6 +43,11 @@ import dev.chieppa.squash.uidesign.generated.rig_tool_erase
 import dev.chieppa.squash.uidesign.generated.rig_tool_paint
 import dev.chieppa.squash.uidesign.generated.rig_tool_smooth
 import dev.chieppa.squash.uidesign.generated.stage_shape
+import dev.chieppa.squash.uidesign.generated.stage_pose
+import dev.chieppa.squash.uidesign.generated.pose_tool_drag
+import dev.chieppa.squash.uidesign.generated.pose_tool_turn
+import dev.chieppa.squash.uidesign.generated.pose_tool_pin
+import dev.chieppa.squash.uidesign.generated.pose_tool_look
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
@@ -77,6 +82,11 @@ object ShellActions {
     val STAGE_LINES = ActionId("stage-lines")
     val STAGE_FACE = ActionId("stage-face")
     val STAGE_RIG = ActionId("stage-rig")
+    val STAGE_POSE = ActionId("stage-pose")
+    val DRAG = ActionId(BuildTool.DRAG.actionId)
+    val TURN = ActionId(BuildTool.TURN.actionId)
+    val PIN = ActionId(BuildTool.PIN.actionId)
+    val LOOK = ActionId(BuildTool.LOOK.actionId)
     val PAINT_WEIGHT = ActionId(BuildTool.PAINT_WEIGHT.actionId)
     val ERASE_WEIGHT = ActionId(BuildTool.ERASE_WEIGHT.actionId)
     val SMOOTH_WEIGHT = ActionId(BuildTool.SMOOTH_WEIGHT.actionId)
@@ -129,6 +139,11 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.STAGE_LINES to Res.string.shell_drawer_lines,
     ShellActions.STAGE_FACE to Res.string.stage_face,
     ShellActions.STAGE_RIG to Res.string.shell_drawer_rig,
+    ShellActions.STAGE_POSE to Res.string.stage_pose,
+    ShellActions.DRAG to Res.string.pose_tool_drag,
+    ShellActions.TURN to Res.string.pose_tool_turn,
+    ShellActions.PIN to Res.string.pose_tool_pin,
+    ShellActions.LOOK to Res.string.pose_tool_look,
     ShellActions.PAINT_WEIGHT to Res.string.rig_tool_paint,
     ShellActions.ERASE_WEIGHT to Res.string.rig_tool_erase,
     ShellActions.SMOOTH_WEIGHT to Res.string.rig_tool_smooth,
@@ -209,6 +224,10 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "paint-weight" -> SquashIcons.PaintWeight
     "erase-weight" -> SquashIcons.EraseWeight
     "smooth-weight" -> SquashIcons.SmoothWeight
+    "drag" -> SquashIcons.Drag
+    "turn" -> SquashIcons.Turn
+    "pin" -> SquashIcons.Pin
+    "look" -> SquashIcons.Look
     else -> null
 }
 
@@ -253,6 +272,7 @@ fun Shell.registerActions() {
     stage(ShellActions.STAGE_LINES, "3", Stage.LINES)
     stage(ShellActions.STAGE_FACE, "4", Stage.FACE)
     stage(ShellActions.STAGE_RIG, "5", Stage.RIG)
+    stage(ShellActions.STAGE_POSE, "6", Stage.POSE)
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
@@ -288,5 +308,10 @@ fun Shell.registerActions() {
     tool(BuildTool.PAINT_WEIGHT, "paint-weight", "D")
     tool(BuildTool.ERASE_WEIGHT, "erase-weight", "X")
     tool(BuildTool.SMOOTH_WEIGHT, "smooth-weight", "S")
+
+    tool(BuildTool.DRAG, "drag", "D")
+    tool(BuildTool.TURN, "turn", "E")
+    tool(BuildTool.PIN, "pin", "P")
+    tool(BuildTool.LOOK, "look", "L")
 
 }

@@ -8,6 +8,22 @@ import dev.chieppa.squash.uidesign.generated.lines_step_stroke
 import dev.chieppa.squash.uidesign.generated.lines_step_weight
 import dev.chieppa.squash.uidesign.generated.move_step
 import androidx.compose.runtime.Composable
+import dev.chieppa.squash.document.SetPose
+import dev.chieppa.squash.document.SetBoneAngle
+import dev.chieppa.squash.document.SetBoneTurn
+import dev.chieppa.squash.document.SetBoneStretch
+import dev.chieppa.squash.document.ResetBone
+import dev.chieppa.squash.document.SetPlanted
+import dev.chieppa.squash.document.SetBoneMode
+import dev.chieppa.squash.document.SetKeepVolume
+import dev.chieppa.squash.document.SetRiding
+import dev.chieppa.squash.document.ResetPose
+import dev.chieppa.squash.uidesign.generated.pose_step
+import dev.chieppa.squash.uidesign.generated.pose_step_pin
+import dev.chieppa.squash.uidesign.generated.pose_step_limits
+import dev.chieppa.squash.uidesign.generated.pose_step_volume
+import dev.chieppa.squash.uidesign.generated.pose_step_rides
+import dev.chieppa.squash.uidesign.generated.pose_step_reset
 import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
@@ -98,6 +114,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val tidy = stringResource(Res.string.rig_step_tidy)
     val twin = stringResource(Res.string.rig_step_twin)
     val reset = stringResource(Res.string.rig_step_reset)
+    val posed = stringResource(Res.string.pose_step)
+    val pinned = stringResource(Res.string.pose_step_pin)
+    val limits = stringResource(Res.string.pose_step_limits)
+    val volume = stringResource(Res.string.pose_step_volume)
+    val rides = stringResource(Res.string.pose_step_rides)
+    val resetPose = stringResource(Res.string.pose_step_reset)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -119,6 +141,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetLineWeight, is SetLineWeightAmount -> lineWeight
             is SetLineRules -> lineRules
             is SetSeamStroke -> seamStroke
+            is SetPose, is SetBoneAngle, is SetBoneTurn, is SetBoneStretch, is ResetBone -> posed
+            is SetPlanted -> pinned
+            is SetBoneMode -> limits
+            is SetKeepVolume -> volume
+            is SetRiding -> rides
+            is ResetPose -> resetPose
             is PutSeamStrokes -> seamStrokes
             is AddSeamStrokes -> tidy
             is SeamToTwin -> twin
