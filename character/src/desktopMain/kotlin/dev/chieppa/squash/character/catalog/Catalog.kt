@@ -11,8 +11,11 @@ import dev.chieppa.squash.document.TemplateRef
 
 const val PAIR_SIZE = 2
 
-/** The loaded template with this id, if any. */
-fun TemplateFolder.template(id: TemplateId): PartTemplate? = parts.firstOrNull { it.id == id }
+/** The newest loaded template with this id, if any: what a new part of that type takes. */
+fun TemplateFolder.template(id: TemplateId): PartTemplate? = parts.filter { it.id == id }.maxByOrNull { it.version }
+
+/** The newest loaded version of each template, in the order of their files. */
+val TemplateFolder.newest: List<PartTemplate> get() = parts.map { it.id }.distinct().mapNotNull(::template)
 
 /** The loaded template pinned by [ref], if any. */
 fun TemplateFolder.template(ref: TemplateRef): PartTemplate? = parts.firstOrNull { it.ref == ref }
@@ -34,7 +37,7 @@ fun BodyPlan.partCount(templates: TemplateFolder): Int {
     return 1 + under(root, setOf(root.id))
 }
 
-/** The loaded templates in the order this plan reaches them from its root; any it never reaches come last. */
+/** The newest loaded templates in the order this plan reaches them from its root; any it never reaches come last. */
 fun BodyPlan.templateOrder(templates: TemplateFolder): List<PartTemplate> {
     val reached = linkedSetOf<PartTemplate>()
     fun visit(template: PartTemplate) {
@@ -42,7 +45,7 @@ fun BodyPlan.templateOrder(templates: TemplateFolder): List<PartTemplate> {
         socketsOn(template).forEach { spec -> templates.firstTaken(spec)?.let(::visit) }
     }
     templates.template(root.template)?.let(::visit)
-    return reached.toList() + (templates.parts - reached)
+    return reached.toList() + (templates.newest - reached)
 }
 
 /** A template and how many instances of it a plan places directly: what New character lists as chips. */

@@ -11,7 +11,7 @@
                 "id": "torso",
                 "template": {
                     "id": "torso",
-                    "version": 1
+                    "version": 2
                 },
                 "own": {
                     "outlines": {
@@ -8785,7 +8785,7 @@
                 "id": "head",
                 "template": {
                     "id": "head",
-                    "version": 1
+                    "version": 2
                 },
                 "socket": {
                     "parent": "torso",
@@ -13140,7 +13140,7 @@
                 "id": "tail",
                 "template": {
                     "id": "tail",
-                    "version": 1
+                    "version": 2
                 },
                 "socket": {
                     "parent": "torso",
@@ -24830,5 +24830,5 @@
             }
         ]
     },
-    "format": 11
+    "format": 12
 }

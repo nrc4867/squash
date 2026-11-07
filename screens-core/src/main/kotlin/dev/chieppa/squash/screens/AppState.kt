@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartData
@@ -61,6 +62,9 @@ class AppState(
 ) {
     val screen = MutableStateFlow(if (recent.entries.isEmpty()) Screen.NEW_CHARACTER else Screen.HOME)
     val session = MutableStateFlow<CharacterSession?>(null)
+
+    /** The open character in its pose, on the session's graph; it changes with [session] and is set first. */
+    val posing = MutableStateFlow<SessionPose?>(null)
     val selectedPart = MutableStateFlow<PartId?>(null)
 
     /** The open character's file and saved state, over the session's history. */
@@ -170,6 +174,7 @@ class AppState(
         val sessionScope = scope + job
         val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope)
         file.value = DocumentSession(format, document, storage, path, opened.history)
+        posing.value = SessionPose(opened)
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
         mirror.value = true

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.screens.fennec
 
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.catalog.template
+import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PairId
@@ -28,7 +30,10 @@ val FRONT_PAW_R = PartId("front-paw-r")
 val BACK_PAW_L = PartId("back-paw-l")
 val BACK_PAW_R = PartId("back-paw-r")
 
-private fun ref(id: String) = TemplateRef(TemplateId(id), 1)
+/** The newest shipped version of [id], which a part placed now takes. */
+private fun ref(id: String): TemplateRef = requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
+
+private val shippedTemplates by lazy { TemplateFolder.shipped() }
 
 private fun pair(id: String, template: String, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
     listOf(

@@ -64,7 +64,7 @@ As stage 3: one orchestrating session per sitting, round 0 serial on `main`, lat
 | --- | --- | --- |
 | 0 | serial | The `rig` module: bones from templates, ownership weights, the seam band, the golden test; spike 4 as a unit test |
 | 1 | `rig-stage` | The Rig stage: colours, heat map, wiggle, Reach, the stroke tools as commands, Tidy, To twin |
-| 1 | `pose-data` | The pose as a document value and the commands that set a bone, a stretch and the planted set; skinning in `render` |
+| 1 | `pose-data` | On `main`: `Character.pose` with the planted set, the pose commands (`SetBoneAngle`, `SetBoneStretch`, `ResetBone` with `bothSides`, `SetPlanted`, `ResetPose`, `SetPose`), the posed node `SessionPose.posed` skinning positions and normals on the CPU, Full drawing the posed meshes; torso, tail and head version 2 (spine and tail bend across, a `neck` joint at the head's base). Color layers, the face, lines, marks and fur still follow the rest surface and Full leaves them out while posed; `pose-drag` poses them |
 | 2 | `pose-drag` | The Drag tool, handles, pins, Alt and Shift, the pole targets; the Turn rings |
 | 2 | `body-curve` | The body curve stroke, re-sampling the spine's slices; spike 8 |
 | 3 | `pose-boards` | Every remaining row of the differences table for boards 7, 12 and 13 |

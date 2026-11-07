@@ -15,13 +15,13 @@ object BodyPlanLint {
         val templates = parts.map { it.id }.toSet()
         if (plan.format != TEMPLATE_FORMAT) add(Finding("$.format", "format ${plan.format} is not $TEMPLATE_FORMAT"))
         if (plan.root.template !in templates) add(Finding("$.root.template", "no template '${plan.root.template.value}'"))
-        val root = parts.firstOrNull { it.id == plan.root.template }
+        val root = parts.newest(plan.root.template)
         if (root != null && root.axis.rest != plan.root.rest) {
             add(Finding("$.root.rest", "the plan's rest is not its root template's, and a root part is not turned"))
         }
         plan.sockets.forEachIndexed { i, socket ->
             addAll(socket(socket, "$.sockets[$i]", templates))
-            val on = parts.firstOrNull { it.id == socket.on }
+            val on = parts.newest(socket.on)
             if (on != null && on.blocks.none { it.reaches(socket.u) }) {
                 add(Finding("$.sockets[$i].u", "no run of '${socket.on.value}' reaches u = ${socket.u}"))
             }
@@ -49,3 +49,6 @@ object BodyPlanLint {
         }
     }
 }
+
+/** The newest of [parts] with [id], which a part placed on the plan takes. */
+private fun List<PartTemplate>.newest(id: TemplateId): PartTemplate? = filter { it.id == id }.maxByOrNull { it.version }

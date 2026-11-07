@@ -58,7 +58,7 @@ class SheetPart(private val placed: PlacedPart) {
  * What the panes draw from one assembled character: the [part] selected with the outlines the document holds for it, the
  * [others] around it, the [box] everything fills, the height of the [floor] and the [drawingScale] its size parameter sets.
  * [overridden] is the views this side holds for itself, and [hidden] what the pair holds under those while an edit lands on
- * the pair.
+ * the pair. [posed] is each part's mesh in the character's pose, or null while the pose leaves every bone at rest.
  */
 class SheetSelection(
     val part: SheetPart,
@@ -69,6 +69,7 @@ class SheetSelection(
     val drawingScale: Float = 1f,
     val overridden: Set<View> = emptySet(),
     val hidden: Map<View, OutlineCurve> = emptyMap(),
+    val posed: Map<PartId, RenderMesh>? = null,
 )
 
 /** [character] as the panes draw it with [selected] picked out, or null while that part has built nothing. */
@@ -79,11 +80,21 @@ fun sheetSelection(
     drawingScale: Float = 1f,
     overridden: Set<View> = emptySet(),
     hidden: Map<View, OutlineCurve> = emptyMap(),
+    posed: Map<PartId, RenderMesh>? = null,
 ): SheetSelection? {
     val shown = character.parts.filter { it.box != null }.map(::SheetPart)
     val part = shown.firstOrNull { it.id == selected } ?: return null
     val box = character.box ?: return null
-    return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale, overridden, hidden)
+    return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale, overridden, hidden, posed)
+}
+
+/** Each part's mesh in the open character's pose, or null while [atRest] or before the posed node has run. */
+@Composable
+private fun rememberPosedMeshes(state: AppState, atRest: Boolean): Map<PartId, RenderMesh>? {
+    val posing by state.posing.collectAsState()
+    val node = posing?.posed ?: return null
+    val posed by remember(node) { node.output }.collectAsState()
+    return if (atRest) null else posed?.meshes
 }
 
 /** The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet. */
@@ -102,6 +113,7 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val scale = data.params[SIZE_PARAM] ?: 1f
     val overridden = document.character.overridesOf(instance).outlines.keys
     val hidden = if (mirror) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
+    val posed = rememberPosedMeshes(state, document.character.pose.isRest)
     val assembled = character ?: return null
-    return remember(assembled, selected, outlines, scale, overridden, hidden) { sheetSelection(assembled, selected, outlines, scale, overridden, hidden) }
+    return remember(assembled, selected, outlines, scale, overridden, hidden, posed) { sheetSelection(assembled, selected, outlines, scale, overridden, hidden, posed) }
 }

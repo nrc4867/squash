@@ -3,7 +3,7 @@ package dev.chieppa.squash.document
 import kotlinx.serialization.Required
 import kotlinx.serialization.Serializable
 
-const val DOCUMENT_FORMAT = 11
+const val DOCUMENT_FORMAT = 12
 
 /**
  * The whole document: the [character] and the [references] kept beside it. [format] numbers its grammar and is always written; only the current format decodes, and [readDocument]

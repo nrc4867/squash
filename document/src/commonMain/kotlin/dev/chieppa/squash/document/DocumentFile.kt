@@ -30,7 +30,7 @@ private const val SHOW_NEAR_KEY = "showNear"
 private const val FUR_ID_PREFIX = "fur-"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -65,6 +65,9 @@ private fun shownExpressionAndCheats(document: JsonObject): JsonObject = documen
 
 /** Format 10 to 11: a document gains reference images and a character traces. A save without them has none. */
 private fun referencesAndTraces(document: JsonObject): JsonObject = document
+
+/** Format 11 to 12: a character gains a pose. A save without one stands at rest with nothing planted. */
+private fun poseOnCharacter(document: JsonObject): JsonObject = document
 
 /** Format 8 to 9: a mark gains a flight, a mirror and a color. A mark saved without them lies on the surface, shows once and is in ink. */
 private fun floatMirrorAndColorOnMarks(document: JsonObject): JsonObject = document

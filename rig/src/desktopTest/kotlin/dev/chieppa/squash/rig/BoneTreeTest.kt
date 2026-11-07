@@ -19,10 +19,10 @@ class BoneTreeTest {
     fun everyTemplateJointOfTheFennecIsABone() {
         val legs = listOf("front-leg-l", "front-leg-r", "back-leg-l", "back-leg-r").flatMap { leg -> listOf("hip", "knee", "ankle").map { "$leg/$it" } }
         val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map { "$it/wrist" }
-        val expected = listOf("torso/hips", "torso/loin", "torso/waist", "torso/ribs", "torso/chest", "torso/withers", "head/jaw") +
+        val expected = listOf("torso/hips", "torso/loin", "torso/waist", "torso/ribs", "torso/chest", "torso/withers", "head/neck", "head/jaw") +
             listOf("ear-l", "ear-r").flatMap { ear -> listOf("base", "fold", "tip").map { "$ear/$it" } } +
             listOf("root", "tail1", "tail2", "tail3", "tail4", "tail5", "tip").map { "tail/$it" } + legs + paws
-        assertEquals(36, rig.bones.size)
+        assertEquals(37, rig.bones.size)
         assertEquals(expected.sorted(), rig.bones.map { it.name.toString() }.sorted())
     }
 
@@ -30,8 +30,9 @@ class BoneTreeTest {
     fun theSocketTreeGivesTheBoneTree() {
         assertEquals(null, parentOf("torso/hips"))
         assertEquals("torso/hips", parentOf("torso/loin"))
-        assertEquals("torso/chest", parentOf("head/jaw"))
-        assertEquals("head/jaw", parentOf("ear-l/base"))
+        assertEquals("torso/chest", parentOf("head/neck"))
+        assertEquals("head/neck", parentOf("head/jaw"))
+        assertEquals("head/neck", parentOf("ear-l/base"))
         assertEquals("ear-r/base", parentOf("ear-r/fold"))
         assertEquals("torso/hips", parentOf("tail/root"))
         assertEquals("torso/chest", parentOf("front-leg-l/hip"))

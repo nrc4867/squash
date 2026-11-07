@@ -49,7 +49,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons. Needs a GPU to test |
 | Domain | `anim` | Later: clips and timing |
-| Domain | `rig` | The rig derived from the assembled character: bones from template joints in the socket tree, weights from part ownership with joint and seam bands and the `SeamPaint` seam, linear blend skinning by a `Pose`, the session's rig node |
+| Domain | `rig` | The rig derived from the assembled character: bones from template joints in the socket tree, weights from part ownership with joint and seam bands and the `SeamPaint` seam, linear blend skinning by a `Pose`, the session's rig and posed nodes |
 | Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the slice row and surface work graph nodes, the open character session |
 | Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions, pose) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |

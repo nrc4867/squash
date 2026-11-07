@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.sheet
 import dev.chieppa.squash.screens.references.TraceDraws
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.RenderMesh
@@ -59,7 +60,7 @@ class SheetInput(
 
 /**
  * One immutable frame of the panes for the render thread. Full always shows the whole character, with what is not placed yet
- * faded except in Full first, which is there to judge the whole; a locked pane shows the selection filled once its view is
+ * faded except in Full first, which is there to judge the whole, and in its pose when the pose moves a bone; a locked pane shows the selection filled once its view is
  * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
@@ -82,6 +83,10 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val toCamera = Vec3(eye.x, eye.y, eye.z) - selection.box.center
         val outline = if (input.surface != null) 0f else look.fullOutline
         val sight = FullView({ camera }, rect.width, rect.height)
+        selection.posed?.let { posed ->
+            val draws = listOf(fullGround(selection, look)) + placed.map { look.posedDraw(it, posed, input.color, toCamera) }
+            return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
+        }
         val draws = listOf(fullGround(selection, look)) +
             placed.map { look.colored(it, input.color, toCamera, outline).withFace(it, input.surface, sight) } +
             planned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
@@ -95,6 +100,15 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, camera) }
     val traces = input.traces(camera.basis.back)
     return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, input.surface), fur.layers, traces.behind, traces.over)
+}
+
+/**
+ * [part] in the character's pose, from [posed]: filled in its base color with the mesh's own outline. Color layers, lines, marks
+ * and fur lie on the rest surface, so a posed Full leaves them out.
+ */
+private fun SheetLook.posedDraw(part: SheetPart, posed: Map<PartId, RenderMesh>, color: PaneColor?, toCamera: Vec3): MeshDraw {
+    val draw = colored(part, color, toCamera, fullOutline)
+    return draw.copy(mesh = part.id?.let(posed::get) ?: draw.mesh, layers = emptyList())
 }
 
 /** What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show it whole, else the selection's in front when [drawn]. */

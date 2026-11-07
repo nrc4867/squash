@@ -72,7 +72,7 @@ A project holds a cast and scenes. A scene owns the set, backdrop, light and sha
 
 Drawing to slices to part mesh to rig and weights to lines and marks to render and thumbnails, with surface work resolved from anchors to positions on the way to lines and marks. Each step is a node in `graph` that declares its inputs. When an input changes, the node recomputes in a coroutine and any older run of it is cancelled. Results are cached by their inputs, so undo is instant.
 
-The rig is one node, `SessionRig.rig`, on the character session's graph, following the assembly; see [data-model.md](data-model.md), The rig.
+The rig is one node, `SessionRig.rig`, on the character session's graph, following the assembly, and the posed character a node after it, `SessionPose.posed`, which gathers the rig and the character's pose and gives each part's posed mesh with its normals. `AppState.posing` holds it for the open session, and Full draws those meshes when the pose moves a bone; see [data-model.md](data-model.md), The rig.
 
 The graph implements Stretch's `Settled`: settled means nothing dirty and nothing running. Tests, agents and render-to-file wait on it, never on a timer.
 
@@ -98,7 +98,7 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
 | Domain | `anim` | Later: clips and timing |
-| Domain | `rig` | The rig derived from the assembled character: bones, weights, seams and linear blend skinning, and the session's rig node |
+| Domain | `rig` | The rig derived from the assembled character: bones, weights, seams and linear blend skinning of positions and normals, and the session's rig and posed nodes |
 | Domain | `character` | Part templates and body plans, the catalog over what is loaded, slice building, the slice row and surface work graph nodes, the open character session |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain, pose) and commands, on `stretch-core` |
 | Core | `graph` | The derived-data graph and `Settled` |

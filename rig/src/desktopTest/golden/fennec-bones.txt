@@ -1,23 +1,24 @@
-torso/hips parent - pivot 0.0000 0.0383 0.0000 along 1.0000 -0.0068 0.0000 length 0.1791 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0
-torso/loin parent torso/hips pivot 0.1790 0.0370 0.0000 along 1.0000 -0.0090 0.0000 length 0.1791 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0
-torso/waist parent torso/loin pivot 0.3581 0.0354 0.0000 along 0.9997 -0.0232 0.0000 length 0.1791 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0
-torso/ribs parent torso/waist pivot 0.5371 0.0313 0.0000 along 0.9344 0.3562 0.0000 length 0.1916 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0
-torso/chest parent torso/ribs pivot 0.7162 0.0995 0.0000 along 0.7798 0.6261 0.0000 length 0.2296 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0
-torso/withers parent torso/chest pivot 0.8952 0.2433 0.0000 along 0.9900 0.1413 0.0000 length 0.0000 hinge 1.0000 0.0000 0.0000 limits -20.0..20.0 stretch
-head/jaw parent torso/chest pivot 1.2276 0.4516 -0.0336 along 0.9947 -0.1027 0.0000 length 0.3241 hinge 0.0000 0.0000 -1.0000 limits 0.0..35.0
-ear-l/base parent head/jaw pivot 1.0024 0.6179 -0.1795 along -0.0070 0.8456 -0.5338 length 0.4320 hinge 0.0000 0.5338 0.8456 limits -40.0..40.0
+torso/hips parent - pivot 0.0000 0.0383 0.0000 along 1.0000 -0.0068 0.0000 length 0.1791 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
+torso/loin parent torso/hips pivot 0.1790 0.0370 0.0000 along 1.0000 -0.0090 0.0000 length 0.1791 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
+torso/waist parent torso/loin pivot 0.3581 0.0354 0.0000 along 0.9997 -0.0232 0.0000 length 0.1791 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
+torso/ribs parent torso/waist pivot 0.5371 0.0313 0.0000 along 0.9344 0.3562 0.0000 length 0.1916 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
+torso/chest parent torso/ribs pivot 0.7162 0.0995 0.0000 along 0.7798 0.6261 0.0000 length 0.2296 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
+torso/withers parent torso/chest pivot 0.8952 0.2433 0.0000 along 0.9900 0.1413 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0 stretch
+head/neck parent torso/chest pivot 0.7441 0.4793 -0.0336 along 0.9984 -0.0571 0.0000 length 0.4844 hinge 0.0000 0.0000 -1.0000 limits -40.0..40.0
+head/jaw parent head/neck pivot 1.2276 0.4516 -0.0336 along 0.9630 -0.2694 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits 0.0..35.0
+ear-l/base parent head/neck pivot 1.0024 0.6179 -0.1795 along -0.0070 0.8456 -0.5338 length 0.4320 hinge 0.0000 0.5338 0.8456 limits -40.0..40.0
 ear-l/fold parent ear-l/base pivot 0.9994 0.9832 -0.4101 along -0.0407 0.8449 -0.5333 length 0.2882 hinge 0.0000 0.5338 0.8456 limits 0.0..150.0
 ear-l/tip parent ear-l/fold pivot 0.9876 1.2267 -0.5638 along -0.1386 0.8375 -0.5286 length 0.0000 hinge 0.0000 0.5338 0.8456 limits -20.0..20.0
-ear-r/base parent head/jaw pivot 1.0024 0.6179 0.1124 along -0.0070 0.8456 0.5338 length 0.4320 hinge 0.0000 -0.5338 0.8456 limits -40.0..40.0
+ear-r/base parent head/neck pivot 1.0024 0.6179 0.1124 along -0.0070 0.8456 0.5338 length 0.4320 hinge 0.0000 -0.5338 0.8456 limits -40.0..40.0
 ear-r/fold parent ear-r/base pivot 0.9994 0.9832 0.3429 along -0.0407 0.8449 0.5333 length 0.2882 hinge 0.0000 -0.5338 0.8456 limits 0.0..150.0
 ear-r/tip parent ear-r/fold pivot 0.9876 1.2267 0.4967 along -0.1386 0.8375 0.5286 length 0.0000 hinge 0.0000 -0.5338 0.8456 limits -20.0..20.0
-tail/root parent torso/hips pivot 0.0644 0.1389 -0.0108 along -0.9382 -0.3460 0.0000 length 0.1429 hinge -0.9504 -0.3112 0.0000 limits -60.0..60.0
-tail/tail1 parent tail/root pivot -0.0696 0.0894 -0.0108 along -0.9510 -0.3093 0.0000 length 0.1344 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
-tail/tail2 parent tail/tail1 pivot -0.1974 0.0479 -0.0108 along -0.9498 -0.3129 0.0000 length 0.1428 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
-tail/tail3 parent tail/tail2 pivot -0.3331 0.0032 -0.0108 along -0.9554 -0.2953 0.0000 length 0.1428 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
-tail/tail4 parent tail/tail3 pivot -0.4695 -0.0390 -0.0108 along -0.9575 -0.2884 0.0000 length 0.1344 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
-tail/tail5 parent tail/tail4 pivot -0.5982 -0.0777 -0.0108 along -0.9496 -0.3134 0.0000 length 0.1428 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
-tail/tip parent tail/tail5 pivot -0.7338 -0.1225 -0.0108 along -0.9504 -0.3112 0.0000 length 0.0000 hinge -0.9504 -0.3112 0.0000 limits -40.0..40.0
+tail/root parent torso/hips pivot 0.0644 0.1389 -0.0108 along -0.9382 -0.3460 0.0000 length 0.1429 hinge 0.0000 0.0000 1.0000 limits -60.0..60.0
+tail/tail1 parent tail/root pivot -0.0696 0.0894 -0.0108 along -0.9510 -0.3093 0.0000 length 0.1344 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
+tail/tail2 parent tail/tail1 pivot -0.1974 0.0479 -0.0108 along -0.9498 -0.3129 0.0000 length 0.1428 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
+tail/tail3 parent tail/tail2 pivot -0.3331 0.0032 -0.0108 along -0.9554 -0.2953 0.0000 length 0.1428 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
+tail/tail4 parent tail/tail3 pivot -0.4695 -0.0390 -0.0108 along -0.9575 -0.2884 0.0000 length 0.1344 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
+tail/tail5 parent tail/tail4 pivot -0.5982 -0.0777 -0.0108 along -0.9496 -0.3134 0.0000 length 0.1428 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
+tail/tip parent tail/tail5 pivot -0.7338 -0.1225 -0.0108 along -0.9504 -0.3112 0.0000 length 0.0000 hinge 0.0000 0.0000 1.0000 limits -40.0..40.0
 front-leg-l/hip parent torso/chest pivot 0.7241 -0.0552 -0.0853 along 0.0239 -0.9997 0.0000 length 0.3119 hinge 0.0000 0.0000 -1.0000 limits -60.0..90.0
 front-leg-l/knee parent front-leg-l/hip pivot 0.7315 -0.3671 -0.0853 along 0.0099 -1.0000 0.0000 length 0.2552 hinge 0.0000 0.0000 -1.0000 limits 0.0..140.0
 front-leg-l/ankle parent front-leg-l/knee pivot 0.7340 -0.6222 -0.0853 along 0.1359 -0.9907 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -30.0..60.0 stretch

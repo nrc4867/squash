@@ -8,7 +8,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | --- | --- | --- |
 | Part template | The recipe for a part type: axis, open end, ring and segment counts, blocks, parameter ranges, joints, sockets, tagged areas, which view sets what | Shipped data file, versioned |
 | Body plan | A graph of sockets from a root spine, pair ids for mirrored sockets, the rest pose | Shipped preset, versioned |
-| Character | Body plan, part instances, the data each mirrored pair shares (outlines, params and surface work by pair id), slots, palette, face sets, and the library version it came from | Document; also its own library file |
+| Character | Body plan, part instances, the data each mirrored pair shares (outlines, params and surface work by pair id), slots, palette, face sets, its working pose, and the library version it came from | Document; also its own library file |
 | Part instance | Template id and version, the socket it sits on, its own outlines, params and surface work while unpaired, pair id, side and that side's overrides | Document |
 | Surface work | Base palette slot, area fills by area name, grain, fur rule, marks, mark groups, regions, paint and line weights: what a part resolves to, a pair shares or a side overrides | Document, beside outlines and params |
 | Surface anchor | A point on a part's surface as (part, patch name, u along the axis, v around it, offset) | Document, inside paint, marks, line weights and touch-ups |
@@ -17,7 +17,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Part mesh | One grid per patch; every vertex tagged with part, patch, bone, u and v | Derived |
 | Resolved surface work | A part's marks, groups, regions, paint and expression marks with every anchor turned into a position and normal on the current mesh | Derived |
 | Rig | A bone per template joint, named by part and joint, in the tree the body plan's sockets give; each vertex weighted to its part's bones by u, blended only across bands at joints and at seams; which joints stretch | Derived |
-| Pose | Per-bone angle about the joint's hinge and stretch, named by part and joint, the body curve kept as a curve, the planted set, touch-up deltas in anchor space | Document, one per shot key |
+| Pose | Per-bone angle about the joint's hinge and stretch, named by part and joint; the planted set, by part; the body curve kept as a curve and touch-up deltas in anchor space, which join it with the tools that make them | Document: one working pose on the character, `Character.pose`, which moves to one per shot key when Shot arrives |
 | Palette | Named color slots per character (fur, cream, pads, nose, inner ear, ink by default), each with an optional shadow color of its own; parts, regions, paint and template color fields name a slot, never a color | Document, on the character; defaults from the body plan |
 | Mark group | Marks with named roles, a draw order, clipping between roles, and controls (open, expression blend, dilation, gaze offset, width, mouth shape). Eyes and mouths are mark groups | Document |
 | Character shading | Flat or two-tone, and whether far parts darken | Document, on the character |
@@ -182,7 +182,9 @@ The rig is derived from the assembly by one graph node, `SessionRig.rig` in `rig
 - **Weights come from ownership.** A vertex follows the joint owning its u, a pad's at its site. Two bands blend, and nothing else does: across each joint inside a part, the two bones blend with a smooth step over the part's radius at the joint either side (`JOINT_REACH`), held to half the way to the joints around it, so a turn up to 90 degrees keeps the inner side from folding; and at each seam. A vertex follows at most four bones.
 - **A seam blends both sides halfway.** Where a child meets its parent, the seam's radius is the child's widest ring up to u = 0.25, held to the parent's widest ring within 0.125 of the socket. On the child, the parent's bone takes half at u = 0 and fades out over one seam radius along the child (`SEAM_REACH`), held to half the way to its next joint. On the parent, the child's first bone takes half within one seam radius of the socket's point and fades out over one more. Several rims on one vertex share at most half.
 - **Painted seams plug in at one place.** `SeamPaint` is asked, for every vertex of both parts of each seam, the share the band guessed, and answers the share to use. With no strokes it answers the guess. Seam strokes are shared by a pair with per-side overrides, as surface work is, and reach the rig through it.
+- **The pose is a document value.** `Character.pose` is the character's one working pose; when Shot arrives it moves under a shot key and its commands keep their shape. Bones are named by part and joint, the planted set by part. `SetBoneAngle`, `SetBoneStretch` and `ResetBone` change one bone, with `bothSides` its twin's too: the twin takes the same number, which its mirrored hinge turns the mirrored way, so the pair poses as mirror images. `SetPlanted` plants or frees a paw, `ResetPose` rests every bone and frees every paw, and `SetPose` sets the whole pose, which is every pose command's undo. Each sets an absolute value, so a drag's previews in one `History.begin()` transaction are one undo step. Joint names are not checked against the templates, since `document` does not see them; a bone the rig lacks is ignored.
 - **Skinning is linear blend.** `Rig.posed` takes a `Pose` and gives every rigged part's vertices in body space. A bone turns by its angle, held to its limits, about its hinge as its parent has turned it, through its pivot as its parent has carried it. A stretch on a joint whose template says `stretch` scales its distance from the joint before it on the part: the bone owning that span lengthens along it by the factor and narrows across it by its square root, so the span keeps its volume, and the stretching joint and all past it ride along.
+- **The posed character is a node.** `SessionPose.posed`, in `rig`, gathers `SessionRig.rig` and the character's pose and gives each rigged part's posed vertices in body space and the mesh the renderer draws, in the part's own space with its normals and proxy normals turned by the blend of the bones' cofactor matrices and made unit again. A part the pose leaves where it rests keeps its rest mesh itself, so a pose at rest draws exactly the built meshes. The skinning runs on the CPU in this node; the renderer takes the posed meshes like any other.
 
 ## How a pane looks at a part
 
@@ -323,12 +325,15 @@ A head is a `skull` block instead of a tube, with a muzzle and the landmarks fac
   { "kind": "skull",    "u": [0.0, 0.75], "width": 0.82, "depth": 0.78 },
   { "kind": "tube",     "name": "muzzle", "u": [0.6, 1.0], "radius": 0.2, "taper": 0.7, "drop": 0.08 },
   { "kind": "pad",      "name": "nose",   "u": 0.95, "v": 0.0, "size": 0.07, "color": "nose", "rings": 7, "segments": 12 },
+  { "kind": "joint",    "name": "neck",   "u": 0.0,            "hinge": "x", "limits": [-40, 40] },
   { "kind": "joint",    "name": "jaw",    "u": 0.6, "v": 0.5, "hinge": "x", "limits": [0, 35] },
   { "kind": "socket",   "name": "ear",    "u": 0.25, "v": 0.12, "pair": "x", "outward": "normal" },
   { "kind": "landmark", "name": "eye",    "u": 0.5,  "v": 0.2,  "pair": "x" },
   { "kind": "landmark", "name": "nose",   "u": 1.0,  "v": 0.0 }
 ]
 ```
+
+The head turns at its `neck` joint, at its base, which carries the ears; the jaw is a hinge on the lower half that the face pose and a mouth's open bend, and as the head's last joint it owns no span of the rig. The torso's joints, hips to withers, and the tail's, root to tip, turn about x, across the part, so the spine and the tail bend in the body's middle plane; the version 1 files of torso, tail and head, which turned the spine and tail about their own length and had no neck, still ship for the characters that pin them.
 
 A body plan is the same grammar with its own block kinds, so it shares the parser, schema and lint:
 

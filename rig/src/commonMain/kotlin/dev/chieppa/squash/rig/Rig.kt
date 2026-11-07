@@ -3,9 +3,13 @@ package dev.chieppa.squash.rig
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.RenderMesh
+import dev.chieppa.squash.geom.Vec3
 
-/** A part of the rig: its mesh in body space at rest, with the bones each vertex follows. */
-class RigPart(val id: PartId, val rest: FloatArray, val indices: IntArray, val weights: PartWeights) {
+/**
+ * A part of the rig: its vertices in body space at rest, with the bones each vertex follows, and the [mesh] they come from as
+ * the renderer draws it, in the part's own space at [origin].
+ */
+class RigPart(val id: PartId, val rest: FloatArray, val indices: IntArray, val weights: PartWeights, val mesh: RenderMesh, val origin: Vec3) {
     val vertexCount: Int get() = rest.size / 3
 }
 
@@ -49,7 +53,7 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
     val rigged = parts.map { part ->
         checkCancelled()
         val weights = weightsOf(part, carrierOf(part, byId), part.placed.socket?.parent?.let(byId::get), children[part.id].orEmpty(), index, paint, checkCancelled)
-        RigPart(part.id, restPositions(part), part.placed.surface.mesh.indices, weights)
+        RigPart(part.id, restPositions(part), part.placed.surface.mesh.indices, weights, part.placed.surface.mesh, part.placed.origin)
     }
     return Rig(bones, rigged)
 }

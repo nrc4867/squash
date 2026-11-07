@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
- * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines and the [traces] drawn over in its views.
+ * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views and
+ * the [pose] it stands in. The pose is the character's one working pose until shots hold a pose per key. See HLD: data-model.
  */
 @Serializable
 data class Character(
@@ -20,6 +21,7 @@ data class Character(
     val shownExpression: ExpressionId? = null,
     val gazeCheats: GazeCheats = GazeCheats(),
     val traces: Map<View, Trace> = emptyMap(),
+    val pose: Pose = Pose(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
@@ -27,6 +29,9 @@ data class Character(
     }
 
     fun part(id: PartId): PartInstance? = parts.firstOrNull { it.id == id }
+
+    /** The other side of [part]'s pair, or null for an unpaired part or a pair with one side placed. */
+    fun twinOf(part: PartInstance): PartInstance? = part.pair?.let { pair -> parts.firstOrNull { it.pair == pair && it.id != part.id } }
 
     /** The part's effective values: its pair's, with anchors read for its side and its overrides on top, or its own when unpaired. */
     fun resolved(part: PartInstance): PartData {

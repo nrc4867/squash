@@ -2,6 +2,7 @@ package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.model.End
+import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.MeshInvariants
@@ -19,8 +20,22 @@ private const val RANDOM_BUILDS = 25
 class ShippedTemplatesTest {
     @Test
     fun theSixStarterTemplatesAndThePlanLoadAndLint() {
-        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value })
+        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value }.distinct().sorted())
         assertEquals(listOf("canine-quadruped"), shipped.plans.map { it.id.value })
+    }
+
+    @Test
+    fun everyVersionShipsSoASavedCharacterKeepsBuilding() {
+        val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
+        assertEquals(mapOf("ear" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1), "paw" to listOf(1), "tail" to listOf(1, 2), "torso" to listOf(1, 2)), versions)
+    }
+
+    @Test
+    fun theSpineAndTailBendSidewaysAndTheHeadTurnsAtItsBase() {
+        fun joints(id: String, version: Int) = shipped.parts.single { it.id.value == id && it.version == version }.blocks.flatMap { it.joints() }
+        assertTrue(joints("torso", 2).all { it.hinge == Hinge.X })
+        assertTrue(joints("tail", 2).all { it.hinge == Hinge.X })
+        assertEquals(listOf("neck" to 0f, "jaw" to 0.6f), joints("head", 2).map { it.name to it.u })
     }
 
     @Test
@@ -69,7 +84,7 @@ class ShippedTemplatesTest {
 
     @Test
     fun defaultBuildsMatchTheirFixtures() {
-        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value })
+        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value }.distinct().sorted())
         for (template in shipped.parts) {
             val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template))
             GoldenFixture.check(Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt"), templateFixture(mesh), "character")

@@ -1,0 +1,31 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "head",
+  "version": 2,
+  "name": "Head",
+  "axis": { "rest": [1, 0, 0], "length": 0.55 },
+  "openEnd": null,
+  "topology": { "rings": 48, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "circle",
+  "params": {
+    "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
+  },
+  "grain": { "toward": "start" },
+  "blocks": [
+    { "kind": "skull",    "u": [0.0, 0.75], "width": 0.82, "depth": 0.78 },
+    { "kind": "tube",     "name": "muzzle", "u": [0.6, 1.0], "radius": 0.2, "taper": 0.7, "drop": 0.08 },
+    { "kind": "pad",      "name": "nose",   "u": 0.95, "v": 0.0, "size": 0.07, "color": "nose", "rings": 7, "segments": 12 },
+    { "kind": "cap",      "end": "end", "shape": "round" },
+    { "kind": "joint",    "name": "neck",   "u": 0.0,            "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint",    "name": "jaw",    "u": 0.6, "v": 0.5, "hinge": "x", "limits": [0, 35] },
+    { "kind": "socket",   "name": "ear",    "u": 0.3, "v": 0.1, "pair": "x", "outward": "normal", "takes": ["ear"] },
+    { "kind": "landmark", "name": "eye",    "u": 0.5,  "v": 0.2,  "pair": "x" },
+    { "kind": "landmark", "name": "nose",   "u": 1.0,  "v": 0.0 },
+    { "kind": "area",  "name": "muzzle", "u": [0.6, 1.0], "v": [0, 1], "tag": "fill", "patch": "muzzle" },
+    { "kind": "area",  "name": "chin", "u": [0.6, 1.0], "v": [0.3, 0.7], "tag": "fill", "patch": "muzzle" },
+    { "kind": "area",  "name": "cheeks", "u": [0.22, 0.7], "v": [0.27, 0.73], "tag": "fill" },
+    { "kind": "area",  "name": "crown", "u": [0.15, 0.6], "v": [0.85, 0.15], "tag": "fill" }
+  ]
+}

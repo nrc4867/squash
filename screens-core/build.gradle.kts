@@ -15,6 +15,7 @@ dependencies {
     api(project(":ui-design"))
     api(project(":render"))
     api(project(":character"))
+    api(project(":rig"))
     api("dev.chieppa.stretch:stretch-frame")
     api("dev.chieppa.stretch:stretch-ui")
     api("dev.chieppa.stretch:stretch-document")
