@@ -33,7 +33,7 @@ class CharacterFactoryTest {
 
     @Test
     fun templatesListInTheOrderThePlanReachesThem() {
-        assertEquals(listOf("torso", "head", "ear", "leg", "paw", "tail"), caninePlan.templateOrder(shipped).map { it.id.value })
+        assertEquals(listOf("torso", "head", "ear", "leg", "paw", "tail", "wing-feathered"), caninePlan.templateOrder(shipped).map { it.id.value })
     }
 
     @Test

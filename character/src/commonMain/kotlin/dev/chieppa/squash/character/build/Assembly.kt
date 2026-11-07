@@ -18,6 +18,14 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.geom.surfaceAt
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+
+private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
+
+/** How far either side of a place, in u, the surface is read for which way the part runs there. */
+private const val TANGENT_STEP = 0.01f
 
 /** What placing a part reads of it from the document. */
 data class AssemblyPart(
@@ -61,6 +69,18 @@ class PlacedPart(
     /** The outward normal there, in body space. */
     fun normalAt(u: Float, v: Float): Vec3? = runAt(u)?.let { surface.shown(it.surfaceAt(u, v).normal) }
 
+    /** The normal there turned [tilt] degrees toward the part's end, which way a socket there with that tilt faces. */
+    fun outwardAt(u: Float, v: Float, tilt: Float): Vec3? {
+        val normal = normalAt(u, v) ?: return null
+        if (tilt == 0f) return normal
+        val ahead = pointOn((u + TANGENT_STEP).coerceAtMost(1f), v) ?: return normal
+        val behind = pointOn((u - TANGENT_STEP).coerceAtLeast(0f), v) ?: return normal
+        val along = (ahead - behind).let { it - normal * (it dot normal) }
+        if (along.length == 0f) return normal
+        val angle = tilt * DEGREES_TO_RADIANS
+        return normal * cos(angle) + along.normalized() * sin(angle)
+    }
+
     /** Where this part reaches in body space, or null when it built nothing. */
     val box: BodyBox? get() = surface.box?.moved(origin)
 
@@ -71,8 +91,8 @@ class PlacedPart(
         PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role)
 }
 
-/** An empty socket on a placed part, in body space. */
-data class PlacedSocket(val ref: SocketRef, val position: Vec3)
+/** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */
+data class PlacedSocket(val ref: SocketRef, val position: Vec3, val side: Side? = null, val on: PartId = ref.parent)
 
 /**
  * The whole character: every placed part on its socket, what the empty sockets of the plan would take, the empty sockets of the
@@ -141,7 +161,7 @@ private class Assembler(
         val surface = surfaces.getValue(part.id)
         val socket = part.socket
         val spec = if (socket != null && parent != null) {
-            socketsOf(parent.template).firstOrNull { it.name == socket.socket }?.placedBy(parent.placement, part.side)
+            socketsOf(parent).firstOrNull { it.name == socket.socket }?.placedBy(parent.placement, part.side)
         } else {
             null
         }
@@ -150,8 +170,7 @@ private class Assembler(
         return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role)
     }
 
-    private fun socketsOf(template: PartTemplate): List<SocketSpec> =
-        plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }
+    private fun socketsOf(part: PlacedPart): List<SocketSpec> = socketsOn(plan, part.template, part.placement)
 
     /**
      * Where the socket plane of a [template] part on [side] sits on [parent]. A right side reads the socket's mirrored v,
@@ -165,7 +184,7 @@ private class Assembler(
         val along = if (mirroredHere) rest.mirrored else rest
         val into = when (spec.outward) {
             Outward.AXIS -> along
-            Outward.NORMAL -> parent.normalAt(spec.u, v) ?: along
+            Outward.NORMAL -> parent.outwardAt(spec.u, v, spec.tilt) ?: along
         }
         return point - into * templates.socketSink(template.ref)
     }
@@ -179,9 +198,13 @@ private class Assembler(
      * [twin], carries the right one. [seen] keeps a plan that loops from going round for ever.
      */
     private fun planUnder(here: PlacedPart, twin: PlacedPart?, leader: PartId?, seen: Set<String>) {
-        for (unmoved in socketsOf(here.template)) {
+        for (unmoved in socketsOf(here)) {
             val spec = unmoved.placedBy(here.placement, null)
             if (leader != null && SocketRef(leader, spec.name) in filled) continue
+            if (spec.takes.isEmpty()) {
+                if (leader != null) sockets += takingAnything(here, twin, leader, unmoved)
+                continue
+            }
             val template = spec.takes.firstNotNullOfOrNull { templates.latest(it) } ?: continue
             if (leader != null) here.pointOn(spec.u, spec.v)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
             if (template.id.value in seen) continue
@@ -190,6 +213,22 @@ private class Assembler(
             val right = if (paired) plannedPart(template, Side.RIGHT, twin ?: here, unmoved.placedBy((twin ?: here).placement, Side.RIGHT)) else null
             planned += listOfNotNull(left, right)
             planUnder(left, right, null, seen + template.id.value)
+        }
+    }
+
+    /**
+     * The dots of a socket that takes any template, which shows no planned part: one, or both sides where it is paired or its
+     * parent is, the right side read on the [twin] or mirrored on [here].
+     */
+    private fun takingAnything(here: PlacedPart, twin: PlacedPart?, leader: PartId, unmoved: SocketSpec): List<PlacedSocket> {
+        val ref = SocketRef(leader, unmoved.name)
+        if (unmoved.pair == null && twin == null) {
+            val spec = unmoved.placedBy(here.placement, null)
+            return listOfNotNull(here.pointOn(spec.u, spec.v)?.let { PlacedSocket(ref, it) })
+        }
+        return listOf(Side.LEFT to here, Side.RIGHT to (twin ?: here)).mapNotNull { (side, parent) ->
+            val spec = unmoved.placedBy(parent.placement, side)
+            parent.pointOn(spec.u, socketV(parent, spec, side))?.let { PlacedSocket(ref, it, side, parent.id ?: leader) }
         }
     }
 

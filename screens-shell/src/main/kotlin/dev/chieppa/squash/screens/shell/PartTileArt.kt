@@ -28,6 +28,7 @@ private val TILE_ART = mapOf(
     Role.HEAD to "M20 4 A11 11 0 1 1 19.9 4 Z",
     Role.EAR to "M10 26 L20 3 L30 26 Z",
     Role.TAIL to "M6 25 C18 25 28 18 28 5 C36 12 36 26 22 28 C14 29 8 28 6 25 Z",
+    Role.WING to "M5 24 C11 11 23 4 35 5 C31 9 33 11 29 13 C32 15 29 17 26 18 C28 20 24 22 20 22 C14 23 9 24 5 24 Z",
 )
 
 /** Whether a template of [role] has art of its own; one without, or with no role, shows the general parts icon. */

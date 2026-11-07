@@ -41,6 +41,6 @@ fun templateOutline(unplaced: PartTemplate, data: PartData, view: View): Outline
     val axes = PartBuilder.axes(template)
     val scale = 1f / ((template.defaults + data.params)[SIZE_PARAM] ?: 1f)
     val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template, data.params, data.outlines - view))
-    val stroke = silhouetteCurve(mesh.patches, { axes.viewPoint(view, it * scale) }, outlineEnds(view, template.openEnd))
+    val stroke = silhouetteCurve(mesh.patches, { axes.viewPoint(template.planeOf(view), it * scale) }, outlineEnds(view, template.openEnd))
     return stroke?.path?.toOutline()
 }

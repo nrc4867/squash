@@ -95,6 +95,12 @@ object SquashIcons {
             stroke("M3 4.5v7M5.5 4.5v7M8 4.5v7M10.5 4.5v7M13 4.5v7")
         }
     }
+    val DeleteSocket: ImageVector by lazy {
+        icon("delete-socket") {
+            stroke("M3 4.5h10M6.5 4.5V3h3v1.5")
+            stroke("M4.5 4.5l.7 8.5h5.6l.7-8.5")
+        }
+    }
     val Door: ImageVector by lazy {
         icon("door") {
             stroke("M4 14V2.5h8V14M2 14h12")
@@ -383,6 +389,11 @@ object SquashIcons {
             stroke("M9.5 2.5h4v4h-4z")
             stroke("M2.5 9.5h4v4h-4z")
             stroke("M9.5 9.5h4v4h-4z")
+        }
+    }
+    val PartWing: ImageVector by lazy {
+        icon("part-wing") {
+            stroke("M2 12.5C4.5 7 9 3.5 14 3.5c-1.5 1.5-.8 2.3-2.4 3 1.3.9 0 1.7-1.2 2 .8.8-.8 1.6-2.4 1.6-2.4.4-4.4.9-6 2.4z")
         }
     }
     val Part: ImageVector by lazy {

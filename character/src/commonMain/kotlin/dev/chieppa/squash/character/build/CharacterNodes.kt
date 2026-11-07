@@ -48,7 +48,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 /** The parts of [character], as placing reads them. */
 fun assemblyParts(character: Character): List<AssemblyPart> =
     character.parts.map { part ->
-        val placement = character.resolvedShape(part).params.filterKeys(PlacementParams::isPlacement)
+        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) }
         AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement, part.role)
     }
 

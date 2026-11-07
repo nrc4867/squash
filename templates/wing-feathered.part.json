@@ -1,0 +1,25 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "wing-feathered",
+  "version": 1,
+  "name": "Wing",
+  "role": "wing",
+  "axis": { "rest": [-0.33, 0, -0.944], "length": 0.55 },
+  "openEnd": "start",
+  "topology": { "rings": 48, "segments": 16 },
+  "views": { "top": "height", "side": "width", "front": "section" },
+  "section": "lens",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "chord": { "default": 0.32, "min": 0.1, "max": 0.8 }
+  },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$chord", "taper": 0.5 },
+    { "kind": "cap",   "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "shoulder", "u": 0.0,  "hinge": "x", "limits": [-90, 90] },
+    { "kind": "joint", "name": "elbow",    "u": 0.4,  "hinge": "x", "limits": [-150, 150] },
+    { "kind": "joint", "name": "wrist",    "u": 0.75, "hinge": "x", "limits": [-120, 120] },
+    { "kind": "area",  "name": "tip", "u": [0.75, 1.0], "v": [0, 1], "tag": "fill" }
+  ]
+}

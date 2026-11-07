@@ -74,4 +74,17 @@ data class PartTemplate(
 
     /** The value of every parameter when nothing has changed it. */
     val defaults: Map<String, Float> get() = params.mapValues { it.value.default.value }
+
+    /**
+     * The view whose plane an outline drawn in [view] lies in: Side's for the view that sets height, Top's for the one that
+     * sets width, so a wing's planform drawn in Top lies across its chord; [view]'s own otherwise.
+     */
+    fun planeOf(view: View): View = when (views[view]) {
+        Sets.HEIGHT -> View.SIDE
+        Sets.WIDTH -> View.TOP
+        else -> view
+    }
+
+    /** The views drawn in another view's plane, by [planeOf]. */
+    val viewPlanes: Map<View, View> get() = View.entries.associateWith(::planeOf).filter { (view, plane) -> view != plane }
 }

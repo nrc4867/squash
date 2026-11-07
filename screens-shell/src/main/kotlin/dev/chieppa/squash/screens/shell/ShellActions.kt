@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.offerPickedSocket
 import dev.chieppa.squash.screens.draw.startFromTemplate
 import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.stretch.core.Action
@@ -98,7 +99,10 @@ fun Shell.registerActions() {
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
     action(ShellActions.PARTS, "parts", available = inFrame) { toggle(DrawerIds.PARTS) }
-    action(ShellActions.ADD_PART, "add-part", chord("T"), inWorkspace) { state.armTool(BuildTool.ADD_PART) }
+    action(ShellActions.ADD_PART, "add-part", chord("T"), inWorkspace) {
+        state.armTool(BuildTool.ADD_PART)
+        if (state.tool.value == BuildTool.ADD_PART) state.offerPickedSocket()
+    }
     action(ShellActions.HISTORY, "history", available = hasCharacter) { toggle(DrawerIds.HISTORY) }
     action(ShellActions.INSPECTOR, "part", chord("Tab"), inFrame) { toggle(DrawerIds.INSPECTOR) }
     action(ShellActions.HELP, "help", available = inFrame) { toggle(DrawerIds.HELP) }

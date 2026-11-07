@@ -128,9 +128,10 @@ private fun DragOptions(state: AppState) {
 /** One row a paw, with the pin glyph and a switch that plants or frees it. */
 @Composable
 private fun PlantedSection(session: CharacterSession, solver: PoseSolver, character: Character, names: (PartId) -> String) {
-    if (solver.chains.limbs.isEmpty()) return
+    val planting = solver.chains.limbs.filter { it.plants }
+    if (planting.isEmpty()) return
     DrawerSection(stringResource(Res.string.pose_planted)) {
-        solver.chains.limbs.forEach { limb ->
+        planting.forEach { limb ->
             val name = names(limb.id)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(SquashIcons.Pin, Stretch.colors.inkMuted)

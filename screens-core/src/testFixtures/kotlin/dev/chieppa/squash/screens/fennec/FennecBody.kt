@@ -32,11 +32,11 @@ val BACK_PAW_L = PartId("back-paw-l")
 val BACK_PAW_R = PartId("back-paw-r")
 
 /** The newest shipped version of [id], which a part placed now takes. */
-private fun ref(id: String): TemplateRef = requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
+internal fun ref(id: String): TemplateRef = requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
 
 private val shippedTemplates by lazy { TemplateFolder.shipped() }
 
-private fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
+internal fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
     listOf(
         PartInstance(left, ref(template), SocketRef(leftOn, socket), pair = PairId(id), side = Side.LEFT, role = role),
         PartInstance(right, ref(template), SocketRef(rightOn, socket), pair = PairId(id), side = Side.RIGHT, role = role),

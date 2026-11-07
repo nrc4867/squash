@@ -28,7 +28,10 @@ enum class Role {
 
     companion object {
         /** The limbs a pose reaches with, from the body to their end. */
-        val LIMBS: Set<Role> = setOf(LEG, ARM)
+        val LIMBS: Set<Role> = setOf(LEG, ARM, WING)
+
+        /** The limbs that stand on the ground, so a pose can plant them; a wing reaches and never plants. */
+        val PLANTING: Set<Role> = setOf(LEG, ARM)
 
         /** What ends a limb: a foot or a hand, which a pose plants. */
         val LIMB_ENDS: Set<Role> = setOf(FOOT, HAND)

@@ -38,7 +38,7 @@ When: starter is spike 1, first is the first version, later is after it.
 | Fur | Three kinds. Silhouette fur is strokes on the surface that show near the silhouette. Big tufts are drawn into the outline. Interior fur is flat color by design, with optional strokes for definition | Starter |
 | Mane, long hair | A `hair` shell part, like a garment, with a loose bone chain and tufts in its outline | First |
 | Whiskers, eyebrows, cheek marks, blush | Marks | Starter |
-| Bird wings | `wing-feathered` template: the leg blocks with shoulder, elbow and wrist joints along the axis, the `lens` section, and a view remap so the planform drawn in Top sets each slice's chord. Primaries are tufts in the outline; feather lines are strokes | Later |
+| Bird wings | `wing-feathered` template, role wing: one tube with shoulder, elbow and wrist joints along the axis and a pointed tip, the `lens` section, and a view remap so the planform drawn in Top sets each slice's chord and Side its thickness. It sits on a hand-made socket. Primaries are tufts in the outline; feather lines are strokes. Pose drags it by its wrist and never plants it | First |
 | Dragon, bat wings | `wing-membrane` template: an arm chain, a toe row of long fingers, and a `membrane` block spanning between the digits and back to a body socket | Later |
 | Fins, frills, crests, spines | `lens`-section templates on sockets; a row of them along the back uses a socket row, sockets repeated along a curve on the parent | Later |
 | Horns, antlers, tusks | `horn` template, a tube with a pointed cap; antlers chain `horn` parts through a tip socket | Later |
@@ -57,7 +57,7 @@ Templates are accelerators, not the only way in. A character can start from an e
 
 - **Blank** is a body plan with one root part and the default palette, offered beside the species plans.
 - **Generic templates** `tube`, `blob` and `sheet` are data files over existing blocks with nothing preset: one tube, skull or lens-section run, one bone from end to end, open end, section profile and views chosen in the Shape inspector.
-- **Anatomy by hand.** Move adds joints, sockets, landmarks and pair flags on any part, so a generic tube becomes a leg when its bend and its paw socket are placed.
+- **Anatomy by hand.** Move adds sockets on any part: Add socket places one where it is pressed, with an outward angle and a pair flag, and Add part offers every template on it. Joints, landmarks and pair flags on two parts are not built yet; with them a generic tube becomes a leg when its bend and its paw socket are placed.
 - **A generic part's role is guessed.** A generic template gives no role, so a part placed from it has its role guessed from where it sits, a tube hanging from the root's rear end a tail, one hanging down a leg, one on the head's top an ear, and the Shape inspector's role chip shows the guess dashed until it is chosen. The pose tools read the role. See [data-model.md](data-model.md), Roles.
 - **Re-templating keeps the drawing.** Outlines live in part axes under the same views grammar, so a generic part can take a typed template later, or a typed part can drop to generic, and the outlines stay.
 - **Save as template** turns a hand-built part, with its joints and sockets, into a template file.
@@ -73,4 +73,4 @@ Face mark groups on a generic head anchor to a landmark placed by hand, which is
 - A **tip socket** on tubes, for antlers chained from horns.
 - A **membrane** block, a surface spanned between digits or parts, for bat wings and webbed feet.
 - The skull's jaw block tags the mouth interior as an `inner` area with a color.
-- New template files, each a data file over existing blocks: `arm`, `hand`, `foot`, `hoof`, `claw`, `nose`, `eye`, `neck`, `hair`, `head-round` in the first version; `beak`, `fang`, `teeth`, `tongue`, `horn`, `wing-feathered`, `wing-membrane`, `fin` later.
+- New template files, each a data file over existing blocks: `arm`, `hand`, `foot`, `hoof`, `claw`, `nose`, `eye`, `neck`, `hair`, `head-round` in the first version; `beak`, `fang`, `teeth`, `tongue`, `horn`, `wing-membrane`, `fin` later; `wing-feathered` ships.

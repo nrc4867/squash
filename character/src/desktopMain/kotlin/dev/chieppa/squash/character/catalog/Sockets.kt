@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.catalog
 
+import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
@@ -32,7 +33,7 @@ fun openSockets(document: SquashDocument, plan: BodyPlan, templates: TemplateFol
     val filled = parts.mapNotNull { it.socket }.toSet()
     return parts.filter { it.isLeader }.flatMap { part ->
         val template = templates.template(part.template) ?: return@flatMap emptyList()
-        plan.socketsOn(template).mapNotNull { spec ->
+        socketsOn(plan, template, document.character.resolvedShape(part).params).mapNotNull { spec ->
             val takes = if (spec.takes.isEmpty()) templates.newest.map { it.id } else spec.takes.filter { templates.template(it) != null }
             when {
                 takes.isEmpty() || SocketRef(part.id, spec.name) in filled -> null

@@ -29,7 +29,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.OpenSocket
+import dev.chieppa.squash.character.catalog.partName
+import dev.chieppa.squash.document.TemplateId
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import dev.chieppa.squash.uidesign.generated.add_part_on_socket
+import dev.chieppa.squash.uidesign.generated.move_socket_name
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.model.PartTemplate
@@ -55,6 +62,9 @@ import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
 
 private val TILE = 88.dp
+private val GRID_TILE = 72.dp
+private val GRID_GAP = 6.dp
+private const val GRID_COLUMNS = 3
 private val TILE_ICON = 32.dp
 private val ROW_ICON = 14.dp
 private val POPOVER_WIDTH = 320.dp
@@ -64,6 +74,13 @@ private val ENTER_KEYS = listOf("Enter")
 @Composable
 fun openSocketCount(socket: OpenSocket): String = stringResource(if (socket.paired) Res.string.add_part_pair else Res.string.add_part_one)
 
+/** Names for [sockets] as the panels read them: socket 1 for a hand-made one, else the socket's own name. */
+@Composable
+fun socketNames(sockets: List<OpenSocket>): (String) -> String {
+    val numbered = sockets.mapNotNull { HandSockets.idOf(it.name) }.associateWith { stringResource(Res.string.move_socket_name, it) }
+    return { name -> HandSockets.idOf(name)?.let(numbered::get) ?: displayName(name) }
+}
+
 /** Add part's section in the Shape inspector: every open socket, the one its popover is open on lit; a row opens the popover there. */
 @Composable
 fun AddPartSection(state: AppState) {
@@ -71,11 +88,12 @@ fun AddPartSection(state: AppState) {
     val document = session?.document?.collectAsState()?.value ?: return
     val adding by state.addingSocket.collectAsState()
     val sockets = remember(document) { state.openSocketsNow() }
+    val names = socketNames(sockets)
     DrawerSection(stringResource(Res.string.add_part)) {
         for (socket in sockets) {
             ListRow(socket == adding, { state.offerSocket(socket) }, Modifier.testTag(ShellTags.addSocket(socket.name))) {
                 Icon(SquashIcons.AddPart, Stretch.colors.inkControl, size = ROW_ICON)
-                BasicText(displayName(socket.name), Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = Stretch.colors.ink)), maxLines = 1)
+                BasicText(names(socket.name), Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = Stretch.colors.ink)), maxLines = 1)
                 BasicText(openSocketCount(socket), style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)), maxLines = 1)
             }
         }
@@ -84,7 +102,8 @@ fun AddPartSection(state: AppState) {
 
 /**
  * The popover a socket's dot or row opens: the types that socket takes, what a person draws for the one chosen, and Add, which
- * Enter presses too. Esc or a press outside closes it.
+ * Enter presses too. A hand-made socket, which takes every type, is titled by its part and number and lists the types as a grid.
+ * Esc or a press outside closes it.
  */
 @Composable
 fun AddPartPopover(state: AppState) {
@@ -94,7 +113,14 @@ fun AddPartPopover(state: AppState) {
     val types = open.takes.mapNotNull { state.templates.template(it) }
     val template = types.firstOrNull { it.id == chosen } ?: types.firstOrNull() ?: return
     val focus = remember { FocusRequester() }
-    Popover(true, state::closeAddPart, stringResource(Res.string.add_part_title, displayName(open.name)), width = POPOVER_WIDTH) {
+    val number = HandSockets.idOf(open.name)
+    val parent = state.session.value?.document?.value?.character?.part(open.parent)
+    val title = if (number != null && parent != null) {
+        stringResource(Res.string.add_part_on_socket, partName(parent, state.templates), stringResource(Res.string.move_socket_name, number))
+    } else {
+        stringResource(Res.string.add_part_title, displayName(open.name))
+    }
+    Popover(true, state::closeAddPart, title, width = POPOVER_WIDTH) {
         Column(
             Modifier
                 .testTag(ShellTags.ADD_PART)
@@ -107,12 +133,16 @@ fun AddPartPopover(state: AppState) {
                 },
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                types.forEach { type -> TypeTile(type, type.id == template.id) { state.addingType.value = type.id } }
+            if (number != null) {
+                TypeGrid(types, template) { state.addingType.value = it }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    types.forEach { type -> TypeTile(type, type.id == template.id, Modifier.size(TILE)) { state.addingType.value = type.id } }
+                }
+                BasicText(stringResource(Res.string.shell_part_you_draw), style = Stretch.type.eyebrow.merge(TextStyle(color = Stretch.colors.inkMuted)))
+                YouDrawChips(template)
+                FactRow(stringResource(Res.string.shell_part_joints), template.jointCount().toString())
             }
-            BasicText(stringResource(Res.string.shell_part_you_draw), style = Stretch.type.eyebrow.merge(TextStyle(color = Stretch.colors.inkMuted)))
-            YouDrawChips(template)
-            FactRow(stringResource(Res.string.shell_part_joints), template.jointCount().toString())
             val add = stringResource(Res.string.add_part_add, template.name.lowercase())
             Tooltip(add, ENTER_KEYS) {
                 Button(add, state::addPart, Modifier.fillMaxWidth().testTag(ShellTags.ADD_PART_ADD), kind = ButtonKind.Primary, icon = SquashIcons.AddPart)
@@ -122,10 +152,23 @@ fun AddPartPopover(state: AppState) {
     LaunchedEffect(open) { focus.requestFocus() }
 }
 
+/** Every type a hand-made socket takes, three to a row. */
 @Composable
-private fun TypeTile(template: PartTemplate, selected: Boolean, onClick: () -> Unit) {
+private fun TypeGrid(types: List<PartTemplate>, chosen: PartTemplate, choose: (TemplateId) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(GRID_GAP)) {
+        types.chunked(GRID_COLUMNS).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(GRID_GAP)) {
+                row.forEach { type -> TypeTile(type, type.id == chosen.id, Modifier.weight(1f).height(GRID_TILE)) { choose(type.id) } }
+                repeat(GRID_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TypeTile(template: PartTemplate, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val c = Stretch.colors
-    Card(Modifier.size(TILE).testTag(ShellTags.addTile(template.id.value)), onClick, selected) {
+    Card(modifier.testTag(ShellTags.addTile(template.id.value)), onClick, selected) {
         Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 val role = template.role

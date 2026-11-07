@@ -4,10 +4,11 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 
 /**
- * A leg as a pose reaches with it, by places in [Rig.bones]: its [upper] and [lower] bones, the [end] joint its paw hangs from,
- * and the paw's own bone, [foot], when a paw sits there. It is named by its paw, [id], which the planted set holds.
+ * A leg, an arm or a wing as a pose reaches with it, by places in [Rig.bones]: its [upper] and [lower] bones, the [end] joint its paw
+ * hangs from, and the paw's own bone, [foot], when a paw sits there. It is named by its paw, [id], which the planted set holds. A limb
+ * that [plants] stands on the ground and can be pinned there; a wing cannot.
  */
-class Limb(val leg: PartId, val paw: PartId?, val upper: Int, val lower: Int, val end: Int, val foot: Int?) {
+class Limb(val leg: PartId, val paw: PartId?, val upper: Int, val lower: Int, val end: Int, val foot: Int?, val plants: Boolean = true) {
     val id: PartId get() = paw ?: leg
 }
 
@@ -19,7 +20,7 @@ class LookChain(val head: Int, val neck: List<Int>)
 
 /**
  * The handles a pose is made with, found by the parts' roles in the rig's shape: the [root] bone that carries the whole body, every
- * [limbs] leg or arm with the foot or hand at its end, every [tails] chain, and the [look] chain to the head, through any necks above it.
+ * [limbs] leg, arm or wing with the foot or hand at its end, every [tails] chain, and the [look] chain to the head, through any necks above it.
  */
 class PoseChains(val root: Int, val limbs: List<Limb>, val tails: List<Tail>, val look: LookChain?) {
     /** The limb named [id], by its paw or its leg. */
@@ -43,7 +44,7 @@ fun poseChains(rig: Rig): PoseChains {
         val bones = bonesOf.getValue(leg).takeIf { it.size >= LIMB_JOINTS } ?: return@mapNotNull null
         val end = bones[2]
         val paw = children[leg].orEmpty().firstOrNull { roles[it] in Role.LIMB_ENDS && rig.parents[bonesOf.getValue(it).first()] == end }
-        Limb(leg, paw, bones[0], bones[1], end, paw?.let { bonesOf.getValue(it).first() })
+        Limb(leg, paw, bones[0], bones[1], end, paw?.let { bonesOf.getValue(it).first() }, roles[leg] in Role.PLANTING)
     }
     val tails = withRole(setOf(Role.TAIL)).filter { bonesOf.getValue(it).size >= 2 }.map { Tail(it, bonesOf.getValue(it)) }
     val look = withRole(setOf(Role.HEAD)).firstOrNull()?.let { head ->

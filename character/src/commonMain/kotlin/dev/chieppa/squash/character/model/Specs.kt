@@ -13,7 +13,7 @@ data class JointSpec(
     val stretch: Boolean,
 )
 
-/** A child attachment point. [pair] gives it a mirrored twin. */
+/** A child attachment point. [pair] gives it a mirrored twin; [tilt] turns its outward normal toward the part's end, in degrees. */
 data class SocketSpec(
     val name: String,
     val u: Float,
@@ -21,6 +21,7 @@ data class SocketSpec(
     val outward: Outward,
     val pair: Mirror?,
     val takes: List<TemplateId>,
+    val tilt: Float = 0f,
 )
 
 /** A patch a block builds: called [name], or `name:i` for each of a row when it [repeats]. */

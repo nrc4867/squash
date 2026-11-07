@@ -47,7 +47,8 @@ sealed interface PartRow {
 /**
  * The Parts tree: each placed part under the part it sits on, and each open socket under the part that has it. A
  * pair reads as one row, as the boards draw it, until its
- * sides can differ: with [mirror] off or once a side has overrides, each side has a row of its own under it, named by [sideLabel].
+ * sides can differ: with [mirror] off or once a side has overrides, each side has a row of its own under it, named by [sideLabel]. A
+ * socket's row reads [socketLabel] of its name.
  */
 fun partTree(
     document: SquashDocument,
@@ -55,13 +56,14 @@ fun partTree(
     templates: TemplateFolder,
     mirror: Boolean = true,
     sideLabel: (Side) -> String = { it.name },
+    socketLabel: (String) -> String = ::displayName,
 ): List<TreeNode<PartRow>> {
     val parts = document.character.parts
     val open = openSockets(document, plan, templates).groupBy { it.parent }
     val roles = templates.roles(document.character)
     fun node(part: PartInstance): TreeNode<PartRow> {
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
-        val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, displayName(it.name))) }
+        val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, socketLabel(it.name))) }
         val guessed = roles.resolved(part).takeIf { roles.isGuess(part) }
         val row = PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part), guessed)
         return TreeNode(row, document.sideRows(part, mirror, sideLabel) + placed + waiting)

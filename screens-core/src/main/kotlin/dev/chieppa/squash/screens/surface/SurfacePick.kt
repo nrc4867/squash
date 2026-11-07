@@ -1,8 +1,5 @@
 package dev.chieppa.squash.screens.surface
 
-import dev.chieppa.squash.document.Character
-import dev.chieppa.squash.character.build.TemplateLibrary
-import dev.chieppa.squash.character.build.partColorInput
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
@@ -17,18 +14,8 @@ data class SurfaceHit(val part: PartId, val patch: String, val u: Float, val v: 
     val anchor: Anchor get() = Anchor(part, patch, u, v)
 }
 
-private const val PATCH_SEPARATOR = ":"
-
 /** How many halvings find the edge of what shows between a pixel off the surface and one on it. */
 private const val EDGE_STEPS = 6
-
-/** The name of the template area [anchor] lies in, the last named there as it overdraws the rest, or null outside them all. */
-fun areaAt(character: Character, templates: TemplateLibrary, anchor: Anchor): String? =
-    partColorInput(character, anchor.part, templates).areas.lastOrNull { area ->
-        val onPatch = anchor.patch == area.patch || anchor.patch.startsWith(area.patch + PATCH_SEPARATOR)
-        val around = anchor.v in area.v.start..area.vEnd || anchor.v + 1f in area.v.start..area.vEnd
-        onPatch && around && anchor.u in area.u.start..area.u.end
-    }?.name
 
 /** The nearest place on any placed part of [character] showing at [pixel], or null where none does. */
 fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView): SurfaceHit? {

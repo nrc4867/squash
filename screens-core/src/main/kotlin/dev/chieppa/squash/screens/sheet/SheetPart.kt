@@ -31,7 +31,7 @@ class SheetPart(private val placed: PlacedPart) {
     val planned: Boolean get() = placed.planned
     val side: BodySide? get() = placed.bodySide()
     val lengthFactor: Float get() = placed.lengthFactor
-    val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored, placed.template.axis.up?.toVec3())
+    val axes: PartAxes = PartAxes.of(placed.template.axis.rest.toVec3(), placed.mirrored, placed.template.axis.up?.toVec3(), placed.template.viewPlanes)
     val box: BodyBox = requireNotNull(placed.box) { "A part with nothing built is not drawn" }
     val extents: PartExtents = requireNotNull(placed.surface.extents)
 

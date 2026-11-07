@@ -55,7 +55,7 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
     val bendLabel = stringResource(Res.string.pose_bend)
     val lengthLabel = stringResource(Res.string.pose_length)
     DrawerSection(names(limb.id)) {
-        SwitchRow(stringResource(Res.string.pose_planted), limb.id in pose.planted, { session.send(SetPlanted(limb.id, it)) }, PoseInspectorTags.LIMB_PLANTED)
+        if (limb.plants) SwitchRow(stringResource(Res.string.pose_planted), limb.id in pose.planted, { session.send(SetPlanted(limb.id, it)) }, PoseInspectorTags.LIMB_PLANTED)
         SwitchRow(stringResource(Res.string.pose_rides), limb.id !in pose.still, { session.send(SetRiding(limb.id, it)) }, PoseInspectorTags.RIDES)
         SettingRow(bendLabel) {
             val range = knee.limits?.let { it.min..it.max } ?: FREE_BEND

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.role
 
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
@@ -111,8 +112,8 @@ class PartRoles(private val character: Character, private val templates: (Templa
 
     /** Socket [name] on [parent], where the Move tool has put it. */
     private fun specOn(parent: PartInstance, template: PartTemplate, name: String): SocketSpec? {
-        val spec = (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }).firstOrNull { it.name == name } ?: return null
         val params = character.resolvedShape(parent).params
+        val spec = socketsOn(plan, template, params).firstOrNull { it.name == name } ?: return null
         return spec.copy(u = params[PlacementParams.socketU(name)] ?: spec.u, v = params[PlacementParams.socketV(name)] ?: spec.v)
     }
 

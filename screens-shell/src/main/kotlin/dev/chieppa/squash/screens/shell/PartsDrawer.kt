@@ -30,6 +30,7 @@ import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.catalog.twin
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_tree_differs
@@ -61,7 +62,8 @@ fun PartsDrawerContent(state: AppState) {
     val mirror by state.mirror.collectAsState()
     val left = stringResource(Res.string.shell_tree_left)
     val right = stringResource(Res.string.shell_tree_right)
-    val roots = partTree(document, plan, state.templates, mirror) { if (it == Side.LEFT) left else right }
+    val names = socketNames(remember(document) { state.openSocketsNow() })
+    val roots = partTree(document, plan, state.templates, mirror, { if (it == Side.LEFT) left else right }, names)
     val guesses = roleLabels(state.templates.roles(document.character).fourLegged)
     val rows = flattenTree(roots) { true }.map { it.node.item }
     val current = rows.firstOrNull { it is PartRow.Open && it.socket == socket } ?: rows.firstOrNull { it is PartRow.SideOf && it.part.id == selected } ?: rows.firstOrNull {

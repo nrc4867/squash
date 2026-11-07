@@ -19,15 +19,15 @@ private const val RANDOM_BUILDS = 25
 
 class ShippedTemplatesTest {
     @Test
-    fun theSixStarterTemplatesAndThePlanLoadAndLint() {
-        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value }.distinct().sorted())
+    fun theShippedTemplatesAndThePlanLoadAndLint() {
+        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso", "wing-feathered"), shipped.parts.map { it.id.value }.distinct().sorted())
         assertEquals(listOf("canine-quadruped"), shipped.plans.map { it.id.value })
     }
 
     @Test
     fun everyVersionShipsSoASavedCharacterKeepsBuilding() {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
-        assertEquals(mapOf("ear" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1), "paw" to listOf(1), "tail" to listOf(1, 2), "torso" to listOf(1, 2)), versions)
+        assertEquals(mapOf("ear" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1), "paw" to listOf(1), "tail" to listOf(1, 2), "torso" to listOf(1, 2), "wing-feathered" to listOf(1)), versions)
     }
 
     @Test
@@ -84,7 +84,7 @@ class ShippedTemplatesTest {
 
     @Test
     fun defaultBuildsMatchTheirFixtures() {
-        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso"), shipped.parts.map { it.id.value }.distinct().sorted())
+        assertEquals(listOf("ear", "head", "leg", "paw", "tail", "torso", "wing-feathered"), shipped.parts.map { it.id.value }.distinct().sorted())
         for (template in shipped.parts) {
             val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template))
             GoldenFixture.check(Path.of("src/desktopTest/golden/${template.id.value}-${template.version}.txt"), templateFixture(mesh), "character")

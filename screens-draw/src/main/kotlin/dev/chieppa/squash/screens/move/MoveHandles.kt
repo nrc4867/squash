@@ -44,13 +44,17 @@ sealed interface MoveHandle {
     val position: Vec3
 }
 
-/** Socket [socket] on [parent], as the part on [side] sits on it. [child] is that part, or null while the socket is empty. */
+/**
+ * Socket [socket] of part [owner], lying on [parent], which is the owner or its twin, as the part on [side] sits on it. [child] is
+ * that part, or null while the socket is empty.
+ */
 class SocketHandle(
     val parent: PlacedPart,
     val socket: String,
     val side: Side?,
     val child: PartId?,
     override val position: Vec3,
+    val owner: PartId? = parent.id,
 ) : MoveHandle
 
 /** Joint [name] of [part], at [u], free to move within [range]. */
@@ -71,8 +75,8 @@ fun moveHandles(character: AssembledCharacter, selected: PartId?): List<MoveHand
         SocketHandle(parent, socket.socket, part.side, part.id, at)
     }
     val open = character.sockets.mapNotNull { socket ->
-        val parent = character.part(socket.ref.parent) ?: return@mapNotNull null
-        SocketHandle(parent, socket.ref.socket, null, null, socket.position)
+        val parent = character.part(socket.on) ?: return@mapNotNull null
+        SocketHandle(parent, socket.ref.socket, socket.side, null, socket.position, socket.ref.parent)
     }
     return placed + open + selected?.let(character::part)?.let(::jointHandles).orEmpty()
 }

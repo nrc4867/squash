@@ -18,11 +18,11 @@ internal object Pressed : PoseDrag {
 class PinTool(state: AppState, look: PoseHandleLook) : PoseTool(state, look) {
     override fun takes(grip: PoseGrip): Boolean = grip is PoseGrip.End
 
-    override fun shows(grip: PoseGrip): Boolean = grip is PoseGrip.End || grip == PoseGrip.Body
+    override fun shows(grip: PoseGrip): Boolean = (grip is PoseGrip.End && plants(grip.limb)) || grip == PoseGrip.Body
 
     override fun grab(grip: PoseGrip?, pixel: Offset, sight: SurfaceView, shift: Boolean): PoseDrag? {
         val session = state.session.value ?: return null
-        val limb = (grip as? PoseGrip.End)?.limb ?: limbUnder(pixel, sight) ?: return null
+        val limb = (grip as? PoseGrip.End)?.limb?.takeIf(::plants) ?: limbUnder(pixel, sight) ?: return null
         state.pose.limb = limb
         session.send(SetPlanted(limb, limb !in session.document.value.character.pose.planted))
         return Pressed
@@ -32,6 +32,9 @@ class PinTool(state: AppState, look: PoseHandleLook) : PoseTool(state, look) {
         val rig = rig ?: return null
         val posed = state.posing.value?.posed?.output?.value ?: return null
         val part = boneUnder(rig, posed, pixel, sight)?.part ?: return null
-        return state.pose.solverFor(rig).chains.limbs.firstOrNull { it.paw == part || it.leg == part }?.id
+        return state.pose.solverFor(rig).chains.limbs.firstOrNull { it.plants && (it.paw == part || it.leg == part) }?.id
     }
+
+    /** Whether the limb named [id] stands on the ground, so it can be pinned there. */
+    private fun plants(id: PartId): Boolean = rig?.let { state.pose.solverFor(it).chains.limb(id)?.plants } == true
 }

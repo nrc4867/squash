@@ -48,7 +48,7 @@ class TemplateOutlineTest {
     private fun profile(template: PartTemplate, patches: List<Patch>, view: View, scale: Float = 1f): OutlineProfile {
         val axes = PartBuilder.axes(template)
         val mesh = PartBuilder.mesh(template.id.value, template, patches)
-        return assertNotNull(meshProfile(mesh.patches) { axes.viewPoint(view, it * scale) }, "${template.id.value} $view")
+        return assertNotNull(meshProfile(mesh.patches) { axes.viewPoint(template.planeOf(view), it * scale) }, "${template.id.value} $view")
     }
 
     /** The furthest either silhouette lies from the other, as the eye measures it. */

@@ -31,6 +31,7 @@ import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.catalog.template
+import dev.chieppa.squash.screens.move.MoveEditState
 import dev.chieppa.squash.screens.spine.SpineEditState
 import dev.chieppa.stretch.document.DocumentSession
 import dev.chieppa.stretch.document.DocumentStorage
@@ -135,6 +136,9 @@ class AppState(
     /** What the Pose stage remembers: Drag's options, the limb and bone picked and the handle under the pointer. */
     val pose = PoseEditState()
 
+    /** What the Move tool remembers: its mode, the next socket's angle and pair, and the hand-made socket picked. */
+    val move = MoveEditState()
+
     /** The open socket Add part's popover is open on, and the type it would add there. */
     val addingSocket = MutableStateFlow<OpenSocket?>(null)
     val addingType = MutableStateFlow<TemplateId?>(null)
@@ -186,6 +190,7 @@ class AppState(
         mirror.value = true
         activeView.value = View.SIDE
         closeAddPart()
+        move.clear()
         curves.clear()
         spine.clear()
         paint.clear()
@@ -198,6 +203,7 @@ class AppState(
                 if (selectedPart.value?.let(current.character::part) == null) selectedPart.value = current.character.parts.firstOrNull()?.id
                 val plan = templates.plan(current.character.bodyPlan)
                 if (plan != null && addingSocket.value?.let { it in openSockets(current, plan, templates) } == false) closeAddPart()
+                if (move.picked.value?.let { hasHandSocket(current, it) } != true) move.picked.value = null
             }
         }
         return opened
@@ -219,6 +225,7 @@ class AppState(
         file.value = null
         selectedPart.value = null
         closeAddPart()
+        move.clear()
         curves.clear()
         spine.clear()
         lines.clear()

@@ -11,15 +11,15 @@ import dev.chieppa.squash.geom.PartAxes as BuildAxes
  * where their width is. They come from the template's rest axis and the part's side alone, so they stay put while the
  * outlines change. A mirrored part's are reflected across the body's plane, which is why [side] is its own field.
  */
-data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
+data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3, val planes: Map<View, View> = emptyMap()) {
     /** Which view each [BodyView] holds: the arrangement that shows every view's plane the most squarely, the plainest on a tie. */
     val framing: Map<BodyView, View> = FRAMINGS.maxBy { arrangement -> arrangement.entries.sumOf { (body, view) -> squareness(view, body).toDouble() } }
 
     /** The body view holding [view]. */
     fun bodyViewOf(view: View): BodyView = framing.entries.first { it.value == view }.key
 
-    /** The direction an outline's x and y run in for [view]. */
-    fun planeOf(view: View): Pair<Vec3, Vec3> = when (view) {
+    /** The direction an outline's x and y run in for [view], in the plane of the view [planes] draws it in, its own by default. */
+    fun planeOf(view: View): Pair<Vec3, Vec3> = when (planes[view] ?: view) {
         View.SIDE -> along to up
         View.TOP -> along to side * -1f
         View.FRONT -> side to up
@@ -58,11 +58,14 @@ data class PartAxes(val along: Vec3, val up: Vec3, val side: Vec3) {
             mapOf(BodyView.TOP to View.FRONT, BodyView.SIDE to View.TOP, BodyView.FRONT to View.SIDE),
         )
 
-        /** The axes of a template with rest axis [rest], the same ones its swept patches' first slice has, reflected when [mirrored]. */
-        fun of(rest: Vec3, mirrored: Boolean = false, towards: Vec3? = null): PartAxes {
+        /**
+         * The axes of a template with rest axis [rest], the same ones its swept patches' first slice has, reflected when [mirrored],
+         * with the views it draws in another's plane, [planes].
+         */
+        fun of(rest: Vec3, mirrored: Boolean = false, towards: Vec3? = null, planes: Map<View, View> = emptyMap()): PartAxes {
             val axes = BuildAxes.of(rest, towards)
-            if (!mirrored) return PartAxes(axes.along, axes.up, axes.side)
-            return PartAxes(axes.along.mirrored, axes.up.mirrored, axes.side.mirrored)
+            if (!mirrored) return PartAxes(axes.along, axes.up, axes.side, planes)
+            return PartAxes(axes.along.mirrored, axes.up.mirrored, axes.side.mirrored, planes)
         }
     }
 }

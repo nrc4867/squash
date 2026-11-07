@@ -46,7 +46,7 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
             if (!isToolPress(down)) return@awaitEachGesture
             val dot = handleAt(dots(), down.position, curves.grabReach, handles) as? SocketHandle ?: return@awaitEachGesture
             down.consume()
-            state.openSocketsNow().firstOrNull { it.ref.parent == dot.parent.id && it.ref.socket == dot.socket }?.let(state::offerSocket)
+            state.openSocketsNow().firstOrNull { it.ref.parent == dot.owner && it.ref.socket == dot.socket }?.let(state::offerSocket)
         }
     }
 
@@ -54,7 +54,7 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
         val adding = state.addingSocket.value?.ref
         for (dot in dots()) {
             val at = view.toPixel(dot.position) ?: continue
-            val picked = adding != null && adding.parent == dot.parent.id && adding.socket == dot.socket
+            val picked = adding != null && adding.parent == dot.owner && adding.socket == dot.socket
             val radius = if (picked) look.pickedDotRadius else look.dotRadius
             dot(at, radius + look.dotEdge, look.ring)
             dot(at, radius, if (picked) look.active else look.dotFill)
