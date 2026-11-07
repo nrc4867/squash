@@ -34,7 +34,9 @@ object SquashIcons {
     }
     val BodyCurve: ImageVector by lazy {
         icon("body-curve") {
-            stroke("M1.5 9.5c2.2-3.3 4.3-3.3 6.5 0s4.3 3.3 6.5 0")
+            stroke("M3.5 10.75C5.5 6 9 5 12.25 5.25")
+            stroke("M1.5 11.75a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+            stroke("M12.25 5.25a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
         }
     }
     val BodyPlan: ImageVector by lazy {

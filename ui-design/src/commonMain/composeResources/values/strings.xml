@@ -459,4 +459,16 @@
     <string name="pose_step_volume">Keep volume</string>
     <string name="pose_step_rides">Rides with body</string>
     <string name="pose_step_reset">Reset pose</string>
+    <string name="pose_tool_body_curve">Body curve</string>
+    <string name="pose_curve_squash">squash</string>
+    <string name="pose_curve_stretch">stretch</string>
+    <string name="pose_curve_clear">Clear curve</string>
+    <string name="pose_curve_length">Length %1$d%</string>
+    <string name="pose_curve_square">Side or Top only</string>
+    <string name="pose_chain">Pose</string>
+    <string name="pose_chain_spine">Spine</string>
+    <string name="pose_chain_neck">Neck</string>
+    <string name="pose_chain_head">Head</string>
+    <string name="pose_chain_tail">Tail</string>
+    <string name="pose_status_curve">Length %1$d% · %2$d paws planted</string>
 </resources>

@@ -34,7 +34,7 @@ import kotlin.math.roundToInt
 private const val PERCENT = 100f
 
 /** How far the Length slider stretches a limb either way, as a factor of its rest length. */
-private val LENGTH_RANGE = 0.5f..1.5f
+internal val LENGTH_RANGE = 0.5f..1.5f
 
 /** How far the Bend slider runs for a knee with no limits, in degrees. */
 private val FREE_BEND = -180f..180f

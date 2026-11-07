@@ -46,6 +46,7 @@ class ShellKeysTest {
         assertEquals(ShellActions.STAGE_POSE.value, shell.resolve("6", Stage.RIG))
         assertEquals(BuildTool.DRAG.actionId, shell.resolve("D", Stage.POSE))
         assertEquals(BuildTool.TURN.actionId, shell.resolve("E", Stage.POSE))
+        assertEquals(BuildTool.BODY_CURVE.actionId, shell.resolve("C", Stage.POSE))
         assertEquals(BuildTool.PIN.actionId, shell.resolve("P", Stage.POSE))
         assertEquals(BuildTool.LOOK.actionId, shell.resolve("L", Stage.POSE))
         assertNull(shell.resolve("P", Stage.SHAPE), "P pins only in Pose")

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.rig.BoneName
 import dev.chieppa.squash.rig.PoseSolver
 import dev.chieppa.squash.rig.Rig
@@ -28,7 +29,13 @@ sealed interface PoseGrip {
 
     /** One of the picked bone's rings. */
     data class Ring(val axis: TurnAxis) : PoseGrip
+
+    /** A handle on the body curve's stroke in [view]: its start, its end or its middle, [at]. */
+    data class Curve(val view: View, val at: CurveSpot) : PoseGrip
 }
+
+/** Where on a body curve's stroke a handle sits. */
+enum class CurveSpot { START, MIDDLE, END }
 
 /** The three ways the Turn tool's rings turn a bone. */
 enum class TurnAxis { TIP, TURN, LEAN }

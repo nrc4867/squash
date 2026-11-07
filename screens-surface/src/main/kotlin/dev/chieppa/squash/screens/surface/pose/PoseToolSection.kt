@@ -11,6 +11,7 @@ import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.pose_tool_body_curve
 import dev.chieppa.squash.uidesign.generated.pose_tool_drag
 import dev.chieppa.squash.uidesign.generated.pose_tool_look
 import dev.chieppa.squash.uidesign.generated.pose_tool_pin
@@ -22,20 +23,18 @@ import org.jetbrains.compose.resources.stringResource
 /** The name of a Pose stage tool. */
 fun poseToolLabel(tool: BuildTool): StringResource = when (tool) {
     BuildTool.TURN -> Res.string.pose_tool_turn
+    BuildTool.BODY_CURVE -> Res.string.pose_tool_body_curve
     BuildTool.PIN -> Res.string.pose_tool_pin
     BuildTool.LOOK -> Res.string.pose_tool_look
     else -> Res.string.pose_tool_drag
 }
 
-/**
- * The Pose tools in the strip's order: Drag, Turn, then the body curve's place, then Pin and Look. A tool missing from [BuildTool],
- * as Body curve is, leaves its place empty.
- */
+/** The Pose tools in the strip's order: Drag, Turn, Body curve, Pin and Look. */
 val POSE_STRIP: List<Pair<BuildTool, ImageVector>> by lazy {
     listOf(
         BuildTool.DRAG to SquashIcons.Drag,
         BuildTool.TURN to SquashIcons.Turn,
-        // The body curve's place.
+        BuildTool.BODY_CURVE to SquashIcons.BodyCurve,
         BuildTool.PIN to SquashIcons.Pin,
         BuildTool.LOOK to SquashIcons.Look,
     )

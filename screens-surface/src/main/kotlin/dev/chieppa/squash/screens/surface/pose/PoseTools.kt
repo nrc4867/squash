@@ -16,13 +16,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /** The Pose stage's tools, each over the pose the document holds and the rig the graph last derived. */
-class PoseTools(val drag: DragTool, val turn: TurnTool, val pin: PinTool, val look: LookTool) {
-    private val all = listOf(drag, turn, pin, look)
+class PoseTools(val drag: DragTool, val turn: TurnTool, val curve: BodyCurveTool, val pin: PinTool, val look: LookTool) {
+    private val all = listOf(drag, turn, curve, pin, look)
 
     /** The tool [tool] arms, or null for a tool of another stage. */
     fun of(tool: BuildTool): PaneTool? = when (tool) {
         BuildTool.DRAG -> drag
         BuildTool.TURN -> turn
+        BuildTool.BODY_CURVE -> curve
         BuildTool.PIN -> pin
         BuildTool.LOOK -> look
         else -> null
@@ -38,7 +39,7 @@ fun rememberPoseTools(state: AppState): PoseTools {
     val sheet = rememberSheetLook()
     val c = Stretch.colors
     val look = PoseHandleLook(sheet.ring, c.accent, c.surfaceFloat, c.inkStrong, c.inkMuted, LocalDensity.current.density)
-    val tools = remember(state) { PoseTools(DragTool(state, look), TurnTool(state, look), PinTool(state, look), LookTool(state, look)) }
+    val tools = remember(state) { PoseTools(DragTool(state, look), TurnTool(state, look), BodyCurveTool(state, look), PinTool(state, look), LookTool(state, look)) }
     val rig = rememberRig(state)
     tools.each {
         it.look = look

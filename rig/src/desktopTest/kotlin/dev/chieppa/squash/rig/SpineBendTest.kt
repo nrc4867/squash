@@ -14,9 +14,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val TORSO = PartId("torso")
-private val TAIL = PartId("tail")
-private val HEAD = PartId("head")
 
 /** How far [bone]'s pivot moves under [pose], off the line its part rests along, across it and sideways out of the body's middle plane. */
 private class Moved(val off: Float, val sideways: Float)

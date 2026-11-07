@@ -76,7 +76,8 @@ object PoseInspectorTags {
 
 /**
  * The Pose inspector: the armed tool's options first, Drag's Firm and Stretch; then the picked limb and the picked bone's turn, the
- * Turn section first while Turn is armed; then the paws with their pins; then Reset bone and Reset pose.
+ * Turn section first while Turn is armed; then the paws with their pins; then Reset bone and Reset pose. With Body curve armed, the
+ * curve's options, the paws with their pins, and how far the curve bends each part of the chain.
  */
 @Composable
 fun PoseInspector(state: AppState, session: CharacterSession) {
@@ -89,6 +90,12 @@ fun PoseInspector(state: AppState, session: CharacterSession) {
     val sliders = remember(session) { SliderGesture(session) }
     val limb = state.pose.limb?.let(solver.chains::limb)
     val bone = state.pose.bone ?: limb?.let { rig.bones[it.lower].name }
+    if (tool == BuildTool.BODY_CURVE) {
+        BodyCurveSection(session, solver, document.character.pose, sliders)
+        PlantedSection(session, solver, document.character, limbs)
+        ChainSection(solver, document.character.pose)
+        return
+    }
     if (tool == BuildTool.DRAG) DragOptions(state)
     if (tool == BuildTool.TURN && bone != null) TurnSection(state, session, rig, document.character, bone, names, sliders)
     if (limb != null) LimbSection(state, session, rig, document.character, limb, limbs, sliders)

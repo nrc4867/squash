@@ -24,53 +24,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val TORSO = PartId("torso")
-private val TAIL = PartId("tail")
-private val HEAD = PartId("head")
-private val PAWS = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map(::PartId).toSet()
-
-/** A play bow: the torso sloping down to the chest, the head raised against it, the tail lifted high. */
-private val BOW = Pose(
-    listOf(
-        BonePose(TORSO, "hips", 8f), BonePose(TORSO, "loin", 6f), BonePose(TORSO, "waist", 6f), BonePose(TORSO, "ribs", 4f),
-        BonePose(TORSO, "chest", -6f), BonePose(HEAD, "neck", -28f),
-        BonePose(TAIL, "root", -45f), BonePose(TAIL, "tail1", -12f), BonePose(TAIL, "tail2", -10f), BonePose(TAIL, "tail3", 8f),
-        BonePose(TAIL, "tail4", 12f), BonePose(TAIL, "tail5", 10f),
-    ),
-)
-
-/**
- * The play bow as a stroke drawn in Side over the bowed fennec: a smooth curve from the tail's tip through every joint of the
- * chain to the head's end, its tangents those of a Catmull-Rom spline. Body x and y, scaled and moved off the body so the solve
- * has to fit it.
- */
-private val PLAY_BOW: BodyStroke by lazy {
-    val chain = checkNotNull(bodyChain(fennec.rig))
-    val transforms = boneTransforms(fennec.rig, BOW)
-    val points = chain.links.map { transforms[it.owner](it.from) } + chain.links.last().let { transforms[it.owner](it.to) }
-    val flat = points.map { Vec2(it.x * DRAWN_SCALE + DRAWN_SHIFT, it.y * DRAWN_SCALE - DRAWN_SHIFT) }
-    BodyStroke(View.SIDE, catmullRom(flat).map { CurvePoint(it.x, it.y) })
-}
-
-private const val DRAWN_SCALE = 1.3f
-private const val DRAWN_SHIFT = 0.2f
-
-/** Joined cubics through [points] with Catmull-Rom tangents, each end's tangent along its last chord. */
-private fun catmullRom(points: List<Vec2>): List<Vec2> = buildList {
-    add(points.first())
-    for (i in 0 until points.lastIndex) {
-        val before = points[(i - 1).coerceAtLeast(0)]
-        val after = points[(i + 2).coerceAtMost(points.lastIndex)]
-        val a = points[i]
-        val b = points[i + 1]
-        val outOf = if (i == 0) (b - a) * (1f / 3f) else (b - before) * (1f / 6f)
-        val into = if (i + 1 == points.lastIndex) (b - a) * (1f / 3f) else (after - a) * (1f / 6f)
-        add(a + outOf)
-        add(b - into)
-        add(b)
-    }
-}
-
 private fun curve(length: Float = 1f, vararg strokes: BodyStroke = arrayOf(PLAY_BOW)) = BodyCurve(strokes.toList(), length)
 
 /**
@@ -182,13 +135,45 @@ class SpikeEightTest {
     }
 
     @Test
-    fun aTopStrokeIsKeptAndBendsNothing() {
-        val top = BodyStroke(View.TOP, listOf(0f to 0f, 0.3f to 0.1f, 0.6f to 0.1f, 0.9f to 0f).map { (x, y) -> CurvePoint(x, y) })
+    fun aTopStrokeBendsTheChainSidewaysWithoutUndoingTheSideBend() {
         val side = solveBodyCurve(rig, planted, curve())
-        val both = solveBodyCurve(rig, planted, curve(1f, PLAY_BOW, top))
-        assertEquals(side.pose.bones, both.pose.bones)
-        assertEquals(top, both.pose.curve?.stroke(View.TOP))
-        assertEquals(planted.copy(curve = curve(1f, top)), solveBodyCurve(rig, planted, curve(1f, top)).pose)
+        val both = solveBodyCurve(rig, planted, curve(1f, PLAY_BOW, SWAY))
+        val tip = both.pose.bones.maxOf { abs(it.degrees - (side.pose.of(it.part, it.joint)?.degrees ?: 0f)) }
+        val lean = both.pose.bones.maxOf { abs(it.lean) }
+        println("a Top stroke leans the chain by $lean degrees at most and changes no tip by more than $tip; ${both.pose.bones.joinToString { "${it.part.value}/${it.joint} ${"%.1f".format(it.lean)}" }}")
+        assertEquals(0f, tip, "the Side bend stays")
+        assertTrue(lean >= MIN_SWAY, "the chain leans sideways")
+        for (bone in both.pose.bones) {
+            val reach = checkNotNull(rig.bone(BoneName(bone.part, bone.joint))).limits?.turnReach() ?: continue
+            assertTrue(abs(bone.lean) <= reach + 1e-3f, "${bone.part.value}/${bone.joint} leans ${bone.lean} past $reach")
+        }
+        val path = SWAY.path().placed(both.top.scale, both.top.offset)
+        val off = topJoints(both).map { (name, p) -> name to path.distanceTo(p) }
+        println("joints off the Top stroke: ${off.maxOf { it.second }} of a ${path.length} stroke; ${off.joinToString { "${it.first} ${"%.4f".format(it.second)}" }}")
+        for ((name, d) in off) assertTrue(d <= ON_TOP, "$name lies $d off the Top stroke")
+        assertEquals(SWAY, both.pose.curve?.stroke(View.TOP))
+        val back = SWAYED.bones.maxOf { abs(it.lean - (both.pose.of(it.part, it.joint)?.lean ?: 0f)) }
+        println("the sway comes back within $back degrees")
+        assertTrue(back <= SWAY_DEGREES, "a bone of the sway comes back $back degrees off")
+    }
+
+    @Test
+    fun aTopStrokeAloneKeepsTheBendTheChainHad() {
+        val bowed = BOW.copy(planted = PAWS)
+        val fit = solveBodyCurve(rig, bowed, curve(1f, SWAY))
+        val tip = BOW.bones.maxOf { abs(it.degrees - (fit.pose.of(it.part, it.joint)?.degrees ?: 0f)) }
+        assertEquals(0f, tip, "the bend the chain had stays")
+        assertTrue(fit.pose.bones.maxOf { abs(it.lean) } >= MIN_SWAY, "the chain leans sideways")
+        assertEquals(curve(1f, SWAY), fit.pose.curve)
+    }
+
+    /** Every joint of the chain as the solved pose takes it, seen from above, but the head's far end. */
+    private fun topJoints(fit: BodyCurveFit): List<Pair<String, Vec2>> {
+        val chain = checkNotNull(bodyChain(rig))
+        val transforms = boneTransforms(rig, fit.pose)
+        return chain.links.filterNot { it.ahead }.flatMap { link ->
+            listOf(link.from, link.to).map { rig.bones[link.owner].name.toString() to transforms[link.owner](it).let { p -> Vec2(p.x, p.z) } }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -244,5 +229,8 @@ class SpikeEightTest {
         const val REFIT_DEGREES = 8f
         const val MOVED_KNEE = 0.6f
         const val SAME_DEGREES = 1e-3f
+        const val ON_TOP = 2e-3f
+        const val SWAY_DEGREES = 1f
+        const val MIN_SWAY = 2f
     }
 }

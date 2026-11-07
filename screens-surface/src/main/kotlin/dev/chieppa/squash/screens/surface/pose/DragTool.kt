@@ -46,7 +46,7 @@ internal class SolvingDrag(
  * or Alt and Shift held during the drag, stop the body where planted paws reach and let a limb stretch past its reach.
  */
 class DragTool(state: AppState, look: PoseHandleLook) : PoseTool(state, look) {
-    override fun takes(grip: PoseGrip): Boolean = grip !is PoseGrip.Ring
+    override fun takes(grip: PoseGrip): Boolean = grip !is PoseGrip.Ring && grip !is PoseGrip.Curve
 
     override fun grab(grip: PoseGrip?, pixel: Offset, sight: SurfaceView, shift: Boolean): PoseDrag? {
         val session = state.session.value ?: return null
@@ -73,7 +73,7 @@ class DragTool(state: AppState, look: PoseHandleLook) : PoseTool(state, look) {
                 drag(curl.tip) { start, target, _ -> solver.curl(start, curl.tail, target) }
             }
             PoseGrip.Look -> drag(handles.look) { start, target, o -> solver.look(start, target, o) }
-            is PoseGrip.Ring, null -> null
+            is PoseGrip.Ring, is PoseGrip.Curve, null -> null
         }
     }
 }

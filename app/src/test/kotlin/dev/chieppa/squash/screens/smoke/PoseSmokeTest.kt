@@ -13,6 +13,18 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.BodyCurve
+import dev.chieppa.squash.document.BodyStroke
+import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.rig.Rig
+import dev.chieppa.squash.rig.bendTo
+import dev.chieppa.squash.rig.curveBones
+import dev.chieppa.squash.screens.sheet.PaneTool
+import kotlin.math.PI
+import kotlin.math.sin
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.PixelRect
@@ -61,12 +73,20 @@ private const val HEIGHT = 900
 private const val SETTLE_MILLIS = 60_000L
 private val LIFTED = PartId("front-paw-l")
 
+/** The bow the Body curve case draws, in body units: the head's end sunk, the body swayed to one side at its middle; and a little short. */
+private const val BOW_SINK = 0.08f
+private const val SWAY = 0.08f
+private const val SQUASHED = 0.92f
+
 private object NoPoseFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
-/** The saved fennec in the Pose stage with Drag armed, its front left paw lifted forward and three paws planted, as board 13 draws it. */
+/**
+ * The saved fennec in the Pose stage: with Drag armed, its front left paw lifted forward and three paws planted, as board 13 draws it;
+ * with Body curve armed, bowed and swayed to a Side and a Top stroke over four planted paws, as board 12 draws it.
+ */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class PoseSmokeTest {
@@ -90,8 +110,8 @@ class PoseSmokeTest {
         return bounds.map { PixelRect((it.left - left).roundToInt(), (it.top - top).roundToInt(), it.width.roundToInt(), it.height.roundToInt()) }
     }
 
-    @Test
-    fun theFennecLiftsAPawWithItsHandlesShowing() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    /** Opens the saved fennec in the Pose stage and gives its bench once the rig has run. */
+    private fun ComposeUiTest.posing(): Bench {
         val bench = Bench(AppState(TemplateFolder.shipped(), scope))
         val state = bench.state
         state.open(savedFennec())
@@ -112,8 +132,43 @@ class PoseSmokeTest {
         waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true && state.rigNow() != null }
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
         waitForIdle()
-        assertEquals(BuildTool.DRAG, state.tool.value)
+        return bench
+    }
 
+    /** Renders the Sheet with [tool]'s handles over it and keeps the panes and the window as [name]. */
+    private fun ComposeUiTest.keepSheet(bench: Bench, tool: PaneTool, name: String) {
+        val session = assertNotNull(bench.state.session.value)
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && bench.selection?.posed != null }
+        waitForIdle()
+        val rects = paneRects()
+        val width = rects.maxOf { it.right }
+        val height = rects.maxOf { it.bottom }
+        val framed = panesInput(assertNotNull(bench.selection), assertNotNull(bench.look), rects, width, height)
+        val fullRect = rects[SheetPane.FULL.ordinal]
+        val camera = assertNotNull(framed.full)
+        val input = SheetInput(
+            rects, width, height, framed.look, framed.selection, framed.cameras, camera,
+            toolOverlays = framed.cameras.mapValues { (view, locked) -> tool.overlay(view, locked) },
+            fullOverlay = tool.fullOverlay(FullView({ camera }, fullRect.width, fullRect.height)),
+            hints = SheetHints(whole = true), color = bench.color, posedPanes = true,
+        )
+        val image = renderSnapshot(sheetFrame(input), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        assertNotBlank(image.pixels, name)
+        keepImage(image.pixels, image.width, name)
+        val root = onAllNodes(isRoot()).onFirst()
+        val window = root.captureToImage().argbPixels()
+        val windowWidth = root.fetchSemanticsNode().size.width
+        val corner = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInWindow }
+        window.paste(windowWidth, image.pixels, image.width, corner.minOf { it.left }.roundToInt(), corner.minOf { it.top }.roundToInt())
+        keepImage(window, windowWidth, "$name-window")
+        assertEquals(emptyList(), errors)
+    }
+
+    @Test
+    fun theFennecLiftsAPawWithItsHandlesShowing() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val bench = posing()
+        val state = bench.state
+        assertEquals(BuildTool.DRAG, state.tool.value)
         val session = assertNotNull(state.session.value)
         val solver = PoseSolver(assertNotNull(state.rigNow()))
         val planted = solver.chains.limbs.map { it.id }.filter { it != LIFTED }.toSet()
@@ -124,31 +179,39 @@ class PoseSmokeTest {
         val stretched = solver.reach(lifted.pose, back, solver.endOf(lifted.pose, back) + Vec3(0f, -0.04f, 0f), SolveOptions(stretch = true))
         session.send(SetPose(stretched.pose.withPlanted(back.id, true)))
         state.pose.limb = LIFTED
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && bench.selection?.posed != null }
-        waitForIdle()
-
-        val rects = paneRects()
-        val width = rects.maxOf { it.right }
-        val height = rects.maxOf { it.bottom }
-        val framed = panesInput(assertNotNull(bench.selection), assertNotNull(bench.look), rects, width, height)
-        val drag = assertNotNull(bench.tools).drag
-        val fullRect = rects[SheetPane.FULL.ordinal]
-        val camera = assertNotNull(framed.full)
-        val input = SheetInput(
-            rects, width, height, framed.look, framed.selection, framed.cameras, camera,
-            toolOverlays = framed.cameras.mapValues { (view, locked) -> drag.overlay(view, locked) },
-            fullOverlay = drag.fullOverlay(FullView({ camera }, fullRect.width, fullRect.height)),
-            hints = SheetHints(whole = true), color = bench.color, posedPanes = true,
-        )
-        val image = renderSnapshot(sheetFrame(input), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
-        assertNotBlank(image.pixels, "pose-lifted")
-        keepImage(image.pixels, image.width, "pose-lifted")
-        val root = onAllNodes(isRoot()).onFirst()
-        val window = root.captureToImage().argbPixels()
-        val windowWidth = root.fetchSemanticsNode().size.width
-        val corner = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInWindow }
-        window.paste(windowWidth, image.pixels, image.width, corner.minOf { it.left }.roundToInt(), corner.minOf { it.top }.roundToInt())
-        keepImage(window, windowWidth, "pose-lifted-window")
-        assertEquals(emptyList(), errors)
+        keepSheet(bench, assertNotNull(bench.tools).drag, "pose-lifted")
     }
+
+    @Test
+    fun theFennecBowsToABodyCurveWithItsHandlesShowing() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val bench = posing()
+        val state = bench.state
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.C) }
+        waitForIdle()
+        assertEquals(BuildTool.BODY_CURVE, state.tool.value)
+        val session = assertNotNull(state.session.value)
+        val rig = assertNotNull(state.rigNow())
+        val solver = PoseSolver(rig)
+        val standing = Pose(planted = solver.chains.limbs.map { it.id }.toSet())
+        val chain = restChain(rig)
+        val side = BodyStroke(View.SIDE, polyline(chain.mapIndexed { i, p -> Vec2(p.x, p.y - BOW_SINK * share(i, chain.lastIndex).let { it * it }) }))
+        val top = BodyStroke(View.TOP, polyline(chain.mapIndexed { i, p -> Vec2(p.x, p.z + SWAY * sin(PI * share(i, chain.lastIndex)).toFloat()) }))
+        session.send(SetPose(solver.bendTo(standing, BodyCurve(listOf(side, top), SQUASHED)).pose))
+        keepSheet(bench, assertNotNull(bench.tools).curve, "pose-curve")
+    }
+
+    private fun share(i: Int, last: Int) = i.toFloat() / last
+
+    /** The body chain's joints at rest from the tail's tip to the head's end, as the body curve lays it. */
+    private fun restChain(rig: Rig): List<Vec3> {
+        val bones = assertNotNull(curveBones(rig))
+        val tip = assertNotNull(rig.bone(bones.behind.last())).let { it.pivot + it.direction * it.length }
+        val end = assertNotNull(rig.bone(bones.ahead.last())).let { it.pivot + it.direction * it.length }
+        return listOf(tip) + (bones.behind.reversed() + bones.spine.drop(1) + bones.ahead).mapNotNull { rig.bone(it)?.pivot } + end
+    }
+
+    /** Joined cubics straight through [points], as a body stroke holds them. */
+    private fun polyline(points: List<Vec2>): List<CurvePoint> = listOf(points.first()).plus(
+        points.zipWithNext().flatMap { (a, b) -> listOf(a + (b - a) * (1f / 3f), a + (b - a) * (2f / 3f), b) },
+    ).map { CurvePoint(it.x, it.y) }
 }

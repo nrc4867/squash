@@ -132,7 +132,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
-        BuildTool.DRAG, BuildTool.TURN, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> selectPart
+        BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> selectPart
     }
     val tool = traceHandles.over(armedTool)
     val selected by state.selectedPart.collectAsState()

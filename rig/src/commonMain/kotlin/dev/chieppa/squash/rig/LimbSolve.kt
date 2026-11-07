@@ -2,7 +2,6 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.Vec3
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.atan2
@@ -14,7 +13,6 @@ private const val LIMB_ROUNDS = 8
 /** How near its target a limb's end counts as there, in body units. */
 const val LIMB_TOLERANCE = 1e-3f
 
-private const val TWO_PI = (2.0 * PI).toFloat()
 
 /**
  * Two-bone reach: bends [limb]'s knee about its hinge until its end stands as far from the hip as [target] does, the bend the
@@ -77,13 +75,6 @@ private fun PoseWork.bendKnee(limb: Limb, target: Vec3) {
 
 /** How much worse a knee angle past its limits is than one as far from the knee's own, per degree. */
 private const val LIMIT_COST = 10f
-
-private fun wrapped(radians: Float): Float {
-    var r = radians % TWO_PI
-    if (r > PI) r -= TWO_PI
-    if (r < -PI) r += TWO_PI
-    return r
-}
 
 /** Turns the hip the shortest way that carries the end toward [target]. */
 private fun PoseWork.aimHip(limb: Limb, target: Vec3) {

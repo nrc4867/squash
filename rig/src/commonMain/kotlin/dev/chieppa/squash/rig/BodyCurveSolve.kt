@@ -25,36 +25,59 @@ private const val HALF_TURN = PI.toFloat()
 private const val SCALE_GROWTH = 1.25f
 private const val SCALE_HALVINGS = 30
 
-/** Where a planted paw stood, by its first bone's pivot in body space, under the pose before a solve and under the solved one. */
+/**
+ * Where a planted paw stood, by the joint it hangs from in body space, under the pose before a solve and under the solved one: the
+ * point [PoseSolver.holdPaws] carries a leg's end back to.
+ */
 data class PawShift(val part: PartId, val before: Vec3, val after: Vec3)
 
+/** Where a stroke lies once fitted: its drawn points times [scale] plus [offset], in its view's plane. */
+data class StrokePlacement(val scale: Float, val offset: Vec2) {
+    /** A point of the stroke as drawn, where the fit put it. */
+    fun placed(drawn: Vec2): Vec2 = Vec2(drawn.x * scale + offset.x, drawn.y * scale + offset.y)
+
+    companion object {
+        val NONE = StrokePlacement(1f, Vec2(0f, 0f))
+    }
+}
+
 /**
- * A body curve solved onto a rig. [pose] is the pose given with the chain's bones turned and stretched and the curve kept.
- * The Side stroke lies where the chain was fitted to it at its drawn points times [scale] plus [offset], in body x and y.
- * [paws] says where each planted paw ended against where it stood, for the limbs' pin solve to bring back.
+ * A body curve solved onto a rig. [pose] is the pose given with the chain's bones turned, leant and stretched and the curve kept.
+ * The Side stroke lies where the chain was fitted to it at its drawn points times [scale] plus [offset], in body x and y; the Top
+ * stroke where [top] places it, in body x and z. [paws] says where each planted paw ended against where it stood, for the limbs'
+ * pin solve to bring back.
  */
-class BodyCurveFit(val pose: Pose, val scale: Float, val offset: Vec2, val paws: List<PawShift>) {
+class BodyCurveFit(val pose: Pose, val scale: Float, val offset: Vec2, val paws: List<PawShift>, val top: StrokePlacement = StrokePlacement.NONE) {
     /** A point of the Side stroke as drawn, where the fit put it in body x and y. */
     fun placed(drawn: Vec2): Vec2 = Vec2(drawn.x * scale + offset.x, drawn.y * scale + offset.y)
 }
 
 /**
- * [pose] with [rig]'s body chain bent onto [curve]'s Side stroke by arc length; see HLD: data-model, Body curve. The stroke is
+ * [pose] with [rig]'s body chain bent onto [curve]'s strokes by arc length; see HLD: data-model, Body curve. The Side stroke is
  * scaled so the chain's spans, laid along it as chords from its start, end at its end, at the curve's length factor: every
  * span of the tail and the root part stretches by that factor and narrows by its square root, the head keeping its size. From the root part's first step outward each joint lands
  * on the stroke one span's chord from the last, each bone turning about its hinge, within its limits, to lie along its chord;
- * the part ahead lies along the stroke's end tangent. The root bone keeps its place, so the stroke is carried to meet it. Legs,
- * the jaw and the ears keep their pose. A Top stroke is kept and bends nothing.
+ * the part ahead lies along the stroke's end tangent. The root bone keeps its place, so the stroke is carried to meet it. The Top
+ * stroke then leans each bone of the chain across its hinge the same way, onto the stroke seen from above, keeping the Side bend;
+ * with no Side stroke the chain keeps the bend it had. Legs, the jaw and the ears keep their pose.
  */
 fun solveBodyCurve(rig: Rig, pose: Pose, curve: BodyCurve): BodyCurveFit {
     val kept = pose.copy(curve = curve)
-    val chain = bodyChain(rig)
-    val stroke = curve.stroke(View.SIDE)
-    if (chain == null || stroke == null) return BodyCurveFit(kept, 1f, Vec2(0f, 0f), pawShifts(rig, pose, kept))
+    val chain = bodyChain(rig) ?: return BodyCurveFit(kept, 1f, Vec2(0f, 0f), pawShifts(rig, pose, kept))
     val factor = curve.length.coerceAtLeast(MIN_STRETCH)
+    val side = curve.stroke(View.SIDE)?.let { sideFit(rig, chain, kept, it, factor) }
+    val bent = side?.first ?: ChainWalk(rig, kept).posed(kept, chain, factor)
+    val top = curve.stroke(View.TOP)?.let { leanAlongTop(rig, chain, bent, it) }
+    val solved = top?.first ?: bent
+    val placement = side?.second ?: StrokePlacement.NONE
+    return BodyCurveFit(solved, placement.scale, placement.offset, pawShifts(rig, pose, solved), top?.second ?: StrokePlacement.NONE)
+}
+
+/** [pose] with the chain bent onto the Side [stroke] at the length [factor], and where the stroke was placed to meet it. */
+private fun sideFit(rig: Rig, chain: BodyChain, pose: Pose, stroke: BodyStroke, factor: Float): Pair<Pose, StrokePlacement> {
     val vectors = chain.links.map { (stretchOf(rig, chain, it.owner, factor) * (it.to - it.from)).flat }
     val total = vectors.sumOf { it.size.toDouble() }.toFloat()
-    val drawn = stroke.path().runningAlong(chain)
+    val drawn = stroke.path().runningAlong(chain.along { it.flat })
     val scale = fittingScale(drawn, vectors.map { it.size }, total)
     val path = drawn.placed(scale)
     val walk = ChainWalk(rig, pose)
@@ -86,8 +109,7 @@ fun solveBodyCurve(rig: Rig, pose: Pose, curve: BodyCurve): BodyCurveFit {
     val pivot = if (parent >= 0) boneTransforms(rig, pose)[parent](owner.pivot) else owner.pivot
     val reach = (stretchOf(rig, chain, rootLink.owner, factor) * (rootLink.from - owner.pivot)).flat
     val carried = pivot.flat + rotate(reach, walk.turnOf(rootLink.owner))
-    val solved = walk.posed(kept, chain, factor)
-    return BodyCurveFit(solved, scale, carried - start, pawShifts(rig, pose, solved))
+    return walk.posed(pose, chain, factor) to StrokePlacement(scale, carried - start)
 }
 
 /** The turns a walk along the chain has set: each bone's turn in the Side plane as the body sees it, and its own degrees. */
@@ -141,7 +163,7 @@ private operator fun Mat3?.times(v: Vec3): Vec3 = if (this == null) v else this 
  * The scale at which [steps] of chord laid one after another along [drawn] from its start end at its end. Chords cut across
  * the curve's bends, so this is at least [total] over the drawn length.
  */
-private fun fittingScale(drawn: ArcPath, steps: List<Float>, total: Float): Float {
+internal fun fittingScale(drawn: ArcPath, steps: List<Float>, total: Float): Float {
     fun overshoot(scale: Float): Float {
         var s = 0f
         for (step in steps) s = drawn.reach(drawn.pointAt(s), s, step / scale)
@@ -157,14 +179,15 @@ private fun fittingScale(drawn: ArcPath, steps: List<Float>, total: Float): Floa
     return (low + high) / 2f
 }
 
-private fun pawShifts(rig: Rig, before: Pose, after: Pose): List<PawShift> {
+internal fun pawShifts(rig: Rig, before: Pose, after: Pose): List<PawShift> {
     if (after.planted.isEmpty()) return emptyList()
     val from = boneTransforms(rig, before)
     val to = boneTransforms(rig, after)
     return after.planted.mapNotNull { part ->
         val first = rig.bones.indexOfFirst { it.name.part == part }.takeIf { it >= 0 } ?: return@mapNotNull null
-        val pivot = rig.bones[first].pivot
-        PawShift(part, from[first](pivot), to[first](pivot))
+        val joint = rig.parents[first].takeIf { it >= 0 } ?: first
+        val pivot = rig.bones[joint].pivot
+        PawShift(part, from[joint](pivot), to[joint](pivot))
     }
 }
 
@@ -174,16 +197,18 @@ internal fun BodyStroke.path(): ArcPath {
     return ArcPath.of(BezierPath((0 until (p.size - 1) / 3).map { CubicBezier(p[it * 3], p[it * 3 + 1], p[it * 3 + 2], p[it * 3 + 3]) }))
 }
 
-/** This path running the way the chain does, from the part behind to the part ahead, whichever way it was drawn. */
-private fun ArcPath.runningAlong(chain: BodyChain): ArcPath {
-    val along = (chain.links.last().to - chain.links.first().from).flat
+/** The way [chain] runs at rest, from the part behind to the part ahead, in the plane [flat] takes body space to. */
+internal fun BodyChain.along(flat: (Vec3) -> Vec2): Vec2 = flat(links.last().to - links.first().from)
+
+/** This path running [along], the way the chain does, from the part behind to the part ahead, whichever way it was drawn. */
+internal fun ArcPath.runningAlong(along: Vec2): ArcPath {
     val drawn = points.last() - points.first()
     return if (drawn.x * along.x + drawn.y * along.y < 0f) reversed() else this
 }
 
 private val Vec3.flat: Vec2 get() = Vec2(x, y)
 
-private val Vec2.size: Float get() = hypot(x, y)
+internal val Vec2.size: Float get() = hypot(x, y)
 
 private fun rotate(v: Vec2, radians: Float): Vec2 {
     val c = cos(radians)
@@ -191,7 +216,8 @@ private fun rotate(v: Vec2, radians: Float): Vec2 {
     return Vec2(v.x * c - v.y * s, v.x * s + v.y * c)
 }
 
-private fun wrapped(radians: Float): Float {
+/** [radians] as the same turn between -π and π. */
+internal fun wrapped(radians: Float): Float {
     var a = radians % FULL_TURN
     if (a > HALF_TURN) a -= FULL_TURN
     if (a < -HALF_TURN) a += FULL_TURN
