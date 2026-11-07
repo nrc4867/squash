@@ -33,6 +33,18 @@ import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetSlotLabel
 import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.SetRegion
+import dev.chieppa.squash.document.AddSeamStrokes
+import dev.chieppa.squash.document.PutSeamStrokes
+import dev.chieppa.squash.document.ResetSeam
+import dev.chieppa.squash.document.SeamToTwin
+import dev.chieppa.squash.document.SetSeamStroke
+import dev.chieppa.squash.character.build.RigParams
+import dev.chieppa.squash.uidesign.generated.rig_step_reach
+import dev.chieppa.squash.uidesign.generated.rig_step_reset
+import dev.chieppa.squash.uidesign.generated.rig_step_stroke
+import dev.chieppa.squash.uidesign.generated.rig_step_strokes
+import dev.chieppa.squash.uidesign.generated.rig_step_tidy
+import dev.chieppa.squash.uidesign.generated.rig_step_twin
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.color_step_area
@@ -80,6 +92,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val furStrokes = stringResource(Res.string.fur_tool)
     val combed = stringResource(Res.string.fur_comb_tool)
     val furRule = stringResource(Res.string.fur_section)
+    val seamStroke = stringResource(Res.string.rig_step_stroke)
+    val seamStrokes = stringResource(Res.string.rig_step_strokes)
+    val reach = stringResource(Res.string.rig_step_reach, FIRST)
+    val tidy = stringResource(Res.string.rig_step_tidy)
+    val twin = stringResource(Res.string.rig_step_twin)
+    val reset = stringResource(Res.string.rig_step_reset)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     return { command ->
         when (command) {
@@ -100,7 +118,12 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetMark -> mark
             is SetLineWeight, is SetLineWeightAmount -> lineWeight
             is SetLineRules -> lineRules
-            is SetParameter -> if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
+            is SetSeamStroke -> seamStroke
+            is PutSeamStrokes -> seamStrokes
+            is AddSeamStrokes -> tidy
+            is SeamToTwin -> twin
+            is ResetSeam -> reset
+            is SetParameter -> if (RigParams.isRig(command.name)) reach.replace(FIRST, RigParams.reachJoint(command.name).orEmpty()) else if (PlacementParams.isPlacement(command.name)) moved else parameter.replace(FIRST, displayName(command.name)).replace(SECOND, command.value?.let(::formatNumber).orEmpty())
             is AddMarks -> if (command.marks.any { it.kind == MarkKind.FUR }) furStrokes else ""
             is SetGrain -> combed
             is SetFurRule -> furRule

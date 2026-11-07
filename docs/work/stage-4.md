@@ -63,7 +63,7 @@ As stage 3: one orchestrating session per sitting, round 0 serial on `main`, lat
 | Round | Branch | Delivers |
 | --- | --- | --- |
 | 0 | serial | The `rig` module: bones from templates, ownership weights, the seam band, the golden test; spike 4 as a unit test |
-| 1 | `rig-stage` | The Rig stage: colours, heat map, wiggle, Reach, the stroke tools as commands, Tidy, To twin |
+| 1 | `rig-stage` | On `main`: the Rig stage (key 5) with Paint weight, Erase weight and Smooth weight, its inspector (tool options, Bones with Reach, Seams with Tidy, To twin and Reset) and status bar; the panes in part colors with seam bands and the heat map as color layers, joint dots, and a frame-driven wiggle through `SessionPose.held`; seam strokes in surface work (`SetSeamStroke`, `ResetSeam`, `SeamToTwin`, `AddSeamStrokes`), replayed by `StrokePaint` into the rig node with reach from `rig.reach.<joint>`; Tidy from `Rig.strayPatches`. Board 7 is verifiable; its differences are in `boards.md` |
 | 1 | `pose-data` | On `main`: `Character.pose` with the planted set, the pose commands (`SetBoneAngle`, `SetBoneStretch`, `ResetBone` with `bothSides`, `SetPlanted`, `ResetPose`, `SetPose`), the posed node `SessionPose.posed` skinning positions and normals on the CPU, Full drawing the posed meshes; torso, tail and head version 2 (spine and tail bend across, a `neck` joint at the head's base). Color layers, the face, lines, marks and fur still follow the rest surface and Full leaves them out while posed; `pose-drag` poses them |
 | 2 | `pose-drag` | The Drag tool, handles, pins, Alt and Shift, the pole targets; the Turn rings |
 | 2 | `body-curve` | The body curve stroke, re-sampling the spine's slices; spike 8 |

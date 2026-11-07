@@ -25,6 +25,10 @@ import dev.chieppa.squash.uidesign.generated.shell_status_settled
 import dev.chieppa.squash.uidesign.generated.shell_status_view_of
 import dev.chieppa.squash.uidesign.generated.shell_status_working
 import dev.chieppa.squash.uidesign.generated.spine_status_writes
+import dev.chieppa.squash.uidesign.generated.rig_status_counts
+import dev.chieppa.squash.uidesign.generated.rig_status_tool
+import dev.chieppa.squash.screens.rig.paintedSeams
+import dev.chieppa.squash.screens.rig.rememberRig
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.stretch.frame.StatusBar
 import dev.chieppa.stretch.frame.StatusItem
@@ -34,8 +38,9 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Build frame's status bar: the pen's pressure while one draws, or what the graph is working on, or that it has settled;
- * then the reference images' count with References open, Swap pane in Focus, or the selected part's views and where they disagree in
- * the workspace, or the character's part count elsewhere.
+ * in Rig, the stage and its armed tool beside that; then the reference images' count with References open, Swap pane in Focus, the
+ * rig's bones, parts and painted seams in Rig, or the selected part's views and where they disagree in the workspace, or the character's
+ * part count elsewhere.
  */
 @Composable
 fun BuildStatusBar(shell: Shell) {
@@ -54,6 +59,9 @@ fun BuildStatusBar(shell: Shell) {
     val mirror by state.mirror.collectAsState()
     val tool by state.tool.collectAsState()
     val layout by state.layout.collectAsState()
+    val stage by state.stage.collectAsState()
+    val rig = rememberRig(state)
+    val rigging = screen == Screen.WORKSPACE && stage == Stage.RIG
     val pen = state.curves.penPressure
     val drawing = state.curves.drawing
     val plan = state.templates.plan(document.character.bodyPlan)
@@ -70,6 +78,9 @@ fun BuildStatusBar(shell: Shell) {
                     else -> StatusItem(stringResource(Res.string.shell_status_working, stageLabel(progress.working(BuildStages.ORDER))))
                 }
             }
+            if (rigging) {
+                toolLabel(tool)?.takeIf { tool.rigs }?.let { Box(Modifier.testTag(ShellTags.STATUS_STAGE)) { StatusItem(stringResource(Res.string.rig_status_tool, stringResource(it))) } }
+            }
         },
         end = {
             Box(Modifier.testTag(ShellTags.STATUS_END)) {
@@ -80,6 +91,7 @@ fun BuildStatusBar(shell: Shell) {
                         StatusItem(if (count == 1) stringResource(Res.string.refs_status_image) else stringResource(Res.string.refs_status_images, count))
                     }
                     screen == Screen.WORKSPACE && layout == SheetLayout.FOCUS -> StatusItem(stringResource(Res.string.sheet_status_swap))
+                    rigging && rig != null -> StatusItem(stringResource(Res.string.rig_status_counts, rig.bones.size, rig.parts.size, paintedSeams(rig, document.character)))
                     touched != null -> StatusItem(
                         stringResource(if (touched.sections == 1) Res.string.edit_status_section else Res.string.edit_status_sections, touched.sections),
                     )

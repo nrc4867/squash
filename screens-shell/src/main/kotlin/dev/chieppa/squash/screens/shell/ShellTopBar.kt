@@ -28,7 +28,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import dev.chieppa.squash.uidesign.generated.stage_dress
-import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
+import dev.chieppa.squash.uidesign.generated.stage_pose
 import dev.chieppa.squash.screens.AppState
 import androidx.compose.runtime.getValue
 
@@ -80,7 +80,7 @@ fun ShellTopBar(shell: Shell) {
 private fun StageSwitcher(state: AppState) {
     val stage by state.stage.collectAsState()
     val built = Stage.entries.associateBy { stringResource(it.label) }
-    val later = listOf(stringResource(Res.string.shell_drawer_rig), stringResource(Res.string.stage_dress))
+    val later = listOf(stringResource(Res.string.stage_pose), stringResource(Res.string.stage_dress))
     Segmented(
         built.keys.toList() + later,
         stringResource(stage.label),

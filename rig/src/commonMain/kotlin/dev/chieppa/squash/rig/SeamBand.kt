@@ -27,15 +27,33 @@ data class Seam(val child: PartId)
 data class SeamVertex(val part: PartId, val patch: String, val u: Float, val v: Float)
 
 /**
- * What painted seam strokes make of a seam's guessed band. The rig asks it for every vertex of both parts at each seam, with
- * the share of the other side's bone the band guessed, which is 0 outside it, and uses the share it answers.
+ * Every vertex of one part as a seam's band reaches it: each one's address in [vertices] and its place in body space in
+ * [positions], three floats a vertex. [onChild] is true on the part sitting on the socket, whose share is its parent's bone, and
+ * false on the parent, whose share is the child's first bone.
+ */
+class SeamVertices(val part: PartId, val onChild: Boolean, val vertices: List<SeamVertex>, val positions: FloatArray)
+
+/**
+ * What painted seam strokes make of a seam's guessed band. The rig asks it, for every vertex of both parts at each seam, one
+ * part at a time, with the share of the other side's bone the band guessed at each, which is 0 outside it, and uses the shares
+ * it answers, one a vertex in the same order.
  */
 fun interface SeamPaint {
-    fun share(seam: Seam, vertex: SeamVertex, guessed: Float): Float
+    fun shares(seam: Seam, at: SeamVertices, guessed: FloatArray): FloatArray
 
     companion object {
         /** No strokes: every seam keeps its guessed band. */
         val NONE = SeamPaint { _, _, guessed -> guessed }
+    }
+}
+
+/** How far each joint's blend reaches, as a factor of what the rig guesses, by part and joint name. */
+fun interface JointReach {
+    fun of(part: PartId, joint: String): Float
+
+    companion object {
+        /** Every joint at the guessed reach. */
+        val GUESSED = JointReach { _, _ -> 1f }
     }
 }
 
@@ -67,3 +85,6 @@ internal fun rimShare(distance: Float, radius: Float): Float = when {
     distance <= radius -> SEAM_SHARE
     else -> SEAM_SHARE * (1f - smoothStep((distance - radius) / (SEAM_REACH * radius)))
 }
+
+/** 0 at 0, 1 at 1 and beyond, easing in and out, for views that shade by weight as the bands blend. */
+fun smoothStepOf(t: Float): Float = smoothStep(t)

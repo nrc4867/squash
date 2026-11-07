@@ -5,6 +5,7 @@ import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.PaneColor
+import dev.chieppa.squash.screens.sheet.RigShading
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
 import dev.chieppa.squash.screens.sheet.SheetLayout
@@ -38,6 +39,7 @@ internal fun panesInput(
     outlines: OutlineLook? = null,
     layout: SheetLayout = SheetLayout.SHEET,
     color: PaneColor? = null,
+    rig: RigShading? = null,
 ): SheetInput {
     val part = selection.part
     val fit = fitSheet(part.box, part.axes, rects, (selection.box.center - part.box.center).length + selection.box.radius)
@@ -49,7 +51,7 @@ internal fun panesInput(
     val target = selection.box.center.toGpu()
     val full = CameraView(eye = target + FULL_EYE * selection.box.radius, target = target)
     val overlays = outlines?.let { paneOutlineOverlays(selection, cameras, null, it) } ?: emptyMap()
-    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints, layout = layout, color = color)
+    return SheetInput(rects, width, height, look, selection, cameras, full, active = null, toolOverlays = overlays, hints = hints, layout = layout, color = color, rig = rig)
 }
 
 /** [GpuSnapshot.render] for a test's thread, which has nothing else to do while the image renders. */
@@ -67,7 +69,8 @@ internal fun renderPanes(
     width: Int,
     height: Int,
     onError: (String) -> Unit,
+    rig: RigShading? = null,
 ): GpuImage {
-    val frame = sheetFrame(panesInput(selection, look, rects, width, height))
+    val frame = sheetFrame(panesInput(selection, look, rects, width, height, hints = SheetHints(whole = rig != null), rig = rig))
     return renderSnapshot(frame, width, height, options = GpuOptions(onError = onError)) { ViewsScene(it) }
 }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
@@ -21,6 +22,13 @@ class PartWeights(val part: PartId, val bones: IntArray, val weights: FloatArray
     /** The bones [vertex] follows, each with its weight, heaviest first. */
     fun of(vertex: Int): List<Pair<Int, Float>> =
         (0 until MAX_INFLUENCES).map { vertex * MAX_INFLUENCES + it }.filter { bones[it] >= 0 }.map { bones[it] to weights[it] }
+
+    /** How much [vertex] follows [bone], 0 when not at all. */
+    fun weightOf(vertex: Int, bone: Int): Float {
+        var total = 0f
+        for (slot in 0 until MAX_INFLUENCES) if (bones[vertex * MAX_INFLUENCES + slot] == bone) total += weights[vertex * MAX_INFLUENCES + slot]
+        return total
+    }
 }
 
 /** One vertex being weighed: its bones and shares so far. */
@@ -54,10 +62,44 @@ private class Blend(own: Map<Int, Float>) {
 }
 
 /**
+ * Every vertex of [part]: its address as the bands weigh it, by the u its bone reads, the anchor that lands on it, and its place
+ * in body space.
+ */
+internal class PartVertices(part: RiggedPart) {
+    val addresses: List<SeamVertex>
+    val anchors: List<Anchor>
+    val positions: FloatArray
+
+    init {
+        val surface = part.placed.surface
+        val list = ArrayList<SeamVertex>(surface.mesh.vertexCount)
+        val landing = ArrayList<Anchor>(surface.mesh.vertexCount)
+        for (patch in surface.patches) for (local in 0 until patch.nu * patch.nv) {
+            val v = (local % patch.nv).toFloat() / patch.segments
+            list += SeamVertex(part.id, patch.name, patch.uOf(local), v)
+            landing += Anchor(part.id, patch.name, patch.ringUs[local / patch.nv], v)
+        }
+        addresses = list
+        anchors = landing
+        positions = FloatArray(list.size * 3) { i ->
+            val p = surface.mesh.position(i / 3)
+            val o = part.placed.origin
+            when (i % 3) {
+                0 -> p.x + o.x
+                1 -> p.y + o.y
+                else -> p.z + o.z
+            }
+        }
+    }
+
+    fun position(vertex: Int) = Vec3(positions[vertex * 3], positions[vertex * 3 + 1], positions[vertex * 3 + 2])
+}
+
+/**
  * The weights of [part]: each vertex on the bone owning its u, blended with the next across a band of [JOINT_REACH] radii
  * either side of each joint inside the part, with its parent's bone across the seam band at its socket, and with each
- * child's first bone round that child's rim. [index] gives a bone's place in the rig, [parent] the part [part] sits on, [children] the
- * parts on [part]'s sockets, and [paint] what painted strokes make of each seam.
+ * child's first bone round that child's rim, each band as wide as [reach] sets. [index] gives a bone's place in the rig,
+ * [parent] the part [part] sits on, [children] the parts on [part]'s sockets, and [paint] what painted strokes make of each seam.
  */
 internal fun weightsOf(
     part: RiggedPart,
@@ -67,32 +109,32 @@ internal fun weightsOf(
     index: Map<BoneName, Int>,
     paint: SeamPaint,
     checkCancelled: () -> Unit,
+    reach: JointReach = JointReach.GUESSED,
+    vertices: PartVertices = PartVertices(part),
 ): PartWeights {
-    val surface = part.placed.surface
-    val vertices = surface.mesh.vertexCount
-    val bones = IntArray(vertices * MAX_INFLUENCES)
-    val weights = FloatArray(vertices * MAX_INFLUENCES)
-    val own = OwnWeights(part, index)
+    val count = vertices.addresses.size
+    val bones = IntArray(count * MAX_INFLUENCES)
+    val weights = FloatArray(count * MAX_INFLUENCES)
+    val own = OwnWeights(part, index, reach)
     val carrierIndex = carrier?.let(index::get)
-    val childBand = if (carrierIndex != null) childBandOf(part, parent) else 0f
-    val rims = children.mapNotNull { child -> Rim.of(child, part, index) }
-    var first = 0
-    for (patch in surface.patches) {
+    checkCancelled()
+    val parentShares = if (carrierIndex != null && !part.joints.isEmpty) {
+        val band = childBandOf(part, parent, reach)
+        paint.shares(Seam(part.id), SeamVertices(part.id, true, vertices.addresses, vertices.positions), FloatArray(count) { childShare(vertices.addresses[it].u, band) })
+    } else {
+        null
+    }
+    val rims = children.mapNotNull { child -> Rim.of(child, part, index, reach) }.map { rim ->
         checkCancelled()
-        for (local in 0 until patch.nu * patch.nv) {
-            val vertex = first + local
-            val at = SeamVertex(part.id, patch.name, patch.uOf(local), (local % patch.nv).toFloat() / patch.segments)
-            val blend = Blend(if (part.joints.isEmpty) carrierIndex?.let { mapOf(it to 1f) }.orEmpty() else own.at(at.u))
-            if (carrierIndex != null && !part.joints.isEmpty) {
-                blend.give(carrierIndex, paint.share(Seam(part.id), at, childShare(at.u, childBand)))
-            }
-            if (rims.isNotEmpty()) {
-                val position = part.placed.origin + surface.mesh.position(vertex)
-                blend.giveAll(rimShares(rims, at, position, paint))
-            }
-            blend.write(vertex, bones, weights)
-        }
-        first += patch.nu * patch.nv
+        val guessed = FloatArray(count) { rimShare((vertices.position(it) - rim.anchor).length, rim.radius) }
+        rim.bone to paint.shares(rim.seam, SeamVertices(part.id, false, vertices.addresses, vertices.positions), guessed)
+    }
+    for (vertex in 0 until count) {
+        val u = vertices.addresses[vertex].u
+        val blend = Blend(if (part.joints.isEmpty) carrierIndex?.let { mapOf(it to 1f) }.orEmpty() else own.at(u))
+        if (carrierIndex != null && parentShares != null) blend.give(carrierIndex, parentShares[vertex])
+        if (rims.isNotEmpty()) blend.giveAll(heldShares(rims.associate { (bone, shares) -> bone to shares[vertex] }))
+        blend.write(vertex, bones, weights)
     }
     return PartWeights(part.id, bones, weights)
 }
@@ -100,35 +142,39 @@ internal fun weightsOf(
 /** The u a vertex of this patch weighs by: the patch's own for one that rides at one u, as a pad does, else its ring's. */
 private fun Patch.uOf(local: Int): Float = boneU ?: ringUs[local / nv]
 
-/** What [rims] give a parent's vertex [at], at [position] in body space, held so they never take more than the seam's share. */
-private fun rimShares(rims: List<Rim>, at: SeamVertex, position: Vec3, paint: SeamPaint): Map<Int, Float> {
-    val given = rims.associate { rim -> rim.bone to paint.share(rim.seam, at, rimShare((position - rim.anchor).length, rim.radius)) }
+/** What several rims give one vertex, held so together they never take more than the seam's share, or than the most one was painted to. */
+private fun heldShares(given: Map<Int, Float>): Map<Int, Float> {
     val total = given.values.sum()
-    return if (total <= SEAM_SHARE) given else given.mapValues { it.value * SEAM_SHARE / total }
+    val most = maxOf(SEAM_SHARE, given.values.maxOrNull() ?: 0f)
+    return if (total <= most) given else given.mapValues { it.value * most / total }
 }
 
 /** A child's seam as its parent's vertices meet it. */
 private class Rim(val seam: Seam, val bone: Int, val anchor: Vec3, val radius: Float) {
     companion object {
-        fun of(child: RiggedPart, parent: RiggedPart, index: Map<BoneName, Int>): Rim? {
+        fun of(child: RiggedPart, parent: RiggedPart, index: Map<BoneName, Int>, reach: JointReach): Rim? {
             if (child.joints.isEmpty) return null
             val anchor = child.placed.anchor ?: return null
             val bone = index[child.bone(0)] ?: return null
-            return Rim(Seam(child.id), bone, anchor, seamRadius(child, parent))
+            return Rim(Seam(child.id), bone, anchor, seamRadius(child, parent) * reach.of(child.id, child.joints.specs[0].name))
         }
     }
 }
 
-/** How far along u a part's seam band reaches from its socket end: [SEAM_REACH] seam radii, held to half the way to its next joint. */
-internal fun childBandOf(part: RiggedPart, parent: RiggedPart?): Float {
+/**
+ * How far along u a part's seam band reaches from its socket end: [SEAM_REACH] seam radii times its first joint's [reach], held to
+ * half the way to its next joint.
+ */
+internal fun childBandOf(part: RiggedPart, parent: RiggedPart?, reach: JointReach = JointReach.GUESSED): Float {
     val perU = part.rings.lengthPerU
-    if (perU <= 0f) return 0f
+    if (perU <= 0f || part.joints.isEmpty) return 0f
     val next = if (part.joints.owning > 1) part.joints.specs[1].u else 1f
-    return (SEAM_REACH * seamRadius(part, parent) / perU).coerceAtMost(next / 2f)
+    val factor = reach.of(part.id, part.joints.specs[0].name)
+    return (SEAM_REACH * factor * seamRadius(part, parent) / perU).coerceAtMost(next / 2f)
 }
 
 /** The weights a part gives its own bones alone, by u. */
-internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int>) {
+internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int>, private val reach: JointReach = JointReach.GUESSED) {
     private val joints = part.joints
     private val bones = IntArray(joints.specs.size) { index.getValue(part.bone(it)) }
     /** Half the band across each owning joint after the first, along u; 0 for the first. */
@@ -146,12 +192,12 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
         return mapOf(bones[joints.ownerAt(u)] to 1f)
     }
 
-    /** Half the band across the joint at [k] along u, held to half the way to the joints around it. */
+    /** Half the band across the joint at [k] along u, its reach times [JOINT_REACH] radii, held to half the way to the joints around it. */
     private fun jointBand(k: Int): Float {
         val perU = part.rings.lengthPerU
         if (perU <= 0f) return 0f
         val u = joints.specs[k].u
         val room = minOf(u - joints.specs[k - 1].u, joints.spanEnd(k) - u) / 2f
-        return (JOINT_REACH * part.rings.radius(u) / perU).coerceAtMost(room)
+        return (JOINT_REACH * reach.of(part.id, joints.specs[k].name) * part.rings.radius(u) / perU).coerceAtMost(room)
     }
 }

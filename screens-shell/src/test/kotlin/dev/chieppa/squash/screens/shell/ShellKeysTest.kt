@@ -39,6 +39,10 @@ class ShellKeysTest {
         assertEquals(BuildTool.BRUSH.actionId, shell.resolve("B", Stage.COLOR))
         assertEquals(BuildTool.GAZE_TARGET.actionId, shell.resolve("G", Stage.FACE))
         assertEquals(BuildTool.COMB.actionId, shell.resolve("C", Stage.LINES))
+        assertEquals(BuildTool.PAINT_WEIGHT.actionId, shell.resolve("D", Stage.RIG))
+        assertEquals(BuildTool.ERASE_WEIGHT.actionId, shell.resolve("X", Stage.RIG))
+        assertEquals(BuildTool.SMOOTH_WEIGHT.actionId, shell.resolve("S", Stage.RIG))
+        assertEquals(ShellActions.STAGE_RIG.value, shell.resolve("5", Stage.SHAPE))
         assertNull(shell.resolve("B", Stage.SHAPE), "B opens no drawer")
         for (stage in Stage.entries) {
             assertEquals(ShellActions.FIT_PANE.value, shell.resolve("F", stage))

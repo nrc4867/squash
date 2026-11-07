@@ -34,5 +34,5 @@ fun Graph.sliceRowNode(
 private fun SquashDocument.partBuildInput(part: PartId, lengths: LegLengthsOf): PartBuildInput? =
     character.part(part)?.let { instance ->
         val data = character.resolved(instance)
-        PartBuildInput(instance.template, data.shape.copy(params = data.params.filterKeys { !PlacementParams.isSocket(it) }), lengths.of(character).ofPart(part))
+        PartBuildInput(instance.template, data.shape.copy(params = data.params.filterKeys { !PlacementParams.isSocket(it) && !RigParams.isRig(it) }), lengths.of(character).ofPart(part))
     }

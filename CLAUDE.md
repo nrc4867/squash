@@ -43,7 +43,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces | `screens-shell` | Home, New character, the Build frame and its chrome, Add part's popover |
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
 | Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
-| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions |
+| Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions; the Rig stage's view, seam stroke tools and inspector |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |

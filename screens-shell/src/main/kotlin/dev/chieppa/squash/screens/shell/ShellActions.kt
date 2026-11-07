@@ -38,6 +38,10 @@ import dev.chieppa.squash.uidesign.generated.shell_drawer_inspector
 import dev.chieppa.squash.uidesign.generated.shell_drawer_color
 import dev.chieppa.squash.uidesign.generated.shell_drawer_lines
 import dev.chieppa.squash.uidesign.generated.stage_face
+import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
+import dev.chieppa.squash.uidesign.generated.rig_tool_erase
+import dev.chieppa.squash.uidesign.generated.rig_tool_paint
+import dev.chieppa.squash.uidesign.generated.rig_tool_smooth
 import dev.chieppa.squash.uidesign.generated.stage_shape
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
@@ -72,6 +76,10 @@ object ShellActions {
     val STAGE_COLOR = ActionId("stage-color")
     val STAGE_LINES = ActionId("stage-lines")
     val STAGE_FACE = ActionId("stage-face")
+    val STAGE_RIG = ActionId("stage-rig")
+    val PAINT_WEIGHT = ActionId(BuildTool.PAINT_WEIGHT.actionId)
+    val ERASE_WEIGHT = ActionId(BuildTool.ERASE_WEIGHT.actionId)
+    val SMOOTH_WEIGHT = ActionId(BuildTool.SMOOTH_WEIGHT.actionId)
     val HELP = ActionId("drawer-help")
     val RESET_LAYOUT = ActionId("reset-layout")
     val REGION_BORDER = ActionId(BuildTool.REGION_BORDER.actionId)
@@ -120,6 +128,10 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.STAGE_COLOR to Res.string.shell_drawer_color,
     ShellActions.STAGE_LINES to Res.string.shell_drawer_lines,
     ShellActions.STAGE_FACE to Res.string.stage_face,
+    ShellActions.STAGE_RIG to Res.string.shell_drawer_rig,
+    ShellActions.PAINT_WEIGHT to Res.string.rig_tool_paint,
+    ShellActions.ERASE_WEIGHT to Res.string.rig_tool_erase,
+    ShellActions.SMOOTH_WEIGHT to Res.string.rig_tool_smooth,
     ShellActions.HELP to Res.string.shell_drawer_help,
     ShellActions.RESET_LAYOUT to Res.string.shell_action_reset_layout,
     ShellActions.DRAW to Res.string.shell_action_draw,
@@ -151,6 +163,9 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.ADD_PART to Res.string.add_part,
 )
+
+/** The name of the action arming [tool], or null for a tool with none. */
+internal fun toolLabel(tool: BuildTool): StringResource? = texts[ActionId(tool.actionId)]
 
 /** The labels for [dev.chieppa.stretch.frame.LocalActionText]. */
 @Composable
@@ -191,6 +206,9 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline
     "add-part" -> SquashIcons.AddPart
+    "paint-weight" -> SquashIcons.PaintWeight
+    "erase-weight" -> SquashIcons.EraseWeight
+    "smooth-weight" -> SquashIcons.SmoothWeight
     else -> null
 }
 
@@ -234,6 +252,7 @@ fun Shell.registerActions() {
     stage(ShellActions.STAGE_COLOR, "2", Stage.COLOR)
     stage(ShellActions.STAGE_LINES, "3", Stage.LINES)
     stage(ShellActions.STAGE_FACE, "4", Stage.FACE)
+    stage(ShellActions.STAGE_RIG, "5", Stage.RIG)
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
@@ -265,5 +284,9 @@ fun Shell.registerActions() {
     tool(BuildTool.EDIT_MARK, "edit-curves", "E")
     tool(BuildTool.ERASE_MARK, "erase", "X")
     tool(BuildTool.GAZE_TARGET, "gaze-target", "G")
+
+    tool(BuildTool.PAINT_WEIGHT, "paint-weight", "D")
+    tool(BuildTool.ERASE_WEIGHT, "erase-weight", "X")
+    tool(BuildTool.SMOOTH_WEIGHT, "smooth-weight", "S")
 
 }

@@ -25,6 +25,7 @@ object ShellTags {
     const val ADD_PART_ADD = "addPart.add"
     const val STATUS_START = "status.start"
     const val STATUS_END = "status.end"
+    const val STATUS_STAGE = "status.stage"
     const val PART_EMPTY = "part.empty"
     const val MIRROR = "tools.mirror"
     const val HALF_OUTLINE = "tools.halfOutline"

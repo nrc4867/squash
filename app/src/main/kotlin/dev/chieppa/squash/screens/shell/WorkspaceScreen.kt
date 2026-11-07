@@ -38,6 +38,11 @@ import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
 import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import dev.chieppa.squash.screens.surface.FaceBand
+import dev.chieppa.squash.document.SeamBrush
+import dev.chieppa.squash.screens.surface.rig.RigWiggle
+import dev.chieppa.squash.screens.surface.rig.rememberRigShading
+import dev.chieppa.squash.screens.surface.rig.rememberSeamStrokeTool
+import dev.chieppa.squash.screens.surface.rig.rigToolSection
 import dev.chieppa.squash.screens.surface.HeadAngleBar
 import dev.chieppa.squash.screens.surface.faceToolSection
 import dev.chieppa.squash.screens.surface.rememberCombTool
@@ -62,7 +67,7 @@ import org.jetbrains.compose.resources.getString
 private val POPOVER_TOP = 44.dp
 private val POPOVER_END = 24.dp
 
-/** The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. */
+/** The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. In Rig the panes show the rig. */
 @Composable
 fun WorkspaceScreen(shell: Shell) {
     val state = shell.state
@@ -91,6 +96,9 @@ fun WorkspaceScreen(shell: Shell) {
     val traceHandles = rememberTraceHandles(state)
     val selectPart = rememberSelectPartTool(state)
     val addPart = rememberAddPartTool(state)
+    val paintWeight = rememberSeamStrokeTool(state, SeamBrush.PAINT)
+    val eraseWeight = rememberSeamStrokeTool(state, SeamBrush.ERASE)
+    val smoothWeight = rememberSeamStrokeTool(state, SeamBrush.SMOOTH)
     val stage by state.stage.collectAsState()
     val armedTool: PaneTool = when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
@@ -114,6 +122,9 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.EDIT_MARK -> editMark
         BuildTool.ERASE_MARK -> eraseMark
         BuildTool.GAZE_TARGET -> gazeTarget
+        BuildTool.PAINT_WEIGHT -> paintWeight
+        BuildTool.ERASE_WEIGHT -> eraseWeight
+        BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
         BuildTool.NONE -> selectPart
     }
@@ -125,16 +136,19 @@ fun WorkspaceScreen(shell: Shell) {
         if (refit != null) shell.toasts.show(refitMessage(refit), getString(Res.string.shell_action_undo)) { state.undo() }
     }
     val facing = stage == Stage.FACE
+    val rigging = stage == Stage.RIG
+    if (rigging) RigWiggle(state)
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             SheetPanes(
                 state,
                 Modifier.fillMaxSize(),
-                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state)) },
+                tools = { WorkspaceTools(state, lineToolSection(state), faceToolSection(state), rigToolSection(state)) },
                 tool = tool,
                 paneToast = if (shell.toasts.showing) ({ ToastHost(shell.toasts) }) else null,
                 surface = rememberSurfaceLines(state),
                 singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
+                rig = if (rigging) rememberRigShading(state) else null,
             )
             Box(Modifier.align(Alignment.TopEnd).padding(top = POPOVER_TOP, end = POPOVER_END)) { AddPartPopover(state) }
         }

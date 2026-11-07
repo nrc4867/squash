@@ -15,16 +15,19 @@ internal fun Character.anchorReadBy(anchor: Anchor, side: Side?): Anchor {
 }
 
 /** The other side of the body from [mark], which is [mark] with its anchors across the middle or on their twins and what it floats through turned over. */
-fun Character.mirrorOf(mark: Mark): Mark = mark.mapAnchors { anchor ->
-    val target = part(anchor.part) ?: return@mapAnchors anchor
-    when (target.side) {
+fun Character.mirrorOf(mark: Mark): Mark = mark.mapAnchors(::mirroredAnchor).copy(id = MarkId(mark.id.value + MIRROR_SUFFIX), mirrored = false, flight = mark.flight.map { it.copy(across = -it.across) })
+
+private const val MIRROR_SUFFIX = "~mirror"
+
+/** [anchor] on the other side of the body: on its part's twin, or across the middle of a part in the middle. */
+internal fun Character.mirroredAnchor(anchor: Anchor): Anchor {
+    val target = part(anchor.part) ?: return anchor
+    return when (target.side) {
         null -> anchor.copy(v = 1f - anchor.v)
         Side.LEFT -> twinOn(target, Side.RIGHT)?.let { anchor.copy(part = it.id) } ?: anchor
         Side.RIGHT -> twinOn(target, Side.LEFT)?.let { anchor.copy(part = it.id) } ?: anchor
     }
-}.copy(id = MarkId(mark.id.value + MIRROR_SUFFIX), mirrored = false, flight = mark.flight.map { it.copy(across = -it.across) })
-
-private const val MIRROR_SUFFIX = "~mirror"
+}
 
 /** An anchor as the right side sees it, turned to how its pair holds it. */
 private fun Character.anchorHeldFromRight(anchor: Anchor): Anchor {

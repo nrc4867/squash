@@ -38,6 +38,7 @@ import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.frame.ViewportOverlay
+import dev.chieppa.squash.screens.sheet.RigShading
 import dev.chieppa.stretch.gpu.orbitNavigation
 
 /**
@@ -53,6 +54,7 @@ internal fun SingleSurface(
     modifier: Modifier,
     surface: SurfaceRibbons? = null,
     foot: (@Composable (toViewer: Vec3, turn: (Vec3) -> Unit) -> Unit)? = null,
+    rig: RigShading? = null,
 ) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
@@ -96,11 +98,12 @@ internal fun SingleSurface(
             free = camera.orbit.view,
             toolOverlay = overlay,
             freeOverlay = tool?.takeIf { it.takesFreeCamera && locked == null }?.fullOverlay(free) ?: ViewportOverlay.Empty,
-            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true),
+            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true || rig != null),
             color = color,
             surface = surface,
             fur = fur,
             traces = rememberTraces(state),
+            rig = rig,
         ),
     )
     val fitting = rememberFitting(state)

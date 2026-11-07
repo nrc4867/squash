@@ -57,6 +57,10 @@ value class LineWeightId(val value: String)
 
 @Serializable
 @JvmInline
+value class SeamStrokeId(val value: String)
+
+@Serializable
+@JvmInline
 value class ExpressionId(val value: String)
 
 /** The name of a palette slot; parts, regions, paint and template color fields hold this, never a color. */

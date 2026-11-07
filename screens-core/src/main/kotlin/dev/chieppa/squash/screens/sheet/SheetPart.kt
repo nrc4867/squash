@@ -113,7 +113,8 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val scale = data.params[SIZE_PARAM] ?: 1f
     val overridden = document.character.overridesOf(instance).outlines.keys
     val hidden = if (mirror) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
-    val posed = rememberPosedMeshes(state, document.character.pose.isRest)
+    val held by state.rig.held.collectAsState()
+    val posed = rememberPosedMeshes(state, (held ?: document.character.pose).isRest)
     val assembled = character ?: return null
     return remember(assembled, selected, outlines, scale, overridden, hidden, posed) { sheetSelection(assembled, selected, outlines, scale, overridden, hidden, posed) }
 }

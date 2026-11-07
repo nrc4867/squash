@@ -25,6 +25,9 @@ import dev.chieppa.squash.screens.sheet.lockedDraws
 import dev.chieppa.squash.screens.sheet.withFace
 import dev.chieppa.squash.screens.sheet.lockedOverlay
 import dev.chieppa.squash.screens.sheet.lockedRibbons
+import dev.chieppa.squash.screens.sheet.RigShading
+import dev.chieppa.squash.screens.sheet.rigDraw
+import dev.chieppa.squash.screens.sheet.rigDraws
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.squash.screens.sheet.toRect
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -45,6 +48,7 @@ class SingleInput(
     val freeOverlay: ViewportOverlay = ViewportOverlay.Empty,
     val fur: ShownFur = ShownFur.NONE,
     val traces: (toViewer: Vec3) -> TraceDraws = { TraceDraws.None },
+    val rig: RigShading? = null,
 )
 
 /**
@@ -57,6 +61,10 @@ fun singleFrame(input: SingleInput): SceneFrame {
     val locked = input.locked
     if (locked != null) {
         val body = selection.part.axes.bodyViewOf(locked.view)
+        input.rig?.let { rig ->
+            val draws = rigDraws(body, locked.basis, selection, input.look, rig)
+            return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws)), (rig.overlay(locked) + input.toolOverlay).clippedTo(rect.toRect()))
+        }
         val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, locked) }
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
@@ -65,6 +73,12 @@ fun singleFrame(input: SingleInput): SceneFrame {
         return SceneFrame(input.look.well, listOf(SceneView(rect, locked.viewProjection(), draws, ribbons, fur.layers, traces.behind, traces.over)), overlay.clippedTo(rect.toRect()))
     }
     val free = input.free ?: return SceneFrame(input.look.well)
+    input.rig?.let { rig ->
+        val placed = (selection.others + selection.part).filter { !it.planned }
+        val draws = listOf(fullGround(selection, input.look)) + placed.map { input.look.rigDraw(it, rig, input.look.lockedOutline, selection.posed) }
+        val overlay = rig.overlay(FullView({ free }, input.width, input.height)) + input.freeOverlay
+        return SceneFrame(input.look.well, listOf(SceneView(rect, free.viewProjection(input.width, input.height), draws)), overlay.clippedTo(rect.toRect()))
+    }
     val toCamera = Vec3(free.eye.x, free.eye.y, free.eye.z) - selection.box.center
     val fur = shownFurDraws(input.fur, true, toCamera, selection, input.look, input.hints, input.color)
     val shown = SceneView(rect, free.viewProjection(input.width, input.height), freeDraws(selection, free, input), freeRibbons(selection, free, input), fur.layers)

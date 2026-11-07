@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 /**
  * What is drawn on a part: as a part resolves it, as a pair shares it, or as a side overrides it. Color layers in this order:
  * [baseSlot] colors the whole part, [areaFills] the areas its template names, by area name, then [regions], then [paint]. A
- * null [grain] is what the template gives, and a null [fur] the default rule. Lists run in draw order.
+ * null [grain] is what the template gives, and a null [fur] the default rule. Lists run in draw order. [seams] are the strokes painted
+ * on the seam where this part meets its parent, in the order laid down, which the rig replays and nothing draws.
  */
 @Serializable
 data class SurfaceWork(
@@ -18,6 +19,7 @@ data class SurfaceWork(
     val paint: Paint = Paint(),
     val lineWeights: List<LineWeight> = emptyList(),
     val fur: FurRule? = null,
+    val seams: List<SeamStroke> = emptyList(),
 ) {
     init {
         requireUniqueIds("mark", marks.map { it.id.value })
@@ -25,7 +27,11 @@ data class SurfaceWork(
         requireUniqueIds("region", regions.map { it.id.value })
         requireUniqueIds("brush stroke", paint.strokes.map { it.id.value })
         requireUniqueIds("line weight", lineWeights.map { it.id.value })
+        requireUniqueIds("seam stroke", seams.map { it.id.value })
     }
+
+    /** This work without its seam strokes: everything a part shows on its surface. */
+    val shown: SurfaceWork get() = if (seams.isEmpty()) this else copy(seams = emptyList())
 
     /** This work, with [overrides] replacing what it names. An item it does not hold goes after the ones this holds. */
     internal fun overlaidWith(overrides: SurfaceWork): SurfaceWork = SurfaceWork(
@@ -38,6 +44,7 @@ data class SurfaceWork(
         paint = Paint(paint.strokes.overlaidWith(overrides.paint.strokes) { it.id }),
         lineWeights = lineWeights.overlaidWith(overrides.lineWeights) { it.id },
         fur = overrides.fur ?: fur,
+        seams = seams.overlaidWith(overrides.seams) { it.id },
     )
 
     internal fun mapAnchors(transform: (Anchor) -> Anchor): SurfaceWork = copy(
@@ -45,6 +52,7 @@ data class SurfaceWork(
         regions = regions.map { it.mapAnchors(transform) },
         paint = Paint(paint.strokes.map { it.mapAnchors(transform) }),
         lineWeights = lineWeights.map { it.mapAnchors(transform) },
+        seams = seams.map { it.mapAnchors(transform) },
     )
 }
 

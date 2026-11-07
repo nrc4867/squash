@@ -56,12 +56,14 @@ class SheetInput(
     val fullFur: ShownFur = ShownFur.NONE,
     val lockedFur: Map<View, ShownFur> = emptyMap(),
     val traces: (toViewer: Vec3) -> TraceDraws = { TraceDraws.None },
+    val rig: RigShading? = null,
 )
 
 /**
  * One immutable frame of the panes for the render thread. Full always shows the whole character, with what is not placed yet
  * faded except in Full first, which is there to judge the whole, and in its pose when the pose moves a bone; a locked pane shows the selection filled once its view is
- * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. A pane with no part stays empty.
+ * drawn and as the mesh's dashed outline until then, with everything else ghosted behind it. With a [SheetInput.rig] every pane shows
+ * the whole character as the Rig stage colors it, in its pose. A pane with no part stays empty.
  */
 fun sheetFrame(input: SheetInput): SceneFrame {
     val views = SheetPane.entries.mapNotNull { sceneView(it, input) }
@@ -83,6 +85,10 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val toCamera = Vec3(eye.x, eye.y, eye.z) - selection.box.center
         val outline = if (input.surface != null) 0f else look.fullOutline
         val sight = FullView({ camera }, rect.width, rect.height)
+        input.rig?.let { rig ->
+            val draws = listOf(fullGround(selection, look)) + placed.map { look.rigDraw(it, rig, look.fullOutline, selection.posed) }
+            return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
+        }
         selection.posed?.let { posed ->
             val draws = listOf(fullGround(selection, look)) + placed.map { look.posedDraw(it, posed, input.color, toCamera) }
             return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
@@ -96,6 +102,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     }
     val view = selection.part.axes.framing.getValue(body)
     val camera = input.cameras[view] ?: return null
+    input.rig?.let { rig -> return SceneView(rect, camera.viewProjection(), rigDraws(body, camera.basis, selection, look, rig)) }
     val fur = input.lockedFur[view]?.let { shownFurDraws(it, view in selection.outlines, camera.basis.back, selection, look, input.hints, input.color) } ?: FurDraws.NONE
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, input.surface != null) { (part, draw) -> draw.withFace(part, input.surface, camera) }
     val traces = input.traces(camera.basis.back)
@@ -156,6 +163,11 @@ private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook,
         .map { look.colored(it, color, basis.back, look.ghostOutline, strength) }
 }
 
+/** What a locked camera from [basis] in the pane of [body] draws as the Rig stage shows it: the ground and every placed part in [rig]'s colors, posed. */
+internal fun rigDraws(body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, rig: RigShading): List<MeshDraw> =
+    listOfNotNull(lockedGround(body, basis, selection, look)) +
+        (selection.others + selection.part).filter { !it.planned }.map { look.rigDraw(it, rig, look.lockedOutline, selection.posed) }
+
 /**
  * The ground as an ellipse behind the character, in a pane that looks along it: the disc under the character as [basis] sees
  * it from its tilt off the ground, and no flatter than a thin ellipse. A pane looking along the body's up has none.
@@ -182,11 +194,13 @@ private fun paneOverlay(pane: SheetPane, input: SheetInput): ViewportOverlay {
     val selection = input.selection ?: return ViewportOverlay.Empty
     val body = pane.body
     val inPane = if (body == null) {
-        (if (input.hints.whole) ViewportOverlay.Empty else fullRing(selection.part, input, rect)) + input.fullOverlay
+        val rig = input.full?.let { camera -> input.rig?.overlay?.invoke(FullView({ camera }, rect.width, rect.height)) } ?: ViewportOverlay.Empty
+        (if (input.hints.whole) ViewportOverlay.Empty else fullRing(selection.part, input, rect)) + rig + input.fullOverlay
     } else {
         val view = selection.part.axes.framing.getValue(body)
         val camera = input.cameras[view] ?: return ViewportOverlay.Empty
-        lockedOverlay(view, camera, selection, input.look, input.hints, input.active) + (input.toolOverlays[view] ?: ViewportOverlay.Empty)
+        val rig = input.rig?.overlay?.invoke(camera) ?: ViewportOverlay.Empty
+        lockedOverlay(view, camera, selection, input.look, input.hints, input.active) + rig + (input.toolOverlays[view] ?: ViewportOverlay.Empty)
     }
     return inPane.translated(Offset(rect.x.toFloat(), rect.y.toFloat()))
 }

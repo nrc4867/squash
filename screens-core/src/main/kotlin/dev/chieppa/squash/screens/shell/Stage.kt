@@ -6,6 +6,7 @@ enum class Stage(val first: BuildTool) {
     COLOR(BuildTool.FILL),
     LINES(BuildTool.LINE_WIDTH),
     FACE(BuildTool.DRAW_MARK),
+    RIG(BuildTool.PAINT_WEIGHT),
 }
 
 /** The stage a tool belongs to; putting the tool down belongs to none. */
@@ -15,5 +16,6 @@ val BuildTool.stage: Stage?
         paints -> Stage.COLOR
         inks -> Stage.LINES
         faces -> Stage.FACE
+        rigs -> Stage.RIG
         else -> Stage.SHAPE
     }

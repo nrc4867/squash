@@ -24,6 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 import dev.chieppa.squash.uidesign.generated.shell_drawer_inspector
 import dev.chieppa.squash.uidesign.generated.stage_face
 import dev.chieppa.squash.uidesign.generated.stage_shape
+import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
 import androidx.compose.runtime.getValue
 
 /** The Build frame every screen but Home sits in: top bar, rails, drawers and status bar around [viewport]. */
@@ -53,7 +54,11 @@ val Stage.label: StringResource
         Stage.COLOR -> Res.string.shell_drawer_color
         Stage.LINES -> Res.string.shell_drawer_lines
         Stage.FACE -> Res.string.stage_face
+        Stage.RIG -> Res.string.shell_drawer_rig
     }
+
+/** The icon heading a stage's inspector. */
+val Stage.icon get() = if (this == Stage.RIG) SquashIcons.Rig else SquashIcons.Part
 
 @Composable
 private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
@@ -68,7 +73,7 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val inspector = DrawerSpec(
         DrawerIds.INSPECTOR,
         stringResource(stage.label),
-        SquashIcons.Part,
+        stage.icon,
         railLabel = stringResource(Res.string.shell_drawer_inspector),
     ) {
         if (open == null || screen != Screen.WORKSPACE) NoPart() else shell.content.inspector(this, state, open, stage)
