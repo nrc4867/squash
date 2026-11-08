@@ -28,7 +28,6 @@ import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.stretch.gpu.CameraView
 import kotlin.math.abs
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -46,9 +45,6 @@ private const val DENSITY = 2f
 class SurfaceToolsTest {
     private val work = TestWork()
     private val folder = TemplateFolder.shipped()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun session(): CharacterSession {
         val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)

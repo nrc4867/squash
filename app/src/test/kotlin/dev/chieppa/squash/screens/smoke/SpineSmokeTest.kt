@@ -86,7 +86,6 @@ class SpineSmokeTest {
 
     @AfterTest
     fun nothingFailedInTheBackground() {
-        work.close()
         assertEquals(emptyList(), failures)
     }
 

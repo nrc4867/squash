@@ -123,7 +123,6 @@ class OrbitSmokeTest {
             assertTrue((rect.y until rect.bottom).any { y -> (rect.x until rect.right).any { x -> first.isInk(x, y, ink) } }, "frame $i shows lines")
         }
         assertTrue(framesShowingStroke >= FRAMES / 3, "the stroke faced the camera in only $framesShowingStroke frames")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -161,7 +160,6 @@ class OrbitSmokeTest {
             val belly = firstRun(image, x, (frame.rect.y + below.y.toInt()) downTo frame.rect.y, ink)
             assertTrue(back > belly, "side on, the back's line is $back pixels and the belly's $belly")
         }
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

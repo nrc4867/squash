@@ -132,7 +132,6 @@ class ScreensSmokeTest {
 
     @AfterTest
     fun nothingFailedInTheBackground() {
-        work.close()
         assertEquals(emptyList(), failures)
     }
 

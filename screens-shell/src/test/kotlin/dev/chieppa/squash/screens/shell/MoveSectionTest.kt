@@ -25,7 +25,6 @@ import dev.chieppa.squash.screens.pickedOutward
 import dev.chieppa.squash.screens.setOutward
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -36,9 +35,6 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalTestApi::class)
 class MoveSectionTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val state = AppState(shipped, work).also {
         it.open(fennecDocument())

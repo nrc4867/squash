@@ -32,7 +32,6 @@ import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.squash.screens.toucan.savedToucan
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -44,9 +43,6 @@ private val LEG = PartId("front-leg-l")
 @OptIn(ExperimentalTestApi::class)
 class PoseInspectorTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun opened(tool: BuildTool = BuildTool.DRAG): AppState = AppState(shipped, work).also {
         it.open(savedFennec())

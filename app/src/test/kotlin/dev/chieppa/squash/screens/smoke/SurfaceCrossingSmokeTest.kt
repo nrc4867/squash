@@ -48,7 +48,6 @@ class SurfaceCrossingSmokeTest {
     private val right = PartInstance(RIGHT_ID, seamsRef("leg"), SocketRef(TORSO_ID, "front-leg"), pair = pair, side = Side.RIGHT)
 
     private fun finish() {
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

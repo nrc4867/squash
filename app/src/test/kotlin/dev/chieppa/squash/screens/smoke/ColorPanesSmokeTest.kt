@@ -93,7 +93,6 @@ class ColorPanesSmokeTest {
 
     @AfterTest
     fun finish() {
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

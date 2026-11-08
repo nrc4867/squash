@@ -30,7 +30,6 @@ import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
 import java.nio.file.Path
 import kotlin.math.abs
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -45,9 +44,6 @@ private const val GRID = 24
 @OptIn(ExperimentalTestApi::class)
 class MoveToolTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 

@@ -67,7 +67,6 @@ class SpineWidthToolTest {
             showPanes(camera)
             block(bench, tool, camera)
         }
-        bench.close()
     }
 
     private fun ComposeUiTest.pointer(bench: StrokeBench, path: List<Offset>) = with(bench) { stroke(path) }
@@ -144,7 +143,6 @@ class SpineWidthToolTest {
             assertTrue(tool.overlay(View.SIDE, camera).lines.none { it.color == TEST_STROKE_LOOK.string && it.width == TEST_STROKE_LOOK.stringWidth }, "release takes it up")
             assertEquals(centre.last().x, farEnd(bench).x, 2f * camera.planePixel, "the stroke finishes at the pointer")
         }
-        bench.close()
     }
 
     @Test

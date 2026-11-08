@@ -17,7 +17,6 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -32,9 +31,6 @@ private object NoBirdFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class NewBirdTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     @Test
     fun birdStartsACharacterWithAPerchedTorso() = runDesktopComposeUiTest(1600, 900) {

@@ -14,11 +14,16 @@ import kotlinx.coroutines.test.TestDispatcher
 
 /**
  * Workers for a test: the graph, the art and file reads queue on one scheduler and run only when the test [drain]s it, on the
- * test's own thread. [context] joins the scope, for a handler that collects failures.
+ * test's own thread. [context] joins the scope, for a handler that collects failures. [TestWorkCloser] closes every one when its
+ * test ends.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class TestWork private constructor(val dispatcher: TestDispatcher, context: CoroutineContext) :
-    Workers(CoroutineScope(SupervisorJob() + dispatcher + context), dispatcher, dispatcher) {
+    Workers(CoroutineScope(SupervisorJob() + dispatcher + context), dispatcher, dispatcher), AutoCloseable {
+    init {
+        TestWorkCloser.opened(this)
+    }
+
     constructor(context: CoroutineContext = EmptyCoroutineContext) : this(StandardTestDispatcher(TestCoroutineScheduler()), context)
 
     /** Runs everything queued, and everything that queues while it runs. */
@@ -30,7 +35,8 @@ class TestWork private constructor(val dispatcher: TestDispatcher, context: Coro
         assertTrue(session.settled, "the graph settles once its work has run")
     }
 
-    fun close() = scope.cancel()
+    /** Cancels everything this work started, the sessions of an [AppState] built on it among them. */
+    override fun close() = scope.cancel()
 }
 
 /** Whether nothing in the session's graph or view graph is dirty or running. */

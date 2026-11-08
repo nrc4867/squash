@@ -37,7 +37,6 @@ import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import java.nio.file.Files
 import kotlin.io.path.exists
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -51,9 +50,6 @@ private val LEG_B = PartId("leg-b")
 @OptIn(ExperimentalTestApi::class)
 class AnatomySectionTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val saved = Files.createTempDirectory("saved-templates")
     private val state = AppState(shipped.withSaved(saved), work).also {

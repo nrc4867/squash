@@ -40,7 +40,6 @@ import dev.chieppa.squash.screens.surface.strokeCommand
 import dev.chieppa.squash.screens.surface.surfaceHit
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -71,9 +70,6 @@ private class FurSeenFree(private val tool: PaneTool) : PaneTool by tool {
 @OptIn(ExperimentalTestApi::class)
 class FurPointerFlowTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val noSurface: SceneSurfaceContent = { _, _ -> }
     private var seen: FurSeenFree? = null

@@ -43,7 +43,6 @@ class TiltedStrokeInPlaceTest {
             assertSilhouetteUnder(id.id, top)
             assertSilhouetteUnder(id.id, front, whole = frontIsWholeSection)
         }
-        bench.close()
     }
 
     private val earSide = PlaneStroke(View.SIDE, 0.16f, 0f, 0.2f, 0.07f)
@@ -73,7 +72,6 @@ class TiltedStrokeInPlaceTest {
             strokeIn(camera, stroke.points())
             assertSilhouetteUnder(id.id, stroke)
         }
-        bench.close()
     }
 
     @Test
@@ -137,7 +135,6 @@ class TiltedStrokeInPlaceTest {
                 assertTrue(atMesh < BENCH_SLACK_PIXELS, "${id.id} ${base.view}: the mesh strays $atMesh pixels at $on")
             }
         }
-        bench.close()
     }
 
     @Test
@@ -188,7 +185,6 @@ class TiltedStrokeInPlaceTest {
                 assertTrue(distance < BENCH_SLACK_PIXELS, "${id.id} ${base.view}: the mesh is $distance pixels from where the moved anchor sets it")
             }
         }
-        bench.close()
     }
 
     @Test

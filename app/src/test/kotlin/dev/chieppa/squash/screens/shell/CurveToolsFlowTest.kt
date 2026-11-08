@@ -42,7 +42,6 @@ import dev.chieppa.stretch.test.setStretchContent
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -61,9 +60,6 @@ private object NoDialogs : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class CurveToolsFlowTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoDialogs) }

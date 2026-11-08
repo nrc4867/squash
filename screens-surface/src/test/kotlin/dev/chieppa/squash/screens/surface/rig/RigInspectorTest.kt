@@ -35,7 +35,6 @@ import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -47,9 +46,6 @@ private val TWIN = PartId("front-leg-r")
 @OptIn(ExperimentalTestApi::class)
 class RigInspectorTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun opened(): AppState = AppState(shipped, work).also {
         it.open(savedFennec())

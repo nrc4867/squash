@@ -27,7 +27,6 @@ import dev.chieppa.squash.screens.spine.SpineDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -47,9 +46,6 @@ private object NoSpineDialogs : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class SpineFlowTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoSpineDialogs) }

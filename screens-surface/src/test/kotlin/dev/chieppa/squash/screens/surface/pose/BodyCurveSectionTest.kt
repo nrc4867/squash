@@ -34,7 +34,6 @@ import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -49,9 +48,6 @@ private const val DIP = 0.08f
 @OptIn(ExperimentalTestApi::class)
 class BodyCurveSectionTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map(::PartId).toSet()
 

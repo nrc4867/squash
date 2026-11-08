@@ -24,6 +24,8 @@ subprojects {
             if (!includeSlowTests) (options as? JUnitPlatformOptions)?.excludeTags("slow")
             // A test that hangs fails on these instead of holding the build: each JUnit 5 test, and each module's run as a whole.
             systemProperty("junit.jupiter.execution.timeout.default", "5 m")
+            // Extensions test fixtures list in META-INF/services, such as screens-core's TestWorkCloser, apply to every test.
+            systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
             timeout.set(java.time.Duration.ofMinutes(30))
         }
     }

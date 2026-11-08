@@ -85,7 +85,6 @@ class TwoToneSmokeTest {
 
     @AfterTest
     fun cleanUp() {
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

@@ -30,7 +30,6 @@ import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.screens.surface.surfaceHit
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -45,9 +44,6 @@ class PaintSectionsTest {
     private val work = TestWork()
     private val folder = TemplateFolder.shipped()
     private val session = CharacterSession(savedFennec(), TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
-
-    @AfterTest
-    fun finish() = work.close()
 
     private fun settled() = work.settle(session)
 

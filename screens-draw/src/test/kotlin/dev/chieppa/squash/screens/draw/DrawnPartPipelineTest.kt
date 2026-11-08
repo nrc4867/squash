@@ -45,30 +45,26 @@ class DrawnPartPipelineTest {
         val part = PartId("leg")
         val document = SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(plan.id, plan.version)))
         val work = TestWork()
-        try {
-            val session = CharacterSession(document, TemplateLibrary(shipped.parts), work.scope, work.dispatcher)
-            session.send(AddPart(PartInstance(part, leg.ref)))
-            val mesh = session.mesh(part)
-            fun built(): PartMesh {
-                work.settle(session)
-                return assertNotNull(mesh.output.value)
-            }
-            val before = built()
-
-            val curve = assertNotNull(fittedOutline(stroke(), strokeEnds(View.SIDE, leg.openEnd), PIXEL)).curve
-            session.send(SetOutline(part, View.SIDE, curve))
-            val after = built()
-
-            assertEquals(before.patches.map { it.patch.nu to it.patch.nv }, after.patches.map { it.patch.nu to it.patch.nv })
-            assertFalse(before.patches.first().patch.points.contentEquals(after.patches.first().patch.points))
-            val axes = PartBuilder.axes(leg)
-            val body = after.patches.first().patch
-            val along = (0 until body.nu * body.nv).map { body.point(it) dot axes.along }
-            val up = (0 until body.nu * body.nv).map { body.point(it) dot axes.up }
-            assertTrue(along.max() in STROKE_LENGTH * 0.9f..STROKE_LENGTH * 1.1f, "reaches ${along.max()}")
-            assertTrue((up.max() - up.min()) in STROKE_HEIGHT * 1.6f..STROKE_HEIGHT * 2.4f, "height ${up.max() - up.min()}")
-        } finally {
-            work.close()
+        val session = CharacterSession(document, TemplateLibrary(shipped.parts), work.scope, work.dispatcher)
+        session.send(AddPart(PartInstance(part, leg.ref)))
+        val mesh = session.mesh(part)
+        fun built(): PartMesh {
+            work.settle(session)
+            return assertNotNull(mesh.output.value)
         }
+        val before = built()
+
+        val curve = assertNotNull(fittedOutline(stroke(), strokeEnds(View.SIDE, leg.openEnd), PIXEL)).curve
+        session.send(SetOutline(part, View.SIDE, curve))
+        val after = built()
+
+        assertEquals(before.patches.map { it.patch.nu to it.patch.nv }, after.patches.map { it.patch.nu to it.patch.nv })
+        assertFalse(before.patches.first().patch.points.contentEquals(after.patches.first().patch.points))
+        val axes = PartBuilder.axes(leg)
+        val body = after.patches.first().patch
+        val along = (0 until body.nu * body.nv).map { body.point(it) dot axes.along }
+        val up = (0 until body.nu * body.nv).map { body.point(it) dot axes.up }
+        assertTrue(along.max() in STROKE_LENGTH * 0.9f..STROKE_LENGTH * 1.1f, "reaches ${along.max()}")
+        assertTrue((up.max() - up.min()) in STROKE_HEIGHT * 1.6f..STROKE_HEIGHT * 2.4f, "height ${up.max() - up.min()}")
     }
 }

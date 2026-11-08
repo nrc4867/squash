@@ -27,7 +27,6 @@ import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.stretch.gpu.GpuOptions
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -47,9 +46,6 @@ private const val LEANED_PAW_RESIDUAL = 0.005f
 @OptIn(ExperimentalTestApi::class)
 class MoveSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     @Test
     fun legsLeanedOutShowInEveryPaneWithTheirDots() = runComposeUiTest {

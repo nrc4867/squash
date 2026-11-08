@@ -31,7 +31,6 @@ import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.squash.screens.surface.headAngle
 import dev.chieppa.stretch.gpu.GpuOptions
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,9 +51,6 @@ private val MOUTH = MarkGroupId("mouth")
 class FaceSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
     private val work = TestWork()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()

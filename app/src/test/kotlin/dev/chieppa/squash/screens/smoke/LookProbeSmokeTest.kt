@@ -158,7 +158,6 @@ class LookProbeSmokeTest {
                 keep("fennec-head-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
         }
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -206,7 +205,6 @@ class LookProbeSmokeTest {
         assertEquals(BIN_FRONT, shown.last())
         assertEquals(BIN_THREE_QUARTER, shown[RISING_AT_72], "turning out, the bin holds past its edge")
         assertEquals(BIN_SIDE, shown[FALLING_AT_72], "turning back at the same angle, the other bin holds")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 }

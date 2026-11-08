@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.first
 
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.TestWork
-import kotlin.test.AfterTest
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
@@ -75,9 +74,6 @@ private class SaveTo(private val path: String) : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class ShellFlowTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun ComposeUiTest.show(state: AppState) = setStretchContent { SquashApp(state, NoFiles) }
 

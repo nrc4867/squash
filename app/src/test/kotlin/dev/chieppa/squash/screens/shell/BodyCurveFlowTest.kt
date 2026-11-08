@@ -42,7 +42,6 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -78,9 +77,6 @@ private object NoCurveFiles : FileChooser {
 class BodyCurveFlowTest {
     private val work = TestWork()
     private val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map(::PartId)
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
         val state = AppState(TemplateFolder.shipped(), work)

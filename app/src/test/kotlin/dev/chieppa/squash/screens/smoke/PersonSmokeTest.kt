@@ -74,7 +74,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -107,9 +106,6 @@ private object NoPersonFiles : FileChooser {
 class PersonSmokeTest {
     private val work = TestWork()
     private val errors = CopyOnWriteArrayList<String>()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private class Bench(val state: AppState) {
         var selection: SheetSelection? = null

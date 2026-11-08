@@ -34,7 +34,6 @@ import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -55,9 +54,6 @@ private object NoFullFirstFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class FullFirstSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     @Test
     fun theFennecInFullFirstAndAnOutlineToolRefusedInFull() = runDesktopComposeUiTest(WIDTH, HEIGHT) {

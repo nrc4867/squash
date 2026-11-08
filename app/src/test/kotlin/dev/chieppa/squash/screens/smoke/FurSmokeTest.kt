@@ -110,7 +110,6 @@ class FurSmokeTest {
         keepImage(image.pixels, image.width, "fur-sheet")
         assertEquals(emptyList(), errors)
         assertNotBlank(image.pixels, "the panes")
-        work.close()
     }
 
     @Test
@@ -129,6 +128,5 @@ class FurSmokeTest {
         onNodeWithTag(ShellTags.tool(BuildTool.SPINE_WIDTH)).assertDoesNotExist()
         val window = onNodeWithTag(ShellTags.WORKSPACE).captureToImage().argbPixels()
         keepImage(window, onNodeWithTag(ShellTags.WORKSPACE).fetchSemanticsNode().size.width, "fur-workspace")
-        work.close()
     }
 }

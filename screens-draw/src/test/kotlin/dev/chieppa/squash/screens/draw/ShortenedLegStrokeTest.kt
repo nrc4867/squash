@@ -63,7 +63,6 @@ class ShortenedLegStrokeTest {
             val shown = stored.map(camera::toPixel)
             assertTrue(abs(shown.maxOf { it.y } - path.maxOf { it.y }) < BENCH_SLACK_PIXELS, "the stored outline reads back under the stroke")
         }
-        bench.close()
     }
 
     @Test
@@ -80,7 +79,6 @@ class ShortenedLegStrokeTest {
             assertEquals(80f / BENCH_SCALE, spans[0], STORED_SLACK, "a Front outline has no length along the axis to shorten")
             assertEquals(100f / BENCH_SCALE, spans[1], STORED_SLACK)
         }
-        bench.close()
     }
 
     @Test
@@ -104,7 +102,6 @@ class ShortenedLegStrokeTest {
             assertEquals(to.y, camera.toPixel(moved).y, 1.5f, "the point stays under the pointer")
             assertEquals(30f / BENCH_SCALE / camera.lengthFactor, moved.x - tip.x, 1e-3f, "and moves further in stored coordinates than on screen")
         }
-        bench.close()
     }
 
     @Test
@@ -120,6 +117,5 @@ class ShortenedLegStrokeTest {
             assertEquals(0.31f, back.x, 1e-4f, "pixel and plane are one round trip")
             assertEquals(-0.07f, back.y, 1e-4f)
         }
-        bench.close()
     }
 }

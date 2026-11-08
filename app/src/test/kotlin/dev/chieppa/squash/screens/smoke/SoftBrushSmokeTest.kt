@@ -113,7 +113,6 @@ class SoftBrushSmokeTest {
             val view = characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { BIN_THREE_QUARTER }
             keep("soft-head-flat-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
         }
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -142,7 +141,6 @@ class SoftBrushSmokeTest {
                 if (mode == Shading.FLAT && zoom.smooth) assertFadeIsSmooth(pixels, ZOOM_SIZE, zoom.name)
             }
         }
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

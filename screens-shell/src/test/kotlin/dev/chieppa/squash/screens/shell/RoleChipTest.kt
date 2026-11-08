@@ -25,7 +25,6 @@ import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.uidesign.Tentative
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,9 +33,6 @@ import kotlin.test.assertFalse
 @OptIn(ExperimentalTestApi::class)
 class RoleChipTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val state = AppState(shipped, work).also { it.open(fennecDocument()) }
     private val session get() = checkNotNull(state.session.value)

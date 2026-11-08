@@ -33,7 +33,6 @@ import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.hypot
 import kotlin.math.tan
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -63,9 +62,6 @@ private val STEPS = listOf(1f, 2f)
 class LineFlickerSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
     private val work = TestWork()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()

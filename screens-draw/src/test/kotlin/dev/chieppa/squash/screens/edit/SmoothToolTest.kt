@@ -35,7 +35,6 @@ import dev.chieppa.squash.screens.shell.partDrawerKind
 import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.math.hypot
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -46,9 +45,6 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class SmoothToolTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun tool(state: AppState) = SmoothTool(state, TEST_CURVE_LOOK)
 

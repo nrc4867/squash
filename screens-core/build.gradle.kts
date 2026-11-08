@@ -22,6 +22,7 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testFixturesApi(kotlin("test"))
+    testFixturesImplementation(kotlin("test-junit5"))
     testFixturesApi(libs.kotlinx.coroutines.test)
     testFixturesApi("dev.chieppa.stretch:stretch-test")
     testFixturesApi(compose.desktop.currentOs)

@@ -48,7 +48,6 @@ import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -67,9 +66,6 @@ private object NoFaceFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class FaceFlowTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
         val state = AppState(TemplateFolder.shipped(), work)

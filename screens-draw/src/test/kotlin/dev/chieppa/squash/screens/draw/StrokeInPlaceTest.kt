@@ -67,7 +67,6 @@ class StrokeInPlaceTest {
             val all = boundsOf(path)
             assertLandsOn(Bounds(all.left, socket.y, all.right, all.bottom), mesh)
         }
-        bench.close()
     }
 
     @Test
@@ -88,7 +87,6 @@ class StrokeInPlaceTest {
             assertTrue(onPlane.all { abs(it.x) < 1e-3f }, "both ends on the plane: $onPlane")
             assertTrue(outline.points.maxOf { it.x } > 0.3f, "the part below the plane is what stays")
         }
-        bench.close()
     }
 
     @Test
@@ -109,7 +107,6 @@ class StrokeInPlaceTest {
             val all = boundsOf(path)
             assertLandsOn(Bounds(all.left, socket.y, all.right, all.bottom), mesh)
         }
-        bench.close()
     }
 
     @Test
@@ -132,7 +129,6 @@ class StrokeInPlaceTest {
             assertTrue(neck.x < tail.x, "the neck is toward the left of the pane")
             assertTrue(camera.toPixel(leg.origin).y > middle.y, "the legs moved with the drawn body and hang under it")
         }
-        bench.close()
     }
 
     @Test
@@ -153,7 +149,6 @@ class StrokeInPlaceTest {
             val all = boundsOf(path)
             assertLandsOn(Bounds(all.left, socket.y, all.right, all.bottom), boundsOf(onScreen(part(leftLeg.id), camera)))
         }
-        bench.close()
     }
 
     @Test
@@ -175,7 +170,6 @@ class StrokeInPlaceTest {
             assertTrue(abs(mesh.bottom - all.bottom) < BENCH_SLACK_PIXELS, "${mesh.bottom} and ${all.bottom}")
             assertTrue(abs(max(mesh.left, all.left) - min(mesh.left, all.left)) < 60f, "$mesh and $all")
         }
-        bench.close()
     }
 
 }

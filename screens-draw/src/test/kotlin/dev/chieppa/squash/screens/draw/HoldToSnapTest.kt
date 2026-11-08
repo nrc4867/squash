@@ -29,15 +29,11 @@ private const val NEAR_PIXELS = 3f
 class HoldToSnapTest {
     private fun bench(view: View, block: ComposeUiTest.(StrokeBench, LockedCamera) -> Unit) = runComposeUiTest {
         val bench = StrokeBench()
-        try {
-            bench.state.selectedPart.value = StrokeParts.leftLeg.id
-            with(bench) { settled() }
-            val camera = bench.camera(bench.part(StrokeParts.leftLeg.id), view)
-            with(bench) { show(camera) }
-            block(bench, camera)
-        } finally {
-            bench.close()
-        }
+        bench.state.selectedPart.value = StrokeParts.leftLeg.id
+        with(bench) { settled() }
+        val camera = bench.camera(bench.part(StrokeParts.leftLeg.id), view)
+        with(bench) { show(camera) }
+        block(bench, camera)
     }
 
     private fun ComposeUiTest.pressAlong(path: List<Offset>) {

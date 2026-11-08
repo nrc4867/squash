@@ -45,7 +45,6 @@ import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -65,9 +64,6 @@ private object PenAssistsNoFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class PenAssistsSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val rects = sheetPaneRects(WIDTH, HEIGHT, 2)
 

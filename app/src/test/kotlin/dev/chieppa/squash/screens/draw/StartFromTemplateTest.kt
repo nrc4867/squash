@@ -19,7 +19,6 @@ import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,9 +32,6 @@ private object NoChooser : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class StartFromTemplateTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoChooser) }

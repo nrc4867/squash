@@ -17,7 +17,6 @@ import dev.chieppa.squash.screens.surface.rig.heatLayers
 import dev.chieppa.squash.screens.surface.rig.rigPartColors
 import dev.chieppa.squash.screens.surface.rig.seamLayers
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -31,9 +30,6 @@ private const val RIG_HEIGHT = 800
 @Tag("slow")
 class RigSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stop() = work.close()
 
     @Test
     fun theFennecShowsItsRig() {

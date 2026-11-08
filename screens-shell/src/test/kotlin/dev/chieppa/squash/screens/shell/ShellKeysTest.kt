@@ -8,7 +8,6 @@ import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.frame.ToastState
 import java.nio.file.Files
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -18,9 +17,6 @@ import kotlinx.coroutines.Dispatchers
 
 class ShellKeysTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private object NoChooser : FileChooser {
         override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null

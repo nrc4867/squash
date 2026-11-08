@@ -12,7 +12,6 @@ import dev.chieppa.squash.screens.draw.WorkspaceTools
 import dev.chieppa.squash.screens.sheet.SheetStrip
 import dev.chieppa.squash.screens.surface.lineToolSection
 import dev.chieppa.stretch.test.setStretchContent
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,9 +22,6 @@ private const val NARROW_HEIGHT = 400
 @OptIn(ExperimentalTestApi::class)
 class ToolStripTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     @Test
     fun aCollapsedSectionOpensItsToolsAndArmingOneClosesItAndLightsIt() = runDesktopComposeUiTest(NARROW_WIDTH, NARROW_HEIGHT) {

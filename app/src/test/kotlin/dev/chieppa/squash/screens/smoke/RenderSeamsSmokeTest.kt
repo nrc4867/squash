@@ -67,7 +67,6 @@ class RenderSeamsSmokeTest {
                 if (turn == 0f) assertEquals(0, isolated(pixels, SEAMS_SIZE), "no pixel of $modeName shows alone through a layer")
             }
         }
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -88,7 +87,6 @@ class RenderSeamsSmokeTest {
         val scene = SceneView(rect, camera.viewProjection(SEAMS_SIZE, SEAMS_SIZE), listOf(seamsDraw(session, leg, ObjectShading(), toCamera)), listOf(ribbon))
         val pixels = seamsRender("seams-ribbon", SceneFrame(SEAMS_WELL, listOf(scene)), errors)
         assertTrue(pixels.count { it == SEAMS_INK.toArgb() } > 500, "the ribbon shows")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -107,7 +105,6 @@ class RenderSeamsSmokeTest {
         val frame = SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, listOf(seamsDraw(session, leg, ObjectShading(), Vec3.Z)))))
         val pixels = seamsRender("seams-close-edge", frame, errors)
         assertEquals(0, isolated(pixels, SEAMS_SIZE))
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -129,7 +126,6 @@ class RenderSeamsSmokeTest {
         val width = ORBIT_COLUMNS * ORBIT_TILE
         val pixels = seamsRender("seams-orbit", SceneFrame(SEAMS_WELL, views), errors, width, width)
         assertEquals(0, isolated(pixels, width), "no pixel shows alone through a layer at any orbit")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

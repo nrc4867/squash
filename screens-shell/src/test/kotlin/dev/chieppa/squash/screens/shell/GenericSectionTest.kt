@@ -28,7 +28,6 @@ import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -39,9 +38,6 @@ private val FIN = PartId("fin")
 @OptIn(ExperimentalTestApi::class)
 class GenericSectionTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val state = AppState(shipped, work).also { state ->
         val new = newCharacter(blankPlan, shipped, "Koi") { "body" }

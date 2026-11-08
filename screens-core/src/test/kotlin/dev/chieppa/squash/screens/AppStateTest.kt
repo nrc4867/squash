@@ -7,7 +7,6 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.shell.caninePlan
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.RecentFiles
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -17,9 +16,6 @@ import kotlin.test.assertTrue
 
 class AppStateTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private fun created() = AppState(shipped, work).also { it.createCharacter(caninePlan, "Fennec") }
 

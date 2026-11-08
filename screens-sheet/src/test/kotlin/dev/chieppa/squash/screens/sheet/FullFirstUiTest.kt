@@ -27,7 +27,6 @@ import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -64,9 +63,6 @@ private class LockedOnlyTool : PaneTool {
 @OptIn(ExperimentalTestApi::class)
 class FullFirstUiTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
     private val noSurface: SceneSurfaceContent = { _, _ -> }

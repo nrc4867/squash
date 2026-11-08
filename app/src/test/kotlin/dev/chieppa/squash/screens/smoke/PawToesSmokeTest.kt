@@ -19,7 +19,6 @@ import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -37,9 +36,6 @@ private val DRAWN_TOP = edges(0f to 0.09f, 0.15f to 0.12f, 0.26f to 0.08f, 0.3f 
 @OptIn(ExperimentalTestApi::class)
 class PawToesSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     @Test
     fun thePawReadsInTheRestPoseAtEachSetting() = runComposeUiTest {

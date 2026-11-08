@@ -35,7 +35,6 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -71,9 +70,6 @@ private fun closedEllipse(x: Float, y: Float): OutlineCurve = edges(
 @Tag("slow")
 class TiltedPanesSmokeTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val templates = TemplateFolder.shipped()
     private fun ref(id: String) = templates.parts.first { it.id == TemplateId(id) }.ref

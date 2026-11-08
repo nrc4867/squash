@@ -69,7 +69,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -91,9 +90,6 @@ private object NoChosenFiles : FileChooser {
 class PenShapesSmokeTest {
     private val work = TestWork()
     private val templates = TemplateFolder.shipped()
-
-    @AfterTest
-    fun stop() = work.close()
 
     private fun render(input: SheetInput, name: String) {
         val errors = CopyOnWriteArrayList<String>()

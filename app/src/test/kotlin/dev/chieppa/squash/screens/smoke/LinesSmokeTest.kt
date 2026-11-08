@@ -163,7 +163,6 @@ class LinesSmokeTest {
         assertTrue(whole.map { it.rule.interiorPixels }.toSet().size >= 2, "Full has thick and thin lines: ${whole.map { it.rule.interiorPixels }.toSet()}")
         keep(bench, input, "lines-fennec")
         assertTrue(assertNotNull(session.document.value.character.part(TORSO)).id == TORSO)
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -183,7 +182,6 @@ class LinesSmokeTest {
         assertEquals(add.id, session.document.value.character.traces[dev.chieppa.squash.document.View.SIDE]?.image, "the sketch is traced in Side")
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, color = it.color, surface = it.surface, traces = { toViewer -> traceDraws(session.document.value, bench.state.images, toViewer) }) }, "references")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -195,7 +193,6 @@ class LinesSmokeTest {
         onNodeWithTag(FaceTags.FEATURE).assertExists()
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, hints = SheetHints(whole = true), color = it.color, surface = it.surface) }, "face-eye")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -238,7 +235,6 @@ class LinesSmokeTest {
         keep(bench, panes(bench), "lines-strokes")
         state.undo()
         assertEquals(1, loose().size, "one undo takes back one stroke")
-        work.close()
         assertEquals(emptyList(), errors)
     }
 

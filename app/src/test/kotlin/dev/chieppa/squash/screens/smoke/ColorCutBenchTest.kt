@@ -83,7 +83,6 @@ class ColorCutBenchTest {
         val single = (0 until ROUNDS).minOf { measureTime { ShapeCuts().cuts(listOf(one), surfaces, ColorDetail.START) } }
         println("BENCH one stroke at step ${ColorDetail.START}: ${single.inWholeMicroseconds} us")
         parts.forEach { println("BENCH bilinear gap on ${it.id.value}: ${bilinearGap(surfaces.getValue(it.id))} over a body of ${surfaces.getValue(it.id).axisLength}") }
-        work.close()
     }
 
     @Test
@@ -108,7 +107,6 @@ class ColorCutBenchTest {
                 }
             }
         }
-        work.close()
     }
 
     /** The most the middle of a cell's bilinear surface lies off the two triangles the mesh draws there. */

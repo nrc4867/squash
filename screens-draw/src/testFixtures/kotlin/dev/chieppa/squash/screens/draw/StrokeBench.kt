@@ -202,6 +202,4 @@ class StrokeBench(tilted: Boolean = false) {
     /** Every vertex of [part] as [camera] shows it. */
     fun onScreen(part: SheetPart, camera: LockedCamera): List<Offset> =
         (0 until part.mesh.vertexCount).map { camera.toPixel(part.origin + part.mesh.position(it)) }
-
-    fun close() = work.close()
 }

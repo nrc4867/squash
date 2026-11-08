@@ -172,6 +172,5 @@ class SheetUiTest {
         val curve = OutlineCurve(listOf(CurvePoint(0f, 0f), CurvePoint(0f, 1f), CurvePoint(1f, 1f), CurvePoint(1f, 0f)))
         session.send(SetOutline(id, View.SIDE, curve))
         settle(work) { selection?.outlines?.containsKey(View.SIDE) == true }
-        work.close()
     }
 }

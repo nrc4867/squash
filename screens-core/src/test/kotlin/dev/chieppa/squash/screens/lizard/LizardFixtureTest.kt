@@ -21,7 +21,6 @@ import dev.chieppa.squash.screens.saveAsTemplate
 import dev.chieppa.squash.screens.shell.SquashFormat
 import java.io.File
 import java.nio.file.Files
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,9 +32,6 @@ private const val UPDATE_PROPERTY = "squash.updateGoldens"
 /** The saved lizard stays what its commands make. Regenerate with ./gradlew :screens-core:test -PupdateGoldens and review the diff. */
 class LizardFixtureTest {
     private val work = TestWork()
-
-    @AfterTest
-    fun stopWork() = work.close()
 
     private val shipped = TemplateFolder.shipped()
 
