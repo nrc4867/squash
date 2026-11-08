@@ -364,6 +364,7 @@
     <string name="anatomy_template">Template</string>
     <string name="anatomy_step_pair">Pair parts</string>
     <string name="anatomy_step_template">Template %1$s</string>
+    <string name="anatomy_update">Update from library</string>
     <string name="add_part_on_socket">%1$s · %2$s</string>
     <string name="edit_tool_mirror">Mirror</string>
     <string name="color_section_paint">Paint</string>

@@ -41,6 +41,7 @@ import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Chip
+import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.Tree
 import dev.chieppa.stretch.ui.flattenTree
 import org.jetbrains.compose.resources.stringResource
@@ -89,6 +90,7 @@ fun PartsDrawerContent(state: AppState) {
             leading = { RowSwatch(it) },
             trailing = {
                 Row(horizontalArrangement = Arrangement.spacedBy(TRAILING_GAP), verticalAlignment = Alignment.CenterVertically) {
+                    RowUnseated(it)
                     RowRole(it, guesses)
                     RowState(it)
                 }
@@ -125,6 +127,13 @@ private fun RowSwatch(row: PartRow) {
 private fun RowRole(row: PartRow, labels: (Role) -> String) {
     val guessed = (row as? PartRow.Placed)?.guessed ?: return
     Chip(stringResource(Res.string.role_guessed, labels(guessed)), Modifier.testTag(ShellTags.partRowRole(row.tagName)), dashed = true, description = stringResource(Res.string.role_title))
+}
+
+/** The socket a part sits on, highlighted, while its parent does not offer it; nothing otherwise. */
+@Composable
+private fun RowUnseated(row: PartRow) {
+    val socket = (row as? PartRow.Placed)?.unseated ?: return
+    Chip(socket, Modifier.testTag(ShellTags.partRowUnseated(row.tagName)), kind = ChipKind.Warn)
 }
 
 @Composable

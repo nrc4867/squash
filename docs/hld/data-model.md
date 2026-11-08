@@ -259,10 +259,18 @@ The sheet is such a surface: a tube run with `openV` is cut open at v = 0, a col
 
 Four rules make saved characters keep working, from the first commit:
 
-1. **Template versions are immutable and ship forever.** A changed template is a new version file; the old file stays and old characters keep building with it. An upgrade to the new version is offered, never applied by itself.
+1. **Template versions are immutable and ship forever.** A changed template is a new version file; the old file stays and old characters keep building with it. An upgrade to the new version is offered by Update from library, never applied by itself.
 2. **A new parameter's default reproduces the old build exactly.** The golden tests build every shipped template version with default parameters and compare against its stored fixture, so a default that moves a vertex fails the build.
 3. **References are by name, never by index.** Poses name bones by part and joint name, anchors name patches, slots name sockets, marks name landmarks. Adding a joint, a patch or a socket to a new template version shifts nothing stored.
 4. **Documents carry a format number and a migration chain.** Each step from one format to the next is one function with a fixture saved in the older format, and `readDocument` runs the chain. A document from a newer app is refused with a clear message, never half-read. Shipped templates stay strictly parsed; documents tolerate only what a migration has accounted for.
+
+### Update from library
+
+A part pins the template version it was built with until it is moved on by hand. Update from library moves it to the library's newest version of the same template, the library being the shipped templates and the saved templates' folder as loaded (`TemplateFolder.newerThan`). It is one `UpdateFromLibrary(part, version)`, which moves the part and the other side of its pair, and whose undo is the same command back to the version it left.
+
+- **Everything stored stays.** The command changes the version pinned and nothing else: outlines, parameters (hand-made sockets, joints and landmarks among them), overrides, surface work, the role, the socket the part sits on, the parts on its sockets, the seams' strokes and the pose. Each reaches the new build by name, as the rules above make it, so whatever the new version builds that they name carries over: the winged fennec's torso moved from version 1 to 2 keeps its hand-made socket holding the wing, which rigs from a torso bone and poses.
+- **What the new version does not build stays stored and shows in place.** A part on a socket its parent no longer offers (`unseatedParts`) sits at the body's origin, and its row in Parts carries the socket's name on a warning chip. A joint the pose sets that the part no longer builds (`posedJointsMissing`) is left out of the rig and listed by name on a warning chip under the part's joints in Anatomy. An anchor on a patch the new version does not build drops, as any dangling anchor does. A parameter the new version does not declare stays stored and sets nothing. A version or a hand-made socket that offers the missing piece again, or the undo, brings each back.
+- **It is offered only over an older version.** The part's Template menu leads with Update from library while the library holds a newer version of the part's template, the root included, which has no other template to change to; the menu shows only where it offers something. A saved template is written at version 1 under an id of its own, so a newer version of it comes only from a file placed in the folder by hand.
 
 ## Part template file format
 

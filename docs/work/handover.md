@@ -33,13 +33,13 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 - **Fingers have no joints.** The hand's five digits are shape only; a curling hand needs a branching joint tree inside one part (bones, vertex tagging, weights, the Rig stage). The biggest single piece of unbuilt anatomy.
 - **The upper beak** hangs from the head's jaw bone, which no pose sets; it holds still, which is right, by accident.
 - **`check` runs 2.5 to 3.5 minutes** on this machine with compilation, against the two-minute criterion in `stage-3.md` and three in `stage-5.md`.
-- **No Update from library** command exists; survival across template versions is tested by a version bump only.
 
 ## Decisions waiting on Nicholas
 
 - The open comment on the Face board: when ¾ is unused, borrow from the nearer drawn angle or always from the first drawn. Built as the document falls back.
 - Whether the quadruped's front legs showing as "Front leg" and "Front paw" while storing arm and hand is what he wants, or the board's "Foot".
 - Whether to fold the restructure canvas back into Squash flow of work now that he has said the new flow is the flow. The old canvas's boards 2, 7, 9 to 13 point at the new one; the rest of the old canvas is still the spec for Home, Sheet, References, Shot and Objects.
+- Update from library is built for a part's template version; `architecture.md` also names a character-level Update from library, from a character saved in the personal library into a project's copy, which is not built and may want another name. And whether a version that drops a socket a part sits on should be offered at all: it is offered, the part kept on its socket and its row in Parts highlighted, since nothing is lost and undo restores it; no shipped version drops anything.
 - The spike-8 volume reading: Length 0.92 is +3.4% from rest because the bow itself adds +3.0% with the legs sunk deeper; the test measures against the bow at Length 1 and allows 3.5%.
 
 ## What to do next, in order
@@ -62,12 +62,12 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 | 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | landed |
 | 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | landed |
 | 2 | `fingers` | A branching joint tree inside a part: a stage note, then bones, tagging, weights, the Rig stage and Turn, so hands curl and the toucan's toes grip | wave 1 | waiting |
-| 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | waiting |
+| 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | landed |
 | 3 | `digit-shape` | The membrane block between digits and per-digit shape (lens sections, taper, knuckles) | `fingers` | waiting |
 | 3 | `blend-spike` | The implicit blend as displacement, from the papers, as a spike | `digit-shape` | waiting |
 | 4 | `membrane-wings` and later anatomy | `wing-membrane`, socket rows, tip sockets, horns and claws | `digit-shape` | waiting |
 | 5 | Shot | Boards 14 to 17 and the eyes-and-gaze Shot board drawn, a stage note, then the workspace in rounds | wave 4 | waiting |
-| Nicholas | none | The verify pass, then `pose-boards` from what it finds, and the four decisions above | a sitting with the app open | waiting |
+| Nicholas | none | The verify pass, then `pose-boards` from what it finds, and the decisions above | a sitting with the app open | waiting |
 
 ## How the work was run, for whoever runs the next sitting
 

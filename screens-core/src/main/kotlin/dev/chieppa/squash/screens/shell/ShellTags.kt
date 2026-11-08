@@ -42,6 +42,7 @@ object ShellTags {
     const val SAVE_NAME = "part.anatomy.save.name"
     const val SAVE_OK = "part.anatomy.save.ok"
     const val TEMPLATE_MENU = "part.template"
+    const val TEMPLATE_UPDATE = "part.template.update"
     const val STATUS_START = "status.start"
     const val STATUS_END = "status.end"
     const val STATUS_STAGE = "status.stage"
@@ -61,6 +62,7 @@ object ShellTags {
     fun partRow(name: String) = "parts.row.$name"
     fun partRowState(name: String) = "parts.state.$name"
     fun partRowRole(name: String) = "parts.role.$name"
+    fun partRowUnseated(name: String) = "parts.unseated.$name"
     fun addTile(id: String) = "addPart.tile.$id"
     fun addSocket(name: String) = "addPart.socket.$name"
     fun tool(tool: BuildTool) = "tools.${tool.name}"
@@ -71,5 +73,6 @@ object ShellTags {
     fun genericView(view: String) = "part.generic.view.$view"
     fun anatomyRow(name: String) = "part.anatomy.row.$name"
     fun anatomyDelete(name: String) = "part.anatomy.delete.$name"
+    fun anatomyMissing(name: String) = "part.anatomy.missing.$name"
     fun pairOption(part: String) = "part.anatomy.pair.$part"
 }

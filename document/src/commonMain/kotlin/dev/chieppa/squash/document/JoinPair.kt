@@ -74,9 +74,6 @@ private fun PartData.over(shared: PartData): PartData = PartData(
 data class SetTemplate(val part: PartId, val template: TemplateRef) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> {
         val instance = document.requirePart(part)
-        val parts = document.character.parts.map {
-            if (it.id == part || (instance.pair != null && it.pair == instance.pair)) it.copy(template = template) else it
-        }
-        return Applied(document.copy(character = document.character.copy(parts = parts)), SetTemplate(part, instance.template))
+        return Applied(document.withTemplate(part, template), SetTemplate(part, instance.template))
     }
 }

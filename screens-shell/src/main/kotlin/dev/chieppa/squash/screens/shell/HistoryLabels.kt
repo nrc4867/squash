@@ -31,8 +31,10 @@ import dev.chieppa.squash.document.BreakPair
 import dev.chieppa.squash.document.JoinPair
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.SetTemplate
+import dev.chieppa.squash.document.UpdateFromLibrary
 import dev.chieppa.squash.uidesign.generated.anatomy_step_pair
 import dev.chieppa.squash.uidesign.generated.anatomy_step_template
+import dev.chieppa.squash.uidesign.generated.anatomy_update
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.RemovePart
@@ -105,6 +107,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
     val retemplated = stringResource(Res.string.anatomy_step_template, FIRST)
+    val updated = stringResource(Res.string.anatomy_update)
     val moved = stringResource(Res.string.move_step)
     val palette = stringResource(Res.string.color_step_palette, FIRST)
     val base = stringResource(Res.string.color_step_base, FIRST)
@@ -142,6 +145,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is BreakPair -> breakPair
             is JoinPair -> joinPair
             is SetTemplate -> retemplated.replace(FIRST, displayName(command.template.id.value))
+            is UpdateFromLibrary -> updated
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters -> moved

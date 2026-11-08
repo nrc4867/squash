@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.catalog.partName
 import dev.chieppa.squash.character.catalog.roles
 import dev.chieppa.squash.character.catalog.twin
+import dev.chieppa.squash.character.catalog.unseatedParts
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.document.PartData
@@ -26,8 +27,18 @@ sealed interface PartRow {
     /** The name its test tag ends with: a socket's, or the root's template id. */
     val tagName: String
 
-    /** A placed part; [guessed] is its role while that is a guess not yet confirmed. */
-    data class Placed(val part: PartInstance, override val label: String, val drawn: Boolean, val base: SlotColor? = null, val guessed: Role? = null) : PartRow {
+    /**
+     * A placed part; [guessed] is its role while that is a guess not yet confirmed, and [unseated] the name of the socket it sits on
+     * while its parent does not offer that socket.
+     */
+    data class Placed(
+        val part: PartInstance,
+        override val label: String,
+        val drawn: Boolean,
+        val base: SlotColor? = null,
+        val guessed: Role? = null,
+        val unseated: String? = null,
+    ) : PartRow {
         override val key get() = part.id.value
         override val tagName get() = part.socket?.socket ?: part.template.id.value
     }
@@ -48,7 +59,7 @@ sealed interface PartRow {
  * The Parts tree: each placed part under the part it sits on, and each open socket under the part that has it. A
  * pair reads as one row, as the boards draw it, until its
  * sides can differ: with [mirror] off or once a side has overrides, each side has a row of its own under it, named by [sideLabel]. A
- * socket's row reads [socketLabel] of its name.
+ * socket's row reads [socketLabel] of its name, and so does a part's whose parent does not offer the socket it sits on.
  */
 fun partTree(
     document: SquashDocument,
@@ -61,11 +72,13 @@ fun partTree(
     val parts = document.character.parts
     val open = openSockets(document, plan, templates).groupBy { it.parent }
     val roles = templates.roles(document.character)
+    val unseated = unseatedParts(document, plan, templates)
     fun node(part: PartInstance): TreeNode<PartRow> {
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
         val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, socketLabel(it.name))) }
         val guessed = roles.resolved(part).takeIf { roles.isGuess(part) }
-        val row = PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part), guessed)
+        val seat = part.socket?.takeIf { part.id in unseated }?.let { socketLabel(it.socket) }
+        val row = PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part), guessed, seat)
         return TreeNode(row, document.sideRows(part, mirror, sideLabel) + placed + waiting)
     }
     return parts.filter { it.socket == null }.map(::node)

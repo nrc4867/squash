@@ -19,6 +19,7 @@ import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.partName
+import dev.chieppa.squash.character.catalog.posedJointsMissing
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.screens.AppState
@@ -49,6 +50,8 @@ import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
+import dev.chieppa.stretch.ui.Chip
+import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.formatNumber
 import org.jetbrains.compose.resources.stringResource
@@ -61,12 +64,13 @@ private const val PLACE_JOIN = " � "
 private fun place(value: Float): String = FIGURE.format(kotlin.math.round(value * PLACES) / PLACES)
 
 /**
- * The selected part's anatomy: its joints, the template's and those placed by hand, by name and u, and its landmarks by name, u and v,
- * each placed by hand with a small delete, picking a joint's row picking the joint; then Pair with… and Save as template.
+ * The selected part's anatomy: its joints, the template's and those placed by hand, by name and u, then each joint the pose sets that
+ * the part does not build, highlighted, and its landmarks by name, u and v, each placed by hand with a small delete, picking a joint's
+ * row picking the joint; then Pair with… and Save as template.
  */
 @Composable
 internal fun AnatomySection(state: AppState, session: CharacterSession, part: PartInstance) {
-    session.document.collectAsState().value
+    val pose = session.document.collectAsState().value.character.pose
     val picked by state.move.pickedJoint.collectAsState()
     val template = session.builtTemplate(part)
     val joints = template.blocks.flatMap { it.joints() }.sortedBy { it.u }
@@ -80,6 +84,9 @@ internal fun AnatomySection(state: AppState, session: CharacterSession, part: Pa
             AnatomyRow(joint.name, SquashIcons.Joint, name, place(joint.u), picked?.part == part.id && picked?.joint == joint.name, id?.let { { state.deleteJoint(part.id, it) } }) {
                 state.pickJoint(part.id, joint.name)
             }
+        }
+        for (joint in posedJointsMissing(pose, part.id, template)) {
+            Chip(displayName(joint), Modifier.testTag(ShellTags.anatomyMissing(joint)), kind = ChipKind.Warn)
         }
         Count(stringResource(Res.string.anatomy_landmarks), landmarks.size, ShellTags.ANATOMY_LANDMARKS)
         for (landmark in landmarks) {
