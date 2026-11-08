@@ -18,6 +18,8 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.sheet.SLOW_WORK_MILLIS
+import dev.chieppa.squash.screens.sheet.rememberSlowWork
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.pixelsLabel
@@ -62,12 +64,13 @@ private val FIT_BAR_WIDTH = 160.dp
 private val FIT_TEXT_INSET = 8.dp
 private const val PERCENT = 100f
 
-/** How far the graph is through the part's surface, as its nodes count it, while it is working. */
+/** How far the graph is through the part's surface, as its nodes count it, once it has been working for [SLOW_WORK_MILLIS]. */
 @Composable
 internal fun rememberFitting(state: AppState): Float? {
     val session by state.session.collectAsState()
-    val progress = session?.graph?.progress?.collectAsState()?.value ?: return null
-    return progress.count(FitStages.SURFACE).takeUnless { progress.total == 0 }?.fraction
+    val progress = session?.graph?.progress?.collectAsState()?.value
+    val fraction = progress?.takeUnless { it.total == 0 }?.count(FitStages.SURFACE)?.fraction
+    return fraction.takeIf { rememberSlowWork(fraction != null) }
 }
 
 /** The fit's stage, bar and percent, as board 4 draws them. */

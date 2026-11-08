@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.surface.pose
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.rig.CurlHandle
 import dev.chieppa.squash.rig.PoseHandles
 import dev.chieppa.squash.screens.pose.PoseGrip
 import dev.chieppa.squash.screens.sheet.SurfaceView
@@ -49,9 +50,18 @@ fun PoseHandles.grips(sight: SurfaceView): Map<PoseGrip, Offset> = buildMap {
     look?.let(sight::toPixel)?.let { put(PoseGrip.Look, it) }
 }
 
-/** The handle among [allowed] nearest [pixel] through [sight], within [reach] pixels, or null. */
-fun PoseHandles.gripAt(pixel: Offset, sight: SurfaceView, reach: Float, allowed: (PoseGrip) -> Boolean): PoseGrip? =
-    grips(sight).filterKeys(allowed).entries.filter { (it.value - pixel).getDistance() <= reach }.minByOrNull { (it.value - pixel).getDistance() }?.key
+/**
+ * The handle among [allowed] nearest [pixel] through [sight], within [PoseHandleLook.reach] pixels, or null. A tail's curl is reached
+ * along the arc it draws, a dot at its middle.
+ */
+fun PoseHandles.gripAt(pixel: Offset, sight: SurfaceView, look: PoseHandleLook, allowed: (PoseGrip) -> Boolean): PoseGrip? {
+    val arcs = curls.mapNotNull { curl -> curlArcPoints(curl, sight, look)?.let { PoseGrip.Curl(curl.tail.part) to it } }.toMap()
+    fun distance(grip: PoseGrip, at: Offset): Float = arcs[grip]?.minOf { (it - pixel).getDistance() } ?: (at - pixel).getDistance()
+    return grips(sight).filterKeys(allowed).entries
+        .map { it.key to distance(it.key, it.value) }
+        .filter { it.second <= look.reach }
+        .minByOrNull { it.second }?.first
+}
 
 /**
  * Draws [handles] through [sight]: pins and leads first, then the handles, [lit] and the [picked] limb's end in the accent; [shown]
@@ -81,9 +91,8 @@ fun OverlayBuilder.poseHandles(handles: PoseHandles, sight: SurfaceView, look: P
     handles.curls.forEach { curl ->
         val grip = PoseGrip.Curl(curl.tail.part)
         if (!shown(grip)) return@forEach
-        val tip = sight.toPixel(curl.tip) ?: return@forEach
-        val toward = sight.toPixel(curl.tip + curl.toward * (1f / sight.pixelsPerUnitAt(curl.tip).coerceAtLeast(1e-6f))) ?: return@forEach
-        curlArc(tip, atan2(toward.y - tip.y, toward.x - tip.x), if (grip == lit) look.accent else look.ring, look)
+        val points = curlArcPoints(curl, sight, look) ?: return@forEach
+        curlArc(points, if (grip == lit) look.accent else look.ring, look)
     }
     if (shown(PoseGrip.Body)) handles.body?.let(sight::toPixel)?.let { at ->
         val color = if (lit == PoseGrip.Body) look.accent else look.ring
@@ -111,13 +120,19 @@ internal fun OverlayBuilder.circle(center: Offset, radius: Float, color: Color, 
     path.zipWithNext().forEach { (a, b) -> line(a, b, color, width) }
 }
 
-/** An arc round [tip] curling toward the screen angle [toward], with a head at its leading end. */
-private fun OverlayBuilder.curlArc(tip: Offset, toward: Float, color: Color, look: PoseHandleLook) {
-    val start = toward - CURL_SWEEP
-    val points = List(CIRCLE_STEPS / 2 + 1) { i ->
+/** The arc a tail's [curl] handle draws through [sight]: round its tip, curling toward the way it turns, in pixels. */
+private fun curlArcPoints(curl: CurlHandle, sight: SurfaceView, look: PoseHandleLook): List<Offset>? {
+    val tip = sight.toPixel(curl.tip) ?: return null
+    val ahead = sight.toPixel(curl.tip + curl.toward * (1f / sight.pixelsPerUnitAt(curl.tip).coerceAtLeast(1e-6f))) ?: return null
+    val start = atan2(ahead.y - tip.y, ahead.x - tip.x) - CURL_SWEEP
+    return List(CIRCLE_STEPS / 2 + 1) { i ->
         val angle = start + CURL_SWEEP * i / (CIRCLE_STEPS / 2)
         tip + Offset(cos(angle), sin(angle)) * look.curl
     }
+}
+
+/** A curl handle's arc along [points], with a head at its leading end. */
+private fun OverlayBuilder.curlArc(points: List<Offset>, color: Color, look: PoseHandleLook) {
     points.zipWithNext().forEach { (a, b) -> line(a, b, color, look.width) }
     val end = points.last()
     val along = (end - points[points.size - 2]).let { it / it.getDistance().coerceAtLeast(1e-6f) }

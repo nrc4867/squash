@@ -178,11 +178,11 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     }
 }
 
-/** Whether the open character's graph is still deriving, which is what a refit is. */
+/** Whether the open character's graph has been deriving, which is what a refit is, for longer than [SLOW_WORK_MILLIS]. */
 @Composable
 private fun rememberRefitting(state: AppState): Boolean {
     val session by state.session.collectAsState()
-    return session?.graph?.settled?.collectAsState()?.value == false
+    return rememberSlowWork(session?.graph?.settled?.collectAsState()?.value == false)
 }
 
 /** How far through its refit the open character's graph is, as the graph counts it. */

@@ -71,7 +71,7 @@ abstract class PoseTool(protected val state: AppState, var look: PoseHandleLook)
     protected open fun OverlayBuilder.drawn(sight: SurfaceView) = Unit
 
     /** The handle this tool would take at [pixel] through [sight]. */
-    protected open fun gripAt(pixel: Offset, sight: SurfaceView): PoseGrip? = handles?.gripAt(pixel, sight, look.reach, ::takes)
+    protected open fun gripAt(pixel: Offset, sight: SurfaceView): PoseGrip? = handles?.gripAt(pixel, sight, look, ::takes)
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera)
 
