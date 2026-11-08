@@ -171,6 +171,7 @@
     <string name="add_part_add">Add %1$s</string>
     <string name="add_part_pair">pair</string>
     <string name="add_part_one">1</string>
+    <string name="add_part_new_socket">New socket</string>
     <string name="rest_pose_art">Rest pose</string>
 
     <string name="draw_stroke">Stroke</string>

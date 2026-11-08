@@ -46,12 +46,15 @@ private const val FLAG_OFF = 0f
 private const val PERCENT = 100f
 private val READOUT_WIDTH = 52.dp
 
-/** The Shape inspector: the armed tool's sections first, then the selected part's role and template, a generic part's own shape, its parameters and its anatomy. */
+/**
+ * The Shape inspector: Add part's section alone while Add part is armed, since it adds to the character rather than changing the
+ * selected part; otherwise the armed tool's sections, then the selected part's role and template, a generic part's own shape, its
+ * parameters and its anatomy.
+ */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
     val tool by state.tool.collectAsState()
-    if (tool == BuildTool.ADD_PART) AddPartSection(state)
-    SelectedPartDetails(state, toolSections)
+    if (tool == BuildTool.ADD_PART) AddPartSection(state) else SelectedPartDetails(state, toolSections)
 }
 
 /** The inspector off the workspace, where it has nothing to show. */

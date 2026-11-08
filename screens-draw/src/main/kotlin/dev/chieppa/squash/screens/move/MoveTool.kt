@@ -10,10 +10,8 @@ import dev.chieppa.squash.screens.addJoint
 import dev.chieppa.squash.screens.addLandmark
 import dev.chieppa.squash.screens.jointPlace
 import dev.chieppa.squash.screens.pickJoint
-import dev.chieppa.squash.character.catalog.twin
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.sheet.SurfaceView
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
@@ -60,10 +58,8 @@ import dev.chieppa.stretch.frame.buildOverlay
 class MoveTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
     private var dragging by mutableStateOf(false)
 
-    /** Where Add socket would place a socket, in the pane the pointer is over. */
-    private var hover by mutableStateOf<Hover?>(null)
-
-    private class Hover(val pane: Any, val place: SocketPlace?)
+    /** Where Add socket, Add joint or Add landmark would place under the pointer. */
+    private val hover = SocketHover()
 
     override val holdsFit: Boolean get() = dragging
 
@@ -113,20 +109,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                 drag(handle, down.id, down.position, handles)
             }
         }
-        .pointerInput(this, pane, key) {
-            awaitPointerEventScope {
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val adding = state.move.mode.value != MoveMode.PLACE_PART && event.type != PointerEventType.Exit
-                    val pointer = event.changes.firstOrNull()?.position
-                    hover = when {
-                        adding && pointer != null -> Hover(pane, assembled()?.let { socketPlaceAt(it, pointer, sight, handles) })
-                        hover?.pane == pane -> null
-                        else -> hover
-                    }
-                }
-            }
-        }
+        .then(hover.track(this, pane, key, { state.move.mode.value != MoveMode.PLACE_PART }) { pointer -> assembled()?.let { socketPlaceAt(it, pointer, sight, handles) } })
 
     /**
      * What a press would place under the pointer in this [pane]: a socket and its twin while Pair is on, a joint on the axis with the
@@ -136,7 +119,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
         val mode = state.move.mode.value
         val character = assembled() ?: return@buildOverlay
         val selected = state.selectedPart.value?.let(character::part)
-        val place = hover?.takeIf { it.pane == pane }?.place
+        val place = hover.placeIn(pane)
         if (mode == MoveMode.ADD_JOINT) {
             if (selected != null) {
                 dashedAxis(selected, sight, look)
@@ -153,12 +136,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
             place?.let { landmarkDot(it.part, it.u, it.v, sight, look, look.active) }
             return@buildOverlay
         }
-        if (mode != MoveMode.ADD_SOCKET || place == null) return@buildOverlay
-        val document = state.session.value?.document?.value ?: return@buildOverlay
-        val twin = placedTwin(character, place.part) { id -> document.character.part(id)?.let { document.twin(it)?.id } }
-        val (own, other) = socketMarks(place, state.move.outward.value, state.move.pair.value, twin) ?: return@buildOverlay
-        other?.let { socketMark(it, sight, look, twin = true) }
-        socketMark(own, sight, look, twin = false)
+        if (mode == MoveMode.ADD_SOCKET && place != null) socketPreview(state, character, place, sight, look)
     }
 
     private fun assembled(): AssembledCharacter? = state.session.value?.assembly?.output?.value
@@ -240,9 +218,6 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
     }
 
 }
-
-/** The key Full's pane goes by in [MoveTool]'s hover, beside the locked panes' views. */
-private object FULL
 
 @Composable
 fun rememberMoveTool(state: AppState): MoveTool {

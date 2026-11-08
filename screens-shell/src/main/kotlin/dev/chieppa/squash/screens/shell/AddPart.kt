@@ -50,6 +50,7 @@ import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.add_part
 import dev.chieppa.squash.uidesign.generated.add_part_add
 import dev.chieppa.squash.uidesign.generated.add_part_one
+import dev.chieppa.squash.uidesign.generated.add_part_new_socket
 import dev.chieppa.squash.uidesign.generated.add_part_pair
 import dev.chieppa.squash.uidesign.generated.add_part_title
 import dev.chieppa.squash.uidesign.generated.shell_part_joints
@@ -85,15 +86,19 @@ fun socketNames(sockets: List<OpenSocket>): (String) -> String {
     return { name -> HandSockets.idOf(name)?.let(numbered::get) ?: displayName(name) }
 }
 
-/** Add part's section in the Shape inspector: every open socket, the one its popover is open on lit; a row opens the popover there. */
+/**
+ * Add part's section in the Shape inspector: every open socket, the one its popover is open on lit, a row opening the popover there;
+ * then the outward angle and pair flag a socket placed by a press on a part takes.
+ */
 @Composable
 fun AddPartSection(state: AppState) {
     val session by state.session.collectAsState()
-    val document = session?.document?.collectAsState()?.value ?: return
+    val open = session ?: return
+    val document = open.document.collectAsState().value
     val adding by state.addingSocket.collectAsState()
     val sockets = remember(document) { state.openSocketsNow() }
     val names = socketNames(sockets)
-    DrawerSection(stringResource(Res.string.add_part)) {
+    if (sockets.isNotEmpty()) DrawerSection(stringResource(Res.string.add_part)) {
         for (socket in sockets) {
             ListRow(socket == adding, { state.offerSocket(socket) }, Modifier.testTag(ShellTags.addSocket(socket.name))) {
                 Icon(SquashIcons.AddPart, Stretch.colors.inkControl, size = ROW_ICON)
@@ -102,6 +107,7 @@ fun AddPartSection(state: AppState) {
             }
         }
     }
+    DrawerSection(stringResource(Res.string.add_part_new_socket)) { SocketControls(state, open) }
 }
 
 /**

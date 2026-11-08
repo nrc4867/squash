@@ -128,8 +128,9 @@ private fun RestControl(state: AppState, part: PartId, template: PartTemplate, p
     }
 }
 
+/** The outward angle and pair flag the next hand-made socket takes, the angle editing the picked socket instead, and Delete socket. */
 @Composable
-private fun SocketControls(state: AppState, session: CharacterSession) {
+internal fun SocketControls(state: AppState, session: CharacterSession) {
     session.document.collectAsState().value
     state.move.outward.collectAsState().value
     val picked by state.move.picked.collectAsState()

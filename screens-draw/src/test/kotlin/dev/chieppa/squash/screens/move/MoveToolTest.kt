@@ -5,6 +5,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
@@ -38,6 +39,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 private const val SETTLE_MILLIS = 20_000L
+
+/** How many steps across a pane the search for a bare spot on the torso takes. */
+private const val GRID = 24
 
 @OptIn(ExperimentalTestApi::class)
 class MoveToolTest {
@@ -196,9 +200,31 @@ class MoveToolTest {
         val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
         showPane(add, camera)
         mouseDrag(listOf(view.toPixel(leg.position)))
-        assertEquals(null, bench.state.addingSocket.value, "a placed part's socket has no dot to press")
+        assertNotEquals("front-leg", bench.state.addingSocket.value?.name, "a placed part's socket has no dot to press")
         mouseDrag(listOf(view.toPixel(tail.position)))
         assertEquals("tail", bench.state.addingSocket.value?.name)
         assertEquals(bench.leg, bench.state.selectedPart.value, "and the selection stays")
+    }
+
+    @Test
+    fun addPartPlacesASocketWhereAPartIsPressedAwayFromTheDotsAndOpensItsPopover() = runComposeUiTest {
+        val bench = Bench()
+        settled(bench)
+        val camera = bench.camera()
+        val view = Locked(camera)
+        val dots = moveHandles(bench.character, null).filterIsInstance<SocketHandle>().map { view.toPixel(it.position) }
+        val pixels = (1 until GRID).flatMap { row -> (1 until GRID).map { column -> Offset(600f * column / GRID, 400f * row / GRID) } }
+        val press = pixels.first { pixel ->
+            dots.all { (it - pixel).getDistance() > TEST_CURVE_LOOK.grabReach * 2 } &&
+                socketPlaceAt(bench.character, pixel, camera, LockedHandleView(camera))?.part?.id == bench.torso
+        }
+        showPane(AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK), camera)
+        val steps = bench.steps()
+        mouseDrag(listOf(press))
+        waitForIdle()
+        assertEquals(steps + 1, bench.steps(), "placing the socket is one step")
+        val socket = assertNotNull(bench.state.addingSocket.value, "the popover opens on the new socket")
+        assertEquals(bench.torso, socket.parent)
+        assertNotNull(HandSockets.idOf(socket.name), "a hand-made socket")
     }
 }
