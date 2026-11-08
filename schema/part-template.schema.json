@@ -135,10 +135,97 @@
       },
       "additionalProperties": false
     },
+    "Blend": {
+      "description": "A fillet where the part's patches cross, grown by moving the vertices near each crossing; every patch keeps its grid.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "blend"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "radius": {
+          "description": "How wide the fillet reaches, as a fraction of the axis length; the surface grows by at most a quarter of it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "apart": {
+          "description": "How much of the fillet two surfaces facing each other across a gap still get, from 0 to 1.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "between": {
+          "description": "The pairs of patches it fillets, by name; a repeating block's name covers all its patches. Every pair when left out.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "still": {
+          "description": "The patches that keep their place and lend only their shape, by name; the patches they meet then cover the whole fillet.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "socket": {
+          "description": "Whether it also fillets where the part comes out of the part it sits on, moving the part's vertices near that crossing and keeping the other's.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Block": {
       "oneOf": [
         {
           "$ref": "#/$defs/Area"
+        },
+        {
+          "$ref": "#/$defs/Blend"
         },
         {
           "$ref": "#/$defs/Cap"

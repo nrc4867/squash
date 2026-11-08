@@ -28,7 +28,7 @@ fun Graph.sliceRowNode(
     node(document.map { it.partBuildInput(part, lengths) }.distinctUntilChanged(), stage = BuildStages.SLICES) { input ->
         if (input == null) return@node PartBuild(null, emptyList())
         val template = templates[input.template].asBuilt(input.data.params, input.onSocket)
-        PartBuild(template, PartBuilder.build(template, input.data, cancellationCheck(), input.lengthFactor))
+        PartBuilder.partBuild(template, input.data, cancellationCheck(), input.lengthFactor)
     }
 
 private fun SquashDocument.partBuildInput(part: PartId, lengths: LegLengthsOf): PartBuildInput? =

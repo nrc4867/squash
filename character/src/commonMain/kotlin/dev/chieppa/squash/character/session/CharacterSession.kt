@@ -36,6 +36,7 @@ import dev.chieppa.squash.character.build.furViewNode
 import dev.chieppa.squash.character.build.held
 import dev.chieppa.squash.character.build.partColorInputs
 import dev.chieppa.squash.character.build.partColorNode
+import dev.chieppa.squash.character.build.partBlendNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
@@ -46,6 +47,7 @@ import dev.chieppa.squash.character.build.posedLinesNode
 import dev.chieppa.squash.character.build.posedStateNode
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.sliceRowNode
+import dev.chieppa.squash.character.build.socketFilletNode
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
@@ -85,6 +87,7 @@ class CharacterSession(
     private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
     private val meshes = mutableMapOf<PartId, Node<PartBuild, PartMesh>>()
+    private val blends = mutableMapOf<PartId, Node<PartBuild, PartBuild>>()
     private val surfaces = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val defaults = mutableMapOf<Pair<TemplateRef, Boolean>, Node<*, PartSurface>>()
     private val works = mutableMapOf<PartId, Node<*, ResolvedSurfaceWork>>()
@@ -97,11 +100,13 @@ class CharacterSession(
      * the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
      * run is pending, and `failure` holds why a part's build failed.
      */
-    val assembly: Node<*, AssembledCharacter> = graph.assemblyNode(
-        document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
-        templates,
-        ::surface,
-        ::defaultSurface,
+    val assembly: Node<*, AssembledCharacter> = graph.socketFilletNode(
+        graph.assemblyNode(
+            document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
+            templates,
+            ::surface,
+            ::defaultSurface,
+        ),
     )
 
     /**
@@ -191,7 +196,10 @@ class CharacterSession(
      * session's life. Its `output` keeps the last mesh while a newer run is pending or cancelled, and `failure` holds why
      * the latest build failed. A part not in the document has an empty mesh.
      */
-    fun mesh(part: PartId): Node<PartBuild, PartMesh> = meshes.getOrPut(part) { graph.partMeshNode(patches(part), part) }
+    fun mesh(part: PartId): Node<PartBuild, PartMesh> = meshes.getOrPut(part) { graph.partMeshNode(blended(part), part) }
+
+    /** The node filleting [part]'s crossings when its template asks, following [patches]; one per part for the session's life. */
+    fun blended(part: PartId): Node<PartBuild, PartBuild> = blends.getOrPut(part) { graph.partBlendNode(patches(part)) }
 
     /** What [part] shows on its side, derived from its mesh; one per part for the session's life, following its side. */
     fun surface(part: PartId): Node<*, PartSurface> = surfaces.getOrPut(part) {

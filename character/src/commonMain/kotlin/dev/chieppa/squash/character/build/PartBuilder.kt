@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.block.Blend
 import dev.chieppa.squash.character.block.Block
 import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.End
@@ -34,6 +35,24 @@ object PartBuilder {
             context.add(it.build(context))
         }
         return shadedAsOne(context)
+    }
+
+    /** The build of [template] for a part that resolves to [data], with the fillet its `blend` block asks for left to apply. */
+    fun partBuild(template: PartTemplate, data: PartData, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): PartBuild {
+        val patches = build(template, data, checkCancelled, lengthFactor)
+        return PartBuild(template, patches, blendOf(template, data, lengthFactor))
+    }
+
+    /** The patches of a part that resolves to [data], with the fillet its template asks for applied. */
+    fun blended(template: PartTemplate, data: PartData, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f): List<Patch> {
+        val built = partBuild(template, data, checkCancelled, lengthFactor)
+        return built.blend?.applyTo(built.patches, checkCancelled) ?: built.patches
+    }
+
+    /** What the `blend` block of [template] switched on for [data] asks for, or null with none. */
+    fun blendOf(template: PartTemplate, data: PartData, lengthFactor: Float = 1f): BlendSpec? {
+        val context = context(template, data.params, data.outlines, lengthFactor = lengthFactor)
+        return context.blocksOn.filterIsInstance<Blend>().firstOrNull()?.spec(context)
     }
 
     /** What [context] built, with the runs of its blocks shading as one surface where they overlap. */
