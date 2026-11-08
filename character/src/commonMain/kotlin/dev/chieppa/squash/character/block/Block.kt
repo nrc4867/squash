@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.character.model.CapShape
 import dev.chieppa.squash.character.model.End
+import dev.chieppa.squash.character.model.DigitChain
 import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.LandmarkSpec
 import dev.chieppa.squash.character.model.ParamRef
@@ -31,6 +32,12 @@ sealed interface Block {
     fun build(ctx: BuildContext): List<Patch> = emptyList()
     fun lint(ctx: LintContext): List<Finding> = emptyList()
     fun joints(): List<JointSpec> = emptyList()
+
+    /** The joint chains of the digits this block built, among [patches], the names of every patch the part's build made. */
+    fun digitChains(patches: Set<String>): List<DigitChain> = emptyList()
+
+    /** The digit patch [patch] rides on, when this block built [patch] on a digit, as a pad on a toe row does. */
+    fun digitUnder(patch: String): String? = null
 
     /** This block with joint [name], if it holds it, at [u]. */
     fun withJointAt(name: String, u: Float): Block = this

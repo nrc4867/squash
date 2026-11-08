@@ -12,14 +12,18 @@ import dev.chieppa.squash.document.SetBoneAngle
 import dev.chieppa.squash.document.SetBoneStretch
 import dev.chieppa.squash.document.SetKeepVolume
 import dev.chieppa.squash.document.SetPlanted
+import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.SetRiding
 import dev.chieppa.squash.rig.Limb
 import dev.chieppa.squash.rig.Rig
+import dev.chieppa.squash.rig.curlOf
+import dev.chieppa.squash.rig.curled
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.surface.Readout
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.pose_bend
+import dev.chieppa.squash.uidesign.generated.pose_curl
 import dev.chieppa.squash.uidesign.generated.pose_degrees
 import dev.chieppa.squash.uidesign.generated.pose_keep_volume
 import dev.chieppa.squash.uidesign.generated.pose_length
@@ -41,8 +45,8 @@ private val FREE_BEND = -180f..180f
 
 /**
  * The picked limb, named by its paw: whether it is planted and whether, lifted, it rides with the body; its knee's Bend, read and set
- * about the hinge; the Length its end joint gives the lower bone, with Keep volume, where its template offers a stretch there. With
- * Mirror on a change writes the twin too.
+ * about the hinge; the Length its end joint gives the lower bone, with Keep volume, where its template offers a stretch there; and
+ * the Curl of its paw's digits, where the paw has jointed digits. With Mirror on a change writes the twin too.
  */
 @Composable
 internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, character: Character, limb: Limb, names: (PartId) -> String, sliders: SliderGesture) {
@@ -62,6 +66,7 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
             Slider(bend, { sliders.change(SetBoneAngle(knee.name.part, knee.name.joint, it, mirror)) }, bendLabel, Modifier.weight(1f).testTag(PoseInspectorTags.BEND), range, sliders::done)
             Readout(stringResource(Res.string.pose_degrees, bend.roundToInt()))
         }
+        limb.paw?.let { paw -> CurlRow(session, rig, character, paw, mirror, sliders) }
         if (end.stretch) {
             val stretch = ankle?.stretch ?: 1f
             SettingRow(lengthLabel) {
@@ -70,5 +75,17 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
             }
             SwitchRow(stringResource(Res.string.pose_keep_volume), ankle?.keepVolume ?: true, { session.send(SetKeepVolume(end.name.part, end.name.joint, it, mirror)) }, PoseInspectorTags.KEEP_VOLUME)
         }
+    }
+}
+
+/** Curl: one value closing every digit of [paw], and its twin's with [mirror], as a share of each digit joint's upper limit. */
+@Composable
+private fun CurlRow(session: CharacterSession, rig: Rig, character: Character, paw: PartId, mirror: Boolean, sliders: SliderGesture) {
+    val curl = rig.curlOf(character.pose, paw) ?: return
+    val label = stringResource(Res.string.pose_curl)
+    val parts = listOfNotNull(paw, character.part(paw)?.let(character::twinOf)?.id?.takeIf { mirror })
+    SettingRow(label) {
+        Slider(curl, { sliders.change(SetPose(rig.curled(session.document.value.character.pose, parts, it))) }, label, Modifier.weight(1f).testTag(PoseInspectorTags.CURL), 0f..1f, sliders::done)
+        Readout(stringResource(Res.string.edit_percent, (curl * PERCENT).roundToInt()))
     }
 }

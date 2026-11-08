@@ -26,4 +26,12 @@ data class Bone(
     val limits: Limits?,
     val stretch: Boolean,
     val mirrored: Boolean = false,
+    /** Where on a digit's chain this bone is, or null for a bone of its part's own chain. */
+    val digit: DigitPlace? = null,
 )
+
+/**
+ * A digit bone's place: the digit's [patch], its [index] in its toe row, the bone's [joint] number on the digit from 1 at its root,
+ * and whether the digit is turned [back], as a bird's hind toe.
+ */
+data class DigitPlace(val patch: String, val index: Int, val joint: Int, val back: Boolean)

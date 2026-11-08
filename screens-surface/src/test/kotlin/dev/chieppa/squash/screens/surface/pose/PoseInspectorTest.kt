@@ -11,7 +11,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -21,6 +23,8 @@ import dev.chieppa.squash.document.ResetPose
 import dev.chieppa.squash.document.SetBoneMode
 import dev.chieppa.squash.document.SetKeepVolume
 import dev.chieppa.squash.document.SetPlanted
+import dev.chieppa.squash.rig.BoneName
+import dev.chieppa.squash.rig.curlOf
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
@@ -39,6 +43,8 @@ import kotlin.test.assertTrue
 
 private val PAW = PartId("front-paw-l")
 private val LEG = PartId("front-leg-l")
+private val HAND_L = PartId("hand-l")
+private val HAND_R = PartId("hand-r")
 
 @OptIn(ExperimentalTestApi::class)
 class PoseInspectorTest {
@@ -77,6 +83,36 @@ class PoseInspectorTest {
         onNodeWithTag(PoseInspectorTags.pin(PartId("hand-l"))).assertDoesNotExist()
         onNodeWithTag(PoseInspectorTags.pin(PartId("hand-r"))).assertDoesNotExist()
         onNodeWithText("Right hand", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun aPickedHandCurlsItsFingersInOneStepAndTheTwinsWithMirror() = runComposeUiTest {
+        val state = AppState(shipped, work).also {
+            it.open(savedPerson())
+            it.tool.value = BuildTool.DRAG
+            it.pose.limb = HAND_L
+        }
+        showInspector(state)
+        val before = steps(state)
+        onNodeWithTag(PoseInspectorTags.CURL).performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(1f) }
+        waitForIdle()
+        assertEquals(before + 1, steps(state), "the curl is one step")
+        val rig = checkNotNull(state.rigNow())
+        val pose = checkNotNull(state.session.value).document.value.character.pose
+        assertEquals(1f, checkNotNull(rig.curlOf(pose, HAND_L)), 1e-4f)
+        assertEquals(1f, checkNotNull(rig.curlOf(pose, HAND_R)), 1e-4f, "Mirror curls the twin")
+    }
+
+    @Test
+    fun aPickedFingerJointNamesItsDigitInTheTurnSection() = runComposeUiTest {
+        val state = AppState(shipped, work).also {
+            it.open(savedPerson())
+            it.tool.value = BuildTool.TURN
+            it.pose.pick(BoneName(HAND_L, "fingers:1.2"), false)
+        }
+        showInspector(state)
+        onNodeWithText("Index 2", substring = true, useUnmergedTree = true).assertExists()
+        onNodeWithText("-10° to 90°", useUnmergedTree = true).assertExists()
     }
 
     @Test

@@ -23,15 +23,39 @@ front-leg-l/hip parent torso/chest pivot 0.7241 -0.0282 -0.0853 along 0.0239 -0.
 front-leg-l/knee parent front-leg-l/hip pivot 0.7315 -0.3401 -0.0853 along 0.0099 -1.0000 0.0000 length 0.2552 hinge 0.0000 0.0000 -1.0000 limits 0.0..140.0
 front-leg-l/ankle parent front-leg-l/knee pivot 0.7340 -0.5952 -0.0853 along 0.1359 -0.9907 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -30.0..60.0 stretch
 front-paw-l/wrist parent front-leg-l/ankle pivot 0.7404 -0.5749 -0.0853 along 0.9996 -0.0276 0.0007 length 0.2817 hinge 0.0000 0.0000 -1.0000 limits -45.0..45.0
+front-paw-l/toes:0.1 parent front-paw-l/wrist pivot 0.9364 -0.5754 -0.0355 along 0.9765 -0.0584 -0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-l/toes:0.2 parent front-paw-l/toes:0.1 pivot 0.9792 -0.5780 -0.0445 along 0.7233 -0.0788 -0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-l/toes:1.1 parent front-paw-l/wrist pivot 0.9364 -0.5754 -0.0853 along 0.9982 -0.0597 0.0000 length 0.0429 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-l/toes:1.2 parent front-paw-l/toes:1.1 pivot 0.9792 -0.5780 -0.0853 along 0.9941 -0.1082 0.0000 length 0.0431 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-l/toes:2.1 parent front-paw-l/wrist pivot 0.9364 -0.5754 -0.1352 along 0.9765 -0.0584 0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-l/toes:2.2 parent front-paw-l/toes:2.1 pivot 0.9792 -0.5780 -0.1261 along 0.7233 -0.0788 0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
 front-leg-r/hip parent torso/chest pivot 0.7241 -0.0282 0.0853 along 0.0239 -0.9997 0.0000 length 0.3119 hinge 0.0000 0.0000 -1.0000 limits -60.0..90.0
 front-leg-r/knee parent front-leg-r/hip pivot 0.7315 -0.3401 0.0853 along 0.0099 -1.0000 0.0000 length 0.2552 hinge 0.0000 0.0000 -1.0000 limits 0.0..140.0
 front-leg-r/ankle parent front-leg-r/knee pivot 0.7340 -0.5952 0.0853 along 0.1359 -0.9907 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -30.0..60.0 stretch
 front-paw-r/wrist parent front-leg-r/ankle pivot 0.7404 -0.5749 0.0853 along 0.9996 -0.0276 -0.0007 length 0.2817 hinge 0.0000 0.0000 -1.0000 limits -45.0..45.0
+front-paw-r/toes:0.1 parent front-paw-r/wrist pivot 0.9364 -0.5754 0.0355 along 0.9765 -0.0584 0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-r/toes:0.2 parent front-paw-r/toes:0.1 pivot 0.9792 -0.5780 0.0445 along 0.7233 -0.0788 0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-r/toes:1.1 parent front-paw-r/wrist pivot 0.9364 -0.5754 0.0853 along 0.9982 -0.0597 0.0000 length 0.0429 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-r/toes:1.2 parent front-paw-r/toes:1.1 pivot 0.9792 -0.5780 0.0853 along 0.9941 -0.1082 0.0000 length 0.0431 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-r/toes:2.1 parent front-paw-r/wrist pivot 0.9364 -0.5754 0.1352 along 0.9765 -0.0584 -0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+front-paw-r/toes:2.2 parent front-paw-r/toes:2.1 pivot 0.9792 -0.5780 0.1261 along 0.7233 -0.0788 -0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
 back-leg-l/hip parent torso/hips pivot 0.1511 -0.0516 -0.0819 along -0.0959 -0.9954 0.0000 length 0.2984 hinge 0.0000 0.0000 -1.0000 limits -60.0..90.0
 back-leg-l/knee parent back-leg-l/hip pivot 0.1225 -0.3486 -0.0819 along 0.1569 -0.9876 0.0000 length 0.2460 hinge 0.0000 0.0000 -1.0000 limits 0.0..140.0
 back-leg-l/ankle parent back-leg-l/knee pivot 0.1611 -0.5916 -0.0819 along -0.1866 -0.9824 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -30.0..60.0 stretch
 back-paw-l/wrist parent back-leg-l/ankle pivot 0.1721 -0.5726 -0.0819 along 0.9996 -0.0276 0.0007 length 0.2817 hinge 0.0000 0.0000 -1.0000 limits -45.0..45.0
+back-paw-l/toes:0.1 parent back-paw-l/wrist pivot 0.3681 -0.5732 -0.0320 along 0.9765 -0.0584 -0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-l/toes:0.2 parent back-paw-l/toes:0.1 pivot 0.4109 -0.5757 -0.0411 along 0.7233 -0.0788 -0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-l/toes:1.1 parent back-paw-l/wrist pivot 0.3681 -0.5732 -0.0819 along 0.9982 -0.0597 0.0000 length 0.0429 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-l/toes:1.2 parent back-paw-l/toes:1.1 pivot 0.4109 -0.5757 -0.0819 along 0.9941 -0.1082 0.0000 length 0.0431 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-l/toes:2.1 parent back-paw-l/wrist pivot 0.3681 -0.5732 -0.1318 along 0.9765 -0.0584 0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-l/toes:2.2 parent back-paw-l/toes:2.1 pivot 0.4109 -0.5757 -0.1227 along 0.7233 -0.0788 0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
 back-leg-r/hip parent torso/hips pivot 0.1511 -0.0516 0.0819 along -0.0959 -0.9954 0.0000 length 0.2984 hinge 0.0000 0.0000 -1.0000 limits -60.0..90.0
 back-leg-r/knee parent back-leg-r/hip pivot 0.1225 -0.3486 0.0819 along 0.1569 -0.9876 0.0000 length 0.2460 hinge 0.0000 0.0000 -1.0000 limits 0.0..140.0
 back-leg-r/ankle parent back-leg-r/knee pivot 0.1611 -0.5916 0.0819 along -0.1866 -0.9824 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -30.0..60.0 stretch
 back-paw-r/wrist parent back-leg-r/ankle pivot 0.1721 -0.5726 0.0819 along 0.9996 -0.0276 -0.0007 length 0.2817 hinge 0.0000 0.0000 -1.0000 limits -45.0..45.0
+back-paw-r/toes:0.1 parent back-paw-r/wrist pivot 0.3681 -0.5732 0.0320 along 0.9765 -0.0584 0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-r/toes:0.2 parent back-paw-r/toes:0.1 pivot 0.4109 -0.5757 0.0411 along 0.7233 -0.0788 0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-r/toes:1.1 parent back-paw-r/wrist pivot 0.3681 -0.5732 0.0819 along 0.9982 -0.0597 0.0000 length 0.0429 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-r/toes:1.2 parent back-paw-r/toes:1.1 pivot 0.4109 -0.5757 0.0819 along 0.9941 -0.1082 0.0000 length 0.0431 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-r/toes:2.1 parent back-paw-r/wrist pivot 0.3681 -0.5732 0.1318 along 0.9765 -0.0584 -0.2073 length 0.0438 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0
+back-paw-r/toes:2.2 parent back-paw-r/toes:2.1 pivot 0.4109 -0.5757 0.1227 along 0.7233 -0.0788 -0.6860 length 0.0592 hinge 0.0000 0.0000 -1.0000 limits -20.0..60.0

@@ -31,6 +31,8 @@ import dev.chieppa.squash.rig.PoseSolver
 import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.SolveOptions
 import dev.chieppa.squash.rig.bendTo
+import dev.chieppa.squash.rig.curlOf
+import dev.chieppa.squash.rig.curled
 import dev.chieppa.squash.rig.curveBones
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
@@ -97,6 +99,9 @@ private const val REACH = 0.95f
 
 /** Where the head looks: ahead, a little up and out to the toucan's left, from its neck, in body units. */
 private val LOOK = Vec3(0.8f, 0.15f, -0.7f)
+
+/** Where the gripping foot is lifted to from where it stands, forward and up, in body units. */
+private val LIFT = Vec3(0.12f, 0.14f, 0f)
 
 /** How far a planted foot may move while the wing spreads or the head turns, in body units. */
 private const val STILL = 1e-5f
@@ -226,6 +231,25 @@ class ToucanSmokeTest {
             val foot = assertNotNull(solver.chains.limb(id))
             assertTrue((solver.endOf(start, foot) - solver.endOf(spread.pose, foot)).length < STILL, "$id stays put")
         }
+    }
+
+    @Test
+    fun theToucanLiftsAFootAndGripsWithItsToes() = runDesktopComposeUiTest(TOUCAN_WIDTH, TOUCAN_HEIGHT) {
+        val bench = opened()
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        waitForIdle()
+        val state = bench.state
+        val session = assertNotNull(state.session.value)
+        val rig = assertNotNull(state.rigNow())
+        val solver = PoseSolver(rig)
+        val start = Pose(planted = setOf(FOOT_R))
+        val foot = assertNotNull(solver.chains.limb(FOOT_L))
+        val lifted = solver.reach(start, foot, solver.endOf(start, foot) + LIFT, SolveOptions())
+        val gripped = rig.curled(lifted.pose, listOf(FOOT_L, FOOT_R), 1f)
+        session.send(SetPose(gripped))
+        state.pose.limb = FOOT_L
+        keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "toucan-pose-grip")
+        assertEquals(1f, assertNotNull(rig.curlOf(gripped, FOOT_L)), 1e-4f, "every toe of the lifted foot closes")
     }
 
     @Test

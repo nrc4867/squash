@@ -5,6 +5,8 @@ import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.build.BuildContext
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
+import dev.chieppa.squash.character.model.DigitChain
+import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
@@ -70,10 +72,31 @@ data class ToeRow(
     val digits: List<Digit> = emptyList(),
     @Doc("How much taller each digit is at its root than along its run, as a fraction of its thickness, easing out over the root's third; a drawn Side's heights are kept.")
     val flare: Param = Param.of(0f),
+    @Doc("Joints along every digit, which bend it toward the row's underside; a digit with none follows the part's bone at its root.")
+    val joints: DigitJoints? = null,
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
     private val rowName get() = name ?: DEFAULT_ROW_NAME
+
+    /**
+     * Each built digit's joints, from the row's [joints] or a [Digit]'s own, at those shares of the digit's span: digit `i` is the
+     * patch `name:i`, and its joints are `name:i.1` on from its root.
+     */
+    override fun digitChains(patches: Set<String>): List<DigitChain> {
+        val spec = joints ?: return emptyList()
+        val overrides = digits.associateBy { it.index }
+        return generateSequence(0) { it + 1 }.takeWhile { "$rowName:$it" in patches }.map { i ->
+            val digit = overrides[i]
+            val span = digit?.u ?: u
+            val patch = "$rowName:$i"
+            val shares = digit?.joints ?: spec.at
+            val specs = shares.mapIndexed { k, share ->
+                JointSpec("$patch.${k + 1}", span.start + (span.end - span.start) * share, null, spec.hinge, spec.limits, stretch = false)
+            }
+            DigitChain(patch, i, span, digit?.angle?.let { abs(it) > RIGHT_ANGLE } == true, specs)
+        }.toList()
+    }
 
     /** How many toes this build makes, none when the row is switched off. */
     fun toeCount(ctx: BuildContext): Int = if (ctx.isOn(this)) ctx.value(count).roundToInt().coerceAtLeast(0) else 0
@@ -132,6 +155,7 @@ data class ToeRow(
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) + ctx.param("flare", flare) +
             ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS) +
+            (joints?.lint(ctx, "joints") ?: emptyList()) +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") } +
             digits.groupBy { it.index }.filter { it.value.size > 1 }.keys.flatMap { ctx.finding("digits", "two digits at index $it") }
 }

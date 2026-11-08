@@ -1,21 +1,13 @@
 package dev.chieppa.squash.rig
 
-import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BodyCurve
 import dev.chieppa.squash.document.BodyStroke
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.View
-import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import java.nio.file.Path
-import kotlin.io.path.readText
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.test.Test
@@ -45,20 +37,7 @@ private const val LEAN = 0.12f
 /** How many degrees the look must turn the head at least. */
 private const val TURNED = 10f
 
-/** The example toucan, rigged by a session's graph once it has settled. */
-@OptIn(ExperimentalCoroutinesApi::class)
-private val toucan: Rig by lazy {
-    var rig: Rig? = null
-    runTest {
-        val document = readDocument(Path.of(System.getProperty("squash.examples"), "toucan.json").readText())
-        val session = CharacterSession(document, shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
-        val node = SessionRig(session).rig
-        runCurrent()
-        check(session.graph.settled.value) { "The toucan's graph did not settle" }
-        rig = checkNotNull(node.output.value)
-    }
-    checkNotNull(rig)
-}
+private val toucan: Rig get() = toucanRig
 
 /** A bird poses by its parts' roles: its feet plant, its wings spread by the wrist and never pin, its head looks and the body curve runs from its tail to its head. */
 class ToucanPoseTest {

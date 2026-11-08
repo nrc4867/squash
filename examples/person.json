@@ -1369,7 +1369,7 @@
                 "id": "hand-l",
                 "template": {
                     "id": "hand",
-                    "version": 1
+                    "version": 2
                 },
                 "socket": {
                     "parent": "arm-l",
@@ -1383,7 +1383,7 @@
                 "id": "hand-r",
                 "template": {
                     "id": "hand",
-                    "version": 1
+                    "version": 2
                 },
                 "socket": {
                     "parent": "arm-r",

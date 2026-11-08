@@ -38,7 +38,10 @@ private const val WING_DOWN = -50f
 /** The legs at three quarters of the template's length: a toucan perches low. */
 private const val LEG_SIZE = 0.75f
 
-private fun ref(id: String) = TemplateRef(TemplateId(id), 1)
+/** The template versions the example takes past the first. */
+private val NEWER = mapOf("foot-bird" to 2)
+
+private fun ref(id: String) = TemplateRef(TemplateId(id), NEWER[id] ?: 1)
 
 private fun one(id: PartId, template: String, role: Role, on: PartId? = null, socket: String? = null) =
     AddParts(listOf(PartInstance(id, ref(template), on?.let { SocketRef(it, checkNotNull(socket)) }, role = role)))

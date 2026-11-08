@@ -38,7 +38,10 @@ private const val ARM_OUTWARD = 12f
 /** The hand-made socket on the crown that takes the hair. */
 const val HAIR_SOCKET = 1
 
-private fun ref(id: String) = TemplateRef(TemplateId(id), 1)
+/** The template versions the example takes past the first. */
+private val NEWER = mapOf("hand" to 2)
+
+private fun ref(id: String) = TemplateRef(TemplateId(id), NEWER[id] ?: 1)
 
 /** A pair as Add part places it on a paired socket of the biped plan, each side on its own parent. */
 private fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(

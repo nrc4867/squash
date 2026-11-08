@@ -6,7 +6,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -92,6 +94,21 @@ class RigInspectorTest {
         onNodeWithTag(RigInspectorTags.BONE).assertExists()
         onNodeWithTag(RigBonesTags.part(TWIN)).performScrollTo().performClick()
         onNodeWithTag(RigBonesTags.joint(TWIN, "knee")).assertExists()
+    }
+
+    @Test
+    fun aPawsToesAreRowsThatOpenToTheirJoints() = runComposeUiTest {
+        val state = opened()
+        showInspector(state)
+        val paw = PartId("front-paw-l")
+        onNodeWithTag(RigBonesTags.joint(paw, "wrist")).assertExists()
+        onNodeWithTag(RigBonesTags.joint(paw, "toes:1.1")).assertDoesNotExist()
+        onNodeWithTag(RigBonesTags.digit(paw, "toes:1")).performScrollTo().assert(hasText("Second toe", substring = true))
+        onNodeWithTag(RigBonesTags.digit(paw, "toes:1")).performClick()
+        onNodeWithTag(RigBonesTags.joint(paw, "toes:1.2")).performScrollTo().performClick()
+        assertEquals(BoneName(paw, "toes:1.2"), state.rig.picked)
+        onNodeWithTag(RigBonesTags.joint(paw, "toes:1.2")).assert(hasText("Second toe 2", substring = true))
+        onNodeWithText("Paw L · Second toe 2", useUnmergedTree = true).assertExists()
     }
 
     @Test

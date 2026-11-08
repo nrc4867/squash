@@ -46,7 +46,7 @@ fun RigInspector(state: AppState, session: CharacterSession) {
     val tool by state.tool.collectAsState()
     val document by session.document.collectAsState()
     val rig = rememberRig(state)
-    val names = rigNames(document.character, state.templates)
+    val names = rigNames(document.character, state.templates, rig)
     if (tool.rigs) ToolOptions(state, tool, names)
     if (rig == null) return
     BonesSection(state, session, rig, names)

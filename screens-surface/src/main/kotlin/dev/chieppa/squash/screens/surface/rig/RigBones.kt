@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.RigParams
 import dev.chieppa.squash.character.session.CharacterSession
@@ -48,6 +49,7 @@ import java.util.Locale
 private val DOT = 8.dp
 private val CHEVRON = 14.dp
 private val JOINT_INDENT = 24.dp
+private val DIGIT_INDENT = 40.dp
 private val ROW_GAP = 6.dp
 
 /** Test tags for the Bones list. */
@@ -55,14 +57,16 @@ object RigBonesTags {
     fun part(id: PartId) = "rig.bones.part.${id.value}"
     fun joint(id: PartId, joint: String) = "rig.bones.joint.${id.value}.$joint"
     fun reach(id: PartId, joint: String) = "rig.bones.reach.${id.value}.$joint"
+    fun digit(id: PartId, patch: String) = "rig.bones.digit.${id.value}.$patch"
 }
 
 /** A reach as the Bones list shows it, to a tenth. */
 fun reachLabel(value: Float): String = "%.1f".format(Locale.ROOT, value)
 
 /**
- * The Bones section: each rigged part with its color, and under it its joints, each with its Reach; a part on the right side
- * starts closed with its joint count. A joint's row picks its bone, which lights it and shows its weight, and wiggles it.
+ * The Bones section: each rigged part with its color, and under it its own joints, each with its Reach, then a row per digit that
+ * opens to the digit's joints; a part on the right side and every digit start closed with their joint count. A joint's row picks
+ * its bone, which lights it and shows its weight, and wiggles it.
  */
 @Composable
 fun BonesSection(state: AppState, session: CharacterSession, rig: Rig, names: RigNames) {
@@ -70,6 +74,7 @@ fun BonesSection(state: AppState, session: CharacterSession, rig: Rig, names: Ri
     val character = document.character
     val colors = remember(character.parts) { rigPartColors(character) }
     var closed by remember(session) { mutableStateOf(character.parts.filter { it.side == Side.RIGHT }.map { it.id }.toSet()) }
+    var openDigits by remember(session) { mutableStateOf(emptySet<Pair<PartId, String>>()) }
     val byPart = rig.bones.groupBy { it.name.part }
     DrawerSection(stringResource(Res.string.rig_bones)) {
         for (part in rig.parts) {
@@ -83,13 +88,24 @@ fun BonesSection(state: AppState, session: CharacterSession, rig: Rig, names: Ri
                 RowText(names.of(part.id), Modifier.weight(1f))
                 if (!open) RowText(bones.size.toString(), subtle = true)
             }
-            if (open) bones.forEach { JointRow(state, session, character, it, color, names) }
+            if (!open) continue
+            bones.filter { it.digit == null }.forEach { JointRow(state, session, character, it, color, names, JOINT_INDENT) }
+            for ((patch, digit) in bones.filter { it.digit != null }.groupBy { it.digit!!.patch }) {
+                val key = part.id to patch
+                val digitOpen = key in openDigits
+                ListRow(false, { openDigits = if (digitOpen) openDigits - key else openDigits + key }, Modifier.testTag(RigBonesTags.digit(part.id, patch)), indent = JOINT_INDENT) {
+                    Icon(if (digitOpen) StretchIcons.ChevronDown else StretchIcons.ChevronRight, Stretch.colors.inkMuted, size = CHEVRON)
+                    RowText(names.digit(part.id, patch), Modifier.weight(1f))
+                    if (!digitOpen) RowText(digit.size.toString(), subtle = true)
+                }
+                if (digitOpen) digit.forEach { JointRow(state, session, character, it, color, names, DIGIT_INDENT) }
+            }
         }
     }
 }
 
 @Composable
-private fun JointRow(state: AppState, session: CharacterSession, character: Character, bone: Bone, color: Color, names: RigNames) {
+private fun JointRow(state: AppState, session: CharacterSession, character: Character, bone: Bone, color: Color, names: RigNames, indent: Dp) {
     val name = bone.name
     val label = names.of(name)
     val reach = stringResource(Res.string.rig_reach)
@@ -99,9 +115,9 @@ private fun JointRow(state: AppState, session: CharacterSession, character: Char
                 ListRow(state.rig.picked == name, {
                     state.rig.picked = name
                     state.rig.wiggle(name)
-                }, Modifier.testTag(RigBonesTags.joint(name.part, name.joint)), indent = JOINT_INDENT) {
+                }, Modifier.testTag(RigBonesTags.joint(name.part, name.joint)), indent = indent) {
                     Dot(color)
-                    RowText(name.joint, Modifier.weight(1f))
+                    RowText(names.joint(name), Modifier.weight(1f))
                     if (bone.stretch) Icon(SquashIcons.Stretch, Stretch.colors.inkMuted, size = CHEVRON, contentDescription = stringResource(Res.string.rig_stretches))
                 }
             }

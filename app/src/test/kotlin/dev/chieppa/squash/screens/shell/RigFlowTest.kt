@@ -86,7 +86,7 @@ class RigFlowTest {
         settle(work) { state.rigNow() != null }
         waitForIdle()
         onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Rig · Paint weight", substring = true)
-        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("37 bones · 13 parts · 0 seams painted", substring = true)
+        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("61 bones · 13 parts · 0 seams painted", substring = true)
 
         val steps = session.history.steps.value.done.size
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.FULL))

@@ -28,7 +28,8 @@ class WeightsTest {
         for (part in parts) {
             val parent = part.placed.socket?.parent?.let(byId::get)
             val childBand = if (carrierOf(part, byId) != null) childBandOf(part, parent) else 0f
-            val joints = OwnWeights(part, index).halfWidths
+            val own = OwnWeights(part, index)
+            val joints = own.halfWidths
             val rims = parts.filter { it.placed.socket?.parent == part.id }.mapNotNull { child ->
                 child.placed.anchor?.let { it to seamRadius(child, part) * (1f + SEAM_REACH) }
             }
@@ -37,8 +38,10 @@ class WeightsTest {
             for (patch in part.placed.surface.patches) for (local in 0 until patch.nu * patch.nv) {
                 val u = patch.boneU ?: patch.ringUs[local / patch.nv]
                 val position = part.placed.origin + part.placed.surface.mesh.position(vertex)
+                val digit = part.joints.digitOf(patch.name)
                 val inBand = u < childBand ||
-                    joints.indices.any { k -> k > 0 && abs(u - part.joints.specs[k].u) < joints[k] } ||
+                    digit != null && part.joints.digits[digit].joints.withIndex().any { (k, joint) -> abs(u - joint.u) < own.digitHalfWidths[digit][k] } ||
+                    digit == null && joints.indices.any { k -> k > 0 && abs(u - part.joints.specs[k].u) < joints[k] } ||
                     rims.any { (anchor, reach) -> (position - anchor).length < reach }
                 val bones = weights.of(vertex).size
                 if (!inBand) assertEquals(1, bones, "${part.id} vertex $vertex at u $u lies in no band")

@@ -29,6 +29,6 @@ class SessionRigTest {
         assertTrue(session.graph.settled.value)
         val after = checkNotNull(node.output.value?.bone(knee)).pivot
         assertNotEquals(before, after, "moving the knee along the leg moves its bone")
-        assertEquals(37, node.output.value?.bones?.size)
+        assertEquals(FENNEC_BONES, node.output.value?.bones?.size)
     }
 }

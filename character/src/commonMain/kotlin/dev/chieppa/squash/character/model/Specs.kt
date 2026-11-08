@@ -42,3 +42,9 @@ data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag
     /** Where its v span ends, running on past 1 when it crosses the seam. */
     val vEnd: Float get() = if (v.end < v.start) v.end + 1f else v.end
 }
+
+/**
+ * One digit's chain of joints: the digit's patch, its place in its row, the span of the part's u it runs along, whether it is
+ * turned [back] past a right angle, and its [joints] in u order from its root, named `<patch>.<n>` from 1.
+ */
+data class DigitChain(val patch: String, val index: Int, val span: Span, val back: Boolean, val joints: List<JointSpec>)

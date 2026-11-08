@@ -61,6 +61,7 @@ object PoseInspectorTags {
     const val LIMB_PLANTED = "pose.limb.planted"
     const val RIDES = "pose.limb.rides"
     const val BEND = "pose.limb.bend"
+    const val CURL = "pose.limb.curl"
     const val LENGTH = "pose.limb.length"
     const val KEEP_VOLUME = "pose.limb.volume"
     const val BONE = "pose.turn.bone"
@@ -86,7 +87,7 @@ fun PoseInspector(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val rig = rememberRig(state) ?: return
     val solver = state.pose.solverFor(rig)
-    val names = rigNames(document.character, state.templates)
+    val names = rigNames(document.character, state.templates, rig)
     val limbs = limbNames(document.character, state.templates)
     val sliders = remember(session) { SliderGesture(session) }
     val limb = state.pose.limb?.let(solver.chains::limb)

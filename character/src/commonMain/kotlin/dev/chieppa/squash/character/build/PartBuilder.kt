@@ -71,16 +71,14 @@ object PartBuilder {
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())
 
-    /** The mesh of [patches]. [checkCancelled] runs before each patch and throws to stop a stale run. */
+    /** The mesh of [patches], each vertex tagged with its joint's place in [JointTree.specs]. [checkCancelled] runs before each patch and throws to stop a stale run. */
     fun mesh(part: String, template: PartTemplate, patches: List<Patch>, checkCancelled: () -> Unit = {}): PartMesh {
-        val joints = template.blocks.flatMap { it.joints() }.map { it.u }.sorted()
-        val lastBone = (joints.size - 2).coerceAtLeast(0)
-        val boneAt = { u: Float -> (joints.count { it <= u } - 1).coerceIn(0, lastBone) }
+        val tree = JointTree(template, patches.map { it.name })
         return PartMesh(
             part,
-            patches.map {
+            patches.map { patch ->
                 checkCancelled()
-                MeshBuilder.build(it, boneAt)
+                MeshBuilder.build(patch) { u -> tree.boneAt(patch.name, u) }
             },
             axes(template),
         )

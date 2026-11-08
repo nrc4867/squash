@@ -1,21 +1,13 @@
 package dev.chieppa.squash.rig
 
-import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BodyCurve
 import dev.chieppa.squash.document.BodyStroke
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.View
-import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import java.nio.file.Path
-import kotlin.io.path.readText
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -50,20 +42,7 @@ private val CROUCH = Vec3(0.02f, -0.04f, 0f)
 /** How many degrees the look must turn the head at least. */
 private const val TURNED = 10f
 
-/** The example person, rigged by a session's graph once it has settled. */
-@OptIn(ExperimentalCoroutinesApi::class)
-private val person: Rig by lazy {
-    var rig: Rig? = null
-    runTest {
-        val document = readDocument(Path.of(System.getProperty("squash.examples"), "person.json").readText())
-        val session = CharacterSession(document, shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
-        val node = SessionRig(session).rig
-        runCurrent()
-        check(session.graph.settled.value) { "The person's graph did not settle" }
-        rig = checkNotNull(node.output.value)
-    }
-    checkNotNull(rig)
-}
+private val person: Rig get() = personRig
 
 /** A biped poses by its parts' roles: its feet plant, its hands reach and never pin, its spine and head take the body curve. */
 class PersonPoseTest {

@@ -47,6 +47,12 @@ data class Pad(
 
     override fun patchNames() = listOf(PatchName(patchName, repeats = on != null))
 
+    override fun digitUnder(patch: String): String? {
+        val row = on ?: return null
+        val prefix = patchName + PATCH_SEPARATOR
+        return if (patch.startsWith(prefix)) row + PATCH_SEPARATOR + patch.removePrefix(prefix) else null
+    }
+
     override fun patchSlots() = color?.let { listOf(PatchSlot(patchName, it)) } ?: emptyList()
 
     override fun build(ctx: BuildContext): List<Patch> {

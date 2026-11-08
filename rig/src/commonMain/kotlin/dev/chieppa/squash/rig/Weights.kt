@@ -130,8 +130,9 @@ internal fun weightsOf(
         rim.bone to paint.shares(rim.seam, SeamVertices(part.id, false, vertices.addresses, vertices.positions), guessed)
     }
     for (vertex in 0 until count) {
-        val u = vertices.addresses[vertex].u
-        val blend = Blend(if (part.joints.isEmpty) carrierIndex?.let { mapOf(it to 1f) }.orEmpty() else own.at(u))
+        val address = vertices.addresses[vertex]
+        val u = address.u
+        val blend = Blend(if (part.joints.isEmpty) carrierIndex?.let { mapOf(it to 1f) }.orEmpty() else own.at(address.patch, u))
         if (carrierIndex != null && parentShares != null) blend.give(carrierIndex, parentShares[vertex])
         if (rims.isNotEmpty()) blend.giveAll(heldShares(rims.associate { (bone, shares) -> bone to shares[vertex] }))
         blend.write(vertex, bones, weights)
@@ -173,13 +174,24 @@ internal fun childBandOf(part: RiggedPart, parent: RiggedPart?, reach: JointReac
     return (SEAM_REACH * factor * seamRadius(part, parent) / perU).coerceAtMost(next / 2f)
 }
 
-/** The weights a part gives its own bones alone, by u. */
+/**
+ * The weights a part gives its own bones alone, by patch and u: along its chain, and along each digit from the bone it branches
+ * from through the digit's joints, a band across each joint.
+ */
 internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int>, private val reach: JointReach = JointReach.GUESSED) {
     private val joints = part.joints
     private val bones = IntArray(joints.specs.size) { index.getValue(part.bone(it)) }
+
     /** Half the band across each owning joint after the first, along u; 0 for the first. */
     val halfWidths = FloatArray(joints.owning) { if (it == 0) 0f else jointBand(it) }
 
+    /** Half the band across each joint of each digit, along u. */
+    val digitHalfWidths = joints.digits.indices.map { d -> FloatArray(joints.digits[d].joints.size) { k -> digitBand(d, k) } }
+
+    /** The shares a vertex of [patch] at [u] gives the part's bones. */
+    fun at(patch: String, u: Float): Map<Int, Float> = joints.digitOf(patch)?.let { alongDigit(it, u) } ?: at(u)
+
+    /** The shares a vertex of the part's own chain at [u] gives its bones. */
     fun at(u: Float): Map<Int, Float> {
         for (k in 1 until joints.owning) {
             val h = halfWidths[k]
@@ -192,6 +204,21 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
         return mapOf(bones[joints.ownerAt(u)] to 1f)
     }
 
+    private fun alongDigit(d: Int, u: Float): Map<Int, Float> {
+        val chain = joints.digits[d].joints
+        for (k in chain.indices) {
+            val h = digitHalfWidths[d][k]
+            val ju = chain[k].u
+            if (h > 0f && u > ju - h && u < ju + h) {
+                val t = smoothStep((u - (ju - h)) / (2f * h))
+                val before = if (k == 0) joints.rootOf(d) else joints.indexOf(d, k - 1)
+                return mapOf(bones[before] to 1f - t, bones[joints.indexOf(d, k)] to t)
+            }
+        }
+        val k = chain.count { it.u <= u }
+        return mapOf(bones[if (k == 0) joints.rootOf(d) else joints.indexOf(d, k - 1)] to 1f)
+    }
+
     /** Half the band across the joint at [k] along u, its reach times [JOINT_REACH] radii, held to half the way to the joints around it. */
     private fun jointBand(k: Int): Float {
         val perU = part.rings.lengthPerU
@@ -199,5 +226,16 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
         val u = joints.specs[k].u
         val room = minOf(u - joints.specs[k - 1].u, joints.spanEnd(k) - u) / 2f
         return (JOINT_REACH * reach.of(part.id, joints.specs[k].name) * part.rings.radius(u) / perU).coerceAtMost(room)
+    }
+
+    /** [jointBand] for joint [k] of digit [d], over the digit's own radius, held between its root, its joints and its tip. */
+    private fun digitBand(d: Int, k: Int): Float {
+        val perU = part.rings.lengthPerU
+        if (perU <= 0f) return 0f
+        val digit = joints.digits[d]
+        val joint = digit.joints[k]
+        val before = if (k == 0) digit.span.start else digit.joints[k - 1].u
+        val room = minOf(joint.u - before, joints.digitSpanEnd(d, k) - joint.u) / 2f
+        return (JOINT_REACH * reach.of(part.id, joint.name) * part.rings.radius(joint.u, digit.patch) / perU).coerceAtMost(room)
     }
 }

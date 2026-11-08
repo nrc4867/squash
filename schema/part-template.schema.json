@@ -290,10 +290,67 @@
               "type": "null"
             }
           ]
+        },
+        "joints": {
+          "description": "Where this digit's joints sit as shares of its span from its root, in place of the row's.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "index"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "DigitJoints": {
+      "description": "Joints along every digit of the row: where each sits as a share of the digit's span from its root, about which hinge, within which limits.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "description": "Each joint's place along a digit, from 0 at its root to 1 at its tip, ascending.",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "hinge": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "limits": {
+          "description": "Degrees; a positive tip turns the digit toward the row's underside.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "at"
       ],
       "patternProperties": {
         "^x-": {}
@@ -1185,6 +1242,17 @@
             {
               "type": "string",
               "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "joints": {
+          "description": "Joints along every digit, which bend it toward the row's underside; a digit with none follows the part's bone at its root.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DigitJoints"
+            },
+            {
+              "type": "null"
             }
           ]
         }

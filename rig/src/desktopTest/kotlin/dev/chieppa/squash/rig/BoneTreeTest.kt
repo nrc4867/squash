@@ -18,11 +18,12 @@ class BoneTreeTest {
     @Test
     fun everyTemplateJointOfTheFennecIsABone() {
         val legs = listOf("front-leg-l", "front-leg-r", "back-leg-l", "back-leg-r").flatMap { leg -> listOf("hip", "knee", "ankle").map { "$leg/$it" } }
-        val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map { "$it/wrist" }
+        val toes = (0 until 3).flatMap { toe -> (1..2).map { "toes:$toe.$it" } }
+        val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").flatMap { paw -> (listOf("wrist") + toes).map { "$paw/$it" } }
         val expected = listOf("torso/hips", "torso/loin", "torso/waist", "torso/ribs", "torso/chest", "torso/withers", "head/neck", "head/jaw") +
             listOf("ear-l", "ear-r").flatMap { ear -> listOf("base", "fold", "tip").map { "$ear/$it" } } +
             listOf("root", "tail1", "tail2", "tail3", "tail4", "tail5", "tip").map { "tail/$it" } + legs + paws
-        assertEquals(37, rig.bones.size)
+        assertEquals(FENNEC_BONES, rig.bones.size)
         assertEquals(expected.sorted(), rig.bones.map { it.name.toString() }.sorted())
     }
 
@@ -40,6 +41,8 @@ class BoneTreeTest {
         assertEquals("back-leg-l/hip", parentOf("back-leg-l/knee"))
         assertEquals("back-leg-l/knee", parentOf("back-leg-l/ankle"))
         assertEquals("front-leg-r/ankle", parentOf("front-paw-r/wrist"))
+        assertEquals("front-paw-r/wrist", parentOf("front-paw-r/toes:1.1"), "a toe branches from the bone owning its root")
+        assertEquals("front-paw-r/toes:1.1", parentOf("front-paw-r/toes:1.2"))
         assertTrue(rig.parents.withIndex().all { (i, parent) -> parent < i }, "a parent comes before its children")
     }
 

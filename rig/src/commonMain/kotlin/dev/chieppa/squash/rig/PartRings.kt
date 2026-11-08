@@ -23,17 +23,18 @@ internal class PartRings(private val part: PlacedPart) {
 
     val hasRings: Boolean get() = swept.isNotEmpty()
 
-    private fun runAt(u: Float): Patch? = swept.firstOrNull { it.covers(u) } ?: swept.firstOrNull()
+    private fun runAt(u: Float, patch: String?): Patch? =
+        patch?.let { name -> swept.firstOrNull { it.name == name } } ?: swept.firstOrNull { it.covers(u) } ?: swept.firstOrNull()
 
-    /** The middle of the ring at [u], in body space. */
-    fun middle(u: Float): Vec3 {
-        val run = runAt(u) ?: return part.origin
+    /** The middle of the ring at [u] on [patch], or on the first run reaching [u] when it is null, in body space. */
+    fun middle(u: Float, patch: String? = null): Vec3 {
+        val run = runAt(u, patch) ?: return part.origin
         return part.origin + part.surface.shown(run.ringMiddle(u))
     }
 
-    /** The mean distance of the ring at [u] from its middle. */
-    fun radius(u: Float): Float {
-        val run = runAt(u) ?: return 0f
+    /** The mean distance of the ring at [u] on [patch] from its middle. */
+    fun radius(u: Float, patch: String? = null): Float {
+        val run = runAt(u, patch) ?: return 0f
         val centre = run.ringMiddle(u)
         return (0 until RADIUS_SAMPLES).sumOf { (run.positionAt(u, it.toFloat() / RADIUS_SAMPLES) - centre).length.toDouble() }.toFloat() / RADIUS_SAMPLES
     }
@@ -42,9 +43,9 @@ internal class PartRings(private val part: PlacedPart) {
     fun widestOver(from: Float, to: Float, steps: Int = 8): Float = (0..steps).maxOf { radius(from + (to - from) * it / steps) }
 
     /** The axis's direction at [u] in body space, toward larger u. */
-    fun tangent(u: Float): Vec3 {
-        val ahead = middle((u + TANGENT_REACH).coerceAtMost(1f))
-        val behind = middle((u - TANGENT_REACH).coerceAtLeast(0f))
+    fun tangent(u: Float, patch: String? = null): Vec3 {
+        val ahead = middle((u + TANGENT_REACH).coerceAtMost(1f), patch)
+        val behind = middle((u - TANGENT_REACH).coerceAtLeast(0f), patch)
         val along = ahead - behind
         return if (along.length > 0f) along.normalized() else part.surface.shown(PartBuilder.axes(part.template).along)
     }

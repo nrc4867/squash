@@ -25,9 +25,12 @@ data class Digit(
     @Doc("Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan; past 90 either way it points back from its root.")
     @Range(min = -180.0, max = 180.0)
     val angle: Float? = null,
+    @Doc("Where this digit's joints sit as shares of its span from its root, in place of the row's.")
+    val joints: List<Float>? = null,
 ) {
     fun lint(ctx: LintContext, field: String): List<Finding> =
         (if (index < 0) ctx.finding("$field.index", "a digit's index is 0 or more") else emptyList()) +
             (u?.let { ctx.unit("$field.u", it) } ?: emptyList()) +
+            (joints?.let { DigitJoints.lintShares(ctx, "$field.joints", it) } ?: emptyList()) +
             (across?.takeIf { it !in -MAX_ACROSS..MAX_ACROSS }?.let { ctx.finding("$field.across", "$it is outside -$MAX_ACROSS to $MAX_ACROSS") } ?: emptyList())
 }

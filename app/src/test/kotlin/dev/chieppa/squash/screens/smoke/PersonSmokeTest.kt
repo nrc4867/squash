@@ -28,6 +28,7 @@ import dev.chieppa.squash.rig.PoseSolver
 import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.SolveOptions
 import dev.chieppa.squash.rig.bendTo
+import dev.chieppa.squash.rig.curled
 import dev.chieppa.squash.rig.curveBones
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
@@ -38,6 +39,7 @@ import dev.chieppa.squash.screens.move.MoveTool
 import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.person.FOOT_L
 import dev.chieppa.squash.screens.person.FOOT_R
+import dev.chieppa.squash.screens.person.HAND_L
 import dev.chieppa.squash.screens.person.HAND_R
 import dev.chieppa.squash.screens.person.TORSO
 import dev.chieppa.squash.screens.person.personDocument
@@ -88,6 +90,9 @@ private const val LEAN = 0.16f
 
 /** Where the raised hand goes from where it hangs: up past the shoulder, a little forward and out to its side, in body units. */
 private val RAISE = Vec3(0.1f, 0.5f, 0.1f)
+
+/** How far the hanging hand curls while the raised one makes a fist. */
+private const val HALF_CURL = 0.5f
 
 /** How near the raised hand must land, in body units. */
 private const val RAISE_TOLERANCE = 1e-2f
@@ -205,7 +210,9 @@ class PersonSmokeTest {
         val start = Pose(planted = setOf(FOOT_L, FOOT_R))
         val limb = assertNotNull(solver.chains.limb(HAND_R))
         val raised = solver.reach(start, limb, solver.endOf(start, limb) + RAISE, SolveOptions())
-        session.send(SetPose(raised.pose))
+        val rig = assertNotNull(state.rigNow())
+        val fist = rig.curled(rig.curled(raised.pose, listOf(HAND_R), 1f), listOf(HAND_L), HALF_CURL)
+        session.send(SetPose(fist))
         state.pose.limb = HAND_R
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "person-pose-hand")
         assertTrue(raised.report.missed < RAISE_TOLERANCE, "the hand lands where it was raised to")
