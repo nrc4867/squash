@@ -57,6 +57,13 @@ private object NoFiles : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
+/** Saves to [path], counting how often it is asked. */
+private class SaveTo(private val path: String) : FileChooser {
+    var asked = 0
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = path.also { asked++ }
+}
+
 private const val SETTLE_MILLIS = 10_000L
 
 @OptIn(ExperimentalTestApi::class)
@@ -249,6 +256,30 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
         waitUntil { state.session.value != null && state.screen.value == Screen.WORKSPACE }
         assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
+    }
+
+    @Test
+    fun aPlainJsonCharacterOpensAndSavesAsANewSquashFile() = runDesktopComposeUiTest(1600, 900) {
+        val folder = Files.createTempDirectory("plain-json")
+        val json = folder.resolve("marsh-hare.json")
+        val squash = folder.resolve("marsh-hare.squash")
+        val format = SquashFormat()
+        val new = newCharacter(caninePlan, shipped, "Marsh hare")
+        val text = format.plainText(new.commands.fold(new.document) { d, c -> c.apply(d).document })
+        Files.writeString(json, text)
+        assertTrue(format.openExtensions.containsAll(setOf("squash", "json")), "the open dialog lists plain JSON")
+        val chooser = SaveTo(squash.absolutePathString())
+        val state = AppState(shipped, recent = RecentFiles(listOf(json.absolutePathString())))
+        setStretchContent { SquashApp(state, chooser) }
+        onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
+        waitUntil { state.session.value != null && state.screen.value == Screen.WORKSPACE }
+        assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
+        onNodeWithText("File").performClick()
+        onNodeWithText("Save").performClick()
+        waitUntil(timeoutMillis = SETTLE_MILLIS) { Files.exists(squash) && state.file.value?.path == squash.absolutePathString() }
+        assertEquals(1, chooser.asked, "saving a JSON character asks where to put the Squash file")
+        assertEquals(text, Files.readString(json), "the JSON is left as it was")
+        assertEquals("Marsh hare", format.decode(Files.readAllBytes(squash)).character.name)
     }
 
     @Test

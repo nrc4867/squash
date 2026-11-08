@@ -85,7 +85,7 @@ class Shell(
         val file = state.file.value ?: return
         val name = state.session.value?.document?.value?.character?.name.orEmpty()
         scope.launch {
-            val target = file.path.takeUnless { asNew } ?: chooser.chooseSave(state.format, name) ?: return@launch
+            val target = file.path?.takeIf { !asNew && state.format.saves(it) } ?: chooser.chooseSave(state.format, name) ?: return@launch
             runCatching { file.saveTo(target) }
                 .onSuccess { state.recent.add(target) }
                 .onFailure { toasts.show(getString(Res.string.shell_save_failed, it.message.orEmpty())) }

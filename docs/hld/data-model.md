@@ -38,7 +38,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Project | The cast (character copies, each with its library version) and scenes | Document file |
 | Library | Characters, later objects and sets, each as a chain of versions | Library files |
 
-A character saves as a `.squash` file: a zip holding the document as `character.json`, with each reference image beside it under `images/` in its own encoding, so a file carries everything it shows. Plain JSON, with images inline as base64, reads too; the example characters are kept that way.
+A character saves as a `.squash` file: a zip holding the document as `character.json`, with each reference image beside it under `images/` in its own encoding, so a file carries everything it shows. Plain JSON, with images inline as base64, opens too, from the open dialog or a drop on Home; the example characters are kept that way. Saving a character opened from JSON asks where to save it as a `.squash` file and leaves the JSON as it is.
 
 Identity and versions: every entity has a ULID. A part instance pins its template id and version, and a character pins its body plan version, so a shipped template can change without silently changing saved characters. A template version that changes its ring or segment count is a migration, since anchors would otherwise land on different vertices.
 

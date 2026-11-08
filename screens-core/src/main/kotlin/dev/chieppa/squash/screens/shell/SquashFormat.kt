@@ -19,6 +19,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 private const val EXTENSION = "squash"
+private const val PLAIN_EXTENSION = "json"
 private const val CHARACTER_ENTRY = "character.json"
 private const val IMAGES_FOLDER = "images/"
 private const val REFERENCES_KEY = "references"
@@ -43,10 +44,12 @@ private val json = Json { prettyPrint = true }
 
 /**
  * A Squash file: a zip holding the document as `character.json`, with each reference image beside it under `images/` in its own
- * encoding, so a file carries everything it shows. A plain JSON document, as older saves and the examples are, reads too.
+ * encoding, so a file carries everything it shows. A plain JSON document, as older saves and the examples are, opens too; saving
+ * it writes a new Squash file and leaves the JSON as it is.
  */
 class SquashFormat(override val description: String = "") : DocumentFormat<SquashDocument> {
     override val extension = EXTENSION
+    override val openExtensions = setOf(EXTENSION, PLAIN_EXTENSION)
 
     override fun encode(document: SquashDocument): ByteArray {
         val tree = json.encodeToJsonElement(SquashDocument.serializer(), document).jsonObject

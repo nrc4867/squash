@@ -159,7 +159,7 @@ private fun ProjectsDrawer(shell: Shell, recent: List<String>, current: String?,
             Dropzone(
                 label = stringResource(Res.string.home_drop_title),
                 kinds = stringResource(Res.string.home_drop_kinds),
-                extensions = setOf(shell.state.format.extension),
+                extensions = shell.state.format.openExtensions,
                 onFiles = { files -> files.firstOrNull()?.let(shell::open) },
                 onBrowse = shell::chooseAndOpen,
                 overLabel = stringResource(Res.string.home_drop_over),
