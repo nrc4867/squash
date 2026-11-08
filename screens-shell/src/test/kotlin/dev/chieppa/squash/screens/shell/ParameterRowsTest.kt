@@ -14,7 +14,7 @@ class ParameterRowsTest {
 
     @Test
     fun rowsComeFromTheTemplatesSpec() {
-        assertEquals(listOf("size", "toes", "spread", "pads"), parameterRows(paw).map { it.name })
+        assertEquals(listOf("size", "toes", "spread", "pads", "webs"), parameterRows(paw).map { it.name })
         assertEquals(0.4f..2.5f, rows.getValue("size").range)
         assertEquals("deg", rows.getValue("spread").unit)
         assertTrue(rows.getValue("pads").isFlag)

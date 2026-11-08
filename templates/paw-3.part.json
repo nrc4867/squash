@@ -1,0 +1,36 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "paw",
+  "version": 3,
+  "name": "Paw",
+  "role": "foot",
+  "axis": { "rest": [1, 0, 0], "length": 0.3 },
+  "openEnd": null,
+  "topology": { "rings": 32, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":   { "default": 1.0, "min": 0.4, "max": 2.5 },
+    "toes":   { "default": 0,  "values": [0, 3, 4, 5] },
+    "spread": { "default": 18, "min": 0, "max": 40, "unit": "deg" },
+    "pads":   { "default": true },
+    "webs":   { "default": true }
+  },
+  "blocks": [
+    { "kind": "tube",   "u": [0.0, 0.66], "radius": 0.19, "fills": "toes" },
+    { "kind": "toeRow", "name": "toes", "u": [0.62, 1.0], "count": "$toes", "spread": "$spread", "radius": 0.085, "rings": 16, "segments": 12, "flare": 0.45,
+      "section": "egg", "taper": 0.8, "knuckle": 0.1,
+      "joints": { "at": [0.2, 0.6], "hinge": "x", "limits": [-20, 60] } },
+    { "kind": "membrane", "name": "web", "on": "toes", "if": "$webs", "reach": 0.45, "sag": 0.3, "thickness": 0.45, "rings": 8, "segments": 16 },
+    { "kind": "pad",    "name": "palm", "u": 0.47, "v": 0.5, "size": 0.2, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+    { "kind": "pad",    "name": "toe",  "on": "toes", "v": 0.5, "size": 0.08, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+    { "kind": "cap",    "end": "start", "shape": "round" },
+    { "kind": "cap",    "end": "end" },
+    { "kind": "joint",  "name": "wrist", "u": 0.0, "hinge": "x", "limits": [-45, 45] },
+    { "kind": "area",  "name": "sock", "u": [0.0, 0.5], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",  "name": "top", "u": [0.0, 0.66], "v": [0.75, 0.25], "tag": "fill" },
+    { "kind": "area",  "name": "toes", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "toes" },
+    { "kind": "area",  "name": "web", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "web" }
+  ]
+}

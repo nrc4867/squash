@@ -28,7 +28,7 @@ fun PartSurface.posed(mesh: RenderMesh): PartSurface {
             }
         }
         first += count
-        Patch(patch.name, patch.nu, patch.nv, patch.closedV, patch.slices, points, patch.boneU, proxies)
+        patch.withPoints(points, proxies)
     }
     return PartSurface(moved, mirrored, mesh, silhouettes, PartSurface.boxOf(mesh), extents)
 }

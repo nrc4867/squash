@@ -10,6 +10,7 @@ import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
+import dev.chieppa.squash.character.model.SectionSpec
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
@@ -40,6 +41,17 @@ private const val RIGHT_ANGLE = 90f
 
 /** How far along a digit, as a share of its span, its root flare has eased out. */
 private const val FLARE_REACH = 0.35f
+
+/** How far either side of a digit joint, as a share of the digit's span, its knuckle swells. */
+private const val KNUCKLE_REACH = 0.09f
+
+/** How much of its knuckle a digit has at [off], its distance from a joint as a share of its span: whole at the joint, gone at [KNUCKLE_REACH]. */
+private fun knuckleAt(off: Float): Float {
+    val x = off / KNUCKLE_REACH
+    if (x <= -1f || x >= 1f) return 0f
+    val left = 1f - x * x
+    return left * left
+}
 
 /** The height at [along] of a digit whose root is [flare] taller than its run, as a multiple of the run's. */
 private fun flareAt(flare: Float, along: Float): Float {
@@ -74,6 +86,14 @@ data class ToeRow(
     val flare: Param = Param.of(0f),
     @Doc("Joints along every digit, which bend it toward the row's underside; a digit with none follows the part's bone at its root.")
     val joints: DigitJoints? = null,
+    @Doc("Each digit's cross-section, a named profile or control points; round when left out. It shapes drawn digits too.")
+    val section: SectionSpec? = null,
+    @Doc("Each digit's width as a multiple of its thickness; a drawn Top's widths are kept.")
+    val width: Param = Param.of(1f),
+    @Doc("Each digit's thickness at its tip as a share of its root's; a drawn Side's heights are kept.")
+    val taper: Param = Param.of(1f),
+    @Doc("How much each digit swells at each of its joints, as a fraction of its thickness; a drawn digit's sizes are kept.")
+    val knuckle: Param = Param.of(0f),
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
@@ -94,9 +114,15 @@ data class ToeRow(
             val specs = shares.mapIndexed { k, share ->
                 JointSpec("$patch.${k + 1}", span.start + (span.end - span.start) * share, null, spec.hinge, spec.limits, stretch = false)
             }
-            DigitChain(patch, i, span, digit?.angle?.let { abs(it) > RIGHT_ANGLE } == true, specs)
+            DigitChain(patch, i, span, pointsBack(i), specs)
         }.toList()
     }
+
+    /** Whether digit [index] is turned past a right angle, pointing back from its root. */
+    fun pointsBack(index: Int): Boolean = digits.firstOrNull { it.index == index }?.angle?.let { abs(it) > RIGHT_ANGLE } == true
+
+    /** Where along digit [index] its joints sit, as shares of its span from its root. */
+    private fun jointShares(index: Int): List<Float> = digits.firstOrNull { it.index == index }?.joints ?: joints?.at.orEmpty()
 
     /** How many toes this build makes, none when the row is switched off. */
     fun toeCount(ctx: BuildContext): Int = if (ctx.isOn(this)) ctx.value(count).roundToInt().coerceAtLeast(0) else 0
@@ -111,7 +137,10 @@ data class ToeRow(
         val thickness = ctx.length(radius) * 2f
         val fan = ctx.value(spread) * DEGREES_TO_RADIANS
         val rootFlare = ctx.value(flare)
-        val section = SectionProfile.CIRCLE.spline(segments)
+        val tipShare = ctx.value(taper)
+        val swell = ctx.value(knuckle)
+        val wide = ctx.value(width)
+        val profile = (section ?: SectionSpec.Named(SectionProfile.CIRCLE)).spline(segments)
         val overrides = digits.associateBy { it.index }
         val sharing = (0 until toes).filter { it !in overrides }
         return List(toes) { i ->
@@ -125,14 +154,19 @@ data class ToeRow(
             val us = FloatArray(rings) { span.start + (span.end - span.start) * it / (rings - 1) }
             val place = digit?.across ?: if (toes == 1) 0f else 2f * i / (toes - 1) - 1f
             val angle = digit?.angle?.let { it * DEGREES_TO_RADIANS } ?: (fan * place)
-            val back = digit?.angle?.let { abs(it) > RIGHT_ANGLE } == true
+            val back = pointsBack(i)
             val fanOut = tan(angle) * ctx.axisLength
             ctx.checkCancelled()
+            val knuckles = jointShares(i)
+            val shaped = FloatArray(rings) { ring ->
+                val along = (us[ring] - span.start) / (span.end - span.start)
+                thickness * (1f + (tipShare - 1f) * along) * (1f + swell * knuckles.sumOf { knuckleAt(along - it).toDouble() }.toFloat())
+            }
             val heights = FloatArray(rings) { ring ->
-                ctx.views?.heightAt(us[ring])?.takeIf { !back } ?: (thickness * flareAt(rootFlare, (us[ring] - span.start) / (span.end - span.start)))
+                ctx.views?.heightAt(us[ring])?.takeIf { !back } ?: (shaped[ring] * flareAt(rootFlare, (us[ring] - span.start) / (span.end - span.start)))
             }
             val widths = FloatArray(rings) { ring ->
-                ctx.views?.widthAt(us[ring])?.takeIf { digit == null }?.let { it / sharing.size * DRAWN_TOE_OVERLAP } ?: thickness
+                ctx.views?.widthAt(us[ring])?.takeIf { digit == null }?.let { it / sharing.size * DRAWN_TOE_OVERLAP } ?: (shaped[ring] * wide)
             }
             val centres = if (back) {
                 val toward = ctx.axes.along * cos(angle) + ctx.axes.side * sin(angle)
@@ -148,12 +182,14 @@ data class ToeRow(
             }
             val up = if (back) ctx.axes.up * -1f else ctx.axes.up
             val facing = ctx.axes.along.takeIf { ctx.views != null }?.let { if (back) it * -1f else it }
-            SliceBuilder.sweep(SweepSpec("$rowName:$i", us, centres, heights, widths, section, up, EndClosure.ROUND, EndClosure.ROUND, facing))
+            SliceBuilder.sweep(SweepSpec("$rowName:$i", us, centres, heights, widths, profile, up, EndClosure.ROUND, EndClosure.ROUND, facing))
         }
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) + ctx.param("flare", flare) +
+            ctx.param("width", width) + ctx.param("taper", taper) + ctx.param("knuckle", knuckle) +
+            (section?.controlPointCount?.takeIf { it != segments }?.let { ctx.finding("section", "$it control points for $segments segments") } ?: emptyList()) +
             ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS) +
             (joints?.lint(ctx, "joints") ?: emptyList()) +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") } +

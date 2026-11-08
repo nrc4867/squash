@@ -2,7 +2,6 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 
 /** The most bones one vertex follows. */
@@ -70,17 +69,23 @@ internal class PartVertices(part: RiggedPart) {
     val anchors: List<Anchor>
     val positions: FloatArray
 
+    /** For each vertex of a patch spanned between two others, where it rides them; null for the rest. */
+    val rides: List<Ride?>
+
     init {
         val surface = part.placed.surface
         val list = ArrayList<SeamVertex>(surface.mesh.vertexCount)
         val landing = ArrayList<Anchor>(surface.mesh.vertexCount)
+        val riding = ArrayList<Ride?>(surface.mesh.vertexCount)
         for (patch in surface.patches) for (local in 0 until patch.nu * patch.nv) {
             val v = (local % patch.nv).toFloat() / patch.segments
-            list += SeamVertex(part.id, patch.name, patch.uOf(local), v)
+            list += SeamVertex(part.id, patch.name, patch.boneUOf(local), v)
             landing += Anchor(part.id, patch.name, patch.ringUs[local / patch.nv], v)
+            riding += patch.spanned?.let { Ride(it.first, it.firstUs[local], it.second, it.secondUs[local], it.shares[local]) }
         }
         addresses = list
         anchors = landing
+        rides = riding
         positions = FloatArray(list.size * 3) { i ->
             val p = surface.mesh.position(i / 3)
             val o = part.placed.origin
@@ -132,7 +137,14 @@ internal fun weightsOf(
     for (vertex in 0 until count) {
         val address = vertices.addresses[vertex]
         val u = address.u
-        val blend = Blend(if (part.joints.isEmpty) carrierIndex?.let { mapOf(it to 1f) }.orEmpty() else own.at(address.patch, u))
+        val ride = vertices.rides[vertex]
+        val blend = Blend(
+            when {
+                part.joints.isEmpty -> carrierIndex?.let { mapOf(it to 1f) }.orEmpty()
+                ride != null -> own.riding(ride)
+                else -> own.at(address.patch, u)
+            },
+        )
         if (carrierIndex != null && parentShares != null) blend.give(carrierIndex, parentShares[vertex])
         if (rims.isNotEmpty()) blend.giveAll(heldShares(rims.associate { (bone, shares) -> bone to shares[vertex] }))
         blend.write(vertex, bones, weights)
@@ -140,8 +152,8 @@ internal fun weightsOf(
     return PartWeights(part.id, bones, weights)
 }
 
-/** The u a vertex of this patch weighs by: the patch's own for one that rides at one u, as a pad does, else its ring's. */
-private fun Patch.uOf(local: Int): Float = boneU ?: ringUs[local / nv]
+/** A vertex of a patch spanned between two others: at [firstU] on [first] and [secondU] on [second], [share] of the way to the second. */
+internal class Ride(val first: String, val firstU: Float, val second: String, val secondU: Float, val share: Float)
 
 /** What several rims give one vertex, held so together they never take more than the seam's share, or than the most one was painted to. */
 private fun heldShares(given: Map<Int, Float>): Map<Int, Float> {
@@ -190,6 +202,14 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
 
     /** The shares a vertex of [patch] at [u] gives the part's bones. */
     fun at(patch: String, u: Float): Map<Int, Float> = joints.digitOf(patch)?.let { alongDigit(it, u) } ?: at(u)
+
+    /** The shares a vertex riding two patches gives the part's bones: what each patch gives at its u, blended by its share. */
+    fun riding(ride: Ride): Map<Int, Float> {
+        val shares = HashMap<Int, Float>()
+        at(ride.first, ride.firstU).forEach { (bone, w) -> shares[bone] = (shares[bone] ?: 0f) + w * (1f - ride.share) }
+        at(ride.second, ride.secondU).forEach { (bone, w) -> shares[bone] = (shares[bone] ?: 0f) + w * ride.share }
+        return shares
+    }
 
     /** The shares a vertex of the part's own chain at [u] gives its bones. */
     fun at(u: Float): Map<Int, Float> {

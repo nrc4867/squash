@@ -15,6 +15,18 @@ private val BIRD_FOOT_L = PartId("foot-l")
 private const val CLOSES = 0.3f
 private const val STILL = 1e-5f
 private const val MIRRORED = 1e-3f
+private const val WEB = "web:"
+
+/** Points round each ring of the hand's webs and fingers. */
+private const val WEB_SEGMENTS = 16
+private const val FINGER_SEGMENTS = 12
+
+/** How much further a web may stretch or shrink under a curl than its own digits' surface does, the skinning's own at a bent joint. */
+private const val DIGITS_SHARE = 1.35f
+
+/** How far a web edge may stretch or shrink under a whole curl at least, as a share of its rest length, and how short an edge goes unread. */
+private val KEPT = 0.4f..2f
+private const val EDGE_FLOOR = 1e-4f
 
 /** The digits of a hand and a bird's foot hang from their wrist as chains of their own, curl toward the underside and grip. */
 class DigitRigTest {
@@ -27,6 +39,54 @@ class DigitRigTest {
     private fun Rig.tipOf(part: PartId, patch: String): Int {
         val rigged = checkNotNull(part(part))
         return rigged.vertices.indices.filter { rigged.vertices[it].patch == patch }.maxBy { rigged.vertices[it].u }
+    }
+
+    /** The digits whose bones a vertex of [patch] may follow: a finger's own, or the two a web between fingers spans. */
+    private fun spannedBy(patch: String): Set<String> = when {
+        patch.startsWith("fingers:") -> setOf(patch)
+        patch.startsWith(WEB) -> patch.removePrefix(WEB).toInt().let { setOf("fingers:$it", "fingers:${it + 1}") }
+        else -> emptySet()
+    }
+
+    /** The least and most any grid edge of [vertices], a patch of [segments] points a ring, changes in length from [rest] to [posed]. */
+    private fun Rig.stretchOf(vertices: List<Int>, segments: Int, rest: FloatArray, posed: FloatArray): ClosedFloatingPointRange<Float> {
+        var least = Float.MAX_VALUE
+        var most = 0f
+        for ((local, v) in vertices.withIndex()) {
+            val right = vertices[local / segments * segments + (local + 1) % segments]
+            for (w in listOfNotNull(right, vertices.getOrNull(local + segments))) {
+                val before = (point(rest, w) - point(rest, v)).length
+                if (before < EDGE_FLOOR) continue
+                val after = (point(posed, w) - point(posed, v)).length / before
+                least = minOf(least, after)
+                most = maxOf(most, after)
+            }
+        }
+        return least..most
+    }
+
+    @Test
+    fun aCurledHandsWebsFollowTheirDigitsWithoutTearingOrSmearing() {
+        val hand = checkNotNull(person.part(HAND_L))
+        val curled = person.posed(person.curled(Pose(), listOf(HAND_L), 1f)).parts.getValue(HAND_L)
+        val byPatch = hand.vertices.indices.groupBy { hand.vertices[it].patch }
+        val webs = byPatch.filterKeys { it.startsWith(WEB) }
+        assertEquals(4, webs.size, "a web between each pair of neighbouring digits")
+        for ((patch, vertices) in webs) {
+            val digits = spannedBy(patch)
+            val followed = vertices.flatMap { v -> hand.weights.of(v).mapNotNull { (bone, _) -> person.bones[bone].digit?.patch } }.toSet()
+            assertEquals(digits, followed, "$patch follows both its digits")
+            val fingers = digits.map { byPatch.getValue(it) }
+            val fingerStretch = fingers.map { person.stretchOf(it, FINGER_SEGMENTS, hand.rest, curled) }
+            val most = maxOf(KEPT.endInclusive, fingerStretch.maxOf { it.endInclusive } * DIGITS_SHARE)
+            val least = minOf(KEPT.start, fingerStretch.minOf { it.start } / DIGITS_SHARE)
+            val stretch = person.stretchOf(vertices, WEB_SEGMENTS, hand.rest, curled)
+            assertTrue(stretch.start >= least && stretch.endInclusive <= most, "$patch stretches $stretch, its digits $fingerStretch")
+            val near = { positions: FloatArray, v: Int -> fingers.flatten().minOf { (person.point(positions, it) - person.point(positions, v)).length } }
+            vertices.forEach { v ->
+                assertTrue(near(curled, v) <= near(hand.rest, v) * most + EDGE_FLOOR, "$patch vertex $v leaves its digits: ${near(hand.rest, v)} to ${near(curled, v)}")
+            }
+        }
     }
 
     @Test
@@ -44,8 +104,7 @@ class DigitRigTest {
         val hand = checkNotNull(person.part(HAND_L))
         for ((vertex, address) in hand.vertices.withIndex()) {
             val digits = hand.weights.of(vertex).mapNotNull { (bone, _) -> person.bones[bone].digit?.patch }.toSet()
-            val own = address.patch.takeIf { it.startsWith("fingers:") }
-            assertTrue(digits.all { it == own }, "$address follows $digits")
+            assertTrue(digits.all { it in spannedBy(address.patch) }, "$address follows $digits")
         }
     }
 

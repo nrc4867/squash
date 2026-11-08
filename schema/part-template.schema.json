@@ -150,6 +150,9 @@
           "$ref": "#/$defs/Landmark"
         },
         {
+          "$ref": "#/$defs/Membrane"
+        },
+        {
           "$ref": "#/$defs/Pad"
         },
         {
@@ -533,6 +536,152 @@
         "name",
         "u",
         "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Membrane": {
+      "description": "A web spanned between neighbouring digits of a toe row listed before it, one patch a pair, named for the membrane and the pair's first digit.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "membrane"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on": {
+          "description": "The toe row whose digits it spans. The row is listed before the membrane.",
+          "type": "string"
+        },
+        "reach": {
+          "description": "How far up the digits its free edge meets them, as a share of each digit's span from its root.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "sag": {
+          "description": "How far its free edge dips toward its middle, as a share of its reach.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "How thick it is half way between two digits, as a share of their thickness.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "rings": {
+          "description": "Rings across it, from one digit to the other.",
+          "type": "integer",
+          "minimum": 4.0
+        },
+        "segments": {
+          "description": "Points round each ring, an even number.",
+          "type": "integer",
+          "minimum": 6.0
+        },
+        "between": {
+          "description": "The pairs of digits it spans; each digit with the next when left out, leaving out a digit turned back.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/MembranePair"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "on",
+        "reach",
+        "thickness",
+        "rings",
+        "segments"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MembranePair": {
+      "description": "Two digits a membrane spans, by their places in the row; reach in place of the membrane's.",
+      "type": "object",
+      "properties": {
+        "first": {
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "second": {
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "reach": {
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "first",
+        "second"
       ],
       "patternProperties": {
         "^x-": {}
@@ -1253,6 +1402,73 @@
             },
             {
               "type": "null"
+            }
+          ]
+        },
+        "section": {
+          "description": "Each digit's cross-section, a named profile or control points; round when left out. It shapes drawn digits too.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "enum": [
+                    "circle",
+                    "egg",
+                    "keel",
+                    "lens"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "description": "Each digit's width as a multiple of its thickness; a drawn Top's widths are kept.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "taper": {
+          "description": "Each digit's thickness at its tip as a share of its root's; a drawn Side's heights are kept.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "knuckle": {
+          "description": "How much each digit swells at each of its joints, as a fraction of its thickness; a drawn digit's sizes are kept.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
             }
           ]
         }

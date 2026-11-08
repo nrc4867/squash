@@ -12,6 +12,7 @@ import dev.chieppa.squash.geom.MeshBuilder
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.PatchMesh
 import dev.chieppa.squash.geom.blendedOverlaps
 
 /** Builds a part's patches and mesh from its template, parameter values and drawn outlines. */
@@ -71,14 +72,19 @@ object PartBuilder {
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())
 
-    /** The mesh of [patches], each vertex tagged with its joint's place in [JointTree.specs]. [checkCancelled] runs before each patch and throws to stop a stale run. */
+    /**
+     * The mesh of [patches], each vertex tagged with its joint's place in [JointTree.specs], a spanned patch's vertex with the one at its u
+     * on the patch it rides the more. [checkCancelled] runs before each patch and throws to stop a stale run.
+     */
     fun mesh(part: String, template: PartTemplate, patches: List<Patch>, checkCancelled: () -> Unit = {}): PartMesh {
         val tree = JointTree(template, patches.map { it.name })
         return PartMesh(
             part,
             patches.map { patch ->
                 checkCancelled()
-                MeshBuilder.build(patch) { u -> tree.boneAt(patch.name, u) }
+                val mesh = MeshBuilder.build(patch) { u -> tree.boneAt(patch.name, u) }
+                val spanned = patch.spanned ?: return@map mesh
+                PatchMesh(patch, mesh.indices, IntArray(mesh.vertexCount) { tree.boneAt(spanned.nearer(it), spanned.nearerU(it)) }, mesh.us, mesh.vs)
             },
             axes(template),
         )

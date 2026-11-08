@@ -39,20 +39,17 @@ private fun List<PatchMesh>.turnedBy(bend: JointBend): List<PatchMesh> {
         if (bend.v != null && patch.slices == null) return@map mesh
         val points = patch.points.copyOf()
         val normals = patch.proxyNormals?.copyOf()
-        val rings = patch.ringUs
         for (ring in 0 until patch.nu) {
-            val along = bendShare(patch.boneU ?: rings[ring], bend.u, patch.boneU != null)
-            if (along == 0f) continue
             for (segment in 0 until patch.nv) {
-                val share = along * sideShare(segment.toFloat() / patch.segments, bend.v)
-                if (share == 0f) continue
                 val i = patch.index(ring, segment)
+                val share = bendShare(patch.boneUOf(i), bend.u, patch.boneU != null) * sideShare(segment.toFloat() / patch.segments, bend.v)
+                if (share == 0f) continue
                 val radians = bend.degrees * DEGREES_TO_RADIANS * share
                 write(points, i, pivot + (patch.point(i) - pivot).turned(bend.hinge, radians))
                 normals?.let { write(it, i, read(it, i).turned(bend.hinge, radians)) }
             }
         }
-        PatchMesh(Patch(patch.name, patch.nu, patch.nv, patch.closedV, patch.slices, points, patch.boneU, normals), mesh.indices, mesh.bones, mesh.us, mesh.vs)
+        PatchMesh(patch.withPoints(points, normals), mesh.indices, mesh.bones, mesh.us, mesh.vs)
     }
 }
 

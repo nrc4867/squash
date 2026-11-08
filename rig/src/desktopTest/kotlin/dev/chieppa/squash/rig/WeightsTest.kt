@@ -36,10 +36,10 @@ class WeightsTest {
             val weights = checkNotNull(rig.part(part.id)).weights
             var vertex = 0
             for (patch in part.placed.surface.patches) for (local in 0 until patch.nu * patch.nv) {
-                val u = patch.boneU ?: patch.ringUs[local / patch.nv]
+                val u = patch.boneUOf(local)
                 val position = part.placed.origin + part.placed.surface.mesh.position(vertex)
                 val digit = part.joints.digitOf(patch.name)
-                val inBand = u < childBand ||
+                val inBand = patch.spanned != null || u < childBand ||
                     digit != null && part.joints.digits[digit].joints.withIndex().any { (k, joint) -> abs(u - joint.u) < own.digitHalfWidths[digit][k] } ||
                     digit == null && joints.indices.any { k -> k > 0 && abs(u - part.joints.specs[k].u) < joints[k] } ||
                     rims.any { (anchor, reach) -> (position - anchor).length < reach }

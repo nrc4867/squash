@@ -34,9 +34,9 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1),
-                "foot-bird" to listOf(1, 2), "hand" to listOf(1, 2), "head-bird" to listOf(1), "head-round" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
-                "leg-bird" to listOf(1), "paw" to listOf(1, 2), "sheet" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
+                "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2),
+                "foot-bird" to listOf(1, 2, 3), "hand" to listOf(1, 2, 3), "head-bird" to listOf(1), "head-round" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
+                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3), "sheet" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1),
             ),
             versions,

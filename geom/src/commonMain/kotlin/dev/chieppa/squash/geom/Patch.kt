@@ -22,8 +22,9 @@ data class Slice(
 /**
  * A named surface: a fixed grid of [nu] rings by [nv] points, closed in v for a tube and open for a sheet. A ring whose
  * points all coincide is a pole. [slices] is present for swept patches. [boneU] is the u along the part that every
- * vertex takes its bone from, for a patch whose own u does not run along the part. [proxyNormals] holds a swept patch's
- * shading normal per point, three values each, as the slice build derives them; a patch without them shades by its mesh normal.
+ * vertex takes its bone from, for a patch whose own u does not run along the part. [spanned] says, for a patch spanned between two
+ * others, where on each of them every vertex takes its bones from. [proxyNormals] holds a swept patch's shading normal per point,
+ * three values each, as the slice build derives them; a patch without them shades by its mesh normal.
  */
 class Patch(
     val name: String,
@@ -34,10 +35,15 @@ class Patch(
     val points: FloatArray,
     val boneU: Float? = null,
     val proxyNormals: FloatArray? = null,
+    val spanned: Spanned? = null,
 ) {
     init {
         require(points.size == nu * nv * COMPONENTS) { "Patch $name holds ${points.size} values for a $nu by $nv grid" }
+        require(spanned == null || spanned.vertexCount == nu * nv) { "Patch $name spans ${spanned?.vertexCount} vertices for a $nu by $nv grid" }
     }
+
+    /** The u along the part that the vertex at [local] takes its bone from. */
+    fun boneUOf(local: Int): Float = boneU ?: spanned?.u(local) ?: ringUs[local / nv]
 
     /** The u of each ring: its slice's, or evenly spaced from 0 to 1 on a patch with no slices. */
     val ringUs: FloatArray by lazy { FloatArray(nu) { slices?.get(it)?.u ?: (it.toFloat() / (nu - 1)) } }
@@ -75,15 +81,18 @@ class Patch(
             val point = i / COMPONENTS
             values[((point / columns) * nv + (point % columns) % nv) * COMPONENTS + i % COMPONENTS]
         }
-        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened))
+        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened), spanned?.reopened(nu, nv))
     }
 
     /** This patch shading by [normals], three values per point. */
-    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals)
+    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals, spanned)
+
+    /** This patch with its points moved to [moved] and its shading normals to [normals], everything addressed by u and v kept. */
+    fun withPoints(moved: FloatArray, normals: FloatArray?) = Patch(name, nu, nv, closedV, slices, moved, boneU, normals, spanned)
 
     override fun equals(other: Any?): Boolean =
         other is Patch && name == other.name && nu == other.nu && nv == other.nv && closedV == other.closedV &&
-            slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU
+            slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU && spanned == other.spanned
 
     override fun hashCode(): Int = 31 * (31 * name.hashCode() + nu) + points.contentHashCode()
 

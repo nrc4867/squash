@@ -39,7 +39,7 @@ private const val ARM_OUTWARD = 12f
 const val HAIR_SOCKET = 1
 
 /** The template versions the example takes past the first. */
-private val NEWER = mapOf("hand" to 2)
+private val NEWER = mapOf("hand" to 3, "foot" to 2)
 
 private fun ref(id: String) = TemplateRef(TemplateId(id), NEWER[id] ?: 1)
 

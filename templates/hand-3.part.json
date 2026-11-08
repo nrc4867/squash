@@ -1,0 +1,35 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hand",
+  "version": 3,
+  "name": "Hand",
+  "role": "hand",
+  "axis": { "rest": [0, -1, 0], "length": 0.24 },
+  "openEnd": null,
+  "topology": { "rings": 32, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "egg",
+  "params": {
+    "size":   { "default": 1.0, "min": 0.4, "max": 2.5 },
+    "spread": { "default": 8, "min": 0, "max": 30, "unit": "deg" },
+    "pads":   { "default": false },
+    "webs":   { "default": true }
+  },
+  "blocks": [
+    { "kind": "tube",   "name": "palm", "u": [0.0, 0.62], "radius": 0.15, "width": 1.6 },
+    { "kind": "toeRow", "name": "fingers", "u": [0.56, 1.0], "count": 5, "spread": "$spread", "radius": 0.055, "v": 0.5, "rings": 16, "segments": 12, "flare": 0.5,
+      "section": "egg", "width": 1.1, "taper": 0.8, "knuckle": 0.12,
+      "joints": { "at": [0.12, 0.52, 0.78], "hinge": "x", "limits": [-10, 90] },
+      "digits": [ { "index": 0, "u": [0.22, 0.66], "across": -1.3, "angle": -38, "joints": [0.25, 0.65] } ] },
+    { "kind": "membrane", "name": "web", "on": "fingers", "if": "$webs", "reach": 0.32, "sag": 0.45, "thickness": 0.35, "rings": 8, "segments": 16,
+      "between": [ { "first": 0, "second": 1, "reach": 0.5 }, { "first": 1, "second": 2 }, { "first": 2, "second": 3 }, { "first": 3, "second": 4 } ] },
+    { "kind": "pad",    "name": "palm", "u": 0.32, "v": 0.5, "size": 0.14, "if": "$pads", "color": "pad", "rings": 7, "segments": 12 },
+    { "kind": "cap",    "end": "start", "shape": "round" },
+    { "kind": "cap",    "end": "end", "shape": "round" },
+    { "kind": "joint",  "name": "wrist", "u": 0.0, "hinge": "x", "limits": [-60, 60] },
+    { "kind": "area",   "name": "back", "u": [0.0, 0.62], "v": [0.75, 0.25], "tag": "fill" },
+    { "kind": "area",   "name": "fingers", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "fingers" },
+    { "kind": "area",   "name": "web", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "web" }
+  ]
+}

@@ -35,7 +35,7 @@ class CharacterFactoryTest {
     fun templatesListInTheOrderThePlanReachesThem() {
         assertEquals(
             listOf(
-                "torso", "head", "ear", "leg", "paw", "tail", "arm", "beak-lower", "beak", "blob", "fin", "foot-bird", "foot", "hand", "head-bird", "head-round",
+                "torso", "head", "ear", "leg", "paw", "tail", "arm", "beak-lower", "beak", "blob", "fin", "foot", "foot-bird", "hand", "head-bird", "head-round",
                 "leg-bird", "sheet", "tail-feathers", "torso-bird", "torso-upright", "tube", "wing-feathered",
             ),
             caninePlan.templateOrder(shipped).map { it.id.value },

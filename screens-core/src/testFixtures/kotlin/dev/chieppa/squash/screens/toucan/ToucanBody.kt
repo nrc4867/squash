@@ -39,7 +39,7 @@ private const val WING_DOWN = -50f
 private const val LEG_SIZE = 0.75f
 
 /** The template versions the example takes past the first. */
-private val NEWER = mapOf("foot-bird" to 2)
+private val NEWER = mapOf("foot-bird" to 3)
 
 private fun ref(id: String) = TemplateRef(TemplateId(id), NEWER[id] ?: 1)
 
