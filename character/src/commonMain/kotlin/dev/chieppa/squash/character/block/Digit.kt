@@ -4,6 +4,7 @@ import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
+import dev.chieppa.squash.character.model.Limits
 import dev.chieppa.squash.character.model.Span
 import kotlinx.serialization.Serializable
 
@@ -27,10 +28,13 @@ data class Digit(
     val angle: Float? = null,
     @Doc("Where this digit's joints sit as shares of its span from its root, in place of the row's.")
     val joints: List<Float>? = null,
+    @Doc("Degrees this digit's joints turn within, in place of the row's, so each digit of a row can close along its own path.")
+    val limits: Limits? = null,
 ) {
     fun lint(ctx: LintContext, field: String): List<Finding> =
         (if (index < 0) ctx.finding("$field.index", "a digit's index is 0 or more") else emptyList()) +
             (u?.let { ctx.unit("$field.u", it) } ?: emptyList()) +
             (joints?.let { DigitJoints.lintShares(ctx, "$field.joints", it) } ?: emptyList()) +
+            (limits?.takeIf { it.min > it.max }?.let { ctx.finding("$field.limits", "minimum is above maximum") } ?: emptyList()) +
             (across?.takeIf { it !in -MAX_ACROSS..MAX_ACROSS }?.let { ctx.finding("$field.across", "$it is outside -$MAX_ACROSS to $MAX_ACROSS") } ?: emptyList())
 }

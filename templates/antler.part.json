@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "antler",
+  "version": 1,
+  "name": "Antler",
+  "role": "horn",
+  "axis": { "rest": [-0.34, 0.94, 0], "length": 0.22 },
+  "openEnd": "start",
+  "topology": { "rings": 24, "segments": 12 },
+  "views": { "side": "height", "top": "width" },
+  "section": "circle",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
+    "girth": { "default": 0.11, "min": 0.04, "max": 0.4 }
+  },
+  "blocks": [
+    { "kind": "tube",   "u": [0.0, 1.0], "radius": "$girth", "taper": 0.55 },
+    { "kind": "cap",    "end": "end", "shape": "round" },
+    { "kind": "socket", "name": "tip",  "u": 1.0,  "v": 0.0, "outward": "axis" },
+    { "kind": "socket", "name": "tine", "u": 0.55, "v": 0.0, "outward": "normal", "tilt": 30 }
+  ]
+}

@@ -112,7 +112,7 @@ data class ToeRow(
             val patch = "$rowName:$i"
             val shares = digit?.joints ?: spec.at
             val specs = shares.mapIndexed { k, share ->
-                JointSpec("$patch.${k + 1}", span.start + (span.end - span.start) * share, null, spec.hinge, spec.limits, stretch = false)
+                JointSpec("$patch.${k + 1}", span.start + (span.end - span.start) * share, null, spec.hinge, digit?.limits ?: spec.limits, stretch = false)
             }
             DigitChain(patch, i, span, pointsBack(i), specs)
         }.toList()

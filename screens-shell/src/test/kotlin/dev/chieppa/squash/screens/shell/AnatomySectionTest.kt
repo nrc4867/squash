@@ -11,7 +11,9 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.HandJoints
@@ -178,7 +180,7 @@ class AnatomySectionTest {
 
         onNodeWithTag(ShellTags.TEMPLATE_MENU).performScrollTo().performClick()
         waitForIdle()
-        onNodeWithText("Long leg").performClick()
+        onNodeWithText("Long leg").performSemanticsAction(SemanticsActions.OnClick)
         waitForIdle()
         assertEquals(longLeg, session.document.value.character.part(LEG_A)?.template?.id, "the Template menu offers it")
 

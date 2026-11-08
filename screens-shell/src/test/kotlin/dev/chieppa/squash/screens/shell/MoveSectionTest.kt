@@ -21,6 +21,7 @@ import dev.chieppa.squash.screens.deletePickedSocket
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.move.MoveMode
+import dev.chieppa.squash.screens.pickSocket
 import dev.chieppa.squash.screens.pickedOutward
 import dev.chieppa.squash.screens.setOutward
 import dev.chieppa.stretch.theme.StretchTheme
@@ -31,7 +32,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-/** The Move section's Place part and Add socket, its Outward angle, Pair and Delete socket. */
+/** The Move section's Place part and Add socket, its Outward angle, Pair, Count and the row's sizes, and Delete socket. */
 @OptIn(ExperimentalTestApi::class)
 class MoveSectionTest {
     private val work = TestWork()
@@ -94,5 +95,22 @@ class MoveSectionTest {
         onNodeWithTag(ShellTags.SOCKET_DELETE).assertIsNotEnabled()
         state.deletePickedSocket()
         assertEquals(listOf(1), HandSockets.ids(torsoParams()), "a held socket stays")
+    }
+
+    @Test
+    fun countAboveOneShowsTheRowsSizesAndAPickedRowDeletesWhole() = runComposeUiTest {
+        state.move.mode.value = MoveMode.ADD_SOCKET
+        setContent { StretchTheme(StretchThemes.Ink) { Column { ShapeInspector(state) { _, _, _, _, _ -> } } } }
+        onNodeWithTag(ShellTags.SOCKET_COUNT).assertExists()
+        onNodeWithTag(ShellTags.SOCKET_FALLOFF).assertDoesNotExist()
+        state.move.count.value = 4
+        waitForIdle()
+        onNodeWithTag(ShellTags.SOCKET_SIZE).assertExists()
+        onNodeWithTag(ShellTags.SOCKET_FALLOFF).assertExists()
+        session.send(HandSockets.addRow(TORSO, 1, 0.8f, 0.2f, 0f, 0f, false, 4, 1f, 0.5f))
+        state.pickSocket(TORSO, HandSockets.member(1, 2))
+        assertEquals(picked, state.move.picked.value, "a socket of a row picks the row")
+        state.deletePickedSocket()
+        assertEquals(emptyList(), torsoParams().keys.filter { HandSockets.isHandSocket(it) }, "the row goes whole")
     }
 }

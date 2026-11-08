@@ -47,7 +47,11 @@ import dev.chieppa.squash.uidesign.generated.move_rest_forward
 import dev.chieppa.squash.uidesign.generated.move_rest_out
 import dev.chieppa.squash.uidesign.generated.move_rest_up
 import dev.chieppa.squash.uidesign.generated.move_section
+import dev.chieppa.squash.uidesign.generated.move_socket_count
 import dev.chieppa.squash.uidesign.generated.move_socket_delete
+import dev.chieppa.squash.uidesign.generated.move_socket_falloff
+import dev.chieppa.squash.uidesign.generated.move_socket_size
+import dev.chieppa.squash.uidesign.generated.place_percent
 import dev.chieppa.squash.uidesign.generated.move_socket_outward
 import dev.chieppa.squash.uidesign.generated.move_socket_pair
 import dev.chieppa.stretch.frame.DrawerSection
@@ -60,8 +64,16 @@ import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Toggle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 private val REST_WIDTH = 120.dp
+
+private const val PERCENT = 100f
+
+/** The least share a row's first size or its falloff may take, and the most for each. */
+private const val ROW_SHARE_MIN = 0.1f
+private const val ROW_SIZE_MAX = 2.5f
+private const val ROW_FALLOFF_MAX = 2f
 
 /** The Move modes as the board's two-by-two grid draws them, a row at a time. */
 private val MODE_ROWS = listOf(listOf(MoveMode.PLACE_PART, MoveMode.ADD_SOCKET), listOf(MoveMode.ADD_JOINT, MoveMode.ADD_LANDMARK))
@@ -155,6 +167,7 @@ internal fun SocketControls(state: AppState, session: CharacterSession) {
         Spacer(Modifier.weight(1f))
         Toggle(pair, { state.move.pair.value = it }, pairLabel, Modifier.testTag(ShellTags.SOCKET_PAIR))
     }
+    RowControls(state)
     val deletable = picked != null && !state.pickedSocketHolds()
     SettingRow("") {
         Button(
@@ -165,6 +178,31 @@ internal fun SocketControls(state: AppState, session: CharacterSession) {
             icon = SquashIcons.DeleteSocket,
             enabled = deletable,
         )
+    }
+}
+
+/** How many sockets the next press places in a row, and with more than one the size a part on its first starts at and the falloff to its last. */
+@Composable
+private fun RowControls(state: AppState) {
+    val count by state.move.count.collectAsState()
+    val size by state.move.size.collectAsState()
+    val falloff by state.move.falloff.collectAsState()
+    val countLabel = stringResource(Res.string.move_socket_count)
+    SettingRow(countLabel) {
+        Spacer(Modifier.weight(1f))
+        NumberField(count.toFloat(), { state.move.count.value = it.roundToInt().coerceIn(1, HandSockets.MAX_COUNT) }, countLabel, Modifier.testTag(ShellTags.SOCKET_COUNT), range = 1f..HandSockets.MAX_COUNT.toFloat())
+    }
+    if (count <= 1) return
+    val percent = stringResource(Res.string.place_percent)
+    val sizeLabel = stringResource(Res.string.move_socket_size)
+    SettingRow(sizeLabel) {
+        Spacer(Modifier.weight(1f))
+        NumberField(size * PERCENT, { state.move.size.value = (it / PERCENT).coerceIn(ROW_SHARE_MIN, ROW_SIZE_MAX) }, sizeLabel, Modifier.testTag(ShellTags.SOCKET_SIZE), unit = percent, range = ROW_SHARE_MIN * PERCENT..ROW_SIZE_MAX * PERCENT)
+    }
+    val falloffLabel = stringResource(Res.string.move_socket_falloff)
+    SettingRow(falloffLabel) {
+        Spacer(Modifier.weight(1f))
+        NumberField(falloff * PERCENT, { state.move.falloff.value = (it / PERCENT).coerceIn(ROW_SHARE_MIN, ROW_FALLOFF_MAX) }, falloffLabel, Modifier.testTag(ShellTags.SOCKET_FALLOFF), unit = percent, range = ROW_SHARE_MIN * PERCENT..ROW_FALLOFF_MAX * PERCENT)
     }
 }
 

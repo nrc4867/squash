@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "spike",
+  "version": 1,
+  "name": "Spike",
+  "role": "horn",
+  "axis": { "rest": [-0.5, 0.866, 0], "length": 0.22 },
+  "openEnd": "start",
+  "topology": { "rings": 16, "segments": 12 },
+  "views": { "side": "height", "top": "width" },
+  "section": "lens",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.1, "max": 2.5 },
+    "girth": { "default": 0.32, "min": 0.1, "max": 1.0 }
+  },
+  "blocks": [
+    { "kind": "tube", "u": [0.0, 1.0], "radius": "$girth", "taper": 0.15 },
+    { "kind": "cap",  "end": "end", "shape": "pointed" }
+  ]
+}

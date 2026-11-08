@@ -12,7 +12,7 @@ Twenty-five commits since the Build workspace was restructured, none pushed, all
 
 **Stage 5, any shape** (`a5a7e07` to `0385245`, plan in `stage-5.md`). Roles on parts, read by Pose, Add part and the rig instead of template ids. Hand-made sockets, joints and landmarks as part parameters through Move. Generic `tube`, `blob` and `sheet` templates and the Blank plan. Pair with…, Save as template into the app data folder, re-templating, a per-part rest direction. The biped plan with `arm`, `hand`, `foot`, `head-round`, `torso-upright`; the bird plan with `beak` in two parts sharing the jaw, `head-bird` with side-set eyes, `leg-bird`, `foot-bird`, `tail-feathers`, `torso-bird`; `wing-feathered`.
 
-**Example characters** under `examples/`, each built from commands by a fixture under `screens-core/src/testFixtures/` and rewritten by `./gradlew :screens-core:test -PupdateGoldens`: `fennec`, `fennec-winged`, `koi`, `lizard`, `person`, `toucan`.
+**Example characters** under `examples/`, each built from commands by a fixture under `screens-core/src/testFixtures/` and rewritten by `./gradlew :screens-core:test -PupdateGoldens`: `dragon`, `fennec`, `fennec-winged`, `koi`, `lizard`, `person`, `toucan`.
 
 ## What nobody has looked at
 
@@ -48,8 +48,8 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 3. **Finish stage 5's round 3: the fish plan.** A `fin` template as a named sheet and a fish plan over the koi's parts, with the koi regenerated from its plan. Small, since the koi exists; it closes exit criterion 5.
 4. **Fingers.** Built on branch `fingers` from `stage-6-fingers.md`: digit chains from the toe row's `joints` (three a finger, two for the thumb, the bird foot's hind toe and a paw's toes), weights per digit, the Rig stage's Bones per digit, Curl on Pose's limb section, `hand`, `foot-bird` and `paw` at version 2. Left for the verify pass: the curl's feel on a real hand, Turn's rings on a finger joint at the panes' size, and whether a fennec's paw reads its toes as First toe on. Tip sockets for claws and nails come with later anatomy.
 5. **The Shot workspace.** Pose is a stage under Build; the Shot boards (14 settle and touch up, 15 timing, 16 scene, 17 render, and the Shot board for eyes and gaze that `future.md` places before the posing screens) are not drawn. Correct pose and the pose library, out of stage 4's scope, belong here. This is the app's second half as the original plan drew it.
-6. **Hands, paws and feet.** The membrane block and per-digit shape are built (`digit-shape`), and the implicit blend as displacement as a spike (`blend-spike`, unmerged); next a palm that narrows and cups and a web that meets its digits tangentially, from the known-gaps entry above.
-7. **Later anatomy** from `stage-5.md`'s out-of-scope list: `wing-membrane` and the membrane block for dragons and bats, socket rows for spines and frills, tip sockets for antlers, horns and claws.
+6. **Hands, paws and feet.** The membrane block and per-digit shape are built (`digit-shape`), and the implicit blend as displacement as a spike (`blend-spike`); next a palm that narrows and cups and a web that meets its digits tangentially, from the known-gaps entry above.
+7. **Later anatomy.** `stage-8-later-anatomy.md`, on branch `membrane-wings`: `wing-membrane` (an arm, four long fingers each closing on its own path, webs between them and skin from the last finger back along the arm, folded by Curl), hand-made rows of sockets that size what Add part places on them and fill in one step, the `spike` and `plate` templates, and `horn` and `antler` (an antler chains through a socket at its tip), on the dragon, `examples/dragon.json`. Left from its round 3: a tip socket per digit of a toe row, the `claw` template on it, and claws on the dragon's toes.
 
 ## Work order
 
@@ -64,7 +64,7 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 | 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | landed |
 | 3 | `digit-shape` | The membrane block between digits and per-digit shape (sections, taper, knuckles), in hand, paw, bird foot and foot at their next versions; `stage-7-digit-shape.md` | `fingers` | landed |
 | 3 | `blend-spike` | The implicit blend as displacement, from the papers, as a spike: the `blend` block (in-part fillets and socket fillets), test-only variants, the close views on and off and a benchmark; `spike-implicit-blend.md` | `digit-shape` | landed |
-| 4 | `membrane-wings` and later anatomy | `wing-membrane`, socket rows, tip sockets, horns and claws | `digit-shape` | waiting |
+| 4 | `membrane-wings` | `stage-8-later-anatomy.md`: `wing-membrane` and the dragon (round 1), socket rows (round 2), tip sockets, horns and claws (round 3) | `digit-shape` | rounds 1 and 2 landed, round 3 in part: horns and antlers landed, digit tip sockets and claws waiting |
 | 5 | Shot | Boards 14 to 17 and the eyes-and-gaze Shot board drawn, a stage note, then the workspace in rounds | Nicholas's answers to the open questions on the Shot boards (S1 to S6 drawn on the restructure canvas, planned) | waiting |
 | Nicholas | none | The verify pass, then `pose-boards` from what it finds, and the decisions above | a sitting with the app open | waiting |
 

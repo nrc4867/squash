@@ -1,9 +1,11 @@
 package dev.chieppa.squash.character.catalog
 
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.character.role.PartRoles
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartData
@@ -15,8 +17,8 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.Ulid
 
-/** An empty socket on a placed part: where a part can go next, and which loaded templates it takes. */
-data class OpenSocket(val parent: PartId, val name: String, val takes: List<TemplateId>, val paired: Boolean) {
+/** An empty socket on a placed part: where a part can go next, which loaded templates it takes, and the size a part placed there starts at. */
+data class OpenSocket(val parent: PartId, val name: String, val takes: List<TemplateId>, val paired: Boolean, val scale: Float = 1f) {
     val ref: SocketRef get() = SocketRef(parent, name)
 }
 
@@ -37,7 +39,7 @@ fun openSockets(document: SquashDocument, plan: BodyPlan, templates: TemplateFol
             val takes = if (spec.takes.isEmpty()) templates.newest.map { it.id } else spec.takes.filter { templates.template(it) != null }
             when {
                 takes.isEmpty() || SocketRef(part.id, spec.name) in filled -> null
-                else -> OpenSocket(part.id, spec.name, takes, spec.pair != null || part.pair != null)
+                else -> OpenSocket(part.id, spec.name, takes, spec.pair != null || part.pair != null, spec.scale)
             }
         }
     }
@@ -75,4 +77,26 @@ fun placeOnSocket(
         instance(parent.id, pair, Side.LEFT),
         instance(twin?.id ?: parent.id, pair, Side.RIGHT),
     )
+}
+
+/**
+ * The instances [template] makes on [socket] and, where [socket] is one of a hand-made row, on every other socket of that row in
+ * [open] that takes it, each with what it starts from: [start], at the size its socket gives where that is not 1 and [template]
+ * has a size. So Add part fills a row of spines in one step, each smaller than the last. See HLD: data-model, Hand-made sockets.
+ */
+fun placeOnRow(
+    socket: OpenSocket,
+    open: List<OpenSocket>,
+    template: PartTemplate,
+    document: SquashDocument,
+    start: PartData = PartData(),
+    roles: PartRoles? = null,
+    id: () -> String = Ulid::next,
+): List<Pair<List<PartInstance>, PartData>> {
+    val row = HandSockets.rowOf(socket.name)
+    val targets = if (row == null) listOf(socket) else listOf(socket) + open.filter { it != socket && it.parent == socket.parent && HandSockets.rowOf(it.name) == row && template.id in it.takes }
+    return targets.sortedBy { it.name.substringAfterLast('.').toIntOrNull() ?: 0 }.map { target ->
+        val data = if (target.scale != 1f && SIZE_PARAM in template.params) start.copy(params = start.params + (SIZE_PARAM to target.scale)) else start
+        placeOnSocket(target, template, document, data, roles, id) to data
+    }
 }

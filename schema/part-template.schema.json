@@ -394,6 +394,22 @@
               "type": "null"
             }
           ]
+        },
+        "limits": {
+          "description": "Degrees this digit's joints turn within, in place of the row's, so each digit of a row can close along its own path.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -630,7 +646,7 @@
       "additionalProperties": false
     },
     "Membrane": {
-      "description": "A web spanned between neighbouring digits of a toe row listed before it, one patch a pair, named for the membrane and the pair's first digit.",
+      "description": "A web spanned between neighbouring digits of a toe row listed before it, or a digit and the part's own run, one patch a pair, named for the membrane and the pair's first digit.",
       "type": "object",
       "properties": {
         "kind": {
@@ -736,7 +752,7 @@
       "additionalProperties": false
     },
     "MembranePair": {
-      "description": "Two digits a membrane spans, by their places in the row; reach in place of the membrane's.",
+      "description": "Two rails a membrane spans: a digit of the row by its place, and a second digit or, with along, the part's own run; reach in place of the membrane's.",
       "type": "object",
       "properties": {
         "first": {
@@ -744,8 +760,33 @@
           "minimum": 0.0
         },
         "second": {
-          "type": "integer",
-          "minimum": 0.0
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "along": {
+          "description": "The part's own run as the second rail, from u at the rail's root to u at its edge, in place of a second digit.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "reach": {
           "anyOf": [
@@ -767,8 +808,7 @@
         }
       },
       "required": [
-        "first",
-        "second"
+        "first"
       ],
       "patternProperties": {
         "^x-": {}

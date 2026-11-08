@@ -79,12 +79,15 @@ private val ENTER_KEYS = listOf("Enter")
 @Composable
 fun openSocketCount(socket: OpenSocket): String = stringResource(if (socket.paired) Res.string.add_part_pair else Res.string.add_part_one)
 
-/** Names for [sockets] as the panels read them: socket 1 for a hand-made one, else the socket's own name. */
+/** Names for [sockets] as the panels read them: socket 1 for a hand-made one or any socket of hand-made row 1, else the socket's own name. */
 @Composable
 fun socketNames(sockets: List<OpenSocket>): (String) -> String {
-    val numbered = sockets.mapNotNull { HandSockets.idOf(it.name) }.associateWith { stringResource(Res.string.move_socket_name, it) }
-    return { name -> HandSockets.idOf(name)?.let(numbered::get) ?: displayName(name) }
+    val numbered = sockets.mapNotNull { handNumber(it.name) }.associateWith { stringResource(Res.string.move_socket_name, it) }
+    return { name -> handNumber(name)?.let(numbered::get) ?: displayName(name) }
 }
+
+/** The number of the hand-made socket or row [socket] is, or null for any other socket. */
+private fun handNumber(socket: String): Int? = HandSockets.idOf(socket) ?: HandSockets.rowOf(socket)
 
 /**
  * Add part's section in the Shape inspector: every open socket, the one its popover is open on lit, a row opening the popover there;
@@ -123,7 +126,7 @@ fun AddPartPopover(state: AppState) {
     val types = open.takes.mapNotNull { state.templates.template(it) }
     val template = types.firstOrNull { it.id == chosen } ?: types.firstOrNull() ?: return
     val focus = remember { FocusRequester() }
-    val number = HandSockets.idOf(open.name)
+    val number = handNumber(open.name)
     val parent = state.session.value?.document?.value?.character?.part(open.parent)
     val title = if (number != null && parent != null) {
         stringResource(Res.string.add_part_on_socket, partName(parent, state.templates), stringResource(Res.string.move_socket_name, number))

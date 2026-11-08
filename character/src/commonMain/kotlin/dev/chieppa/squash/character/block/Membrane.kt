@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
+import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.MembraneBuilder
 import dev.chieppa.squash.geom.MembraneRail
 import dev.chieppa.squash.geom.MembraneShape
@@ -18,20 +19,25 @@ import kotlinx.serialization.Serializable
 private const val DEFAULT_NAME = "web"
 private const val SEPARATOR = ":"
 
-/** Two digits of a row a membrane spans, by their places in the row, with how far up them it reaches when not the membrane's. */
+/**
+ * Two rails a membrane spans: digit [first] of the row and digit [second], or in place of a second digit the part's own run
+ * [along] a span of u read from the rail's root to its edge, with how far up them it reaches when not the membrane's.
+ */
 @Serializable
-@Doc("Two digits a membrane spans, by their places in the row; reach in place of the membrane's.")
+@Doc("Two rails a membrane spans: a digit of the row by its place, and a second digit or, with along, the part's own run; reach in place of the membrane's.")
 data class MembranePair(
     @Range(min = 0.0)
     val first: Int,
     @Range(min = 0.0)
-    val second: Int,
+    val second: Int? = null,
+    @Doc("The part's own run as the second rail, from u at the rail's root to u at its edge, in place of a second digit.")
+    val along: Span? = null,
     val reach: Param? = null,
 )
 
 @Serializable
 @SerialName("membrane")
-@Doc("A web spanned between neighbouring digits of a toe row listed before it, one patch a pair, named for the membrane and the pair's first digit.")
+@Doc("A web spanned between neighbouring digits of a toe row listed before it, or a digit and the part's own run, one patch a pair, named for the membrane and the pair's first digit.")
 data class Membrane(
     override val name: String? = null,
     @SerialName("if") override val condition: ParamRef? = null,
@@ -62,10 +68,10 @@ data class Membrane(
         val shape = MembraneShape(ctx.value(thickness), ctx.value(sag))
         return pairs(row, digits.keys.filterNotNull().sorted()).mapNotNull { pair ->
             val first = digits[pair.first] ?: return@mapNotNull null
-            val second = digits[pair.second] ?: return@mapNotNull null
             ctx.checkCancelled()
             val share = ctx.value(pair.reach ?: reach)
-            MembraneBuilder.membrane(patchName + SEPARATOR + pair.first, rail(first, share), rail(second, share), rings, segments, shape)
+            val second = pair.along?.let { runRail(ctx, it, share) } ?: pair.second?.let(digits::get)?.let { rail(it, share) } ?: return@mapNotNull null
+            MembraneBuilder.membrane(patchName + SEPARATOR + pair.first, rail(first, share), second, rings, segments, shape)
         }
     }
 
@@ -77,6 +83,16 @@ data class Membrane(
         val slices = requireNotNull(digit.slices) { "Digit ${digit.name} has no slices" }
         val root = slices.first().u
         return MembraneRail(digit, root, root + (slices.last().u - root) * share)
+    }
+
+    /** The part's own run covering [along], as a rail from its root at [along]'s start toward its edge, [share] of the way to its end. */
+    private fun runRail(ctx: BuildContext, along: Span, share: Float): MembraneRail? {
+        val low = minOf(along.start, along.end)
+        val high = maxOf(along.start, along.end)
+        val run = ctx.built.firstOrNull { patch ->
+            patch.spanned == null && !patch.name.startsWith(on + SEPARATOR) && patch.slices?.let { it.first().u <= low && it.last().u >= high } == true
+        } ?: return null
+        return MembraneRail(run, along.start, along.start + (along.end - along.start) * share)
     }
 
     override fun lint(ctx: LintContext): List<Finding> {
@@ -91,7 +107,9 @@ data class Membrane(
             between.orEmpty().flatMapIndexed { i, pair ->
                 ctx.param("between[$i].reach", pair.reach) +
                     (if (pair.first == pair.second) ctx.finding("between[$i]", "a pair spans two digits") else emptyList()) +
-                    (if (pair.first < 0 || pair.second < 0) ctx.finding("between[$i]", "a digit's place is 0 or more") else emptyList())
+                    (if ((pair.second == null) == (pair.along == null)) ctx.finding("between[$i]", "a pair names a second digit or a run along the part, not both") else emptyList()) +
+                    (pair.along?.let { ctx.unit("between[$i].along.start", it.start) + ctx.unit("between[$i].along.end", it.end) } ?: emptyList()) +
+                    (if (pair.first < 0 || (pair.second ?: 0) < 0) ctx.finding("between[$i]", "a digit's place is 0 or more") else emptyList())
             } +
             between.orEmpty().groupBy { it.first }.filter { it.value.size > 1 }.keys.flatMap { ctx.finding("between", "two pairs start at digit $it") }
     }

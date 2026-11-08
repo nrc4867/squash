@@ -29,3 +29,6 @@ val personRig: Rig by lazy { exampleRig("person.json") }
 
 /** The example toucan, rigged once for every test that reads it. */
 val toucanRig: Rig by lazy { exampleRig("toucan.json") }
+
+/** The example dragon, rigged once for every test that reads it. */
+val dragonRig: Rig by lazy { exampleRig("dragon.json") }

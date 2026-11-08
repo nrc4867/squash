@@ -66,7 +66,7 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
             Slider(bend, { sliders.change(SetBoneAngle(knee.name.part, knee.name.joint, it, mirror)) }, bendLabel, Modifier.weight(1f).testTag(PoseInspectorTags.BEND), range, sliders::done)
             Readout(stringResource(Res.string.pose_degrees, bend.roundToInt()))
         }
-        limb.paw?.let { paw -> CurlRow(session, rig, character, paw, mirror, sliders) }
+        CurlRow(session, rig, character, limb.paw ?: limb.leg, mirror, sliders)
         if (end.stretch) {
             val stretch = ankle?.stretch ?: 1f
             SettingRow(lengthLabel) {
@@ -78,7 +78,7 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
     }
 }
 
-/** Curl: one value closing every digit of [paw], and its twin's with [mirror], as a share of each digit joint's upper limit. */
+/** Curl: one value closing every digit of [paw], the limb's end or a limb with digits of its own such as a membrane wing, and its twin's with [mirror], as a share of each digit joint's upper limit. */
 @Composable
 private fun CurlRow(session: CharacterSession, rig: Rig, character: Character, paw: PartId, mirror: Boolean, sliders: SliderGesture) {
     val curl = rig.curlOf(character.pose, paw) ?: return

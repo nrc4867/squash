@@ -323,6 +323,9 @@
     <string name="move_socket_outward">Outward angle</string>
     <string name="move_socket_pair">Pair</string>
     <string name="move_socket_delete">Delete socket</string>
+    <string name="move_socket_count">Count</string>
+    <string name="move_socket_size">First size</string>
+    <string name="move_socket_falloff">Last size</string>
     <string name="move_socket_name">socket %1$d</string>
     <string name="move_status_tool">Shape · %1$s</string>
     <string name="move_status_add_socket">%1$s · add socket · %2$d parts</string>

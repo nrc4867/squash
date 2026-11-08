@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "horn",
+  "version": 1,
+  "name": "Horn",
+  "role": "horn",
+  "axis": { "rest": [-0.64, 0.77, 0], "length": 0.24 },
+  "openEnd": "start",
+  "topology": { "rings": 24, "segments": 12 },
+  "views": { "side": "height", "top": "width" },
+  "section": "circle",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
+    "girth": { "default": 0.2,  "min": 0.05, "max": 0.6 }
+  },
+  "blocks": [
+    { "kind": "tube", "u": [0.0, 1.0], "radius": "$girth", "taper": 0.12 },
+    { "kind": "cap",  "end": "end", "shape": "pointed" }
+  ]
+}

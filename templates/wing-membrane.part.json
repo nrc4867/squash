@@ -1,0 +1,41 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "wing-membrane",
+  "version": 1,
+  "name": "Membrane wing",
+  "role": "wing",
+  "axis": { "rest": [-0.33, 0, -0.944], "length": 0.6 },
+  "openEnd": "start",
+  "topology": { "rings": 48, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "thickness": { "default": 0.045, "min": 0.02, "max": 0.2 },
+    "sag":       { "default": 0.22, "min": 0.0, "max": 0.6 }
+  },
+  "blocks": [
+    { "kind": "tube",   "name": "body", "u": [0.0, 0.4], "radius": "$thickness", "taper": 0.6 },
+    { "kind": "toeRow", "name": "fingers", "u": [0.38, 1.0], "count": 4, "spread": 0, "radius": 0.016, "v": 0.5, "rings": 16, "segments": 8,
+      "taper": 0.45, "knuckle": 0.2, "flare": 0.4,
+      "joints": { "at": [0.04], "hinge": "y", "limits": [-10, 82] },
+      "digits": [
+        { "index": 0, "u": [0.38, 0.99], "across": -0.5, "angle": -12, "limits": [-10, 112] },
+        { "index": 1, "u": [0.38, 0.95], "across": -0.2, "angle": 18,  "limits": [-10, 82] },
+        { "index": 2, "u": [0.38, 0.77], "across": 0.15, "angle": 42,  "limits": [-10, 58] },
+        { "index": 3, "u": [0.38, 0.57], "across": 0.5,  "angle": 64,  "limits": [-10, 36] }
+      ] },
+    { "kind": "membrane", "name": "web", "on": "fingers", "reach": 1.0, "sag": "$sag", "thickness": 0.4, "rings": 12, "segments": 16 },
+    { "kind": "membrane", "name": "skin", "on": "fingers", "reach": 1.0, "sag": "$sag", "thickness": 0.4, "rings": 14, "segments": 16,
+      "between": [ { "first": 3, "along": [0.38, 0.03] } ] },
+    { "kind": "cap",    "end": "end", "shape": "round" },
+    { "kind": "joint",  "name": "shoulder", "u": 0.0,  "hinge": "x", "limits": [-90, 90] },
+    { "kind": "joint",  "name": "elbow",    "u": 0.17, "hinge": "y", "limits": [-150, 30] },
+    { "kind": "joint",  "name": "wrist",    "u": 0.38, "hinge": "y", "limits": [-30, 150] },
+    { "kind": "joint",  "name": "tip",      "u": 1.0,  "hinge": "x", "limits": [-30, 30] },
+    { "kind": "area",   "name": "web", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "web" },
+    { "kind": "area",   "name": "skin", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "skin" },
+    { "kind": "area",   "name": "fingers", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "fingers" }
+  ]
+}

@@ -20,7 +20,7 @@ import kotlin.math.min
 private val ART_SIZE = Size(40f, 30f)
 private const val ART_STROKE = 1.5f
 
-/** The board's small filled shape for a template of each role the starter templates take, in a 40 by 30 box. */
+/** The board's small filled shape for a template of each role the shipped templates take, in a 40 by 30 box. */
 private val TILE_ART = mapOf(
     Role.BODY to "M6 15 C6 7 34 7 34 15 C34 23 6 23 6 15 Z",
     Role.LEG to "M15 3 H25 L24 24 Q24 27 20 27 Q16 27 16 24 Z",
@@ -31,6 +31,7 @@ private val TILE_ART = mapOf(
     Role.EAR to "M10 26 L20 3 L30 26 Z",
     Role.JAW to "M5 9 C15 3 29 5 36 15 C29 13 19 14 13 19 C9 21 5 19 5 16 Z",
     Role.TAIL to "M6 25 C18 25 28 18 28 5 C36 12 36 26 22 28 C14 29 8 28 6 25 Z",
+    Role.HORN to "M13 28 C13 19 17 9 31 3 C27 11 24 19 24 28 Z",
     Role.WING to "M5 24 C11 11 23 4 35 5 C31 9 33 11 29 13 C32 15 29 17 26 18 C28 20 24 22 20 22 C14 23 9 24 5 24 Z",
 )
 
