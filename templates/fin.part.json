@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "fin",
+  "version": 1,
+  "name": "Fin",
+  "role": "fin",
+  "axis": { "rest": [-1, 0, 0], "length": 0.3 },
+  "openEnd": "start",
+  "topology": { "rings": 24, "segments": 12 },
+  "views": { "side": "height", "top": "width" },
+  "section": "lens",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "girth": { "default": 0.08, "min": 0.02, "max": 0.5 }
+  },
+  "generic": { "rings": { "min": 8, "max": 96 }, "segments": { "min": 6, "max": 32 } },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth", "openV": true },
+    { "kind": "cap",   "end": "end", "shape": "round" },
+    { "kind": "joint", "name": "base", "u": 0.0, "hinge": "x", "limits": [-60, 60] }
+  ]
+}

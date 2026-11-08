@@ -1,7 +1,6 @@
 package dev.chieppa.squash.screens.koi
 
 import dev.chieppa.squash.character.build.HandJoints
-import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.Limits
 import dev.chieppa.squash.character.build.PlacementParams
@@ -36,21 +35,28 @@ val EYE_R = PartId("eye-r")
 /** How far each of the body's hand-made joints bends either way, in degrees. */
 private val BODY_BEND = Limits(-35f, 35f)
 
-/** The hand-made sockets on the body, by number. */
-const val DORSAL_SOCKET = 1
-const val TAIL_SOCKET = 2
-const val PECTORAL_SOCKET = 3
-const val ANAL_SOCKET = 4
-const val EYE_SOCKET = 5
+/** The fish plan's sockets on the body. */
+const val DORSAL_SOCKET = "dorsal"
+const val TAIL_SOCKET = "tail"
+const val PECTORAL_SOCKET = "pectoral"
+const val ANAL_SOCKET = "anal"
+const val EYE_SOCKET = "eye"
 
 private fun ref(id: String) = TemplateRef(TemplateId(id), 1)
 
-private fun on(socket: Int) = SocketRef(KOI_BODY, HandSockets.name(socket))
+private fun on(socket: String) = SocketRef(KOI_BODY, socket)
 
-/** A part as Add part places it on a hand-made socket: a generic template, its role a guess until it is chosen. */
-private fun guessed(id: PartId, template: String, socket: Int, role: Role) = PartInstance(id, ref(template), on(socket), role = role, roleGuessed = true)
+/** A part as Add part places it on a fish plan socket: a generic template, its role a guess until it is chosen. */
+private fun guessed(id: PartId, template: String, socket: String, role: Role) = PartInstance(id, ref(template), on(socket), role = role, roleGuessed = true)
 
-private fun pair(id: String, template: String, socket: Int, role: Role, left: PartId, right: PartId) = AddParts(
+private fun finPair() = AddParts(
+    listOf(
+        PartInstance(PECTORAL_L, ref("fin"), on(PECTORAL_SOCKET), pair = PairId("pectorals"), side = Side.LEFT, role = Role.FIN),
+        PartInstance(PECTORAL_R, ref("fin"), on(PECTORAL_SOCKET), pair = PairId("pectorals"), side = Side.RIGHT, role = Role.FIN),
+    ),
+)
+
+private fun pair(id: String, template: String, socket: String, role: Role, left: PartId, right: PartId) = AddParts(
     listOf(
         PartInstance(left, ref(template), on(socket), pair = PairId(id), side = Side.LEFT, role = role, roleGuessed = true),
         PartInstance(right, ref(template), on(socket), pair = PairId(id), side = Side.RIGHT, role = role, roleGuessed = true),
@@ -89,11 +95,11 @@ private val PECTORAL_TOP = drawn(p(0f, 0.03f), p(0.05f, 0.05f), p(0.10f, 0.045f)
 private val ANAL_SIDE = drawn(p(0f, 0.05f), p(0.04f, 0.045f), p(0.075f, 0.02f), p(0.08f, -0.01f), p(0.05f, -0.03f), p(0f, -0.035f))
 
 /**
- * The koi's shape on the Blank plan: its body tube drawn in Side and Top with three hand-made joints along it, so the body curve
- * bends it along its length, hand-made sockets on it for a dorsal fin on the back, a
- * pair of pectoral fins low on the sides behind the head, an anal fin underneath and a tail fin at the rear, each a sheet drawn as a
- * planform in its best view and its thickness in the other, turned into place with Move's angles; and a pair of blob eyes on the
- * head. Every part's role is the guess Add part gives it, then chosen.
+ * The koi's shape on the fish plan: its body tube drawn in Side and Top with three hand-made joints along it, so the body curve
+ * bends it along its length, a dorsal fin on the plan's back socket, a pair of pectoral fins low on the sides behind the head, an
+ * anal fin underneath and a tail fin at the rear, each a fin or sheet drawn as a planform in its best view and its thickness in the
+ * other, turned into place with Move's angles; and a pair of blob eyes on the head. A fin takes the role its template gives it, the
+ * tail's sheet and the eyes' blob the guess Add part gives them, then chosen.
  */
 fun koiBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(PartInstance(KOI_BODY, ref("tube"), role = Role.BODY))),
@@ -101,20 +107,12 @@ fun koiBody(): List<DocumentCommand> = listOf(
     HandJoints.add(KOI_BODY, 1, 0.3f, Hinge.X, BODY_BEND, stretch = false),
     HandJoints.add(KOI_BODY, 2, 0.5f, Hinge.X, BODY_BEND, stretch = false),
     HandJoints.add(KOI_BODY, 3, 0.7f, Hinge.X, BODY_BEND, stretch = false),
-    HandSockets.add(KOI_BODY, DORSAL_SOCKET, 0.56f, 0.0f, 0f, paired = false),
-    HandSockets.add(KOI_BODY, TAIL_SOCKET, 0.0f, 0.0f, 0f, paired = false),
-    HandSockets.add(KOI_BODY, PECTORAL_SOCKET, 0.74f, 0.36f, 0f, paired = true),
-    HandSockets.add(KOI_BODY, ANAL_SOCKET, 0.24f, 0.5f, 0f, paired = false),
-    HandSockets.add(KOI_BODY, EYE_SOCKET, 0.86f, 0.2f, 0f, paired = true),
-    AddParts(listOf(guessed(DORSAL, "sheet", DORSAL_SOCKET, Role.FIN))),
+    AddParts(listOf(PartInstance(DORSAL, ref("fin"), on(DORSAL_SOCKET), role = Role.FIN))),
     AddParts(listOf(guessed(TAIL_FIN, "sheet", TAIL_SOCKET, Role.TAIL))),
-    pair("pectorals", "sheet", PECTORAL_SOCKET, Role.OTHER, PECTORAL_L, PECTORAL_R),
-    AddParts(listOf(guessed(ANAL, "sheet", ANAL_SOCKET, Role.OTHER))),
+    finPair(),
+    AddParts(listOf(PartInstance(ANAL, ref("fin"), on(ANAL_SOCKET), role = Role.FIN))),
     pair("eyes", "blob", EYE_SOCKET, Role.OTHER, EYE_L, EYE_R),
-    SetRole(DORSAL, Role.FIN),
     SetRole(TAIL_FIN, Role.TAIL),
-    SetRole(PECTORAL_L, Role.FIN),
-    SetRole(ANAL, Role.FIN),
     SetRole(EYE_L, Role.OTHER),
     SetOutlines(DORSAL, mapOf(View.SIDE to DORSAL_SIDE, View.TOP to thin(0.13f, 0.012f))),
     SetParameter(DORSAL, PlacementParams.LEAN, 55f),

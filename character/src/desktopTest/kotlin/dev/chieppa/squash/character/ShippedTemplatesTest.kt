@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 
 private const val RANDOM_BUILDS = 25
 private val SHIPPED_IDS = listOf(
-    "arm", "beak", "beak-lower", "blob", "ear", "foot", "foot-bird", "hand", "head", "head-bird", "head-round", "leg", "leg-bird", "paw", "sheet", "tail",
+    "arm", "beak", "beak-lower", "blob", "ear", "fin", "foot", "foot-bird", "hand", "head", "head-bird", "head-round", "leg", "leg-bird", "paw", "sheet", "tail",
     "tail-feathers", "torso", "torso-bird", "torso-upright", "tube", "wing-feathered",
 )
 
@@ -26,7 +26,7 @@ class ShippedTemplatesTest {
     @Test
     fun theShippedTemplatesAndThePlanLoadAndLint() {
         assertEquals(SHIPPED_IDS, shipped.parts.map { it.id.value }.distinct().sorted())
-        assertEquals(listOf("canine-quadruped", "bird", "biped", "blank"), shipped.plans.map { it.id.value })
+        assertEquals(listOf("canine-quadruped", "bird", "biped", "fish", "blank"), shipped.plans.map { it.id.value })
     }
 
     @Test
@@ -34,7 +34,7 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "ear" to listOf(1), "foot" to listOf(1),
+                "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1),
                 "foot-bird" to listOf(1), "hand" to listOf(1), "head-bird" to listOf(1), "head-round" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
                 "leg-bird" to listOf(1), "paw" to listOf(1), "sheet" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1),

@@ -35,7 +35,7 @@ private const val SAME = 1e-5f
 class RolesNotTemplatesTest {
     private val renamed = mapOf(
         "torso-bird" to "kind-p", "head-bird" to "kind-q", "beak-lower" to "kind-r", "beak" to "kind-s", "leg-bird" to "kind-t", "foot-bird" to "kind-u",
-        "tail-feathers" to "kind-v", "torso-upright" to "kind-k", "head-round" to "kind-l", "arm" to "kind-m", "hand" to "kind-n", "foot" to "kind-o", "torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g", "tube" to "kind-h", "blob" to "kind-i", "sheet" to "kind-j",
+        "tail-feathers" to "kind-v", "torso-upright" to "kind-k", "head-round" to "kind-l", "arm" to "kind-m", "hand" to "kind-n", "foot" to "kind-o", "torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g", "tube" to "kind-h", "blob" to "kind-i", "sheet" to "kind-j", "fin" to "kind-w",
     )
     private val templates: Path = Path.of(System.getProperty("squash.templates"))
 
@@ -44,7 +44,7 @@ class RolesNotTemplatesTest {
         val folder = renamedFolder()
         val document = readDocument(rename(Json.parseToJsonElement(Path.of(System.getProperty("squash.examples"), "fennec.json").readText()), Spot.DOCUMENT).toString())
         val notOnTheFennec = setOf("wing-feathered", "tube", "blob", "sheet", "torso-upright", "head-round", "arm", "hand", "foot") +
-            setOf("torso-bird", "head-bird", "beak-lower", "beak", "leg-bird", "foot-bird", "tail-feathers")
+            setOf("fin", "torso-bird", "head-bird", "beak-lower", "beak", "leg-bird", "foot-bird", "tail-feathers")
         assertEquals((renamed - notOnTheFennec).values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
         val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
         val shipped = fennec.rig

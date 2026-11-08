@@ -1,0 +1,24 @@
+{
+  "$schema": "../../schema/body-plan.schema.json",
+  "format": 1,
+  "id": "fish",
+  "version": 1,
+  "name": "Fish",
+  "root": { "template": "tube", "rest": [1, 0, 0] },
+  "sockets": [
+    { "name": "dorsal",   "on": "tube", "u": 0.56, "v": 0.0,  "outward": "normal", "takes": ["fin"] },
+    { "name": "tail",     "on": "tube", "u": 0.0,  "v": 0.0,  "outward": "normal", "takes": ["sheet"] },
+    { "name": "pectoral", "on": "tube", "u": 0.74, "v": 0.36, "pair": "x", "outward": "normal", "sink": 2.0, "takes": ["fin"] },
+    { "name": "anal",     "on": "tube", "u": 0.24, "v": 0.5,  "outward": "normal", "takes": ["fin"] },
+    { "name": "eye",      "on": "tube", "u": 0.86, "v": 0.2,  "pair": "x", "outward": "normal", "takes": ["blob"] }
+  ],
+  "palette": [
+    { "name": "scale", "color": { "red": 0.95, "green": 0.45, "blue": 0.13 } },
+    { "name": "belly", "color": { "red": 0.98, "green": 0.96, "blue": 0.92 } },
+    { "name": "patch", "color": { "red": 0.12, "green": 0.10, "blue": 0.10 } },
+    { "name": "fin",   "color": { "red": 0.99, "green": 0.78, "blue": 0.58 } },
+    { "name": "eye",   "color": { "red": 0.96, "green": 0.86, "blue": 0.55 } },
+    { "name": "pupil", "color": { "red": 0.08, "green": 0.06, "blue": 0.07 } }
+  ],
+  "base": "scale"
+}

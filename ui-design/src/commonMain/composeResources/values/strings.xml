@@ -164,6 +164,7 @@
     <string name="new_create">Create character</string>
     <string name="new_plan_blank">One tube, anatomy by hand</string>
     <string name="new_plan_upright">Two legs, two arms, upright</string>
+    <string name="new_plan_finned">Fins, a tail, two eyes</string>
     <string name="new_plan_winged">Wings, two legs, a beak</string>
 
     <string name="add_part">Add part</string>

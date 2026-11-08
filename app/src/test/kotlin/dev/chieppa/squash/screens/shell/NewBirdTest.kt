@@ -36,8 +36,8 @@ class NewBirdTest {
     fun birdStartsACharacterWithAPerchedTorso() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
         setStretchContent { SquashApp(state, NoBirdFiles) }
-        val rows = listOf("canine-quadruped", "bird", "biped").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }
-        assertEquals(rows.sorted(), rows, "Bird reads after Canine quadruped and before Biped")
+        val rows = listOf("canine-quadruped", "bird", "biped", "fish").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(rows.sorted(), rows, "Bird reads after Canine quadruped and before Biped and Fish")
         onNode(hasTestTag(ShellTags.newPlan("bird")) and hasText("Wings, two legs, a beak", substring = true, ignoreCase = false)).assertExists()
         onNodeWithTag(ShellTags.newPlan("bird")).performClick()
         waitForIdle()

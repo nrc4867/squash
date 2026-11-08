@@ -3,7 +3,7 @@
         "id": "koi",
         "name": "Koi",
         "bodyPlan": {
-            "id": "blank",
+            "id": "fish",
             "version": 1
         },
         "parts": [
@@ -404,24 +404,7 @@
                         "joint.3.hinge": 0.0,
                         "joint.3.low": -35.0,
                         "joint.3.high": 35.0,
-                        "joint.3.u": 0.7,
-                        "socket.1.u": 0.56,
-                        "socket.1.v": 0.0,
-                        "socket.1.outward": 0.0,
-                        "socket.2.u": 0.0,
-                        "socket.2.v": 0.0,
-                        "socket.2.outward": 0.0,
-                        "socket.3.u": 0.74,
-                        "socket.3.v": 0.36,
-                        "socket.3.outward": 0.0,
-                        "socket.3.pair": 1.0,
-                        "socket.4.u": 0.24,
-                        "socket.4.v": 0.5,
-                        "socket.4.outward": 0.0,
-                        "socket.5.u": 0.86,
-                        "socket.5.v": 0.2,
-                        "socket.5.outward": 0.0,
-                        "socket.5.pair": 1.0
+                        "joint.3.u": 0.7
                     },
                     "surface": {
                         "baseSlot": "scale",
@@ -764,12 +747,12 @@
             {
                 "id": "dorsal",
                 "template": {
-                    "id": "sheet",
+                    "id": "fin",
                     "version": 1
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.1"
+                    "socket": "dorsal"
                 },
                 "own": {
                     "outlines": {
@@ -927,7 +910,7 @@
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.2"
+                    "socket": "tail"
                 },
                 "own": {
                     "outlines": {
@@ -1137,12 +1120,12 @@
             {
                 "id": "pectoral-l",
                 "template": {
-                    "id": "sheet",
+                    "id": "fin",
                     "version": 1
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.3"
+                    "socket": "pectoral"
                 },
                 "pair": "pectorals",
                 "side": "left",
@@ -1151,12 +1134,12 @@
             {
                 "id": "pectoral-r",
                 "template": {
-                    "id": "sheet",
+                    "id": "fin",
                     "version": 1
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.3"
+                    "socket": "pectoral"
                 },
                 "pair": "pectorals",
                 "side": "right",
@@ -1165,12 +1148,12 @@
             {
                 "id": "anal",
                 "template": {
-                    "id": "sheet",
+                    "id": "fin",
                     "version": 1
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.4"
+                    "socket": "anal"
                 },
                 "own": {
                     "outlines": {
@@ -1316,7 +1299,7 @@
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.5"
+                    "socket": "eye"
                 },
                 "pair": "eyes",
                 "side": "left",
@@ -1330,7 +1313,7 @@
                 },
                 "socket": {
                     "parent": "body",
-                    "socket": "socket.5"
+                    "socket": "eye"
                 },
                 "pair": "eyes",
                 "side": "right",

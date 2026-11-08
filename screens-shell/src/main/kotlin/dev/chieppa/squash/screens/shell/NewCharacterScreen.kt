@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.chips
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.isUpright
+import dev.chieppa.squash.character.catalog.isFinned
 import dev.chieppa.squash.character.catalog.isWinged
 import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.model.BodyPlan
@@ -36,6 +37,7 @@ import dev.chieppa.squash.uidesign.generated.new_open_file
 import dev.chieppa.squash.uidesign.generated.new_plan_blank
 import dev.chieppa.squash.uidesign.generated.new_plan_parts
 import dev.chieppa.squash.uidesign.generated.new_plan_upright
+import dev.chieppa.squash.uidesign.generated.new_plan_finned
 import dev.chieppa.squash.uidesign.generated.new_plan_winged
 import dev.chieppa.squash.uidesign.generated.new_recent
 import dev.chieppa.squash.uidesign.generated.new_title
@@ -141,19 +143,21 @@ private fun Labeled(label: String, content: @Composable () -> Unit) {
 }
 
 /**
- * A body plan to start from: a species plan with its part count, a winged one, the bird, with a perched bird and what it grows, an
- * upright one, the biped, with a standing figure and what it stands on, or one that places nothing past its root, Blank, read as one tube.
+ * A body plan to start from: a species plan with its part count, a winged one, the bird, with a perched bird and what it grows, a finned
+ * one, the fish, with a fish and its fins, an upright one, the biped, with a standing figure and what it stands on, or one that places nothing past its root, Blank, read as one tube.
  */
 @Composable
 private fun PlanRow(shell: Shell, plan: BodyPlan, selected: Boolean, onClick: () -> Unit) {
     val blank = plan.sockets.isEmpty()
     val winged = !blank && plan.isWinged(shell.state.templates)
+    val finned = !blank && !winged && plan.isFinned(shell.state.templates)
     val upright = !blank && plan.isUpright()
     ListRow(selected, onClick, Modifier.testTag(ShellTags.newPlan(plan.id.value))) {
         RowIcon(
             when {
                 blank -> SquashIcons.PlanBlank
                 winged -> SquashIcons.PlanBird
+                finned -> SquashIcons.PlanFish
                 upright -> SquashIcons.PlanBiped
                 else -> SquashIcons.BodyPlan
             },
@@ -162,6 +166,7 @@ private fun PlanRow(shell: Shell, plan: BodyPlan, selected: Boolean, onClick: ()
         val note = when {
             blank -> stringResource(Res.string.new_plan_blank)
             winged -> stringResource(Res.string.new_plan_winged)
+            finned -> stringResource(Res.string.new_plan_finned)
             upright -> stringResource(Res.string.new_plan_upright)
             else -> stringResource(Res.string.new_plan_parts, plan.partCount(shell.state.templates))
         }

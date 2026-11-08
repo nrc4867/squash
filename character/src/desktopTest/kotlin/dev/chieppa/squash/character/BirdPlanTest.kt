@@ -47,7 +47,7 @@ class BirdPlanTest {
 
     @Test
     fun newCharacterListsTheBirdAfterTheQuadrupedAndGivesTheTorsoWithAWholePerchedBirdPlanned() {
-        assertEquals(listOf("canine-quadruped", "bird", "biped", "blank"), shipped.plans.map { it.id.value })
+        assertEquals(listOf("canine-quadruped", "bird", "biped", "fish", "blank"), shipped.plans.map { it.id.value })
         val made = newCharacter(plan, shipped, "Bird", ids())
         val document = made.commands.fold(made.document) { document, command -> command.apply(document).document }
         val torso = document.character.parts.single()

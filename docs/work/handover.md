@@ -61,7 +61,7 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 
 | Wave | Branch | Delivers | Waits on | Status |
 | --- | --- | --- | --- | --- |
-| 1 | `fish-plan` | `fin` as a named sheet template, the fish plan, the koi rebuilt from it; stage 5's exit criterion 5 | nothing | building |
+| 1 | `fish-plan` | `fin` as a named sheet template, the fish plan, the koi rebuilt from it; stage 5's exit criterion 5 | nothing | landed |
 | 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | building |
 | 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | landed |
 | 2 | `fingers` | A branching joint tree inside a part: a stage note, then bones, tagging, weights, the Rig stage and Turn, so hands curl and the toucan's toes grip | wave 1 | waiting |

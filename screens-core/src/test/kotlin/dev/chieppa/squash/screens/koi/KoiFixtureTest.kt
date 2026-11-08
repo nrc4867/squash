@@ -34,7 +34,7 @@ class KoiFixtureTest {
     @Test
     fun everyPartIsGenericWithItsRoleChosen() {
         val parts = koiDocument().character.parts
-        assertTrue(parts.all { it.template.id.value in setOf("tube", "sheet", "blob") })
+        assertTrue(parts.all { it.template.id.value in setOf("tube", "fin", "sheet", "blob") })
         assertTrue(parts.none { it.roleGuessed })
         assertEquals(
             mapOf(Role.BODY to 1, Role.FIN to 4, Role.TAIL to 1, Role.OTHER to 2),

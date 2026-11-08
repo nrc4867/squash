@@ -108,3 +108,6 @@ fun BodyPlan.isUpright(): Boolean = root.rest.y >= UPRIGHT
 
 /** Whether this plan grows wings: one of its sockets takes, first, a template whose role is wing, as the bird's shoulders do. */
 fun BodyPlan.isWinged(templates: TemplateFolder): Boolean = sockets.any { socket -> socket.takes.firstNotNullOfOrNull { templates.template(it) }?.role == Role.WING }
+
+/** Whether this plan grows fins: one of its sockets takes, first, a template whose role is fin, as the fish's dorsal and pectoral sockets do. */
+fun BodyPlan.isFinned(templates: TemplateFolder): Boolean = sockets.any { socket -> socket.takes.firstNotNullOfOrNull { templates.template(it) }?.role == Role.FIN }
