@@ -329,6 +329,10 @@
     <string name="move_status_add_landmark">%1$s · add landmark · %2$d parts</string>
     <string name="move_mode_add_joint">Add joint</string>
     <string name="move_mode_add_landmark">Add landmark</string>
+    <string name="move_mode_place_tip">Move the selected part along its socket</string>
+    <string name="move_mode_add_socket_tip">Press a part to place a socket for another part to sit on</string>
+    <string name="move_mode_add_joint_tip">Press a part to place a joint the pose can bend</string>
+    <string name="move_mode_add_landmark_tip">Press a part to place a landmark for the template's other parts to line up with</string>
     <string name="move_joint_hinge">Hinge</string>
     <string name="move_hinge_x">X</string>
     <string name="move_hinge_y">Y</string>

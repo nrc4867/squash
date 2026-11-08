@@ -129,10 +129,11 @@ private fun PairWith(state: AppState, part: PartInstance) {
     Box {
         Button(
             stringResource(Res.string.anatomy_pair),
-            { if (offers) open = true },
-            Modifier.enabledOrFaint(offers).testTag(ShellTags.PAIR_WITH),
+            { open = true },
+            Modifier.testTag(ShellTags.PAIR_WITH),
             kind = ButtonKind.Quiet,
             icon = SquashIcons.PairWith,
+            enabled = offers,
         )
         Menu(open, { open = false }) {
             for (other in candidates) {

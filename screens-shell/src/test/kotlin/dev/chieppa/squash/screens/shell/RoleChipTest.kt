@@ -22,7 +22,7 @@ import dev.chieppa.squash.screens.fennec.FRONT_PAW_R
 import dev.chieppa.squash.screens.fennec.TAIL
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
-import dev.chieppa.squash.uidesign.Tentative
+import dev.chieppa.stretch.ui.ChipDashed
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
@@ -38,7 +38,7 @@ class RoleChipTest {
     private val session get() = checkNotNull(state.session.value)
     private fun part(id: PartId) = checkNotNull(session.document.value.character.part(id))
 
-    private fun tentative(value: Boolean) = SemanticsMatcher.expectValue(Tentative, value)
+    private fun tentative(value: Boolean) = SemanticsMatcher.expectValue(ChipDashed, value)
 
     @Test
     fun theChipReadsTheRoleAndItsListSetsAnotherForThePair() = runComposeUiTest {

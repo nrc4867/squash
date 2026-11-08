@@ -19,12 +19,12 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetRole
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.uidesign.ChoiceChip
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.role_title
 import dev.chieppa.stretch.frame.Menu
 import dev.chieppa.stretch.frame.MenuItem
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.Chip
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
 
@@ -42,7 +42,7 @@ internal fun RoleRow(state: AppState, session: CharacterSession, character: Char
     Row(Modifier.fillMaxWidth().heightIn(min = StretchSizes.ctl), verticalAlignment = Alignment.CenterVertically) {
         Box {
             Tooltip(title) {
-                ChoiceChip(labels(role), Modifier.testTag(ShellTags.ROLE_CHIP), tentative = roles.isGuess(part), description = title) { open = true }
+                Chip(labels(role), Modifier.testTag(ShellTags.ROLE_CHIP), dashed = roles.isGuess(part), description = title, onClick = { open = true })
             }
             Menu(open, { open = false }) {
                 Role.entries.forEach { choice ->

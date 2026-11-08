@@ -49,9 +49,10 @@ internal fun SaveTemplateDialog(state: AppState, part: PartId, onClose: () -> Un
             Button(stringResource(Res.string.anatomy_save_cancel), onClose)
             Button(
                 stringResource(Res.string.anatomy_save_ok),
-                { if (savable && state.saveAsTemplate(part, name) != null) onClose() },
-                Modifier.enabledOrFaint(savable).testTag(ShellTags.SAVE_OK),
+                { if (state.saveAsTemplate(part, name) != null) onClose() },
+                Modifier.testTag(ShellTags.SAVE_OK),
                 kind = ButtonKind.Primary,
+                enabled = savable,
             )
         },
     ) {

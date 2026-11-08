@@ -36,7 +36,6 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 - **The feet slide** about 1.4 cm when the body curve tips an upright pelvis, where a body drag holds them exactly.
 - **Saved templates appear after a restart,** because `AppState.templates` is immutable and `AppState.kt` is at its line limit.
 - **`check` runs 2.5 to 3.5 minutes** on this machine with compilation, against the two-minute criterion in `stage-3.md` and three in `stage-5.md`.
-- **Stretch gaps** worth their own Stretch commits: a disabled state on the labelled button, a per-option tooltip on the segmented control, a chip that presses and dashes (Squash drew `ChoiceChip` in `ui-design` meanwhile).
 - **No Update from library** command exists; survival across template versions is tested by a version bump only.
 
 ## Decisions waiting on Nicholas
@@ -64,7 +63,7 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 | --- | --- | --- | --- | --- |
 | 1 | `fish-plan` | `fin` as a named sheet template, the fish plan, the koi rebuilt from it; stage 5's exit criterion 5 | nothing | building |
 | 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | building |
-| 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | building |
+| 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | landed |
 | 2 | `fingers` | A branching joint tree inside a part: a stage note, then bones, tagging, weights, the Rig stage and Turn, so hands curl and the toucan's toes grip | wave 1 | waiting |
 | 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | waiting |
 | 3 | `digit-shape` | The membrane block between digits and per-digit shape (lens sections, taper, knuckles) | `fingers` | waiting |

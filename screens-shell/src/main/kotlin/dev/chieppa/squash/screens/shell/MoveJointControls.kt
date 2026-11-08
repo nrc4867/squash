@@ -87,10 +87,11 @@ internal fun JointControls(state: AppState, session: CharacterSession) {
     SettingRow("") {
         Button(
             stringResource(Res.string.move_joint_delete),
-            { if (deletable) state.deletePickedJoint() },
-            Modifier.enabledOrFaint(deletable).testTag(ShellTags.JOINT_DELETE),
+            { state.deletePickedJoint() },
+            Modifier.testTag(ShellTags.JOINT_DELETE),
             kind = ButtonKind.Quiet,
             icon = SquashIcons.DeleteSocket,
+            enabled = deletable,
         )
     }
 }

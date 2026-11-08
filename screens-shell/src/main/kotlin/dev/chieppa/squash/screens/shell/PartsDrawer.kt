@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import dev.chieppa.squash.character.catalog.roles
 import dev.chieppa.squash.document.Role
-import dev.chieppa.squash.uidesign.ChoiceChip
 import dev.chieppa.squash.uidesign.generated.role_guessed
 import dev.chieppa.squash.uidesign.generated.role_title
 import androidx.compose.foundation.layout.size
@@ -41,6 +40,7 @@ import dev.chieppa.squash.uidesign.generated.shell_tree_to_draw
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.ui.Chip
 import dev.chieppa.stretch.ui.Tree
 import dev.chieppa.stretch.ui.flattenTree
 import org.jetbrains.compose.resources.stringResource
@@ -124,7 +124,7 @@ private fun RowSwatch(row: PartRow) {
 @Composable
 private fun RowRole(row: PartRow, labels: (Role) -> String) {
     val guessed = (row as? PartRow.Placed)?.guessed ?: return
-    ChoiceChip(stringResource(Res.string.role_guessed, labels(guessed)), Modifier.testTag(ShellTags.partRowRole(row.tagName)), tentative = true, description = stringResource(Res.string.role_title))
+    Chip(stringResource(Res.string.role_guessed, labels(guessed)), Modifier.testTag(ShellTags.partRowRole(row.tagName)), dashed = true, description = stringResource(Res.string.role_title))
 }
 
 @Composable

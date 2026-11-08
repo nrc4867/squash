@@ -10,10 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
@@ -36,6 +33,10 @@ import dev.chieppa.squash.uidesign.generated.move_degrees
 import dev.chieppa.squash.uidesign.generated.move_lean
 import dev.chieppa.squash.uidesign.generated.move_mode_add_joint
 import dev.chieppa.squash.uidesign.generated.move_mode_add_landmark
+import dev.chieppa.squash.uidesign.generated.move_mode_add_landmark_tip
+import dev.chieppa.squash.uidesign.generated.move_mode_add_joint_tip
+import dev.chieppa.squash.uidesign.generated.move_mode_add_socket_tip
+import dev.chieppa.squash.uidesign.generated.move_mode_place_tip
 import dev.chieppa.squash.uidesign.generated.move_mode_add_socket
 import dev.chieppa.squash.uidesign.generated.move_mode_place
 import dev.chieppa.squash.uidesign.generated.move_outward
@@ -60,9 +61,6 @@ import dev.chieppa.stretch.ui.Toggle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** How faint a button shows while it has nothing to act on, as the board draws it. */
-internal const val DISABLED_ALPHA = 0.5f
-
 private val REST_WIDTH = 120.dp
 
 /** The Move modes as the board's two-by-two grid draws them, a row at a time. */
@@ -75,6 +73,13 @@ private val MODE_LABELS: Map<MoveMode, StringResource> = mapOf(
     MoveMode.ADD_LANDMARK to Res.string.move_mode_add_landmark,
 )
 
+private val MODE_TIPS: Map<MoveMode, StringResource> = mapOf(
+    MoveMode.PLACE_PART to Res.string.move_mode_place_tip,
+    MoveMode.ADD_SOCKET to Res.string.move_mode_add_socket_tip,
+    MoveMode.ADD_JOINT to Res.string.move_mode_add_joint_tip,
+    MoveMode.ADD_LANDMARK to Res.string.move_mode_add_landmark_tip,
+)
+
 private val REST_LABELS: Map<RestDirection, StringResource> = mapOf(
     RestDirection.FORWARD to Res.string.move_rest_forward,
     RestDirection.BACK to Res.string.move_rest_back,
@@ -82,9 +87,6 @@ private val REST_LABELS: Map<RestDirection, StringResource> = mapOf(
     RestDirection.DOWN to Res.string.move_rest_down,
     RestDirection.OUT to Res.string.move_rest_out,
 )
-
-/** Something faint that takes no presses while it is not [enabled]. */
-internal fun Modifier.enabledOrFaint(enabled: Boolean): Modifier = if (enabled) this else alpha(DISABLED_ALPHA).semantics { disabled() }
 
 /**
  * The Move tool's section of the Shape inspector: its four modes, Place part, Add socket, Add joint and Add landmark. Place part holds
@@ -96,11 +98,12 @@ internal fun Modifier.enabledOrFaint(enabled: Boolean): Modifier = if (enabled) 
 internal fun MoveSection(state: AppState, session: CharacterSession, part: PartInstance, template: PartTemplate, params: Map<String, Float>, thisSide: Boolean, hidden: Map<String, Float>) {
     val mode by state.move.mode.collectAsState()
     val labels = MODE_LABELS.mapValues { stringResource(it.value) }
+    val tips = MODE_TIPS.mapValues { stringResource(it.value) }
     DrawerSection(stringResource(Res.string.move_section)) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             MODE_ROWS.forEachIndexed { i, row ->
                 val tag = if (i == 0) ShellTags.MOVE_MODE else ShellTags.MOVE_MODE_MORE
-                Segmented(row, mode, { state.move.mode.value = it }, labels::getValue, Modifier.fillMaxWidth().testTag(tag), fill = true)
+                Segmented(row, mode, { state.move.mode.value = it }, labels::getValue, Modifier.fillMaxWidth().testTag(tag), fill = true, tooltip = tips::getValue)
             }
         }
         when (mode) {
@@ -156,10 +159,11 @@ internal fun SocketControls(state: AppState, session: CharacterSession) {
     SettingRow("") {
         Button(
             stringResource(Res.string.move_socket_delete),
-            { if (deletable) state.deletePickedSocket() },
-            Modifier.enabledOrFaint(deletable).testTag(ShellTags.SOCKET_DELETE),
+            { state.deletePickedSocket() },
+            Modifier.testTag(ShellTags.SOCKET_DELETE),
             kind = ButtonKind.Quiet,
             icon = SquashIcons.DeleteSocket,
+            enabled = deletable,
         )
     }
 }
