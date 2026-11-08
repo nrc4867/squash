@@ -18,15 +18,17 @@ const val LIMB_TOLERANCE = 1e-3f
  * Two-bone reach: bends [limb]'s knee about its hinge until its end stands as far from the hip as [target] does, the bend the
  * knee's limits allow nearest its own, then turns the hip to carry the end onto [target], over a few rounds so each holds to the
  * limits the other met. With [stretch] up to [maxStretch], a target past the straight limb's reach lengthens the lower bone by its
- * stretching joint. The paw keeps its turn in body space, [foot]. Returns how far the end stays from the target.
+ * stretching joint. The paw keeps its turn in body space, [foot], and with [end] the leg's end bone keeps that turn too, so the
+ * paw, which hangs from the end bone sunk above its joint, stays where it stood. Returns how far the end stays from the target.
  */
-internal fun PoseWork.reachWith(limb: Limb, target: Vec3, stretch: Boolean, maxStretch: Float, foot: Mat3?): Float {
+internal fun PoseWork.reachWith(limb: Limb, target: Vec3, stretch: Boolean, maxStretch: Float, foot: Mat3?, end: Mat3? = null): Float {
     if (stretch) stretchToward(limb, target, maxStretch)
     for (round in 0 until LIMB_ROUNDS) {
         bendKnee(limb, target)
         aimHip(limb, target)
         if ((joint(limb.end) - target).length <= LIMB_TOLERANCE) break
     }
+    if (end != null) setWorldTurn(limb.end, end)
     if (foot != null && limb.foot != null) setWorldTurn(limb.foot, foot)
     return (joint(limb.end) - target).length
 }
@@ -44,6 +46,15 @@ private fun PoseWork.stretchToward(limb: Limb, target: Vec3, maxStretch: Float) 
     if (lower <= 0f || wanted <= upper + lower) return
     setStretch(limb.end, (now * (wanted - upper) / lower).coerceIn(now, maxOf(now, maxStretch)))
 }
+
+/** How a planted paw stands under [work]: the turns in body space its leg's end bone and the paw itself keep while the leg reaches. */
+internal class PawStance(val end: Mat3, val foot: Mat3?) {
+    constructor(work: PoseWork, limb: Limb) : this(work.turn(limb.end), limb.foot?.let(work::turn))
+}
+
+/** [reachWith] holding the paw as it stood, [stance]. */
+internal fun PoseWork.holdAt(limb: Limb, target: Vec3, stretch: Boolean, stance: PawStance): Float =
+    reachWith(limb, target, stretch, MAX_DRAG_STRETCH, stance.foot, stance.end)
 
 /** Tips the knee so the end stands from the hip as far as [target] does, or as near as the knee's limits let it. */
 private fun PoseWork.bendKnee(limb: Limb, target: Vec3) {

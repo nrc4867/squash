@@ -30,6 +30,8 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.addJoint
 import dev.chieppa.squash.screens.addLandmark
+import dev.chieppa.squash.screens.addPart
+import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.move.JointRef
 import dev.chieppa.squash.screens.move.MoveMode
 import dev.chieppa.squash.screens.pairCandidates
@@ -153,5 +155,42 @@ class AnatomySectionTest {
         waitForIdle()
         assertTrue(saved.resolve("long-body.part.json").exists())
         onNodeWithTag(ShellTags.SAVE_NAME).assertDoesNotExist()
+    }
+
+    @Test
+    fun aSavedTemplateIsOfferedAtOnceByTheTemplateMenuAndAddPart() = runComposeUiTest {
+        val tube = assertNotNull(shipped.template(TemplateId("tube"))).ref
+        session.send(HandSockets.add(body, 1, 0.3f, 0.35f, 0f, paired = false))
+        session.send(HandSockets.add(body, 2, 0.3f, 0.65f, 0f, paired = false))
+        session.send(AddParts(listOf(PartInstance(LEG_A, tube, SocketRef(body, HandSockets.name(1))))))
+        state.selectedPart.value = LEG_A
+        setContent {
+            inspector()()
+            StretchTheme(StretchThemes.Ink) { AddPartPopover(state) }
+        }
+        onNodeWithTag(ShellTags.SAVE_TEMPLATE).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.SAVE_NAME).performTextReplacement("Long leg")
+        onNodeWithTag(ShellTags.SAVE_OK).performClick()
+        waitForIdle()
+        val longLeg = TemplateId("long-leg")
+        assertNotNull(state.templates.template(longLeg), "the catalog holds it without a restart")
+
+        onNodeWithTag(ShellTags.TEMPLATE_MENU).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithText("Long leg").performClick()
+        waitForIdle()
+        assertEquals(longLeg, session.document.value.character.part(LEG_A)?.template?.id, "the Template menu offers it")
+
+        state.offerSocket(state.openSocketsNow().first { it.name == HandSockets.name(2) })
+        waitForIdle()
+        onNodeWithTag(ShellTags.addTile(longLeg.value)).performClick()
+        waitForIdle()
+        state.addPart()
+        waitForIdle()
+        val added = session.document.value.character.parts.last()
+        assertEquals(longLeg, added.template.id, "Add part offers it")
+        work.settle(session)
+        assertEquals(longLeg, session.builtTemplate(added).id, "the open character builds with it")
     }
 }

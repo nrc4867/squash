@@ -20,7 +20,7 @@ Every board touched since the restructure is at "verifiable" in `docs/work/board
 
 1. Build on the fennec: press 1 to 6, the strips, the inspectors, Tab, Esc, Add part on an open socket. `boards.md` row "Build: stages, tools and keys".
 2. Rig and Pose on the fennec: hover and wiggle a joint, paint a seam, drag a paw, Alt and Shift, the Turn rings, a Side curve then a Top curve. Rows 7, 12, 13. Things only a hand will tell: drag feel with the posed lines (about 15 ms settle per step), the Turn rings' direction, whether the Top stroke draws jagged (seen once in a lizard render).
-3. Stage 5 on the koi, lizard, person and toucan: Add socket, Add joint, the role chip, Pair with…, Save as template and whether the saved template appears in Add part after a restart. Rows W9 to W12 and row 1.
+3. Stage 5 on the koi, lizard, person and toucan: Add socket, Add joint, the role chip, Pair with…, Save as template and whether the saved template appears in Add part, at once and after a restart. Rows W9 to W12 and row 1.
 
 What is found wrong goes into the differences tables, and the `pose-boards` row of `stage-4.md` (the only row of stages 4 and 5 not built) is that cleanup.
 
@@ -31,10 +31,7 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 - **Joins are overlaps.** Parts meet by overlapping at their sockets, with ink on the border. What holds the overlap inside now: a socket's `sink` (the plans' limb sockets sink 1.6 to 2.2 times the template's depth), the round head's `mount` under its middle, the `SocketFit` lint that fails a plan whose socket ring would show, and a `flare` on digits where they leave the palm. The lint reads undrawn builds only, so a thin drawn torso under a thick drawn thigh can still show the ring; the next step if the renders still show joins is a geometric blend at the seam, the Implicit Skinning family already planned for pose-time contact, read from the papers first.
 - **Hands, paws and feet read as tubes.** Nicholas's verdict on the renders after the seating work: still too tubular. Every digit and palm is a swept tube with a round or egg section, meshed on its own and overlapped, and the builder blends shading across overlapping runs, never geometry, so there is no web between fingers and no fillet where a finger meets the palm. Numbers change proportions, not that. What would fix it, in rising cost: (1) the membrane block already on the data-model list, a sheet spanned between the roots of neighbouring digits, which turns a comb of fingers into a hand with no research; (2) per-digit shape, lens or flattened sections, taper toward the tip and a knuckle at each root, template and block work; (3) an implicit blend applied as displacement: a convolution or skeleton-based implicit field built from the existing tubes, with vertices near the junctions pushed onto the blended iso-surface, so the fixed topology and the slice coordinates stay while fingers merge into the palm with a fillet. (3) is the same family as Implicit Skinning, planned for pose-time contact, so one reading of the papers serves both; read from the papers first, per the rules. Nothing more on hands until the verify pass; then (1) and (2) as one small stage, and (3) as the research item.
 - **Fingers have no joints.** The hand's five digits are shape only; a curling hand needs a branching joint tree inside one part (bones, vertex tagging, weights, the Rig stage). The biggest single piece of unbuilt anatomy.
-- **Side-set eyes** read angle versions from the head's angle, not the eye's, and the gaze solve has no bias for eyes that look sideways. Written in `parts.md`.
 - **The upper beak** hangs from the head's jaw bone, which no pose sets; it holds still, which is right, by accident.
-- **The feet slide** about 1.4 cm when the body curve tips an upright pelvis, where a body drag holds them exactly.
-- **Saved templates appear after a restart,** because `AppState.templates` is immutable and `AppState.kt` is at its line limit.
 - **`check` runs 2.5 to 3.5 minutes** on this machine with compilation, against the two-minute criterion in `stage-3.md` and three in `stage-5.md`.
 - **No Update from library** command exists; survival across template versions is tested by a version bump only.
 
@@ -62,7 +59,7 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 | Wave | Branch | Delivers | Waits on | Status |
 | --- | --- | --- | --- | --- |
 | 1 | `fish-plan` | `fin` as a named sheet template, the fish plan, the koi rebuilt from it; stage 5's exit criterion 5 | nothing | landed |
-| 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | building |
+| 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | landed |
 | 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | landed |
 | 2 | `fingers` | A branching joint tree inside a part: a stage note, then bones, tagging, weights, the Rig stage and Turn, so hands curl and the toucan's toes grip | wave 1 | waiting |
 | 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | waiting |

@@ -162,7 +162,7 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
         } else {
             val look = characterLook(rules, density)
             val parts = shown.parts.mapValues { it.value.part }
-            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view -> locked ?: bins.binOf(part, view) }
+            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view, eye -> locked ?: bins.binOf(part, view, eye) }
             SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight)
         }
     }

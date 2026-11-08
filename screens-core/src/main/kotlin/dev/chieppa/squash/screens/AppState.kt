@@ -50,7 +50,7 @@ import kotlinx.coroutines.plus
  * First launch has no recent files and opens straight on New character, so Home always has something to show.
  */
 class AppState(
-    val templates: TemplateFolder,
+    templates: TemplateFolder,
     /** Where the graph, the art and file reads run. */
     val workers: Workers = Workers(),
     val recent: RecentFiles = RecentFiles(),
@@ -60,6 +60,12 @@ class AppState(
     /** What renders rest pose art offscreen; with none, a screen shows no art. */
     val artist: RestPoseArtist? = null,
 ) {
+    /** The loaded templates and plans, which Save as template adds to. */
+    val catalog = TemplateCatalog(templates)
+
+    /** What [catalog] holds now; a view reading it recomposes when a template is saved. */
+    val templates: TemplateFolder get() = catalog.folder
+
     val screen = MutableStateFlow(if (recent.entries.isEmpty()) Screen.NEW_CHARACTER else Screen.HOME)
     val session = MutableStateFlow<CharacterSession?>(null)
 
@@ -191,14 +197,7 @@ class AppState(
         selectedPart.value = document.character.parts.firstOrNull()?.id
         mirror.value = true
         activeView.value = View.SIDE
-        closeAddPart()
-        move.clear()
-        curves.clear()
-        spine.clear()
-        paint.clear()
-        lines.clear()
-        references.clear()
-        face.clear()
+        clearEdits()
         // Undo can remove the selected part or the parent of the socket Add part is open on, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
@@ -226,16 +225,22 @@ class AppState(
         session.value = null
         file.value = null
         selectedPart.value = null
+        clearEdits()
+        rig.clear()
+        pose.clear()
+        screen.value = Screen.HOME
+    }
+
+    /** Drops what the tools remember of the character that was open. */
+    private fun clearEdits() {
         closeAddPart()
         move.clear()
         curves.clear()
         spine.clear()
+        paint.clear()
         lines.clear()
         references.clear()
         face.clear()
-        rig.clear()
-        pose.clear()
-        screen.value = Screen.HOME
     }
 
     /** Takes back the last step, unless a drag holds a gesture open on the history. */

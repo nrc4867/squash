@@ -83,7 +83,7 @@ fun characterView(
     val faces = FaceWork(
         FaceInput(parts.associateBy { requireNotNull(it.id) }, state.work, state.lines, state.palette, shading.toLight, state.shown, state.target, state.cheats),
         look.marks, ink, state.taper,
-    ) { part, _ -> faceBin(requireNotNull(part.id)) }
+    ) { part, _, _ -> faceBin(requireNotNull(part.id)) }
     val center = state.character.box?.center ?: Vec3.ZERO
     val ribbons = ArrayList<RibbonDraw>()
     val filled = parts.map { part ->

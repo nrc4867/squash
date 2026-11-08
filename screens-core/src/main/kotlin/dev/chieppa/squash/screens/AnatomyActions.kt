@@ -12,7 +12,6 @@ import dev.chieppa.squash.character.catalog.roles
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.load.freeId
-import dev.chieppa.squash.character.load.save
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.Sets
 import dev.chieppa.squash.document.BreakPair
@@ -126,7 +125,8 @@ fun AppState.changeTemplate(part: PartId, template: PartTemplate) {
 /**
  * Writes [part] as a template called [name] into the saved templates' folder, with its role, its parameters' values, its shape
  * choices and its joints, sockets and landmarks; the template, or null when there is no folder, the name gives no id or the
- * template would not lint clean. It loads with the catalog from the next start. See HLD: data-model, Save as template.
+ * template would not lint clean. It joins the catalog and the open character's library at once, so Add part and the Template menu
+ * offer it straight away, and loads with the catalog at every start after. See HLD: data-model, Save as template.
  */
 fun AppState.saveAsTemplate(part: PartId, name: String): PartTemplate? {
     val character = session.value?.document?.value?.character ?: return null
@@ -136,5 +136,7 @@ fun AppState.saveAsTemplate(part: PartId, name: String): PartTemplate? {
     val role = templates.roles(character).resolved(instance)
     val template = savedTemplate(unplaced, character.resolvedShape(instance).params, role, id, name.trim())
     if (TemplateLint.lint(template).isNotEmpty()) return null
-    return template.takeIf { templates.save(it) != null }
+    if (catalog.save(template) == null) return null
+    session.value?.templates?.add(template)
+    return template
 }

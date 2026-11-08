@@ -66,9 +66,14 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
         box.center + part.facing * (box.radius * GAZE_REACH)
     }
 
-    /** The version the tool works in through [sight]: the one picked, else the one the view shows. */
-    protected fun binThrough(sight: SurfaceView): CameraBin? =
-        state.face.version ?: head(sight)?.let { FACE_BINS.binFor(headAngle(it, sight.toViewer(it.box?.center ?: it.origin))) }
+    /** The version the tool works in through [sight]: the one picked, else the one the view shows, a side-set eye's read from its own facing. */
+    protected fun binThrough(sight: SurfaceView): CameraBin? = state.face.version ?: head(sight)?.let { part ->
+        val toViewer = sight.toViewer(part.box?.center ?: part.origin)
+        val headBin = FACE_BINS.binFor(headAngle(part, toViewer))
+        val work = state.session.value?.bodySurfaceWork?.output?.value?.parts?.get(part.id)
+        val eye = work?.let { sideEyes(part, it, headBin) }?.firstOrNull { it.group == picked?.id }
+        FACE_BINS.binFor(faceAngle(part, toViewer, eye))
+    }
 
     /** Whether an eye's work writes both eyes. */
     protected val mirrors: Boolean get() = state.face.bothEyes

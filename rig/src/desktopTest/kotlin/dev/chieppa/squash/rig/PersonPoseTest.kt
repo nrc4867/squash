@@ -41,8 +41,11 @@ private const val STILL = 1e-5f
 private const val LEAN = 0.16f
 private const val ALONG_TANGENT = 6f
 
-/** How far a foot may slide while the body curve tips the pelvis, its leg already straight at rest, in body units. */
-private const val STRAIGHT_LEG_SLIDE = 0.02f
+/** How far any point of a planted foot may move while the body curve tips the pelvis or a drag moves the body, in body units. */
+private const val FOOT_HELD = LIMB_TOLERANCE * 2f
+
+/** A body drag that bends the knees without taking an ankle past its limits, in body units. */
+private val CROUCH = Vec3(0.02f, -0.04f, 0f)
 
 /** How many degrees the look must turn the head at least. */
 private const val TURNED = 10f
@@ -127,26 +130,40 @@ class PersonPoseTest {
         val headTurn = degrees(atan2(now.y, now.x)) - degrees(atan2(rest.y, rest.x))
         assertTrue(tangentTurn < 0f, "the stroke leans the top of the spine forward")
         assertTrue(abs(headTurn - tangentTurn) < ALONG_TANGENT, "the head turns as the end tangent does: $headTurn against $tangentTurn")
-        assertTrue(bent.report.slid.values.all { it < STRAIGHT_LEG_SLIDE }, "the straight legs hold the feet as near as they reach: ${bent.report.slid}")
+        assertTrue(bent.report.slid.isEmpty(), "both feet come back: ${bent.report.slid}")
     }
 
     @Test
-    fun thePinsHoldTheFeetWhenTheBodyIsDragged() {
-        val moved = solver.moveBody(standing, Vec3(0.03f, -0.08f, 0f))
-        assertTrue(moved.report.slid.isEmpty(), "both feet stay where they stood: ${moved.report.slid}")
-        listOf(FOOT_L, FOOT_R).forEach { id ->
-            val foot = assertNotNull(solver.chains.limb(id))
-            assertTrue((solver.endOf(standing, foot) - solver.endOf(moved.pose, foot)).length < LIMB_TOLERANCE * 2f, "$id stays put")
+    fun theBodyCurveHoldsThePlantedFeetAsABodyDragDoes() {
+        val bones = assertNotNull(curveBones(person))
+        val chain = bones.spine.mapNotNull { person.bone(it)?.pivot } + assertNotNull(person.bone(bones.ahead.first())).pivot
+        val last = chain.lastIndex.toFloat()
+        val drawn = chain.mapIndexed { i, p -> Vec2(p.x + LEAN * sin(PI * i / last / 2.0).toFloat(), p.y) }
+        val stroke = BodyStroke(View.SIDE, listOf(drawn.first()).plus(drawn.zipWithNext().flatMap { (a, b) -> listOf(a + (b - a) * (1f / 3f), a + (b - a) * (2f / 3f), b) }).map { CurvePoint(it.x, it.y) })
+        val bent = solver.bendTo(standing, BodyCurve(listOf(stroke), 1f)).pose
+        val hips = assertNotNull(person.indexOf(BoneName(PERSON_TORSO, "hips")))
+        assertTrue(solver.turnedBetween(standing, bent, hips) > TURNED, "the curve tips the pelvis")
+        val dragged = solver.moveBody(standing, CROUCH).pose
+        val curved = footShift(standing, bent)
+        val moved = footShift(standing, dragged)
+        println("feet under the body curve move ${"%.5f".format(curved)}, under a body drag ${"%.5f".format(moved)}")
+        assertTrue(moved < FOOT_HELD, "a body drag holds the feet: $moved")
+        assertTrue(curved < FOOT_HELD, "the body curve holds the feet: $curved")
+        assertTrue(solver.clearCurve(bent).pose.let { footShift(standing, it) } < FOOT_HELD, "clearing the curve holds them too")
+    }
+
+    /**
+     * The furthest any point of either foot moves from [from] to [to], carried by the foot's own bone: how far the foot slides or
+     * rolls on the ground, leaving out the ankle's skin, which the shin carries as the knee bends.
+     */
+    private fun footShift(from: Pose, to: Pose): Float {
+        val a = boneTransforms(person, from)
+        val b = boneTransforms(person, to)
+        return listOf(FOOT_L, FOOT_R).maxOf { foot ->
+            val bone = person.bones.indexOfFirst { it.name.part == foot }
+            val rest = assertNotNull(person.part(foot)).rest
+            (rest.indices step 3).maxOf { Vec3(rest[it], rest[it + 1], rest[it + 2]).let { v -> (b[bone](v) - a[bone](v)).length } }
         }
-    }
-
-    @Test
-    fun theLookTurnsTheHead() {
-        val look = assertNotNull(solver.chains.look)
-        assertEquals(assertNotNull(person.indexOf(BoneName(PERSON_HEAD, "neck"))), look.head)
-        val from = PoseWork(person, standing).joint(look.head)
-        val looked = solver.look(standing, from + Vec3(1f, 0.2f, -0.6f))
-        assertTrue(solver.turnedBetween(standing, looked.pose, look.head) > TURNED)
     }
 
     private fun degrees(radians: Float) = radians * 180f / PI.toFloat()

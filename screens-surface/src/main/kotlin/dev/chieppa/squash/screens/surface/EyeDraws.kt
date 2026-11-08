@@ -70,7 +70,7 @@ fun eyeDraws(
     fun roleOf(role: MarkRole) = roleShapes(group, role, marks, show.expressed, bin)
     val opened = roleOf(MarkRole.LID).map { it.withPlaces(openedLid(it.places, controls.open)) }
     val lidLoop = opened.firstOrNull()?.places
-    val irisFrom = roleOf(MarkRole.IRIS).firstOrNull()?.places?.middle()
+    val irisFrom = (roleOf(MarkRole.IRIS) + roleOf(MarkRole.PUPIL)).firstOrNull()?.places?.middle()
     val total = Vec2(controls.gazeU, controls.gazeV) + show.gaze
     val look = if (lidLoop != null && irisFrom != null) heldInLid(irisFrom, total, lidLoop) else total
     fun shown(role: MarkRole): List<ShownShape> = when (role) {

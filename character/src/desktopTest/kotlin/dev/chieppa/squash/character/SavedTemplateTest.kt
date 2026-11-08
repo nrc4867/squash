@@ -99,4 +99,15 @@ class SavedTemplateTest {
         val mesh = PartBuilder.mesh("limb", saved, PartBuilder.build(saved))
         mesh.patches.forEach { assertEquals(emptyList(), MeshInvariants.check(it, PartBuilder.openRings(saved, it.patch))) }
     }
+
+    @Test
+    fun anOpenLibraryLoadsATemplateSavedWhileItIsOpen() {
+        val library = TemplateLibrary(shipped.parts, shipped.plans)
+        val saved = savedTemplate(tube, leg, Role.LEG, TemplateId("lizard-leg"), "Lizard leg")
+        assertNull(library.find(saved.ref))
+        library.add(saved)
+        assertEquals(saved, library[saved.ref])
+        assertEquals(saved, library.latest(saved.id))
+        assertEquals(library.socketSink(tube.ref), TemplateLibrary(shipped.parts).socketSink(tube.ref), "what it held reads the same")
+    }
 }

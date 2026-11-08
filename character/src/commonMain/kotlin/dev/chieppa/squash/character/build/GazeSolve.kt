@@ -18,15 +18,23 @@ private const val LEAST_FACING = 0.2f
 
 private const val SMALL = 1e-5f
 
-/** An eye as its gaze reads it: its [center] in body space, its surface [normal] there, the directions [alongU] and [aroundV] its region's u and v grow in, unit length, and the [travel] in u and v that reaches its edge looking square along the surface. */
-data class EyeFrame(val center: Vec3, val normal: Vec3, val alongU: Vec3, val aroundV: Vec3, val travel: Vec2)
+/** How far a side-set eye's look leans out along its own facing, as a share. */
+private const val SIDE_BIAS = 0.4f
+
+/**
+ * An eye as its gaze reads it: its [center] in body space, its surface [normal] there, the directions [alongU] and [aroundV] its region's u and v grow in, unit length,
+ * the [travel] in u and v that reaches its edge looking square along the surface, and whether it is set to the side of its head, [sideSet], a bird's.
+ */
+data class EyeFrame(val center: Vec3, val normal: Vec3, val alongU: Vec3, val aroundV: Vec3, val travel: Vec2, val sideSet: Boolean = false)
 
 /** Where a surface eye looks: its pupil's [offset] from where it was drawn, in the patch's u and v, and the [scale] it draws at. */
 data class SurfaceGaze(val offset: Vec2, val scale: Float)
 
 /**
  * Where the eyes in [frames] look at [target] from [toCamera], in the order given. Each turns toward [target] from its own center, so a near target converges them, up to
- * [CONVERGENCE_LIMIT] from their shared direction. That direction leans by [GazeCheats.cameraBias] toward the camera, and becomes an offset in the eye's u and v through its travel. See HLD: look, The pupil system.
+ * [CONVERGENCE_LIMIT] from their shared direction. That direction leans by [GazeCheats.cameraBias] toward the camera, and a side-set eye's by [SIDE_BIAS] out along its own
+ * facing, as an eye on the side of the head rests looking sideways, so a target ahead moves its pupil forward without pinning it to the lid. It then becomes an offset in the
+ * eye's u and v through its travel. See HLD: look, The pupil system.
  */
 fun solveSurfaceGaze(frames: List<EyeFrame>, target: Vec3, toCamera: Vec3, cheats: GazeCheats): List<SurfaceGaze> {
     if (frames.isEmpty()) return emptyList()
@@ -38,7 +46,8 @@ fun solveSurfaceGaze(frames: List<EyeFrame>, target: Vec3, toCamera: Vec3, cheat
     return frames.indices.map { i ->
         val eye = frames[i]
         val own = limitedFrom(shared, direction(target - eye.center))
-        val looked = direction(own * (1f - cheats.cameraBias) + camera * cheats.cameraBias)
+        val biased = direction(own * (1f - cheats.cameraBias) + camera * cheats.cameraBias)
+        val looked = if (eye.sideSet) direction(biased * (1f - SIDE_BIAS) + direction(eye.normal) * SIDE_BIAS) else biased
         val offset = Vec2((looked dot eye.alongU) * eye.travel.x, (looked dot eye.aroundV) * eye.travel.y)
         val scale = if (cheats.sizeCompensation) min(nearest / facings[i], MOST_COMPENSATION) else 1f
         SurfaceGaze(offset, scale)

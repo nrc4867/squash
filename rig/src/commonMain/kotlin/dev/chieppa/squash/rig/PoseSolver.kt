@@ -60,7 +60,7 @@ class PoseSolver(val rig: Rig) {
     }
 
     /**
-     * The whole body moved [by], each planted paw, and each lifted one the pose keeps still, held where it stood by its leg. With
+     * The whole body moved [by], each planted paw, and each lifted one the pose keeps still, held where and as it stood by its leg. With
      * [SolveOptions.firm] the body stops where the first of them would leave its place; otherwise it goes all the way and a paw past
      * its leg's reach slides along the ground toward under the hip, by as little as lets the leg reach it.
      */
@@ -68,10 +68,10 @@ class PoseSolver(val rig: Rig) {
         val begin = PoseWork(rig, start)
         val held = chains.limbs.filter { it.id in start.planted || it.id in start.still }
         val goals = held.associateWith { begin.joint(it.end) }
-        val feet = held.associateWith { limb -> limb.foot?.let(begin::turn) }
+        val stances = held.associateWith { PawStance(begin, it) }
         fun attempt(share: Float): Pair<PoseWork, Map<Limb, Float>> {
             val work = PoseWork(rig, start.copy(offset = start.offset + by * share))
-            val misses = held.associateWith { work.reachWith(it, goals.getValue(it), options.stretch, MAX_DRAG_STRETCH, feet.getValue(it)) }
+            val misses = held.associateWith { work.holdAt(it, goals.getValue(it), options.stretch, stances.getValue(it)) }
             return work to misses
         }
         val share = if (options.firm) firmShare(::attempt) else 1f
@@ -80,7 +80,7 @@ class PoseSolver(val rig: Rig) {
         for (limb in held) {
             if (misses.getValue(limb) <= LIMB_TOLERANCE) continue
             val goal = goals.getValue(limb)
-            work.reachWith(limb, slideTarget(work, limb, goal), options.stretch, MAX_DRAG_STRETCH, feet.getValue(limb))
+            work.holdAt(limb, slideTarget(work, limb, goal), options.stretch, stances.getValue(limb))
             slid[limb.id] = (work.joint(limb.end) - goal).length
         }
         return Solved(work.pose, SolveReport(slid = slid, stretched = stretchedBy(start, work.pose), moved = by * share))
@@ -166,24 +166,26 @@ class PoseSolver(val rig: Rig) {
     }
 
     /**
-     * The pin solve: [pose] with each paw in [targets], by paw, carried back to its target by its leg, the paw keeping its turn in
-     * body space. A paw no leg can bring back stays as near as it reaches, and the report says how far each stays off, in [SolveReport.slid].
-     * Run it after any solve that moves bones above planted paws, such as a body curve's, with the paws' places before it.
+     * The pin solve: [pose] with each paw in [targets], by paw, carried back to its target by its leg, the paw and its leg's end bone
+     * keeping the turns in body space they had under [stood], so the paw stands as it stood. A paw no leg can bring back stays as near
+     * as it reaches, and the report says how far each stays off, in [SolveReport.slid]. Run it after any solve that moves bones above
+     * planted paws, such as a body curve's, with the paws' places and the pose before it.
      */
-    fun holdPaws(pose: Pose, targets: Map<PartId, Vec3>, options: SolveOptions = SolveOptions()): Solved {
+    fun holdPaws(pose: Pose, targets: Map<PartId, Vec3>, stood: Pose, options: SolveOptions = SolveOptions()): Solved {
         val work = PoseWork(rig, pose)
+        val before = PoseWork(rig, stood)
         val off = HashMap<PartId, Float>()
         chains.limbs.filter { it.id in targets }.forEach { limb ->
-            val miss = work.reachWith(limb, targets.getValue(limb.id), options.stretch, MAX_DRAG_STRETCH, limb.foot?.let(work::turn))
+            val miss = work.holdAt(limb, targets.getValue(limb.id), options.stretch, PawStance(before, limb))
             if (miss > LIMB_TOLERANCE) off[limb.id] = miss
         }
         return Solved(work.pose, SolveReport(slid = off, stretched = stretchedBy(pose, work.pose)))
     }
 
-    /** Puts each planted paw back where it stood in [begin], after [work] has moved bones above it, each paw keeping its turn from [begin]. */
+    /** Puts each planted paw back where it stood in [begin], after [work] has moved bones above it, each paw standing as it did in [begin]. */
     private fun holdPlanted(begin: PoseWork, work: PoseWork, options: SolveOptions) {
         chains.limbs.filter { it.id in work.pose.planted }.forEach { limb ->
-            work.reachWith(limb, begin.joint(limb.end), options.stretch, MAX_DRAG_STRETCH, limb.foot?.let(begin::turn))
+            work.holdAt(limb, begin.joint(limb.end), options.stretch, PawStance(begin, limb))
         }
     }
 
