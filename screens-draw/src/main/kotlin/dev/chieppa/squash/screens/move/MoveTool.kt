@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.move
 import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.addSocket
 import dev.chieppa.squash.screens.pickSocket
+import dev.chieppa.squash.character.block.DigitTips
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacedPart
@@ -189,7 +190,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
     }
 
     private fun commandFor(session: CharacterSession, handle: MoveHandle, pixel: Offset, view: HandleView): DocumentCommand? = when (handle) {
-        is SocketHandle -> surfaceUnder(handle.parent, pixel, view)?.let { place ->
+        is SocketHandle -> if (DigitTips.isTip(handle.socket)) null else surfaceUnder(handle.parent, pixel, view)?.let { place ->
             val parent = handle.parent.id ?: return null
             val number = HandSockets.idOf(handle.socket)
             val owner = handle.owner ?: parent

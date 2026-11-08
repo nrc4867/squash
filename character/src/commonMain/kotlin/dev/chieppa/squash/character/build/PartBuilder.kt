@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.View
@@ -87,6 +88,14 @@ object PartBuilder {
     /** The colored patches of [template]'s blocks that are on with [params] over its defaults. */
     fun patchSlots(template: PartTemplate, params: Map<String, Float>): List<PatchSlot> =
         (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.patchSlots() } }
+
+    /** The digits' tip sockets of [template]'s blocks that are on with [params] over its defaults, for the digits they would build. */
+    fun tipSockets(template: PartTemplate, params: Map<String, Float>): List<SocketSpec> =
+        (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.tipSockets(it.countedPatches(values)) } }
+
+    /** The digits' tip sockets of [template]'s blocks, for the digits among [patches], the names of every patch a build of it made. */
+    fun tipSockets(template: PartTemplate, patches: Collection<String>): List<SocketSpec> =
+        patches.toSet().let { names -> template.blocks.flatMap { it.tipSockets(names) } }
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())

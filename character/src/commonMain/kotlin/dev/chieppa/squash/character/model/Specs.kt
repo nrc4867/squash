@@ -15,7 +15,8 @@ data class JointSpec(
 
 /**
  * A child attachment point. [pair] gives it a mirrored twin; [tilt] turns its outward normal toward the part's end, in degrees;
- * [sink] multiplies how deep a child sits inside the part here; [scale] is the size a part Add part places here starts at.
+ * [sink] multiplies how deep a child sits inside the part here; [scale] is the size a part Add part places here starts at. With
+ * [patch] it lies on that patch's surface at [u] and [v], as a digit's tip socket lies on its digit, and not on the part's run.
  */
 data class SocketSpec(
     val name: String,
@@ -27,6 +28,7 @@ data class SocketSpec(
     val tilt: Float = 0f,
     val sink: Float = 1f,
     val scale: Float = 1f,
+    val patch: String? = null,
 )
 
 /** A named surface point on a part, at [u] and [v], that face marks and sets anchor to. */

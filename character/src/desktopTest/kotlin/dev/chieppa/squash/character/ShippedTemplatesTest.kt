@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 
 private const val RANDOM_BUILDS = 25
 private val SHIPPED_IDS = listOf(
-    "antler", "arm", "beak", "beak-lower", "blob", "ear", "fin", "foot", "foot-bird", "hand", "head", "head-bird", "head-round", "horn", "leg", "leg-bird", "paw", "plate", "sheet", "spike", "tail",
+    "antler", "arm", "beak", "beak-lower", "blob", "claw", "ear", "fin", "foot", "foot-bird", "hand", "head", "head-bird", "head-round", "horn", "leg", "leg-bird", "paw", "plate", "sheet", "spike", "tail",
     "tail-feathers", "torso", "torso-bird", "torso-upright", "tube", "wing-feathered", "wing-membrane",
 )
 
@@ -34,9 +34,9 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2),
+                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2),
                 "foot-bird" to listOf(1, 2, 3), "hand" to listOf(1, 2, 3), "head-bird" to listOf(1), "head-round" to listOf(1), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
-                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
+                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1), "wing-membrane" to listOf(1),
             ),
             versions,

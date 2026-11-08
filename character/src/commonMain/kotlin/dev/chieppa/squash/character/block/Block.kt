@@ -43,6 +43,12 @@ sealed interface Block {
     fun withJointAt(name: String, u: Float): Block = this
 
     fun sockets(): List<SocketSpec> = emptyList()
+
+    /** The sockets at the tips of the digits this block built, among [patches], the names of every patch the part's build made. */
+    fun tipSockets(patches: Set<String>): List<SocketSpec> = emptyList()
+
+    /** The names of the patches this block builds with [values], where how many it builds depends on them; none for any other block. */
+    fun countedPatches(values: Map<String, Float>): Set<String> = emptySet()
     fun landmarks(): List<LandmarkSpec> = emptyList()
     fun areas(): List<AreaSpec> = emptyList()
 

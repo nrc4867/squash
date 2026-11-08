@@ -34,6 +34,7 @@ const val DRAGON_RESOURCE = "dragon.json"
 val SCALES = SlotName("scales")
 val BELLY = SlotName("belly")
 val WING_SKIN = SlotName("wing-skin")
+val CLAW = SlotName("claw")
 
 private const val LOOP_POINTS = 14
 
@@ -41,6 +42,9 @@ private val SCALED_PARTS = listOf(TORSO, HEAD, TAIL, EAR_L, FRONT_LEG_L, BACK_LE
 
 /** The spikes down the back and the tail. */
 private val SPIKED = (0 until 7).map { spikeOf(TORSO, it) } + (0 until 6).map { spikeOf(TAIL, it) }
+
+/** The left claws, which their pairs share. */
+private val CLAWS = listOf(FRONT_PAW_L, BACK_PAW_L).flatMap { paw -> (0 until PAW_TOES).map { clawOf(paw, it) } }
 
 private val shipped by lazy { TemplateFolder.shipped() }
 
@@ -53,12 +57,13 @@ private fun spot(part: PartId, id: String, slot: SlotName, u: Float, v: Float, d
     Region(RegionId(id), List(LOOP_POINTS) { i -> (2.0 * PI * i / LOOP_POINTS).let { Anchor(part, BODY_PATCH, u + du * cos(it).toFloat(), v + dv * sin(it).toFloat()) } }, slot),
 )
 
-/** The dragon's colors: red scales, a pale gold belly along the body, tail and jaw and on its spikes and horns, and darker wine-red skin on its wings. */
+/** The dragon's colors: red scales, a pale gold belly along the body, tail and jaw and on its spikes and horns, darker wine-red skin on its wings, and dark claws. */
 fun dragonColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SCALES, SlotColor(0.78f, 0.22f, 0.18f)),
     SetPaletteSlot(BELLY, SlotColor(0.96f, 0.82f, 0.52f)),
     SetPaletteSlot(WING_SKIN, SlotColor(0.52f, 0.13f, 0.18f)),
-) + SCALED_PARTS.map { SetBaseSlot(it, SCALES) } + (SPIKED + HORN_L).map { SetBaseSlot(it, BELLY) } + listOf(
+    SetPaletteSlot(CLAW, SlotColor(0.22f, 0.16f, 0.14f)),
+) + SCALED_PARTS.map { SetBaseSlot(it, SCALES) } + (SPIKED + HORN_L).map { SetBaseSlot(it, BELLY) } + CLAWS.map { SetBaseSlot(it, CLAW) } + listOf(
     SetAreaFill(WING_L, "web", WING_SKIN),
     SetAreaFill(WING_L, "skin", WING_SKIN),
     spot(TORSO, "belly", BELLY, 0.5f, 0.5f, 0.44f, 0.15f),

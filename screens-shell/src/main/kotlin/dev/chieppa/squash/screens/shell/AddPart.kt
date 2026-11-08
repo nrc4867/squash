@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.character.block.DigitTips
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.character.catalog.partName
@@ -47,6 +48,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.add_part_tip
 import dev.chieppa.squash.uidesign.generated.add_part
 import dev.chieppa.squash.uidesign.generated.add_part_add
 import dev.chieppa.squash.uidesign.generated.add_part_one
@@ -79,11 +81,15 @@ private val ENTER_KEYS = listOf("Enter")
 @Composable
 fun openSocketCount(socket: OpenSocket): String = stringResource(if (socket.paired) Res.string.add_part_pair else Res.string.add_part_one)
 
-/** Names for [sockets] as the panels read them: socket 1 for a hand-made one or any socket of hand-made row 1, else the socket's own name. */
+/**
+ * Names for [sockets] as the panels read them: socket 1 for a hand-made one or any socket of hand-made row 1, tip 1 for the first
+ * digit's tip socket, else the socket's own name.
+ */
 @Composable
 fun socketNames(sockets: List<OpenSocket>): (String) -> String {
     val numbered = sockets.mapNotNull { handNumber(it.name) }.associateWith { stringResource(Res.string.move_socket_name, it) }
-    return { name -> handNumber(name)?.let(numbered::get) ?: displayName(name) }
+    val tips = sockets.mapNotNull { DigitTips.indexOf(it.name) }.associateWith { stringResource(Res.string.add_part_tip, it + 1) }
+    return { name -> handNumber(name)?.let(numbered::get) ?: DigitTips.indexOf(name)?.let(tips::get) ?: displayName(name) }
 }
 
 /** The number of the hand-made socket or row [socket] is, or null for any other socket. */
@@ -128,10 +134,11 @@ fun AddPartPopover(state: AppState) {
     val focus = remember { FocusRequester() }
     val number = handNumber(open.name)
     val parent = state.session.value?.document?.value?.character?.part(open.parent)
-    val title = if (number != null && parent != null) {
-        stringResource(Res.string.add_part_on_socket, partName(parent, state.templates), stringResource(Res.string.move_socket_name, number))
-    } else {
-        stringResource(Res.string.add_part_title, displayName(open.name))
+    val tip = DigitTips.indexOf(open.name)
+    val title = when {
+        number != null && parent != null -> stringResource(Res.string.add_part_on_socket, partName(parent, state.templates), stringResource(Res.string.move_socket_name, number))
+        tip != null && parent != null -> stringResource(Res.string.add_part_on_socket, partName(parent, state.templates), stringResource(Res.string.add_part_tip, tip + 1))
+        else -> stringResource(Res.string.add_part_title, displayName(open.name))
     }
     Popover(true, state::closeAddPart, title, width = POPOVER_WIDTH) {
         Column(

@@ -34,6 +34,10 @@ import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.rig.curled
+import dev.chieppa.squash.screens.dragon.BACK_PAW_L
+import dev.chieppa.squash.screens.dragon.BACK_PAW_R
+import dev.chieppa.squash.screens.dragon.FRONT_PAW_L
+import dev.chieppa.squash.screens.dragon.FRONT_PAW_R
 import dev.chieppa.squash.screens.dragon.TORSO
 import dev.chieppa.squash.screens.dragon.WING_L
 import dev.chieppa.squash.screens.dragon.WING_R
@@ -92,7 +96,8 @@ private object NoDragonFiles : FileChooser {
 /**
  * The dragon, built from its commands, in every pane with its colors and lines, spikes down its back and tail and horns on its crown:
  * in Shape with Move's dots over it, its membrane wings
- * spread at rest, and with a wing selected, close; in Pose with the left wing raised by its wrist; and with both wings folded by a whole Curl.
+ * spread at rest, and with a wing selected, close; in Pose with the left wing raised by its wrist; and with both wings folded by a whole Curl;
+ * and its clawed front paw, close, at rest in Shape and with every paw curled in Pose.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
@@ -223,5 +228,26 @@ class DragonSmokeTest {
         val folded = rig.curled(session.document.value.character.pose, listOf(WING_L, WING_R), 1f)
         session.send(SetPose(folded))
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dragon-pose-folded")
+    }
+
+    @Test
+    fun aClawedPawCloseInShape() = runDesktopComposeUiTest(DRAGON_WIDTH, DRAGON_HEIGHT) {
+        val bench = opened(FRONT_PAW_L)
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.V) }
+        waitForIdle()
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dragon-paw-shape")
+    }
+
+    @Test
+    fun theClawsRideTheirCurledToes() = runDesktopComposeUiTest(DRAGON_WIDTH, DRAGON_HEIGHT) {
+        val bench = opened(FRONT_PAW_L)
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        waitForIdle()
+        val state = bench.state
+        val session = assertNotNull(state.session.value)
+        val rig = assertNotNull(state.rigNow())
+        val curled = rig.curled(session.document.value.character.pose, listOf(FRONT_PAW_L, FRONT_PAW_R, BACK_PAW_L, BACK_PAW_R), 1f)
+        session.send(SetPose(curled))
+        keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dragon-pose-paws-curled")
     }
 }

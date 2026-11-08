@@ -1,16 +1,19 @@
 package dev.chieppa.squash.screens.dragon
 
+import dev.chieppa.squash.character.block.DigitTips
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.fennec.drawn
@@ -72,6 +75,23 @@ private fun spikes(row: SpikeRow): List<DocumentCommand> {
 /** The spike on socket [index] of [part]'s row. */
 fun spikeOf(part: PartId, index: Int) = PartId("${part.value}-spike-$index")
 
+/** How many toes each paw has. */
+const val PAW_TOES = 3
+
+/** The claw on the tip of toe [index] of [paw]. */
+fun clawOf(paw: PartId, index: Int) = PartId("${paw.value}-claw-$index")
+
+/** The claws of a pair of paws: one on every toe's tip socket of each side, placed in one step, as Add part fills the tips. */
+private fun claws(id: String, left: PartId, right: PartId) = AddParts(
+    (0 until PAW_TOES).flatMap { i ->
+        val tip = DigitTips.name("toes:$i")
+        listOf(
+            PartInstance(clawOf(left, i), ref("claw"), SocketRef(left, tip), pair = PairId("$id-$i"), side = Side.LEFT, role = Role.HORN),
+            PartInstance(clawOf(right, i), ref("claw"), SocketRef(right, tip), pair = PairId("$id-$i"), side = Side.RIGHT, role = Role.HORN),
+        )
+    },
+)
+
 /** The paired hand-made socket on the head's crown the horns sit on, behind and inside the ears. */
 const val HORN_SOCKET = 1
 private const val CROWN_U = 0.16f
@@ -118,7 +138,7 @@ private val TAIL_TOP = drawn(
  * The dragon's parts on the canine plan's sockets: a long low torso, a snouted head with small swept-back ears and a long tapering
  * tail, drawn from outlines, its legs and paws as their templates build them with three toes, and a pair of membrane wings on a
  * paired hand-made socket on the shoulders, raised a little from their rest out to the sides, and rows of spikes down its back and
- * tail, each smaller than the last, and a pair of horns leaning back from its crown.
+ * tail, each smaller than the last, a pair of horns leaning back from its crown, and a claw on every toe.
  */
 fun dragonBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(PartInstance(TORSO, ref("torso"), role = Role.BODY))),
@@ -134,8 +154,8 @@ fun dragonBody(): List<DocumentCommand> = listOf(
     SetParameter(EAR_L, PlacementParams.OUTWARD, EAR_OUTWARD),
     SetOutlines(TAIL, mapOf(View.SIDE to TAIL_SIDE, View.TOP to TAIL_TOP)),
     SetParameter(TAIL, PlacementParams.LEAN, TAIL_LEAN),
-    SetParameter(FRONT_PAW_L, "toes", 3f),
-    SetParameter(BACK_PAW_L, "toes", 3f),
+    SetParameter(FRONT_PAW_L, "toes", PAW_TOES.toFloat()),
+    SetParameter(BACK_PAW_L, "toes", PAW_TOES.toFloat()),
     HandSockets.add(TORSO, WING_SOCKET, SHOULDER_U, SHOULDER_V, 0f, paired = true),
     pair("wings", "wing-membrane", Role.WING, WING_L, TORSO, WING_R, TORSO, HandSockets.name(WING_SOCKET)),
     SetParameter(WING_L, "size", WING_SIZE),
@@ -143,4 +163,6 @@ fun dragonBody(): List<DocumentCommand> = listOf(
 ) + SPIKE_ROWS.flatMap(::spikes) + listOf(
     HandSockets.add(HEAD, HORN_SOCKET, CROWN_U, CROWN_V, 0f, paired = true),
     pair("horns", "horn", Role.HORN, HORN_L, HEAD, HORN_R, HEAD, HandSockets.name(HORN_SOCKET)),
+    claws("front-claws", FRONT_PAW_L, FRONT_PAW_R),
+    claws("back-claws", BACK_PAW_L, BACK_PAW_R),
 )

@@ -7,10 +7,12 @@ import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.DigitChain
 import dev.chieppa.squash.character.model.JointSpec
+import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SectionSpec
+import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
@@ -94,6 +96,8 @@ data class ToeRow(
     val taper: Param = Param.of(1f),
     @Doc("How much each digit swells at each of its joints, as a fraction of its thickness; a drawn digit's sizes are kept.")
     val knuckle: Param = Param.of(0f),
+    @Doc("A socket at every digit's tip, for a claw or a nail; none when left out.")
+    val tips: DigitTips? = null,
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
@@ -116,6 +120,27 @@ data class ToeRow(
             }
             DigitChain(patch, i, span, pointsBack(i), specs)
         }.toList()
+    }
+
+    /**
+     * A socket at the tip of each built digit, among [patches]: digit `i`'s is `name:i.tip`, on the digit's patch at the end of its
+     * span, sinking what sits there along that part's own axis.
+     */
+    override fun tipSockets(patches: Set<String>): List<SocketSpec> {
+        val spec = tips ?: return emptyList()
+        val overrides = digits.associateBy { it.index }
+        return generateSequence(0) { it + 1 }.takeWhile { "$rowName:$it" in patches }.map { i ->
+            val patch = "$rowName:$i"
+            val end = (overrides[i]?.u ?: u).end
+            SocketSpec(DigitTips.name(patch), end, 0f, Outward.AXIS, null, spec.takes, sink = spec.sink, patch = patch)
+        }.toList()
+    }
+
+    /** The digits the row builds with [values], by patch name: as many as its count, none when it is switched off. */
+    override fun countedPatches(values: Map<String, Float>): Set<String> {
+        if (condition?.let { values[it.name] == 0f } == true) return emptySet()
+        val toes = count.resolve(values).roundToInt().coerceAtLeast(0)
+        return (0 until toes).map { "$rowName:$it" }.toSet()
     }
 
     /** Whether digit [index] is turned past a right angle, pointing back from its root. */
@@ -191,7 +216,7 @@ data class ToeRow(
             ctx.param("width", width) + ctx.param("taper", taper) + ctx.param("knuckle", knuckle) +
             (section?.controlPointCount?.takeIf { it != segments }?.let { ctx.finding("section", "$it control points for $segments segments") } ?: emptyList()) +
             ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS) +
-            (joints?.lint(ctx, "joints") ?: emptyList()) +
+            (joints?.lint(ctx, "joints") ?: emptyList()) + (tips?.lint(ctx, "tips") ?: emptyList()) +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") } +
             digits.groupBy { it.index }.filter { it.value.size > 1 }.keys.flatMap { ctx.finding("digits", "two digits at index $it") }
 }

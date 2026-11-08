@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "claw",
+  "version": 1,
+  "name": "Claw",
+  "role": "horn",
+  "axis": { "rest": [0.8, -0.6, 0], "length": 0.08, "bend": "$curve", "bendAt": 0.5 },
+  "openEnd": "start",
+  "topology": { "rings": 16, "segments": 10 },
+  "views": { "side": "height", "top": "width" },
+  "section": "circle",
+  "params": {
+    "size":  { "default": 1.0,   "min": 0.2,  "max": 3.0 },
+    "girth": { "default": 0.22,  "min": 0.08, "max": 0.5 },
+    "curve": { "default": -0.08, "min": -0.3, "max": 0.0 }
+  },
+  "blocks": [
+    { "kind": "tube", "u": [0.0, 1.0], "radius": "$girth", "taper": 0.1 },
+    { "kind": "cap",  "end": "end", "shape": "pointed" }
+  ]
+}

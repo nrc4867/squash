@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.catalog
 
+import dev.chieppa.squash.character.block.DigitTips
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -80,9 +81,10 @@ fun placeOnSocket(
 }
 
 /**
- * The instances [template] makes on [socket] and, where [socket] is one of a hand-made row, on every other socket of that row in
- * [open] that takes it, each with what it starts from: [start], at the size its socket gives where that is not 1 and [template]
- * has a size. So Add part fills a row of spines in one step, each smaller than the last. See HLD: data-model, Hand-made sockets.
+ * The instances [template] makes on [socket] and, where [socket] is one of a row, a hand-made row or the tips of a toe row's digits,
+ * on every other socket of that row in [open] that takes it, each with what it starts from: [start], at the size its socket gives
+ * where that is not 1 and [template] has a size. So Add part fills a row of spines in one step, each smaller than the last, and puts
+ * a claw on every toe. See HLD: data-model, Hand-made sockets, and Tip sockets.
  */
 fun placeOnRow(
     socket: OpenSocket,
@@ -93,10 +95,16 @@ fun placeOnRow(
     roles: PartRoles? = null,
     id: () -> String = Ulid::next,
 ): List<Pair<List<PartInstance>, PartData>> {
-    val row = HandSockets.rowOf(socket.name)
-    val targets = if (row == null) listOf(socket) else listOf(socket) + open.filter { it != socket && it.parent == socket.parent && HandSockets.rowOf(it.name) == row && template.id in it.takes }
-    return targets.sortedBy { it.name.substringAfterLast('.').toIntOrNull() ?: 0 }.map { target ->
+    val row = rowOf(socket.name)
+    val targets = if (row == null) listOf(socket) else listOf(socket) + open.filter { it != socket && it.parent == socket.parent && rowOf(it.name) == row && template.id in it.takes }
+    return targets.sortedBy { placeInRow(it.name) }.map { target ->
         val data = if (target.scale != 1f && SIZE_PARAM in template.params) start.copy(params = start.params + (SIZE_PARAM to target.scale)) else start
         placeOnSocket(target, template, document, data, roles, id) to data
     }
 }
+
+/** The row socket [name] belongs to on its part, a hand-made row's or a toe row's tips, or null for a socket on its own. */
+private fun rowOf(name: String): String? = HandSockets.rowOf(name)?.let(HandSockets::name) ?: DigitTips.rowOf(name)
+
+/** Where socket [name] stands in its row, from 0. */
+private fun placeInRow(name: String): Int = DigitTips.indexOf(name) ?: name.substringAfterLast('.').toIntOrNull() ?: 0

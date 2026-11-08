@@ -38,12 +38,16 @@ internal fun boneTree(parts: List<RiggedPart>): List<Bone> {
     return parts.flatMap { part -> bonesOf(part, carrierOf(part, byId)) }
 }
 
-/** The bone [part] hangs from: its parent's bone carrying its socket, through any parent with no joints of its own. */
+/**
+ * The bone [part] hangs from: its parent's bone carrying its socket, through any parent with no joints of its own. A socket on a
+ * digit, its tip's, is carried by the digit's joint owning it there, the last.
+ */
 internal fun carrierOf(part: RiggedPart, byId: Map<PartId, RiggedPart>): BoneName? {
     val parent = part.placed.socket?.parent?.let(byId::get) ?: return null
-    val socketU = part.placed.socketSpec?.u ?: return null
+    val spec = part.placed.socketSpec ?: return null
     if (parent.joints.isEmpty) return carrierOf(parent, byId)
-    return parent.bone(parent.joints.carrierAt(socketU))
+    val onDigit = spec.patch?.takeIf { parent.joints.digitOf(it) != null }
+    return parent.bone(if (onDigit != null) parent.joints.boneAt(onDigit, spec.u) else parent.joints.carrierAt(spec.u))
 }
 
 private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {

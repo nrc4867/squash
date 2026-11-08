@@ -110,6 +110,10 @@ object HandSockets {
     fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), pair(id), count(id), to(id), size(id), falloff(id)).associateWith { null })
 }
 
-/** The sockets a part of [template] offers on [plan]: the plan's and the template's by name, then those its [params] hold by hand. */
-fun socketsOn(plan: BodyPlan?, template: PartTemplate, params: Map<String, Float>): List<SocketSpec> =
-    (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }) + HandSockets.specs(params)
+/**
+ * The sockets a part of [template] offers on [plan]: the plan's and the template's by name, those its [params] hold by hand, then its
+ * digits' tips, for the digits among [built], the patches its build made, or without them for the digits [params] would build.
+ */
+fun socketsOn(plan: BodyPlan?, template: PartTemplate, params: Map<String, Float>, built: Collection<String>? = null): List<SocketSpec> =
+    (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }) + HandSockets.specs(params) +
+        (built?.let { PartBuilder.tipSockets(template, it) } ?: PartBuilder.tipSockets(template, params))

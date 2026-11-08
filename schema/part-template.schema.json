@@ -463,6 +463,29 @@
       },
       "additionalProperties": false
     },
+    "DigitTips": {
+      "description": "A socket at the tip of every digit of the row, named for the digit with .tip after it; a part there sinks along its own axis and rides the digit's last joint.",
+      "type": "object",
+      "properties": {
+        "takes": {
+          "description": "The templates a tip takes; every loaded template when empty, and an empty tip shows no planned part.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sink": {
+          "description": "Multiplies how deep a part on a tip sits inside the digit.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 4.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "GenericSpec": {
       "description": "A generic template: each part chooses its section profile, the views that set it, and its rings and segments; the template's section, views and topology are the defaults.",
       "type": "object",
@@ -1596,6 +1619,17 @@
             {
               "type": "string",
               "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "tips": {
+          "description": "A socket at every digit's tip, for a claw or a nail; none when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DigitTips"
+            },
+            {
+              "type": "null"
             }
           ]
         }

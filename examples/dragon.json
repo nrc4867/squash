@@ -1915,7 +1915,7 @@
                 "id": "front-paw-l",
                 "template": {
                     "id": "paw",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "front-leg-l",
@@ -1929,7 +1929,7 @@
                 "id": "front-paw-r",
                 "template": {
                     "id": "paw",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "front-leg-r",
@@ -1943,7 +1943,7 @@
                 "id": "back-paw-l",
                 "template": {
                     "id": "paw",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "back-leg-l",
@@ -1957,7 +1957,7 @@
                 "id": "back-paw-r",
                 "template": {
                     "id": "paw",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "back-leg-r",
@@ -2282,6 +2282,174 @@
                 "pair": "horns",
                 "side": "right",
                 "role": "horn"
+            },
+            {
+                "id": "front-paw-l-claw-0",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-l",
+                    "socket": "toes:0.tip"
+                },
+                "pair": "front-claws-0",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "front-paw-r-claw-0",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-r",
+                    "socket": "toes:0.tip"
+                },
+                "pair": "front-claws-0",
+                "side": "right",
+                "role": "horn"
+            },
+            {
+                "id": "front-paw-l-claw-1",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-l",
+                    "socket": "toes:1.tip"
+                },
+                "pair": "front-claws-1",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "front-paw-r-claw-1",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-r",
+                    "socket": "toes:1.tip"
+                },
+                "pair": "front-claws-1",
+                "side": "right",
+                "role": "horn"
+            },
+            {
+                "id": "front-paw-l-claw-2",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-l",
+                    "socket": "toes:2.tip"
+                },
+                "pair": "front-claws-2",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "front-paw-r-claw-2",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "front-paw-r",
+                    "socket": "toes:2.tip"
+                },
+                "pair": "front-claws-2",
+                "side": "right",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-l-claw-0",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-l",
+                    "socket": "toes:0.tip"
+                },
+                "pair": "back-claws-0",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-r-claw-0",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-r",
+                    "socket": "toes:0.tip"
+                },
+                "pair": "back-claws-0",
+                "side": "right",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-l-claw-1",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-l",
+                    "socket": "toes:1.tip"
+                },
+                "pair": "back-claws-1",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-r-claw-1",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-r",
+                    "socket": "toes:1.tip"
+                },
+                "pair": "back-claws-1",
+                "side": "right",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-l-claw-2",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-l",
+                    "socket": "toes:2.tip"
+                },
+                "pair": "back-claws-2",
+                "side": "left",
+                "role": "horn"
+            },
+            {
+                "id": "back-paw-r-claw-2",
+                "template": {
+                    "id": "claw",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "back-paw-r",
+                    "socket": "toes:2.tip"
+                },
+                "pair": "back-claws-2",
+                "side": "right",
+                "role": "horn"
             }
         ],
         "pairs": {
@@ -2498,6 +2666,36 @@
                 "surface": {
                     "baseSlot": "belly"
                 }
+            },
+            "front-claws-0": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
+            },
+            "front-claws-1": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
+            },
+            "front-claws-2": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
+            },
+            "back-claws-0": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
+            },
+            "back-claws-1": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
+            },
+            "back-claws-2": {
+                "surface": {
+                    "baseSlot": "claw"
+                }
             }
         },
         "palette": {
@@ -2524,6 +2722,14 @@
                         "red": 0.52,
                         "green": 0.13,
                         "blue": 0.18
+                    }
+                },
+                {
+                    "name": "claw",
+                    "color": {
+                        "red": 0.22,
+                        "green": 0.16,
+                        "blue": 0.14
                     }
                 }
             ]

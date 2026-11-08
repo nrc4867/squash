@@ -63,18 +63,18 @@ class PlacedPart(
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
 
-    /** A point on this part's surface at [u] and [v] on its first run reaching [u], in body space. */
-    fun pointOn(u: Float, v: Float): Vec3? = runAt(u)?.let { origin + surface.shown(it.positionAt(u, v)) }
+    /** A point on this part's surface at [u] and [v] on [patch], or on its first run reaching [u] without one, in body space. */
+    fun pointOn(u: Float, v: Float, patch: String? = null): Vec3? = patchAt(u, patch)?.let { origin + surface.shown(it.positionAt(u, v)) }
 
     /** The outward normal there, in body space. */
-    fun normalAt(u: Float, v: Float): Vec3? = runAt(u)?.let { surface.shown(it.surfaceAt(u, v).normal) }
+    fun normalAt(u: Float, v: Float, patch: String? = null): Vec3? = patchAt(u, patch)?.let { surface.shown(it.surfaceAt(u, v).normal) }
 
     /** The normal there turned [tilt] degrees toward the part's end, which way a socket there with that tilt faces. */
-    fun outwardAt(u: Float, v: Float, tilt: Float): Vec3? {
-        val normal = normalAt(u, v) ?: return null
+    fun outwardAt(u: Float, v: Float, tilt: Float, patch: String? = null): Vec3? {
+        val normal = normalAt(u, v, patch) ?: return null
         if (tilt == 0f) return normal
-        val ahead = pointOn((u + TANGENT_STEP).coerceAtMost(1f), v) ?: return normal
-        val behind = pointOn((u - TANGENT_STEP).coerceAtLeast(0f), v) ?: return normal
+        val ahead = pointOn((u + TANGENT_STEP).coerceAtMost(1f), v, patch) ?: return normal
+        val behind = pointOn((u - TANGENT_STEP).coerceAtLeast(0f), v, patch) ?: return normal
         val along = (ahead - behind).let { it - normal * (it dot normal) }
         if (along.length == 0f) return normal
         val angle = tilt * DEGREES_TO_RADIANS
@@ -84,7 +84,8 @@ class PlacedPart(
     /** Where this part reaches in body space, or null when it built nothing. */
     val box: BodyBox? get() = surface.box?.moved(origin)
 
-    private fun runAt(u: Float): Patch? = surface.patches.firstOrNull { it.covers(u) }
+    private fun patchAt(u: Float, patch: String?): Patch? =
+        if (patch == null) surface.patches.firstOrNull { it.covers(u) } else surface.patches.firstOrNull { it.name == patch }
 
     /** This part showing [surface], turned by [turn], where it sits. */
     fun showing(surface: PartSurface, turn: Mat3): PlacedPart =
@@ -166,11 +167,11 @@ private class Assembler(
             null
         }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
-        val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side)) else null
+        val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side), spec.patch) else null
         return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role)
     }
 
-    private fun socketsOf(part: PlacedPart): List<SocketSpec> = socketsOn(plan, part.template, part.placement)
+    private fun socketsOf(part: PlacedPart): List<SocketSpec> = socketsOn(plan, part.template, part.placement, part.surface.patches.map { it.name })
 
     /**
      * Where the socket plane of a [template] part on [side] sits on [parent]: the socket's point, sunk by the template's depth
@@ -180,12 +181,12 @@ private class Assembler(
     private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?): Vec3 {
         val mirroredHere = side == Side.RIGHT
         val v = socketV(parent, spec, side)
-        val point = parent.pointOn(spec.u, v) ?: return parent.origin
+        val point = parent.pointOn(spec.u, v, spec.patch) ?: return parent.origin
         val rest = PartBuilder.axes(template).along
         val along = if (mirroredHere) rest.mirrored else rest
         val into = when (spec.outward) {
             Outward.AXIS -> along
-            Outward.NORMAL -> parent.outwardAt(spec.u, v, spec.tilt) ?: along
+            Outward.NORMAL -> parent.outwardAt(spec.u, v, spec.tilt, spec.patch) ?: along
         }
         val mount = templates.mountOffset(template.ref)
         return point - into * (templates.socketSink(template.ref) * spec.sink) - (if (mirroredHere) mount.mirrored else mount)
@@ -208,7 +209,7 @@ private class Assembler(
                 continue
             }
             val template = spec.takes.firstNotNullOfOrNull { templates.latest(it) } ?: continue
-            if (leader != null) here.pointOn(spec.u, spec.v)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
+            if (leader != null) here.pointOn(spec.u, spec.v, spec.patch)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
             if (template.id.value in seen) continue
             val paired = spec.pair != null || twin != null
             val left = plannedPart(template, if (paired) Side.LEFT else null, here, unmoved.placedBy(here.placement, Side.LEFT)) ?: continue
@@ -226,11 +227,11 @@ private class Assembler(
         val ref = SocketRef(leader, unmoved.name)
         if (unmoved.pair == null && twin == null) {
             val spec = unmoved.placedBy(here.placement, null)
-            return listOfNotNull(here.pointOn(spec.u, spec.v)?.let { PlacedSocket(ref, it) })
+            return listOfNotNull(here.pointOn(spec.u, spec.v, spec.patch)?.let { PlacedSocket(ref, it) })
         }
         return listOf(Side.LEFT to here, Side.RIGHT to (twin ?: here)).mapNotNull { (side, parent) ->
             val spec = unmoved.placedBy(parent.placement, side)
-            parent.pointOn(spec.u, socketV(parent, spec, side))?.let { PlacedSocket(ref, it, side, parent.id ?: leader) }
+            parent.pointOn(spec.u, socketV(parent, spec, side), spec.patch)?.let { PlacedSocket(ref, it, side, parent.id ?: leader) }
         }
     }
 
