@@ -18,6 +18,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
 import dev.chieppa.squash.screens.fennec.CREAM
 import dev.chieppa.squash.screens.fennec.EAR_L
@@ -29,17 +30,13 @@ import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -80,13 +77,13 @@ private fun softPaint(): List<DocumentCommand> = listOf(
 @Tag("slow")
 class SoftBrushSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()
-        val session = CharacterSession(savedFennec(), TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(savedFennec(), TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         softPaint().forEach(session::send)
-        session.settled()
+        work.settle(session)
         return session
     }
 
@@ -107,8 +104,8 @@ class SoftBrushSmokeTest {
             val whole = framedCamera(parts, toViewer, WIDTH, HEIGHT, WHOLE_MARGIN)
             val close = framedCamera(head, toViewer, WIDTH, HEIGHT, CLOSE_MARGIN)
             session.showColorAt(close.pixelsPerUnit)
-            session.settled()
-            val state = session.probeState()
+            work.settle(session)
+            val state = session.probeState(work)
             for ((modeName, mode) in listOf("flat" to Shading.FLAT, "two-tone" to Shading.TWO_TONE)) {
                 val view = characterView(rect, whole.camera, state, PROBE_LOOK, ObjectShading(mode), whole.pixelsPerUnit) { BIN_THREE_QUARTER }
                 keep("soft-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
@@ -116,7 +113,7 @@ class SoftBrushSmokeTest {
             val view = characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { BIN_THREE_QUARTER }
             keep("soft-head-flat-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
         }
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -125,7 +122,7 @@ class SoftBrushSmokeTest {
         val session = session()
         val assembled = assertNotNull(session.assembly.output.value)
         session.showColorAt(pixelsPerUnit(ZOOM_DISTANCE))
-        session.settled()
+        work.settle(session)
         val rect = PixelRect(0, 0, ZOOM_SIZE, ZOOM_SIZE)
         val zooms = listOf(
             Zoom("belly", TORSO, 0.4f, 0.34f, smooth = true),
@@ -145,7 +142,7 @@ class SoftBrushSmokeTest {
                 if (mode == Shading.FLAT && zoom.smooth) assertFadeIsSmooth(pixels, ZOOM_SIZE, zoom.name)
             }
         }
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 

@@ -27,7 +27,6 @@ import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -58,7 +57,7 @@ fun main() {
             state = rememberWindowState(width = 1440.dp, height = 900.dp),
         ) {
             LaunchedEffect(recent) {
-                snapshotFlow { recent.entries }.drop(1).collect { withContext(Dispatchers.IO) { store.save(it) } }
+                snapshotFlow { recent.entries }.drop(1).collect { withContext(state.workers.files) { store.save(it) } }
             }
             val dark by state.darkTheme.collectAsState()
             StretchTheme(if (dark) StretchThemes.InkDark else StretchThemes.Ink) {

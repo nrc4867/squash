@@ -4,36 +4,33 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.PaneNav
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 30_000L
 private const val WIDTH = 1600
 private const val HEIGHT = 900
 
@@ -48,17 +45,17 @@ private object NoKeysFlowFiles : FileChooser {
 /** The keys that mean the same in every stage, in the app whole over the saved fennec. */
 @OptIn(ExperimentalTestApi::class)
 class KeysFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoKeysFlowFiles) }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
         return state
     }

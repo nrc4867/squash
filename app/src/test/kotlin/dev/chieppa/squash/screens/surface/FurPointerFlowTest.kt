@@ -1,8 +1,5 @@
 package dev.chieppa.squash.screens.surface
 
-import dev.chieppa.squash.screens.surface.surfaceHit
-import dev.chieppa.squash.screens.surface.strokeCommand
-import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -25,9 +22,11 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.TAIL
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -36,15 +35,18 @@ import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
+import dev.chieppa.squash.screens.surface.rememberLineEditTool
+import dev.chieppa.squash.screens.surface.strokeCommand
+import dev.chieppa.squash.screens.surface.surfaceHit
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
 private const val DRAG_STEP = 8f
@@ -68,10 +70,15 @@ private class FurSeenFree(private val tool: PaneTool) : PaneTool by tool {
 /** Fur stroke and Comb driven with the pointer through the panes as the app composes them, in the Sheet and in Full first's free pane. */
 @OptIn(ExperimentalTestApi::class)
 class FurPointerFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val noSurface: SceneSurfaceContent = { _, _ -> }
     private var seen: FurSeenFree? = null
 
-    private fun opened(layout: SheetLayout, selected: PartId = TORSO) = AppState(shipped).also {
+    private fun opened(layout: SheetLayout, selected: PartId = TORSO) = AppState(shipped, work).also {
         it.open(savedFennec())
         it.layout.value = layout
         it.selectedPart.value = selected
@@ -88,12 +95,12 @@ class FurPointerFlowTest {
             }
         }
         settle(assertNotNull(state.session.value))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { seen?.view != null }
+        settle(work) { seen?.view != null }
     }
 
     private fun ComposeUiTest.settle(session: CharacterSession) {
         waitForIdle()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value != null }
         waitForIdle()
     }
 

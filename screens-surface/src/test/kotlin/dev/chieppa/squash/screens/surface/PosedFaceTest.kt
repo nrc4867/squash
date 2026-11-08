@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.Pose
@@ -20,11 +22,12 @@ private const val TURN = 50f
 private const val MOVED = 0.02f
 
 class PosedFaceTest {
-    private val session = openSession(fennecDocument()).also { SessionPose(it); it.settle() }
+    private val work = TestWork()
+    private val session = openSession(fennecDocument(), work).also { SessionPose(it); work.settle(it) }
 
     private fun turnHead() {
         session.send(SetPose(Pose(listOf(BonePose(HEAD, "neck", lean = TURN, mode = JointMode.FREE)))))
-        session.settle()
+        work.settle(session)
     }
 
     @Test

@@ -1,27 +1,22 @@
 package dev.chieppa.squash.screens.smoke
 
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import dev.chieppa.squash.screens.references.ReferencesTags
-import dev.chieppa.squash.screens.references.decodeImage
-import dev.chieppa.squash.screens.references.newImageCommand
-import dev.chieppa.squash.screens.references.sketchPng
-import dev.chieppa.squash.screens.references.traceDraws
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.render.PixelRect
@@ -29,46 +24,48 @@ import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.references.ReferencesTags
+import dev.chieppa.squash.screens.references.decodeImage
+import dev.chieppa.squash.screens.references.newImageCommand
+import dev.chieppa.squash.screens.references.sketchPng
+import dev.chieppa.squash.screens.references.traceDraws
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
-import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
+import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
-import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.squash.screens.surface.FaceTags
+import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.squash.screens.surface.MarksDrawerTags
 import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 
 private object NoLineFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -79,7 +76,7 @@ private object NoLineFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class LinesSmokeTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val errors = CopyOnWriteArrayList<String>()
 
     private class Bench(val state: AppState) {
@@ -90,7 +87,7 @@ class LinesSmokeTest {
     }
 
     private fun ComposeUiTest.fennecOpen(): Bench {
-        val bench = Bench(AppState(TemplateFolder.shipped(), scope))
+        val bench = Bench(AppState(TemplateFolder.shipped(), work))
         bench.state.open(savedFennec())
         bench.state.screen.value = Screen.WORKSPACE
         setStretchContent {
@@ -111,7 +108,7 @@ class LinesSmokeTest {
     }
 
     private fun ComposeUiTest.settle(bench: Bench) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+        settle(work) {
             bench.state.session.value?.graph?.settled?.value == true && bench.selection != null && bench.lines != null
         }
         waitForIdle()
@@ -166,7 +163,7 @@ class LinesSmokeTest {
         assertTrue(whole.map { it.rule.interiorPixels }.toSet().size >= 2, "Full has thick and thin lines: ${whole.map { it.rule.interiorPixels }.toSet()}")
         keep(bench, input, "lines-fennec")
         assertTrue(assertNotNull(session.document.value.character.part(TORSO)).id == TORSO)
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -186,7 +183,7 @@ class LinesSmokeTest {
         assertEquals(add.id, session.document.value.character.traces[dev.chieppa.squash.document.View.SIDE]?.image, "the sketch is traced in Side")
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, color = it.color, surface = it.surface, traces = { toViewer -> traceDraws(session.document.value, bench.state.images, toViewer) }) }, "references")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -198,7 +195,7 @@ class LinesSmokeTest {
         onNodeWithTag(FaceTags.FEATURE).assertExists()
         settle(bench)
         keep(bench, panes(bench).let { SheetInput(it.rects, it.width, it.height, it.look, it.selection, it.cameras, it.full, hints = SheetHints(whole = true), color = it.color, surface = it.surface) }, "face-eye")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -241,7 +238,7 @@ class LinesSmokeTest {
         keep(bench, panes(bench), "lines-strokes")
         state.undo()
         assertEquals(1, loose().size, "one undo takes back one stroke")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 

@@ -5,50 +5,54 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
-import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.BodyCurve
 import dev.chieppa.squash.document.BodyStroke
 import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec2
-import dev.chieppa.squash.rig.Rig
-import dev.chieppa.squash.rig.bendTo
-import dev.chieppa.squash.rig.curveBones
-import dev.chieppa.squash.screens.sheet.PaneTool
-import kotlin.math.PI
-import kotlin.math.sin
-import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.rig.PoseSolver
+import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.SolveOptions
+import dev.chieppa.squash.rig.bendTo
+import dev.chieppa.squash.rig.curveBones
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.fennec.WING_L
+import dev.chieppa.squash.screens.fennec.fennecWingedDocument
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.move.MoveTool
+import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.FurViews
-import dev.chieppa.squash.screens.sheet.ShownFur
-import dev.chieppa.squash.screens.sheet.SurfaceRibbons
-import dev.chieppa.squash.screens.sheet.furCamera
-import dev.chieppa.squash.render.LineRule
-import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.sheet.PaneColor
+import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetInput
 import dev.chieppa.squash.screens.sheet.SheetLook
+import dev.chieppa.squash.screens.sheet.SheetLook as Look
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
+import dev.chieppa.squash.screens.sheet.ShownFur
+import dev.chieppa.squash.screens.sheet.SurfaceRibbons
+import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
@@ -58,30 +62,23 @@ import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.surface.pose.PoseTools
 import dev.chieppa.squash.screens.surface.pose.rememberPoseTools
+import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.PI
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import dev.chieppa.squash.screens.fennec.WING_L
-import dev.chieppa.squash.screens.fennec.fennecWingedDocument
-import dev.chieppa.squash.screens.move.MoveTool
-import dev.chieppa.squash.screens.move.rememberMoveTool
-import dev.chieppa.squash.screens.sheet.SheetLook as Look
+import org.junit.jupiter.api.Tag
 
 private const val WINGED_WIDTH = 1440
 private const val WINGED_HEIGHT = 900
-private const val WINGED_SETTLE_MILLIS = 60_000L
 
 /** How far the Pose case lifts and spreads the left wing's end, in body units. */
 private val WING_RAISED = Vec3(0.05f, 0.22f, -0.25f)
@@ -98,11 +95,11 @@ private object NoWingedFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class WingedFennecSmokeTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val errors = CopyOnWriteArrayList<String>()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private class Bench(val state: AppState) {
         var selection: SheetSelection? = null
@@ -122,7 +119,7 @@ class WingedFennecSmokeTest {
     }
 
     private fun ComposeUiTest.opened(): Bench {
-        val bench = Bench(AppState(TemplateFolder.shipped(), scope))
+        val bench = Bench(AppState(TemplateFolder.shipped(), work))
         val state = bench.state
         state.open(fennecWingedDocument())
         state.selectedPart.value = WING_L
@@ -146,14 +143,14 @@ class WingedFennecSmokeTest {
                 bench.posed = posed
             }
         }
-        waitUntil(timeoutMillis = WINGED_SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true && state.rigNow() != null }
+        settle(work) { state.session.value?.graph?.settled?.value == true && state.rigNow() != null }
         waitForIdle()
         return bench
     }
 
     private fun ComposeUiTest.keepSheet(bench: Bench, tool: PaneTool, posed: Boolean, name: String) {
         val session = assertNotNull(bench.state.session.value)
-        waitUntil(timeoutMillis = WINGED_SETTLE_MILLIS) { session.graph.settled.value && bench.selection != null && (!posed || bench.selection?.posed != null) }
+        settle(work) { session.graph.settled.value && bench.selection != null && (!posed || bench.selection?.posed != null) }
         waitForIdle()
         val rects = paneRects()
         val width = rects.maxOf { it.right }
@@ -164,7 +161,7 @@ class WingedFennecSmokeTest {
         session.showFurFrom(FurViews.FULL, furCamera(camera, fullRect.width, fullRect.height))
         framed.cameras.forEach { (view, locked) -> session.showFurFrom(FurViews.locked(view), furCamera(locked)) }
         val furViews = (listOf(FurViews.FULL) + framed.cameras.keys.map(FurViews::locked)).map { session.furView(it, posed = posed) }
-        waitUntil(timeoutMillis = WINGED_SETTLE_MILLIS) { session.graph.settled.value && session.viewGraph.settled.value && furViews.all { it.output.value != null } }
+        settle(work) { session.graph.settled.value && session.viewGraph.settled.value && furViews.all { it.output.value != null } }
         val rules = session.document.value.character.lineRules
         fun fur(key: String) = ShownFur(assertNotNull(session.furView(key, posed = posed).output.value), LineRule(rules.interior, rules.silhouette))
         val input = SheetInput(

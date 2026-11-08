@@ -1,8 +1,5 @@
 package dev.chieppa.squash.screens.surface.paint
 
-import dev.chieppa.squash.screens.surface.surfaceHit
-import dev.chieppa.squash.screens.surface.SurfaceHit
-import dev.chieppa.squash.screens.sheet.SurfaceView
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.ShapeSource
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -16,6 +13,7 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyBox
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.FillReach
 import dev.chieppa.squash.screens.fennec.CREAM
 import dev.chieppa.squash.screens.fennec.EAR_L
@@ -29,13 +27,9 @@ import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import dev.chieppa.squash.screens.sheet.SurfaceView
+import dev.chieppa.squash.screens.surface.SurfaceHit
+import dev.chieppa.squash.screens.surface.surfaceHit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,19 +38,18 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private const val PANE = 800
 
 /** What a pick and Fill find on the fennec, through its real graph. */
 class PaintSectionsTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val folder = TemplateFolder.shipped()
-    private val session = CharacterSession(savedFennec(), TemplateLibrary(folder.parts, folder.plans), scope)
+    private val session = CharacterSession(savedFennec(), TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
 
     @AfterTest
-    fun finish() = scope.cancel()
+    fun finish() = work.close()
 
-    private fun settled() = runBlocking { withTimeout(SETTLE_MILLIS) { session.graph.settled.first { it } } }
+    private fun settled() = work.settle(session)
 
     private fun assembled() = run {
         settled()

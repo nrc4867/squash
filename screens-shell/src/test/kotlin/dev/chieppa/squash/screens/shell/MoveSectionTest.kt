@@ -9,21 +9,23 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.catalog.openSockets
+import dev.chieppa.squash.character.catalog.placeOnSocket
+import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.SocketRef
+import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.deletePickedSocket
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.move.MoveMode
 import dev.chieppa.squash.screens.pickedOutward
 import dev.chieppa.squash.screens.setOutward
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.placeOnSocket
-import dev.chieppa.squash.character.catalog.template
-import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -33,7 +35,12 @@ import kotlin.test.assertNull
 /** The Move section's Place part and Add socket, its Outward angle, Pair and Delete socket. */
 @OptIn(ExperimentalTestApi::class)
 class MoveSectionTest {
-    private val state = AppState(shipped).also {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private val state = AppState(shipped, work).also {
         it.open(fennecDocument())
         it.tool.value = BuildTool.MOVE
         it.selectedPart.value = TORSO

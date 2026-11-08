@@ -12,12 +12,14 @@ import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -30,6 +32,11 @@ private object NoChooser : FileChooser {
 
 @OptIn(ExperimentalTestApi::class)
 class StartFromTemplateTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoChooser) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
@@ -43,7 +50,7 @@ class StartFromTemplateTest {
 
     @Test
     fun anUndrawnViewsRowSetsItsOutlineAsOneUndoStep() = runComposeUiTest {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         val history = assertNotNull(state.session.value).history
         onNodeWithTag(ShellTags.startTemplate(View.SIDE)).performScrollTo().assertIsEnabled()
@@ -64,7 +71,7 @@ class StartFromTemplateTest {
 
     @Test
     fun inSingleItWaitsForASnappedView() {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         runComposeUiTest {
             workspace(state)
             state.layout.value = SheetLayout.SINGLE
@@ -78,7 +85,7 @@ class StartFromTemplateTest {
 
     @Test
     fun thePressWithAStrokeUnderWayDoesNothing() {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         runComposeUiTest {
             workspace(state)
             state.curves.drawing = View.SIDE

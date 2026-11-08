@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.smoke
 
+import dev.chieppa.squash.screens.TestWork
+
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -43,11 +45,7 @@ import dev.chieppa.squash.screens.sheet.coloredPartDraw
 import dev.chieppa.squash.screens.sheet.translation
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -56,7 +54,6 @@ import kotlin.test.assertNotNull
 import dev.chieppa.stretch.gpu.Vec3 as GpuVec3
 
 internal const val SEAMS_SIZE = 900
-private const val SETTLE_MILLIS = 60_000L
 private const val FOV = 0.698f
 private const val OUTLINE = 3f
 private const val NEAREST_RINGS = 80
@@ -73,19 +70,10 @@ private val FALLBACK = PartMaterial(Color(0xFFB0B0B0), ink = SEAMS_INK)
 
 internal fun seamsRef(id: String) = TemplateRef(TemplateId(id), 1)
 
-internal fun seamsSession(scope: CoroutineScope, parts: List<PartInstance>): CharacterSession {
+internal fun seamsSession(work: TestWork, parts: List<PartInstance>): CharacterSession {
     val folder = TemplateFolder.shipped()
     val empty = SquashDocument(Character(CharacterId("fennec"), "Fennec", BodyPlanRef(BodyPlanId("canine-quadruped"), 1)))
-    return CharacterSession(AddParts(parts).apply(empty).document, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
-}
-
-internal fun CharacterSession.settled() = runBlocking {
-    withTimeout(SETTLE_MILLIS) {
-        do {
-            graph.settled.first { it }
-            viewGraph.settled.first { it }
-        } while (!graph.settled.value)
-    }
+    return CharacterSession(AddParts(parts).apply(empty).document, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
 }
 
 internal fun seamsPalette(): List<DocumentCommand> = listOf(

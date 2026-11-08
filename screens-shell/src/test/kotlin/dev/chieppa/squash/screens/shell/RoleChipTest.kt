@@ -16,6 +16,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetRole
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.FRONT_PAW_L
 import dev.chieppa.squash.screens.fennec.FRONT_PAW_R
 import dev.chieppa.squash.screens.fennec.TAIL
@@ -24,6 +25,7 @@ import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.uidesign.Tentative
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,7 +33,12 @@ import kotlin.test.assertFalse
 /** The role chip in Shape's inspector and the guessed role's chip in Parts. */
 @OptIn(ExperimentalTestApi::class)
 class RoleChipTest {
-    private val state = AppState(shipped).also { it.open(fennecDocument()) }
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private val state = AppState(shipped, work).also { it.open(fennecDocument()) }
     private val session get() = checkNotNull(state.session.value)
     private fun part(id: PartId) = checkNotNull(session.document.value.character.part(id))
 

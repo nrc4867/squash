@@ -3,7 +3,6 @@ package dev.chieppa.squash.graph
 import dev.chieppa.stretch.core.Settled
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +16,7 @@ data class Gathered<S, K, V>(val shape: S, val values: Map<K, V>)
 /** The derived-data graph. Settled when no node is dirty or running. Runs compute on [dispatcher], inside [scope]. */
 class Graph(
     private val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val dispatcher: CoroutineDispatcher,
 ) : Settled {
     private val changes = MutableStateFlow(0L)
     private val nodes = MutableStateFlow<List<Node<*, *>>>(emptyList())

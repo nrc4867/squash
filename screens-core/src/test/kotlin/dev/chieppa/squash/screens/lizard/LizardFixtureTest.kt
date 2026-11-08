@@ -15,11 +15,13 @@ import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.fennecText
 import dev.chieppa.squash.screens.saveAsTemplate
 import dev.chieppa.squash.screens.shell.SquashFormat
 import java.io.File
 import java.nio.file.Files
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -30,6 +32,11 @@ private const val UPDATE_PROPERTY = "squash.updateGoldens"
 
 /** The saved lizard stays what its commands make. Regenerate with ./gradlew :screens-core:test -PupdateGoldens and review the diff. */
 class LizardFixtureTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val shipped = TemplateFolder.shipped()
 
     @Test
@@ -84,7 +91,7 @@ class LizardFixtureTest {
     @Test
     fun aLegSavesAsATemplateThatLoadsAndBuilds() {
         val folder = Files.createTempDirectory("lizard-templates")
-        val state = AppState(shipped.withSaved(folder))
+        val state = AppState(shipped.withSaved(folder), work)
         state.open(lizardDocument())
         val saved = assertNotNull(state.saveAsTemplate(BACK_LEG_L, "lizard-leg"))
         assertEquals(TemplateId("lizard-leg"), saved.id)
@@ -96,7 +103,7 @@ class LizardFixtureTest {
         assertEquals(listOf("socket1"), leg.blocks.flatMap { it.sockets() }.map { it.name })
 
         val document = AddParts(listOf(PartInstance(PartId("extra"), leg.ref, SocketRef(LIZARD_BODY, "socket.3"), role = Role.LEG))).apply(lizardDocument()).document
-        val reopened = AppState(loaded)
+        val reopened = AppState(loaded, work)
         val session = reopened.open(document)
         assertNotNull(session.builtTemplate(assertNotNull(document.character.part(PartId("extra")))))
         val library = TemplateLibrary(loaded.parts, loaded.plans)

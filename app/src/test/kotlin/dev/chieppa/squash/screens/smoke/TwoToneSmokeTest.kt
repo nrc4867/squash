@@ -25,6 +25,7 @@ import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
 import dev.chieppa.squash.screens.fennec.CREAM
 import dev.chieppa.squash.screens.fennec.EAR_L
@@ -35,6 +36,7 @@ import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.IRIS
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecCommands
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
 import dev.chieppa.squash.screens.sheet.SheetPanes
@@ -43,11 +45,6 @@ import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.test.AfterTest
@@ -56,12 +53,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 private const val CLOSE_MARGIN = 0.06f
 private const val WHOLE_MARGIN = 0.08f
-private const val SETTLE_MILLIS = 20_000L
 
 /** The most times a row of the head may pass between fur and cream: a comb of covered color passes many times. */
 private const val MOST_CROSSINGS = 6
@@ -83,19 +80,19 @@ private const val IRIS_SHARE = 0.02f
 @OptIn(ExperimentalTestApi::class)
 class TwoToneSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val templates = TemplateFolder.shipped()
 
     @AfterTest
     fun cleanUp() {
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     private fun session(): CharacterSession {
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(templates.parts, templates.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(templates.parts, templates.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
-        session.settled()
+        work.settle(session)
         return session
     }
 
@@ -110,8 +107,8 @@ class TwoToneSmokeTest {
         val parts = assertNotNull(assembly.output.value).parts.filter { it.id == HEAD || it.id == EAR_L || it.id == EAR_R }
         val close = framedCamera(parts, toViewer, WIDTH, HEIGHT, CLOSE_MARGIN)
         showColorAt(close.pixelsPerUnit)
-        settled()
-        val view = characterView(PixelRect(0, 0, WIDTH, HEIGHT), close.camera, probeState(), PROBE_LOOK, shading, close.pixelsPerUnit) { BIN_THREE_QUARTER }
+        work.settle(this)
+        val view = characterView(PixelRect(0, 0, WIDTH, HEIGHT), close.camera, probeState(work), PROBE_LOOK, shading, close.pixelsPerUnit) { BIN_THREE_QUARTER }
         return SceneFrame(PROBE_GROUND, listOf(view))
     }
 
@@ -158,21 +155,21 @@ class TwoToneSmokeTest {
         val toViewer = probeAzimuth(70f)
         val framed = framedCamera(parts, toViewer, WIDTH, HEIGHT, WHOLE_MARGIN)
         session.showColorAt(framed.pixelsPerUnit)
-        session.settled()
+        work.settle(session)
         fun view() = SceneFrame(
             PROBE_GROUND,
-            listOf(characterView(PixelRect(0, 0, WIDTH, HEIGHT), framed.camera, session.probeState(), PROBE_LOOK, ObjectShading(Shading.TWO_TONE), framed.pixelsPerUnit) { BIN_THREE_QUARTER }),
+            listOf(characterView(PixelRect(0, 0, WIDTH, HEIGHT), framed.camera, session.probeState(work), PROBE_LOOK, ObjectShading(Shading.TWO_TONE), framed.pixelsPerUnit) { BIN_THREE_QUARTER }),
         )
         val bare = render(view(), "two-tone-soft-bare")
         val id = BrushStrokeId("flank")
         val across = listOf(0.4f to 0.2f, 0.4f to 0.3f, 0.4f to 0.45f).map { (u, v) -> Anchor(TORSO, u = u, v = v) }
         session.send(SetBrushStroke(TORSO, id, BrushStroke(id, across, FUR, 0.2f, 1f)))
-        session.settled()
+        work.settle(session)
         val samePlace = render(view(), "two-tone-soft-own-color")
         val moved = bare.indices.count { i -> (0..2).any { abs((bare[i] shr (it * 8) and 0xFF) - (samePlace[i] shr (it * 8) and 0xFF)) > BLEND_ROUNDING } }
         assertTrue(moved <= MOST_MOVED_PIXELS, "a fade in the part's own color moves $moved pixels, so its tone or its shadow edge differs from the part's")
         session.send(SetBrushStroke(TORSO, id, BrushStroke(id, across, CREAM, 0.2f, 1f)))
-        session.settled()
+        work.settle(session)
         render(view(), "two-tone-soft-cream")
     }
 
@@ -190,7 +187,7 @@ class TwoToneSmokeTest {
     @Test
     fun theFarSidePassesThroughHeadOnWithNoStep() {
         val session = session()
-        val state = session.probeState()
+        val state = session.probeState(work)
         val parts = state.character.parts.filter { it.id != null }
         val tile = WIDTH / ORBIT_COLUMNS
         val rows = ORBIT_TILES / ORBIT_COLUMNS
@@ -206,18 +203,18 @@ class TwoToneSmokeTest {
 
     @Test
     fun theSettingTurnsTheRealPanesTwoTone() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         var frame: SceneFrame? = null
         val recorder: SceneSurfaceContent = { shown, _ -> SideEffect { if (shown != null) frame = shown } }
         setStretchContent { CompositionLocalProvider(LocalSceneSurface provides recorder) { SheetPanes(state, Modifier.fillMaxSize()) } }
         val session = state.open(EMPTY_FENNEC)
         fennecCommands().forEach(session::send)
         state.selectedPart.value = HEAD
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && frame?.views?.isNotEmpty() == true }
+        settle(work) { session.graph.settled.value && frame?.views?.isNotEmpty() == true }
         fun fullShading() = assertNotNull(frame).views.flatMap { it.draws }.map { it.material.shading }.toSet()
         assertEquals(setOf(Shading.FLAT), fullShading())
         session.send(SetCharacterShading(CharacterShading(ShadingMode.TWO_TONE)))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { Shading.TWO_TONE in fullShading() }
+        settle(work) { Shading.TWO_TONE in fullShading() }
         waitForIdle()
         val shown = assertNotNull(frame)
         val pixels = renderSnapshot(shown, WIDTH, HEIGHT, GpuOptions(onError = { errors += it })) { ViewsScene(it) }

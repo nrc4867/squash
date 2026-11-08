@@ -11,13 +11,10 @@ import dev.chieppa.squash.uidesign.generated.shell_save_failed
 import dev.chieppa.stretch.core.ActionRegistry
 import dev.chieppa.stretch.core.Keymap
 import dev.chieppa.stretch.document.FileChooser
-import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.frame.FrameLayout
 import dev.chieppa.stretch.frame.ToastState
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import kotlin.io.path.Path
 import kotlin.io.path.nameWithoutExtension
@@ -69,7 +66,7 @@ class Shell(
     fun open(path: String) = state.whenSaved {
         scope.launch {
             runCatching {
-                val bytes = withContext(Dispatchers.IO) { FileStorage.read(path) }
+                val bytes = state.storage.read(path)
                 state.open(state.format.decode(bytes), path)
             }.onSuccess {
                 state.recent.add(path)

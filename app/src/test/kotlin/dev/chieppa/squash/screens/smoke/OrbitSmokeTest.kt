@@ -18,6 +18,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.INK
@@ -30,17 +31,13 @@ import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.GpuImage
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val FRAMES = 12
 private const val COLUMNS = 4
@@ -63,21 +60,21 @@ private val STROKE_POINTS = List(9) { i -> Anchor(TORSO, BODY_PATCH, 0.3f + 0.04
 @Tag("slow")
 class OrbitSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
         session.send(SetMark(TORSO, STROKE, Mark(STROKE, STROKE_POINTS)))
-        session.settled()
+        work.settle(session)
         return session
     }
 
     private class Frame(val view: SceneView, val camera: CameraView, val rect: PixelRect, val toViewer: Vec3)
 
     private fun frames(session: CharacterSession, turn: Float): List<Frame> {
-        val state = session.probeState()
+        val state = session.probeState(work)
         val parts = state.character.parts.filter { it.id != null }
         return List(FRAMES) { i ->
             val toViewer = probeAzimuth(STEP_DEGREES * i + turn)
@@ -126,7 +123,7 @@ class OrbitSmokeTest {
             assertTrue((rect.y until rect.bottom).any { y -> (rect.x until rect.right).any { x -> first.isInk(x, y, ink) } }, "frame $i shows lines")
         }
         assertTrue(framesShowingStroke >= FRAMES / 3, "the stroke faced the camera in only $framesShowingStroke frames")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -164,7 +161,7 @@ class OrbitSmokeTest {
             val belly = firstRun(image, x, (frame.rect.y + below.y.toInt()) downTo frame.rect.y, ink)
             assertTrue(back > belly, "side on, the back's line is $back pixels and the belly's $belly")
         }
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 

@@ -1,15 +1,15 @@
 package dev.chieppa.squash.screens.shell
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -27,15 +27,17 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.addJoint
 import dev.chieppa.squash.screens.addLandmark
-import dev.chieppa.squash.screens.pairCandidates
 import dev.chieppa.squash.screens.move.JointRef
 import dev.chieppa.squash.screens.move.MoveMode
+import dev.chieppa.squash.screens.pairCandidates
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import java.nio.file.Files
 import kotlin.io.path.exists
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -48,8 +50,13 @@ private val LEG_B = PartId("leg-b")
 /** Move's four modes with Add joint's fields, the Anatomy section, Pair with… and Save as template's dialog. See board W12. */
 @OptIn(ExperimentalTestApi::class)
 class AnatomySectionTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val saved = Files.createTempDirectory("saved-templates")
-    private val state = AppState(shipped.withSaved(saved)).also {
+    private val state = AppState(shipped.withSaved(saved), work).also {
         it.createCharacter(shipped.plans.first { plan -> plan.id == BodyPlanId("blank") }, "Lizard")
         it.tool.value = BuildTool.MOVE
     }

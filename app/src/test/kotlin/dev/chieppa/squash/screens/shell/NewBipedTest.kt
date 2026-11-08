@@ -13,9 +13,11 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -29,9 +31,14 @@ private object NoBipedFiles : FileChooser {
 /** New character's Biped row: between Bird and Blank, read as two legs, two arms, upright; creating from it gives an upright torso. */
 @OptIn(ExperimentalTestApi::class)
 class NewBipedTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun bipedStartsACharacterWithAnUprightTorso() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         setStretchContent { SquashApp(state, NoBipedFiles) }
         assertEquals(listOf("canine-quadruped", "bird", "biped", "blank"), shipped.plans.map { it.id.value })
         val rows = listOf("canine-quadruped", "bird", "biped", "blank").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }

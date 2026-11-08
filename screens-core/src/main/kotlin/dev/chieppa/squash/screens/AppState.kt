@@ -37,7 +37,6 @@ import dev.chieppa.stretch.document.DocumentSession
 import dev.chieppa.stretch.document.DocumentStorage
 import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.document.RecentFiles
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -52,10 +51,12 @@ import kotlinx.coroutines.plus
  */
 class AppState(
     val templates: TemplateFolder,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /** Where the graph, the art and file reads run. */
+    val workers: Workers = Workers(),
     val recent: RecentFiles = RecentFiles(),
     val format: SquashFormat = SquashFormat(),
-    private val storage: DocumentStorage = FileStorage,
+    /** Where character files are read and written; it moves its own file work off the caller. */
+    val storage: DocumentStorage = FileStorage,
     /** What renders rest pose art offscreen; with none, a screen shows no art. */
     val artist: RestPoseArtist? = null,
 ) {
@@ -143,6 +144,7 @@ class AppState(
     val addingSocket = MutableStateFlow<OpenSocket?>(null)
     val addingType = MutableStateFlow<TemplateId?>(null)
 
+    private val scope get() = workers.scope
     private var sessionJob: Job? = null
 
     init {
@@ -180,7 +182,7 @@ class AppState(
         val job = SupervisorJob(scope.coroutineContext[Job])
         sessionJob = job
         val sessionScope = scope + job
-        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope)
+        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope, workers.compute)
         file.value = DocumentSession(format, document, storage, path, opened.history)
         rig.clear()
         pose.clear()

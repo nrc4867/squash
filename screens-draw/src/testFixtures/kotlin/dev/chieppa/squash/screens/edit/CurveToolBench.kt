@@ -27,6 +27,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.draw.StrokeLook
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -36,9 +37,6 @@ import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
 import kotlin.math.sin
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 const val PANE_TAG = "pane"
 const val PANE_WIDTH = 600
@@ -106,11 +104,13 @@ class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
     val state: AppState
     val session: CharacterSession
 
+    /** Where the bench's graph runs, until a test drains it. */
+    val work = TestWork()
+
     init {
         val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        state = AppState(folder)
-        session = CharacterSession(SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1))), TemplateLibrary(folder.parts), scope)
+        state = AppState(folder, work)
+        session = CharacterSession(SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1))), TemplateLibrary(folder.parts), work.scope, work.dispatcher)
         session.send(AddPart(PartInstance(id, folder.parts.first { it.id.value == "leg" }.ref)))
         if (side != null) session.send(SetOutline(id, View.SIDE, side))
         state.session.value = session

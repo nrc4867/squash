@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.PartMesh
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.shell.shipped
 import kotlin.math.PI
 import kotlin.math.cos
@@ -23,14 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 
 private const val PIXEL = 0.005f
 private const val SAMPLES = 300
@@ -45,18 +39,18 @@ class DrawnPartPipelineTest {
     }
 
     @Test
-    fun aDrawnSideOutlineBuildsTheLegWithItsFixedTopologyAndItsSize() = runBlocking {
+    fun aDrawnSideOutlineBuildsTheLegWithItsFixedTopologyAndItsSize() {
         val leg = shipped.parts.first { it.id.value == "leg" }
         val plan = shipped.plans.first()
         val part = PartId("leg")
         val document = SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(plan.id, plan.version)))
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val work = TestWork()
         try {
-            val session = CharacterSession(document, TemplateLibrary(shipped.parts), scope)
+            val session = CharacterSession(document, TemplateLibrary(shipped.parts), work.scope, work.dispatcher)
             session.send(AddPart(PartInstance(part, leg.ref)))
             val mesh = session.mesh(part)
-            suspend fun built(): PartMesh {
-                withTimeout(10.seconds) { session.graph.settled.first { it } }
+            fun built(): PartMesh {
+                work.settle(session)
                 return assertNotNull(mesh.output.value)
             }
             val before = built()
@@ -74,7 +68,7 @@ class DrawnPartPipelineTest {
             assertTrue(along.max() in STROKE_LENGTH * 0.9f..STROKE_LENGTH * 1.1f, "reaches ${along.max()}")
             assertTrue((up.max() - up.min()) in STROKE_HEIGHT * 1.6f..STROKE_HEIGHT * 2.4f, "height ${up.max() - up.min()}")
         } finally {
-            scope.cancel()
+            work.close()
         }
     }
 }

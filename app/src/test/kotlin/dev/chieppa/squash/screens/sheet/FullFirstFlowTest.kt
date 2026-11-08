@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -19,9 +21,11 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.move.SocketHandle
 import dev.chieppa.squash.screens.move.moveHandles
 import dev.chieppa.squash.screens.move.rememberMoveTool
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.DocumentFormat
@@ -31,16 +35,14 @@ import dev.chieppa.stretch.test.setStretchContent
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.onLast
-import androidx.compose.ui.test.onAllNodesWithText
 
-private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 30f
 private const val LOOP_POINTS = 40
 private const val DRAG_PIXELS = 30f
@@ -55,6 +57,11 @@ private object NoFiles : FileChooser {
 /** Full first with the real tools: Draw outline refused in Full and writing in a sheet, Move in Full, and the switch to Single and back. */
 @OptIn(ExperimentalTestApi::class)
 class FullFirstFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspaceOnALeg(state: AppState): CharacterSession {
         setStretchContent { SquashApp(state, NoFiles) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
@@ -62,7 +69,7 @@ class FullFirstFlowTest {
         waitForIdle()
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
-        waitForIdle()
+        settle(work, state)
         return assertNotNull(state.session.value)
     }
 
@@ -91,10 +98,10 @@ class FullFirstFlowTest {
 
     @Test
     fun drawOutlineWritesNothingInFullAndAnOutlineInASheetOfFullFirst() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
         pickLayout("Full first")
-        waitForIdle()
+        settle(work, state)
         assertEquals(SheetLayout.FULL_FIRST, state.layout.value)
         val leg = assertNotNull(state.selectedPart.value)
 
@@ -103,7 +110,7 @@ class FullFirstFlowTest {
         assertSame(before, session.document.value, "the free pane takes no outline")
 
         loopIn(SheetPane.SIDE)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         val character = session.document.value.character
         assertTrue(View.SIDE in character.resolved(assertNotNull(character.part(leg))).outlines, "a sheet takes it")
         assertEquals(leg, state.selectedPart.value)
@@ -111,7 +118,7 @@ class FullFirstFlowTest {
 
     @Test
     fun aSwitchToSingleAndBackKeepsTheSelectionAndTheOutlines() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
         pickLayout("Full first")
         waitForIdle()
@@ -130,7 +137,7 @@ class FullFirstFlowTest {
 
     @Test
     fun moveDragsASocketsDotInTheFreePaneOfFullFirst() = runComposeUiTest {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         state.createCharacter(shipped.plans.first(), "Fennec")
         state.layout.value = SheetLayout.FULL_FIRST
         val session = assertNotNull(state.session.value)
@@ -148,7 +155,7 @@ class FullFirstFlowTest {
                 Box(Modifier.size(PANES_WIDTH.dp, PANES_HEIGHT.dp)) { SheetPanes(state, Modifier.fillMaxSize(), tool = tool) }
             }
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null && fullView != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value != null && fullView != null }
         waitForIdle()
         val view = assertNotNull(fullView)
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.FULL)).fetchSemanticsNode().size

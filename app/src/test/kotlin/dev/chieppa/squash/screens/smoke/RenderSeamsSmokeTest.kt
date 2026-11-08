@@ -16,13 +16,9 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.render.Shading
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.sheet.ribbonDraw
 import dev.chieppa.squash.screens.sheet.translation
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
 import kotlin.math.sin
@@ -30,6 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val ORBIT_TILE = 300
 private const val ORBIT_TILES = 16
@@ -43,21 +40,21 @@ private val LEG_ID = PartId("leg")
 class RenderSeamsSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
 
-    private fun CharacterSession.paintedLeg(): PlacedPart {
+    private fun CharacterSession.paintedLeg(work: TestWork): PlacedPart {
         (seamsPalette() + seamsPaint(LEG_ID)).forEach(::send)
-        settled()
+        work.settle(this)
         return assertNotNull(assembly.output.value?.part(LEG_ID))
     }
 
     @Test
     fun aPaintedLegReadsFlatAndTwoToneFromTwoAngles() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = seamsSession(scope, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
-        val leg = session.paintedLeg()
+        val work = TestWork()
+        val session = seamsSession(work, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
+        val leg = session.paintedLeg(work)
         val box = assertNotNull(leg.box)
         val distance = box.radius * 2.6f
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val angles = listOf("seam" to 0f, "side" to 2.1f)
         val modes = listOf("flat" to Shading.FLAT, "two-tone" to Shading.TWO_TONE)
         for ((angleName, turn) in angles) {
@@ -70,17 +67,17 @@ class RenderSeamsSmokeTest {
                 if (turn == 0f) assertEquals(0, isolated(pixels, SEAMS_SIZE), "no pixel of $modeName shows alone through a layer")
             }
         }
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     @Test
     fun aTaperedRibbonRunsOverTheSurface() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = seamsSession(scope, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
+        val work = TestWork()
+        val session = seamsSession(work, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
         val line = List(14) { i -> Anchor(LEG_ID, u = 0.12f + i * 0.058f, v = (0.96f + 0.03f * sin(i * 0.9).toFloat()) % 1f) }
         session.send(SetMark(LEG_ID, MarkId("line"), Mark(MarkId("line"), line)))
-        val leg = session.paintedLeg()
+        val leg = session.paintedLeg(work)
         val box = assertNotNull(leg.box)
         val distance = box.radius * 2.6f
         val camera = cameraOn(leg, 0.5f, 0f, distance, 0.35f)
@@ -91,38 +88,38 @@ class RenderSeamsSmokeTest {
         val scene = SceneView(rect, camera.viewProjection(SEAMS_SIZE, SEAMS_SIZE), listOf(seamsDraw(session, leg, ObjectShading(), toCamera)), listOf(ribbon))
         val pixels = seamsRender("seams-ribbon", SceneFrame(SEAMS_WELL, listOf(scene)), errors)
         assertTrue(pixels.count { it == SEAMS_INK.toArgb() } > 500, "the ribbon shows")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     @Test
     fun aCloseZoomShowsACrispCurvedEdge() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = seamsSession(scope, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
-        val leg = session.paintedLeg()
+        val work = TestWork()
+        val session = seamsSession(work, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
+        val leg = session.paintedLeg(work)
         val distance = 0.09f
         val camera = cameraOn(leg, 0.195f, 0.25f, distance, near = CLOSE_NEAR, lift = 0f)
         val before = assertNotNull(session.bodyColor.output.value).parts.getValue(LEG_ID).layers.sumOf { it.cut.mesh.vertexCount }
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val after = assertNotNull(session.bodyColor.output.value).parts.getValue(LEG_ID).layers.sumOf { it.cut.mesh.vertexCount }
         assertTrue(after > before, "zooming in flattens finer: $before then $after")
         val frame = SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, listOf(seamsDraw(session, leg, ObjectShading(), Vec3.Z)))))
         val pixels = seamsRender("seams-close-edge", frame, errors)
         assertEquals(0, isolated(pixels, SEAMS_SIZE))
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     @Test
     fun noLayerFlickersAtAnyOrbit() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = seamsSession(scope, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
-        val leg = session.paintedLeg()
+        val work = TestWork()
+        val session = seamsSession(work, listOf(PartInstance(LEG_ID, seamsRef("leg"))))
+        val leg = session.paintedLeg(work)
         val box = assertNotNull(leg.box)
         val distance = box.radius * 2.6f
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val views = List(ORBIT_TILES) { i ->
             val camera = cameraOn(leg, 0.5f, 0f, distance, turn = i * 2f * PI.toFloat() / ORBIT_TILES, lift = 0.15f + 0.1f * (i % 3))
             val toCamera = camera.toCameraFrom(box.center)
@@ -132,7 +129,7 @@ class RenderSeamsSmokeTest {
         val width = ORBIT_COLUMNS * ORBIT_TILE
         val pixels = seamsRender("seams-orbit", SceneFrame(SEAMS_WELL, views), errors, width, width)
         assertEquals(0, isolated(pixels, width), "no pixel shows alone through a layer at any orbit")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 

@@ -60,7 +60,6 @@ import dev.chieppa.squash.graph.Node
 import dev.chieppa.stretch.core.History
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -71,7 +70,7 @@ class CharacterSession(
     initial: SquashDocument,
     val templates: TemplateLibrary,
     scope: CoroutineScope,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    dispatcher: CoroutineDispatcher,
 ) {
     val history = History(initial)
     val graph = Graph(scope, dispatcher)

@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.EyeFrame
@@ -39,10 +41,11 @@ private val MOUTH = MarkGroupId("mouth")
 private const val PIXELS = 400
 
 class FaceWorkTest {
-    private val session: CharacterSession = openSession(fennecDocument())
+    private val work = TestWork()
+    private val session: CharacterSession = openSession(fennecDocument(), work)
 
     private fun faces(target: Vec3? = null): FaceWork {
-        session.settle()
+        work.settle(session)
         val whole = assertNotNull(session.assembly.output.value)
         val work: BodySurfaceWork = assertNotNull(session.bodySurfaceWork.output.value)
         val character = session.document.value.character
@@ -51,7 +54,7 @@ class FaceWorkTest {
     }
 
     private fun view(toViewer: Vec3): FullView {
-        session.settle()
+        work.settle(session)
         val whole = assertNotNull(session.assembly.output.value)
         val camera = framedCamera(listOfNotNull(whole.part(HEAD)), toViewer, PIXELS, PIXELS, 0.1f).camera
         return FullView({ camera }, PIXELS, PIXELS)
@@ -129,7 +132,7 @@ class FaceWorkTest {
     fun aMouthOpensItsLipsItsColorAndItsJaw() {
         val closed = faces().draws(HEAD, side)
         val chin = { assertNotNull(session.assembly.output.value?.part(HEAD)).surface.patches.first { it.name == "muzzle" } }
-        session.settle()
+        work.settle(session)
         val before = chin().points.copyOf()
         session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.6f)))
         val open = faces().draws(HEAD, side)
@@ -153,18 +156,18 @@ class FaceWorkTest {
 
     @Test
     fun anExpressionsPoseTurnsTheEarsAndItsMarksReplaceTheRole() {
-        session.settle()
+        work.settle(session)
         fun earTip() = assertNotNull(session.assembly.output.value?.part(EAR_L)).let { it.pointOn(0.9f, 0f) }
         val rest = assertNotNull(earTip())
         session.send(ShowExpression(EARS_BACK))
-        session.settle()
+        work.settle(session)
         val back = assertNotNull(earTip())
         assertTrue(back.x < rest.x - 0.05f, "back moves the ear's tip rearward, from ${rest.x} to ${back.x}")
         session.send(ShowExpression(EARS_FORWARD))
-        session.settle()
+        work.settle(session)
         assertTrue(assertNotNull(earTip()).x > rest.x + 0.02f, "forward moves it ahead")
         session.send(ShowExpression(null))
-        session.settle()
+        work.settle(session)
         assertEquals(rest, assertNotNull(earTip()), "neutral stands it back up")
         val plain = faces().draws(HEAD, side)
         session.send(ShowExpression(SLEEPY))

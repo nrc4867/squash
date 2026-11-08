@@ -65,7 +65,6 @@ import dev.chieppa.stretch.ui.Swatch
 import dev.chieppa.stretch.ui.fileName
 import dev.chieppa.stretch.ui.pickFiles
 import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -211,7 +210,7 @@ private fun AddImages(state: AppState, session: CharacterSession) {
     fun add(paths: List<String>) {
         scope.launch {
             for (path in paths) {
-                val bytes = withContext(Dispatchers.IO) { runCatching { File(path).readBytes() }.getOrNull() } ?: continue
+                val bytes = withContext(state.workers.files) { runCatching { File(path).readBytes() }.getOrNull() } ?: continue
                 val decoded = decodeImage(bytes) ?: continue
                 val command = newImageCommand(session.document.value, fileName(path).substringBeforeLast('.'), bytes, decoded.width, decoded.height)
                 session.send(command)

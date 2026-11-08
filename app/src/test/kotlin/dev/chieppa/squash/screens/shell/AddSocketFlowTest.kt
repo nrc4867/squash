@@ -25,32 +25,33 @@ import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.move.MoveMode
 import dev.chieppa.squash.screens.pose.PoseGrip
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlin.math.hypot
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
-private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SCAN_STEP = 6f
+/** Under twice a handle's reach over the square root of two, so a dot always has a scanned point within reach. */
+private const val SCAN_STEP = 12f
 private const val LIFT_PIXELS = 40f
 private const val DRAG_STEPS = 8
 
@@ -65,10 +66,10 @@ private object NoSocketFiles : FileChooser {
 /** A socket placed by hand on the fennec's torso in Full, a wing pair added on it with T and Enter, and the wing dragged in Pose. */
 @OptIn(ExperimentalTestApi::class)
 class AddSocketFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.key(key: Key) {
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(key) }
@@ -76,19 +77,20 @@ class AddSocketFlowTest {
     }
 
     private fun ComposeUiTest.settle(state: AppState) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
     }
 
     /**
-     * Presses Full across a grid until a press places a socket on the torso, taking back any that lands on another part, and gives
+     * Presses Full across a grid, from the middle out, until a press places a socket on the torso, taking back any that lands on another part, and gives
      * where it pressed.
      */
     private fun ComposeUiTest.pressTorso(state: AppState): Offset? {
         val session = assertNotNull(state.session.value)
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.FULL))
         val size = pane.fetchSemanticsNode().size
-        for (row in 1 until GRID) for (column in 1 until GRID) {
+        val cells = (1 until GRID).flatMap { row -> (1 until GRID).map { column -> row to column } }
+        for ((row, column) in cells.sortedBy { (row, column) -> hypot(row - GRID / 2f, column - GRID / 2f) }) {
             val at = Offset(size.width * column / GRID.toFloat(), size.height * row / GRID.toFloat())
             val before = session.history.steps.value.done.size
             pane.performMouseInput { click(at) }
@@ -107,7 +109,7 @@ class AddSocketFlowTest {
         val size = pane.fetchSemanticsNode().size
         fun lit() = (state.pose.hovered as? PoseGrip.End)?.limb in limbs
         var seen = false
-        val watch = scope.launch(Dispatchers.Unconfined) { snapshotFlow { lit() }.collect { if (it) seen = true } }
+        val watch = work.scope.launch(Dispatchers.Unconfined) { snapshotFlow { lit() }.collect { if (it) seen = true } }
         try {
             var y = size.height * 0.1f
             while (y < size.height * 0.95f) {
@@ -139,7 +141,7 @@ class AddSocketFlowTest {
 
     @Test
     fun aSocketPressedOnTheTorsoTakesAWingPairThatPoses() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoSocketFiles) }
@@ -177,7 +179,7 @@ class AddSocketFlowTest {
         assertTrue(onAllNodesWithText("Wing").fetchSemanticsNodes().isNotEmpty(), "the wing shows in Parts")
 
         key(Key.Six)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null }
+        settle(work) { state.rigNow() != null }
         waitForIdle()
         val at = assertNotNull(findEnd(state, wings.map { it.id }.toSet()), "a wing's end handle shows in Full")
         val wing = assertNotNull((state.pose.hovered as? PoseGrip.End)?.limb)

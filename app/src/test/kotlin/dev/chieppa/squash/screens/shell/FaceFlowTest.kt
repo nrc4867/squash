@@ -4,12 +4,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.click
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.centerY
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,25 +25,24 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkRole
+import dev.chieppa.squash.document.MouthShape
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.EARS_BACK
 import dev.chieppa.squash.screens.fennec.EAR_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetLayout
-import dev.chieppa.squash.screens.surface.ExpressionTags
-import dev.chieppa.squash.screens.surface.FaceTags
-import dev.chieppa.squash.screens.surface.FACE_FRONT
-import dev.chieppa.squash.screens.surface.FACE_WRITES_TAG
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
-import dev.chieppa.squash.document.MouthShape
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.assertIsNotSelected
+import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.screens.surface.ExpressionTags
+import dev.chieppa.squash.screens.surface.FACE_FRONT
+import dev.chieppa.squash.screens.surface.FACE_WRITES_TAG
+import dev.chieppa.squash.screens.surface.FaceTags
 import dev.chieppa.squash.screens.surface.HeadAngleTags
 import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
@@ -51,13 +54,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import dev.chieppa.squash.screens.shell.Stage
 
-private const val SETTLE_MILLIS = 30_000L
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
@@ -69,17 +66,17 @@ private object NoFaceFiles : FileChooser {
 /** The Face stage in the app whole, over the saved fennec: its tools, its inspector and the band of expressions and angle versions. */
 @OptIn(ExperimentalTestApi::class)
 class FaceFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoFaceFiles) }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true && state.session.value?.bodyLines?.output?.value != null }
+        settle(work) { state.session.value?.graph?.settled?.value == true && state.session.value?.bodyLines?.output?.value != null }
         waitForIdle()
         return state
     }
@@ -152,7 +149,7 @@ class FaceFlowTest {
         pickEye(state)
         val before = assertNotNull(session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f))
         onNodeWithTag(ExpressionTags.tile(EARS_BACK)).performScrollTo().performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f) != before }
+        settle(work) { session.graph.settled.value && session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f) != before }
         assertEquals(EARS_BACK, session.document.value.character.shownExpression)
         assertNotEquals(before, session.assembly.output.value?.part(EAR_L)?.pointOn(0.9f, 0f))
         onNodeWithTag(ExpressionTags.NEUTRAL).performScrollTo().performClick()
@@ -160,9 +157,9 @@ class FaceFlowTest {
         assertEquals(null, session.document.value.character.shownExpression)
 
         onNode(hasTestTag(ExpressionTags.NEW), true).performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.document.value.character.shownExpression != null }
+        settle(work) { session.document.value.character.shownExpression != null }
         val made = session.document.value.character.shownExpression
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodes(hasTestTag(ExpressionTags.DELETE), true).fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodes(hasTestTag(ExpressionTags.DELETE), true).fetchSemanticsNodes().isNotEmpty() }
         onNode(hasTestTag(ExpressionTags.DELETE), true).performClick()
         waitForIdle()
         assertTrue(session.document.value.character.expressions.none { it.id == made })

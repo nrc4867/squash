@@ -23,10 +23,12 @@ import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.SectionProfile
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -36,7 +38,12 @@ private val FIN = PartId("fin")
 /** Shape's Generic section: a generic part's section, views, rings and segments, each one command, and nothing for a typed part. */
 @OptIn(ExperimentalTestApi::class)
 class GenericSectionTest {
-    private val state = AppState(shipped).also { state ->
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private val state = AppState(shipped, work).also { state ->
         val new = newCharacter(blankPlan, shipped, "Koi") { "body" }
         val body = PartId("body")
         val fin = PartInstance(FIN, TemplateRef(TemplateId("sheet"), 1), SocketRef(body, HandSockets.name(1)), role = Role.FIN)

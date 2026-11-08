@@ -5,38 +5,37 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.moveSocket
-import dev.chieppa.squash.character.load.TemplateFolder
-import dev.chieppa.squash.document.AddParts
-import dev.chieppa.squash.document.SetParameter
-import dev.chieppa.squash.document.Side
-import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.move.MoveTool
-import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
-import dev.chieppa.squash.screens.sheet.FullView
-import dev.chieppa.squash.screens.sheet.SheetInput
-import dev.chieppa.squash.screens.sheet.SheetPane
-import dev.chieppa.squash.render.ViewsScene
-import dev.chieppa.squash.screens.sheet.sheetFrame
-import dev.chieppa.squash.screens.sheet.sheetPaneRects
-import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket
 import dev.chieppa.squash.character.catalog.template
+import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.Side
+import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
+import dev.chieppa.squash.screens.move.MoveTool
+import dev.chieppa.squash.screens.settle
+import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.SheetInput
+import dev.chieppa.squash.screens.sheet.SheetPane
+import dev.chieppa.squash.screens.sheet.sheetFrame
+import dev.chieppa.squash.screens.sheet.sheetPaneRects
+import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 private const val MOVE_WIDTH = 1440
 private const val MOVE_HEIGHT = 900
-private const val SETTLE_MILLIS = 20_000L
 
 private const val LEANED_DEGREES = 25f
 
@@ -47,10 +46,15 @@ private const val LEANED_PAW_RESIDUAL = 0.005f
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class MoveSmokeTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun legsLeanedOutShowInEveryPaneWithTheirDots() = runComposeUiTest {
         val folder = TemplateFolder.shipped()
-        val state = AppState(folder, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val state = AppState(folder, work)
         val plan = folder.plans.first()
         val new = newCharacter(plan, folder, "Fennec")
         val session = state.open(new.document)
@@ -63,7 +67,7 @@ class MoveSmokeTest {
         session.send(moveSocket(session.document.value.character, new.root, "front-leg", Side.LEFT, 0.7f, 0.3f, false, thisSide = false))
         session.send(SetParameter(leg, PlacementParams.OUTWARD, 25f))
         session.send(SetParameter(leg, PlacementParams.joint("knee"), 0.35f))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+        settle(work) {
             session.graph.settled.value && session.assembly.output.value?.part(leg)?.placement?.containsKey(PlacementParams.OUTWARD) == true
         }
         val character = assertNotNull(session.assembly.output.value)
@@ -100,7 +104,7 @@ class MoveSmokeTest {
 
     private fun ComposeUiTest.leanedDog(angle: String, image: String) {
         val folder = TemplateFolder.shipped()
-        val state = AppState(folder, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val state = AppState(folder, work)
         val plan = folder.plans.first()
         val new = newCharacter(plan, folder, "Fennec")
         val session = state.open(new.document)
@@ -112,7 +116,7 @@ class MoveSmokeTest {
         place("back-leg")
         state.selectedPart.value = leg
         session.send(SetParameter(leg, angle, LEANED_DEGREES))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+        settle(work) {
             session.graph.settled.value && session.assembly.output.value?.part(leg)?.placement?.containsKey(angle) == true
         }
         val character = assertNotNull(session.assembly.output.value)

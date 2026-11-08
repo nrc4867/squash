@@ -12,11 +12,7 @@ import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.cutShape
 import dev.chieppa.squash.geom.positionAt
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
+import dev.chieppa.squash.screens.TestWork
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -24,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.measureTime
+import org.junit.jupiter.api.Tag
 
 private const val STROKES_PER_PART = 24
 private const val REGIONS_PER_PART = 6
@@ -52,12 +49,12 @@ class ColorCutBenchTest {
 
     @Test
     fun aFennecsPaintCuts() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val work = TestWork()
         val torso = PartInstance(PartId("torso"), seamsRef("torso"))
         fun on(id: String, template: String, socket: String) = PartInstance(PartId(id), seamsRef(template), SocketRef(torso.id, socket))
         val parts = listOf(torso, on("front", "leg", "front-leg"), on("back", "leg", "back-leg"), on("tail", "tail", "tail"), on("head", "head", "neck"))
-        val session = seamsSession(scope, parts)
-        session.settled()
+        val session = seamsSession(work, parts)
+        work.settle(session)
         val surfaces = parts.associate { it.id to assertNotNull(session.surface(it.id).output.value) }
         val perPart = parts.mapIndexed { seed, part -> shapes(part.id, seed) }
         val count = perPart.sumOf { it.size } * 2
@@ -86,15 +83,15 @@ class ColorCutBenchTest {
         val single = (0 until ROUNDS).minOf { measureTime { ShapeCuts().cuts(listOf(one), surfaces, ColorDetail.START) } }
         println("BENCH one stroke at step ${ColorDetail.START}: ${single.inWholeMicroseconds} us")
         parts.forEach { println("BENCH bilinear gap on ${it.id.value}: ${bilinearGap(surfaces.getValue(it.id))} over a body of ${surfaces.getValue(it.id).axisLength}") }
-        scope.cancel()
+        work.close()
     }
 
     @Test
     fun aSoftStrokeCostsThisAgainstAHardOne() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val work = TestWork()
         val torso = PartInstance(PartId("torso"), seamsRef("torso"))
-        val session = seamsSession(scope, listOf(torso))
-        session.settled()
+        val session = seamsSession(work, listOf(torso))
+        work.settle(session)
         val surface = assertNotNull(session.surface(torso.id).output.value)
         val grid = requireNotNull(surface.grid(BODY_PATCH))
         val long = List(POINTS_PER_STROKE) { i -> SurfaceUv(0.3f + 0.05f * sin(i * 0.4f), 0.2f + i * 0.012f) }
@@ -111,7 +108,7 @@ class ColorCutBenchTest {
                 }
             }
         }
-        scope.cancel()
+        work.close()
     }
 
     /** The most the middle of a cell's bilinear surface lies off the two triangles the mesh draws there. */

@@ -4,9 +4,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.catalog.newCharacter
+import dev.chieppa.squash.character.catalog.openSockets
+import dev.chieppa.squash.character.catalog.placeOnSocket
+import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
@@ -14,23 +19,18 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.mouseDrag
 import dev.chieppa.squash.screens.edit.showPane
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.sheet.sheetSelection
-import dev.chieppa.squash.character.catalog.newCharacter
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.placeOnSocket
-import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
-import dev.chieppa.squash.document.AddParts
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import java.nio.file.Path
 import kotlin.math.abs
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -38,18 +38,22 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 20_000L
 
 /** How many steps across a pane the search for a bare spot on the torso takes. */
 private const val GRID = 24
 
 @OptIn(ExperimentalTestApi::class)
 class MoveToolTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
     /** A dog with its front legs placed, settled, and a Side pane on the left leg. */
     private inner class Bench {
-        val state = AppState(folder, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val state = AppState(folder, work)
         val leg: PartId
         val torso: PartId
 
@@ -83,7 +87,7 @@ class MoveToolTest {
     private fun tool(bench: Bench) = MoveTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
 
     private fun androidx.compose.ui.test.ComposeUiTest.settled(bench: Bench) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+        settle(work) {
             bench.session.graph.settled.value && bench.session.assembly.output.value?.part(bench.leg) != null
         }
     }
@@ -152,9 +156,9 @@ class MoveToolTest {
         assertEquals(steps + 1, bench.steps())
         assertTrue(bench.params().params.keys.any { it == PlacementParams.socketU("front-leg") })
         settled(bench)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { bench.character.part(bench.leg)!!.origin != before }
+        settle(work) { bench.character.part(bench.leg)!!.origin != before }
         bench.session.history.undo()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { bench.character.part(bench.leg)!!.origin == before }
+        settle(work) { bench.character.part(bench.leg)!!.origin == before }
         assertTrue(bench.params().params.isEmpty())
     }
 

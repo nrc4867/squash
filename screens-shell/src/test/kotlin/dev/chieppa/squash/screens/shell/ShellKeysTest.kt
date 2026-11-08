@@ -1,27 +1,34 @@
 package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.frame.ToastState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.nio.file.Files
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 class ShellKeysTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private object NoChooser : FileChooser {
         override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
         override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
     }
 
     private fun shell(keys: KeymapStore? = null): Shell {
-        val state = AppState(shipped).also { it.createCharacter(caninePlan, "Fennec") }
+        val state = AppState(shipped, work).also { it.createCharacter(caninePlan, "Fennec") }
         return Shell(state, NoChooser, ToastState(), CoroutineScope(Dispatchers.Unconfined), BuildContent({}), keys).apply { registerActions() }
     }
 

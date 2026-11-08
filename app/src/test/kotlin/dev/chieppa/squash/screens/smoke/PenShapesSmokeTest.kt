@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.smoke
 
-import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.SideEffect
@@ -15,8 +14,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -35,15 +34,18 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.draw.DrawOutlineTool
 import dev.chieppa.squash.screens.draw.HOLD_SNAP_MILLIS
 import dev.chieppa.squash.screens.draw.rememberStrokeLook
 import dev.chieppa.squash.screens.edit.rememberCurveLook
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.SheetInput
@@ -72,15 +74,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 private const val PANE_TAG = "pane"
 
 private object NoChosenFiles : FileChooser {
@@ -92,11 +89,11 @@ private object NoChosenFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class PenShapesSmokeTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val templates = TemplateFolder.shipped()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun render(input: SheetInput, name: String) {
         val errors = CopyOnWriteArrayList<String>()
@@ -107,12 +104,12 @@ class PenShapesSmokeTest {
     }
 
     private fun ComposeUiTest.settled(session: CharacterSession) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value != null }
     }
 
     @Test
     fun startFromTemplateInTheWholeApp() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         var selection: SheetSelection? = null
         var look: SheetLook? = null
         var outlines: OutlineLook? = null
@@ -129,7 +126,7 @@ class PenShapesSmokeTest {
         }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.screen.value == Screen.WORKSPACE }
+        settle(work) { state.screen.value == Screen.WORKSPACE }
         val session = assertNotNull(state.session.value)
         settled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
@@ -148,13 +145,13 @@ class PenShapesSmokeTest {
         val pixels = rects.map { PixelRect((it.left - left).roundToInt(), (it.top - top).roundToInt(), it.width.roundToInt(), it.height.roundToInt()) }
         val width = pixels.maxOf { it.right }
         val height = pixels.maxOf { it.bottom }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.part?.id == state.selectedPart.value }
+        settle(work) { selection?.part?.id == state.selectedPart.value }
         val undrawn = assertNotNull(selection)
         render(panesInput(undrawn, assertNotNull(look), pixels, width, height, outlines = outlines), "pen-shapes-template-hint")
 
         onNodeWithTag(ShellTags.startTemplate(View.SIDE)).performScrollTo().performClick()
         val before = undrawn.part.mesh
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== before && session.graph.settled.value }
+        settle(work) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== before && session.graph.settled.value }
         waitForIdle()
         val drawn = assertNotNull(selection)
         assertEquals(before.vertexCount, drawn.part.mesh.vertexCount, "the template's topology")
@@ -171,10 +168,10 @@ class PenShapesSmokeTest {
         val torso = PartInstance(PartId("torso"), ref("torso"))
         val left = PartInstance(PartId("left"), ref("leg"), SocketRef(torso.id, "front-leg"), pair = PairId("legs"), side = Side.LEFT)
         val right = PartInstance(PartId("right"), ref("leg"), SocketRef(torso.id, "front-leg"), pair = PairId("legs"), side = Side.RIGHT)
-        val session = CharacterSession(SquashDocument(Character(CharacterId("dog"), "Dog", BodyPlanRef(plan.id, plan.version))), library, scope)
+        val session = CharacterSession(SquashDocument(Character(CharacterId("dog"), "Dog", BodyPlanRef(plan.id, plan.version))), library, work.scope, work.dispatcher)
         session.send(AddPart(torso))
         session.send(AddParts(listOf(left, right)))
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         state.session.value = session
         state.selectedPart.value = left.id
         settled(session)
@@ -209,7 +206,7 @@ class PenShapesSmokeTest {
             }
             SideEffect { input = sized }
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { input != null && tool != null }
+        settle(work) { input != null && tool != null }
         waitForIdle()
         val panes = assertNotNull(input)
         val camera = assertNotNull(panes.cameras[View.SIDE])

@@ -13,10 +13,11 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.SquashApp
-import dev.chieppa.squash.screens.fennec.savedFennec
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.Screen
+import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SURFACE_REFUSED_TAG
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
@@ -26,25 +27,23 @@ import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
+import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 
 private object NoFullFirstFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -55,9 +54,14 @@ private object NoFullFirstFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class FullFirstSmokeTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun theFennecInFullFirstAndAnOutlineToolRefusedInFull() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(TemplateFolder.shipped(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val state = AppState(TemplateFolder.shipped(), work)
         var selection: SheetSelection? = null
         var look: SheetLook? = null
         setStretchContent {
@@ -70,7 +74,7 @@ class FullFirstSmokeTest {
             }
         }
         val session = runOnIdle { state.open(savedFennec()).also { state.screen.value = Screen.WORKSPACE } }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && selection != null }
+        settle(work) { session.graph.settled.value && selection != null }
         runOnIdle { state.layout.value = SheetLayout.FULL_FIRST }
         waitForIdle()
         assertEquals(SheetLayout.FULL_FIRST, state.layout.value)

@@ -22,16 +22,18 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 20_000L
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
 
@@ -61,10 +63,15 @@ private class LockedOnlyTool : PaneTool {
 
 @OptIn(ExperimentalTestApi::class)
 class FullFirstUiTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
     private val noSurface: SceneSurfaceContent = { _, _ -> }
 
-    private fun opened(layout: SheetLayout = SheetLayout.FULL_FIRST) = AppState(folder).also {
+    private fun opened(layout: SheetLayout = SheetLayout.FULL_FIRST) = AppState(folder, work).also {
         it.createCharacter(folder.plans.first(), "Fennec")
         it.layout.value = layout
     }
@@ -79,7 +86,7 @@ class FullFirstUiTest {
 
     private fun ComposeUiTest.settle(state: AppState, view: () -> FullView?) {
         val session = assertNotNull(state.session.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null && view() != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value != null && view() != null }
         waitForIdle()
     }
 

@@ -22,26 +22,33 @@ import dev.chieppa.squash.document.SetBoneMode
 import dev.chieppa.squash.document.SetKeepVolume
 import dev.chieppa.squash.document.SetPlanted
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.person.savedPerson
-import dev.chieppa.squash.screens.toucan.savedToucan
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
+import dev.chieppa.squash.screens.toucan.savedToucan
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private val PAW = PartId("front-paw-l")
 private val LEG = PartId("front-leg-l")
 
 @OptIn(ExperimentalTestApi::class)
 class PoseInspectorTest {
-    private fun opened(tool: BuildTool = BuildTool.DRAG): AppState = AppState(shipped).also {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private fun opened(tool: BuildTool = BuildTool.DRAG): AppState = AppState(shipped, work).also {
         it.open(savedFennec())
         it.tool.value = tool
     }
@@ -53,7 +60,7 @@ class PoseInspectorTest {
                 Column(Modifier.width(360.dp).verticalScroll(rememberScrollState())) { PoseInspector(state, session) }
             }
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null && session.graph.settled.value }
+        settle(work) { state.rigNow() != null && session.graph.settled.value }
         waitForIdle()
     }
 
@@ -63,7 +70,7 @@ class PoseInspectorTest {
 
     @Test
     fun anUprightCharactersFeetAreItsPlantedRowsAndItsHandsAreNot() = runComposeUiTest {
-        val state = AppState(shipped).also {
+        val state = AppState(shipped, work).also {
             it.open(savedPerson())
             it.tool.value = BuildTool.DRAG
         }
@@ -78,7 +85,7 @@ class PoseInspectorTest {
 
     @Test
     fun aBirdsFeetAreItsPlantedRowsAndItsWingsAreNot() = runComposeUiTest {
-        val state = AppState(shipped).also {
+        val state = AppState(shipped, work).also {
             it.open(savedToucan())
             it.tool.value = BuildTool.DRAG
         }

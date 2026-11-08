@@ -81,7 +81,6 @@ import dev.chieppa.stretch.ui.TextField
 import dev.chieppa.stretch.ui.Tooltip
 import java.time.Instant
 import java.time.ZoneId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -216,7 +215,7 @@ private fun HomeMain(shell: Shell, current: String?, search: String, onSearch: (
     }
     val c = Stretch.colors
     val project by produceState<RecentProject?>(null, current) {
-        value = withContext(Dispatchers.IO) { readRecentProject(current, shell.state.format, shell.state.templates) }
+        value = withContext(shell.state.workers.files) { readRecentProject(current, shell.state.format, shell.state.templates) }
     }
     val today = stringResource(Res.string.home_today, STAMP)
     Column(modifier.padding(horizontal = 28.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

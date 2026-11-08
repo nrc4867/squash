@@ -15,6 +15,7 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_FRONT
 import dev.chieppa.squash.screens.fennec.BIN_SIDE
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
@@ -26,28 +27,24 @@ import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.INK
 import dev.chieppa.squash.screens.fennec.fennecCommands
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.squash.screens.surface.AngleBins
 import dev.chieppa.squash.screens.surface.CharacterLook
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.StrokeLook
 import dev.chieppa.squash.screens.surface.characterView
-import dev.chieppa.squash.screens.surface.floatingCommand
 import dev.chieppa.squash.screens.surface.degreesBetween
+import dev.chieppa.squash.screens.surface.floatingCommand
 import dev.chieppa.squash.screens.surface.framedCamera
-import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -88,9 +85,9 @@ private const val PROBE_FUR_VIEW = "probe"
 private const val WHISKER_MARGIN = 0.7f
 
 /** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
-internal fun CharacterSession.probeState(camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT, shown: ExpressionId? = null, target: Vec3? = null): CharacterState {
+internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT, shown: ExpressionId? = null, target: Vec3? = null): CharacterState {
     camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height)) }
-    settled()
+    work.settle(this)
     val character = assertNotNull(assembly.output.value)
     return CharacterState(
         character,
@@ -111,13 +108,13 @@ internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, 
 @Tag("slow")
 class LookProbeSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
-        session.settled()
+        work.settle(session)
         return session
     }
 
@@ -136,7 +133,7 @@ class LookProbeSmokeTest {
     fun theFennecRendersFlatAndTwoToneFromThreeSides() {
         val session = session()
         assertEquals(savedFennec(), session.document.value, "the saved fixture is what the commands make")
-        val state = session.probeState()
+        val state = session.probeState(work)
         val parts = state.character.parts.filter { it.id != null }
         val floor = state.character.floor
         val paw = assertNotNull(state.character.part(FRONT_PAW_L)?.box)
@@ -149,19 +146,19 @@ class LookProbeSmokeTest {
             val whole = framedCamera(parts, toViewer, WIDTH, HEIGHT, WHOLE_MARGIN)
             val close = framedCamera(head, toViewer, WIDTH, HEIGHT, CLOSE_MARGIN)
             session.showColorAt(close.pixelsPerUnit)
-            session.settled()
-            val fresh = session.probeState(whole.camera)
+            work.settle(session)
+            val fresh = session.probeState(work, whole.camera)
             for ((modeName, mode) in MODES) {
                 val view = characterView(rect, whole.camera, fresh, PROBE_LOOK, ObjectShading(mode), whole.pixelsPerUnit) { binAt(toViewer) }
                 keep("fennec-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
-            val probed = session.probeState(close.camera)
+            val probed = session.probeState(work, close.camera)
             for ((modeName, mode) in MODES) {
                 val view = characterView(rect, close.camera, probed, PROBE_LOOK, ObjectShading(mode), close.pixelsPerUnit) { binAt(toViewer) }
                 keep("fennec-head-$modeName-$viewName", SceneFrame(PROBE_GROUND, listOf(view)))
             }
         }
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
@@ -175,9 +172,9 @@ class LookProbeSmokeTest {
         }
         for ((viewName, toViewer) in VIEWS) {
             val rect = PixelRect(0, 0, WIDTH, HEIGHT)
-            val state = session.probeState()
+            val state = session.probeState(work)
             val close = framedCamera(listOfNotNull(state.character.part(HEAD)), toViewer, WIDTH, HEIGHT, WHISKER_MARGIN)
-            val shown = session.probeState(close.camera)
+            val shown = session.probeState(work, close.camera)
             val view = characterView(rect, close.camera, shown, PROBE_LOOK, ObjectShading(Shading.FLAT), close.pixelsPerUnit) { binAt(toViewer) }
             keepImage(renderSnapshot(SceneFrame(PROBE_GROUND, listOf(view)), WIDTH, HEIGHT, GpuOptions(onError = { errors += it })) { ViewsScene(it) }.pixels, WIDTH, "whiskers-$viewName")
         }
@@ -187,7 +184,7 @@ class LookProbeSmokeTest {
     @Test
     fun theEyeSwitchesVersionsWithHysteresisOnASweep() {
         val session = session()
-        val state = session.probeState()
+        val state = session.probeState(work)
         val head = state.character.parts.filter { it.id == HEAD || it.id == EAR_L || it.id == EAR_R }
         val tile = WIDTH / SWEEP_COLUMNS
         var held: CameraBin? = null
@@ -209,7 +206,7 @@ class LookProbeSmokeTest {
         assertEquals(BIN_FRONT, shown.last())
         assertEquals(BIN_THREE_QUARTER, shown[RISING_AT_72], "turning out, the bin holds past its edge")
         assertEquals(BIN_SIDE, shown[FALLING_AT_72], "turning back at the same angle, the other bin holds")
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 }

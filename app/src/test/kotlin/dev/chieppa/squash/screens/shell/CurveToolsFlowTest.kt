@@ -1,36 +1,39 @@
 package dev.chieppa.squash.screens.shell
 
-import androidx.compose.ui.test.withKeyDown
-import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.withKeyDown
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.CurveDrawerTags
 import dev.chieppa.squash.screens.edit.CurveSelection
 import dev.chieppa.squash.screens.edit.LEG_SIDE
 import dev.chieppa.squash.screens.edit.Refit
 import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.SmoothDrawerTags
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
@@ -39,13 +42,12 @@ import dev.chieppa.stretch.test.setStretchContent
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.runDesktopComposeUiTest
 
-private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 60f
 private const val LOOP_POINTS = 60
 private const val GRID_PIXELS = 16
@@ -58,11 +60,16 @@ private object NoDialogs : FileChooser {
 
 @OptIn(ExperimentalTestApi::class)
 class CurveToolsFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoDialogs) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitForIdle()
+        settle(work, state)
         assertEquals(Screen.WORKSPACE, state.screen.value)
     }
 
@@ -73,7 +80,7 @@ class CurveToolsFlowTest {
 
     @Test
     fun theDAndEKeysArmTheTools() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.E) }
@@ -86,7 +93,7 @@ class CurveToolsFlowTest {
 
     @Test
     fun theSKeyArmsSmoothAndItsDrawerSetsTheBrush() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.S) }
         waitForIdle()
@@ -106,14 +113,14 @@ class CurveToolsFlowTest {
 
     @Test
     fun theRealPanesTakeAStrokeAHandleDragAndAStrayStroke() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         val part = checkNotNull(state.selectedPart.value)
         val session = checkNotNull(state.session.value)
         fun side() = session.document.value.character.resolved(part)?.outlines?.get(View.SIDE)
         fun steps() = session.history.steps.value.done.size
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.SIDE))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.mesh(part).output.value != null && runCatching { pane.assertExists() }.isSuccess }
+        settle(work) { session.mesh(part).output.value != null && runCatching { pane.assertExists() }.isSuccess }
         val size = pane.fetchSemanticsNode().size
         val middle = Offset(size.width / 2f, size.height / 2f)
         val before = steps()
@@ -173,7 +180,7 @@ class CurveToolsFlowTest {
 
     @Test
     fun theDrawerShowsTheOutlineCurvesOnceAPartIsDrawn() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         state.drawSide()
         waitForIdle()
@@ -187,7 +194,7 @@ class CurveToolsFlowTest {
 
     @Test
     fun theSelectedPointsFieldsReadAndSetItAsACommand() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         state.drawSide()
         val part = checkNotNull(state.selectedPart.value)
@@ -207,7 +214,7 @@ class CurveToolsFlowTest {
 
     @Test
     fun theStatusBarCountsTheSectionsARefitTouchedWhileItStands() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         state.drawSide()
         val part = checkNotNull(state.selectedPart.value)
@@ -219,7 +226,7 @@ class CurveToolsFlowTest {
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 section touched")
         onNodeWithText("Section 2 refit · other sections unchanged").assertExists()
         onNodeWithText("Undo").performClick()
-        waitForIdle()
+        settle(work, state)
         assertEquals(LEG_SIDE, session.document.value.character.resolved(part)?.outlines?.get(View.SIDE))
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 drawn · 2 from template")
     }

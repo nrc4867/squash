@@ -20,26 +20,24 @@ import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetPlanted
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.rig.LIMB_TOLERANCE
 import dev.chieppa.squash.rig.PoseSolver
 import dev.chieppa.squash.rig.Rig
-import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.rig.curveBones
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.pose.BodyCurveTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -52,7 +50,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 2880
 private const val HEIGHT = 1800
 
@@ -79,18 +76,18 @@ private object NoCurveFiles : FileChooser {
 /** The Body curve tool in the app whole, over the saved fennec standing on four planted paws: Side, then Top, Length, Clear curve. */
 @OptIn(ExperimentalTestApi::class)
 class BodyCurveFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map(::PartId)
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoCurveFiles) }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
         return state
     }
@@ -169,7 +166,7 @@ class BodyCurveFlowTest {
         key(Key.C)
         assertEquals(BuildTool.BODY_CURVE, state.tool.value)
         onNodeWithTag(ShellTags.tool(BuildTool.BODY_CURVE)).assertExists()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null }
+        settle(work) { state.rigNow() != null }
         waitForIdle()
         onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Pose · Body curve", substring = true)
         statusEnd("4 paws planted")

@@ -19,7 +19,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 
 ```
 ./gradlew check                      # every test tier except smoke
-./gradlew check -Pslow               # also the smoke tier (needs a GPU)
+./gradlew check -Pslow               # also the smoke tier (needs a GPU) and the benchmarks
 ./gradlew :app:run                   # the app
 ./gradlew :app:run -Pdevtools=47811  # the app, with window screenshots at curl 127.0.0.1:47811/capture
 ./gradlew :app:createDistributable   # the packaged app, under app/build/compose/binaries/main/app/Squash
@@ -75,13 +75,13 @@ These are Stretch's conventions plus Squash's own. They apply from the first com
 
 **Derived data is a graph.** Drawing to slices to mesh to rig to lines to render. Each node declares its inputs, recomputes in a coroutine when they change, cancels its own stale run, and caches by inputs. The graph is `Settled` when nothing is dirty and nothing is running. Tests, agents and render-to-file wait on that, never on a timer.
 
-**No timed waits.** Anything that waits, waits for a condition with a timeout: `waitUntil { graph.settled }`. A `delay` in a test or in app code is a bug.
+**No timed waits.** Nothing waits on the wall clock: no `Thread.sleep`, `delay`, `waitUntil` or polling loop, in a test or in app code. Work that runs in the background takes its dispatcher from where it is made: the graph from `CharacterSession`, and the screens from `AppState`'s `Workers`. A test injects a test dispatcher (`TestWork` in `screens-core`'s test fixtures, or `StandardTestDispatcher(testScheduler)` under `runTest`) and runs the queued work itself, then checks Settled: `runCurrent()` under `runTest`, `work.settle(session)` in a plain test, `settle(work)` in a UI test. Anything else is awaited through a hook, such as a state flow's `first`. `checkTestSources`, part of `check`, fails on `Thread.sleep(`, `delay(`, `waitUntil(`, `setAccessible` and `isAccessible = true` in test sources.
 
 **Text lives outside code.** Every user-facing string is a key in `ui-design`'s resources. No literal UI text in Kotlin.
 
 **Clean panels.** Icons, labels, numbers and tooltips. No explanatory text in panels, no messages that explain incomplete state; show it in place by highlighting it.
 
-**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (generated meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (each screen of the app composed whole over the packaged templates and a real graph and captured offscreen, the panes rendered with `GpuSnapshot`, tagged slow, before a merge only). A session never spends an hour on integration tests. Run only the module being changed while working.
+**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (generated meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (each screen of the app composed whole over the packaged templates and a real graph and captured offscreen, the panes rendered with `GpuSnapshot`, tagged slow, before a merge only). Benchmarks that measure wall-clock time are tagged slow too. Tests in `check` open no window and stay light on the CPU: one small character per case where one will do, the same session reused through undo rather than rebuilt, and anything that needs many full builds or a timer tagged slow. No reflection to widen visibility in tests. A session never spends an hour on integration tests. Run only the module being changed while working.
 
 **Research from papers only.** Methods are implemented from the papers' own descriptions. Research code is not opened, read or copied without asking Nicholas first, and only permissively licensed code (MIT, Apache, BSD) is ever a candidate. A method gets a patent check before it is built; see `docs/hld/pipeline.md`.
 

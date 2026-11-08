@@ -1,12 +1,13 @@
 package dev.chieppa.squash.screens.sheet
 
-import dev.chieppa.squash.geom.BodyView
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -16,10 +17,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
-import dev.chieppa.squash.geom.Vec3
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.IntOffset
@@ -40,7 +40,12 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.settle
+import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Path
 import kotlin.test.Test
@@ -48,13 +53,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import dev.chieppa.squash.screens.shell.ShellTags
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalTestApi::class)
 class SheetUiTest {
@@ -151,11 +149,11 @@ class SheetUiTest {
 
     @Test
     fun theSelectedPartComesThroughTheRealBuild() = runComposeUiTest {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val state = AppState(folder)
+        val work = TestWork()
+        val state = AppState(folder, work)
         val id = PartId("p")
         val document = SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1)))
-        val session = CharacterSession(document, TemplateLibrary(folder.parts), scope)
+        val session = CharacterSession(document, TemplateLibrary(folder.parts), work.scope, work.dispatcher)
         val leg = folder.parts.first { it.id.value == "leg" }
         session.send(AddPart(PartInstance(id, leg.ref)))
         var selection: SheetSelection? = null
@@ -165,7 +163,7 @@ class SheetUiTest {
 
         state.session.value = session
         state.selectedPart.value = id
-        waitUntil(timeoutMillis = 10_000) { session.graph.settled.value && selection != null }
+        settle(work) { session.graph.settled.value && selection != null }
         val built = assertNotNull(selection)
         assertTrue(built.part.mesh.vertexCount > 0)
         assertEquals(id, built.part.id)
@@ -173,7 +171,7 @@ class SheetUiTest {
 
         val curve = OutlineCurve(listOf(CurvePoint(0f, 0f), CurvePoint(0f, 1f), CurvePoint(1f, 1f), CurvePoint(1f, 0f)))
         session.send(SetOutline(id, View.SIDE, curve))
-        waitUntil(timeoutMillis = 10_000) { selection?.outlines?.containsKey(View.SIDE) == true }
-        scope.cancel()
+        settle(work) { selection?.outlines?.containsKey(View.SIDE) == true }
+        work.close()
     }
 }

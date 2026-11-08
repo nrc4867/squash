@@ -31,8 +31,10 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.TEST_STROKE_LOOK
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.PaneViewport
@@ -46,16 +48,11 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 
 const val BENCH_TAG = "pane"
 const val BENCH_WIDTH = 800
 const val BENCH_HEIGHT = 700
 const val BENCH_SCALE = 500f
-const val BENCH_SETTLE_MILLIS = 20_000L
 
 /** How far the mesh may stray from the stroke on screen: the smoothing, and rings a span apart. */
 const val BENCH_SLACK_PIXELS = 6f
@@ -98,12 +95,13 @@ object StrokeParts {
 /** A real character with its graph, a Draw outline tool on it and one pane to draw in. */
 @OptIn(ExperimentalTestApi::class)
 class StrokeBench(tilted: Boolean = false) {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val work = TestWork()
     val plan = shipped.plans.first()
     val session = CharacterSession(
         SquashDocument(Character(CharacterId("dog"), "Dog", BodyPlanRef(plan.id, plan.version))),
         TemplateLibrary(shipped.parts, shipped.plans),
-        scope,
+        work.scope,
+        work.dispatcher,
     ).also {
         it.send(AddPart(StrokeParts.torso))
         it.send(AddParts(listOf(StrokeParts.leftLeg, StrokeParts.rightLeg)))
@@ -113,10 +111,10 @@ class StrokeBench(tilted: Boolean = false) {
             it.send(AddParts(listOf(StrokeParts.leftEar, StrokeParts.rightEar)))
         }
     }
-    val state = AppState(shipped).also { it.session.value = session }
+    val state = AppState(shipped, work).also { it.session.value = session }
     val tool = DrawOutlineTool(state, TEST_STROKE_LOOK, TEST_CURVE_LOOK)
 
-    fun ComposeUiTest.settled() = waitUntil(timeoutMillis = BENCH_SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null }
+    fun ComposeUiTest.settled() = settle(work) { session.graph.settled.value && session.assembly.output.value != null }
 
     fun part(id: PartId) = SheetPart(assertNotNull(session.assembly.output.value?.part(id)))
 
@@ -205,5 +203,5 @@ class StrokeBench(tilted: Boolean = false) {
     fun onScreen(part: SheetPart, camera: LockedCamera): List<Offset> =
         (0 until part.mesh.vertexCount).map { camera.toPixel(part.origin + part.mesh.position(it)) }
 
-    fun close() = scope.cancel()
+    fun close() = work.close()
 }

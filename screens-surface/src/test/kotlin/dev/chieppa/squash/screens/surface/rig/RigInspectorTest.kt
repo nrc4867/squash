@@ -27,24 +27,31 @@ import dev.chieppa.squash.document.SetSeamStroke
 import dev.chieppa.squash.document.seamStrokes
 import dev.chieppa.squash.rig.BoneName
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private val LEG = PartId("front-leg-l")
 private val TWIN = PartId("front-leg-r")
 
 @OptIn(ExperimentalTestApi::class)
 class RigInspectorTest {
-    private fun opened(): AppState = AppState(shipped).also {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private fun opened(): AppState = AppState(shipped, work).also {
         it.open(savedFennec())
         it.tool.value = BuildTool.PAINT_WEIGHT
     }
@@ -56,7 +63,7 @@ class RigInspectorTest {
                 Column(Modifier.width(360.dp).verticalScroll(rememberScrollState())) { RigInspector(state, session) }
             }
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null && session.graph.settled.value }
+        settle(work) { state.rigNow() != null && session.graph.settled.value }
     }
 
     private fun lastCommand(state: AppState) = checkNotNull(state.session.value).history.steps.value.done.last()

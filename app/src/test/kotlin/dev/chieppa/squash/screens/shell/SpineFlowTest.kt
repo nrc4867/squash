@@ -18,20 +18,22 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.draw.OutlineDrawerTags
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.spine.SpineDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 20_000L
 private const val STROKE_POINTS = 40
 private const val STROKE_REACH = 160f
 private const val DRAG_PIXELS = 6f
@@ -44,13 +46,18 @@ private object NoSpineDialogs : FileChooser {
 /** Spine and width from the key that arms it, in the whole workspace. */
 @OptIn(ExperimentalTestApi::class)
 class SpineFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoSpineDialogs) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitForIdle()
+        settle(work, state)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.W) }
-        waitForIdle()
+        settle(work, state)
     }
 
     private fun ComposeUiTest.strokeInSide() {
@@ -67,13 +74,13 @@ class SpineFlowTest {
     }
 
     private fun ComposeUiTest.settled(state: AppState) =
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { checkNotNull(state.session.value).graph.settled.value }
+        settle(work) { checkNotNull(state.session.value).graph.settled.value }
 
     private fun ComposeUiTest.statusEnd(text: String) = onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains(text)
 
     @Test
     fun theKeyArmsTheToolAndTheDrawerReadsAsTheBoardDrawsIt() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         assertEquals(BuildTool.SPINE_WIDTH, state.tool.value)
         onNodeWithTag(ShellTags.tool(BuildTool.SPINE_WIDTH)).assertExists()
@@ -94,7 +101,7 @@ class SpineFlowTest {
 
     @Test
     fun theDrawersRowsShareDrawOutlinesSettings() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         onNodeWithTag(OutlineDrawerTags.SNAP_GUIDES).performClick()
         waitForIdle()
@@ -106,7 +113,7 @@ class SpineFlowTest {
 
     @Test
     fun aStrokeInHandShowsInTheStatusBarAndTheOutlineRowsAndItsWidthWrites() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         strokeInSide()
         statusEnd("Side · writes Side and Top")
@@ -137,7 +144,7 @@ class SpineFlowTest {
 
     @Test
     fun anotherToolDropsTheStrokeInHand() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         strokeInSide()
         assertTrue(state.spine.active)

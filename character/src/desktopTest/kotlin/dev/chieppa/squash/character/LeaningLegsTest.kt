@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.session.CharacterSession
+
 import dev.chieppa.squash.character.build.assembleNow
 import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.document.DocumentCommand
@@ -14,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
 private const val CLOSE = 1e-4f
@@ -36,12 +39,18 @@ private const val RIM_UNDER_PAWS_BOTH_60 = 0.02f
 /** A leg leaning keeps every paw on the ground. See HLD: data-model, Legs stay level as they lean. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LeaningLegsTest : LeaningLegsBench() {
+    /** The dog the level checks share; each check takes its commands back, so the next starts from the square dog. */
+    private var shared: CharacterSession? = null
+
     private fun TestScope.assertLevel(tolerance: Float, vararg commands: DocumentCommand, spreadTolerance: Float = PAW_RESIDUAL) {
-        val session = session()
+        val session = shared ?: session().also { shared = it }
+        val square = session.history.steps.value.done.size
         apply(session, *commands)
         val character = session.built()
         assertTrue(character.spread() < spreadTolerance, "paws part by ${character.spread()}")
         assertTrue(character.residual() < tolerance, "paws off the ground by ${character.residual()}")
+        while (session.history.steps.value.done.size > square) session.history.undo()
+        runCurrent()
     }
 
     @Test

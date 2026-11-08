@@ -20,18 +20,15 @@ import dev.chieppa.squash.geom.surfaceAt
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.edges
 import dev.chieppa.stretch.gpu.CameraView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val TORSO_ID = PartId("torso")
 private val LEFT_ID = PartId("leg")
@@ -44,29 +41,29 @@ private val OVERSKETCHED = edges(0f to 0.2f, 0.5f to 0.16f, 0.9f to 0.07f, 0.9f 
 @Tag("slow")
 class SurfaceCrossingSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val pair = PairId("front")
     private val torso = PartInstance(TORSO_ID, seamsRef("torso"))
     private val left = PartInstance(LEFT_ID, seamsRef("leg"), SocketRef(TORSO_ID, "front-leg"), pair = pair, side = Side.LEFT)
     private val right = PartInstance(RIGHT_ID, seamsRef("leg"), SocketRef(TORSO_ID, "front-leg"), pair = pair, side = Side.RIGHT)
 
     private fun finish() {
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     @Test
     fun aPairMirrorsItsPaintAndFarSideDarkens() {
-        val session = seamsSession(scope, listOf(torso, left, right))
+        val session = seamsSession(work, listOf(torso, left, right))
         (seamsPalette() + seamsPaint(LEFT_ID) + SetBaseSlot(TORSO_ID, FUR)).forEach(session::send)
-        session.settled()
+        work.settle(session)
         val character = assertNotNull(session.assembly.output.value)
         val parts = character.parts.filter { it.id != null }
         val box = parts.mapNotNull { it.box }.reduce { a, b -> a.union(b) }
         val near = assertNotNull(character.part(LEFT_ID)).origin.z
         val eye = box.center + Vec3(0.6f, 0.35f, if (near >= 0f) 1f else -1f).normalized() * box.radius * 2.6f
         session.showColorAt(pixelsPerUnit(box.radius * 2.6f))
-        session.settled()
+        work.settle(session)
         val draws = parts.map { seamsDraw(session, it, ObjectShading(Shading.TWO_TONE), eye - box.center) }
         val camera = CameraView(eye = eye.toGpuVec(), target = box.center.toGpuVec())
         seamsRender("seams-pair-two-tone", SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, draws))), errors)
@@ -75,9 +72,9 @@ class SurfaceCrossingSmokeTest {
 
     @Test
     fun aStrokeAndABorderCrossTheSocketOntoTheParent() {
-        val session = seamsSession(scope, listOf(torso, left, right))
+        val session = seamsSession(work, listOf(torso, left, right))
         (seamsPalette() + SetBaseSlot(LEFT_ID, FUR) + SetBaseSlot(TORSO_ID, FUR)).forEach(session::send)
-        session.settled()
+        work.settle(session)
         val character = assertNotNull(session.assembly.output.value)
         val leg = assertNotNull(character.part(LEFT_ID))
         val body = assertNotNull(character.part(TORSO_ID))
@@ -94,7 +91,7 @@ class SurfaceCrossingSmokeTest {
         session.send(SetBrushStroke(LEFT_ID, BrushStrokeId("across"), BrushStroke(BrushStrokeId("across"), stroke, SPOT, 0.035f)))
         val distance = 1.3f
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val target = leg.origin + Vec3(0f, -0.1f, 0f)
         val camera = CameraView(eye = (target + toCamera * distance).toGpuVec(), target = target.toGpuVec())
         val draws = character.parts.filter { it.id != null }.map { seamsDraw(session, it, ObjectShading(), camera.toCameraFrom(target)) }
@@ -107,9 +104,9 @@ class SurfaceCrossingSmokeTest {
     /** Along a soft stroke's middle from leg to torso the image holds the stroke's color, with no dip where each run would fade its own end. */
     @Test
     fun aSoftStrokeHoldsItsStrengthAcrossTheSocket() {
-        val session = seamsSession(scope, listOf(torso, left, right))
+        val session = seamsSession(work, listOf(torso, left, right))
         (seamsPalette() + SetBaseSlot(LEFT_ID, FUR) + SetBaseSlot(TORSO_ID, FUR)).forEach(session::send)
-        session.settled()
+        work.settle(session)
         val character = assertNotNull(session.assembly.output.value)
         val leg = assertNotNull(character.part(LEFT_ID))
         val body = assertNotNull(character.part(TORSO_ID))
@@ -123,7 +120,7 @@ class SurfaceCrossingSmokeTest {
         session.send(SetBrushStroke(LEFT_ID, BrushStrokeId("soft"), BrushStroke(BrushStrokeId("soft"), anchors, SOCK, 0.12f, 0.8f)))
         val distance = 1.3f
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val target = leg.origin + Vec3(0f, -0.1f, 0f)
         val camera = CameraView(eye = (target + toCamera * distance).toGpuVec(), target = target.toGpuVec())
         val draws = character.parts.filter { it.id != null }.map { seamsDraw(session, it, ObjectShading(), camera.toCameraFrom(target)) }
@@ -144,11 +141,11 @@ class SurfaceCrossingSmokeTest {
 
     @Test
     fun aDabOverTheClosedEndCoversItsPole() {
-        val session = seamsSession(scope, listOf(PartInstance(LEFT_ID, seamsRef("leg"))))
+        val session = seamsSession(work, listOf(PartInstance(LEFT_ID, seamsRef("leg"))))
         val dab = BrushStroke(BrushStrokeId("tip"), listOf(Anchor(LEFT_ID, u = 0.985f, v = 0.1f)), SOCK, 0.3f)
         val rim = BrushStroke(BrushStrokeId("rim"), listOf(Anchor(LEFT_ID, u = 0.96f, v = 0.6f)), SPOT, 0.09f)
         (seamsPalette() + SetBaseSlot(LEFT_ID, FUR) + SetBrushStroke(LEFT_ID, dab.id, dab) + SetBrushStroke(LEFT_ID, rim.id, rim)).forEach(session::send)
-        session.settled()
+        work.settle(session)
         val leg = assertNotNull(session.assembly.output.value?.part(LEFT_ID))
         val patch = leg.surface.patches.first { it.slices != null }
         assertTrue(patch.isPole(patch.nu - 1), "the leg's end closes on a pole")
@@ -157,7 +154,7 @@ class SurfaceCrossingSmokeTest {
         val toCamera = (leg.surface.shown(patch.surfaceAt(0.9f, 0f).alongU.normalized()) + Vec3(0.35f, 0f, 0.3f)).normalized()
         val camera = CameraView(eye = (tip + toCamera * distance).toGpuVec(), target = tip.toGpuVec())
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val draw = seamsDraw(session, leg, ObjectShading(), toCamera)
         seamsRender("seams-pole", SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, listOf(draw)))), errors)
         finish()
@@ -165,15 +162,15 @@ class SurfaceCrossingSmokeTest {
 
     @Test
     fun aPadShowsItsSlotAndTakesPaintOnItsGrid() {
-        val session = seamsSession(scope, listOf(PartInstance(LEFT_ID, seamsRef("paw"))))
+        val session = seamsSession(work, listOf(PartInstance(LEFT_ID, seamsRef("paw"))))
         val dab = BrushStroke(BrushStrokeId("mark"), listOf(Anchor(LEFT_ID, "pad:palm", u = 0.8f, v = 0.2f)), CREAM, 0.05f)
         (seamsPalette() + SetBaseSlot(LEFT_ID, FUR) + SetBrushStroke(LEFT_ID, dab.id, dab)).forEach(session::send)
-        session.settled()
+        work.settle(session)
         val paw = assertNotNull(session.assembly.output.value?.part(LEFT_ID))
         val distance = 1.0f
         val camera = cameraOn(paw, 0.45f, 0.5f, distance, lift = 0.1f)
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val center = assertNotNull(paw.box).center
         val draw = seamsDraw(session, paw, ObjectShading(), camera.toCameraFrom(center))
         val layers = assertNotNull(session.bodyColor.output.value).parts.getValue(LEFT_ID).layers
@@ -184,15 +181,15 @@ class SurfaceCrossingSmokeTest {
 
     @Test
     fun paintFollowsAnOversketch() {
-        val session = seamsSession(scope, listOf(PartInstance(LEFT_ID, seamsRef("leg"))))
+        val session = seamsSession(work, listOf(PartInstance(LEFT_ID, seamsRef("leg"))))
         (seamsPalette() + seamsPaint(LEFT_ID)).forEach(session::send)
         session.send(SetOutline(LEFT_ID, View.SIDE, OVERSKETCHED))
-        session.settled()
+        work.settle(session)
         val leg = assertNotNull(session.assembly.output.value?.part(LEFT_ID))
         val distance = assertNotNull(leg.box).radius * 2.6f
         val camera = cameraOn(leg, 0.5f, 0f, distance)
         session.showColorAt(pixelsPerUnit(distance))
-        session.settled()
+        work.settle(session)
         val draw = seamsDraw(session, leg, ObjectShading(Shading.TWO_TONE), camera.toCameraFrom(assertNotNull(leg.box).center))
         seamsRender("seams-oversketched", SceneFrame(SEAMS_WELL, listOf(seamsView(seamsWhole, camera, listOf(draw)))), errors)
         finish()

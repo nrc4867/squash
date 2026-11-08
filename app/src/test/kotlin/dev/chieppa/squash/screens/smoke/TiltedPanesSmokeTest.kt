@@ -20,6 +20,8 @@ import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.edges
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.SheetPane
@@ -28,28 +30,21 @@ import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.stretch.gpu.GpuOptions
-import dev.chieppa.squash.render.ViewsScene
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import org.junit.jupiter.api.Tag
 
 private const val PANES_WIDTH = 1400
 private const val PANES_HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 private const val RUN_POINTS = 24
 
 /** How far the filled part may sit from its outline on screen, in pixels: the rim the shader draws, and rings a span apart. */
@@ -75,6 +70,11 @@ private fun closedEllipse(x: Float, y: Float): OutlineCurve = edges(
 /** The panes rendered offscreen for an ear and a tail, undrawn and drawn, left in the smoke images for a person to read. */
 @Tag("slow")
 class TiltedPanesSmokeTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val templates = TemplateFolder.shipped()
     private fun ref(id: String) = templates.parts.first { it.id == TemplateId(id) }.ref
     private val torso = PartInstance(PartId("torso"), ref("torso"))
@@ -83,10 +83,10 @@ class TiltedPanesSmokeTest {
     private val leftEar = PartInstance(PartId("left-ear"), ref("ear"), SocketRef(head.id, "ear"), pair = PairId("ears"), side = Side.LEFT)
     private val rightEar = PartInstance(PartId("right-ear"), ref("ear"), SocketRef(head.id, "ear"), pair = PairId("ears"), side = Side.RIGHT)
 
-    private fun session(scope: CoroutineScope): CharacterSession {
+    private fun session(): CharacterSession {
         val plan = templates.plans.first()
         val character = Character(CharacterId("dog"), "Dog", BodyPlanRef(plan.id, plan.version))
-        return CharacterSession(SquashDocument(character), TemplateLibrary(templates.parts, templates.plans), scope).also {
+        return CharacterSession(SquashDocument(character), TemplateLibrary(templates.parts, templates.plans), work.scope, work.dispatcher).also {
             it.send(AddPart(torso))
             it.send(AddPart(tail))
             it.send(AddPart(head))
@@ -94,13 +94,11 @@ class TiltedPanesSmokeTest {
         }
     }
 
-    private fun selection(session: CharacterSession, id: PartId): SheetSelection = runBlocking {
-        withTimeout(SETTLE_MILLIS) {
-            session.graph.settled.first { it }
-            val assembled = session.assembly.output.first { it != null }!!
-            val document = session.document.value.character
-            assertNotNull(sheetSelection(assembled, id, document.resolved(assertNotNull(document.part(id))).outlines))
-        }
+    private fun selection(session: CharacterSession, id: PartId): SheetSelection {
+        work.settle(session)
+        val assembled = assertNotNull(session.assembly.output.value)
+        val document = session.document.value.character
+        return assertNotNull(sheetSelection(assembled, id, document.resolved(assertNotNull(document.part(id))).outlines))
     }
 
     private val rects = sheetPaneRects(PANES_WIDTH, PANES_HEIGHT, 2)
@@ -135,8 +133,7 @@ class TiltedPanesSmokeTest {
     }
 
     private fun tiltedPanes(id: PartId, name: String, side: OutlineCurve, top: OutlineCurve, front: OutlineCurve) {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = session(scope)
+        val session = session()
         render(selection(session, id), "$name-undrawn")
         session.send(SetOutline(id, View.SIDE, side))
         session.send(SetOutline(id, View.TOP, top))
@@ -145,7 +142,6 @@ class TiltedPanesSmokeTest {
         val image = render(drawn, "$name-drawn")
         assertFillOnOutline(drawn, image, View.SIDE, name)
         assertFillOnOutline(drawn, image, View.TOP, name)
-        scope.cancel()
     }
 
     private val earSide = openBlade(0.32f, 0.07f)
@@ -163,11 +159,9 @@ class TiltedPanesSmokeTest {
 
     @Test
     fun aTailsDisagreementLinesLieAcrossItsAxis() {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = session(scope)
+        val session = session()
         session.send(SetOutline(tail.id, View.SIDE, openBlade(0.55f, 0.06f)))
         session.send(SetOutline(tail.id, View.TOP, openBlade(0.4f, 0.08f)))
         render(selection(session, tail.id), "tail-disagree")
-        scope.cancel()
     }
 }

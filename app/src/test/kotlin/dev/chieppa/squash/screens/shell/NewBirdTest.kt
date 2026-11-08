@@ -13,9 +13,11 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -29,9 +31,14 @@ private object NoBirdFiles : FileChooser {
 /** New character's Bird row: after Canine quadruped, with a perched bird and Wings, two legs, a beak; creating from it gives a perched torso. */
 @OptIn(ExperimentalTestApi::class)
 class NewBirdTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun birdStartsACharacterWithAPerchedTorso() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         setStretchContent { SquashApp(state, NoBirdFiles) }
         val rows = listOf("canine-quadruped", "bird", "biped").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }
         assertEquals(rows.sorted(), rows, "Bird reads after Canine quadruped and before Biped")

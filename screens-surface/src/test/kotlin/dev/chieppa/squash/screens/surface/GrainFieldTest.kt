@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import dev.chieppa.squash.character.build.GrainField
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -21,9 +23,10 @@ private const val MOSTLY = 0.7f
 private const val SAME = 1e-4f
 
 class GrainFieldTest {
+    private val work = TestWork()
     private val document = fennecDocument()
     private val folder = TemplateFolder.shipped()
-    private val session = openSession(document)
+    private val session = openSession(document, work)
 
     private fun patch(part: PartId): Patch =
         assertNotNull(session.assembly.output.value?.part(part)?.surface?.patches?.first { it.name == BODY_PATCH })

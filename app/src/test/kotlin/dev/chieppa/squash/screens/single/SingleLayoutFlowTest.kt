@@ -1,15 +1,18 @@
 package dev.chieppa.squash.screens.single
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,6 +23,8 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
@@ -32,16 +37,13 @@ import dev.chieppa.stretch.test.setStretchContent
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.onLast
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 
-private const val SETTLE_MILLIS = 10_000L
 private const val RADIUS = 60f
 private const val LOOP_POINTS = 60
 
@@ -55,6 +57,11 @@ private object NoFiles : FileChooser {
 
 @OptIn(ExperimentalTestApi::class)
 class SingleLayoutFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspaceOnALeg(state: AppState): CharacterSession {
         setStretchContent { SquashApp(state, NoFiles) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
@@ -79,11 +86,11 @@ class SingleLayoutFlowTest {
 
     private fun ComposeUiTest.pickSingle() {
         pickLayout("Single")
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun ComposeUiTest.waitForHud(view: String) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · $view").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Front leg · L · $view").fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun ComposeUiTest.stroke() {
@@ -121,9 +128,9 @@ class SingleLayoutFlowTest {
 
     @Test
     fun theLayoutControlOffersItsBuiltLayoutsAndTheChoiceIsNotInTheDocument() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         val before = session.document.value
 
         pickSingle()
@@ -143,15 +150,15 @@ class SingleLayoutFlowTest {
 
     @Test
     fun aStrokeInSingleProducesAnOutlineOnTheViewSnappedTo() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         pickSingle()
 
         stroke()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { View.SIDE in outlines(state, session) }
+        settle(work) { View.SIDE in outlines(state, session) }
         assertEquals(setOf(View.SIDE), outlines(state, session).keys)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         onNodeWithText("Front leg · L · side").assertExists()
         onNodeWithText("Side · 1 of 3 views").assertExists()
         onNodeWithText("SIDE · ", substring = true).assertTextContains(" PX", substring = true)
@@ -163,9 +170,9 @@ class SingleLayoutFlowTest {
 
     @Test
     fun drawingWorksOnlyWhileSnapped() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         pickSingle()
 
         orbit(ORBIT_PIXELS)
@@ -179,21 +186,21 @@ class SingleLayoutFlowTest {
         waitForHud("side")
         segment("Side").assertIsSelected()
         stroke()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { View.SIDE in outlines(state, session) }
+        settle(work) { View.SIDE in outlines(state, session) }
     }
 
     @Test
     fun aMissingViewsThumbnailAndSnapViewBothTurnTheCameraThere() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         pickSingle()
 
         onNodeWithTag(SingleTags.thumbnail(View.TOP)).performClick()
         waitForHud("front")
         segment("Front").assertIsSelected()
         stroke()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { View.TOP in outlines(state, session) }
+        settle(work) { View.TOP in outlines(state, session) }
         assertEquals(setOf(View.TOP), outlines(state, session).keys)
 
         segment("Top").performClick()
@@ -205,24 +212,24 @@ class SingleLayoutFlowTest {
 
     @Test
     fun pressingTheSnapViewTheCameraIsOnLooksFromItsOtherSide() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         pickSingle()
         waitForHud("side")
         segment("Side").performClick()
         waitForHud("far side")
         segment("Side").assertIsSelected()
         segment("Side").performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("far side", substring = true).fetchSemanticsNodes().isEmpty() }
+        settle(work) { onAllNodesWithText("far side", substring = true).fetchSemanticsNodes().isEmpty() }
         waitForHud("side")
     }
 
     @Test
     fun theLayoutOutlivesTheCharacter() = runDesktopComposeUiTest(1900, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         val session = workspaceOnALeg(state)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         pickSingle()
         runOnIdle { state.open(session.document.value) }
         waitForIdle()

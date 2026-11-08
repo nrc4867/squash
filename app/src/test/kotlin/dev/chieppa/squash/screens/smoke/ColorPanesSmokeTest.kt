@@ -1,22 +1,21 @@
 package dev.chieppa.squash.screens.smoke
 
-import dev.chieppa.squash.screens.edit.FillReach
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.pressKey
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -31,16 +30,18 @@ import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.edit.FillReach
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
-import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.sheet.SheetHints
-import dev.chieppa.squash.screens.single.SingleTags
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
+import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.sheet.SheetSelection
 import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
@@ -48,17 +49,13 @@ import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.shell.BuildTool
-import dev.chieppa.squash.screens.surface.paint.PaintTags
 import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.single.SingleTags
+import dev.chieppa.squash.screens.surface.paint.PaintTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
 import kotlin.test.AfterTest
@@ -68,10 +65,10 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 60_000L
 
 /** How far a stroke runs across a pane, as a share of its size. */
 private const val STROKE_REACH = 0.08f
@@ -87,7 +84,7 @@ private object NoColorFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class ColorPanesSmokeTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val errors = CopyOnWriteArrayList<String>()
 
     private var selection: SheetSelection? = null
@@ -96,12 +93,12 @@ class ColorPanesSmokeTest {
 
     @AfterTest
     fun finish() {
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), errors)
     }
 
     private fun ComposeUiTest.openFennec(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         setStretchContent {
             SquashApp(state, NoColorFiles)
             val shown = rememberSheetSelection(state)
@@ -123,9 +120,9 @@ class ColorPanesSmokeTest {
 
     private fun ComposeUiTest.settle(state: AppState) {
         val session = assertNotNull(state.session.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         waitForIdle()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && selection != null && color != null }
+        settle(work) { session.graph.settled.value && selection != null && color != null }
         waitForIdle()
     }
 
@@ -187,18 +184,18 @@ class ColorPanesSmokeTest {
     /** The frame the panes themselves build, flat and then with the stored choice two-tone, in Full and in the locked panes alike. */
     @Test
     fun theFramePanesBuildFollowsTheCharactersShading() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         var frame: SceneFrame? = null
         val recorder: SceneSurfaceContent = { shown, _ -> SideEffect { if (shown != null) frame = shown } }
         setStretchContent { CompositionLocalProvider(LocalSceneSurface provides recorder) { SheetPanes(state, Modifier.fillMaxSize()) } }
         val session = runOnIdle { state.open(savedFennec()) }
         fun partShadings() = assertNotNull(frame).views.flatMap { view -> view.draws.filter { it.layers.isNotEmpty() } }.map { it.material.shading }.toSet()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && partShadings().isNotEmpty() }
+        settle(work) { session.graph.settled.value && partShadings().isNotEmpty() }
         waitForIdle()
         assertEquals(setOf(Shading.FLAT), partShadings())
         keepFrame(assertNotNull(frame), "color-fennec-real-frame-flat")
         session.send(SetCharacterShading(CharacterShading(ShadingMode.TWO_TONE)))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { partShadings() == setOf(Shading.TWO_TONE) }
+        settle(work) { partShadings() == setOf(Shading.TWO_TONE) }
         waitForIdle()
         assertEquals(4, assertNotNull(frame).views.size, "every pane shows it")
         keepFrame(assertNotNull(frame), "color-fennec-real-frame-two-tone")

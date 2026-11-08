@@ -12,17 +12,19 @@ import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 20_000L
 
 private object LabelsNoFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -32,6 +34,11 @@ private object LabelsNoFiles : FileChooser {
 /** A pane's label says which way it looks at the body, whichever view it holds. See HLD: data-model, How a pane looks at a part. */
 @OptIn(ExperimentalTestApi::class)
 class PaneLabelsTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspaceOn(state: AppState, row: String) {
         setStretchContent { SquashApp(state, LabelsNoFiles) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
@@ -41,7 +48,7 @@ class PaneLabelsTest {
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         waitForIdle()
         val session = assertNotNull(state.session.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         waitForIdle()
     }
 
@@ -57,7 +64,7 @@ class PaneLabelsTest {
 
     @Test
     fun aLegsPanesReadTheirDirectionsAndHoldItsViewsSwapped() = runComposeUiTest {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspaceOn(state, "front-leg")
         assertLabelIn(SheetPane.TOP, "Top · part axes")
         assertLabelIn(SheetPane.SIDE, "Side · part axes")
@@ -72,7 +79,7 @@ class PaneLabelsTest {
 
     @Test
     fun aPartAlongTheBodyReadsTheSameDirections() = runComposeUiTest {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspaceOn(state, "tail")
         assertLabelIn(SheetPane.TOP, "Top · part axes")
         assertLabelIn(SheetPane.SIDE, "Side · part axes")

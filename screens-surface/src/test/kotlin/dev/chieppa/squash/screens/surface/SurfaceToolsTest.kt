@@ -10,9 +10,10 @@ import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.View
-import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.render.DepthLayer
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BACK_WEIGHT
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.HEAD
@@ -26,12 +27,6 @@ import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.sheet.toGpu
 import dev.chieppa.stretch.gpu.CameraView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -41,6 +36,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
 
 private const val PIXELS = 800
 private const val PIXEL_CLOSE = 1.5f
@@ -48,20 +44,20 @@ private const val DENSITY = 2f
 
 /** The surface tools' logic over the saved fennec's real graph, through a free camera and a locked one. */
 class SurfaceToolsTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
     private val folder = TemplateFolder.shipped()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun session(): CharacterSession {
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
         settle(session)
         return session
     }
 
-    private fun settle(session: CharacterSession) = runBlocking { session.graph.settled.first { it } }
+    private fun settle(session: CharacterSession) = work.settle(session)
 
     private fun free(session: CharacterSession, from: Vec3): FullView {
         val box = assertNotNull(assertNotNull(session.assembly.output.value).box)

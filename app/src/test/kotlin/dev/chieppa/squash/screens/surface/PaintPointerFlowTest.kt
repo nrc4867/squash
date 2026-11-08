@@ -15,22 +15,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BrushStroke
+import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetBrushStroke
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.document.SlotColor
@@ -38,16 +40,14 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.positionAt
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.CREAM
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_R
 import dev.chieppa.squash.screens.fennec.FUR
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.savedFennec
-import dev.chieppa.squash.screens.shell.BuildTool
-import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
-import dev.chieppa.squash.document.SetBrushStroke
-import dev.chieppa.squash.document.BrushStrokeId
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -56,14 +56,17 @@ import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetPanes
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
+import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.screens.surface.paint.ColorDrawerContent
 import dev.chieppa.squash.screens.surface.paint.PaintTags
-import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
+import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
 import dev.chieppa.squash.screens.surface.surfaceHit
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -72,7 +75,6 @@ import kotlin.test.assertTrue
 
 /** A dab big enough that a press on its anchor lands inside it, as a share of the part's axis. */
 private const val ERASE_DAB_RADIUS = 0.08f
-private const val SETTLE_MILLIS = 60_000L
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
 private const val DRAWER_WIDTH = 300
@@ -105,10 +107,15 @@ private class SeenFree(private val tool: PaneTool) : PaneTool by tool {
 /** The paint tools and the Color drawer on the fennec, driven with the pointer through the panes as the app composes them. */
 @OptIn(ExperimentalTestApi::class)
 class PaintPointerFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val noSurface: SceneSurfaceContent = { _, _ -> }
     private var seen: SeenFree? = null
 
-    private fun opened(layout: SheetLayout) = AppState(shipped).also {
+    private fun opened(layout: SheetLayout) = AppState(shipped, work).also {
         it.open(savedFennec())
         it.layout.value = layout
     }
@@ -126,12 +133,12 @@ class PaintPointerFlowTest {
             }
         }
         settle(session)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { seen?.view != null }
+        settle(work) { seen?.view != null }
     }
 
     private fun ComposeUiTest.settle(session: CharacterSession) {
         waitForIdle()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value != null && session.bodyColor.output.value != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value != null && session.bodyColor.output.value != null }
         waitForIdle()
     }
 

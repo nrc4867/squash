@@ -15,10 +15,11 @@ import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.ViewsScene
-import dev.chieppa.squash.screens.fennec.EAR_L
-import dev.chieppa.squash.screens.fennec.EAR_R
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.EARS_BACK
 import dev.chieppa.squash.screens.fennec.EARS_FORWARD
+import dev.chieppa.squash.screens.fennec.EAR_L
+import dev.chieppa.squash.screens.fennec.EAR_R
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.HAPPY
 import dev.chieppa.squash.screens.fennec.HEAD
@@ -34,10 +35,6 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import org.junit.jupiter.api.Tag
 
 private const val TILE = 320
@@ -54,27 +51,27 @@ private val MOUTH = MarkGroupId("mouth")
 @Tag("slow")
 class FaceSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
-        session.settled()
+        work.settle(session)
         return session
     }
 
     private fun row(session: CharacterSession, name: String, target: Vec3? = null) {
-        session.settled()
-        val state = session.probeState()
+        work.settle(session)
+        val state = session.probeState(work)
         val head = state.character.parts.filter { it.id == HEAD || it.id == EAR_L || it.id == EAR_R }
         val views = FACE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i * TILE, 0, TILE, TILE)
             val framed = framedCamera(head, toViewer, TILE, TILE, FACE_MARGIN)
-            val shown = session.probeState(framed.camera, TILE, TILE, session.document.value.character.shownExpression, target)
+            val shown = session.probeState(work, framed.camera, TILE, TILE, session.document.value.character.shownExpression, target)
             val bin = FACE_BINS.binFor(headAngle(assertNotNull(shown.character.part(HEAD)), toViewer))
             characterView(rect, framed.camera, shown, PROBE_LOOK, ObjectShading(Shading.FLAT), framed.pixelsPerUnit) { bin }
         }
@@ -118,7 +115,7 @@ class FaceSmokeTest {
     @Test
     fun theEyesFollowATargetFromEveryView() {
         val session = session()
-        val head = assertNotNull(session.probeState().character.part(HEAD)).box!!.center
+        val head = assertNotNull(session.probeState(work).character.part(HEAD)).box!!.center
         val targets = listOf("ahead" to Vec3(2f, 0f, 0f), "up" to Vec3(1f, 1.5f, 0f), "down" to Vec3(1f, -1.5f, 0f), "near-left" to Vec3(0.5f, 0f, -0.8f), "far-right" to Vec3(0.5f, 0f, 2f))
         for ((name, by) in targets) row(session, "face-gaze-$name", head + by)
         assertEquals(emptyList(), errors)

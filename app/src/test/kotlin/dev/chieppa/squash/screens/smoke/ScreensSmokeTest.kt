@@ -1,28 +1,9 @@
 package dev.chieppa.squash.screens.smoke
 
-import androidx.compose.ui.test.performMouseInput
-import dev.chieppa.squash.document.BoardPlace
-import dev.chieppa.squash.document.ImageBytes
-import dev.chieppa.squash.document.ImageId
-import dev.chieppa.squash.document.ReferenceImage
-import dev.chieppa.squash.render.ImageDraw
-import dev.chieppa.squash.screens.references.TraceDraws
-import dev.chieppa.squash.screens.references.decodeImage
-import dev.chieppa.squash.screens.references.fittedTrace
-import dev.chieppa.squash.screens.references.sketchPng
-import dev.chieppa.squash.screens.references.traceCorners
-import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
-import dev.chieppa.squash.screens.sheet.SheetLayout
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.plan
-import dev.chieppa.squash.screens.shell.BuildTool
-import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
-import dev.chieppa.squash.screens.sheet.LocalSceneSurface
-import dev.chieppa.squash.render.SceneFrame
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ComposeUiTest
@@ -40,36 +21,56 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import dev.chieppa.squash.character.catalog.newCharacter
+import dev.chieppa.squash.character.catalog.openSockets
+import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.document.BoardPlace
+import dev.chieppa.squash.document.ImageBytes
+import dev.chieppa.squash.document.ImageId
+import dev.chieppa.squash.document.ReferenceImage
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.render.ImageDraw
 import dev.chieppa.squash.render.PixelRect
+import dev.chieppa.squash.render.SceneFrame
+import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.references.TraceDraws
+import dev.chieppa.squash.screens.references.decodeImage
+import dev.chieppa.squash.screens.references.fittedTrace
+import dev.chieppa.squash.screens.references.sketchPng
+import dev.chieppa.squash.screens.references.traceCorners
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.DEFAULT_GHOST
+import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.OutlineLook
-import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
-import dev.chieppa.squash.screens.sheet.rememberOutlineLook
+import dev.chieppa.squash.screens.sheet.PANE_ZOOM_TAG
+import dev.chieppa.squash.screens.sheet.SceneSurfaceContent
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
+import dev.chieppa.squash.screens.sheet.paneOutlineOverlays
+import dev.chieppa.squash.screens.sheet.rememberOutlineLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
 import dev.chieppa.squash.screens.sheet.restPoseCamera
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.sheet.toGpu
+import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
+import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.screens.single.SingleCamera
 import dev.chieppa.squash.screens.single.SingleInput
 import dev.chieppa.squash.screens.single.SingleTags
 import dev.chieppa.squash.screens.single.singleFrame
-import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
-import dev.chieppa.squash.screens.shell.SquashFormat
-import dev.chieppa.squash.screens.shell.ShellTags
-import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.document.FileStorage
@@ -80,9 +81,9 @@ import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.Stretch
 import java.awt.image.BufferedImage
 import java.io.File
-import javax.imageio.ImageIO
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
+import javax.imageio.ImageIO
 import kotlin.io.path.absolutePathString
 import kotlin.math.PI
 import kotlin.math.cos
@@ -96,17 +97,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 
 /** The size the app's window opens at. */
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 private const val STROKE_RADIUS = 60f
 private const val STROKE_POINTS = 60
 
@@ -131,12 +127,12 @@ private object NoFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class ScreensSmokeTest {
     private val failures = CopyOnWriteArrayList<Throwable>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e -> failures += e })
+    private val work = TestWork(CoroutineExceptionHandler { _, e -> failures += e })
     private val templates = TemplateFolder.shipped()
 
     @AfterTest
     fun nothingFailedInTheBackground() {
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), failures)
     }
 
@@ -152,12 +148,12 @@ class ScreensSmokeTest {
     private fun ComposeUiTest.createCharacter(state: AppState): CharacterSession {
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.screen.value == Screen.WORKSPACE }
+        settle(work) { state.screen.value == Screen.WORKSPACE }
         return assertNotNull(state.session.value)
     }
 
     private fun ComposeUiTest.assertSettled(session: CharacterSession) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && onAllNodesWithText("Settled").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { session.graph.settled.value && onAllNodesWithText("Settled").fetchSemanticsNodes().isNotEmpty() }
         session.document.value.character.parts.forEach { assertNull(session.mesh(it.id).failure.value, "${it.id} failed to build") }
     }
 
@@ -167,24 +163,24 @@ class ScreensSmokeTest {
         val format = SquashFormat()
         val new = newCharacter(templates.plans.first(), templates, "Marsh hare")
         runBlocking { FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document })) }
-        show(AppState(templates, scope, RecentFiles(listOf(file.absolutePathString())), format, artist = GpuRestPoseArtist))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.HOME_ART).fetchSemanticsNodes().isNotEmpty() }
+        show(AppState(templates, work, RecentFiles(listOf(file.absolutePathString())), format, artist = GpuRestPoseArtist))
+        settle(work) { onAllNodesWithTag(ShellTags.HOME_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.HOME)
         keep(onNodeWithTag(ShellTags.HOME).captureToImage().argbPixels(), onNodeWithTag(ShellTags.HOME).fetchSemanticsNode().size.width, "home")
     }
 
     @Test
     fun newCharacter() = smoke {
-        show(AppState(templates, scope, artist = GpuRestPoseArtist))
+        show(AppState(templates, work, artist = GpuRestPoseArtist))
         onNodeWithTag(ShellTags.newPlan(templates.plans.first().id.value)).assertExists()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithTag(ShellTags.NEW_ART).fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithTag(ShellTags.NEW_ART).fetchSemanticsNodes().isNotEmpty() }
         assertCaptured(ShellTags.NEW_DIALOG)
         keep(onNodeWithTag(ShellTags.NEW_DIALOG).captureToImage().argbPixels(), onNodeWithTag(ShellTags.NEW_DIALOG).fetchSemanticsNode().size.width, "new")
     }
 
     @Test
     fun theWheelZoomsOnePaneOfTheRealSheetAndItsReadoutFitsItAgain() = smoke {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         show(state)
         assertSettled(createCharacter(state))
         val side = onNodeWithTag(sheetPaneTag(SheetPane.SIDE))
@@ -203,7 +199,7 @@ class ScreensSmokeTest {
 
     @Test
     fun addPartOverTheWorkspace() = smoke {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         show(state)
         val session = createCharacter(state)
         assertSettled(session)
@@ -219,7 +215,7 @@ class ScreensSmokeTest {
 
     @Test
     fun theAssembledWorkspaceDrawnInPlace() = smoke {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         var selection: SheetSelection? = null
         var look: SheetLook? = null
         setStretchContent {
@@ -236,7 +232,7 @@ class ScreensSmokeTest {
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         assertSettled(session)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.part?.id == state.selectedPart.value && selection != null }
+        settle(work) { selection?.part?.id == state.selectedPart.value && selection != null }
         val leg = assertNotNull(selection)
         assertEquals(View.SIDE, leg.part.axes.framing[BodyView.SIDE])
         assertEquals(View.FRONT, leg.part.axes.framing[BodyView.TOP], "a leg's Front sits above its Side")
@@ -255,7 +251,7 @@ class ScreensSmokeTest {
             release()
         }
         val fromTemplate = leg.part.mesh
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
+        settle(work) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
         assertSettled(session)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 drawn · 2 from template")
         assertCaptured(ShellTags.WORKSPACE)
@@ -311,7 +307,7 @@ class ScreensSmokeTest {
 
     @Test
     fun theSingleLayout() = smoke {
-        val state = AppState(templates, scope)
+        val state = AppState(templates, work)
         var selection: SheetSelection? = null
         var look: SheetLook? = null
         var outlineLook: OutlineLook? = null
@@ -337,7 +333,7 @@ class ScreensSmokeTest {
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         assertSettled(session)
         runOnIdle { state.layout.value = SheetLayout.SINGLE }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }
         val fromTemplate = assertNotNull(selection).part.mesh
 
         val viewport = onNodeWithTag(SingleTags.VIEWPORT)
@@ -352,7 +348,7 @@ class ScreensSmokeTest {
             }
             release()
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
+        settle(work) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
         assertSettled(session)
         val drawn = assertNotNull(selection)
         assertEquals(fromTemplate.vertexCount, drawn.part.mesh.vertexCount, "drawing in Single keeps the template's topology")

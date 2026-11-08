@@ -12,6 +12,7 @@ import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.ViewsScene
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_THREE_QUARTER
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.INK
@@ -26,11 +27,6 @@ import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.GpuImage
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -42,6 +38,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val FRAMES = 9
 private const val COLUMNS = 3
@@ -65,16 +62,16 @@ private val STEPS = listOf(1f, 2f)
 @Tag("slow")
 class LineFlickerSmokeTest {
     private val errors = CopyOnWriteArrayList<String>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun session(): CharacterSession {
         val folder = TemplateFolder.shipped()
-        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), scope, Dispatchers.Default)
+        val session = CharacterSession(EMPTY_FENNEC, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
         fennecCommands().forEach(session::send)
-        session.settled()
+        work.settle(session)
         return session
     }
 
@@ -87,7 +84,7 @@ class LineFlickerSmokeTest {
     }
 
     private fun render(session: CharacterSession, centre: Float, step: Float, name: String): GpuImage {
-        val state = session.probeState()
+        val state = session.probeState(work)
         val parts = state.character.parts.filter { it.id != null }
         val framed = framedCamera(parts, probeAzimuth(centre), TILE, TILE, MARGIN)
         val target = framed.camera.target
@@ -220,7 +217,7 @@ class LineFlickerSmokeTest {
     fun aStrokeHoldsItsSizeAsTheViewTurns() {
         val session = session()
         val fur = assertNotNull(session.bodyFur.output.value)
-        val state = session.probeState()
+        val state = session.probeState(work)
         val framed = framedCamera(state.character.parts.filter { it.id != null }, probeAzimuth(0f), TILE, TILE, MARGIN)
         val target = framed.camera.target
         val distance = (framed.camera.eye - target).length
@@ -276,7 +273,7 @@ class LineFlickerSmokeTest {
     fun theTailReachesAsFarPastItsEdgeFromEveryAngle() {
         val session = session()
         val fur = assertNotNull(session.bodyFur.output.value)
-        val state = session.probeState()
+        val state = session.probeState(work)
         val framed = framedCamera(state.character.parts.filter { it.id != null }, probeAzimuth(0f), TILE, TILE, MARGIN)
         val target = framed.camera.target
         val distance = (framed.camera.eye - target).length

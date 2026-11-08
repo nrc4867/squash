@@ -14,9 +14,11 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,9 +32,14 @@ private object NoBlankFiles : FileChooser {
 /** New character's Blank row: after the species plans, read as one tube, and creating from it gives one body part and no sockets. */
 @OptIn(ExperimentalTestApi::class)
 class NewBlankTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun blankStartsACharacterWithOneBodyTube() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         setStretchContent { SquashApp(state, NoBlankFiles) }
         onNodeWithTag(ShellTags.newPlan("canine-quadruped")).assertExists()
         onNode(hasTestTag(ShellTags.newPlan("blank")) and hasText("One tube, anatomy by hand", substring = true, ignoreCase = false), useUnmergedTree = false)

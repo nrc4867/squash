@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import dev.chieppa.squash.character.face.eyeLandmark
 import dev.chieppa.squash.character.face.newEyesCommand
 import dev.chieppa.squash.character.face.newMouthCommand
@@ -22,7 +24,8 @@ import kotlin.test.assertTrue
 
 /** Add eyes on a head that has none: two starter eyes that draw at once, the second mirroring the first, as one undo step. */
 class StarterEyesTest {
-    private val session: CharacterSession = openSession(fennecDocument())
+    private val work = TestWork()
+    private val session: CharacterSession = openSession(fennecDocument(), work)
     private val character get() = session.document.value.character
 
     private fun withoutEyes() {
@@ -49,7 +52,7 @@ class StarterEyesTest {
         val leftLid = assertNotNull(character.markIn(left, MarkRole.LID, HEAD)).points
         val rightLid = assertNotNull(character.markIn(right, MarkRole.LID, HEAD)).points
         leftLid.zip(rightLid).forEach { (l, r) -> assertEquals(1f - l.v, r.v, 1e-5f, "the right eye mirrors the left") }
-        session.settle()
+        work.settle(session)
         val work = assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(HEAD))
         val lid = assertNotNull(character.markIn(left, MarkRole.LID, HEAD)).id
         assertTrue(work.marks.any { it.id == lid && it.points.isNotEmpty() }, "the starter lid lands on the head")

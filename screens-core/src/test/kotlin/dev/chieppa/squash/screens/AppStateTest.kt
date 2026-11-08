@@ -1,12 +1,13 @@
 package dev.chieppa.squash.screens
 
+import dev.chieppa.squash.character.catalog.isLeader
+import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.shell.caninePlan
-import dev.chieppa.squash.character.catalog.isLeader
-import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.document.RecentFiles
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -15,12 +16,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AppStateTest {
-    private fun created() = AppState(shipped).also { it.createCharacter(caninePlan, "Fennec") }
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
+    private fun created() = AppState(shipped, work).also { it.createCharacter(caninePlan, "Fennec") }
 
     @Test
     fun firstLaunchOpensOnNewCharacterAndLaterOnesOnHome() {
-        assertEquals(Screen.NEW_CHARACTER, AppState(shipped).screen.value)
-        assertEquals(Screen.HOME, AppState(shipped, recent = RecentFiles(listOf("a.json"))).screen.value)
+        assertEquals(Screen.NEW_CHARACTER, AppState(shipped, work).screen.value)
+        assertEquals(Screen.HOME, AppState(shipped, work, recent = RecentFiles(listOf("a.json"))).screen.value)
     }
 
     @Test

@@ -1,16 +1,17 @@
 package dev.chieppa.squash.screens.shell
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -20,21 +21,17 @@ import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.pose.PoseGrip
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.surface.pose.PoseInspectorTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.snapshotFlow
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,13 +39,18 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
-private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
-/** How far apart the pointer looks for a paw's dot across Full, in pixels, and how far a drag lifts it. */
-private const val SCAN_STEP = 6f
+/**
+ * How far apart the pointer looks for a paw's dot across Full, in pixels, under twice a handle's reach over the square root of two
+ * so a dot always has a scanned point within reach; and how far a drag lifts it.
+ */
+private const val SCAN_STEP = 12f
 private const val LIFT_PIXELS = 40f
 private const val DRAG_STEPS = 8
 
@@ -60,17 +62,17 @@ private object NoPoseFiles : FileChooser {
 /** The Pose stage in the app whole, over the saved fennec: its key and strip, a paw dragged in Full, a pin, the inspector's key, and back to Shape. */
 @OptIn(ExperimentalTestApi::class)
 class PoseFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoPoseFiles) }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
         return state
     }
@@ -84,7 +86,7 @@ class PoseFlowTest {
     private fun ComposeUiTest.findPaw(state: AppState): Offset? {
         val pane = onNodeWithTag(sheetPaneTag(SheetPane.FULL))
         val seen = ArrayList<PoseGrip>()
-        val watch = scope.launch(Dispatchers.Unconfined) { snapshotFlow { state.pose.hovered }.collect { if (it is PoseGrip.End) seen += it } }
+        val watch = work.scope.launch(Dispatchers.Unconfined) { snapshotFlow { state.pose.hovered }.collect { if (it is PoseGrip.End) seen += it } }
         try {
             val size = pane.fetchSemanticsNode().size
             var y = size.height * 0.45f
@@ -128,7 +130,7 @@ class PoseFlowTest {
         assertEquals(BuildTool.TURN, state.tool.value)
         key(Key.D)
         assertEquals(BuildTool.DRAG, state.tool.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null }
+        settle(work) { state.rigNow() != null }
         waitForIdle()
         onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Pose · Drag", substring = true)
         onNodeWithTag(PoseInspectorTags.FIRM).assertExists()

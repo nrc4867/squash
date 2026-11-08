@@ -10,13 +10,14 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.stretch.gpu.CameraView
+import dev.chieppa.stretch.gpu.Vec3 as GpuVec3
 import java.nio.file.Path
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import dev.chieppa.stretch.gpu.Vec3 as GpuVec3
+import org.junit.jupiter.api.Tag
 
 /** One display frame at 120 Hz. */
 private const val FRAME_NANOS = 8_333_333L
@@ -28,7 +29,8 @@ private const val NANOS_PER_MICRO = 1_000.0
 private const val STROKE_SAMPLES = 960
 private const val STORED_SEGMENTS = 24
 
-/** Puts a number on the highlight at stroke rate, on a stroke longer than most drawn in one go. */
+/** Puts a number on the highlight at stroke rate, on a stroke longer than most drawn in one go. A benchmark, so tagged slow. */
+@Tag("slow")
 class DisagreeCostTest {
     private fun loop(radius: Float, count: Int) = List(count) {
         val angle = 2.0 * PI * it / (count - 1)

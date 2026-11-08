@@ -26,12 +26,15 @@ import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.bendTo
 import dev.chieppa.squash.rig.curveBones
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -39,17 +42,21 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private const val SQUASHED = 0.92f
 private const val DIP = 0.08f
 
 /** The Pose inspector with Body curve armed: the curve's section, the paws, and the chain's bends. */
 @OptIn(ExperimentalTestApi::class)
 class BodyCurveSectionTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").map(::PartId).toSet()
 
     private fun ComposeUiTest.opened(): AppState {
-        val state = AppState(shipped).also {
+        val state = AppState(shipped, work).also {
             it.open(savedFennec())
             it.tool.value = BuildTool.BODY_CURVE
         }
@@ -59,7 +66,7 @@ class BodyCurveSectionTest {
                 Column(Modifier.width(360.dp).verticalScroll(rememberScrollState())) { PoseInspector(state, session) }
             }
         }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null && session.graph.settled.value }
+        settle(work) { state.rigNow() != null && session.graph.settled.value }
         waitForIdle()
         return state
     }

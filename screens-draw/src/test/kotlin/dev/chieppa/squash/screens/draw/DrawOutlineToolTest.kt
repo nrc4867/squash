@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.draw
 
-import dev.chieppa.squash.geom.BodyView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
@@ -9,8 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -34,8 +33,10 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.TEST_STROKE_LOOK
 import dev.chieppa.squash.screens.sheet.LockedCamera
@@ -52,9 +53,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 private const val TAG = "pane"
 private const val PANE_WIDTH = 600
@@ -67,18 +65,18 @@ class DrawOutlineToolTest {
     private val look = TEST_STROKE_LOOK
     private val id = PartId("p")
 
-    private class Bench(val state: AppState, val session: CharacterSession, val tool: DrawOutlineTool)
+    private class Bench(val state: AppState, val session: CharacterSession, val tool: DrawOutlineTool, val work: TestWork)
 
     private fun bench(template: String): Bench {
-        val state = AppState(folder)
+        val work = TestWork()
+        val state = AppState(folder, work)
         val document = SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1)))
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val session = CharacterSession(document, TemplateLibrary(folder.parts), scope)
+        val session = CharacterSession(document, TemplateLibrary(folder.parts), work.scope, work.dispatcher)
         val found = folder.parts.first { it.id.value == template }
         session.send(AddPart(PartInstance(id, found.ref)))
         state.session.value = session
         state.selectedPart.value = id
-        return Bench(state, session, DrawOutlineTool(state, look, TEST_CURVE_LOOK))
+        return Bench(state, session, DrawOutlineTool(state, look, TEST_CURVE_LOOK), work)
     }
 
     private fun camera(view: View) = LockedCamera(view, PartAxes.of(Vec3.X), SheetFit(Vec3(1f, 0f, 0f), SCALE), PANE_WIDTH, PANE_HEIGHT)

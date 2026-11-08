@@ -28,7 +28,6 @@ import dev.chieppa.squash.screens.sheet.restPoseFrame
 import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.gpu.GpuSnapshot
 import java.awt.image.BufferedImage
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** The size rest pose art renders at by default; an image scales it to fit, and it has the boards' proportions. */
@@ -68,7 +67,7 @@ fun rememberRestPoseArt(
 ): ImageBitmap? {
     val look = rememberSheetLook()
     val art by produceState<ImageBitmap?>(null, plan, document, dashed, look, width, height) {
-        value = if (plan == null) null else withContext(Dispatchers.Default) { renderArt(state, plan, document, dashed, look, width, height) }
+        value = if (plan == null) null else withContext(state.workers.compute) { renderArt(state, plan, document, dashed, look, width, height) }
     }
     return art
 }

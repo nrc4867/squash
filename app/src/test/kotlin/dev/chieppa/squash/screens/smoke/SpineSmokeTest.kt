@@ -4,13 +4,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
@@ -22,10 +22,12 @@ import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
-import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.OutlineLook
 import dev.chieppa.squash.screens.sheet.SheetInput
+import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.SheetSelection
@@ -59,15 +61,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
-private const val SETTLE_MILLIS = 30_000L
 private const val STROKE_POINTS = 50
 
 /** How far along a the strokes reach, and how far a drag comes out from the spine, in screen pixels. */
@@ -84,12 +81,12 @@ private object NoSpineFiles : FileChooser {
 @OptIn(ExperimentalTestApi::class)
 class SpineSmokeTest {
     private val failures = CopyOnWriteArrayList<Throwable>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e -> failures += e })
+    private val work = TestWork(CoroutineExceptionHandler { _, e -> failures += e })
     private val templates = TemplateFolder.shipped()
 
     @AfterTest
     fun nothingFailedInTheBackground() {
-        scope.cancel()
+        work.close()
         assertEquals(emptyList(), failures)
     }
 
@@ -101,7 +98,7 @@ class SpineSmokeTest {
     }
 
     private fun ComposeUiTest.tailInWorkspace(): Bench {
-        val bench = Bench(AppState(templates, scope))
+        val bench = Bench(AppState(templates, work))
         setStretchContent {
             SquashApp(bench.state, NoSpineFiles)
             val selected = rememberSheetSelection(bench.state)
@@ -113,7 +110,7 @@ class SpineSmokeTest {
         }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { bench.state.screen.value == Screen.WORKSPACE }
+        settle(work) { bench.state.screen.value == Screen.WORKSPACE }
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
         settled(bench)
@@ -123,7 +120,7 @@ class SpineSmokeTest {
     }
 
     private fun ComposeUiTest.settled(bench: Bench) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) {
+        settle(work) {
             bench.state.session.value?.graph?.settled?.value == true && bench.selection?.part?.id == bench.state.selectedPart.value && bench.selection != null
         }
     }
@@ -172,7 +169,7 @@ class SpineSmokeTest {
     fun theBoardInSingleWithAWidthBeingDragged() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val bench = tailInWorkspace()
         runOnIdle { bench.state.layout.value = SheetLayout.SINGLE }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Tail · side").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Tail · side").fetchSemanticsNodes().isNotEmpty() }
         val viewport = onNodeWithTag(SingleTags.VIEWPORT).fetchSemanticsNode().size
         val selection = assertNotNull(bench.selection)
         val looks = assertNotNull(bench.looks)

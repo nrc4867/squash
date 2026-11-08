@@ -17,8 +17,10 @@ import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.draw.BENCH_TAG
 import dev.chieppa.squash.screens.draw.StrokeBench
 import dev.chieppa.squash.screens.draw.StrokeLook
@@ -36,7 +38,6 @@ import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.shipped
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.gpu.GpuOptions
@@ -44,6 +45,7 @@ import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -62,6 +64,11 @@ private object PenAssistsNoFiles : FileChooser {
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class PenAssistsSmokeTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private val rects = sheetPaneRects(WIDTH, HEIGHT, 2)
 
     private fun scene(
@@ -171,7 +178,7 @@ class PenAssistsSmokeTest {
 
     @Test
     fun theDrawerAndStripRead() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         setStretchContent { SquashApp(state, PenAssistsNoFiles) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()

@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.ResolvedMark
@@ -30,12 +32,13 @@ private const val MIRROR_HELD = 0.02f
 private const val PIXEL_HELD = 0.05f
 
 class FloatingMarksTest {
-    private val session = openSession(fennecDocument())
+    private val work = TestWork()
+    private val session = openSession(fennecDocument(), work)
     private val root = Anchor(HEAD, u = 0.5f, v = 0.2f)
     private val flight = listOf(MarkFlight(0.02f, 0.03f, 0.1f), MarkFlight(0.04f, 0.09f, 0.2f))
 
     private fun marks(part: PartId): List<ResolvedMark> {
-        session.settle()
+        work.settle(session)
         return assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(part)).marks
     }
 
@@ -119,7 +122,7 @@ class FloatingMarksTest {
     fun aStrokeDrawsInItsColorAndWithoutOneInInk() {
         val inked = send()
         val colored = send(StrokeLook(slot = SlotName("cream")))
-        session.settle()
+        work.settle(session)
         val ink = Color.Black
         val palette = session.document.value.character.palette
         val lines = SurfaceLines(assertNotNull(session.bodyLines.output.value), assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper, ink, 1f, palette)

@@ -28,23 +28,20 @@ import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.move.MoveMode
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
-private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
@@ -56,13 +53,13 @@ private object NoAnatomyFiles : FileChooser {
 /** A Blank character given a joint and a landmark by Move's presses in Full, listed and deleted in Anatomy, and two legs paired. */
 @OptIn(ExperimentalTestApi::class)
 class AnatomyFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.settle(state: AppState) {
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
     }
 
@@ -76,7 +73,7 @@ class AnatomyFlowTest {
     @Test
     fun movesPressesAddAJointAndALandmarkThatAnatomyListsAndTwoLegsPair() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val folder = TemplateFolder.shipped()
-        val state = AppState(folder, scope)
+        val state = AppState(folder, work)
         state.createCharacter(folder.plans.first { it.id == BodyPlanId("blank") }, "Lizard")
         setStretchContent { SquashApp(state, NoAnatomyFiles) }
         settle(state)

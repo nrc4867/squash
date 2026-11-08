@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.TestWork
+
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.FurCamera
 import dev.chieppa.squash.character.build.FurView
@@ -61,20 +63,21 @@ private const val FULL_SCALE = 280f
 private const val SPACING_HELD = 0.85f
 
 class FurViewTest {
-    private val session = openSession(fennecDocument())
+    private val work = TestWork()
+    private val session = openSession(fennecDocument(), work)
 
     private fun center(part: PartId): Vec3 = assertNotNull(session.assembly.output.value?.part(part)?.box?.center)
 
     private fun shown(offset: Vec3 = Vec3(0f, 0f, -5f)): Pair<FurView, FurCamera> {
         val camera = furCamera(sideCamera(center(TORSO), offset), VIEW_PIXELS, VIEW_PIXELS)
         session.showFurFrom(VIEW, camera)
-        session.settle()
+        work.settle(session)
         return assertNotNull(session.furView(VIEW).output.value) to camera
     }
 
     private fun rule(part: PartId, rule: FurRule) {
         session.send(SetFurRule(part, rule))
-        session.settle()
+        work.settle(session)
     }
 
     @Test
@@ -173,7 +176,7 @@ class FurViewTest {
         assertEquals(FUR, tail.first { it.id.value == "tail-0-0" }.slot, "the tail's base slot")
         val pastTheBorder = Mark(MarkId("past-the-border"), listOf(Anchor(TAIL, BODY_PATCH, 0.9f, 0.5f)), kind = MarkKind.FUR)
         session.send(AddMarks(TAIL, listOf(pastTheBorder)))
-        session.settle()
+        work.settle(session)
         val tip = assertNotNull(session.bodyFur.output.value?.parts?.get(TAIL)).roots.first { it.id == pastTheBorder.id }
         assertEquals(INK, tip.slot, "the tail's tip, past a border going once round")
     }
@@ -183,7 +186,7 @@ class FurViewTest {
         shown()
         session.showFurFrom(VIEW, furCamera(sideCamera(center(TORSO), Vec3(3f, 1f, -4f)), VIEW_PIXELS, VIEW_PIXELS))
         assertTrue(session.graph.settled.value, "an orbit does not read as a refit")
-        session.settle()
+        work.settle(session)
     }
 
     @Test

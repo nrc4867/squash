@@ -1,5 +1,11 @@
 package dev.chieppa.squash.screens.shell
 
+import kotlinx.coroutines.flow.first
+
+
+import dev.chieppa.squash.screens.settle
+import dev.chieppa.squash.screens.TestWork
+import kotlin.test.AfterTest
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
@@ -33,6 +39,7 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.DirectStorage
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.stretch.document.DocumentFormat
@@ -64,29 +71,34 @@ private class SaveTo(private val path: String) : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = path.also { asked++ }
 }
 
-private const val SETTLE_MILLIS = 10_000L
 
 @OptIn(ExperimentalTestApi::class)
 class ShellFlowTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.show(state: AppState) = setStretchContent { SquashApp(state, NoFiles) }
 
     private fun ComposeUiTest.createCharacter(state: AppState) {
         show(state)
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
-        waitForIdle()
+        settle(work, state)
         assertEquals(Screen.WORKSPACE, state.screen.value)
     }
 
     @Test
     fun firstLaunchGoesFromNewCharacterToTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         show(state)
         onNodeWithTag(ShellTags.NEW_DIALOG).assertExists()
         onNodeWithTag(ShellTags.newPlan("canine-quadruped")).assertExists()
         onNodeWithTag(ShellTags.STATUS_START).assertExists()
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
+        settle(work, state)
 
         onNodeWithTag(ShellTags.WORKSPACE).assertExists()
         onNodeWithTag(ShellTags.NEW_DIALOG).assertDoesNotExist()
@@ -97,12 +109,12 @@ class ShellFlowTest {
         val session = assertNotNull(state.session.value)
         assertEquals("Fennec", session.document.value.character.name)
         assertEquals(session.document.value.character.parts.single().id, state.selectedPart.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { onAllNodesWithText("Settled").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Settled").fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test
     fun anEmptyNameFallsBackToUntitled() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         show(state)
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
@@ -111,7 +123,7 @@ class ShellFlowTest {
 
     @Test
     fun aSocketRowOpensAddPartAndAddingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRowState("front-leg")).assertTextContains("pair")
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
@@ -135,7 +147,7 @@ class ShellFlowTest {
 
     @Test
     fun tListsTheOpenSocketsAndEnterAddsWhileEscCloses() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.T) }
         waitForIdle()
@@ -159,7 +171,7 @@ class ShellFlowTest {
 
     @Test
     fun undoInTheTopBarTakesBackAPlacedPart() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
         onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
@@ -176,7 +188,7 @@ class ShellFlowTest {
 
     @Test
     fun theSliderIsOneUndoStepAndStaysInItsLimits() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         state.tool.value = BuildTool.NONE
         waitForIdle()
@@ -193,7 +205,7 @@ class ShellFlowTest {
 
     @Test
     fun aSocketOffersOnlyTheTypesItTakesWithWhatYouDraw() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         val session = assertNotNull(state.session.value)
         val plan = shipped.plans.first()
@@ -209,7 +221,7 @@ class ShellFlowTest {
 
     @Test
     fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         val session = assertNotNull(state.session.value)
         val plan = shipped.plans.first()
@@ -235,7 +247,7 @@ class ShellFlowTest {
 
     @Test
     fun theMenusRunActions() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithText("View").performClick()
         onNodeWithText("History").performClick()
@@ -248,13 +260,13 @@ class ShellFlowTest {
         val format = SquashFormat()
         val new = newCharacter(caninePlan, shipped, "Marsh hare")
         FileStorage.write(file.absolutePathString(), format.encode(new.commands.fold(new.document) { d, c -> c.apply(d).document }))
-        val state = AppState(shipped, recent = RecentFiles(listOf(file.absolutePathString())))
+        val state = AppState(shipped, work, storage = DirectStorage, recent = RecentFiles(listOf(file.absolutePathString())))
         show(state)
         onNodeWithTag(ShellTags.HOME).assertExists()
         onNodeWithTag(ShellTags.recent(file.nameWithoutExtension)).assertExists()
-        waitUntil { onAllNodesWithText("Marsh hare").fetchSemanticsNodes().isNotEmpty() }
+        settle(work) { onAllNodesWithText("Marsh hare").fetchSemanticsNodes().isNotEmpty() }
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
-        waitUntil { state.session.value != null && state.screen.value == Screen.WORKSPACE }
+        settle(work) { state.session.value != null && state.screen.value == Screen.WORKSPACE }
         assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
     }
 
@@ -269,14 +281,15 @@ class ShellFlowTest {
         Files.writeString(json, text)
         assertTrue(format.openExtensions.containsAll(setOf("squash", "json")), "the open dialog lists plain JSON")
         val chooser = SaveTo(squash.absolutePathString())
-        val state = AppState(shipped, recent = RecentFiles(listOf(json.absolutePathString())))
+        val state = AppState(shipped, work, storage = DirectStorage, recent = RecentFiles(listOf(json.absolutePathString())))
         setStretchContent { SquashApp(state, chooser) }
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
-        waitUntil { state.session.value != null && state.screen.value == Screen.WORKSPACE }
+        settle(work) { state.session.value != null && state.screen.value == Screen.WORKSPACE }
         assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
         onNodeWithText("File").performClick()
         onNodeWithText("Save").performClick()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { Files.exists(squash) && state.file.value?.path == squash.absolutePathString() }
+        settle(work) { state.file.value?.path == squash.absolutePathString() }
+        assertTrue(Files.exists(squash))
         assertEquals(1, chooser.asked, "saving a JSON character asks where to put the Squash file")
         assertEquals(text, Files.readString(json), "the JSON is left as it was")
         assertEquals("Marsh hare", format.decode(Files.readAllBytes(squash)).character.name)
@@ -284,7 +297,7 @@ class ShellFlowTest {
 
     @Test
     fun clearingTheRecentListShowsTheEmptyHome() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped, recent = RecentFiles(listOf("gone.json")))
+        val state = AppState(shipped, work, storage = DirectStorage, recent = RecentFiles(listOf("gone.json")))
         show(state)
         onNodeWithText("Clear recent files").performClick()
         onNodeWithText("No projects").assertExists()
@@ -294,16 +307,16 @@ class ShellFlowTest {
 
     @Test
     fun aFileThatWillNotOpenLeavesTheRecentList() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped, recent = RecentFiles(listOf("gone.json")))
+        val state = AppState(shipped, work, storage = DirectStorage, recent = RecentFiles(listOf("gone.json")))
         show(state)
         onNodeWithTag(ShellTags.HOME_CONTINUE).performClick()
-        waitUntil { state.recent.entries.isEmpty() }
+        settle(work) { state.recent.entries.isEmpty() }
         assertEquals(Screen.HOME, state.screen.value)
     }
 
     @Test
     fun everyScreenHasTheFourMenusAndCantUndoWithNothingToTakeBack() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         for (title in listOf("File", "Edit", "View", "Help")) onNodeWithText(title).assertExists()
         val undo = onNodeWithContentDescription("Undo")
@@ -317,7 +330,7 @@ class ShellFlowTest {
 
     @Test
     fun theStatusBarShowsHomesOwnFactsAfterTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("0 drawn · 3 from template")
         state.closeCharacter()
@@ -332,7 +345,7 @@ class ShellFlowTest {
 
     @Test
     fun theRailsHoldTheDrawersAndTheStagesNotBuiltDoNotOpen() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         for (name in listOf("Parts", "References", "History", "Help", "Inspector")) onNodeWithContentDescription(name).assertIsEnabled()
         onNodeWithContentDescription("Part types").assertDoesNotExist()
@@ -350,7 +363,7 @@ class ShellFlowTest {
 
     @Test
     fun mirrorDecidesWhereAnEditLandsAndAnOverrideShowsItself() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.tool(BuildTool.ERASE)).assertExists()
         onNodeWithTag(ShellTags.MIRROR).assertIsNotEnabled()

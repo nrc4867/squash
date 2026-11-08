@@ -3,7 +3,9 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -12,23 +14,23 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.CentreLine
 import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.draw.OutlineDrawerTags
 import dev.chieppa.squash.screens.edit.LEG_SIDE
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.runDesktopComposeUiTest
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onAllNodesWithText
 
 /** Past Stretch's hover wait before a tooltip shows. */
 private const val TOOLTIP_MILLIS = 600L
@@ -40,6 +42,11 @@ private object NoChooser : FileChooser {
 
 @OptIn(ExperimentalTestApi::class)
 class OutlineDrawerTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun ComposeUiTest.workspace(state: AppState) {
         setStretchContent { SquashApp(state, NoChooser) }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
@@ -58,7 +65,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theHintSectionReadsAsTheBoardDrawsItAndIsSessionState() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         waitForIdle()
         onNodeWithTag(OutlineDrawerTags.GHOST_VALUE).assertTextContains("40%")
@@ -71,7 +78,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theOutlineDrawerReadsAsTheBoardDrawsItAndSetsTheStrokesOptions() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         waitForIdle()
         onNodeWithTag(OutlineDrawerTags.SMOOTH_VALUE).assertTextContains("45%")
@@ -86,7 +93,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theStrokeAssistsReadAsTheBoardDrawsThemAndSetTheOptions() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         waitForIdle()
         onNodeWithTag(OutlineDrawerTags.STABILIZER_VALUE).assertTextContains("20%")
@@ -103,7 +110,7 @@ class OutlineDrawerTest {
 
     @Test
     fun halfOutlineTogglesFromTheStripAndFromHAndIsSessionState() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         val steps = state.session.value?.history?.steps?.value?.done?.size
         onNodeWithTag(ShellTags.HALF_OUTLINE).performClick()
@@ -117,7 +124,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theDrawToolsTitleNamesItsModifiers() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         onNodeWithTag(ShellTags.tool(BuildTool.DRAW_OUTLINE)).performMouseInput { enter(center) }
         waitForIdle()
@@ -128,7 +135,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theStrokeSectionStaysOverOutlineCurvesOnceThePartIsDrawn() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         checkNotNull(state.session.value).send(SetOutline(checkNotNull(state.selectedPart.value), View.SIDE, LEG_SIDE))
         waitForIdle()
@@ -141,7 +148,7 @@ class OutlineDrawerTest {
 
     @Test
     fun theInspectorHoldsTheToolsSectionsOverThePartsParameters() = runDesktopComposeUiTest(1600, 900) {
-        val state = AppState(shipped)
+        val state = AppState(shipped, work)
         workspace(state)
         onAllNodesWithText("Shape").assertCountEquals(2)
         onNodeWithText("STROKE").assertExists()

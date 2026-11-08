@@ -4,6 +4,10 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
+import dev.chieppa.squash.character.catalog.newCharacter
+import dev.chieppa.squash.character.catalog.openSockets
+import dev.chieppa.squash.character.catalog.placeOnSocket
+import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.CurvePoint
@@ -12,43 +16,43 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.PANE_TAG
 import dev.chieppa.squash.screens.edit.RIPPLED
 import dev.chieppa.squash.screens.edit.SmoothTool
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.edit.mouseDrag
 import dev.chieppa.squash.screens.edit.showPane
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetInput
 import dev.chieppa.squash.screens.sheet.sheetFrame
 import dev.chieppa.squash.screens.sheet.sheetPaneRects
 import dev.chieppa.squash.screens.sheet.sheetSelection
-import dev.chieppa.squash.character.catalog.newCharacter
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.placeOnSocket
-import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.stretch.gpu.GpuOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import org.junit.jupiter.api.Tag
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 private const val SMOOTH_WIDTH = 1440
 private const val SMOOTH_HEIGHT = 900
-private const val SETTLE_MILLIS = 20_000L
 
 /** A dog's front leg smoothed along its rippled top, through the real build and scene, with the brush over Side. */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
 class SmoothSmokeTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     @Test
     fun theBrushShowsOverTheRealPaneAndItsDragRebuildsThePart() = runComposeUiTest {
         val folder = TemplateFolder.shipped()
-        val state = AppState(folder, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val state = AppState(folder, work)
         val plan = folder.plans.first()
         val new = newCharacter(plan, folder, "Fennec")
         val session = state.open(new.document)
@@ -59,7 +63,7 @@ class SmoothSmokeTest {
         val leg = parts.first { it.side == Side.LEFT }.id
         state.selectedPart.value = leg
         session.send(SetOutline(leg, View.SIDE, RIPPLED))
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value && session.assembly.output.value?.part(leg) != null }
+        settle(work) { session.graph.settled.value && session.assembly.output.value?.part(leg) != null }
         val rects = sheetPaneRects(SMOOTH_WIDTH, SMOOTH_HEIGHT, 2)
         val character = assertNotNull(session.assembly.output.value)
         val selection = assertNotNull(sheetSelection(character, leg, mapOf(View.SIDE to RIPPLED)))
@@ -80,7 +84,7 @@ class SmoothSmokeTest {
 
         onNodeWithTag(PANE_TAG).performMouseInput { moveTo((from + to) / 2f) }
         waitForIdle()
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         val built = assertNotNull(session.assembly.output.value)
         val after = assertNotNull(sheetSelection(built, leg, mapOf(View.SIDE to smoothed)))
         val shown = panesInput(after, SMOKE_LOOK, rects, SMOOTH_WIDTH, SMOOTH_HEIGHT)

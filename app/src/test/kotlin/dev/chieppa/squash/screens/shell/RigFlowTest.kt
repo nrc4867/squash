@@ -6,10 +6,10 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
@@ -19,17 +19,15 @@ import dev.chieppa.squash.document.SetSeamStroke
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.rig.rigNow
+import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetPane
 import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +35,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
@@ -57,17 +54,17 @@ private object NoRigFiles : FileChooser {
 /** The Rig stage in the app whole, over the saved fennec: the key, its strip, a stroke from a pane, the status bar and the inspector's key. */
 @OptIn(ExperimentalTestApi::class)
 class RigFlowTest {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val work = TestWork()
 
     @AfterTest
-    fun stop() = scope.cancel()
+    fun stop() = work.close()
 
     private fun ComposeUiTest.fennecOpen(): AppState {
-        val state = AppState(TemplateFolder.shipped(), scope)
+        val state = AppState(TemplateFolder.shipped(), work)
         state.open(savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoRigFiles) }
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.session.value?.graph?.settled?.value == true }
+        settle(work, state)
         waitForIdle()
         return state
     }
@@ -90,7 +87,7 @@ class RigFlowTest {
         assertEquals(BuildTool.ERASE_WEIGHT, state.tool.value)
         key(Key.D)
         assertEquals(BuildTool.PAINT_WEIGHT, state.tool.value)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { state.rigNow() != null }
+        settle(work) { state.rigNow() != null }
         waitForIdle()
         onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Rig · Paint weight", substring = true)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("37 bones · 13 parts · 0 seams painted", substring = true)
@@ -111,7 +108,7 @@ class RigFlowTest {
         assertEquals(steps + 1, session.history.steps.value.done.size, "one drag is one step")
         val laid = assertIs<SetSeamStroke>(session.history.steps.value.done.last())
         assertNotNull(laid.stroke)
-        waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
+        settle(work) { session.graph.settled.value }
         waitForIdle()
         val status = onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().fetchSemanticsNode().config[SemanticsProperties.Text].joinToString()
         assertTrue(PAIR_SEAMS_PAINTED.containsMatchIn(status), "one stroke paints one seam, or both of a pair's: $status")

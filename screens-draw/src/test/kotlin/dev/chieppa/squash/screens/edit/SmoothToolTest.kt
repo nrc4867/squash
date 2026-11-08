@@ -25,27 +25,31 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.shell.BuildTool
-import dev.chieppa.squash.screens.shell.PartDrawerKind
-import dev.chieppa.squash.screens.shell.partDrawerKind
+import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
+import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.screens.shell.PartDrawerKind
+import dev.chieppa.squash.screens.shell.partDrawerKind
 import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.math.hypot
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 @OptIn(ExperimentalTestApi::class)
 class SmoothToolTest {
+    private val work = TestWork()
+
+    @AfterTest
+    fun stopWork() = work.close()
+
     private fun tool(state: AppState) = SmoothTool(state, TEST_CURVE_LOOK)
 
     private fun along(camera: LockedCamera, from: CurvePoint, to: CurvePoint): List<Offset> = List(24) { i ->
@@ -147,11 +151,12 @@ class SmoothToolTest {
     @Test
     fun withMirrorOffOnlyThisSideChanges() = runComposeUiTest {
         val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
-        val state = AppState(folder)
+        val state = AppState(folder, work)
         val session = CharacterSession(
             SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1))),
             TemplateLibrary(folder.parts),
-            CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            work.scope,
+            work.dispatcher,
         )
         val ref = folder.parts.first { it.id.value == "leg" }.ref
         val left = PartId("left")
