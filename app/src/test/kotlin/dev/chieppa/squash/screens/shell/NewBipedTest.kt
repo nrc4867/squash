@@ -26,16 +26,16 @@ private object NoBipedFiles : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
-/** New character's Biped row: between Canine quadruped and Blank, read as two legs, two arms, upright; creating from it gives an upright torso. */
+/** New character's Biped row: between Bird and Blank, read as two legs, two arms, upright; creating from it gives an upright torso. */
 @OptIn(ExperimentalTestApi::class)
 class NewBipedTest {
     @Test
     fun bipedStartsACharacterWithAnUprightTorso() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped)
         setStretchContent { SquashApp(state, NoBipedFiles) }
-        assertEquals(listOf("canine-quadruped", "biped", "blank"), shipped.plans.map { it.id.value })
-        val rows = listOf("canine-quadruped", "biped", "blank").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }
-        assertEquals(rows.sorted(), rows, "the rows read Canine quadruped, Biped, Blank")
+        assertEquals(listOf("canine-quadruped", "bird", "biped", "blank"), shipped.plans.map { it.id.value })
+        val rows = listOf("canine-quadruped", "bird", "biped", "blank").map { onNodeWithTag(ShellTags.newPlan(it)).fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(rows.sorted(), rows, "the rows read Canine quadruped, Bird, Biped, Blank")
         onNode(hasTestTag(ShellTags.newPlan("biped")) and hasText("Two legs, two arms, upright", substring = true, ignoreCase = false)).assertExists()
         onNodeWithTag(ShellTags.newPlan("biped")).performClick()
         waitForIdle()

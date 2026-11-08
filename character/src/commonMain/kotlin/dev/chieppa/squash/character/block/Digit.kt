@@ -22,8 +22,8 @@ data class Digit(
     @Doc("Where across the row the digit's root sits, -1 at the first side and 1 at the last.")
     @Range(min = -1.5, max = 1.5)
     val across: Float? = null,
-    @Doc("Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan.")
-    @Range(min = -90.0, max = 90.0)
+    @Doc("Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan; past 90 either way it points back from its root.")
+    @Range(min = -180.0, max = 180.0)
     val angle: Float? = null,
 ) {
     fun lint(ctx: LintContext, field: String): List<Finding> =

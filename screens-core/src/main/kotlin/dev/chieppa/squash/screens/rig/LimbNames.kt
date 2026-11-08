@@ -15,19 +15,22 @@ import dev.chieppa.squash.uidesign.generated.role_left_arm
 import dev.chieppa.squash.uidesign.generated.role_left_foot
 import dev.chieppa.squash.uidesign.generated.role_left_hand
 import dev.chieppa.squash.uidesign.generated.role_left_leg
+import dev.chieppa.squash.uidesign.generated.role_left_wing
 import dev.chieppa.squash.uidesign.generated.role_right_arm
 import dev.chieppa.squash.uidesign.generated.role_right_foot
 import dev.chieppa.squash.uidesign.generated.role_right_hand
 import dev.chieppa.squash.uidesign.generated.role_right_leg
+import dev.chieppa.squash.uidesign.generated.role_right_wing
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** How an upright character's limb ends and limbs read by role and side: Left foot, Right hand. */
+/** How an upright character's limb ends and limbs read by role and side: Left foot, Right hand, Left wing. */
 private val SIDED: Map<Pair<Role, Side>, StringResource> = mapOf(
     (Role.ARM to Side.LEFT) to Res.string.role_left_arm, (Role.ARM to Side.RIGHT) to Res.string.role_right_arm,
     (Role.HAND to Side.LEFT) to Res.string.role_left_hand, (Role.HAND to Side.RIGHT) to Res.string.role_right_hand,
     (Role.LEG to Side.LEFT) to Res.string.role_left_leg, (Role.LEG to Side.RIGHT) to Res.string.role_right_leg,
     (Role.FOOT to Side.LEFT) to Res.string.role_left_foot, (Role.FOOT to Side.RIGHT) to Res.string.role_right_foot,
+    (Role.WING to Side.LEFT) to Res.string.role_left_wing, (Role.WING to Side.RIGHT) to Res.string.role_right_wing,
 )
 
 /**

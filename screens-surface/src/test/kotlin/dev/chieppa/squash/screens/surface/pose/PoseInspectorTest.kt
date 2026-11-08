@@ -24,6 +24,7 @@ import dev.chieppa.squash.document.SetPlanted
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.person.savedPerson
+import dev.chieppa.squash.screens.toucan.savedToucan
 import dev.chieppa.squash.screens.rig.rigNow
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
@@ -73,6 +74,21 @@ class PoseInspectorTest {
         onNodeWithTag(PoseInspectorTags.pin(PartId("hand-l"))).assertDoesNotExist()
         onNodeWithTag(PoseInspectorTags.pin(PartId("hand-r"))).assertDoesNotExist()
         onNodeWithText("Right hand", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun aBirdsFeetAreItsPlantedRowsAndItsWingsAreNot() = runComposeUiTest {
+        val state = AppState(shipped).also {
+            it.open(savedToucan())
+            it.tool.value = BuildTool.DRAG
+        }
+        showInspector(state)
+        onNodeWithText("Left foot", useUnmergedTree = true).assertExists()
+        onNodeWithText("Right foot", useUnmergedTree = true).assertExists()
+        onNodeWithTag(PoseInspectorTags.pin(PartId("foot-l"))).assertExists()
+        onNodeWithTag(PoseInspectorTags.pin(PartId("foot-r"))).assertExists()
+        onNodeWithTag(PoseInspectorTags.pin(PartId("wing-l"))).assertDoesNotExist()
+        onNodeWithTag(PoseInspectorTags.pin(PartId("wing-r"))).assertDoesNotExist()
     }
 
     @Test

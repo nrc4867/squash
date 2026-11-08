@@ -42,6 +42,15 @@ private const val FRONT_TOLERANCE = 0.03f
  */
 private const val TOED_PAW_TOLERANCE = 0.045f
 
+/**
+ * A part whose undrawn axis bends, a digitigrade leg, stands its undrawn rings square to the bent axis, and a drawing's on planes
+ * a = constant, so at the bend the two silhouettes differ by the rings' tilt across the part's thickness.
+ */
+private const val BENT_TOLERANCE = 0.03f
+
+/** Whether [template]'s axis bends with nothing drawn. */
+private fun bendsUndrawn(template: PartTemplate): Boolean = template.axis.bend?.let { it.resolve(template.defaults) != 0f } ?: false
+
 /** With all three views started, each is held to the others as well, which the head's proportions show most. */
 private const val IN_TURN_TOLERANCE = 0.035f
 
@@ -100,6 +109,7 @@ class TemplateOutlineTest {
         thumbWidth(template, view) -> null
         view == View.FRONT -> FRONT_TOLERANCE
         hasToes(template) -> TOED_PAW_TOLERANCE
+        bendsUndrawn(template) -> BENT_TOLERANCE
         else -> TOLERANCE
     }
 

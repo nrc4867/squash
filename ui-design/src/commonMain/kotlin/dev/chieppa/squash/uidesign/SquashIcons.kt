@@ -496,6 +496,16 @@ object SquashIcons {
             stroke("M6 14.25l2-3.75 2 3.75")
         }
     }
+    val PlanBird: ImageVector by lazy {
+        icon("plan-bird") {
+            stroke("M8.5 3.75a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 1 0 -3.5 0z")
+            stroke("M12 3.5l2.5 1-2.5.75")
+            stroke("M9 5.75C6 6.25 4 8.75 4.5 11.5c2.75.5 5.5-1 6-4.5")
+            stroke("M4.5 11.5l-2 2")
+            stroke("M7 11.75v2.5M9 11.25v3")
+            stroke("M5 14.25h6")
+        }
+    }
     val PlanBlank: ImageVector by lazy {
         icon("plan-blank") {
             stroke("M5 5h6a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6z")

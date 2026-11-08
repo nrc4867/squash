@@ -34,13 +34,15 @@ fun PartAxes.viewPoint(view: View, point: Vec3): Vec2 = when (view) {
 
 /**
  * The outline of a part of [unplaced] resolving to [data], as the build shows it in [view] with nothing drawn there: its
- * template hint as an ordinary curve. Null if the part has no extent in the view.
+ * template hint as an ordinary curve. A patch running back against the axis, a hind toe, keeps its own place whatever is drawn, so
+ * the outline leaves it out. Null if the part has no extent in the view.
  */
 fun templateOutline(unplaced: PartTemplate, data: PartData, view: View): OutlineCurve? {
     val template = unplaced.placedBy(data.params)
     val axes = PartBuilder.axes(template)
     val scale = 1f / ((template.defaults + data.params)[SIZE_PARAM] ?: 1f)
     val mesh = PartBuilder.mesh(template.id.value, template, PartBuilder.build(template, data.params, data.outlines - view))
-    val stroke = silhouetteCurve(mesh.patches, { axes.viewPoint(template.planeOf(view), it * scale) }, outlineEnds(view, template.openEnd))
+    val along = mesh.patches.filter { patch -> patch.patch.slices?.let { (it.last().frame.center - it.first().frame.center) dot axes.along >= 0f } ?: true }
+    val stroke = silhouetteCurve(along, { axes.viewPoint(template.planeOf(view), it * scale) }, outlineEnds(view, template.openEnd))
     return stroke?.path?.toOutline()
 }

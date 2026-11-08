@@ -1,0 +1,33 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "torso-bird",
+  "version": 1,
+  "name": "Torso",
+  "role": "body",
+  "axis": { "rest": [0.643, 0.766, 0], "length": 0.6 },
+  "openEnd": null,
+  "topology": { "rings": 64, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "egg",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "girth": { "default": 0.3,  "min": 0.1, "max": 0.7 }
+  },
+  "grain": { "toward": "start" },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth" },
+    { "kind": "cap",   "end": "start", "shape": "round" },
+    { "kind": "cap",   "end": "end",   "shape": "round" },
+    { "kind": "joint", "name": "hips",      "u": 0.0, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "joint", "name": "belly",     "u": 0.2, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "joint", "name": "waist",     "u": 0.4, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "joint", "name": "ribs",      "u": 0.6, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "joint", "name": "chest",     "u": 0.8, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "joint", "name": "shoulders", "u": 1.0, "hinge": "x", "limits": [-20, 20], "stretch": true },
+    { "kind": "area",  "name": "bib", "u": [0.55, 1.0], "v": [0.8, 0.2], "tag": "fill" },
+    { "kind": "area",  "name": "belly", "u": [0.1, 0.55], "v": [0.8, 0.2], "tag": "fill" },
+    { "kind": "area",  "name": "back", "u": [0.2, 1.0], "v": [0.3, 0.7], "tag": "fill" },
+    { "kind": "area",  "name": "vent", "u": [0.0, 0.12], "v": [0, 1], "tag": "fill" }
+  ]
+}

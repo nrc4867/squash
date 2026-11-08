@@ -1,0 +1,28 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "leg-bird",
+  "version": 1,
+  "name": "Bird leg",
+  "role": "leg",
+  "axis": { "rest": [0, -1, 0], "length": 0.36, "bend": "$stance", "bendAt": 0.5, "bearsWeight": true },
+  "openEnd": "start",
+  "topology": { "rings": 40, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "thickness": { "default": 0.08, "min": 0.04, "max": 0.3 },
+    "stance":    { "default": 0.1, "min": 0.0, "max": 0.3 }
+  },
+  "blocks": [
+    { "kind": "tube",   "u": [0.0, 1.0], "radius": "$thickness" },
+    { "kind": "joint",  "name": "hip",   "u": 0.0, "hinge": "x", "limits": [-60, 90] },
+    { "kind": "joint",  "name": "heel",  "u": 0.5, "hinge": "x", "limits": [-140, 10] },
+    { "kind": "joint",  "name": "ankle", "u": 1.0, "hinge": "x", "limits": [-60, 60], "stretch": true },
+    { "kind": "socket", "name": "foot",  "u": 1.0, "v": 0.5, "outward": "normal", "takes": ["foot-bird"] },
+    { "kind": "area",   "name": "heel",  "u": [0.45, 0.55], "v": [0, 1], "tag": "rigid" },
+    { "kind": "area",   "name": "thigh", "u": [0.0, 0.3], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",   "name": "shank", "u": [0.5, 1.0], "v": [0, 1], "tag": "fill" }
+  ]
+}

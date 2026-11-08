@@ -19,7 +19,10 @@ import dev.chieppa.squash.geom.positionAt
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.tan
 
 private const val MIN_TOE_RINGS = 3
@@ -29,6 +32,9 @@ private const val V_UNDER = 0.5f
 private const val V_SIDE = 0.25f
 private const val DRAWN_TOE_OVERLAP = 1.15f
 private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
+
+/** The angle from the axis past which a digit points back from its root, as a bird's hind toe does. */
+private const val RIGHT_ANGLE = 90f
 
 @Serializable
 @SerialName("toeRow")
@@ -63,6 +69,7 @@ data class ToeRow(
     /**
      * A drawn Side fills each toe to the outline; a drawn Top shares its width among the toes. A [Digit] runs along its own span, from
      * its own place across the row, at its own angle and thickness, whatever is drawn, and the drawn width is shared among the others.
+     * A digit turned past a right angle points back from its root, at its span's start, as far as its span is long, at its own thickness.
      */
     override fun build(ctx: BuildContext): List<Patch> {
         val toes = toeCount(ctx)
@@ -82,24 +89,28 @@ data class ToeRow(
             val us = FloatArray(rings) { span.start + (span.end - span.start) * it / (rings - 1) }
             val place = digit?.across ?: if (toes == 1) 0f else 2f * i / (toes - 1) - 1f
             val angle = digit?.angle?.let { it * DEGREES_TO_RADIANS } ?: (fan * place)
+            val back = digit?.angle?.let { abs(it) > RIGHT_ANGLE } == true
             val fanOut = tan(angle) * ctx.axisLength
             ctx.checkCancelled()
-            val heights = FloatArray(rings) { ctx.views?.heightAt(us[it]) ?: thickness }
+            val heights = FloatArray(rings) { ring -> ctx.views?.heightAt(us[ring])?.takeIf { !back } ?: thickness }
             val widths = FloatArray(rings) { ring ->
                 ctx.views?.widthAt(us[ring])?.takeIf { digit == null }?.let { it / sharing.size * DRAWN_TOE_OVERLAP } ?: thickness
             }
-            val centres = us.map { at ->
-                val share = ctx.views?.widthAt(at)?.takeIf { digit == null }?.let { it * ((sharing.indexOf(i) + 0.5f) / sharing.size - 0.5f) }
-                val across = share ?: (rowHalf * place + fanOut * (at - span.start))
-                val base = (ctx.views?.centreAt(at) ?: ctx.axis.pointAt(at)) + ctx.axes.side * across
-                if (ctx.views?.heightAt(at) != null) base else base + rest
+            val centres = if (back) {
+                val toward = ctx.axes.along * cos(angle) + ctx.axes.side * sin(angle)
+                val from = ctx.axis.pointAt(span.start) + ctx.axes.side * (rowHalf * place) + rest
+                us.map { at -> from + toward * (ctx.axisLength * (at - span.start)) }
+            } else {
+                us.map { at ->
+                    val share = ctx.views?.widthAt(at)?.takeIf { digit == null }?.let { it * ((sharing.indexOf(i) + 0.5f) / sharing.size - 0.5f) }
+                    val across = share ?: (rowHalf * place + fanOut * (at - span.start))
+                    val base = (ctx.views?.centreAt(at) ?: ctx.axis.pointAt(at)) + ctx.axes.side * across
+                    if (ctx.views?.heightAt(at) != null) base else base + rest
+                }
             }
-            SliceBuilder.sweep(
-                SweepSpec(
-                    "$rowName:$i", us, centres, heights, widths, section, ctx.axes.up,
-                    EndClosure.ROUND, EndClosure.ROUND, ctx.axes.along.takeIf { ctx.views != null },
-                ),
-            )
+            val up = if (back) ctx.axes.up * -1f else ctx.axes.up
+            val facing = ctx.axes.along.takeIf { ctx.views != null }?.let { if (back) it * -1f else it }
+            SliceBuilder.sweep(SweepSpec("$rowName:$i", us, centres, heights, widths, section, up, EndClosure.ROUND, EndClosure.ROUND, facing))
         }
     }
 

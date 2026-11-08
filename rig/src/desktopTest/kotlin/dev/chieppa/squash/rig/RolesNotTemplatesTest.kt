@@ -31,16 +31,21 @@ import kotlin.test.assertNotNull
 /** How near two solves of the same pose must agree, in body units. */
 private const val SAME = 1e-5f
 
-/** The fennec and the person pose by their parts' roles: with every template id renamed, their rigs, handles and solves are the same. */
+/** The fennec, the person and the toucan pose by their parts' roles: with every template id renamed, their rigs, handles and solves are the same. */
 class RolesNotTemplatesTest {
-    private val renamed = mapOf("torso-upright" to "kind-k", "head-round" to "kind-l", "arm" to "kind-m", "hand" to "kind-n", "foot" to "kind-o", "torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g", "tube" to "kind-h", "blob" to "kind-i", "sheet" to "kind-j")
+    private val renamed = mapOf(
+        "torso-bird" to "kind-p", "head-bird" to "kind-q", "beak-lower" to "kind-r", "beak" to "kind-s", "leg-bird" to "kind-t", "foot-bird" to "kind-u",
+        "tail-feathers" to "kind-v", "torso-upright" to "kind-k", "head-round" to "kind-l", "arm" to "kind-m", "hand" to "kind-n", "foot" to "kind-o", "torso" to "kind-a", "head" to "kind-b", "tail" to "kind-c", "ear" to "kind-d", "leg" to "kind-e", "paw" to "kind-f", "wing-feathered" to "kind-g", "tube" to "kind-h", "blob" to "kind-i", "sheet" to "kind-j",
+    )
     private val templates: Path = Path.of(System.getProperty("squash.templates"))
 
     @Test
     fun theFennecWithEveryTemplateIdRenamedPosesTheSame() {
         val folder = renamedFolder()
         val document = readDocument(rename(Json.parseToJsonElement(Path.of(System.getProperty("squash.examples"), "fennec.json").readText()), Spot.DOCUMENT).toString())
-        assertEquals((renamed - setOf("wing-feathered", "tube", "blob", "sheet", "torso-upright", "head-round", "arm", "hand", "foot")).values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
+        val notOnTheFennec = setOf("wing-feathered", "tube", "blob", "sheet", "torso-upright", "head-round", "arm", "hand", "foot") +
+            setOf("torso-bird", "head-bird", "beak-lower", "beak", "leg-bird", "foot-bird", "tail-feathers")
+        assertEquals((renamed - notOnTheFennec).values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
         val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
         val shipped = fennec.rig
 
@@ -103,6 +108,35 @@ class RolesNotTemplatesTest {
             { it.reach(planted, hand, it.endOf(planted, hand) + Vec3(0.1f, 0.4f, 0.1f)).pose },
             { it.moveBody(planted, Vec3(0.03f, -0.08f, 0f)).pose },
             { it.look(planted, Vec3(1.2f, 1.2f, 0.4f)).pose },
+        )
+        solves.forEach { solve -> assertEquals(solve(before), solve(after)) }
+        assertEquals(before.handles(planted).pins.keys, after.handles(planted).pins.keys)
+    }
+
+    @Test
+    fun theToucanWithEveryTemplateIdRenamedPosesTheSame() {
+        val folder = renamedFolder()
+        val text = Path.of(System.getProperty("squash.examples"), "toucan.json").readText()
+        val shipped = rigOf(readDocument(text), shippedLibrary)
+        val document = readDocument(rename(Json.parseToJsonElement(text), Spot.DOCUMENT).toString())
+        assertEquals(setOf("kind-p", "kind-q", "kind-s", "kind-r", "kind-g", "kind-t", "kind-u", "kind-v"), document.character.parts.map { it.template.id.value }.toSet())
+        val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
+        assertEquals(shipped.bones.map { it.name }, rig.bones.map { it.name })
+        shipped.bones.indices.forEach { assertNear(shipped.bones[it].pivot, rig.bones[it].pivot) }
+
+        val before = PoseSolver(shipped)
+        val after = PoseSolver(rig)
+        assertEquals(before.chains.limbs.map { listOf(it.leg, it.paw, it.upper, it.lower, it.end, it.foot, it.plants) }, after.chains.limbs.map { listOf(it.leg, it.paw, it.upper, it.lower, it.end, it.foot, it.plants) })
+        assertEquals(before.chains.tails.map { it.part to it.bones }, after.chains.tails.map { it.part to it.bones })
+        assertEquals(before.chains.look?.let { it.head to it.neck }, after.chains.look?.let { it.head to it.neck })
+        assertEquals(curveBones(shipped)?.let { listOf(it.behind, it.spine, it.ahead) }, curveBones(rig)?.let { listOf(it.behind, it.spine, it.ahead) })
+
+        val planted = Pose(planted = setOf(PartId("foot-l"), PartId("foot-r")))
+        val wing = assertNotNull(before.chains.limb(PartId("wing-l")))
+        val solves = listOf<(PoseSolver) -> Pose>(
+            { it.reach(planted, wing, it.endOf(planted, wing) + Vec3(0.05f, 0.2f, -0.2f)).pose },
+            { it.moveBody(planted, Vec3(0.02f, -0.05f, 0f)).pose },
+            { it.look(planted, Vec3(1.2f, 1.2f, -0.4f)).pose },
         )
         solves.forEach { solve -> assertEquals(solve(before), solve(after)) }
         assertEquals(before.handles(planted).pins.keys, after.handles(planted).pins.keys)

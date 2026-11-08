@@ -21,7 +21,8 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
     companion object {
         /**
          * Loads every `*.part.json` in [folder] in name order and every `*.plan.json` in its plans folder, the plans placing the most
-         * parts first and by name among equals, so Blank, which places its root alone, comes last.
+         * parts first, a pair counting once, then among equals the most counting each side, then by name, so Blank, which places its
+         * root alone, comes last.
          */
         fun load(folder: Path): TemplateFolder {
             val parts = folder.listDirectoryEntries().map { it.name }
@@ -38,7 +39,11 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
             val unordered = TemplateFolder(parts, plans)
-            return unordered.copy(plans = plans.sortedWith(compareByDescending<BodyPlan> { it.partCount(unordered) }.thenBy { it.name }))
+            return unordered.copy(
+                plans = plans.sortedWith(
+                    compareByDescending<BodyPlan> { it.partCount(unordered) }.thenByDescending { it.partCount(unordered, bothSides = true) }.thenBy { it.name },
+                ),
+            )
         }
 
         private fun shippedResource(name: String): String {

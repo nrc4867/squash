@@ -279,12 +279,12 @@
           ]
         },
         "angle": {
-          "description": "Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan.",
+          "description": "Degrees the digit turns from the axis toward the row's last side, in place of its place in the fan; past 90 either way it points back from its root.",
           "anyOf": [
             {
               "type": "number",
-              "minimum": -90.0,
-              "maximum": 90.0
+              "minimum": -180.0,
+              "maximum": 180.0
             },
             {
               "type": "null"

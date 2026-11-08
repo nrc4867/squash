@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 
@@ -27,12 +28,13 @@ fun TemplateFolder.plan(ref: BodyPlanRef): BodyPlan? = plans.firstOrNull { it.re
 /** The first template [spec] takes that is loaded; a socket with none is not offered. */
 fun TemplateFolder.firstTaken(spec: SocketSpec): PartTemplate? = spec.takes.firstNotNullOfOrNull { template(it) }
 
-/** Every part of a whole character on this plan, one to a socket, a mirrored pair counting once. */
-fun BodyPlan.partCount(templates: TemplateFolder): Int {
+/** Every part of a whole character on this plan, one to a socket, a mirrored pair counting once, or with [bothSides] as its two sides. */
+fun BodyPlan.partCount(templates: TemplateFolder, bothSides: Boolean = false): Int {
     fun under(template: PartTemplate, seen: Set<TemplateId>): Int =
         socketsOn(template).sumOf { spec ->
             val child = templates.firstTaken(spec)
-            if (child == null || child.id in seen) 0 else 1 + under(child, seen + child.id)
+            val sides = if (bothSides && spec.pair != null) PAIR_SIZE else 1
+            if (child == null || child.id in seen) 0 else sides * (1 + under(child, seen + child.id))
         }
     val root = templates.template(root.template) ?: return 0
     return 1 + under(root, setOf(root.id))
@@ -103,3 +105,6 @@ private const val UPRIGHT = 0.7f
 
 /** Whether this plan stands upright, its root resting up, as the biped's torso does. */
 fun BodyPlan.isUpright(): Boolean = root.rest.y >= UPRIGHT
+
+/** Whether this plan grows wings: one of its sockets takes, first, a template whose role is wing, as the bird's shoulders do. */
+fun BodyPlan.isWinged(templates: TemplateFolder): Boolean = sockets.any { socket -> socket.takes.firstNotNullOfOrNull { templates.template(it) }?.role == Role.WING }

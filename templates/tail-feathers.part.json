@@ -1,0 +1,26 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "tail-feathers",
+  "version": 1,
+  "name": "Tail feathers",
+  "role": "tail",
+  "axis": { "rest": [-0.6, -0.8, 0], "length": 0.32 },
+  "openEnd": "start",
+  "topology": { "rings": 24, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "lens",
+  "params": {
+    "size":   { "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "spread": { "default": 0.2,  "min": 0.08, "max": 0.6 }
+  },
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$spread", "taper": 1.6 },
+    { "kind": "cap",   "end": "end", "shape": "round" },
+    { "kind": "joint", "name": "root", "u": 0.0, "hinge": "x", "limits": [-50, 50] },
+    { "kind": "joint", "name": "fan",  "u": 0.5, "hinge": "x", "limits": [-30, 30] },
+    { "kind": "joint", "name": "tip",  "u": 1.0, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "area",  "name": "tip", "u": [0.8, 1.0], "v": [0, 1], "tag": "fill" },
+    { "kind": "area",  "name": "underside", "u": [0.0, 1.0], "v": [0.3, 0.7], "tag": "fill" }
+  ]
+}

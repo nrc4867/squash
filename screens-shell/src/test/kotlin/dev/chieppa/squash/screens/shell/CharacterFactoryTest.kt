@@ -33,7 +33,13 @@ class CharacterFactoryTest {
 
     @Test
     fun templatesListInTheOrderThePlanReachesThem() {
-        assertEquals(listOf("torso", "head", "ear", "leg", "paw", "tail", "arm", "blob", "foot", "hand", "head-round", "sheet", "torso-upright", "tube", "wing-feathered"), caninePlan.templateOrder(shipped).map { it.id.value })
+        assertEquals(
+            listOf(
+                "torso", "head", "ear", "leg", "paw", "tail", "arm", "beak-lower", "beak", "blob", "foot-bird", "foot", "hand", "head-bird", "head-round",
+                "leg-bird", "sheet", "tail-feathers", "torso-bird", "torso-upright", "tube", "wing-feathered",
+            ),
+            caninePlan.templateOrder(shipped).map { it.id.value },
+        )
     }
 
     @Test
@@ -46,7 +52,7 @@ class CharacterFactoryTest {
 
     @Test
     fun blankIsOneBodyAfterTheSpeciesPlans() {
-        assertEquals(listOf("canine-quadruped", "biped", "blank"), shipped.plans.map { it.id.value })
+        assertEquals(listOf("canine-quadruped", "bird", "biped", "blank"), shipped.plans.map { it.id.value })
         assertEquals(1, blankPlan.partCount(shipped))
         assertEquals(mapOf("Body" to 1), blankPlan.chips(shipped).associate { it.name to it.count })
     }

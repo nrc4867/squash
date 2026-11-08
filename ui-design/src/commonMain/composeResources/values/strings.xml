@@ -164,6 +164,7 @@
     <string name="new_create">Create character</string>
     <string name="new_plan_blank">One tube, anatomy by hand</string>
     <string name="new_plan_upright">Two legs, two arms, upright</string>
+    <string name="new_plan_winged">Wings, two legs, a beak</string>
 
     <string name="add_part">Add part</string>
     <string name="add_part_title">Add to %1$s socket</string>
@@ -556,4 +557,6 @@
     <string name="role_right_leg">Right leg</string>
     <string name="role_left_foot">Left foot</string>
     <string name="role_right_foot">Right foot</string>
+    <string name="role_left_wing">Left wing</string>
+    <string name="role_right_wing">Right wing</string>
 </resources>
