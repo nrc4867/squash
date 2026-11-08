@@ -50,7 +50,7 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 2. **`pose-boards`.** The differences tables for boards 7, 12, 13 and W9 to W12 against what the pass found, plus the small fixes it names (the Top stroke's drawing, the Rig inspector's length, whatever drags badly).
 3. **Finish stage 5's round 3: the fish plan.** A `fin` template as a named sheet and a fish plan over the koi's parts, with the koi regenerated from its plan. Small, since the koi exists; it closes exit criterion 5.
 4. **Fingers.** A branching joint tree inside a part, so hands curl and the toucan's toes grip. Plan it as a short stage note first: it touches `PartJoints`, `boneAt`, the weights, the Rig stage and Turn.
-5. **The Shot workspace.** Pose now lives under Build until the Shot boards are drawn (board 14 settle and touch up, 15 timing, 16 scene, 17 render, and the Shot board for eyes and gaze that `future.md` says comes before the posing screens). Correct pose and the pose library were deferred from stage 4 and belong here. This is where the app's second half starts to look like the original plan again.
+5. **The Shot workspace.** Pose is a stage under Build; the Shot boards (14 settle and touch up, 15 timing, 16 scene, 17 render, and the Shot board for eyes and gaze that `future.md` places before the posing screens) are not drawn. Correct pose and the pose library, out of stage 4's scope, belong here. This is the app's second half as the original plan drew it.
 6. **Later anatomy** from `stage-5.md`'s out-of-scope list: `wing-membrane` and the membrane block for dragons and bats, socket rows for spines and frills, tip sockets for antlers, horns and claws.
 
 ## How the work was run, for whoever runs the next sitting
