@@ -36,6 +36,16 @@ private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
 /** The angle from the axis past which a digit points back from its root, as a bird's hind toe does. */
 private const val RIGHT_ANGLE = 90f
 
+/** How far along a digit, as a share of its span, its root flare has eased out. */
+private const val FLARE_REACH = 0.35f
+
+/** The height at [along] of a digit whose root is [flare] taller than its run, as a multiple of the run's. */
+private fun flareAt(flare: Float, along: Float): Float {
+    if (flare == 0f || along >= FLARE_REACH) return 1f
+    val left = 1f - along / FLARE_REACH
+    return 1f + flare * left * left
+}
+
 @Serializable
 @SerialName("toeRow")
 @Doc("A row of small tubes fanned across the end, each named for the row and its place in it. A count of 0 builds nothing.")
@@ -58,6 +68,8 @@ data class ToeRow(
     val segments: Int,
     @Doc("Digits moved and angled apart from the fan, by their place in the row.")
     val digits: List<Digit> = emptyList(),
+    @Doc("How much taller each digit is at its root than along its run, as a fraction of its thickness, easing out over the root's third; a drawn Side's heights are kept.")
+    val flare: Param = Param.of(0f),
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
@@ -75,6 +87,7 @@ data class ToeRow(
         val toes = toeCount(ctx)
         val thickness = ctx.length(radius) * 2f
         val fan = ctx.value(spread) * DEGREES_TO_RADIANS
+        val rootFlare = ctx.value(flare)
         val section = SectionProfile.CIRCLE.spline(segments)
         val overrides = digits.associateBy { it.index }
         val sharing = (0 until toes).filter { it !in overrides }
@@ -92,7 +105,9 @@ data class ToeRow(
             val back = digit?.angle?.let { abs(it) > RIGHT_ANGLE } == true
             val fanOut = tan(angle) * ctx.axisLength
             ctx.checkCancelled()
-            val heights = FloatArray(rings) { ring -> ctx.views?.heightAt(us[ring])?.takeIf { !back } ?: thickness }
+            val heights = FloatArray(rings) { ring ->
+                ctx.views?.heightAt(us[ring])?.takeIf { !back } ?: (thickness * flareAt(rootFlare, (us[ring] - span.start) / (span.end - span.start)))
+            }
             val widths = FloatArray(rings) { ring ->
                 ctx.views?.widthAt(us[ring])?.takeIf { digit == null }?.let { it / sharing.size * DRAWN_TOE_OVERLAP } ?: thickness
             }
@@ -115,7 +130,7 @@ data class ToeRow(
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
-        ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) +
+        ctx.unit("u", u) + ctx.param("count", count) + ctx.param("spread", spread) + ctx.param("radius", radius) + ctx.param("flare", flare) +
             ctx.unit("v", v) + ctx.atLeast("rings", rings, MIN_TOE_RINGS) + ctx.atLeast("segments", segments, MIN_TOE_SEGMENTS) +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") } +
             digits.groupBy { it.index }.filter { it.value.size > 1 }.keys.flatMap { ctx.finding("digits", "two digits at index $it") }

@@ -205,6 +205,12 @@
         },
         "optional": {
           "type": "boolean"
+        },
+        "sink": {
+          "description": "Multiplies how deep a part on this socket sits inside its parent.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 4.0
         }
       },
       "required": [

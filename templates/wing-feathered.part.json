@@ -12,7 +12,7 @@
   "section": "lens",
   "params": {
     "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "chord": { "default": 0.32, "min": 0.1, "max": 0.8 }
+    "chord": { "default": 0.22, "min": 0.1, "max": 0.8 }
   },
   "blocks": [
     { "kind": "tube",  "u": [0.0, 1.0], "radius": "$chord", "taper": 0.5 },

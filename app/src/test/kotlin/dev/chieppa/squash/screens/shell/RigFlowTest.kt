@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
@@ -34,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 private const val SETTLE_MILLIS = 60_000L
 private const val WIDTH = 1440
@@ -43,6 +45,9 @@ private const val HEIGHT = 900
 private val TRIES = listOf(0.5f to 0.55f, 0.45f to 0.6f, 0.55f to 0.5f, 0.4f to 0.5f, 0.6f to 0.6f, 0.5f to 0.65f, 0.35f to 0.45f)
 private const val DRAG_PIXELS = 30f
 private const val DRAG_STEPS = 6
+
+/** What one stroke paints: a seam, or both seams of a pair where the stroke lands on a paired part. */
+private val PAIR_SEAMS_PAINTED = Regex("(^| )[12] seams painted")
 
 private object NoRigFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -108,7 +113,8 @@ class RigFlowTest {
         assertNotNull(laid.stroke)
         waitUntil(timeoutMillis = SETTLE_MILLIS) { session.graph.settled.value }
         waitForIdle()
-        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("1 seams painted", substring = true)
+        val status = onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().fetchSemanticsNode().config[SemanticsProperties.Text].joinToString()
+        assertTrue(PAIR_SEAMS_PAINTED.containsMatchIn(status), "one stroke paints one seam, or both of a pair's: $status")
 
         onNodeWithText("Bones", ignoreCase = true, useUnmergedTree = true).assertExists()
         key(Key.Tab)

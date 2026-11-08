@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.PartBuilder
+import dev.chieppa.squash.character.lint.SocketFit
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.PartTemplate
@@ -73,6 +74,12 @@ class ShippedTemplatesTest {
                 assertBuildHolds(template, params)
             }
         }
+    }
+
+    /** The lower beak's open ring sits inside the head, not the upper beak it hangs from, which this pairwise check cannot see. */
+    @Test
+    fun everyTemplatesOwnSocketSeatsWhatItTakesInsideIt() {
+        assertEquals(listOf("beak.$.blocks.socket.lower"), SocketFit.lint(shipped.parts).map { it.path })
     }
 
     @Test

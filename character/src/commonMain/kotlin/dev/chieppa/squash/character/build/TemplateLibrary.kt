@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.geom.Vec3
 
 /** Every loaded template by its pinned id and version, and the body plans that place them. */
 class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emptyList()) {
@@ -12,6 +13,7 @@ class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emp
     private val byId = templates.groupBy { it.id }
     private val plansByRef = plans.associateBy { it.ref }
     private val sinks = byRef.mapValues { (_, template) -> lazy { template.socketSink() } }
+    private val mounts = byRef.mapValues { (_, template) -> lazy { template.mountOffset() } }
 
     operator fun get(ref: TemplateRef): PartTemplate =
         requireNotNull(byRef[ref]) { "No template ${ref.id.value} version ${ref.version}" }
@@ -24,6 +26,9 @@ class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emp
 
     /** How far a part pinned to [ref] sits inside what it is on. See [socketSink]. */
     fun socketSink(ref: TemplateRef): Float = requireNotNull(sinks[ref]) { "No template ${ref.id.value} version ${ref.version}" }.value
+
+    /** How far a part pinned to [ref] is carried back from its socket so its mount sits there. See [mountOffset]. */
+    fun mountOffset(ref: TemplateRef): Vec3 = requireNotNull(mounts[ref]) { "No template ${ref.id.value} version ${ref.version}" }.value
 
     fun plan(ref: BodyPlanRef): BodyPlan? = plansByRef[ref]
 }

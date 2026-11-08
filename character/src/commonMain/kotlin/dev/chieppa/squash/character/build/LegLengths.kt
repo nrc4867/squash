@@ -115,20 +115,21 @@ private class StanceMeasure(
         val point = rings.positionAt(u, v) ?: return null
         val childSink = if (far?.outward == Outward.NORMAL) sinkOfChild(part, far) else 0f
         val child = point - (rings.normalAt(u, v) ?: return null) * childSink
-        val plane = if (sitsAlongAxis(part)) PartBuilder.axes(template).along * templates.socketSink(part.template) else Vec3.ZERO
+        val plane = axisSinkOf(part)?.let { PartBuilder.axes(template).along * (templates.socketSink(part.template) * it) } ?: Vec3.ZERO
         return (plane - child).y
     }
 
-    private fun sitsAlongAxis(part: AssemblyPart): Boolean {
-        val socket = part.socket ?: return false
-        val parent = parts.firstOrNull { it.id == socket.parent } ?: return false
-        val spec = templates.find(parent.template)?.let(::socketsOf)?.firstOrNull { it.name == socket.socket } ?: return false
-        return spec.outward == Outward.AXIS
+    /** The sink multiplier of the socket [part] sits on when it sinks along its own axis, else null. */
+    private fun axisSinkOf(part: AssemblyPart): Float? {
+        val socket = part.socket ?: return null
+        val parent = parts.firstOrNull { it.id == socket.parent } ?: return null
+        val spec = templates.find(parent.template)?.let(::socketsOf)?.firstOrNull { it.name == socket.socket } ?: return null
+        return spec.sink.takeIf { spec.outward == Outward.AXIS }
     }
 
     private fun sinkOfChild(part: AssemblyPart, far: SocketSpec): Float {
         val placed = parts.firstOrNull { it.socket?.parent == part.id && it.socket.socket == far.name }?.template
         val template = placed ?: far.takes.firstNotNullOfOrNull { templates.latest(it) }?.ref ?: return 0f
-        return if (templates.find(template) != null) templates.socketSink(template) else 0f
+        return if (templates.find(template) != null) templates.socketSink(template) * far.sink else 0f
     }
 }

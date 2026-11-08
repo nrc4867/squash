@@ -62,20 +62,20 @@ private val TORSO_FRONT = loop(
 
 /**
  * The round head in Side, the back of the skull at the left and the face at the right, with a bit of a chin under the face, drawn
- * mostly above its axis so the head sits up on the shoulders.
+ * to the template's length so its mount, read from the template, lands under its middle.
  */
 private val HEAD_SIDE = loop(
-    p(0.00f, 0.110f), p(0.04f, 0.220f), p(0.14f, 0.290f), p(0.26f, 0.280f), p(0.35f, 0.210f), p(0.385f, 0.110f), p(0.375f, 0.020f),
-    p(0.34f, -0.060f), p(0.27f, -0.100f), p(0.16f, -0.075f), p(0.06f, -0.020f),
+    p(0.000f, 0.018f), p(0.052f, 0.150f), p(0.182f, 0.234f), p(0.338f, 0.222f), p(0.455f, 0.138f), p(0.501f, 0.018f), p(0.488f, -0.090f),
+    p(0.442f, -0.186f), p(0.351f, -0.234f), p(0.208f, -0.204f), p(0.078f, -0.138f),
 )
 private val HEAD_TOP = loop(
-    p(0.00f, 0.00f), p(0.04f, 0.12f), p(0.14f, 0.18f), p(0.26f, 0.175f), p(0.35f, 0.11f), p(0.385f, 0.00f),
-    p(0.35f, -0.11f), p(0.26f, -0.175f), p(0.14f, -0.18f), p(0.04f, -0.12f),
+    p(0.000f, 0.000f), p(0.052f, 0.144f), p(0.182f, 0.216f), p(0.338f, 0.210f), p(0.455f, 0.132f), p(0.501f, 0.000f),
+    p(0.455f, -0.132f), p(0.338f, -0.210f), p(0.182f, -0.216f), p(0.052f, -0.144f),
 )
 
 /** The hair: a blob lying along the crown, as wide as the head and deep enough to show above it. */
-private val HAIR_SIDE = loop(p(0f, 0.02f), p(0.04f, 0.07f), p(0.14f, 0.085f), p(0.24f, 0.06f), p(0.29f, 0f), p(0.24f, -0.05f), p(0.12f, -0.06f), p(0.03f, -0.04f))
-private val HAIR_TOP = loop(p(0f, 0f), p(0.04f, 0.13f), p(0.14f, 0.19f), p(0.24f, 0.15f), p(0.29f, 0f), p(0.24f, -0.15f), p(0.14f, -0.19f), p(0.04f, -0.13f))
+private val HAIR_SIDE = loop(p(0.000f, 0.024f), p(0.054f, 0.084f), p(0.189f, 0.102f), p(0.324f, 0.072f), p(0.392f, 0.000f), p(0.324f, -0.060f), p(0.162f, -0.072f), p(0.041f, -0.048f))
+private val HAIR_TOP = loop(p(0.000f, 0.000f), p(0.054f, 0.156f), p(0.189f, 0.228f), p(0.324f, 0.180f), p(0.392f, 0.000f), p(0.324f, -0.180f), p(0.189f, -0.228f), p(0.054f, -0.156f))
 
 /** A leg, thick at the thigh and narrowing to the ankle, in Side and from in front. */
 private val LEG_SIDE = drawn(p(0f, 0.085f), p(0.12f, 0.08f), p(0.22f, 0.065f), p(0.34f, 0.058f), p(0.40f, 0f), p(0.34f, -0.058f), p(0.22f, -0.065f), p(0.10f, -0.08f), p(0f, -0.09f))

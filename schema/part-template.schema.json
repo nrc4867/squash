@@ -482,6 +482,32 @@
       },
       "additionalProperties": false
     },
+    "MountSpec": {
+      "description": "The point of a closed part that sits on its socket, in place of its axis start.",
+      "type": "object",
+      "properties": {
+        "u": {
+          "description": "Along the axis.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "v": {
+          "description": "Around the surface; underneath is 0.5.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Pad": {
       "description": "A raised area tagged with a palette slot, on the first run listed before it that reaches its u.",
       "type": "object",
@@ -735,6 +761,17 @@
                 "start",
                 "end"
               ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mount": {
+          "description": "The point of a closed part that sits on its socket, in place of its axis start: a head carried under its middle.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MountSpec"
             },
             {
               "type": "null"
@@ -1018,6 +1055,12 @@
           "type": "number",
           "minimum": -90.0,
           "maximum": 90.0
+        },
+        "sink": {
+          "description": "Multiplies how deep a child sits inside this part here.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 4.0
         }
       },
       "required": [
@@ -1132,6 +1175,18 @@
           "items": {
             "$ref": "#/$defs/Digit"
           }
+        },
+        "flare": {
+          "description": "How much taller each digit is at its root than along its run, as a fraction of its thickness, easing out over the root's third; a drawn Side's heights are kept.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
         }
       },
       "required": [
@@ -1223,6 +1278,18 @@
         },
         "taper": {
           "description": "The radius at the far end, as a fraction of the radius at the near end.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "width": {
+          "description": "The undrawn width as a fraction of the height: below 1 a run flat from side to side, above 1 one flat from top to bottom.",
           "oneOf": [
             {
               "type": "number"

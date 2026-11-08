@@ -13,7 +13,10 @@ data class JointSpec(
     val stretch: Boolean,
 )
 
-/** A child attachment point. [pair] gives it a mirrored twin; [tilt] turns its outward normal toward the part's end, in degrees. */
+/**
+ * A child attachment point. [pair] gives it a mirrored twin; [tilt] turns its outward normal toward the part's end, in degrees;
+ * [sink] multiplies how deep a child sits inside the part here.
+ */
 data class SocketSpec(
     val name: String,
     val u: Float,
@@ -22,6 +25,7 @@ data class SocketSpec(
     val pair: Mirror?,
     val takes: List<TemplateId>,
     val tilt: Float = 0f,
+    val sink: Float = 1f,
 )
 
 /** A named surface point on a part, at [u] and [v], that face marks and sets anchor to. */

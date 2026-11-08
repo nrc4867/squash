@@ -28,6 +28,7 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 
 - **Drag speed.** The posed resolution adds about 12 ms to each drag step on the fennec; with a Top stroke the curve tool evaluates the rig about 5,000 times per move. Unmeasured on screen.
 - **Previews on the rest body.** Paint, region and line-weight tools in Full preview on the rest mesh while the character is posed. Locked panes outside Pose and Rig show rest on purpose.
+- **Joins are overlaps.** Parts meet by overlapping at their sockets, with ink on the border. What holds the overlap inside now: a socket's `sink` (the plans' limb sockets sink 1.6 to 2.2 times the template's depth), the round head's `mount` under its middle, the `SocketFit` lint that fails a plan whose socket ring would show, and a `flare` on digits where they leave the palm. The lint reads undrawn builds only, so a thin drawn torso under a thick drawn thigh can still show the ring; the next step if the renders still show joins is a geometric blend at the seam, the Implicit Skinning family already planned for pose-time contact, read from the papers first.
 - **Fingers have no joints.** The hand's five digits are shape only; a curling hand needs a branching joint tree inside one part (bones, vertex tagging, weights, the Rig stage). The biggest single piece of unbuilt anatomy.
 - **Side-set eyes** read angle versions from the head's angle, not the eye's, and the gaze solve has no bias for eyes that look sideways. Written in `parts.md`.
 - **The upper beak** hangs from the head's jaw bone, which no pose sets; it holds still, which is right, by accident.
@@ -42,11 +43,11 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 - The open comment on the Face board: when ¾ is unused, borrow from the nearer drawn angle or always from the first drawn. Built as the document falls back.
 - Whether the quadruped's front legs showing as "Front leg" and "Front paw" while storing arm and hand is what he wants, or the board's "Foot".
 - Whether to fold the restructure canvas back into Squash flow of work now that he has said the new flow is the flow. The old canvas's boards 2, 7, 9 to 13 point at the new one; the rest of the old canvas is still the spec for Home, Sheet, References, Shot and Objects.
-- The spike-8 volume reading: Length 0.92 is +3.4% from rest because the bow itself adds +2.9%; the test measures against the bow at Length 1.
+- The spike-8 volume reading: Length 0.92 is +3.4% from rest because the bow itself adds +3.0% with the legs sunk deeper; the test measures against the bow at Length 1 and allows 3.5%.
 
 ## What to do next, in order
 
-1. **Verify.** The pass above, with the app open. Half a day. Everything else should wait for it, because three stages of UI have never met a pointer.
+1. **Verify.** The pass above, with the app open, and a look at every example for the joins, the hands and feet and the person's head, which only smoke renders have shown. Half a day. Everything else should wait for it, because three stages of UI have never met a pointer.
 2. **`pose-boards`.** The differences tables for boards 7, 12, 13 and W9 to W12 against what the pass found, plus the small fixes it names (the Top stroke's drawing, the Rig inspector's length, whatever drags badly).
 3. **Finish stage 5's round 3: the fish plan.** A `fin` template as a named sheet and a fish plan over the koi's parts, with the koi regenerated from its plan. Small, since the koi exists; it closes exit criterion 5.
 4. **Fingers.** A branching joint tree inside a part, so hands curl and the toucan's toes grip. Plan it as a short stage note first: it touches `PartJoints`, `boneAt`, the weights, the Rig stage and Turn.

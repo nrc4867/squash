@@ -29,6 +29,8 @@ data class Tube(
     val radius: Param,
     @Doc("The radius at the far end, as a fraction of the radius at the near end.")
     val taper: Param = Param.of(1f),
+    @Doc("The undrawn width as a fraction of the height: below 1 a run flat from side to side, above 1 one flat from top to bottom.")
+    val width: Param = Param.of(1f),
     @Doc("Overrides the template's section.")
     val section: SectionSpec? = null,
     @Doc("How far the section's sides curl toward v = 0, as a fraction of its half span.")
@@ -71,6 +73,7 @@ data class Tube(
             section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).cupped(ctx.value(cup)),
             radius = ctx.length(radius),
             taper = ctx.value(taper),
+            widthRatio = ctx.value(width),
             startClosure = ctx.closure(End.START, span.start),
             endClosure = ctx.closure(End.END, span.end),
             jointUs = ctx.jointUs,
@@ -85,7 +88,7 @@ data class Tube(
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
-        ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.section("section", section) +
+        ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.param("width", width) + ctx.section("section", section) +
             ctx.param("cup", cup) + ctx.param("drop", drop) + lintFills(ctx)
 
     private fun lintFills(ctx: LintContext): List<Finding> {

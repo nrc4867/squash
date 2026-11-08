@@ -26,6 +26,8 @@ data class PlanSocket(
     val outward: Outward = Outward.AXIS,
     val takes: List<TemplateId>,
     val optional: Boolean = false,
+    @Doc("Multiplies how deep a part on this socket sits inside its parent.") @Range(min = 0.0, max = 4.0)
+    val sink: Float = 1f,
 )
 
 @Serializable
@@ -64,7 +66,7 @@ data class BodyPlan(
 
     /** The sockets a part with [template] offers: this plan's and its own, by name. */
     fun socketsOn(template: PartTemplate): List<SocketSpec> {
-        val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, it.outward, it.pair, it.takes) }
+        val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, it.outward, it.pair, it.takes, sink = it.sink) }
         return (planned + template.blocks.flatMap { it.sockets() }).distinctBy { it.name }
     }
 }

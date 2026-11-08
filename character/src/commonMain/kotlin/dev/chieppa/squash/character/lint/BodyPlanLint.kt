@@ -24,6 +24,8 @@ object BodyPlanLint {
             val on = parts.newest(socket.on)
             if (on != null && on.blocks.none { it.reaches(socket.u) }) {
                 add(Finding("$.sockets[$i].u", "no run of '${socket.on.value}' reaches u = ${socket.u}"))
+            } else if (on != null) {
+                addAll(fit(plan, on, socket, "$.sockets[$i]", parts))
             }
         }
         plan.slots.forEachIndexed { i, slot ->
@@ -37,8 +39,15 @@ object BodyPlanLint {
         }
     }
 
+    /** Each part the socket takes sits with its socket ring inside the part it is on, both undrawn. */
+    private fun fit(plan: BodyPlan, on: PartTemplate, socket: PlanSocket, path: String, parts: List<PartTemplate>): List<Finding> =
+        socket.takes.mapNotNull { parts.newest(it) }.mapNotNull { child ->
+            if (SocketFit.encloses(on, socket.name, child, plan) == false) Finding("$path.sink", "'${child.id.value}' sits with its socket ring outside '${on.id.value}'") else null
+        }
+
     private fun socket(socket: PlanSocket, path: String, templates: Set<TemplateId>): List<Finding> = buildList {
         if (socket.on !in templates) add(Finding("$path.on", "no template '${socket.on.value}'"))
+        if (socket.sink !in 0f..MAX_SINK) add(Finding("$path.sink", "${socket.sink} is outside 0 to $MAX_SINK"))
         if (socket.u !in 0f..1f) add(Finding("$path.u", "${socket.u} is outside 0 to 1"))
         if (socket.v !in 0f..1f) add(Finding("$path.v", "${socket.v} is outside 0 to 1"))
         if (socket.pair != null && (socket.v == V_TOP || socket.v == V_UNDER || socket.v == 1f)) {

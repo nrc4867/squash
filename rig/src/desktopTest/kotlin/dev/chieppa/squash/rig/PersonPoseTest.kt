@@ -113,7 +113,7 @@ class PersonPoseTest {
         assertTrue(bones.behind.isEmpty())
         assertTrue(bones.spine.all { it.part == PERSON_TORSO })
         assertTrue(bones.ahead.all { it.part == PERSON_HEAD })
-        val chain = bones.spine.mapNotNull { person.bone(it)?.pivot } + assertNotNull(person.bone(bones.spine.last())).let { it.pivot + it.direction * it.length }
+        val chain = bones.spine.mapNotNull { person.bone(it)?.pivot } + assertNotNull(person.bone(bones.ahead.first())).pivot
         val last = chain.lastIndex.toFloat()
         val drawn = chain.mapIndexed { i, p -> Vec2(p.x + LEAN * sin(PI * i / last / 2.0).toFloat(), p.y) }
         val stroke = BodyStroke(View.SIDE, listOf(drawn.first()).plus(drawn.zipWithNext().flatMap { (a, b) -> listOf(a + (b - a) * (1f / 3f), a + (b - a) * (2f / 3f), b) }).map { CurvePoint(it.x, it.y) })

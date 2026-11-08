@@ -7,8 +7,8 @@
   "root": { "template": "torso-bird", "rest": [0.643, 0.766, 0] },
   "sockets": [
     { "name": "neck",     "on": "torso-bird", "u": 0.97, "v": 0.12, "takes": ["head-bird", "head-round"] },
-    { "name": "shoulder", "on": "torso-bird", "u": 0.8,  "v": 0.62, "pair": "x", "outward": "normal", "takes": ["wing-feathered"] },
-    { "name": "hip",      "on": "torso-bird", "u": 0.3,  "v": 0.85, "pair": "x", "takes": ["leg-bird"] },
+    { "name": "shoulder", "on": "torso-bird", "u": 0.8,  "v": 0.62, "pair": "x", "outward": "normal", "sink": 1.6, "takes": ["wing-feathered"] },
+    { "name": "hip",      "on": "torso-bird", "u": 0.3,  "v": 0.85, "pair": "x", "outward": "normal", "sink": 2.0, "takes": ["leg-bird"] },
     { "name": "tail",     "on": "torso-bird", "u": 0.03, "v": 0.5,  "takes": ["tail-feathers"] }
   ],
   "palette": [

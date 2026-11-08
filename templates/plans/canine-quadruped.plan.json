@@ -7,9 +7,9 @@
   "root": { "template": "torso", "rest": [1, 0, 0] },
   "sockets": [
     { "name": "neck",      "on": "torso", "u": 0.92, "v": 0.04, "takes": ["head"] },
-    { "name": "front-leg", "on": "torso", "u": 0.82, "v": 0.42, "pair": "x", "takes": ["leg"] },
-    { "name": "back-leg",  "on": "torso", "u": 0.18, "v": 0.42, "pair": "x", "takes": ["leg"] },
-    { "name": "tail",      "on": "torso", "u": 0.03, "v": 0.02, "takes": ["tail"] },
+    { "name": "front-leg", "on": "torso", "u": 0.82, "v": 0.42, "pair": "x", "sink": 1.6, "takes": ["leg"] },
+    { "name": "back-leg",  "on": "torso", "u": 0.18, "v": 0.42, "pair": "x", "sink": 1.6, "takes": ["leg"] },
+    { "name": "tail",      "on": "torso", "u": 0.03, "v": 0.02, "sink": 1.2, "takes": ["tail"] },
     { "name": "ruff",      "on": "torso", "u": 0.9,  "v": 0.5,  "takes": ["ruff"], "optional": true }
   ],
   "slots": [

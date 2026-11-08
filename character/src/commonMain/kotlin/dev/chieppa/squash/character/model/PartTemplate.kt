@@ -36,6 +36,16 @@ data class AxisSpec(
     @Transient val up: Direction? = null,
 )
 
+/** The point of a closed part that sits on its socket, in place of its axis start. */
+@Serializable
+@Doc("The point of a closed part that sits on its socket, in place of its axis start.")
+data class MountSpec(
+    @Doc("Along the axis.") @Range(min = 0.0, max = 1.0)
+    val u: Float,
+    @Doc("Around the surface; underneath is 0.5.") @Range(min = 0.0, max = 1.0)
+    val v: Float,
+)
+
 /** The body patch's fixed grid. */
 @Serializable
 data class Topology(
@@ -62,6 +72,8 @@ data class PartTemplate(
     val axis: AxisSpec,
     @Doc("The end that sits on the socket plane; null for a closed part.")
     val openEnd: End? = null,
+    @Doc("The point of a closed part that sits on its socket, in place of its axis start: a head carried under its middle.")
+    val mount: MountSpec? = null,
     val topology: Topology,
     val views: Map<View, Sets>,
     @Doc("The default section along u, used where no view sets it.")

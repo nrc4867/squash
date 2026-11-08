@@ -164,6 +164,6 @@ class PawAndHeadTest {
     fun aPadHasNoSlicesAndAToeDoes() {
         val patches = PartBuilder.build(paw, fourToes)
         assertNull(patches.named("pad:palm").slices)
-        assertEquals(0.55f, patches.named("toes:0").slices!!.first().u, 1e-5f)
+        assertEquals(0.62f, patches.named("toes:0").slices!!.first().u, 1e-5f)
     }
 }

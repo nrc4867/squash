@@ -7,6 +7,7 @@
   "role": "head",
   "axis": { "rest": [1, 0, 0], "length": 0.5 },
   "openEnd": null,
+  "mount": { "u": 0.42, "v": 0.5 },
   "topology": { "rings": 40, "segments": 24 },
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "circle",
@@ -16,7 +17,7 @@
   "grain": { "toward": "start" },
   "blocks": [
     { "kind": "skull",    "u": [0.0, 1.0], "width": 0.9, "depth": 0.96 },
-    { "kind": "joint",    "name": "neck",  "u": 0.0,            "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint",    "name": "neck",  "u": 0.42,           "hinge": "x", "limits": [-40, 40] },
     { "kind": "joint",    "name": "jaw",   "u": 0.7, "v": 0.5,  "hinge": "x", "limits": [0, 25] },
     { "kind": "socket",   "name": "ear",   "u": 0.45, "v": 0.26, "pair": "x", "outward": "normal" },
     { "kind": "landmark", "name": "eye",   "u": 0.9, "v": 0.21, "pair": "x" },

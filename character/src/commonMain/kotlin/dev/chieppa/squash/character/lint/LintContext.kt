@@ -14,6 +14,9 @@ fun Block.reaches(u: Float): Boolean = run()?.let { u >= it.start && u <= it.end
 private const val V_TOP = 0f
 private const val V_UNDER = 0.5f
 
+/** The most a socket may multiply a child's depth by. */
+const val MAX_SINK = 4f
+
 /** The checks a block's lint is written from, reporting under [path]. */
 class LintContext(val template: PartTemplate, private val path: String) {
     fun finding(field: String, message: String) = listOf(Finding("$path.$field", message))
@@ -46,6 +49,10 @@ class LintContext(val template: PartTemplate, private val path: String) {
         val spec = template.params[name] ?: return finding(field, "no parameter '$name'")
         return if (spec.default.isFlag) emptyList() else finding(field, "'$name' is a number, not a flag")
     }
+
+    /** A socket's sink multiplier is 0 or more and no more than [MAX_SINK]. */
+    fun sink(field: String, value: Float): List<Finding> =
+        if (value in 0f..MAX_SINK) emptyList() else finding(field, "$value is outside 0 to $MAX_SINK")
 
     /** A count is at least [min]. */
     fun atLeast(field: String, value: Int, min: Int): List<Finding> =

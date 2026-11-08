@@ -6,9 +6,9 @@
   "name": "Biped",
   "root": { "template": "torso-upright", "rest": [0, 1, 0] },
   "sockets": [
-    { "name": "neck",     "on": "torso-upright", "u": 0.985, "v": 0.5,  "takes": ["head-round", "head"] },
-    { "name": "shoulder", "on": "torso-upright", "u": 0.86, "v": 0.75, "pair": "x", "outward": "normal", "takes": ["arm"] },
-    { "name": "hip",      "on": "torso-upright", "u": 0.07, "v": 0.7,  "pair": "x", "takes": ["leg"] },
+    { "name": "neck",     "on": "torso-upright", "u": 1.0,   "v": 0.5,  "outward": "normal", "sink": 0.6, "takes": ["head-round", "head"] },
+    { "name": "shoulder", "on": "torso-upright", "u": 0.86, "v": 0.75, "pair": "x", "outward": "normal", "sink": 2.2, "takes": ["arm"] },
+    { "name": "hip",      "on": "torso-upright", "u": 0.06, "v": 0.7,  "pair": "x", "outward": "normal", "sink": 2.0, "takes": ["leg"] },
     { "name": "paw",      "on": "leg",           "u": 1.0,  "v": 0.5,  "outward": "normal", "takes": ["foot", "paw"] }
   ],
   "palette": [

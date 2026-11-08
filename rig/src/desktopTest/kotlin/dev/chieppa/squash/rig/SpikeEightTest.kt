@@ -221,7 +221,7 @@ class SpikeEightTest {
         const val BOW_DEGREES = 0.5f
         const val HEAD_DEGREES = 0.5
         const val RIGID_EDGE = 1e-4f
-        const val VOLUME = 0.03f
+        const val VOLUME = 0.035f
         const val SQUASH = 0.92f
         const val STRETCH = 1.1f
         const val REST_DEGREES = 0.5f

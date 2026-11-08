@@ -27,9 +27,11 @@ data class Socket(
     val takes: List<TemplateId> = emptyList(),
     @Doc("Degrees the outward normal turns toward the part's end.") @Range(min = -90.0, max = 90.0)
     val tilt: Float = 0f,
+    @Doc("Multiplies how deep a child sits inside this part here.") @Range(min = 0.0, max = 4.0)
+    val sink: Float = 1f,
 ) : Block {
-    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes, tilt))
+    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes, tilt, sink))
 
     override fun lint(ctx: LintContext): List<Finding> =
-        ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair) + ctx.onTheSurface("u", u, condition)
+        ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair) + ctx.onTheSurface("u", u, condition) + ctx.sink("sink", sink)
 }

@@ -28,10 +28,10 @@ private const val PAW_RESIDUAL = 0.005f
 private const val DRAWN_LIMIT_RESIDUAL = 0.006f
 
 /** A leg's far rim is the lowest thing on the character when it leans back 60 degrees, this far under the level paws. */
-private const val RIM_UNDER_PAWS_LEAN_60 = 0.032f
+private const val RIM_UNDER_PAWS_LEAN_60 = 0.045f
 
 /** The same with 60 degrees outward as well. */
-private const val RIM_UNDER_PAWS_BOTH_60 = 0.008f
+private const val RIM_UNDER_PAWS_BOTH_60 = 0.02f
 
 /** A leg leaning keeps every paw on the ground. See HLD: data-model, Legs stay level as they lean. */
 @OptIn(ExperimentalCoroutinesApi::class)

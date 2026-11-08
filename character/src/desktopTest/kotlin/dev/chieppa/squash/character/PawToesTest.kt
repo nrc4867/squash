@@ -60,7 +60,7 @@ class PawToesTest {
     @Test
     fun withToesTheBodyStopsWhereTheyTakeOver() {
         val slices = body(PartBuilder.build(paw, mapOf("toes" to 3f))).slices!!
-        assertEquals(0.6f, slices.last().u, 1e-5f)
+        assertEquals(0.66f, slices.last().u, 1e-5f)
     }
 
     @Test
@@ -78,7 +78,7 @@ class PawToesTest {
     fun thePalmPadSitsAtItsUOnThePlainBody() {
         val pad = PartBuilder.build(paw).first { it.name == "pad:palm" }
         val middle = (pad.vertices().maxOf { it dot axes.along } + pad.vertices().minOf { it dot axes.along }) / 2f
-        assertEquals(0.45f * paw.axis.length, middle, 2e-3f)
+        assertEquals(0.47f * paw.axis.length, middle, 2e-3f)
     }
 
     @Test

@@ -23,7 +23,7 @@ private val SECTION_READINGS = setOf(Sets.CAP, Sets.SECTION)
 /** The semantic checks a part template's schema cannot express. See HLD: data-model, Verifiable. */
 object TemplateLint {
     fun lint(template: PartTemplate): List<Finding> =
-        format(template) + params(template) + axis(template) + section(template) + views(template) + openEnd(template) +
+        format(template) + params(template) + axis(template) + section(template) + views(template) + openEnd(template) + mount(template) +
             blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template) + generic(template)
 
     /**
@@ -108,6 +108,14 @@ object TemplateLint {
         val at = if (end == End.START) 0f else 1f
         val count = template.blocks.count { it.reaches(at) }
         return if (count == 1) emptyList() else listOf(Finding("$.openEnd", "$count runs reach the open end"))
+    }
+
+    /** A mount carries a closed part; an open end already says where the part sits. */
+    private fun mount(template: PartTemplate): List<Finding> {
+        val mount = template.mount ?: return emptyList()
+        val context = LintContext(template, "$.mount")
+        val closed = if (template.openEnd == null) emptyList() else context.finding("u", "a part with an open end has no mount")
+        return closed + context.unit("u", mount.u) + context.unit("v", mount.v) + context.onTheSurface("u", mount.u, null)
     }
 
     private fun blocks(template: PartTemplate): List<Finding> = template.blocks.flatMapIndexed { i, block ->
