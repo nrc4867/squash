@@ -56,6 +56,23 @@ What is found wrong goes into the differences tables, and the `pose-boards` row 
 6. **Hands, paws and feet.** The membrane block between digits and per-digit shape as one small stage, then the implicit blend as displacement as a research spike, from the known-gaps entry above. Can run before or after fingers' joints; both touch the toe row.
 7. **Later anatomy** from `stage-5.md`'s out-of-scope list: `wing-membrane` and the membrane block for dragons and bats, socket rows for spines and frills, tip sockets for antlers, horns and claws.
 
+## Work order
+
+The steps above split by who can do them. Agents cannot drive the app with a pointer (the devtools endpoint captures, it does not click), so the verify pass and the cleanup that follows it wait for Nicholas; everything else runs as branches in worktrees, one Opus agent per branch, landed on `main` with `check`, rounds serial where they share files.
+
+| Wave | Branch | Delivers | Waits on | Status |
+| --- | --- | --- | --- | --- |
+| 1 | `fish-plan` | `fin` as a named sheet template, the fish plan, the koi rebuilt from it; stage 5's exit criterion 5 | nothing | building |
+| 1 | `pose-gaps` | Saved templates appear in Add part at once; feet hold under the body curve's pelvis tip; side-set eyes read their own angle and gaze sideways | nothing | building |
+| 1 | Stretch `main` | The labelled button's disabled state, a per-option tooltip on the segmented control, a chip that presses and dashes; Squash moved onto them | nothing | building |
+| 2 | `fingers` | A branching joint tree inside a part: a stage note, then bones, tagging, weights, the Rig stage and Turn, so hands curl and the toucan's toes grip | wave 1 | waiting |
+| 2 | `update-from-library` | The Update from library command, so survival across template versions is tested through it | wave 1 | waiting |
+| 3 | `digit-shape` | The membrane block between digits and per-digit shape (lens sections, taper, knuckles) | `fingers` | waiting |
+| 3 | `blend-spike` | The implicit blend as displacement, from the papers, as a spike | `digit-shape` | waiting |
+| 4 | `membrane-wings` and later anatomy | `wing-membrane`, socket rows, tip sockets, horns and claws | `digit-shape` | waiting |
+| 5 | Shot | Boards 14 to 17 and the eyes-and-gaze Shot board drawn, a stage note, then the workspace in rounds | wave 4 | waiting |
+| Nicholas | none | The verify pass, then `pose-boards` from what it finds, and the four decisions above | a sitting with the app open | waiting |
+
 ## How the work was run, for whoever runs the next sitting
 
 One orchestrating session; one Opus agent per branch with a written brief naming the files to read, the boards to build to, the tests and docs owed, and the rule to stop at a clean boundary; boards drawn on the restructure canvas before any UI; a creature per round as the regression. Agents cannot run the app, so each brief asked for a smoke render the agent viewed and described, and the orchestrator re-rendered the creatures in the main checkout to look as well (`./gradlew :app:test --tests '*<Name>Smoke*' -Pslow`, images under `app/build/smoke-images`). The Opus weekly limit stopped one agent mid-branch; its worktree survived and it resumed from the same state.
