@@ -5,6 +5,7 @@ import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
+import dev.chieppa.squash.document.branchPartId
 
 /**
  * [branches], one garment's, with each joined to the branch over the part its own part sits on: the child branch moves onto a socket
@@ -35,7 +36,9 @@ internal fun joined(garment: Garment, branches: List<PlacedPart>, body: Assemble
 /**
  * [branch], a branch of [garment], with a hole where each body part comes out through it, and the cuff round each such part that has
  * one. A part comes out through it when it sits on a socket inside the region [branch] covers and [garment] does not hide it; the hole
- * is the branch's faces inside that part, and the cuff runs from the part's root past where it comes out by its cuff size, as a share.
+ * is the branch's faces inside that part, and the cuff runs from the part's root to its cuff size, as a share of the part's length, past
+ * where it comes out. A cuff inks its far edge and where it comes out of [branch] when the garment's cuffs and its own change are inked;
+ * with no cuff, [branch] inks where the part comes through it when its hem is inked.
  */
 internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledCharacter, twins: Map<PartId, PartId>, checkCancelled: () -> Unit): Pair<PlacedPart, List<PlacedPart>> {
     val covering = requireNotNull(branch.covering)
@@ -55,9 +58,26 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
         bodyInside(part)?.let { inside -> holed = holed.hiding { _, _, point -> point in inside } }
         val id = requireNotNull(part.id)
         val change = (garment.changes[id] ?: twins[id]?.let { garment.changes[it] }) as? BodyPartChange.Through ?: BodyPartChange.Through()
-        if (!change.cuff) null else cuffOver(garment.id, part, exitOf(part, branch) * (1f + change.cuffSize), ease)
+        if (!change.cuff) {
+            if (garment.inkHem) holed = holed.inking(GarmentInk(crossings = setOf(id)))
+            return@mapNotNull null
+        }
+        val inked = garment.inkCuffs && change.inkCuff
+        cuffOver(garment.id, part, exitOf(part, branch) + change.cuffSize, ease)
+            ?.let { cuff -> if (inked) cuff.inking(GarmentInk(hem = true, crossings = setOfNotNull(branch.id))) else cuff }
     }
     return holed to cuffs
+}
+
+/**
+ * [branch], a branch of [garment], inking its hem when the garment's hem is inked, and where it comes out of the branch over the part
+ * its own part sits on when its join is inked. A join is keyed by the left part of a pair, so it holds for both sides.
+ */
+internal fun edgeInked(garment: Garment, branch: PlacedPart, body: AssembledCharacter, twins: Map<PartId, PartId>): PlacedPart {
+    val covered = requireNotNull(branch.covering).part
+    val joinInked = covered in garment.joins || twins[covered] in garment.joins
+    val parent = body.part(covered)?.socket?.parent?.takeIf { joinInked }
+    return branch.inking(GarmentInk(hem = garment.inkHem, crossings = setOfNotNull(parent?.let { branchPartId(garment.id, it) })))
 }
 
 /** How far along [part], in u, its surface comes out of [branch]: the u of its first ring whose middle lies outside it, or 0. */

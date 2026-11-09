@@ -11,7 +11,10 @@ sealed interface BodyPartChange {
     @SerialName("hide")
     data object Hide : BodyPartChange
 
-    /** The part comes out through a hole in the garment, with a [cuff] of [cuffSize] round it, inked when [inkCuff]. */
+    /**
+     * The part comes out through a hole in the garment, with a [cuff] round it reaching [cuffSize] past where it comes out, as a share
+     * of the part's length, inked when [inkCuff].
+     */
     @Serializable
     @SerialName("through")
     data class Through(val cuff: Boolean = true, val cuffSize: Float = DEFAULT_CUFF_SIZE, val inkCuff: Boolean = true) : BodyPartChange
@@ -27,6 +30,6 @@ sealed interface BodyPartChange {
     data class Swap(val template: TemplateRef, val data: PartData = PartData()) : BodyPartChange
 
     companion object {
-        const val DEFAULT_CUFF_SIZE = 0.25f
+        const val DEFAULT_CUFF_SIZE = 0.1f
     }
 }

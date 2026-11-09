@@ -27,7 +27,7 @@ const val CUFF_RINGS = 6
 /**
  * For a garment's branch or cuff, the [garment] it belongs to and the body [part] it was built over: that part's patch [bodyPatch],
  * the ring of it under each of its rings and the column under each of its columns, and the region of the part it covers, [from] to
- * [to] in u and [fromV] to [toV] round it.
+ * [to] in u and [fromV] to [toV] round it, and the lines it [ink]s.
  */
 class Covering(
     val garment: GarmentId,
@@ -39,9 +39,23 @@ class Covering(
     val to: Float = 1f,
     val fromV: Float = 0f,
     val toV: Float = 1f,
+    val ink: GarmentInk = GarmentInk(),
 ) {
     /** Whether it goes the whole way round its part. */
     val allRound: Boolean get() = toV - fromV >= 1f
+
+    /** This covering inking [ink]. */
+    fun inking(ink: GarmentInk): Covering = Covering(garment, part, bodyPatch, bodyRings, bodyColumns, from, to, fromV, toV, ink)
+}
+
+/** The lines a garment's branch or cuff inks: its open edges when [hem], and where it crosses each placed part in [crossings]. */
+data class GarmentInk(val hem: Boolean = false, val crossings: Set<PartId> = emptySet())
+
+/** This branch or cuff inking [ink] as well as what it inked before. */
+internal fun PlacedPart.inking(ink: GarmentInk): PlacedPart {
+    val held = requireNotNull(covering) { "Only a garment's branch or cuff is inked" }
+    val both = GarmentInk(held.ink.hem || ink.hem, held.ink.crossings + ink.crossings)
+    return PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, held.inking(both))
 }
 
 /** [garment]'s [branch] built over [covered], or null when the part has no swept patch to build it on. */

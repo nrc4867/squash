@@ -38,7 +38,7 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
  * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches cover hidden, and each layer's faces
- * an outer layer covers hidden. See HLD: data-model, Garments.
+ * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
@@ -50,7 +50,7 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
                 part(id)?.let { branchOver(garment, branch.fittedOver(under, dressing.twins), it) }
             }
         }
-        joined(garment, branches, this, checkCancelled).flatMap { branch ->
+        joined(garment, branches, this, checkCancelled).map { edgeInked(garment, it, this, dressing.twins) }.flatMap { branch ->
             val (holed, cuffs) = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
             listOf(holed) + cuffs
         }

@@ -25085,8 +25085,8 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "from": 0.84,
-                            "to": 0.97
+                            "from": 0.93,
+                            "to": 1.02
                         }
                     ],
                     "color": "scarf"

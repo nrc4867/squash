@@ -65,8 +65,9 @@ private const val TOES = "toes"
 /** The boots' shafts run up the legs from this far along them. */
 private const val SHAFT_FROM = 0.72f
 
-/** The scarf wraps the base of the neck, over the sweater, one layer out. */
-private const val SCARF_FROM = 0.84f
+/** The scarf wraps the torso's front end where the head joins, a narrow band over the sweater, one layer out. */
+private const val SCARF_FROM = 0.93f
+private const val SCARF_TO = 1.02f
 private const val SCARF_LAYER = 2
 
 /** The paws the boots drop the toes of, both sides by their pairs. */
@@ -107,7 +108,7 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SCARF_WOOL, SlotColor(0.92f, 0.82f, 0.36f)),
     AddGarmentSlot(GarmentSlot(NECK_SLOT, "Neck")),
     AddGarment(Garment(SCARF, "Scarf", NECK_SLOT, layer = SCARF_LAYER)),
-    CoverPart(SCARF, GarmentBranch(TORSO, SCARF_FROM, SWEATER_TO)),
+    CoverPart(SCARF, GarmentBranch(TORSO, SCARF_FROM, SCARF_TO)),
     SetGarmentColor(SCARF, SCARF_WOOL),
     AddOutfit(Outfit(WINTER, "Winter")),
     PickGarment(WINTER, HEAD_SLOT, CAP),

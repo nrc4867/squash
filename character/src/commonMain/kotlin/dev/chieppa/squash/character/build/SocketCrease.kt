@@ -39,13 +39,23 @@ class CreaseParents {
     internal fun of(parent: PlacedPart): List<PlacedGrid> = held.getOrPut(parent) { parent.sweptPatches().map { PlacedGrid(parent, it) } }
 }
 
-/** Where [placed] comes out of its parent in [character], or null for a part that does not meet one. */
+/**
+ * Where [placed] comes out of its parent in [character], or null for a part that does not meet one. For a garment's branch or cuff,
+ * the edges it inks instead: see [garmentEdges].
+ */
 fun socketCrease(character: AssembledCharacter, placed: PlacedPart, parents: CreaseParents = CreaseParents()): SocketCrease? {
     val id = placed.id ?: return null
+    if (placed.covering != null) return garmentEdges(character, placed, parents)
     val parent = placed.socket?.parent?.let(character::part) ?: return null
-    val within = parents.of(parent)
+    val runs = crossingRuns(placed, id, parents.of(parent))
+    return if (runs.isEmpty()) null else SocketCrease(id, runs)
+}
+
+/** The runs on [placed], part [id], where its surface crosses out of the surface [within] holds. */
+internal fun crossingRuns(placed: PlacedPart, id: PartId, within: List<PlacedGrid>): List<List<ResolvedPoint>> {
+    if (within.isEmpty()) return emptyList()
     fun inBody(local: Vec3) = placed.origin + placed.surface.shown(local)
-    val runs = placed.sweptPatches().flatMap { patch ->
+    return placed.sweptPatches().flatMap { patch ->
         patch.zeroCurves { local -> within.minOf { it.outsideBy(inBody(local)) } }.map { run ->
             calmedPlaces(run, patch.closedV).map { place ->
                 val normal = placed.surface.shown(patch.surfaceAt(place.u, place.v).normal)
@@ -53,7 +63,6 @@ fun socketCrease(character: AssembledCharacter, placed: PlacedPart, parents: Cre
             }
         }
     }
-    return if (runs.isEmpty()) null else SocketCrease(id, runs)
 }
 
 /** [run] with each place moved toward the middle of its neighbours across any wrap of v. A closed run stays closed; an open one keeps its ends. */
