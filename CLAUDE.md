@@ -90,7 +90,7 @@ These are Stretch's conventions plus Squash's own. They apply from the first com
 
 **Comments describe the code as it stands.** Never the work that produced it: no reference to a request, a session, a change or an earlier behaviour. A comment is written only when the code cannot say it. Public APIs get a one-line KDoc where the name is not enough. The same rule holds for docs: state current behaviour only.
 
-**Docs.** High-level design in `docs/hld/`, one file per area, kept current, the only docs code may reference. Working notes, plans and handovers in `docs/work/`, deleted or folded into the HLD when the work merges. The readme says how to build, run and test, nothing else. No Markdown scattered through source folders. No dates, session names or progress logs in docs.
+**Docs.** High-level design in `docs/hld/`, one file per area, kept current, the only docs code may reference. Working notes, plans and handovers in `docs/work/`, deleted or folded into the HLD when the work merges. The readme holds a description with images of the app, a feature table, the local development guide and the license, nothing else: no links to Claude artifacts and no project state or progress. No Markdown scattered through source folders. No dates, session names or progress logs in docs.
 
 **Status protocol.** `docs/work/boards.md` holds the state of every board: planned, building, verifiable, verified. A session moves a board to building when it starts it and to verifiable when its verify steps pass, and writes those steps into the table. Only Nicholas sets verified. The same four states appear on the boards in the Squash flow of work artifact; a session that changes a state here changes the board's note there too, and changes nothing else in that artifact.
 
