@@ -27,13 +27,13 @@ internal fun joined(garment: Garment, branches: List<PlacedPart>, body: Assemble
             shown[i] = child
             shown[p] = parent
         }
-        if (shown[p].covering?.allRound == true) {
-            val inside = shown[p].shellInside()
-            shown[i] = shown[i].hiding { _, _, point -> point in inside }
-        }
+        if (shown[p].covering?.allRound == true) insideHider(shown[p])?.let { shown[i] = shown[i].hiddenBy(listOf(it)) }
     }
     return shown
 }
+
+/** A branch with its holes cut, the [cuffs] round what comes out through them, and the body parts that come [through]. */
+internal class Holed(val branch: PlacedPart, val cuffs: List<PlacedPart>, val through: List<PartId>)
 
 /**
  * [branch], a branch of [garment], with a hole where each body part comes out through it, and the cuff round each such part that has
@@ -42,9 +42,9 @@ internal fun joined(garment: Garment, branches: List<PlacedPart>, body: Assemble
  * where it comes out. A cuff inks its far edge and where it comes out of [branch] when the garment's cuffs and its own change are inked;
  * with no cuff, [branch] inks where the part comes through it when its hem is inked.
  */
-internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledCharacter, twins: Map<PartId, PartId>, checkCancelled: () -> Unit): Pair<PlacedPart, List<PlacedPart>> {
+internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledCharacter, twins: Map<PartId, PartId>, checkCancelled: () -> Unit): Holed {
     val covering = requireNotNull(branch.covering)
-    val parent = body.part(covering.part) ?: return branch to emptyList()
+    val parent = body.part(covering.part) ?: return Holed(branch, emptyList(), emptyList())
     val through = body.parts.filter { part ->
         val id = part.id ?: return@filter false
         if (part.covering != null || part.socket?.parent != covering.part) return@filter false
@@ -57,7 +57,7 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
     var holed = branch
     val cuffs = through.mapNotNull { part ->
         checkCancelled()
-        bodyInside(part)?.let { inside -> holed = holed.hiding { _, _, point -> point in inside } }
+        insideHider(part, whole = true)?.let { holed = holed.hiddenBy(listOf(it)) }
         val id = requireNotNull(part.id)
         val change = (garment.changes[id] ?: twins[id]?.let { garment.changes[it] }) as? BodyPartChange.Through ?: BodyPartChange.Through()
         if (!change.cuff) {
@@ -68,7 +68,7 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
         cuffOver(garment.id, part, exitOf(part, branch) + change.cuffSize, ease)
             ?.let { cuff -> if (inked) cuff.inking(GarmentInk(hem = true, crossings = setOfNotNull(branch.id))) else cuff }
     }
-    return holed to cuffs
+    return Holed(holed, cuffs, through.mapNotNull { it.id })
 }
 
 /**
@@ -85,7 +85,7 @@ internal fun edgeInked(garment: Garment, branch: PlacedPart, body: AssembledChar
 /** How far along [part], in u, its surface comes out of [branch]: the u of its first ring whose middle lies outside it, or 0. */
 private fun exitOf(part: PlacedPart, branch: PlacedPart): Float {
     val slices = part.bodyPatch()?.slices ?: return 0f
-    val inside = branch.shellInside()
+    val inside = insideOf(branch) ?: return 0f
     val first = slices.indexOfFirst { slice -> part.origin + part.surface.shown(slice.frame.center) !in inside }
     return if (first <= 0) 0f else slices[first].u
 }

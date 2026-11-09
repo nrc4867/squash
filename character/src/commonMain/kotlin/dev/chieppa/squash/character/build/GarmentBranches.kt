@@ -55,7 +55,7 @@ data class GarmentInk(val hem: Boolean = false, val crossings: Set<PartId> = emp
 internal fun PlacedPart.inking(ink: GarmentInk): PlacedPart {
     val held = requireNotNull(covering) { "Only a garment's branch or cuff is inked" }
     val both = GarmentInk(held.ink.hem || ink.hem, held.ink.crossings + ink.crossings)
-    return PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, held.inking(both), hanging)
+    return PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, held.inking(both), hanging, hiding)
 }
 
 /** [garment]'s [branch] built over [covered], or null when the part has no swept patch to build it on. */

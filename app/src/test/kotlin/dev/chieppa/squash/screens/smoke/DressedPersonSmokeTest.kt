@@ -72,6 +72,7 @@ private const val DRESSED_HEIGHT = 900
 /** How far the Pose case bends the left elbow and the left knee, in degrees. */
 private const val ELBOW_BENT = 120f
 private const val KNEE_BENT = 60f
+private const val SHOULDER_RAISED = 80f
 
 private object NoDressedPersonFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -184,5 +185,16 @@ class DressedPersonSmokeTest {
         val session = assertNotNull(bench.state.session.value)
         session.send(SetPose(Pose(listOf(BonePose(ARM_L, "elbow", ELBOW_BENT), BonePose(LEG_L, "knee", KNEE_BENT)))))
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "person-dressed-pose")
+    }
+
+    @Test
+    fun theSummerOutfitFollowsARaisedArm() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        bench.state.dress.lookElsewhere.value = GarmentLook.SHOWN
+        bench.state.showStage(Stage.POSE)
+        waitForIdle()
+        val session = assertNotNull(bench.state.session.value)
+        session.send(SetPose(Pose(listOf(BonePose(ARM_L, "shoulder", SHOULDER_RAISED)))))
+        keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "person-dressed-raised-arm")
     }
 }

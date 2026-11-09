@@ -133,11 +133,11 @@ class GarmentShellTest {
         assertEquals(bare.mesh.vertexCount, covered.mesh.vertexCount, "every vertex stays, so anchors still land")
         assertTrue(covered.mesh.indices.size < bare.mesh.indices.size, "triangles under the sweater are left out")
         val shell = assertNotNull(character.part(branchPartId(sweater, torso)))
-        val inside = dev.chieppa.squash.geom.ShellInside(shell.surface.patches.single(), { shell.origin + shell.surface.shown(it) }, shell.surface::shown)
+        val inside = dev.chieppa.squash.geom.ShellInside(shell.surface.patches.single(), { shell.origin + shell.surface.shown(it) })
         val torsoOrigin = assertNotNull(character.part(torso)).origin
         for (t in 0 until covered.mesh.indices.size / 3) {
             val corners = (0 until 3).map { torsoOrigin + covered.mesh.position(covered.mesh.indices[t * 3 + it]) }
-            assertTrue(corners.any { it !in inside }, "triangle $t shows and lies outside the sweater")
+            assertTrue(corners.any { !inside.covers(it) }, "triangle $t shows and lies where the sweater does not cover it")
         }
         assertTrue(assertNotNull(character.part(torso)).surface.patches === bare.patches)
     }

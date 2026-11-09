@@ -14,6 +14,7 @@ import dev.chieppa.squash.geom.BodyBox
 import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.ShellInside
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
 import dev.chieppa.squash.geom.positionAt
@@ -63,6 +64,8 @@ class PlacedPart(
     val covering: Covering? = null,
     /** For a garment's loose end, where it hangs from; null for anything else. */
     val hanging: Hanging? = null,
+    /** What hides faces of it under a garment, so a pose can decide again; null when nothing does. */
+    val hiding: Hiding? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -85,15 +88,18 @@ class PlacedPart(
         return normal * cos(angle) + along.normalized() * sin(angle)
     }
 
+    /** The inside test of its swept surface as it stands, in body space, or null when it has none; read once per part. */
+    internal val inside: ShellInside? by lazy { bodyPatch()?.let { patch -> ShellInside(patch) { origin + surface.shown(it) } } }
+
     /** Where this part reaches in body space, or null when it built nothing. */
     val box: BodyBox? get() = surface.box?.moved(origin)
 
     private fun patchAt(u: Float, patch: String?): Patch? =
         if (patch == null) surface.patches.firstOrNull { it.covers(u) } else surface.patches.firstOrNull { it.name == patch }
 
-    /** This part showing [surface], turned by [turn], where it sits. */
-    fun showing(surface: PartSurface, turn: Mat3): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging)
+    /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
+    fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding): PlacedPart =
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */

@@ -115,5 +115,5 @@ private fun mapped(values: FloatArray, map: (Vec3) -> Vec3): FloatArray {
 private fun PlacedPart.withPatches(patches: List<Patch>): PlacedPart {
     if (patches.indices.all { patches[it] === surface.patches[it] }) return this
     val mesh = PartMesh(id?.value ?: template.id.value, patches.map { patch -> MeshBuilder.build(patch) { 0 } })
-    return showing(PartSurface.of(mesh, PartBuilder.axes(template), mirrored), turn)
+    return showing(PartSurface.of(mesh, PartBuilder.axes(template), mirrored), turn, hiding = null)
 }

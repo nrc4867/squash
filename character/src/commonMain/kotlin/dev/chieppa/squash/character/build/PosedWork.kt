@@ -33,15 +33,21 @@ fun posedFur(
     inputs: Map<PartId, PartFurInput>,
     work: BodySurfaceWork,
     body: AssembledCharacter,
+    carried: Set<PartId>,
     moved: Set<PartId>,
     workMoved: (PartId) -> Boolean,
     checkCancelled: () -> Unit = {},
 ): BodyFur {
+    val worn by lazy { body.garmentCovers() }
     val parts = rest.parts.mapValues { (id, fur) ->
-        val input = inputs[id]?.takeIf { id in moved || workMoved(id) } ?: return@mapValues fur
-        val held = work.parts[id] ?: return@mapValues fur
+        val input = inputs[id]?.takeIf { id in carried || workMoved(id) }
+        val held = work.parts[id]
         checkCancelled()
-        fur.rootedOn(id, input, held, body)
+        when {
+            input != null && held != null -> fur.rootedOn(id, input, held, body, worn)
+            id in moved && (fur.covered.isNotEmpty() || fur.roots.isNotEmpty()) -> fur.coveredAgain(worn)
+            else -> fur
+        }
     }
     return BodyFur(parts, body.box?.radius ?: rest.figureRadius, body.box?.center ?: rest.figureCenter)
 }

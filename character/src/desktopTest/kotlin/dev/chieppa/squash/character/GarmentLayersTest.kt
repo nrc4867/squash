@@ -52,10 +52,10 @@ class GarmentLayersTest {
         val inner = shellOf(dressed, sweater)
         val outer = shellOf(dressed, scarf)
         assertTrue(inner.surface.mesh.indices.size < sweaterAlone.surface.mesh.indices.size, "the sweater under the scarf is hidden")
-        val inside = ShellInside(outer.surface.patches.single(), { outer.origin + outer.surface.shown(it) }, outer.surface::shown)
+        val inside = ShellInside(outer.surface.patches.single(), { outer.origin + outer.surface.shown(it) })
         for (t in 0 until inner.surface.mesh.indices.size / 3) {
             val corners = (0 until 3).map { inner.origin + inner.surface.mesh.position(inner.surface.mesh.indices[t * 3 + it]) }
-            assertTrue(corners.any { it !in inside }, "triangle $t of the sweater shows outside the scarf")
+            assertTrue(corners.any { !inside.covers(it) }, "triangle $t of the sweater shows where the scarf does not cover it")
         }
         assertEquals(shellOf(body.dressedIn(Dressing(listOf(scarf))), scarf).surface.mesh.indices.size, outer.surface.mesh.indices.size, "nothing hides the outermost layer")
     }

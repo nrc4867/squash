@@ -32,6 +32,10 @@ fun AssembledCharacter.posedBy(pose: PosedParts): AssembledCharacter {
     return if (moved) AssembledCharacter(shown, sockets) else this
 }
 
-/** The parts of this character that show something other than they do in [rest]: those a pose moves. */
+/** The parts of this character that show something other than they do in [rest]: those a pose moves, or shows more or less of. */
 fun AssembledCharacter.movedFrom(rest: AssembledCharacter): Set<PartId> =
     parts.mapNotNullTo(hashSetOf()) { part -> part.id?.takeIf { rest.part(it) !== part } }
+
+/** The parts of this character whose surface lies elsewhere than in [rest]: those a pose carries, not those it only shows more or less of. */
+fun AssembledCharacter.carriedFrom(rest: AssembledCharacter): Set<PartId> =
+    parts.mapNotNullTo(hashSetOf()) { part -> part.id?.takeIf { rest.part(it)?.surface?.patches !== part.surface.patches } }

@@ -88,7 +88,7 @@ class LooseEndRigTest {
         val character = assertNotNull(session.assembly.output.value)
         val strip = assertNotNull(character.part(end))
         val body = character.parts.filter { it.id != null && it.covering == null && it.hanging == null }.flatMap { part ->
-            part.surface.patches.filter { it.slices != null }.map { ShellInside(it, { p -> part.origin + part.surface.shown(p) }, part.surface::shown) }
+            part.surface.patches.filter { it.slices != null }.map { ShellInside(it, { p -> part.origin + part.surface.shown(p) }) }
         }
         val mesh = strip.surface.mesh
         val inside = (0 until mesh.vertexCount).count { v -> body.any { strip.origin + mesh.position(v) in it } }

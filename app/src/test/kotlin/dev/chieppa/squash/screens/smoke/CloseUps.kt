@@ -79,6 +79,20 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
         assertNotBlank(image.pixels, name)
     }
 
+    /** The whole character framed on [part], from six sides, one tile each, kept as the image [name]. */
+    fun keepAround(session: CharacterSession, part: PartId, name: String) {
+        val state = session.posedState()
+        val framed = listOf(assertNotNull(state.character.part(part)))
+        val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
+            val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)
+            val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
+            characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
+        }
+        val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        keepImage(image.pixels, image.width, name)
+        assertNotBlank(image.pixels, name)
+    }
+
     companion object {
         fun shippedLibrary(): TemplateLibrary = TemplateFolder.shipped().let { TemplateLibrary(it.parts, it.plans) }
     }

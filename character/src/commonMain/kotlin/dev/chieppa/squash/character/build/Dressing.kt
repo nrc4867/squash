@@ -58,12 +58,14 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
 /**
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
- * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches and cuffs cover hidden, and each layer's faces
+ * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches and cuffs cover hidden, but for a part
+ * that comes out through a branch, which that branch leaves whole, as the hole leaves the branch open where the part fills it; each layer's faces
  * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
  * loose ends hung from their branches; with [Dressing.covers] off nothing under a garment is hidden. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
+    val through = HashMap<PartId, MutableSet<PartId>>()
     val layers = dressing.worn.mapIndexed { layer, garment ->
         val under = dressing.worn.take(layer)
         val branches = garment.branches.flatMap { branch ->
@@ -73,25 +75,27 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
             }
         }
         joined(garment, branches, this, checkCancelled).map { edgeInked(garment, it, this, dressing.twins) }.flatMap { branch ->
-            val (holed, cuffs) = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
-            listOf(holed) + cuffs
+            val holed = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
+            holed.through.forEach { part -> through.getOrPut(part, ::HashSet) += requireNotNull(holed.branch.id) }
+            listOf(holed.branch) + holed.cuffs
         }
     }
     if (!dressing.covers) {
         val shells = layers.flatten()
         return AssembledCharacter(parts + shells + dressing.worn.flatMap { garment -> looseEnds(garment, shells, this) }, sockets)
     }
-    val covers = layers.map { parts -> parts.filter { !isCuffPart(requireNotNull(it.id)) }.map(::coverOf) }
+    val covers = layers.map { parts -> parts.filter { !isCuffPart(requireNotNull(it.id)) }.mapNotNull(::hiderOf) }
     val dressed = layers.flatMapIndexed { layer, parts ->
         val outer = covers.drop(layer + 1).flatten()
-        parts.map { it.coveredBy(outer) }
+        parts.map { it.hiddenBy(outer) }
     }
     if (dressed.isEmpty()) return this
     val ends = dressing.worn.flatMap { garment -> looseEnds(garment, dressed, this) }
-    val all = layers.flatten().map(::coverOf)
+    val all = layers.flatten().mapNotNull(::hiderOf)
     val body = parts.map { part ->
         checkCancelled()
-        part.coveredBy(all)
+        val passes = through[part.id].orEmpty()
+        part.hiddenBy(if (passes.isEmpty()) all else all.filter { it !is Hider.Inside || it.part !in passes })
     }
     return AssembledCharacter(body + dressed + ends, sockets)
 }

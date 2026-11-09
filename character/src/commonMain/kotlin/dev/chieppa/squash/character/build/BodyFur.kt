@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.GrainSpec
 import dev.chieppa.squash.document.wornPart
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.FurRule
 import dev.chieppa.squash.document.Grain
@@ -67,21 +68,36 @@ fun furInputs(character: Character, templates: TemplateLibrary): Map<PartId, Par
 
 /**
  * One fur stroke on the body, in body space: its root, the surface's [normal] there, the way the grain runs, the slot under it, the
- * part's [radius] at that place, and the [room] it has: how far it lies, on the body, from every stroke before it.
+ * part's [radius] at that place, the [room] it has: how far it lies, on the body, from every stroke before it, and the [anchor] its root
+ * lies at.
  */
-data class FurRoot(val id: MarkId, val position: Vec3, val normal: Vec3, val direction: Vec3, val slot: SlotName?, val radius: Float, val room: Float = Float.POSITIVE_INFINITY)
+data class FurRoot(
+    val id: MarkId,
+    val position: Vec3,
+    val normal: Vec3,
+    val direction: Vec3,
+    val slot: SlotName?,
+    val radius: Float,
+    val room: Float = Float.POSITIVE_INFINITY,
+    val anchor: Anchor? = null,
+)
 
 /** A ball that stands in for one stretch of a part: from any camera the part's outline is the outline of its balls together. */
 data class FurRim(val center: Vec3, val radius: Float)
 
-/** A part's fur strokes, the rule they show by, and the [rims] that make its outline. */
-data class PartFur(val rule: FurRule, val roots: List<FurRoot>, val rims: List<FurRim> = emptyList())
+/**
+ * A part's fur strokes, the rule they show by, and the [rims] that make its outline; [covered] holds the strokes a garment covers,
+ * kept so a pose that carries them out shows them again.
+ */
+data class PartFur(val rule: FurRule, val roots: List<FurRoot>, val rims: List<FurRim> = emptyList(), val covered: List<FurRoot> = emptyList())
 
 /** Every part's fur, camera aside, on a figure of [figureRadius] around [figureCenter]. */
 data class BodyFur(val parts: Map<PartId, PartFur>, val figureRadius: Float = 0f, val figureCenter: Vec3 = Vec3.ZERO)
 
 /**
- * The fur strokes in [work], each following the grain of the part holding it, each with its [FurRoot.room], which [furView] shows them by. A root on a part or patch not there, or under a garment [character] wears, is dropped. [checkCancelled] runs before each part.
+ * The fur strokes in [work], each following the grain of the part holding it, each with its [FurRoot.room], which [furView] shows them by. A root on a part
+ * or patch not there is dropped, and one under a garment [character] wears is kept apart in [PartFur.covered], its room read among every stroke of its
+ * part. [checkCancelled] runs before each part.
  */
 fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character: AssembledCharacter, checkCancelled: () -> Unit = {}): BodyFur {
     val placed = character.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
@@ -91,14 +107,17 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
             checkCancelled()
             val held = work.parts[id] ?: return@mapNotNull null
             val field = GrainField(input.spec, input.grain)
-            val roots = held.marks.filter { it.kind == MarkKind.FUR }.mapNotNull { mark ->
+            val found = held.marks.filter { it.kind == MarkKind.FUR }.mapNotNull { mark ->
                 val root = mark.points.first()
                 val surface = placed[root.anchor.part]?.surface ?: return@mapNotNull null
                 val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return@mapNotNull null
-                if (worn.any { it.covers(root.anchor.part, root.anchor.u, root.anchor.v, root.position) }) return@mapNotNull null
-                rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))
-            }
-            if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }), placed[id]?.surface?.let(::rimsOf).orEmpty())
+                val covered = worn.any { it.covers(root.anchor.part, root.anchor.u, root.anchor.v, root.position) }
+                rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))?.let { it to covered }
+            }.sortedBy { orderOf(it.first.id) }
+            if (found.isEmpty()) return@mapNotNull null
+            val roots = withRoom(found.filter { !it.second }.map { it.first })
+            val covered = if (found.none { it.second }) emptyList() else withRoom(found.map { it.first }).filter { root -> found.any { it.second && it.first.id == root.id } }
+            id to PartFur(input.rule, roots, placed[id]?.surface?.let(::rimsOf).orEmpty(), covered)
         }.toMap(),
         character.box?.radius ?: 0f,
         character.box?.center ?: Vec3.ZERO,
@@ -111,21 +130,34 @@ private fun rootOn(mark: ResolvedMark, surface: PartSurface, field: GrainField, 
     val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return null
     val direction = surface.shown(field.directionAt(patch, root.anchor.u, root.anchor.v))
     val radius = (patch.positionAt(root.anchor.u, root.anchor.v) - patch.positionAt(root.anchor.u, root.anchor.v + HALF_WAY_ROUND)).length / 2f
-    return FurRoot(mark.id, root.position, root.normal, direction, slot, radius)
+    return FurRoot(mark.id, root.position, root.normal, direction, slot, radius, anchor = root.anchor)
+}
+
+/** This fur with its strokes where they lie, kept apart in [PartFur.covered] when a garment [worn] covers them and shown when none does. */
+fun PartFur.coveredAgain(worn: List<GarmentCover>): PartFur {
+    val all = roots + covered
+    val (under, shown) = all.partition { root ->
+        val anchor = root.anchor ?: return@partition root in covered
+        worn.any { it.covers(anchor.part, anchor.u, anchor.v, root.position) }
+    }
+    return if (shown.size == roots.size && under.size == covered.size) this else copy(roots = shown, covered = under)
 }
 
 /**
  * [rest], a part's fur, rooted again on [character], a pose of the body it was found on, from [held], the part's surface work there: each
  * stroke's root, normal, grain and radius follow the posed surface while its room, its slot and its place in the order stay, since
- * they are the body's own. The rims come from the posed surface. A stroke whose mark or patch is not there drops.
+ * they are the body's own. A stroke under a garment [character] wears in the pose is kept apart in [PartFur.covered], and one covered at
+ * rest that the pose carries out of every garment shows. The rims come from the posed surface. A stroke whose mark or patch is not
+ * there drops.
  */
-fun PartFur.rootedOn(id: PartId, input: PartFurInput, held: ResolvedSurfaceWork, character: AssembledCharacter): PartFur {
+fun PartFur.rootedOn(id: PartId, input: PartFurInput, held: ResolvedSurfaceWork, character: AssembledCharacter, worn: List<GarmentCover>): PartFur {
     val field = GrainField(input.spec, input.grain)
     val marks = held.marks.associateBy { it.id }
-    val moved = roots.mapNotNull { root ->
+    val moved = (roots + covered).mapNotNull { root ->
         val mark = marks[root.id] ?: return@mapNotNull null
-        val surface = character.part(mark.points.first().anchor.part)?.surface ?: return@mapNotNull null
-        rootOn(mark, surface, field, root.slot)?.copy(room = root.room)
+        val anchor = mark.points.first().anchor
+        val surface = character.part(anchor.part)?.surface ?: return@mapNotNull null
+        rootOn(mark, surface, field, root.slot)?.copy(room = root.room)?.let { posed -> posed to worn.any { it.covers(anchor.part, anchor.u, anchor.v, posed.position) } }
     }
-    return copy(roots = moved, rims = character.part(id)?.surface?.let(::rimsOf).orEmpty())
+    return copy(roots = moved.filter { !it.second }.map { it.first }, rims = character.part(id)?.surface?.let(::rimsOf).orEmpty(), covered = moved.filter { it.second }.map { it.first })
 }

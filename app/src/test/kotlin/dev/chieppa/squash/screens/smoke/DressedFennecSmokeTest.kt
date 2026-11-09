@@ -83,6 +83,8 @@ private const val DRESSED_HEIGHT = 900
 private const val KNEE_BENT = 60f
 private const val HEAD_TURNED = 20f
 private const val END_SWUNG = 35f
+private const val KNEE_DEEP = 110f
+private const val HEAD_FAR = 40f
 
 private object NoDressedFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -208,6 +210,16 @@ class DressedFennecSmokeTest {
         val session = assertNotNull(bench.state.session.value)
         session.send(SetPose(Pose(listOf(BonePose(FRONT_LEG_L, "knee", KNEE_BENT), BonePose(HEAD, "neck", HEAD_TURNED), BonePose(looseEndPartId(SCARF, SCARF_END), looseJoint(1), END_SWUNG)))))
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dressed-pose")
+    }
+
+    @Test
+    fun theWinterOutfitFollowsADeepPose() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        bench.state.dress.lookElsewhere.value = GarmentLook.SHOWN
+        key(Key.Seven)
+        val session = assertNotNull(bench.state.session.value)
+        session.send(SetPose(Pose(listOf(BonePose(FRONT_LEG_L, "knee", KNEE_DEEP), BonePose(HEAD, "neck", HEAD_FAR)))))
+        keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dressed-deep-pose")
     }
 
     @Test

@@ -32,16 +32,19 @@ private enum class PosedKey { REST, POSE, SHOWN, REST_WORK, STATE, REST_HELD }
 class PosedState(val rest: AssembledCharacter, val body: AssembledCharacter, val restWork: BodySurfaceWork, val work: BodySurfaceWork) {
     val atRest: Boolean get() = body === rest
 
-    /** The parts the pose moves. */
+    /** The parts the pose moves or shows more or less of. */
     val moved: Set<PartId> by lazy { body.movedFrom(rest) }
+
+    /** The parts whose surface the pose carries elsewhere. */
+    val carried: Set<PartId> by lazy { body.carriedFrom(rest) }
 
     /** Whether [part]'s surface work in the pose differs from its work at rest. */
     fun workMoved(part: PartId): Boolean = work.parts[part] !== restWork.parts[part]
 }
 
 /**
- * [assembly] in the pose [pose] holds the node of, once a rig gives one: the character itself while the pose leaves every part at rest
- * or before there is a pose. See [posedBy].
+ * [assembly] in the pose [pose] holds the node of, once a rig gives one, with what the garments hide decided again in the pose: the
+ * character itself while the pose leaves every part at rest or before there is a pose. See [posedBy] and [hiddenAgain].
  */
 fun Graph.posedBodyNode(assembly: Node<*, AssembledCharacter>, pose: StateFlow<Node<*, Held>?>): Node<*, AssembledCharacter> {
     val rest = held(assembly)
@@ -51,7 +54,7 @@ fun Graph.posedBodyNode(assembly: Node<*, AssembledCharacter>, pose: StateFlow<N
         cacheSize = POSED_CACHE,
     ) { (_, sources) ->
         val character = sources.getValue(PosedKey.REST).value as AssembledCharacter
-        (sources[PosedKey.POSE]?.value as PosedParts?)?.let(character::posedBy) ?: character
+        (sources[PosedKey.POSE]?.value as PosedParts?)?.let { character.posedBy(it).hiddenAgain(character) } ?: character
     }
 }
 
@@ -79,7 +82,7 @@ fun Graph.posedStateNode(
         } else {
             @Suppress("UNCHECKED_CAST")
             val byPart = inputs.value as Map<PartId, SurfaceWorkInput>
-            PosedState(rest, shown, work, posedSurfaceWork(work, byPart, shown, shown.movedFrom(rest), cancellationCheck()))
+            PosedState(rest, shown, work, posedSurfaceWork(work, byPart, shown, shown.carriedFrom(rest), cancellationCheck()))
         }
     }
 }
@@ -110,5 +113,5 @@ fun Graph.posedLinesNode(state: Node<*, PosedState>, rest: Node<*, BodyLines>): 
 fun Graph.posedFurNode(document: Flow<SquashDocument>, templates: TemplateLibrary, state: Node<*, PosedState>, rest: Node<*, BodyFur>): Node<*, BodyFur> =
     posedFrom(document.map { furInputs(it.character, templates) }.distinctUntilChanged(), state, rest) { inputs, posed, fur ->
         @Suppress("UNCHECKED_CAST")
-        posedFur(fur, inputs as Map<PartId, PartFurInput>, posed.work, posed.body, posed.moved, posed::workMoved, cancellationCheck())
+        posedFur(fur, inputs as Map<PartId, PartFurInput>, posed.work, posed.body, posed.carried, posed.moved, posed::workMoved, cancellationCheck())
     }
