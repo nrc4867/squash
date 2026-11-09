@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.branchPartId
 import dev.chieppa.squash.document.cuffPartId
+import dev.chieppa.squash.document.looseEndPartId
 import dev.chieppa.squash.document.isCuffPart
 import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.graph.Graph
@@ -38,7 +39,8 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
  * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches cover hidden, and each layer's faces
- * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say. See HLD: data-model, Garments.
+ * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
+ * loose ends hung from their branches. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
@@ -61,12 +63,13 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
         parts.map { it.coveredBy(outer) }
     }
     if (dressed.isEmpty()) return this
+    val ends = dressing.worn.flatMap { garment -> looseEnds(garment, dressed, this) }
     val all = covers.flatten()
     val body = parts.map { part ->
         checkCancelled()
         part.coveredBy(all)
     }
-    return AssembledCharacter(body + dressed, sockets)
+    return AssembledCharacter(body + dressed + ends, sockets)
 }
 
 /**
@@ -81,7 +84,7 @@ private fun GarmentBranch.fittedOver(under: List<Garment>, twins: Map<PartId, Pa
     return if (below == 0f) this else copy(ease = ease + below)
 }
 
-/** The base color of every branch and cuff [character] may wear: its garment's slot, else its branch's own surface work's. */
+/** The base color of every branch, cuff and loose end [character] may wear: its garment's slot, else its branch's own surface work's. */
 fun garmentColors(character: Character): Map<PartId, PartColor> {
     val dressing = dressingOf(character)
     return dressing.worn.flatMap { garment ->
@@ -90,7 +93,7 @@ fun garmentColors(character: Character): Map<PartId, PartColor> {
             val covered = listOfNotNull(branch.part, dressing.twins[branch.part])
             val through = character.parts.filter { it.socket?.parent in covered }.map { cuffPartId(garment.id, it.id) }
             covered.map { branchPartId(garment.id, it) to color } + through.map { it to color }
-        }
+        } + garment.looseEnds.map { looseEndPartId(garment.id, it.id) to PartColor(garment.color ?: garment.branch(it.branch)?.surface?.baseSlot, emptyList()) }
     }.toMap()
 }
 

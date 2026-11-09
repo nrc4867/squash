@@ -66,7 +66,7 @@ The steps above split by who can do them. Agents cannot drive the app with a poi
 | 3 | `blend-spike` | The implicit blend as displacement, from the papers, as a spike: the `blend` block (in-part fillets and socket fillets), test-only variants, the close views on and off and a benchmark; `spike-implicit-blend.md` | `digit-shape` | landed |
 | 4 | `membrane-wings` | `stage-8-later-anatomy.md`: `wing-membrane` and the dragon (round 1), socket rows (round 2), tip sockets, horns and claws (round 3) | `digit-shape` | landed |
 | 5 | Shot | Boards 14 to 17 and the eyes-and-gaze Shot board drawn, a stage note, then the workspace in rounds | Nicholas's answers to the open questions on the Shot boards (S1 to S6 drawn on the restructure canvas, planned) | waiting |
-| 6 | `garment-model` to `loose-ends` | `stage-9-garments.md`: garments, layers, outfits and slots, body-part changes, the Dress stage (W13 to W15) and loose ends, in seven rounds | nothing | rounds 1 to 5 landed; 6 and 7 not started |
+| 6 | `garment-model` to `loose-ends` | `stage-9-garments.md`: garments, layers, outfits and slots, body-part changes, the Dress stage (W13 to W15) and loose ends, in seven rounds | nothing | rounds 1 to 5 landed, the garment ink and round 7's loose-end chains landed; the Dress stage UI building |
 | Nicholas | none | The verify pass, then `pose-boards` from what it finds, and the decisions above | a sitting with the app open | waiting |
 
 ## How the work was run, for whoever runs the next sitting

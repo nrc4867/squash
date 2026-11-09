@@ -54,8 +54,9 @@ data class SetPose(val pose: Pose) : DocumentCommand {
         Applied(document.copy(character = document.character.copy(pose = pose)), SetPose(document.character.pose))
 }
 
-/** This document with [change] made to its pose for [part], and with [bothSides] for its twin too. */
+/** This document with [change] made to its pose for [part], and with [bothSides] for its twin too; a garment's loose end has no twin. */
 internal fun SquashDocument.posed(part: PartId, bothSides: Boolean, change: (Pose, PartId) -> Pose): Applied<SquashDocument> {
+    if (character.isLooseEnd(part)) return SetPose(change(character.pose, part)).apply(this)
     val instance = requirePart(part)
     val twin = if (bothSides) character.twinOf(instance) else null
     val ids = listOfNotNull(instance.id, twin?.id)

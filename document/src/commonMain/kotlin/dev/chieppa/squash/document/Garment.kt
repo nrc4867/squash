@@ -84,6 +84,11 @@ fun cuffPartId(garment: GarmentId, part: PartId): PartId = PartId("$GARMENT_PART
 
 private const val CUFF_SUFFIX = "/cuff"
 
+/** The part id the loose end [end] of [garment] is built, rigged and posed as. */
+fun looseEndPartId(garment: GarmentId, end: LooseEndId): PartId = PartId("$GARMENT_PART_PREFIX${garment.value}$LOOSE_END_INFIX${end.value}")
+
+private const val LOOSE_END_INFIX = "/end/"
+
 /** Whether [part] names a garment's cuff. */
 fun isCuffPart(part: PartId): Boolean = isBranchPart(part) && part.value.endsWith(CUFF_SUFFIX)
 

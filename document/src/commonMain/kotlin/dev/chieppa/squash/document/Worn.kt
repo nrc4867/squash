@@ -34,6 +34,10 @@ fun Character.wornPart(part: PartInstance): WornPart {
     }
 }
 
+/** Whether [part] is the part id of a loose end of a garment in the wardrobe, which the pose may turn as it turns a part's bones. */
+fun Character.isLooseEnd(part: PartId): Boolean =
+    wardrobe.garments.any { garment -> garment.looseEnds.any { looseEndPartId(garment.id, it.id) == part } }
+
 /** The part's worn state, or null if it is not in this character. */
 fun Character.wornPart(id: PartId): WornPart? = part(id)?.let { wornPart(it) }
 

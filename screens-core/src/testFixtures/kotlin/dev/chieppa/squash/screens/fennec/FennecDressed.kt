@@ -13,6 +13,9 @@ import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlot
 import dev.chieppa.squash.document.GarmentSlotId
+import dev.chieppa.squash.document.LooseEnd
+import dev.chieppa.squash.document.LooseEndId
+import dev.chieppa.squash.document.SetLooseEnd
 import dev.chieppa.squash.document.Outfit
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PickGarment
@@ -33,6 +36,9 @@ val HOOD = GarmentId("hood")
 val CAP = GarmentId("cap")
 val BOOTS = GarmentId("boots")
 val SCARF = GarmentId("scarf")
+
+/** The scarf's loose end, hanging from the middle of its hem under the chin. */
+val SCARF_END = LooseEndId("scarf-end")
 val NECK_SLOT = GarmentSlotId("neck")
 val SCARF_WOOL = SlotName("scarf")
 val FEET_SLOT = GarmentSlotId("feet")
@@ -65,6 +71,9 @@ private const val TOES = "toes"
 /** The boots' shafts run up the legs from this far along them. */
 private const val SHAFT_FROM = 0.72f
 
+/** Where round the scarf's hem its loose end hangs: under the chin, a little to one side. */
+private const val SCARF_END_V = 0.55f
+
 /** The scarf wraps the torso's front end where the head joins, a narrow band over the sweater, one layer out. */
 private const val SCARF_FROM = 0.93f
 private const val SCARF_TO = 1.02f
@@ -79,7 +88,7 @@ private val SWEATER_SIDE = loop(
     p(0.91f, 0.16f), p(0.82f, -0.10f), p(0.64f, -0.20f), p(0.38f, -0.20f),
 )
 
-/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots that drop the paws' toes, a scarf over the sweater, and Winter (cap, scarf, sweater, boots), Hooded and Bare outfits. */
+/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots that drop the paws' toes, a scarf over the sweater with a loose end, and Winter (cap, scarf, sweater, boots), Hooded and Bare outfits. */
 fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SWEATER_WOOL, SlotColor(0.20f, 0.42f, 0.52f)),
     SetPaletteSlot(HOOD_WOOL, SlotColor(0.78f, 0.24f, 0.22f)),
@@ -110,6 +119,7 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
     AddGarment(Garment(SCARF, "Scarf", NECK_SLOT, layer = SCARF_LAYER)),
     CoverPart(SCARF, GarmentBranch(TORSO, SCARF_FROM, SCARF_TO)),
     SetGarmentColor(SCARF, SCARF_WOOL),
+    SetLooseEnd(SCARF, LooseEnd(SCARF_END, TORSO, v = SCARF_END_V)),
     AddOutfit(Outfit(WINTER, "Winter")),
     PickGarment(WINTER, HEAD_SLOT, CAP),
     PickGarment(WINTER, BODY_SLOT, SWEATER),

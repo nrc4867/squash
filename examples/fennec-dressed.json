@@ -25089,7 +25089,14 @@
                             "to": 1.02
                         }
                     ],
-                    "color": "scarf"
+                    "color": "scarf",
+                    "looseEnds": [
+                        {
+                            "id": "scarf-end",
+                            "branch": "torso",
+                            "v": 0.55
+                        }
+                    ]
                 }
             ],
             "slots": [

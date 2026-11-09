@@ -74,7 +74,7 @@ class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSe
  * runs between parts and throws to stop a stale run.
  */
 fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, checkCancelled: () -> Unit = {}, reach: JointReach = JointReach.GUESSED): Rig {
-    val parts = character.parts.filter { it.id != null && it.covering == null }.map(::RiggedPart)
+    val parts = character.parts.filter { it.id != null && it.covering == null && it.hanging == null }.map(::RiggedPart)
     val bones = boneTree(parts)
     val index = bones.withIndex().associate { (i, bone) -> bone.name to i }
     val byId = parts.associateBy { it.id }
@@ -90,7 +90,8 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
         )
     }
     val dressed = character.parts.mapNotNull { placed -> placed.covering?.let { covering -> rigged.firstOrNull { it.id == covering.part }?.let { branchRigPart(placed, character.part(covering.part) ?: return@mapNotNull null, it) } } }
-    return Rig(bones, rigged + dressed, seamsOf(parts, byId, index, reach))
+    val hung = looseEndRigs(character, rigged + dressed, bones)
+    return Rig(bones + hung.flatMap { it.bones }, rigged + dressed + hung.map { it.part }, seamsOf(parts, byId, index, reach))
 }
 
 private fun seamsOf(parts: List<RiggedPart>, byId: Map<PartId, RiggedPart>, index: Map<BoneName, Int>, reach: JointReach): List<RigSeam> = parts.mapNotNull { part ->

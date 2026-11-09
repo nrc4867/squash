@@ -15,6 +15,10 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetPose
+import dev.chieppa.squash.document.looseEndPartId
+import dev.chieppa.squash.rig.looseJoint
+import dev.chieppa.squash.screens.fennec.SCARF
+import dev.chieppa.squash.screens.fennec.SCARF_END
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.ViewsScene
@@ -67,9 +71,10 @@ import org.junit.jupiter.api.Tag
 private const val DRESSED_WIDTH = 1440
 private const val DRESSED_HEIGHT = 900
 
-/** How far the Pose case bends the left front knee and turns the head, in degrees. */
+/** How far the Pose case bends the left front knee, turns the head and swings the scarf's loose end, in degrees. */
 private const val KNEE_BENT = 60f
 private const val HEAD_TURNED = 20f
+private const val END_SWUNG = 35f
 
 private object NoDressedFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -178,7 +183,7 @@ class DressedFennecSmokeTest {
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
         waitForIdle()
         val session = assertNotNull(bench.state.session.value)
-        session.send(SetPose(Pose(listOf(BonePose(FRONT_LEG_L, "knee", KNEE_BENT), BonePose(HEAD, "neck", HEAD_TURNED)))))
+        session.send(SetPose(Pose(listOf(BonePose(FRONT_LEG_L, "knee", KNEE_BENT), BonePose(HEAD, "neck", HEAD_TURNED), BonePose(looseEndPartId(SCARF, SCARF_END), looseJoint(1), END_SWUNG)))))
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dressed-pose")
     }
 }
