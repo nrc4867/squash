@@ -1,7 +1,6 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.isCuffPart
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.ShellInside
@@ -32,8 +31,8 @@ private fun aroundIn(v: Float, from: Float, to: Float): Boolean {
     return ahead <= to - from
 }
 
-/** What every garment branch this character wears covers. */
-fun AssembledCharacter.garmentCovers(): List<GarmentCover> = parts.filter { part -> part.covering != null && part.id?.let(::isCuffPart) == false }.map(::coverOf)
+/** What every garment branch and cuff this character wears covers of the body. */
+fun AssembledCharacter.garmentCovers(): List<GarmentCover> = parts.filter { part -> part.covering != null }.map(::coverOf)
 
 /** The inside test of this branch or cuff, in body space. */
 internal fun PlacedPart.shellInside(): ShellInside = ShellInside(surface.patches.single(), { origin + surface.shown(it) }, surface::shown)

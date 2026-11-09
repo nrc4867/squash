@@ -38,7 +38,7 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
 /**
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
- * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches cover hidden, and each layer's faces
+ * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches and cuffs cover hidden, and each layer's faces
  * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
  * loose ends hung from their branches. See HLD: data-model, Garments.
  */
@@ -64,7 +64,7 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
     }
     if (dressed.isEmpty()) return this
     val ends = dressing.worn.flatMap { garment -> looseEnds(garment, dressed, this) }
-    val all = covers.flatten()
+    val all = layers.flatten().map(::coverOf)
     val body = parts.map { part ->
         checkCancelled()
         part.coveredBy(all)

@@ -6,7 +6,9 @@ import dev.chieppa.squash.character.build.Dressing
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assembleNow
 import dev.chieppa.squash.character.build.dressedIn
+import dev.chieppa.squash.character.build.partGrids
 import dev.chieppa.squash.character.build.socketCrease
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
@@ -94,6 +96,22 @@ class GarmentInkTest {
         val reach = assertNotNull(assertNotNull(wearing(long).part(cuffPartId(cap, earL))).covering).to
         assertEquals(0.2f, reach - short, NEAR)
         assertTrue(short < 0.6f, "a short band, reaching $short along the ear")
+    }
+
+    @Test
+    fun aCuffHidesTheSkinUnderIt() {
+        val bare = assertNotNull(body.part(earL)).surface.mesh.indices.size
+        val cuffed = assertNotNull(wearing(capOnly).part(earL)).surface.mesh.indices.size
+        assertTrue(cuffed < bare, "the ear's root under its cuff is hidden: $cuffed of $bare")
+    }
+
+    @Test
+    fun noContourRunsAlongHiddenSkin() {
+        val side = { _: Vec3 -> Vec3(0f, 0f, 1f) }
+        fun contourPoints(character: AssembledCharacter) = partGrids(assertNotNull(character.part(torso))).sumOf { grid -> grid.contours(side).sumOf { it.points.size } }
+        val bare = contourPoints(body)
+        val covered = contourPoints(wearing(sweaterOn))
+        assertTrue(covered < bare, "the torso's outline under the sweater is left out: $covered of $bare points")
     }
 
     @Test

@@ -27,8 +27,59 @@ fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}): M
         id to partGrids(placed)
     }.toMap()
 
-/** [placed]'s patches in body space, with lines of plain weight. */
-fun partGrids(placed: PlacedPart): List<LineGrid> = placed.surface.patches.map { LineGrid.of(it, placed.origin, placed.surface::shown) }
+/** [placed]'s patches in body space, with lines of plain weight, and none along the skin a garment hides. */
+fun partGrids(placed: PlacedPart): List<LineGrid> {
+    val hidden = hiddenPoints(placed)
+    return placed.surface.patches.mapIndexed { i, patch ->
+        val grid = LineGrid.of(patch, placed.origin, placed.surface::shown)
+        hidden?.get(i)?.let(grid::hiding) ?: grid
+    }
+}
+
+/**
+ * For each of [placed]'s patches, which of its grid points no face of its mesh has as a corner, as where a garment hides the skin; null
+ * when every point has one. The flags travel with the grid, so they hold in a pose.
+ */
+internal fun hiddenPoints(placed: PlacedPart): List<BooleanArray>? {
+    val patches = placed.surface.patches
+    val total = patches.sumOf { it.nu * it.nv }
+    val used = BooleanArray(total)
+    for (index in placed.surface.mesh.indices) if (index < total) used[index] = true
+    if (used.all { it }) return null
+    var start = 0
+    return patches.map { patch ->
+        val count = patch.nu * patch.nv
+        BooleanArray(count) { !used[start + it] }.also { start += count }
+    }
+}
+
+/** [runs], points on [placed], cut where they cross the skin a garment hides there; [runs] itself where none does. */
+private fun shownRuns(placed: PlacedPart, runs: List<List<ResolvedPoint>>): List<List<ResolvedPoint>> {
+    val hidden = hiddenPoints(placed) ?: return runs
+    val patches = placed.surface.patches
+    fun hides(point: ResolvedPoint): Boolean {
+        val p = patches.indexOfFirst { it.name == point.anchor.patch }.takeIf { it >= 0 } ?: return false
+        val patch = patches[p]
+        val ring = patch.ringUs.indices.minBy { kotlin.math.abs(patch.ringUs[it] - point.anchor.u) }
+        val column = kotlin.math.round(point.anchor.v * patch.segments).toInt().mod(patch.nv)
+        return hidden[p][patch.index(ring, column)]
+    }
+    if (runs.none { run -> run.any(::hides) }) return runs
+    return runs.flatMap { run ->
+        val kept = mutableListOf<List<ResolvedPoint>>()
+        var stretch = mutableListOf<ResolvedPoint>()
+        for (point in run) {
+            if (hides(point)) {
+                if (stretch.size >= 2) kept += stretch
+                stretch = mutableListOf()
+            } else {
+                stretch += point
+            }
+        }
+        if (stretch.size >= 2) kept += stretch
+        kept
+    }
+}
 
 /** [character] with [grids] and [creases] weighed by each part's line weights in [work]. A weight reaches only the parts its anchors name. */
 fun bodyLines(
@@ -121,7 +172,7 @@ private class LineWeighing(character: AssembledCharacter, private val work: Body
         val id = requireNotNull(placed.id)
         val own = strokes[id]
         val weighed = grids.map { grid -> if (own == null) grid else grid.weighted { lineWeightAt(it, own) } }
-        val runs = crease?.runs.orEmpty().map { WeightedRun(it, weigh(it)) }
+        val runs = shownRuns(placed, crease?.runs.orEmpty()).map { WeightedRun(it, weigh(it)) }
         return PartLines(placed, weighed, runs, markWeights(id))
     }
 

@@ -26,19 +26,28 @@ class LineGrid private constructor(
     private val weights: FloatArray,
     private val center: Vec3,
     private val reach: Float,
+    private val hidden: BooleanArray? = null,
 ) {
     /** This grid with a line weight of [weightAt] at each point. */
     fun weighted(weightAt: (Vec3) -> Float): LineGrid =
-        LineGrid(patch, positions, faceNormals, FloatArray(positions.size) { weightAt(positions[it]) }, center, reach)
+        LineGrid(patch, positions, faceNormals, FloatArray(positions.size) { weightAt(positions[it]) }, center, reach, hidden)
+
+    /** This grid with no contour along an edge both of whose points [hidden] marks, as where a garment hides the skin. */
+    fun hiding(hidden: BooleanArray): LineGrid {
+        require(hidden.size == positions.size) { "${hidden.size} flags for ${positions.size} points" }
+        return LineGrid(patch, positions, faceNormals, weights, center, reach, hidden)
+    }
 
     /**
      * Where this surface turns edge on to a viewer that [toViewer] gives the direction of from any point: the mesh's edges between a
      * triangle facing the viewer and one facing away, so a line along them lies on the edge the fill shows, sawteeth and all. A closed patch's end rings count against the faces that close them. An edge of an open
-     * patch has one triangle and is no contour, unless its faces meet round it ([Patch.meetsAround]), as a sheet's do at its edge. Ends of runs meeting at a pole are joined.
+     * patch has one triangle and is no contour, unless its faces meet round it ([Patch.meetsAround]), as a sheet's do at its edge. Ends of runs meeting at a pole are joined. An
+     * edge between two hidden points is no contour.
      */
     fun contours(toViewer: (Vec3) -> Vec3): List<ContourRun> {
         val facing = BooleanArray(faceNormals.size) { face -> (faceNormals[face] dot toViewer(positions[faceCorner(face)])) > 0f }
-        val edges = silhouetteEdges(facing)
+        val hidden = hidden
+        val edges = silhouetteEdges(facing).let { all -> if (hidden == null) all else all.filter { (a, b) -> !hidden[a] || !hidden[b] } }
         val pieces = connectedPieces(edges)
         val runs = walkedEdges(edges).map { run -> IndexedRun(run.map { ContourPoint(positions[it], weights[it]) }, pieces.getValue(run.first())) }
         return joinedAtEnds(runs, reach * JOIN_SHARE)
