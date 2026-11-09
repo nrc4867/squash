@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetPose
+import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.isBranchPart
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.rig.RigPart
@@ -12,12 +13,14 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
+import dev.chieppa.squash.screens.person.ARM_L
+import dev.chieppa.squash.screens.person.personDressedDocument
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import org.junit.jupiter.api.Tag
 
 /**
- * What a pose leaves showing under the dressed fennec's clothes: of the vertices hidden at rest that lie inside a garment then, on the
+ * What a pose leaves showing under the dressed fennec's and the dressed person's clothes: of the vertices hidden at rest that lie inside a garment then, on the
  * body and on inner layers, how many a pose carries outside every garment's surface, where they leave a hole. Read on the posed meshes by the
  * nearest garment vertex's normal. Numbers go to the test's output.
  */
@@ -25,7 +28,7 @@ import org.junit.jupiter.api.Tag
 class GarmentGapBenchTest {
     private val work = TestWork()
 
-    private val poses = listOf(
+    private val fennecPoses = listOf(
         "rest" to Pose(),
         "knee 60" to Pose(listOf(BonePose(FRONT_LEG_L, "knee", 60f))),
         "knee 110" to Pose(listOf(BonePose(FRONT_LEG_L, "knee", 110f))),
@@ -33,9 +36,22 @@ class GarmentGapBenchTest {
         "neck 40" to Pose(listOf(BonePose(HEAD, "neck", 40f))),
     )
 
+    private val personPoses = listOf(
+        "rest" to Pose(),
+        "elbow 90" to Pose(listOf(BonePose(ARM_L, "elbow", 90f))),
+        "elbow 120" to Pose(listOf(BonePose(ARM_L, "elbow", 120f))),
+        "elbow 150" to Pose(listOf(BonePose(ARM_L, "elbow", 150f))),
+        "shoulder 80" to Pose(listOf(BonePose(ARM_L, "shoulder", 80f))),
+    )
+
     @Test
-    fun theDressedFennec() {
-        val session = CharacterSession(fennecDressedDocument(), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
+    fun theDressedFennec() = measure("dressed fennec", fennecDressedDocument(), fennecPoses)
+
+    @Test
+    fun theDressedPerson() = measure("dressed person", personDressedDocument(), personPoses)
+
+    private fun measure(character: String, document: SquashDocument, poses: List<Pair<String, Pose>>) {
+        val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
         val pose = SessionPose(session)
         work.settle(session)
         val rig = assertNotNull(pose.rig.rig.output.value)
@@ -67,10 +83,10 @@ class GarmentGapBenchTest {
             }
             if (under == null) {
                 under = inside
-                println("dressed fennec at rest: ${inside.size} hidden vertices inside a garment")
+                println("$character at rest: ${inside.size} hidden vertices inside a garment")
                 continue
             }
-            println("dressed fennec, $name: $open of ${under!!.size} vertices hidden inside a garment at rest now outside every garment; by part $byPart")
+            println("$character, $name: $open of ${under!!.size} vertices hidden inside a garment at rest now outside every garment; by part $byPart")
         }
     }
 
