@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.screens.edit.outlineTarget
+import dev.chieppa.squash.screens.edit.outlineWriter
+import dev.chieppa.squash.screens.edit.editedOutline
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
@@ -16,7 +19,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.character.build.oversketchedOutline
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
-import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.sections
 import dev.chieppa.squash.geom.OversketchOptions
@@ -48,7 +50,8 @@ import dev.chieppa.stretch.frame.buildOverlay
 /**
  * Draw outline: in a pane with no outline yet, a stroke becomes one; over a drawn outline it is an oversketch, replacing
  * only the span it covers, and a stroke too far from the outline does nothing. Either way the stroke is previewed as it
- * grows, with what the build would read of it and what release would add and discard, and ends as one [SetOutline], so one
+ * grows, with what the build would read of it and what release would add and discard, and ends as one command on what the
+ * outline tools draw on ([outlineTarget]: the part's outline, or in Dress a garment's), so one
  * stroke is one undo step. A stroke the pane loses midway sends nothing. The Outline drawer's assists all act on the samples
  * or the options, ahead of the preview and the release alike, so the two cannot part. With Hold to snap on, a stroke whose
  * pointer rests turns into the clean shape it best reads as, which the pointer adjusts until release and which stands in
@@ -175,11 +178,12 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         val pixel = camera.planePixel
         val curves = state.curves
         val existing = state.editedOutline(view)
+        val writer = state.outlineWriter() ?: return
         val stroke = strokeNow()
         if (existing == null) {
             val fitted = fittedOutline(stroke.samples, ends, pixel, strokeOptions(view, stroke)) ?: return
             curves.recordFit(fitted.curve, fitted.errorPixels)
-            session.send(SetOutline(part, view, fitted.curve, state.thisSide))
+            writer(view, fitted.curve)?.let(session::send)
             return
         }
         val done = oversketchedOutline(existing, stroke.samples, ends, pixel, oversketchOptions(view, stroke)) ?: return
@@ -189,7 +193,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
         }
         curves.refit = Refit(part, view, done.curve, done.firstSection, done.replaced, reach)
         curves.selection = null
-        session.send(SetOutline(part, view, done.curve, state.thisSide))
+        writer(view, done.curve)?.let(session::send)
     }
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {

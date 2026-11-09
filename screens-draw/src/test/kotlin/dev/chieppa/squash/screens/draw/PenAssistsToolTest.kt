@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.screens.edit.editedOutline
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest

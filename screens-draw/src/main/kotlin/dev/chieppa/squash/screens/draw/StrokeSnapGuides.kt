@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.draw
 
+import dev.chieppa.squash.screens.edit.editedOutline
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.PartExtents

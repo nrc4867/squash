@@ -14,7 +14,6 @@ import dev.chieppa.squash.document.CurveLimit
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartInstance
-import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.handlesAt
 import dev.chieppa.squash.document.isSmooth
@@ -81,7 +80,7 @@ private fun SelectedPointSection(state: AppState, session: CharacterSession, par
     val ends = strokeEnds(selection.view, session.builtTemplate(part).openEnd) as? StrokeEnds.CutAtPlane
     val limit = ends?.let { CurveLimit(it.plane, it.above) }
     val point = curve.points[selection.index]
-    fun moveTo(to: CurvePoint) = session.send(SetOutline(part.id, selection.view, curve.moved(selection.index, to, limit), state.thisSide))
+    fun moveTo(to: CurvePoint) = state.outlineWriter()?.invoke(selection.view, curve.moved(selection.index, to, limit))?.let(session::send)
     DrawerSection(stringResource(Res.string.edit_selected_point)) {
         val x = stringResource(Res.string.edit_x)
         val y = stringResource(Res.string.edit_y)
@@ -123,7 +122,7 @@ private fun HandleRow(
             { kind ->
                 state.curves.markCorner(key, kind == HandleKind.CORNER)
                 if (kind == HandleKind.SMOOTH && !curve.isSmooth(anchor)) {
-                    session.send(SetOutline(part.id, selection.view, curve.smoothed(anchor, limit), state.thisSide))
+                    state.outlineWriter()?.invoke(selection.view, curve.smoothed(anchor, limit))?.let(session::send)
                 }
             },
             { labels.getValue(it) },

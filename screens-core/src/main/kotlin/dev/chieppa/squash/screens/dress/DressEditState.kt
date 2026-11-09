@@ -16,6 +16,9 @@ class DressEditState {
     /** The garment the inspector and the garment tools work on. */
     val garment = MutableStateFlow<GarmentId?>(null)
 
+    /** The part whose Redraw by the picked garment the outline tools draw on, or null for the garment's branches. */
+    val redrawing = MutableStateFlow<dev.chieppa.squash.document.PartId?>(null)
+
     /** The slot of the shown outfit whose popover is open. */
     val openSlot = MutableStateFlow<GarmentSlotId?>(null)
 
@@ -55,6 +58,7 @@ class DressEditState {
 
     fun clear() {
         garment.value = null
+        redrawing.value = null
         openSlot.value = null
         hidden.value = emptySet()
     }

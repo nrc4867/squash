@@ -138,7 +138,11 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
         BuildTool.COVER -> cover
-        BuildTool.DRAW_GARMENT, BuildTool.EDIT_GARMENT, BuildTool.ERASE_GARMENT, BuildTool.SMOOTH_GARMENT, BuildTool.LOOSE_END -> garmentSelect
+        BuildTool.DRAW_GARMENT -> draw
+        BuildTool.EDIT_GARMENT -> edit
+        BuildTool.ERASE_GARMENT -> erase
+        BuildTool.SMOOTH_GARMENT -> smooth
+        BuildTool.LOOSE_END -> garmentSelect
         BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> if (stage == Stage.DRESS) garmentSelect else selectPart
     }
     val tool = traceHandles.over(armedTool)

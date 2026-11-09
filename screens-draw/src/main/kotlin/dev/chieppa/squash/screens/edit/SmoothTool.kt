@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.edit
 
+import dev.chieppa.squash.document.DocumentCommand
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
@@ -23,7 +24,6 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.replacedSections
@@ -55,7 +55,7 @@ private const val RADIUS_OF_SIZE = 0.5f
 private class BrushSpot(val view: View, val pixel: Offset)
 
 /** Where in the document a drag is working. */
-private class SmoothTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val thisSide: Boolean, val template: PartTemplate)
+private class SmoothTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val write: (View, OutlineCurve?) -> DocumentCommand?, val template: PartTemplate)
 
 /**
  * Smooth: a ring follows the pointer over a pane with an outline, with the stretch under it dashed as affected. A drag calms
@@ -102,7 +102,7 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
         val part = state.selectedPart.value ?: return null
         val instance = session.document.value.character.part(part) ?: return null
         val curve = state.editedOutline(view) ?: return null
-        return SmoothTarget(session, part, view, curve, state.thisSide, session.builtTemplate(instance))
+        return SmoothTarget(session, part, view, curve, state.outlineWriter() ?: return null, session.builtTemplate(instance))
     }
 
     /** Follows [down] until it lets go, which commits what it smoothed, or goes away, which restores the start. */
@@ -120,7 +120,7 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
             if (curve == last) return
             last = curve
             val open = gesture ?: target.session.history.begin().also { gesture = it }
-            open.update(SetOutline(target.part, target.view, curve, target.thisSide))
+            target.write(target.view, curve)?.let(open::update)
         }
         dragging = true
         try {

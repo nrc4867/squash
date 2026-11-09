@@ -14,7 +14,6 @@ import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.withoutSections
 import dev.chieppa.squash.geom.BezierPath
@@ -114,7 +113,7 @@ class EraseTool(private val state: AppState, var strokeLook: StrokeLook, var loo
             val reach = refitReach(view, outline, it, session.builtTemplate(instance))
             Refit(part, view, it, first, done.sections.size, reach)
         }
-        session.send(SetOutline(part, view, after, state.thisSide))
+        state.outlineWriter()?.invoke(view, after)?.let(session::send)
     }
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {

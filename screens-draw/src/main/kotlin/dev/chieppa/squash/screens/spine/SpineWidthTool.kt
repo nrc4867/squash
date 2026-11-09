@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.spine
 
+import dev.chieppa.squash.screens.edit.editedOutline
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable

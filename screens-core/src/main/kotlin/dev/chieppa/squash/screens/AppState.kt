@@ -6,7 +6,6 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.rig.SessionPose
-import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
@@ -185,13 +184,6 @@ class AppState(
 
     /** Whether an edit writes the selected side alone, as [mirror] off asks. */
     val thisSide: Boolean get() = !mirror.value
-
-    /** What an edit of the selected part in [view] starts from, which is where the edit will land. */
-    fun editedOutline(view: View): OutlineCurve? {
-        val character = session.value?.document?.value?.character ?: return null
-        val part = selectedPart.value?.let(character::part) ?: return null
-        return character.editBase(part, thisSide).outlines[view]
-    }
 
     /** Makes [document] the open character. Throws when it pins a body plan or template that is not loaded. */
     fun open(document: SquashDocument, path: String? = null): CharacterSession {

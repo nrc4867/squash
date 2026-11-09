@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -130,7 +131,7 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
             active = shownActive,
             toolOverlays = paneOutlineOverlays(selection, cameras, tool, rememberOutlineLook(), disagreements, shownActive),
             fullOverlay = tool?.fullOverlay(fullView) ?: ViewportOverlay.Empty,
-            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true || rig != null),
+            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true || rig != null || stage == Stage.DRESS),
             layout = layout,
             color = color,
             surface = surface,

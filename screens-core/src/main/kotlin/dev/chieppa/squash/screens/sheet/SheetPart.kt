@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.screens.edit.dressTarget
+import dev.chieppa.squash.screens.edit.outlinesOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -125,7 +127,10 @@ private fun rememberPosedMeshes(state: AppState, atRest: Boolean): Map<PartId, R
     return if (atRest) null else meshes
 }
 
-/** The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet. */
+/**
+ * The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet.
+ * In Dress its outlines are those of what the outline tools draw on, the picked garment's branch over it or its Redraw.
+ */
 @Composable
 fun rememberSheetSelection(state: AppState): SheetSelection? {
     val session by state.session.collectAsState()
@@ -136,13 +141,17 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val instance = document.character.part(selected) ?: return null
     val character by remember(open) { open.assembly.output }.collectAsState()
     val mirror by state.mirror.collectAsState()
-    val data = document.character.resolved(instance)
-    val outlines = data.outlines
-    val scale = data.params[SIZE_PARAM] ?: 1f
-    val overridden = document.character.overridesOf(instance).outlines.keys
-    val hidden = if (mirror) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
-    val held by state.rig.held.collectAsState()
     val stage by state.stage.collectAsState()
+    val garment by state.dress.garment.collectAsState()
+    val redrawing by state.dress.redrawing.collectAsState()
+    val dressing = stage == Stage.DRESS
+    val data = document.character.resolved(instance)
+    val target = if (dressing) garment?.let { document.character.dressTarget(it, selected, redrawing) } else null
+    val outlines = if (dressing) target?.let(document.character::outlinesOf).orEmpty() else data.outlines
+    val scale = data.params[SIZE_PARAM] ?: 1f
+    val overridden = if (dressing) emptySet() else document.character.overridesOf(instance).outlines.keys
+    val hidden = if (mirror && !dressing) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
+    val held by state.rig.held.collectAsState()
     val poseView by state.poseView.collectAsState()
     val posed = rememberPosedMeshes(state, (held ?: document.character.pose).isRest || !posesPane(stage, poseView, locked = false))
     val look by state.dress.look(stage == Stage.DRESS).collectAsState()

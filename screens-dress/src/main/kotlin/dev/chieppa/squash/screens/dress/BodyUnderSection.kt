@@ -111,7 +111,12 @@ private fun PartChangeRows(state: AppState, session: CharacterSession, character
         listOf<ChangeKind?>(ChangeKind.HIDE, ChangeKind.THROUGH, ChangeKind.REDRAW, ChangeKind.SWAP),
         kindOf(row.change),
         { kind ->
-            if (kind != null) session.send(SetBodyPartChange(garment.id, part.id, changeFor(kind, row.change, character, part, swaps.firstOrNull())))
+            if (kind != null) {
+                val next = changeFor(kind, row.change, character, part, swaps.firstOrNull())
+                session.send(SetBodyPartChange(garment.id, part.id, next))
+                state.dress.redrawing.value = part.id.takeIf { next is BodyPartChange.Redraw }
+                if (next is BodyPartChange.Redraw) state.selectedPart.value = part.id
+            }
         },
         { it?.let(labels::getValue).orEmpty() },
         Modifier.testTag(DressTags.change(part.id)),

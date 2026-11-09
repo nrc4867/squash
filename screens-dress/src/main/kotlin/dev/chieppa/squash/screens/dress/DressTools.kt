@@ -66,7 +66,10 @@ abstract class DressPressTool(protected val state: AppState) : PaneTool {
     }
 }
 
-/** What a press does in Dress with no garment tool working: on a garment it picks the garment and selects the part its branch covers, on the body the part. */
+/**
+ * What a press does in Dress with no garment tool working: on a garment it picks the garment and selects the part its branch covers,
+ * on the body the part, a pair's leader either way.
+ */
 @Stable
 class GarmentSelectTool(state: AppState) : DressPressTool(state) {
     override val showsWhole: Boolean get() = false
@@ -75,9 +78,9 @@ class GarmentSelectTool(state: AppState) : DressPressTool(state) {
         when (hit) {
             is DressHit.OnGarment -> {
                 state.dress.garment.value = hit.covers.garment
-                state.selectedPart.value = hit.covers.part
+                state.selectLeader(hit.covers.part)
             }
-            is DressHit.OnBody -> state.selectedPart.value = hit.part
+            is DressHit.OnBody -> state.selectLeader(hit.part)
         }
     }
 }
@@ -89,11 +92,17 @@ class CoverTool(state: AppState) : DressPressTool(state) {
 
     override fun pressed(hit: DressHit) {
         val part = (hit as? DressHit.OnBody)?.part ?: return
-        state.selectedPart.value = part
+        state.selectLeader(part)
         val session = state.session.value ?: return
         val garment = state.dress.garment.value?.let(session.document.value.character.wardrobe::garment) ?: return
         coverToggle(session.document.value.character, garment, part)?.let(session::send)
     }
+}
+
+/** Selects [part], or the leader of its pair, since a garment's branch on a pair is drawn on its leader. */
+fun AppState.selectLeader(part: PartId) {
+    val character = session.value?.document?.value?.character
+    selectedPart.value = character?.part(part)?.let(character::leaderOf)?.id ?: part
 }
 
 /** The command a Cover press on [part] sends for [garment]: its branch there taken off, or a new branch over it, keyed by the pair's leader; null for no part. */

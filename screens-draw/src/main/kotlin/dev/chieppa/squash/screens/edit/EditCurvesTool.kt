@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.edit
 
+import dev.chieppa.squash.document.DocumentCommand
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
@@ -15,7 +16,6 @@ import dev.chieppa.squash.document.CurveLimit
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.changedSections
@@ -32,7 +32,7 @@ import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
 
 /** Where in the document a drag is working. */
-private class DragTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val index: Int, val limit: CurveLimit?, val thisSide: Boolean, val template: PartTemplate)
+private class DragTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val index: Int, val limit: CurveLimit?, val write: (View, OutlineCurve?) -> DocumentCommand?, val template: PartTemplate)
 
 /**
  * Edit curves: a locked pane shows the stored outline's anchors and handles, and a press on one selects it and drags it.
@@ -72,7 +72,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
         }
         val limit = (strokeEnds(view, session.builtTemplate(instance).openEnd) as? StrokeEnds.CutAtPlane)
             ?.let { CurveLimit(it.plane, it.above) }
-        return DragTarget(session, part, view, curve, index, limit, state.thisSide, session.builtTemplate(instance))
+        return DragTarget(session, part, view, curve, index, limit, state.outlineWriter() ?: return null, session.builtTemplate(instance))
     }
 
     /** Follows [id] until it lets go, which commits what it moved, or goes away, which restores the start. */
@@ -96,7 +96,7 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
                 val to = CurvePoint(start.x + plane.x - grabbed.x, start.y + plane.y - grabbed.y)
                 last = target.curve.moved(target.index, to, target.limit, corner)
                 val open = gesture ?: target.session.history.begin().also { gesture = it }
-                open.update(SetOutline(target.part, target.view, last, target.thisSide))
+                target.write(target.view, last)?.let(open::update)
             }
         } finally {
             state.curves.dragging = false
