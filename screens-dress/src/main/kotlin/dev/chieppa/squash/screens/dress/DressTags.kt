@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.dress
 
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
+import dev.chieppa.squash.document.LooseEndId
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
@@ -46,5 +47,9 @@ object DressTags {
     fun hole(part: PartId) = "dress.holes.${part.value}"
     fun outfit(outfit: OutfitId) = "dress.band.outfit.${outfit.value}"
     fun slot(slot: GarmentSlotId) = "dress.band.slot.${slot.value}"
+    fun looseEnd(end: LooseEndId) = "dress.looseEnd.${end.value}"
+    fun follow(end: LooseEndId) = "dress.looseEnd.follow.${end.value}"
+    fun spring(end: LooseEndId) = "dress.looseEnd.spring.${end.value}"
+    fun collide(end: LooseEndId) = "dress.looseEnd.collide.${end.value}"
     fun pick(garment: GarmentId) = "dress.slot.pick.${garment.value}"
 }

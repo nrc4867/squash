@@ -658,6 +658,7 @@
     <string name="dress_loose_end_of">%1$s · loose end</string>
     <string name="dress_loose_end">End</string>
     <string name="dress_loose_bones">%1$d bones</string>
+    <string name="dress_loose_end_on">%1$s · %2$s</string>
     <string name="dress_follow_through">Follow-through</string>
     <string name="dress_spring">Spring</string>
     <string name="dress_collide_body">Collide body</string>

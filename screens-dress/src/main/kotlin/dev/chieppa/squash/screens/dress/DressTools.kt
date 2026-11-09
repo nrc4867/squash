@@ -26,9 +26,9 @@ import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.bodyThrough
 import dev.chieppa.squash.screens.surface.surfaceHit
 
-/** What a press in Dress lands on: a garment's branch or cuff, by what it [covers], or a body [part]. */
+/** What a press in Dress lands on: a garment's branch or cuff, by what it [covers] and at [v] round the body under it, or a body [part]. */
 sealed interface DressHit {
-    data class OnGarment(val covers: Covering) : DressHit
+    data class OnGarment(val covers: Covering, val v: Float) : DressHit
     data class OnBody(val part: PartId) : DressHit
 }
 
@@ -36,8 +36,10 @@ sealed interface DressHit {
 fun AppState.dressHit(pixel: Offset, sight: SurfaceView, garments: Boolean = true): DressHit? {
     val body = bodyThrough(sight) ?: return null
     val hit = surfaceHit(body, pixel, sight, garments) ?: return null
-    val covering = body.part(hit.part)?.covering
-    return if (covering != null) DressHit.OnGarment(covering) else DressHit.OnBody(hit.part)
+    val placed = body.part(hit.part)
+    val covering = placed?.covering ?: return DressHit.OnBody(hit.part)
+    val closed = placed.surface.patches.firstOrNull { it.name == hit.patch }?.closedV ?: true
+    return DressHit.OnGarment(covering, if (closed) hit.v else covering.fromV + hit.v * (covering.toV - covering.fromV))
 }
 
 /** A Dress tool answering a single press, in a locked pane or a free one. A press on nothing is left to the pane. */
@@ -115,6 +117,30 @@ fun coverToggle(character: Character, garment: Garment, part: PartId): DocumentC
 
 @Composable
 fun rememberGarmentSelectTool(state: AppState): GarmentSelectTool = remember(state) { GarmentSelectTool(state) }
+
+/**
+ * Loose end: a press on a garment picks it and hangs a new loose end from its branch at the place pressed round it, with the tool's
+ * bones and From hem; a press on the body selects the part.
+ */
+@Stable
+class LooseEndTool(state: AppState) : DressPressTool(state) {
+    override fun pressed(hit: DressHit) {
+        when (hit) {
+            is DressHit.OnGarment -> {
+                state.dress.garment.value = hit.covers.garment
+                state.selectLeader(hit.covers.part)
+                val session = state.session.value ?: return
+                val character = session.document.value.character
+                val garment = character.wardrobe.garment(hit.covers.garment) ?: return
+                character.newLooseEnd(garment, hit.covers.part, hit.v, state.dress.looseBones.value, state.dress.looseFromHem.value)?.let(session::send)
+            }
+            is DressHit.OnBody -> state.selectLeader(hit.part)
+        }
+    }
+}
+
+@Composable
+fun rememberLooseEndTool(state: AppState): LooseEndTool = remember(state) { LooseEndTool(state) }
 
 @Composable
 fun rememberCoverTool(state: AppState): CoverTool = remember(state) { CoverTool(state) }

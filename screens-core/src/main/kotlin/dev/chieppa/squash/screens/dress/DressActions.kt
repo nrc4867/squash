@@ -3,6 +3,11 @@ package dev.chieppa.squash.screens.dress
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
+import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.LooseEnd
+import dev.chieppa.squash.document.LooseEndId
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetLooseEnd
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlot
@@ -23,10 +28,22 @@ import org.jetbrains.compose.resources.getString
 const val NEW_GARMENT = "garment-"
 const val NEW_SLOT = "slot-"
 const val NEW_OUTFIT = "outfit-"
+const val NEW_LOOSE_END = "end-"
 
 /** The first id from [prefix] and a number that [taken] does not hold, with its number. */
 fun freshNumbered(prefix: String, taken: Set<String>): Pair<String, Int> =
     generateSequence(1) { it + 1 }.map { "$prefix$it" to it }.first { it.first !in taken }
+
+/**
+ * The command that hangs a new loose end of [bones] bones from [garment]'s branch over [part] at [v] round it, from its hem when
+ * [fromHem]; null where the garment does not cover the part.
+ */
+fun Character.newLooseEnd(garment: Garment, part: PartId, v: Float, bones: Int, fromHem: Boolean): SetLooseEnd? {
+    val instance = part(part) ?: return null
+    val branch = covers(garment, instance) ?: return null
+    val (id, _) = freshNumbered(NEW_LOOSE_END, garment.looseEnds.map { it.id.value }.toSet())
+    return SetLooseEnd(garment.id, LooseEnd(LooseEndId(id), branch.part, v, bones, fromHem))
+}
 
 /** A garment new to [wardrobe], named [name] with its number, in no slot and with nothing covered. */
 inline fun newGarmentIn(wardrobe: Wardrobe, name: (Int) -> String): Garment {

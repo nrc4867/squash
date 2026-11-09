@@ -65,6 +65,7 @@ fun DressInspector(state: AppState, session: CharacterSession) {
     if (garment != null) {
         GarmentSection(state, session, character, garment)
         JoinsSection(state, session, character, garment)
+        LooseEndsSection(state, session, character, garment)
         GarmentColorSection(session, character, garment)
         BodyUnderSection(state, session, character, garment)
     }
