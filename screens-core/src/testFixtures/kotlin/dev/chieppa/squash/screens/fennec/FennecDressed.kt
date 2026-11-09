@@ -32,6 +32,9 @@ val SWEATER = GarmentId("sweater")
 val HOOD = GarmentId("hood")
 val CAP = GarmentId("cap")
 val BOOTS = GarmentId("boots")
+val SCARF = GarmentId("scarf")
+val NECK_SLOT = GarmentSlotId("neck")
+val SCARF_WOOL = SlotName("scarf")
 val FEET_SLOT = GarmentSlotId("feet")
 val BOOT_LEATHER = SlotName("boot")
 val HEAD_SLOT = GarmentSlotId("head")
@@ -62,6 +65,10 @@ private const val TOES = "toes"
 /** The boots' shafts run up the legs from this far along them. */
 private const val SHAFT_FROM = 0.72f
 
+/** The scarf wraps the base of the neck, over the sweater, one layer out. */
+private const val SCARF_FROM = 0.84f
+private const val SCARF_LAYER = 2
+
 /** The paws the boots drop the toes of, both sides by their pairs. */
 private val BOOTED = listOf(FRONT_PAW_L, BACK_PAW_L)
 
@@ -71,7 +78,7 @@ private val SWEATER_SIDE = loop(
     p(0.91f, 0.16f), p(0.82f, -0.10f), p(0.64f, -0.20f), p(0.38f, -0.20f),
 )
 
-/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots that drop the paws' toes, and Winter (cap, sweater, boots), Hooded and Bare outfits. */
+/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots that drop the paws' toes, a scarf over the sweater, and Winter (cap, scarf, sweater, boots), Hooded and Bare outfits. */
 fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SWEATER_WOOL, SlotColor(0.20f, 0.42f, 0.52f)),
     SetPaletteSlot(HOOD_WOOL, SlotColor(0.78f, 0.24f, 0.22f)),
@@ -97,10 +104,16 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
         SetBodyPartChange(BOOTS, paw, BodyPartChange.Redraw(PartData(params = mapOf(TOES to 0f)))),
     )
 } + listOf(FRONT_LEG_L, BACK_LEG_L).map { CoverPart(BOOTS, GarmentBranch(it, SHAFT_FROM, 1f)) } + listOf(
+    SetPaletteSlot(SCARF_WOOL, SlotColor(0.92f, 0.82f, 0.36f)),
+    AddGarmentSlot(GarmentSlot(NECK_SLOT, "Neck")),
+    AddGarment(Garment(SCARF, "Scarf", NECK_SLOT, layer = SCARF_LAYER)),
+    CoverPart(SCARF, GarmentBranch(TORSO, SCARF_FROM, SWEATER_TO)),
+    SetGarmentColor(SCARF, SCARF_WOOL),
     AddOutfit(Outfit(WINTER, "Winter")),
     PickGarment(WINTER, HEAD_SLOT, CAP),
     PickGarment(WINTER, BODY_SLOT, SWEATER),
     PickGarment(WINTER, FEET_SLOT, BOOTS),
+    PickGarment(WINTER, NECK_SLOT, SCARF),
     AddOutfit(Outfit(HOODED, "Hooded")),
     PickGarment(HOODED, HEAD_SLOT, HOOD),
     PickGarment(HOODED, BODY_SLOT, SWEATER),

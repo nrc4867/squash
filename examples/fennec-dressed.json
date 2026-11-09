@@ -23686,6 +23686,14 @@
                         "green": 0.24,
                         "blue": 0.18
                     }
+                },
+                {
+                    "name": "scarf",
+                    "color": {
+                        "red": 0.92,
+                        "green": 0.82,
+                        "blue": 0.36
+                    }
                 }
             ]
         },
@@ -25068,6 +25076,20 @@
                             }
                         }
                     }
+                },
+                {
+                    "id": "scarf",
+                    "name": "Scarf",
+                    "slot": "neck",
+                    "layer": 2,
+                    "branches": [
+                        {
+                            "part": "torso",
+                            "from": 0.84,
+                            "to": 0.97
+                        }
+                    ],
+                    "color": "scarf"
                 }
             ],
             "slots": [
@@ -25082,6 +25104,10 @@
                 {
                     "id": "feet",
                     "name": "Feet"
+                },
+                {
+                    "id": "neck",
+                    "name": "Neck"
                 }
             ],
             "outfits": [
@@ -25091,7 +25117,8 @@
                     "picks": {
                         "head": "cap",
                         "body": "sweater",
-                        "feet": "boots"
+                        "feet": "boots",
+                        "neck": "scarf"
                     }
                 },
                 {

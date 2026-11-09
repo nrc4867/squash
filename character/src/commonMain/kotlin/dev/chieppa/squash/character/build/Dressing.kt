@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Garment
+import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.branchPartId
 import dev.chieppa.squash.document.cuffPartId
@@ -35,16 +36,18 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
 
 /**
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
- * placed where that part is; each branch joined by fillet to the branch over the part its own part sits on; a hole and a cuff where
- * a body part comes out through a branch; and the skin the branches cover hidden. See HLD: data-model, Garments.
+ * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
+ * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches cover hidden, and each layer's faces
+ * an outer layer covers hidden. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
-    val dressed = dressing.worn.flatMap { garment ->
+    val layers = dressing.worn.mapIndexed { layer, garment ->
+        val under = dressing.worn.take(layer)
         val branches = garment.branches.flatMap { branch ->
             listOfNotNull(branch.part, dressing.twins[branch.part]).mapNotNull { id ->
                 checkCancelled()
-                part(id)?.let { branchOver(garment, branch, it) }
+                part(id)?.let { branchOver(garment, branch.fittedOver(under, dressing.twins), it) }
             }
         }
         joined(garment, branches, this, checkCancelled).flatMap { branch ->
@@ -52,13 +55,30 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
             listOf(holed) + cuffs
         }
     }
+    val covers = layers.map { parts -> parts.filter { !isCuffPart(requireNotNull(it.id)) }.map(::coverOf) }
+    val dressed = layers.flatMapIndexed { layer, parts ->
+        val outer = covers.drop(layer + 1).flatten()
+        parts.map { it.coveredBy(outer) }
+    }
     if (dressed.isEmpty()) return this
-    val covers = dressed.filter { !isCuffPart(requireNotNull(it.id)) }.map(::coverOf)
+    val all = covers.flatten()
     val body = parts.map { part ->
         checkCancelled()
-        part.coveredBy(covers)
+        part.coveredBy(all)
     }
     return AssembledCharacter(body + dressed, sockets)
+}
+
+/**
+ * This branch fitted over the garments [under] it: its ease stands off the layer below rather than the skin, so each inner garment's
+ * branch the whole way round its part, over any of the same span, adds its ease to this one's.
+ */
+private fun GarmentBranch.fittedOver(under: List<Garment>, twins: Map<PartId, PartId>): GarmentBranch {
+    val below = under.sumOf { garment ->
+        garment.branches.filter { (it.part == part || twins[it.part] == part) && it.allRound && it.from < to && it.to > from }
+            .sumOf { it.ease.toDouble() }
+    }.toFloat()
+    return if (below == 0f) this else copy(ease = ease + below)
 }
 
 /** The base color of every branch and cuff [character] may wear: its garment's slot, else its branch's own surface work's. */
