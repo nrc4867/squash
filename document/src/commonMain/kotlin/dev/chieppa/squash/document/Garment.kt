@@ -50,8 +50,10 @@ data class Garment(
 
 /**
  * The garment's surface over one covered [part], from [from] to [to] along it in u, which may run past 1 to continue past the
- * part's end. Its rings are the part's slices grown by [ease]; its own Side and Top [outlines] take them further where they stand
- * off, and its [surface] work is anchored on it. On a paired part it covers both sides, the right one mirrored.
+ * part's end, and from [fromV] to [toV] round it, the whole way round when they span 1 or more, else a region whose open edges are
+ * hems; v is read round the part's own v, so a range may start below 0 to cross it. Its rings are the part's slices grown by [ease];
+ * its own Side and Top [outlines] take them further where they stand off, and its [surface] work is anchored on it. On a paired part
+ * it covers both sides, the right one mirrored.
  */
 @Serializable
 data class GarmentBranch(
@@ -61,17 +63,31 @@ data class GarmentBranch(
     val ease: Float = DEFAULT_EASE,
     val outlines: Map<View, OutlineCurve> = emptyMap(),
     val surface: SurfaceWork = SurfaceWork(),
+    val fromV: Float = 0f,
+    val toV: Float = 1f,
 ) {
     init {
         require(from < to) { "Branch on ${part.value} runs from $from to $to" }
+        require(fromV < toV) { "Branch on ${part.value} runs round from $fromV to $toV" }
         require(ease >= 0f) { "Branch on ${part.value} has a negative ease" }
     }
+
+    /** Whether it goes the whole way round its part. */
+    val allRound: Boolean get() = toV - fromV >= 1f
 }
 
 /** The part id a branch of [garment] over [part] is built, rigged and anchored as. */
 fun branchPartId(garment: GarmentId, part: PartId): PartId = PartId("$GARMENT_PART_PREFIX${garment.value}/${part.value}")
 
-/** Whether [part] names a garment's branch rather than a part of the document. */
+/** The part id the cuff of [garment] round [part], where it comes out through the garment, is built, rigged and anchored as. */
+fun cuffPartId(garment: GarmentId, part: PartId): PartId = PartId("$GARMENT_PART_PREFIX${garment.value}/${part.value}$CUFF_SUFFIX")
+
+private const val CUFF_SUFFIX = "/cuff"
+
+/** Whether [part] names a garment's cuff. */
+fun isCuffPart(part: PartId): Boolean = isBranchPart(part) && part.value.endsWith(CUFF_SUFFIX)
+
+/** Whether [part] names a garment's branch or cuff rather than a part of the document. */
 fun isBranchPart(part: PartId): Boolean = part.value.startsWith(GARMENT_PART_PREFIX)
 
 /**

@@ -25006,6 +25006,20 @@
                         }
                     ],
                     "color": "hood"
+                },
+                {
+                    "id": "cap",
+                    "name": "Cap",
+                    "slot": "head",
+                    "branches": [
+                        {
+                            "part": "head",
+                            "to": 0.45,
+                            "fromV": -0.22,
+                            "toV": 0.22
+                        }
+                    ],
+                    "color": "hood"
                 }
             ],
             "slots": [
@@ -25022,6 +25036,14 @@
                 {
                     "id": "winter",
                     "name": "Winter",
+                    "picks": {
+                        "head": "cap",
+                        "body": "sweater"
+                    }
+                },
+                {
+                    "id": "hooded",
+                    "name": "Hooded",
                     "picks": {
                         "head": "hood",
                         "body": "sweater"

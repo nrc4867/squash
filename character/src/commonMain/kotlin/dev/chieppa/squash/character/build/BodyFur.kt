@@ -83,7 +83,7 @@ data class BodyFur(val parts: Map<PartId, PartFur>, val figureRadius: Float = 0f
  */
 fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character: AssembledCharacter, checkCancelled: () -> Unit = {}): BodyFur {
     val placed = character.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
-    val worn = character.garmentShells()
+    val worn = character.garmentCovers()
     return BodyFur(
         inputs.mapNotNull { (id, input) ->
             checkCancelled()
@@ -93,7 +93,7 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
                 val root = mark.points.first()
                 val surface = placed[root.anchor.part]?.surface ?: return@mapNotNull null
                 val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return@mapNotNull null
-                if (worn.any { root.position in it }) return@mapNotNull null
+                if (worn.any { it.covers(root.anchor.part, root.anchor.u, root.anchor.v, root.position) }) return@mapNotNull null
                 rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))
             }
             if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }), placed[id]?.surface?.let(::rimsOf).orEmpty())

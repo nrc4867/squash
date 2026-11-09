@@ -54,8 +54,8 @@ private fun socketBlend(part: PlacedPart): Blend? {
     }
 }
 
-/** [child] and [parent] with the fillet between them, or null when it moves nothing. */
-private fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, checkCancelled: () -> Unit): Pair<PlacedPart, PlacedPart>? {
+/** [child] and [parent] with the fillet between them, [child] moving and [parent] still, or null when it moves nothing. */
+internal fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, checkCancelled: () -> Unit): Pair<PlacedPart, PlacedPart>? {
     val own = child.surface.patches.map { it to CHILD } + parent.surface.patches.map { it to PARENT }
     val placed = own.mapIndexed { i, (patch, side) -> inBody(patch, side + i, if (side == CHILD) child else parent) }
     val blend = ImplicitBlend(GradientBlend(radius), joins = { a, b -> a.startsWith(CHILD) != b.startsWith(CHILD) }, moves = { it.startsWith(CHILD) })

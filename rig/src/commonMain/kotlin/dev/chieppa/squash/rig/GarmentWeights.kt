@@ -5,7 +5,7 @@ import dev.chieppa.squash.document.Anchor
 
 /**
  * A garment's branch as a part of the rig, every vertex weighted as the vertex under it of [bodyPart], the part it was built over,
- * rigged as [body]: on the ring of the body's patch nearest in u, at the same place round it. It carries no bones of its own. See
+ * rigged as [body]: on the ring of the body's patch nearest in u and its column nearest in v. It carries no bones of its own. See
  * HLD: data-model, Garments.
  */
 internal fun branchRigPart(branch: PlacedPart, bodyPart: PlacedPart, body: RigPart): RigPart {
@@ -23,7 +23,7 @@ internal fun branchRigPart(branch: PlacedPart, bodyPart: PlacedPart, body: RigPa
     for (patch in branch.surface.patches) for (local in 0 until patch.nu * patch.nv) {
         val ring = local / patch.nv
         val column = local % patch.nv
-        val under = start + covering.bodyRings[ring] * around + column.coerceAtMost(around - 1)
+        val under = start + covering.bodyRings[ring] * around + covering.bodyColumns[column].coerceAtMost(around - 1)
         for (slot in 0 until MAX_INFLUENCES) {
             bones[vertex * MAX_INFLUENCES + slot] = body.weights.bones[under * MAX_INFLUENCES + slot]
             weights[vertex * MAX_INFLUENCES + slot] = body.weights.weights[under * MAX_INFLUENCES + slot]

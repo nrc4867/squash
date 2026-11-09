@@ -27,10 +27,12 @@ const val FENNEC_DRESSED_RESOURCE = "fennec-dressed.json"
 
 val SWEATER = GarmentId("sweater")
 val HOOD = GarmentId("hood")
+val CAP = GarmentId("cap")
 val HEAD_SLOT = GarmentSlotId("head")
 val BODY_SLOT = GarmentSlotId("body")
 val WINTER = OutfitId("winter")
 val BARE = OutfitId("bare")
+val HOODED = OutfitId("hooded")
 val SWEATER_WOOL = SlotName("sweater")
 val HOOD_WOOL = SlotName("hood")
 
@@ -44,13 +46,17 @@ private const val SLEEVE_TO = 0.6f
 /** The hood runs from the back of the skull to past the ears' roots, open round the face. */
 private const val HOOD_TO = 0.42f
 
+/** The cap covers the crown from the back of the skull to the brow, over the top of the head, the ears coming through it. */
+private const val CAP_TO = 0.45f
+private const val CAP_ROUND = 0.22f
+
 /** The sweater's Side, a little looser than the chest, flaring at the hem behind the ribs. */
 private val SWEATER_SIDE = loop(
     p(0.38f, 0.26f), p(0.56f, 0.27f), p(0.70f, 0.36f), p(0.84f, 0.48f), p(0.92f, 0.38f),
     p(0.91f, 0.16f), p(0.82f, -0.10f), p(0.64f, -0.20f), p(0.38f, -0.20f),
 )
 
-/** The commands that dress the fennec: a head and a body slot, a wool hood and a sweater on torso and front legs, and Winter and Bare outfits. */
+/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood and a sweater on torso and front legs, and Winter (cap), Hooded and Bare outfits. */
 fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SWEATER_WOOL, SlotColor(0.20f, 0.42f, 0.52f)),
     SetPaletteSlot(HOOD_WOOL, SlotColor(0.78f, 0.24f, 0.22f)),
@@ -63,9 +69,15 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
     AddGarment(Garment(HOOD, "Hood", HEAD_SLOT)),
     CoverPart(HOOD, GarmentBranch(HEAD, 0f, HOOD_TO)),
     SetGarmentColor(HOOD, HOOD_WOOL),
+    AddGarment(Garment(CAP, "Cap", HEAD_SLOT)),
+    CoverPart(CAP, GarmentBranch(HEAD, 0f, CAP_TO, fromV = -CAP_ROUND, toV = CAP_ROUND)),
+    SetGarmentColor(CAP, HOOD_WOOL),
     AddOutfit(Outfit(WINTER, "Winter")),
-    PickGarment(WINTER, HEAD_SLOT, HOOD),
+    PickGarment(WINTER, HEAD_SLOT, CAP),
     PickGarment(WINTER, BODY_SLOT, SWEATER),
+    AddOutfit(Outfit(HOODED, "Hooded")),
+    PickGarment(HOODED, HEAD_SLOT, HOOD),
+    PickGarment(HOODED, BODY_SLOT, SWEATER),
     AddOutfit(Outfit(BARE, "Bare")),
     ShowOutfit(WINTER),
 )

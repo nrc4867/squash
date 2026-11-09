@@ -78,7 +78,7 @@ private object NoDressedFiles : FileChooser {
 
 /**
  * The dressed fennec, built from its commands, in every pane with its colors, lines and fur, wearing its Winter outfit: in Shape at
- * rest with Move's dots over it, and in Pose with the left front knee bent and the head turned, the sleeve and hood following.
+ * rest with Move's dots over it, and in Pose with the left front knee bent and the head turned, the sleeve and cap following.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)

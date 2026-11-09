@@ -1,15 +1,19 @@
 package dev.chieppa.squash.geom
 
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.roundToInt
 
 /** A body ring smaller than this across both ways is a pole, and the shell over it closes there too. */
 private const val POLE_SIZE = 1e-4f
 
 /**
- * A shell lofted over a swept patch: [patch], open at both ends and closed round, and for each of its rings the ring of the body
- * patch it was grown from, nearest in u, so a shell vertex can read the body vertex under it at the same v.
+ * A shell lofted over a swept patch: [patch], open at both ends, closed round or open over part of it, and for each of its rings the
+ * ring of the body patch it was grown from, nearest in u, and for each of its columns the body's column nearest in v, so a shell vertex
+ * can read the body vertex under it.
  */
-class Shell(val patch: Patch, val bodyRings: IntArray)
+class Shell(val patch: Patch, val bodyRings: IntArray, val bodyColumns: IntArray)
 
 /** How a shell ring is pushed out past its ease: a height or width it must reach and how far its centre moves to meet it. */
 data class ShellReach(val height: Float? = null, val width: Float? = null, val up: Float = 0f, val side: Float = 0f)
@@ -20,9 +24,20 @@ object ShellBuilder {
      * A shell named [name] over [body] from [from] to [to] in u in [rings] rings evenly spaced, each the body's slice there grown by
      * [ease] on every side. Past either end of [body] the shell carries on along its end slice's frame at the size of the ring nearest
      * that end that is not a pole. [reach] may take a ring further out, never further in than the ease. A pole of the body stays a pole.
-     * [body] must be swept.
+     * From [fromV] to [toV] round it, a span under 1, the shell is open round, its columns evenly spaced over that span and as many
+     * as the body's over it, plus one. [body] must be swept.
      */
-    fun shell(name: String, body: Patch, from: Float, to: Float, rings: Int, ease: Float, reach: (Slice) -> ShellReach = { ShellReach() }): Shell {
+    fun shell(
+        name: String,
+        body: Patch,
+        from: Float,
+        to: Float,
+        rings: Int,
+        ease: Float,
+        reach: (Slice) -> ShellReach = { ShellReach() },
+        fromV: Float = 0f,
+        toV: Float = 1f,
+    ): Shell {
         val slices = requireNotNull(body.slices) { "Patch ${body.name} is not swept" }
         require(rings >= 2) { "A shell needs two rings, not $rings" }
         val perU = body.lengthPerU()
@@ -33,7 +48,19 @@ object ShellBuilder {
             val under = sliceAt(slices, u, perU)
             if (under.isPole) under else grownBy(under, ease, reach(under.copy(height = under.height + 2f * ease, width = under.width + 2f * ease)))
         }
-        return Shell(SliceBuilder.loft(name, grown, body.nv), bodyRings)
+        if (toV - fromV >= 1f) return Shell(SliceBuilder.loft(name, grown, body.nv), bodyRings, IntArray(body.nv) { it })
+        val columns = ceil((toV - fromV) * body.nv).toInt().coerceAtLeast(1) + 1
+        val vs = FloatArray(columns) { fromV + (toV - fromV) * it / (columns - 1) }
+        val points = FloatArray(rings * columns * Patch.COMPONENTS)
+        var o = 0
+        for (slice in grown) for (v in vs) {
+            val point = slice.pointAt(v)
+            points[o++] = point.x
+            points[o++] = point.y
+            points[o++] = point.z
+        }
+        val bodyColumns = IntArray(columns) { ((vs[it] - floor(vs[it])) * body.nv).roundToInt() % body.nv }
+        return Shell(Patch(name, rings, columns, closedV = false, slices = grown, points = points), bodyRings, bodyColumns)
     }
 
     private fun grownBy(slice: Slice, ease: Float, reach: ShellReach): Slice {

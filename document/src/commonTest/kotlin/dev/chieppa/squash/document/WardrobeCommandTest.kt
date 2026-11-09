@@ -146,18 +146,20 @@ class WardrobeCommandTest {
         scenario(start) {
             run(SetBranchRange(SWEATER, LEG_L, 0f, 1.2f))
             run(SetBranchEase(SWEATER, LEG_L, 0.05f))
+            run(SetBranchAround(SWEATER, LEG_L, -0.25f, 0.25f))
             run(SetBranchOutline(SWEATER, TORSO, View.SIDE, curve))
             run(SetBranchSurface(SWEATER, TORSO, SurfaceWork(baseSlot = SlotName("fur"))))
             expect {
                 val leg = it.wardrobe.garment(SWEATER)?.branch(LEG_L)
                 assertEquals(1.2f, leg?.to)
                 assertEquals(0.05f, leg?.ease)
+                assertEquals(false, leg?.allRound)
                 assertEquals(curve, it.wardrobe.garment(SWEATER)?.branch(TORSO)?.outlines?.get(View.SIDE))
                 assertEquals(SlotName("fur"), it.wardrobe.garment(SWEATER)?.branch(TORSO)?.surface?.baseSlot)
             }
             run(SetBranchOutline(SWEATER, TORSO, View.SIDE, null))
             expect { assertEquals(emptyMap(), it.wardrobe.garment(SWEATER)?.branch(TORSO)?.outlines) }
-            repeat(5) { undo() }
+            repeat(6) { undo() }
             expect(start)
         }
     }

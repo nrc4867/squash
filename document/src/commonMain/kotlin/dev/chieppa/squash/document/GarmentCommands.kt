@@ -51,6 +51,14 @@ data class SetBranchRange(val garment: GarmentId, val part: PartId, val from: Fl
         document.garmentChanged(garment) { it.withBranch(part) { branch -> branch.copy(from = from, to = to) } }
 }
 
+/** Sets how far round [part] [garment]'s branch runs, [fromV] to [toV]; a span of 1 or more goes the whole way round. */
+@Serializable
+@SerialName("setBranchAround")
+data class SetBranchAround(val garment: GarmentId, val part: PartId, val fromV: Float, val toV: Float) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> =
+        document.garmentChanged(garment) { it.withBranch(part) { branch -> branch.copy(fromV = fromV, toV = toV) } }
+}
+
 /** Sets how far [garment]'s branch on [part] stands off the body where nothing drawn takes it further. */
 @Serializable
 @SerialName("setBranchEase")
