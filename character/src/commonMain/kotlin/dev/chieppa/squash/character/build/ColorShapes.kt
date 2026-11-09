@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PatchSlot
+import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.PartId
@@ -54,8 +55,9 @@ data class PartColorInput(
 /** What [part] reads in [character], through its template in [templates]; empty when no such part is there. */
 fun partColorInput(character: Character, part: PartId, templates: TemplateLibrary): PartColorInput {
     val instance = character.part(part) ?: return PartColorInput()
-    val template = templates.find(instance.template) ?: return PartColorInput(surfaceWorkInput(character, part).parts)
-    val params = character.resolved(instance).params
+    val worn = character.wornPart(instance)
+    val template = templates.find(worn.template) ?: return PartColorInput(surfaceWorkInput(character, part).parts)
+    val params = worn.data.params
     val named = surfaceWorkInput(character, part).parts
     return PartColorInput(named, PartBuilder.areas(template, params), PartBuilder.patchSlots(template, params), socketEnds(character, named, templates))
 }

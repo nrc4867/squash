@@ -11,6 +11,8 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.document.worn
+import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.PartSurface
@@ -47,12 +49,26 @@ fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCa
 /** What decides what a character is assembled from: its parts and its plan. */
 data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val lengths: LegLengths = LegLengths())
 
-/** The parts of [character], as placing reads them. */
-fun assemblyParts(character: Character): List<AssemblyPart> =
-    character.parts.map { part ->
+/**
+ * The parts of [character], as placing reads them, under the garments worn: each on the template it wears, and a part a worn garment
+ * hides left out with every part on it.
+ */
+fun assemblyParts(character: Character): List<AssemblyPart> {
+    val hidden = hiddenUnderGarments(character)
+    return character.parts.filter { it.id !in hidden }.map { part ->
         val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) }
-        AssemblyPart(part.id, part.template, part.socket, part.pair, part.side, placement, part.role)
+        AssemblyPart(part.id, character.wornPart(part).template, part.socket, part.pair, part.side, placement, part.role)
     }
+}
+
+/** The parts of [character] a worn garment hides, with every part sitting on one of them. */
+fun hiddenUnderGarments(character: Character): Set<PartId> {
+    if (character.worn.isEmpty()) return emptySet()
+    val hidden = character.parts.filter { character.wornPart(it).hidden }.mapTo(hashSetOf()) { it.id }
+    var grew = hidden.isNotEmpty()
+    while (grew) grew = character.parts.filter { it.socket?.parent in hidden }.any { hidden.add(it.id) }
+    return hidden
+}
 
 /** A surface the character is assembled from: a part's own, or a template's with nothing drawn. */
 sealed interface AssemblySource {

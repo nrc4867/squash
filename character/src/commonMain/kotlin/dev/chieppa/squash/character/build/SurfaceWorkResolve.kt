@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BrushStroke
 import dev.chieppa.squash.document.Character
@@ -41,7 +42,7 @@ data class SurfaceWorkInput(
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
 fun surfaceWorkInput(character: Character, part: PartId): SurfaceWorkInput {
     val instance = character.part(part) ?: return SurfaceWorkInput()
-    val surface = character.resolved(instance).surface.shown
+    val surface = character.wornPart(instance).data.surface.shown
     val expressions = character.expressions.mapNotNull { set ->
         val marks = surface.groups.associate { it.id to character.expressionMarks(set, instance, it.id) }.filterValues { it.isNotEmpty() }
         if (marks.isEmpty()) null else ExpressionWork(set.id, set.name, marks)

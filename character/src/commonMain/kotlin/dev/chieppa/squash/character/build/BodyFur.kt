@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.model.GrainSpec
+import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.FurRule
 import dev.chieppa.squash.document.Grain
@@ -58,8 +59,9 @@ data class PartFurInput(val spec: GrainSpec, val grain: Grain?, val rule: FurRul
 
 /** What every part's fur reads, by part. */
 fun furInputs(character: Character, templates: TemplateLibrary): Map<PartId, PartFurInput> = character.parts.mapNotNull { instance ->
-    val template = templates.find(instance.template) ?: return@mapNotNull null
-    val data = character.resolved(instance)
+    val worn = character.wornPart(instance)
+    val template = templates.find(worn.template) ?: return@mapNotNull null
+    val data = worn.data
     instance.id to PartFurInput(template.grain, data.surface.grain, data.surface.fur ?: FurRule(), PartBuilder.areas(template, data.params))
 }.toMap()
 

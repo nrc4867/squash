@@ -23678,6 +23678,14 @@
                         "green": 0.24,
                         "blue": 0.22
                     }
+                },
+                {
+                    "name": "boot",
+                    "color": {
+                        "red": 0.36,
+                        "green": 0.24,
+                        "blue": 0.18
+                    }
                 }
             ]
         },
@@ -25020,6 +25028,46 @@
                         }
                     ],
                     "color": "hood"
+                },
+                {
+                    "id": "boots",
+                    "name": "Boots",
+                    "slot": "feet",
+                    "branches": [
+                        {
+                            "part": "front-paw-l"
+                        },
+                        {
+                            "part": "back-paw-l"
+                        },
+                        {
+                            "part": "front-leg-l",
+                            "from": 0.72
+                        },
+                        {
+                            "part": "back-leg-l",
+                            "from": 0.72
+                        }
+                    ],
+                    "color": "boot",
+                    "changes": {
+                        "front-paw-l": {
+                            "type": "redraw",
+                            "data": {
+                                "params": {
+                                    "toes": 0.0
+                                }
+                            }
+                        },
+                        "back-paw-l": {
+                            "type": "redraw",
+                            "data": {
+                                "params": {
+                                    "toes": 0.0
+                                }
+                            }
+                        }
+                    }
                 }
             ],
             "slots": [
@@ -25030,6 +25078,10 @@
                 {
                     "id": "body",
                     "name": "Body"
+                },
+                {
+                    "id": "feet",
+                    "name": "Feet"
                 }
             ],
             "outfits": [
@@ -25038,7 +25090,8 @@
                     "name": "Winter",
                     "picks": {
                         "head": "cap",
-                        "body": "sweater"
+                        "body": "sweater",
+                        "feet": "boots"
                     }
                 },
                 {
