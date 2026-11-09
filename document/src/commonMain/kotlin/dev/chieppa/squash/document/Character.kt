@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
- * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views and
- * the [pose] it stands in. The pose is the character's one working pose until shots hold a pose per key. See HLD: data-model.
+ * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
+ * the [pose] it stands in and its [wardrobe]. The pose is the character's one working pose until shots hold a pose per key. See HLD: data-model.
  */
 @Serializable
 data class Character(
@@ -22,10 +22,12 @@ data class Character(
     val gazeCheats: GazeCheats = GazeCheats(),
     val traces: Map<View, Trace> = emptyMap(),
     val pose: Pose = Pose(),
+    val wardrobe: Wardrobe = Wardrobe(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
         require(pairs.keys == named) { "Pair data for ${pairs.keys.map { it.value }}, parts name ${named.map { it.value }}" }
+        require(parts.none { isBranchPart(it.id) }) { "A part id starts as a garment's branch does" }
     }
 
     fun part(id: PartId): PartInstance? = parts.firstOrNull { it.id == id }

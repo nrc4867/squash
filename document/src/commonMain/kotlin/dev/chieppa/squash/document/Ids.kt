@@ -72,3 +72,20 @@ value class SlotName(val value: String)
 @Serializable
 @JvmInline
 value class CameraBin(val value: String)
+
+@Serializable
+@JvmInline
+value class GarmentId(val value: String)
+
+/** The id of a wardrobe slot, a place on the body an outfit fills with one garment; apart from a palette slot's [SlotName]. */
+@Serializable
+@JvmInline
+value class GarmentSlotId(val value: String)
+
+@Serializable
+@JvmInline
+value class OutfitId(val value: String)
+
+@Serializable
+@JvmInline
+value class LooseEndId(val value: String)

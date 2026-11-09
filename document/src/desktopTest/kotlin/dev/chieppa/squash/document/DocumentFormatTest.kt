@@ -92,6 +92,19 @@ class DocumentFormatTest {
     }
 
     @Test
+    fun aSaveFromBeforeWardrobesWearsNothing() {
+        val character = readDocument(formatFive).character
+        assertEquals(Wardrobe(), character.wardrobe)
+        assertEquals(emptyList(), character.worn)
+    }
+
+    @Test
+    fun aWardrobeSurvivesASave() {
+        val dressed = WinterFennec.dressed()
+        assertEquals(dressed, readDocument(Json.encodeToString(SquashDocument.serializer(), dressed)))
+    }
+
+    @Test
     fun aSoftStrokeSurvivesASaveAndAHardOneWritesNoSoftness() {
         val saved = readDocument(formatTwo)
         val torso = PartId("torso-1")
