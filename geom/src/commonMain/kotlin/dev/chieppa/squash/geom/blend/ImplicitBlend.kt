@@ -44,16 +44,28 @@ class ImplicitBlend(
 
     /**
      * [patches] with the vertices near their crossings moved onto the fillet, each patch's field fitted to [sampled] of its index:
-     * samples taken where the patch's own grid gives outward normals, for a patch moved into another space.
+     * samples taken where the patch's own grid gives outward normals, for a patch moved into another space. With [cache], a patch
+     * whose [keyOf] is not null takes the field kept under that key, fitting it only the first time.
      */
-    fun apply(patches: List<Patch>, sampled: (Int) -> PatchSamples, checkCancelled: () -> Unit = {}): List<Patch> {
+    fun apply(
+        patches: List<Patch>,
+        sampled: (Int) -> PatchSamples,
+        checkCancelled: () -> Unit = {},
+        cache: FieldCache? = null,
+        keyOf: (Int) -> Any? = { null },
+    ): List<Patch> {
         val taking = patches.indices.filter { i -> patches.indices.any { j -> j != i && joins(patches[i].name, patches[j].name) } }
         if (taking.size < 2 || blend.radius <= 0f) return patches
         val fields = HashMap<Int, HermiteField>()
         for (i in taking) {
             checkCancelled()
-            val samples = sampled(i)
-            HermiteField.fit(samples.points, samples.normals)?.let { fields[i] = it }
+            val fit = {
+                val samples = sampled(i)
+                HermiteField.fit(samples.points, samples.normals)
+            }
+            val key = keyOf(i)
+            val field = if (cache != null && key != null) cache.of(key, fit) else fit()
+            field?.let { fields[i] = it }
         }
         val joined = Joined(fields.keys.sorted().map { patches[it].name to fields.getValue(it) })
         val rising = taking.any { !moves(patches[it].name) }

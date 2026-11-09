@@ -5,15 +5,17 @@ import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
+import dev.chieppa.squash.geom.blend.FieldCache
 import dev.chieppa.squash.document.branchPartId
 
 /**
  * [branches], one garment's, with each joined to the branch over the part its own part sits on: the child branch moves onto a socket
  * fillet [garment]'s fillet wide, as a share of its length along its part, the parent branch stays still, and the child branch's
- * faces inside the parent branch are left out.
+ * faces inside the parent branch are left out. A parent branch several children fillet into has its field fitted once.
  */
 internal fun joined(garment: Garment, branches: List<PlacedPart>, body: AssembledCharacter, checkCancelled: () -> Unit): List<PlacedPart> {
     val shown = branches.toMutableList()
+    val fields = FieldCache()
     for (i in shown.indices) {
         val covered = body.part(shown[i].covering?.part ?: continue) ?: continue
         val parentPart = covered.socket?.parent ?: continue
@@ -21,7 +23,7 @@ internal fun joined(garment: Garment, branches: List<PlacedPart>, body: Assemble
         if (p < 0) continue
         checkCancelled()
         val radius = garment.fillet * shown[i].surface.axisLength
-        filleted(shown[i], shown[p], radius, checkCancelled)?.let { (child, parent) ->
+        filleted(shown[i], shown[p], radius, checkCancelled, fields)?.let { (child, parent) ->
             shown[i] = child
             shown[p] = parent
         }

@@ -7,6 +7,7 @@ import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.blend.FIELD_SAMPLES
+import dev.chieppa.squash.geom.blend.FieldCache
 import dev.chieppa.squash.geom.blend.GradientBlend
 import dev.chieppa.squash.geom.blend.ImplicitBlend
 import dev.chieppa.squash.geom.blend.PatchSamples
@@ -27,6 +28,7 @@ fun Graph.socketFilletNode(assembly: Node<*, AssembledCharacter>): Node<Assemble
  */
 fun AssembledCharacter.withSocketFillets(checkCancelled: () -> Unit = {}): AssembledCharacter {
     val shown = parts.toMutableList()
+    val fields = FieldCache()
     var changed = false
     for (i in shown.indices) {
         val child = shown[i]
@@ -38,7 +40,7 @@ fun AssembledCharacter.withSocketFillets(checkCancelled: () -> Unit = {}): Assem
         if (parent.side != null && parent.side != child.side) continue
         checkCancelled()
         val radius = blend.socketRadius(child.template.defaults + child.placement, child.surface.axisLength)
-        val joined = filleted(child, parent, radius, checkCancelled) ?: continue
+        val joined = filleted(child, parent, radius, checkCancelled, fields) ?: continue
         shown[i] = joined.first
         shown[p] = joined.second
         changed = true
@@ -54,8 +56,11 @@ private fun socketBlend(part: PlacedPart): Blend? {
     }
 }
 
-/** [child] and [parent] with the fillet between them, [child] moving and [parent] still, or null when it moves nothing. */
-internal fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, checkCancelled: () -> Unit): Pair<PlacedPart, PlacedPart>? {
+/**
+ * [child] and [parent] with the fillet between them, [child] moving and [parent] still, or null when it moves nothing. A field [fields]
+ * already holds for a patch as it lies is not fitted again.
+ */
+internal fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, checkCancelled: () -> Unit, fields: FieldCache = FieldCache()): Pair<PlacedPart, PlacedPart>? {
     val own = child.surface.patches.map { it to CHILD } + parent.surface.patches.map { it to PARENT }
     val placed = own.mapIndexed { i, (patch, side) -> inBody(patch, side + i, if (side == CHILD) child else parent) }
     val blend = ImplicitBlend(GradientBlend(radius), joins = { a, b -> a.startsWith(CHILD) != b.startsWith(CHILD) }, moves = { it.startsWith(CHILD) })
@@ -64,7 +69,12 @@ internal fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, chec
         val part = if (side == CHILD) child else parent
         PatchSamples.of(patch, FIELD_SAMPLES).moved({ part.origin + part.surface.shown(it) }, part.surface::shown)
     }
-    val moved = blend.apply(placed, sampled, checkCancelled)
+    val keyOf = { i: Int ->
+        val (patch, side) = own[i]
+        val part = if (side == CHILD) child else parent
+        PlacedPatch(patch, part.origin, part.surface.mirrored)
+    }
+    val moved = blend.apply(placed, sampled, checkCancelled, fields, keyOf)
     if (moved.indices.all { moved[it] === placed[it] }) return null
     val back = moved.mapIndexed { i, patch ->
         val (original, side) = own[i]
@@ -72,6 +82,13 @@ internal fun filleted(child: PlacedPart, parent: PlacedPart, radius: Float, chec
     }
     val count = child.surface.patches.size
     return child.withPatches(back.take(count)) to parent.withPatches(back.drop(count))
+}
+
+/** A patch as it lies in body space, the same key only for the same patch object at the same place. */
+private class PlacedPatch(val patch: Patch, val origin: Vec3, val mirrored: Boolean) {
+    override fun equals(other: Any?): Boolean = other is PlacedPatch && other.patch === patch && other.origin == origin && other.mirrored == mirrored
+
+    override fun hashCode(): Int = ((patch.name.hashCode() * 31 + patch.nu) * 31 + origin.hashCode()) * 31 + mirrored.hashCode()
 }
 
 /** [patch] of [part] named [name], placed in body space. */
