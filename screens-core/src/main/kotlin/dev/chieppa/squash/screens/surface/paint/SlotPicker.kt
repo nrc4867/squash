@@ -33,7 +33,7 @@ import org.jetbrains.compose.resources.stringResource
  * and only a change with no pointer down, as a typed hex, closes on the report.
  */
 @Composable
-internal fun SlotPicker(session: CharacterSession, slot: SlotName, color: Color, modifier: Modifier = Modifier) {
+fun SlotPicker(session: CharacterSession, slot: SlotName, color: Color, modifier: Modifier = Modifier) {
     var gesture by remember { mutableStateOf<History<SquashDocument>.Transaction?>(null) }
     var held by remember { mutableStateOf(false) }
     fun close() {

@@ -44,7 +44,7 @@ private val SLOT_GAP = 6.dp
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun SlotChoice(
+fun SlotChoice(
     palette: Palette,
     slot: SlotName?,
     title: String,

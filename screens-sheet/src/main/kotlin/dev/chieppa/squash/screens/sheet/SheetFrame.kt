@@ -84,7 +84,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val body = pane.body
     if (body == null) {
         val camera = input.full ?: return null
-        val (planned, placed) = (selection.others + selection.part).partition { it.planned }
+        val (planned, placed) = selection.whole.partition { it.planned }
         val eye = camera.eye
         val plannedOpacity = if (input.layout == SheetLayout.FULL_FIRST) 1f else PLANNED_OPACITY
         val toCamera = Vec3(eye.x, eye.y, eye.z) - selection.box.center
@@ -133,7 +133,7 @@ internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection
     lockedGround(body, basis, selection, look)?.let(::add)
     val outline = if (ribbons) 0f else look.lockedOutline
     if (hints.whole) {
-        (selection.others + selection.part).filter { !it.planned }.forEach { add(faced(it to look.colored(it, color, basis.back, outline, posed = posed.of(it)))) }
+        selection.whole.filter { !it.planned }.forEach { add(faced(it to look.colored(it, color, basis.back, outline, posed = posed.of(it)))) }
         return@buildList
     }
     addAll(ghosts(selection, basis, look, hints, color, posed))

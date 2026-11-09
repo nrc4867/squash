@@ -8,6 +8,10 @@ import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.stretch.core.Action
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.stretch.core.KeyChord
+import dev.chieppa.squash.character.build.GarmentLook
+import dev.chieppa.squash.screens.sheet.PoseView
+import dev.chieppa.squash.screens.dress.newGarment
+import kotlinx.coroutines.launch
 
 /** The shell's actions. An action's text key is its id. */
 object ShellActions {
@@ -27,7 +31,21 @@ object ShellActions {
     val STAGE_LINES = ActionId("stage-lines")
     val STAGE_FACE = ActionId("stage-face")
     val STAGE_RIG = ActionId("stage-rig")
+    val STAGE_DRESS = ActionId("stage-dress")
     val STAGE_POSE = ActionId("stage-pose")
+    val DRAW_GARMENT = ActionId(BuildTool.DRAW_GARMENT.actionId)
+    val EDIT_GARMENT = ActionId(BuildTool.EDIT_GARMENT.actionId)
+    val ERASE_GARMENT = ActionId(BuildTool.ERASE_GARMENT.actionId)
+    val SMOOTH_GARMENT = ActionId(BuildTool.SMOOTH_GARMENT.actionId)
+    val COVER = ActionId(BuildTool.COVER.actionId)
+    val LOOSE_END = ActionId(BuildTool.LOOSE_END.actionId)
+    val NEW_GARMENT = ActionId("new-garment")
+    val DRESS_HALF_OUTLINE = ActionId("dress-half-outline")
+    val GARMENTS_SHOWN = ActionId("garments-shown")
+    val GARMENTS_GHOSTED = ActionId("garments-ghosted")
+    val GARMENTS_HIDDEN = ActionId("garments-hidden")
+    val POSE_POSED = ActionId("pose-posed")
+    val POSE_REST = ActionId("pose-rest")
     val DRAG = ActionId(BuildTool.DRAG.actionId)
     val TURN = ActionId(BuildTool.TURN.actionId)
     val BODY_CURVE = ActionId(BuildTool.BODY_CURVE.actionId)
@@ -112,7 +130,14 @@ fun Shell.registerActions() {
     stage(ShellActions.STAGE_LINES, "3", Stage.LINES)
     stage(ShellActions.STAGE_FACE, "4", Stage.FACE)
     stage(ShellActions.STAGE_RIG, "5", Stage.RIG)
-    stage(ShellActions.STAGE_POSE, "6", Stage.POSE)
+    stage(ShellActions.STAGE_DRESS, "6", Stage.DRESS)
+    stage(ShellActions.STAGE_POSE, "7", Stage.POSE)
+    val dressing = { state.stage.value == Stage.DRESS }
+    action(ShellActions.GARMENTS_SHOWN, null, available = hasCharacter) { state.dress.look(dressing()).value = GarmentLook.SHOWN }
+    action(ShellActions.GARMENTS_GHOSTED, null, available = hasCharacter) { state.dress.look(dressing()).value = GarmentLook.GHOSTED }
+    action(ShellActions.GARMENTS_HIDDEN, null, available = hasCharacter) { state.dress.look(dressing()).value = GarmentLook.HIDDEN }
+    action(ShellActions.POSE_POSED, null, available = hasCharacter) { state.poseView.value = PoseView.POSED }
+    action(ShellActions.POSE_REST, null, available = hasCharacter) { state.poseView.value = PoseView.REST }
     action(ShellActions.SWAP_PANE, null, chord("Space"), { inWorkspace() && state.layout.value == SheetLayout.FOCUS }) { state.swapPane() }
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
@@ -148,6 +173,15 @@ fun Shell.registerActions() {
     tool(BuildTool.PAINT_WEIGHT, "paint-weight", "D")
     tool(BuildTool.ERASE_WEIGHT, "erase-weight", "X")
     tool(BuildTool.SMOOTH_WEIGHT, "smooth-weight", "S")
+
+    tool(BuildTool.DRAW_GARMENT, "draw-garment", "D")
+    tool(BuildTool.EDIT_GARMENT, "edit-curves", "E")
+    tool(BuildTool.ERASE_GARMENT, "erase", "X")
+    tool(BuildTool.SMOOTH_GARMENT, "smooth", "S")
+    tool(BuildTool.COVER, "cover", "C")
+    tool(BuildTool.LOOSE_END, "loose-end", "L")
+    action(ShellActions.NEW_GARMENT, "new-garment", chord("N"), inWorkspace, Stage.DRESS.keyMode) { scope.launch { state.newGarment() } }
+    action(ShellActions.DRESS_HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.DRESS.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }
 
     tool(BuildTool.DRAG, "drag", "D")
     tool(BuildTool.TURN, "turn", "E")

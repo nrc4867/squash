@@ -213,7 +213,7 @@ class ToucanSmokeTest {
     @Test
     fun theToucanSpreadsAWingWithBothFeetPlanted() = runDesktopComposeUiTest(TOUCAN_WIDTH, TOUCAN_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -236,7 +236,7 @@ class ToucanSmokeTest {
     @Test
     fun theToucanLiftsAFootAndGripsWithItsToes() = runDesktopComposeUiTest(TOUCAN_WIDTH, TOUCAN_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -255,7 +255,7 @@ class ToucanSmokeTest {
     @Test
     fun theToucanTurnsItsHeadToLook() = runDesktopComposeUiTest(TOUCAN_WIDTH, TOUCAN_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.L) }
         waitForIdle()

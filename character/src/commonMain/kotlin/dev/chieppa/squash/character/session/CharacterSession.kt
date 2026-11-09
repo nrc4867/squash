@@ -52,6 +52,9 @@ import dev.chieppa.squash.character.build.dressedNode
 import dev.chieppa.squash.character.build.dressingOf
 import dev.chieppa.squash.character.build.dressedColorNode
 import dev.chieppa.squash.character.build.garmentColors
+import dev.chieppa.squash.character.build.GarmentView
+import dev.chieppa.squash.character.build.seenAs
+import kotlinx.coroutines.flow.combine
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
@@ -99,6 +102,9 @@ class CharacterSession(
     private val colorStep = MutableStateFlow(ColorDetail.START)
     private val colorDetail: Node<*, ColorSource> = graph.node(colorStep, stage = BuildStages.SURFACE_WORK) { ColorSource.Detail(it) }
 
+    /** How the views show the garments; the views set it, and [assembly] follows it. */
+    val garmentView = MutableStateFlow(GarmentView())
+
     /**
      * The whole character, each part on its socket with the plan's empty sockets filled from their templates, wearing what its shown
      * outfit wears. Made with the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
@@ -113,7 +119,7 @@ class CharacterSession(
                 ::defaultSurface,
             ),
         ),
-        document.map { dressingOf(it.character) }.distinctUntilChanged(),
+        combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
     )
 
     /**

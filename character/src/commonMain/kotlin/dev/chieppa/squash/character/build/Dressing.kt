@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
+import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.branchPartId
 import dev.chieppa.squash.document.cuffPartId
@@ -14,8 +15,27 @@ import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 
-/** What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin. */
-data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap())
+/**
+ * What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin; [covers] is
+ * whether the skin and the inner layers the garments cover are hidden.
+ */
+data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap(), val covers: Boolean = true)
+
+/** How the garments show: drawn whole over what they cover, see-through with the body whole under them, or not at all. View state, never saved. */
+enum class GarmentLook { SHOWN, GHOSTED, HIDDEN }
+
+/** What the views ask of the garments: how they [look], and the garments left out of view. Never saved. */
+data class GarmentView(val look: GarmentLook = GarmentLook.SHOWN, val hidden: Set<GarmentId> = emptySet())
+
+/**
+ * This dressing as [view] shows it: without the garments it hides, with nothing hidden under them when ghosted, and with none worn when
+ * hidden. The garments' body-part changes are the document's and hold whatever the view.
+ */
+fun Dressing.seenAs(view: GarmentView): Dressing = when (view.look) {
+    GarmentLook.HIDDEN -> Dressing()
+    GarmentLook.GHOSTED -> copy(worn = worn.filter { it.id !in view.hidden }, covers = false)
+    GarmentLook.SHOWN -> if (view.hidden.isEmpty()) this else copy(worn = worn.filter { it.id !in view.hidden })
+}
 
 /** The dressing [character] wears. */
 fun dressingOf(character: Character): Dressing {
@@ -40,7 +60,7 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
  * sits on; a hole and a cuff where a body part comes out through a branch; the skin the branches and cuffs cover hidden, and each layer's faces
  * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
- * loose ends hung from their branches. See HLD: data-model, Garments.
+ * loose ends hung from their branches; with [Dressing.covers] off nothing under a garment is hidden. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
@@ -56,6 +76,10 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
             val (holed, cuffs) = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
             listOf(holed) + cuffs
         }
+    }
+    if (!dressing.covers) {
+        val shells = layers.flatten()
+        return AssembledCharacter(parts + shells + dressing.worn.flatMap { garment -> looseEnds(garment, shells, this) }, sockets)
     }
     val covers = layers.map { parts -> parts.filter { !isCuffPart(requireNotNull(it.id)) }.map(::coverOf) }
     val dressed = layers.flatMapIndexed { layer, parts ->

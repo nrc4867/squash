@@ -35,6 +35,7 @@ import dev.chieppa.squash.screens.sheet.rememberOutlineLook
 import dev.chieppa.squash.screens.sheet.rememberPaneColor
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetSelection
+import dev.chieppa.squash.screens.sheet.posesPane
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -55,6 +56,7 @@ internal fun SingleSurface(
     surface: SurfaceRibbons? = null,
     foot: (@Composable (toViewer: Vec3, turn: (Vec3) -> Unit) -> Unit)? = null,
     rig: RigShading? = null,
+    posedSurface: SurfaceRibbons? = null,
 ) {
     val selection = rememberSheetSelection(state)
     val part = selection?.part
@@ -83,10 +85,14 @@ internal fun SingleSurface(
     val free = remember(camera, size) { FullView({ camera.orbit.view }, size.width, size.height) }
     SideEffect { open?.showColorAt(largestColorScale(shownCameras.values, camera.orbit.view, size.height)) }
     val look = rememberSheetLook()
+    val stage by state.stage.collectAsState()
+    val poseView by state.poseView.collectAsState()
+    val posedLocked = posesPane(stage, poseView, locked = true)
     val fur = rememberFurView(
         open,
         FurViews.SINGLE,
         if (!sized || selection == null) null else locked?.let { furCamera(it) } ?: furCamera(camera.orbit.view, size.width, size.height),
+        posed = selection?.posed != null && (locked == null || posedLocked),
     )
     val frame = singleFrame(
         SingleInput(
@@ -104,6 +110,8 @@ internal fun SingleSurface(
             fur = fur,
             traces = rememberTraces(state),
             rig = rig,
+            posedSurface = posedSurface,
+            posedLocked = posedLocked,
         ),
     )
     val fitting = rememberFitting(state)

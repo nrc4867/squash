@@ -187,7 +187,7 @@ class KoiSmokeTest {
     @Test
     fun theBodyCurveBendsTheKoiInPose() = runDesktopComposeUiTest(KOI_WIDTH, KOI_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.C) }
         waitForIdle()

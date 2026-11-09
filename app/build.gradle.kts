@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":screens-sheet"))
     implementation(project(":screens-draw"))
     implementation(project(":screens-surface"))
+    implementation(project(":screens-dress"))
     implementation("dev.chieppa.stretch:stretch-core")
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")

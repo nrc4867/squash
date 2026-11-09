@@ -30,7 +30,7 @@ class Shell(
     val state: AppState,
     val chooser: FileChooser,
     val toasts: ToastState,
-    private val scope: CoroutineScope,
+    internal val scope: CoroutineScope,
     val content: BuildContent,
     private val keys: KeymapStore? = null,
 ) {

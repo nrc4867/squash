@@ -7,6 +7,7 @@ enum class Stage(val first: BuildTool) {
     LINES(BuildTool.LINE_WIDTH),
     FACE(BuildTool.DRAW_MARK),
     RIG(BuildTool.PAINT_WEIGHT),
+    DRESS(BuildTool.DRAW_GARMENT),
     POSE(BuildTool.DRAG),
 }
 
@@ -18,6 +19,7 @@ val BuildTool.stage: Stage?
         inks -> Stage.LINES
         faces -> Stage.FACE
         rigs -> Stage.RIG
+        dresses -> Stage.DRESS
         poses -> Stage.POSE
         else -> Stage.SHAPE
     }

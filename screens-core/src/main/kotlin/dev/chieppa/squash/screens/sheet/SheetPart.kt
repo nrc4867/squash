@@ -21,9 +21,15 @@ import java.util.IdentityHashMap
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.character.build.GarmentLook
+import dev.chieppa.squash.document.isBranchPart
 
-/** One placed part as the panes draw it: what the graph derived for it, in body space. Never changes once made. */
-class SheetPart(private val placed: PlacedPart) {
+/**
+ * One placed part as the panes draw it: what the graph derived for it, in body space, [seeThrough] for a garment shown ghosted. Never
+ * changes once made.
+ */
+class SheetPart(private val placed: PlacedPart, val seeThrough: Boolean = false) {
     val id: PartId? get() = placed.id
     val mesh: RenderMesh get() = placed.surface.mesh
     val origin: Vec3 get() = placed.origin
@@ -84,9 +90,12 @@ class SheetSelection(
     val overridden: Set<View> = emptySet(),
     val hidden: Map<View, OutlineCurve> = emptyMap(),
     val posed: Map<PartId, RenderMesh>? = null,
-)
+) {
+    /** Every part, the selection among them, with the see-through ones last so what lies behind them is drawn first. */
+    val whole: List<SheetPart> get() = (others + part).sortedBy { it.seeThrough }
+}
 
-/** [character] as the panes draw it with [selected] picked out, or null while that part has built nothing. */
+/** [character] as the panes draw it with [selected] picked out, its garments see-through when [ghosted], or null while that part has built nothing. */
 fun sheetSelection(
     character: AssembledCharacter,
     selected: PartId,
@@ -95,8 +104,9 @@ fun sheetSelection(
     overridden: Set<View> = emptySet(),
     hidden: Map<View, OutlineCurve> = emptyMap(),
     posed: Map<PartId, RenderMesh>? = null,
+    ghosted: Boolean = false,
 ): SheetSelection? {
-    val shown = character.parts.filter { it.box != null }.map(::SheetPart)
+    val shown = character.parts.filter { it.box != null }.map { SheetPart(it, ghosted && it.id?.let(::isBranchPart) == true) }
     val part = shown.firstOrNull { it.id == selected } ?: return null
     val box = character.box ?: return null
     return SheetSelection(part, outlines, shown - part, box, character.floor, drawingScale, overridden, hidden, posed)
@@ -132,7 +142,13 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val overridden = document.character.overridesOf(instance).outlines.keys
     val hidden = if (mirror) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
     val held by state.rig.held.collectAsState()
-    val posed = rememberPosedMeshes(state, (held ?: document.character.pose).isRest)
+    val stage by state.stage.collectAsState()
+    val poseView by state.poseView.collectAsState()
+    val posed = rememberPosedMeshes(state, (held ?: document.character.pose).isRest || !posesPane(stage, poseView, locked = false))
+    val look by state.dress.look(stage == Stage.DRESS).collectAsState()
+    val ghosted = look == GarmentLook.GHOSTED
     val assembled = character ?: return null
-    return remember(assembled, selected, outlines, scale, overridden, hidden, posed) { sheetSelection(assembled, selected, outlines, scale, overridden, hidden, posed) }
+    return remember(assembled, selected, outlines, scale, overridden, hidden, posed, ghosted) {
+        sheetSelection(assembled, selected, outlines, scale, overridden, hidden, posed, ghosted)
+    }
 }

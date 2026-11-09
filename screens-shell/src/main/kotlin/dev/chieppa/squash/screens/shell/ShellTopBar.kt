@@ -21,13 +21,20 @@ import dev.chieppa.stretch.frame.ActionMenuItem
 import dev.chieppa.stretch.frame.BarMenu
 import dev.chieppa.stretch.frame.BarMenus
 import dev.chieppa.stretch.frame.MenuDivider
+import dev.chieppa.stretch.frame.MenuItem
+import dev.chieppa.stretch.frame.MenuLabel
+import dev.chieppa.stretch.frame.LocalActionText
+import dev.chieppa.stretch.frame.caps
+import dev.chieppa.squash.character.build.GarmentLook
+import dev.chieppa.squash.screens.sheet.PoseView
+import dev.chieppa.squash.uidesign.generated.view_garments
+import dev.chieppa.squash.uidesign.generated.view_pose
 import dev.chieppa.stretch.frame.TopBarActions
 import dev.chieppa.stretch.frame.WindowTopBar
 import dev.chieppa.stretch.ui.Segmented
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
-import dev.chieppa.squash.uidesign.generated.stage_dress
 import dev.chieppa.squash.screens.AppState
 import androidx.compose.runtime.getValue
 
@@ -74,19 +81,17 @@ fun ShellTopBar(shell: Shell) {
     )
 }
 
-/** The stages of Build, the one on screen lit, with the stages not built yet faint after them. */
+/** The stages of Build, the one on screen lit. */
 @Composable
 private fun StageSwitcher(state: AppState) {
     val stage by state.stage.collectAsState()
-    val built = Stage.entries.associateBy { stringResource(it.label) }
-    val later = listOf(stringResource(Res.string.stage_dress))
+    val stages = Stage.entries.associateBy { stringResource(it.label) }
     Segmented(
-        built.keys.toList() + later,
+        stages.keys.toList(),
         stringResource(stage.label),
-        { name -> built[name]?.let(state::showStage) },
+        { name -> stages[name]?.let(state::showStage) },
         { it },
         Modifier.testTag(ShellTags.STAGES),
-        enabled = { it in built },
     )
 }
 
@@ -120,10 +125,52 @@ private fun shellMenus(shell: Shell): List<BarMenu> = listOf(
         Item(shell, ShellActions.HISTORY, close)
         Item(shell, ShellActions.INSPECTOR, close)
         MenuDivider()
+        GarmentLookItems(shell, close)
+        MenuDivider()
+        PoseViewItems(shell, close)
+        MenuDivider()
         Item(shell, ShellActions.RESET_LAYOUT, close)
     },
     BarMenu(stringResource(Res.string.shell_menu_help)) { close -> Item(shell, ShellActions.HELP, close) },
 )
+
+/** The Garments group: Shown, Ghosted or Hidden for the stage on screen, the one in force checked. */
+@Composable
+private fun GarmentLookItems(shell: Shell, close: () -> Unit) {
+    val state = shell.state
+    val stage by state.stage.collectAsState()
+    val look by state.dress.look(stage == Stage.DRESS).collectAsState()
+    MenuLabel(stringResource(Res.string.view_garments))
+    Choice(shell, ShellActions.GARMENTS_SHOWN, look == GarmentLook.SHOWN, close)
+    Choice(shell, ShellActions.GARMENTS_GHOSTED, look == GarmentLook.GHOSTED, close)
+    Choice(shell, ShellActions.GARMENTS_HIDDEN, look == GarmentLook.HIDDEN, close)
+}
+
+/** The Pose group: Posed or Rest, the one in force checked. */
+@Composable
+private fun PoseViewItems(shell: Shell, close: () -> Unit) {
+    val view by shell.state.poseView.collectAsState()
+    MenuLabel(stringResource(Res.string.view_pose))
+    Choice(shell, ShellActions.POSE_POSED, view == PoseView.POSED, close)
+    Choice(shell, ShellActions.POSE_REST, view == PoseView.REST, close)
+}
+
+/** One choice of a View group: the action [id] as a check item, faint where it cannot act. */
+@Composable
+private fun Choice(shell: Shell, id: ActionId, checked: Boolean, close: () -> Unit) {
+    val action = shell.registry[id] ?: return
+    val keys = shell.keymap.keysFor(id).firstOrNull()?.caps()?.joinToString(" ")
+    MenuItem(
+        LocalActionText.current(id.value),
+        {
+            action.run()
+            close()
+        },
+        keys = keys,
+        checked = checked,
+        enabled = action.isAvailable(),
+    )
+}
 
 @Composable
 private fun Item(shell: Shell, id: ActionId, close: () -> Unit) {

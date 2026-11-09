@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.surface.pose
+package dev.chieppa.squash.screens.edit
 
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.DocumentCommand
@@ -6,7 +6,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.stretch.core.History
 
 /** A slider's drag as one undo step: each change previews on one open transaction, which [done] writes. */
-internal class SliderGesture(private val session: CharacterSession) {
+class SliderGesture(private val session: CharacterSession) {
     private var open: History<SquashDocument>.Transaction? = null
 
     fun change(command: DocumentCommand) {

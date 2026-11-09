@@ -158,7 +158,7 @@ class BodyCurveFlowTest {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
         paws.forEach { session.send(SetPlanted(it, true)) }
-        key(Key.Six)
+        key(Key.Seven)
         key(Key.C)
         assertEquals(BuildTool.BODY_CURVE, state.tool.value)
         onNodeWithTag(ShellTags.tool(BuildTool.BODY_CURVE)).assertExists()

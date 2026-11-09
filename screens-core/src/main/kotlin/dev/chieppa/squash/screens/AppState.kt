@@ -41,6 +41,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import dev.chieppa.squash.screens.dress.DressEditState
+import dev.chieppa.squash.screens.sheet.PoseView
 import kotlinx.coroutines.launch
 import java.util.EnumMap
 import kotlinx.coroutines.plus
@@ -146,6 +149,12 @@ class AppState(
     /** What the Move tool remembers: its mode, the next socket's angle and pair, and the hand-made socket picked. */
     val move = MoveEditState()
 
+    /** What the Dress stage remembers: the garment picked, the slot popover, the garments out of view and how garments show. */
+    val dress = DressEditState()
+
+    /** Whether the panes outside Pose show the pose or the rest pose. */
+    val poseView = MutableStateFlow(PoseView.POSED)
+
     /** The open socket Add part's popover is open on, and the type it would add there. */
     val addingSocket = MutableStateFlow<OpenSocket?>(null)
     val addingType = MutableStateFlow<TemplateId?>(null)
@@ -159,6 +168,10 @@ class AppState(
                 armed.stage?.let { stage.value = it }
                 armedIn[stage.value] = armed
             }
+        }
+        scope.launch(Dispatchers.Unconfined) {
+            combine(session, stage, dress.lookInDress, dress.lookElsewhere, dress.hidden) { open, shown, _, _, _ -> open to shown }
+                .collect { (open, shown) -> open?.garmentView?.value = dress.view(shown == Stage.DRESS) }
         }
     }
 
@@ -192,6 +205,7 @@ class AppState(
         file.value = DocumentSession(format, document, storage, path, opened.history)
         rig.clear()
         pose.clear()
+        dress.clear()
         posing.value = SessionPose(opened, held = rig.held)
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
@@ -205,6 +219,7 @@ class AppState(
                 val plan = templates.plan(current.character.bodyPlan)
                 if (plan != null && addingSocket.value?.let { it in openSockets(current, plan, templates) } == false) closeAddPart()
                 move.follow(current)
+                dress.follow(current)
             }
         }
         return opened
@@ -228,6 +243,7 @@ class AppState(
         clearEdits()
         rig.clear()
         pose.clear()
+        dress.clear()
         screen.value = Screen.HOME
     }
 

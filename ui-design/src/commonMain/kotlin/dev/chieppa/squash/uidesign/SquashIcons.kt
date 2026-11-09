@@ -95,6 +95,12 @@ object SquashIcons {
             stroke("M3 4.5v7M5.5 4.5v7M8 4.5v7M10.5 4.5v7M13 4.5v7")
         }
     }
+    val Cover: ImageVector by lazy {
+        icon("cover") {
+            stroke("M2 8c0-4 12-4 12 0s-12 4-12 0z")
+            stroke("M5 4.6v6.8M8 4v8M11 4.6v6.8")
+        }
+    }
     val DeleteSocket: ImageVector by lazy {
         icon("delete-socket") {
             stroke("M3 4.5h10M6.5 4.5V3h3v1.5")
@@ -232,6 +238,13 @@ object SquashIcons {
             fill("M7 8a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z")
         }
     }
+    val Layers: ImageVector by lazy {
+        icon("layers") {
+            stroke("M8 2.5l6 3-6 3-6-3z")
+            stroke("M2 8l6 3 6-3")
+            stroke("M2 10.5l6 3 6-3")
+        }
+    }
     val Leaves: ImageVector by lazy {
         icon("leaves") {
             stroke("M13.5 2.5c-6 0-11 2-11 7a4 4 0 0 0 4 4c5 0 7-5 7-11z")
@@ -283,6 +296,14 @@ object SquashIcons {
             stroke("M6 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
         }
     }
+    val LooseEnd: ImageVector by lazy {
+        icon("loose-end") {
+            stroke("M3 3.5c2 1 3 3 3 5s1 4 3 4.5")
+            stroke("M1.7 3.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z")
+            stroke("M4.7 8.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z")
+            stroke("M10.2 13a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z")
+        }
+    }
     val Marks: ImageVector by lazy {
         icon("marks") {
             stroke("M5.5 4v3M10.5 4v3")
@@ -315,6 +336,11 @@ object SquashIcons {
         icon("move") {
             stroke("M8 2v12M2 8h12")
             stroke("M6 4l2-2 2 2M6 12l2 2 2-2M4 6L2 8l2 2M12 6l2 2-2 2")
+        }
+    }
+    val NewGarment: ImageVector by lazy {
+        icon("new-garment") {
+            stroke("M8 3v10M3 8h10")
         }
     }
     val Object: ImageVector by lazy {

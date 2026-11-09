@@ -197,7 +197,7 @@ class LizardSmokeTest {
     @Test
     fun theLizardLiftsAFootWithTheOthersPlanted() = runDesktopComposeUiTest(LIZARD_WIDTH, LIZARD_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -216,7 +216,7 @@ class LizardSmokeTest {
     @Test
     fun theBodyCurveBendsTheLizardOverItsPlantedFeet() = runDesktopComposeUiTest(LIZARD_WIDTH, LIZARD_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.C) }
         waitForIdle()

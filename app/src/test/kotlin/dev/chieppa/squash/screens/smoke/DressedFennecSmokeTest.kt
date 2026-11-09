@@ -10,6 +10,14 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.onFirst
+import dev.chieppa.squash.character.build.GarmentLook
+import dev.chieppa.squash.screens.fennec.CAP
+import dev.chieppa.squash.screens.fennec.FEET_SLOT
+import dev.chieppa.squash.screens.fennec.SCARF
+import dev.chieppa.squash.screens.fennec.SWEATER
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BonePose
@@ -83,7 +91,8 @@ private object NoDressedFiles : FileChooser {
 
 /**
  * The dressed fennec, built from its commands, in every pane with its colors, lines and fur, wearing its Winter outfit: in Shape at
- * rest with Move's dots over it, and in Pose with the left front knee bent and the head turned, the sleeve and cap following.
+ * rest with Move's dots over it, shown and ghosted, in Pose with the left front knee bent and the head turned, the sleeve and cap
+ * following, and in Dress as W13, W14 and W15 draw it, each with the window around the panes.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)
@@ -138,7 +147,7 @@ class DressedFennecSmokeTest {
         return bench
     }
 
-    private fun ComposeUiTest.keepSheet(bench: Bench, tool: PaneTool, posed: Boolean, name: String) {
+    private fun ComposeUiTest.keepSheet(bench: Bench, tool: PaneTool, posed: Boolean, name: String, window: Boolean = false) {
         val session = assertNotNull(bench.state.session.value)
         settle(work) { session.graph.settled.value && bench.selection != null && (!posed || bench.selection?.posed != null) }
         waitForIdle()
@@ -165,12 +174,26 @@ class DressedFennecSmokeTest {
         val image = renderSnapshot(sheetFrame(input), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
         assertNotBlank(image.pixels, name)
         keepImage(image.pixels, image.width, name)
+        if (window) {
+            val root = onAllNodes(isRoot()).onFirst()
+            val shot = root.captureToImage().argbPixels()
+            val windowWidth = root.fetchSemanticsNode().size.width
+            val corner = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInWindow }
+            shot.paste(windowWidth, image.pixels, image.width, corner.minOf { it.left }.roundToInt(), corner.minOf { it.top }.roundToInt())
+            keepImage(shot, windowWidth, "$name-window")
+        }
         assertEquals(emptyList(), errors)
+    }
+
+    private fun ComposeUiTest.key(key: Key) {
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(key) }
+        waitForIdle()
     }
 
     @Test
     fun theWinterOutfitAtRestInShape() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
         val bench = opened()
+        bench.state.dress.lookElsewhere.value = GarmentLook.SHOWN
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.V) }
         waitForIdle()
         assertEquals(BuildTool.MOVE, bench.state.tool.value)
@@ -180,10 +203,45 @@ class DressedFennecSmokeTest {
     @Test
     fun theWinterOutfitFollowsAPose() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
-        waitForIdle()
+        bench.state.dress.lookElsewhere.value = GarmentLook.SHOWN
+        key(Key.Seven)
         val session = assertNotNull(bench.state.session.value)
         session.send(SetPose(Pose(listOf(BonePose(FRONT_LEG_L, "knee", KNEE_BENT), BonePose(HEAD, "neck", HEAD_TURNED), BonePose(looseEndPartId(SCARF, SCARF_END), looseJoint(1), END_SWUNG)))))
         keepSheet(bench, assertNotNull(bench.tools).drag, posed = true, "dressed-pose")
+    }
+
+    @Test
+    fun theWinterOutfitGhostedInShape() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        assertEquals(GarmentLook.GHOSTED, bench.state.dress.lookElsewhere.value, "garments are ghosted outside Dress")
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dressed-ghosted")
+    }
+
+    @Test
+    fun dressDrawsTheSweaterAsW13() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        key(Key.Six)
+        bench.state.dress.garment.value = SWEATER
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w13", window = true)
+    }
+
+    @Test
+    fun dressShowsTheFeetSlotAndTheLayersAsW14() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        key(Key.Six)
+        key(Key.L)
+        bench.state.dress.garment.value = SCARF
+        bench.state.dress.openSlot.value = FEET_SLOT
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w14", window = true)
+    }
+
+    @Test
+    fun dressShowsTheBodyUnderTheCapAsW15() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        key(Key.Six)
+        key(Key.E)
+        bench.state.dress.garment.value = CAP
+        bench.state.selectedPart.value = HEAD
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w15", window = true)
     }
 }

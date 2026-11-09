@@ -174,7 +174,7 @@ class AddSocketFlowTest {
         assertTrue(wings.all { it.role == Role.WING })
         assertTrue(onAllNodesWithText("Wing").fetchSemanticsNodes().isNotEmpty(), "the wing shows in Parts")
 
-        key(Key.Six)
+        key(Key.Seven)
         settle(work) { state.rigNow() != null }
         waitForIdle()
         val at = assertNotNull(findEnd(state, wings.map { it.id }.toSet()), "a wing's end handle shows in Full")

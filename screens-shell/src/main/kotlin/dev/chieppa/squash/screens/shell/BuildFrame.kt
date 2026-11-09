@@ -25,6 +25,7 @@ import org.jetbrains.compose.resources.stringResource
 import dev.chieppa.squash.uidesign.generated.shell_drawer_inspector
 import dev.chieppa.squash.uidesign.generated.stage_face
 import dev.chieppa.squash.uidesign.generated.stage_shape
+import dev.chieppa.squash.uidesign.generated.stage_dress
 import dev.chieppa.squash.uidesign.generated.shell_drawer_rig
 import androidx.compose.runtime.getValue
 
@@ -56,6 +57,7 @@ val Stage.label: StringResource
         Stage.LINES -> Res.string.shell_drawer_lines
         Stage.FACE -> Res.string.stage_face
         Stage.RIG -> Res.string.shell_drawer_rig
+        Stage.DRESS -> Res.string.stage_dress
         Stage.POSE -> Res.string.stage_pose
     }
 
@@ -63,6 +65,7 @@ val Stage.label: StringResource
 val Stage.icon get() = when (this) {
     Stage.RIG -> SquashIcons.Rig
     Stage.POSE -> SquashIcons.Pose
+    Stage.DRESS -> SquashIcons.Garment
     else -> SquashIcons.Part
 }
 

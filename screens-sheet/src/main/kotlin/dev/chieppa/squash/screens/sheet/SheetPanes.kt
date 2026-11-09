@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.sheet
 
-import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -73,7 +72,7 @@ fun SheetPanes(
     Column(modifier) {
         if (layout == SheetLayout.SINGLE) {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
-            SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, singleFoot, rig)
+            SingleSurface(state, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, singleFoot, rig, posedSurface)
         } else {
             SheetStrip(layout = layout, onLayout = pick, tools = tools)
             SheetSurface(state, layout, tool, paneToast, Modifier.weight(1f).fillMaxWidth(), surface, rig, posedSurface)
@@ -111,8 +110,10 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
     var refused by remember { mutableStateOf(false) }
     val fullRect = rects[SheetPane.FULL.ordinal]
     val look = rememberSheetLook()
-    val posedPanes = state.stage.collectAsState().value == Stage.POSE
-    val fullFur = rememberFurView(open, FurViews.FULL, part?.takeIf { fullRect.width > 0 && fullRect.height > 0 }?.let { furCamera(orbit.view, fullRect.width, fullRect.height) }, posed = true)
+    val stage by state.stage.collectAsState()
+    val poseView by state.poseView.collectAsState()
+    val posedPanes = posesPane(stage, poseView, locked = true)
+    val fullFur = rememberFurView(open, FurViews.FULL, part?.takeIf { fullRect.width > 0 && fullRect.height > 0 }?.let { furCamera(orbit.view, fullRect.width, fullRect.height) }, posed = selection?.posed != null)
     val lockedFur = View.entries.associateWith { view -> rememberFurView(open, FurViews.locked(view), cameras[view]?.let { furCamera(it) }, posedPanes) }
     val fullView = remember(orbit, fullRect.width, fullRect.height) { FullView({ orbit.view }, fullRect.width, fullRect.height) }
     val color = rememberPaneColor(state)

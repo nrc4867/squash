@@ -39,8 +39,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Build frame's status bar: the pen's pressure while one draws, or what the graph is working on, or that it has settled;
- * in Rig and Pose, the stage and its armed tool beside that; then the reference images' count with References open, Swap pane in Focus, the
- * rig's bones, parts and painted seams in Rig, the paw lifted and the paws planted in Pose, or the selected part's views and where they disagree in the workspace, or the character's
+ * in Rig, Dress and Pose, the stage and its armed tool beside that; then the reference images' count with References open, Swap pane in Focus, the
+ * rig's bones, parts and painted seams in Rig, the paw lifted and the paws planted in Pose, the picked garment, outfit or body under it in Dress, or the selected part's views and where they disagree in the workspace, or the character's
  * part count elsewhere.
  */
 @Composable
@@ -66,6 +66,7 @@ fun BuildStatusBar(shell: Shell) {
     val moveMode by state.move.mode.collectAsState()
     val adding = screen == Screen.WORKSPACE && stage == Stage.SHAPE && tool == BuildTool.MOVE && moveMode != MoveMode.PLACE_PART
     val posing = screen == Screen.WORKSPACE && stage == Stage.POSE
+    val dressing = screen == Screen.WORKSPACE && stage == Stage.DRESS
     val pen = state.curves.penPressure
     val drawing = state.curves.drawing
     val plan = state.templates.plan(document.character.bodyPlan)
@@ -84,6 +85,7 @@ fun BuildStatusBar(shell: Shell) {
             }
             if (posing) PoseStatusTool(tool)
             if (screen == Screen.WORKSPACE && stage == Stage.SHAPE && tool == BuildTool.MOVE) MoveStatusTool()
+            if (dressing) DressStatusTool(tool)
             if (rigging) {
                 toolLabel(tool)?.takeIf { tool.rigs }?.let { Box(Modifier.testTag(ShellTags.STATUS_STAGE)) { StatusItem(stringResource(Res.string.rig_status_tool, stringResource(it))) } }
             }
@@ -98,6 +100,7 @@ fun BuildStatusBar(shell: Shell) {
                     }
                     screen == Screen.WORKSPACE && layout == SheetLayout.FOCUS -> StatusItem(stringResource(Res.string.sheet_status_swap))
                     posing -> PoseStatusPaws(state, document.character)
+                    dressing -> DressStatusSummary(state, open, document.character, tool)
                     adding && part != null -> AddingStatus(state, document, part, moveMode)
                     rigging && rig != null -> StatusItem(stringResource(Res.string.rig_status_counts, rig.bones.size, rig.parts.size, paintedSeams(rig, document.character)))
                     touched != null -> StatusItem(

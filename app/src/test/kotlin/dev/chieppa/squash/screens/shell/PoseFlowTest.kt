@@ -117,7 +117,7 @@ class PoseFlowTest {
     fun sixShowsPoseAndADragOnAPawIsOneStep() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
-        key(Key.Six)
+        key(Key.Seven)
         assertEquals(Stage.POSE, state.stage.value)
         assertEquals(BuildTool.DRAG, state.tool.value, "Pose opens on Drag")
         for (tool in listOf(BuildTool.DRAG, BuildTool.TURN, BuildTool.PIN, BuildTool.LOOK)) onNodeWithTag(ShellTags.tool(tool)).assertExists()

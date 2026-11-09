@@ -33,6 +33,9 @@ val INK_SLOT = SlotName("ink")
 /** How many pieces a border's ribbon has between two of its anchors. */
 private const val BORDER_PIECES = 6
 
+/** How strongly a garment shown ghosted fills. */
+private const val SEE_THROUGH_OPACITY = 0.18f
+
 private val EVEN_WIDTH = MarkWidth(listOf(WidthStop(0f, 1f), WidthStop(1f, 1f)))
 
 /** What the panes read to show a character's color, all of it derived: its [body] color, its [palette] and its [shading], with its [borders]' ink. */
@@ -41,9 +44,11 @@ class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectSh
 /**
  * [part] as a pane draws it. With [color], its base and layers show their slots at the shading the pane reads, darkened by side seen with the
  * camera at [toCamera]; a part nothing has been placed on, or a character with no color, draws as the look's own. With [posed], the
- * part's mesh in a pose, it draws on that mesh with its layers laid on it, since a layer keeps its place on the patch.
+ * part's mesh in a pose, it draws on that mesh with its layers laid on it, since a layer keeps its place on the patch. A part seen
+ * through draws faint in the look's own fill with its outline.
  */
 fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: RenderMesh? = null): MeshDraw {
+    if (part.seeThrough) return draw(part, ghostOutline, opacity * SEE_THROUGH_OPACITY, layer).let { if (posed != null) it.copy(mesh = posed) else it }
     val id = part.id
     if (color == null || id == null) return draw(part, outline, opacity, layer).let { if (posed != null) it.copy(mesh = posed) else it }
     val fallback = this.part.copy(ink = color.palette.colorOf(INK_SLOT) ?: this.part.ink)

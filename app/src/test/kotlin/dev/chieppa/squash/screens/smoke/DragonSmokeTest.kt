@@ -202,7 +202,7 @@ class DragonSmokeTest {
     @Test
     fun aWingRaisedByItsWristInPose() = runDesktopComposeUiTest(DRAGON_WIDTH, DRAGON_HEIGHT) {
         val bench = opened(WING_L)
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -220,7 +220,7 @@ class DragonSmokeTest {
     @Test
     fun theWingsFoldByCurl() = runDesktopComposeUiTest(DRAGON_WIDTH, DRAGON_HEIGHT) {
         val bench = opened(TORSO)
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -241,7 +241,7 @@ class DragonSmokeTest {
     @Test
     fun theClawsRideTheirCurledToes() = runDesktopComposeUiTest(DRAGON_WIDTH, DRAGON_HEIGHT) {
         val bench = opened(FRONT_PAW_L)
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)

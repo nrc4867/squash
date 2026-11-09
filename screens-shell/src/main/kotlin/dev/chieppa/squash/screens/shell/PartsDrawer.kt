@@ -1,5 +1,10 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.screens.dress.DressNote
+import dev.chieppa.squash.screens.dress.dressNote
+import dev.chieppa.squash.uidesign.generated.dress_hidden
+import dev.chieppa.squash.uidesign.generated.dress_through
+import dev.chieppa.squash.uidesign.generated.dress_bare
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -48,6 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private val SWATCH_SHAPE = RoundedCornerShape(3.dp)
 private val TRAILING_GAP = 6.dp
+private const val NOTE_JOIN = " · "
 
 /** The open character's parts and empty sockets: a part selects, and a socket, shown as a row to add, opens Add part's popover on it. */
 @Composable
@@ -67,6 +73,13 @@ fun PartsDrawerContent(state: AppState) {
     val roots = partTree(document, plan, state.templates, mirror, { if (it == Side.LEFT) left else right }, names)
     val guesses = roleLabels(state.templates.roles(document.character).fourLegged)
     val rows = flattenTree(roots) { true }.map { it.node.item }
+    val stage by state.stage.collectAsState()
+    val assembled by remember(open) { open.assembly.output }.collectAsState()
+    val notes: (PartRow) -> DressNote? = if (stage == Stage.DRESS) {
+        { row -> (row as? PartRow.Placed)?.let { document.character.dressNote(it.part, assembled) } }
+    } else {
+        { null }
+    }
     val current = rows.firstOrNull { it is PartRow.Open && it.socket == socket } ?: rows.firstOrNull { it is PartRow.SideOf && it.part.id == selected } ?: rows.firstOrNull {
         it is PartRow.Placed && (it.part.id == selected || document.twin(it.part)?.id == selected)
     }
@@ -93,6 +106,7 @@ fun PartsDrawerContent(state: AppState) {
                     RowUnseated(it)
                     RowRole(it, guesses)
                     RowState(it)
+                    notes(it)?.let { note -> RowDressNote(it, note) }
                 }
             },
         )
@@ -134,6 +148,23 @@ private fun RowRole(row: PartRow, labels: (Role) -> String) {
 private fun RowUnseated(row: PartRow) {
     val socket = (row as? PartRow.Placed)?.unseated ?: return
     Chip(socket, Modifier.testTag(ShellTags.partRowUnseated(row.tagName)), kind = ChipKind.Warn)
+}
+
+/** What a part is under the worn garments, in Dress: the garments covering it, outermost first, through, hidden or bare. */
+@Composable
+private fun RowDressNote(row: PartRow, note: DressNote) {
+    val text = when (note) {
+        DressNote.Hidden -> stringResource(Res.string.dress_hidden)
+        DressNote.Through -> stringResource(Res.string.dress_through)
+        DressNote.Bare -> stringResource(Res.string.dress_bare)
+        is DressNote.Under -> note.garments.joinToString(NOTE_JOIN)
+    }
+    BasicText(
+        text,
+        Modifier.testTag(ShellTags.partRowDress(row.tagName)),
+        style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)),
+        maxLines = 1,
+    )
 }
 
 @Composable

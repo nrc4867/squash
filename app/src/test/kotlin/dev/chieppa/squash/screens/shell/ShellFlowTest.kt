@@ -340,13 +340,12 @@ class ShellFlowTest {
     }
 
     @Test
-    fun theRailsHoldTheDrawersAndTheStagesNotBuiltDoNotOpen() = runDesktopComposeUiTest(1600, 900) {
+    fun theRailsHoldTheDrawersAndEveryStageOpens() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
         createCharacter(state)
         for (name in listOf("Parts", "References", "History", "Help", "Inspector")) onNodeWithContentDescription(name).assertIsEnabled()
         onNodeWithContentDescription("Part types").assertDoesNotExist()
-        for (name in listOf("Color", "Lines", "Face", "Rig", "Pose")) onNode(hasText(name) and isSelectable()).assertIsEnabled()
-        onNode(hasText("Dress") and isSelectable()).assertIsNotEnabled()
+        for (name in listOf("Color", "Lines", "Face", "Rig", "Dress", "Pose")) onNode(hasText(name) and isSelectable()).assertIsEnabled()
         onNode(hasText("Color") and isSelectable()).performClick()
         waitForIdle()
         assertEquals(Stage.COLOR, state.stage.value)

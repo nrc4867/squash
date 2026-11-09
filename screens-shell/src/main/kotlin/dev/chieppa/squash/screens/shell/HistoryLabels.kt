@@ -136,6 +136,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     val roleStep = stringResource(Res.string.role_step, FIRST)
     val roleNames = roleLabels(fourLegged = false)
+    val dress = dressLabels(views)
     fun label(command: Command<SquashDocument>): String =
         when (command) {
             is Together -> command.commands.firstOrNull()?.let(::label).orEmpty()
@@ -175,7 +176,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is AddMarks -> if (command.marks.any { it.kind == MarkKind.FUR }) furStrokes else ""
             is SetGrain -> combed
             is SetFurRule -> furRule
-            else -> ""
+            else -> dress(command)
         }
     return ::label
 }

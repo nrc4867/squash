@@ -38,6 +38,9 @@ import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
 import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import dev.chieppa.squash.screens.surface.FaceBand
+import dev.chieppa.squash.screens.dress.DressBand
+import dev.chieppa.squash.screens.dress.rememberCoverTool
+import dev.chieppa.squash.screens.dress.rememberGarmentSelectTool
 import dev.chieppa.squash.document.SeamBrush
 import dev.chieppa.squash.screens.surface.rig.RigWiggle
 import dev.chieppa.squash.screens.surface.rig.rememberRigShading
@@ -70,7 +73,7 @@ private val POPOVER_TOP = 44.dp
 private val POPOVER_END = 24.dp
 
 /**
- * The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. In Rig the panes
+ * The Build workspace: the panes and their tool strip, and under them the Face or Dress stage's band, in the frame's viewport. In Rig the panes
  * show the rig, and in Pose every pane shows the character in its pose.
  */
 @Composable
@@ -105,6 +108,8 @@ fun WorkspaceScreen(shell: Shell) {
     val eraseWeight = rememberSeamStrokeTool(state, SeamBrush.ERASE)
     val smoothWeight = rememberSeamStrokeTool(state, SeamBrush.SMOOTH)
     val poseTools = rememberPoseTools(state)
+    val garmentSelect = rememberGarmentSelectTool(state)
+    val cover = rememberCoverTool(state)
     val stage by state.stage.collectAsState()
     val armedTool: PaneTool = poseTools.of(armed) ?: when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
@@ -132,7 +137,9 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
-        BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> selectPart
+        BuildTool.COVER -> cover
+        BuildTool.DRAW_GARMENT, BuildTool.EDIT_GARMENT, BuildTool.ERASE_GARMENT, BuildTool.SMOOTH_GARMENT, BuildTool.LOOSE_END -> garmentSelect
+        BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> if (stage == Stage.DRESS) garmentSelect else selectPart
     }
     val tool = traceHandles.over(armedTool)
     val selected by state.selectedPart.collectAsState()
@@ -160,6 +167,7 @@ fun WorkspaceScreen(shell: Shell) {
             Box(Modifier.align(Alignment.TopEnd).padding(top = POPOVER_TOP, end = POPOVER_END)) { AddPartPopover(state) }
         }
         if (facing) FaceBand(state)
+        if (stage == Stage.DRESS) DressBand(state)
     }
 }
 

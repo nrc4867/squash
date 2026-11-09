@@ -201,7 +201,7 @@ class PersonSmokeTest {
     @Test
     fun thePersonRaisesAHandWithTheFeetPlanted() = runDesktopComposeUiTest(PERSON_WIDTH, PERSON_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         val state = bench.state
         val session = assertNotNull(state.session.value)
@@ -221,7 +221,7 @@ class PersonSmokeTest {
     @Test
     fun theBodyCurveBendsThePersonOverItsPlantedFeet() = runDesktopComposeUiTest(PERSON_WIDTH, PERSON_HEIGHT) {
         val bench = opened()
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.C) }
         waitForIdle()

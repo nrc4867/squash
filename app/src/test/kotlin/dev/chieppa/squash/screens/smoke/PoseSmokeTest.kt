@@ -133,7 +133,7 @@ class PoseSmokeTest {
             }
         }
         settle(work) { state.session.value?.graph?.settled?.value == true && state.rigNow() != null }
-        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Six) }
+        onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.Seven) }
         waitForIdle()
         return bench
     }

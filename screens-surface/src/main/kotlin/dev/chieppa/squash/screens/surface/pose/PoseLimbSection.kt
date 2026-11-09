@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.pose
 
+import dev.chieppa.squash.screens.edit.SliderGesture
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
