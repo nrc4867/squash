@@ -59,6 +59,8 @@ class PlacedPart(
     val turn: Mat3 = Mat3.IDENTITY,
     /** What it is to the body: its own role, else its template's. */
     val role: Role? = null,
+    /** For a garment's branch, the body part it was built over; null for a part of the body. */
+    val covering: Covering? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -89,7 +91,7 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits. */
     fun showing(surface: PartSurface, turn: Mat3): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */

@@ -48,6 +48,10 @@ import dev.chieppa.squash.character.build.posedStateNode
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.socketFilletNode
+import dev.chieppa.squash.character.build.dressedNode
+import dev.chieppa.squash.character.build.dressingOf
+import dev.chieppa.squash.character.build.dressedColorNode
+import dev.chieppa.squash.character.build.garmentColors
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
@@ -96,17 +100,20 @@ class CharacterSession(
     private val colorDetail: Node<*, ColorSource> = graph.node(colorStep, stage = BuildStages.SURFACE_WORK) { ColorSource.Detail(it) }
 
     /**
-     * The whole character, each part on its socket with the plan's empty sockets filled from their templates. Made with
-     * the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
+     * The whole character, each part on its socket with the plan's empty sockets filled from their templates, wearing what its shown
+     * outfit wears. Made with the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
      * run is pending, and `failure` holds why a part's build failed.
      */
-    val assembly: Node<*, AssembledCharacter> = graph.socketFilletNode(
-        graph.assemblyNode(
-            document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
-            templates,
-            ::surface,
-            ::defaultSurface,
+    val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
+        graph.socketFilletNode(
+            graph.assemblyNode(
+                document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
+                templates,
+                ::surface,
+                ::defaultSurface,
+            ),
         ),
+        document.map { dressingOf(it.character) }.distinctUntilChanged(),
     )
 
     /**
@@ -126,12 +133,15 @@ class CharacterSession(
     val bodyLines: Node<*, BodyLines> = graph.bodyLinesNode(assembly, bodySurfaceWork)
 
     /**
-     * Every part's color, cut to the mesh in each part's surface space. Made with the session, so [Graph.settled] covers it from
-     * the start. Its `output` keeps the last result while a newer run is pending. See HLD: look, Color is vector.
+     * Every part's color, cut to the mesh in each part's surface space, and each worn garment's. Made with the session, so
+     * [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending. See HLD: look, Color is vector.
      */
-    val bodyColor: Node<*, BodyColor> = graph.bodyColorNode(
-        document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
-        ::heldColor,
+    val bodyColor: Node<*, BodyColor> = graph.dressedColorNode(
+        graph.bodyColorNode(
+            document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
+            ::heldColor,
+        ),
+        document.map { garmentColors(it.character) }.distinctUntilChanged(),
     )
 
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */

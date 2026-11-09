@@ -17,12 +17,13 @@ data class SurfaceHit(val part: PartId, val patch: String, val u: Float, val v: 
 /** How many halvings find the edge of what shows between a pixel off the surface and one on it. */
 private const val EDGE_STEPS = 6
 
-/** The nearest place on any placed part of [character] showing at [pixel], or null where none does. */
+/** The nearest place on any placed part of the body of [character] showing at [pixel], or null where none does; garments are passed through. */
 fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView): SurfaceHit? {
     var best: SurfaceHit? = null
     var nearest = Float.POSITIVE_INFINITY
     for (part in character.parts) {
         val id = part.id ?: continue
+        if (part.covering != null) continue
         for (patch in part.surface.patches) {
             hitOn(part, id, patch, pixel, sight, nearest)?.let { (hit, depth) ->
                 best = hit
@@ -42,7 +43,7 @@ fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: Surfac
     var closest: Offset? = null
     var nearest = Float.POSITIVE_INFINITY
     for (part in character.parts) {
-        if (part.id == null) continue
+        if (part.id == null || part.covering != null) continue
         for (patch in part.surface.patches) {
             for (index in 0 until patch.nu * patch.nv) {
                 val point = part.origin + part.surface.shown(patch.point(index))

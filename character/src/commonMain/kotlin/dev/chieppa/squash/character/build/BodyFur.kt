@@ -79,10 +79,11 @@ data class PartFur(val rule: FurRule, val roots: List<FurRoot>, val rims: List<F
 data class BodyFur(val parts: Map<PartId, PartFur>, val figureRadius: Float = 0f, val figureCenter: Vec3 = Vec3.ZERO)
 
 /**
- * The fur strokes in [work], each following the grain of the part holding it, each with its [FurRoot.room], which [furView] shows them by. A root on a part or patch not there is dropped. [checkCancelled] runs before each part.
+ * The fur strokes in [work], each following the grain of the part holding it, each with its [FurRoot.room], which [furView] shows them by. A root on a part or patch not there, or under a garment [character] wears, is dropped. [checkCancelled] runs before each part.
  */
 fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character: AssembledCharacter, checkCancelled: () -> Unit = {}): BodyFur {
     val placed = character.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
+    val worn = character.garmentShells()
     return BodyFur(
         inputs.mapNotNull { (id, input) ->
             checkCancelled()
@@ -92,6 +93,7 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
                 val root = mark.points.first()
                 val surface = placed[root.anchor.part]?.surface ?: return@mapNotNull null
                 val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return@mapNotNull null
+                if (worn.any { root.position in it }) return@mapNotNull null
                 rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))
             }
             if (roots.isEmpty()) null else id to PartFur(input.rule, withRoom(roots.sortedBy { orderOf(it.id) }), placed[id]?.surface?.let(::rimsOf).orEmpty())

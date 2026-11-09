@@ -27,7 +27,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
 ./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
 ./gradlew :rig:desktopTest -PupdateGoldens        # rewrite the rig's golden fixtures
-./gradlew :screens-core:test -PupdateGoldens  # rewrite examples/dragon.json, examples/fennec.json, examples/fennec-winged.json, examples/koi.json, examples/lizard.json, examples/person.json and examples/toucan.json, the example characters, from their commands
+./gradlew :screens-core:test -PupdateGoldens  # rewrite examples/dragon.json, examples/fennec.json, examples/fennec-dressed.json, examples/fennec-winged.json, examples/koi.json, examples/lizard.json, examples/person.json and examples/toucan.json, the example characters, from their commands
 ./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
 ```
 
