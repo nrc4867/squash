@@ -42,7 +42,26 @@ data class TubeSpec(
     val endHandover: Float? = null,
     /** Where an undrawn run's rings take their up from, or null for what the axis's own direction gives. */
     val up: Vec3? = null,
+    /** A stretch of u holding more than its share of the rings, or null for rings spaced evenly. */
+    val focus: RingFocus? = null,
 )
+
+/** The stretch of u from [from] to [to] holding [share] of a run's ring spacings, the rest spaced evenly outside it. */
+data class RingFocus(val from: Float, val to: Float, val share: Float) {
+    /** Where the spacing [t] of the way through the rings lies, 0 to 1 in u. */
+    fun at(t: Float): Float {
+        val inside = (to - from).coerceIn(0f, 1f)
+        val outside = 1f - inside
+        if (inside <= 0f || outside <= 0f) return t
+        val before = from * (1f - share) / outside
+        val after = before + share
+        return when {
+            t <= before -> if (before <= 0f) from else t / before * from
+            t <= after -> from + (t - before) / share * inside
+            else -> to + (t - after) / (1f - after) * (1f - to)
+        }
+    }
+}
 
 /**
  * A run given ring by ring, for a run that does not follow the part's axis: full extents and centre at each u. Its rings
@@ -179,7 +198,7 @@ object SliceBuilder {
     }
 
     /**
-     * Evenly spaced u values with the nearest ring moved onto each joint, so a joint always lands on a ring. A flat end's
+     * Evenly spaced u values, or more of them over the spec's focus, with the nearest ring moved onto each joint, so a joint always lands on a ring. A flat end's
      * pole shares its u with the ring it closes, and the other rings space evenly between.
      */
     private fun ringUs(spec: TubeSpec): List<Float> {
@@ -188,7 +207,11 @@ object SliceBuilder {
         val last = if (spec.endClosure == EndClosure.FLAT) n - 2 else n - 1
         val steps = (last - first).coerceAtLeast(1)
         val span = spec.uEnd - spec.uStart
-        val us = FloatArray(n) { spec.uStart + span * (it - first).coerceIn(0, steps) / steps }
+        val focus = spec.focus
+        val us = FloatArray(n) {
+            val step = (it - first).coerceIn(0, steps)
+            if (focus == null) spec.uStart + span * step / steps else spec.uStart + span * focus.at(step.toFloat() / steps)
+        }
         for (joint in spec.jointUs) {
             if (joint < spec.uStart || joint > spec.uEnd) continue
             val nearest = us.indices.minBy { abs(us[it] - joint) }

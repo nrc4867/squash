@@ -32,6 +32,8 @@ data class AxisSpec(
     val bendAt: Float = DEFAULT_BEND_AT,
     @Doc("Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.")
     val bearsWeight: Boolean = false,
+    @Doc("Where a head's face looks at rest, in body space, when not along the axis: the way its angle versions and gaze read.")
+    val faces: Direction? = null,
     /** Where a turned part's up stays, so its drawings keep their meaning. Never in a file. */
     @Transient val up: Direction? = null,
 )
@@ -53,6 +55,26 @@ data class Topology(
     val rings: Int,
     @Doc("Control points of every section spline.") @Range(min = 3.0)
     val segments: Int,
+    @Doc("A stretch of u that holds more than its share of the rings, as a face does; rings space evenly without it.")
+    val focus: FocusSpec? = null,
+)
+
+/** A stretch of u that holds [share] of the ring spacings. */
+@Serializable
+data class FocusSpec(
+    @Doc("The stretch of u, as a share of the run.")
+    val u: Span,
+    @Doc("The share of the ring spacings inside it.") @Range(min = 0.0, max = 1.0)
+    val share: Float,
+)
+
+/** The height view's up side read as a profile, so a nose, lips or a beak stand out as a ridge rather than swelling the whole ring. */
+@Serializable
+data class ProfileSpec(
+    @Doc("Features of the profile shorter than this share of the drawn length stand out as a ridge; longer ones, a forehead or a muzzle, swell the ring.") @Range(min = 0.0, max = 1.0)
+    val span: Float,
+    @Doc("How wide the ridge is, as a share of the ring's half width.") @Range(min = 0.0, max = 1.0)
+    val keel: Float,
 )
 
 /** The recipe for a part type. See HLD: data-model, Part template file format. */
@@ -76,6 +98,8 @@ data class PartTemplate(
     val mount: MountSpec? = null,
     val topology: Topology,
     val views: Map<View, Sets>,
+    @Doc("Reads the height view's up side as a profile whose short features stand out as a ridge; null reads it as an outline like any other.")
+    val profile: ProfileSpec? = null,
     @Doc("The default section along u, used where no view sets it.")
     val section: SectionSpec = SectionSpec.Named(SectionProfile.CIRCLE),
     val params: Map<String, ParamSpec> = emptyMap(),

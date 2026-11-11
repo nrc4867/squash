@@ -147,7 +147,7 @@ class PoseSolver(val rig: Rig) {
         val begin = PoseWork(rig, start)
         val work = PoseWork(rig, start)
         val head = rig.bones[chain.head]
-        fun facing() = work.turn(chain.head) * head.direction
+        fun facing() = work.turn(chain.head) * (chain.facing ?: head.direction)
         val whole = target - work.joint(chain.head)
         chain.neck.forEach { bone ->
             work.setWorldTurn(bone, shareOfTurn(facing(), whole, NECK_SHARE / chain.neck.size) * work.turn(bone))

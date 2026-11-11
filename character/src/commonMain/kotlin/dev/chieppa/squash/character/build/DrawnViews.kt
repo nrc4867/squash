@@ -12,6 +12,7 @@ import dev.chieppa.squash.geom.CubicBezier
 import dev.chieppa.squash.geom.FrontSection
 import dev.chieppa.squash.geom.OutlineProfile
 import dev.chieppa.squash.geom.PartAxes
+import dev.chieppa.squash.geom.ProfileKeel
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.ViewSizing
 
@@ -62,6 +63,7 @@ internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCur
             openStart = template.openEnd == End.START,
             openEnd = template.openEnd == End.END,
             scale = scale,
+            profile = template.profile?.let { spec -> { profile -> ProfileKeel.of(profile, spec.span, spec.keel) } },
         )
         val whole = section(Sets.SECTION)
         val cap = section(Sets.CAP)

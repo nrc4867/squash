@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.RingFocus
 import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.TubeSpec
 import kotlinx.serialization.SerialName
@@ -61,6 +62,7 @@ data class Skull(
                     startHandover = ctx.handover(u.start, u),
                     endHandover = ctx.handover(u.end, u),
                     up = ctx.template.axis.up?.toVec3(),
+                    focus = ctx.template.topology.focus?.let { RingFocus(it.u.start, it.u.end, it.share) },
                 ),
             ),
         )

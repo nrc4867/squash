@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.person
 
-import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.face.eyeLandmark
 import dev.chieppa.squash.character.face.newEyesCommand
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -27,6 +26,7 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.mouthGroup
 import dev.chieppa.squash.document.readDocument
 
@@ -85,7 +85,7 @@ private fun mouth(): List<DocumentCommand> {
 
 /** The face: two eyes as the Face stage's Add eyes places them about the round head's eye landmark, and a smile. */
 fun personFace(before: Character): List<DocumentCommand> {
-    val head = checkNotNull(shipped.template(TemplateId("head-round")))
+    val head = shipped.parts.single { it.ref == TemplateRef(TemplateId("head-round"), 1) }
     return listOfNotNull(newEyesCommand(before, HEAD, eyeLandmark(head))) + mouth()
 }
 

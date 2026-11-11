@@ -14,12 +14,16 @@ private const val OFF_MIDDLE = 1e-4f
 /** How far ahead of the head's middle, as a share of its half depth, the face begins; the skull is above the middle and behind that. */
 private const val FACE_SHARE = 0.3f
 
-/** The head's profile in Side, chin to brow: the deepest notch below its front's hull, in body units and as a share of the head's height. */
-class Profile(val notch: Float, val share: Float, val forward: List<Float>)
+/**
+ * The head's profile in Side, chin to brow: the deepest notch below its front's hull, in body units and as a share of the head's height;
+ * its [depth], every notch's deepest fall summed, one a stretch of the hull, so a brow over a nose over lips over a chin each count.
+ */
+class Profile(val notch: Float, val share: Float, val depth: Float, val forward: List<Float>)
 
 /**
  * The head's profile seen from its side, chin to brow: at each height, how far forward the faces it shows cross its middle plane; the notch is the
- * furthest that curve falls behind the hull over its front, which a sphere never does and a brow, nose, lips and chin do.
+ * furthest that curve falls behind the hull over its front, which a sphere never does and a brow, nose, lips and chin do, and the depth adds up
+ * how far it falls behind each stretch of the hull.
  */
 fun profile(head: PlacedPart): Profile? {
     val box = head.box ?: return null
@@ -47,15 +51,17 @@ fun profile(head: PlacedPart): Profile? {
     val heights = (0 until PROFILE_BINS).filter { forward[it].isFinite() }
     if (heights.size < 3) return null
     val hull = upperHull(heights.map { it.toFloat() to forward[it] })
-    var notch = 0f
+    val stretches = hull.zipWithNext()
+    val deepest = FloatArray(stretches.size)
     for (bin in heights) {
         val y = bin.toFloat()
-        val segment = hull.zipWithNext().firstOrNull { (a, b) -> y >= a.first && y <= b.first } ?: continue
-        val (a, b) = segment
+        val at = stretches.indexOfFirst { (a, b) -> y >= a.first && y <= b.first }.takeIf { it >= 0 } ?: continue
+        val (a, b) = stretches[at]
         val t = if (b.first == a.first) 0f else (y - a.first) / (b.first - a.first)
-        notch = maxOf(notch, a.second + (b.second - a.second) * t - forward[bin])
+        deepest[at] = maxOf(deepest[at], a.second + (b.second - a.second) * t - forward[bin])
     }
-    return Profile(notch, notch / height, heights.map { forward[it] - box.center.x })
+    val notch = deepest.maxOrNull() ?: 0f
+    return Profile(notch, notch / height, deepest.sum(), heights.map { forward[it] - box.center.x })
 }
 
 /** The hull of points over a line, from above: the chain no point rises over, in order along it. */

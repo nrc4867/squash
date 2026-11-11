@@ -104,7 +104,7 @@ private val TORSO_FRONT = loop(*TORSO_FRONT_POINTS.toTypedArray())
 internal const val TORSO_LENGTH = 0.68f
 
 private val NECK_SIDE = drawn(p(0f, 0.075f), p(0.04f, 0.06f), p(0.1f, 0.056f), p(0.13f, 0f), p(0.1f, -0.056f), p(0.04f, -0.064f), p(0f, -0.085f))
-private val NECK_FRONT = drawn(p(0f, 0.105f), p(0.04f, 0.07f), p(0.1f, 0.062f), p(0.13f, 0f), p(0.1f, -0.062f), p(0.04f, -0.07f), p(0f, -0.105f))
+private val NECK_FRONT = drawn(p(0f, 0.08f), p(0.04f, 0.068f), p(0.1f, 0.063f), p(0.13f, 0f), p(0.1f, -0.063f), p(0.04f, -0.068f), p(0f, -0.08f))
 
 /** An arm, its shoulder left to the strip joining it to the torso, slim above the elbow, a soft forearm and a narrow wrist, front up in Side. */
 private val ARM_SIDE = drawn(
@@ -193,7 +193,7 @@ fun womanBody(): List<DocumentCommand> = buildList {
     add(RestDirection.restIn(NECK, RestDirection.UP))
     add(SetRole(NECK, Role.NECK))
     add(SetOutlines(NECK, mapOf(View.SIDE to NECK_SIDE, View.TOP to NECK_FRONT)))
-    add(HandSockets.add(NECK, END_SOCKET, 1f, 0f, 0f, paired = false))
+    add(HandSockets.add(NECK, END_SOCKET, 1f, 0f, 0f, paired = false, sink = 0f))
 
     add(pairOn("arms", "tube", ARM_L, ARM_R, on(TORSO, SHOULDER_SOCKET), Role.OTHER))
     add(RestDirection.restIn(ARM_L, RestDirection.DOWN))

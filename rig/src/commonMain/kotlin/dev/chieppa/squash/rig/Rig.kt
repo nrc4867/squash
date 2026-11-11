@@ -1,6 +1,7 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -24,6 +25,8 @@ class RigPart(
     val anchors: List<Anchor> = emptyList(),
     val role: Role? = null,
     val axis: Vec3 = Vec3.X,
+    /** Where its face looks at rest, for a template that names a face direction apart from its axis; null otherwise. */
+    val facing: Vec3? = null,
 ) {
     val vertexCount: Int get() = rest.size / 3
 }
@@ -87,6 +90,7 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
         RigPart(
             part.id, restPositions(part), part.placed.surface.mesh.indices, weights, part.placed.surface.mesh, part.placed.origin,
             vertices.addresses, vertices.anchors, part.placed.role, part.placed.template.axis.rest.toVec3().normalized(),
+            part.placed.template.axis.faces?.let { PartBuilder.facing(part.placed.template) },
         )
     }
     val dressed = character.parts.mapNotNull { placed -> placed.covering?.let { covering -> rigged.firstOrNull { it.id == covering.part }?.let { branchRigPart(placed, character.part(covering.part) ?: return@mapNotNull null, it) } } }

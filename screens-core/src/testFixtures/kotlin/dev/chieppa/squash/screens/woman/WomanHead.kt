@@ -45,8 +45,19 @@ const val LOCK_SOCKET = 3
 /** How big the round head is beside its template, and the hair drawn to the same scale. */
 const val HEAD_SIZE = 0.68f
 
-/** Where round the round head, which rests forward, its left side lies. */
-private const val HEAD_LEFT = 0.27f
+/** Where round the round head, which rests upright with its face at v = 0, the hair's sockets lie: the back, and a little behind her left side. */
+private const val HEAD_BACK = 0.5f
+private const val HEAD_LEFT_BEHIND = 0.68f
+
+/** Up the head from the chin, as shares of its drawn height, where the crown of hair, the fall and the locks sit. */
+private const val CROWN_U = 0.60f
+private const val FALL_U = 0.79f
+private const val LOCK_U = 0.61f
+
+/** How deep the crown, the fall and the locks sit in the skull, as shares of each one's own sink: the crown stands off it, so the hair keeps its place over a skull drawn inside it. */
+private const val CROWN_SINK = -0.8f
+private const val FALL_SINK = 0.3f
+private const val LOCK_SINK = 0.5f
 
 /** The fall's two joints, so it sways from the nape and again lower down. */
 private val FALL_JOINTS = listOf(0.3f, 0.65f)
@@ -56,24 +67,34 @@ private const val HAIR_RINGS = 64
 private const val HAIR_SEGMENTS = 32
 
 /**
- * The round head in Side, the back of the skull at the left and the face at the right, drawn to the template's length so its mount
- * lands under its middle: a high crown, the jaw running forward to a small chin under the face.
+ * The head in Side, from the chin up, forward to the right of the drawing's up: her profile from the chin over the lips, the nose and the
+ * brow to the crown, then down the back of the skull to the nape and forward under the jaw. Drawn from the neck's top, which lies under the
+ * middle of her jaw, in the head's units.
  */
-private val HEAD_SIDE = loop(
-    p(0.000f, 0.030f), p(0.030f, 0.150f), p(0.110f, 0.235f), p(0.230f, 0.265f), p(0.340f, 0.250f), p(0.420f, 0.200f), p(0.470f, 0.130f),
-    p(0.495f, 0.050f), p(0.500f, -0.010f), p(0.493f, -0.080f), p(0.470f, -0.150f), p(0.425f, -0.210f), p(0.360f, -0.235f), p(0.270f, -0.200f),
-    p(0.150f, -0.160f), p(0.050f, -0.090f),
-)
-private val HEAD_TOP = loop(
-    p(0.000f, 0.000f), p(0.030f, 0.130f), p(0.130f, 0.205f), p(0.260f, 0.225f), p(0.370f, 0.210f), p(0.440f, 0.170f), p(0.485f, 0.100f),
-    p(0.500f, 0.000f), p(0.485f, -0.100f), p(0.440f, -0.170f), p(0.370f, -0.210f), p(0.260f, -0.225f), p(0.130f, -0.205f), p(0.030f, -0.130f),
+internal val HEAD_SIDE = loop(
+    p(-0.070f, 0.085f), p(-0.045f, 0.112f), p(-0.010f, 0.126f), p(0.025f, 0.117f), p(0.045f, 0.127f), p(0.062f, 0.125f), p(0.078f, 0.133f),
+    p(0.098f, 0.128f), p(0.118f, 0.146f), p(0.138f, 0.168f), p(0.155f, 0.172f), p(0.195f, 0.156f), p(0.235f, 0.140f), p(0.260f, 0.134f),
+    p(0.295f, 0.143f), p(0.335f, 0.141f), p(0.395f, 0.122f), p(0.445f, 0.080f), p(0.480f, 0.015f), p(0.478f, -0.075f), p(0.440f, -0.170f),
+    p(0.365f, -0.240f), p(0.265f, -0.250f), p(0.165f, -0.212f), p(0.085f, -0.160f), p(0.020f, -0.125f), p(-0.030f, -0.090f), p(-0.060f, -0.030f),
+    p(-0.068f, 0.040f),
 )
 
-/** The head's section, seen from in front: a full cranium narrowing through the cheeks to the chin. */
-private val HEAD_FRONT = loop(
-    p(0f, 1f), p(0.6f, 0.88f), p(0.93f, 0.5f), p(1f, 0.05f), p(0.9f, -0.4f), p(0.64f, -0.74f), p(0.32f, -0.95f), p(0f, -1f),
-    p(-0.32f, -0.95f), p(-0.64f, -0.74f), p(-0.9f, -0.4f), p(-1f, 0.05f), p(-0.93f, 0.5f), p(-0.6f, 0.88f),
+/** The head from in front, its half width up from the chin: a small chin, the jaw widening to the cheeks, the temples and a full cranium. */
+internal val HEAD_TOP = loop(
+    p(-0.070f, 0.000f), p(-0.067f, 0.045f), p(-0.050f, 0.085f), p(-0.015f, 0.120f), p(0.035f, 0.152f), p(0.090f, 0.174f), p(0.160f, 0.188f),
+    p(0.240f, 0.196f), p(0.320f, 0.198f), p(0.400f, 0.184f), p(0.450f, 0.142f), p(0.480f, 0.060f), p(0.482f, 0.000f), p(0.480f, -0.060f),
+    p(0.450f, -0.142f), p(0.400f, -0.184f), p(0.320f, -0.198f), p(0.240f, -0.196f), p(0.160f, -0.188f), p(0.090f, -0.174f), p(0.035f, -0.152f),
+    p(-0.015f, -0.120f), p(-0.050f, -0.085f), p(-0.067f, -0.045f),
 )
+
+/** The head's section seen from above, her face up: a face broad across the front turning back at the cheekbones, round behind. */
+internal val HEAD_FRONT = loop(
+    p(0f, 1f), p(0.35f, 0.97f), p(0.62f, 0.86f), p(0.82f, 0.66f), p(0.95f, 0.38f), p(1f, 0.05f), p(0.97f, -0.3f), p(0.86f, -0.6f), p(0.64f, -0.84f),
+    p(0.34f, -0.97f), p(0f, -1f), p(-0.34f, -0.97f), p(-0.64f, -0.84f), p(-0.86f, -0.6f), p(-0.97f, -0.3f), p(-1f, 0.05f), p(-0.95f, 0.38f),
+    p(-0.82f, 0.66f), p(-0.62f, 0.86f), p(-0.35f, 0.97f),
+)
+
+internal val HEAD_OUTLINES = mapOf(View.SIDE to HEAD_SIDE, View.TOP to HEAD_TOP, View.FRONT to HEAD_FRONT)
 
 /** The crown of hair from the back of the skull over the top to a swept fringe on the brow, hugging the skull's curve. */
 private val HAIR_SIDE = loop(
@@ -140,17 +161,17 @@ private fun hairShape(part: PartId, side: dev.chieppa.squash.document.OutlineCur
 )
 
 /**
- * The head and the hair: the shipped round head on the neck, whose mount, neck joint, jaw and eye landmark a generic blob lacks, drawn
- * in Side, Top and from in front; the hair as generic parts on sockets placed by hand, a blob crown with a fringe, a long fall down
- * the back with two joints, and a lock at each temple framing the face.
+ * The head and the hair: the shipped round head on the neck, upright with its face drawn as a profile in Side, its width from in front
+ * and its section from above, whose neck joint, face direction and eye landmark a generic blob lacks; the hair as generic parts on
+ * sockets placed by hand, a blob crown with a fringe, a long fall down the back with two joints, and a lock at each temple framing the face.
  */
 fun womanHead(): List<DocumentCommand> = buildList {
     add(AddParts(listOf(PartInstance(HEAD, ref("head-round"), on(NECK, END_SOCKET), role = Role.HEAD))))
-    add(SetOutlines(HEAD, mapOf(View.SIDE to HEAD_SIDE, View.TOP to HEAD_TOP, View.FRONT to HEAD_FRONT)))
+    add(SetOutlines(HEAD, HEAD_OUTLINES))
     add(SetParameter(HEAD, "size", HEAD_SIZE))
-    add(HandSockets.add(HEAD, CROWN_SOCKET, 0f, 0f, 0f, paired = false))
-    add(HandSockets.add(HEAD, FALL_SOCKET, 0.12f, 0f, 0f, paired = false))
-    add(HandSockets.add(HEAD, LOCK_SOCKET, 0.4f, HEAD_LEFT, 0f, paired = true))
+    add(HandSockets.add(HEAD, CROWN_SOCKET, CROWN_U, HEAD_BACK, 0f, paired = false, sink = CROWN_SINK))
+    add(HandSockets.add(HEAD, FALL_SOCKET, FALL_U, HEAD_BACK, 0f, paired = false, sink = FALL_SINK))
+    add(HandSockets.add(HEAD, LOCK_SOCKET, LOCK_U, HEAD_LEFT_BEHIND, 0f, paired = true, sink = LOCK_SINK))
 
     add(AddParts(listOf(PartInstance(HAIR, ref("blob"), on(HEAD, CROWN_SOCKET), role = Role.OTHER, roleGuessed = true))))
     addAll(hairShape(HAIR, HAIR_SIDE, HAIR_TOP))

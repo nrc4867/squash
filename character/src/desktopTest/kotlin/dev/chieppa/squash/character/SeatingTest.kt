@@ -34,7 +34,7 @@ class SeatingTest {
     private val plan = shipped.plans.single { it.id.value == "biped" }
     private val library = TemplateLibrary(shipped.parts, shipped.plans)
     private val torso = template("torso-upright")
-    private val head = template("head-round")
+    private val head = shipped.parts.first { it.id.value == "head-round" && it.version == 1 }
     private val leg = template("leg")
 
     private fun assembled(vararg parts: AssemblyPart) = assembleNow(parts.toList(), { PartData() }, plan, library)

@@ -2,6 +2,7 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.geom.Vec3
 
 /**
  * A leg, an arm or a wing as a pose reaches with it, by places in [Rig.bones]: its [upper] and [lower] bones, the [end] joint its paw
@@ -16,7 +17,7 @@ class Limb(val leg: PartId, val paw: PartId?, val upper: Int, val lower: Int, va
 class Tail(val part: PartId, val bones: List<Int>)
 
 /** What turns to look: the [head]'s bone, and the [neck] bones above it, which take a share of the turn. */
-class LookChain(val head: Int, val neck: List<Int>)
+class LookChain(val head: Int, val neck: List<Int>, val facing: Vec3? = null)
 
 /**
  * The handles a pose is made with, found by the parts' roles in the rig's shape: the [root] bone that carries the whole body, every
@@ -52,7 +53,7 @@ fun poseChains(rig: Rig): PoseChains {
         val necks = generateSequence(parentPart[head]) { parentPart[it] }.takeWhile { roles[it] == Role.NECK }.toList().reversed()
         val headBone = bonesOf.getValue(head).first()
         val neck = if (necks.isEmpty()) listOfNotNull(rig.parents[headBone].takeIf { it >= 0 }) else necks.flatMap { bonesOf.getValue(it) }
-        LookChain(headBone, neck)
+        LookChain(headBone, neck, rig.part(head)?.facing)
     }
     return PoseChains(root, limbs, tails, look)
 }

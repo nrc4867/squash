@@ -58,7 +58,7 @@ Measured by round 0's command and kept as tests where they are cheap: arm volume
 - **Hip socket spread**: the distance between the legs' roots.
 - **Digit tip gap**: the least distance between the last 30% of neighbouring digits' patches.
 - **Socket ring length**: the curve where a part's shown faces cross its parent's mesh, all and seen (a point is seen when 10 of 96 rays from it leave the character).
-- **Profile notch**: the head cut by its middle plane, chin to three quarters up; the deepest fall of that front curve behind its hull. A sphere reads 0.
+- **Profile depth brow to chin**: the head cut by its middle plane, chin to three quarters up; for each stretch of that front curve's hull, the deepest fall of the curve behind it, summed, with the deepest alone as the notch. A sphere reads 0 for both.
 - **Skull seen**: the head's shown vertices above its middle and behind its face that are seen.
 - **Bare skin**: shown body vertices inside the shell of a garment's branch over that part that are seen.
 - **Terminator**: the line on each shown face where the interpolated shading normal turns from the light; its length across each view, the pieces seen, and blotches, pieces shorter than half a turn round their part's thinnest extent.
@@ -193,6 +193,49 @@ For the next rounds (aimed at round 6, `head-v2`):
 - Left from round 4: arms do not push a hanging branch, so a lowered hand still sinks a little into the skirt's side in the display pose; the short ink dash on the skirt's front in the walk is still there, a contour at a ring where the pushed fold turns; the walk's bell is the push's spread, unchanged.
 - Regions on a Swap's data do not follow a pose (they stay where they lay at rest), so the pumps show no painted opening.
 - A part's Top outline sets width only, not the middle, so no prop wraps round a face or a chest; a lapel is rigid on the chest bone.
+
+## Round 6: head v2
+
+Built:
+
+- **`head-round` version 2** (`templates/head-round-2.part.json`): upright, its axis from the chin to the crown, facing forward (`axis.faces`, `PartBuilder.facing`, read by the face bins, the gaze tools and the look-at solve through `RigPart.facing` and `LookChain.facing`). No mount: its axis start sits on the socket. One joint, `neck`, at u 0.25, owns the whole head and turns it about the middle of the jaw. 72 rings, 0.85 of their spacings over u 0 to 0.72, the face (`topology.focus`, `RingFocus` in `geom/.../SliceBuilder.kt`); 64 segments. The views keep version 1's keys: Side the profile, Top the face's width up from the chin (the Front pane shows it), Front the section from above (the Top pane shows it). Ear sockets and `eye`, `nose` and `mouth` landmarks; no jaw joint, since a joint turns what lies above it. Version 1 ships as it was and the person pins it, its face placed about version 1's eye landmark, so only the woman's two example files change. A new biped from the plan takes version 2.
+- **Profile ridge** (`template.profile`, `geom/.../ProfileKeel.kt`, applied in `ViewSizing.slice`): Side's up side is read as a profile. Where it stands out of the base that a ball 0.3 of the drawn length across reaches, rolled along behind it, the ring's section is squeezed into the base and a ridge 0.3 of its half width across rises to the crossing. So the nose, lips and chin stand out narrow, a muzzle longer than the span swells the whole front, and a round face stands out nowhere. A flat window would cut the top off every convex curve and put a faint ridge down any round face; the round ball does not. Tests: `ProfileKeelTest` (a short bump is a narrow ridge, a long plateau is the ring's own swelling, a circle stands out nowhere, the ring keeps its drawn span), `RingFocusTest`, and `character/.../FaceHeadTest.kt` (a nose stands out with the cheek beside it kept back, a creature's muzzle drawn on the same head swells its whole front, the face map lands where the front view shows it, left and right mirror).
+- **Face map** (`character/.../build/FaceMap.kt`): built from a head's template and data, it maps a place on the flat face, x to her left and y up in the head's drawn units, to the anchor where a ray from in front first meets the body patch, through the mesh's own triangles. The woman's eyes, brows, lashes, lips, lid shadows, blush and nose lines and the shades' bridge socket are placed by it (`WomanFaceMap.kt`).
+- **The woman's head** (`WomanHead.kt`): drawn from the neck's top (the neck's end socket sinks 0), the chin 0.07 below it so the head's underside covers the neck's end. Profile, forward of the neck: chin 0.126, lower lip 0.127, upper lip 0.133, nose tip 0.172, nasion 0.134, brow 0.143; the back of the skull at -0.25, inside the hair. Top widens from a soft chin through the jaw to 0.198 at the temples; Front is broad across the face and round behind. The hair's sockets move to the upright head with sinks that keep each hair part's root within 0.004 of where it was (the crown stands off, sink -0.8). The neck is drawn with no flare at its base (Front 0.08 across there), so the strip makes the base.
+- **Measure**: `profile depth brow to chin` (`HeadChecks.profile`): for each stretch of the profile's hull, the deepest fall of the profile behind it, summed; the deepest alone is still printed as the notch.
+- **Eyes with depth, spiked and dropped**: each eye a blob on a paired socket at the eye's place on the face map, standing 0.016 out of the face, white, with iris, pupil and glint regions and skin-coloured lid regions painted on it and a lash mark along the upper lid, in place of the mark eyes' lid, white, iris, pupil and highlight. It reads as goggles: the overlap's crease inks a circle round each ball in every view, the ball's round cap shows where the lid's almond should, and the lids painted on the ball meet the face's skin along that inked circle. The mark eyes stay. The spike's renders are kept with the round's look renders under `eyeball-spike/`; its code is not on `main`.
+
+Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`), round 5 / round 6:
+
+| Check | Round 5 | Round 6 |
+| --- | --- | --- |
+| Profile depth brow to chin, every outfit | 0.0021 | 0.0323 |
+| Deepest profile notch | 0.0008 (0.002 of the head's height) | 0.0180 (0.048) |
+| Skull vertices seen outside the hair, every outfit but Winter | 83 of 332 | 0 of 1200 |
+| The same in Winter, the beanie over the hair | 76 of 332 | 125 of 1200 |
+| Face in shade, Office, front / three-quarter / side | 0.231 / 0.120 / 0.115 | 0.060 / 0.000 / 0.012 |
+| Head on its neck, socket ring all / seen | 0.118 / 0.069 | 0.393 / 0.126 |
+| Owned part vertices under cloth, Beach shades and temples | 0 / 0 | 0 / 0 |
+| Owned parts' drift from rigid, walk and salute | 0.00000 | 0.00000 |
+| Hip spread, arm volume inside the torso, leg volume outside the skirt | as round 5 | as round 5 |
+
+The fix targets read from round 5's renders:
+
+- **The face as a flat disc with marks on it**: in three-quarter the nose stands out of the cheek line, the jaw runs back from a soft chin and the far cheek turns away; Side shows brow, nasion, nose, lips and chin (`bare-face.png`, `office-face.png`).
+- **The beard-like shade band across the lower face and jaw in front**: gone. The face in shade in front falls from 0.23 to 0.06; what is left is a narrow wedge at her right cheek's edge, the side away from the light.
+- **The flesh lump behind the head in Side**: it was the skull. Version 1's back of the skull reached 0.033 behind the hair cap's back; version 2's lies 0.026 inside it, and no skull vertex is seen outside the hair in any outfit but Winter. The hair is not rebuilt.
+- **Notches at the neck base in front**: they were the neck's round end showing as a small shoulder each side below the round head's disc, and a corner where the neck's drawn flare met its strip. The jaw now covers the neck's end and the flare is gone, so the neck runs from the jaw into the shoulders in one curve.
+
+Only the woman's images change among all examples; the person, dressed person, fennec, dressed fennec, dragon, toucan, lizard and koi render as round 5's (pixel diff).
+
+For the next rounds (aimed at round 7, `hair-shell`):
+
+- The skull lies inside the hair in every outfit but Winter, where the beanie covers the hair blob, not the head. A shell lofted from the head's own slices reads rings that run chin to crown, 72 of them, most over the face: loft it over the top (u above about 0.55) and the back, and leave the face open (the template's `face` area, u 0 to 0.75, v 0.82 round the front to 0.18).
+- Rings over the crown are sparse (0.15 of the spacings over the top 0.28 of u); a shell lofted from them is coarse there unless it has rings of its own.
+- The hair's sockets: crown at u 0.6, v 0.5, sink -0.8 (standing off); fall at u 0.79, v 0.5, sink 0.3; locks at u 0.61, v 0.68 on her left, sink 0.5. They keep round 5's hair where it was; a shell replaces the crown blob and needs no stand-off.
+- The face map gives a hairline: a fringe drawn on the flat face lands on the forehead as marks do.
+- The shades' temples run 0.27 head units back from hinges level with the bridge (face map y 0.245) and end in the hair; a shell will cover their ends.
+- Left in the head: its underside is one floor from the chin to the nape, since each height crosses the profile twice, and the neck runs into it with no strip (the head's socket ring seen rose to 0.126, under the jaw from the side); the ridge is one width for nose, lips and chin; the upright head has no jaw joint; the eyes are marks, so they have no depth beyond the face's own curve.
 
 ## Open
 

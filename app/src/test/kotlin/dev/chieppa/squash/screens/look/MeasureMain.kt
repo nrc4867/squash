@@ -96,7 +96,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
     println("$name: hip socket spread ${hipSpread(body)?.let { "%.4f".format(it) } ?: "none"}")
     println("$name: smallest gap between digit tips ${digitTipGaps(body).format()}")
     println("$name: socket ring length, all / seen ${socketRings(body, seen).mapValues { (_, v) -> "%.3f / %.3f".format(v.first, v.second) }}")
-    head?.let(::profile)?.let { println("$name: profile notch brow to chin %.4f (%.3f of the head's height) ${it.forward.map { f -> "%.3f".format(f) }}".format(it.notch, it.share)) }
+    head?.let(::profile)?.let { println("$name: profile depth brow to chin %.4f, deepest notch %.4f (%.3f of the head's height) ${it.forward.map { f -> "%.3f".format(f) }}".format(it.depth, it.notch, it.share)) }
     head?.let { skullShown(it, seen) }?.let { (shown, all) -> println("$name: skull vertices seen outside the hair $shown of $all") }
     if (dressed) bareSkin(body, seen).let { println("$name: bare skin seen on covered parts ${it.values.sum()} ${it}") }
     propsUnderCloth(body, seen).takeIf { it.isNotEmpty() }?.let { println("$name: owned part vertices under cloth, all / seen ${it.mapValues { (_, v) -> "${v.first} / ${v.second}" }}") }

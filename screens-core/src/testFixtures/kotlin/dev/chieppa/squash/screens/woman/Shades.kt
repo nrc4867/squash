@@ -27,7 +27,10 @@ val GLINT = SlotName("glint")
 
 /** The head's socket the shades sit on: one paired socket at the bridge of the nose, between the eyes, which both halves share. */
 private const val BRIDGE_SOCKET = 4
-private val BRIDGE = FacePlane(HEAD).at(0f, 0.16f)
+private val BRIDGE by lazy { FACE.on(0f, BRIDGE_HEIGHT) }
+
+/** How high up the face the bridge sits, on the nose between the eyes. */
+private const val BRIDGE_HEIGHT = 0.245f
 
 /** The socket at each half's outer end that its temple runs back from, near the frame's top. */
 private const val HINGE_SOCKET = 1

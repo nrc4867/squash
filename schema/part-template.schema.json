@@ -125,6 +125,22 @@
         "bearsWeight": {
           "description": "Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.",
           "type": "boolean"
+        },
+        "faces": {
+          "description": "Where a head's face looks at rest, in body space, when not along the axis: the way its angle versions and gaze read.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -481,6 +497,36 @@
           "maximum": 4.0
         }
       },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "FocusSpec": {
+      "type": "object",
+      "properties": {
+        "u": {
+          "description": "The stretch of u, as a share of the run.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "share": {
+          "description": "The share of the ring spacings inside it.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "u",
+        "share"
+      ],
       "patternProperties": {
         "^x-": {}
       },
@@ -1155,6 +1201,17 @@
             ]
           }
         },
+        "profile": {
+          "description": "Reads the height view's up side as a profile whose short features stand out as a ridge; null reads it as an outline like any other.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "section": {
           "description": "The default section along u, used where no view sets it.",
           "oneOf": [
@@ -1218,6 +1275,31 @@
         "topology",
         "views",
         "blocks"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ProfileSpec": {
+      "type": "object",
+      "properties": {
+        "span": {
+          "description": "Features of the profile shorter than this share of the drawn length stand out as a ridge; longer ones, a forehead or a muzzle, swell the ring.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "keel": {
+          "description": "How wide the ridge is, as a share of the ring's half width.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "span",
+        "keel"
       ],
       "patternProperties": {
         "^x-": {}
@@ -1660,6 +1742,17 @@
           "description": "Control points of every section spline.",
           "type": "integer",
           "minimum": 3.0
+        },
+        "focus": {
+          "description": "A stretch of u that holds more than its share of the rings, as a face does; rings space evenly without it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FocusSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

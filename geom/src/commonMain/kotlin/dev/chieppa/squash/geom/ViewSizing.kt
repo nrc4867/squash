@@ -22,6 +22,7 @@ class ViewSizing private constructor(
     private val scale: Float,
     private val openStart: Boolean,
     private val openEnd: Boolean,
+    private val keel: ProfileKeel?,
 ) {
     /** The drawn length of the part. */
     val length: Float = (end - start) * scale
@@ -56,7 +57,8 @@ class ViewSizing private constructor(
      * silhouette is the drawing's; a view not drawn takes the other's scale, keeping the section's proportions. A section
      * off centre in y moves the frame so its ends still land on the crossings.
      */
-    fun slice(u: Float, section: ClosedSpline, closure: Float): Slice {
+    fun slice(u: Float, drawnSection: ClosedSpline, closure: Float): Slice {
+        val section = keelAt(u, drawnSection)
         val spans = section.spans()
         val tall = heightAt(u)?.let { 2f * it / max(spans.y, MIN_SECTION_SPAN) }
         val wide = widthAt(u)?.let { 2f * it / max(spans.x, MIN_SECTION_SPAN) }
@@ -64,6 +66,14 @@ class ViewSizing private constructor(
         val lift = if (tall == null) 0f else section.middleY() * fullHeight * closure / 2f
         val frame = Frame(centreAt(u) - axes.up * lift, axes.along, axes.up)
         return Slice(u, frame, fullHeight * closure, (wide ?: fullHeight) * closure, section, proxyNormalFrame(u, frame.center))
+    }
+
+    /** [section] with the profile's ridge at [u] standing out of its up side, when the height view is read as a profile. */
+    private fun keelAt(u: Float, section: ClosedSpline): ClosedSpline {
+        val keel = keel ?: return section
+        val profile = height ?: return section
+        val a = stationOf(u)
+        return keel.shape(section, keel.depthAt(a), profile.extentAt(a))
     }
 
     /** Along the axis at [u], except that a ring on the socket plane faces straight out of it. */
@@ -77,7 +87,7 @@ class ViewSizing private constructor(
         /**
          * Sizing from whichever of [height] and [width] are drawn, or null if neither is or the part would have no
          * length. u follows [height]'s range when drawn, else [width]'s. An open end sits on the socket plane, a = 0.
-         * [scale] multiplies the drawing.
+         * [scale] multiplies the drawing. [profile] reads the height view's up side as a profile, its short features standing out as a ridge.
          */
         fun of(
             axes: PartAxes,
@@ -86,12 +96,13 @@ class ViewSizing private constructor(
             openStart: Boolean,
             openEnd: Boolean,
             scale: Float,
+            profile: ((OutlineProfile) -> ProfileKeel?)? = null,
         ): ViewSizing? {
             val ruler = height ?: width ?: return null
             val start = if (openStart) 0f else ruler.start
             val end = if (openEnd) 0f else ruler.end
             if (end <= start) return null
-            return ViewSizing(axes, height, width, start, end, scale, openStart, openEnd)
+            return ViewSizing(axes, height, width, start, end, scale, openStart, openEnd, height?.let { profile?.invoke(it) })
         }
     }
 }

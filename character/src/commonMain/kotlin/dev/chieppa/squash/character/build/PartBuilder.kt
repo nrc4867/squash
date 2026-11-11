@@ -15,6 +15,7 @@ import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.PatchMesh
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.blendedOverlaps
 
 /** Builds a part's patches and mesh from its template, parameter values and drawn outlines. */
@@ -99,6 +100,9 @@ object PartBuilder {
 
     /** The axes an outline of [template] is drawn in and its patches are built in. */
     fun axes(template: PartTemplate): PartAxes = PartAxes.of(template.axis.rest.toVec3(), template.axis.up?.toVec3())
+
+    /** Where a part of [template] faces at rest: its face's direction where the template names one, else along its axis. */
+    fun facing(template: PartTemplate): Vec3 = template.axis.faces?.toVec3()?.normalized() ?: axes(template).along
 
     /**
      * The mesh of [patches], each vertex tagged with its joint's place in [JointTree.specs], a spanned patch's vertex with the one at its u

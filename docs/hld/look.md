@@ -78,7 +78,7 @@ A floating stroke goes where that paper does not, for what stands off the body s
 
 Marks on a pair are shared by both sides. A mark on a part in the middle of the body has a mirror flag: it shows once as stored and once across the middle, with v turned to 1 - v and what it floats through turned over, and erasing either side takes the mark. The tools set the flag from Mirror.
 
-Face marks are painted on the head's surface, with versions drawn for a few head angles that switch, not blend, as the head turns. Each expression has its own set of angle versions. Each mark's 3D position comes from the body it sits on, never estimated from the drawings. Marks anchor to template coordinates (see [data-model.md](data-model.md), Surface anchor), so they survive refits and oversketches.
+Face marks are painted on the head's surface, with versions drawn for a few head angles that switch, not blend, as the head turns. Each expression has its own set of angle versions. Each mark's 3D position comes from the body it sits on, never estimated from the drawings. Marks anchor to template coordinates (see [data-model.md](data-model.md), Surface anchor), so they survive refits and oversketches. A face is drawn flat, as seen from straight ahead, and placed by the head's face map (`FaceMap`): a place x to the character's left and y up, in the head's drawn units, lands where a ray from in front, along the way the head faces, first meets the body patch as drawn, and the anchor there keeps its u and v when the head is drawn again. Props on the face, a pair of shades on the nose's bridge, take their sockets from the same map.
 
 ## Eyes and gaze
 

@@ -20,8 +20,8 @@ val FACE_FRONT = CameraBin("front")
 /** Which version shows at a head angle, the same for every head: side up to 35 degrees, three-quarter up to 70, front past that, each holding 6 degrees past its edge. */
 val FACE_BINS = AngleBins(listOf(FACE_SIDE, FACE_THREE_QUARTER, FACE_FRONT), listOf(35f, 70f), 6f)
 
-/** The way [PlacedPart] faces: its template's axis, turned as a pose turns the part. */
-val PlacedPart.facing: Vec3 get() = turn * PartBuilder.axes(template).along
+/** The way [PlacedPart] faces: its template's face direction, else its axis, turned as a pose turns the part. */
+val PlacedPart.facing: Vec3 get() = turn * PartBuilder.facing(template)
 
 /** How far [part], a head, has turned to a viewer in the direction [toViewer]: 0 side on, 90 facing them, from behind as from ahead. */
 fun headAngle(part: PlacedPart, toViewer: Vec3): Float = abs(RIGHT_ANGLE - degreesBetween(part.facing, toViewer))
