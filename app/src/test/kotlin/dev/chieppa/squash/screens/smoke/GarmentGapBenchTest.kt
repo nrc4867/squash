@@ -10,21 +10,22 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.look.measure.SEEN_WAYS
+import dev.chieppa.squash.screens.look.measure.WAYS_OUT
+import dev.chieppa.squash.screens.look.measure.seen
+import dev.chieppa.squash.screens.look.measure.shownCorners
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
 import dev.chieppa.squash.screens.person.ARM_L
 import dev.chieppa.squash.screens.person.personDressedDocument
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import org.junit.jupiter.api.Tag
 
 /**
  * What a pose leaves showing under the dressed fennec's and the dressed person's clothes, read on the posed body the session shows. A
- * vertex is seen when rays from it along at least [SEEN_WAYS] of [DIRECTIONS] leave the character crossing no face it shows. A hole is
+ * vertex is seen when rays from it along at least [SEEN_WAYS] of [WAYS_OUT] leave the character crossing no face it shows. A hole is
  * a vertex of the body or of an inner layer that a face of its whole mesh has as a corner, that no shown face has, and that is seen: a
  * look through to where nothing is drawn. Shown again is a vertex hidden at rest that a shown face has as a corner in the pose and is
  * seen: skin or an inner layer the pose carries out. A pose counts only the holes that were not holes at rest. Bare skin is a vertex of
@@ -108,45 +109,12 @@ class GarmentGapBenchTest {
                 val bareSkin = used?.get(v) == true
                 if (v !in hidden && !wasHidden && !bareSkin) continue
                 val p = part.origin + mesh.position(v)
-                val seen = DIRECTIONS.count { grid.escapes(p, it) } >= SEEN_WAYS
+                val seen = grid.seen(p)
                 if (v in hidden && seen) holes += id.value to v
                 if (v !in hidden && wasHidden && seen) shown += id.value to v
                 if (bareSkin && seen) bare += id.value to v
             }
         }
         return Gaps(holes, shown, bare)
-    }
-
-    /** The corners of every face [body] shows, in body space, three points a face. */
-    private fun shownCorners(body: AssembledCharacter): FloatArray {
-        val all = body.parts.filter { it.id != null }
-        val corners = FloatArray(all.sumOf { it.surface.mesh.indices.size } * 3)
-        var at = 0
-        for (part in all) for (index in part.surface.mesh.indices) {
-            val p = part.origin + part.surface.mesh.position(index)
-            corners[at++] = p.x
-            corners[at++] = p.y
-            corners[at++] = p.z
-        }
-        return corners
-    }
-
-    private companion object {
-        /** How many ways out a vertex is looked at along. */
-        const val WAYS = 96
-
-        /** How many of [WAYS] must leave the character for a vertex to be seen, so a look down a long sleeve or through a slit is not counted. */
-        const val SEEN_WAYS = 10
-
-        /** Ways out spread evenly over the sphere. */
-        val DIRECTIONS: List<Vec3> = List(WAYS) { i ->
-            val y = 1f - 2f * (i + 0.5f) / WAYS
-            val r = sqrt(1f - y * y)
-            val turn = i * GOLDEN_TURN
-            Vec3(r * cos(turn), y, r * sin(turn))
-        }
-
-        /** The golden angle, in radians. */
-        const val GOLDEN_TURN = 2.3999631f
     }
 }

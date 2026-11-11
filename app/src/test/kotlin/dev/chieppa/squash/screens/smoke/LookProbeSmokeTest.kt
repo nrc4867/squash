@@ -55,7 +55,6 @@ private const val SWEEP_COLUMNS = 6
 private const val SWEEP_LAST_DEGREES = 90f
 private const val RISING_AT_72 = 4
 private const val FALLING_AT_72 = 7
-private const val SMOKE_IMAGES = "build/smoke-images"
 private const val RAISE = 0.08f
 
 /** The probe's call on where a face's versions switch, in degrees off the head's axis. */

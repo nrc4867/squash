@@ -21,6 +21,7 @@ import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.stretch.gpu.GpuOptions
+import java.io.File
 import kotlin.test.assertNotNull
 
 private const val TILE = 480
@@ -39,7 +40,7 @@ private val CLOSE_VIEWS = listOf(
 )
 
 /** Close views of one part and the part it hangs from, six sides in one image, two-tone with lines, through the real graph and scene. */
-class CloseUps(private val work: TestWork, private val errors: MutableList<String>) {
+class CloseUps(private val work: TestWork, private val errors: MutableList<String>, private val images: File = SMOKE_IMAGES) {
     /** A session over [library], the shipped templates unless given, with [commands] sent and settled. */
     fun session(empty: SquashDocument, commands: List<DocumentCommand>, library: TemplateLibrary = shippedLibrary()): CharacterSession {
         val session = CharacterSession(empty, library, work.scope, work.dispatcher)
@@ -75,7 +76,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
             characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
         }
         val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
-        keepImage(image.pixels, image.width, name)
+        keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }
 
@@ -89,7 +90,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
             characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
         }
         val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
-        keepImage(image.pixels, image.width, name)
+        keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }
 

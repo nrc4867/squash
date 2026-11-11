@@ -64,5 +64,4 @@ There is a schema for templates and plans (`schema/`) but none for the document 
 
 ### Rendering
 
-- `app/src/test/.../smoke/*.kt`, `CloseUps.kt`, `LookProbeSmokeTest.kt`: how to render a character to a PNG from several sides, with its face bins, through the real graph. There is no command-line render; a headless render task taking a document, an outfit and a pose would replace the smoke test as the authoring loop.
 - `screens-core/build.gradle.kts`: that `examples/` is the test fixtures' resource folder and `-PupdateGoldens` writes it. The skill says it now.

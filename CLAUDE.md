@@ -29,6 +29,8 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew :rig:desktopTest -PupdateGoldens        # rewrite the rig's golden fixtures
 ./gradlew :screens-core:test -PupdateGoldens  # rewrite examples/dragon.json, examples/fennec.json, examples/fennec-dressed.json, examples/fennec-winged.json, examples/koi.json, examples/lizard.json, examples/person.json, examples/person-dressed.json, examples/toucan.json, examples/woman.json and examples/woman-dressed.json, the example characters, from their commands
 ./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
+./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"  # render examples to PNGs under app/build/look (needs a GPU)
+./gradlew :app:measure -Pmeasure="example=woman-dressed"  # print an example's quality checks as numbers
 ```
 
 Stop a running app before rebuilding; a rebuild under a running app breaks it. To see the running app, use Stretch's screenshot endpoint as described in `../stretch/.claude/skills/app-screenshot/SKILL.md`, never a desktop screenshot.

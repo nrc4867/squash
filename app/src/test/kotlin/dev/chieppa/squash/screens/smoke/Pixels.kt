@@ -30,9 +30,12 @@ fun assertNotBlank(pixels: IntArray, name: String) {
     assertTrue(counts.size >= MIN_COLORS && drawn >= MIN_DRAWN_SHARE, "$name is blank: ${counts.size} colors, $drawn drawn")
 }
 
-/** Leaves an image in the smoke images, for a person to look at. */
-internal fun keepImage(pixels: IntArray, width: Int, name: String) {
-    val folder = File(IMAGES).apply { mkdirs() }
+/** Where the smoke tier leaves its images. */
+internal val SMOKE_IMAGES = File(IMAGES)
+
+/** Leaves an image in [folder], the smoke images unless given, for a person to look at. */
+internal fun keepImage(pixels: IntArray, width: Int, name: String, folder: File = SMOKE_IMAGES) {
+    folder.mkdirs()
     val height = pixels.size / width
     val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
     out.setRGB(0, 0, width, height, pixels, 0, width)

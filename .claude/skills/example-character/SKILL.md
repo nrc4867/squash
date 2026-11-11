@@ -20,7 +20,9 @@ An example character is a list of document commands in a test fixture, folded ov
 JDK 25: `JAVA_HOME=~/.jdks/corretto-25.0.1`.
 
 - `./gradlew :screens-core:test --tests '*<Name>*' -PupdateGoldens`: write the example files. About 40 s. Run again without the flag to check them.
-- `./gradlew :app:test --tests '*<Name>SmokeTest*' -Pslow`: render. About 20 to 60 s warm for a dozen images; needs the GPU. Images land in `app/build/smoke-images/<image>.png`.
+- `./gradlew :app:look -Plook="example=<name>"`: render through the real graph with no test runner, every outfit at rest and in the example's named poses from the front, three-quarter and side, with face, hand and foot close-ups, into `app/build/look/<name>/`. Options: `outfits=a,b`, `poses=a,b`, `close=face,hand,foot`, `file=true` to read `examples/<name>.json` instead of the fixture's commands. About 30 s for the dressed woman's 36 images; needs the GPU. Named poses are listed per example in `screens/look/LookSubjects.kt`; a new example is added to its fixture map.
+- `./gradlew :app:measure -Pmeasure="example=<name>"`: print the checks per outfit as numbers: arm volume inside the torso, hip socket spread, the smallest gap between digit tips, socket ring length (all and seen), the head's profile notch, skull vertices seen outside the hair, bare skin seen inside a garment's shell, and the shading terminator per view with its blotches. No GPU.
+- `./gradlew :app:test --tests '*<Name>SmokeTest*' -Pslow`: the smoke tier's renders, kept for regressions. Images land in `app/build/smoke-images/<image>.png`.
 - `./gradlew check`: before landing, 2 to 4 minutes. The smoke tier is not in it.
 
 ## Two routes: templated or template-free
@@ -63,6 +65,8 @@ Pick per part, with the renders as judge.
 - `AddOutfit`, `PickGarment(outfit, slot, garment)` per slot, `ShowOutfit`. Share garments between outfits by picking them in several. **Gap**: `document/.../Garment.kt`, `BodyPartChange.kt`, `Worn.kt`.
 
 ## Render and look
+
+The look command above is the authoring loop. In a smoke test:
 
 1. `CloseUps.session(EMPTY, commands)` then `SessionPose(session)` builds the rig the posed views need.
 2. `WomanViews.keep(session, name)` renders the whole character from the front, three-quarter and side, with face versions from the head's angle; pass `framed = setOf(HEAD, ...)` for a close-up. `CloseUps.keep(session, part, name)` shows one part and its parent from six sides; `keepAround` the whole character framed on a part.

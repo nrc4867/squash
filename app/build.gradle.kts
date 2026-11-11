@@ -59,3 +59,17 @@ compose.desktop {
         }
     }
 }
+
+// ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot" renders examples to app/build/look;
+// ./gradlew :app:measure -Pmeasure="example=woman-dressed" prints their checks. Both run the real graph with no test runner.
+listOf("look" to "LookMainKt", "measure" to "MeasureMainKt").forEach { (name, main) ->
+    tasks.register<JavaExec>(name) {
+        group = "verification"
+        classpath = sourceSets["test"].runtimeClasspath
+        mainClass = "dev.chieppa.squash.screens.look.$main"
+        javaLauncher = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt())) }
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
+        systemProperty("squash.templates", rootProject.layout.projectDirectory.dir("templates").asFile.path)
+        args(listOf("root=${rootProject.layout.projectDirectory.asFile.path}") + (providers.gradleProperty(name).orNull?.split(' ') ?: emptyList()))
+    }
+}

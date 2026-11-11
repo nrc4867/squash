@@ -51,6 +51,21 @@ Each round is one branch landed on `main` as one commit with `./gradlew check`, 
 
 Measured by round 0's command and kept as tests where they are cheap: arm volume inside the torso; skull vertices outside the hair; smallest gap between neighbouring digit tips; hip socket spread per outfit; socket ring length shown; profile depth brow to chin; bare skin under garments; shading terminator length per view.
 
+## Round 0: fast look
+
+`./gradlew :app:look` and `./gradlew :app:measure` (see the example-character skill) build an example from its fixture's commands, or its saved file, in one session over the real graph and rig, with no test runner. Look renders on the GPU; measure reads the posed meshes on the CPU. Each check, as measure defines it:
+
+- **Arm volume inside the torso**: grid points 0.012 apart inside both an arm's mesh and its parent's, by winding number, leaving out the fifth of the arm's length at the shoulder.
+- **Hip socket spread**: the distance between the legs' roots.
+- **Digit tip gap**: the least distance between the last 30% of neighbouring digits' patches.
+- **Socket ring length**: the curve where a part's shown faces cross its parent's mesh, all and seen (a point is seen when 10 of 96 rays from it leave the character).
+- **Profile notch**: the head cut by its middle plane, chin to three quarters up; the deepest fall of that front curve behind its hull. A sphere reads 0.
+- **Skull seen**: the head's shown vertices above its middle and behind its face that are seen.
+- **Bare skin**: shown body vertices inside the shell of a garment's branch over that part that are seen.
+- **Terminator**: the line on each shown face where the interpolated shading normal turns from the light; its length across each view, the pieces seen, and blotches, pieces shorter than half a turn round their part's thinnest extent.
+
+The woman as the stage starts, undressed (`example=woman-dressed outfits=bare`): arm inside 0.00079 each side; hip spread 0.248 (0.574 in Dress); digit tip gap 0.028 hands, 0.012 feet; socket ring seen neck 0.199, head 0.069, shoulder 1.165, wrist 0.112, hip 0.465, ankle 0.200; profile notch 0.0008; skull seen 83 of 332; terminator front 6.05 in 46 pieces, 2 blotches (torso, head). The full set of 36 images renders in about 25 s, against about 30 s of test time and a minute in all for the smoke test's 15; measure runs every outfit in about 28 s.
+
 ## Open
 
 - Whether the display pose is a pose of its own or the first entry of the pose library Shot will hold.

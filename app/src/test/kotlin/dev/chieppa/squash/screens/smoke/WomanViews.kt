@@ -16,6 +16,7 @@ import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.squash.screens.surface.headAngle
 import dev.chieppa.stretch.gpu.GpuOptions
+import java.io.File
 import kotlin.test.assertNotNull
 
 private const val WHOLE_MARGIN = 0.05f
@@ -25,7 +26,7 @@ private const val CLOSE_MARGIN = 0.08f
 private val AROUND = listOf(0f, 40f, 90f)
 
 /** The whole character, or the parts nearest a few, from a row of sides through the real graph and scene, as the app's free view draws them. */
-class WomanViews(private val work: TestWork, private val errors: MutableList<String>) {
+class WomanViews(private val work: TestWork, private val errors: MutableList<String>, private val images: File = SMOKE_IMAGES) {
     private fun CharacterSession.posedState(): CharacterState {
         work.settle(this)
         return CharacterState(
@@ -57,7 +58,7 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
             }
         }
         val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), tile * azimuths.size, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
-        keepImage(image.pixels, image.width, name)
+        keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }
 }
