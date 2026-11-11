@@ -68,4 +68,4 @@ private fun SquashDocument.skeletonBuildInput(part: PartId, lengths: LegLengthsO
 }
 
 /** This data's shape as a part's build reads it, without what only says where its children sit or how its rig turns. */
-private fun PartData.forBuild(): PartData = shape.copy(params = params.filterKeys { !PlacementParams.isSocket(it) && !HandSockets.isHandSocket(it) && !RigParams.isRig(it) })
+private fun PartData.forBuild(): PartData = shape.copy(params = params.filterKeys { !PlacementParams.isSocket(it) && !HandSockets.isHandSocket(it) && !RigParams.isRig(it) && !JoinParams.isJoin(it) })

@@ -8,6 +8,7 @@ private const val WELD = 1e-5f
 /** Which vertices of a part's mesh touch: across a triangle's edges, and where two patches' vertices lie at one place. */
 internal class MeshPieces(part: RigPart) {
     private val neighbours: Array<MutableSet<Int>> = Array(part.vertexCount) { mutableSetOf() }
+    private val drawn = BooleanArray(part.vertexCount)
 
     init {
         val indices = part.indices
@@ -15,6 +16,9 @@ internal class MeshPieces(part: RigPart) {
             val a = indices[t * 3]
             val b = indices[t * 3 + 1]
             val c = indices[t * 3 + 2]
+            drawn[a] = true
+            drawn[b] = true
+            drawn[c] = true
             join(a, b)
             join(b, c)
             join(c, a)
@@ -40,19 +44,19 @@ internal class MeshPieces(part: RigPart) {
     /** Whether a vertex of [piece] touches one [other] marks. */
     fun borders(piece: List<Int>, other: BooleanArray): Boolean = piece.any { v -> neighbours[v].any { other[it] } }
 
-    /** The pieces [inside] marks: each a set of vertices joined through others it marks. */
+    /** The pieces [inside] marks: each a set of vertices joined through others it marks. A vertex no face draws is in none. */
     fun pieces(inside: BooleanArray): List<List<Int>> {
         val seen = BooleanArray(inside.size)
         val found = ArrayList<List<Int>>()
         for (start in inside.indices) {
-            if (!inside[start] || seen[start]) continue
+            if (!inside[start] || !drawn[start] || seen[start]) continue
             val piece = ArrayList<Int>()
             val queue = ArrayDeque(listOf(start))
             seen[start] = true
             while (queue.isNotEmpty()) {
                 val v = queue.removeFirst()
                 piece += v
-                for (n in neighbours[v]) if (inside[n] && !seen[n]) {
+                for (n in neighbours[v]) if (inside[n] && drawn[n] && !seen[n]) {
                     seen[n] = true
                     queue += n
                 }

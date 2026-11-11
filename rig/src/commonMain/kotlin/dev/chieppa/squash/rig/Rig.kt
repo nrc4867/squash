@@ -90,8 +90,9 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
         )
     }
     val dressed = character.parts.mapNotNull { placed -> placed.covering?.let { covering -> rigged.firstOrNull { it.id == covering.part }?.let { branchRigPart(placed, character.part(covering.part) ?: return@mapNotNull null, it) } } }
-    val hung = looseEndRigs(character, rigged + dressed, bones)
-    return Rig(bones + hung.flatMap { it.bones }, rigged + dressed + hung.map { it.part }, seamsOf(parts, byId, index, reach))
+    val strung = withStripWeights(rigged + dressed, character::part)
+    val hung = looseEndRigs(character, strung, bones)
+    return Rig(bones + hung.flatMap { it.bones }, strung + hung.map { it.part }, seamsOf(parts, byId, index, reach))
 }
 
 private fun seamsOf(parts: List<RiggedPart>, byId: Map<PartId, RiggedPart>, index: Map<BoneName, Int>, reach: JointReach): List<RigSeam> = parts.mapNotNull { part ->

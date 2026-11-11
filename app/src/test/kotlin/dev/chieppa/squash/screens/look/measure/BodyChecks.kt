@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.look.measure
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.build.stripJoining
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.geom.Vec3
@@ -94,15 +95,20 @@ fun joinName(part: PlacedPart): String? = when (part.role) {
     else -> null
 }
 
-/** The length of the curve where each part of the body sitting on another crosses its parent's surface, by join, in body units: a socket ring. */
+/**
+ * The length of the curve where each part of the body sitting on another crosses its parent's surface, by join, in body units: a socket
+ * ring. Where the parent holds the strip joining them, the parent is the tube and the curve is where it crosses the child's surface.
+ */
 fun socketRings(body: AssembledCharacter, seen: (Vec3) -> Boolean): Map<String, Pair<Float, Float>> {
     val out = mutableMapOf<String, Pair<Float, Float>>()
     for (child in body.parts.filter { it.isBody }) {
         val join = joinName(child) ?: continue
         val parent = child.socket?.parent?.let(body::part) ?: continue
-        val inParent = Winding(parent)
-        val mesh = child.surface.mesh
-        val inside = BooleanArray(mesh.vertexCount) { inParent.inside(child.point(it)) }
+        val heldByParent = body.stripJoining(requireNotNull(child.id))?.first === parent
+        val tube = if (heldByParent) parent else child
+        val inHost = Winding(if (heldByParent) child else parent)
+        val mesh = tube.surface.mesh
+        val inside = BooleanArray(mesh.vertexCount) { inHost.inside(tube.point(it)) }
         var all = 0f
         var shown = 0f
         val faces = mesh.indices
@@ -111,7 +117,7 @@ fun socketRings(body: AssembledCharacter, seen: (Vec3) -> Boolean): Map<String, 
             val crossings = (0..2).mapNotNull { e ->
                 val a = corners[e]
                 val b = corners[(e + 1) % 3]
-                if (inside[a] == inside[b]) null else (child.point(a) + child.point(b)) * 0.5f
+                if (inside[a] == inside[b]) null else (tube.point(a) + tube.point(b)) * 0.5f
             }
             if (crossings.size != 2) continue
             val length = (crossings[0] - crossings[1]).length

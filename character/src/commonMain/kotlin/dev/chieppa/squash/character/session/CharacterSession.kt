@@ -49,6 +49,7 @@ import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.skeletonRowNode
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.socketFilletNode
+import dev.chieppa.squash.character.build.socketStripNode
 import dev.chieppa.squash.character.build.dressedNode
 import dev.chieppa.squash.character.build.dressingOf
 import dev.chieppa.squash.character.build.dressedColorNode
@@ -113,13 +114,15 @@ class CharacterSession(
      * run is pending, and `failure` holds why a part's build failed.
      */
     val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
-        graph.socketFilletNode(
-            graph.assemblyNode(
-                document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
-                templates,
-                ::surface,
-                ::defaultSurface,
-                ::skeleton,
+        graph.socketStripNode(
+            graph.socketFilletNode(
+                graph.assemblyNode(
+                    document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
+                    templates,
+                    ::surface,
+                    ::defaultSurface,
+                    ::skeleton,
+                ),
             ),
         ),
         combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),

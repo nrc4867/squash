@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddMarks
@@ -11,6 +12,7 @@ import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.ResetPose
+import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.geom.Vec3
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,6 +45,7 @@ class PosedSurfaceTest {
     private fun TestScope.posedSession(): Pair<CharacterSession, SessionPose> {
         val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val pose = SessionPose(session)
+        listOf(leg, PartId("back-paw-l")).forEach { session.send(SetParameter(it, JoinParams.INK, 1f)) }
         runCurrent()
         check(session.graph.settled.value)
         return session to pose
@@ -113,18 +116,16 @@ class PosedSurfaceTest {
         val crease = paw.crease.flatMap { run -> run.points.map { it.position } }
         assertTrue(crease.isNotEmpty())
         assertOn(crease, surfaceOf(posed, paw.part), "A crease point on the paw")
-        assertOn(crease, surface, "A crease point at the leg the paw leaves")
     }
 
     @Test
-    fun aCreaseAtABentHipStaysOnTheOverlap() = runTest {
+    fun anInkedJoinAtABentHipStaysOnTheLeg() = runTest {
         val (session, posed) = posedSession()
         session.pose(Pose(listOf(BonePose(leg, "hip", -35f))), this)
         val lines = checkNotNull(session.posedLines.output.value)
         val crease = lines.parts.getValue(leg).crease.flatMap { run -> run.points.map { it.position } }
         assertTrue(crease.isNotEmpty())
         assertOn(crease, surfaceOf(posed, lines.parts.getValue(leg).part), "A crease point on the leg")
-        assertOn(crease, surfaceOf(posed, lines.parts.getValue(torso).part), "A crease point at the torso")
     }
 
     @Test

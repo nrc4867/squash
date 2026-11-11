@@ -45,7 +45,8 @@ Pick per part, with the renders as judge.
 
 - A biped is built, weighted and dressed in A-pose: arms 45 degrees out (`move.outward` 45; on the biped plan Add part starts them there from the shoulder's `spread`, which a fixture passes as the `AddParts` pair data), legs straight down from the hips. Garments are drawn over that pose.
 - The display pose, saved with the character, brings the arms down (`woman/WomanPoses.kt` `WOMAN_DISPLAY`: a lean on the arm's root bone, `base` on a tube, `shoulder` on the `arm` template, and a free turn at the elbow for the palms). The session shows the working pose over it: a pose names only the bones it changes, and naming a display bone replaces it.
-- The posed arm is pushed out of the torso and any all-round garment on it, so leave the arm a little out from the hips in the display pose (about 15 to 25 degrees) rather than straight down, or it rides over the hips.
+- The posed upper arm is pushed out of the torso (not out of garments, which hide what of it lies inside them) and the push lets go toward the elbow, so leave the arm a little out from the hips in the display pose (about 15 to 25 degrees) rather than straight down, or the forearm sinks into the hips.
+- Necks, arms, legs, hands and feet are joined to what they sit on by strips: the tube is trimmed at a ring clear of the part it enters and a faired strip bridges to that part's surface, at rest and again in every pose. So draw a limb without a shoulder or hip bulge of its own at its root (the strip makes the shoulder), and a sleeve or trouser leg all the way round follows the strip. `join.ink` 1 on the joined part draws a line round the join; unset, it reads as one surface.
 - A garment never moves a socket: a Redraw that reshapes a part leaves what hangs from it where it hangs on the bare part, carried along only by the socket u the Redraw gives. Do not turn limbs in or out per outfit to clear a garment.
 
 ## Drawing outlines
@@ -88,7 +89,7 @@ Draw the body first and render bare from three sides; fix proportions; then the 
 
 - A missing example file fails the golden test: run with `-PupdateGoldens` once, then without.
 - `--tests` takes the class's simple name with a wildcard: `'*WomanSmokeTest.poses'`, not `'*WomanSmoke.poses'`.
-- A hand-made socket centres the child on the parent's surface, sunk once by default: half a thigh or arm top can stand outside, which shows as a ring. `socket.<n>.sink` sets it deeper; an A-pose arm wants it shallow, or its top lies inside the torso.
+- A hand-made socket centres the child on the parent's surface, sunk once by default; the strip trims whatever of the child's root stands outside, so no ring shows. `socket.<n>.sink` sets it deeper; an A-pose arm wants it shallow, or its top lies inside the torso. A child that runs inside its parent for more than 0.6 of its rings gets no strip and overlaps.
 - A shoe branch over `foot-2` is open at the toe; Swap the foot for a blob.
 - A garment shared between outfits reads u on the part as other garments leave it; a Redraw that changes a part's length moves every other garment's range.
 - Wait on the graph, never a timer: `work.settle(session)` (inside `CloseUps`), `settle(work) { ... }` in a UI test.

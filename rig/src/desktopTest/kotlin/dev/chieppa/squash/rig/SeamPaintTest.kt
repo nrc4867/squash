@@ -41,7 +41,8 @@ class SeamPaintTest {
         var changed = 0
         for (part in rig.parts) {
             val before = checkNotNull(guessed.part(part.id))
-            for (v in 0 until part.vertexCount) {
+            val own = assembled.part(part.id)?.let(::ownVertices) ?: part.vertexCount
+            for (v in 0 until own) {
                 val same = part.weights.of(v) == before.weights.of(v)
                 val inside = (part.at(v) - center).length < reach
                 if (!same) {

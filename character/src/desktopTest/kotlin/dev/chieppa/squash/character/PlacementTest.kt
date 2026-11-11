@@ -199,10 +199,10 @@ class PlacementTest {
     @Test
     fun aMeshOfTheSelectedPartIsNotRederivedWhenItsParentMoves() = runTest {
         val session = session(torso, leftLeg, rightLeg)
-        val before = session.character().of(leftLeg).surface
+        val before = session.character().of(leftLeg).surface.patches.first()
         session.send(SetOutline(torso.id, View.SIDE, body))
         runCurrent()
-        assertSame(before, session.character().of(leftLeg).surface, "the GPU keeps its buffers")
+        assertSame(before, session.character().of(leftLeg).surface.patches.first(), "the leg's own grid is not built again")
     }
 
     @Test

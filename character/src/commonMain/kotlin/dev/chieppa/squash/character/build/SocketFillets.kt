@@ -48,7 +48,7 @@ fun AssembledCharacter.withSocketFillets(checkCancelled: () -> Unit = {}): Assem
     return if (changed) AssembledCharacter(shown, sockets) else this
 }
 
-private fun socketBlend(part: PlacedPart): Blend? {
+internal fun socketBlend(part: PlacedPart): Blend? {
     if (part.id == null) return null
     val values = part.template.defaults + part.placement
     return part.template.blocks.filterIsInstance<Blend>().firstOrNull { blend ->

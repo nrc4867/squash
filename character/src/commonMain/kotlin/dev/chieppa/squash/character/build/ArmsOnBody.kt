@@ -13,6 +13,10 @@ private const val SHOULDER_SHARE = 0.06f
 /** Over how much more of the arm's length the push comes in to the whole of it, so the shoulder bends into it with no step. */
 private const val EASE_SHARE = 0.08f
 
+/** Where along the arm's length the push starts to let go, and over how much more it is gone: the forearm hangs as the pose put it. */
+private const val UPPER_SHARE = 0.4f
+private const val RELEASE_SHARE = 0.2f
+
 /** How far a point is carried at a time while it looks for the body's surface, how far at most, and how many halvings then find it. */
 private const val STEP = 0.01f
 private const val MAX_REACH = 0.6f
@@ -28,11 +32,12 @@ private const val MIN_WAY = 0.2f
 private const val CLEARANCE = 0.006f
 
 /**
- * This posed character with each arm the pose moves pushed out of the body it hangs from where they meet, so a lowered arm lies on the
- * body's surface rather than through it: every point of the arm past its shoulder that lies inside its parent, or inside a garment's
- * branch going all the way round its parent, is carried out across the body to its surface, and each ring of the arm moves whole with
- * its deepest point. The garments' branches over the arm move
- * with the arm's points under them, keeping their ease. A part [rest] holds as this does, which the pose did not move, stays as it is.
+ * This posed character with each arm the pose moves pushed out of the body it hangs from where they meet, so a lowered upper arm lies
+ * on the body's surface rather than through it: every point of the arm past its shoulder that lies inside its parent is carried out
+ * across the body to its surface, and each ring of the arm moves whole with its deepest point; the push lets go down the arm from
+ * [UPPER_SHARE] of its length, so the forearm hangs as the pose put it, and a garment over the body hides what of the arm lies under
+ * it, as [hiddenAgain] decides. The garments' branches over the arm move with the arm's points under them, keeping their ease. A part
+ * [rest] holds as this does, which the pose did not move, stays as it is.
  */
 fun AssembledCharacter.withArmsOnBody(rest: AssembledCharacter): AssembledCharacter {
     val arms = parts.filter { it.isBodyPart && it.role == Role.ARM && rest.part(requireNotNull(it.id)) !== it }
@@ -40,8 +45,7 @@ fun AssembledCharacter.withArmsOnBody(rest: AssembledCharacter): AssembledCharac
     val replaced = HashMap<PlacedPart, PlacedPart>()
     for (arm in arms) {
         val parent = arm.socket?.parent?.let(::part) ?: continue
-        val body = listOf(parent) + parts.filter { it.covering?.let { c -> c.part == parent.id && c.allRound } == true }
-        val shift = pushOut(arm, body) ?: continue
+        val shift = pushOut(arm, listOf(parent)) ?: continue
         replaced[arm] = arm.moved(shift)
         for (branch in parts.filter { it.covering?.part == arm.id }) replaced[branch] = branch.movedOver(arm, shift)
     }
@@ -58,7 +62,9 @@ private fun pushOut(arm: PlacedPart, body: List<PlacedPart>): Array<Vec3>? {
     val mesh = arm.surface.mesh
     val length = arm.surface.axisLength
     if (length <= 0f) return null
-    val shares = alongShares(arm).let { along -> FloatArray(mesh.vertexCount) { (along[it] - SHOULDER_SHARE) / EASE_SHARE } }
+    val shares = alongShares(arm).let { along ->
+        FloatArray(mesh.vertexCount) { minOf((along[it] - SHOULDER_SHARE) / EASE_SHARE, 1f - (along[it] - UPPER_SHARE) / RELEASE_SHARE) }
+    }
     val across = body.first().let { it.turn * PartBuilder.axes(it.template).along }
     val inside = { at: Vec3 -> shells.any { (_, shell) -> at in shell } }
     val point = { v: Int -> arm.origin + mesh.position(v) }

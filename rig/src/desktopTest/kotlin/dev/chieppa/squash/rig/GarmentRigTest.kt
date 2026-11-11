@@ -83,7 +83,8 @@ class GarmentRigTest {
         val start = legPatch.take(covering.bodyPatch).sumOf { it.nu * it.nv }
         val around = legPatch[covering.bodyPatch].nv
         var moved = 0
-        for (vertex in 0 until sleevePart.vertexCount) {
+        val shell = placed.surface.patches.first()
+        for (vertex in 0 until shell.nu * shell.nv) {
             val ring = vertex / around
             val under = start + covering.bodyRings[ring] * around + vertex % around
             val gapRest = at(sleevePart.rest, vertex) - at(legPart.rest, under)

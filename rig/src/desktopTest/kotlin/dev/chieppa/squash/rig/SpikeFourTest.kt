@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Spike 4, weights and stretch: the fennec's back leg and paw bent and stretched, with nothing smearing and volume held. */
+/** Spike 4, weights and stretch: the fennec's back leg and paw bent and stretched, with nothing smearing and volume held, over their own patches; a pose builds their strips again. */
 class SpikeFourTest {
     private val leg = PartId("back-leg-l")
     private val paw = PartId("back-paw-l")
@@ -22,8 +22,9 @@ class SpikeFourTest {
         return listOf(torso, leg, paw).associateWith { id ->
             val part = checkNotNull(rig.part(id))
             val moved = checkNotNull(posed.parts[id])
-            val single = edges(part.indices).filter { (a, b) -> part.weights.of(a).size == 1 && part.weights.of(b).size == 1 }
-            val band = edges(part.indices) - single.toSet()
+            val faces = ownFaces(part.indices, ownVertices(checkNotNull(fennec.assembled.part(id))))
+            val single = edges(faces).filter { (a, b) -> part.weights.of(a).size == 1 && part.weights.of(b).size == 1 }
+            val band = edges(faces) - single.toSet()
             Triple(
                 invertedTriangles(part, moved, transforms),
                 single.maxOfOrNull { edgeChange(part, moved, it) } ?: 0f,
@@ -47,8 +48,9 @@ class SpikeFourTest {
     fun aStretchedAnkleHoldsTheLegsVolume() {
         val rig = fennec.rig
         val part = checkNotNull(rig.part(leg))
-        val rest = enclosedVolume(part.rest, part.indices)
-        fun change(pose: Pose) = enclosedVolume(checkNotNull(rig.posed(pose).parts[leg]), part.indices) / rest - 1f
+        val faces = ownFaces(part.indices, ownVertices(checkNotNull(fennec.assembled.part(leg))))
+        val rest = enclosedVolume(part.rest, faces)
+        fun change(pose: Pose) = enclosedVolume(checkNotNull(rig.posed(pose).parts[leg]), faces) / rest - 1f
         val measured = measure(stretched)
         println("stretched: $measured")
         for ((p, m) in measured) assertEquals(0, m.first, "$p has inverted triangles")

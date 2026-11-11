@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.build.JoinParams
+import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.character.build.socketCreases
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
@@ -25,6 +27,7 @@ class BodyLinesTest {
     @Test
     fun theLinesFollowTheGraphAndKeepEachPartsCreaseWithItsParent() = runTest {
         val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        session.send(SetParameter(leftLeg.id, JoinParams.INK, 1f))
         session.settle()
         val lines = assertNotNull(session.bodyLines.output.value)
         assertEquals(setOf(torsoPart.id, leftLeg.id, rightLeg.id), lines.parts.keys)
@@ -36,6 +39,7 @@ class BodyLinesTest {
     @Test
     fun aSurfaceEditFindsNoCreaseAgainAndWeighsOnlyThePartItNames() = runTest {
         val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        session.send(SetParameter(leftLeg.id, JoinParams.INK, 1f))
         session.settle()
         val before = assertNotNull(session.bodyLines.output.value)
         val weight = LineWeight(WEIGHT, listOf(Anchor(torsoPart.id, BODY_PATCH, 0.5f, 0.25f)), 0.4f, 1f)
@@ -52,6 +56,7 @@ class BodyLinesTest {
     @Test
     fun aCreaseRunsCalmlyRoundItsPart() = runTest {
         val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        session.send(SetParameter(leftLeg.id, JoinParams.INK, 1f))
         session.settle()
         val character = assertNotNull(session.assembly.output.value)
         val creases = socketCreases(character)

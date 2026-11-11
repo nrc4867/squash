@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.Anchor
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.isCuffPart
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.surfaceAt
@@ -11,20 +12,40 @@ private const val POLE_REACH = 1e-4f
 /**
  * The lines a garment's branch or cuff [placed] inks, as its covering's ink says: its hem, the open edges of its grid where its faces
  * are shown (a cuff's far end only, its near end lying inside the part it rises from), and where it crosses each part it inks a
- * crossing with. Null when it inks nothing. See HLD: data-model, Garments.
+ * crossing with; a branch joined to the branch over its part's parent by a strip inks that join round the ring its strip meets. Null
+ * when it inks nothing. See HLD: data-model, Garments.
  */
 internal fun garmentEdges(character: AssembledCharacter, placed: PlacedPart, parents: CreaseParents): SocketCrease? {
     val id = placed.id ?: return null
     val ink = placed.covering?.ink ?: return null
-    val patch = placed.surface.patches.singleOrNull() ?: return null
+    val patch = placed.surface.patches.firstOrNull() ?: return null
+    val parentPart = placed.covering.part.let(character::part)?.socket?.parent
+    val strip = placed.strips.firstOrNull { it.tube == patch.name }
     val runs = buildList {
         if (ink.hem) addAll(hemRuns(placed, patch, cuff = isCuffPart(id)))
-        ink.crossings.forEach { other -> character.part(other)?.let { addAll(crossingRuns(placed, id, parents.of(it))) } }
+        ink.crossings.forEach { other ->
+            val crossed = character.part(other) ?: return@forEach
+            if (strip != null && crossed.covering?.part == parentPart) add(ringRun(placed, patch, strip.ring)) else addAll(crossingRuns(placed, id, parents.of(crossed)))
+        }
     }
     return if (runs.isEmpty()) null else SocketCrease(id, runs)
 }
 
-/** The open edges of [patch], [placed]'s only one, broken where its faces are hidden; a [cuff] leaves out its first ring. */
+/** Ring [ring] of [patch], [placed]'s shell, the whole way round. */
+private fun ringRun(placed: PlacedPart, patch: Patch, ring: Int): List<ResolvedPoint> {
+    val id = requireNotNull(placed.id)
+    val indices = (0 until patch.nv).map { patch.index(ring, it) }
+    return (if (patch.closedV) indices + indices.first() else indices).map { index -> resolvedAt(placed, id, patch, index) }
+}
+
+private fun resolvedAt(placed: PlacedPart, id: PartId, patch: Patch, index: Int): ResolvedPoint {
+    val u = patch.ringUs[index / patch.nv]
+    val v = (index % patch.nv).toFloat() / patch.segments
+    val normal = placed.surface.shown(patch.surfaceAt(u, v).normal)
+    return ResolvedPoint(Anchor(id, patch.name, u, v), placed.origin + placed.surface.shown(patch.point(index)), normal)
+}
+
+/** The open edges of [patch], [placed]'s shell, broken where its faces are hidden; a [cuff] leaves out its first ring. */
 private fun hemRuns(placed: PlacedPart, patch: Patch, cuff: Boolean): List<List<ResolvedPoint>> {
     val id = requireNotNull(placed.id)
     val shown = shownVertices(placed, patch)
@@ -36,13 +57,7 @@ private fun hemRuns(placed: PlacedPart, patch: Patch, cuff: Boolean): List<List<
         edges += if (patch.closedV) columns + columns.first() else columns
     }
     if (!patch.meetsAround) for (column in listOf(0, patch.nv - 1)) edges += (0 until patch.nu).map { patch.index(it, column) }
-    fun pointAt(index: Int): ResolvedPoint {
-        val u = patch.ringUs[index / patch.nv]
-        val v = (index % patch.nv).toFloat() / patch.segments
-        val normal = placed.surface.shown(patch.surfaceAt(u, v).normal)
-        return ResolvedPoint(Anchor(id, patch.name, u, v), placed.origin + placed.surface.shown(patch.point(index)), normal)
-    }
-    return edges.flatMap { edge -> shownStretches(edge, shown) }.filter { it.size >= 2 }.map { run -> run.map(::pointAt) }
+    return edges.flatMap { edge -> shownStretches(edge, shown) }.filter { it.size >= 2 }.map { run -> run.map { resolvedAt(placed, id, patch, it) } }
 }
 
 /** Which of [patch]'s grid points a kept face of [placed]'s mesh has as a corner. */

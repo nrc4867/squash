@@ -81,6 +81,17 @@ internal fun PlacedPart.hiddenBy(hiders: List<Hider>): PlacedPart {
     return withShown(keptFaces(all, flags), record)
 }
 
+/** This part with the vertices [hidden] marks hidden wherever it goes, as well as what was hidden before; itself when it marks none. */
+internal fun PlacedPart.alwaysHiding(hidden: BooleanArray): PlacedPart {
+    if (hidden.none { it }) return this
+    val mesh = surface.mesh
+    val held = hiding
+    val fixed = BooleanArray(mesh.vertexCount) { (held?.fixed?.get(it) ?: false) || hidden[it] }
+    val flags = BooleanArray(mesh.vertexCount) { (held?.flags?.get(it) ?: false) || fixed[it] }
+    val all = held?.indices ?: mesh.indices
+    return withShown(keptFaces(all, flags), Hiding(all, fixed, held?.inside.orEmpty(), held?.whole.orEmpty(), flags))
+}
+
 /** Calls [visit] with each vertex of this part's mesh, its u and its v on its patch. */
 private inline fun PlacedPart.forEachVertex(visit: (vertex: Int, u: Float, v: Float) -> Unit) {
     var vertex = 0

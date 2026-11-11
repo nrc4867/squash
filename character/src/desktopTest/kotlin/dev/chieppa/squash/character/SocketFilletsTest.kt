@@ -46,8 +46,8 @@ class SocketFilletsTest {
         val off = assembled(on = false)
         val on = assembled(on = true)
         assertEquals(off.getValue(torso), on.getValue(torso), "the torso keeps its place")
-        val before = off.getValue(leg).single()
-        val after = on.getValue(leg).single()
+        val before = off.getValue(leg).first()
+        val after = on.getValue(leg).first()
         assertEquals(before.nu to before.nv, after.nu to after.nv)
         assertEquals(emptyList(), MeshInvariants.check(MeshBuilder.build(after) { 0 }, setOf(0)))
         val moves = (0 until before.nu * before.nv).map { (after.point(it) - before.point(it)).length }

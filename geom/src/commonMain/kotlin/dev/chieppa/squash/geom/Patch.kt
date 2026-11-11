@@ -24,7 +24,8 @@ data class Slice(
  * points all coincide is a pole. [slices] is present for swept patches. [boneU] is the u along the part that every
  * vertex takes its bone from, for a patch whose own u does not run along the part. [spanned] says, for a patch spanned between two
  * others, where on each of them every vertex takes its bones from. [proxyNormals] holds a swept patch's shading normal per point,
- * three values each, as the slice build derives them; a patch without them shades by its mesh normal.
+ * three values each, as the slice build derives them; a patch without them shades by its mesh normal. [us] gives a patch with no slices
+ * a u range of its own, one u a ring. A patch with [openEnds] meets other surfaces at its first and last rings, which close nothing.
  */
 class Patch(
     val name: String,
@@ -36,17 +37,20 @@ class Patch(
     val boneU: Float? = null,
     val proxyNormals: FloatArray? = null,
     val spanned: Spanned? = null,
+    val us: FloatArray? = null,
+    val openEnds: Boolean = false,
 ) {
     init {
         require(points.size == nu * nv * COMPONENTS) { "Patch $name holds ${points.size} values for a $nu by $nv grid" }
+        require(us == null || us.size == nu) { "Patch $name holds ${us?.size} us for $nu rings" }
         require(spanned == null || spanned.vertexCount == nu * nv) { "Patch $name spans ${spanned?.vertexCount} vertices for a $nu by $nv grid" }
     }
 
     /** The u along the part that the vertex at [local] takes its bone from. */
     fun boneUOf(local: Int): Float = boneU ?: spanned?.u(local) ?: ringUs[local / nv]
 
-    /** The u of each ring: its slice's, or evenly spaced from 0 to 1 on a patch with no slices. */
-    val ringUs: FloatArray by lazy { FloatArray(nu) { slices?.get(it)?.u ?: (it.toFloat() / (nu - 1)) } }
+    /** The u of each ring: its slice's, its own [us], or evenly spaced from 0 to 1. */
+    val ringUs: FloatArray by lazy { FloatArray(nu) { slices?.get(it)?.u ?: us?.get(it) ?: (it.toFloat() / (nu - 1)) } }
 
     /** How many spans of grid run around v: the wrap to the first point counts on a closed patch. */
     val segments: Int get() = if (closedV) nv else nv - 1
@@ -81,18 +85,19 @@ class Patch(
             val point = i / COMPONENTS
             values[((point / columns) * nv + (point % columns) % nv) * COMPONENTS + i % COMPONENTS]
         }
-        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened), spanned?.reopened(nu, nv))
+        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened), spanned?.reopened(nu, nv), us, openEnds)
     }
 
     /** This patch shading by [normals], three values per point. */
-    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals, spanned)
+    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals, spanned, us, openEnds)
 
     /** This patch with its points moved to [moved] and its shading normals to [normals], everything addressed by u and v kept. */
-    fun withPoints(moved: FloatArray, normals: FloatArray?) = Patch(name, nu, nv, closedV, slices, moved, boneU, normals, spanned)
+    fun withPoints(moved: FloatArray, normals: FloatArray?) = Patch(name, nu, nv, closedV, slices, moved, boneU, normals, spanned, us, openEnds)
 
     override fun equals(other: Any?): Boolean =
         other is Patch && name == other.name && nu == other.nu && nv == other.nv && closedV == other.closedV &&
-            slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU && spanned == other.spanned
+            slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU && spanned == other.spanned &&
+            us.contentEquals(other.us) && openEnds == other.openEnds
 
     override fun hashCode(): Int = 31 * (31 * name.hashCode() + nu) + points.contentHashCode()
 

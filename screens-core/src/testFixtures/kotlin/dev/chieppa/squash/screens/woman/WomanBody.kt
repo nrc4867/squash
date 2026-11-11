@@ -106,14 +106,14 @@ internal const val TORSO_LENGTH = 0.68f
 private val NECK_SIDE = drawn(p(0f, 0.075f), p(0.04f, 0.06f), p(0.1f, 0.056f), p(0.13f, 0f), p(0.1f, -0.056f), p(0.04f, -0.064f), p(0f, -0.085f))
 private val NECK_FRONT = drawn(p(0f, 0.105f), p(0.04f, 0.07f), p(0.1f, 0.062f), p(0.13f, 0f), p(0.1f, -0.062f), p(0.04f, -0.07f), p(0f, -0.105f))
 
-/** An arm, round over the shoulder, slim above the elbow, a soft forearm and a narrow wrist, front up in Side. */
+/** An arm, its shoulder left to the strip joining it to the torso, slim above the elbow, a soft forearm and a narrow wrist, front up in Side. */
 private val ARM_SIDE = drawn(
-    p(0f, 0.05f), p(0.08f, 0.056f), p(0.2f, 0.046f), p(0.31f, 0.038f), p(0.4f, 0.041f), p(0.5f, 0.034f), p(0.59f, 0.024f),
-    p(0.62f, 0f), p(0.59f, -0.025f), p(0.5f, -0.036f), p(0.4f, -0.042f), p(0.31f, -0.038f), p(0.2f, -0.048f), p(0.08f, -0.058f), p(0f, -0.052f),
+    p(0f, 0.05f), p(0.08f, 0.048f), p(0.2f, 0.044f), p(0.31f, 0.038f), p(0.4f, 0.041f), p(0.5f, 0.034f), p(0.59f, 0.024f),
+    p(0.62f, 0f), p(0.59f, -0.025f), p(0.5f, -0.036f), p(0.4f, -0.042f), p(0.31f, -0.038f), p(0.2f, -0.045f), p(0.08f, -0.05f), p(0f, -0.052f),
 )
 private val ARM_FRONT = drawn(
-    p(0f, 0.05f), p(0.1f, 0.058f), p(0.2f, 0.046f), p(0.31f, 0.04f), p(0.42f, 0.042f), p(0.52f, 0.036f), p(0.59f, 0.031f),
-    p(0.62f, 0f), p(0.59f, -0.031f), p(0.52f, -0.036f), p(0.42f, -0.042f), p(0.31f, -0.04f), p(0.2f, -0.046f), p(0.1f, -0.058f), p(0f, -0.05f),
+    p(0f, 0.05f), p(0.1f, 0.047f), p(0.2f, 0.043f), p(0.31f, 0.04f), p(0.42f, 0.042f), p(0.52f, 0.036f), p(0.59f, 0.031f),
+    p(0.62f, 0f), p(0.59f, -0.031f), p(0.52f, -0.036f), p(0.42f, -0.042f), p(0.31f, -0.04f), p(0.2f, -0.043f), p(0.1f, -0.047f), p(0f, -0.05f),
 )
 
 /** A leg, front up in Side: a full thigh, the knee, a calf swelling behind and a slim ankle. */

@@ -199,7 +199,10 @@ class StrokeBench(tilted: Boolean = false) {
         waitForIdle()
     }
 
-    /** Every vertex of [part] as [camera] shows it. */
-    fun onScreen(part: SheetPart, camera: LockedCamera): List<Offset> =
-        (0 until part.mesh.vertexCount).map { camera.toPixel(part.origin + part.mesh.position(it)) }
+    /** Every vertex of [part]'s own patches, not of the strips joining it to its parent, as [camera] shows it. */
+    fun onScreen(part: SheetPart, camera: LockedCamera): List<Offset> {
+        val placed = part.id?.let { session.assembly.output.value?.part(it) }
+        val own = placed?.let { p -> p.surface.patches.takeWhile { patch -> p.strips.none { it.patch == patch.name } }.sumOf { it.nu * it.nv } }
+        return (0 until (own ?: part.mesh.vertexCount)).map { camera.toPixel(part.origin + part.mesh.position(it)) }
+    }
 }

@@ -59,7 +59,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 fun assemblyParts(character: Character): List<AssemblyPart> {
     val hidden = hiddenUnderGarments(character)
     return character.parts.filter { it.id !in hidden }.map { part ->
-        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) }
+        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) || JoinParams.isJoin(it) }
         val worn = character.wornPart(part)
         val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
         AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets)
@@ -139,5 +139,5 @@ fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: Bod
         surfaceOf(templates[ref], plannedData(plan?.spreadFor(ref.id) ?: 0f), mirrored, lengthFactor = lengths.ofPlanned(ref))
     }
     val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
-    return assemble(parts, surfaces, plan, templates, ::default, lengths).withSocketFillets()
+    return assemble(parts, surfaces, plan, templates, ::default, lengths).withSocketFillets().withSocketStrips()
 }

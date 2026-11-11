@@ -60,7 +60,9 @@ class WeightsTest {
             val l = checkNotNull(rig.part(left)).weights
             val r = checkNotNull(rig.part(right)).weights
             assertEquals(l.vertexCount, r.vertexCount)
-            for (v in 0 until l.vertexCount) {
+            // A strip's foot reads the torso it shares with its twin, whose vertices near its middle hold more bones than a vertex keeps,
+            // so the strips are left to StripWeightsTest.
+            for (v in 0 until ownVertices(checkNotNull(fennec.assembled.part(left)))) {
                 val expected = l.of(v).associate { (bone, w) -> twinName(rig.bones[bone].name) to w }
                 val actual = r.of(v).associate { (bone, w) -> rig.bones[bone].name to w }
                 assertEquals(expected.keys, actual.keys, "$right vertex $v")

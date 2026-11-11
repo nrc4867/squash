@@ -48,9 +48,10 @@ import kotlin.test.assertTrue
  * posed arm lies on the body rather than through it. See
  * HLD: data-model, Placing parts.
  */
-/** How far into the body the test sinks an arm, and how much of its rings from the root count as its shoulder. */
+/** How far into the body the test sinks an arm, and the share of its rings from the root that is its upper arm past its shoulder. */
 private const val INTO_BODY = 0.12f
 private const val PAST_SHOULDER = 0.2f
+private const val UPPER_ARM = 0.4f
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class APoseTest {
@@ -114,7 +115,7 @@ class APoseTest {
     }
 
     @Test
-    fun anArmPosedIntoTheTorsoIsPushedOutOntoIt() = runTest {
+    fun anArmPosedIntoTheTorsoIsPushedOutOntoItDownToItsUpperArm() = runTest {
         val (document, arms) = armed()
         val rest = assertNotNull(session(document).assembly.output.value)
         val left = assertNotNull(rest.part(arms.first()))
@@ -130,8 +131,8 @@ class APoseTest {
         val shell = ShellInside(assertNotNull(torso.surface.patches.firstOrNull { it.slices != null })) { torso.origin + torso.surface.shown(it) }
         fun insideAfterShoulder(body: dev.chieppa.squash.character.build.AssembledCharacter): Int {
             val arm = assertNotNull(body.part(requireNotNull(left.id)))
-            val patch = arm.surface.patches.single()
-            return (0 until patch.nu * patch.nv).filter { it / patch.nv > patch.nu * PAST_SHOULDER }.count { arm.origin + arm.surface.mesh.position(it) in shell }
+            val patch = arm.surface.patches.first { it.slices != null }
+            return (0 until patch.nu * patch.nv).filter { it / patch.nv > patch.nu * PAST_SHOULDER && it / patch.nv < patch.nu * UPPER_ARM }.count { arm.origin + arm.surface.mesh.position(it) in shell }
         }
         assertTrue(insideAfterShoulder(posed) > 0, "the sunk arm lies in the torso")
         assertEquals(0, insideAfterShoulder(posed.withArmsOnBody(rest)))

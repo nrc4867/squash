@@ -73,7 +73,7 @@ fun enclosedVolume(positions: FloatArray, indices: IntArray): Float {
         val loop = mutableListOf(left.first())
         while (true) {
             val after = next[loop.last()] ?: break
-            if (after == loop.first()) break
+            if (after == loop.first() || after in loop) break
             loop += after
         }
         left -= loop.toSet()
@@ -82,3 +82,11 @@ fun enclosedVolume(positions: FloatArray, indices: IntArray): Float {
     }
     return (six / 6.0).toFloat()
 }
+
+/** How many vertices of [part]'s mesh come before its strips: those of its own patches, which a strip built again in a pose leaves to skinning. */
+fun ownVertices(part: dev.chieppa.squash.character.build.PlacedPart): Int =
+    part.surface.patches.takeWhile { patch -> part.strips.none { it.patch == patch.name } }.sumOf { it.nu * it.nv }
+
+/** [indices] with only the faces whose corners all come before [own]. */
+fun ownFaces(indices: IntArray, own: Int): IntArray =
+    (0 until indices.size / 3).filter { t -> (0..2).all { indices[t * 3 + it] < own } }.flatMap { t -> (0..2).map { indices[t * 3 + it] } }.toIntArray()

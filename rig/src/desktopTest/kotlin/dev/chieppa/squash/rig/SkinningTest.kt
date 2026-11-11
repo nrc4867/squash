@@ -28,7 +28,8 @@ class SkinningTest {
         for ((left, right) in listOf("back-leg-l" to "back-leg-r", "back-paw-l" to "back-paw-r").map { (l, r) -> PartId(l) to PartId(r) }) {
             val l = checkNotNull(posed.parts[left])
             val r = checkNotNull(posed.parts[right])
-            for (v in 0 until l.size / 3) {
+            // A strip skins partly by the torso it shares with its twin, which a pose builds again, so only the parts' own patches count.
+            for (v in 0 until ownVertices(checkNotNull(fennec.assembled.part(left)))) {
                 assertEquals(l[v * 3], r[v * 3], 1e-4f)
                 assertEquals(l[v * 3 + 1], r[v * 3 + 1], 1e-4f)
                 assertEquals(l[v * 3 + 2], -r[v * 3 + 2], 1e-4f)
