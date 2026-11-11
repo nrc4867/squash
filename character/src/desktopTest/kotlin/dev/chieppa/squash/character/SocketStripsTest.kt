@@ -2,6 +2,7 @@ package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.AssemblyPart
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.PosedParts
@@ -28,13 +29,17 @@ import kotlin.test.assertTrue
 /** How far a leg is carried in the posed case, in body units. */
 private const val CARRIED = 0.05f
 
+/** Where the seated case's hand-made socket sits on the torso: halfway along, underneath. */
+private const val SEAT_U = 0.5f
+private const val SEAT_V = 0.5f
+
 /** Closer than this, in body units, is the same place. */
 private const val SAME = 1e-4f
 
 /**
  * A leg sitting in a torso is trimmed at a ring clear of it and joined to it by a strip lying on both, with the torso's faces under the
  * strip left out and the leg's own patch and its anchors as they were; the strip inks only when asked, and a pose builds it again
- * between where the leg and the torso now are. See HLD: look, Where parts meet.
+ * between where the leg and the torso now are, its foot slid to where the leg now leaves the torso. See HLD: look, Where parts meet.
  */
 class SocketStripsTest {
     private val plan = shipped.plans.single { it.id.value == "canine-quadruped" }
@@ -95,7 +100,7 @@ class SocketStripsTest {
     }
 
     @Test
-    fun aPoseBuildsTheStripAgainWhereTheLegNowIs() {
+    fun aPoseBuildsTheStripAgainWithItsFootSlidWhereTheLegNowLeavesTheTorso() {
         val placed = assertNotNull(character.part(leg))
         val moved = RenderMesh(
             placed.surface.mesh.vertices.copyOf().also { v -> for (i in 0 until placed.surface.mesh.vertexCount) v[i * RenderMesh.FLOATS_PER_VERTEX] += CARRIED },
@@ -111,8 +116,26 @@ class SocketStripsTest {
         val rest = assertNotNull(character.part(leg))
         for (j in 0 until own.nv) {
             assertEquals(0f, (tube.point(ownFirst + own.index(strip.ring, j)) - tube.point(first + patch.index(patch.nu - 1, j))).length, SAME)
-            assertEquals(0f, (rest.point(first + j) - tube.point(first + j)).length, SAME, "the foot stays on the torso, which did not move")
         }
+        val slid = (0 until own.nv).fold(Vec3.ZERO) { sum, j -> sum + tube.point(first + j) - rest.point(first + j) } * (1f / own.nv)
+        assertTrue(slid.x in CARRIED * 0.5f..CARRIED * 1.5f, "the foot slides with the leg: $slid")
+        val torsoAtRest = assertNotNull(character.part(torso))
+        val torsoPosed = assertNotNull(posed.part(torso))
+        assertTrue(!torsoPosed.surface.mesh.indices.contentEquals(torsoAtRest.surface.mesh.indices), "the torso shows again what the old foot covered")
+    }
+
+    @Test
+    fun aLegSeatedOnTheTorsosSurfaceIsJoinedFromItsOwnStart() {
+        val seat = mapOf(HandSockets.u(1) to SEAT_U, HandSockets.v(1) to SEAT_V, HandSockets.outward(1) to 0f, HandSockets.sink(1) to 0f)
+        val placed = listOf(
+            AssemblyPart(torso, assertNotNull(library.latest(TemplateId("torso"))).ref, null, null, null),
+            AssemblyPart(leg, assertNotNull(library.latest(TemplateId("leg"))).ref, SocketRef(torso, HandSockets.name(1)), null, null),
+        )
+        val seated = assembleNow(placed, { id -> if (id == torso) PartData(params = seat) else PartData() }, plan, library)
+        val (tube, strip) = assertNotNull(seated.stripJoining(leg), "a seated leg is joined")
+        assertEquals(leg, tube.id)
+        assertTrue(strip.atStart)
+        assertEquals(torso, strip.host)
     }
 
     private fun PlacedPart.point(vertex: Int): Vec3 = origin + surface.mesh.position(vertex)

@@ -16,6 +16,7 @@ import dev.chieppa.squash.screens.look.measure.bareSkin
 import dev.chieppa.squash.screens.look.measure.digitTipGaps
 import dev.chieppa.squash.screens.look.measure.faceShade
 import dev.chieppa.squash.screens.look.measure.hipSpread
+import dev.chieppa.squash.screens.look.measure.armInsideSkirt
 import dev.chieppa.squash.screens.look.measure.legOutsideSkirt
 import dev.chieppa.squash.screens.look.measure.partBoxes
 import dev.chieppa.squash.screens.look.measure.skirtInsideLegs
@@ -72,6 +73,7 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
             legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let {
                 println("$name, $pose: leg volume outside the skirt ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}")
                 println("$name, $pose: hanging branches pushed in %.2f ms".format(pushTime(body)))
+                armInsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: arm and hand vertices inside the skirt $it") }
             }
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
@@ -97,6 +99,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
     val seen: (Vec3) -> Boolean = { grid.seen(it) }
     println("$name: arm volume inside the torso as shown ${armInside(body).format()}")
     legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt as shown ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}") }
+    armInsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name: arm and hand vertices inside the skirt as shown $it") }
     println("$name: hip socket spread ${hipSpread(body)?.let { "%.4f".format(it) } ?: "none"}")
     println("$name: smallest gap between digit tips ${digitTipGaps(body).format()}")
     println("$name: socket ring length, all / seen ${socketRings(body, seen).mapValues { (_, v) -> "%.3f / %.3f".format(v.first, v.second) }}")

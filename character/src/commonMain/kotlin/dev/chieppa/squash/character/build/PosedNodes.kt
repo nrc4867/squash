@@ -45,8 +45,8 @@ class PosedState(val rest: AssembledCharacter, val body: AssembledCharacter, val
 /**
  * [assembly] in the pose [pose] holds the node of, once a rig gives one, with what the garments hide decided again in the pose: the
  * character itself while the pose leaves every part at rest or before there is a pose, its moved arms lying on the body rather than through
- * it, its strips built again where the pose carried them and its hanging branches pushed out of what hangs inside them. See [posedBy],
- * [withArmsOnBody], [withStripsPosed], [withHangingPushed] and [hiddenAgain].
+ * it and turned out clear of a skirt hanging beside them, its strips built again where the pose carried them and its hanging branches pushed out of what hangs inside them. See [posedBy],
+ * [withArmsOnBody], [withArmsClearOfSkirts], [withStripsPosed], [withHangingPushed] and [hiddenAgain].
  */
 fun Graph.posedBodyNode(assembly: Node<*, AssembledCharacter>, pose: StateFlow<Node<*, Held>?>): Node<*, AssembledCharacter> {
     val rest = held(assembly)
@@ -56,7 +56,7 @@ fun Graph.posedBodyNode(assembly: Node<*, AssembledCharacter>, pose: StateFlow<N
         cacheSize = POSED_CACHE,
     ) { (_, sources) ->
         val character = sources.getValue(PosedKey.REST).value as AssembledCharacter
-        (sources[PosedKey.POSE]?.value as PosedParts?)?.let { character.posedBy(it).withArmsOnBody(character).withStripsPosed(character).withHangingPushed().hiddenAgain(character) } ?: character
+        (sources[PosedKey.POSE]?.value as PosedParts?)?.let { character.posedBy(it).withArmsOnBody(character).withArmsClearOfSkirts(character).withStripsPosed(character).withHangingPushed().hiddenAgain(character) } ?: character
     }
 }
 

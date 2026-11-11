@@ -22,7 +22,7 @@ internal fun stripOver(branch: PlacedPart, body: AssembledCharacter): PlacedPart
         (shell.point(shell.index(first, j)) - tube.point(tube.index(under, covering.bodyColumns[j].coerceAtMost(tube.nv - 1)))).length
     }.average().toFloat()
     val foot = List(shell.nv) { j -> join.foot[covering.bodyColumns[j].coerceAtMost(join.foot.size - 1)] }
-    val own = StripJoin(StripJoin.patchName(true), shell.name, first, true, join.host, join.hostPatch, foot, join.joined, ease)
+    val own = StripJoin(StripJoin.patchName(true), shell.name, first, true, join.host, join.hostPatch, foot, join.joined, ease, capped = join.capped)
     val shape = stripShape(branch, own, host) ?: return branch
     return branch.withStrip(shape, own).let { it.alwaysHiding(trimmed(it, own)) }
 }

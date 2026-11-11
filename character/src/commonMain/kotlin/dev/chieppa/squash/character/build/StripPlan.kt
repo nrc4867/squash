@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.ShellInside
 import dev.chieppa.squash.geom.SurfaceUv
@@ -14,6 +15,12 @@ private const val TUBE_REACH = 0.7f
 
 /** How far from where the tube leaves the host the strip's foot lies on the host, in the tube's radii. */
 private const val HOST_REACH = 0.6f
+
+/** How far from where the neck leaves a head its strip's foot lies under the head, in the neck's radii. */
+private const val HEAD_REACH = 0.1f
+
+/** How far out the foot lies on [host], in the tube's radii: less on a head, so the jaw keeps its edge. */
+private fun reachOn(host: PlacedPart) = if (host.role == Role.HEAD) HEAD_REACH else HOST_REACH
 
 /** The share of a tube's rings, from the end it joins by, that its strip may take. */
 private const val MOST_RINGS = 0.6f
@@ -35,10 +42,12 @@ private const val MIN_WAY = 1e-6f
 /**
  * Where a strip would join [tube]'s first swept patch, from its start when [atStart] or else from its end, to [host]'s surface, for the
  * part [joined] on the socket between them: the first ring past where every column has left [host] by [TUBE_REACH] of the tube's
- * radius, or [MOST_SHOWN] of the rings showing past the host if that comes first, and a foot on [host] [HOST_REACH] radii out from where each column leaves it, calmed round the loop. Null when too few
- * columns come out of [host], or the tube runs inside it for more than [MOST_RINGS] of its rings.
+ * radius, or [MOST_SHOWN] of the rings showing past the host if that comes first, and a foot on [host] [HOST_REACH] radii out from where
+ * each column leaves it, calmed round the loop; a column never inside leaves at its first ring. Null when fewer than [ENTERING] of the
+ * columns come out of [host], unless the tube is [seated] on its surface, or the tube runs inside it for more than [MOST_RINGS] of its
+ * rings.
  */
-internal fun planStrip(tube: PlacedPart, atStart: Boolean, host: PlacedPart, joined: PartId): StripJoin? {
+internal fun planStrip(tube: PlacedPart, atStart: Boolean, host: PlacedPart, joined: PartId, seated: Boolean = false): StripJoin? {
     val hostId = host.id ?: return null
     val own = tube.surface.patches.firstOrNull { it.slices != null } ?: return null
     val inside = host.inside ?: return null
@@ -46,23 +55,63 @@ internal fun planStrip(tube: PlacedPart, atStart: Boolean, host: PlacedPart, joi
     val nv = own.nv
     val limit = (nu * MOST_RINGS).toInt()
     if (limit < 2) return null
-    fun ring(step: Int) = if (atStart) step else nu - 1 - step
-    fun at(step: Int, j: Int) = tube.origin + tube.surface.shown(own.point(own.index(ring(step), j)))
-    val last = IntArray(nv) { j -> (limit downTo 0).firstOrNull { at(it, j) in inside } ?: -1 }
-    if (last.count { it >= 0 } < nv * ENTERING || last.max() >= limit - 1) return null
-    val leaving = Array(nv) { j -> if (last[j] < 0) at(0, j) else leavingPoint(at(last[j], j), at(last[j] + 1, j), inside) }
+    val run = TubeRun(tube, own, atStart)
+    val last = run.lastInside(limit, inside)
+    if ((!seated && last.count { it >= 0 } < nv * ENTERING) || last.max() >= limit - 1) return null
+    val leaving = run.leaving(last, inside)
     val out = last.max() + 1
-    val radius = ringRadius(List(nv) { at(out, it) })
+    val radius = ringRadius(List(nv) { run.at(out, it) })
     if (radius <= 0f) return null
     val most = out + ((nu - 1 - out) * MOST_SHOWN).toInt()
-    val step = (out until most).firstOrNull { s -> (0 until nv).all { j -> (at(s, j) - leaving[j]).length >= TUBE_REACH * radius } } ?: most
+    val step = (out until most).firstOrNull { s -> (0 until nv).all { j -> (run.at(s, j) - leaving[j]).length >= TUBE_REACH * radius } } ?: most
+    val surface = hostPatchUnder(host, leaving) ?: return null
+    val feet = feetOf(host, surface, leaving, List(nv) { j -> middleOf(List(nv) { run.at(maxOf(last[j], 0), it) }) }, reachOn(host) * radius, own.closedV)
+    return StripJoin(StripJoin.patchName(atStart), own.name, run.ring(step), atStart, hostId, surface.name, feet, joined, capped = atStart && tube.role == Role.ARM)
+}
+
+/**
+ * The foot [join]'s strip takes on [host] with [tube] as they now stand: planned as [planStrip] plans it, up to the strip's own ring,
+ * which stays; a column still inside [host] at that ring leaves it there. So in a pose the foot slides over the host with the tube, and
+ * the strip meets the host where the posed tube leaves it. Null when the tube has lost its patch or the host its inside.
+ */
+internal fun slidFoot(tube: PlacedPart, join: StripJoin, host: PlacedPart): List<SurfaceUv>? {
+    val own = tube.surface.patches.firstOrNull { it.name == join.tube } ?: return null
+    val onHost = host.surface.patches.firstOrNull { it.name == join.hostPatch } ?: return null
+    val inside = host.inside ?: return null
+    val run = TubeRun(tube, own, join.atStart)
+    val ringStep = if (join.atStart) join.ring else own.nu - 1 - join.ring
+    val last = run.lastInside(ringStep, inside)
+    val leaving = Array(own.nv) { j -> if (last[j] >= ringStep) run.at(ringStep, j) else null }
+    val left = run.leaving(IntArray(own.nv) { j -> if (last[j] >= ringStep) -1 else last[j] }, inside)
+    for (j in leaving.indices) leaving[j] = leaving[j] ?: left[j]
+    val out = (last.max() + 1).coerceAtMost(ringStep)
+    val radius = ringRadius(List(own.nv) { run.at(out, it) })
+    if (radius <= 0f) return null
+    val middles = List(own.nv) { j -> middleOf(List(own.nv) { run.at(last[j].coerceIn(0, ringStep), it) }) }
+    return feetOf(host, onHost, Array(own.nv) { requireNotNull(leaving[it]) }, middles, reachOn(host) * radius, own.closedV)
+}
+
+/** A tube's swept patch [own] read in steps from the end [atStart] names, its points where [tube] now stands. */
+private class TubeRun(private val tube: PlacedPart, private val own: Patch, private val atStart: Boolean) {
+    fun ring(step: Int) = if (atStart) step else own.nu - 1 - step
+
+    fun at(step: Int, column: Int): Vec3 = tube.origin + tube.surface.shown(own.point(own.index(ring(step), column)))
+
+    /** For each column, the last step up to [limit] whose point lies inside [inside], or -1 when none does. */
+    fun lastInside(limit: Int, inside: ShellInside): IntArray = IntArray(own.nv) { j -> (limit downTo 0).firstOrNull { at(it, j) in inside } ?: -1 }
+
+    /** Where each column leaves [inside] past its [last] step inside, or its first point when it never lies inside. */
+    fun leaving(last: IntArray, inside: ShellInside): Array<Vec3> =
+        Array(own.nv) { j -> if (last[j] < 0) at(0, j) else leavingPoint(at(last[j], j), at(last[j] + 1, j), inside) }
+}
+
+/** The swept patch of [host] nearest the middle of [leaving]. */
+private fun hostPatchUnder(host: PlacedPart, leaving: Array<Vec3>): Patch? {
     val middle = host.surface.shown(middleOf(leaving.toList()) - host.origin)
-    val surface = host.surface.patches.filter { it.slices != null }.minByOrNull { patch ->
+    return host.surface.patches.filter { it.slices != null }.minByOrNull { patch ->
         val near = patch.nearestUv(middle)
         (patch.positionAt(near.u, near.v) - middle).length
-    } ?: return null
-    val feet = feetOf(host, surface, leaving, List(nv) { j -> middleOf(List(nv) { at(maxOf(last[j], 0), it) }) }, HOST_REACH * radius, own.closedV)
-    return StripJoin(StripJoin.patchName(atStart), own.name, ring(step), atStart, hostId, surface.name, feet, joined)
+    }
 }
 
 /** Where a column leaves the shell between [inside], a point within it, and [outside], a point beyond, by halving. */

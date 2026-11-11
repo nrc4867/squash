@@ -59,3 +59,29 @@ private fun RenderMesh.gridNormal(i: Int, j: Int, nu: Int, nv: Int, at: (Int) ->
 }
 
 private const val MIN_NORMAL = 1e-12f
+
+/**
+ * This mesh, held in a part's space, turned [angle] radians about the line through [pivot] along the unit [axis], both in that space:
+ * positions, normals and shading normals.
+ */
+internal fun RenderMesh.turnedAbout(pivot: Vec3, axis: Vec3, angle: Float): RenderMesh {
+    val cos = kotlin.math.cos(angle)
+    val sin = kotlin.math.sin(angle)
+    fun turn(v: Vec3) = v * cos + (axis cross v) * sin + axis * ((axis dot v) * (1f - cos))
+    val out = vertices.copyOf()
+    for (v in 0 until vertexCount) {
+        val base = v * RenderMesh.FLOATS_PER_VERTEX
+        val p = turn(Vec3(out[base], out[base + 1], out[base + 2]) - pivot) + pivot
+        out[base] = p.x
+        out[base + 1] = p.y
+        out[base + 2] = p.z
+        for (offset in intArrayOf(RenderMesh.NORMAL_OFFSET_FLOATS, RenderMesh.PROXY_OFFSET_FLOATS)) {
+            val at = base + offset
+            val n = turn(Vec3(out[at], out[at + 1], out[at + 2]))
+            out[at] = n.x
+            out[at + 1] = n.y
+            out[at + 2] = n.z
+        }
+    }
+    return RenderMesh(out, indices)
+}

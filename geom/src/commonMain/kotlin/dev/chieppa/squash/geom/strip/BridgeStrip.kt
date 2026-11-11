@@ -30,9 +30,9 @@ class StripEnd(val points: List<Vec3>, val ways: List<Vec3>) {
 object BridgeStrip {
     /**
      * The points of a strip [rings] rings long from [from] to [to], ring by ring, each ring in the loops' order. [reach] scales how far
-     * each end's way carries the curve, as a share of the distance between its ends.
+     * [from]'s way carries the curve, and [arriveReach] how far [to]'s does, as shares of the distance between its ends.
      */
-    fun build(from: StripEnd, to: StripEnd, rings: Int, reach: Float): Array<Vec3> {
+    fun build(from: StripEnd, to: StripEnd, rings: Int, reach: Float, arriveReach: Float = reach): Array<Vec3> {
         val columns = from.points.size
         require(to.points.size == columns) { "A strip joins loops of ${from.points.size} and ${to.points.size} points" }
         require(rings >= 2) { "A strip has at least two rings" }
@@ -40,9 +40,9 @@ object BridgeStrip {
         for (j in 0 until columns) {
             val start = from.points[j]
             val end = to.points[j]
-            val carry = (end - start).length * reach
-            val leave = from.ways[j] * carry
-            val arrive = to.ways[j] * carry
+            val chord = (end - start).length
+            val leave = from.ways[j] * (chord * reach)
+            val arrive = to.ways[j] * (chord * arriveReach)
             for (k in 0 until rings) points[k * columns + j] = hermite(start, leave, end, arrive, k.toFloat() / (rings - 1))
         }
         if (rings > 2 * HELD_ROWS) fair(points, rings, columns)

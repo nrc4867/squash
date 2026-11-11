@@ -340,6 +340,69 @@ The twin's gaps set the order of the remaining rounds, model shape and dressing 
 | 14 | `soles-straps` | A sole as a slab under the foot's footprint; a part drawn along a curve on a surface (straps, toe post, heel strap); a swapped boot joined to its shaft | Foot shots 0.88 or more; no skin ring at a boot's shaft |
 | 15 | `cloth-paint` | Regions and ink on a garment's shell: cuffs, dots, lace, studs, lacing, pockets, seams | The reference's cloth details each have a built counterpart |
 
+## Round 9: shoulders
+
+Built:
+
+- **Seated limbs get strips** (`StripPlan.kt` `planStrip(seated = true)`, `SocketStrips.kt`): a neck, an arm or a leg that runs into its parent with fewer than half its columns, as the twin's do with every body socket seated on the surface (`sink = 0`), is planned from its own start when neither it nor its parent plans otherwise; a column never inside leaves at its first ring. The twin's arms, legs and neck had no strips at all: each limb's flat root showed as a squared pad or a ring, which is what the twin's shoulders were.
+- **The foot slides in a pose** (`slidFoot`, `withStripsPosed`, `GarmentHiding.kt` `refixed`): a posed strip keeps its ring and plans its foot again where the posed tube now leaves the host, up to that ring, a column still inside there leaving at the ring. The host's faces under the old foot show again and those under the new one are hidden (`StripJoin.underFoot` holds what the rest foot hid; `hiddenAgain` decides garments' hiding again for a host whose fixed set changed), and a garment's strip over the same join stands on the new foot. A foot the pose leaves within 1e-4 in u and v is kept as it was, so a knee bend changes nothing at the hip.
+- **Shoulder caps** (`StripShape.kt`, `StripJoin.capped`): an arm's strip from its start leaves its foot turned out of the body at a slope of 0.5 and is carried 1.0 of its length into the ring (0.6 elsewhere), so the shoulder rises off the torso and rounds over into the arm. Tentative; tuned on the twin and the woman. Other strips are as they were.
+- **Head on neck** (`SocketStrips.kt`): a head on a part of role neck is joined by a strip, the neck from its end into the head first, its foot 0.1 of the neck's radius out under the head (`HEAD_REACH`, against 0.6 elsewhere) so the jaw keeps its edge. A head on anything else (the person, the creatures) keeps its overlap.
+- **Arms clear a hanging skirt** (`ArmsClearOfSkirts.kt`, in the posed body after the push onto the body): an arm whose vertices, or its hand's, lie inside a branch hanging free from the part it sits on turns out at its shoulder, with everything it carries and the branches over it, by the least turn that clears, found by seven halvings, and a tenth more, at most 0.35 radians. The skirt is not pushed by the arm: an arm lies outside the skirt, and the push only grows a ring outward round what lies inside it. The reference itself spreads the dress's arms 7.4 degrees.
+- **Measure**: `arm and hand vertices inside the skirt`, as shown and per pose.
+- Tests: `SocketStripsTest` (a pose slides the foot with the leg and shows the torso again under the old foot; a leg seated on the torso's surface is joined from its own start), `HangingBranchTest.anArmLoweredIntoTheSkirtTurnsOutClearOfIt`.
+
+Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed,woman-twin-dressed,woman,woman-twin,person,person-dressed outfits=all poses=all"`), before / after:
+
+| Check | Before | After |
+| --- | --- | --- |
+| Head on neck, socket ring all / seen, woman, every outfit | 0.400 / 0.121 to 0.130 | 0 / 0 |
+| The same, twin, every outfit | 0.328 / 0.108 | 0 / 0 |
+| Twin bare, seen: neck, shoulder, hip | 0.104, 0.186, 0.079 | 0, 0, 0 |
+| Arm and hand vertices inside the skirt, Dress, woman and twin | not measured; the hand sank into the skirt | 0 each side |
+| Hip spread, woman / twin, every outfit | 0.2483 / 0.1820 | 0.2483 / 0.1820 |
+| Arm volume inside the torso, every outfit and pose, woman and twin | 0 | 0 |
+| Leg volume outside the skirt, skirt vertices inside a leg | 0 / 0 | 0 / 0 |
+| Owned parts' drift from rigid | 0 (shades-up 0.0003, its own turn) | the same |
+| Person: head ring seen, shoulder ring seen | 0.330, 0.454 | 0.330, 0.467 |
+| Twin profile depth brow to chin | 0.0286 | 0.0234: the strip now forms the chin's underside, which the measure's cut reads |
+| Bare skin seen, twin Dress arms under the puff sleeves | 57 / 55 | 104 / 104 |
+
+Strips built again in a pose with the foot slid: 0.38 to 0.64 ms a socket by outfit, median, against about 0.2 ms before the slide (`SocketStripBenchTest`, slow, every outfit of the woman); the round 3 budget is 5 ms.
+
+Silhouette IoU, dressed twin (`./gradlew :app:compare`), twin round / round 9:
+
+| shot | whole | head | torso | arms | legs |
+|---|---|---|---|---|---|
+| beach-threeq | 0.900 / 0.900 | 0.861 / 0.861 | 0.994 / 0.994 | 0.814 / 0.817 | 0.877 / 0.876 |
+| lawyer-threeq | 0.870 / 0.869 | 0.855 / 0.854 | 0.882 / 0.883 | 0.820 / 0.820 | 0.887 / 0.885 |
+| dress-threeq | 0.803 / 0.816 | 0.859 / 0.859 | 0.709 / 0.723 | 0.619 / 0.711 | 0.879 / 0.872 |
+| goth-threeq | 0.907 / 0.906 | 0.863 / 0.863 | 0.997 / 0.997 | 0.811 / 0.812 | 0.897 / 0.895 |
+| beach-front | 0.910 / 0.910 | 0.854 / 0.854 | 0.972 / 0.973 | 0.753 / 0.754 | 0.929 / 0.929 |
+| lawyer-side | 0.846 / 0.848 | 0.833 / 0.839 | 0.860 / 0.860 | - | 0.837 / 0.839 |
+| dress-side | 0.841 / 0.839 | 0.879 / 0.871 | 0.737 / 0.735 | - | 0.906 / 0.906 |
+| goth-front | 0.905 / 0.907 | 0.844 / 0.844 | 0.986 / 0.987 | 0.753 / 0.760 | 0.913 / 0.913 |
+| hand-rest | 0.233 / 0.295 | | | | |
+| pose-wave-lawyer | 0.767 / 0.767 | 0.596 / 0.596 | 0.884 / 0.885 | 0.836 / 0.828 | 0.782 / 0.784 |
+| pose-walk-dress | 0.630 / 0.624 | 0.783 / 0.783 | 0.631 / 0.635 | 0.353 / 0.357 | 0.713 / 0.706 |
+| pose-walk-goth | 0.795 / 0.799 | 0.831 / 0.831 | 0.988 / 0.988 | 0.577 / 0.579 | 0.782 / 0.791 |
+| mean of all 24 | 0.784 / 0.787 | | | | |
+
+The other shots move by 0.002 or less.
+
+What the renders show: the twin's squared pads and the beach-front's pointed flaps are gone in every view of every outfit, at rest in A-pose and lowered; the shoulder runs from the neck over a round cap into the arm, and a raised arm (wave) meets the body under its own cap. Her neck runs into the shoulders and up under the jaw with no lumps, rings or ink, and her hips join the legs. The woman's head sits on her neck with the jaw's edge and no ring under it; her shoulders read round as before. The Dress hands rest beside the skirt, the twin's arms spread as the reference's do in that outfit. Pixel diff against the round's start: the woman, twin and person change where expected; among the creatures only the joins of forelimbs of role arm move, by a few hundred to two thousand pixels (dragon face 2180, fennec 1085, lizard 152) with no change to read in the images, and the toucan, koi, every foot and hind limb render the same.
+
+The arms band stays at 0.75 to 0.82 in the rest body shots (0.71 in dress-threeq), short of 0.88. Without the push onto the body it reached only 0.80: the reference's upper arm lies about 0.04 m inside its torso at the armpit, Squash pushes the posed arm clear of the torso, so the twin's upper arm stands that much further out and the arm's whole outer edge shows red in the overlays. The rest is the hands (round 13) and the reference's shoulder cap, which stands above its torso's shoulder line where the twin's strip rounds a little below it.
+
+For the next rounds (aimed at round 10, `garment-cuts`):
+
+- Strips at the shoulder now slide: a garment's strip over an arm reads the body strip's slid foot column by column (`footOver`), so an opening or a neckline cut across the shoulder must cut the sleeve's strip as well as its branch, and the body faces a strip hides change with the pose (`StripJoin.underFoot`, `refixed`).
+- A host's always-hidden set holds the strips' feet and the `Hider.Over` regions together; freeing a slid foot frees an `Over` vertex under it too until `hiddenAgain` runs. A cut outline built as an `Over` hider near the shoulder should keep a set of its own.
+- The twin's puff sleeves show more bare skin seen under them in Dress (57 to 104 vertices an arm), not visible in the renders: the arm turned out beside the skirt, and the capped body strip runs close under the sleeve's strip. A sleeve's strip read from the body strip's rows offset by the ease (round 3's note) would close it.
+- Lapels and cups lie on the chest, which the strips do not reach; the shoulder cap rises off the torso where a halter strap or a collar crosses the shoulder.
+- The head's strip hides the head's floor near the neck; a collar or a choker on the neck meets the head's underside along the strip, not a ring.
+- Left: the arm push against the reference's overlap (above); the person's shoulder ring seen 0.467 is its hanging arm lying in the torso's side below the strip, as round 3 measured.
+
 ## Open
 
 - Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.

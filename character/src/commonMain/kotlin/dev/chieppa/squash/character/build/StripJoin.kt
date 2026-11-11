@@ -19,7 +19,8 @@ object JoinParams {
  * to 2 at the other part. Faces of [tube] past the ring, toward the other part, are left out, as are faces of the [host] inside the
  * strip's foot, which lies on [host]'s patch [hostPatch] at [foot], one place a column of the strip. [joined] is the part sitting on
  * the socket the strip joins, whose [JoinParams] rule the join. The foot stands [lift] off [host], as a garment's strip stands its ease
- * off the body's. See HLD: look, Where parts meet.
+ * off the body's. [underFoot] lists the vertices of [host] the strip hides at rest. A [capped] strip, at a shoulder, rises off [host]
+ * and rounds over into the tube. See HLD: look, Where parts meet.
  */
 class StripJoin(
     val patch: String,
@@ -31,7 +32,15 @@ class StripJoin(
     val foot: List<SurfaceUv>,
     val joined: PartId,
     val lift: Float = 0f,
+    val underFoot: IntArray = IntArray(0),
+    val capped: Boolean = false,
 ) {
+    /** This strip with its foot at [at]. */
+    fun withFoot(at: List<SurfaceUv>) = StripJoin(patch, tube, ring, atStart, host, hostPatch, at, joined, lift, underFoot, capped)
+
+    /** This strip hiding [hidden], the vertices of its host it lies over. */
+    fun hiding(hidden: BooleanArray) = StripJoin(patch, tube, ring, atStart, host, hostPatch, foot, joined, lift, hidden.indices.filter { hidden[it] }.toIntArray(), capped)
+
     companion object {
         /** The name of a strip's patch at a part's start, or at its end. */
         fun patchName(atStart: Boolean) = if (atStart) "join.start" else "join.end"

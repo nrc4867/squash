@@ -13,11 +13,17 @@ import dev.chieppa.squash.geom.surfaceAt
 /** How far a strip's foot stands off the surface it lies on, in body units, so it never dips under it. */
 internal const val STRIP_LIFT = 0.002f
 
-/** How far each end's way carries a strip's columns, as a share of the distance between their ends: a quarter round's bulge. */
+/** How far the foot's way carries a strip's columns, as a share of the distance between their ends. */
 private const val WAY_REACH = 0.6f
+
+/** How far the ring's way carries a shoulder strip's columns, as a share of the distance between their ends, so the cap rounds over before it meets the arm. */
+private const val ARRIVE_REACH = 1f
 
 /** Below this a way has no length to turn into a direction. */
 private const val MIN_WAY = 1e-6f
+
+/** How far a shoulder strip's columns leave their foot turned out of the surface under it, as the tan of that turn, so the shoulder rises from the body into a cap. */
+private const val FOOT_TILT = 0.5f
 
 /** A strip as built: its [patch] in the tube part's own space, and its vertices as that part's mesh holds them. */
 internal class StripShape(val patch: Patch, val mesh: RenderMesh)
@@ -56,11 +62,13 @@ internal fun stripShape(tube: PlacedPart, join: StripJoin, host: PlacedPart): St
     val ringWays = List(columns) { j -> direction(ringPoint(join.ring + away, j) - ringPoint(join.ring - away, j)) }
     val normals = join.foot.map { host.surface.shown(onHost.surfaceAt(it.u, it.v).normal) }
     val feet = join.foot.mapIndexed { j, at -> host.origin + host.surface.shown(onHost.positionAt(at.u, at.v)) + normals[j] * (STRIP_LIFT + join.lift) }
+    val shoulder = join.capped
+    val tilt = if (shoulder) FOOT_TILT else 0f
     val footWays = List(columns) { j ->
         val toward = ring[j] - feet[j]
-        direction(toward - normals[j] * (toward dot normals[j]))
+        direction(direction(toward - normals[j] * (toward dot normals[j])) + normals[j] * tilt)
     }
-    val points = BridgeStrip.build(StripEnd(feet, footWays), StripEnd(ring, ringWays), StripJoin.RINGS, WAY_REACH)
+    val points = BridgeStrip.build(StripEnd(feet, footWays), StripEnd(ring, ringWays), StripJoin.RINGS, WAY_REACH, if (shoulder) ARRIVE_REACH else WAY_REACH)
     val rings = StripJoin.RINGS
     val local = FloatArray(rings * columns * Patch.COMPONENTS)
     for (k in 0 until rings) for (j in 0 until columns) {

@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.PosedParts
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.posedBy
+import dev.chieppa.squash.character.build.withArmsClearOfSkirts
 import dev.chieppa.squash.character.build.withHangingPushed
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
@@ -30,6 +31,7 @@ import dev.chieppa.squash.document.cuffPartId
 import dev.chieppa.squash.geom.Mat3
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.ShellInside
+import dev.chieppa.squash.geom.Vec3
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -41,14 +43,15 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** How far before the torso's start the skirt hangs, in u, how far up it runs, and how far forward the test leans a leg per unit down it. */
+/** How far before the torso's start the skirt hangs, in u, how far up it runs, how far forward the test leans a leg per unit down it, and how far it lowers an arm, in radians. */
 private const val HEM = -0.8f
 private const val WAIST = 0.3f
 private const val STEP = 0.8f
+private const val LOWER = 0.5f
 
 /**
- * A branch that runs on past its part's start hangs free: the legs inside it are covered rather than cut through, and wherever a pose
- * carries a leg into it, it is pushed out clear of the leg. See HLD: data-model, Garments.
+ * A branch that runs on past its part's start hangs free: the legs inside it are covered rather than cut through, wherever a pose
+ * carries a leg into it, it is pushed out clear of the leg, and an arm lowered into it turns out clear of it. See HLD: data-model, Garments.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HangingBranchTest {
@@ -101,6 +104,44 @@ class HangingBranchTest {
         val pushed = posed.withHangingPushed()
         assertEquals(0, skirtInside(pushed, assertNotNull(pushed.part(branch)), legs), "the skirt clears the leg")
     }
+
+    @Test
+    fun anArmLoweredIntoTheSkirtTurnsOutClearOfIt() = runTest {
+        val (document, torso, _) = skirted()
+        val shoulder = openSockets(document, plan, shipped).first { it.parent == torso && it.name == "shoulder" }
+        val placed = placeOnRow(shoulder, emptyList(), assertNotNull(shipped.template(TemplateId("arm"))), document)
+        val arms = placed.flatMap { it.first }
+        val armed = AddParts(arms, pairs = placed.flatMap { (made, data) -> made.mapNotNull { it.pair }.map { it to data } }.toMap()).apply(document).document
+        val rest = assertNotNull(session(armed).assembly.output.value)
+        val arm = assertNotNull(rest.part(arms.first().id))
+        val shell = assertNotNull(rest.part(branchPartId(skirt, torso))).let { ShellInside(it.surface.patches.first()) { p -> it.origin + it.surface.shown(p) } }
+        val lowered = listOf(LOWER, -LOWER).map { angle -> arm.turnedAboutRoot(angle) }.maxBy { mesh -> inside(arm, mesh, shell) }
+        assertTrue(inside(arm, lowered, shell) > 0, "the lowered arm reaches into the skirt")
+        val posed = rest.posedBy(object : PosedParts {
+            override val meshes = mapOf(requireNotNull(arm.id) to lowered)
+            override val turns = emptyMap<PartId, Mat3>()
+        })
+        val turned = assertNotNull(posed.withArmsClearOfSkirts(rest).part(requireNotNull(arm.id)))
+        assertEquals(0, inside(turned, turned.surface.mesh, shell), "the arm turns out clear of the skirt")
+    }
+
+    /** This arm's mesh turned [angle] radians about the body's forward axis through the middle of its root ring. */
+    private fun PlacedPart.turnedAboutRoot(angle: Float): RenderMesh {
+        val patch = surface.patches.first { it.slices != null }
+        val root = (0 until patch.nv).fold(Vec3.ZERO) { sum, c -> sum + surface.shown(patch.point(patch.index(0, c))) } * (1f / patch.nv)
+        val cos = kotlin.math.cos(angle)
+        val sin = kotlin.math.sin(angle)
+        val out = surface.mesh.vertices.copyOf()
+        for (v in 0 until surface.mesh.vertexCount) {
+            val p = surface.mesh.position(v) - root
+            val at = v * RenderMesh.FLOATS_PER_VERTEX
+            out[at + 1] = root.y + p.y * cos - p.z * sin
+            out[at + 2] = root.z + p.y * sin + p.z * cos
+        }
+        return RenderMesh(out, surface.mesh.indices)
+    }
+
+    private fun inside(arm: PlacedPart, mesh: RenderMesh, shell: ShellInside) = (0 until mesh.vertexCount).count { arm.origin + mesh.position(it) in shell }
 
     /** How many of [branch]'s vertices lie inside any of [legs] in [body]. */
     private fun skirtInside(body: AssembledCharacter, branch: PlacedPart, legs: List<PartId>): Int {

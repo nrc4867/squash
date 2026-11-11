@@ -92,6 +92,18 @@ internal fun PlacedPart.alwaysHiding(hidden: BooleanArray): PlacedPart {
     return withShown(keptFaces(all, flags), Hiding(all, fixed, held?.inside.orEmpty(), held?.whole.orEmpty(), flags))
 }
 
+/**
+ * This part with the vertices in [freed] no longer always hidden and those [under] marks always hidden: a strip's foot that slid in a
+ * pose. What garments hide of the freed vertices is decided again by [hiddenAgain].
+ */
+internal fun PlacedPart.refixed(freed: Set<Int>, under: BooleanArray): PlacedPart {
+    val held = hiding ?: return alwaysHiding(under)
+    val fixed = BooleanArray(held.fixed.size) { (held.fixed[it] && it !in freed) || under[it] }
+    if (fixed.contentEquals(held.fixed)) return this
+    val flags = BooleanArray(fixed.size) { fixed[it] || (held.flags[it] && !(held.fixed[it] && it in freed)) }
+    return withShown(keptFaces(held.indices, flags), Hiding(held.indices, fixed, held.inside, held.whole, flags))
+}
+
 /** Calls [visit] with each vertex of this part's mesh, its u and its v on its patch. */
 private inline fun PlacedPart.forEachVertex(visit: (vertex: Int, u: Float, v: Float) -> Unit) {
     var vertex = 0
@@ -136,7 +148,7 @@ fun AssembledCharacter.hiddenAgain(rest: AssembledCharacter): AssembledCharacter
     val shown = parts.map { part ->
         val hiding = part.hiding ?: return@map part
         val id = part.id ?: return@map part
-        val carried = atRest[id]?.surface?.patches !== part.surface.patches
+        val carried = atRest[id]?.surface?.patches !== part.surface.patches || atRest[id]?.hiding?.fixed !== hiding.fixed
         val movedHiders = hiding.by.filter { atRest[it] !== posed[it] }
         if (!carried && movedHiders.isEmpty()) return@map part
         val box = part.box ?: return@map part

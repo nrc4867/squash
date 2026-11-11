@@ -96,3 +96,20 @@ fun skirtInsideLegs(body: AssembledCharacter): Map<String, Int> {
         requireNotNull(skirt.id).value to (0 until skirt.surface.mesh.vertexCount).count { v -> skirt.point(v).let { p -> inLegs.any { it.inside(p) } } }
     }
 }
+
+/**
+ * How many vertices of each arm, and of every part on it, lie inside a garment branch hanging free from the part the arm sits on, by
+ * side: a hand lowered through a skirt. Arms beside no such branch are left out.
+ */
+fun armInsideSkirt(body: AssembledCharacter): Map<Side?, Int> = body.parts.filter { it.isBody && it.role == Role.ARM }.mapNotNull { arm ->
+    val skirts = body.parts.filter { it.covering?.hangsFree == true && it.covering?.part == arm.socket?.parent }
+    if (skirts.isEmpty()) return@mapNotNull null
+    val shells = skirts.map { skirt -> ShellInside(skirt.surface.patches.first()) { skirt.origin + skirt.surface.shown(it) } }
+    val ids = hashSetOf(requireNotNull(arm.id))
+    var grew = true
+    while (grew) {
+        grew = false
+        for (part in body.parts) if (part.isBody && part.socket?.parent in ids && ids.add(requireNotNull(part.id))) grew = true
+    }
+    arm.side to body.parts.filter { it.id in ids }.sumOf { part -> (0 until part.surface.mesh.vertexCount).count { v -> part.point(v).let { p -> shells.any { it.contains(p) } } } }
+}.toMap()
