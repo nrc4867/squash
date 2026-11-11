@@ -46,6 +46,7 @@ import dev.chieppa.squash.character.build.posedFurNode
 import dev.chieppa.squash.character.build.posedLinesNode
 import dev.chieppa.squash.character.build.posedStateNode
 import dev.chieppa.squash.character.build.shownJoints
+import dev.chieppa.squash.character.build.skeletonRowNode
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.socketFilletNode
 import dev.chieppa.squash.character.build.dressedNode
@@ -96,6 +97,7 @@ class CharacterSession(
     private val meshes = mutableMapOf<PartId, Node<PartBuild, PartMesh>>()
     private val blends = mutableMapOf<PartId, Node<PartBuild, PartBuild>>()
     private val surfaces = mutableMapOf<PartId, Node<*, PartSurface>>()
+    private val skeletons = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val defaults = mutableMapOf<Pair<TemplateRef, Boolean>, Node<*, PartSurface>>()
     private val works = mutableMapOf<PartId, Node<*, ResolvedSurfaceWork>>()
     private val colors = mutableMapOf<PartId, Node<*, HeldColor>>()
@@ -117,6 +119,7 @@ class CharacterSession(
                 templates,
                 ::surface,
                 ::defaultSurface,
+                ::skeleton,
             ),
         ),
         combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
@@ -226,6 +229,13 @@ class CharacterSession(
         graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template)
     }
 
+    /** What [part]'s sockets are read from while a garment reshapes it, empty otherwise; one per part for the session's life. */
+    private fun skeleton(part: PartId): Node<*, PartSurface> = skeletons.getOrPut(part) {
+        val axes = document.value.character.part(part)?.let { templates.find(it.template) }?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
+        val row = graph.skeletonRowNode(document, part, templates, lengths)
+        graph.partSurfaceNode(graph.partMeshNode(row, part), axes, document.map { it.character.part(part)?.side })
+    }
+
     /**
      * [part]'s surface work as positions in surface space, each point in the space of the part its anchor names; one per part
      * for the session's life. A part not in the document holds nothing.
@@ -239,5 +249,11 @@ class CharacterSession(
     }
 
     private fun defaultSurface(template: TemplateRef, mirrored: Boolean): Node<*, PartSurface> =
-        defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(templates[template], mirrored, plannedLengthFactor(document, template, templates, lengths)) }
+        defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(
+            templates[template],
+            mirrored,
+            plannedLengthFactor(document, template, templates, lengths),
+            templates.plan(document.value.character.bodyPlan)?.spreadFor(template.id) ?: 0f,
+        )
+    }
 }

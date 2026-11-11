@@ -24,6 +24,7 @@ import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.mouthGroup
@@ -88,10 +89,10 @@ fun personFace(before: Character): List<DocumentCommand> {
     return listOfNotNull(newEyesCommand(before, HEAD, eyeLandmark(head))) + mouth()
 }
 
-/** Every command that makes the person, in the order a person would send them. */
+/** Every command that makes the person, in the order a person would send them, the pose it is shown in last. */
 fun personCommands(): List<DocumentCommand> {
     val shaped = (personBody() + personColor()).fold(EMPTY_PERSON) { document, command -> command.apply(document).document }
-    return personBody() + personColor() + personFace(shaped.character)
+    return personBody() + personColor() + personFace(shaped.character) + SetDisplayPose(PERSON_DISPLAY)
 }
 
 /** The person as those commands leave it. */

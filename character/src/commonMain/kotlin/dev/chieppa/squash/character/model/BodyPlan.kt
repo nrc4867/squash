@@ -28,6 +28,9 @@ data class PlanSocket(
     val optional: Boolean = false,
     @Doc("Multiplies how deep a part on this socket sits inside its parent.") @Range(min = 0.0, max = 4.0)
     val sink: Float = 1f,
+    @Doc("Degrees a part placed on this socket rests leaning out from the body's plane, as the Move tool's outward angle; the right side mirrors it.")
+    @Range(min = -60.0, max = 60.0)
+    val spread: Float = 0f,
 )
 
 @Serializable
@@ -66,7 +69,10 @@ data class BodyPlan(
 
     /** The sockets a part with [template] offers: this plan's and its own, by name. */
     fun socketsOn(template: PartTemplate): List<SocketSpec> {
-        val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, it.outward, it.pair, it.takes, sink = it.sink) }
+        val planned = sockets.filter { it.on == template.id }.map { SocketSpec(it.name, it.u, it.v, it.outward, it.pair, it.takes, sink = it.sink, spread = it.spread) }
         return (planned + template.blocks.flatMap { it.sockets() }).distinctBy { it.name }
     }
+
+    /** The degrees a part of [template] rests leaning out where this plan would place it: the spread of the first socket taking it. */
+    fun spreadFor(template: TemplateId): Float = sockets.firstOrNull { template in it.takes }?.spread ?: 0f
 }

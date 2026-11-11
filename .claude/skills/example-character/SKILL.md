@@ -20,8 +20,8 @@ An example character is a list of document commands in a test fixture, folded ov
 JDK 25: `JAVA_HOME=~/.jdks/corretto-25.0.1`.
 
 - `./gradlew :screens-core:test --tests '*<Name>*' -PupdateGoldens`: write the example files. About 40 s. Run again without the flag to check them.
-- `./gradlew :app:look -Plook="example=<name>"`: render through the real graph with no test runner, every outfit at rest and in the example's named poses from the front, three-quarter and side, with face, hand and foot close-ups, into `app/build/look/<name>/`. Options: `outfits=a,b`, `poses=a,b`, `close=face,hand,foot`, `file=true` to read `examples/<name>.json` instead of the fixture's commands. About 30 s for the dressed woman's 36 images; needs the GPU. Named poses are listed per example in `screens/look/LookSubjects.kt`; a new example is added to its fixture map.
-- `./gradlew :app:measure -Pmeasure="example=<name>"`: print the checks per outfit as numbers: arm volume inside the torso, hip socket spread, the smallest gap between digit tips, socket ring length (all and seen), the head's profile notch, skull vertices seen outside the hair, bare skin seen inside a garment's shell, and the shading terminator per view with its blotches. No GPU.
+- `./gradlew :app:look -Plook="example=<name>"`: render through the real graph with no test runner, every outfit in its display pose (`<outfit>.png`), at rest when that differs (`<outfit>-rest.png`) and in the example's named poses from the front, three-quarter and side, with face, hand and foot close-ups, into `app/build/look/<name>/`. Options: `outfits=a,b`, `poses=a,b`, `close=face,hand,foot`, `file=true` to read `examples/<name>.json` instead of the fixture's commands. About 30 s for the dressed woman's 36 images; needs the GPU. Named poses are listed per example in `screens/look/LookSubjects.kt`; a new example is added to its fixture map.
+- `./gradlew :app:measure -Pmeasure="example=<name>"`: print the checks per outfit as numbers: arm volume inside the torso at rest and as shown, hip socket spread, the share of the face in shade per view, the smallest gap between digit tips, socket ring length (all and seen), the head's profile notch, skull vertices seen outside the hair, bare skin seen inside a garment's shell, and the shading terminator per view with its blotches. No GPU.
 - `./gradlew :app:test --tests '*<Name>SmokeTest*' -Pslow`: the smoke tier's renders, kept for regressions. Images land in `app/build/smoke-images/<image>.png`.
 - `./gradlew check`: before landing, 2 to 4 minutes. The smoke tier is not in it.
 
@@ -29,17 +29,24 @@ JDK 25: `JAVA_HOME=~/.jdks/corretto-25.0.1`.
 
 Pick per part, with the renders as judge.
 
-- **Template-free** (Blank plan): `tube`, `blob` and `sheet` on hand-made sockets, with hand-made joints and landmarks. Use it wherever a template's built shape fights the figure: torso, limbs, neck, hair. You draw every outline; `generic.rings` up to 96 and `generic.segments` up to 32 make it fine. Costs (see the limits note): no sink, no blend, one hinge a joint, the tube's root joint keeps ±60, and `PartRoles.upright` ignores `move.rest`.
+- **Template-free** (Blank plan): `tube`, `blob` and `sheet` on hand-made sockets, with hand-made joints and landmarks. Use it wherever a template's built shape fights the figure: torso, limbs, neck, hair. You draw every outline; `generic.rings` up to 96 and `generic.segments` up to 32 make it fine. Costs (see the limits note): no blend, one hinge a joint, the tube's root joint keeps ±60, and `PartRoles.upright` ignores `move.rest`. A hand-made socket sinks once unless its `socket.<n>.sink` says more (`HandSockets.add(..., sink =)`).
 - **Templated**: a template earns its place only for blocks no generic part has: `hand-3` and `foot-2` for digits with joints, thumb, webs and toes; `head-round` for a head centred on its neck (`mount`), a mid-head neck joint, a jaw and an eye landmark, and a facing the face bins and gaze read. The newest version of each template is the highest `version` among `templates/<id>*.part.json`; `ref(id)` in `fennec/FennecBody.kt` picks it.
 - Plans: `templates/plans/*.plan.json`. A templated character starts on a species plan (biped, bird, canine, fish); a template-free one on `blank`. Copy the plan's palette into the empty document as `woman/Woman.kt` does.
 
 ## Order of commands
 
 1. Root part: `AddParts(PartInstance(id, ref, role = Role.BODY))`. A generic root rests forward; turn it with `RestDirection.restIn(part, UP)`.
-2. Sockets on the parent before parts on them: `HandSockets.add(part, n, u, v, outward, paired)`, named `HandSockets.name(n)`. **Gap**: parameter names live in `character/.../build/HandSockets.kt`, `HandJoints.kt`, `HandLandmarks.kt`, `GenericShape.kt`, `Placement.kt`.
+2. Sockets on the parent before parts on them: `HandSockets.add(part, n, u, v, outward, paired, sink)`, named `HandSockets.name(n)`. **Gap**: parameter names live in `character/.../build/HandSockets.kt`, `HandJoints.kt`, `HandLandmarks.kt`, `GenericShape.kt`, `Placement.kt`.
 3. Children: `AddParts` with `SocketRef(parent, socket)`. A generic part is added with `roleGuessed = true` and its role set after with `SetRole`, as Add part does. A pair is one `AddParts` with both sides (`pair = PairId`, `side`), and every later command names the left side only; the right mirrors it.
 4. Shape: `SetOutlines(part, mapOf(View.SIDE to ..., View.TOP to ..., View.FRONT to ...))`, `SetParameter` for `size`, `move.outward`, `move.lean`, `generic.*`, joints with `HandJoints.add`.
-5. Color: `SetPaletteSlot`, `SetBaseSlot`, `SetRegion`. Then face and marks (`SetMark`, `SetMarkGroup`). Then the wardrobe.
+5. Color: `SetPaletteSlot`, `SetBaseSlot`, `SetRegion`. Then face and marks (`SetMark`, `SetMarkGroup`). Then the display pose, `SetDisplayPose`. Then the wardrobe.
+
+## A-pose and the display pose
+
+- A biped is built, weighted and dressed in A-pose: arms 45 degrees out (`move.outward` 45; on the biped plan Add part starts them there from the shoulder's `spread`, which a fixture passes as the `AddParts` pair data), legs straight down from the hips. Garments are drawn over that pose.
+- The display pose, saved with the character, brings the arms down (`woman/WomanPoses.kt` `WOMAN_DISPLAY`: a lean on the arm's root bone, `base` on a tube, `shoulder` on the `arm` template, and a free turn at the elbow for the palms). The session shows the working pose over it: a pose names only the bones it changes, and naming a display bone replaces it.
+- The posed arm is pushed out of the torso and any all-round garment on it, so leave the arm a little out from the hips in the display pose (about 15 to 25 degrees) rather than straight down, or it rides over the hips.
+- A garment never moves a socket: a Redraw that reshapes a part leaves what hangs from it where it hangs on the bare part, carried along only by the socket u the Redraw gives. Do not turn limbs in or out per outfit to clear a garment.
 
 ## Drawing outlines
 
@@ -81,7 +88,7 @@ Draw the body first and render bare from three sides; fix proportions; then the 
 
 - A missing example file fails the golden test: run with `-PupdateGoldens` once, then without.
 - `--tests` takes the class's simple name with a wildcard: `'*WomanSmokeTest.poses'`, not `'*WomanSmoke.poses'`.
-- A hand-made socket centres the child on the parent's surface: half a thigh or arm top stands outside, which shows as a ring or pokes through a skirt.
+- A hand-made socket centres the child on the parent's surface, sunk once by default: half a thigh or arm top can stand outside, which shows as a ring. `socket.<n>.sink` sets it deeper; an A-pose arm wants it shallow, or its top lies inside the torso.
 - A shoe branch over `foot-2` is open at the toe; Swap the foot for a blob.
 - A garment shared between outfits reads u on the part as other garments leave it; a Redraw that changes a part's length moves every other garment's range.
 - Wait on the graph, never a timer: `work.settle(session)` (inside `CloseUps`), `settle(work) { ... }` in a UI test.

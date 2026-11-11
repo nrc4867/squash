@@ -71,9 +71,9 @@ private const val FINE_SEGMENTS = 32
 private const val LIMB_RINGS = 64
 private const val LIMB_SEGMENTS = 24
 
-/** The arms lean out from the body a little, the legs in toward each other from the wide hips. */
-private const val ARM_OUTWARD = 9f
-private const val LEG_INWARD = -3f
+/** She is built in A-pose: the arms 45 degrees out from the body, the legs a little apart under the wide hips. */
+internal const val ARM_OUTWARD = 45f
+private const val LEG_OUTWARD = 1f
 
 private const val HAND_SIZE = 1.0f
 internal const val FOOT_SIZE = 0.6f
@@ -210,7 +210,7 @@ fun womanBody(): List<DocumentCommand> = buildList {
     add(SetRole(LEG_L, Role.LEG))
     addAll(fine(LEG_L, LIMB_RINGS, LIMB_SEGMENTS))
     add(SetOutlines(LEG_L, mapOf(View.SIDE to LEG_SIDE, View.TOP to LEG_FRONT)))
-    add(SetParameter(LEG_L, PlacementParams.OUTWARD, LEG_INWARD))
+    add(SetParameter(LEG_L, PlacementParams.OUTWARD, LEG_OUTWARD))
     add(HandJoints.add(LEG_L, 1, KNEE_AT, Hinge.X, KNEE_BEND, stretch = true))
     add(HandSockets.add(LEG_L, END_SOCKET, 1f, 0.5f, 0f, paired = false))
 

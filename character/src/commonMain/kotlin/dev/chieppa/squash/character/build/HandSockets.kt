@@ -13,8 +13,8 @@ private const val PREFIX = "socket."
 private const val FLAG_ON = 1f
 
 /**
- * Sockets a person places on a part with the Move tool, held in that part's parameters as `socket.<n>.u`, `.v`, `.outward` and
- * `.pair`, so pairs, overrides, undo and saving treat them like any other. Socket `<n>` is named `socket.<n>`, takes every
+ * Sockets a person places on a part with the Move tool, held in that part's parameters as `socket.<n>.u`, `.v`, `.outward`,
+ * `.sink` and `.pair`, so pairs, overrides, undo and saving treat them like any other. Socket `<n>` is named `socket.<n>`, takes every
  * template, and with `pair` set has a mirrored twin. With `.count` above 1 it is a row: that many sockets evenly spaced from `.u`
  * to `.to` at one v, named `socket.<n>.<i>` from 0, a part placed on the first starting at `.size` and on the last at `.falloff`
  * of that. See HLD: data-model, Hand-made sockets.
@@ -33,6 +33,9 @@ object HandSockets {
 
     /** Degrees its outward direction turns from the surface's normal toward the part's end. */
     fun outward(id: Int) = "${name(id)}.outward"
+
+    /** How deep a part sits inside its parent here, as a multiple of that part's own sink, as a plan socket's `sink` is; 1 when unset. */
+    fun sink(id: Int) = "${name(id)}.sink"
 
     /** Set when it has a mirrored twin across the body's middle. */
     fun pair(id: Int) = "${name(id)}.pair"
@@ -78,20 +81,24 @@ object HandSockets {
         val v = params[v(id)] ?: return@flatMap emptyList()
         val pair = if ((params[pair(id)] ?: 0f) != 0f) Mirror.X else null
         val tilt = params[outward(id)] ?: 0f
+        val sink = params[sink(id)] ?: 1f
         val count = (params[count(id)] ?: 1f).roundToInt().coerceIn(1, MAX_COUNT)
-        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt))
+        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink))
         val last = params[to(id)] ?: u
         val first = params[size(id)] ?: 1f
         val falloff = params[falloff(id)] ?: 1f
         List(count) { i ->
             val share = i.toFloat() / (count - 1)
-            SocketSpec(member(id, i), u + (last - u) * share, v, Outward.NORMAL, pair, emptyList(), tilt, scale = first * (1f + (falloff - 1f) * share))
+            SocketSpec(member(id, i), u + (last - u) * share, v, Outward.NORMAL, pair, emptyList(), tilt, sink, scale = first * (1f + (falloff - 1f) * share))
         }
     }
 
-    /** The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired]: one undo step. */
-    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean): SetParameters =
-        SetParameters(part, mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null))
+    /**
+     * The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired], a part on
+     * it sunk [sink] times its own depth, or once with null: one undo step.
+     */
+    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null): SetParameters =
+        SetParameters(part, mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink))
 
     /**
      * The command that places a row of [count] sockets on [part] from [u] to [to] at [v], [outward] degrees from the normal, mirrored when
@@ -107,7 +114,7 @@ object HandSockets {
     fun move(part: PartId, id: Int, u: Float, v: Float): SetParameters = SetParameters(part, mapOf(u(id) to u, v(id) to v))
 
     /** The command that clears socket [id] from [part]: one undo step. */
-    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), pair(id), count(id), to(id), size(id), falloff(id)).associateWith { null })
+    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), sink(id), pair(id), count(id), to(id), size(id), falloff(id)).associateWith { null })
 }
 
 /**

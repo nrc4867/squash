@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PaletteSlot
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
 
@@ -22,8 +23,8 @@ val EMPTY_WOMAN: SquashDocument by lazy {
     SquashDocument(Character(CharacterId("woman"), "Woman", plan.ref, palette = Palette(plan.palette.map { PaletteSlot(SlotName(it.name), it.color) })))
 }
 
-/** Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, then the face. */
-fun womanCommands(): List<DocumentCommand> = womanBody() + womanHead() + womanColor() + womanFace()
+/** Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, the face, then the pose she is shown in. */
+fun womanCommands(): List<DocumentCommand> = womanBody() + womanHead() + womanColor() + womanFace() + SetDisplayPose(WOMAN_DISPLAY)
 
 /** The woman as those commands leave it. */
 fun womanDocument(): SquashDocument = womanCommands().fold(EMPTY_WOMAN) { document, command -> command.apply(document).document }

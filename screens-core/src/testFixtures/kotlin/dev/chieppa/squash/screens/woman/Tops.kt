@@ -1,8 +1,6 @@
 package dev.chieppa.squash.screens.woman
 
-import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.BodyPartChange
-import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
@@ -52,8 +50,6 @@ private const val DARK_SLEEVE = 0.97f
 private const val COAT_FROM = 0.0f
 private const val COAT_SLEEVE = 0.97f
 private const val PADDED = 0.032f
-/** How far the coat holds the arms out from the body, in degrees, so its padded sleeves clear its padded body. */
-private const val COAT_ARMS = 17f
 
 /** Layers counted out from the skin: what goes under the waistband, the waistband, and what goes over both. */
 const val UNDER_LAYER = 1
@@ -87,5 +83,5 @@ fun tops(): List<DocumentCommand> = listOf(
         COAT, "Coat", OUTER_SLOT, COAT_WOOL,
         listOf(GarmentBranch(TORSO, COAT_FROM, 1f, ease = PADDED), GarmentBranch(ARM_L, 0f, COAT_SLEEVE, ease = PADDED)),
         layer = OVER_LAYER,
-        changes = mapOf(NECK to OPEN, ARM_L to BodyPartChange.Redraw(PartData(params = mapOf(PlacementParams.OUTWARD to COAT_ARMS)))),
+        changes = mapOf(NECK to OPEN),
     )

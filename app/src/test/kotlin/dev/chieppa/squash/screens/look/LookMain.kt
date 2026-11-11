@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.rig.SessionPose
@@ -21,7 +22,7 @@ private const val FACE_TILE = 600
 
 /**
  * Renders examples through the real graph, rig and scene on the GPU to PNGs, with no test runner: per outfit, the whole character
- * from the front, three-quarter and side at rest and in each named pose, and the face and foot close-ups; the bare hand close-up
+ * from the front, three-quarter and side in its display pose, at rest when that differs, and in each named pose, and the face and foot close-ups; the bare hand close-up
  * once. Run as `./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"`.
  */
 fun main(args: Array<String>) {
@@ -48,6 +49,12 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
             val name = outfit?.value ?: "as-saved"
             if (outfit != null) session.send(ShowOutfit(outfit))
             views.keep(session, name)
+            val display = session.document.value.character.displayPose
+            if (!display.isRest) {
+                session.send(SetDisplayPose(Pose()))
+                views.keep(session, "$name-rest")
+                session.send(SetDisplayPose(display))
+            }
             if (FACE in look.close) parts.head?.let { views.keep(session, "$name-face", parts.faceFramed(it), FACE_AZIMUTHS, FACE_TILE, FACE_TILE) }
             if (FOOT in look.close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
             for ((pose, set) in poses) {

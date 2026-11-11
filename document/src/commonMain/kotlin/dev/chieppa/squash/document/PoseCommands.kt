@@ -54,6 +54,14 @@ data class SetPose(val pose: Pose) : DocumentCommand {
         Applied(document.copy(character = document.character.copy(pose = pose)), SetPose(document.character.pose))
 }
 
+/** Makes [pose] the pose the character is shown in under its own: see [Character.displayPose]. */
+@Serializable
+@SerialName("setDisplayPose")
+data class SetDisplayPose(val pose: Pose) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> =
+        Applied(document.copy(character = document.character.copy(displayPose = pose)), SetDisplayPose(document.character.displayPose))
+}
+
 /** This document with [change] made to its pose for [part], and with [bothSides] for its twin too; a garment's loose end has no twin. */
 internal fun SquashDocument.posed(part: PartId, bothSides: Boolean, change: (Pose, PartId) -> Pose): Applied<SquashDocument> {
     if (character.isLooseEnd(part)) return SetPose(change(character.pose, part)).apply(this)

@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
  * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
- * the [pose] it stands in and its [wardrobe]. The pose is the character's one working pose until shots hold a pose per key. See HLD: data-model.
+ * the [pose] it stands in, the [displayPose] under it, and its [wardrobe]. The pose is the character's one working pose until shots hold a
+ * pose per key. The display pose is saved with the character and shows it as it is meant to be seen, a biped's arms brought down from
+ * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. See HLD: data-model.
  */
 @Serializable
 data class Character(
@@ -22,6 +24,7 @@ data class Character(
     val gazeCheats: GazeCheats = GazeCheats(),
     val traces: Map<View, Trace> = emptyMap(),
     val pose: Pose = Pose(),
+    val displayPose: Pose = Pose(),
     val wardrobe: Wardrobe = Wardrobe(),
 ) {
     init {
@@ -31,6 +34,9 @@ data class Character(
     }
 
     fun part(id: PartId): PartInstance? = parts.firstOrNull { it.id == id }
+
+    /** The pose the character shows: its working [pose], with each bone it leaves out standing as [displayPose] holds it. */
+    val shownPose: Pose get() = pose.over(displayPose)
 
     /** The other side of [part]'s pair, or null for an unpaired part or a pair with one side placed. */
     fun twinOf(part: PartInstance): PartInstance? = part.pair?.let { pair -> parts.firstOrNull { it.pair == pair && it.id != part.id } }

@@ -94,6 +94,13 @@ data class Pose(
         return with(BonePose(part, joint, mode = held.mode, keepVolume = held.keepVolume))
     }
 
+    /** This pose laid over [under]: its own bones, then each bone of [under] it does not name; the rest of it is its own. */
+    fun over(under: Pose): Pose {
+        if (under.bones.isEmpty()) return this
+        val named = bones.mapTo(hashSetOf()) { it.part to it.joint }
+        return copy(bones = bones + under.bones.filter { (it.part to it.joint) !in named })
+    }
+
     /** This pose with [part] planted, or free when [planted] is false. */
     fun withPlanted(part: PartId, planted: Boolean): Pose = copy(planted = if (planted) this.planted + part else this.planted - part)
 

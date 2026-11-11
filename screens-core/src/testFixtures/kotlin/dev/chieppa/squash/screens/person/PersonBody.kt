@@ -2,7 +2,11 @@ package dev.chieppa.squash.screens.person
 
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.moveSocket
 import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.BonePose
+import dev.chieppa.squash.document.PartData
+import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
@@ -32,8 +36,20 @@ val LEG_R = PartId("leg-r")
 val FOOT_L = PartId("foot-l")
 val FOOT_R = PartId("foot-r")
 
-/** How far the arms lean out from the body, in degrees, so the hands hang clear of the thighs. */
-private const val ARM_OUTWARD = 12f
+/**
+ * How far the biped plan rests the arms out from the body, the A-pose Add part places them in, and how far the display pose brings them
+ * down from it, leaving them out a little so the hands hang clear of the thighs. The legs stand straight down from the hips, which bear
+ * the weight.
+ */
+private const val ARM_SPREAD = 45f
+private const val ARMS_DOWN = -25f
+
+/** Where the shoulders sit on the torso, high on its side, so an arm in A-pose leaves the body near its root. */
+private const val SHOULDER_U = 0.93f
+private const val SHOULDER_V = 0.75f
+
+/** The pose the person is shown in: arms down at the sides. */
+val PERSON_DISPLAY = Pose(listOf(BonePose(ARM_L, "shoulder", lean = ARMS_DOWN), BonePose(ARM_R, "shoulder", lean = ARMS_DOWN)))
 
 /** The hand-made socket on the crown that takes the hair. */
 const val HAIR_SOCKET = 1
@@ -43,12 +59,13 @@ private val NEWER = mapOf("hand" to 3, "foot" to 2)
 
 private fun ref(id: String) = TemplateRef(TemplateId(id), NEWER[id] ?: 1)
 
-/** A pair as Add part places it on a paired socket of the biped plan, each side on its own parent. */
-private fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String) = AddParts(
+/** A pair as Add part places it on a paired socket of the biped plan, each side on its own parent, leaning out as far as the socket spreads. */
+private fun pair(id: String, template: String, role: Role, left: PartId, leftOn: PartId, right: PartId, rightOn: PartId, socket: String, spread: Float = 0f) = AddParts(
     listOf(
         PartInstance(left, ref(template), SocketRef(leftOn, socket), pair = PairId(id), side = Side.LEFT, role = role),
         PartInstance(right, ref(template), SocketRef(rightOn, socket), pair = PairId(id), side = Side.RIGHT, role = role),
     ),
+    pairs = if (spread == 0f) emptyMap() else mapOf(PairId(id) to PartData(params = mapOf(PlacementParams.OUTWARD to spread))),
 )
 
 /** The torso in Side, hips at the left and shoulders at the right, the belly forward and up: round in front, flatter behind. */
@@ -98,21 +115,21 @@ private val FOOT_TOP = loop(
 )
 
 /**
- * The person's shape on the biped plan: a stocky torso drawn in Side and from in front, a round head with a chin, arms and legs drawn,
- * arms leaning out a little, hands at the template's own shape, shoes for feet with no toes, and hair, a blob on a socket placed by hand on the crown. Every
+ * The person's shape on the biped plan, in its A-pose: a stocky torso drawn in Side and from in front, a round head with a chin, arms and
+ * legs drawn, hands at the template's own shape, shoes for feet with no toes, and hair, a blob on a socket placed by hand on the crown. Every
  * part takes the role Add part gives it there; the hair's guess is chosen as other.
  */
 fun personBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(PartInstance(TORSO, ref("torso-upright"), role = Role.BODY))),
     AddParts(listOf(PartInstance(HEAD, ref("head-round"), SocketRef(TORSO, "neck"), role = Role.HEAD))),
-    pair("arms", "arm", Role.ARM, ARM_L, TORSO, ARM_R, TORSO, "shoulder"),
+    pair("arms", "arm", Role.ARM, ARM_L, TORSO, ARM_R, TORSO, "shoulder", ARM_SPREAD),
     pair("legs", "leg", Role.LEG, LEG_L, TORSO, LEG_R, TORSO, "hip"),
     pair("hands", "hand", Role.HAND, HAND_L, ARM_L, HAND_R, ARM_R, "hand"),
     pair("feet", "foot", Role.FOOT, FOOT_L, LEG_L, FOOT_R, LEG_R, "paw"),
     SetOutlines(TORSO, mapOf(View.SIDE to TORSO_SIDE, View.TOP to TORSO_FRONT)),
     SetOutlines(HEAD, mapOf(View.SIDE to HEAD_SIDE, View.TOP to HEAD_TOP)),
     SetOutlines(ARM_L, mapOf(View.SIDE to ARM_SIDE, View.TOP to ARM_SIDE)),
-    SetParameter(ARM_L, PlacementParams.OUTWARD, ARM_OUTWARD),
+    moveSocket(EMPTY_PERSON.character.copy(parts = listOf(PartInstance(TORSO, ref("torso-upright")))), TORSO, "shoulder", null, SHOULDER_U, SHOULDER_V, parentMirrored = false, thisSide = false),
     SetOutlines(LEG_L, mapOf(View.SIDE to LEG_SIDE, View.TOP to LEG_FRONT)),
     SetOutlines(FOOT_L, mapOf(View.SIDE to FOOT_SIDE, View.TOP to FOOT_TOP)),
     SetParameter(FOOT_L, "toes", 0f),

@@ -7,7 +7,7 @@ A working note for the branches that raise a complex character to finished quali
 The woman (`examples/woman.json`, `examples/woman-dressed.json`) reaches the quality of the reference renders of the same character built by hand in a general 3D engine: a palm with fingers that stay apart at the tips, arches and heels, a face with depth and a jaw, hair outside the skull, joins that read as one body, a skirt hanging free of straight legs, heels, shades with frames and lenses, lapels, and two-tone shading with no blotches. She stays a drawn character: every change is a command, every shape comes from outlines and settings a person can redraw.
 
 The reference renders, outside the repo, are the bar to compare against side by side:
-`C:\Users\nicho\AppData\Local\Temp\claude\1ecc764ac6b91634\87b9b827-4a83-48db-812d-f6f72c09da52\scratchpad\threejs-woman\renders\final\`.
+`C:\Users\nicho\squash-reference\threejs-woman\renders\` (its build log is `log.md` one folder up).
 
 ## What stands today
 
@@ -16,9 +16,8 @@ The reference renders, outside the repo, are the bar to compare against side by 
 | Flaw | Cause |
 | --- | --- |
 | Blotches on the bust, cheek and jaw | Two-tone shading reads the mesh's own normals, so the terminator follows every small bump |
-| Arms lie through the body | Arms rest down at a few degrees, on sockets centred on the torso's drawn surface |
-| Legs splay under the dress | A skirt is only possible as a torso redrawn into a bell, and hip sockets ride the torso's surface outward |
-| Neck, shoulders and hips read as pegs | Parts meet by overlap; hand-made sockets have no sink; the blend fillet is a template block |
+| A skirt leaves a walking leg | A skirt is only possible as a torso redrawn into a bell, which rides the torso's bones |
+| Neck, shoulders and hips read as pegs | Parts meet by overlap; the blend fillet is a template block |
 | Flat head, hair through the skull | `head-round` rests forward with a round section, so the face is the sphere's pole; hair is a separate blob |
 | Blocky hands and feet, merging tips | The palm is one box and each digit its own tube; digits space by drawn width |
 | No heels, shades, buttons or lapels | Garment-owned parts are designed (stage 9) but not built |
@@ -74,7 +73,31 @@ Measured with `./gradlew :app:measure -Pmeasure="example=woman-dressed poses=non
 
 For the next rounds: the face's shade is now the head's form, so its shape is round 6's to change, not shading's. The smoothing reads a part's mesh box, so a part whose thinnest extent is tiny relative to its bumps (a flat sheet) smooths little. Any new surface built outside `PartSurface.of` would miss it. Golden digests that hash mesh vertex floats change with it (`SoftBrushCutTest.softnessZeroIsTodaysCutExactly` was refreshed; only the vertex hashes moved). Already on `main` before this round and not caused by it: the dressed woman's hand close-up (`app/build/look/woman-dressed/hand.png`) shows stair-stepped missing faces and broken outline on the hand and forearm, where the undressed woman's (`example=woman`) is clean; something hidden by the wardrobe in the shown outfit is left out of `CloseUps.keep`'s part-only view.
 
+## Round 2: A-pose
+
+Built:
+
+- **Skeleton sockets** (`character/.../build/SliceRowNode.kt` `skeletonRowNode`, `Assembly.kt` `socketPoint`, the session's `skeleton(part)`, `AssemblySource.Skeleton`). While a worn garment reshapes a part (Redraw of outlines or shape, Swap), its sockets are read from the part built bare with the worn `move.` placement kept, and carried from the bare ring's middle to the shown ring's middle at the u the garment gives that socket (`AssemblyPart.wornSockets`, the worn socket parameters that differ from the bare ones). Joints were already inside: a bone pivots at its ring's middle. Outlines the author redraws still carry the sockets, as before.
+- **Hand-made socket sink**: `socket.<n>.sink` (`HandSockets.sink`, `add(..., sink =)`), 1 when unset, so nothing that exists moved. The woman leaves it unset; a deeper sink puts more of her arm inside the torso at rest.
+- **A-pose**: plan sockets take `spread`, the degrees a part placed there starts leaning out (`PlanSocket.spread`, `SocketSpec.spread`, `OpenSocket.spread`; `placeOnRow` puts `move.outward` in the start data; planned parts build with it through `plannedData`). The biped's shoulders spread 45; its hips spread nothing, since lint holds a weight-bearing leg straight down (`an axis that bears weight rests straight down`).
+- **Display pose**: `Character.displayPose`, `SetDisplayPose`, `Pose.over`, `Character.shownPose`; `SessionPose` shows `(held ?: pose).over(displayPose)`. History label `pose_step_display`. No UI sets it yet; there is no board for it.
+- **Arms on the body**: `character/.../build/ArmsOnBody.kt` `withArmsOnBody`, run in `posedBodyNode` after `posedBy`. Per ring of the arm's swept patch: one direction (the parent's nearest surface normal made square to its axis, summed over the ring's inside points), carried until no point of the ring lies inside the parent or an all-round branch over it (`ShellInside`, a march of 0.01 then 8 halvings), then dilated and averaged over 1/16 of the rings, eased in over rings 6% to 14% along the arm. Branches over the arm take the shift of the arm vertex under each (`Covering.bodyRings`, `bodyColumns`). Unit test: `character/src/desktopTest/.../APoseTest.kt`, with the plan spread, planned A-pose and the skeleton under a Redraw.
+- **Examples**: the woman's arms rest at `move.outward` 45, legs 1 (`WomanBody.kt`); `WOMAN_DISPLAY` (`WomanPoses.kt`) leans each tube's `base` bone -28 and turns each elbow 70 with the bone free, so the palms face the thighs; walk and salute name plain elbows, so they drop that turn. The Dress outfit's leg and arm Redraws and the coat's arm Redraw are gone: the legs hang from her own hips under the bell, the arms come down by the display pose and the push. The person takes the plan's 45 through its `AddParts` pair data, moves its shoulders to u 0.93, and `PERSON_DISPLAY` leans the `shoulder` bones -25.
+- **Look and measure**: look renders `<outfit>-rest.png` (display pose cleared) beside the display view whenever the example has one; measure prints the arm volume inside the torso at rest (the assembly) and as shown (the display pose), and `face in shade` per view (`HeadChecks.faceShade`: the share of the face's seen front vertices whose shading normal faces away from the light).
+- **Light** (tentative): `PartMaterial.DEFAULT_TO_LIGHT` is (0.7, 0.5, -0.5), lower and more frontal than (0.45, 0.8, -0.5). Face in shade on the woman in Office, front / three-quarter / side: 0.470 / 0.402 / 0.404 before, 0.231 / 0.120 / 0.115 after; the fennec 0.249 / 0.180 / 0.173 before, 0.166 / 0.026 / 0.002 after. The fennec, dragon, toucan, lizard and koi keep their shade on far legs, bellies and under muzzles. A head-only softer terminator was not needed.
+
+Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed"`): arm volume inside the torso was 0.00078 each side in most outfits (0.00061 Dress, 0.00013 Winter); now 0 at rest and in the display pose in every outfit, and 0 in walk and salute. Hip spread was 0.248 bare and 0.574 in Dress; now 0.2483 in every outfit. The person (`example=person`): 0.0019 before; now 0.00051 at rest and 0.00013 shown, since the plan's shoulder sinks the arm 2.2 times the arm template's undrawn depth, about half the drawn arm's length, more than the fifth of the length at the shoulder that measure leaves out.
+
+For the next rounds:
+
+- The A-pose arm leaves the torso through a ring the shoulder's bend shows: in the display pose the arm's top swings out over the shoulder as a lump (the person most, the woman in Beach and Office), and a pushed arm shows a kink where it meets an all-round top. Round 3's strips at the socket ring are where that should close.
+- Hand blotches: the terminator check finds 3 to 5 blotches on the hands in the display pose (none at rest); they come from the posed hand's fingers, not the light.
+- The dressed woman's hand close-up no longer shows missing faces. The likely cause: at the old rest her hand hung against her hips inside the shorts' shell, and `GarmentHiding` hid hand faces under a garment covering another part; her hand now hangs clear. Any part reaching into another part's garment shell will show it again.
+- The plan lint (`SocketFit`) checks a socket's ring with the part resting along its template's axis, not along its spread, so the biped shoulder could not go shallower than its 2.2.
+- The Office blazer sleeves balloon below the elbow as they did before this round.
+- Only the four biped example files changed; the creatures' files are unchanged.
+
 ## Open
 
-- Whether the display pose is a pose of its own or the first entry of the pose library Shot will hold.
+- Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.
 - The three questions on garment-owned parts in `stage-9-garments.md`; round 5 takes the recommended answers there as tentative and lists them for Nicholas.

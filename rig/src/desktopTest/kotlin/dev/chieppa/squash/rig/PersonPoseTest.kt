@@ -24,8 +24,8 @@ private val HAND_R = PartId("hand-r")
 private val PERSON_TORSO = PartId("torso")
 private val PERSON_HEAD = PartId("head")
 
-/** Where the raised hand goes from where it hangs, in body units. */
-private val RAISE = Vec3(0.1f, 0.5f, 0.1f)
+/** Where the raised hand goes from where it rests, out in A-pose, in body units: up and in toward the body. */
+private val RAISE = Vec3(0.1f, 0.4f, -0.1f)
 private const val LANDS = 1e-2f
 private const val STILL = 1e-5f
 

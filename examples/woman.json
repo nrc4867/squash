@@ -4733,7 +4733,7 @@
                     "move.rest": 3.0,
                     "generic.rings": 64.0,
                     "generic.segments": 24.0,
-                    "move.outward": 9.0,
+                    "move.outward": 45.0,
                     "joint.1.hinge": 0.0,
                     "joint.1.low": -170.0,
                     "joint.1.high": 60.0,
@@ -5158,7 +5158,7 @@
                     "move.rest": 3.0,
                     "generic.rings": 64.0,
                     "generic.segments": 24.0,
-                    "move.outward": -3.0,
+                    "move.outward": 1.0,
                     "joint.1.hinge": 0.0,
                     "joint.1.low": 0.0,
                     "joint.1.high": 140.0,
@@ -6151,6 +6151,32 @@
                         "green": 0.97,
                         "blue": 0.95
                     }
+                }
+            ]
+        },
+        "displayPose": {
+            "bones": [
+                {
+                    "part": "arm-l",
+                    "joint": "base",
+                    "lean": -28.0
+                },
+                {
+                    "part": "arm-r",
+                    "joint": "base",
+                    "lean": -28.0
+                },
+                {
+                    "part": "arm-l",
+                    "joint": "joint.2",
+                    "turn": 70.0,
+                    "mode": "free"
+                },
+                {
+                    "part": "arm-r",
+                    "joint": "joint.2",
+                    "turn": 70.0,
+                    "mode": "free"
                 }
             ]
         }

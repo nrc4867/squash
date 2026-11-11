@@ -25,6 +25,9 @@ import kotlin.math.sin
 
 private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
 
+/** How many points round a ring its middle is read from. */
+private const val MIDDLE_SAMPLES = 16
+
 /** How far either side of a place, in u, the surface is read for which way the part runs there. */
 private const val TANGENT_STEP = 0.01f
 
@@ -37,6 +40,8 @@ data class AssemblyPart(
     val side: Side?,
     val placement: Map<String, Float> = emptyMap(),
     val role: Role? = null,
+    /** Where the garments worn put its children's sockets on it as it shows, by the same keys as [placement], when they move any. */
+    val wornSockets: Map<String, Float> = emptyMap(),
 )
 
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
@@ -72,6 +77,12 @@ class PlacedPart(
 
     /** A point on this part's surface at [u] and [v] on [patch], or on its first run reaching [u] without one, in body space. */
     fun pointOn(u: Float, v: Float, patch: String? = null): Vec3? = patchAt(u, patch)?.let { origin + surface.shown(it.positionAt(u, v)) }
+
+    /** The middle of this part's ring at [u] on [patch], or on its first run reaching [u] without one, in body space. */
+    fun middleAt(u: Float, patch: String? = null): Vec3? {
+        val around = (0 until MIDDLE_SAMPLES).mapNotNull { pointOn(u, it.toFloat() / MIDDLE_SAMPLES, patch) }
+        return if (around.isEmpty()) null else around.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / around.size)
+    }
 
     /** The outward normal there, in body space. */
     fun normalAt(u: Float, v: Float, patch: String? = null): Vec3? = patchAt(u, patch)?.let { surface.shown(it.surfaceAt(u, v).normal) }
@@ -120,8 +131,9 @@ class AssembledCharacter(val parts: List<PlacedPart>, val sockets: List<PlacedSo
 
 /**
  * Places [parts] on their sockets, and what the empty sockets of [plan] would take. [surfaces] holds each part's build,
- * [defaults] a template's build with nothing drawn on either side, and [lengths] what the legs among them were built at. Roots sit at the origin. See HLD: data-model,
- * Placing parts.
+ * [defaults] a template's build with nothing drawn on either side, and [lengths] what the legs among them were built at. A part in
+ * [skeletons] has its sockets read from that surface, its bare build, rather than from what it shows. Roots sit at the origin. See HLD:
+ * data-model, Placing parts.
  */
 fun assemble(
     parts: List<AssemblyPart>,
@@ -130,7 +142,8 @@ fun assemble(
     templates: TemplateLibrary,
     defaults: (TemplateRef, Boolean) -> PartSurface?,
     lengths: LegLengths = LegLengths(),
-): AssembledCharacter = Assembler(parts, surfaces, plan, templates, defaults, lengths).assemble()
+    skeletons: Map<PartId, PartSurface> = emptyMap(),
+): AssembledCharacter = Assembler(parts, surfaces, plan, templates, defaults, lengths, skeletons).assemble()
 
 private class Assembler(
     private val parts: List<AssemblyPart>,
@@ -139,12 +152,14 @@ private class Assembler(
     private val templates: TemplateLibrary,
     private val defaults: (TemplateRef, Boolean) -> PartSurface?,
     private val lengths: LegLengths,
+    private val skeletons: Map<PartId, PartSurface>,
 ) {
     private val placed = LinkedHashMap<PartId, PlacedPart>()
     private val planned = mutableListOf<PlacedPart>()
     private val sockets = mutableListOf<PlacedSocket>()
     private val filled = parts.mapNotNull { it.socket }.toSet()
     private val byParent = parts.filter { it.socket != null }.groupBy { it.socket?.parent }
+    private val wornSockets = parts.filter { it.wornSockets.isNotEmpty() }.associate { it.id to it.placement + it.wornSockets }
 
     fun assemble(): AssembledCharacter {
         val known = parts.map { it.id }.toSet()
@@ -177,8 +192,27 @@ private class Assembler(
             null
         }
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
-        val anchor = if (spec != null && parent != null) parent.pointOn(spec.u, socketV(parent, spec, part.side), spec.patch) else null
+        val anchor = if (spec != null && parent != null) socketPoint(parent, spec, socketV(parent, spec, part.side), part.side) else null
         return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role)
+    }
+
+    /** [part] as its sockets read it: showing its skeleton while a garment reshapes it, else itself. */
+    private fun skeletonOf(part: PlacedPart): PlacedPart = part.id?.let(skeletons::get)?.let { part.showing(it, part.turn) } ?: part
+
+    /**
+     * Where socket [spec] lies on [parent] at [v], for a part on [side]. On a part a garment reshapes it keeps the place it has inside
+     * the bare part: the point on the skeleton, carried from the middle of the skeleton's ring there to the middle of the shown part's
+     * ring where the garment puts that socket, so a garment that only reshapes leaves it where it was and one that draws the part
+     * longer carries it along with the rest of the part.
+     */
+    private fun socketPoint(parent: PlacedPart, spec: SocketSpec, v: Float, side: Side?): Vec3? {
+        val frame = skeletonOf(parent)
+        val point = frame.pointOn(spec.u, v, spec.patch) ?: return null
+        if (frame === parent) return point
+        val worn = parent.id?.let(wornSockets::get)?.let { held -> socketsOf(parent).firstOrNull { it.name == spec.name }?.placedBy(held, side) } ?: spec
+        val from = frame.middleAt(spec.u, spec.patch) ?: return point
+        val to = parent.middleAt(worn.u, worn.patch) ?: return point
+        return point + (to - from)
     }
 
     private fun socketsOf(part: PlacedPart): List<SocketSpec> = socketsOn(plan, part.template, part.placement, part.surface.patches.map { it.name })
@@ -191,12 +225,13 @@ private class Assembler(
     private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?): Vec3 {
         val mirroredHere = side == Side.RIGHT
         val v = socketV(parent, spec, side)
-        val point = parent.pointOn(spec.u, v, spec.patch) ?: return parent.origin
+        val frame = skeletonOf(parent)
+        val point = socketPoint(parent, spec, v, side) ?: return parent.origin
         val rest = PartBuilder.axes(template).along
         val along = if (mirroredHere) rest.mirrored else rest
         val into = when (spec.outward) {
             Outward.AXIS -> along
-            Outward.NORMAL -> parent.outwardAt(spec.u, v, spec.tilt, spec.patch) ?: along
+            Outward.NORMAL -> frame.outwardAt(spec.u, v, spec.tilt, spec.patch) ?: along
         }
         val mount = templates.mountOffset(template.ref)
         return point - into * (templates.socketSink(template.ref) * spec.sink) - (if (mirroredHere) mount.mirrored else mount)
@@ -219,7 +254,7 @@ private class Assembler(
                 continue
             }
             val template = spec.takes.firstNotNullOfOrNull { templates.latest(it) } ?: continue
-            if (leader != null) here.pointOn(spec.u, spec.v, spec.patch)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
+            if (leader != null) socketPoint(here, spec, spec.v, null)?.let { sockets += PlacedSocket(SocketRef(leader, spec.name), it) }
             if (template.id.value in seen) continue
             val paired = spec.pair != null || twin != null
             val left = plannedPart(template, if (paired) Side.LEFT else null, here, unmoved.placedBy(here.placement, Side.LEFT)) ?: continue
@@ -237,16 +272,17 @@ private class Assembler(
         val ref = SocketRef(leader, unmoved.name)
         if (unmoved.pair == null && twin == null) {
             val spec = unmoved.placedBy(here.placement, null)
-            return listOfNotNull(here.pointOn(spec.u, spec.v, spec.patch)?.let { PlacedSocket(ref, it) })
+            return listOfNotNull(socketPoint(here, spec, spec.v, null)?.let { PlacedSocket(ref, it) })
         }
         return listOf(Side.LEFT to here, Side.RIGHT to (twin ?: here)).mapNotNull { (side, parent) ->
             val spec = unmoved.placedBy(parent.placement, side)
-            parent.pointOn(spec.u, socketV(parent, spec, side), spec.patch)?.let { PlacedSocket(ref, it, side, parent.id ?: leader) }
+            socketPoint(parent, spec, socketV(parent, spec, side), side)?.let { PlacedSocket(ref, it, side, parent.id ?: leader) }
         }
     }
 
     private fun plannedPart(template: PartTemplate, side: Side?, parent: PlacedPart, spec: SocketSpec): PlacedPart? {
         val surface = defaults(template.ref, side == Side.RIGHT) ?: return null
-        return PlacedPart(null, template, side, surface, originOn(parent, spec, template, side), lengthFactor = lengths.ofPlanned(template.ref), role = template.role)
+        val placed = template.placedBy(plannedData(plan?.spreadFor(template.id) ?: 0f).params)
+        return PlacedPart(null, placed, side, surface, originOn(parent, spec, placed, side), lengthFactor = lengths.ofPlanned(template.ref), role = template.role)
     }
 }

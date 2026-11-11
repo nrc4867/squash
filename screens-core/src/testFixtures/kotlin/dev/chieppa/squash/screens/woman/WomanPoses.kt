@@ -1,6 +1,8 @@
 package dev.chieppa.squash.screens.woman
 
 import dev.chieppa.squash.document.BonePose
+import dev.chieppa.squash.document.JointMode
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 
 /** Her hand-made bones by name: a tube's own bone at its root, the arm's shoulder and elbow, the leg's knee, and the round head's neck. */
@@ -9,6 +11,20 @@ private const val ARM_SHOULDER = "joint.1"
 private const val ARM_ELBOW = "joint.2"
 private const val KNEE = "joint.1"
 private const val NECK_TURN = "neck"
+
+/**
+ * How far her display pose brings each arm down from the A-pose she is built in, leaning it in across its shoulder's hinge, so it hangs
+ * just clear of her hips; and how far it turns the forearm about its length at the elbow, past the elbow's limits, so the palms face her
+ * thighs. A pose that sets an elbow sets its turn too.
+ */
+private const val ARMS_DOWN = -28f
+private const val PALMS_IN = 70f
+
+/** The forearm of [arm] turned at the elbow so its palm faces in. */
+private fun palmIn(arm: PartId) = BonePose(arm, ARM_ELBOW, turn = PALMS_IN, mode = JointMode.FREE)
+
+/** The pose she is shown in: her arms brought down to her sides, which the body keeps on its surface, palms in. */
+val WOMAN_DISPLAY = Pose(listOf(BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN), BonePose(ARM_R, TUBE_BASE, lean = ARMS_DOWN), palmIn(ARM_L), palmIn(ARM_R)))
 
 /** A step forward on the left leg, the arms swinging against it. */
 val WOMAN_WALK = Pose(listOf(

@@ -74,6 +74,21 @@ class HandSocketsTest {
     }
 
     @Test
+    fun aDeeperSinkSetsAPartOnItFurtherIn() {
+        val (document, torso) = rooted()
+        fun wingAt(sink: Float?): Float {
+            val placed = HandSockets.add(torso, 1, 0.75f, 0.2f, 0f, paired = false, sink = sink).apply(document).document
+            val wing = assertNotNull(shipped.template(TemplateId("wing-feathered")))
+            val part = placeOnSocket(placed.handOpen().single(), wing, placed).single()
+            val built = assemble(AddParts(listOf(part)).apply(placed).document)
+            val placedWing = assertNotNull(built.part(part.id))
+            return (placedWing.origin - assertNotNull(placedWing.anchor)).length
+        }
+        assertEquals(1f, assertNotNull(HandSockets.specs(mapOf(HandSockets.u(1) to 0.5f, HandSockets.v(1) to 0.2f)).single()).sink)
+        assertTrue(wingAt(2f) > wingAt(null) * 1.5f)
+    }
+
+    @Test
     fun deletingClearsItsParameters() {
         val (document, torso) = rooted()
         val placed = HandSockets.add(torso, 1, 0.75f, 0.2f, 0f, paired = false).apply(document).document

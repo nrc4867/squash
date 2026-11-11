@@ -13,6 +13,7 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.look.measure.armInside
 import dev.chieppa.squash.screens.look.measure.bareSkin
 import dev.chieppa.squash.screens.look.measure.digitTipGaps
+import dev.chieppa.squash.screens.look.measure.faceShade
 import dev.chieppa.squash.screens.look.measure.hipSpread
 import dev.chieppa.squash.screens.look.measure.profile
 import dev.chieppa.squash.screens.look.measure.seen
@@ -29,8 +30,8 @@ import kotlin.time.measureTime
 private val VIEWS = listOf("front" to 0f, "three-quarter" to 40f, "side" to 90f)
 
 /**
- * Prints the stage's checks for examples, as numbers, through the real graph and rig with no GPU and no test runner: per outfit at
- * rest, and in each named pose in the first of them. Run as `./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`.
+ * Prints the stage's checks for examples, as numbers, through the real graph and rig with no GPU and no test runner: per outfit as
+ * shown, in the display pose, with the arm volume at rest too, and in each named pose in the first of them. Run as `./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`.
  */
 fun main(args: Array<String>) {
     val look = LookArgs(args)
@@ -48,8 +49,9 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
     for (outfit in outfits) {
         if (outfit != null) session.send(ShowOutfit(outfit))
         val name = "$example ${outfit?.value ?: "as saved"}"
-        val rest = posed(session, work)
-        report(name, rest, head?.let(rest::part), dressed = outfit != null)
+        val shown = posed(session, work)
+        println("$name: arm volume inside the torso at rest ${armInside(checkNotNull(session.assembly.output.value)).format()}")
+        report(name, shown, head?.let(shown::part), dressed = outfit != null)
         if (outfit != outfits.first()) continue
         for ((pose, set) in poses) {
             session.send(SetPose(set))
@@ -67,13 +69,16 @@ private fun posed(session: CharacterSession, work: TestWork): AssembledCharacter
 private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dressed: Boolean) {
     val grid = RayGrid(shownCorners(body))
     val seen: (Vec3) -> Boolean = { grid.seen(it) }
-    println("$name: arm volume inside the torso ${armInside(body).format()}")
+    println("$name: arm volume inside the torso as shown ${armInside(body).format()}")
     println("$name: hip socket spread ${hipSpread(body)?.let { "%.4f".format(it) } ?: "none"}")
     println("$name: smallest gap between digit tips ${digitTipGaps(body).format()}")
     println("$name: socket ring length, all / seen ${socketRings(body, seen).mapValues { (_, v) -> "%.3f / %.3f".format(v.first, v.second) }}")
     head?.let(::profile)?.let { println("$name: profile notch brow to chin %.4f (%.3f of the head's height) ${it.forward.map { f -> "%.3f".format(f) }}".format(it.notch, it.share)) }
     head?.let { skullShown(it, seen) }?.let { (shown, all) -> println("$name: skull vertices seen outside the hair $shown of $all") }
     if (dressed) bareSkin(body, seen).let { println("$name: bare skin seen on covered parts ${it.values.sum()} ${it}") }
+    head?.let { faceShade(it, PartMaterial.DEFAULT_TO_LIGHT, VIEWS.map { v -> probeAzimuth(v.second) }, grid::escapes) }?.let { shares ->
+        println("$name: face in shade ${VIEWS.indices.joinToString { "${VIEWS[it].first} %.3f".format(shares[it]) }}")
+    }
     terminator(body, grid, PartMaterial.DEFAULT_TO_LIGHT, VIEWS.map { probeAzimuth(it.second) }).forEachIndexed { i, t ->
         println("$name: terminator ${VIEWS[i].first} length %.2f in ${t.pieces} pieces, ${t.blotches.values.sum()} blotches ${t.blotches}".format(t.length))
     }

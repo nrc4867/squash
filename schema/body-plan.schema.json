@@ -211,6 +211,12 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 4.0
+        },
+        "spread": {
+          "description": "Degrees a part placed on this socket rests leaning out from the body's plane, as the Move tool's outward angle; the right side mirrors it.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 60.0
         }
       },
       "required": [

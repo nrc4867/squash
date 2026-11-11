@@ -30,6 +30,22 @@ private val SquashDocument.pose get() = character.pose
 
 class PoseCommandTest {
     @Test
+    fun theDisplayPoseIsSavedAndUndoneAndShowsUnderTheWorkingPose() {
+        val start = document()
+        val display = Pose(listOf(BonePose(LEFT, "hip", lean = -30f), BonePose(TORSO, "waist", 4f)))
+        scenario(start) {
+            run(SetDisplayPose(display))
+            run(SetBoneAngle(TORSO, "waist", 12f))
+            expect { assertEquals(display, it.character.displayPose) }
+            expect { assertEquals(listOf(BonePose(TORSO, "waist", 12f), BonePose(LEFT, "hip", lean = -30f)), it.character.shownPose.bones) }
+            undo(2)
+            expect(start)
+        }
+        val saved = SetDisplayPose(display).apply(start).document
+        assertEquals(saved, readDocument(Json.encodeToString(SquashDocument.serializer(), saved)))
+    }
+
+    @Test
     fun aBoneTurnsAndItsUndoRestsIt() {
         val start = document()
         scenario(start) {
@@ -152,6 +168,7 @@ class PoseCommandTest {
             SetKeepVolume(LEFT, "ankle", false),
             SetRiding(PAW, false),
             SetPose(Pose(offset = BodyPoint(0.1f, 0f, 0f), lookAt = BodyPoint(1f, 0.5f, 0f), still = setOf(PAW))),
+            SetDisplayPose(Pose(listOf(BonePose(LEFT, "hip", lean = -20f)))),
         )
         for (command in commands) {
             val text = Json.encodeToString(DocumentCommand.serializer(), command)

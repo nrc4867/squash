@@ -34,10 +34,13 @@ fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Flow<
     PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, on == Side.RIGHT, cancellationCheck())
 }
 
-/** A template's surface with nothing drawn, [mirrored] or not, at each of [lengthFactor]'s values. */
-fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean, lengthFactor: Flow<Float>): Node<Float, PartSurface> = node(lengthFactor, stage = BuildStages.SURFACE) { factor ->
-    surfaceOf(template, PartData(), mirrored, cancellationCheck(), factor)
+/** A template's surface with nothing drawn, [mirrored] or not, leaning [spread] degrees out as its plan places it, at each of [lengthFactor]'s values. */
+fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean, lengthFactor: Flow<Float>, spread: Float = 0f): Node<Float, PartSurface> = node(lengthFactor, stage = BuildStages.SURFACE) { factor ->
+    surfaceOf(template, plannedData(spread), mirrored, cancellationCheck(), factor)
 }
+
+/** What a part the plan would place starts from: nothing drawn, leaning [spread] degrees out. */
+fun plannedData(spread: Float): PartData = if (spread == 0f) PartData() else PartData(params = mapOf(PlacementParams.OUTWARD to spread))
 
 /** The surface of an [unplaced] part that resolves to [data], built at [lengthFactor] of its length, on a socket unless it is a root. */
 fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f, onSocket: Boolean = true): PartSurface {
@@ -57,7 +60,9 @@ fun assemblyParts(character: Character): List<AssemblyPart> {
     val hidden = hiddenUnderGarments(character)
     return character.parts.filter { it.id !in hidden }.map { part ->
         val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) }
-        AssemblyPart(part.id, character.wornPart(part).template, part.socket, part.pair, part.side, placement, part.role)
+        val worn = character.wornPart(part)
+        val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
+        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets)
     }
 }
 
@@ -75,6 +80,9 @@ sealed interface AssemblySource {
     data class Part(val id: PartId) : AssemblySource
 
     data class Default(val template: TemplateRef, val mirrored: Boolean) : AssemblySource
+
+    /** The surface a part's sockets are read from while a garment reshapes it, see [skeletonRowNode]. */
+    data class Skeleton(val id: PartId) : AssemblySource
 }
 
 /** Every template [plan] can reach from what [parts] hold. */
@@ -91,21 +99,24 @@ fun reachableTemplates(parts: List<AssemblyPart>, plan: BodyPlan?, templates: Te
 
 /**
  * The whole character from every part's surface, following the document's shape. A part's redraw reaches it through that
- * part's own surface, so a child moves when its parent is redrawn, and undo does the reverse from the caches.
+ * part's own surface, so a child moves when its parent is redrawn, and undo does the reverse from the caches. A garment's change
+ * to a part reaches its children through the part's [skeleton] instead, which holds them where the bare part does.
  */
 fun Graph.assemblyNode(
     shape: Flow<AssemblyShape>,
     templates: TemplateLibrary,
     part: (PartId) -> Node<*, PartSurface>,
     default: (TemplateRef, Boolean) -> Node<*, PartSurface>,
+    skeleton: (PartId) -> Node<*, PartSurface>? = { null },
 ): Node<Gathered<AssemblyShape, AssemblySource, PartSurface>, AssembledCharacter> = gather(
     shape,
     sourcesOf = { current ->
         val owned = current.parts.associate<AssemblyPart, AssemblySource, Node<*, PartSurface>> { AssemblySource.Part(it.id) to part(it.id) }
+        val skeletons = current.parts.mapNotNull { placed -> skeleton(placed.id)?.let { AssemblySource.Skeleton(placed.id) to it } }
         val planned = reachableTemplates(current.parts, current.plan, templates).flatMap { template ->
             listOf(false, true).map { mirrored -> AssemblySource.Default(template.ref, mirrored) to default(template.ref, mirrored) }
         }
-        owned + planned
+        owned + skeletons + planned
     },
     stage = BuildStages.ASSEMBLY,
 ) { (current, values) ->
@@ -116,6 +127,7 @@ fun Graph.assemblyNode(
         templates,
         { ref, mirrored -> values[AssemblySource.Default(ref, mirrored)] },
         current.lengths,
+        current.parts.mapNotNull { placed -> values[AssemblySource.Skeleton(placed.id)]?.takeIf { it.patches.isNotEmpty() }?.let { placed.id to it } }.toMap(),
     )
 }
 
@@ -123,7 +135,9 @@ fun Graph.assemblyNode(
 fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: BodyPlan?, templates: TemplateLibrary): AssembledCharacter {
     val lengths = legLengths(parts, data, plan, templates)
     val defaults = HashMap<Pair<TemplateRef, Boolean>, PartSurface>()
-    fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) { surfaceOf(templates[ref], PartData(), mirrored, lengthFactor = lengths.ofPlanned(ref)) }
+    fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) {
+        surfaceOf(templates[ref], plannedData(plan?.spreadFor(ref.id) ?: 0f), mirrored, lengthFactor = lengths.ofPlanned(ref))
+    }
     val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
     return assemble(parts, surfaces, plan, templates, ::default, lengths).withSocketFillets()
 }

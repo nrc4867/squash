@@ -8,6 +8,7 @@ import dev.chieppa.squash.uidesign.generated.lines_step_stroke
 import dev.chieppa.squash.uidesign.generated.lines_step_weight
 import dev.chieppa.squash.uidesign.generated.move_step
 import androidx.compose.runtime.Composable
+import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.SetBoneAngle
 import dev.chieppa.squash.document.SetBoneTurn
@@ -24,6 +25,7 @@ import dev.chieppa.squash.uidesign.generated.pose_step_limits
 import dev.chieppa.squash.uidesign.generated.pose_step_volume
 import dev.chieppa.squash.uidesign.generated.pose_step_rides
 import dev.chieppa.squash.uidesign.generated.pose_step_reset
+import dev.chieppa.squash.uidesign.generated.pose_step_display
 import dev.chieppa.squash.document.AddMarks
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
@@ -133,6 +135,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val volume = stringResource(Res.string.pose_step_volume)
     val rides = stringResource(Res.string.pose_step_rides)
     val resetPose = stringResource(Res.string.pose_step_reset)
+    val displayPose = stringResource(Res.string.pose_step_display)
     val views = VIEW_ORDER.associateWith { viewLabel(it) }
     val roleStep = stringResource(Res.string.role_step, FIRST)
     val roleNames = roleLabels(fourLegged = false)
@@ -167,6 +170,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetKeepVolume -> volume
             is SetRiding -> rides
             is ResetPose -> resetPose
+            is SetDisplayPose -> displayPose
             is PutSeamStrokes -> seamStrokes
             is AddSeamStrokes -> tidy
             is SeamToTwin -> twin

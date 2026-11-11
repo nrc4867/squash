@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.look.measure
 
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 
 /** How many heights the head's profile is read at, and how far up the head from the chin it runs: chin to brow. */
@@ -79,4 +80,42 @@ fun skullShown(head: PlacedPart, seen: (Vec3) -> Boolean): Pair<Int, Int> {
     val used = head.usedVertices()
     val skull = used.indices.filter { used[it] }.map(head::point).filter { it.y > box.center.y && it.x < faceFrom }
     return skull.count(seen) to skull.size
+}
+
+/** How square to a view a face of the head must turn to count as seen face-on. */
+private const val FACING_VIEW = 0.3f
+
+/** How far off the surface a ray toward the viewer starts, so it does not hit the head it starts on. */
+private const val SHADE_LIFT = 2e-3f
+
+/**
+ * How much of the face each of [views] sees falls in two-tone's shade under [toLight], as a share of the face's vertices it sees:
+ * the head's shown vertices in front of its middle, turned to the view and with nothing in front. A sphere lit from above and the side
+ * shades a wide band across the lower face; a face lit as drawn keeps its shade under the jaw and on the far cheek's edge.
+ */
+fun faceShade(head: PlacedPart, toLight: Vec3, views: List<Vec3>, escapes: (Vec3, Vec3) -> Boolean): List<Float> {
+    val box = head.box ?: return views.map { 0f }
+    val mesh = head.surface.mesh
+    val used = head.usedVertices()
+    val light = toLight.normalized()
+    return views.map { view ->
+        val toView = view.normalized()
+        var seen = 0
+        var shaded = 0
+        for (v in 0 until mesh.vertexCount) {
+            if (!used[v]) continue
+            val point = head.point(v)
+            if (point.x < box.center.x) continue
+            val normal = mesh.normalAt(v, RenderMesh.NORMAL_OFFSET_FLOATS)
+            if ((normal dot toView) < FACING_VIEW || !escapes(point + normal * SHADE_LIFT, toView)) continue
+            seen++
+            if ((mesh.normalAt(v, RenderMesh.PROXY_OFFSET_FLOATS) dot light) <= 0f) shaded++
+        }
+        if (seen == 0) 0f else shaded.toFloat() / seen
+    }
+}
+
+private fun RenderMesh.normalAt(vertex: Int, offset: Int): Vec3 {
+    val at = vertex * RenderMesh.FLOATS_PER_VERTEX + offset
+    return Vec3(vertices[at], vertices[at + 1], vertices[at + 2]).normalized()
 }

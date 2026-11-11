@@ -531,6 +531,7 @@
     <string name="pose_step_volume">Keep volume</string>
     <string name="pose_step_rides">Rides with body</string>
     <string name="pose_step_reset">Reset pose</string>
+    <string name="pose_step_display">Set display pose</string>
     <string name="pose_tool_body_curve">Body curve</string>
     <string name="pose_curve_squash">squash</string>
     <string name="pose_curve_stretch">stretch</string>
