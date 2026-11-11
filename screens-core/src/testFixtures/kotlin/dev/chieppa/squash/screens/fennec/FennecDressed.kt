@@ -55,8 +55,8 @@ val HOOD_WOOL = SlotName("hood")
 private const val SWEATER_FROM = 0.4f
 private const val SWEATER_TO = 0.97f
 
-/** How far down the front legs the sleeves reach. */
-private const val SLEEVE_TO = 0.6f
+/** How far down the front legs the sleeves reach: past the knee and into the boots' shafts, so the leg is covered between them in every bend. */
+private const val SLEEVE_TO = 0.78f
 
 /** The hood runs from the back of the skull to past the ears' roots, open round the face. */
 private const val HOOD_TO = 0.42f
@@ -68,8 +68,11 @@ private const val CAP_ROUND = 0.22f
 /** The paw parameter that sets how many toes it builds. */
 private const val TOES = "toes"
 
-/** The boots' shafts run up the legs from this far along them. */
+/** The boots' shafts run up the legs from this far along them, over the sleeves' ends. */
 private const val SHAFT_FROM = 0.72f
+
+/** The boots sit one layer out from the sweater, so a shaft goes over the sleeve tucked into it. */
+private const val BOOTS_LAYER = 2
 
 /** Where round the scarf's hem its loose end hangs: under the chin, a little to one side. */
 private const val SCARF_END_V = 0.55f
@@ -88,7 +91,7 @@ private val SWEATER_SIDE = loop(
     p(0.91f, 0.16f), p(0.82f, -0.10f), p(0.64f, -0.20f), p(0.38f, -0.20f),
 )
 
-/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots that drop the paws' toes, a scarf over the sweater with a loose end, and Winter (cap, scarf, sweater, boots), Hooded and Bare outfits. */
+/** The commands that dress the fennec: a head and a body slot, a wool cap with the ears through it, a hood, a sweater on torso and front legs, boots over the sleeves' ends that drop the paws' toes, a scarf over the sweater with a loose end, and Winter (cap, scarf, sweater, boots), Hooded and Bare outfits. */
 fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SWEATER_WOOL, SlotColor(0.20f, 0.42f, 0.52f)),
     SetPaletteSlot(HOOD_WOOL, SlotColor(0.78f, 0.24f, 0.22f)),
@@ -106,7 +109,7 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
     SetGarmentColor(CAP, HOOD_WOOL),
     SetPaletteSlot(BOOT_LEATHER, SlotColor(0.36f, 0.24f, 0.18f)),
     AddGarmentSlot(GarmentSlot(FEET_SLOT, "Feet")),
-    AddGarment(Garment(BOOTS, "Boots", FEET_SLOT)),
+    AddGarment(Garment(BOOTS, "Boots", FEET_SLOT, layer = BOOTS_LAYER)),
     SetGarmentColor(BOOTS, BOOT_LEATHER),
 ) + BOOTED.flatMap { paw ->
     listOf(

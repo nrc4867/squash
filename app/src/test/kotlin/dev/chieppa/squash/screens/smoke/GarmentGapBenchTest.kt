@@ -24,10 +24,12 @@ import org.junit.jupiter.api.Tag
 
 /**
  * What a pose leaves showing under the dressed fennec's and the dressed person's clothes, read on the posed body the session shows. A
- * vertex is seen when rays from it along at least [SEEN_WAYS] of [DIRECTIONS] leave the character crossing no face it shows. A hole is a vertex of
- * the body or of an inner layer that no shown face has as a corner and that is seen: a look through to where nothing is drawn. Shown
- * again is a vertex hidden at rest that a shown face has as a corner in the pose and is seen: skin or an inner layer the pose carries
- * out. A pose counts only the holes that were not holes at rest. Numbers go to the test's output.
+ * vertex is seen when rays from it along at least [SEEN_WAYS] of [DIRECTIONS] leave the character crossing no face it shows. A hole is
+ * a vertex of the body or of an inner layer that a face of its whole mesh has as a corner, that no shown face has, and that is seen: a
+ * look through to where nothing is drawn. Shown again is a vertex hidden at rest that a shown face has as a corner in the pose and is
+ * seen: skin or an inner layer the pose carries out. A pose counts only the holes that were not holes at rest. Bare skin is a vertex of
+ * a body part a garment's branch covers that a shown face has as a corner and that is seen, as between two garments that do not meet.
+ * Numbers go to the test's output.
  */
 @Tag("slow")
 class GarmentGapBenchTest {
@@ -40,10 +42,11 @@ class GarmentGapBenchTest {
         "neck 40" to Pose(listOf(BonePose(HEAD, "neck", 40f))),
     )
 
+    /** The arm's elbow bends the negative way, as far as its limit of 145°. */
     private val personPoses = listOf(
-        "elbow 90" to Pose(listOf(BonePose(ARM_L, "elbow", 90f))),
-        "elbow 120" to Pose(listOf(BonePose(ARM_L, "elbow", 120f))),
-        "elbow 150" to Pose(listOf(BonePose(ARM_L, "elbow", 150f))),
+        "elbow 90" to Pose(listOf(BonePose(ARM_L, "elbow", -90f))),
+        "elbow 120" to Pose(listOf(BonePose(ARM_L, "elbow", -120f))),
+        "elbow 145" to Pose(listOf(BonePose(ARM_L, "elbow", -145f))),
         "shoulder 80" to Pose(listOf(BonePose(ARM_L, "shoulder", 80f))),
     )
 
@@ -61,46 +64,57 @@ class GarmentGapBenchTest {
         val hiddenAtRest = restBody.parts.flatMap { part -> hiddenOf(part).map { requireNotNull(part.id).value to it } }.toSet()
         val rest = gapsOf(restBody, hiddenAtRest)
         println("$character at rest: ${hiddenAtRest.size} hidden, ${rest.holes.size} of them seen; by part ${byPart(rest.holes)}; hidden by part ${byPart(hiddenAtRest)}")
+        println("$character at rest: ${rest.bare.size} bare skin seen on covered parts; by part ${byPart(rest.bare)}")
         for ((name, set) in poses) {
             session.send(SetPose(set))
             work.settle(session)
             val gaps = gapsOf(assertNotNull(session.posedBody.output.value), hiddenAtRest)
             val holes = gaps.holes - rest.holes
             println("$character, $name: ${holes.size} holes, ${gaps.shown.size} shown again; holes by part ${byPart(holes)}; shown again by part ${byPart(gaps.shown)}")
+            println("$character, $name: ${gaps.bare.size} bare skin seen on covered parts; by part ${byPart(gaps.bare)}")
         }
     }
 
-    private class Gaps(val holes: Set<Pair<String, Int>>, val shown: Set<Pair<String, Int>>)
+    /** The [holes], the vertices [shown] again, and the [bare] skin seen of the body parts a garment's branch covers, shown and seen. */
+    private class Gaps(val holes: Set<Pair<String, Int>>, val shown: Set<Pair<String, Int>>, val bare: Set<Pair<String, Int>>)
 
     private fun byPart(vertices: Set<Pair<String, Int>>): Map<String, Int> = vertices.groupingBy { it.first }.eachCount()
 
     private fun measured(part: PlacedPart): Boolean = part.id != null && part.hanging == null
 
+    /** The vertices a face of [part]'s whole mesh has as a corner and no shown face does; a pole's copies no face uses are never hidden. */
     private fun hiddenOf(part: PlacedPart): List<Int> {
         if (!measured(part)) return emptyList()
         val mesh = part.surface.mesh
         val used = BooleanArray(mesh.vertexCount).also { flags -> mesh.indices.forEach { flags[it] = true } }
-        return used.indices.filter { !used[it] }
+        val whole = BooleanArray(mesh.vertexCount).also { flags -> (part.hiding?.indices ?: mesh.indices).forEach { flags[it] = true } }
+        return used.indices.filter { whole[it] && !used[it] }
     }
 
     private fun gapsOf(body: AssembledCharacter, hiddenAtRest: Set<Pair<String, Int>>): Gaps {
         val grid = RayGrid(shownCorners(body))
         val holes = mutableSetOf<Pair<String, Int>>()
         val shown = mutableSetOf<Pair<String, Int>>()
+        val bare = mutableSetOf<Pair<String, Int>>()
+        val covered = body.parts.mapNotNullTo(hashSetOf()) { it.covering?.part }
         for (part in body.parts.filter(::measured)) {
-            val id = requireNotNull(part.id).value
+            val id = requireNotNull(part.id)
             val mesh = part.surface.mesh
             val hidden = hiddenOf(part).toSet()
+            val skin = part.covering == null && id in covered
+            val used = if (skin) BooleanArray(mesh.vertexCount).also { flags -> mesh.indices.forEach { flags[it] = true } } else null
             for (v in 0 until mesh.vertexCount) {
-                val wasHidden = (id to v) in hiddenAtRest
-                if (v !in hidden && !wasHidden) continue
+                val wasHidden = (id.value to v) in hiddenAtRest
+                val bareSkin = used?.get(v) == true
+                if (v !in hidden && !wasHidden && !bareSkin) continue
                 val p = part.origin + mesh.position(v)
                 val seen = DIRECTIONS.count { grid.escapes(p, it) } >= SEEN_WAYS
-                if (v in hidden && seen) holes += id to v
-                if (v !in hidden && seen) shown += id to v
+                if (v in hidden && seen) holes += id.value to v
+                if (v !in hidden && wasHidden && seen) shown += id.value to v
+                if (bareSkin && seen) bare += id.value to v
             }
         }
-        return Gaps(holes, shown)
+        return Gaps(holes, shown, bare)
     }
 
     /** The corners of every face [body] shows, in body space, three points a face. */

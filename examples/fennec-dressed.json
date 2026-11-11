@@ -25006,7 +25006,7 @@
                         },
                         {
                             "part": "front-leg-l",
-                            "to": 0.6
+                            "to": 0.78
                         }
                     ],
                     "color": "sweater"
@@ -25041,6 +25041,7 @@
                     "id": "boots",
                     "name": "Boots",
                     "slot": "feet",
+                    "layer": 2,
                     "branches": [
                         {
                             "part": "front-paw-l"
