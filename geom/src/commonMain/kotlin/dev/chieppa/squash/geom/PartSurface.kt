@@ -76,7 +76,7 @@ class PartSurface(
     companion object {
         /** The surface of [built], whose axes are [axes]. [checkCancelled] runs between its steps and throws to stop a stale run. */
         fun of(built: PartMesh, axes: PartAxes, mirrored: Boolean, checkCancelled: () -> Unit = {}): PartSurface {
-            val own = RenderMesh.of(built)
+            val own = RenderMesh.of(built).withSmoothedShading()
             checkCancelled()
             val mesh = if (mirrored) own.mirrored() else own
             val swept = PartMesh(built.part, built.patches.filter { it.patch.slices != null })

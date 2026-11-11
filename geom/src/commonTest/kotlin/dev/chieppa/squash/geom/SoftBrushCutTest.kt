@@ -167,10 +167,10 @@ class SoftBrushCutTest {
         fun digest(cut: PatchCut) = listOf(cut.mesh.vertices.contentHashCode(), cut.mesh.indices.contentHashCode(), cut.us.contentHashCode(), cut.vs.contentHashCode(), cut.mesh.vertexCount, cut.mesh.indices.size)
         val tube = cutShape(ColorShape.Brush(across, 0.15f, 0f), tubeGrid(), FINE_CUT)
         assertNull(tube.alphas)
-        assertEquals(listOf(1599410091, -2034642748, -1481240797, 403553938, 69, 237), digest(tube))
+        assertEquals(listOf(433245164, -2034642748, -1481240797, 403553938, 69, 237), digest(tube))
         assertEquals(listOf(820680409, -1924438222, 1301778950, 1792189740, 21, 57), digest(cutShape(ColorShape.Brush(listOf(SurfaceUv(0.5f, 0.02f)), 0.2f), sheetGrid(), FINE_CUT)))
-        assertEquals(listOf(524594346, 950633737, -1575406143, -800116414, 186, 816), digest(cutShape(ColorShape.Brush(listOf(SurfaceUv(0.97f, 0.1f)), 0.5f), domeGrid(), FINE_CUT)))
-        assertEquals(listOf(362936588, -621622190, -1597731148, 159261018, 64, 210), digest(cutShape(ColorShape.Brush(listOf(SurfaceUv(0.3f, 0.2f), SurfaceUv(0.6f, 0.3f)), 0.2f), tubeGrid(mirrored = true), FINE_CUT)))
+        assertEquals(listOf(-374041004, 950633737, -1575406143, -800116414, 186, 816), digest(cutShape(ColorShape.Brush(listOf(SurfaceUv(0.97f, 0.1f)), 0.5f), domeGrid(), FINE_CUT)))
+        assertEquals(listOf(-253711219, -621622190, -1597731148, 159261018, 64, 210), digest(cutShape(ColorShape.Brush(listOf(SurfaceUv(0.3f, 0.2f), SurfaceUv(0.6f, 0.3f)), 0.2f), tubeGrid(mirrored = true), FINE_CUT)))
     }
 
     @Test

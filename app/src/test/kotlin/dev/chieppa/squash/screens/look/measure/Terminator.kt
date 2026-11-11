@@ -8,8 +8,9 @@ import dev.chieppa.squash.screens.smoke.RayGrid
 import kotlin.math.PI
 
 /**
- * A piece of terminator shorter than this share of a half turn round the part's thinnest extent is an island of shade or light on its
- * surface, a blotch, rather than the edge of a form's shade, which runs at least half round the form.
+ * A closed piece of terminator shorter than this share of a half turn round the part's thinnest extent is an island of shade or light
+ * on its surface, a blotch, rather than the edge of a form's shade, which runs at least half round the form. A piece ending where
+ * the shown faces end, at a hem or a hidden stretch, is the form's edge cut short.
  */
 private const val BLOTCH_SHARE = 1f
 
@@ -40,12 +41,13 @@ fun terminator(body: AssembledCharacter, grid: RayGrid, toLight: Vec3, views: Li
         val blotchUnder = blotchLength(part)
         for ((_, run) in byPiece) {
             val whole = run.sumOf { (it.b - it.a).length.toDouble() }.toFloat()
+            val closed = run.flatMap { listOf(it.from, it.to) }.groupingBy { it }.eachCount().values.all { it == 2 }
             for (view in units.indices) {
                 val seen = run.filter { it.seenBy[view] }
                 if (seen.isEmpty()) continue
                 length[view] += seen.sumOf { s -> (s.b - s.a).let { it - units[view] * (it dot units[view]) }.length.toDouble() }.toFloat()
                 pieces[view]++
-                if (whole < blotchUnder) blotches[view].merge(requireNotNull(part.id).value, 1, Int::plus)
+                if (closed && whole < blotchUnder) blotches[view].merge(requireNotNull(part.id).value, 1, Int::plus)
             }
         }
     }
