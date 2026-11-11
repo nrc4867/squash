@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.look
 
+import dev.chieppa.squash.screens.look.shots.ShotCamera
 import java.io.File
 
 /** Says to take every value there is: every outfit, every named pose. */
@@ -27,6 +28,18 @@ class LookArgs(args: Array<String>) {
 
     /** The close-ups asked for, among face, hand and foot. */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
+
+    /** The shot list to render instead of the usual views: `reference` for the reference's 24 shots. */
+    val shots: String? = values["shots"]
+
+    /** An explicit camera in the reference frame to render through instead of the usual views, from `eye`, `target`, `fov` and `size`. */
+    val camera: ShotCamera? = values["eye"]?.let { eye -> ShotCamera.parse(eye, requireNotNull(values["target"]) { "eye needs a target" }, values["fov"], values["size"]) }
+
+    /** Whether measure prints every part's origin and box. */
+    val parts: Boolean = values["parts"] == "true"
+
+    /** Body units to a metre of the reference frame, for the shots and the explicit camera. */
+    val unitsPerMetre: Float = values["scale"]?.toFloat() ?: 1f
 
     val examplesFolder = File(values["root"] ?: ".", EXAMPLES_FOLDER)
     val imagesFolder = File(values["out"] ?: File(values["root"] ?: ".", IMAGES_FOLDER).path)

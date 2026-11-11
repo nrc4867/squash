@@ -76,6 +76,18 @@ There is a schema for templates and plans (`schema/`) but none for the document 
 ### The upright head
 
 - `character/.../build/Assembly.kt` (`originOn`): that a hand-made socket's default sink of 1 carries the head on the neck's end down by the head template's depth along the end's normal, so a head drawn from the neck's top needs the neck's end socket at sink 0; and that a hair part's socket sink moves its root in or out along the skull's normal, by how much. The HLD says sinks scale the template's depth; a number per template would.
-- No command prints where parts land: the hair's sockets on the new head were placed to keep the hair where it was by a throwaway print of each part's origin and box from a measure run. A measure line listing each part's origin and box would.
+- Where parts land: `./gradlew :app:measure -Pmeasure="example=<name> parts=true"` prints each part's origin and box as shown.
 - `geom/.../PartAxes.kt`: that on a part resting up v = 0.75 is her left and v = 0 her face, for the hair locks' sockets. The skill says it; a catalog would draw it.
 - `character/.../lint/TemplateLint.kt`: that Front alone may set a section, so an upright head's width is drawn under Top (shown in the Front pane) and its section under Front (shown in the Top pane).
+
+### The twin
+
+Read while building the twin (`examples/woman-twin*.json`, fixtures under `screens-core/src/testFixtures/kotlin/dev/chieppa/squash/screens/twin/`) from a numeric description of a reference character:
+
+- `document/.../Pose.kt`: a `BonePose`'s fields (`degrees`, `turn`, `lean`, `mode`) and that `JointMode.FREE` lets a lean pass the joint's limits. Which way each turns was then found only by rendering trial poses: a tube's `base` with positive degrees swings an arm or a leg back, `lean` swings it out to the side, and an elbow's `turn` with its bend folds a forearm up from an arm raised to the side. A pose reference with each bone's axes drawn would.
+- `templates/foot-2.part.json`, `hand-3.part.json`, `head-round-2.part.json`: the joint names a pose needs (`ankle`, `wrist`, `neck`) and the template lengths a size scales; the fingers' joints sit inside the toe row's block with no names, so no pose curls a finger. The generated catalog would, with joint names a pose can use.
+- `character/.../build/FaceMap.kt`: `on`, `ring` and `of`'s signatures, since the face is drawn from numbers about a head centre rather than in steps of a drawn face. The parameter reference.
+- `document/.../Mark.kt`, `MarkGroup.kt`: that a mark has its own `slot`, so a brow can be the brow colour rather than ink. A schema.
+- `document/.../Palette.kt`: that a slot colour is three sRGB channels 0 to 1, so a reference's hex colour is its bytes over 255. A schema.
+- `screens-core/.../woman/Wardrobe.kt`: that `garment()` sizes its fillet from the woman's limb lengths; it now takes the limb lengths. A fillet in body units per join would need none.
+- No source was read for where parts land: `measure parts=true` prints each part's origin and box. It showed that a socket's default sink moved the hips 0.05 up and the shoulders 0.035 in from where the drawing put them (the twin seats every body socket with `sink = 0`), and that two garments' parts on one socket number had moved each other.

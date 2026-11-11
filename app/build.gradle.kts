@@ -62,7 +62,8 @@ compose.desktop {
 
 // ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot" renders examples to app/build/look;
 // ./gradlew :app:measure -Pmeasure="example=woman-dressed" prints their checks. Both run the real graph with no test runner.
-listOf("look" to "LookMainKt", "measure" to "MeasureMainKt").forEach { (name, main) ->
+// ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>" sets look's shots beside reference renders.
+listOf("look" to "LookMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt").forEach { (name, main) ->
     tasks.register<JavaExec>(name) {
         group = "verification"
         classpath = sourceSets["test"].runtimeClasspath

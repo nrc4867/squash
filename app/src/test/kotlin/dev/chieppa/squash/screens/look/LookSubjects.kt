@@ -12,6 +12,9 @@ import dev.chieppa.squash.screens.lizard.lizardDocument
 import dev.chieppa.squash.screens.person.personDocument
 import dev.chieppa.squash.screens.person.personDressedDocument
 import dev.chieppa.squash.screens.toucan.toucanDocument
+import dev.chieppa.squash.screens.twin.TWIN_POSES
+import dev.chieppa.squash.screens.twin.twinDocument
+import dev.chieppa.squash.screens.twin.twinDressedDocument
 import dev.chieppa.squash.screens.woman.WOMAN_POSES
 import dev.chieppa.squash.screens.woman.womanDocument
 import dev.chieppa.squash.screens.woman.womanDressedDocument
@@ -30,10 +33,17 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "toucan" to ::toucanDocument,
     "woman" to ::womanDocument,
     "woman-dressed" to ::womanDressedDocument,
+    "woman-twin" to ::twinDocument,
+    "woman-twin-dressed" to ::twinDressedDocument,
 )
 
 /** The poses an example is looked at in besides rest, by name. */
-private val POSES: Map<String, Map<String, Pose>> = mapOf("woman" to WOMAN_POSES, "woman-dressed" to WOMAN_POSES)
+private val POSES: Map<String, Map<String, Pose>> = mapOf(
+    "woman" to WOMAN_POSES,
+    "woman-dressed" to WOMAN_POSES,
+    "woman-twin" to TWIN_POSES,
+    "woman-twin-dressed" to TWIN_POSES,
+)
 
 /** Every example the look and measure commands know. */
 val EXAMPLES: Set<String> get() = FIXTURES.keys

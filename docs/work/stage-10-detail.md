@@ -237,6 +237,95 @@ For the next rounds (aimed at round 7, `hair-shell`):
 - The shades' temples run 0.27 head units back from hinges level with the bridge (face map y 0.245) and end in the hair; a shell will cover their ends.
 - Left in the head: its underside is one floor from the chin to the nape, since each height crosses the profile twice, and the neck runs into it with no strip (the head's socket ring seen rose to 0.126, under the jaw from the side); the ridge is one width for nose, lips and chin; the upright head has no jaw joint; the eyes are marks, so they have no depth beyond the face's own curve.
 
+## Twin
+
+A woman built to match the reference renders nearly one to one, so the reference can judge Squash's model shape and dressing; light, shading and lines stay Squash's own and are left out of the comparison. She is built from a numeric description of the reference character (body, skeleton, face, hair, outfits, poses and cameras, in metres, +Y up, facing +Z) and its renders, not from its source. The woman stays as she is.
+
+Built:
+
+- **The example** (`examples/woman-twin.json`, `examples/woman-twin-dressed.json`; fixtures under `screens-core/src/testFixtures/kotlin/dev/chieppa/squash/screens/twin/`, tests `TwinFixtureTest`, `TwinDressedFixtureTest`). Drawn in metres on the Blank plan: the torso tube from the pelvis's underside (0.735 m) to the base of the neck, its Side and Top read from the reference's ring table with the bust and seat swellings; spine joints at the reference's bone heights; a neck to the head's origin (1.455 m); `head-round` version 2 at size 1.1, the reference's head scale, its profile, width and section read from the reference's head shape; arms and legs with the reference's radius keys, the shoulder, elbow and knee at its joints; the shipped hand and foot. Body sockets are seated on the surface (`sink = 0`), so the hips land 0.182 apart (0.184 in the reference) and the shoulder joints at 1.318 m. The face is painted from the reference's numbers about its head centre (eyes, lids, brows, wings, nostrils, lips, eyeshadow, blush). The hair is a cap with bangs, a fall to the middle of the back and a curtain each side. She rests in A-pose; the display pose brings the upper arms to 9 degrees out with the elbow bent 5.7, the reference's `rest`. Named poses `walk`, `wave` and `shades-up`. Outfits by the reference's names: `beach` (halter bikini band with cups and straps it owns, denim shorts, cork sandals with a strap, shades), `lawyer` (blouse, open blazer with lapels and a button, wide-leg trousers, pumps with heels, the lawyer face), `dress` (cream top with puffed sleeves, the free teal skirt, a tan belt, flats, the dress face), `goth` (dark top, black jeans, belt with buckle, choker with ring, platform boots, the goth face). The face looks are garments in the Face slot redrawing lips, eyeshadow and blush.
+- **Matched cameras** (`app/.../look/shots/`): `look` takes `eye`, `target`, `fov`, `size` and `scale` for one perspective camera in the reference frame, and `shots=reference` for the reference's 24 shots under their own names (`ReferenceShots.kt`). `ReferenceFrame` maps the reference's +Z forward to Squash's +X and its +X left to -Z, and its ground to the posed body's lowest vertex. The shots render on the reference's background colour.
+- **Compare** (`app/.../look/compare/`, `./gradlew :app:compare`): per shot a side-by-side, a silhouette overlay (blue reference only, red Squash only, grey both) and the silhouette IoU, whole and in head, torso, arms and legs bands, kept as `iou.txt`.
+- **Measure**: `parts=true` prints every part's origin and box from the ground; dressed outfits print bare skin seen in each named pose.
+
+Silhouette IoU, dressed twin against the reference (`./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=..."`):
+
+| shot | whole | head | torso | arms | legs |
+|---|---|---|---|---|---|
+| beach-threeq | 0.900 | 0.861 | 0.994 | 0.814 | 0.877 |
+| lawyer-threeq | 0.870 | 0.855 | 0.882 | 0.820 | 0.887 |
+| dress-threeq | 0.803 | 0.859 | 0.709 | 0.619 | 0.879 |
+| goth-threeq | 0.907 | 0.863 | 0.997 | 0.811 | 0.897 |
+| beach-front | 0.910 | 0.854 | 0.972 | 0.753 | 0.929 |
+| lawyer-side | 0.846 | 0.833 | 0.860 | - | 0.837 |
+| dress-side | 0.841 | 0.879 | 0.737 | - | 0.906 |
+| goth-front | 0.905 | 0.844 | 0.986 | 0.753 | 0.913 |
+| face-natural | 0.868 | | | | |
+| face-goth | 0.890 | | | | |
+| face-lawyer | 0.805 | | | | |
+| face-beach-shades | 0.883 | | | | |
+| face-beach-shadesup | 0.878 | | | | |
+| hand-rest | 0.233 | | | | |
+| foot-beach | 0.771 | | | | |
+| foot-lawyer | 0.754 | | | | |
+| foot-dress | 0.847 | | | | |
+| foot-goth | 0.808 | | | | |
+| hand-wave | 0.570 | | | | |
+| pose-wave-lawyer | 0.767 | 0.596 | 0.884 | 0.836 | 0.782 |
+| pose-walk-dress | 0.630 | 0.783 | 0.631 | 0.353 | 0.713 |
+| pose-walk-dress-side | 0.647 | 0.792 | 0.574 | - | 0.661 |
+| pose-walk-goth | 0.795 | 0.831 | 0.988 | 0.577 | 0.782 |
+| pose-walk-beach | 0.696 | 0.854 | 0.737 | - | 0.615 |
+| mean | 0.784 | | | | |
+
+The bands are set at the reference's rest heights, so in the poses they are approximate, and the waving arm lies in the head band. Undressed (`example=woman-twin`) against the dressed reference, the body alone scores 0.912 beach three-quarter, 0.919 beach front and 0.913 goth front.
+
+Largest shape gaps, by how much they cost:
+
+1. **The walk** (0.63 to 0.80). The legs and arms take the reference's angles on the `base`, knee, shoulder and elbow bones, but the hips' and chest's turns about the vertical have no bone (the spine's joints bend about one axis), the planted feet shorten the stride, and the arms swing in a narrower arc (arms band 0.35 to 0.58).
+2. **The hand at rest in the dress** (0.23). The reference's dress outfit adds 7.4 degrees of arm abduction for that outfit alone; Squash has one display pose, and arms do not push a hanging skirt, so the hand sinks into the skirt's side. The hand itself is `hand` with straight fingers: its finger joints are unnamed blocks in the template, so no pose gives the reference's relaxed curl.
+3. **Hair** (head band 0.83 to 0.88 where the bare head scores 0.88 to 0.90). A blob cap with a solid bang edge, a slab fall and a slab curtain each side: the reference's 23 ribbons, the zigzag hairline and the parting have nothing to be built from, and from the side the hair mass is thinner behind the head (lawyer-side head 0.83).
+4. **Shoulders**. The shoulder strip is built where the A-pose arm leaves the torso, so with the arms down the shoulder reads as a squared pad above the arm in every front and three-quarter view (arms band 0.75 to 0.82); the reference's shoulder is a round cap.
+5. **Feet and shoes** (0.75 to 0.85). The pump's 24 degree foot pitch is a per-outfit pose in the reference; the twin draws a pitched pump on a flat ankle, so the heel is 0.045 m where the reference's is taller and the instep sits lower. The toes are the template's row, longer and evener than the reference's capsules.
+
+The wave raises the right arm with a free `lean` on its `base` 25 degrees past the reference's 114.6 (the lean reads from where the A-pose leaves the arm, so the reference's number alone lands low) and folds the forearm up with a turn at the elbow; there is no shoulder bone to shrug and no hand twist, so the palm faces in rather than forward (hand-wave 0.57). Shades up turns each half about its own length at the bridge: the reference lifts the whole pair onto the forehead about the head, which a part riding its socket cannot do.
+
+Dressing report (`./gradlew :app:measure -Pmeasure="example=woman-twin-dressed outfits=<outfit> poses=walk,wave"`):
+
+| Outfit | Garment or prop | Built to match | Fit against the reference | Walk and wave |
+|---|---|---|---|---|
+| Beach | Bikini band and neck tie | Yes, branches on the torso and neck | Band 1.139 to 1.157 at 0.0035, as the reference | Holds |
+| Beach | Cups | Partly: owned blobs on the bust | Triangles of the reference's size, but rigid and a little wide; no polka dots | Ride the torso rigidly, drift 0 |
+| Beach | Halter straps | Yes, owned tubes | From cup to neck, 0.009 across | Rigid, drift 0 |
+| Beach | Shorts | Yes, waist and legs | 0.0085 off, hem at 0.735; the lighter cuff band and the pocket, fly and seam ink need patterns on cloth | Holds; bare skin seen 12 to 17 torso vertices at the waist edge |
+| Beach | Sandals | Partly | The sole branch wraps up the foot's sides rather than lying under it (121 foot vertices seen inside its shell), and the toes show over its edge; the strap is a band round the forefoot; the toe post and heel strap are not built | Holds |
+| Beach | Shades | Yes, owned halves and temples | Frames, lenses and glint where the reference's are; lenses opaque | Rigid on the head, drift 0 |
+| Lawyer | Blouse | Partly | 0.0045 off; its V neck is a plain top edge, since an opening cannot vary along a branch | Holds |
+| Lawyer | Blazer | Partly | 0.0135 off, open front of one width the whole length rather than closing to the button | Holds; sleeves follow |
+| Lawyer | Lapels, button | Partly, owned blobs | Lapels read; 188 of each lapel's vertices lie under cloth (26 seen); no collar band, no notch | Rigid, drift 0 |
+| Lawyer | Trousers | Yes, flared by drawn outlines | Waist 0.009, leg 0.0095 flaring to 0.0275 front and 0.0395 sides at the hem | Bare skin seen 48 to 55 leg vertices at the hip strip; none visible in the renders |
+| Lawyer | Pumps and heels | Partly | Swapped foot drawn pitched, heel 0.045 m (the reference's foot pitches 24 degrees on a taller heel); no foot opening paint | Heels rigid, drift 0 |
+| Dress | Cream top, puff sleeves | Partly | 0.006 off; scoop neck drawn as a straight top edge; the puff is one ease | Bare skin seen 41 to 58 arm vertices under the sleeves |
+| Dress | Skirt | Yes, free skirt | Hem 0.305 below the pelvis, 0.29 wide and 0.19 / 0.24 deep, as the reference's rest radii | Legs stay inside: leg volume outside 0 at rest, in walk and wave; push 1.7 ms in the walk |
+| Dress | Belt, flats | Yes | Belt 1.004 to 1.020 at 0.0155; flats a swapped foot, opening not painted | Hold |
+| Goth | Top, sleeves | Partly | 0.006 off; scoop neck straight, no lace trim | Bare skin 12 to 20 arm vertices |
+| Goth | Jeans | Yes | Waist 0.0085, legs 0.0065 to 0.2 m | Bare skin 2 to 4 leg vertices |
+| Goth | Belt, buckle | Yes, owned buckle | Belt 0.961 to 0.983; buckle 0.034 by 0.026 by 0.006; no studs | Rigid, drift 0 |
+| Goth | Choker, ring | Yes | Band at the neck's base and a ring at its front | Rigid |
+| Goth | Boots | Partly | Swapped foot with a 0.028 platform and a shaft to 0.31 m; a thin ring of skin shows between the boot and the shaft at the ankle; no lacing | Holds |
+
+No skin pokes through in walk or wave beyond what shows at rest: arm volume inside the torso is 0, owned parts drift 0, and the skirt holds the legs. Trouser, jeans and shorts legs run on 0.08 of the leg up into the pelvis (`INTO_PELVIS`): from the leg's own start they left the hip strip bare under the waist in every outfit.
+
+Largest dressing gaps, by how much they hurt the match:
+
+1. **Openings and cut shapes.** A branch's v range is one width along its whole length and its ends are rings, so V necks, scoop necks, the blazer's opening narrowing to its button, the bikini's triangles and the pumps' and flats' foot openings are all straight bands. Fix: an opening whose v range varies along u, or a cut outline drawn on the garment.
+2. **Per-outfit pose.** The reference pitches the foot for heels and spreads the arms for the dress; Squash has one display pose, so heels stay short and the dress's hands sink into the skirt (arms do not push a hanging branch either). Fix: a display pose an outfit can add to; arms among what pushes a skirt.
+3. **Shoe soles and straps.** A sole is a v range of a shell over the foot, so it wraps up the foot's sides; straps that arc over the foot, a toe post and a heel strap have no part to be built from; a swapped boot meets its shaft with a gap at the ankle. Fix: a sole as a slab under the foot's footprint; a part drawn along a curve on a surface.
+4. **One colour per garment.** Cuffs, polka dots, lace, studs, lacing, pockets, seams and creases need patterns or regions on cloth; a two-colour item is two garments in two slots (the sandal's straps take a Straps slot). Fix: regions and ink on a garment's shell.
+5. **Rigid owned sheets.** Lapels and cups are rigid blobs that lie partly under cloth and cannot follow the chest; shades turn only about their own socket. Fix: a sheet that lies on the surface under it; a prop pose about another bone.
+
+For the next rounds: round 7 replaces the twin's hair (cap, bangs, fall, curtains) and round 8 its hands and feet; both are judged by `compare` against the same shots.
+
 ## Open
 
 - Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.

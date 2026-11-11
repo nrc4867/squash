@@ -12,6 +12,10 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.FOOT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
 import dev.chieppa.squash.screens.smoke.CloseUps
 import dev.chieppa.squash.screens.smoke.WomanViews
+import dev.chieppa.squash.screens.look.shots.ReferenceShot
+import dev.chieppa.squash.screens.look.shots.SHOTS_FOLDER
+import dev.chieppa.squash.screens.look.shots.ShotViews
+import dev.chieppa.squash.screens.look.shots.shotList
 import java.io.File
 import kotlin.system.exitProcess
 import kotlin.time.measureTime
@@ -40,7 +44,9 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
         SessionPose(session)
         work.settle(session)
+        if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
         val views = WomanViews(work, errors, folder)
+        val camera = look.camera?.let { ShotViews(work, errors, folder, look.unitsPerMetre) to it }
         val closeUps = CloseUps(work, errors, folder)
         val parts = LookParts(session.document.value.character)
         val poses = examplePoses(example).filterKeys { look.poses == null || it in look.poses }
@@ -48,6 +54,15 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         for (outfit in outfitsOf(session, look)) {
             val name = outfit?.value ?: "as-saved"
             if (outfit != null) session.send(ShowOutfit(outfit))
+            if (camera != null) {
+                camera.first.keep(session, camera.second, "$name-camera")
+                for ((pose, set) in poses) {
+                    session.send(SetPose(set))
+                    camera.first.keep(session, camera.second, "$name-pose-$pose-camera")
+                }
+                session.send(SetPose(Pose()))
+                continue
+            }
             views.keep(session, name)
             val display = session.document.value.character.displayPose
             if (!display.isRest) {
@@ -64,6 +79,28 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
             if (poses.isNotEmpty()) session.send(SetPose(Pose()))
         }
     }
+}
+
+/**
+ * Renders [example] through each shot of the list [look] names, into a `shots` folder beside its views, under the shots' own names: each
+ * shot's outfit, then its pose from the example's named poses, rest for none.
+ */
+private fun renderShots(session: CharacterSession, work: TestWork, example: String, look: LookArgs, errors: MutableList<String>, folder: File) {
+    val shots = shotList(requireNotNull(look.shots))
+    val views = ShotViews(work, errors, File(folder, SHOTS_FOLDER), look.unitsPerMetre)
+    val poses = examplePoses(example)
+    val outfits = session.document.value.character.wardrobe.outfits.associateBy { it.id.value }
+    for (shot in shots) {
+        outfits[shot.outfit]?.let { session.send(ShowOutfit(it.id)) }
+        val pose = if (shot.examplePose == ReferenceShot.REST) Pose() else poses[shot.examplePose]
+        if (pose == null) {
+            errors += "$example has no pose ${shot.examplePose} for ${shot.name}"
+            continue
+        }
+        session.send(SetPose(pose))
+        views.keep(session, shot.camera, shot.name)
+    }
+    session.send(SetPose(Pose()))
 }
 
 /** The outfits asked for that the example has, or its shown state alone when it has none. */

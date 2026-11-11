@@ -17,6 +17,7 @@ import dev.chieppa.squash.screens.look.measure.digitTipGaps
 import dev.chieppa.squash.screens.look.measure.faceShade
 import dev.chieppa.squash.screens.look.measure.hipSpread
 import dev.chieppa.squash.screens.look.measure.legOutsideSkirt
+import dev.chieppa.squash.screens.look.measure.partBoxes
 import dev.chieppa.squash.screens.look.measure.skirtInsideLegs
 import dev.chieppa.squash.screens.look.measure.profile
 import dev.chieppa.squash.screens.look.measure.propDrift
@@ -36,7 +37,8 @@ private val VIEWS = listOf("front" to 0f, "three-quarter" to 40f, "side" to 90f)
 
 /**
  * Prints the stage's checks for examples, as numbers, through the real graph and rig with no GPU and no test runner: per outfit as
- * shown, in the display pose, with the arm volume at rest too, and in each named pose in the first of them. Run as `./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`.
+ * shown, in the display pose, with the arm volume at rest too, and in each named pose in the first of them, with `parts=true` every
+ * part's origin and box as shown, heights from the ground. Run as `./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`.
  */
 fun main(args: Array<String>) {
     val look = LookArgs(args)
@@ -59,11 +61,13 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
         println("$name: arm volume inside the torso at rest ${armInside(rest).format()}")
         legOutsideSkirt(rest).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt at rest ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(rest)}") }
         report(name, shown, head?.let(shown::part), dressed = outfit != null)
+        if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }
         if (outfit != outfits.first()) continue
         for ((pose, set) in poses) {
             session.send(SetPose(set))
             val body = posed(session, work)
             println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
+            if (outfit != null) RayGrid(shownCorners(body)).let { grid -> bareSkin(body) { grid.seen(it) } }.let { println("$name, $pose: bare skin seen on covered parts ${it.values.sum()} $it") }
             propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
             legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let {
                 println("$name, $pose: leg volume outside the skirt ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}")
@@ -107,5 +111,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
         println("$name: terminator ${VIEWS[i].first} length %.2f in ${t.pieces} pieces, ${t.blotches.values.sum()} blotches ${t.blotches}".format(t.length))
     }
 }
+
+private fun Vec3.format() = "(%.3f, %.3f, %.3f)".format(x, y, z)
 
 private fun <K> Map<K, Float>.format(): String = entries.joinToString(prefix = "{", postfix = "}") { (k, v) -> "$k=%.5f".format(v) }
