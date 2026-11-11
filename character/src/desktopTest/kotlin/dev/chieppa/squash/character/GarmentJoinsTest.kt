@@ -4,9 +4,15 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.AssemblyPart
 import dev.chieppa.squash.character.build.BRANCH_RINGS
 import dev.chieppa.squash.character.build.Dressing
+import dev.chieppa.squash.character.build.PosedParts
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assembleNow
 import dev.chieppa.squash.character.build.dressedIn
+import dev.chieppa.squash.character.build.hiddenAgain
+import dev.chieppa.squash.character.build.posedBy
+import dev.chieppa.squash.geom.Mat3
+import dev.chieppa.squash.geom.RenderMesh
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
@@ -103,5 +109,63 @@ class GarmentJoinsTest {
         val moves = sleeve.surface.patches.single().let { patch -> (0 until patch.nu * patch.nv).map { (patch.point(it) - bareSleeve.surface.patches.single().point(it)).length } }
         assertTrue(moves.any { it > STILL }, "the sleeve moves onto the fillet")
         assertTrue(sleeve.surface.mesh.indices.size < bareSleeve.surface.mesh.indices.size, "the sleeve's top inside the sweater is left out")
+    }
+
+    private val torsoBranch = GarmentBranch(torso, 0.4f, 0.97f)
+    private val sleeved = Garment(sweater, "Sweater", branches = listOf(torsoBranch, GarmentBranch(legL, 0f, 0.6f)))
+
+    private fun shownFaces(character: AssembledCharacter, part: PartId) = assertNotNull(character.part(part)).surface.mesh.indices.size / 3
+
+    @Test
+    fun aLegUnderItsOwnSleeveJoinsTheSweaterByTheFilletAlone() {
+        val sleeves = wearing(sleeved)
+        for (leg in listOf(legL, legR)) assertNull(sleeves.part(cuffPartId(sweater, leg)), "no cuff round $leg under its own sleeve")
+        val unholed = wearing(Garment(sweater, "Sweater", branches = listOf(torsoBranch), changes = mapOf(legL to BodyPartChange.Hide)))
+        assertEquals(shownFaces(unholed, branchPartId(sweater, torso)), shownFaces(sleeves, branchPartId(sweater, torso)), "no hole in the sweater's body")
+        val sleeveless = wearing(Garment(sweater, "Sweater", branches = listOf(torsoBranch)))
+        assertNotNull(sleeveless.part(cuffPartId(sweater, legL)), "a sleeveless sweater still lets the leg through")
+        assertTrue(shownFaces(sleeveless, branchPartId(sweater, torso)) < shownFaces(sleeves, branchPartId(sweater, torso)), "with a hole")
+    }
+
+    @Test
+    fun aLegUnderOneGarmentsSleeveStillComesThroughAnother() {
+        val vest = GarmentId("vest")
+        val character = wearing(sleeved, Garment(vest, "Vest", branches = listOf(GarmentBranch(torso, 0.45f, 0.95f))))
+        for (leg in listOf(legL, legR)) {
+            assertNull(character.part(cuffPartId(sweater, leg)))
+            assertNotNull(character.part(cuffPartId(vest, leg)), "$leg comes through the vest with a cuff")
+        }
+    }
+
+    @Test
+    fun theSkinUnderAnOwnSleeveStaysHidden() {
+        val bare = shownFaces(body, legL)
+        val sleeves = wearing(sleeved)
+        assertTrue(shownFaces(sleeves, legL) < bare, "the sleeve hides the leg under it")
+        val hiding = assertNotNull(assertNotNull(sleeves.part(legL)).hiding)
+        assertTrue(branchPartId(sweater, torso) in hiding.inside, "the sweater's body hides what of the leg lies in it, at rest and posed")
+        assertTrue(hiding.whole.isEmpty(), "and no hole leaves the leg whole")
+        val carried = carriedTogether(sleeves, sleeves.parts.mapNotNull { it.id }, Vec3(0f, 0.05f, 0.02f))
+        assertEquals(shownFaces(sleeves, legL), shownFaces(carried, legL), "the leg carried with the sweater stays hidden as it was")
+    }
+
+    /** [character] with [parts]' meshes moved by [by] together, as a pose carrying them would show them, and hidden again. */
+    private fun carriedTogether(character: AssembledCharacter, parts: List<PartId>, by: Vec3): AssembledCharacter {
+        val meshes = parts.associateWith { part ->
+            val mesh = assertNotNull(character.part(part)).surface.mesh
+            val vertices = mesh.vertices.copyOf()
+            for (v in 0 until mesh.vertexCount) {
+                val at = v * RenderMesh.FLOATS_PER_VERTEX
+                vertices[at] += by.x
+                vertices[at + 1] += by.y
+                vertices[at + 2] += by.z
+            }
+            RenderMesh(vertices, mesh.indices)
+        }
+        val pose = object : PosedParts {
+            override val meshes = meshes
+            override val turns = emptyMap<PartId, Mat3>()
+        }
+        return character.posedBy(pose).hiddenAgain(character)
     }
 }

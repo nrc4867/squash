@@ -37,7 +37,8 @@ internal class Holed(val branch: PlacedPart, val cuffs: List<PlacedPart>, val th
 
 /**
  * [branch], a branch of [garment], with a hole where each body part comes out through it, and the cuff round each such part that has
- * one. A part comes out through it when it sits on a socket inside the region [branch] covers and [garment] does not hide it; the hole
+ * one. A part comes out through it when it sits on a socket inside the region [branch] covers and [garment] neither hides it nor
+ * covers it with a branch of its own, which joins [branch] by its fillet alone; the hole
  * is the branch's faces inside that part, and the cuff runs from the part's root to its cuff size, as a share of the part's length, past
  * where it comes out. A cuff inks its far edge and where it comes out of [branch] when the garment's cuffs and its own change are inked;
  * with no cuff, [branch] inks where the part comes through it when its hem is inked.
@@ -51,7 +52,8 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
         val spec = part.socketSpec ?: return@filter false
         val v = if (part.side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
         val change = garment.changes[id] ?: twins[id]?.let { garment.changes[it] }
-        change != BodyPartChange.Hide && spec.u in covering.from..covering.to && coverOf(branch).covers(covering.part, spec.u, v, part.origin)
+        val ownBranch = garment.branch(id) != null || twins[id]?.let(garment::branch) != null
+        !ownBranch && change != BodyPartChange.Hide && spec.u in covering.from..covering.to && coverOf(branch).covers(covering.part, spec.u, v, part.origin)
     }
     val ease = (garment.branch(covering.part) ?: twins[covering.part]?.let(garment::branch))?.ease ?: DEFAULT_EASE
     var holed = branch
