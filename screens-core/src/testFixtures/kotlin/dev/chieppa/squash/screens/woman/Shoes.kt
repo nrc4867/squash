@@ -17,7 +17,6 @@ import dev.chieppa.squash.screens.fennec.p
 
 val SANDALS = GarmentId("sandals")
 val SNEAKERS = GarmentId("sneakers")
-val PUMPS = GarmentId("pumps")
 val BOOTS = GarmentId("boots")
 
 val SANDAL_LEATHER = SlotName("sandal")
@@ -46,28 +45,18 @@ private val SNEAKER_TOP = loop(
     p(0.410f, -0.052f), p(0.330f, -0.060f), p(0.210f, -0.050f), p(0.090f, -0.042f), p(0.010f, -0.036f),
 )
 
-/** A pump: slim, low over the instep, the toe drawn to a soft point. */
-private val PUMP_SIDE = loop(
-    p(0.000f, 0.025f), p(0.030f, 0.050f), p(0.120f, 0.035f), p(0.250f, 0.010f), p(0.380f, -0.020f), p(0.460f, -0.045f),
-    p(0.420f, -0.070f), p(0.250f, -0.074f), p(0.080f, -0.076f), p(0.000f, -0.066f),
-)
-private val PUMP_TOP = loop(
-    p(0.000f, 0.000f), p(0.010f, 0.030f), p(0.090f, 0.035f), p(0.230f, 0.044f), p(0.340f, 0.046f), p(0.420f, 0.026f), p(0.460f, 0.000f),
-    p(0.420f, -0.026f), p(0.340f, -0.046f), p(0.230f, -0.044f), p(0.090f, -0.035f), p(0.010f, -0.030f),
-)
-
 /** The boots' shafts run up the legs from above the ankle to under the knee, over the jeans. */
 private const val SHAFT_FROM = 0.66f
 private const val BOOT_EASE = 0.022f
 private const val SHOE_EASE = 0.01f
 
 /** The foot swapped for a closed blob drawn as the shoe, at the foot's own size, for as long as the shoe is worn. */
-private fun shod(side: OutlineCurve, top: OutlineCurve, color: SlotName) = BodyPartChange.Swap(
+internal fun shod(side: OutlineCurve, top: OutlineCurve, color: SlotName) = BodyPartChange.Swap(
     TemplateRef(TemplateId("blob"), 1),
     PartData(outlines = mapOf(View.SIDE to side, View.TOP to top), params = mapOf(SIZE to FOOT_SIZE, GenericParams.RINGS to SHOE_RINGS.toFloat()), surface = SurfaceWork(baseSlot = color)),
 )
 
-/** The shoes: sandals over the bare foot, sneakers and pumps that redraw the foot without its toes, and boots up to under the knee. */
+/** The shoes: sandals over the bare foot, sneakers that swap the foot for a closed shoe, and boots up to under the knee; the pumps are [pumps]. */
 fun shoes(): List<DocumentCommand> = listOf(
     cloth(SANDAL_LEATHER, 0.55f, 0.36f, 0.22f),
     cloth(CANVAS, 0.95f, 0.95f, 0.93f),
@@ -75,7 +64,6 @@ fun shoes(): List<DocumentCommand> = listOf(
     cloth(BOOT_LEATHER, 0.16f, 0.13f, 0.13f),
 ) + garment(SANDALS, "Sandals", FEET_SLOT, SANDAL_LEATHER, listOf(GarmentBranch(FOOT_L, fromV = SOLE_FROM_V, toV = SOLE_TO_V, ease = SOLE_EASE))) +
     garment(SNEAKERS, "Sneakers", FEET_SLOT, CANVAS, listOf(GarmentBranch(FOOT_L, ease = SHOE_EASE)), changes = mapOf(FOOT_L to shod(SNEAKER_SIDE, SNEAKER_TOP, CANVAS))) +
-    garment(PUMPS, "Pumps", FEET_SLOT, PATENT, listOf(GarmentBranch(FOOT_L, ease = SHOE_EASE)), changes = mapOf(FOOT_L to shod(PUMP_SIDE, PUMP_TOP, PATENT))) +
     garment(
         BOOTS, "Boots", FEET_SLOT, BOOT_LEATHER, listOf(GarmentBranch(FOOT_L, ease = BOOT_EASE), GarmentBranch(LEG_L, SHAFT_FROM, 1f, ease = BOOT_EASE)),
         layer = OVER_LAYER, changes = mapOf(FOOT_L to shod(SNEAKER_SIDE, SNEAKER_TOP, BOOT_LEATHER)),

@@ -31,9 +31,19 @@ data class Character(
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
         require(pairs.keys == named) { "Pair data for ${pairs.keys.map { it.value }}, parts name ${named.map { it.value }}" }
         require(parts.none { isBranchPart(it.id) }) { "A part id starts as a garment's branch does" }
+        val byId = parts.associateBy { it.id }
+        for (part in parts) {
+            val owner = part.garment
+            require(owner == null || wardrobe.garment(owner) != null) { "Part ${part.id.value} is owned by ${owner?.value}, which the wardrobe does not hold" }
+            val parentOwner = part.socket?.parent?.let(byId::get)?.garment
+            require(parentOwner == null || parentOwner == owner) { "Part ${part.id.value} sits on a part ${parentOwner?.value} owns" }
+        }
     }
 
     fun part(id: PartId): PartInstance? = parts.firstOrNull { it.id == id }
+
+    /** The parts [garment] owns. */
+    fun ownedBy(garment: GarmentId): List<PartInstance> = parts.filter { it.garment == garment }
 
     /** The pose the character shows: its working [pose], with each bone it leaves out standing as [displayPose] holds it. */
     val shownPose: Pose get() = pose.over(displayPose)

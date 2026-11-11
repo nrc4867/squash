@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
+import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -42,6 +43,8 @@ data class AssemblyPart(
     val role: Role? = null,
     /** Where the garments worn put its children's sockets on it as it shows, by the same keys as [placement], when they move any. */
     val wornSockets: Map<String, Float> = emptyMap(),
+    /** The garment that owns it, or null for a part of the body. */
+    val owner: GarmentId? = null,
 )
 
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
@@ -73,6 +76,8 @@ class PlacedPart(
     val hiding: Hiding? = null,
     /** The strips that join it to the parts it meets, each a patch of its own surface. See [withSocketStrips]. */
     val strips: List<StripJoin> = emptyList(),
+    /** The garment that owns it, a part of its own on a socket, or null for a part of the body and for a garment's branch. */
+    val owner: GarmentId? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -112,7 +117,7 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
     fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding, strips: List<StripJoin> = this.strips): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips, owner)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */
@@ -193,22 +198,27 @@ private class Assembler(
         } else {
             null
         }
-        val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side) else Vec3.ZERO
-        val anchor = if (spec != null && parent != null) socketPoint(parent, spec, socketV(parent, spec, part.side), part.side) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role)
+        val owned = part.owner != null
+        val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side, owned) else Vec3.ZERO
+        val anchor = if (spec != null && parent != null) socketPoint(parent, spec, socketV(parent, spec, part.side), part.side, owned) else null
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner)
     }
 
-    /** [part] as its sockets read it: showing its skeleton while a garment reshapes it, else itself. */
-    private fun skeletonOf(part: PlacedPart): PlacedPart = part.id?.let(skeletons::get)?.let { part.showing(it, part.turn) } ?: part
+    /**
+     * [part] as its sockets read it: showing its skeleton while a garment reshapes it, else itself. A part a garment owns, with [owned],
+     * reads it as it shows, since it belongs to the shape the garment gives.
+     */
+    private fun skeletonOf(part: PlacedPart, owned: Boolean = false): PlacedPart =
+        if (owned) part else part.id?.let(skeletons::get)?.let { part.showing(it, part.turn) } ?: part
 
     /**
      * Where socket [spec] lies on [parent] at [v], for a part on [side]. On a part a garment reshapes it keeps the place it has inside
      * the bare part: the point on the skeleton, carried from the middle of the skeleton's ring there to the middle of the shown part's
      * ring where the garment puts that socket, so a garment that only reshapes leaves it where it was and one that draws the part
-     * longer carries it along with the rest of the part.
+     * longer carries it along with the rest of the part. For a part a garment owns, with [owned], it lies on [parent] as it shows.
      */
-    private fun socketPoint(parent: PlacedPart, spec: SocketSpec, v: Float, side: Side?): Vec3? {
-        val frame = skeletonOf(parent)
+    private fun socketPoint(parent: PlacedPart, spec: SocketSpec, v: Float, side: Side?, owned: Boolean = false): Vec3? {
+        val frame = skeletonOf(parent, owned)
         val point = frame.pointOn(spec.u, v, spec.patch) ?: return null
         if (frame === parent) return point
         val worn = parent.id?.let(wornSockets::get)?.let { held -> socketsOf(parent).firstOrNull { it.name == spec.name }?.placedBy(held, side) } ?: spec
@@ -224,11 +234,11 @@ private class Assembler(
      * times the socket's, then carried back by the template's mount. A right side reads the socket's mirrored v, unless its
      * parent is itself mirrored, which already reflects whatever sits on it.
      */
-    private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?): Vec3 {
+    private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?, owned: Boolean = false): Vec3 {
         val mirroredHere = side == Side.RIGHT
         val v = socketV(parent, spec, side)
-        val frame = skeletonOf(parent)
-        val point = socketPoint(parent, spec, v, side) ?: return parent.origin
+        val frame = skeletonOf(parent, owned)
+        val point = socketPoint(parent, spec, v, side, owned) ?: return parent.origin
         val rest = PartBuilder.axes(template).along
         val along = if (mirroredHere) rest.mirrored else rest
         val into = when (spec.outward) {

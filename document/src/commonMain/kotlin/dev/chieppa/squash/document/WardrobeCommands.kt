@@ -23,13 +23,18 @@ data class AddGarment(val garment: Garment, val index: Int? = null) : DocumentCo
     }
 }
 
-/** Removes [garment] from the wardrobe and from every outfit that picks it. */
+/** Removes [garment] from the wardrobe, from every outfit that picks it, and the parts it owns with it, in one step. */
 @Serializable
 @SerialName("removeGarment")
 data class RemoveGarment(val garment: GarmentId) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.wardrobeChanged { wardrobe ->
-        require(wardrobe.garment(garment) != null) { "No garment ${garment.value}" }
-        wardrobe.picksKept { _, id -> id != garment }.copy(garments = wardrobe.garments.filter { it.id != garment })
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val owned = document.character.ownedBy(garment).map { it.id }
+        val wardrobe = SetWardrobe(
+            document.character.wardrobe.also { require(it.garment(garment) != null) { "No garment ${garment.value}" } }
+                .picksKept { _, id -> id != garment }
+                .let { it.copy(garments = it.garments.filter { held -> held.id != garment }) },
+        )
+        return if (owned.isEmpty()) wardrobe.apply(document) else Together(listOf(RemoveParts(owned), wardrobe)).apply(document)
     }
 }
 

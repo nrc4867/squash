@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.woman
 
+import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.worn
@@ -58,5 +59,19 @@ class WomanDressedFixtureTest {
         val foot = dressed.wornPart(assertNotNull(dressed.part(FOOT_R)))
         assertEquals(PUMPS, foot.changedBy, "the right foot is swapped too")
         assertIs<BodyPartChange.Swap>(dressed.wardrobe.garments.first { it.id == PUMPS }.changes[FOOT_L])
+    }
+
+    @Test
+    fun eachOutfitBuildsThePartsItsGarmentsOwnAndNoOthers() {
+        val owned = mapOf(
+            BEACH to setOf(SHADES_L, SHADES_R, TEMPLE_L, TEMPLE_R),
+            OFFICE to setOf(LAPEL_L, LAPEL_R, BLAZER_BUTTON, HEEL_L, HEEL_R),
+            GOTH to setOf(BUCKLE, PENDANT),
+            BARE to emptySet(),
+        )
+        for ((outfit, parts) in owned) {
+            val built = assemblyParts(wearing(outfit)).filter { it.owner != null }.map { it.id }.toSet()
+            assertEquals(parts, built, outfit.value)
+        }
     }
 }

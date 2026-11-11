@@ -16,8 +16,8 @@ private const val SHOULDER_SHARE = 0.2f
 /** How much of a digit's length from its tip counts as its tip. */
 private const val TIP_SHARE = 0.3f
 
-/** A part of the body, not a garment's branch or loose end. */
-val PlacedPart.isBody: Boolean get() = id != null && covering == null && hanging == null
+/** A part of the body, not a garment's branch, loose end or a part a garment owns. */
+val PlacedPart.isBody: Boolean get() = id != null && covering == null && hanging == null && owner == null
 
 private fun AssembledCharacter.bodyWith(role: Role) = parts.filter { it.isBody && it.role == role }
 

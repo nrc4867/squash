@@ -29,7 +29,7 @@ val OUTFITS: List<Triple<OutfitId, String, Map<GarmentSlotId, GarmentId>>> = lis
     Triple(CASUAL, "Casual", mapOf(TOP_SLOT to TEE, BOTTOM_SLOT to SHORTS, FEET_SLOT to SNEAKERS)),
     Triple(DRESS, "Dress", mapOf(TOP_SLOT to TANK_TOP, BOTTOM_SLOT to SKIRT, FEET_SLOT to PUMPS)),
     Triple(WINTER, "Winter", mapOf(TOP_SLOT to DARK_TOP, OUTER_SLOT to COAT, BOTTOM_SLOT to JEANS, FEET_SLOT to BOOTS, HEAD_SLOT to BEANIE, NECK_SLOT to SCARF, HANDS_SLOT to MITTENS)),
-    Triple(GOTH, "Goth", mapOf(TOP_SLOT to DARK_TOP, BOTTOM_SLOT to BLACK_JEANS, FEET_SLOT to BOOTS, NECK_SLOT to CHOKER, FACE_SLOT to MAKEUP)),
+    Triple(GOTH, "Goth", mapOf(TOP_SLOT to DARK_TOP, BOTTOM_SLOT to BLACK_JEANS, FEET_SLOT to BOOTS, NECK_SLOT to CHOKER, FACE_SLOT to MAKEUP, WAIST_SLOT to BELT)),
 )
 
 private fun outfits(): List<DocumentCommand> = OUTFITS.flatMap { (id, name, picks) ->
@@ -37,7 +37,7 @@ private fun outfits(): List<DocumentCommand> = OUTFITS.flatMap { (id, name, pick
 } + AddOutfit(Outfit(BARE, "Bare"))
 
 /** The commands that dress her: the slots, every garment, the six outfits and Bare, Casual shown. */
-fun womanDressing(): List<DocumentCommand> = wardrobeSlots() + tops() + bottoms() + dress() + shoes() + accessories() + outfits() + ShowOutfit(CASUAL)
+fun womanDressing(): List<DocumentCommand> = wardrobeSlots() + tops() + bottoms() + dress() + shoes() + pumps() + accessories() + shades() + suitParts() + belt() + outfits() + ShowOutfit(CASUAL)
 
 /** Every command that makes the dressed woman: the woman, then her clothes. */
 fun womanDressedCommands(): List<DocumentCommand> = womanCommands() + womanDressing()

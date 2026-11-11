@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.document.isWorn
 import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.geom.PartAxes
@@ -53,8 +54,8 @@ fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCa
 data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val lengths: LegLengths = LegLengths())
 
 /**
- * The parts of [character], as placing reads them, under the garments worn: each on the template it wears, and a part a worn garment
- * hides left out with every part on it.
+ * The parts of [character], as placing reads them, under the garments worn: each on the template it wears, a part a worn garment
+ * hides left out with every part on it, and a part a garment owns only while that garment is worn.
  */
 fun assemblyParts(character: Character): List<AssemblyPart> {
     val hidden = hiddenUnderGarments(character)
@@ -62,14 +63,15 @@ fun assemblyParts(character: Character): List<AssemblyPart> {
         val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) || JoinParams.isJoin(it) }
         val worn = character.wornPart(part)
         val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
-        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets)
+        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets, part.garment)
     }
 }
 
-/** The parts of [character] a worn garment hides, with every part sitting on one of them. */
+/** The parts of [character] a worn garment hides or that a garment not worn owns, with every part sitting on one of them. */
 fun hiddenUnderGarments(character: Character): Set<PartId> {
-    if (character.worn.isEmpty()) return emptySet()
-    val hidden = character.parts.filter { character.wornPart(it).hidden }.mapTo(hashSetOf()) { it.id }
+    val unworn = character.parts.filter { !character.isWorn(it) }.mapTo(hashSetOf()) { it.id }
+    if (character.worn.isEmpty() && unworn.isEmpty()) return emptySet()
+    val hidden = character.parts.filter { character.wornPart(it).hidden }.mapTo(unworn) { it.id }
     var grew = hidden.isNotEmpty()
     while (grew) grew = character.parts.filter { it.socket?.parent in hidden }.any { hidden.add(it.id) }
     return hidden

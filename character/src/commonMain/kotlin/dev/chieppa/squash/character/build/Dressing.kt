@@ -61,7 +61,7 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
  * sits on, and carried over the strip joining its part at its start, see [stripOver]; a hole and a cuff where a body part comes out through a branch;
  * a branch that hangs free pushed out of the parts hanging inside it, see [pushedClear]; the skin the branches and cuffs cover hidden, but for a part
  * that comes out through a branch, which that branch leaves whole, as the hole leaves the branch open where the part fills it; each layer's faces
- * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
+ * an outer layer covers hidden, but never a part a garment owns, which stands outside them all; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
  * loose ends hung from their branches; with [Dressing.covers] off nothing under a garment is hidden. See HLD: data-model, Garments.
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
@@ -95,6 +95,7 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
     val all = layers.flatten().mapNotNull(::hiderOf)
     val body = parts.map { part ->
         checkCancelled()
+        if (part.owner != null) return@map part
         val passes = through[part.id].orEmpty()
         part.hiddenBy(if (passes.isEmpty()) all else all.filter { it !is Hider.Inside || it.part !in passes })
     }

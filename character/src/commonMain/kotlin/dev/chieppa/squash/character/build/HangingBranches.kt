@@ -76,8 +76,7 @@ internal fun PlacedPart.pushedClear(body: AssembledCharacter): PlacedPart {
     if (grids.isEmpty()) return this
     val own = PointGrid(gridPoints(this, shell, 0), shell.nu, shell.nv, closedV = true)
     val shift = HemPush.push(own, covering.hingeRing(shell.nu), grids, HANG_CLEARANCE) ?: return this
-    val count = shell.nu * shell.nv
-    return showing(surface.posed(surface.mesh.shifted { v -> if (v < count) shift[v] else Vec3.ZERO }), turn)
+    return showing(surface.posed(surface.mesh.shiftedOnGrid(shift, shell.nu, shell.nv)), turn)
 }
 
 /** What hangs inside a branch with [covering] in [body]: the parts it hangs over, the parts on them, and other garments' branches over those. */

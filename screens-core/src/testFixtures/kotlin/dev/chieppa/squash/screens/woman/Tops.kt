@@ -39,7 +39,7 @@ private const val COLLAR = 0.35f
 /** The blazer over the blouse, open down the front, a little shorter in body and sleeve. */
 private const val BLAZER_FROM = 0.16f
 private const val BLAZER_SLEEVE = 0.88f
-private const val OPEN_FRONT = 0.075f
+private const val OPEN_FRONT = 0.04f
 private const val TAILORED = 0.03f
 
 /** The fitted long-sleeved dark top. */

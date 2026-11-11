@@ -19,7 +19,6 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.fennec.loop
 import dev.chieppa.squash.screens.fennec.p
 
-val SHADES = GarmentId("shades")
 val BEANIE = GarmentId("beanie")
 val SCARF = GarmentId("scarf")
 val MITTENS = GarmentId("mittens")
@@ -27,21 +26,10 @@ val CHOKER = GarmentId("choker")
 val MAKEUP = GarmentId("makeup")
 val SCARF_END = LooseEndId("scarf-end")
 
-val LENS = SlotName("lens")
 val KNIT = SlotName("knit")
 val SCARF_KNIT = SlotName("scarf")
 val DARK_LIPS = SlotName("dark-lips")
 val SHADOW = SlotName("shadow")
-
-/**
- * The shades: a band over the front of the head through both eyes, round the front pole the face is drawn about, from the bridge out
- * past the outer corners and across the brow between them. A garment is a shell over a part's surface, so a frame and lenses that
- * stand off the face are out of reach.
- */
-private val SHADES_FROM = FacePlane.uAt(0.68f)
-private val SHADES_TO = FacePlane.uAt(0.3f)
-private const val SHADES_ROUND = 0.27f
-private const val SHADES_EASE = 0.006f
 
 /** The beanie over the crown of the hair, from the back to the fringe, over the top. */
 private const val BEANIE_TO = 0.82f
@@ -81,15 +69,13 @@ private val mitten = BodyPartChange.Swap(
 /** The face the dark look paints over her own: dark lips over her lips, and shadow over each lid. */
 private val makeup = BodyPartChange.Redraw(PartData(surface = SurfaceWork(regions = lipRegions(DARK_LIPS) + lidShadows(SHADOW))))
 
-/** The accessories: shades, a beanie, a scarf with a loose end, mittens, a choker and a dark face to wear with them. */
+/** The accessories: a beanie, a scarf with a loose end, mittens, a choker and a dark face to wear with them. */
 fun accessories(): List<DocumentCommand> = listOf(
-    cloth(LENS, 0.08f, 0.08f, 0.12f),
     cloth(KNIT, 0.90f, 0.84f, 0.70f),
     cloth(SCARF_KNIT, 0.86f, 0.70f, 0.24f),
     cloth(DARK_LIPS, 0.30f, 0.08f, 0.16f),
     cloth(SHADOW, 0.36f, 0.26f, 0.38f),
-) + garment(SHADES, "Shades", EYES_SLOT, LENS, listOf(GarmentBranch(HEAD, SHADES_FROM, SHADES_TO, ease = SHADES_EASE, fromV = -SHADES_ROUND, toV = SHADES_ROUND))) +
-    garment(BEANIE, "Beanie", HEAD_SLOT, KNIT, listOf(GarmentBranch(HAIR, 0f, BEANIE_TO, ease = BEANIE_EASE, fromV = -BEANIE_ROUND, toV = BEANIE_ROUND))) +
+) + garment(BEANIE, "Beanie", HEAD_SLOT, KNIT, listOf(GarmentBranch(HAIR, 0f, BEANIE_TO, ease = BEANIE_EASE, fromV = -BEANIE_ROUND, toV = BEANIE_ROUND))) +
     garment(
         SCARF, "Scarf", NECK_SLOT, SCARF_KNIT,
         listOf(GarmentBranch(TORSO, SCARF_FROM, 1f, ease = SCARF_EASE), GarmentBranch(NECK, 0f, SCARF_UP, ease = SCARF_EASE)), layer = SCARF_LAYER,

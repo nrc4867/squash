@@ -19,6 +19,8 @@ import dev.chieppa.squash.screens.look.measure.hipSpread
 import dev.chieppa.squash.screens.look.measure.legOutsideSkirt
 import dev.chieppa.squash.screens.look.measure.skirtInsideLegs
 import dev.chieppa.squash.screens.look.measure.profile
+import dev.chieppa.squash.screens.look.measure.propDrift
+import dev.chieppa.squash.screens.look.measure.propsUnderCloth
 import dev.chieppa.squash.screens.look.measure.seen
 import dev.chieppa.squash.screens.look.measure.shownCorners
 import dev.chieppa.squash.screens.look.measure.skullShown
@@ -62,6 +64,7 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
             session.send(SetPose(set))
             val body = posed(session, work)
             println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
+            propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
             legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let {
                 println("$name, $pose: leg volume outside the skirt ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}")
                 println("$name, $pose: hanging branches pushed in %.2f ms".format(pushTime(body)))
@@ -96,6 +99,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
     head?.let(::profile)?.let { println("$name: profile notch brow to chin %.4f (%.3f of the head's height) ${it.forward.map { f -> "%.3f".format(f) }}".format(it.notch, it.share)) }
     head?.let { skullShown(it, seen) }?.let { (shown, all) -> println("$name: skull vertices seen outside the hair $shown of $all") }
     if (dressed) bareSkin(body, seen).let { println("$name: bare skin seen on covered parts ${it.values.sum()} ${it}") }
+    propsUnderCloth(body, seen).takeIf { it.isNotEmpty() }?.let { println("$name: owned part vertices under cloth, all / seen ${it.mapValues { (_, v) -> "${v.first} / ${v.second}" }}") }
     head?.let { faceShade(it, PartMaterial.DEFAULT_TO_LIGHT, VIEWS.map { v -> probeAzimuth(v.second) }, grid::escapes) }?.let { shares ->
         println("$name: face in shade ${VIEWS.indices.joinToString { "${VIEWS[it].first} %.3f".format(shares[it]) }}")
     }

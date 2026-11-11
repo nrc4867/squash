@@ -156,7 +156,45 @@ For the next rounds:
 - The thresholds (0.1 in u to hang free, 0.85 of the way to the free end, 0.012 clearance, a quarter turn round, twice down) are tuned on the woman alone.
 - Left from round 3: the dragon's belly diamond paint lost under the leg strip feet and the fennec's paw flecks at strip feet are untouched.
 
+## Round 5: garment props
+
+Built:
+
+- **Parts a garment owns** (stage 9's design, `PartInstance.garment`): ordinary parts in `Character.parts` naming the garment that owns them, on hand-made sockets of the part they sit on. `Character` refuses an owned part whose garment the wardrobe lacks and a part on an owned part unless the same garment owns it; `RemoveGarment` removes the garment's parts in the same step (`Together(RemoveParts, SetWardrobe)`). `assemblyParts` leaves out a part whose garment is not worn, with every part on it (`Character.isWorn`, `hiddenUnderGarments`), and carries the owner to `AssemblyPart.owner` and `PlacedPart.owner`. An owned part reads its socket on its parent as the parent shows rather than on the parent's skeleton (`Assembler.skeletonOf(part, owned)`), so a heel's socket on a swapped foot lands on the shoe. `dressedIn` cuts no hole or cuff for an owned part and hides none of it. The rig needs nothing new: a generic part's `base` bone follows its parent's bone at the socket, so props ride rigidly in every pose and in the display pose.
+- **Hem push normals** (`MeshShift.kt` `shiftedOnGrid`): after the push each moved vertex's normal and shading normal turn by the turn that carries the shell grid's normal there before the push onto the one after, so the flared hem shades as it stands.
+- **Measure** (`app/.../measure/PropChecks.kt`): per owned part, its vertices inside any garment branch's shell, all and seen; in each named pose, how far it strays from moving rigidly (the largest change of any vertex's distance from its first vertex). `isBody` leaves owned parts out of the body checks.
+- **Woman** (fixtures `Shades.kt`, `Pumps.kt`, `Suit.kt`, `Belt.kt`, helpers `owned`, `ownedPair`, `propShape` in `Wardrobe.kt`): Beach's shades are two blob halves resting out from a paired socket at the bridge of the nose, each a squarish frame with a bridge, a lens region with a glint region inside it, and a tube temple running back from a socket at its outer end into the hair; the old visor branch is gone. The pumps swap the foot for a slim blob with its heel seat raised and the instep low, and own a tapering tube heel under the seat of each foot; they have no shell, so the ankle shows over the instep as the reference's opening does. The blazer owns two blob lapels from either side of the neck, leaned in 24 degrees to the button and drawn forward over the bust in Side, and a button; its opening narrows from 0.075 to 0.04 in v so the blouse shows as a V between the lapels. Goth adds a belt (a new Belt slot, a narrow band over the jeans' waistband on layer 4) that owns a steel buckle at the front, and the choker owns a small steel pendant. The Dress skirt's drawn flare is toned down to an A-line (hem 0.28 across from 0.32, 0.175 / 0.19 front and back from 0.195 / 0.21).
+- Tests: `document/.../OwnedPartTest.kt` (worn only with the garment, removal with undo, the two refusals), `character/.../OwnedPartsTest.kt` (no cuff and no hiding on an owned part inside a cap where a body part gets a cuff; assembled only while worn), `WomanDressedFixtureTest.eachOutfitBuildsThePartsItsGarmentsOwnAndNoOthers`.
+
+Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`, and per outfit with `outfits=office`, `dress` and `goth` for the posed checks):
+
+| Check | Round 4 | Round 5 |
+| --- | --- | --- |
+| Owned parts' drift from rigid, walk and salute, Beach, Office, Dress and Goth | none | 0.00000 |
+| Push and spread per pose, with the normals turned | 0.79 ms walk, 0.60 ms salute | 1.33 ms walk, 0.67 ms salute |
+| Owned part vertices under cloth, all / seen: Beach shades and temples | none | 0 / 0 |
+| Office: lapels, button, heels | none | lapel-l 104 / 37, lapel-r 103 / 36, button 144 / 69, heels 0 / 0 |
+| Goth: buckle, pendant | none | buckle 137 / 5, pendant 28 / 0 |
+| Socket ring seen at the ankle, Office / Dress (pumps) | 0 / 0 | 0.056 / 0.099 |
+| Hip socket spread, every outfit | 0.2483 | 0.2483 |
+| Leg volume outside the skirt and skirt vertices inside a leg, walk | 0 / 0 | 0 / 0 |
+| Arm volume inside the torso, every outfit, rest and shown | 0 | 0 |
+
+The lapel and button counts are their buried halves: the button is a stub from the skin out past the blouse, and a lapel's inner edge runs into the blazer's open edge, whose v-range shell the winding test reads loosely; the renders show both faces whole. The ankle ring is the leg end showing over the pumps' low instep, which reads as the reference's opening. Only the Beach, Office, Dress and Goth images change among all examples (pixel diff against round 4's renders); Casual, Winter and Bare, the undressed woman, the person, dressed person, fennec, dressed fennec, dragon, toucan, lizard and koi render the same.
+
+Against the reference: the shades read as square dark frames with grey lenses, a bridge and a glint, riding the head through walk and salute (`beach-face.png`, `beach-pose-salute.png`); the temples run into the hair and do not show over it as the reference's do. The pumps read as pointed pumps on a short heel (`office-foot.png`); the reference's foot points down with a tall heel, which a fixed ankle cannot give. The lapels read as a notchless V-lapel blazer closing at the button (`office.png`); the blouse shows as a strip below the button where the reference's jacket closes. The belt and its square steel buckle read as the reference's (`goth.png`), without its studs.
+
+For the next rounds (aimed at round 6, `head-v2`):
+
+- The shades sit on a paired socket at FacePlane (0, 0.16), u 0.996 on today's `head-round`, with sink 0 and lenses drawn flat 0.006 thick. `head-round` version 2 moves the face off the pole, so the bridge socket, the lens regions' v (0.6 to 0.9 round a half resting out) and the temples' hinge must be placed again on the new head; the face map should give a socket's u and v from a face-plane point, as it will for marks, so props on the face are placed by the same map.
+- Eyes with depth will stand forward of today's surface; the lenses stand off the face only by the frame's own depth, so check the lens clears eyeballs and lids, or give the bridge socket a negative sink.
+- A head with a profile can take the bridge on the nose: the profile's brow and nose give the shades a seat, and a temple can meet a drawn ear.
+- The hair cap (round 7) will cover where the temples end; they run 0.27 head units back and are hidden by the hair today.
+- Left from round 4: arms do not push a hanging branch, so a lowered hand still sinks a little into the skirt's side in the display pose; the short ink dash on the skirt's front in the walk is still there, a contour at a ring where the pushed fold turns; the walk's bell is the push's spread, unchanged.
+- Regions on a Swap's data do not follow a pose (they stay where they lay at rest), so the pumps show no painted opening.
+- A part's Top outline sets width only, not the middle, so no prop wraps round a face or a chest; a lapel is rigid on the chest bone.
+
 ## Open
 
 - Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.
-- The three questions on garment-owned parts in `stage-9-garments.md`; round 5 takes the recommended answers there as tentative and lists them for Nicholas.
+- The three questions on garment-owned parts in `stage-9-garments.md`, built with the tentative answers listed there: owned parts listed in the Parts tree under the part they sit on, worn or not; a body part passing through an owned part overlaps it; owned parts may be pairs.

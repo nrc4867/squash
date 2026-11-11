@@ -22,18 +22,18 @@ private const val SKIRT_TO = 0.32f
 private const val SKIRT_EASE = 0.02f
 
 /**
- * The skirt in Side, along the torso from the hem below it to the waist, front up: flaring from the waist over the seat to a full hem.
+ * The skirt in Side, along the torso from the hem below it to the waist, front up: flaring from the waist over the seat to a modest A-line hem.
  * Where it lies inside the torso and its ease, the ease holds.
  */
 private val SKIRT_SIDE = loop(
-    p(-0.40f, 0.195f), p(-0.26f, 0.18f), p(-0.12f, 0.165f), p(0f, 0.15f), p(0.12f, 0.125f), p(0.24f, 0.1f),
-    p(0.24f, -0.1f), p(0.12f, -0.16f), p(0f, -0.18f), p(-0.12f, -0.19f), p(-0.26f, -0.2f), p(-0.40f, -0.21f),
+    p(-0.40f, 0.175f), p(-0.26f, 0.165f), p(-0.12f, 0.155f), p(0f, 0.145f), p(0.12f, 0.125f), p(0.24f, 0.1f),
+    p(0.24f, -0.1f), p(0.12f, -0.16f), p(0f, -0.175f), p(-0.12f, -0.18f), p(-0.26f, -0.185f), p(-0.40f, -0.19f),
 )
 
 /** The skirt from in front: out from the waist over the hips and on to the hem, clear of both legs. */
 private val SKIRT_TOP = loop(
-    p(-0.40f, 0.32f), p(-0.26f, 0.295f), p(-0.12f, 0.27f), p(0f, 0.245f), p(0.12f, 0.215f), p(0.24f, 0.15f),
-    p(0.24f, -0.15f), p(0.12f, -0.215f), p(0f, -0.245f), p(-0.12f, -0.27f), p(-0.26f, -0.295f), p(-0.40f, -0.32f),
+    p(-0.40f, 0.28f), p(-0.26f, 0.265f), p(-0.12f, 0.25f), p(0f, 0.235f), p(0.12f, 0.21f), p(0.24f, 0.15f),
+    p(0.24f, -0.15f), p(0.12f, -0.21f), p(0f, -0.235f), p(-0.12f, -0.25f), p(-0.26f, -0.265f), p(-0.40f, -0.28f),
 )
 
 /** The tank top runs from under the bust to the base of the neck, the arms out of it bare. */
