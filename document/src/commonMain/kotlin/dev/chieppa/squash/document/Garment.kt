@@ -50,7 +50,7 @@ data class Garment(
 
 /**
  * The garment's surface over one covered [part], from [from] to [to] along it in u, which may run past 1 to continue past the
- * part's end, and from [fromV] to [toV] round it, the whole way round when they span 1 or more, else a region whose open edges are
+ * part's end or below 0 to run on before its start, and from [fromV] to [toV] round it, the whole way round when they span 1 or more, else a region whose open edges are
  * hems; v is read round the part's own v, so a range may start below 0 to cross it. Its rings are the part's slices grown by [ease];
  * its own Side and Top [outlines] take them further where they stand off, and its [surface] work is anchored on it. On a paired part
  * it covers both sides, the right one mirrored.

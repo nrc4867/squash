@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.build.withHangingPushed
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Pose
@@ -15,6 +16,8 @@ import dev.chieppa.squash.screens.look.measure.bareSkin
 import dev.chieppa.squash.screens.look.measure.digitTipGaps
 import dev.chieppa.squash.screens.look.measure.faceShade
 import dev.chieppa.squash.screens.look.measure.hipSpread
+import dev.chieppa.squash.screens.look.measure.legOutsideSkirt
+import dev.chieppa.squash.screens.look.measure.skirtInsideLegs
 import dev.chieppa.squash.screens.look.measure.profile
 import dev.chieppa.squash.screens.look.measure.seen
 import dev.chieppa.squash.screens.look.measure.shownCorners
@@ -50,16 +53,32 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
         if (outfit != null) session.send(ShowOutfit(outfit))
         val name = "$example ${outfit?.value ?: "as saved"}"
         val shown = posed(session, work)
-        println("$name: arm volume inside the torso at rest ${armInside(checkNotNull(session.assembly.output.value)).format()}")
+        val rest = checkNotNull(session.assembly.output.value)
+        println("$name: arm volume inside the torso at rest ${armInside(rest).format()}")
+        legOutsideSkirt(rest).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt at rest ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(rest)}") }
         report(name, shown, head?.let(shown::part), dressed = outfit != null)
         if (outfit != outfits.first()) continue
         for ((pose, set) in poses) {
             session.send(SetPose(set))
-            println("$name, $pose: arm volume inside the torso ${armInside(posed(session, work)).format()}")
+            val body = posed(session, work)
+            println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
+            legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let {
+                println("$name, $pose: leg volume outside the skirt ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}")
+                println("$name, $pose: hanging branches pushed in %.2f ms".format(pushTime(body)))
+            }
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
     }
 }
+
+/** How long pushing [body]'s hanging branches out of what hangs inside them takes, the median of [TIMED_RUNS] runs once warm, in ms. */
+private fun pushTime(body: AssembledCharacter): Double {
+    repeat(TIMED_RUNS) { body.withHangingPushed() }
+    val runs = List(TIMED_RUNS) { measureTime { body.withHangingPushed() }.inWholeMicroseconds / 1000.0 }
+    return runs.sorted()[TIMED_RUNS / 2]
+}
+
+private const val TIMED_RUNS = 21
 
 private fun posed(session: CharacterSession, work: TestWork): AssembledCharacter {
     work.settle(session)
@@ -70,6 +89,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
     val grid = RayGrid(shownCorners(body))
     val seen: (Vec3) -> Boolean = { grid.seen(it) }
     println("$name: arm volume inside the torso as shown ${armInside(body).format()}")
+    legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt as shown ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}") }
     println("$name: hip socket spread ${hipSpread(body)?.let { "%.4f".format(it) } ?: "none"}")
     println("$name: smallest gap between digit tips ${digitTipGaps(body).format()}")
     println("$name: socket ring length, all / seen ${socketRings(body, seen).mapValues { (_, v) -> "%.3f / %.3f".format(v.first, v.second) }}")

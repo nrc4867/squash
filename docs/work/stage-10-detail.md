@@ -113,7 +113,6 @@ Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed"`, display po
 
 For the next rounds:
 
-- Round 4's skirt: the woman's Dress top and skirt still ride a redrawn torso; strips join the legs to that torso under the bell. A free skirt will need the hip strips' foot under it hidden like any skin under a garment.
 - Bare skin seen inside garments rose where sleeves and trouser legs carry strips (casual arms 21 to 63 vertices, legs 31 to 52; beach legs 46 to 60): the body strip and the branch strip are built apart and the body's can stand a hair outside the branch's near the foot. Not visible in the renders; a branch strip read from the body strip's own rows, offset by the ease, would close it.
 - The ankle in a closed shoe is not stripped (the shoe Swaps the foot for a blob, which the leg overlaps); its ring is never seen.
 - The Office blazer's sleeves are wide because its ease stacks on the blouse's (0.045 a side); that is the fixture's choice, not the strip's.
@@ -121,6 +120,41 @@ For the next rounds:
 - The measure's socket ring check takes the strip's tube against its host: where the parent holds the strip (the leg into a shoe), it measures the parent's crossing of the child.
 - The dragon's yellow belly diamond shows smaller: its torso's faces under the leg strips' feet are left out, the diamond's paint with them. The fennec's paws show a few white flecks along the strip foot in close-ups.
 - The display pose's shoulder: the strip foot stays where the A-pose arm left the torso, so a lowered arm's shoulder is a strip from there; it reads as a rounded shoulder, a little broad on the woman in Beach.
+
+## Round 4: free skirt
+
+Built:
+
+- **Branches that hang free** (`GarmentBranch.from` below 0 runs a branch on before its part's start, as `to` past 1 runs it past the end; `Covering.hangsFree`, `HANG_PAST` 0.1 in u, tentative). The shell past the end is the end slice's frame carried on, sized by the drawn outlines, which read the part's own x, negative below the part. The rig weights it from the end ring, so the skirt rides the pelvis.
+- **Parts that hang inside** (`HangingBranches.kt` `leavesByFreeEnd`, `hangingInside`; `Covering.hangsOver`): a part on a socket inside the branch's region whose first ring outside the branch lies past 0.85 of the way to the free end (tentative) hangs inside rather than going through: no hole, no cuff, and it is covered by the branch's inside test like any skin, the hip strip and its foot with it. `throughHoles` leaves such parts out.
+- **The push** (`geom/.../HemPush.kt`, `pushedClear`, `withHangingPushed`): in `dressedIn` at rest and in `posedBodyNode` after the posed strips, before `hiddenAgain`. Each ring of the branch is cut against the grids of what hangs inside it (the legs, every part on them, other garments' branches over them): each grid edge crossing the ring's plane gives a section point, and each column, with its two neighbours, is pushed out radially from the ring's middle to clear the farthest point round it by 0.012. The push spreads round the ring (most of every column's push, squared cosine over a quarter turn) and down the branch as a cone hinged at its held ring (another ring's push scaled by their distances from the hinge, at most twice). The held ring never moves; no column moves in. The technique is the reference's idea of a free cone pushed out by leg collision, built from section cuts on Squash's own grids.
+- **Woman's dress** (`Dress.kt`): the skirt is a branch over her own torso from 0.40 below its lowest point (u -0.59) to the waist (u 0.32), with Side and Top outlines flaring from the waist to the hem; the redrawn torso, its moved joints and sockets and the redrawn tank top range are gone. The Goth outfit wears black jeans, not a skirt, so it is unchanged.
+- **Measure** (`app/.../measure/SkirtChecks.kt`): leg volume outside the skirt, grid points 0.01 apart inside a leg's mesh (winding number), on the inside of the planes of the skirt's waist and hem rings and outside the skirt's shell, per leg; skirt vertices inside a leg; the push's time per pose (median of 21 runs once warm). A skirt to the measure is a branch all round the leg's parent, of a garment with no branch over the leg, reaching below the leg's root by 0.08 of its length.
+- Tests: `geom/.../HemPushTest.kt` (a leg inside moves nothing; a stepping leg pushes the hem in front, not behind, the push spreads round and grows down, the waist holds, and the leg lies inside after), `character/.../HangingBranchTest.kt` (the biped's legs in a hanging skirt are covered, not cut, and a leg swung into it pushes it clear).
+
+Measured (`./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=dress poses=all"`), round 3 / round 4:
+
+| Check | Round 3 | Round 4 |
+| --- | --- | --- |
+| Leg volume outside the skirt, rest and display pose | 0 / 0 | 0 / 0 |
+| Leg volume outside the skirt, walk (left / right) | 0.00001 / 0 | 0 / 0 |
+| Skirt vertices inside a leg, walk | 2 | 0 |
+| Skirt vertices inside a leg, rest, display, salute | 0 | 0 |
+| Hip socket spread, every outfit | 0.2483 | 0.2483 |
+| Socket ring seen at the hip, Dress | 0 | 0 |
+| Push and spread per pose | none | 0.79 ms walk, 0.60 ms salute |
+
+Round 3's numbers are small because its bell was wide and rigid and the walking thigh passed through a hole the leg cut in it: the measure does not see a rigid cone, the renders do. Round 4's walk renders (`dress-pose-walk.png`) show the hem swung forward over the stepping thigh and back over the trailing one, the bell asymmetric, both legs straight under it and coming out below the hem; at rest (`dress-rest.png`) and in the display pose the skirt is an A-line from the waist to above the knee with the legs straight under it. Bare skin seen inside the Dress's garments: torso 69 to 77 vertices, at the skirt's waist ring. Only the Dress images change among all examples (pixel diff against round 3's renders): the person, dressed person, fennec, dressed fennec, dragon, toucan, lizard, koi and the woman's other outfits render the same.
+
+For the next rounds:
+
+- Round 5's props hang on bones as rigid shapes; the push here is for branches only. A buckle or belt on the skirt's waist sits on the held ring, which never moves.
+- The push moves positions only; normals keep their skinned values, so a flared hem shades as the cone it was. A short contour shows on the skirt's front in the walk, likely the fold where pushed cloth meets unpushed.
+- Arms do not push a hanging branch: a hand lowered against the skirt in the display pose sinks into it from the side (as it did in round 3).
+- The Winter coat over the jeans reads to the measure as a skirt (it covers the torso from u 0, below the hips): 0.00056 of each leg lies outside it and 40 of its vertices lie inside the legs, as before. Making it hang free would hide the jeans' tops under it.
+- No sway or follow-through: the skirt is placed by the pose, not simulated. A loose end on a hem would be the place for it.
+- The thresholds (0.1 in u to hang free, 0.85 of the way to the free end, 0.012 clearance, a quarter turn round, twice down) are tuned on the woman alone.
+- Left from round 3: the dragon's belly diamond paint lost under the leg strip feet and the fennec's paw flecks at strip feet are untouched.
 
 ## Open
 

@@ -21,6 +21,9 @@ import dev.chieppa.squash.geom.Slice
 /** How many rings every branch of a garment has, whatever its length or drawing. */
 const val BRANCH_RINGS = 32
 
+/** How far in u a branch must run past an end of its part to hang free there; a branch running on less is held over its part's end. */
+const val HANG_PAST = 0.1f
+
 /** How many rings every cuff has. */
 const val CUFF_RINGS = 6
 
@@ -40,12 +43,25 @@ class Covering(
     val fromV: Float = 0f,
     val toV: Float = 1f,
     val ink: GarmentInk = GarmentInk(),
+    val hangsOver: Set<PartId> = emptySet(),
 ) {
     /** Whether it goes the whole way round its part. */
     val allRound: Boolean get() = toV - fromV >= 1f
 
+    /**
+     * Whether it hangs free past one end of its part and is held over the part at the other: the whole way round, running more than
+     * [HANG_PAST] before the part's start or past its end, but not both.
+     */
+    val hangsFree: Boolean get() = allRound && ((from < -HANG_PAST) != (to > 1f + HANG_PAST))
+
+    /** The ring it is held by, at the end over its part, when it [hangsFree]. */
+    fun hingeRing(rings: Int): Int = if (from < -HANG_PAST) rings - 1 else 0
+
     /** This covering inking [ink]. */
-    fun inking(ink: GarmentInk): Covering = Covering(garment, part, bodyPatch, bodyRings, bodyColumns, from, to, fromV, toV, ink)
+    fun inking(ink: GarmentInk): Covering = Covering(garment, part, bodyPatch, bodyRings, bodyColumns, from, to, fromV, toV, ink, hangsOver)
+
+    /** This covering with [parts] hanging inside it. */
+    fun hangingOver(parts: Set<PartId>): Covering = Covering(garment, part, bodyPatch, bodyRings, bodyColumns, from, to, fromV, toV, ink, parts)
 }
 
 /** The lines a garment's branch or cuff inks: its open edges when [hem], and where it crosses each placed part in [crossings]. */
@@ -55,8 +71,12 @@ data class GarmentInk(val hem: Boolean = false, val crossings: Set<PartId> = emp
 internal fun PlacedPart.inking(ink: GarmentInk): PlacedPart {
     val held = requireNotNull(covering) { "Only a garment's branch or cuff is inked" }
     val both = GarmentInk(held.ink.hem || ink.hem, held.ink.crossings + ink.crossings)
-    return PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, held.inking(both), hanging, hiding, strips)
+    return covered(held.inking(both))
 }
+
+/** This branch or cuff with [covering] in place of its own. */
+internal fun PlacedPart.covered(covering: Covering): PlacedPart =
+    PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips)
 
 /** [garment]'s [branch] built over [covered], or null when the part has no swept patch to build it on. */
 internal fun branchOver(garment: Garment, branch: GarmentBranch, covered: PlacedPart): PlacedPart? {

@@ -38,7 +38,8 @@ internal class Holed(val branch: PlacedPart, val cuffs: List<PlacedPart>, val th
 /**
  * [branch], a branch of [garment], with a hole where each body part comes out through it, and the cuff round each such part that has
  * one. A part comes out through it when it sits on a socket inside the region [branch] covers and [garment] neither hides it nor
- * covers it with a branch of its own, which joins [branch] by its fillet alone; the hole
+ * covers it with a branch of its own, which joins [branch] by its fillet alone, and it does not hang inside [branch] out through its
+ * free end, which [branch] then [Covering.hangsOver] (see [hangingInside]); the hole
  * is the branch's faces inside that part, and the cuff runs from the part's root to its cuff size, as a share of the part's length, past
  * where it comes out. A cuff inks its far edge and where it comes out of [branch] when the garment's cuffs and its own change are inked;
  * with no cuff, [branch] inks where the part comes through it when its hem is inked.
@@ -46,17 +47,22 @@ internal class Holed(val branch: PlacedPart, val cuffs: List<PlacedPart>, val th
 internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledCharacter, twins: Map<PartId, PartId>, checkCancelled: () -> Unit): Holed {
     val covering = requireNotNull(branch.covering)
     val parent = body.part(covering.part) ?: return Holed(branch, emptyList(), emptyList())
-    val through = body.parts.filter { part ->
-        val id = part.id ?: return@filter false
-        if (part.covering != null || part.socket?.parent != covering.part) return@filter false
-        val spec = part.socketSpec ?: return@filter false
-        val v = if (part.side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
+    val keeps = { part: PlacedPart ->
+        val id = requireNotNull(part.id)
         val change = garment.changes[id] ?: twins[id]?.let { garment.changes[it] }
         val ownBranch = garment.branch(id) != null || twins[id]?.let(garment::branch) != null
-        !ownBranch && change != BodyPartChange.Hide && spec.u in covering.from..covering.to && coverOf(branch).covers(covering.part, spec.u, v, part.origin)
+        ownBranch || change == BodyPartChange.Hide
+    }
+    val hanging = hangingInside(branch, body) { part -> part.id == null || keeps(part) }
+    val through = body.parts.filter { part ->
+        val id = part.id ?: return@filter false
+        if (part.covering != null || part.socket?.parent != covering.part || id in hanging) return@filter false
+        val spec = part.socketSpec ?: return@filter false
+        val v = if (part.side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
+        !keeps(part) && spec.u in covering.from..covering.to && coverOf(branch).covers(covering.part, spec.u, v, part.origin)
     }
     val ease = (garment.branch(covering.part) ?: twins[covering.part]?.let(garment::branch))?.ease ?: DEFAULT_EASE
-    var holed = branch
+    var holed = if (hanging.isEmpty()) branch else branch.covered(covering.hangingOver(hanging))
     val cuffs = through.mapNotNull { part ->
         checkCancelled()
         insideHider(part, whole = true)?.let { holed = holed.hiddenBy(listOf(it)) }

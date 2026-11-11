@@ -58,7 +58,8 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
 /**
  * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
  * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
- * sits on, and carried over the strip joining its part at its start, see [stripOver]; a hole and a cuff where a body part comes out through a branch; the skin the branches and cuffs cover hidden, but for a part
+ * sits on, and carried over the strip joining its part at its start, see [stripOver]; a hole and a cuff where a body part comes out through a branch;
+ * a branch that hangs free pushed out of the parts hanging inside it, see [pushedClear]; the skin the branches and cuffs cover hidden, but for a part
  * that comes out through a branch, which that branch leaves whole, as the hole leaves the branch open where the part fills it; each layer's faces
  * an outer layer covers hidden; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
  * loose ends hung from their branches; with [Dressing.covers] off nothing under a garment is hidden. See HLD: data-model, Garments.
@@ -77,7 +78,7 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
         joined(garment, branches, this, checkCancelled).map { edgeInked(garment, stripOver(it, this), this, dressing.twins) }.flatMap { branch ->
             val holed = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
             holed.through.forEach { part -> through.getOrPut(part, ::HashSet) += requireNotNull(holed.branch.id) }
-            listOf(holed.branch) + holed.cuffs
+            listOf(holed.branch.pushedClear(this)) + holed.cuffs
         }
     }
     if (!dressing.covers) {

@@ -11,6 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val SAVED_FILE = "../examples/$WOMAN_DRESSED_RESOURCE"
@@ -48,10 +49,12 @@ class WomanDressedFixtureTest {
     }
 
     @Test
-    fun theSkirtRedrawsTheTorsoLongerAndTheShoesSwapTheFoot() {
+    fun theSkirtHangsBelowHerOwnTorsoAndTheShoesSwapTheFoot() {
         val dressed = wearing(DRESS)
         val torso = dressed.wornPart(assertNotNull(dressed.part(TORSO)))
-        assertEquals(SKIRT, torso.changedBy)
+        assertNull(torso.changedBy, "the torso under the skirt is her own")
+        val skirt = assertNotNull(dressed.wardrobe.garments.first { it.id == SKIRT }.branch(TORSO))
+        assertTrue(skirt.from < 0f, "the skirt runs on below the torso's start")
         val foot = dressed.wornPart(assertNotNull(dressed.part(FOOT_R)))
         assertEquals(PUMPS, foot.changedBy, "the right foot is swapped too")
         assertIs<BodyPartChange.Swap>(dressed.wardrobe.garments.first { it.id == PUMPS }.changes[FOOT_L])
