@@ -5,7 +5,7 @@ description: Make or improve an example character in Squash, dressed or not, fro
 
 # Make an example character
 
-An example character is a list of document commands in a test fixture, folded over an empty document, saved as `examples/<name>.json` by a golden test, and judged by smoke renders. Nothing in the engine changes. Read `docs/work/example-limits.md` first: it lists what Squash cannot do yet, and every place below that still needs a source file (marked **gap**).
+An example character is a list of document commands in a test fixture, folded over an empty document, saved as `examples/<name>.json` by a golden test, and judged by smoke renders. Nothing in the engine changes. A new character is an original model: draw its outlines and proportions yourself, never reshape another example's data; use the other examples' files for structure only. Read `docs/work/example-limits.md` first: it lists what Squash cannot do yet, and every place below that still needs a source file (marked **gap**).
 
 ## Files
 
