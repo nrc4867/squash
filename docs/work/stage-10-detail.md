@@ -326,6 +326,20 @@ Largest dressing gaps, by how much they hurt the match:
 
 For the next rounds: round 7 replaces the twin's hair (cap, bangs, fall, curtains) and round 8 its hands and feet; both are judged by `compare` against the same shots.
 
+## After the twin
+
+The twin's gaps set the order of the remaining rounds, model shape and dressing first. Light, shading and lines stay Squash's own; the twin is not a reason to change them. Each round ends with `compare` run on `woman-twin-dressed` beside the woman's own renders, and its numbers in its section.
+
+| Round | Branch | Delivers | Done when |
+| --- | --- | --- | --- |
+| 9 | `shoulders` | The shoulder strip planned where the arm leaves the torso in the display pose, so a lowered arm meets the body in a round cap; the head joined to the neck by a strip or a floor that wraps the neck; arms among what pushes a hanging skirt | No squared shoulder pad in any front or three-quarter view; arms band 0.88 or more in the twin's rest body shots; the dress hand clear of the skirt; head-on-neck socket ring seen 0 |
+| 10 | `garment-cuts` | An opening whose width varies along the branch, or a cut outline drawn on a garment: V and scoop necks, a front closing to a button, bikini triangles, shoe openings; a collar; owned sheets that lie on the surface under them so lapels and cups follow the chest | The lawyer's V and closing front, the dress and goth scoop necks and the bikini triangles read as in the reference; lapel vertices under cloth near 0 |
+| 11 | `outfit-pose` | A pose an outfit adds to the display pose (heel pitch, the dress's arm spread); turns of the hips and chest about the vertical; named finger joints and a hand twist on the hand template | Pump heel and instep as in the reference; walk shots 0.80 or more whole; hand-wave palm forward |
+| 12 | `hair-shell` | As round 7 in the rounds table: the hair cap as a shell lofted from the head's slices, volume and fall as drawn outlines, locks as chains; the hairline from the face map | Head band 0.90 or more in body shots; no skull through the hair in any view or pose |
+| 13 | `hand-cage` | As round 8 in the rounds table | hand-rest 0.70 or more; fingertips and toes apart in every close-up |
+| 14 | `soles-straps` | A sole as a slab under the foot's footprint; a part drawn along a curve on a surface (straps, toe post, heel strap); a swapped boot joined to its shaft | Foot shots 0.88 or more; no skin ring at a boot's shaft |
+| 15 | `cloth-paint` | Regions and ink on a garment's shell: cuffs, dots, lace, studs, lacing, pockets, seams | The reference's cloth details each have a built counterpart |
+
 ## Open
 
 - Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.
