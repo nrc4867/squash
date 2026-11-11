@@ -1,0 +1,59 @@
+package dev.chieppa.squash.screens.woman
+
+import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.ShowOutfit
+import dev.chieppa.squash.document.worn
+import dev.chieppa.squash.document.wornPart
+import dev.chieppa.squash.screens.fennec.fennecText
+import dev.chieppa.squash.screens.shell.SquashFormat
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+private const val SAVED_FILE = "../examples/$WOMAN_DRESSED_RESOURCE"
+private const val UPDATE_PROPERTY = "squash.updateGoldens"
+
+/** The saved dressed woman stays what her commands make. Regenerate with ./gradlew :screens-core:test -PupdateGoldens and review the diff. */
+class WomanDressedFixtureTest {
+    private fun wearing(outfit: dev.chieppa.squash.document.OutfitId) = ShowOutfit(outfit).apply(womanDressedDocument()).document.character
+
+    @Test
+    fun theSavedDocumentIsWhatTheCommandsMake() {
+        val file = File(SAVED_FILE)
+        val text = fennecText(womanDressedDocument())
+        if (System.getProperty(UPDATE_PROPERTY) != null) {
+            file.parentFile.mkdirs()
+            file.writeText(text)
+            return
+        }
+        assertEquals(text, file.readText().replace("\r\n", "\n"))
+        assertEquals(womanDressedDocument(), savedWomanDressed())
+        assertEquals(womanDressedDocument(), SquashFormat().decode(file.readBytes()))
+    }
+
+    @Test
+    fun everyOutfitWearsWhatItPicksAndSharesGarments() {
+        for ((id, _, picks) in OUTFITS) assertEquals(picks.values.toSet(), wearing(id).worn.map { it.id }.toSet(), id.value)
+        val shared = OUTFITS.flatMap { it.third.values }.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
+        assertEquals(setOf(SHORTS, PUMPS, BOOTS, DARK_TOP), shared)
+        assertTrue(wearing(BARE).worn.isEmpty())
+    }
+
+    @Test
+    fun theBlazerGoesOverTheBlouseAndTheTrousersWaistband() {
+        assertEquals(listOf(BLOUSE, TROUSERS, BLAZER), wearing(OFFICE).worn.map { it.id }.filter { it != PUMPS })
+    }
+
+    @Test
+    fun theSkirtRedrawsTheTorsoLongerAndTheShoesSwapTheFoot() {
+        val dressed = wearing(DRESS)
+        val torso = dressed.wornPart(assertNotNull(dressed.part(TORSO)))
+        assertEquals(SKIRT, torso.changedBy)
+        val foot = dressed.wornPart(assertNotNull(dressed.part(FOOT_R)))
+        assertEquals(PUMPS, foot.changedBy, "the right foot is swapped too")
+        assertIs<BodyPartChange.Swap>(dressed.wardrobe.garments.first { it.id == PUMPS }.changes[FOOT_L])
+    }
+}
