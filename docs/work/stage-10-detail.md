@@ -330,7 +330,7 @@ For the next rounds: round 7 replaces the twin's hair (cap, bangs, fall, curtain
 
 ## After the twin
 
-The base model comes first: hands, feet, head, hair and body shape, then joints; garment work waits until they are done. The pose an outfit adds is deferred with it. Light, shading and lines stay Squash's own; the twin is not a reason to change them. Each round ends with `compare` run on `woman-twin-dressed` beside the woman's own renders, and its numbers in its section.
+The base model comes first: hands, feet, head, hair and body shape, then joints; garment work waits until they are done. The pose an outfit adds is deferred with it. Each of these rounds builds a generic mechanism that creatures use too: a blended hand is also a paw or a clawed hand, nails and claws are one mechanism, and a head joins whatever neck it sits on; each round shows it on at least one creature where that is cheap and names what the others need. Light, shading and lines stay Squash's own; the twin is not a reason to change them. Each round ends with `compare` run on `woman-twin-dressed` beside the woman's own renders, and its numbers in its section.
 
 | Round | Branch | Delivers | Done when |
 | --- | --- | --- | --- |
@@ -341,6 +341,7 @@ The base model comes first: hands, feet, head, hair and body shape, then joints;
 | 16 | `head-field` | `head-round` version 3 built as a `field` from cranium, jaw, chin, cheeks, nose, lips, rims and brows, the face map kept; the twin's paint and hair placed again by it | The twin's face shots at or above version 2's, a jaw and nose with no ridge or chin strip |
 | 12 | `hair-shell` | As round 7 in the rounds table: the hair cap as a shell lofted from the head's slices, volume and fall as drawn outlines, locks as chains; the hairline from the face map | Head band 0.90 or more in body shots; no skull through the hair in any view or pose |
 | – | `body-shape` | The bare torso and limbs against the reference's silhouettes | Planned when the head and hair land |
+| – | `creatures` | The examples moved onto the new templates: the fennec's paws, the dragon's and lizard's clawed hands and feet, every creature's head joined to its neck, the toucan's beak from the head profile | Each creature's close-ups read as well as before or better by eye; no head-on-neck ring seen on any creature |
 | – | `joints` | Joints that turn about more than one axis (ball joints or two hinges a joint) | Planned when the modelling rounds above have landed |
 | 10 | `garment-cuts` | Deferred until the base model is done. An opening whose width varies along the branch, or a cut outline drawn on a garment: V and scoop necks, a front closing to a button, bikini triangles, a pump's oval opening in one branch; a collar; owned sheets that lie on the surface under them so lapels and cups follow the chest; straps drawn along a curve on a surface (toe post, heel strap) | The lawyer's V and closing front, the dress and goth scoop necks, the bikini triangles and the pumps' openings read as in the reference; lapel vertices under cloth near 0 |
 | 15 | `cloth-paint` | Deferred until the base model is done. Regions and ink on a garment's shell: cuffs, dots, lace, studs, lacing, pockets, seams; nails and toenails as regions on the digits | The reference's cloth details each have a built counterpart |
