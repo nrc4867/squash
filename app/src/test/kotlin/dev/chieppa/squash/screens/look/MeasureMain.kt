@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.look.measure.armDepthInside
 import dev.chieppa.squash.screens.look.measure.armInside
 import dev.chieppa.squash.screens.look.measure.bareSkin
 import dev.chieppa.squash.screens.look.measure.digitTipGaps
@@ -98,6 +99,7 @@ private fun report(name: String, body: AssembledCharacter, head: PlacedPart?, dr
     val grid = RayGrid(shownCorners(body))
     val seen: (Vec3) -> Boolean = { grid.seen(it) }
     println("$name: arm volume inside the torso as shown ${armInside(body).format()}")
+    println("$name: arm depth inside the torso as shown ${armDepthInside(body).format()}")
     legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt as shown ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}") }
     armInsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name: arm and hand vertices inside the skirt as shown $it") }
     println("$name: hip socket spread ${hipSpread(body)?.let { "%.4f".format(it) } ?: "none"}")

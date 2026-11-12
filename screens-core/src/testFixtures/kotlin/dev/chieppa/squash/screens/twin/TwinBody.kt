@@ -51,6 +51,9 @@ private const val HIP_HEIGHT = 0.746f
 /** A socket seated on its part's surface rather than sunk into it, so the joints stand where the reference's do. */
 private const val ON_SURFACE = 0f
 
+/** How far the shoulder sockets sink, so the shoulder joints stand 0.148 m out from her middle as the reference's do, a little inside the torso. */
+private const val SHOULDER_SINK = 0.25f
+
 /** Where round an upright part its left side lies, as hand-made sockets read v. */
 internal const val LEFT = 0.75f
 
@@ -106,7 +109,7 @@ fun twinBody(): List<DocumentCommand> = buildList {
     add(SetOutlines(TORSO, mapOf(View.SIDE to TORSO_SIDE, View.TOP to TORSO_TOP)))
     SPINE.forEachIndexed { i, height -> add(HandJoints.add(TORSO, i + 1, torsoU(height), Hinge.X, SPINE_BEND, stretch = false)) }
     add(HandSockets.add(TORSO, NECK_SOCKET, 1f, 0f, 0f, paired = false, sink = ON_SURFACE))
-    add(HandSockets.add(TORSO, SHOULDER_SOCKET, torsoU(SHOULDER_HEIGHT), LEFT, 0f, paired = true, sink = ON_SURFACE))
+    add(HandSockets.add(TORSO, SHOULDER_SOCKET, torsoU(SHOULDER_HEIGHT), LEFT, 0f, paired = true, sink = SHOULDER_SINK))
     add(HandSockets.add(TORSO, HIP_SOCKET, torsoU(HIP_HEIGHT), LEFT, 0f, paired = true, sink = ON_SURFACE))
 
     add(AddParts(listOf(PartInstance(NECK, ref("tube"), on(TORSO, NECK_SOCKET), role = Role.OTHER, roleGuessed = true))))

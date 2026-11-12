@@ -1448,7 +1448,7 @@
                         "socket.2.v": 0.75,
                         "socket.2.outward": 0.0,
                         "socket.2.pair": 1.0,
-                        "socket.2.sink": 0.0,
+                        "socket.2.sink": 0.25,
                         "socket.3.u": 0.016666632,
                         "socket.3.v": 0.75,
                         "socket.3.outward": 0.0,
@@ -10582,14 +10582,14 @@
                     "part": "arm-l",
                     "joint": "joint.2",
                     "degrees": -5.73,
-                    "turn": 70.0,
+                    "lean": -4.3,
                     "mode": "free"
                 },
                 {
                     "part": "arm-r",
                     "joint": "joint.2",
                     "degrees": -5.73,
-                    "turn": 70.0,
+                    "lean": -4.3,
                     "mode": "free"
                 },
                 {
@@ -10741,18 +10741,6 @@
                     "part": "hand-r",
                     "joint": "fingers:4.3",
                     "degrees": 11.5
-                },
-                {
-                    "part": "hand-l",
-                    "joint": "wrist",
-                    "turn": -70.0,
-                    "mode": "free"
-                },
-                {
-                    "part": "hand-r",
-                    "joint": "wrist",
-                    "turn": -70.0,
-                    "mode": "free"
                 }
             ]
         },

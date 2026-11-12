@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.PosedParts
 import dev.chieppa.squash.character.build.posedBy
@@ -48,10 +50,16 @@ import kotlin.test.assertTrue
  * posed arm lies on the body rather than through it. See
  * HLD: data-model, Placing parts.
  */
-/** How far into the body the test sinks an arm, and the share of its rings from the root that is its upper arm past its shoulder. */
+/**
+ * How far into the body the test sinks an arm, and the share of its rings from the root that is its upper arm past its armpit, where
+ * the arm may no longer press into the body.
+ */
 private const val INTO_BODY = 0.12f
-private const val PAST_SHOULDER = 0.2f
-private const val UPPER_ARM = 0.4f
+private const val PAST_ARMPIT = 0.36f
+private const val UPPER_ARM = 0.45f
+
+/** How much faster than evenly from the upper arm to its end a pushed arm may let go anywhere along the way, so it bends no corner. */
+private const val MOST_STEEP = 2.5f
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class APoseTest {
@@ -114,28 +122,56 @@ class APoseTest {
         assertEquals(bare, arms.map { assertNotNull(session.assembly.output.value?.part(it)).origin })
     }
 
-    @Test
-    fun anArmPosedIntoTheTorsoIsPushedOutOntoItDownToItsUpperArm() = runTest {
+    /** The biped's left arm sunk [INTO_BODY] into its torso as a pose would leave it, with the rest it was sunk from and the torso's inside. */
+    private fun TestScope.sunkArm(): Triple<AssembledCharacter, AssembledCharacter, PartId> {
         val (document, arms) = armed()
         val rest = assertNotNull(session(document).assembly.output.value)
         val left = assertNotNull(rest.part(arms.first()))
-        val torso = assertNotNull(rest.parts.firstOrNull { it.socket == null && it.id != null })
-        val inward = Vec3(0f, 0f, INTO_BODY)
         val sunk = RenderMesh(left.surface.mesh.vertices.copyOf().also { v ->
-            for (i in 0 until left.surface.mesh.vertexCount) v[i * RenderMesh.FLOATS_PER_VERTEX + 2] += inward.z
+            for (i in 0 until left.surface.mesh.vertexCount) v[i * RenderMesh.FLOATS_PER_VERTEX + 2] += INTO_BODY
         }, left.surface.mesh.indices)
         val posed = rest.posedBy(object : PosedParts {
             override val meshes = mapOf(requireNotNull(left.id) to sunk)
             override val turns = emptyMap<PartId, Mat3>()
         })
+        return Triple(rest, posed, requireNotNull(left.id))
+    }
+
+    @Test
+    fun anArmPosedIntoTheTorsoIsPushedOutOntoItDownToItsUpperArm() = runTest {
+        val (rest, posed, left) = sunkArm()
+        val torso = assertNotNull(rest.parts.firstOrNull { it.socket == null && it.id != null })
         val shell = ShellInside(assertNotNull(torso.surface.patches.firstOrNull { it.slices != null })) { torso.origin + torso.surface.shown(it) }
-        fun insideAfterShoulder(body: dev.chieppa.squash.character.build.AssembledCharacter): Int {
-            val arm = assertNotNull(body.part(requireNotNull(left.id)))
+        fun insidePastArmpit(body: AssembledCharacter): Int {
+            val arm = assertNotNull(body.part(left))
             val patch = arm.surface.patches.first { it.slices != null }
-            return (0 until patch.nu * patch.nv).filter { it / patch.nv > patch.nu * PAST_SHOULDER && it / patch.nv < patch.nu * UPPER_ARM }.count { arm.origin + arm.surface.mesh.position(it) in shell }
+            return (0 until patch.nu * patch.nv).filter { it / patch.nv > patch.nu * PAST_ARMPIT && it / patch.nv < patch.nu * UPPER_ARM }.count { arm.origin + arm.surface.mesh.position(it) in shell }
         }
-        assertTrue(insideAfterShoulder(posed) > 0, "the sunk arm lies in the torso")
-        assertEquals(0, insideAfterShoulder(posed.withArmsOnBody(rest)))
+        assertTrue(insidePastArmpit(posed) > 0, "the sunk arm lies in the torso")
+        assertEquals(0, insidePastArmpit(posed.withArmsOnBody(rest)))
+    }
+
+    @Test
+    fun aPushedArmLetsGoOfTheBodyInOneCurveDownToItsEnd() = runTest {
+        val (rest, posed, left) = sunkArm()
+        val before = ringMiddles(assertNotNull(posed.part(left)))
+        val after = ringMiddles(assertNotNull(posed.withArmsOnBody(rest).part(left)))
+        val shifts = before.zip(after).map { (a, b) -> b - a }
+        val most = shifts.maxOf { it.length }
+        assertTrue(most > 0f, "the arm is pushed")
+        assertEquals(0f, shifts.last().length, most * 0.01f, "the arm's end, where the hand hangs, stays where the pose put it")
+        val upper = (shifts.size * UPPER_ARM).toInt()
+        val even = shifts[upper].length / (shifts.size - 1 - upper)
+        for (ring in upper until shifts.size - 1) {
+            val step = shifts[ring].length - shifts[ring + 1].length
+            assertTrue(step >= -most * 1e-3f, "the push only lets go below the upper arm, ring $ring")
+            assertTrue(step <= even * MOST_STEEP, "it lets go over the whole forearm, ring $ring: $step against $even")
+        }
+    }
+
+    private fun ringMiddles(arm: PlacedPart): List<Vec3> {
+        val patch = arm.surface.patches.first { it.slices != null }
+        return (0 until patch.nu).map { ring -> (0 until patch.nv).fold(Vec3.ZERO) { sum, column -> sum + arm.surface.mesh.position(patch.index(ring, column)) } * (1f / patch.nv) }
     }
 
     private fun TestScope.session(document: SquashDocument): CharacterSession {

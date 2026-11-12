@@ -1,8 +1,10 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.document.BonePose
+import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.geom.Vec3
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -55,5 +57,31 @@ class SkinningTest {
         val reach = transforms[ankle](rig.bones[ankle].pivot) - knee.pivot
         assertEquals(1.5f * knee.length, reach.length, 1e-4f)
         assertTrue((transforms[wrist](rig.bones[wrist].pivot) - rig.bones[wrist].pivot).length > 0.4f * knee.length)
+    }
+
+    @Test
+    fun aTwistSpreadsAlongItsBoneSoTheJointKeepsItsSection() {
+        val leg = PartId("back-leg-l")
+        val knee = checkNotNull(rig.indexOf(BoneName(leg, "knee")))
+        val bone = rig.bones[knee]
+        val pose = Pose(listOf(BonePose(leg, "knee", turn = 90f, mode = JointMode.FREE)))
+        val frames = boneFrames(rig, pose)
+        val part = checkNotNull(rig.part(leg))
+        val posed = rig.posed(pose).parts.getValue(leg)
+        val along = bone.direction.normalized()
+        val pivot = frames.transforms[knee](bone.pivot)
+        val posedAlong = (frames.turns[knee] * along).normalized()
+        fun across(p: Vec3, from: Vec3, way: Vec3) = (p - from - way * ((p - from) dot way)).length
+        var checked = 0
+        for (v in 0 until part.vertexCount) {
+            val rest = Vec3(part.rest[v * 3], part.rest[v * 3 + 1], part.rest[v * 3 + 2])
+            if (part.weights.weightOf(v, knee) !in 0.2f..0.8f) continue
+            val moved = Vec3(posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2])
+            assertEquals(across(rest, bone.pivot, along), across(moved, pivot, posedAlong), 0.03f * bone.length, "vertex $v keeps its distance from the leg's line")
+            checked++
+        }
+        assertTrue(checked > 0, "some vertices blend across the knee")
+        val tip = bone.pivot + along * (bone.length * 1.01f)
+        assertEquals(0f, (checkNotNull(frames.twists[knee]).backOf(tip)?.let { 1f } ?: 0f), "past its span a point takes the whole twist")
     }
 }

@@ -30,13 +30,17 @@ class PosedCharacter(
  */
 fun boneTransforms(rig: Rig, pose: Pose): List<Affine> = boneFrames(rig, pose).transforms
 
-/** Each bone's transform under a pose, with the rotation alone that carries its children, in [turns]. */
-class BoneFrames(val transforms: List<Affine>, val turns: List<Mat3>)
+/**
+ * Each bone's transform under a pose, with the rotation alone that carries its children, in [turns], and in [twists] the twist a bone
+ * spreads along its own span, or null where it turns whole.
+ */
+class BoneFrames(val transforms: List<Affine>, val turns: List<Mat3>, val twists: List<BoneTwist?> = List(transforms.size) { null })
 
 /** [boneTransforms] with each bone's rotation alone beside it. */
 fun boneFrames(rig: Rig, pose: Pose): BoneFrames {
     val turns = ArrayList<Mat3>(rig.bones.size)
     val result = ArrayList<Affine>(rig.bones.size)
+    val twists = ArrayList<BoneTwist?>(rig.bones.size)
     val offset = pose.offset.let { Vec3(it.x, it.y, it.z) }
     for ((i, bone) in rig.bones.withIndex()) {
         val parent = rig.parents[i]
@@ -49,8 +53,9 @@ fun boneFrames(rig: Rig, pose: Pose): BoneFrames {
         val linear = if (stretched != null) turned * stretched else turned
         turns += turned
         result += Affine(linear, pivot - linear * bone.pivot)
+        twists += twistOf(bone, own, rig.bones.getOrNull(parent))
     }
-    return BoneFrames(result, turns)
+    return BoneFrames(result, turns, twists)
 }
 
 /** The stretch [bone]'s joint puts on the span before it along [along], or null at its rest length. */
@@ -65,10 +70,13 @@ private fun stretchOf(rig: Rig, bone: Int, pose: Pose, along: Vec3): Mat3? {
 /**
  * [rig]'s parts posed by [pose], linear blend skinning over [boneTransforms]. A vertex that follows no bone stays at rest. A
  * normal turns by the same blend of the bones' maps for normals, so a stretch tilts it as the surface tilts, and is made unit again.
+ * A bone that twists about its length takes each vertex through only its share of the twist (see [BoneTwist]), so a band across
+ * the joint blends the bend alone and keeps the limb's section round, where blending a whole twist would pinch it.
  */
 fun Rig.posed(pose: Pose): PosedCharacter {
     val frames = boneFrames(this, pose)
     val transforms = frames.transforms
+    val twists = frames.twists
     val positions = HashMap<PartId, FloatArray>(parts.size)
     val meshes = HashMap<PartId, RenderMesh>(parts.size)
     val turns = HashMap<PartId, Mat3>()
@@ -77,7 +85,7 @@ fun Rig.posed(pose: Pose): PosedCharacter {
             positions[part.id] = part.rest.copyOf()
             meshes[part.id] = part.mesh
         } else {
-            val skinned = part.skinnedBy(transforms)
+            val skinned = part.skinnedBy(transforms, twists)
             positions[part.id] = skinned.positions
             meshes[part.id] = skinned.mesh
             bones.indexOfFirst { it.name.part == part.id }.takeIf { it >= 0 }?.let { turns[part.id] = frames.turns[it] }
@@ -91,7 +99,7 @@ private fun RigPart.restsUnder(transforms: List<Affine>): Boolean =
 
 private class Skinned(val positions: FloatArray, val mesh: RenderMesh)
 
-private fun RigPart.skinnedBy(transforms: List<Affine>): Skinned {
+private fun RigPart.skinnedBy(transforms: List<Affine>, twists: List<BoneTwist?>): Skinned {
     val positions = rest.copyOf()
     val vertices = mesh.vertices.copyOf()
     for (v in 0 until vertexCount) {
@@ -108,9 +116,17 @@ private fun RigPart.skinnedBy(transforms: List<Affine>): Skinned {
             if (bone < 0) continue
             val w = weights.weights[v * MAX_INFLUENCES + slot]
             val transform = transforms[bone]
-            moved += transform(point) * w
-            turned += transform.normals * normal * w
-            turnedProxy += transform.normals * proxy * w
+            val twist = twists[bone]
+            val back = twist?.backOf(point)
+            if (twist != null && back != null) {
+                moved += transform(twist.pivot + back * (point - twist.pivot)) * w
+                turned += transform.normals * (back * normal) * w
+                turnedProxy += transform.normals * (back * proxy) * w
+            } else {
+                moved += transform(point) * w
+                turned += transform.normals * normal * w
+                turnedProxy += transform.normals * proxy * w
+            }
             total += w
         }
         if (total <= 0f) continue

@@ -106,3 +106,11 @@ Read while joining the twin's shoulders, neck and head and clearing the dress's 
 
 - `twin/TwinPoses.kt`, `twin/TwinBodyOutlines.kt`: the display pose's arm lean and the arm's and torso's drawn widths, to see why the posed upper arm stands further out than the reference's. The reference's arm lies partly inside its torso at the armpit; Squash pushes the posed arm out of the torso, so the twin's arm stands out by about the overlap. A print of the posed arm's ring middles beside the reference's joints would have said it.
 - `character/.../build/StripPlan.kt`, `SocketStrips.kt`: which joins get a strip, found by printing each plan; the twin's limbs, seated on the surface, had none. A measure line naming each join's strip, its tube, host and ring, would have said it.
+
+### Elbow
+
+Read while smoothing the twin's and the woman's arms through the elbow:
+
+- `rig/.../BoneTurns.kt` (`localTurn`): that a bone's `turn` is taken last, about its rest length, so a turn at a bent elbow swings the bend about the upper arm's line as well as twisting the forearm; the twin had aimed its elbows by a turn of 70 degrees, which twisted the forearm and pinched it at the elbow. A pose reference with each bone's axes and their order drawn would have said it.
+- `twin/TwinPoses.kt`, `twin/TwinBody.kt`, `twin/TwinBodyOutlines.kt`: the elbow's pose, the shoulder socket's sink and the arm's radius keys, to tell which made the corner. The keys are the reference's own (it narrows to the elbow too), so they were not the cause. Rendering one change at a time told the rest; a measure line printing each posed arm ring's middle and radius would have said it without renders.
+- No source was read for where the shoulder joint lands: `measure parts=true` printed the arm's origin, which put the twin's shoulder 0.012 m further out than the reference's joint.

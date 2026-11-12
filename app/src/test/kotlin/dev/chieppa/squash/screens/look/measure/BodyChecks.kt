@@ -10,8 +10,14 @@ import dev.chieppa.squash.geom.Vec3
 /** The side of the grid an arm's volume is counted in, in body units. */
 private const val VOXEL = 0.012f
 
-/** How much of an arm's length from its shoulder is the join, left out of what may not lie inside the torso. */
-private const val SHOULDER_SHARE = 0.2f
+/**
+ * How much of an arm's length from its shoulder is the join and the armpit, left out of what may not lie inside the torso: the push
+ * onto the body lets an arm press into the body's side there, as an arm hanging at the side does.
+ */
+private const val ARMPIT_SHARE = 0.36f
+
+/** How much of an arm's length from its shoulder is its join, which the strip at the shoulder hides. */
+private const val JOIN_SHARE = 0.2f
 
 /** How much of a digit's length from its tip counts as its tip. */
 private const val TIP_SHARE = 0.3f
@@ -22,15 +28,15 @@ val PlacedPart.isBody: Boolean get() = id != null && covering == null && hanging
 private fun AssembledCharacter.bodyWith(role: Role) = parts.filter { it.isBody && it.role == role }
 
 /**
- * How much of each arm, past the share of its length at the shoulder that is its join, lies inside the part it hangs from, in cubic
- * body units, by side: points of a grid inside both meshes.
+ * How much of each arm, past the share of its length at the shoulder that is its join and armpit, lies inside the part it hangs from,
+ * in cubic body units, by side: points of a grid inside both meshes.
  */
 fun armInside(body: AssembledCharacter): Map<Side?, Float> = body.bodyWith(Role.ARM).associate { arm ->
     val parent = arm.socket?.parent?.let(body::part) ?: return@associate arm.side to 0f
     val inArm = Winding(arm)
     val inParent = Winding(parent)
     val box = arm.box ?: return@associate arm.side to 0f
-    val join = arm.surface.axisLength * SHOULDER_SHARE
+    val join = arm.surface.axisLength * ARMPIT_SHARE
     var count = 0
     var x = box.low.x
     while (x <= box.high.x) {
@@ -47,6 +53,21 @@ fun armInside(body: AssembledCharacter): Map<Side?, Float> = body.bodyWith(Role.
         x += VOXEL
     }
     arm.side to count * VOXEL * VOXEL * VOXEL
+}
+
+/**
+ * How deep each arm lies inside the part it hangs from at its deepest, past its join, by side, in body units: the distance from its
+ * deepest shown vertex inside that part to the part's nearest vertex.
+ */
+fun armDepthInside(body: AssembledCharacter): Map<Side?, Float> = body.bodyWith(Role.ARM).associate { arm ->
+    val parent = arm.socket?.parent?.let(body::part) ?: return@associate arm.side to 0f
+    val inParent = Winding(parent)
+    val surface = (0 until parent.surface.mesh.vertexCount).map(parent::point)
+    val join = arm.surface.axisLength * JOIN_SHARE
+    val shown = (arm.hiding?.indices ?: arm.surface.mesh.indices).toSet()
+    val deepest = shown.map(arm::point).filter { (it - arm.origin).length > join && inParent.inside(it) }
+        .maxOfOrNull { p -> surface.minOf { (it - p).length } } ?: 0f
+    arm.side to deepest
 }
 
 /** How far apart the legs' sockets sit, between the roots of a pair of legs, or null with no pair. */
