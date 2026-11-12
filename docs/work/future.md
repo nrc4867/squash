@@ -14,3 +14,7 @@ Decided in principle, not yet scheduled into a spike or a stage. Each names its 
 | Later parts | Teeth, tongue and fangs as parts; beaks; horns and antlers through a tip socket; membrane wings; socket rows for spines and frills; elephant ears; shells with garments. See `docs/hld/parts.md` | Later |
 | Export plan | How faces, fur edges and outlines survive a glTF export | Not in the first version |
 | Clothing across body plans | Whether one garment refits to another species with the same sockets | Not in the first version |
+| Cloth settle | Sway and follow-through for a free-hanging branch, a settle after the pose rather than a placement by it | With animation |
+| Loose-end size | A loose end's length and width as its own values, and its end fitted over the layers under it | With Dress |
+| Trousers across the seat | A garment surface lofted across the pelvis and both legs, weighted by blending their weights, so trousers fall from the seat to the thigh | With Dress |
+| Sections along a part | Front sections drawn at several places along a part, so a chest and a waist can differ in section | After the style test |

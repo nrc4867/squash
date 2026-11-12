@@ -330,16 +330,20 @@ For the next rounds: round 7 replaces the twin's hair (cap, bangs, fall, curtain
 
 ## After the twin
 
-The twin's gaps set the order of the remaining rounds, model shape and dressing first. Light, shading and lines stay Squash's own; the twin is not a reason to change them. Each round ends with `compare` run on `woman-twin-dressed` beside the woman's own renders, and its numbers in its section.
+The base model comes first: hands, feet, head, hair and body shape, then joints; garment work waits until they are done. The pose an outfit adds is deferred with it. Light, shading and lines stay Squash's own; the twin is not a reason to change them. Each round ends with `compare` run on `woman-twin-dressed` beside the woman's own renders, and its numbers in its section.
 
 | Round | Branch | Delivers | Done when |
 | --- | --- | --- | --- |
 | 9 | `shoulders` | The shoulder strip planned where the arm leaves the torso in the display pose, so a lowered arm meets the body in a round cap; the head joined to the neck by a strip or a floor that wraps the neck; arms among what pushes a hanging skirt | No squared shoulder pad in any front or three-quarter view; arms band 0.88 or more in the twin's rest body shots; the dress hand clear of the skirt; head-on-neck socket ring seen 0 |
 | 11 | `outfit-pose` | The bare body's pose: turns of the hips and chest about the vertical; a twist that rolls a bone where it points, for a palm; legs swinging from the hip joint; the resting hand where the reference's hangs; the person's arms straight. The pose an outfit adds (heel pitch, the dress's arm spread) is deferred | Walk shots 0.80 or more whole; hand-wave palm forward; hand-rest 0.70 or more; the person's arms hang straight |
-| 10 | `garment-cuts` | An opening whose width varies along the branch, or a cut outline drawn on a garment: V and scoop necks, a front closing to a button, bikini triangles, a pump's oval opening in one branch; a collar; owned sheets that lie on the surface under them so lapels and cups follow the chest; straps drawn along a curve on a surface (toe post, heel strap) | The lawyer's V and closing front, the dress and goth scoop necks, the bikini triangles and the pumps' openings read as in the reference; lapel vertices under cloth near 0 |
-| 12 | `hair-shell` | As round 7 in the rounds table: the hair cap as a shell lofted from the head's slices, volume and fall as drawn outlines, locks as chains; the hairline from the face map | Head band 0.90 or more in body shots; no skull through the hair in any view or pose |
+| – | `hands` | Fingers blended into the palm's field: no line at a finger's root, webs, knuckles, a palm that can cup, nails, clean curls; the woman on the blended hand and foot. The hand cage (round 8) if the blend still shows seams | Bare hand close-ups at rest, curled and spread show none of those faults, on the twin and the woman |
+| – | `feet` | The same for the foot: toes blended in, nails, arch and heel shape | Bare foot close-ups as for the hands |
 | 16 | `head-field` | `head-round` version 3 built as a `field` from cranium, jaw, chin, cheeks, nose, lips, rims and brows, the face map kept; the twin's paint and hair placed again by it | The twin's face shots at or above version 2's, a jaw and nose with no ridge or chin strip |
-| 15 | `cloth-paint` | Regions and ink on a garment's shell: cuffs, dots, lace, studs, lacing, pockets, seams; nails and toenails as regions on the digits | The reference's cloth details each have a built counterpart |
+| 12 | `hair-shell` | As round 7 in the rounds table: the hair cap as a shell lofted from the head's slices, volume and fall as drawn outlines, locks as chains; the hairline from the face map | Head band 0.90 or more in body shots; no skull through the hair in any view or pose |
+| – | `body-shape` | The bare torso and limbs against the reference's silhouettes | Planned when the head and hair land |
+| – | `joints` | Joints that turn about more than one axis (ball joints or two hinges a joint) | Planned when the modelling rounds above have landed |
+| 10 | `garment-cuts` | Deferred until the base model is done. An opening whose width varies along the branch, or a cut outline drawn on a garment: V and scoop necks, a front closing to a button, bikini triangles, a pump's oval opening in one branch; a collar; owned sheets that lie on the surface under them so lapels and cups follow the chest; straps drawn along a curve on a surface (toe post, heel strap) | The lawyer's V and closing front, the dress and goth scoop necks, the bikini triangles and the pumps' openings read as in the reference; lapel vertices under cloth near 0 |
+| 15 | `cloth-paint` | Deferred until the base model is done. Regions and ink on a garment's shell: cuffs, dots, lace, studs, lacing, pockets, seams; nails and toenails as regions on the digits | The reference's cloth details each have a built counterpart |
 
 ## Round 9: shoulders
 
