@@ -54,11 +54,24 @@ private val HANDS_RELAXED = fingers(HAND_L, RELAXED) + fingers(HAND_R, RELAXED)
 val TWIN_DISPLAY = Pose(ARMS_AT_REST + HANDS_RELAXED)
 
 /**
- * The reference's walk, mid-stride on the left leg: the left thigh forward 25.8 and its knee 8, the right thigh back 17.2 with its knee bent
+ * The torso's joint at the top of the hips, whose turn spreads up the waist to the chest's joint, so everything from the chest up, the bust,
+ * what lies on it and the shoulders, turns whole against the hips, as the reference's chest does.
+ */
+private const val CHEST = "joint.1"
+
+/** The walk's turns about the vertical: the hips 5.2 degrees toward the stepping leg, the chest 8 back against them, the neck 2.3. */
+private const val HIPS_YAW = 5.16f
+private const val CHEST_YAW = -8.02f
+private const val NECK_YAW = 2.29f
+
+/**
+ * The reference's walk, mid-stride on the left leg: the hips turned about the vertical toward the stepping leg and the chest turned back
+ * against them, the neck a little after the hips; the left thigh forward 25.8 and its knee 8, the right thigh back 17.2 with its knee bent
  * 28.7 and the foot pointing; the arms swing against the legs, the left back 18.3 with the elbow 12.6, the right forward 21.8 with the elbow
- * 31.5; the head nods 2.3. The hips' and chest's turns about the vertical have no bone here.
+ * 31.5; the head nods 2.3. The turns are about each bone's own length, which stands up the torso and neck.
  */
 val TWIN_WALK = Pose(listOf(
+    BonePose(TORSO, TUBE_BASE, turn = HIPS_YAW), BonePose(TORSO, CHEST, turn = CHEST_YAW), BonePose(NECK, TUBE_BASE, turn = NECK_YAW),
     BonePose(LEG_L, TUBE_BASE, -25.78f), BonePose(LEG_L, KNEE, 8.02f), BonePose(FOOT_L, ANKLE, 6.88f),
     BonePose(LEG_R, TUBE_BASE, 17.19f), BonePose(LEG_R, KNEE, 28.65f), BonePose(FOOT_R, ANKLE, -18.33f),
     BonePose(ARM_L, ARM_SHOULDER, 18.33f), elbow(ARM_L, -12.61f),

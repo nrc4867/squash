@@ -41,7 +41,7 @@ internal class PoseWork(val rig: Rig, start: Pose) {
         val bone = rig.bones[i]
         val current = set(i) ?: BonePose(bone.name.part, bone.name.joint)
         val kept = held(angles, bone.limits, current.mode)
-        pose = pose.with(current.copy(degrees = kept.tip, turn = kept.turn, lean = kept.lean))
+        pose = pose.with(current.copy(degrees = kept.tip, turn = kept.turn, lean = kept.lean, twist = kept.twist))
     }
 
     /** Turns bone [i] so its turn in body space is [world], as near as its limits let it. */

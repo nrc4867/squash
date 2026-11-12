@@ -98,7 +98,7 @@ fun twinBeach(): List<DocumentCommand> = listOf(cloth(SWIM, 0xEE6A58), cloth(DEN
     } +
     twinGarment(
         SHORTS, "Shorts", BOTTOM_SLOT, DENIM,
-        listOf(GarmentBranch(TORSO, 0f, torsoU(SHORTS_TOP), ease = SHORTS_EASE), GarmentBranch(LEG_L, INTO_PELVIS, legU(SHORTS_HEM), ease = SHORTS_EASE)),
+        listOf(GarmentBranch(TORSO, 0f, torsoU(SHORTS_TOP), ease = SHORTS_EASE), GarmentBranch(LEG_L, 0f, legU(SHORTS_HEM), ease = SHORTS_EASE)),
         layer = WAIST_LAYER,
     ) +
     twinGarment(SANDALS, "Sandals", FEET_SLOT, CORK, emptyList()) +

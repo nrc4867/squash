@@ -84,4 +84,19 @@ class SkinningTest {
         val tip = bone.pivot + along * (bone.length * 1.01f)
         assertEquals(0f, (checkNotNull(frames.twists[knee]).backOf(tip)?.let { 1f } ?: 0f), "past its span a point takes the whole twist")
     }
+
+    @Test
+    fun aTwistRollsABentBoneWhereItPointsAndSpreadsAlongItWhereATurnSwingsTheBend() {
+        val leg = PartId("back-leg-l")
+        val knee = checkNotNull(rig.indexOf(BoneName(leg, "knee")))
+        val along = rig.bones[knee].direction.normalized()
+        fun pointing(set: BonePose) = (boneFrames(rig, Pose(listOf(set))).turns[knee] * along).normalized()
+        val bent = pointing(BonePose(leg, "knee", 40f, mode = JointMode.FREE))
+        val twisted = pointing(BonePose(leg, "knee", 40f, twist = 70f, mode = JointMode.FREE))
+        val turned = pointing(BonePose(leg, "knee", 40f, turn = 70f, mode = JointMode.FREE))
+        assertEquals(0f, (twisted - bent).length, 1e-4f, "a twist leaves the bent bone pointing where its bend put it")
+        assertTrue((turned - bent).length > 0.1f, "a turn about the rest length swings the bend")
+        val twist = checkNotNull(boneFrames(rig, Pose(listOf(BonePose(leg, "knee", 40f, twist = 70f, mode = JointMode.FREE)))).twists[knee])
+        assertEquals(70f * DEGREES_TO_RADIANS, twist.radians, 1e-3f, "the whole twist spreads along the bone")
+    }
 }

@@ -14,14 +14,14 @@ private const val NECK_TURN = "neck"
 
 /**
  * How far her display pose brings each arm down from the A-pose she is built in, leaning it in across its shoulder's hinge, so it hangs
- * just clear of her hips; and how far it turns the forearm about its length at the elbow, past the elbow's limits, so the palms face her
- * thighs. A pose that sets an elbow sets its turn too.
+ * just clear of her hips; and how far it rolls the forearm about its own length from the elbow, past the elbow's limits, so the palms
+ * face her thighs. A pose that sets an elbow sets its twist too.
  */
 private const val ARMS_DOWN = -28f
 private const val PALMS_IN = 70f
 
-/** The forearm of [arm] turned at the elbow so its palm faces in. */
-private fun palmIn(arm: PartId) = BonePose(arm, ARM_ELBOW, turn = PALMS_IN, mode = JointMode.FREE)
+/** The forearm of [arm] rolled from the elbow so its palm faces in. */
+private fun palmIn(arm: PartId) = BonePose(arm, ARM_ELBOW, twist = PALMS_IN, mode = JointMode.FREE)
 
 /** The pose she is shown in: her arms brought down to her sides, which the body keeps on its surface, palms in. */
 val WOMAN_DISPLAY = Pose(listOf(BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN), BonePose(ARM_R, TUBE_BASE, lean = ARMS_DOWN), palmIn(ARM_L), palmIn(ARM_R)))

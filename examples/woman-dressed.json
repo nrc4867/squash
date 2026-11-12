@@ -8376,14 +8376,14 @@
                 {
                     "part": "arm-l",
                     "joint": "joint.2",
-                    "turn": 70.0,
-                    "mode": "free"
+                    "mode": "free",
+                    "twist": 70.0
                 },
                 {
                     "part": "arm-r",
                     "joint": "joint.2",
-                    "turn": 70.0,
-                    "mode": "free"
+                    "mode": "free",
+                    "twist": 70.0
                 }
             ]
         },

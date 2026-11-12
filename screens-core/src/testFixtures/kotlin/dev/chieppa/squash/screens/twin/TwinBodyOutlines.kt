@@ -60,20 +60,22 @@ internal val ARM_TOP = drawn(
 )
 
 /**
- * The leg from where it leaves the pelvis's underside to the ankle, front up in Side: the thigh below the hip, the knee, the calf swelling
- * behind, a slim ankle. Above that the pelvis holds the top of the thigh.
+ * The leg from the hip joint, inside the pelvis, to the ankle, front up in Side: the top of the thigh slimmed inside the pelvis, the thigh below
+ * the hip, the knee, the calf swelling behind, a slim ankle.
  */
-internal const val LEG_LENGTH = 0.684f
-internal const val KNEE_ALONG = 0.274f
+internal const val LEG_LENGTH = 0.806f
+internal const val KNEE_ALONG = 0.396f
 internal val LEG_SIDE = drawn(
-    p(0f, 0.085f), p(0.040f, 0.081f), p(0.118f, 0.072f), p(0.251f, 0.053f), p(0.290f, 0.051f), p(0.368f, 0.056f), p(0.477f, 0.047f),
-    p(0.602f, 0.034f), p(0.665f, 0.031f), p(0.684f, 0f), p(0.665f, -0.031f), p(0.602f, -0.034f), p(0.477f, -0.0485f), p(0.423f, -0.0598f),
-    p(0.368f, -0.067f), p(0.313f, -0.0596f), p(0.290f, -0.0526f), p(0.251f, -0.0535f), p(0.118f, -0.072f), p(0.040f, -0.081f), p(0f, -0.085f),
+    p(0f, 0.05f), p(0.06f, 0.07f), p(0.122f, 0.085f), p(0.162f, 0.081f), p(0.24f, 0.072f), p(0.373f, 0.053f), p(0.412f, 0.051f),
+    p(0.49f, 0.056f), p(0.599f, 0.047f), p(0.724f, 0.034f), p(0.787f, 0.031f), p(0.806f, 0f), p(0.787f, -0.031f), p(0.724f, -0.034f),
+    p(0.599f, -0.0485f), p(0.545f, -0.0598f), p(0.49f, -0.067f), p(0.435f, -0.0596f), p(0.412f, -0.0526f), p(0.373f, -0.0535f), p(0.24f, -0.072f),
+    p(0.162f, -0.081f), p(0.122f, -0.085f), p(0.06f, -0.07f), p(0f, -0.05f),
 )
 internal val LEG_TOP = drawn(
-    p(0f, 0.085f), p(0.040f, 0.0835f), p(0.118f, 0.0735f), p(0.251f, 0.050f), p(0.274f, 0.048f), p(0.368f, 0.0545f),
-    p(0.477f, 0.047f), p(0.602f, 0.034f), p(0.665f, 0.031f), p(0.684f, 0f), p(0.665f, -0.031f), p(0.602f, -0.034f), p(0.477f, -0.047f),
-    p(0.368f, -0.0545f), p(0.274f, -0.048f), p(0.251f, -0.050f), p(0.118f, -0.0735f), p(0.040f, -0.0835f), p(0f, -0.085f),
+    p(0f, 0.05f), p(0.06f, 0.07f), p(0.122f, 0.085f), p(0.162f, 0.0835f), p(0.24f, 0.0735f), p(0.373f, 0.05f), p(0.396f, 0.048f),
+    p(0.49f, 0.0545f), p(0.599f, 0.047f), p(0.724f, 0.034f), p(0.787f, 0.031f), p(0.806f, 0f), p(0.787f, -0.031f), p(0.724f, -0.034f),
+    p(0.599f, -0.047f), p(0.49f, -0.0545f), p(0.396f, -0.048f), p(0.373f, -0.05f), p(0.24f, -0.0735f), p(0.162f, -0.0835f), p(0.122f, -0.085f),
+    p(0.06f, -0.085f), p(0f, -0.085f),
 )
 
 /** The unit the shoes are drawn in, in metres. */

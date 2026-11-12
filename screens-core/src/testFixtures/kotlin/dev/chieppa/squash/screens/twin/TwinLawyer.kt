@@ -48,18 +48,20 @@ private const val TROUSERS_EASE = 0.009f
 private const val TROUSERS_HEM = 0.075f
 
 /**
- * A trouser leg along the leg from the pelvis, its half depth in Side and half width in Top: the leg's own with the waist's ease to below
+ * A trouser leg along the leg from the hip joint, its half depth in Side and half width in Top: the leg's own with the waist's ease to below
  * the knee, then flaring wider at the sides than front and back to the hem.
  */
 private val TROUSER_SIDE = loop(
-    p(0f, 0.094f), p(0.118f, 0.082f), p(0.213f, 0.068f), p(0.290f, 0.061f), p(0.368f, 0.068f), p(0.477f, 0.064f), p(0.560f, 0.060f),
-    p(0.626f, 0.061f), p(0.671f, 0.061f), p(0.671f, -0.061f), p(0.626f, -0.061f), p(0.560f, -0.062f), p(0.477f, -0.066f), p(0.368f, -0.077f),
-    p(0.290f, -0.062f), p(0.213f, -0.068f), p(0.118f, -0.082f), p(0f, -0.094f),
+    p(0f, 0.094f), p(0.06f, 0.094f), p(0.122f, 0.094f), p(0.24f, 0.082f), p(0.335f, 0.068f), p(0.412f, 0.061f), p(0.49f, 0.068f),
+    p(0.599f, 0.064f), p(0.682f, 0.06f), p(0.748f, 0.061f), p(0.793f, 0.061f), p(0.793f, -0.061f), p(0.748f, -0.061f), p(0.682f, -0.062f),
+    p(0.599f, -0.066f), p(0.49f, -0.077f), p(0.412f, -0.062f), p(0.335f, -0.068f), p(0.24f, -0.082f), p(0.122f, -0.094f), p(0.06f, -0.094f),
+    p(0f, -0.094f),
 )
 private val TROUSER_TOP = loop(
-    p(0f, 0.094f), p(0.118f, 0.083f), p(0.213f, 0.066f), p(0.290f, 0.060f), p(0.368f, 0.066f), p(0.477f, 0.064f), p(0.560f, 0.068f),
-    p(0.626f, 0.073f), p(0.671f, 0.073f), p(0.671f, -0.073f), p(0.626f, -0.073f), p(0.560f, -0.068f), p(0.477f, -0.064f), p(0.368f, -0.066f),
-    p(0.290f, -0.060f), p(0.213f, -0.066f), p(0.118f, -0.083f), p(0f, -0.094f),
+    p(0f, 0.094f), p(0.06f, 0.094f), p(0.122f, 0.094f), p(0.24f, 0.083f), p(0.335f, 0.066f), p(0.412f, 0.06f), p(0.49f, 0.066f),
+    p(0.599f, 0.064f), p(0.682f, 0.068f), p(0.748f, 0.073f), p(0.793f, 0.073f), p(0.793f, -0.073f), p(0.748f, -0.073f), p(0.682f, -0.068f),
+    p(0.599f, -0.064f), p(0.49f, -0.066f), p(0.412f, -0.06f), p(0.335f, -0.066f), p(0.24f, -0.083f), p(0.122f, -0.094f), p(0.06f, -0.094f),
+    p(0f, -0.094f),
 )
 
 /** The torso's sockets for the blazer's parts: each lapel's top beside the neck, and the button where the lapels meet. */
@@ -110,7 +112,7 @@ fun twinLawyer(): List<DocumentCommand> =
             TROUSERS, "Trousers", BOTTOM_SLOT, SUIT,
             listOf(
                 GarmentBranch(TORSO, 0f, torsoU(TROUSERS_TOP), ease = TROUSERS_EASE),
-                GarmentBranch(LEG_L, INTO_PELVIS, legU(TROUSERS_HEM), ease = TROUSERS_EASE, outlines = mapOf(View.SIDE to TROUSER_SIDE, View.TOP to TROUSER_TOP)),
+                GarmentBranch(LEG_L, 0f, legU(TROUSERS_HEM), ease = TROUSERS_EASE, outlines = mapOf(View.SIDE to TROUSER_SIDE, View.TOP to TROUSER_TOP)),
             ),
             layer = WAIST_LAYER,
         ) + buildList {

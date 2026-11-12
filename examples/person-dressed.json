@@ -2383,12 +2383,12 @@
                 {
                     "part": "arm-l",
                     "joint": "shoulder",
-                    "lean": -25.0
+                    "lean": -17.0
                 },
                 {
                     "part": "arm-r",
                     "joint": "shoulder",
-                    "lean": -25.0
+                    "lean": -17.0
                 }
             ]
         },

@@ -66,6 +66,14 @@ class TwinFixtureTest {
     }
 
     @Test
+    fun theWalkTurnsTheHipsAndTheChestAgainstEachOtherAboutTheVertical() {
+        val hips = assertNotNull(TWIN_WALK.of(TORSO, "base"))
+        val chest = assertNotNull(TWIN_WALK.of(TORSO, "joint.1"))
+        assertTrue(hips.turn > 0f && chest.turn < 0f, "the chest turns back against the hips")
+        assertEquals(0f, hips.degrees + hips.lean + chest.degrees + chest.lean, "neither bends, only turns")
+    }
+
+    @Test
     fun itBuildsAndEveryPartLintsAsBuilt() {
         val document = twinDocument()
         val library = TemplateLibrary(shipped.parts, shipped.plans)

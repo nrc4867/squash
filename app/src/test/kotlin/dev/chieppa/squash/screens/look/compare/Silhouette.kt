@@ -11,9 +11,8 @@ class Silhouette(val width: Int, val height: Int, private val covered: BooleanAr
     operator fun get(x: Int, y: Int): Boolean = covered[y * width + x]
 
     companion object {
-        /** The pixels of [image] that are not its flat background, read as the colour of its top-left corner. */
-        fun keyed(image: BufferedImage): Silhouette {
-            val ground = image.getRGB(0, 0)
+        /** The pixels of [image] that are not the flat background [ground], an ARGB colour. */
+        fun keyed(image: BufferedImage, ground: Int): Silhouette {
             val covered = BooleanArray(image.width * image.height) { at -> !near(image.getRGB(at % image.width, at / image.width), ground) }
             return Silhouette(image.width, image.height, covered)
         }

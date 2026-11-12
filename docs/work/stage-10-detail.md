@@ -333,7 +333,7 @@ The twin's gaps set the order of the remaining rounds, model shape and dressing 
 | Round | Branch | Delivers | Done when |
 | --- | --- | --- | --- |
 | 9 | `shoulders` | The shoulder strip planned where the arm leaves the torso in the display pose, so a lowered arm meets the body in a round cap; the head joined to the neck by a strip or a floor that wraps the neck; arms among what pushes a hanging skirt | No squared shoulder pad in any front or three-quarter view; arms band 0.88 or more in the twin's rest body shots; the dress hand clear of the skirt; head-on-neck socket ring seen 0 |
-| 11 | `outfit-pose` | A pose an outfit adds to the display pose (heel pitch, the dress's arm spread); turns of the hips and chest about the vertical; a hand twist at the wrist; the arm placed so the hand hangs where the reference's does | Pump heel and instep as in the reference without the shoe's Redraw pitching the foot; walk shots 0.80 or more whole; hand-wave palm forward; hand-rest 0.70 or more |
+| 11 | `outfit-pose` | The bare body's pose: turns of the hips and chest about the vertical; a twist that rolls a bone where it points, for a palm; legs swinging from the hip joint; the resting hand where the reference's hangs; the person's arms straight. The pose an outfit adds (heel pitch, the dress's arm spread) is deferred | Walk shots 0.80 or more whole; hand-wave palm forward; hand-rest 0.70 or more; the person's arms hang straight |
 | 10 | `garment-cuts` | An opening whose width varies along the branch, or a cut outline drawn on a garment: V and scoop necks, a front closing to a button, bikini triangles, a pump's oval opening in one branch; a collar; owned sheets that lie on the surface under them so lapels and cups follow the chest; straps drawn along a curve on a surface (toe post, heel strap) | The lawyer's V and closing front, the dress and goth scoop necks, the bikini triangles and the pumps' openings read as in the reference; lapel vertices under cloth near 0 |
 | 12 | `hair-shell` | As round 7 in the rounds table: the hair cap as a shell lofted from the head's slices, volume and fall as drawn outlines, locks as chains; the hairline from the face map | Head band 0.90 or more in body shots; no skull through the hair in any view or pose |
 | 16 | `head-field` | `head-round` version 3 built as a `field` from cranium, jaw, chin, cheeks, nose, lips, rims and brows, the face map kept; the twin's paint and hair placed again by it | The twin's face shots at or above version 2's, a jaw and nose with no ridge or chin strip |
@@ -401,6 +401,60 @@ For the next rounds (aimed at round 10, `garment-cuts`):
 - Lapels and cups lie on the chest, which the strips do not reach; the shoulder cap rises off the torso where a halter strap or a collar crosses the shoulder.
 - The head's strip hides the head's floor near the neck; a collar or a choker on the neck meets the head's underside along the strip, not a ring.
 - Left: the arm push against the reference's overlap (above); the person's shoulder ring seen 0.467 is its hanging arm lying in the torso's side below the strip, as round 3 measured.
+
+## Round 11: outfit pose
+
+The round is narrowed to the bare body: the pose an outfit adds to the display pose (the pumps' heel pitch moved out of the shoe's Redraw, the dress's 7.4 degree arm spread) is deferred, and the pumps and the dress stand as they were. Judged on the bare twin (`example=woman-twin`, against the dressed reference) as well as the dressed one.
+
+Built:
+
+- **Twist** (`BonePose.twist`, `BoneAngles.twist`, `rig/.../BoneTurns.kt` `localTurn`): a bone's roll about its own length, taken before its tip, lean and turn, so it rolls the bone where its bend points; a `turn`, taken last about the rest line, swings a bend as well. Held as a turn is, and spread along the bone as a turn's twist is (`BoneTwist`). Its home is the elbow or the knee, the bone the forearm or shin rolls along; on a hand's or foot's own root bone it would turn whole and pinch the wrist. Test: `SkinningTest.aTwistRollsABentBoneWhereItPointsAndSpreadsAlongItWhereATurnSwingsTheBend` (a bent knee twisted 70 keeps pointing where its bend put it and spreads all 70 along the bone; the same turn swings it). The woman's palms turn in by a twist at the elbow (identical renders, since her elbows are straight). The twin's wave needs none: its palm already faces forward from the elbow's turn, the thumb toward her middle as the reference's; a further twist of -77, -25 or +25 only turned the palm off the camera (hand-wave 0.53 to 0.72 against 0.73 untwisted).
+- **Hips and chest turned about the vertical** in the twin's walk (`TwinPoses.kt`): `turn` 5.2 on the torso's root bone turns the whole body with the legs, as the reference's hips do; -8 at the torso's first joint (0.99 m) spreads up the waist, so everything from the chest's joint (1.13 m) up, bust, cups and shoulders, turns whole against the hips, as the reference's chest blends there; the neck 2.3. On the chest's own joint the spread would reach the bust and move the owned cups 6.7 mm off rigid.
+- **Legs swing from the hip joint** (`TwinBody.kt`, `TwinBodyOutlines.kt`, `TwinWardrobe.kt` `legU`): a tube's root bone pivots at its socket, and the twin's legs started where they leave the pelvis's underside, 0.746 m, 0.12 m below the reference's hip joint, so every swing of the thigh moved the knee two thirds as far as the reference's. The hip sockets now stand at 0.868 m, sunk into the torso's side (`HIP_SINK` 1.8, `HIP_V` 0.69, just forward of her side), the joints 0.0916 m out and 0.014 m behind her middle; the leg is drawn 0.122 m longer up into the pelvis, slimmer there; garments over the leg read from that start, and the trousers' drawn flare moves with it. The leg branches start at the leg's own start, so the twin's `INTO_PELVIS` is gone.
+- **Person's arms** (`PersonBody.kt`): the display pose leans the arms to 28 degrees out (`ARMS_DOWN` -17 from -25), so the upper arm hangs along the round body's side rather than pressed 0.11 into it and bowed out.
+- **Compare keys by the shared background** (`compare/Silhouette.kt`, `CompareMain.kt`): a silhouette is what is not the reference's flat background, which the shots render on too, rather than what differs from each image's top-left pixel. In a close-up that corner is cloth or skin: hand-rest keyed the skirt as background and foot-lawyer the trouser, so their scores read the light and the corner, not the shape. Body shots are unchanged by it, their corner being the background.
+
+Measured, silhouette IoU against the reference (`./gradlew :app:compare`), keyed by the background, whole; before is the elbow round's renders keyed the same way, with the corner-keyed number in brackets where it differs by more than 0.01:
+
+| shot | dressed before | dressed after | bare before | bare after |
+|---|---|---|---|---|
+| pose-walk-beach | 0.761 | 0.820 | 0.737 | 0.779 |
+| pose-walk-goth | 0.838 | 0.844 | 0.782 | 0.758 |
+| pose-walk-dress | 0.689 | 0.646 | 0.561 | 0.547 |
+| pose-walk-dress-side | 0.702 | 0.660 | 0.697 | 0.715 |
+| hand-rest | 0.789 (0.495) | 0.792 | 0.851 (0.482) | 0.866 |
+| hand-wave | 0.733 | 0.732 | 0.728 | 0.686 |
+| pose-wave-lawyer | 0.783 | 0.792 | 0.734 | 0.730 |
+| foot-lawyer | 0.831 (0.873) | 0.845 | 0.655 (0.299) | 0.664 |
+| lawyer-side | 0.856 | 0.851 | 0.814 | 0.790 |
+| beach-threeq, lawyer-threeq, goth-threeq | 0.925, 0.891, 0.929 | 0.917, 0.895, 0.926 | 0.925, 0.854, 0.911 | 0.912, 0.846, 0.898 |
+| mean of all 24 | 0.845 (0.834) | 0.848 | 0.797 (0.767) | 0.792 |
+
+The other shots move by 0.01 or less. The dressed walk's legs band: beach 0.666 to 0.797, goth 0.799 to 0.839. The bare twin lacks the reference's sandals, boots and shorts, so its walk numbers are loose: bare goth's fall is the boots and jeans the reference wears over the stepping leg, and bare hand-wave's the hair, the arm being unchanged there.
+
+What the renders show (`round11-look/crops/*-ref-before-after.png`: reference, before, after): in the side walks the front thigh reaches forward from the hip and the back leg trails from it, the feet landing where the reference's do; in three-quarter the hips turn toward the stepping leg and the chest back, the arms riding the chest. At rest nothing moves but the legs' tops inside the pelvis. The resting hand hangs at the reference's place in the bare twin (hand-rest's hand over the reference's within a few pixels); in the dress the arm still turns out beside the skirt by the skirt clearance, as the reference spreads its dress arms. The person's arms hang straight down its sides from a round shoulder (`crops/person-before-after.png`).
+
+Regressions (`measure`, every outfit and pose of the woman, twin and person, against `main`): hip spread 0.2483 (woman) unchanged, and 0.1820 to 0.1832 (twin; the reference's is 0.184); leg volume outside the skirt and skirt vertices inside a leg unchanged (0, and the woman's Winter coat 0.00056); arm volume inside the torso unchanged (0, the twin's right arm 0.00001); arm depth inside the torso unchanged but the twin's Dress 0.0105 to 0.0107 and the person's 0.037 to 0.045; arm and hand vertices inside the skirt 0; owned parts' drift 0 in every pose. Creatures: fennec, dressed and winged fennec, dragon, toucan, lizard and koi render pixel for pixel as on `main` in every outfit, pose and close-up.
+
+Against the done-when:
+
+- Walk shots 0.80 or more whole: beach 0.820 and goth 0.844 dressed. The two dress walks fall short at 0.646 and 0.660, 0.04 below the elbow round: a thigh swinging from the hip joint cuts the free skirt's rings near the hips, and the push spreads each ring's push down the cone, up to twice, so the skirt balloons front and back where the reference's hem moves 0.065 forward. The legs under it match the reference's (legs band 0.69). The cream top also keys as background, its colour being within the tolerance.
+- Hand-wave palm forward: met, as it was before this round; the palm faces the camera, the thumb toward her middle. What holds hand-wave at 0.73 is the hand's size and place in the frame, not its roll.
+- Hand-rest 0.70 or more: 0.792 dressed, 0.866 bare. The 0.495 was the corner key reading the skirt as background; keyed by the background the elbow round's render scores 0.789.
+- The person's arms hang straight: met by eye.
+- The woman's armpit merge: not fixed. Leaning her display pose to -25 and -22 from -28 left the arm and torso one silhouette down to the same height under the arm: it is the shoulder strip's foot running down the body's side, which this round's tools do not reach. She stays at -28.
+
+Tentative: the hip socket's sink 1.8 and v 0.69, found by measure; the leg's slimmer top inside the pelvis (0.05 to 0.085 m); the person's 28 degrees out; the chest's turn on the waist joint rather than the chest's own.
+
+For Nicholas: whether the deferred outfit pose comes back, and in which form: the design that keeps the open question on the display pose free either way is an outfit's own pose, stored on the outfit, whose bones add to whatever the working pose over the display pose sets, so it holds in every pose; and whether the twin keeps its legs from the hip joint at the cost of the dress walks until the skirt's push is reworked.
+
+For the next rounds (aimed at round 10, `garment-cuts`):
+
+- The twin's legs start at the hip joint inside the pelvis: a leg branch's u runs from there (`legU` reads heights from 0.868 m), so a cut or an opening along a trouser leg is placed by `legU`, and anything drawn along the leg in metres starts 0.122 m above the pelvis's underside.
+- The free skirt balloons in the walk now that the thighs swing from the hip: the push at rings near the hips spreads down the cone to the hem. A skirt held near the hips, as the reference holds every row above 0.86 m, is where the dress walks recover.
+- The chest turns whole above 1.13 m in the walk, so lapels, cups and a neckline ride it rigidly; a cut across the waist between 0.99 and 1.13 m sees the turn spread.
+- Silhouettes key by the reference's background: a garment within about 10 a channel of (241, 236, 227), as the cream top is, keys as background in every shot.
+- The outfit pose is deferred: the pumps keep their Redraw's lean and pitch, and the dress's arms clear the skirt by the clearance turn.
 
 ## Blend trial
 

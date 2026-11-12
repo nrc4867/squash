@@ -26,7 +26,8 @@ data class BodyPoint(val x: Float, val y: Float, val z: Float) {
 
 /**
  * One bone of a pose, the bone named by part and joint name: its turn in [degrees] about the joint's hinge, its [turn] about its
- * own length and its [lean] across the hinge, how far the joint sits from the one before it on the part as a [stretch] factor,
+ * own length as it rests and its [lean] across the hinge, its [twist] about its own length taken before any of them, so it rolls the
+ * bone where it points as a forearm turns the palm, how far the joint sits from the one before it on the part as a [stretch] factor,
  * whether that stretch [keepVolume] by narrowing, and how its limits hold it. A template's `stretch` marks the joints a stretch
  * handle offers; the body curve's length stretches every joint along the spine and tail.
  */
@@ -40,9 +41,10 @@ data class BonePose(
     val lean: Float = 0f,
     val mode: JointMode = JointMode.LIMITED,
     val keepVolume: Boolean = true,
+    val twist: Float = 0f,
 ) {
     /** Whether it leaves its bone as it rests. A mode or a volume rule moves nothing by itself. */
-    val isRest: Boolean get() = degrees == 0f && stretch == 1f && turn == 0f && lean == 0f
+    val isRest: Boolean get() = degrees == 0f && stretch == 1f && turn == 0f && lean == 0f && twist == 0f
 
     /** Whether it says nothing a bone left out of the pose would not: at rest, limited, keeping volume. */
     val isDefault: Boolean get() = isRest && mode == JointMode.LIMITED && keepVolume

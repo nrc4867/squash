@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.look.compare
 
+import androidx.compose.ui.graphics.toArgb
+import dev.chieppa.squash.screens.look.shots.REFERENCE_GROUND
 import dev.chieppa.squash.screens.look.shots.SHOTS_FOLDER
 import dev.chieppa.squash.screens.look.shots.shotList
 import java.awt.image.BufferedImage
@@ -13,6 +15,9 @@ private const val SQUASH_ONLY = 0xFFE0532F.toInt()
 private const val SHARED = 0xFF9C9C9C.toInt()
 private const val NEITHER = 0xFFFFFFFF.toInt()
 
+/** The background both renders share, as an ARGB colour. */
+private val GROUND = REFERENCE_GROUND.toArgb()
+
 /** The gap between the reference and the Squash render in a pair, in pixels, and its colour. */
 private const val GAP = 8
 private const val GAP_COLOR = 0xFF2A1B17.toInt()
@@ -24,7 +29,8 @@ private const val TABLE = "iou.txt"
 /**
  * Compares an example's shots, as the look command rendered them with `shots=`, with the reference renders of the same names: per shot a
  * side-by-side (`<shot>-pair.png`, the reference on the left) and a silhouette overlay (`<shot>-overlay.png`), and the silhouette's
- * intersection over union, whole and per body band, printed and kept as a table. Each silhouette is what is not its image's flat background.
+ * intersection over union, whole and per body band, printed and kept as a table. Each silhouette is what is not the reference's flat
+ * background, which the shots render on too, so a close-up whose corner shows cloth or skin still keys the character alone.
  * Run as `./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder of the reference PNGs>"`.
  */
 fun main(args: Array<String>) {
@@ -46,8 +52,8 @@ fun main(args: Array<String>) {
         val ref = ImageIO.read(refFile)
         val own = ImageIO.read(ownFile)
         ImageIO.write(sideBySide(ref, own), "png", File(out, "${shot.name}-pair.png"))
-        val a = Silhouette.keyed(ref)
-        val b = Silhouette.keyed(own)
+        val a = Silhouette.keyed(ref, GROUND)
+        val b = Silhouette.keyed(own, GROUND)
         require(a.width == b.width && a.height == b.height) { "${shot.name}: the reference is ${a.width}x${a.height}, the render ${b.width}x${b.height}" }
         ImageIO.write(overlay(a, b), "png", File(out, "${shot.name}-overlay.png"))
         val bands = BodyBands.of(shot)

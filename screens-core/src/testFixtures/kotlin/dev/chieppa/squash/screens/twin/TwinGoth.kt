@@ -72,7 +72,7 @@ fun twinGoth(): List<DocumentCommand> =
         ) +
         twinGarment(
             BLACK_JEANS, "Black jeans", BOTTOM_SLOT, BLACK_DENIM,
-            listOf(GarmentBranch(TORSO, 0f, torsoU(JEANS_TOP), ease = JEANS_WAIST_EASE), GarmentBranch(LEG_L, INTO_PELVIS, legU(JEANS_HEM), ease = JEANS_LEG_EASE)),
+            listOf(GarmentBranch(TORSO, 0f, torsoU(JEANS_TOP), ease = JEANS_WAIST_EASE), GarmentBranch(LEG_L, 0f, legU(JEANS_HEM), ease = JEANS_LEG_EASE)),
             layer = WAIST_LAYER,
         ) +
         twinGarment(GOTH_BELT, "Belt", WAIST_SLOT, BELT_LEATHER, listOf(GarmentBranch(TORSO, torsoU(BELT_FROM), torsoU(BELT_TO), ease = BELT_EASE)), layer = BELT_LAYER) +

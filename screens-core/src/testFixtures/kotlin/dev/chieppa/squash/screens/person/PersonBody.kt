@@ -38,11 +38,11 @@ val FOOT_R = PartId("foot-r")
 
 /**
  * How far the biped plan rests the arms out from the body, the A-pose Add part places them in, and how far the display pose brings them
- * down from it, leaving them out a little so the hands hang clear of the thighs. The legs stand straight down from the hips, which bear
- * the weight.
+ * down from it, leaving them out along the round body's side, so the upper arm hangs clear of it rather than pressed in and bowed out.
+ * The legs stand straight down from the hips, which bear the weight.
  */
 private const val ARM_SPREAD = 45f
-private const val ARMS_DOWN = -25f
+private const val ARMS_DOWN = -17f
 
 /** Where the shoulders sit on the torso, high on its side, so an arm in A-pose leaves the body near its root. */
 private const val SHOULDER_U = 0.93f

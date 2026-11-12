@@ -46,10 +46,16 @@ internal val LIMB_LENGTHS = mapOf(ARM_L to ARM_LENGTH, LEG_L to LEG_LENGTH, NECK
 /** Up the torso, as a share of its length, where the shoulder joints and the hip joints stand. */
 internal fun torsoU(height: Float) = (height - PELVIS_HEIGHT) / TORSO_LENGTH
 private const val SHOULDER_HEIGHT = 1.318f
-private const val HIP_HEIGHT = 0.746f
+private const val HIP_HEIGHT = 0.868f
 
 /** A socket seated on its part's surface rather than sunk into it, so the joints stand where the reference's do. */
 private const val ON_SURFACE = 0f
+
+/** How far the hip sockets sink, so the hip joints stand 0.092 m out from her middle inside the pelvis, as the reference's do. */
+private const val HIP_SINK = 1.8f
+
+/** Round the torso where the hip sockets sit: a little forward of her left side, so the joints stand over the middle of the pelvis's depth. */
+private const val HIP_V = 0.69f
 
 /** How far the shoulder sockets sink, so the shoulder joints stand 0.148 m out from her middle as the reference's do, a little inside the torso. */
 private const val SHOULDER_SINK = 0.25f
@@ -110,7 +116,7 @@ fun twinBody(): List<DocumentCommand> = buildList {
     SPINE.forEachIndexed { i, height -> add(HandJoints.add(TORSO, i + 1, torsoU(height), Hinge.X, SPINE_BEND, stretch = false)) }
     add(HandSockets.add(TORSO, NECK_SOCKET, 1f, 0f, 0f, paired = false, sink = ON_SURFACE))
     add(HandSockets.add(TORSO, SHOULDER_SOCKET, torsoU(SHOULDER_HEIGHT), LEFT, 0f, paired = true, sink = SHOULDER_SINK))
-    add(HandSockets.add(TORSO, HIP_SOCKET, torsoU(HIP_HEIGHT), LEFT, 0f, paired = true, sink = ON_SURFACE))
+    add(HandSockets.add(TORSO, HIP_SOCKET, torsoU(HIP_HEIGHT), HIP_V, 0f, paired = true, sink = HIP_SINK))
 
     add(AddParts(listOf(PartInstance(NECK, ref("tube"), on(TORSO, NECK_SOCKET), role = Role.OTHER, roleGuessed = true))))
     add(RestDirection.restIn(NECK, RestDirection.UP))

@@ -114,3 +114,12 @@ Read while smoothing the twin's and the woman's arms through the elbow:
 - `rig/.../BoneTurns.kt` (`localTurn`): that a bone's `turn` is taken last, about its rest length, so a turn at a bent elbow swings the bend about the upper arm's line as well as twisting the forearm; the twin had aimed its elbows by a turn of 70 degrees, which twisted the forearm and pinched it at the elbow. A pose reference with each bone's axes and their order drawn would have said it.
 - `twin/TwinPoses.kt`, `twin/TwinBody.kt`, `twin/TwinBodyOutlines.kt`: the elbow's pose, the shoulder socket's sink and the arm's radius keys, to tell which made the corner. The keys are the reference's own (it narrows to the elbow too), so they were not the cause. Rendering one change at a time told the rest; a measure line printing each posed arm ring's middle and radius would have said it without renders.
 - No source was read for where the shoulder joint lands: `measure parts=true` printed the arm's origin, which put the twin's shoulder 0.012 m further out than the reference's joint.
+
+### Bare body: walk turns, hips and arms
+
+Read while turning the twin's hips and chest for the walk, moving her hip joints and widening the person's arms:
+
+- `rig/.../BoneTurns.kt` (`localTurn`): the order a bone's angles turn it in, to know a `turn` at a bent elbow swings the bend while a roll where the bone points needs a turn taken first (now `twist`), and that a turn on an upright torso's bones is about the vertical. A pose reference with each bone's axes and their order drawn would have said it.
+- `twin/TwinBody.kt`, `twin/TwinBodyOutlines.kt`: where the legs' sockets sat and where the leg started, to find why the walk's stride fell short: a tube's root bone pivots at its socket, and the twin's legs started where they leave the pelvis's underside, 0.12 m below the reference's hip joint. `measure parts=true` gave the leg's origin; a measure line printing each bone's pivot beside a reference's joints would have said it without reading.
+- `app/.../compare/Silhouette.kt`: how a silhouette is keyed, to find why hand-rest and the lawyer's foot scored low: it keyed each image by its top-left pixel, which in a close-up is cloth or skin. It now keys by the background the shots share.
+- No source was read for the person's arms or the woman's armpit: renders of the display pose at several leans told them.

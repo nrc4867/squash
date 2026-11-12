@@ -50,15 +50,9 @@ internal fun cloth(slot: SlotName, hex: Int): DocumentCommand = SetPaletteSlot(s
 /** Up an arm hanging at rest, as a share of its drawn length, of a place [above] metres above the wrist along it. */
 internal fun armU(above: Float) = (0.497f - above) / ARM_LENGTH
 
-/** Down a leg from where it leaves the pelvis, as a share of its drawn length, of a place [height] metres above the ground at rest. */
+/** Down a leg from the hip joint, as a share of its drawn length, of a place [height] metres above the ground at rest. */
 internal fun legU(height: Float) = (LEG_TOP_HEIGHT - height) / LEG_LENGTH
-private const val LEG_TOP_HEIGHT = 0.746f
-
-/**
- * How far a trouser leg runs on up into the pelvis before the leg's start, as a share of the leg, short of hanging free: the leg leaves
- * the pelvis's underside, so a leg branch from the leg's own start leaves the hip strip bare under the waist.
- */
-internal const val INTO_PELVIS = -0.08f
+private const val LEG_TOP_HEIGHT = 0.868f
 
 private const val SHOE_RINGS = 48
 

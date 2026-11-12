@@ -17,15 +17,18 @@ internal const val RADIANS_TO_DEGREES = (180.0 / PI).toFloat()
 /** Below this a direction has no length to make an axis from. */
 private const val MIN_AXIS = 1e-6f
 
-/** A bone's three angles in degrees: [tip] about its hinge, [turn] about its own length, [lean] across the hinge. */
-data class BoneAngles(val tip: Float, val turn: Float, val lean: Float) {
+/**
+ * A bone's angles in degrees: [tip] about its hinge, [turn] about its own length as it rests, [lean] across the hinge, and [twist]
+ * about its own length taken before the rest, which rolls the bone where it points.
+ */
+data class BoneAngles(val tip: Float, val turn: Float, val lean: Float, val twist: Float = 0f) {
     companion object {
         val REST = BoneAngles(0f, 0f, 0f)
     }
 }
 
 /** The angles [pose] sets, or rest. */
-fun BonePose?.angles(): BoneAngles = if (this == null) BoneAngles.REST else BoneAngles(degrees, turn, lean)
+fun BonePose?.angles(): BoneAngles = if (this == null) BoneAngles.REST else BoneAngles(degrees, turn, lean, twist)
 
 /**
  * The bone's own axes as columns, right-handed: its hinge, the axis it leans about, and its length. A mirrored bone takes the
@@ -53,14 +56,18 @@ fun Limits.turnReach(): Float = if (min >= 0f || max <= 0f) 0f else min(-min, ma
 fun held(angles: BoneAngles, limits: Limits?, mode: JointMode): BoneAngles {
     if (limits == null || mode == JointMode.FREE) return angles
     val reach = limits.turnReach()
-    return BoneAngles(angles.tip.coerceIn(limits.min, limits.max), angles.turn.coerceIn(-reach, reach), angles.lean.coerceIn(-reach, reach))
+    return BoneAngles(angles.tip.coerceIn(limits.min, limits.max), angles.turn.coerceIn(-reach, reach), angles.lean.coerceIn(-reach, reach), angles.twist.coerceIn(-reach, reach))
 }
 
-/** The turn [angles] make of [bone] in its parent's frame: tip about the hinge first, then lean, then turn about its length. */
+/**
+ * The turn [angles] make of [bone] in its parent's frame: twist about its length first, then tip about the hinge, then lean, then
+ * turn about its length as it rests.
+ */
 fun localTurn(bone: Bone, angles: BoneAngles): Mat3 {
-    if (angles.turn == 0f && angles.lean == 0f) return rotation(bone.hinge, angles.tip * DEGREES_TO_RADIANS)
+    if (angles.turn == 0f && angles.lean == 0f && angles.twist == 0f) return rotation(bone.hinge, angles.tip * DEGREES_TO_RADIANS)
     val axes = bone.axes()
-    return rotation(axes.z, angles.turn * DEGREES_TO_RADIANS) * rotation(axes.y, angles.lean * DEGREES_TO_RADIANS) * rotation(axes.x, angles.tip * DEGREES_TO_RADIANS)
+    val bent = rotation(axes.z, angles.turn * DEGREES_TO_RADIANS) * rotation(axes.y, angles.lean * DEGREES_TO_RADIANS) * rotation(axes.x, angles.tip * DEGREES_TO_RADIANS)
+    return if (angles.twist == 0f) bent else bent * rotation(axes.z, angles.twist * DEGREES_TO_RADIANS)
 }
 
 /** The angles whose [localTurn] of [bone] is [turn], a rotation in its parent's frame. */
