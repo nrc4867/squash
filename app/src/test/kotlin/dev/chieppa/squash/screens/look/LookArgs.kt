@@ -26,7 +26,7 @@ class LookArgs(args: Array<String>) {
     /** The pose names asked for, or null for every named pose. */
     val poses: List<String>? = values["poses"]?.takeIf { it != ALL }?.split(',')
 
-    /** The close-ups asked for, among face, hand and foot. */
+    /** The close-ups asked for, among face, hand, foot and hands, the bare hand at rest, curled into a fist and open. */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
     /** The shot list to render instead of the usual views: `reference` for the reference's 24 shots. */
@@ -48,5 +48,6 @@ class LookArgs(args: Array<String>) {
         const val FACE = "face"
         const val HAND = "hand"
         const val FOOT = "foot"
+        const val HANDS = "hands"
     }
 }

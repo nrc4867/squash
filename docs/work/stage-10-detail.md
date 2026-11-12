@@ -599,6 +599,50 @@ For the next rounds (aimed at round 11, `outfit-pose`):
 - A heel pitch on the ankle is a tip, not a turn, so the twist spread does not touch it.
 - The twin's shoulder joints sit 0.012 m inside the torso; an outfit pose that raises an arm swings it about that pivot, as the reference does.
 
+## Hands
+
+`hand` 5 grows its fingers out of the palm on one surface. The blend was kept and the cage not needed: the hand's palm is already a `field` (a smooth union of solids lofted by rays), so the fingers became solids of the same field, joined by a smooth union, and the work was in lofting that one surface as several runs that meet without seams, cracks or folds. A cage would have rebuilt the palm, the rig's reading of it and the hand's parameters, for the same surface.
+
+How it works:
+
+- **One field.** The palm's solids and each finger (a capsule from a buried root to its tip, tapering, a knuckle ball at its root toward the back, an optional claw past the tip) are one `BlendedField`: the digits as a second group (`FieldDigits`), joined to the palm by a smooth union of radius `web` (each digit's own `join` factor times it; the thumb's 2.5) and to each other by `merge` in radii. `cup` warps the palm's solids so its underside hollows. Digits are culled by a capsule bound, so the field costs about the palm's.
+- **Runs on it.** The palm's run is lofted as before but cut where the fingers first rise out of the palm (rays against a field of only the fingers' roots), so its end rings stop below the knuckles; its normals come from the whole field. Each finger's run (`DigitLoft`) is planar rings across its axis: rays from the axis stop at the surface, or at the wall where a neighbour's axis lies nearer (only where the neighbour's run begins), and a wall stretch's first and last rays slide along the wall to the surface and a little past, so neighbours overlap on the web's middle line. Points inside, rays still inside at the reach, and the finger's rings sunk in the palm are buried: no face, no contour, no watertight check. Slid points whose faces turn against the field's gradient are buried too, so no fold inks a line.
+- **One rig.** Every vertex of the palm and fingers carries `Rides`: its u on the palm and on each finger, with shares that ease from the palm to a finger over the finger's root and are shared between touching fingers. Coincident points on two runs ride the same, so a curled finger pulls its web and the palm next to it.
+- **Nails and claws are one setting.** `nail` paints an oval area `nail:i` on each finger's back (`roll` turns a digit's rings so v = 0.25 is its back), palette slot `nails`; `claw` and `curl` stand a point past the tip and paint the area to it. Curl now closes each joint toward its farther limit, so the fingers (-100 to 20) close to a fist and the thumb (-20 to 35) across it.
+- **The range from fingers to paws.** `merge` at 0.2 leaves separate fingers; near 1.5 the row is a mitten of shallow lobes. `JoinedHandTest` builds both, and a clawed hand, closed and watertight; no shipped creature uses them yet.
+
+The woman (`woman.json`, `woman-dressed.json`) and the twin are on hand 5; the woman's palms face her thighs with no palm twist, fingers relaxed in the display pose, nails in her `nails` slot. She stays on foot 2. A `close=hands` look renders the hand in six views in the display pose, as built, curled 0.85 and open.
+
+Measured:
+
+| | before | after |
+| --- | --- | --- |
+| Hand build and mesh, median warm (target under 50 ms) | 15 ms (hand 4) | 34 ms |
+| Twin hand-rest / hand-wave IoU | 0.866 / 0.686 | 0.866 / 0.684 |
+| Dressed twin hand-rest / hand-wave IoU | 0.792 / 0.732 | 0.792 / 0.741 |
+| Woman-dressed terminator blotches on hands, every outfit | 3 to 4 | 0 |
+| Woman-dressed bare skin seen under winter mittens | 41 | 8 |
+| Woman-dressed smallest gap between fingertips, display pose | 0.028 | 0.0065 (relaxed curl) |
+
+Creatures render pixel-identical (dragon, fennec, fennec-dressed, fennec-winged, koi, lizard, toucan). The person differs where colour layers now lie on her posed parts rather than at rest: dark patches that floated off her shoulders are gone.
+
+Left as it stands:
+
+- Small shade flecks and pin holes in the thumb to index crotch in the wave's view, and thin pale slivers where two fingers part, where the slid rays overlap least.
+- The fist's thumb goes into the index: one hinge a joint and the thumb's limits; it wants a thumb that swings across the palm.
+- At rest the knuckles read lightly and the cup barely shows at its default.
+- Paint across the palm and a finger where their runs overlap would fight in depth; the nails sit wholly on the fingers.
+- Nails take one slot for every outfit; an outfit cannot paint them.
+
+### For the next rounds
+
+Feet, next, on the same mechanism:
+
+- **Foot 4**: the toes as a `digits` row joined to the foot's field, toenails by `nail` at a smaller `length` and `width`, the toes' merge high enough that they read as one front with grooves; check every shoe still covers it (the shoe's toe box replaces the toes, so `count` 0 must leave the field's run closing the foot).
+- **Paws**: the fennec's paw as a joined row with `merge` near 1.5, toe pads as `pad` areas on the lobes, and claws by `nail.claw` with a small `curl`, retracted by a shorter claw; the dragon's foot with long curled claws. Check the creatures still pixel-match until each is deliberately moved.
+- **Heads**: a creature's head joined to its muzzle and ears by the same runs-on-one-field loft.
+- **Thumb**: a second thumb hinge that swings it across the palm, for a fist and a grip.
+
 ## Open
 
 - None.

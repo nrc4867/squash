@@ -26,6 +26,8 @@ data class Slice(
  * others, where on each of them every vertex takes its bones from. [proxyNormals] holds a swept patch's shading normal per point,
  * three values each, as the slice build derives them; a patch without them shades by its mesh normal. [us] gives a patch with no slices
  * a u range of its own, one u a ring. A patch with [openEnds] meets other surfaces at its first and last rings, which close nothing.
+ * [buried] marks the points that lie inside the part as built, where another of its patches shows the surface: no face with one of
+ * them as a corner is built. [rides] says, for a patch whose bones follow each vertex's place, where it takes them from.
  */
 class Patch(
     val name: String,
@@ -39,11 +41,15 @@ class Patch(
     val spanned: Spanned? = null,
     val us: FloatArray? = null,
     val openEnds: Boolean = false,
+    val buried: BooleanArray? = null,
+    val rides: Rides? = null,
 ) {
     init {
         require(points.size == nu * nv * COMPONENTS) { "Patch $name holds ${points.size} values for a $nu by $nv grid" }
         require(us == null || us.size == nu) { "Patch $name holds ${us?.size} us for $nu rings" }
         require(spanned == null || spanned.vertexCount == nu * nv) { "Patch $name spans ${spanned?.vertexCount} vertices for a $nu by $nv grid" }
+        require(buried == null || buried.size == nu * nv) { "Patch $name buries ${buried?.size} of a $nu by $nv grid" }
+        require(rides == null || rides.vertexCount == nu * nv) { "Patch $name rides ${rides?.vertexCount} vertices for a $nu by $nv grid" }
     }
 
     /** The u along the part that the vertex at [local] takes its bone from. */
@@ -85,19 +91,29 @@ class Patch(
             val point = i / COMPONENTS
             values[((point / columns) * nv + (point % columns) % nv) * COMPONENTS + i % COMPONENTS]
         }
-        return Patch(name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened), spanned?.reopened(nu, nv), us, openEnds)
+        val buriedAgain = buried?.let { flags -> BooleanArray(nu * columns) { flags[(it / columns) * nv + (it % columns) % nv] } }
+        return Patch(
+            name, nu, columns, closedV = false, slices, reopened(points), boneU, proxyNormals?.let(::reopened), spanned?.reopened(nu, nv), us, openEnds,
+            buriedAgain, rides?.reopened(nu, nv),
+        )
     }
 
     /** This patch shading by [normals], three values per point. */
-    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals, spanned, us, openEnds)
+    fun withProxyNormals(normals: FloatArray) = Patch(name, nu, nv, closedV, slices, points, boneU, normals, spanned, us, openEnds, buried, rides)
+
+    /** This patch meeting other surfaces at its end rings, which close nothing. */
+    fun withOpenEnds() = Patch(name, nu, nv, closedV, slices, points, boneU, proxyNormals, spanned, us, true, buried, rides)
+
+    /** This patch with [buried] points and the bones of each vertex taken from [rides]. */
+    fun withBuried(buried: BooleanArray?, rides: Rides?) = Patch(name, nu, nv, closedV, slices, points, boneU, proxyNormals, spanned, us, openEnds, buried, rides)
 
     /** This patch with its points moved to [moved] and its shading normals to [normals], everything addressed by u and v kept. */
-    fun withPoints(moved: FloatArray, normals: FloatArray?) = Patch(name, nu, nv, closedV, slices, moved, boneU, normals, spanned, us, openEnds)
+    fun withPoints(moved: FloatArray, normals: FloatArray?) = Patch(name, nu, nv, closedV, slices, moved, boneU, normals, spanned, us, openEnds, buried, rides)
 
     override fun equals(other: Any?): Boolean =
         other is Patch && name == other.name && nu == other.nu && nv == other.nv && closedV == other.closedV &&
             slices == other.slices && points.contentEquals(other.points) && boneU == other.boneU && spanned == other.spanned &&
-            us.contentEquals(other.us) && openEnds == other.openEnds
+            us.contentEquals(other.us) && openEnds == other.openEnds && buried.contentEquals(other.buried) && rides == other.rides
 
     override fun hashCode(): Int = 31 * (31 * name.hashCode() + nu) + points.contentHashCode()
 

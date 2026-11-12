@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Tag
 
 /**
  * What building a hand or a foot again costs, its patches and its mesh, as a change to its shape or parameters builds it: the blended
- * `hand` 4 and `foot` 3, with a pitched shoe's foot, beside the lofted `hand` 3 and `foot` 2. A pose only skins them. The medians go to
+ * `hand` 4 and 5 and `foot` 3, with a pitched shoe's foot, beside the lofted `hand` 3 and `foot` 2. A pose only skins them. The medians go to
  * the test's output.
  */
 @Tag("slow")
@@ -29,6 +29,7 @@ class BlendedHandFootBenchTest {
 
     @Test
     fun aBlendedHandBuildsUnderFiftyMilliseconds() {
+        assertTrue(median("hand", 5) < BUDGET_MS)
         assertTrue(median("hand", 4) < BUDGET_MS)
         median("hand", 3)
         assertTrue(median("foot", 3) < BUDGET_MS)

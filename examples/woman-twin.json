@@ -1707,7 +1707,7 @@
                 "id": "hand-l",
                 "template": {
                     "id": "hand",
-                    "version": 4
+                    "version": 5
                 },
                 "socket": {
                     "parent": "arm-l",
@@ -1721,7 +1721,7 @@
                 "id": "hand-r",
                 "template": {
                     "id": "hand",
-                    "version": 4
+                    "version": 5
                 },
                 "socket": {
                     "parent": "arm-r",
@@ -7420,6 +7420,14 @@
                         "red": 0.10980392,
                         "green": 0.07058824,
                         "blue": 0.05490196
+                    }
+                },
+                {
+                    "name": "nails",
+                    "color": {
+                        "red": 0.9411765,
+                        "green": 0.5411765,
+                        "blue": 0.47843137
                     }
                 }
             ]

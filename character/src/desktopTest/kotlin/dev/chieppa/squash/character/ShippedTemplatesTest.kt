@@ -35,7 +35,7 @@ class ShippedTemplatesTest {
         assertEquals(
             mapOf(
                 "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2, 3),
-                "foot-bird" to listOf(1, 2, 3), "hand" to listOf(1, 2, 3, 4), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
+                "foot-bird" to listOf(1, 2, 3), "hand" to listOf(1, 2, 3, 4, 5), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
                 "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1), "wing-membrane" to listOf(1),
             ),

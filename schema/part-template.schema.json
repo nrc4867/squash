@@ -485,6 +485,54 @@
       },
       "additionalProperties": false
     },
+    "DigitNail": {
+      "description": "A nail or a claw at each digit's tip: an oval on the digit's back centred at a share of its length, so long along it and so wide round it, in a palette slot; a claw stands out past the tip as a point and is painted to it.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The area's name; each digit's is this with its place after it.",
+          "type": "string"
+        },
+        "at": {
+          "description": "Its middle along the digit, from 0 at the root to 1 at the tip.",
+          "type": "number"
+        },
+        "length": {
+          "description": "How long it runs along the digit, as a share of the digit's length.",
+          "type": "number"
+        },
+        "width": {
+          "description": "How far round the digit it reaches, as a share of a turn.",
+          "type": "number"
+        },
+        "color": {
+          "description": "The palette slot it shows until it is filled.",
+          "type": "string"
+        },
+        "claw": {
+          "description": "How far a claw stands out past the tip, as a share of the digit's length; 0 for a nail.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "curl": {
+          "description": "How far a claw's point curls toward the digit's underside, as a share of the claw's length.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "at",
+        "length",
+        "width",
+        "color"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "DigitSegment": {
       "description": "One digit: its root in the part's own axes (along, up, side) as fractions of the axis length, its direction, length and thickness.",
       "type": "object",
@@ -547,6 +595,18 @@
               "type": "null"
             }
           ]
+        },
+        "roll": {
+          "description": "Degrees its rings turn about it, so v = 0.25 round it, where its nail lies, faces its back.",
+          "type": "number"
+        },
+        "join": {
+          "description": "On digits joined to a field, how much wider than the row's its own join to the field is, as a factor: a thumb rising out of a pad.",
+          "type": "number"
+        },
+        "knuckle": {
+          "description": "On digits joined to a field, its knuckle ball as a share of the row's knuckles: 0 for a digit rooted deep in a pad.",
+          "type": "number"
         }
       },
       "required": [
@@ -733,6 +793,60 @@
               "type": "null"
             }
           ]
+        },
+        "join": {
+          "description": "The radius, a fraction of the axis length, of the smooth union joining the digits to the part's field, so roots, webs and knuckles come out of one surface; unset, each digit is a run of its own.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "merge": {
+          "description": "On digits joined to a field, the radius of the smooth union joining each digit to its neighbours, as a share of a digit's radius: small for fingers apart to their roots, 1 or more for toes that only part a rounded mass as lobes.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "knuckles": {
+          "description": "On digits joined to a field, the radius of a ball at each digit's root toward its back, a knuckle, as a share of the digit's radius; 0 for none.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "nail": {
+          "description": "A nail or a claw at each digit's tip: painted on its back, and on digits joined to a field standing out past the tip as a point.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DigitNail"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -815,6 +929,18 @@
             },
             {
               "type": "null"
+            }
+          ]
+        },
+        "cup": {
+          "description": "How far the first solid's edges come toward the part's negative side, as a fraction of the axis length, growing as the square of how far they lie from its middle: a cupped palm. Digits joined to the field keep their roots on it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
             }
           ]
         }

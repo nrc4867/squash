@@ -18,7 +18,7 @@ class PatchMesh(
 data class PartMesh(val part: String, val patches: List<PatchMesh>, val axes: PartAxes? = null)
 
 object MeshBuilder {
-    /** Triangulates [patch], with each vertex's bone from [boneAt] of its u. Faces point away from the axis. */
+    /** Triangulates [patch], with each vertex's bone from [boneAt] of its u. Faces point away from the axis; none has a buried corner. */
     fun build(patch: Patch, boneAt: (Float) -> Int): PatchMesh {
         val nu = patch.nu
         val nv = patch.nv
@@ -33,7 +33,9 @@ object MeshBuilder {
         val segmentCount = patch.segments
         val indices = IntArray((nu - 1) * segmentCount * INDICES_PER_QUAD)
         var o = 0
+        val buried = patch.buried
         fun triangle(x: Int, y: Int, z: Int) {
+            if (buried != null && (buried[x] || buried[y] || buried[z])) return
             indices[o++] = x
             indices[o++] = y
             indices[o++] = z

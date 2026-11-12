@@ -98,7 +98,11 @@ class RenderMesh(val vertices: FloatArray, val indices: IntArray) {
                 val at = (first + v) * FLOATS_PER_VERTEX
                 val point = patch.patch.point(v)
                 val normal = Vec3(normals[v * 3], normals[v * 3 + 1], normals[v * 3 + 2])
-                val unit = if (normal.length < MIN_NORMAL_LENGTH) Vec3.ZERO else normal.normalized()
+                val unit = when {
+                    normal.length >= MIN_NORMAL_LENGTH -> normal.normalized()
+                    patch.patch.buried != null && proxies != null -> Vec3(proxies[v * 3], proxies[v * 3 + 1], proxies[v * 3 + 2])
+                    else -> Vec3.ZERO
+                }
                 out[at] = point.x
                 out[at + 1] = point.y
                 out[at + 2] = point.z

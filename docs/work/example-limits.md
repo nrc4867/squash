@@ -123,3 +123,13 @@ Read while turning the twin's hips and chest for the walk, moving her hip joints
 - `twin/TwinBody.kt`, `twin/TwinBodyOutlines.kt`: where the legs' sockets sat and where the leg started, to find why the walk's stride fell short: a tube's root bone pivots at its socket, and the twin's legs started where they leave the pelvis's underside, 0.12 m below the reference's hip joint. `measure parts=true` gave the leg's origin; a measure line printing each bone's pivot beside a reference's joints would have said it without reading.
 - `app/.../compare/Silhouette.kt`: how a silhouette is keyed, to find why hand-rest and the lawyer's foot scored low: it keyed each image by its top-left pixel, which in a close-up is cloth or skin. It now keys by the background the shots share.
 - No source was read for the person's arms or the woman's armpit: renders of the display pose at several leans told them.
+
+### Joined hand
+
+Read while joining the fingers to the palm and moving the woman to hand 5. Most were engine reads, building the joined digits themselves; the authoring reads are the last two:
+
+- `rig/.../Weights.kt`, `rig/.../DigitCurl.kt`, `rig/.../BoneTree.kt`: how a vertex's bones come from its patch's u and from `Spanned`, to give the joined runs `Rides`, and that Curl closed each joint toward its upper limit only, so fingers whose curl is negative opened; it now closes toward the farther limit.
+- `character/.../ColorShapes.kt`, `character/.../SurfaceColor.kt`, `screens-surface/.../PaneColor.kt`, `screens-surface/.../CharacterView.kt`: how an area becomes a colour shape, for the nails' ovals, and why colour layers in `look` renders lay at the parts' rest places; they now lie on the posed parts.
+- `geom/.../LineGrid.kt`, `geom/.../MeshInvariants.kt`, `geom/.../RenderMesh.kt`, `character/.../PatchSurface.kt`: where contours and closed meshes are decided, to leave buried cells out of both.
+- `woman/WomanBody.kt`, `woman/WomanPoses.kt`: which hand the woman pinned and the palm twist her display pose put at the elbow for hand 4; hand 5 rests palm to the thigh with no twist. The skill now says so, so the next author need not read them.
+- No source was read to shape the hand: `close=hands` renders of the display pose, as built, curled and open told it.

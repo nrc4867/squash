@@ -69,7 +69,7 @@ internal class PartVertices(part: RiggedPart) {
     val anchors: List<Anchor>
     val positions: FloatArray
 
-    /** For each vertex of a patch spanned between two others, where it rides them; null for the rest. */
+    /** For each vertex of a patch spanned between two others, or whose bones follow its place, where it rides them; null for the rest. */
     val rides: List<Ride?>
 
     init {
@@ -81,7 +81,8 @@ internal class PartVertices(part: RiggedPart) {
             val v = (local % patch.nv).toFloat() / patch.segments
             list += SeamVertex(part.id, patch.name, patch.boneUOf(local), v)
             landing += Anchor(part.id, patch.name, patch.ringUs[local / patch.nv], v)
-            riding += patch.spanned?.let { Ride(it.first, it.firstUs[local], it.second, it.secondUs[local], it.shares[local]) }
+            riding += patch.rides?.let { rides -> Ride(rides.patches, FloatArray(rides.patches.size) { rides.u(local, it) }, FloatArray(rides.patches.size) { rides.share(local, it) }) }
+                ?: patch.spanned?.let { Ride(listOf(it.first, it.second), floatArrayOf(it.firstUs[local], it.secondUs[local]), floatArrayOf(1f - it.shares[local], it.shares[local])) }
         }
         addresses = list
         anchors = landing
@@ -152,8 +153,8 @@ internal fun weightsOf(
     return PartWeights(part.id, bones, weights)
 }
 
-/** A vertex of a patch spanned between two others: at [firstU] on [first] and [secondU] on [second], [share] of the way to the second. */
-internal class Ride(val first: String, val firstU: Float, val second: String, val secondU: Float, val share: Float)
+/** A vertex whose bones come from points on other patches: at [us] on [patches], each giving its share of [shares]. */
+internal class Ride(val patches: List<String>, val us: FloatArray, val shares: FloatArray)
 
 /** What several rims give one vertex, held so together they never take more than the seam's share, or than the most one was painted to. */
 private fun heldShares(given: Map<Int, Float>): Map<Int, Float> {
@@ -203,11 +204,13 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
     /** The shares a vertex of [patch] at [u] gives the part's bones. */
     fun at(patch: String, u: Float): Map<Int, Float> = joints.digitOf(patch)?.let { alongDigit(it, u) } ?: at(u)
 
-    /** The shares a vertex riding two patches gives the part's bones: what each patch gives at its u, blended by its share. */
+    /** The shares a vertex riding other patches gives the part's bones: what each patch gives at its u, blended by its share. */
     fun riding(ride: Ride): Map<Int, Float> {
         val shares = HashMap<Int, Float>()
-        at(ride.first, ride.firstU).forEach { (bone, w) -> shares[bone] = (shares[bone] ?: 0f) + w * (1f - ride.share) }
-        at(ride.second, ride.secondU).forEach { (bone, w) -> shares[bone] = (shares[bone] ?: 0f) + w * ride.share }
+        ride.patches.forEachIndexed { k, patch ->
+            val share = ride.shares[k]
+            if (share > 0f) at(patch, ride.us[k]).forEach { (bone, w) -> shares[bone] = (shares[bone] ?: 0f) + w * share }
+        }
         return shares
     }
 

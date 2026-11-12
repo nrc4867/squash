@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.geom.laidOn
+
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.AssembledCharacter
@@ -64,7 +66,7 @@ class CharacterState(
 /**
  * A view of [state] through [camera]. Every part's contour draws as a ribbon at the silhouette weight in the back of the depth
  * buffer, where only what clears the whole figure shows, and at the interior weight in the scene. [faceBin] says which camera bin
- * the face shows in each part holding one.
+ * the face shows in each part holding one. Color layers lie on each part as it shows, posed or not.
  */
 fun characterView(
     rect: PixelRect,
@@ -90,6 +92,7 @@ fun characterView(
         val id = requireNotNull(part.id)
         val draw = coloredPartDraw(
             part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
+            cutMesh = { cut -> part.surface.grid(cut.patch)?.let(cut::laidOn) ?: cut.mesh },
         )
         val face = faces.draws(id, view)
         ribbons += face.ribbons

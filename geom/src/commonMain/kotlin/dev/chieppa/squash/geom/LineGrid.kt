@@ -43,7 +43,8 @@ class LineGrid private constructor(
      * triangle facing the viewer and one facing away, so a line along them lies on the edge the fill shows, sawteeth and all. A closed patch's end rings count against the faces that close them. An edge of an open
      * patch has one triangle and is no contour, unless its faces meet round it ([Patch.meetsAround]), as a sheet's do at its edge; the end
      * rings of a patch with [Patch.openEnds] close nothing. Ends of runs meeting at a pole are joined. An edge between two hidden points
-     * is no contour, nor is one between a cell with a hidden corner and a cell with none, the edge where the shown surface stops.
+     * is no contour, nor is one between a cell with a hidden corner and a cell with none, the edge where the shown surface stops, nor any
+     * edge of a cell with a [Patch.buried] corner, which has no faces.
      */
     fun contours(toViewer: (Vec3) -> Vec3): List<ContourRun> {
         val facing = BooleanArray(faceNormals.size) { face -> (faceNormals[face] dot toViewer(positions[faceCorner(face)])) > 0f }
@@ -75,17 +76,24 @@ class LineGrid private constructor(
             val next = (segment + 1) % nv
             return !held[patch.index(ring, segment)] && !held[patch.index(ring, next)] && !held[patch.index(ring + 1, segment)] && !held[patch.index(ring + 1, next)]
         }
+        val buried = patch.buried
+        fun built(ring: Int, segment: Int): Boolean {
+            val held = buried ?: return true
+            val next = (segment + 1) % nv
+            return !held[patch.index(ring, segment)] && !held[patch.index(ring, next)] && !held[patch.index(ring + 1, segment)] && !held[patch.index(ring + 1, next)]
+        }
         for (ring in 0 until patch.nu - 1) {
             for (segment in 0 until segments) {
+                if (!built(ring, segment)) continue
                 val a = patch.index(ring, segment)
                 val next = (segment + 1) % nv
                 val c = patch.index(ring + 1, segment)
                 val d = patch.index(ring + 1, next)
                 val here = shown(ring, segment)
                 if (facing[first(ring, segment)] != facing[second(ring, segment)]) add(a to d)
-                if (ring > 0 && here == shown(ring - 1, segment) && facing[first(ring, segment)] != facing[second(ring - 1, segment)]) add(a to patch.index(ring, next))
+                if (ring > 0 && built(ring - 1, segment) && here == shown(ring - 1, segment) && facing[first(ring, segment)] != facing[second(ring - 1, segment)]) add(a to patch.index(ring, next))
                 val before = if (segment > 0) segment - 1 else if (patch.meetsAround) segments - 1 else -1
-                if (before >= 0 && here == shown(ring, before) && facing[second(ring, segment)] != facing[first(ring, before)]) add(a to c)
+                if (before >= 0 && built(ring, before) && here == shown(ring, before) && facing[second(ring, segment)] != facing[first(ring, before)]) add(a to c)
                 if (closesEnds && ring == 0 && facing[first(ring, segment)] != facing[startCap]) add(a to patch.index(ring, next))
                 if (closesEnds && ring == patch.nu - 2 && facing[second(ring, segment)] != facing[endCap]) add(c to d)
             }

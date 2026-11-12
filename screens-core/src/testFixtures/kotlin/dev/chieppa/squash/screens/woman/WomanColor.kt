@@ -15,6 +15,9 @@ val EYE_WHITE = SlotName("eye-white")
 val BROW = SlotName("brow")
 val INK = SlotName("ink")
 
+/** The slot the hand's nails show, as its template names it. */
+val NAILS = SlotName("nails")
+
 /** The parts her skin covers, by their left side where they pair. */
 private val SKIN_PARTS = listOf(TORSO, NECK, HEAD, ARM_L, HAND_L, LEG_L, FOOT_L)
 private val HAIR_PARTS = listOf(HAIR, HAIR_FALL, LOCK_L)
@@ -28,4 +31,5 @@ fun womanColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(BLUSH, SlotColor(0.97f, 0.74f, 0.70f)),
     SetPaletteSlot(HAZEL, SlotColor(0.52f, 0.47f, 0.22f)),
     SetPaletteSlot(EYE_WHITE, SlotColor(0.99f, 0.97f, 0.95f)),
+    SetPaletteSlot(NAILS, SlotColor(0.88f, 0.56f, 0.55f)),
 ) + SKIN_PARTS.map { SetBaseSlot(it, SKIN) } + HAIR_PARTS.map { SetBaseSlot(it, HAIR_BROWN) }

@@ -10,7 +10,9 @@ import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.field.BlendedField
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.Bend
+import dev.chieppa.squash.geom.field.Cup
 import dev.chieppa.squash.geom.field.DrawnRing
 import dev.chieppa.squash.geom.field.FieldLoft
 import dev.chieppa.squash.geom.field.Floor
@@ -18,6 +20,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 private const val DEGREES_TO_RADIANS = (kotlin.math.PI / 180.0).toFloat()
+
+/** How far out, in half widths, the cup keeps growing; [BlendedField]'s own. */
+private const val CUP_REACH = 1.5f
 
 /**
  * A run built from a smooth union of ellipsoids and capsules: planar rings across the axis, each the star-shaped section of the
@@ -39,6 +44,8 @@ data class Field(
     val floor: FieldFloor? = null,
     @Doc("A turn of everything past a point about the part's side axis, eased in along the axis: a forefoot kept flat on a pointed foot.")
     val bend: FieldBend? = null,
+    @Doc("How far the first solid's edges come toward the part's negative side, as a fraction of the axis length, growing as the square of how far they lie from its middle: a cupped palm. Digits joined to the field keep their roots on it.")
+    val cup: Param = Param.of(0f),
 ) : Block {
     override fun run() = u
 
@@ -46,6 +53,7 @@ data class Field(
 
     override fun build(ctx: BuildContext): List<Patch> {
         val length = ctx.solidLength
+        JoinedDigits.of(ctx)?.let { joined -> return listOf(joinedRun(ctx, joined)) }
         val field = field(ctx)
         val views = ctx.views
         val drawn: (Float) -> DrawnRing? = if (views == null) { _ -> null } else { u ->
@@ -59,6 +67,20 @@ data class Field(
         return listOf(patch)
     }
 
+    /**
+     * The run over the field with digits joined to it, each digit only as far as just past its seam: rays stop where they first leave
+     * the solid, and the run stops open past the digits' seams; what the digits own is buried, and every vertex takes its bones by its place.
+     */
+    private fun joinedRun(ctx: BuildContext, joined: JoinedDigits): Patch {
+        val length = ctx.solidLength
+        val uOf = { a: Float -> a / length - from }
+        val patch = FieldLoft.loft(
+            name ?: BODY_PATCH, joined.rootsField, ctx.axes, ctx.template.topology.rings, ctx.template.topology.segments,
+            uOf = uOf, checkCancelled = ctx.checkCancelled, end = joined.fieldEnd(), firstCrossing = true, shadedBy = joined.field,
+        )
+        return patch.withBuried(joined.fieldBuried(patch, ctx.axes), joined.rides(patch, ctx.axes, uOf)).withOpenEnds()
+    }
+
     /** The field this block builds with [ctx]'s values, in the part's own axes and in body units. */
     fun field(ctx: BuildContext): BlendedField {
         val on = parts.filter { part -> part.condition?.let { ctx.value(Param("$" + it.name)) != 0f } ?: true }
@@ -69,10 +91,28 @@ data class Field(
                 val at = point(ctx, bend.at)
                 Bend(at, ctx.value(bend.degrees) * DEGREES_TO_RADIANS, at.x + solid(ctx, bend.from), at.x + solid(ctx, bend.to))
             },
+            cup = cupOf(ctx),
         )
     }
 
+    /** The cup of the first solid, about its middle and across its half width up, or null with none. */
+    private fun cupOf(ctx: BuildContext): Cup? {
+        val depth = solid(ctx, cup)
+        if (depth == 0f) return null
+        val first = parts.firstOrNull() ?: return null
+        val middle = solid(ctx, first.at[1])
+        val halfWidth = first.radii?.let { solid(ctx, it[1]) } ?: first.radius?.let { solid(ctx, it) } ?: return null
+        return Cup(depth, middle, halfWidth)
+    }
+
+    /** Where [p], a point on the uncupped solid, lies once the field is cupped, as a digit's root rides the palm. */
+    fun cupped(ctx: BuildContext, p: Vec3): Vec3 {
+        val c = cupOf(ctx) ?: return p
+        val across = ((p.y - c.middle) / c.halfWidth).coerceIn(-CUP_REACH, CUP_REACH)
+        return Vec3(p.x, p.y, p.z - c.depth * across * across)
+    }
+
     override fun lint(ctx: LintContext): List<Finding> =
-        ctx.unit("u", u) + (if (parts.isEmpty()) ctx.finding("parts", "a field needs a solid") else emptyList()) +
+        ctx.unit("u", u) + ctx.param("cup", cup) + (if (parts.isEmpty()) ctx.finding("parts", "a field needs a solid") else emptyList()) +
             parts.flatMapIndexed { i, part -> part.lint(ctx, "parts[$i]") }
 }

@@ -1,7 +1,6 @@
 package dev.chieppa.squash.screens.woman
 
 import dev.chieppa.squash.document.BonePose
-import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 
@@ -14,17 +13,26 @@ private const val NECK_TURN = "neck"
 
 /**
  * How far her display pose brings each arm down from the A-pose she is built in, leaning it in across its shoulder's hinge, so it hangs
- * just clear of her hips; and how far it rolls the forearm about its own length from the elbow, past the elbow's limits, so the palms
- * face her thighs. A pose that sets an elbow sets its twist too.
+ * just clear of her hips. The blended hand already rests with its palm toward her middle.
  */
 private const val ARMS_DOWN = -28f
-private const val PALMS_IN = 70f
 
-/** The forearm of [arm] rolled from the elbow so its palm faces in. */
-private fun palmIn(arm: PartId) = BonePose(arm, ARM_ELBOW, twist = PALMS_IN, mode = JointMode.FREE)
+/** Her relaxed finger curl in degrees, joints 1 to 3 of each finger, index to little finger, toward the palm, and the thumb's. */
+private val FINGERS_RELAXED = listOf(listOf(10f, 14f, 9f), listOf(13f, 17f, 11f), listOf(16f, 19f, 12f), listOf(20f, 21f, 13f))
+private val THUMB_RELAXED = listOf(10f, 12f, 9f)
 
-/** The pose she is shown in: her arms brought down to her sides, which the body keeps on its surface, palms in. */
-val WOMAN_DISPLAY = Pose(listOf(BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN), BonePose(ARM_R, TUBE_BASE, lean = ARMS_DOWN), palmIn(ARM_L), palmIn(ARM_R)))
+/** The sign that turns a finger's joints toward the palm on the blended hand, and the thumb's. */
+private const val CURL = -1f
+private const val THUMB_CURL = 1f
+private const val THUMB = 4
+
+/** [hand]'s fingers and thumb in their relaxed curl. */
+private fun relaxed(hand: PartId) = FINGERS_RELAXED.flatMapIndexed { finger, joints ->
+    joints.mapIndexed { k, degrees -> BonePose(hand, "fingers:$finger.${k + 1}", degrees * CURL) }
+} + THUMB_RELAXED.mapIndexed { k, degrees -> BonePose(hand, "fingers:$THUMB.${k + 1}", degrees * THUMB_CURL) }
+
+/** The pose she is shown in: her arms brought down to her sides, which the body keeps on its surface, her fingers relaxed. */
+val WOMAN_DISPLAY = Pose(listOf(BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN), BonePose(ARM_R, TUBE_BASE, lean = ARMS_DOWN)) + relaxed(HAND_L) + relaxed(HAND_R))
 
 /** A step forward on the left leg, the arms swinging against it. */
 val WOMAN_WALK = Pose(listOf(

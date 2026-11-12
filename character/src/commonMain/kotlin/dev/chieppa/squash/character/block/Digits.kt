@@ -5,6 +5,8 @@ import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.build.BuildContext
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
+import dev.chieppa.squash.character.model.AreaSpec
+import dev.chieppa.squash.character.model.AreaTag
 import dev.chieppa.squash.character.model.DigitChain
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.JointSpec
@@ -20,6 +22,7 @@ import dev.chieppa.squash.geom.SectionProfile
 import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.SweepSpec
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.DigitLoft
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
@@ -33,6 +36,14 @@ private const val DEFAULT_ROW_NAME = "digits"
 private const val COORDINATES = 3
 private const val MIN_RINGS = 8
 private const val MIN_SEGMENTS = 3
+
+/** How far digits joined to a field blend into their neighbours by default, as a share of their radius. */
+private const val DEFAULT_MERGE = 0.2f
+
+/** Where round a digit its back lies, in v. */
+private const val BACK = 0.25f
+
+private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
 
 /** Of a digit's rings, the share in each round end. */
 private const val CAP_SHARE = 0.2f
@@ -75,8 +86,16 @@ data class Digits(
     val hinge: Hinge = Hinge.X,
     @Doc("Degrees the joints turn within.")
     val limits: Limits? = null,
+    @Doc("The radius, a fraction of the axis length, of the smooth union joining the digits to the part's field, so roots, webs and knuckles come out of one surface; unset, each digit is a run of its own.")
+    val join: Param? = null,
+    @Doc("On digits joined to a field, the radius of the smooth union joining each digit to its neighbours, as a share of a digit's radius: small for fingers apart to their roots, 1 or more for toes that only part a rounded mass as lobes.")
+    val merge: Param = Param.of(DEFAULT_MERGE),
+    @Doc("On digits joined to a field, the radius of a ball at each digit's root toward its back, a knuckle, as a share of the digit's radius; 0 for none.")
+    val knuckles: Param = Param.of(0f),
+    @Doc("A nail or a claw at each digit's tip: painted on its back, and on digits joined to a field standing out past the tip as a point.")
+    val nail: DigitNail? = null,
 ) : Block {
-    private val rowName get() = name ?: DEFAULT_ROW_NAME
+    internal val rowName get() = name ?: DEFAULT_ROW_NAME
 
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
 
@@ -88,8 +107,24 @@ data class Digits(
     private fun built(values: Map<String, Float>): Int =
         (count?.resolve(values)?.roundToInt() ?: digits.size).coerceIn(0, digits.size)
 
+    /** How many digits [ctx]'s build makes. */
+    internal fun builtCount(ctx: BuildContext): Int = count?.let { ctx.value(it).roundToInt().coerceIn(0, digits.size) } ?: digits.size
+
+    override fun areas(): List<AreaSpec> = nail?.let { nail ->
+        digits.indices.map { i ->
+            val span = span(i)
+            fun u(share: Float) = span.start + (span.end - span.start) * share
+            val end = if (nail.claw > 0f) 1f + nail.claw else nail.at + nail.length / 2f
+            AreaSpec(
+                "${nail.name}:$i", Span(u(nail.at - nail.length / 2f), u(end)),
+                Span((BACK - nail.width / 2f).mod(1f), (BACK + nail.width / 2f).mod(1f)), AreaTag.FILL, "$rowName:$i", nail.color,
+                round = nail.claw == 0f,
+            )
+        }
+    }.orEmpty()
+
     /** Digit [i]'s u along the part from its root to its tip, fixed by the template's numbers so a pose's joints stay where the rings are. */
-    private fun span(i: Int): Span {
+    internal fun span(i: Int): Span {
         val digit = digits[i]
         val direction = digit.direction()
         return Span(digit.root[0] - from, digit.root[0] + direction.x * digit.length - from)
@@ -106,12 +141,28 @@ data class Digits(
         }
 
     override fun build(ctx: BuildContext): List<Patch> {
-        val count = count?.let { ctx.value(it).roundToInt().coerceIn(0, digits.size) } ?: digits.size
+        JoinedDigits.of(ctx)?.let { joined -> return joinedRuns(ctx, joined) }
+        val count = builtCount(ctx)
         val section = SectionProfile.CIRCLE.spline(segments)
         return List(count) { i ->
             ctx.checkCancelled()
             segment(ctx, i, section)
         }
+    }
+
+    /** Each digit as a run cut against the field it is joined to, meeting the field's run on one surface. */
+    private fun joinedRuns(ctx: BuildContext, joined: JoinedDigits): List<Patch> = joined.axes.indices.map { k ->
+        ctx.checkCancelled()
+        val shares = joined.shares(k, rings)
+        val us = FloatArray(shares.size) { joined.uOf(k, shares[it]) }
+        val digit = digits[joined.built[k]]
+        val patch = DigitLoft.loft(
+            joined.patchName(k), joined.field, ctx.axes, joined.axes, k, shares, us, segments, JoinedDigits.REACH_RADII,
+            roll = digit.roll * DEGREES_TO_RADIANS, buriedBefore = joined.buriedBefore(k),
+            begins = FloatArray(joined.axes.size) { joined.buriedBefore(it) }, checkCancelled = ctx.checkCancelled,
+        )
+        val length = ctx.solidLength
+        patch.withBuried(patch.buried, joined.rides(patch, ctx.axes) { a -> a / length - joined.own.from })
     }
 
     /**
@@ -164,6 +215,7 @@ data class Digits(
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
+        ctx.param("join", join) + ctx.param("knuckles", knuckles) + ctx.param("merge", merge) +
         ctx.atLeast("rings", rings, MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS) + ctx.param("count", count) +
             ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") }
@@ -186,6 +238,12 @@ data class DigitSegment(
     val hinge: Hinge? = null,
     @Doc("Degrees its joints turn within, in place of the row's.")
     val limits: Limits? = null,
+    @Doc("Degrees its rings turn about it, so v = 0.25 round it, where its nail lies, faces its back.")
+    val roll: Float = 0f,
+    @Doc("On digits joined to a field, how much wider than the row's its own join to the field is, as a factor: a thumb rising out of a pad.")
+    val join: Float = 1f,
+    @Doc("On digits joined to a field, its knuckle ball as a share of the row's knuckles: 0 for a digit rooted deep in a pad.")
+    val knuckle: Float = 1f,
 ) {
     fun direction(): Vec3 = Vec3(toward[0], toward[1], toward[2]).normalized()
 
@@ -195,3 +253,28 @@ data class DigitSegment(
             (if (toward.size == COORDINATES && direction().x <= 0f) ctx.finding("$field.toward", "a digit runs forward along the part") else emptyList()) +
             DigitJoints.lintShares(ctx, "$field.joints", joints)
 }
+
+/**
+ * A nail or a claw at each digit's tip of a [Digits] row: an oval painted on the digit's back, a nail; with a [claw] length, a point
+ * standing out past the tip of digits joined to a field, painted from the nail's start to its point.
+ */
+@Serializable
+@Doc("A nail or a claw at each digit's tip: an oval on the digit's back centred at a share of its length, so long along it and so wide round it, in a palette slot; a claw stands out past the tip as a point and is painted to it.")
+data class DigitNail(
+    @Doc("The area's name; each digit's is this with its place after it.")
+    val name: String = "nail",
+    @Doc("Its middle along the digit, from 0 at the root to 1 at the tip.")
+    val at: Float,
+    @Doc("How long it runs along the digit, as a share of the digit's length.")
+    val length: Float,
+    @Doc("How far round the digit it reaches, as a share of a turn.")
+    val width: Float,
+    @Doc("The palette slot it shows until it is filled.")
+    val color: String,
+    @Doc("How far a claw stands out past the tip, as a share of the digit's length; 0 for a nail.")
+    @Range(min = 0.0, max = 2.0)
+    val claw: Float = 0f,
+    @Doc("How far a claw's point curls toward the digit's underside, as a share of the claw's length.")
+    @Range(min = -1.0, max = 1.0)
+    val curl: Float = 0f,
+)

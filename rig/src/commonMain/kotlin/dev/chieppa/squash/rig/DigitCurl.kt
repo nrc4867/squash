@@ -11,12 +11,12 @@ private const val UNLIMITED_CURL = 90f
 /** The bones of [part]'s digits, as places in [Rig.bones], in the order the rig lists them. */
 fun Rig.digitBones(part: PartId): List<Int> = bones.indices.filter { bones[it].name.part == part && bones[it].digit != null }
 
-/** How far a whole curl tips [bone]: its upper limit, the way a digit closes. */
-private fun Bone.fullCurl(): Float = limits?.max ?: UNLIMITED_CURL
+/** How far a whole curl tips [bone]: the farther of its limits, the way a digit closes. */
+private fun Bone.fullCurl(): Float = limits?.let { if (-it.min > it.max) it.min else it.max } ?: UNLIMITED_CURL
 
 /**
- * [start] with every digit of [parts] curled by [amount], from 0, every digit straight, to 1, every digit joint tipped to its upper
- * limit: one value closing a hand or a foot at once. Each joint keeps its turn, lean and stretch; a locked joint keeps its tip.
+ * [start] with every digit of [parts] curled by [amount], from 0, every digit straight, to 1, every digit joint tipped to the farther
+ * of its limits: one value closing a hand or a foot at once. Each joint keeps its turn, lean and stretch; a locked joint keeps its tip.
  * See HLD: data-model, The rig.
  */
 fun Rig.curled(start: Pose, parts: Collection<PartId>, amount: Float): Pose = parts.flatMap(::digitBones).fold(start) { pose, i ->

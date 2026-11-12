@@ -60,6 +60,12 @@ class BuildContext(
 
     private val patches = mutableListOf<Patch>()
 
+    private val sharedBuilds = HashMap<Any, Any>()
+
+    /** What [make] makes for [key], made once for this build however many blocks ask, as a field two blocks cut. */
+    @Suppress("UNCHECKED_CAST")
+    internal fun <T : Any> shared(key: Any, make: () -> T): T = sharedBuilds.getOrPut(key, make) as T
+
     val built: List<Patch> get() = patches
 
     internal fun add(built: List<Patch>) {

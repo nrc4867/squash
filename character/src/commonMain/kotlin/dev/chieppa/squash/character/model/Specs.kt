@@ -43,7 +43,16 @@ data class PatchName(val name: String, val repeats: Boolean = false)
 data class PatchSlot(val patch: String, val slot: String)
 
 /** A tagged surface region on [patch] that weights and shading can read and Fill colors; [color] names the slot it shows until filled. */
-data class AreaSpec(val name: String, val u: Span, val v: Span, val tag: AreaTag, val patch: String = BODY_PATCH, val color: String? = null) {
+data class AreaSpec(
+    val name: String,
+    val u: Span,
+    val v: Span,
+    val tag: AreaTag,
+    val patch: String = BODY_PATCH,
+    val color: String? = null,
+    /** Whether it is the oval inside its u and v rather than the whole rectangle. */
+    val round: Boolean = false,
+) {
     /** Where its v span ends, running on past 1 when it crosses the seam. */
     val vEnd: Float get() = if (v.end < v.start) v.end + 1f else v.end
 }

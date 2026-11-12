@@ -54,6 +54,12 @@ data class Capsule(val from: Vec3, val to: Vec3, val fromRadius: Float, val toRa
         return (p - (from + along * t)).length - (fromRadius + (toRadius - fromRadius) * t)
     }
 
+    private val middle: Vec3 = (from + to) * 0.5f
+    private val halfLength: Float = (to - from).length / 2f
+
+    /** A distance from [p] no greater than [distance] there, cheap to find. */
+    fun lowerBound(p: Vec3): Float = (p - middle).length - halfLength - reach
+
     private val reach: Float get() = max(fromRadius, toRadius)
     override val low: Vec3 get() = Vec3(min(from.x, to.x) - reach, min(from.y, to.y) - reach, min(from.z, to.z) - reach)
     override val high: Vec3 get() = Vec3(max(from.x, to.x) + reach, max(from.y, to.y) + reach, max(from.z, to.z) + reach)

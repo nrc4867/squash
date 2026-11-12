@@ -47,7 +47,10 @@ object FieldLoft {
     /**
      * The patch [name] of [field], given in the part's own axes (x along, y up, z side), placed by [axes], on a grid of [rings] by
      * [segments], with each ring's u from its distance [uOf] along the axis. [drawn] may resize each ring by its u. [checkCancelled]
-     * runs between rings.
+     * runs between rings. With [end] the run stops open at that distance along the axis, its rings closer together toward its start
+     * alone. With [firstCrossing] each ray stops where it first leaves the solid going out from the middle, so solids standing apart
+     * from the section's middle, digits joined to the field, are left to runs of their own. Shading normals are the gradient of
+     * [shadedBy], the field itself unless another surface it meets is cut through a fuller one.
      */
     fun loft(
         name: String,
@@ -58,19 +61,25 @@ object FieldLoft {
         uOf: (Float) -> Float,
         drawn: (Float) -> DrawnRing? = { null },
         checkCancelled: () -> Unit = {},
+        end: Float? = null,
+        firstCrossing: Boolean = false,
+        shadedBy: BlendedField = field,
     ): Patch {
-        val (first, last) = reach(field)
+        val own = if (firstCrossing) field.withoutDigits() else field
+        val (first, reached) = reach(own)
+        val last = end ?: reached
         val box = (field.high - field.low).length
         val slices = ArrayList<Slice>(rings)
         val points = ArrayList<Vec3>(rings * segments)
         var section: ClosedSpline? = null
         for (ring in 0 until rings) {
             checkCancelled()
-            val share = (1f - cos(PI * ring / (rings - 1)).toFloat()) / 2f
+            val share = if (end == null) (1f - cos(PI * ring / (rings - 1)).toFloat()) / 2f else 1f - cos(PI / 2.0 * ring / (rings - 1)).toFloat()
             val x = first + (last - first) * share
             val u = uOf(x)
-            val middle = middleAt(field, x)
-            val hits = if (ring == 0 || ring == rings - 1 || middle == null) null else hitsAt(field, x, middle, segments)
+            val middle = middleAt(own, x)
+            val pole = ring == 0 || (ring == rings - 1 && end == null)
+            val hits = if (pole || middle == null) null else hitsAt(field, x, middle, segments, firstCrossing)
             val size = hits?.let { spanOf(it) }
             if (hits == null || size == null || max(size.second.x, size.second.y) < box * POLE_SHARE) {
                 val at = middle ?: Vec2(field.low.y + (field.high.y - field.low.y) / 2f, field.low.z + (field.high.z - field.low.z) / 2f)
@@ -95,7 +104,7 @@ object FieldLoft {
         val step = box * GRADIENT_SHARE
         val normals = FloatArray(points.size * Patch.COMPONENTS)
         points.forEachIndexed { i, local ->
-            val g = field.gradient(local, step)
+            val g = shadedBy.gradient(local, step)
             val length = g.length
             val n = if (length > 0f) axes.point(g.x / length, g.y / length, g.z / length) else axes.along
             normals[i * 3] = n.x
@@ -186,7 +195,7 @@ object FieldLoft {
     }
 
     /** The outermost crossing along each of [segments] rays from [middle] in the plane at [x], as (z, y): side, then up. */
-    private fun hitsAt(field: BlendedField, x: Float, middle: Vec2, segments: Int): List<Vec2> {
+    private fun hitsAt(field: BlendedField, x: Float, middle: Vec2, segments: Int, firstCrossing: Boolean): List<Vec2> {
         val reachY = max(field.high.y - middle.x, middle.x - field.low.y)
         val reachZ = max(field.high.z - middle.y, middle.y - field.low.z)
         val far = sqrt(reachY * reachY + reachZ * reachZ)
@@ -197,7 +206,17 @@ object FieldLoft {
             fun at(r: Float) = field.value(Vec3(x, middle.x + up * r, middle.y + side * r))
             var outer = far
             var inner = far
-            for (step in 1..MARCH_STEPS) {
+            if (firstCrossing) {
+                inner = 0f
+                for (step in 1..MARCH_STEPS) {
+                    val r = far * step.toFloat() / MARCH_STEPS
+                    if (at(r) >= 0f) {
+                        outer = r
+                        break
+                    }
+                    inner = r
+                }
+            } else for (step in 1..MARCH_STEPS) {
                 val r = far * (1f - step.toFloat() / MARCH_STEPS)
                 if (at(r) < 0f) {
                     inner = r
@@ -205,7 +224,7 @@ object FieldLoft {
                 }
                 outer = r
             }
-            if (inner == far) inner = 0f
+            if (!firstCrossing && inner == far) inner = 0f
             repeat(HALVINGS) {
                 val mid = (outer + inner) / 2f
                 if (at(mid) < 0f) inner = mid else outer = mid

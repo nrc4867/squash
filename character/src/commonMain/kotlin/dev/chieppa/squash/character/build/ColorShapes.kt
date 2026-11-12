@@ -95,8 +95,24 @@ private fun patchSlotShapes(holder: PartId, work: ResolvedSurfaceWork, input: Pa
 private fun areaShapes(holder: PartId, work: ResolvedSurfaceWork, input: PartColorInput, patches: List<Patch>) = input.areas.flatMap { area ->
     val slot = work.areaFills[area.name] ?: area.color?.let(::SlotName) ?: return@flatMap emptyList()
     patches.filter { it.isNamed(area.patch) }.map {
-        LandedShape(RANK_AREA, slot, holder, it.name, ColorShape.Rectangle(area.u.start, area.u.end, area.v.start, area.vEnd), ShapeSource.Area(holder, area.name))
+        LandedShape(RANK_AREA, slot, holder, it.name, areaShape(area), ShapeSource.Area(holder, area.name))
     }
+}
+
+/** The points round an oval area's border. */
+private const val OVAL_POINTS = 24
+
+/** [area]'s shape on its patch: its rectangle, or the oval inside it. */
+private fun areaShape(area: AreaSpec): ColorShape {
+    if (!area.round) return ColorShape.Rectangle(area.u.start, area.u.end, area.v.start, area.vEnd)
+    val middleU = (area.u.start + area.u.end) / 2f
+    val middleV = (area.v.start + area.vEnd) / 2f
+    val halfU = (area.u.end - area.u.start) / 2f
+    val halfV = (area.vEnd - area.v.start) / 2f
+    return ColorShape.Border(List(OVAL_POINTS) { i ->
+        val angle = 2.0 * kotlin.math.PI * i / OVAL_POINTS
+        SurfaceUv(middleU + halfU * kotlin.math.cos(angle).toFloat(), middleV + halfV * kotlin.math.sin(angle).toFloat())
+    })
 }
 
 /** Runs of neighbours in [points] that land on one patch of one part, as a closed loop starting where one begins. */

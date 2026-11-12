@@ -77,7 +77,11 @@ private const val LIMB_SEGMENTS = 24
 internal const val ARM_OUTWARD = 45f
 private const val LEG_OUTWARD = 1f
 
-private const val HAND_SIZE = 1.0f
+/** The blended hand at her scale, a little broader in the palm and longer in the fingers than its adult defaults. */
+private const val HAND_SIZE = 1.05f
+private const val HAND_PALM_WIDTH = 0.21f
+private const val HAND_FINGER_THICKNESS = 1.0f
+private const val HAND_FINGER_LENGTH = 1.1f
 internal const val FOOT_SIZE = 0.6f
 
 /**
@@ -130,18 +134,6 @@ private val LEG_FRONT = drawn(
     p(0f, -0.085f),
 )
 
-/** A hand in Top, from the wrist: narrow there, widening over the palm to the knuckles, the fingers' run tapering to their tips. */
-private val HAND_TOP = loop(
-    p(0.000f, 0.040f), p(0.050f, 0.058f), p(0.110f, 0.072f), p(0.150f, 0.075f), p(0.205f, 0.075f), p(0.232f, 0.060f), p(0.240f, 0.000f),
-    p(0.232f, -0.060f), p(0.205f, -0.075f), p(0.150f, -0.075f), p(0.110f, -0.072f), p(0.050f, -0.058f), p(0.000f, -0.040f),
-)
-
-/** The hand in Side: as deep as the wrist where it leaves it, flattening over the palm, thin through the fingers. */
-private val HAND_SIDE = loop(
-    p(0.000f, 0.032f), p(0.060f, 0.030f), p(0.130f, 0.024f), p(0.200f, 0.016f), p(0.240f, 0.000f),
-    p(0.200f, -0.016f), p(0.130f, -0.026f), p(0.060f, -0.032f), p(0.000f, -0.034f),
-)
-
 /** A bare foot in Side, from behind the ankle: a round heel, the instep rising to the ankle and falling to the toes, a flat sole. */
 private val FOOT_SIDE = loop(
     p(-0.030f, 0.000f), p(-0.020f, 0.045f), p(0.030f, 0.075f), p(0.110f, 0.065f), p(0.220f, 0.040f), p(0.320f, 0.024f), p(0.405f, 0.020f),
@@ -165,8 +157,8 @@ private fun pairOn(id: String, template: String, left: PartId, right: PartId, so
 )
 
 /** A pair as Add part places it on each side's own parent, a typed template giving its role. */
-/** The hand and foot versions she is drawn on: the lofted hand and foot, before the blended ones. */
-private val PINNED = mapOf("hand" to 3, "foot" to 2)
+/** The foot version she is drawn on: the lofted foot, before the blended one. */
+private val PINNED = mapOf("foot" to 2)
 
 private fun pinned(template: String) = PINNED[template]?.let { TemplateRef(TemplateId(template), it) } ?: ref(template)
 
@@ -183,8 +175,8 @@ private fun fine(part: PartId, rings: Int, segments: Int) = listOf(GenericParams
 /**
  * The woman's shape on the Blank plan, from generic parts where a template's built shape would fight her figure: a tube torso standing
  * up, drawn in Side and from in front, with a spine of three joints; a tube neck; tube arms and legs on paired sockets with a
- * shoulder, an elbow and a knee placed by hand. The hands and feet are the shipped hand and foot, whose fingers, thumb, toes and webs
- * are blocks no generic part has.
+ * shoulder, an elbow and a knee placed by hand. The hands are the blended hand, shaped by its parameters and leaning out with the
+ * arm, and the feet the lofted foot: their fingers, thumb, toes and webs are blocks no generic part has.
  */
 fun womanBody(): List<DocumentCommand> = buildList {
     add(AddParts(listOf(PartInstance(TORSO, ref("tube"), role = Role.BODY))))
@@ -223,7 +215,10 @@ fun womanBody(): List<DocumentCommand> = buildList {
 
     add(pairEach("hands", "hand", Role.HAND, HAND_L to ARM_L, HAND_R to ARM_R))
     add(SetParameter(HAND_L, "size", HAND_SIZE))
-    add(SetOutlines(HAND_L, mapOf(View.SIDE to HAND_SIDE, View.TOP to HAND_TOP)))
+    add(SetParameter(HAND_L, PlacementParams.OUTWARD, ARM_OUTWARD))
+    add(SetParameter(HAND_L, "palmWidth", HAND_PALM_WIDTH))
+    add(SetParameter(HAND_L, "fingerThickness", HAND_FINGER_THICKNESS))
+    add(SetParameter(HAND_L, "fingerLength", HAND_FINGER_LENGTH))
     add(pairEach("feet", "foot", Role.FOOT, FOOT_L to LEG_L, FOOT_R to LEG_R))
     add(SetParameter(FOOT_L, "size", FOOT_SIZE))
     add(SetOutlines(FOOT_L, mapOf(View.SIDE to FOOT_SIDE, View.TOP to FOOT_TOP)))
