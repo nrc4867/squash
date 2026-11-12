@@ -28,6 +28,8 @@ The reference renders, outside the repo, are the bar to compare against side by 
 - **Skeleton before surface.** A socket and a joint have a position of their own inside the part, not a point on its drawn surface, so a redraw or a garment changes shape only and never moves a hip or a shoulder. Hand-made sockets sink as plan sockets do. The existing examples move to it.
 - **`head-round` version 2, face first.** Its axis runs chin to crown; Side draws a profile with brow, nose, lips, chin and jaw; Front draws the face's width; rings are denser across the face. The nose is part of the head's profile, not a part, and the profile is generic, so snouts, muzzles and beaks draw the same way on other heads. Marks are placed on a flat face map.
 - **Joins by strips, hands and feet as blended parts.** Joins follow the research in the "Research: hands and joins" tab of the plan doc: bridging strips at socket rings. Hands and feet are built as smooth unions of simple solids with digits placed one by one (`field` and `digits`, `hand` 4 and `foot` 3), which the blend trial chose over the hand and foot cage (B-Mesh, Ji, Liu, Wang 2010; SQM, Bærentzen et al. 2012; box per node, Usai et al. 2015). Methods from the papers' text and plain mathematics only.
+- **The display pose is a pose of its own**, saved with the character and shown under the working pose; it is not an entry in Shot's pose library.
+- **An upper arm may press into the body's side under the shoulder**, as a real arm does: the arm-inside-the-torso check leaves the armpit out, and measure prints the arm's depth inside the torso.
 - **Parts stay the thing drawn and stored.** The body does not become one mesh; strips and junction cells stitch parts into a surface that reads as one.
 
 ## Rounds
@@ -593,5 +595,4 @@ For the next rounds (aimed at round 11, `outfit-pose`):
 
 ## Open
 
-- Whether the display pose is a pose of its own, as built, or the first entry of the pose library Shot will hold; and whether the Pose stage edits it, or shows it under the working pose as it does now.
-- The three questions on garment-owned parts in `stage-9-garments.md`, built with the tentative answers listed there: owned parts listed in the Parts tree under the part they sit on, worn or not; a body part passing through an owned part overlaps it; owned parts may be pairs.
+- None.

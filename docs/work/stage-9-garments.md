@@ -83,7 +83,7 @@ Stiff hats, brims, helmets, shades, heels, buttons, buckles and lapels are parts
 - **Ownership by command.** `AddParts` takes the owner on the instance; `RemoveGarment` removes the garment's parts with it in the same undo step; `RemovePart` of an owned part works as for any part. `Character` refuses an owned part whose garment is not in the wardrobe, and a part on an owned part's socket unless the same garment owns it.
 - **What it changes on the body.** The garment's own `changes` keep holding Hide, Through, Redraw and Swap for the body parts under the owned part. An owned part is never cut through or hidden by a garment's branch, its own or another's, and reads its socket on its parent as the parent shows.
 
-Tentative answers, for Nicholas to confirm:
+Decided:
 
 - **The Parts tree** lists owned parts under the part they sit on, among the body's parts, worn or not; they are not marked faint while their garment is not worn, and Dress does not list them under their garment. W13's Parts drawer draws no owned part.
 - **A body part passing through an owned part** overlaps it, as parts overlap at sockets today: no inside test hides it and no hole or cuff is cut.
@@ -96,6 +96,5 @@ Tentative answers, for Nicholas to confirm:
 - W13's Draw garment rows Snap to body and Close end, and W15's Edit curves row Handles, have no model behind them.
 - W15's Head marks row: marks are not parts, and a garment's change is per part; whether marks under a garment get their own change.
 - The layers list's Show button hides a garment from view only; whether it should be saved.
-- The three tentative answers on parts a garment owns, above.
 - A loose end's length and width are fixed shares of its covered part and its hem; whether they should be values of the loose end, drawn, or set in the inspector.
 - Whether the fennec's scarf, which the head comes through, should keep the cuff round the neck that Through gives by default, or the head go through it with no cuff.
