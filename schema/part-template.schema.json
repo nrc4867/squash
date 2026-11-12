@@ -247,6 +247,12 @@
           "$ref": "#/$defs/Cap"
         },
         {
+          "$ref": "#/$defs/Digits"
+        },
+        {
+          "$ref": "#/$defs/Field"
+        },
+        {
           "$ref": "#/$defs/Joint"
         },
         {
@@ -479,6 +485,81 @@
       },
       "additionalProperties": false
     },
+    "DigitSegment": {
+      "description": "One digit: its root in the part's own axes (along, up, side) as fractions of the axis length, its direction, length and thickness.",
+      "type": "object",
+      "properties": {
+        "root": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "toward": {
+          "description": "Along, up and side; it must run forward along the part.",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "length": {
+          "description": "A fraction of the axis length.",
+          "type": "number"
+        },
+        "radius": {
+          "description": "Its radius at the root, a fraction of the axis length.",
+          "type": "number"
+        },
+        "joints": {
+          "description": "Each joint's place along the digit, from 0 at its root to 1 at its tip, ascending.",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "hinge": {
+          "description": "The axis its joints turn about, in place of the row's.",
+          "anyOf": [
+            {
+              "enum": [
+                "x",
+                "y",
+                "z"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limits": {
+          "description": "Degrees its joints turn within, in place of the row's.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "root",
+        "toward",
+        "length",
+        "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "DigitTips": {
       "description": "A socket at the tip of every digit of the row, named for the digit with .tip after it; a part there sinks along its own axis and rides the digit's last joint.",
       "type": "object",
@@ -497,6 +578,525 @@
           "maximum": 4.0
         }
       },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Digits": {
+      "description": "Digits placed one by one, each a straight rounded segment from its own root in its own direction with joints along it; named for the row and its place in it.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "digits"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "from": {
+          "description": "Where u = 0 lies along the axis from the socket plane, as a fraction of the axis length, as on the part's field.",
+          "type": "number"
+        },
+        "digits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DigitSegment"
+          }
+        },
+        "count": {
+          "description": "How many of the digits, from the first, the part builds.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rings": {
+          "description": "Rings along each digit.",
+          "type": "integer",
+          "minimum": 8.0
+        },
+        "segments": {
+          "description": "Points round each digit's section.",
+          "type": "integer",
+          "minimum": 3.0
+        },
+        "taper": {
+          "description": "Each digit's thickness at its tip as a share of its root's.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "knuckle": {
+          "description": "How much each digit swells at each joint past its root, as a share of its thickness.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "flat": {
+          "description": "How much thinner each digit is toward its neighbours than toward the back and the palm, as a share.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "reach": {
+          "description": "Every digit's length is multiplied by this.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "Every digit's thickness is multiplied by this.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "hinge": {
+          "description": "Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it.",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "limits": {
+          "description": "Degrees the joints turn within.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "digits",
+        "rings",
+        "segments"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Field": {
+      "description": "A run of rings cut through a smooth union of ellipsoids and capsules, placed in the part's own axes as fractions of the axis length.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "field"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "description": "The stretch of u the rings cover with the template's defaults.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "from": {
+          "description": "Where u = 0 lies along the axis from the socket plane, as a fraction of the axis length; negative behind it.",
+          "type": "number"
+        },
+        "parts": {
+          "description": "The solids, each joined to those before it by a smooth union of its blend radius.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldPart"
+          }
+        },
+        "floor": {
+          "description": "A flat floor the solid is cut at, a sole.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FieldFloor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bend": {
+          "description": "A turn of everything past a point about the part's side axis, eased in along the axis: a forefoot kept flat on a pointed foot.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FieldBend"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "u",
+        "parts"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "FieldBend": {
+      "description": "A turn about the side axis through a point, toward the part's up for positive degrees, eased in along the axis from `from` to `to` past the point.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              }
+            ]
+          }
+        },
+        "degrees": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "from": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "to": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "at",
+        "degrees",
+        "from",
+        "to"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "FieldFloor": {
+      "description": "A flat floor the field is cut at, up from the axis as a fraction of the axis length, joined by a smooth intersection.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "blend": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "at"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "FieldPart": {
+      "description": "One solid of a field, in the part's own axes (along, up, side) as fractions of the axis length.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "A name an author can know the solid by, a palm or a heel.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shape": {
+          "enum": [
+            "ellipsoid",
+            "capsule"
+          ]
+        },
+        "at": {
+          "description": "The ellipsoid's centre, or the capsule's first end: along, up, side.",
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              }
+            ]
+          }
+        },
+        "to": {
+          "description": "The capsule's second end.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "radii": {
+          "description": "The ellipsoid's semi-axes along, up and side.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "radius": {
+          "description": "The capsule's radius at its first end.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toRadius": {
+          "description": "The capsule's radius at its second end; its first radius when left out.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "blend": {
+          "description": "The radius of the smooth union joining this solid to those before it; 0 joins them by a plain union.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "narrows": {
+          "description": "How much shorter the ellipsoid's side semi-axis is toward the part's start, as a share.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "over": {
+          "description": "Over how far either side of the centre the narrowing eases in.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "shape",
+        "at"
+      ],
       "patternProperties": {
         "^x-": {}
       },

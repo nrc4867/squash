@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.block.Field
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
@@ -86,7 +87,7 @@ internal fun branchOver(garment: Garment, branch: GarmentBranch, covered: Placed
     val axes = PartBuilder.axes(covered.template)
     val shell = ShellBuilder.shell(
         branch.part.value, covered.surface.patches[bodyPatch], branch.from, branch.to, BRANCH_RINGS, branch.ease, drawnReach(branch, axes),
-        branch.fromV, branch.toV,
+        branch.fromV, branch.toV, closeOnPoles = branch.from >= 0f && branch.to <= 1f && covered.template.blocks.any { it is Field },
     )
     val covering = Covering(garment.id, id, bodyPatch, shell.bodyRings, shell.bodyColumns, branch.from, branch.to, branch.fromV, branch.toV)
     return shellPart(branchPartId(garment.id, id), shell, covered, axes, covering)

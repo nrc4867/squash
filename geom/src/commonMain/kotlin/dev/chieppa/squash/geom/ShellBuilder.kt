@@ -1,12 +1,18 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /** A body ring smaller than this across both ways is a pole, and the shell over it closes there too. */
 private const val POLE_SIZE = 1e-4f
+
+/** How far in u a shell must run past a pole to close on it rather than carry on. */
+private const val PAST_POLE = 1e-3f
 
 /**
  * A shell lofted over a swept patch: [patch], open at both ends, closed round or open over part of it, and for each of its rings the
@@ -21,9 +27,10 @@ data class ShellReach(val height: Float? = null, val width: Float? = null, val u
 /** Builds shells over a body's slices. See HLD: data-model, Garments. */
 object ShellBuilder {
     /**
-     * A shell named [name] over [body] from [from] to [to] in u in [rings] rings evenly spaced, each the body's slice there grown by
+     * A shell named [name] over [body] from [from] to [to] in u in [rings] rings, each the body's slice there grown by
      * [ease] on every side. Past either end of [body] the shell carries on along its end slice's frame at the size of the ring nearest
-     * that end that is not a pole. [reach] may take a ring further out, never further in than the ease. A pole of the body stays a pole.
+     * that end that is not a pole, unless [closeOnPoles] and that end is a pole the shell runs past: then it ends on the pole, its rings drawing closer
+     * together toward it. [reach] may take a ring further out, never further in than the ease. A pole of the body stays a pole.
      * From [fromV] to [toV] round it, a span under 1, the shell is open round, its columns evenly spaced over that span and as many
      * as the body's over it, plus one. [body] must be swept.
      */
@@ -37,15 +44,20 @@ object ShellBuilder {
         reach: (Slice) -> ShellReach = { ShellReach() },
         fromV: Float = 0f,
         toV: Float = 1f,
+        closeOnPoles: Boolean = false,
     ): Shell {
         val slices = requireNotNull(body.slices) { "Patch ${body.name} is not swept" }
         require(rings >= 2) { "A shell needs two rings, not $rings" }
         val perU = body.lengthPerU()
         val bodyRings = IntArray(rings)
+        val closesAtStart = closeOnPoles && slices.first().isPole && from < slices.first().u - PAST_POLE
+        val closesAtEnd = closeOnPoles && slices.last().isPole && to > slices.last().u + PAST_POLE
+        val start = if (closesAtStart) slices.first().u else from
+        val end = if (closesAtEnd) slices.last().u else to
         val grown = List(rings) { i ->
-            val u = from + (to - from) * i / (rings - 1)
+            val u = start + (end - start) * spacing(i.toFloat() / (rings - 1), closesAtStart, closesAtEnd)
             bodyRings[i] = nearestRing(slices, u)
-            val under = sliceAt(slices, u, perU)
+            val under = sliceAt(slices, u, perU, closesAtStart, closesAtEnd)
             if (under.isPole) under else grownBy(under, ease, reach(under.copy(height = under.height + 2f * ease, width = under.width + 2f * ease)))
         }
         if (toV - fromV >= 1f) return Shell(SliceBuilder.loft(name, grown, body.nv), bodyRings, IntArray(body.nv) { it })
@@ -63,6 +75,17 @@ object ShellBuilder {
         return Shell(Patch(name, rings, columns, closedV = false, slices = grown, points = points), bodyRings, bodyColumns)
     }
 
+    /**
+     * Where ring share [t] of a shell lies along its range: evenly, or closer together toward an end that closes on a pole, as the
+     * latitudes of a sphere do, so a shell over a round tip follows it rather than cutting across it.
+     */
+    private fun spacing(t: Float, start: Boolean, end: Boolean): Float = when {
+        start && end -> (1f - cos(PI.toFloat() * t)) / 2f
+        end -> sin(PI.toFloat() / 2f * t)
+        start -> 1f - cos(PI.toFloat() / 2f * t)
+        else -> t
+    }
+
     private fun grownBy(slice: Slice, ease: Float, reach: ShellReach): Slice {
         val eased = slice.copy(height = slice.height + 2f * ease, width = slice.width + 2f * ease)
         val height = maxOf(eased.height, reach.height ?: 0f)
@@ -75,11 +98,11 @@ object ShellBuilder {
     }
 
     /** The body's slice at [u]: between its two neighbours, or carried on from the end slice past either end. */
-    private fun sliceAt(slices: List<Slice>, u: Float, perU: Float): Slice {
+    private fun sliceAt(slices: List<Slice>, u: Float, perU: Float, closedStart: Boolean, closedEnd: Boolean): Slice {
         val first = slices.first()
         val last = slices.last()
-        if (u <= first.u) return carried(first, slices.firstOrNull { !it.isPole } ?: first, u, perU)
-        if (u >= last.u) return carried(last, slices.lastOrNull { !it.isPole } ?: last, u, perU)
+        if (u <= first.u) return if (closedStart) first.copy(u = u) else carried(first, slices.firstOrNull { !it.isPole } ?: first, u, perU)
+        if (u >= last.u) return if (closedEnd) last.copy(u = u) else carried(last, slices.lastOrNull { !it.isPole } ?: last, u, perU)
         val next = slices.indexOfFirst { it.u >= u }
         val a = slices[next - 1]
         val b = slices[next]

@@ -64,12 +64,12 @@ private const val SHORTS_TOP = 0.985f
 private const val SHORTS_HEM = 0.735f
 private const val SHORTS_EASE = 0.0085f
 
-/** The sandals: a cork sole under the foot, and a strap over the forefoot. */
-private const val SOLE_FROM_V = 0.3f
-private const val SOLE_TO_V = 0.7f
-private const val SOLE_EASE = 0.012f
-private const val STRAP_FROM = 0.50f
-private const val STRAP_TO = 0.60f
+/** The sandals: a cork sole under the foot's footprint, 0.012 m deep, and a strap over the forefoot. */
+val SANDAL_SOLE_L = PartId("sandal-sole-l")
+val SANDAL_SOLE_R = PartId("sandal-sole-r")
+private const val SOLE_DEPTH = 0.012f
+private const val STRAP_FROM = 0.56f
+private const val STRAP_TO = 0.61f
 private const val STRAP_EASE = 0.004f
 
 private const val CUP_RINGS = 24
@@ -101,5 +101,6 @@ fun twinBeach(): List<DocumentCommand> = listOf(cloth(SWIM, 0xEE6A58), cloth(DEN
         listOf(GarmentBranch(TORSO, 0f, torsoU(SHORTS_TOP), ease = SHORTS_EASE), GarmentBranch(LEG_L, INTO_PELVIS, legU(SHORTS_HEM), ease = SHORTS_EASE)),
         layer = WAIST_LAYER,
     ) +
-    twinGarment(SANDALS, "Sandals", FEET_SLOT, CORK, listOf(GarmentBranch(FOOT_L, fromV = SOLE_FROM_V, toV = SOLE_TO_V, ease = SOLE_EASE))) +
+    twinGarment(SANDALS, "Sandals", FEET_SLOT, CORK, emptyList()) +
+    sole(SANDALS, SANDAL_SOLE_SOCKET, SANDAL_SOLE_L, SANDAL_SOLE_R, FOOTPRINT, PRINT_BACK, PRINT_FRONT, SOLE_DEPTH, CORK) +
     twinGarment(SANDAL_STRAPS, "Sandal straps", STRAPS_SLOT, SWIM, listOf(GarmentBranch(FOOT_L, STRAP_FROM, STRAP_TO, ease = STRAP_EASE)), layer = OVER_LAYER)

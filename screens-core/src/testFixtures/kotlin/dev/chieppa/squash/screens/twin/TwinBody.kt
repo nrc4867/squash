@@ -75,8 +75,6 @@ private const val LIMB_SEGMENTS = 24
 internal const val ARM_OUTWARD = 45f
 private const val LEG_OUTWARD = -1f
 
-private const val HAND_SIZE = 1.0f
-
 private fun on(part: PartId, socket: Int) = SocketRef(part, HandSockets.name(socket))
 
 private fun pairOn(id: String, template: String, left: PartId, right: PartId, socket: SocketRef, role: Role) = AddParts(
@@ -98,7 +96,8 @@ private fun fine(part: PartId, rings: Int, segments: Int) = listOf(GenericParams
 /**
  * The twin's shape on the Blank plan, in metres: a tube torso standing up from the bottom of the pelvis to the base of the neck, with joints
  * where the reference's hips, spine and chest bones meet; a tube neck up to the head's origin; tube arms and legs on paired sockets with a
- * shoulder, an elbow and a knee at the reference's joints; the shipped hand and foot.
+ * shoulder, an elbow and a knee at the reference's joints; the blended hand, built in metres at its size 1 and leaning out with the arm, and
+ * the blended foot.
  */
 fun twinBody(): List<DocumentCommand> = buildList {
     add(AddParts(listOf(PartInstance(TORSO, ref("tube"), role = Role.BODY))))
@@ -136,9 +135,6 @@ fun twinBody(): List<DocumentCommand> = buildList {
     add(HandSockets.add(LEG_L, END_SOCKET, 1f, 0.5f, 0f, paired = false, sink = ON_SURFACE))
 
     add(pairEach("hands", "hand", Role.HAND, HAND_L to ARM_L, HAND_R to ARM_R))
-    add(SetParameter(HAND_L, "size", HAND_SIZE))
-    add(SetOutlines(HAND_L, mapOf(View.SIDE to HAND_SIDE, View.TOP to HAND_TOP)))
+    add(SetParameter(HAND_L, PlacementParams.OUTWARD, ARM_OUTWARD))
     add(pairEach("feet", "foot", Role.FOOT, FOOT_L to LEG_L, FOOT_R to LEG_R))
-    add(SetParameter(FOOT_L, "size", FOOT_SIZE))
-    add(SetOutlines(FOOT_L, mapOf(View.SIDE to FOOT_SIDE, View.TOP to FOOT_TOP)))
 }

@@ -76,8 +76,8 @@ val REFERENCE_SHOTS: List<ReferenceShot> = listOf(
 /** The folder under an example's look images that its shots go into. */
 const val SHOTS_FOLDER = "shots"
 
-/** The shot list called [name]. */
+/** The shot list called [name], or the reference's shots named in a comma-separated list. */
 fun shotList(name: String): List<ReferenceShot> = when (name) {
     "reference" -> REFERENCE_SHOTS
-    else -> error("No shot list $name; known: reference")
+    else -> name.split(',').map { shot -> REFERENCE_SHOTS.firstOrNull { it.name == shot } ?: error("No shot list or shot $shot; lists: reference") }
 }

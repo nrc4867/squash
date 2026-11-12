@@ -1,0 +1,275 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hand",
+  "version": 4,
+  "name": "Hand",
+  "role": "hand",
+  "axis": {
+    "rest": [
+      0,
+      -1,
+      0
+    ],
+    "length": 0.22
+  },
+  "openEnd": null,
+  "topology": {
+    "rings": 40,
+    "segments": 32
+  },
+  "views": {
+    "side": "height",
+    "top": "width",
+    "front": "cap"
+  },
+  "section": "egg",
+  "params": {
+    "size": {
+      "default": 1.0,
+      "min": 0.4,
+      "max": 2.5
+    },
+    "palmLength": {
+      "default": 0.2273,
+      "min": 0.1,
+      "max": 0.4
+    },
+    "palmWidth": {
+      "default": 0.1864,
+      "min": 0.08,
+      "max": 0.35
+    },
+    "palmThickness": {
+      "default": 0.0705,
+      "min": 0.03,
+      "max": 0.2
+    },
+    "wrist": {
+      "default": 0.1091,
+      "min": 0.04,
+      "max": 0.25
+    },
+    "fingerLength": {
+      "default": 1.0,
+      "min": 0.5,
+      "max": 1.6
+    },
+    "fingerThickness": {
+      "default": 1.0,
+      "min": 0.5,
+      "max": 1.8
+    }
+  },
+  "blocks": [
+    {
+      "kind": "field",
+      "u": [
+        0.0,
+        0.7
+      ],
+      "from": -0.23,
+      "parts": [
+        {
+          "name": "palm",
+          "shape": "ellipsoid",
+          "at": [
+            0.2273,
+            0.0,
+            0.0091
+          ],
+          "radii": [
+            "$palmLength",
+            "$palmWidth",
+            "$palmThickness"
+          ],
+          "narrows": 0.12,
+          "over": 0.1818
+        },
+        {
+          "name": "thumbPad",
+          "shape": "ellipsoid",
+          "at": [
+            0.1455,
+            0.1,
+            -0.0136
+          ],
+          "radii": [
+            0.1182,
+            0.0727,
+            0.0591
+          ],
+          "blend": 0.0545
+        },
+        {
+          "name": "wrist",
+          "shape": "capsule",
+          "at": [
+            -0.0909,
+            0.0,
+            0.0
+          ],
+          "to": [
+            0.0909,
+            0.0,
+            0.0045
+          ],
+          "radius": "$wrist",
+          "blend": 0.0909
+        }
+      ]
+    },
+    {
+      "kind": "digits",
+      "name": "fingers",
+      "from": -0.23,
+      "rings": 20,
+      "segments": 16,
+      "taper": 0.84,
+      "knuckle": 0.06,
+      "flat": 0.08,
+      "reach": "$fingerLength",
+      "thickness": "$fingerThickness",
+      "hinge": "y",
+      "limits": [
+        -20,
+        100
+      ],
+      "digits": [
+        {
+          "root": [
+            0.3909,
+            0.1182,
+            0.0091
+          ],
+          "toward": [
+            0.9976,
+            0.0699,
+            0.0
+          ],
+          "length": 0.3227,
+          "radius": 0.0455,
+          "joints": [
+            0,
+            0.44,
+            0.75
+          ]
+        },
+        {
+          "root": [
+            0.4091,
+            0.0364,
+            0.0091
+          ],
+          "toward": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "length": 0.3545,
+          "radius": 0.0464,
+          "joints": [
+            0,
+            0.44,
+            0.75
+          ]
+        },
+        {
+          "root": [
+            0.3955,
+            -0.0455,
+            0.0091
+          ],
+          "toward": [
+            0.9982,
+            -0.06,
+            0.0
+          ],
+          "length": 0.3273,
+          "radius": 0.0436,
+          "joints": [
+            0,
+            0.44,
+            0.75
+          ]
+        },
+        {
+          "root": [
+            0.3636,
+            -0.1227,
+            0.0091
+          ],
+          "toward": [
+            0.9902,
+            -0.1395,
+            0.0
+          ],
+          "length": 0.2591,
+          "radius": 0.0386,
+          "joints": [
+            0,
+            0.44,
+            0.75
+          ]
+        },
+        {
+          "root": [
+            0.1182,
+            0.0909,
+            -0.0364
+          ],
+          "toward": [
+            0.8812,
+            0.3805,
+            -0.2804
+          ],
+          "length": 0.3545,
+          "radius": 0.055,
+          "joints": [
+            0,
+            0.38,
+            0.72
+          ],
+          "hinge": "x"
+        }
+      ]
+    },
+    {
+      "kind": "joint",
+      "name": "wrist",
+      "u": 0.23,
+      "hinge": "x",
+      "limits": [
+        -60,
+        60
+      ]
+    },
+    {
+      "kind": "area",
+      "name": "back",
+      "u": [
+        0.0,
+        0.7
+      ],
+      "v": [
+        0.0,
+        0.5
+      ],
+      "tag": "fill"
+    },
+    {
+      "kind": "area",
+      "name": "fingers",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "fingers"
+    }
+  ]
+}

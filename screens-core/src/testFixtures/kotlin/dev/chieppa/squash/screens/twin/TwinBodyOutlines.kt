@@ -76,32 +76,5 @@ internal val LEG_TOP = drawn(
     p(0.368f, -0.0545f), p(0.274f, -0.048f), p(0.251f, -0.050f), p(0.118f, -0.0735f), p(0.040f, -0.0835f), p(0f, -0.085f),
 )
 
-/** The hand in Top from the wrist: the wrist's capsule, the palm widening to the knuckles, the fingers' run as wide, rounding at the tips. */
-internal val HAND_TOP = loop(
-    p(0.000f, 0.024f), p(0.020f, 0.032f), p(0.050f, 0.039f), p(0.088f, 0.041f), p(0.130f, 0.040f), p(0.158f, 0.036f), p(0.168f, 0.000f),
-    p(0.158f, -0.036f), p(0.130f, -0.040f), p(0.088f, -0.041f), p(0.050f, -0.039f), p(0.020f, -0.032f), p(0.000f, -0.024f),
-)
-
-/** The hand in Side: as deep as the wrist where it leaves it, the palm flat, the fingers thin. */
-internal val HAND_SIDE = loop(
-    p(0.000f, 0.024f), p(0.030f, 0.018f), p(0.060f, 0.0155f), p(0.088f, 0.012f), p(0.130f, 0.010f), p(0.160f, 0.007f), p(0.168f, 0.000f),
-    p(0.160f, -0.007f), p(0.130f, -0.010f), p(0.088f, -0.013f), p(0.060f, -0.0165f), p(0.030f, -0.020f), p(0.000f, -0.024f),
-)
-
-/** How large the foot is drawn beside its template, which ends the foot at the toes' tips at 0.42. */
+/** The unit the shoes are drawn in, in metres. */
 internal const val FOOT_SIZE = 0.443f
-
-/**
- * The bare foot in Side, in the foot's drawn units from the back of the ankle: a round heel, the instep falling from the ankle to the ball
- * and the toes, and a flat sole on the ground.
- */
-internal val FOOT_SIDE = loop(
-    p(-0.122f, -0.090f), p(-0.110f, -0.020f), p(-0.060f, 0.030f), p(0.000f, 0.050f), p(0.060f, 0.020f), p(0.130f, -0.010f), p(0.260f, -0.050f),
-    p(0.350f, -0.085f), p(0.405f, -0.105f), p(0.420f, -0.130f), p(0.400f, -0.153f), p(0.250f, -0.153f), p(0.050f, -0.153f), p(-0.100f, -0.148f),
-)
-
-/** The foot in Top: a narrow heel, the arch, widest across the ball and round over the toes. */
-internal val FOOT_TOP = loop(
-    p(-0.122f, 0.000f), p(-0.110f, 0.060f), p(-0.040f, 0.072f), p(0.080f, 0.080f), p(0.220f, 0.090f), p(0.330f, 0.093f), p(0.400f, 0.070f),
-    p(0.420f, 0.000f), p(0.400f, -0.070f), p(0.330f, -0.093f), p(0.220f, -0.090f), p(0.080f, -0.080f), p(-0.040f, -0.072f), p(-0.110f, -0.060f),
-)

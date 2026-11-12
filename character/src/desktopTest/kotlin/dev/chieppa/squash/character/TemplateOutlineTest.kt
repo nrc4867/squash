@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.oversketchedOutline
 import dev.chieppa.squash.character.build.templateOutline
 import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.character.build.viewPoint
+import dev.chieppa.squash.character.block.Digits
 import dev.chieppa.squash.character.block.ToeRow
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.Sets
@@ -65,7 +66,8 @@ private fun hasToes(template: PartTemplate): Boolean = PartBuilder.build(templat
  * shared digits', and the thumb keeps its own place outside it, so the undrawn silhouette is not one a drawing makes again.
  */
 private fun thumbWidth(template: PartTemplate, view: View): Boolean =
-    template.views[view] != Sets.HEIGHT && template.blocks.any { it is ToeRow && it.digits.isNotEmpty() }
+    template.views[view] != Sets.HEIGHT &&
+        template.blocks.any { (it is ToeRow && it.digits.isNotEmpty()) || (it is Digits && it.digits.any { digit -> digit.hinge != null }) }
 
 /** Start from template through the real build: the outline it makes rebuilds the silhouette it was made from. */
 class TemplateOutlineTest {

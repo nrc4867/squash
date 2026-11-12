@@ -48,6 +48,9 @@ class BuildContext(
     /** The axis length before the length factor: lengths in a template are fractions of this. */
     private val fullLength: Float = views?.let { it.length / lengthFactor } ?: (size * template.axis.length)
 
+    /** The template's own axis length at the part's size, drawn or not: what a solid placed in fractions of the axis length is measured in. */
+    val solidLength: Float = size * template.axis.length
+
     /** How far the axis reaches. */
     val axisLength: Float = views?.length ?: (fullLength * lengthFactor)
 

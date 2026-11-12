@@ -38,6 +38,9 @@ class ViewSizing private constructor(
 
     private fun stationOf(u: Float): Float = start + (end - start) * u
 
+    /** The u whose plane lies [a] along the rest axis from the socket plane, in body units: below 0 or past 1 off the drawing. */
+    fun uAt(a: Float): Float = (a / scale - start) / (end - start)
+
     private fun floored(extent: Float): Float = max(extent, length * MIN_EXTENT_OF_LENGTH)
 
     /** The full height the height view gives at [u], or null if that view is not drawn. */

@@ -51,10 +51,10 @@ class TwinDressedFixtureTest {
     @Test
     fun eachOutfitBuildsThePartsItsGarmentsOwnAndNoOthers() {
         val owned = mapOf(
-            BEACH to setOf(SHADES_L, SHADES_R, TEMPLE_L, TEMPLE_R, CUP_L, CUP_R, HALTER_L, HALTER_R),
+            BEACH to setOf(SHADES_L, SHADES_R, TEMPLE_L, TEMPLE_R, CUP_L, CUP_R, HALTER_L, HALTER_R, SANDAL_SOLE_L, SANDAL_SOLE_R),
             LAWYER to setOf(LAPEL_L, LAPEL_R, BLAZER_BUTTON, HEEL_L, HEEL_R),
             DRESS to emptySet(),
-            GOTH to setOf(BUCKLE, PENDANT),
+            GOTH to setOf(BUCKLE, PENDANT, PLATFORM_L, PLATFORM_R),
         )
         for ((outfit, parts) in owned) assertEquals(parts, assemblyParts(wearing(outfit)).filter { it.owner != null }.map { it.id }.toSet(), outfit.value)
     }

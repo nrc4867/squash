@@ -18,6 +18,8 @@ import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetRole
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
+import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.fennec.drawn
 import dev.chieppa.squash.screens.fennec.loop
@@ -163,10 +165,15 @@ private fun pairOn(id: String, template: String, left: PartId, right: PartId, so
 )
 
 /** A pair as Add part places it on each side's own parent, a typed template giving its role. */
+/** The hand and foot versions she is drawn on: the lofted hand and foot, before the blended ones. */
+private val PINNED = mapOf("hand" to 3, "foot" to 2)
+
+private fun pinned(template: String) = PINNED[template]?.let { TemplateRef(TemplateId(template), it) } ?: ref(template)
+
 private fun pairEach(id: String, template: String, role: Role, left: Pair<PartId, PartId>, right: Pair<PartId, PartId>) = AddParts(
     listOf(
-        PartInstance(left.first, ref(template), on(left.second, END_SOCKET), pair = PairId(id), side = Side.LEFT, role = role),
-        PartInstance(right.first, ref(template), on(right.second, END_SOCKET), pair = PairId(id), side = Side.RIGHT, role = role),
+        PartInstance(left.first, pinned(template), on(left.second, END_SOCKET), pair = PairId(id), side = Side.LEFT, role = role),
+        PartInstance(right.first, pinned(template), on(right.second, END_SOCKET), pair = PairId(id), side = Side.RIGHT, role = role),
     ),
 )
 

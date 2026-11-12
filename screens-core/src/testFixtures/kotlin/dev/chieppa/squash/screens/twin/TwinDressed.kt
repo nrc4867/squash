@@ -55,8 +55,8 @@ private fun look(id: GarmentId, name: String, look: FaceLook): List<DocumentComm
 /** Each outfit's name and what it picks per slot. */
 val TWIN_OUTFITS: List<Triple<OutfitId, String, Map<GarmentSlotId, GarmentId>>> = listOf(
     Triple(BEACH, "Beach", mapOf(TOP_SLOT to BIKINI, BOTTOM_SLOT to SHORTS, FEET_SLOT to SANDALS, STRAPS_SLOT to SANDAL_STRAPS, EYES_SLOT to SHADES)),
-    Triple(LAWYER, "Lawyer", mapOf(TOP_SLOT to BLOUSE, OUTER_SLOT to BLAZER, BOTTOM_SLOT to TROUSERS, FEET_SLOT to PUMPS, FACE_SLOT to LAWYER_FACE)),
-    Triple(DRESS, "Dress", mapOf(TOP_SLOT to CREAM_TOP, BOTTOM_SLOT to SKIRT, WAIST_SLOT to DRESS_BELT, FEET_SLOT to FLATS, FACE_SLOT to DRESS_FACE)),
+    Triple(LAWYER, "Lawyer", mapOf(TOP_SLOT to BLOUSE, OUTER_SLOT to BLAZER, BOTTOM_SLOT to TROUSERS, FEET_SLOT to PUMPS, STRAPS_SLOT to PUMP_VAMPS, FACE_SLOT to LAWYER_FACE)),
+    Triple(DRESS, "Dress", mapOf(TOP_SLOT to CREAM_TOP, BOTTOM_SLOT to SKIRT, WAIST_SLOT to DRESS_BELT, FEET_SLOT to FLATS, STRAPS_SLOT to FLAT_VAMPS, FACE_SLOT to DRESS_FACE)),
     Triple(
         GOTH, "Goth",
         mapOf(TOP_SLOT to DARK_TOP, BOTTOM_SLOT to BLACK_JEANS, WAIST_SLOT to GOTH_BELT, FEET_SLOT to BOOTS, NECK_SLOT to CHOKER, FACE_SLOT to GOTH_FACE),

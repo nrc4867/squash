@@ -15,19 +15,43 @@ private const val NECK_TURN = "neck"
 
 /**
  * The reference's rest: each upper arm 9 degrees out from straight down, from the 45 she is built at; the elbow bent forward 5.7 degrees,
- * and the forearm turned at the elbow, past its limits, so the palms face her thighs.
+ * the forearm turned at the elbow, past its limits, so it bends as the reference's does, and the hand turned back at the wrist so it faces
+ * her thigh as it is built.
  */
 private const val ARMS_DOWN = 9f - ARM_OUTWARD
 private const val REST_ELBOW = -5.73f
-private const val PALMS_IN = 70f
+private const val FOREARM_TURN = 70f
+private const val WRIST = "wrist"
 
-/** The elbow of [arm] bent [degrees] with the forearm turned so the palm faces in, as every pose that names an elbow keeps it. */
-private fun elbow(arm: PartId, degrees: Float) = BonePose(arm, ARM_ELBOW, degrees, turn = PALMS_IN, mode = JointMode.FREE)
+/** The elbow of [arm] bent [degrees] with the forearm turned, as every pose that names an elbow keeps it. */
+private fun elbow(arm: PartId, degrees: Float) = BonePose(arm, ARM_ELBOW, degrees, turn = FOREARM_TURN, mode = JointMode.FREE)
+
+/** [hand] turned back at the wrist by the forearm's turn. */
+private fun wrist(hand: PartId) = BonePose(hand, WRIST, turn = -FOREARM_TURN, mode = JointMode.FREE)
+
+/** The sign that turns a finger's joints toward the palm, and the thumb's, on the hand as built. */
+private const val CURL = -1f
+private const val THUMB_CURL = 1f
+private const val THUMB = 4
+
+/** The reference's finger presets in degrees, joints 1 to 3, index to pinky then the thumb: relaxed and open. */
+private val RELAXED = listOf(
+    listOf(10.3f, 14.3f, 9.2f), listOf(13.8f, 18.3f, 11.5f), listOf(17.2f, 20.6f, 12.6f), listOf(21.8f, 22.9f, 14.3f), listOf(12.6f, 14.3f, 11.5f),
+)
+private val SPREAD = listOf(
+    listOf(2.3f, 3.4f, 2.3f), listOf(1.1f, 2.9f, 2.3f), listOf(2.9f, 4.6f, 2.9f), listOf(5.7f, 5.7f, 3.4f), listOf(-8.6f, 2.9f, 2.9f),
+)
+
+/** [hand]'s fingers and thumb curled by [preset]. */
+private fun fingers(hand: PartId, preset: List<List<Float>>) = preset.flatMapIndexed { finger, joints ->
+    joints.mapIndexed { k, degrees -> BonePose(hand, "fingers:$finger.${k + 1}", degrees * if (finger == THUMB) THUMB_CURL else CURL) }
+}
 
 private val ARMS_AT_REST = listOf(BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN), BonePose(ARM_R, TUBE_BASE, lean = ARMS_DOWN), elbow(ARM_L, REST_ELBOW), elbow(ARM_R, REST_ELBOW))
+private val HANDS_RELAXED = fingers(HAND_L, RELAXED) + fingers(HAND_R, RELAXED) + wrist(HAND_L) + wrist(HAND_R)
 
-/** The pose she is shown in: the reference's arms-down rest. */
-val TWIN_DISPLAY = Pose(ARMS_AT_REST)
+/** The pose she is shown in: the reference's arms-down rest, the fingers relaxed. */
+val TWIN_DISPLAY = Pose(ARMS_AT_REST + HANDS_RELAXED)
 
 /**
  * The reference's walk, mid-stride on the left leg: the left thigh forward 25.8 and its knee 8, the right thigh back 17.2 with its knee bent
@@ -40,7 +64,7 @@ val TWIN_WALK = Pose(listOf(
     BonePose(ARM_L, ARM_SHOULDER, 18.33f), elbow(ARM_L, -12.61f),
     BonePose(ARM_R, ARM_SHOULDER, -21.77f), elbow(ARM_R, -31.51f),
     BonePose(HEAD, NECK_TURN, 2.29f),
-))
+) + HANDS_RELAXED)
 
 /** How far the waving arm rises out to the side from where she is built, 114.6 degrees from hanging, and how far its forearm folds up. */
 private const val WAVE_RAISE = 114.59f - ARM_OUTWARD + 25f
@@ -56,7 +80,7 @@ val TWIN_WAVE = Pose(listOf(
     BonePose(ARM_L, TUBE_BASE, lean = ARMS_DOWN + 3.44f), elbow(ARM_L, -8.02f),
     BonePose(ARM_R, TUBE_BASE, lean = WAVE_RAISE, mode = JointMode.FREE), BonePose(ARM_R, ARM_ELBOW, WAVE_ELBOW, turn = WAVE_TWIST, mode = JointMode.FREE),
     BonePose(HEAD, NECK_TURN, 1.72f),
-))
+) + fingers(HAND_L, RELAXED) + wrist(HAND_L) + fingers(HAND_R, SPREAD) + BonePose(HAND_R, WRIST, mode = JointMode.FREE))
 
 /** The shades tipped up onto the forehead: each half turned about its own length, which runs out from the bridge. */
 private const val SHADES_TIP = 57.3f
