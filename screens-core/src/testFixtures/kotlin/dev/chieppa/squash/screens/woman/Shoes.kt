@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SurfaceWork
@@ -14,6 +15,10 @@ import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.fennec.loop
 import dev.chieppa.squash.screens.fennec.p
+import dev.chieppa.squash.screens.twin.FOOTPRINT
+import dev.chieppa.squash.screens.twin.PRINT_BACK
+import dev.chieppa.squash.screens.twin.PRINT_FRONT
+import dev.chieppa.squash.screens.twin.sole
 
 val SANDALS = GarmentId("sandals")
 val SNEAKERS = GarmentId("sneakers")
@@ -24,10 +29,17 @@ val CANVAS = SlotName("canvas")
 val PATENT = SlotName("patent")
 val BOOT_LEATHER = SlotName("boot")
 
-/** The sandal's sole under the foot from heel to toe, where the foot's v is a half; the bare foot shows its toes over it. */
-private const val SOLE_FROM_V = 0.3f
-private const val SOLE_TO_V = 0.7f
-private const val SOLE_EASE = 0.012f
+/**
+ * The sandal: a sole it owns under each foot, the blended foot's footprint at her foot's size, 0.012 m deep before that size, and a strap
+ * over the forefoot; the bare toes rest on the sole.
+ */
+val SANDAL_SOLE_L = PartId("sandal-sole-l")
+val SANDAL_SOLE_R = PartId("sandal-sole-r")
+private const val SANDAL_SOLE_SOCKET = 2
+private const val SOLE_DEPTH = 0.012f
+private const val STRAP_FROM = 0.56f
+private const val STRAP_TO = 0.61f
+private const val STRAP_EASE = 0.005f
 
 private const val SIZE = "size"
 private const val SHOE_RINGS = 48
@@ -56,13 +68,14 @@ internal fun shod(side: OutlineCurve, top: OutlineCurve, color: SlotName) = Body
     PartData(outlines = mapOf(View.SIDE to side, View.TOP to top), params = mapOf(SIZE to FOOT_SIZE, GenericParams.RINGS to SHOE_RINGS.toFloat()), surface = SurfaceWork(baseSlot = color)),
 )
 
-/** The shoes: sandals over the bare foot, sneakers that swap the foot for a closed shoe, and boots up to under the knee; the pumps are [pumps]. */
+/** The shoes: sandals under the bare foot, sneakers that swap the foot for a closed shoe, and boots up to under the knee; the pumps are [pumps]. */
 fun shoes(): List<DocumentCommand> = listOf(
     cloth(SANDAL_LEATHER, 0.55f, 0.36f, 0.22f),
     cloth(CANVAS, 0.95f, 0.95f, 0.93f),
     cloth(PATENT, 0.10f, 0.09f, 0.11f),
     cloth(BOOT_LEATHER, 0.16f, 0.13f, 0.13f),
-) + garment(SANDALS, "Sandals", FEET_SLOT, SANDAL_LEATHER, listOf(GarmentBranch(FOOT_L, fromV = SOLE_FROM_V, toV = SOLE_TO_V, ease = SOLE_EASE))) +
+) + garment(SANDALS, "Sandals", FEET_SLOT, SANDAL_LEATHER, listOf(GarmentBranch(FOOT_L, STRAP_FROM, STRAP_TO, ease = STRAP_EASE))) +
+    sole(SANDALS, SANDAL_SOLE_SOCKET, SANDAL_SOLE_L, SANDAL_SOLE_R, FOOTPRINT, PRINT_BACK, PRINT_FRONT, SOLE_DEPTH, SANDAL_LEATHER, BARE_FOOT_SIZE) +
     garment(SNEAKERS, "Sneakers", FEET_SLOT, CANVAS, listOf(GarmentBranch(FOOT_L, ease = SHOE_EASE)), changes = mapOf(FOOT_L to shod(SNEAKER_SIDE, SNEAKER_TOP, CANVAS))) +
     garment(
         BOOTS, "Boots", FEET_SLOT, BOOT_LEATHER, listOf(GarmentBranch(FOOT_L, ease = BOOT_EASE), GarmentBranch(LEG_L, SHAFT_FROM, 1f, ease = BOOT_EASE)),

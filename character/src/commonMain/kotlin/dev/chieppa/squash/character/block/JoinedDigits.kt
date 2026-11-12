@@ -70,7 +70,7 @@ internal class JoinedDigits private constructor(
     private val length = ctx.solidLength
 
     /** The patch name of the [k]th built digit. */
-    fun patchName(k: Int) = "${row.rowName}:${built[k]}"
+    fun patchName(k: Int) = row.patchOf(k)
 
     /** Where along the part's axis the field's run stops open: past every digit's seam by the overlap and a ring, inside the field's own reach. */
     fun fieldEnd(): Float {
@@ -89,7 +89,7 @@ internal class JoinedDigits private constructor(
         val start = claims.seam[k] - axis.radius * MARGIN * 2f / axis.length
         val tipRadius = axis.radius * ctx.value(row.taper)
         val bodyEnd = 1f - tipRadius / axis.length
-        val claw = row.nail?.claw ?: 0f
+        val claw = clawOf(ctx, row)
         val tipRings = if (claw > 0f) TIP_RINGS + CLAW_RINGS else TIP_RINGS
         val body = (rings - ROOT_RINGS - tipRings).coerceAtLeast(2)
         val shares = FloatArray(ROOT_RINGS + body + tipRings)
@@ -142,11 +142,19 @@ internal class JoinedDigits private constructor(
         fun of(ctx: BuildContext): JoinedDigits? {
             val row = ctx.blocksOn.filterIsInstance<Digits>().firstOrNull { it.join != null } ?: return null
             val own = ctx.blocksOn.filterIsInstance<Field>().firstOrNull() ?: return null
+            if (row.builtDigits(ctx).isEmpty()) return null
             return ctx.shared(row) { make(ctx, own, row) }
         }
 
+        /** How far [row]'s claws stand past each tip with [ctx]'s values, as a share of the digit's length; 0 with nails or none. */
+        private fun clawOf(ctx: BuildContext, row: Digits): Float =
+            row.nail?.takeIf { it.isOn(ctx.values) }?.let { ctx.value(it.claw) } ?: 0f
+
         private fun make(ctx: BuildContext, own: Field, row: Digits): JoinedDigits {
-            val built = (0 until row.builtCount(ctx)).toList()
+            val built = row.builtDigits(ctx)
+            val claw = clawOf(ctx, row)
+            val clawCurl = row.nail?.let { ctx.value(it.curl) } ?: 0f
+            val bean = row.pad?.takeIf { it.isOn(ctx.values) }?.let { ctx.value(it.rise) } ?: 0f
             val length = ctx.solidLength
             val reach = ctx.value(row.reach)
             val thickness = ctx.value(row.thickness)
@@ -157,7 +165,8 @@ internal class JoinedDigits private constructor(
             val axes = built.map { i ->
                 val digit = row.digits[i]
                 val root = point(ctx, digit.root.map { Param.of(it) })
-                DigitAxis(own.cupped(ctx, root), digit.direction(), digit.length * length * reach, digit.radius * length * thickness)
+                val digitLength = digit.length * length * reach
+                DigitAxis(own.cupped(ctx, root), digit.direction(), digitLength, digit.radius * length * thickness, claw * digitLength)
             }
             val solids = ArrayList<Blended>()
             val roots = ArrayList<Blended>()
@@ -176,12 +185,19 @@ internal class JoinedDigits private constructor(
                     solids += Blended(Capsule(axis.at(a), axis.at(b), radiusAt(a), if (b == bodyEnd) tipRadius else radiusAt(b)), blend)
                     joins += join * digit.join
                 }
-                row.nail?.takeIf { it.claw > 0f }?.let { nail ->
+                if (claw > 0f) {
                     val back = backOf(axis.direction, digit.roll * DEGREES_TO_RADIANS)
-                    val clawLength = nail.claw * axis.length
+                    val clawLength = claw * axis.length
                     val base = axis.at(bodyEnd) + back * (tipRadius * CLAW_BACK)
-                    val point = axis.at(1f + nail.claw) - back * (clawLength * nail.curl)
+                    val point = axis.at(1f + claw) - back * (clawLength * clawCurl)
                     solids += Blended(Capsule(base, point, tipRadius * CLAW_ROOT, tipRadius * CLAW_POINT), blend)
+                    joins += join * digit.join
+                }
+                row.pad?.takeIf { bean > 0f }?.let { pad ->
+                    val back = backOf(axis.direction, digit.roll * DEGREES_TO_RADIANS)
+                    val r = axis.radius * bean
+                    val at = axis.at(pad.at) - back * (axis.radius - r * BEAN_SINK)
+                    solids += Blended(Capsule(at, at, r), blend)
                     joins += join * digit.join
                 }
                 if (knuckles * digit.knuckle > 0f) {
@@ -208,6 +224,9 @@ internal class JoinedDigits private constructor(
         private const val CLAW_ROOT = 0.75f
         private const val CLAW_POINT = 0.12f
         private const val CLAW_BACK = 0.2f
+
+        /** How far a toe bean's ball sinks into its digit's underside, as a share of each radius. */
+        private const val BEAN_SINK = 0.5f
 
         /** How many of a digit's tip rings more a claw takes. */
         private const val CLAW_RINGS = 4

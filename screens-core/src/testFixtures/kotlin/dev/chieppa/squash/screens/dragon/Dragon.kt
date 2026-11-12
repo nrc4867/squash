@@ -43,9 +43,6 @@ private val SCALED_PARTS = listOf(TORSO, HEAD, TAIL, EAR_L, FRONT_LEG_L, BACK_LE
 /** The spikes down the back and the tail. */
 private val SPIKED = (0 until 7).map { spikeOf(TORSO, it) } + (0 until 6).map { spikeOf(TAIL, it) }
 
-/** The left claws, which their pairs share. */
-private val CLAWS = listOf(FRONT_PAW_L, BACK_PAW_L).flatMap { paw -> (0 until PAW_TOES).map { clawOf(paw, it) } }
-
 private val shipped by lazy { TemplateFolder.shipped() }
 
 /** The character before any command: a name on the canine plan. */
@@ -63,7 +60,7 @@ fun dragonColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(BELLY, SlotColor(0.96f, 0.82f, 0.52f)),
     SetPaletteSlot(WING_SKIN, SlotColor(0.52f, 0.13f, 0.18f)),
     SetPaletteSlot(CLAW, SlotColor(0.22f, 0.16f, 0.14f)),
-) + SCALED_PARTS.map { SetBaseSlot(it, SCALES) } + (SPIKED + HORN_L).map { SetBaseSlot(it, BELLY) } + CLAWS.map { SetBaseSlot(it, CLAW) } + listOf(
+) + SCALED_PARTS.map { SetBaseSlot(it, SCALES) } + (SPIKED + HORN_L).map { SetBaseSlot(it, BELLY) } + listOf(
     SetAreaFill(WING_L, "web", WING_SKIN),
     SetAreaFill(WING_L, "skin", WING_SKIN),
     spot(TORSO, "belly", BELLY, 0.5f, 0.5f, 0.44f, 0.15f),

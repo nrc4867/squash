@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.look
 
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.withHangingPushed
@@ -51,6 +53,7 @@ fun main(args: Array<String>) {
 private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
     val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
     SessionPose(session)
+    look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
     work.settle(session)
     val head = LookParts(session.document.value.character).head
     val outfits = session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }

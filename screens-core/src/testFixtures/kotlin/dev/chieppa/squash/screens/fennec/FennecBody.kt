@@ -73,9 +73,6 @@ private val FRONT_LEG_TOP = drawn(p(0f, 0.055f), p(0.2f, 0.052f), p(0.5f, 0.04f)
 private val BACK_LEG_SIDE = drawn(p(0f, 0.11f), p(0.14f, 0.09f), p(0.28f, 0.02f), p(0.40f, 0.03f), p(0.50f, 0.045f), p(0.54f, 0f), p(0.50f, -0.04f), p(0.40f, -0.06f), p(0.28f, -0.10f), p(0.14f, -0.14f), p(0f, -0.13f))
 private val BACK_LEG_TOP = drawn(p(0f, 0.065f), p(0.2f, 0.065f), p(0.5f, 0.04f), p(0.54f, 0f), p(0.5f, -0.04f), p(0.2f, -0.065f), p(0f, -0.065f))
 
-private val PAW_SIDE = loop(p(0f, 0f), p(0.05f, 0.05f), p(0.15f, 0.06f), p(0.25f, 0.035f), p(0.28f, -0.01f), p(0.22f, -0.045f), p(0.08f, -0.045f))
-private val PAW_TOP = loop(p(0f, 0f), p(0.05f, 0.06f), p(0.16f, 0.08f), p(0.26f, 0.05f), p(0.28f, 0f), p(0.26f, -0.05f), p(0.16f, -0.08f), p(0.05f, -0.06f))
-
 private val TAIL_SIDE = drawn(
     p(0f, 0.05f), p(0.08f, 0.08f), p(0.20f, 0.125f), p(0.36f, 0.16f), p(0.50f, 0.16f), p(0.64f, 0.12f), p(0.76f, 0.06f), tuft(0.84f, 0f),
     p(0.76f, -0.06f), p(0.64f, -0.12f), p(0.50f, -0.17f), p(0.36f, -0.17f), p(0.20f, -0.135f), p(0.08f, -0.09f), p(0f, -0.05f),
@@ -85,8 +82,11 @@ private val TAIL_TOP = drawn(
     p(0.76f, -0.05f), p(0.64f, -0.105f), p(0.50f, -0.14f), p(0.36f, -0.14f), p(0.20f, -0.115f), p(0.08f, -0.08f), p(0f, -0.05f),
 )
 
+/** How many toes each paw has: four that stand clear, each with a short dark claw, the paw's own default shape. */
+private const val PAW_TOES = 4f
+
 /**
- * The parts on the canine plan's sockets, drawn from outlines only, with the Move tool's lean on the tail and ears. Each takes the role
+ * The parts on the canine plan's sockets, drawn from outlines but for the paws, which are their template's shape with four toes, with the Move tool's lean on the tail and ears. Each takes the role
  * Add part gives it there: its template's, with the front legs and paws a four-legged body's arms and hands.
  */
 fun fennecBody(): List<DocumentCommand> = listOf(
@@ -107,8 +107,6 @@ fun fennecBody(): List<DocumentCommand> = listOf(
     SetParameter(TAIL, PlacementParams.LEAN, -55f),
     SetOutlines(FRONT_LEG_L, mapOf(View.SIDE to FRONT_LEG_SIDE, View.TOP to FRONT_LEG_TOP)),
     SetOutlines(BACK_LEG_L, mapOf(View.SIDE to BACK_LEG_SIDE, View.TOP to BACK_LEG_TOP)),
-    SetOutlines(FRONT_PAW_L, mapOf(View.SIDE to PAW_SIDE, View.TOP to PAW_TOP)),
-    SetOutlines(BACK_PAW_L, mapOf(View.SIDE to PAW_SIDE, View.TOP to PAW_TOP)),
-    SetParameter(FRONT_PAW_L, "toes", 3f),
-    SetParameter(BACK_PAW_L, "toes", 3f),
+    SetParameter(FRONT_PAW_L, "toes", PAW_TOES),
+    SetParameter(BACK_PAW_L, "toes", PAW_TOES),
 )

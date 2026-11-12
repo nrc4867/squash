@@ -64,7 +64,7 @@ class WomanDressedFixtureTest {
     @Test
     fun eachOutfitBuildsThePartsItsGarmentsOwnAndNoOthers() {
         val owned = mapOf(
-            BEACH to setOf(SHADES_L, SHADES_R, TEMPLE_L, TEMPLE_R),
+            BEACH to setOf(SANDAL_SOLE_L, SANDAL_SOLE_R, SHADES_L, SHADES_R, TEMPLE_L, TEMPLE_R),
             OFFICE to setOf(LAPEL_L, LAPEL_R, BLAZER_BUTTON, HEEL_L, HEEL_R),
             GOTH to setOf(BUCKLE, PENDANT),
             BARE to emptySet(),

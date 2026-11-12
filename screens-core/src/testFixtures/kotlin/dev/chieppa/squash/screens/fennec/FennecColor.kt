@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.SlotName
 val FUR = SlotName("fur")
 val CREAM = SlotName("cream")
 val PAD = SlotName("pad")
+val CLAW = SlotName("claw")
 val NOSE = SlotName("nose")
 val INNER_EAR = SlotName("inner-ear")
 val INK = SlotName("ink")
@@ -31,6 +32,7 @@ fun fennecColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(FUR, SlotColor(0.90f, 0.70f, 0.43f)),
     SetPaletteSlot(CREAM, SlotColor(0.99f, 0.94f, 0.82f)),
     SetPaletteSlot(PAD, SlotColor(0.36f, 0.24f, 0.24f)),
+    SetPaletteSlot(CLAW, SlotColor(0.20f, 0.14f, 0.13f)),
     SetPaletteSlot(NOSE, SlotColor(0.16f, 0.11f, 0.12f)),
     SetPaletteSlot(INNER_EAR, SlotColor(0.96f, 0.76f, 0.68f)),
     SetPaletteSlot(INK, SlotColor(0.13f, 0.09f, 0.10f)),

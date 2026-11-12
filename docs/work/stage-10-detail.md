@@ -643,6 +643,68 @@ Feet, next, on the same mechanism:
 - **Heads**: a creature's head joined to its muzzle and ears by the same runs-on-one-field loft.
 - **Thumb**: a second thumb hinge that swings it across the palm, for a fist and a grip.
 
+## Feet
+
+`foot` 4 and `paw` 5 join their toes to the foot's field by hand 5's mechanism, unchanged: the toes are a `digits` row with `join`, solids of the foot's own field, lofted as runs on that one surface that ride each other's bones. What the round added is what a foot and a paw need from that row, as parameters, so one template spans a person's foot, a fox's paw, a dragon's foot and a house cat's mitten.
+
+How it works:
+
+- **Foot 4** is foot 3 with its toes joined: `web` 0.04 and `merge` 0.35, so the five toes read as one front with grooves and no line where each leaves the foot; two joints a toe (`toes:i.1`, `.2`), curling down; a toenail on each, `nail:i` in the slot `nails`, the toes rolled -90 degrees so v = 0.25, where a nail lies, faces up. Heel, arch, ball, ankle and the shoe parameters are foot 3's. A shoe's Redraw sets `toes` 0, and a row that builds no toes now leaves the field to loft alone, closed round at heel and toe, so every shoe over foot 3 works over foot 4 unchanged.
+- **Paw 5** is a round heel (`heel`) and a pad ellipsoid (`width`, `height`) cut flat at the sole, with a joined toe row: `toes` 3, 4 or 5, each count its own spread of toes (a digit's `counts` names the counts it is built at; toes are numbered from 0 whatever the count), two joints a toe, `toeLength` and `toeThickness`. `merge` is the range from clear-standing toes (0.15 to 0.3) to a mitten of shallow lobes (about 1) to a rounded mass (2). Claws are the nail setting with a point past each tip, now parameters: `claw` (its length in toe lengths), `clawCurl`, and `claws` 0 to retract them; they paint the slot `claw`. Pads: a main pad (an `area` with the new `round`, an oval) and a bean under each toe (the row's new `pad`, an oval at v = 0.75 on each digit), in the slot `pad`, both off with `pads` 0; `beans` raises each bean as a ball joined into the field.
+- **A claw rides its toe.** A digit's reach runs past its tip by its claw's length, so the claw's point takes the toe's last joint, not the wrist's.
+- **No fold at the heel.** Each ring's rays are cast again from the middle of the box round the first cast's points, so rings near a pole keep their v at matching places and no cell twists into an inked fold. This touches every field part: hand 4 and 5 and foot 3 move by a few ten-thousandths (goldens rewritten), with no change by eye.
+- **`close=feet`** renders the bare foot or paw in six views as `foot-rest`, `foot-built`, `foot-curl`, `foot-open` and `foot-spread` (each toe leaning 14 degrees from the row's middle at its root, `Rig.spread`); `close=hands` renders the same set as `hand-*`. **`set=part:name:value,...`** sets parameters on an example's parts before `look` renders or `measure` measures it, which is how the mitten is shown without a fixture.
+
+The creatures:
+
+- **The twin** is on foot 4 with no change to her fixture, her shoes as they were.
+- **The woman** is on foot 4 at size 1.18 (0.28 m heel to big toe, her old foot's length), her drawn foot outlines dropped. Foot 4 stands its ankle where a person's is, 0.08 above the ground, where her old foot stood it 0.027 above: she is 0.054 taller, her legs reaching that much further into the ankle. Her sneakers, boots and pumps swap the foot for a drawn blob as before and sit where they did. Her sandal is now a sole it owns under each foot, the twin's footprint at her foot's size (`sole` takes a size), and a strap over the forefoot: a branch over the sole of a joined foot ran on past the field's open end as a slab.
+- **The fennec** is on paw 5 with four toes that stand clear, short dark claws, a main pad and beans, its drawn paw outlines dropped (they shaped paw 4; a joined paw is shaped by its parameters). Its boots set `toes` 0.
+- **The dragon** is on paw 5 front and back with three long thick toes (`toeLength` 1.5, `toeThickness` 1.3, `merge` 0.15), long claws (`claw` 0.9, `clawCurl` 0.15) and no pads; its twelve claw parts on tip sockets are gone, the claws now its paws' own. Its front paws are its hands, so the same parameters make its clawed hands.
+- **A house cat's mitten** is the fennec with `set=` on both pairs of paws, `merge` 1.0, `claws` 0, `toeLength` 0.6: four shallow lobes on the front, the main pad and beans underneath, claws retracted.
+
+Measured:
+
+| | before | after |
+| --- | --- | --- |
+| Build and mesh, median warm (target under 50 ms; `BlendedHandFootBenchTest`) | foot 3 9.9 ms, paw 4 0.8 ms | foot 4 20.1 ms, its shoe foot 13.9 ms; paw 5 11.9 ms, the dragon's 8.7 ms, the mitten 10.3 ms; hand 5 22.6 ms |
+| Dressed twin foot IoU, beach / lawyer / dress / goth | 0.932 / 0.845 / 0.902 / 0.886 | 0.930 / 0.845 / 0.902 / 0.887 |
+| Dressed twin mean IoU of all 24 shots | 0.849 | 0.849 |
+| Twin smallest gap between toe tips, beach | 0.0030 | 0.0031 |
+| Woman smallest gap between toe tips | 0.0118 (foot 2) | 0.0037 |
+| Woman-dressed bare skin seen on covered parts, beach | 310 (feet 95) | 216 (feet 0) |
+| Twin-dressed bare skin seen on the feet, lawyer / dress / goth | 49 / 84 / 20 | 38 / 66 / 22 |
+| Fennec-dressed bare skin seen on the paws, winter boots | 379 | 195 |
+| Fennec bones | 61 | 69 (four toes, two joints each) |
+
+`bare skin seen` counts covered skin a camera sees; the woman's sandal is now a sole it owns, so her feet under it count none. No band of any body shot moves by more than 0.002; the twin's beach foot falls 0.002, which `merge` and `web` do not move (0.930 to 0.931 over 0.2 to 0.35 and 0.02 to 0.04). Koi, lizard, toucan, person and person-dressed render pixel for pixel as before in every outfit, pose and close-up (22 images). Leg checks, hip spread, arm volume and owned parts' drift read as before for the woman, the twin and the fennec. The dragon's wrist and ankle now read a socket ring of 0.30 and 0.27 seen where they read none: no ink shows there in the close-ups, where paw 4's tube drew a ring round the ankle; the check's winding test reads the joined paw, whose runs overlap by design, as the host.
+
+Left as it stands:
+
+- Small shade flecks and short ink ticks remain where two toes part, at the bottom of each groove, on the foot and the paws, fewer than the hand's; on the mitten they help the lobes read.
+- Toes curl by skinning, so a curled foot's toes go through the ground plane; nothing plants them.
+- The mitten's outer lobes bulge out at the sides: a large `merge` swells the union between neighbours as much outward as between them. The cat reference's ink strokes on the lobes are not drawn; the lobes read by shading and the ticks.
+- `web` only fills between the toes' roots; there is no thin web reaching up the toes, so an otter's webbed paw is five toes with a fuller fill between them, not a membrane.
+- A joined field ignores drawn Side and Top outlines: the woman's and the fennec's drawn feet and paws are dropped for parameters. A booted fennec paw (no toes) would read a drawing again, since a field with no joined toes lofts as before.
+- The woman stands 0.054 taller, foot 4 standing her ankle where a person's is.
+- The pad's main area is an oval on the field's run behind the toes; one reaching under the toes' roots would show torn where the toes' runs own the surface.
+- The dragon's leg narrows into a round heel behind it; the paw's `heel` widens it, but the dragon's leg is its template's, not drawn to the paw.
+
+### For the next rounds
+
+The fennec test rebuilds the whole fennec as blended fields with eyeballs seated in sockets its head carves. What this round learned that bears on it:
+
+- **One field with runs on it works beyond the hand.** Every joined part here is one `BlendedField` with several runs lofted on it, buried where another run owns the surface, every vertex riding the runs round it. It held for five short toes on a floor, three long clawed ones and a mitten with no change to the loft, so a fennec whose torso, legs, neck, head and tail are runs on one field is the same mechanism. What it lacks: every digit is a straight axis (`DigitAxis`), and claims, rides and the walls between runs are measured from straight segments. Legs and a tail bend along their spines, so claims and rides want a polyline axis, the nearest point on a chain.
+- **Drawn outlines must become the solids.** A joined field ignores Side and Top, which only resize a lone field's rings after the solid is found and would tear the seams between runs. The fennec test is built from drawn outlines, so each drawing has to define its part's solid before the union (a swept solid whose radius along the spine is the drawing's half width and height), not resize rings afterwards.
+- **Cast rays from the section's own middle.** Near a pole the first cast's middle jumps from ring to ring and twists cells into inked folds; casting again from the middle of the box round the hits fixed it for every field part at about twice the ray cost. Bigger, lumpier sections (a torso where legs leave it) will need it too, and the first crossing (`firstCrossing`) so rays do not wrap another part.
+- **A cut is a smooth intersection, and it cuts everything.** The sole's floor flattened every claw that curled below it. An eye socket carved into the head is the same operation (the head's field smooth-maxed with a sphere's negative), so it carves whatever of the head's runs lies there; the eyeball should be its own run in the head's field joined by a plain union (blend 0), so the buried-point rule drops its crossing with the socket's wall and no ink rings the ball, which the eyeball spike's separate blobs could not avoid.
+- **Paint follows (u, v) per run, which is fragile across runs.** Nails, claws and beans sit wholly on their digits and read cleanly; the main pad reaching toward the toes' roots tore where the toes' runs take over. A fennec's cream chest, muzzle and socks cross several runs, so regions on a blended fennec want painting by body position, or areas that buried points hand to the run that shows the surface.
+- **A part's own anatomy moves the ground.** Foot 4 stood the woman 0.054 taller; a fennec rebuilt as fields must keep its legs' ground and its sockets where the drawing puts them, or every pose and garment shifts.
+- **Cost.** A joined foot or paw takes 9 to 20 ms and a hand 23 ms, against 1 ms for a lofted paw; field values dominate. Thirteen fennec parts on one field is a few hundred milliseconds unless each run rebuilds only when its own solids change, so the fennec test should time a one-part edit, not only a full build.
+- **Authoring stayed in parameters.** The fennec's, the dragon's and the mitten's paws needed no drawing and no code: `toes`, `merge`, `claw`, `claws`, `pads` and the look's `set=` to try them. A field fennec authored from drawings loses that unless its drawings and its solids' parameters both stay editable.
+
+Tentative: foot 4's `merge` 0.35 and `web` 0.04 and the toes' roll; paw 5's solids, toe spreads, claw and bean sizes, set by eye on the fennec, the dragon and the mitten; the dragon's toe and claw values; the woman's foot size; the spread's 14 degrees.
+
 ## Open
 
 - None.

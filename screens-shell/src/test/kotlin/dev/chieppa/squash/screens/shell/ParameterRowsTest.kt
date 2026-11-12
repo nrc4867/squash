@@ -9,7 +9,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ParameterRowsTest {
-    private val paw = assertNotNull(shipped.template(TemplateId("paw")))
+    /** The paw with a spread in degrees and on-off pads and webs. */
+    private val paw = shipped.parts.single { it.id == TemplateId("paw") && it.version == 4 }
     private val rows = parameterRows(paw).associateBy { it.name }
 
     @Test

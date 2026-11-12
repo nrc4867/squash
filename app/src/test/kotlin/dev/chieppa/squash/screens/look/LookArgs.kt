@@ -26,7 +26,7 @@ class LookArgs(args: Array<String>) {
     /** The pose names asked for, or null for every named pose. */
     val poses: List<String>? = values["poses"]?.takeIf { it != ALL }?.split(',')
 
-    /** The close-ups asked for, among face, hand, foot and hands, the bare hand at rest, curled into a fist and open. */
+    /** The close-ups asked for, among face, hand, foot, hands, the bare hand at rest, curled into a fist and open, and feet, the bare foot or paw at rest, curled, open and spread. */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
     /** The shot list to render instead of the usual views: `reference` for the reference's 24 shots. */
@@ -34,6 +34,15 @@ class LookArgs(args: Array<String>) {
 
     /** An explicit camera in the reference frame to render through instead of the usual views, from `eye`, `target`, `fov` and `size`. */
     val camera: ShotCamera? = values["eye"]?.let { eye -> ShotCamera.parse(eye, requireNotNull(values["target"]) { "eye needs a target" }, values["fov"], values["size"]) }
+
+    /**
+     * Parameters to set on parts before rendering, from `set=part:name:value,...`, each sent as Set parameter over the example as it
+     * is built, a pair's both sides: a variant of an example without a fixture of its own.
+     */
+    val settings: List<Triple<String, String, Float>> = values["set"]?.split(',')?.map { entry ->
+        val (part, name, value) = entry.split(':').also { require(it.size == 3) { "set takes part:name:value, not $entry" } }
+        Triple(part, name, value.toFloat())
+    }.orEmpty()
 
     /** Whether measure prints every part's origin and box. */
     val parts: Boolean = values["parts"] == "true"
@@ -49,5 +58,6 @@ class LookArgs(args: Array<String>) {
         const val HAND = "hand"
         const val FOOT = "foot"
         const val HANDS = "hands"
+        const val FEET = "feet"
     }
 }

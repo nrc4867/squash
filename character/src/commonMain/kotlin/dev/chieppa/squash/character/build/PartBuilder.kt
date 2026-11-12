@@ -84,7 +84,7 @@ object PartBuilder {
 
     /** The areas of [template]'s blocks that are on with [params] over its defaults. */
     fun areas(template: PartTemplate, params: Map<String, Float>): List<AreaSpec> =
-        (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.areas() } }
+        (template.defaults + params).let { values -> template.blocks.filter { it.isOn(values) }.flatMap { it.areas(values) } }
 
     /** The colored patches of [template]'s blocks that are on with [params] over its defaults. */
     fun patchSlots(template: PartTemplate, params: Map<String, Float>): List<PatchSlot> =

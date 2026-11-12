@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Tag
 
 /**
  * What building a hand or a foot again costs, its patches and its mesh, as a change to its shape or parameters builds it: the blended
- * `hand` 4 and 5 and `foot` 3, with a pitched shoe's foot, beside the lofted `hand` 3 and `foot` 2. A pose only skins them. The medians go to
+ * `hand` 4 and 5, `foot` 3 and 4, with a pitched shoe's foot, and `paw` 5 clawed and as a mitten, beside the lofted `hand` 3 and `foot` 2. A pose only skins them. The medians go to
  * the test's output.
  */
 @Tag("slow")
@@ -35,6 +35,16 @@ class BlendedHandFootBenchTest {
         assertTrue(median("foot", 3) < BUDGET_MS)
         assertTrue(median("foot", 3, mapOf("toes" to 0f, "toeBox" to 1f, "pitch" to 24f)) < BUDGET_MS)
         median("foot", 2)
+    }
+
+    @Test
+    fun aJoinedFootOrPawBuildsUnderFiftyMilliseconds() {
+        assertTrue(median("foot", 4) < BUDGET_MS)
+        assertTrue(median("foot", 4, mapOf("toes" to 0f, "toeBox" to 1f, "pitch" to 24f)) < BUDGET_MS)
+        assertTrue(median("paw", 5) < BUDGET_MS)
+        assertTrue(median("paw", 5, mapOf("toes" to 3f, "toeLength" to 1.5f, "claw" to 0.9f)) < BUDGET_MS)
+        assertTrue(median("paw", 5, mapOf("merge" to 1f, "claws" to 0f, "toeLength" to 0.6f)) < BUDGET_MS)
+        median("paw", 4, mapOf("toes" to 3f))
     }
 
     private companion object {

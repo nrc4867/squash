@@ -5,18 +5,19 @@ import kotlin.math.max
 
 /**
  * One digit as a run joined to a field sees it, in the part's own axes: a straight axis from [root] along [direction], unit length,
- * [length] long, [radius] thick at its root. Shares along it run from 0 at the root to 1 at the tip.
+ * [length] long, [radius] thick at its root, reaching [beyond] further past its tip where a claw stands. Shares along it run from 0 at
+ * the root to 1 at the tip.
  */
-data class DigitAxis(val root: Vec3, val direction: Vec3, val length: Float, val radius: Float) {
+data class DigitAxis(val root: Vec3, val direction: Vec3, val length: Float, val radius: Float, val beyond: Float = 0f) {
     /** How far along the digit [p] lies, as a share of its length. */
     fun share(p: Vec3): Float = ((p - root) dot direction) / length
 
     /** The point on the axis at [share]. */
     fun at(share: Float): Vec3 = root + direction * (length * share)
 
-    /** How far [p] lies from the axis, between a radius behind the root and the tip. */
+    /** How far [p] lies from the axis, between a radius behind the root and the tip, or the claw's point past it. */
     fun distance(p: Vec3): Float {
-        val along = ((p - root) dot direction).coerceIn(-radius, length)
+        val along = ((p - root) dot direction).coerceIn(-radius, length + beyond)
         return (p - (root + direction * along)).length
     }
 }

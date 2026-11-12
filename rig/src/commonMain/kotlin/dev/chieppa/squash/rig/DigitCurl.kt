@@ -34,3 +34,23 @@ fun Rig.curlOf(pose: Pose, part: PartId): Float? {
         (tip / bone.fullCurl()).coerceIn(0f, 1f)
     }.average().toFloat()
 }
+
+/**
+ * [start] with each digit of [parts] spread [degrees] at its root away from the middle of its part's digit roots, leaning free of its
+ * hinge's limits, every other joint left as it was: fingers or toes fanned apart.
+ */
+fun Rig.spread(start: Pose, parts: Collection<PartId>, degrees: Float): Pose = parts.fold(start) { pose, part ->
+    val roots = digitBones(part).filter { bones[it].digit?.joint == 1 }
+    if (roots.isEmpty()) return@fold pose
+    val middle = roots.map { bones[it].pivot }.reduce { a, b -> a + b } * (1f / roots.size)
+    roots.fold(pose) { posed, i ->
+        val bone = bones[i]
+        val away = (bone.axes().y cross bone.direction) dot (bone.pivot - middle)
+        val set = posed.of(bone.name.part, bone.name.joint) ?: BonePose(bone.name.part, bone.name.joint)
+        if (set.mode == JointMode.LOCKED || kotlin.math.abs(away) < SPREAD_MIDDLE) posed
+        else posed.with(set.copy(lean = if (away > 0f) degrees else -degrees, mode = JointMode.FREE))
+    }
+}
+
+/** How near the middle of its row, in body units across it, a digit's root stands still when the row spreads. */
+private const val SPREAD_MIDDLE = 1e-4f

@@ -1,13 +1,16 @@
 package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FACE
+import dev.chieppa.squash.screens.look.LookArgs.Companion.FEET
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FOOT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
@@ -28,7 +31,7 @@ private const val FACE_TILE = 600
 /**
  * Renders examples through the real graph, rig and scene on the GPU to PNGs, with no test runner: per outfit, the whole character
  * from the front, three-quarter and side in its display pose, at rest when that differs, and in each named pose, and the face and foot close-ups; the bare hand close-up
- * once, and with `close=hands` the bare hand at rest, curled and open. Run as `./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"`.
+ * once, with `close=hands` the bare hand at rest, curled and open, and with `close=feet` the bare foot or paw at rest, curled, open and spread. Run as `./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"`.
  */
 fun main(args: Array<String>) {
     val look = LookArgs(args)
@@ -44,6 +47,7 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
     TestWork().use { work ->
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
         val sessionPose = SessionPose(session)
+        look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
         work.settle(session)
         if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
         val views = WomanViews(work, errors, folder)
@@ -52,7 +56,8 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         val parts = LookParts(session.document.value.character)
         val poses = examplePoses(example).filterKeys { look.poses == null || it in look.poses }
         if (HAND in look.close) parts.hand?.let { closeUps.keep(session, it, "hand") }
-        if (HANDS in look.close) parts.hand?.let { HandCloseUps(closeUps, work).keep(session, sessionPose, it) }
+        if (HANDS in look.close) parts.hand?.let { DigitCloseUps(closeUps, work, HAND).keep(session, sessionPose, it) }
+        if (FEET in look.close) parts.foot?.let { DigitCloseUps(closeUps, work, FOOT, spreads = true).keep(session, sessionPose, it) }
         for (outfit in outfitsOf(session, look)) {
             val name = outfit?.value ?: "as-saved"
             if (outfit != null) session.send(ShowOutfit(outfit))

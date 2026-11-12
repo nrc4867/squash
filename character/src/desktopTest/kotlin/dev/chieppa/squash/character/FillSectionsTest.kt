@@ -83,7 +83,7 @@ class FillSectionsTest {
         val plan = assertNotNull(shipped.plans.firstOrNull())
         val made = newCharacter(plan, shipped, "Test")
         assertEquals(plan.palette.map { it.name }, made.document.character.palette.slots.map { it.name.value })
-        assertEquals(listOf("fur", "cream", "pad", "nose", "inner-ear", "ink"), plan.palette.map { it.name })
+        assertEquals(listOf("fur", "cream", "pad", "claw", "nose", "inner-ear", "ink"), plan.palette.map { it.name })
         assertEquals(SlotName("fur"), plan.startingData().surface.baseSlot)
     }
 

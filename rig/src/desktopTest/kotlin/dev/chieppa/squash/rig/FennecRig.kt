@@ -13,8 +13,8 @@ import kotlinx.coroutines.test.runTest
 import java.nio.file.Path
 import kotlin.io.path.readText
 
-/** The fennec's bones: 37 along its parts and two on each of the three toes of its four paws. */
-const val FENNEC_BONES = 37 + 4 * 3 * 2
+/** The fennec's bones: 37 along its parts and two on each of the four toes of its four paws. */
+const val FENNEC_BONES = 37 + 4 * 4 * 2
 
 /** The shipped templates and plans. */
 val shippedLibrary: TemplateLibrary by lazy { TemplateFolder.shipped().let { TemplateLibrary(it.parts, it.plans) } }

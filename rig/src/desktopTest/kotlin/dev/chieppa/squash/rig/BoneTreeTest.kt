@@ -18,7 +18,7 @@ class BoneTreeTest {
     @Test
     fun everyTemplateJointOfTheFennecIsABone() {
         val legs = listOf("front-leg-l", "front-leg-r", "back-leg-l", "back-leg-r").flatMap { leg -> listOf("hip", "knee", "ankle").map { "$leg/$it" } }
-        val toes = (0 until 3).flatMap { toe -> (1..2).map { "toes:$toe.$it" } }
+        val toes = (0 until 4).flatMap { toe -> (1..2).map { "toes:$toe.$it" } }
         val paws = listOf("front-paw-l", "front-paw-r", "back-paw-l", "back-paw-r").flatMap { paw -> (listOf("wrist") + toes).map { "$paw/$it" } }
         val expected = listOf("torso/hips", "torso/loin", "torso/waist", "torso/ribs", "torso/chest", "torso/withers", "head/neck", "head/jaw") +
             listOf("ear-l", "ear-r").flatMap { ear -> listOf("base", "fold", "tip").map { "$ear/$it" } } +

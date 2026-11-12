@@ -10,44 +10,39 @@ import kotlin.test.assertTrue
 
 private val PAW_L = PartId("front-paw-l")
 
-/** The claw on each toe of the dragon's left front paw. */
-private fun clawOf(index: Int) = PartId("front-paw-l-claw-$index")
+/** How many toes the dragon's paws have. */
+private const val TOES = 3
 
-/** How far a claw's root may drift from its toe's tip under a whole curl, beyond where it sat at rest, in body units. */
-private const val HELD = 1e-3f
-
-/** How far a whole curl carries each toe's tip at least, in body units, so the claw is seen to ride it. */
+/** How far a whole curl carries each claw's point at least, in body units, so the claw is seen to ride its toe. */
 private const val CARRIED = 0.01f
 
-/** The dragon's claws: each hangs from its toe's last joint and rides it as the paw curls. */
+/** The dragon's claws, grown from its paws' toes: each claw's point rides its toe's last joint as the paw curls. */
 class ClawRigTest {
     private val dragon get() = dragonRig
 
     private fun point(positions: FloatArray, vertex: Int) = Vec3(positions[vertex * 3], positions[vertex * 3 + 1], positions[vertex * 3 + 2])
 
+    /** The vertex of toe [i] farthest along it: its claw's point. */
+    private fun clawPoint(paw: RigPart, i: Int) = paw.vertices.indices.filter { paw.vertices[it].patch == "toes:$i" }.maxBy { paw.vertices[it].u }
+
     @Test
-    fun aClawFollowsOnlyItsToesLastJoint() {
-        for (i in 0 until 3) {
-            val claw = assertNotNull(dragon.part(clawOf(i)))
-            val followed = (0 until claw.rest.size / 3).flatMap { v -> claw.weights.of(v).map { (bone, _) -> dragon.bones[bone].name } }.toSet()
-            assertEquals(setOf(BoneName(PAW_L, "toes:$i.2")), followed, "claw $i")
+    fun aClawFollowsItsToesLastJoint() {
+        val paw = assertNotNull(dragon.part(PAW_L))
+        for (i in 0 until TOES) {
+            val (bone, share) = paw.weights.of(clawPoint(paw, i)).maxBy { it.second }
+            assertEquals(BoneName(PAW_L, "toes:$i.2"), dragon.bones[bone].name, "claw $i")
+            assertTrue(share > 0.5f, "claw $i rides its last joint: $share")
         }
     }
 
     @Test
     fun aCurledToeCarriesItsClaw() {
         val paw = assertNotNull(dragon.part(PAW_L))
-        val posed = dragon.posed(dragon.curled(Pose(), listOf(PAW_L), 1f)).parts
-        val curled = posed.getValue(PAW_L)
-        for (i in 0 until 3) {
-            val tip = paw.vertices.indices.filter { paw.vertices[it].patch == "toes:$i" }.maxBy { paw.vertices[it].u }
-            val claw = assertNotNull(dragon.part(clawOf(i)))
-            val bent = posed.getValue(clawOf(i))
-            val root = (0 until claw.rest.size / 3).minBy { (point(claw.rest, it) - point(paw.rest, tip)).length }
-            val atRest = (point(claw.rest, root) - point(paw.rest, tip)).length
+        val curled = dragon.posed(dragon.curled(Pose(), listOf(PAW_L), 1f)).parts.getValue(PAW_L)
+        for (i in 0 until TOES) {
+            val tip = clawPoint(paw, i)
             val moved = (point(curled, tip) - point(paw.rest, tip)).length
-            assertTrue(moved > CARRIED, "toe $i curls: $moved")
-            assertEquals(atRest, (point(bent, root) - point(curled, tip)).length, HELD, "claw $i keeps to its toe's tip")
+            assertTrue(moved > CARRIED, "claw $i curls with its toe: $moved")
         }
     }
 }

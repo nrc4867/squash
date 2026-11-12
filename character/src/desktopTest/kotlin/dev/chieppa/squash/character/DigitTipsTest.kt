@@ -24,6 +24,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 private const val TOES = 3
+private const val TIPPED_PAW = 4
 
 /** How near its toe's tip a claw's socket plane sits at most, as a share of the claw's length. */
 private const val AT_THE_TIP = 0.5f
@@ -33,7 +34,8 @@ class DigitTipsTest {
     private val plan = shipped.plans.first()
     private val library = TemplateLibrary(shipped.parts, shipped.plans)
     private val claw = assertNotNull(shipped.template(TemplateId("claw")))
-    private val paw = assertNotNull(shipped.template(TemplateId("paw")))
+    /** The paw whose toe row offers tips; the joined paw after it grows its claws itself. */
+    private val paw = shipped.parts.single { it.ref == TemplateRef(TemplateId("paw"), TIPPED_PAW) }
 
     /** A torso with a front leg and paw on it, the paw at [version] with [toes] toes; the paw's id comes second. */
     private fun pawed(version: Int = paw.version, toes: Int = TOES): Pair<SquashDocument, PartId> {
@@ -56,7 +58,7 @@ class DigitTipsTest {
     fun theClawIsATaperingHornAndThePawsTipsAreNew() {
         assertEquals(emptyList(), TemplateLint.lint(claw))
         assertEquals(Role.HORN, claw.role)
-        assertEquals(4, paw.version)
+        assertTrue(shipped.parts.any { it.ref == TemplateRef(TemplateId("paw"), TIPPED_PAW + 1) }, "a joined paw follows it")
         assertTrue(shipped.parts.any { it.ref == TemplateRef(TemplateId("paw"), 3) }, "the paw's earlier versions keep shipping")
     }
 

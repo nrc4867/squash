@@ -141,7 +141,7 @@ object TemplateLint {
         val groups = listOf(
             "joint" to template.blocks.flatMap { it.joints() }.map { it.name },
             "socket" to template.blocks.flatMap { it.sockets() }.map { it.name },
-            "area" to template.blocks.flatMap { it.areas() }.map { it.name },
+            "area" to template.blocks.flatMap { it.areas(template.defaults) }.map { it.name },
         )
         return groups.flatMap { (kind, names) ->
             names.groupBy { it }.filter { it.value.size > 1 }.keys.map { Finding("$.blocks", "two ${kind}s named '$it'") }

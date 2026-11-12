@@ -52,7 +52,7 @@ class JoinedHandTest {
 
     @Test
     fun clawsStandOutPastTheTipsAndAreFilledToThePoint() {
-        val clawed = withRow { it.copy(nail = it.nail?.copy(claw = 0.3f, curl = 0.3f)) }
+        val clawed = withRow { it.copy(nail = it.nail?.copy(claw = Param.of(0.3f), curl = Param.of(0.3f))) }
         val plain = PartBuilder.build(hand)
         val built = PartBuilder.build(clawed)
         for (k in 1..4) assertTrue(farthest(built[k]) > farthest(plain[k]), "finger ${k - 1}'s claw reaches past its tip")

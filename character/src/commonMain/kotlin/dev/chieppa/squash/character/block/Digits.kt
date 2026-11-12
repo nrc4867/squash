@@ -40,8 +40,9 @@ private const val MIN_SEGMENTS = 3
 /** How far digits joined to a field blend into their neighbours by default, as a share of their radius. */
 private const val DEFAULT_MERGE = 0.2f
 
-/** Where round a digit its back lies, in v. */
+/** Where round a digit its back lies, in v, and its underside. */
 private const val BACK = 0.25f
+private const val UNDER = 0.75f
 
 private const val DEGREES_TO_RADIANS = (PI / 180.0).toFloat()
 
@@ -94,6 +95,8 @@ data class Digits(
     val knuckles: Param = Param.of(0f),
     @Doc("A nail or a claw at each digit's tip: painted on its back, and on digits joined to a field standing out past the tip as a point.")
     val nail: DigitNail? = null,
+    @Doc("A pad under each digit's tip, a toe bean: painted on its underside, and on digits joined to a field raised from it.")
+    val pad: DigitPad? = null,
 ) : Block {
     internal val rowName get() = name ?: DEFAULT_ROW_NAME
 
@@ -101,27 +104,46 @@ data class Digits(
 
     override fun countedPatches(values: Map<String, Float>): Set<String> {
         if (condition?.let { values[it.name] == 0f } == true) return emptySet()
-        return (0 until built(values)).map { "$rowName:$it" }.toSet()
+        return builtOf(count?.resolve(values)?.roundToInt() ?: digits.size).indices.map(::patchOf).toSet()
     }
 
-    private fun built(values: Map<String, Float>): Int =
-        (count?.resolve(values)?.roundToInt() ?: digits.size).coerceIn(0, digits.size)
+    /** The patch of the [k]th digit the row builds, counted from 0 whichever of [digits] it is. */
+    internal fun patchOf(k: Int) = "$rowName:$k"
 
-    /** How many digits [ctx]'s build makes. */
-    internal fun builtCount(ctx: BuildContext): Int = count?.let { ctx.value(it).roundToInt().coerceIn(0, digits.size) } ?: digits.size
+    /**
+     * The places in [digits] of the digits a row of [count] builds, in order: those that list [count] among their counts, or the first
+     * [count] when no digit lists any.
+     */
+    private fun builtOf(count: Int): List<Int> =
+        if (digits.any { it.counts != null }) digits.indices.filter { digits[it].counts?.contains(count) == true }
+        else (0 until count.coerceIn(0, digits.size)).toList()
 
-    override fun areas(): List<AreaSpec> = nail?.let { nail ->
-        digits.indices.map { i ->
-            val span = span(i)
-            fun u(share: Float) = span.start + (span.end - span.start) * share
-            val end = if (nail.claw > 0f) 1f + nail.claw else nail.at + nail.length / 2f
-            AreaSpec(
-                "${nail.name}:$i", Span(u(nail.at - nail.length / 2f), u(end)),
-                Span((BACK - nail.width / 2f).mod(1f), (BACK + nail.width / 2f).mod(1f)), AreaTag.FILL, "$rowName:$i", nail.color,
-                round = nail.claw == 0f,
-            )
-        }
-    }.orEmpty()
+    /** The places in [digits] of the digits [ctx]'s build makes. */
+    internal fun builtDigits(ctx: BuildContext): List<Int> = builtOf(count?.let { ctx.value(it).roundToInt() } ?: digits.size)
+
+    override fun areas(values: Map<String, Float>): List<AreaSpec> {
+        val built = builtOf(count?.or(values)?.roundToInt() ?: digits.size)
+        val nails = nail?.takeIf { it.isOn(values) }?.let { nail ->
+            val claw = nail.claw.or(values)
+            built.mapIndexed { k, i ->
+                val end = if (claw > 0f) 1f + claw else nail.at + nail.length / 2f
+                oval("${nail.name}:$k", k, i, nail.at - nail.length / 2f, end, BACK, nail.width, nail.color, round = claw == 0f)
+            }
+        }.orEmpty()
+        val pads = pad?.takeIf { it.isOn(values) }?.let { pad ->
+            built.mapIndexed { k, i -> oval("${pad.name}:$k", k, i, pad.at - pad.length / 2f, pad.at + pad.length / 2f, UNDER, pad.width, pad.color, round = true) }
+        }.orEmpty()
+        return nails + pads
+    }
+
+    /** An area on the [k]th built digit, [digits]' [i]th, from [from] to [to] along it, [width] of a turn round it about [around]. */
+    private fun oval(name: String, k: Int, i: Int, from: Float, to: Float, around: Float, width: Float, color: String, round: Boolean): AreaSpec {
+        val span = span(i)
+        fun u(share: Float) = span.start + (span.end - span.start) * share
+        return AreaSpec(
+            name, Span(u(from), u(to)), Span((around - width / 2f).mod(1f), (around + width / 2f).mod(1f)), AreaTag.FILL, patchOf(k), color, round = round,
+        )
+    }
 
     /** Digit [i]'s u along the part from its root to its tip, fixed by the template's numbers so a pose's joints stay where the rings are. */
     internal fun span(i: Int): Span {
@@ -130,23 +152,25 @@ data class Digits(
         return Span(digit.root[0] - from, digit.root[0] + direction.x * digit.length - from)
     }
 
-    override fun digitChains(patches: Set<String>): List<DigitChain> =
-        digits.indices.filter { "$rowName:$it" in patches }.map { i ->
-            val digit = digits[i]
-            val span = span(i)
-            val specs = digit.joints.mapIndexed { k, share ->
-                JointSpec("$rowName:$i.${k + 1}", span.start + (span.end - span.start) * share, null, digit.hinge ?: hinge, digit.limits ?: limits, stretch = false)
+    /** Each built digit's chain, the row's count read from how many of its patches [patches] holds, which picks the digits a count builds. */
+    override fun digitChains(patches: Set<String>): List<DigitChain> {
+        val built = builtOf(patches.count { it.startsWith("$rowName:") && it.removePrefix("$rowName:").toIntOrNull() != null })
+        return built.indices.filter { patchOf(it) in patches }.map { k ->
+            val digit = digits[built[k]]
+            val span = span(built[k])
+            val specs = digit.joints.mapIndexed { j, share ->
+                JointSpec("${patchOf(k)}.${j + 1}", span.start + (span.end - span.start) * share, null, digit.hinge ?: hinge, digit.limits ?: limits, stretch = false)
             }
-            DigitChain("$rowName:$i", i, span, false, specs)
+            DigitChain(patchOf(k), k, span, false, specs)
         }
+    }
 
     override fun build(ctx: BuildContext): List<Patch> {
         JoinedDigits.of(ctx)?.let { joined -> return joinedRuns(ctx, joined) }
-        val count = builtCount(ctx)
         val section = SectionProfile.CIRCLE.spline(segments)
-        return List(count) { i ->
+        return builtDigits(ctx).mapIndexed { k, i ->
             ctx.checkCancelled()
-            segment(ctx, i, section)
+            segment(ctx, i, patchOf(k), section)
         }
     }
 
@@ -166,11 +190,11 @@ data class Digits(
     }
 
     /**
-     * Digit [i] as a swept run: a round end behind its root as deep as the root is thick, a body along its length swelling at its
+     * Digit [i] as a swept run named [patch]: a round end behind its root as deep as the root is thick, a body along its length swelling at its
      * knuckles and thinning to its tip, and a round end at the tip as long as the tip is thick, every ring's u read along the digit
      * so its joints land where their shares put them.
      */
-    private fun segment(ctx: BuildContext, i: Int, section: ClosedSpline): Patch {
+    private fun segment(ctx: BuildContext, i: Int, patch: String, section: ClosedSpline): Patch {
         val digit = digits[i]
         val span = span(i)
         val length = digit.length * ctx.solidLength * ctx.value(reach)
@@ -211,13 +235,15 @@ data class Digits(
         val centres = List(rings) { rootAt + toward * (length * shares[it]) }
         val widths = FloatArray(rings) { 2f * radiusAt(shares[it]) * scales[it] }
         val heights = FloatArray(rings) { widths[it] * narrow }
-        return SliceBuilder.sweep(SweepSpec("$rowName:$i", us, centres, heights, widths, section, ctx.axes.up, EndClosure.OPEN, EndClosure.OPEN))
+        return SliceBuilder.sweep(SweepSpec(patch, us, centres, heights, widths, section, ctx.axes.up, EndClosure.OPEN, EndClosure.OPEN))
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.param("join", join) + ctx.param("knuckles", knuckles) + ctx.param("merge", merge) +
         ctx.atLeast("rings", rings, MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS) + ctx.param("count", count) +
             ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) +
+            nail?.let { ctx.param("nail.claw", it.claw) + ctx.param("nail.curl", it.curl) }.orEmpty() +
+            pad?.let { ctx.param("pad.rise", it.rise) }.orEmpty() +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") }
 }
 
@@ -244,6 +270,8 @@ data class DigitSegment(
     val join: Float = 1f,
     @Doc("On digits joined to a field, its knuckle ball as a share of the row's knuckles: 0 for a digit rooted deep in a pad.")
     val knuckle: Float = 1f,
+    @Doc("The row counts it is built at, so a row holds a spread of digits for each count; unset on every digit, a count builds the first digits.")
+    val counts: List<Int>? = null,
 ) {
     fun direction(): Vec3 = Vec3(toward[0], toward[1], toward[2]).normalized()
 
@@ -254,27 +282,3 @@ data class DigitSegment(
             DigitJoints.lintShares(ctx, "$field.joints", joints)
 }
 
-/**
- * A nail or a claw at each digit's tip of a [Digits] row: an oval painted on the digit's back, a nail; with a [claw] length, a point
- * standing out past the tip of digits joined to a field, painted from the nail's start to its point.
- */
-@Serializable
-@Doc("A nail or a claw at each digit's tip: an oval on the digit's back centred at a share of its length, so long along it and so wide round it, in a palette slot; a claw stands out past the tip as a point and is painted to it.")
-data class DigitNail(
-    @Doc("The area's name; each digit's is this with its place after it.")
-    val name: String = "nail",
-    @Doc("Its middle along the digit, from 0 at the root to 1 at the tip.")
-    val at: Float,
-    @Doc("How long it runs along the digit, as a share of the digit's length.")
-    val length: Float,
-    @Doc("How far round the digit it reaches, as a share of a turn.")
-    val width: Float,
-    @Doc("The palette slot it shows until it is filled.")
-    val color: String,
-    @Doc("How far a claw stands out past the tip, as a share of the digit's length; 0 for a nail.")
-    @Range(min = 0.0, max = 2.0)
-    val claw: Float = 0f,
-    @Doc("How far a claw's point curls toward the digit's underside, as a share of the claw's length.")
-    @Range(min = -1.0, max = 1.0)
-    val curl: Float = 0f,
-)

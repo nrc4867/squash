@@ -50,7 +50,8 @@ sealed interface Block {
     /** The names of the patches this block builds with [values], where how many it builds depends on them; none for any other block. */
     fun countedPatches(values: Map<String, Float>): Set<String> = emptySet()
     fun landmarks(): List<LandmarkSpec> = emptyList()
-    fun areas(): List<AreaSpec> = emptyList()
+    /** The areas this block paints with [values], the part's parameters over its template's defaults; with none, only their names are sure. */
+    fun areas(values: Map<String, Float> = emptyMap()): List<AreaSpec> = emptyList()
 
     /** The patches this block shows in a palette slot of their own. */
     fun patchSlots(): List<PatchSlot> = emptyList()

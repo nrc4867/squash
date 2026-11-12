@@ -1757,7 +1757,7 @@
                 "id": "foot-l",
                 "template": {
                     "id": "foot",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "leg-l",
@@ -1771,7 +1771,7 @@
                 "id": "foot-r",
                 "template": {
                     "id": "foot",
-                    "version": 3
+                    "version": 4
                 },
                 "socket": {
                     "parent": "leg-r",

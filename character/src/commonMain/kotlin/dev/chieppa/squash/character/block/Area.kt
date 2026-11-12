@@ -25,8 +25,10 @@ data class Area(
     val patch: String = BODY_PATCH,
     @Doc("A palette slot it shows until it is filled.")
     val color: String? = null,
+    @Doc("Whether it is the oval inside its u and v rather than the whole rectangle: a pad.")
+    val round: Boolean = false,
 ) : Block {
-    override fun areas() = listOf(AreaSpec(name, u, v, tag, patch, color))
+    override fun areas(values: Map<String, Float>) = listOf(AreaSpec(name, u, v, tag, patch, color, round))
 
     override fun lint(ctx: LintContext): List<Finding> = ctx.unit("u", u) + around(ctx)
 

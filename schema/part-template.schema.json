@@ -66,6 +66,10 @@
               "type": "null"
             }
           ]
+        },
+        "round": {
+          "description": "Whether it is the oval inside its u and v rather than the whole rectangle: a pad.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -493,6 +497,18 @@
           "description": "The area's name; each digit's is this with its place after it.",
           "type": "string"
         },
+        "if": {
+          "description": "The boolean parameter that switches the nails or claws on.",
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "at": {
           "description": "Its middle along the digit, from 0 at the root to 1 at the tip.",
           "type": "number"
@@ -510,16 +526,88 @@
           "type": "string"
         },
         "claw": {
-          "description": "How far a claw stands out past the tip, as a share of the digit's length; 0 for a nail.",
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 2.0
+          "description": "How far a claw stands out past the tip, as a share of the digit's length, up to 2; 0 for a nail.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
         },
         "curl": {
-          "description": "How far a claw's point curls toward the digit's underside, as a share of the claw's length.",
-          "type": "number",
-          "minimum": -1.0,
-          "maximum": 1.0
+          "description": "How far a claw's point curls toward the digit's underside, as a share of the claw's length, -1 to 1.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "at",
+        "length",
+        "width",
+        "color"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "DigitPad": {
+      "description": "A pad under each digit's tip: an oval on the digit's underside centred at a share of its length, so long along it and so wide round it, in a palette slot; with a rise, a ball raised under it on digits joined to a field.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The area's name; each digit's is this with its place after it.",
+          "type": "string"
+        },
+        "if": {
+          "description": "The boolean parameter that switches the pads on.",
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "at": {
+          "description": "Its middle along the digit, from 0 at the root to 1 at the tip.",
+          "type": "number"
+        },
+        "length": {
+          "description": "How long it runs along the digit, as a share of the digit's length.",
+          "type": "number"
+        },
+        "width": {
+          "description": "How far round the digit it reaches, as a share of a turn.",
+          "type": "number"
+        },
+        "color": {
+          "description": "The palette slot it shows until it is filled.",
+          "type": "string"
+        },
+        "rise": {
+          "description": "On digits joined to a field, the radius of the ball raised under it, as a share of the digit's radius; 0 paints it only.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
         }
       },
       "required": [
@@ -607,6 +695,20 @@
         "knuckle": {
           "description": "On digits joined to a field, its knuckle ball as a share of the row's knuckles: 0 for a digit rooted deep in a pad.",
           "type": "number"
+        },
+        "counts": {
+          "description": "The row counts it is built at, so a row holds a spread of digits for each count; unset on every digit, a count builds the first digits.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -842,6 +944,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/DigitNail"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pad": {
+          "description": "A pad under each digit's tip, a toe bean: painted on its underside, and on digits joined to a field raised from it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DigitPad"
             },
             {
               "type": "null"

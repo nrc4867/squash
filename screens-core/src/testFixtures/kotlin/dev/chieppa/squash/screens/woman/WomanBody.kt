@@ -82,7 +82,11 @@ private const val HAND_SIZE = 1.05f
 private const val HAND_PALM_WIDTH = 0.21f
 private const val HAND_FINGER_THICKNESS = 1.0f
 private const val HAND_FINGER_LENGTH = 1.1f
+/** The size her shoes, which take the foot's place while worn, are drawn at. */
 internal const val FOOT_SIZE = 0.6f
+
+/** The blended foot at her scale: 0.28 long from heel to big toe. */
+internal const val BARE_FOOT_SIZE = 1.18f
 
 /**
  * The torso in Side, hips at the left and the base of the neck at the right, front up: a full seat behind, the belly in to a narrow
@@ -134,18 +138,6 @@ private val LEG_FRONT = drawn(
     p(0f, -0.085f),
 )
 
-/** A bare foot in Side, from behind the ankle: a round heel, the instep rising to the ankle and falling to the toes, a flat sole. */
-private val FOOT_SIDE = loop(
-    p(-0.030f, 0.000f), p(-0.020f, 0.045f), p(0.030f, 0.075f), p(0.110f, 0.065f), p(0.220f, 0.040f), p(0.320f, 0.024f), p(0.405f, 0.020f),
-    p(0.420f, -0.005f), p(0.405f, -0.035f), p(0.250f, -0.042f), p(0.080f, -0.045f), p(-0.010f, -0.040f),
-)
-
-/** The foot in Top: a narrow heel, the arch, widest across the ball and round over the toes. */
-private val FOOT_TOP = loop(
-    p(-0.030f, 0.000f), p(-0.020f, 0.032f), p(0.060f, 0.038f), p(0.180f, 0.046f), p(0.300f, 0.056f), p(0.385f, 0.056f), p(0.412f, 0.045f),
-    p(0.420f, 0.000f), p(0.412f, -0.045f), p(0.385f, -0.056f), p(0.300f, -0.056f), p(0.180f, -0.046f), p(0.060f, -0.038f), p(-0.020f, -0.032f),
-)
-
 private fun on(part: PartId, socket: Int) = SocketRef(part, HandSockets.name(socket))
 
 /** A pair as Add part places it on a paired hand-made socket, its role a guess until it is chosen. */
@@ -157,15 +149,10 @@ private fun pairOn(id: String, template: String, left: PartId, right: PartId, so
 )
 
 /** A pair as Add part places it on each side's own parent, a typed template giving its role. */
-/** The foot version she is drawn on: the lofted foot, before the blended one. */
-private val PINNED = mapOf("foot" to 2)
-
-private fun pinned(template: String) = PINNED[template]?.let { TemplateRef(TemplateId(template), it) } ?: ref(template)
-
 private fun pairEach(id: String, template: String, role: Role, left: Pair<PartId, PartId>, right: Pair<PartId, PartId>) = AddParts(
     listOf(
-        PartInstance(left.first, pinned(template), on(left.second, END_SOCKET), pair = PairId(id), side = Side.LEFT, role = role),
-        PartInstance(right.first, pinned(template), on(right.second, END_SOCKET), pair = PairId(id), side = Side.RIGHT, role = role),
+        PartInstance(left.first, ref(template), on(left.second, END_SOCKET), pair = PairId(id), side = Side.LEFT, role = role),
+        PartInstance(right.first, ref(template), on(right.second, END_SOCKET), pair = PairId(id), side = Side.RIGHT, role = role),
     ),
 )
 
@@ -175,8 +162,8 @@ private fun fine(part: PartId, rings: Int, segments: Int) = listOf(GenericParams
 /**
  * The woman's shape on the Blank plan, from generic parts where a template's built shape would fight her figure: a tube torso standing
  * up, drawn in Side and from in front, with a spine of three joints; a tube neck; tube arms and legs on paired sockets with a
- * shoulder, an elbow and a knee placed by hand. The hands are the blended hand, shaped by its parameters and leaning out with the
- * arm, and the feet the lofted foot: their fingers, thumb, toes and webs are blocks no generic part has.
+ * shoulder, an elbow and a knee placed by hand. The hands and feet are the blended hand and foot, shaped by their parameters, the hands
+ * leaning out with the arm: their fingers, thumb, toes and webs are blocks no generic part has.
  */
 fun womanBody(): List<DocumentCommand> = buildList {
     add(AddParts(listOf(PartInstance(TORSO, ref("tube"), role = Role.BODY))))
@@ -220,6 +207,5 @@ fun womanBody(): List<DocumentCommand> = buildList {
     add(SetParameter(HAND_L, "fingerThickness", HAND_FINGER_THICKNESS))
     add(SetParameter(HAND_L, "fingerLength", HAND_FINGER_LENGTH))
     add(pairEach("feet", "foot", Role.FOOT, FOOT_L to LEG_L, FOOT_R to LEG_R))
-    add(SetParameter(FOOT_L, "size", FOOT_SIZE))
-    add(SetOutlines(FOOT_L, mapOf(View.SIDE to FOOT_SIDE, View.TOP to FOOT_TOP)))
+    add(SetParameter(FOOT_L, "size", BARE_FOOT_SIZE))
 }

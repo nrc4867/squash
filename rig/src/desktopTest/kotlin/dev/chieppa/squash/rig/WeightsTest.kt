@@ -39,7 +39,8 @@ class WeightsTest {
                 val u = patch.boneUOf(local)
                 val position = part.placed.origin + part.placed.surface.mesh.position(vertex)
                 val digit = part.joints.digitOf(patch.name)
-                val inBand = patch.spanned != null || u < childBand ||
+                val rides = patch.rides?.let { r -> r.patches.indices.any { it > 0 && r.share(local, it) > 0f } } == true
+                val inBand = patch.spanned != null || rides || u < childBand ||
                     digit != null && part.joints.digits[digit].joints.withIndex().any { (k, joint) -> abs(u - joint.u) < own.digitHalfWidths[digit][k] } ||
                     digit == null && joints.indices.any { k -> k > 0 && abs(u - part.joints.specs[k].u) < joints[k] } ||
                     rims.any { (anchor, reach) -> (position - anchor).length < reach }

@@ -133,3 +133,14 @@ Read while joining the fingers to the palm and moving the woman to hand 5. Most 
 - `geom/.../LineGrid.kt`, `geom/.../MeshInvariants.kt`, `geom/.../RenderMesh.kt`, `character/.../PatchSurface.kt`: where contours and closed meshes are decided, to leave buried cells out of both.
 - `woman/WomanBody.kt`, `woman/WomanPoses.kt`: which hand the woman pinned and the palm twist her display pose put at the elbow for hand 4; hand 5 rests palm to the thigh with no twist. The skill now says so, so the next author need not read them.
 - No source was read to shape the hand: `close=hands` renders of the display pose, as built, curled and open told it.
+
+### Joined feet and paws
+
+Read while joining the toes to the foot's and paw's fields and moving the twin, the woman, the fennec and the dragon onto them. The engine reads first, then the authoring reads:
+
+- `character/.../block/Digits.kt`, `JoinedDigits.kt`, `Field.kt`, `geom/.../field/BlendedField.kt`, `FieldLoft.kt`, `DigitAxis.kt`: how a joined row builds, to give it counts, claws and pads as parameters, to find that a row building no toes broke the join, and that a claw's point lay past its digit's reach and rode the paw's wrist instead of the toe.
+- `geom/.../LineGrid.kt` and a printout of the field run's rings: why an ink tick sat on the heel; rays cast from a jumping middle twisted the cells near the pole into a fold. Rays are now cast again from the middle of each section's box.
+- `woman/WomanBody.kt`: the woman's foot size and outlines, to size the blended foot to her. `measure parts=true` gave the box to match (0.28 long); a measure line comparing two templates' extents at a size would have given the size directly.
+- `fennec/FennecBody.kt`, `dragon/DragonBody.kt`, `dragon/Dragon.kt`: how the paws were drawn and clawed (outlines on the paw, claw parts on tip sockets), to drop what the joined paw now does itself.
+- `character/.../block/Field.kt`: that a joined field's run ignores drawn outlines, so the fennec's paw drawing would have shaped only its booted, toeless paw. The skill now says the paw is shaped by parameters.
+- No code was read to find which way a toe's nail faces: renders of `close=feet` told it (a toe's v = 0.25 faces its side until rolled -90 degrees).

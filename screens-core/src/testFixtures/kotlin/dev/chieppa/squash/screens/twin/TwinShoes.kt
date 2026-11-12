@@ -120,15 +120,16 @@ internal fun slab(back: Float, front: Float, thick: Float): OutlineCurve = loop(
 
 /**
  * A sole [garment] owns under each foot: a blob from the foot's ground line under the ankle, drawn as [print] in Top and a slab [thick]
- * deep in Side, in [color]. It rides the foot's bone rigidly and does not wrap the foot's sides.
+ * deep in Side, in [color], the drawing in metres of a foot at [size]. It rides the foot's bone rigidly and does not wrap the foot's sides.
  */
 internal fun sole(
     garment: GarmentId, socket: Int, left: PartId, right: PartId, print: OutlineCurve, back: Float, front: Float, thick: Float, color: SlotName,
+    size: Float = 1f,
 ): List<DocumentCommand> = buildList {
     add(HandSockets.add(FOOT_L, socket, SOLE_U, SOLE_V, 0f, paired = false, sink = 0f))
     val seat = HandSockets.name(socket)
     add(ownedPair(garment, "${garment.value}-soles", left to SocketRef(FOOT_L, seat), right to SocketRef(FOOT_R, seat), "blob"))
-    addAll(propShape(left, slab(back, front, thick), print, 1f, SOLE_RINGS, SOLE_SEGMENTS))
+    addAll(propShape(left, slab(back, front, thick), print, size, SOLE_RINGS, SOLE_SEGMENTS))
     add(SetBaseSlot(left, color))
 }
 

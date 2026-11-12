@@ -80,6 +80,9 @@ class BuildContext(
 
     fun value(param: Param): Float = param.resolve(params)
 
+    /** The part's parameter values over its template's defaults. */
+    val values: Map<String, Float> get() = params
+
     fun length(param: Param): Float = value(param) * fullLength
 
     /** Straight along the rest direction, or bent toward the underside at the template's bend point. */

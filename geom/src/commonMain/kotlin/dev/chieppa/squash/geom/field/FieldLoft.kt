@@ -79,7 +79,7 @@ object FieldLoft {
             val u = uOf(x)
             val middle = middleAt(own, x)
             val pole = ring == 0 || (ring == rings - 1 && end == null)
-            val hits = if (pole || middle == null) null else hitsAt(field, x, middle, segments, firstCrossing)
+            val hits = if (pole || middle == null) null else hitsAt(field, x, middle, segments, firstCrossing).let { first -> recentred(field, x, first, segments, firstCrossing) ?: first }
             val size = hits?.let { spanOf(it) }
             if (hits == null || size == null || max(size.second.x, size.second.y) < box * POLE_SHARE) {
                 val at = middle ?: Vec2(field.low.y + (field.high.y - field.low.y) / 2f, field.low.z + (field.high.z - field.low.z) / 2f)
@@ -232,6 +232,17 @@ object FieldLoft {
             val r = (outer + inner) / 2f
             Vec2(middle.y + side * r, middle.x + up * r)
         }
+    }
+
+    /**
+     * [hits] cast again from the middle of the box round them, where that lies inside the solid: rays from one ring's middle to the next
+     * then keep their v at matching places round each section, so a lopsided section near a pole does not twist its cells into a fold.
+     */
+    private fun recentred(field: BlendedField, x: Float, hits: List<Vec2>, segments: Int, firstCrossing: Boolean): List<Vec2>? {
+        val (box, _) = spanOf(hits)
+        val middle = Vec2(box.y, box.x)
+        if (field.value(Vec3(x, middle.x, middle.y)) >= 0f) return null
+        return hitsAt(field, x, middle, segments, firstCrossing)
     }
 
     /** The middle of the box round [hits] and its spans, both as (side, up). */
