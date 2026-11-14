@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.surface.SurfaceSection
-import dev.chieppa.squash.character.surface.isRun
+import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.CurvePoint
 import dev.chieppa.squash.geom.TriangleLines
@@ -28,14 +28,19 @@ class OneSurfaceLines(val shown: PosedSurface, private val strokes: List<WeightS
 
     private val weightAt: ((Vec3) -> Float)? = if (strokes.isEmpty()) null else { point -> lineWeightAt(point, strokes) }
 
-    /** The contour of [lined], each part's lines with the surface's runs left out, and of the surface and its garments, through [view]. */
+    /**
+     * The contour of [lined], each part's lines with the surface's runs left out, and of the surface and its garments, through [view],
+     * with the hems of the garments hanging free (see [hangingHems]).
+     */
     fun contour(lined: Collection<PartLines>, view: SurfaceView) =
-        contourRibbon(lined, view, listOf(shown.surface.lines) + shown.dress?.garments.orEmpty().map { it.lines }, weightAt)
+        contourRibbon(lined, view, listOf(shown.surface.lines) + shown.dress?.garments.orEmpty().map { it.lines }, weightAt, shown.dress?.let(::hangingHems).orEmpty())
 
-    /** The ink along the surface's inked joins and its garments' inked hems, through [view]. */
+    /** The ink along the surface's inked joins and its garments' inked hems and joins, through [view]. */
     fun inks(view: SurfaceView, look: CharacterLook, ink: Color): List<RibbonDraw> {
         val surface = shown.surface
-        return joinDraws(surface, view, look.creases, ink) + shown.dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty()
+        val dress = shown.dress
+        return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
+            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell) }
     }
 
     /** What the surface's paint inks on [part] as [view] sees it, its face's lines among them. */
@@ -59,4 +64,4 @@ class OneSurfaceLines(val shown: PosedSurface, private val strokes: List<WeightS
 }
 
 /** These lines of a part of the one surface: only its patches that are not runs, and no crease, since the surface's own joins ink it. */
-internal fun PartLines.withoutRuns(): PartLines = PartLines(part, grids.filterNot { isRun(it.patch) }, emptyList(), markWeights)
+internal fun PartLines.withoutRuns(): PartLines = PartLines(part, grids.filterNot { isFieldRun(part, it.patch) }, emptyList(), markWeights)

@@ -1,13 +1,15 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 48
+internal const val COLOR_LAYER_FLOATS = 60
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
  * camera by a fraction of a pixel's depth. That fraction grows where the surface turns away, since there a fragment's depth moves
  * fastest between its mesh and its cut, and it never falls under a few steps of the depth buffer. So a layer passes against its
- * own mesh at any angle and at any zoom, and fails against anything truly in front of it.
+ * own mesh at any angle and at any zoom, and fails against anything truly in front of it. A shaped layer is kept at each fragment to an
+ * almond and an oval, each turned, in the chart its vertices carry, as [dev.chieppa.squash.geom.ChartShape] reads them, its edge faded
+ * over a pixel.
  */
 internal const val COLOR_LAYER_WGSL = """
 struct Layer {
@@ -17,6 +19,9 @@ struct Layer {
     shadow: vec4<f32>,
     to_light_and_two_tone: vec4<f32>,
     viewport_and_depth: vec4<f32>,
+    opening: vec4<f32>,
+    oval: vec4<f32>,
+    turn_and_oval: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> layer: Layer;
@@ -80,5 +85,53 @@ fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
 @fragment
 fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
     return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), in.alpha);
+}
+
+struct ShapedOut {
+    @builtin(position) clip: vec4<f32>,
+    @location(0) proxy: vec3<f32>,
+    @location(1) chart: vec2<f32>,
+};
+
+@vertex
+fn vs_shaped(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @location(2) proxy: vec3<f32>, @location(3) chart: vec2<f32>) -> ShapedOut {
+    let layered = lifted(position, normal, proxy);
+    var out: ShapedOut;
+    out.clip = layered.clip;
+    out.proxy = layered.proxy;
+    out.chart = chart;
+    return out;
+}
+
+// How far outside the almond a chart point lies, along v between its corners: at most zero inside.
+fn almond_level(p: vec2<f32>) -> f32 {
+    let o = layer.opening;
+    let a = clamp(p.x / o.x, -1.0, 1.0);
+    let open = sqrt(max(1.0 - a * a, 0.0)) * (1.0 + o.w * a);
+    return max(max(p.y - o.y * open, -o.y * o.z * open - p.y), (abs(p.x) - o.x) * o.y / o.x);
+}
+
+// How far outside the oval a chart point lies, in shares of its lesser half: at most zero inside.
+fn oval_level(p: vec2<f32>) -> f32 {
+    let q = (p - layer.oval.xy) / layer.oval.zw;
+    return (length(q) - 1.0) * min(layer.oval.z, layer.oval.w);
+}
+
+@fragment
+fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
+    let c = layer.turn_and_oval.x;
+    let s = layer.turn_and_oval.y;
+    let p = vec2<f32>(in.chart.x * c + in.chart.y * s, -in.chart.x * s + in.chart.y * c);
+    var level = almond_level(p);
+    if (layer.turn_and_oval.z > 0.5) {
+        let oc = cos(layer.turn_and_oval.w);
+        let os = sin(layer.turn_and_oval.w);
+        level = max(level, oval_level(vec2<f32>(in.chart.x * oc + in.chart.y * os, -in.chart.x * os + in.chart.y * oc)));
+    }
+    let alpha = clamp(0.5 - level / max(fwidth(level), 0.0000001), 0.0, 1.0);
+    if (alpha <= 0.0) {
+        discard;
+    }
+    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), alpha);
 }
 """ + TONE_WGSL

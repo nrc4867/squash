@@ -117,13 +117,13 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val sight = FullView({ camera }, input.width, input.height)
     if (input.hints.whole) {
         selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, input.color, toCamera, outline, posed = posed.of(part))?.let { add(it.withFace(part, surface, sight)) } }
-        addAll(look.surfaceDraws(input.color, toCamera, posed != null))
+        addAll(look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer))
         return@buildList
     }
     look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
-    if (input.color.holds(selection.part)) addAll(look.surfaceDraws(input.color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id))
+    if (input.color.holds(selection.part)) addAll(look.surfaceDraws(input.color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id, toViewer = sight::toViewer))
     if (input.hints.ghost > 0f) {
-        addAll(look.surfaceDraws(input.color, toCamera, posed != null, look.ghostOutline, input.hints.ghost))
+        addAll(look.surfaceDraws(input.color, toCamera, posed != null, look.ghostOutline, input.hints.ghost, toViewer = sight::toViewer))
         selection.others
             .sortedByDescending { (it.center.toGpu() - camera.eye).length }
             .forEach { part -> look.colored(part, input.color, toCamera, look.ghostOutline, input.hints.ghost, posed = posed.of(part))?.let(::add) }

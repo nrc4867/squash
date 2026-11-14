@@ -3,6 +3,7 @@ package dev.chieppa.squash.geom.surface
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
+import dev.chieppa.squash.geom.field.Solid
 import dev.chieppa.squash.geom.field.SweptSolid
 import kotlin.math.PI
 import kotlin.math.abs
@@ -30,13 +31,7 @@ class SurfaceMesherTest {
         val field = body(Vec3(RADIUS * 1.2f, 0f, 0f))
         val mesh = meshed(SurfaceMesher(CELL), field)
         assertTrue(mesh.vertexCount > 100)
-        val edges = HashMap<Pair<Int, Int>, Int>()
-        for (t in 0 until mesh.triangleCount) for (c in 0 until 3) {
-            val a = mesh.triangles[t * 3 + c]
-            val b = mesh.triangles[t * 3 + (c + 1) % 3]
-            edges.merge(if (a < b) a to b else b to a, 1, Int::plus)
-        }
-        assertTrue(edges.values.all { it == 2 }, "every edge has two triangles")
+        assertClosed(mesh)
         for (v in 0 until mesh.vertexCount) assertTrue(abs(field.value(mesh.position(v))) < CELL * 0.01f, "vertex $v lies on the field")
         var outward = 0
         for (t in 0 until mesh.triangleCount) {
@@ -49,6 +44,32 @@ class SurfaceMesherTest {
         val shared = (0 until mesh.vertexCount).filter { mesh.parents[it] == 0 }
         assertTrue(shared.isNotEmpty() && shared.all { mesh.winners[it] == 1 && mesh.shares[it] in 0f..1f }, "the small ball shares its join with the large")
         assertTrue(shared.any { mesh.shares[it] < 0.5f } && shared.any { mesh.shares[it] > 0.5f }, "the shares cross a half round the join")
+    }
+
+    @Test
+    fun aFieldChangingFasterThanADistanceStillMeshesClosed() {
+        val steep = object : Solid {
+            override fun distance(p: Vec3): Float = STEEPNESS * (p.length - RADIUS * 0.5f)
+            override val low = Vec3(-RADIUS, -RADIUS, -RADIUS)
+            override val high = Vec3(RADIUS, RADIUS, RADIUS)
+        }
+        val field = JoinedField(
+            listOf(
+                JoinedMember(ball, Vec3.ZERO, false, 0f, -1, 0),
+                JoinedMember(steep, Vec3(RADIUS * 1.1f, RADIUS * 0.3f, 0.01f), false, 0f, -1, 1),
+            ),
+        )
+        assertClosed(meshed(SurfaceMesher(CELL * 0.5f), field))
+    }
+
+    private fun assertClosed(mesh: SurfaceMesh) {
+        val edges = HashMap<Pair<Int, Int>, Int>()
+        for (t in 0 until mesh.triangleCount) for (c in 0 until 3) {
+            val a = mesh.triangles[t * 3 + c]
+            val b = mesh.triangles[t * 3 + (c + 1) % 3]
+            edges.merge(if (a < b) a to b else b to a, 1, Int::plus)
+        }
+        assertTrue(edges.values.all { it == 2 }, "every edge has two triangles: ${edges.values.count { it != 2 }} have not")
     }
 
     @Test
@@ -73,6 +94,7 @@ class SurfaceMesherTest {
         const val RADIUS = 0.3f
         const val CELL = 0.04f
         const val BLEND = 0.08f
+        const val STEEPNESS = 8f
         const val RINGS = 17
         const val AROUND = 24
 

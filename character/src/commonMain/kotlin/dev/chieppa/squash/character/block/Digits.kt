@@ -15,6 +15,7 @@ import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Span
+import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.geom.ClosedSpline
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
@@ -97,10 +98,14 @@ data class Digits(
     val nail: DigitNail? = null,
     @Doc("A pad under each digit's tip, a toe bean: painted on its underside, and on digits joined to a field raised from it.")
     val pad: DigitPad? = null,
+    @Doc("On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.")
+    val surface: SurfaceMethod = SurfaceMethod.FIELD,
 ) : Block {
     internal val rowName get() = name ?: DEFAULT_ROW_NAME
 
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
+
+    override fun surfaceMethod() = surface
 
     override fun countedPatches(values: Map<String, Float>): Set<String> {
         if (condition?.let { values[it.name] == 0f } == true) return emptySet()

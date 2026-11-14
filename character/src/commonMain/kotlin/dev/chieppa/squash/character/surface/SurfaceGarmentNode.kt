@@ -12,8 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** The garments a one surface wears, innermost first, each cut to what shows of it, and what of the body shows, [skin]; null where nothing is worn. */
-class SurfaceDress(val garments: List<SurfaceGarment>, val skin: LevelCut?) {
+/**
+ * The garments a one surface wears, innermost first, each cut to what shows of it, and what of the body shows, [skin], cut where
+ * [shown], one value a vertex of the body's drawn mesh, is at least zero; null where nothing is worn. [under] holds for the body, then
+ * each garment, how far each of its vertices lies inside the coverage of the garments over it, the most of any.
+ */
+class SurfaceDress(val garments: List<SurfaceGarment>, val skin: LevelCut?, val shown: FloatArray? = null, val under: List<FloatArray> = emptyList()) {
     companion object {
         val NONE = SurfaceDress(emptyList(), null)
     }
@@ -71,7 +75,7 @@ fun Graph.surfaceDressNode(surface: Node<*, HeldSurface>, garments: Node<*, Held
             currentCoroutineContext().ensureActive()
             IN_PARALLEL(hiding.next() ?: break)
         }
-        HeldDress(SurfaceDress(hiding.worn, hiding.skin))
+        HeldDress(SurfaceDress(hiding.worn, hiding.skin, hiding.shownSkin, hiding.under))
     }
 }
 

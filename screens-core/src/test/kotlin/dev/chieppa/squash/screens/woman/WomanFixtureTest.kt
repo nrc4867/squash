@@ -49,12 +49,13 @@ class WomanFixtureTest {
     }
 
     @Test
-    fun theFaceHasTwoFullEyesAndAMouth() {
+    fun theFaceHasPaintedEyesAndAMouth() {
         val character = womanDocument().character
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        val eyes = head.groups.filter { it.isEye }
-        assertEquals(2, eyes.size)
-        assertTrue(eyes.all { eye -> eye.roles.all { it.marks.isNotEmpty() } }, "every eye fills all seven of its roles")
+        assertEquals(0, head.groups.count { it.isEye }, "a one-surface head's eyes are painted, not drawn")
+        val eye = character.paintedEyes.single()
+        assertEquals(HEAD, eye.anchor.part)
+        assertTrue(eye.mirrored && eye.look.lashes && eye.look.brow, "both eyes, with lashes and a brow")
         assertEquals(1, head.groups.count { !it.isEye })
     }
 

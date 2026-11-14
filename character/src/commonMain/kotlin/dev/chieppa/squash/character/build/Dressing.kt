@@ -12,6 +12,7 @@ import dev.chieppa.squash.document.isCuffPart
 import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
+import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 
@@ -104,8 +105,29 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
     return AssembledCharacter(body + dressed + ends, sockets)
 }
 
-/** This character with the loose ends of the garments [dressing] wears, each hung from its branch fitted over the layers under it. */
+/**
+ * This character with the loose ends of the garments [dressing] wears, each hung from its branch fitted over the layers under it, and
+ * each separate part that comes out through a branch with a cuff hidden from its root to the cuff's far edge, as the cuff hides it, and
+ * each part a branch covers whole hidden, so the pieces it draws beside the one surface, such as a paw's pads, stay inside the garment.
+ */
 private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledCharacter {
+    val cuffed = dressing.worn.flatMapIndexed { layer, garment ->
+        val under = dressing.worn.take(layer)
+        garment.branches.flatMap { branch -> listOfNotNull(branch.part, dressing.twins[branch.part]).map { it to branch } }.flatMap { (id, branch) ->
+            val covered = part(id)
+            val separate = parts.any { it.socket?.parent == id && it.owner == null && it.template.surface == SurfaceMethod.SEPARATE }
+            if (covered == null || !separate) return@flatMap emptyList()
+            val placed = branchOver(garment, branch.fittedOver(under, dressing.twins), covered) ?: return@flatMap emptyList()
+            throughHoles(garment, placed, this, dressing.twins) {}.cuffs.mapNotNull { it.covering }
+                .filter { cuff -> part(cuff.part)?.template?.surface == SurfaceMethod.SEPARATE }
+                .map { cuff -> Hider.Over(cuff.part, -1f, cuff.to, 0f, 1f) }
+        }
+    }
+    val whole = dressing.worn.flatMap { garment ->
+        garment.branches.filter { it.allRound && it.from <= 0f && it.to >= 1f }.flatMap { branch -> listOfNotNull(branch.part, dressing.twins[branch.part]) }
+    }.distinct().map { Hider.Over(it, -1f, 2f, 0f, 1f) }
+    val hiders = cuffed + whole
+    val rooted = if (hiders.isEmpty()) parts else parts.map { it.hiddenBy(hiders) }
     val ends = dressing.worn.flatMapIndexed { layer, garment ->
         val under = dressing.worn.take(layer)
         val pieces = garment.looseEnds.map { it.branch }.distinct().mapNotNull { id ->
@@ -114,7 +136,7 @@ private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledChara
         }
         looseEnds(garment, pieces, this)
     }
-    return if (ends.isEmpty()) this else AssembledCharacter(parts + ends, sockets)
+    return AssembledCharacter(rooted + ends, sockets)
 }
 
 /**

@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SectionSpec
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.character.model.Span
+import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.geom.EndClosure
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.SectionProfile
@@ -98,8 +99,12 @@ data class ToeRow(
     val knuckle: Param = Param.of(0f),
     @Doc("A socket at every digit's tip, for a claw or a nail; none when left out.")
     val tips: DigitTips? = null,
+    @Doc("On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.")
+    val surface: SurfaceMethod = SurfaceMethod.FIELD,
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))
+
+    override fun surfaceMethod() = surface
 
     private val rowName get() = name ?: DEFAULT_ROW_NAME
 

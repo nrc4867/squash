@@ -159,3 +159,13 @@ Read while building the fennec, the dressed fennec and the winged fennec as one 
 
 - `fennec/FennecMarks.kt`: the front angle version of the drawn eye (its size, roundness and iris), to set the painted eye's front look to it. The same face reference as above, listing each angle version, would have done.
 - `PartTemplate.kt`, `Enums.kt` (`SurfaceMethod`) and `CharacterField.kt`: which templates stay separate pieces (`"surface": "separate"`) and how a template says so, to keep the winged fennec's feathered wings as pieces. A reference line listing each template's surface setting would have done.
+
+### The person and the woman on one surface
+
+Read while building the person and the woman as one surface with painted eyes:
+
+- `character/.../face/StarterFace.kt`: the person's drawn eyes are Add eyes' starter eyes, so their lid's half width and height and the pupil's share are the painted eye's starting numbers. A face reference listing each example's eye drawing in numbers would have done.
+- `character/.../surface/SurfaceEyes.kt`, `EyeShapes.kt`: that a painted eye's lengths are shares of the head's u and v at its middle, its width along u and its height along v on a head facing along its axis, and across v and up u on an upright head, so a round iris on the woman's head needs a height about one and a half times its width; that `frontNarrowing` narrows the back corner when positive; and that a shape smaller than about a cell, such as a small pupil or highlight, paints as a jagged patch or not at all. A reference for the eye's parameters, drawn on a head of each kind, would have done.
+- `character/.../surface/CharacterSurface.kt`, `build/StripJoin.kt`: that a one-surface join is inked unless its part's `join.ink` parameter is 0, so the woman's neck, wrists, ankles and hips needed it set to draw as her parts did. The parameter reference.
+- `character/.../surface/SurfacePaint.kt`, `ChartEasing.kt`, with a printout of the head's shares: why the woman's lips and blush did not paint. Her hair's blob lay over the skull with the default socket blend, so the hair held a third of every face vertex and the face's paint was eased away; a narrow blend at the hairline (`SetSocketBlend`) keeps the face the head's. A measure line printing each part's largest share over its own section would have said it.
+- `character/.../surface/Coverage.kt`, `GarmentField.kt`: that a garment reads a part's branch only on its first run, so the sandal over the person's `foot` 2, whose heel block comes before its body, covered only the heel. The first run is now the body run where a part has one.

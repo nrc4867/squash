@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.surface.CharacterSurface
-import dev.chieppa.squash.character.surface.isRun
+import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
@@ -36,7 +36,7 @@ fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView,
         val id = part.id ?: continue
         if (part.covering != null && !garments) continue
         for (patch in part.surface.patches) {
-            if (id in inSurface && isRun(patch)) continue
+            if (id in inSurface && isFieldRun(part, patch)) continue
             hitOn(part, id, patch, pixel, sight, nearest)?.let { (hit, depth) ->
                 best = hit
                 nearest = depth
@@ -58,7 +58,7 @@ fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: Surfac
     for (part in character.parts) {
         if (part.id == null || part.covering != null) continue
         for (patch in part.surface.patches) {
-            if (part.id in inSurface && isRun(patch)) continue
+            if (part.id in inSurface && isFieldRun(part, patch)) continue
             for (index in 0 until patch.nu * patch.nv) {
                 val point = part.origin + part.surface.shown(patch.point(index))
                 val shown = sight.toPixel(point) ?: continue

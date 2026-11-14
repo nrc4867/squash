@@ -2,24 +2,22 @@ package dev.chieppa.squash.screens.woman
 
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.GroupRole
+import dev.chieppa.squash.document.EyeLook
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkWidth
+import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
+import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.WidthStop
-import dev.chieppa.squash.document.eyeGroup
 import dev.chieppa.squash.document.mouthGroup
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /** The face drawn in steps of about the reach from the middle of the nose to the outer corner of an eye, from the middle of her eyes' height down the middle of her face. */
 private const val STEP = 0.19f
@@ -31,71 +29,46 @@ private fun at(x: Float, y: Float, left: Boolean = true): Anchor = FACE.on(x * S
 private fun ring(x: Float, y: Float, rx: Float, ry: Float, left: Boolean): List<Anchor> =
     FACE.ring(x * STEP, EYE_LINE + y * STEP, rx * STEP, ry * STEP, left)
 
-/** One eye on the face plane: its middle, the lid's half width and how far it opens above and below, and the iris inside it. */
-private data class EyeShape(
-    val x: Float,
-    val y: Float,
-    val halfWidth: Float,
-    val over: Float,
-    val under: Float,
-    val iris: Float,
-    val tilt: Float,
-)
+/** One eye on the face plane: its middle, and the lid's half width and how far it opens above it. */
+private data class EyeShape(val x: Float, val y: Float, val halfWidth: Float, val over: Float)
 
-private val EYE = EyeShape(x = 0.45f, y = 0.16f, halfWidth = 0.23f, over = 0.16f, under = 0.09f, iris = 0.12f, tilt = 0.03f)
-private const val LID_POINTS = 16
+private val EYE = EyeShape(x = 0.45f, y = 0.16f, halfWidth = 0.23f, over = 0.16f)
 
-/** The brow's run over the eye and the lashes flicking from its outer corner, on the face plane. */
-private val BROW_LINE = listOf(0.22f to 0.41f, 0.38f to 0.48f, 0.56f to 0.48f, 0.72f to 0.4f)
-private val LASH_LINE = listOf(0.64f to 0.22f, 0.72f to 0.27f, 0.78f to 0.33f)
-
-private val LID_WIDTH = MarkWidth(listOf(WidthStop(0f, 0.6f), WidthStop(0.25f, 1.6f), WidthStop(0.5f, 0.6f), WidthStop(0.75f, 0.35f), WidthStop(1f, 0.6f)))
-private val BROW_WIDTH = MarkWidth(listOf(WidthStop(0f, 0.9f), WidthStop(0.35f, 1.5f), WidthStop(1f, 0.4f)))
-private val LASH_WIDTH = MarkWidth(listOf(WidthStop(0f, 1.4f), WidthStop(1f, 0.3f)))
-private val SOLID = MarkWidth(listOf(WidthStop(0f, 1f), WidthStop(1f, 1f)))
 private val NOSE_WIDTH = MarkWidth(listOf(WidthStop(0f, 0.3f), WidthStop(0.5f, 0.9f), WidthStop(1f, 0.3f)))
 
-/** The lid's almond, the outer corner a little higher than the inner, from the inner corner over the top and back under. */
-private fun EyeShape.lid(left: Boolean): List<Anchor> = List(LID_POINTS + 1) { i ->
-    val angle = 2.0 * PI * (i % LID_POINTS) / LID_POINTS
-    val along = cos(angle).toFloat()
-    val up = sin(angle).toFloat()
-    val open = up * (if (up > 0f) over else under) * (1f - 0.15f * along)
-    at(x - halfWidth * along, y + open + tilt * -along, left)
-}
+/** The painted eyes' id on her head. */
+const val WOMAN_EYES = "eyes"
 
-private fun EyeShape.white(left: Boolean) = ring(x, y + 0.01f, halfWidth * 1.1f, over * 1.2f, left)
+/**
+ * Her painted eye: a hazel iris with a round pupil and a highlight in an almond opening lifted toward its outer corner, a lid line, a
+ * lash flick at the outer corner and a brow arched level over it.
+ */
+val WOMAN_EYE = EyeLook(
+    width = 0.037f,
+    height = 0.049f,
+    lowerLid = 0.8f,
+    frontNarrowing = 0.1f,
+    openingTilt = 15f,
+    irisSize = 0.02f,
+    irisRatio = 1.9f,
+    irisForward = 0.002f,
+    irisUp = -0.004f,
+    pupilSize = 0.47f,
+    highlightSize = 0.22f,
+    highlightForward = 0.4f,
+    highlightUp = -0.2f,
+    browTilt = -30f,
+    browRaise = 0.022f,
+    white = EYE_WHITE,
+    iris = HAZEL,
+    pupil = INK,
+    highlight = EYE_WHITE,
+    ink = INK,
+)
 
-private fun EyeShape.iris(left: Boolean) = ring(x - 0.01f, y + 0.005f, iris, iris * 1.1f, left)
-
-private fun EyeShape.pupil(left: Boolean) = ring(x - 0.01f, y + 0.005f, iris * 0.5f, iris * 0.55f, left)
-
-private fun EyeShape.highlight(left: Boolean) = ring(x + 0.025f, y + 0.045f, iris * 0.28f, iris * 0.28f, left)
-
-private fun line(points: List<Pair<Float, Float>>, left: Boolean) = points.map { (x, y) -> at(x, y, left) }
-
-/** One eye's seven marks and the group that holds them, the lid clipping the white, iris and pupil. */
-private fun eye(name: String, left: Boolean): List<DocumentCommand> {
-    fun mark(role: String, points: List<Anchor>, width: MarkWidth, ink: Boolean, locked: Boolean = false) =
-        Mark(MarkId("eye-$name-$role"), points, width, ink, cameraLocked = locked)
-    val byRole = mapOf(
-        MarkRole.LID to (mark("lid", EYE.lid(left), LID_WIDTH, ink = true) to null),
-        MarkRole.WHITE to (mark("white", EYE.white(left), SOLID, ink = false) to EYE_WHITE),
-        MarkRole.IRIS to (mark("iris", EYE.iris(left), SOLID, ink = false) to HAZEL),
-        MarkRole.PUPIL to (mark("pupil", EYE.pupil(left), SOLID, ink = false) to INK),
-        MarkRole.HIGHLIGHT to (mark("highlight", EYE.highlight(left), SOLID, ink = false, locked = true) to EYE_WHITE),
-        MarkRole.BROW to (mark("brow", line(BROW_LINE, left), BROW_WIDTH, ink = true) to null),
-        MarkRole.LASHES to (mark("lashes", line(LASH_LINE, left), LASH_WIDTH, ink = true) to null),
-    )
-    val empty = eyeGroup(MarkGroupId("eye-$name"), "eye-$name")
-    val group = empty.copy(
-        roles = empty.roles.map { role ->
-            val (mark, fill) = byRole.getValue(role.role)
-            GroupRole(role.role, ink = mark.ink, fill = fill, marks = listOf(mark.id))
-        },
-    )
-    return byRole.values.map { (mark, _) -> SetMark(HEAD, mark.id, mark) } + SetMarkGroup(HEAD, group.id, group)
-}
+/** Her painted eyes, both sides, about the middle of her eye on the face map. */
+fun womanPaintedEyes(look: EyeLook = WOMAN_EYE, front: EyeLook? = null): List<DocumentCommand> =
+    listOf(SetPaintedEye(WOMAN_EYES, PaintedEye(WOMAN_EYES, at(EYE.x, EYE.y), look, front = front)))
 
 /** The lip line, a soft closed smile across the middle under the nose, and the mouth group that holds it. */
 private fun mouth(): List<DocumentCommand> {
@@ -133,5 +106,5 @@ private fun cheeks(): List<DocumentCommand> = listOf(true, false).map { left ->
     region(if (left) "blush-l" else "blush-r", BLUSH, ring(0.5f, -0.3f, 0.15f, 0.08f, left)).let { SetRegion(HEAD, it.id, it) }
 }
 
-/** The face: two hazel eyes with lids, lashes and brows, a nose drawn in two lines, lips about the lip line and a blush on each cheek. */
-fun womanFace(): List<DocumentCommand> = eye("l", left = true) + eye("r", left = false) + mouth() + lips() + nose() + cheeks()
+/** The face drawn on the head: a nose drawn in two lines, lips about the lip line and a blush on each cheek; the eyes are painted. */
+fun womanFace(): List<DocumentCommand> = mouth() + lips() + nose() + cheeks()

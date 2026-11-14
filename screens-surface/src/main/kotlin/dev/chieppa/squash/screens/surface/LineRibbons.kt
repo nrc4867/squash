@@ -45,15 +45,21 @@ class LineLayers(val behind: DepthLayer, val over: DepthLayer) {
 
 /**
  * One ribbon along where [parts], and the one-surface meshes [surfaces] a character has, turn edge on through [view], weighed by what lies on
- * their surfaces, the one surfaces' by [weightAt] in space, or null with none on show.
+ * their surfaces, the one surfaces' by [weightAt] in space, and along the open [edges] that outline a surface, or null with none on show.
  */
-fun contourRibbon(parts: Collection<PartLines>, view: SurfaceView, surfaces: List<TriangleLines> = emptyList(), weightAt: ((Vec3) -> Float)? = null): StrokeRibbon? {
+fun contourRibbon(
+    parts: Collection<PartLines>,
+    view: SurfaceView,
+    surfaces: List<TriangleLines> = emptyList(),
+    weightAt: ((Vec3) -> Float)? = null,
+    edges: List<ContourRun> = emptyList(),
+): StrokeRibbon? {
     val ribbons = parts.flatMap { part -> part.grids.flatMap { grid -> gridRibbons(grid.contours(view::toViewer), view) } }
     val own = surfaces.flatMap { lines ->
         val runs = lines.smoothContours(view::toViewer)
         gridRibbons(if (weightAt == null) runs else runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, weightAt(it.position)) }, run.closed, run.piece) }, view)
     }
-    return StrokeRibbon.joined(ribbons + own)
+    return StrokeRibbon.joined(ribbons + own + gridRibbons(edges, view))
 }
 
 /** Each of [runs] as a ribbon, thinned by the length on screen of the connected piece it belongs to, however its edges branch. */

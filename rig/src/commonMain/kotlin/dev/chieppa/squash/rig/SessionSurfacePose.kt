@@ -53,7 +53,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     }
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = 1) { it }
-    private val paintSource = graph.follow<HeldPaint, Any>(session.surfacePaint, cacheSize = 1) { it }
+    private val paintSource = graph.follow<HeldPaint, Any>(session.oneSurface.shownPaint, cacheSize = 1) { it }
 
     val posed: Node<*, HeldPosedSurface> = graph.gather(
         pose,
@@ -67,10 +67,11 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         if (surface == null || skin == null) return@gather HeldPosedSurface(null)
         val frames = boneFrames(held.rig, gathered.shape)
         val body = posedSurface(surface, skin, paint, frames)
-        val dress = held.dress?.let { dress ->
-            SurfaceDress(dress.garments.mapIndexed { i, garment -> garment.movedTo(posedSurface(garment.surface, held.garments[i], null, frames).surface) }, dress.skin)
+        val worn = held.dress?.let { dress ->
+            val moved = dress.garments.mapIndexed { i, garment -> garment.movedTo(hangingPushed(garment, posedSurface(garment.surface, held.garments[i], null, frames).surface, body.surface)) }
+            PosedHiding(body.surface, surface.render.indices, moved, dress).of(body.paint)
         }
-        HeldPosedSurface(PosedSurface(body.surface, body.paint, dress, body.carry))
+        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry))
     }
 
     init {

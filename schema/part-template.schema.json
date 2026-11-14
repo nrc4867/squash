@@ -960,6 +960,13 @@
               "type": "null"
             }
           ]
+        },
+        "surface": {
+          "description": "On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.",
+          "enum": [
+            "field",
+            "separate"
+          ]
         }
       },
       "required": [
@@ -2559,6 +2566,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "surface": {
+          "description": "On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.",
+          "enum": [
+            "field",
+            "separate"
           ]
         }
       },

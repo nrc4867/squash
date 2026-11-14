@@ -2,7 +2,6 @@ package dev.chieppa.squash.screens.look.shots
 
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
@@ -14,13 +13,13 @@ import dev.chieppa.squash.screens.smoke.PROBE_LOOK
 import dev.chieppa.squash.screens.smoke.assertNotBlank
 import dev.chieppa.squash.screens.smoke.keepImage
 import dev.chieppa.squash.screens.smoke.renderSnapshot
+import dev.chieppa.squash.screens.smoke.shownState
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.FACE_BINS
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.headAngle
 import dev.chieppa.stretch.gpu.GpuOptions
 import java.io.File
-import kotlin.test.assertNotNull
 
 /** The reference renders' flat background, so a shot and its reference pair up on the same ground. */
 val REFERENCE_GROUND = Color(0xFFF1ECE3)
@@ -33,14 +32,7 @@ fun AssembledCharacter.groundHeight(): Float =
 class ShotViews(private val work: TestWork, private val errors: MutableList<String>, private val images: File, private val unitsPerMetre: Float = 1f) {
     private fun CharacterSession.posedState(): CharacterState {
         work.settle(this)
-        return CharacterState(
-            assertNotNull(posedBody.output.value),
-            assertNotNull(bodyColor.output.value),
-            assertNotNull(posedSurfaceWork.output.value),
-            document.value.character.palette,
-            assertNotNull(posedLines.output.value),
-            fur = FurView.EMPTY,
-        )
+        return shownState()
     }
 
     /** The character through [shot], its soles on the reference's ground, kept as the image [name]. */

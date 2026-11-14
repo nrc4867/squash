@@ -19,8 +19,13 @@ internal fun SurfaceBlock.placesAs(before: SurfaceBlock): Boolean {
     return true
 }
 
-/** Takes [before]'s placed vertices, which [placesAs] says this block places alike, its members' slots matched by key. */
+/**
+ * Takes [before]'s placed vertices, which [placesAs] says this block places alike, its members' slots matched by key, and its quads,
+ * which the same grid point signs and sheets make the same.
+ */
 internal fun SurfaceBlock.takePlacement(before: SurfaceBlock) {
+    quads = before.quads
+    quadCount = before.quadCount
     positions = before.positions
     normals = before.normals
     starts = before.starts

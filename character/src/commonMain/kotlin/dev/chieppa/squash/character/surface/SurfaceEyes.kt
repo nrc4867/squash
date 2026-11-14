@@ -11,10 +11,14 @@ import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ColorShape
+import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.UvShapeDistance
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.character.build.PlacedPart
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.math.tan
 
@@ -27,15 +31,21 @@ private const val CHART_STEP = 0.01f
 /** How far from its middle an eye paints at most, as a multiple of its opening's width. */
 private const val EYE_REACH = 4f
 
+/** How far past where their values cut them, in cells, an eye's fills are laid, so each fill's edge drawn at each fragment lies on its mesh. */
+private const val FILL_GROW_CELLS = 1.5f
+
 /** How far toward the eye's facing a vertex's normal must turn, as a cosine, to take its paint. */
 private const val LEAST_FACING = 0.2f
 
 private const val TINY = 1e-9f
 
+/** How nearly along a head's axis, as a cosine, its facing may lie for its eyes' chart to run along its u. */
+private const val ACROSS_AXIS = 0.5f
+
 /**
  * Eyes painted on a one-surface head. Each eye's middle is its anchor resolved on the field, and its facing the surface's normal there
  * turned outward by its look-out. Every shape of its [EyeShapes] lies in the plane square to that facing, its chart running along the
- * head's u toward the front and against its v toward the top, scaled by how far the surface runs per unit of the head's u and v there; each vertex of the surface near the
+ * head's coordinates toward the front and the top (see [chartOf]), scaled by how far the surface runs per unit of the head's u and v there; each vertex of the surface near the
  * eye that faces it is projected along the facing into that plane and painted where it falls inside. So the paint foreshortens and wraps
  * as the head turns, and never stands past the head's outline. A mirrored eye is painted again with its anchor's v read as 1 - v.
  */
@@ -85,8 +95,8 @@ object SurfaceEyes {
         val run = surface.field.runs.indexOfFirst { it.partId == anchor.part && it.patch.name == anchor.patch }
         if (run < 0) return SurfacePaint.NONE
         val members = surface.field.runs.indices.filter { surface.field.runs[it].partId == anchor.part }
-        val forward = span(anchors, anchor, CHART_STEP, 0f) ?: return SurfacePaint.NONE
-        val down = span(anchors, anchor, 0f, if (mirrored) -CHART_STEP else CHART_STEP) ?: return SurfacePaint.NONE
+        val head = surface.field.runs[run].part
+        val (forward, down) = chartOf(anchors, anchor, mirrored, head) ?: return SurfacePaint.NONE
         val along = forward.length / (2f * CHART_STEP)
         val around = down.length / (2f * CHART_STEP)
         val facing = turnedOut(middle.normal, middle.position, look.lookOut)
@@ -109,24 +119,66 @@ object SurfaceEyes {
         val opening = distances(shapes.opening, near)
         val open = BooleanArray(near.size) { near[it] && opening[it] > -chart.reach }
         fun inside(shape: ColorShape) = distances(shape, open)
-        fun layer(slot: SlotName?, values: FloatArray) = PaintLayer.of(slot, surface, values, candidates, flat = true)
+        val (chartU, chartV) = chartAt(surface, candidates, middle.position, across * (1f / along), up * (1f / around))
+        fun layer(slot: SlotName?, values: FloatArray, oval: ChartOval?) =
+            if (oval != null && (oval.halfU <= 0f || oval.halfV <= 0f)) null else PaintLayer.of(slot, surface, values, candidates, flat = true, fill = LayerFill(chartU, chartV, shapes.almond, oval, shapes.turn, shapes.fillTurn, mesh.cell * FILL_GROW_CELLS))
         fun within(values: FloatArray) = FloatArray(values.size) { minOf(values[it], opening[it]) }
         val layers = listOfNotNull(
-            layer(look.white, opening),
-            layer(look.iris, within(inside(shapes.iris))),
-            layer(look.pupil, within(inside(shapes.pupil))),
-            layer(look.highlight, within(inside(shapes.highlight))),
+            layer(look.white, opening, null),
+            layer(look.iris, within(inside(shapes.iris)), shapes.irisOval),
+            layer(look.pupil, within(inside(shapes.pupil)), shapes.pupilOval),
+            layer(look.highlight, within(inside(shapes.highlight)), shapes.highlightOval),
         )
-        fun mark(name: String, places: List<SurfaceUv>?, width: MarkWidth): ResolvedMark? {
+        fun mark(name: String, places: List<SurfaceUv>?, width: MarkWidth, alongFacing: Boolean = true): ResolvedMark? {
             places ?: return null
             val points = places.map { place ->
-                val (position, normal) = anchors.onSurface(middle.position + across * (place.u * along) + up * (place.v * around), facing)
+                val inPlane = middle.position + across * (place.u * along) + up * (place.v * around)
+                val (position, normal) = if (alongFacing) anchors.onSurfaceAlong(inPlane, facing) else anchors.onSurface(inPlane, facing)
                 ResolvedPoint(anchor, position, normal)
             }
             return ResolvedMark(MarkId("$id-$side-$name"), points, width, ink = true, cameraLocked = false, versions = emptyMap(), slot = look.ink)
         }
-        val marks = listOfNotNull(mark("lid", shapes.lid, LID_WIDTH), mark("lashes", shapes.lashes, MarkWidth()), mark("brow", shapes.brow, MarkWidth()))
+        val marks = listOfNotNull(mark("lid", shapes.lid, LID_WIDTH), mark("lashes", shapes.lashes, MarkWidth()), mark("brow", shapes.brow, MarkWidth(), alongFacing = false))
         return SurfacePaint(layers, mapOf(anchor.part to marks))
+    }
+
+    /** Each drawn vertex of [candidates]' chart place, ([u], [v]) per unit of its offset from [middle] along [toU] and [toV]; zero elsewhere. */
+    private fun chartAt(surface: CharacterSurface, candidates: IntArray, middle: Vec3, toU: Vec3, toV: Vec3): Pair<FloatArray, FloatArray> {
+        val render = surface.render
+        val u = FloatArray(render.vertexCount)
+        val v = FloatArray(render.vertexCount)
+        val indices = render.indices
+        val width = RenderMesh.FLOATS_PER_VERTEX
+        for (tri in candidates) for (c in 0 until 3) {
+            val at = indices[tri * 3 + c]
+            val x = render.vertices[at * width] - middle.x
+            val y = render.vertices[at * width + 1] - middle.y
+            val z = render.vertices[at * width + 2] - middle.z
+            u[at] = x * toU.x + y * toU.y + z * toU.z
+            v[at] = x * toV.x + y * toV.y + z * toV.z
+        }
+        return u to v
+    }
+
+    /**
+     * The eye's chart at [anchor] on [head]: how far the surface runs toward the eye's front corner and toward its bottom per
+     * 2 [CHART_STEP] of the head's coordinates. On a head facing along its axis, the front runs along its u and the bottom along its v; on
+     * a head facing across its axis, as an upright head does, the bottom runs down the head's axis as far as its u does and the front round
+     * its v toward its face, so the eye stays level however the head's u lines lean where it sits.
+     */
+    private fun chartOf(anchors: FieldAnchors, anchor: Anchor, mirrored: Boolean, head: PlacedPart): Pair<Vec3, Vec3>? {
+        val faces = head.template.axis.faces?.toVec3()?.normalized()
+        val rest = head.template.axis.rest.toVec3().normalized()
+        if (faces == null || abs(faces dot rest) > ACROSS_AXIS) {
+            val forward = span(anchors, anchor, CHART_STEP, 0f) ?: return null
+            val down = span(anchors, anchor, 0f, if (mirrored) -CHART_STEP else CHART_STEP) ?: return null
+            return forward to down
+        }
+        val up = span(anchors, anchor, CHART_STEP, 0f) ?: return null
+        val round = span(anchors, anchor, 0f, CHART_STEP) ?: return null
+        val toFace = head.turn * PartBuilder.facing(head.template)
+        val headUp = (head.turn * rest).normalized().let { if ((it dot up) >= 0f) it else it * -1f }
+        return (if ((round dot toFace) >= 0f) round else round * -1f) to headUp * -up.length
     }
 
     /** How far the field's surface runs from [anchor] as its u goes from [du] below to [du] above and its v likewise by [dv]; null where it does not resolve. */

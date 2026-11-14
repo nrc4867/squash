@@ -34,7 +34,8 @@ class PaneSurface(val rest: PosedSurface, val posed: PosedSurface?) {
 }
 
 /**
- * What [color]'s one surface draws in a pane, the pose's when [posedPane], seen with the camera at [toCamera]: its garments, then the
+ * What [color]'s one surface draws in a pane, the pose's when [posedPane], seen with the camera at [toCamera], each eye
+ * along [toViewer] from its middle: its garments, then the
  * surface with its paint, or with [only] that part's own section of it; each at [opacity] in [layer], outlined [outline] wide. Nothing
  * for a character without one.
  */
@@ -46,13 +47,14 @@ fun SheetLook.surfaceDraws(
     opacity: Float = 1f,
     layer: DepthLayer = DepthLayer.SCENE,
     only: PartId? = null,
+    toViewer: (Vec3) -> Vec3 = { toCamera },
 ): List<MeshDraw> {
     val held = color?.surface ?: return emptyList()
     val shown = held.shown(posedPane)
     val fallback = part.copy(ink = color.palette.colorOf(INK_SLOT) ?: part.ink)
     val section = only?.let { held.section(it, posedPane) }
     val garments = if (only == null) shown.dress?.let { garmentDraws(it, color.palette, fallback, color.shading, toCamera) }.orEmpty() else emptyList()
-    val body = surfaceDraw(shown.surface, shown.paint, shown.dress?.skin, color.body, color.palette, fallback, color.shading, toCamera, section)
+    val body = surfaceDraw(shown.surface, shown.paint, shown.dress?.skin, color.body, color.palette, fallback, color.shading, toCamera, section, toViewer)
     return (garments + body).map { it.copy(outlinePixels = outline, opacity = opacity, layer = layer) }
 }
 

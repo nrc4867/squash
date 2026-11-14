@@ -100,7 +100,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val shownPlanned = if (posed != null) emptyList() else planned
         val draws = listOf(fullGround(selection, look)) +
             placed.mapNotNull { look.colored(it, input.color, toCamera, outline, posed = posed.of(it))?.withFace(it, surface, sight) } +
-            look.surfaceDraws(input.color, toCamera, posed != null) +
+            look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer) +
             shownPlanned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
         val ribbons = surface?.figure(sight) ?: look.borderRibbons(input.color)
         val fur = look.furDraws(input.fullFur, input.color, toCamera, selection)

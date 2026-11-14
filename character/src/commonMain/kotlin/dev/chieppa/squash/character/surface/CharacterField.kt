@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.SurfaceMethod
+import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.field.JoinedField
@@ -19,10 +20,16 @@ private const val RUN_BLEND_SHARE = 0.125f
 /** The template parameter a part's runs join its first run by, as a share of the least extent of the joining run's box. */
 private const val MERGE_PARAM = "merge"
 
-/** The body's cell, as a share of the median over field parts of their first run's least half-extent. */
-private const val CELL_SHARE = 0.133f
+/**
+ * The body's cell, as a share of its root's first run's least half-extent: the part on no socket, which no outfit swaps, so the cell
+ * stays the same whatever the character wears. At this share the fennec's body meshes at the 0.012 its triangle budget sets.
+ */
+const val CELL_SHARE = 0.05f
 
-/** One member of a character's field: run [patchIndex], [patch], of [part], and whether it is the part's first run. */
+/**
+ * One member of a character's field: run [patchIndex], [patch], of [part], and whether it is the part's first run: its body run, whose
+ * (u, v) are the part's own, or its first run where it has none.
+ */
 class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val first: Boolean) {
     val partId: PartId get() = requireNotNull(part.id)
 }
@@ -36,22 +43,34 @@ class CharacterField(val field: JoinedField, val runs: List<FieldRun>, val cell:
 /** Whether [part] is in a one-surface character's field: a part of the body, not thin or hard, with a swept run. */
 fun isFieldPart(part: PlacedPart): Boolean =
     part.id != null && part.covering == null && part.hanging == null && part.owner == null &&
-        part.template.surface == SurfaceMethod.FIELD && part.surface.patches.any(::isRun)
+        part.template.surface == SurfaceMethod.FIELD && part.surface.patches.any { isFieldRun(part, it) }
+
+/** Whether [patch] of [part] is a run in the body's field: a swept run that no block of its template builds as its own mesh. */
+fun isFieldRun(part: PlacedPart, patch: Patch): Boolean =
+    isRun(patch) && part.template.blocks.none { block ->
+        block.surfaceMethod() == SurfaceMethod.SEPARATE &&
+            block.patchNames().any { it.name == patch.name || (it.repeats && patch.name.startsWith(it.name + ":")) }
+    }
 
 /** Whether [patch] is a swept run that a member's solid is read from. */
 fun isRun(patch: Patch): Boolean = patch.slices != null && patch.nu >= 2
 
+/** Which of [patches] is a part's first run: its body run, whose (u, v) are the part's own, or its first run where it has none; -1 with no run. */
+fun firstRunIndex(patches: List<Patch>): Int =
+    patches.indexOfFirst { isRun(it) && it.name == BODY_PATCH }.takeIf { it >= 0 } ?: patches.indexOfFirst(::isRun)
+
 /**
  * The field of [character]'s field parts: each run of each part a member, its solid swept by its rings and kept in [solids] while the
  * run is the same; a part's first run joined to the run of its socket parent nearest its socket by the part's socket blend, its other
- * runs joined to its first by its merge, and every other pair of runs meeting by a plain union. Null with no field part.
+ * runs joined to its first by its merge, and every other pair of runs meeting by a plain union, meshed at [cellShare] of its root's
+ * least half-extent. Null with no field part.
  */
-fun fieldOf(character: AssembledCharacter, solids: RunSolids): CharacterField? {
+fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float = CELL_SHARE): CharacterField? {
     val parts = character.parts.filter(::isFieldPart)
     if (parts.isEmpty()) return null
     val runs = parts.flatMap { part ->
-        var first = true
-        part.surface.patches.withIndex().filter { isRun(it.value) }.map { (k, patch) -> FieldRun(part, k, patch, first).also { first = false } }
+        val first = firstRunIndex(part.surface.patches)
+        part.surface.patches.withIndex().filter { isFieldRun(part, it.value) }.map { (k, patch) -> FieldRun(part, k, patch, k == first) }
     }
     val made = runs.map { solids.of(it.patch) }
     val firstOf = HashMap<PartId, Int>()
@@ -72,8 +91,9 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids): CharacterField? {
         }
         JoinedMember(solid, part.origin, part.mirrored, blend, parent, partIndex.getValue(run.partId))
     }
-    val halves = runs.indices.filter { runs[it].first }.map { leastExtent(made[it]) / 2f }.sorted()
-    return CharacterField(JoinedField(members), runs, halves[halves.size / 2] * CELL_SHARE)
+    val firsts = runs.indices.filter { runs[it].first }
+    val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
+    return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)
 }
 
 /** The blend [part]'s first run, swept as [solid], joins its socket parent by. */

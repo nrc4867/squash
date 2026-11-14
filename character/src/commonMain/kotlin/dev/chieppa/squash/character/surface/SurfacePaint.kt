@@ -17,47 +17,21 @@ import dev.chieppa.squash.geom.surface.HELD
 private const val RANK_BASE = -1
 
 /**
- * One color layer on the one surface: [slot] over [cut], laid as [mesh] on the surface it was cut from, with each of its vertices' share
- * of paired parts on either side of the body's plane, [positive] and [negative], null where it holds none. A [flat] layer shows its
- * slot's color unshaded, as an eye's fills do. It keeps the [values] it was cut at over its [candidates] triangles.
- */
-class PaintLayer(
-    val slot: SlotName?,
-    val cut: LevelCut,
-    val mesh: RenderMesh,
-    val positive: FloatArray?,
-    val negative: FloatArray?,
-    val flat: Boolean = false,
-    val values: FloatArray = FloatArray(0),
-    val candidates: IntArray = IntArray(0),
-) {
-    /** This layer laid on [render], the same surface moved. */
-    fun on(render: RenderMesh): PaintLayer = PaintLayer(slot, cut, cut.mesh(render), positive, negative, flat, values, candidates)
-
-    /** This layer where [kept] is at least zero too, one value a vertex of [surface]'s drawn mesh, laid on [render]; null where none is. */
-    fun within(kept: FloatArray, surface: CharacterSurface, render: RenderMesh): PaintLayer? =
-        of(slot, surface, FloatArray(values.size) { minOf(values[it], kept[it]) }, candidates, flat)?.on(render)
-
-    companion object {
-        /** [slot] where [values], one a vertex of [surface]'s drawn mesh, are at least zero, over [candidates]; null where none is. */
-        fun of(slot: SlotName?, surface: CharacterSurface, values: FloatArray, candidates: IntArray, flat: Boolean = false): PaintLayer? {
-            val cut = LevelCut.of(values, surface.render.indices, candidates)
-            if (cut.isEmpty) return null
-            if (flat) return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat = true, values = values, candidates = candidates)
-            return PaintLayer(slot, cut, cut.mesh(surface.render), sides(cut, surface.positiveZ), sides(cut, surface.negativeZ), values = values, candidates = candidates)
-        }
-
-        private fun sides(cut: LevelCut, shares: FloatArray): FloatArray? = cut.values(shares).takeIf { values -> values.any { it > 0f } }
-    }
-}
-
-/**
  * What is painted on the one surface, in the order its layers overdraw, and the ink [marks] each part draws on it, their places
  * resolved on the field in body space; then its painted [eyes], each in the look a view sees it in (see [seenFrom]).
  */
 class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<ResolvedMark>> = emptyMap(), val eyes: List<EyeVersions> = emptyList()) {
     /** These layers, then [over]'s, and both's marks and eyes. */
     operator fun plus(over: SurfacePaint): SurfacePaint = SurfacePaint(layers + over.layers, merged(marks, over.marks), eyes + over.eyes)
+
+    /**
+     * This paint's layers kept to where [shown], one value a vertex of [surface]'s drawn mesh, is at least zero, as the skin its garments
+     * leave showing; its marks and eyes as they are. Itself where [shown] does not fit the layers.
+     */
+    fun within(shown: FloatArray, surface: CharacterSurface): SurfacePaint {
+        if (shown.size != surface.render.vertexCount || layers.any { it.values.size != shown.size }) return this
+        return SurfacePaint(layers.mapNotNull { it.within(shown, surface, surface.render) }, marks, eyes)
+    }
 
     /** This paint laid on [render], the same surface moved. */
     fun on(render: RenderMesh): SurfacePaint = SurfacePaint(layers.map { it.on(render) }, marks, eyes.map { it.on(render) })

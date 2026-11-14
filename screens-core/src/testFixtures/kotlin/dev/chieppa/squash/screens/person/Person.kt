@@ -1,7 +1,5 @@
 package dev.chieppa.squash.screens.person
 
-import dev.chieppa.squash.character.face.eyeLandmark
-import dev.chieppa.squash.character.face.newEyesCommand
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
@@ -25,8 +23,6 @@ import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SquashDocument
-import dev.chieppa.squash.document.TemplateId
-import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.mouthGroup
 import dev.chieppa.squash.document.readDocument
 
@@ -83,17 +79,15 @@ private fun mouth(): List<DocumentCommand> {
     return listOf(SetMark(HEAD, smile.id, smile), SetMarkGroup(HEAD, group.id, group))
 }
 
-/** The face: two eyes as the Face stage's Add eyes places them about the round head's eye landmark, and a smile. */
-fun personFace(before: Character): List<DocumentCommand> {
-    val head = shipped.parts.single { it.ref == TemplateRef(TemplateId("head-round"), 1) }
-    return listOfNotNull(newEyesCommand(before, HEAD, eyeLandmark(head))) + mouth()
-}
+/** The face: a smile; the eyes are painted on the one surface. */
+fun personFace(): List<DocumentCommand> = mouth()
 
-/** Every command that makes the person, in the order a person would send them, the pose it is shown in last. */
-fun personCommands(): List<DocumentCommand> {
-    val shaped = (personBody() + personColor()).fold(EMPTY_PERSON) { document, command -> command.apply(document).document }
-    return personBody() + personColor() + personFace(shaped.character) + SetDisplayPose(PERSON_DISPLAY)
-}
+/**
+ * Every command that makes the person, in the order a person would send them, then the commands that build it as one
+ * surface with its painted eyes, and the pose it is shown in last.
+ */
+fun personCommands(): List<DocumentCommand> =
+    personBody() + personColor() + personFace() + personOneSurface() + SetDisplayPose(PERSON_DISPLAY)
 
 /** The person as those commands leave it. */
 fun personDocument(): SquashDocument = personCommands().fold(EMPTY_PERSON) { document, command -> command.apply(document).document }

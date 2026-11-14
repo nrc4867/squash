@@ -88,6 +88,18 @@ class OneSurfaceTest {
     }
 
     @Test
+    fun theCellFollowsTheRootAloneSoAPartOnASocketChangesNoCell() = runTest {
+        val session = oneSurface()
+        val before = session.surface().mesh.cell
+        session.send(SetParameter(leftLeg.id, "size", 1.5f))
+        session.settle()
+        assertEquals(before, assertNotNull(SurfaceBuilder().build(assertNotNull(session.placed.output.value))).mesh.cell)
+        session.send(SetParameter(torsoPart.id, "size", 1.5f))
+        session.settle()
+        assertTrue(assertNotNull(SurfaceBuilder().build(assertNotNull(session.placed.output.value))).mesh.cell > before)
+    }
+
+    @Test
     fun aDragMeshesAtTheCoarseCellAndTheSwitchTurnsTheSurfaceOff() = runTest {
         val session = oneSurface()
         val cell = session.surface().mesh.cell

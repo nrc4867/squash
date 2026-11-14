@@ -97,11 +97,18 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
     }
 }
 
-/** Which runs of a surface's field a line of joins relates: one grows from the other, however far up, or both from the same run. */
+/** Which runs of a surface's field a line of joins relates, each standing for its part's first run: the same part, one growing from the other, however far up, or both from the same run. */
 private class Lineage(surface: CharacterSurface) {
     private val members = surface.field.field.members
 
-    fun related(a: Int, b: Int): Boolean = descends(a, b) || descends(b, a) || (members[a].parent >= 0 && members[a].parent == members[b].parent)
+    /** Each member's part's first member, which stands for all of the part's runs. */
+    private val first = IntArray(members.size) { m -> members.indexOfFirst { it.part == members[m].part } }
+
+    fun related(a: Int, b: Int): Boolean {
+        val x = first[a]
+        val y = first[b]
+        return x == y || descends(x, y) || descends(y, x) || (members[x].parent >= 0 && members[x].parent == members[y].parent)
+    }
 
     private fun descends(child: Int, ancestor: Int): Boolean {
         var at = child

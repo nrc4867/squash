@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.model.ParamRef
 import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.character.model.Span
+import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Slice
 import kotlinx.serialization.Serializable
@@ -64,6 +65,9 @@ sealed interface Block {
 
     /** The patches this block builds. */
     fun patchNames(): List<PatchName> = emptyList()
+
+    /** How the runs this block builds meet the body on a character built as one surface. */
+    fun surfaceMethod(): SurfaceMethod = SurfaceMethod.FIELD
 
     /** The shape this block closes [end] with, if it closes it. */
     fun capShape(end: End): CapShape? = null

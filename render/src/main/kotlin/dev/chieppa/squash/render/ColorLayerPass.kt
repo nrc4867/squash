@@ -2,6 +2,7 @@ package dev.chieppa.squash.render
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.geom.ChartShape
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
 import dev.chieppa.stretch.gpu.webgpu.BlendState
@@ -20,15 +21,19 @@ import dev.chieppa.stretch.gpu.webgpu.VertexAttribute
 import dev.chieppa.stretch.gpu.webgpu.VertexBufferLayout
 import dev.chieppa.stretch.gpu.webgpu.VertexFormat
 
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+
 private const val MATRIX_FLOATS = 16
 private const val VECTOR_FLOATS = 4
 
 /**
- * One color layer over a mesh: a cut's [mesh] in the [tones] its slot shows as, solid or with each vertex's opacity in [alphas]. A
- * [MeshDraw] draws its layers in order, each over the last.
+ * One color layer over a mesh: a cut's [mesh] in the [tones] its slot shows as, solid or with each vertex's opacity in [alphas], or kept
+ * to a [shape] read at each fragment, its edge smoothed over a pixel. A [MeshDraw] draws its layers in order, each over the last.
  */
 @Immutable
-data class ColorLayerDraw(val mesh: RenderMesh, val tones: Tones, val alphas: FloatArray? = null)
+data class ColorLayerDraw(val mesh: RenderMesh, val tones: Tones, val alphas: FloatArray? = null, val shape: ChartShape? = null)
 
 /** The vertex buffer of a cut's per-vertex opacities. */
 internal fun alphaBuffer(context: GpuContext, alphas: FloatArray): GpuBuffer {
@@ -40,8 +45,12 @@ internal fun alphaBuffer(context: GpuContext, alphas: FloatArray): GpuBuffer {
 /** A cut's opacities as the shader's fourth attribute, one float per vertex in a buffer of their own. */
 private val ALPHA_VERTEX_LAYOUT = VertexBufferLayout(Float.SIZE_BYTES.toLong(), listOf(VertexAttribute(VertexFormat.Float32, 0, 3)))
 
+/** A shaped layer's chart places as the shader's fourth attribute, two floats per vertex in a buffer of their own. */
+private val CHART_VERTEX_LAYOUT = VertexBufferLayout(2L * Float.SIZE_BYTES, listOf(VertexAttribute(VertexFormat.Float32x2, 0, 3)))
+
 /** Draws a color layer over a mesh already drawn in the frame's pass. */
 internal interface ColorLayers : AutoCloseable {
+    /** Draws [layer] over [over], with [alphas] its opacities' buffer, or for a shaped layer its chart's. */
     fun draw(pass: GpuRenderPass, slot: Int, mesh: GpuMesh, alphas: GpuBuffer?, layer: ColorLayerDraw, over: MeshDraw, view: SceneView)
 }
 
@@ -79,13 +88,30 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         ),
     )
 
+    private val shaped = device.createRenderPipeline(
+        RenderPipelineSpec(
+            shader = shader,
+            vertexEntry = "vs_shaped",
+            buffers = listOf(MESH_VERTEX_LAYOUT, CHART_VERTEX_LAYOUT),
+            fragmentEntry = "fs_shaped",
+            targets = listOf(ColorTarget(context.format, BlendState.AlphaBlending)),
+            cullMode = CullMode.Back,
+            depth = DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual),
+            sampleCount = context.sampleCount,
+            label = "shaped color layer",
+        ),
+    )
+
     /** A pipeline's bind group layout is its own, so a slot's uniforms have a bind group for each, the fading one made when first asked for. */
     private inner class Slot(val buffer: GpuBuffer, val group: GpuBindGroup) {
         private val fadingLazily = lazy { fading.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) } }
         val fadingGroup: GpuBindGroup get() = fadingLazily.value
+        private val shapedLazily = lazy { shaped.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) } }
+        val shapedGroup: GpuBindGroup get() = shapedLazily.value
 
         fun close() {
             if (fadingLazily.isInitialized()) fadingLazily.value.close()
+            if (shapedLazily.isInitialized()) shapedLazily.value.close()
             group.close()
             buffer.close()
         }
@@ -97,7 +123,11 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
     override fun draw(pass: GpuRenderPass, slot: Int, mesh: GpuMesh, alphas: GpuBuffer?, layer: ColorLayerDraw, over: MeshDraw, view: SceneView) {
         val held = slotAt(slot)
         write(held.buffer, layer, over, view)
-        if (alphas == null) {
+        if (layer.shape != null && alphas != null) {
+            pass.setPipeline(shaped)
+            pass.setBindGroup(0, held.shapedGroup)
+            pass.setVertexBuffer(1, alphas)
+        } else if (alphas == null) {
             pass.setPipeline(pipeline)
             pass.setBindGroup(0, held.group)
         } else {
@@ -127,7 +157,16 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         at = put(at, layer.tones.shadow)
         val light = over.material.toLight
         at = put(at, light.x, light.y, light.z, if (over.material.shading == Shading.TWO_TONE) 1f else 0f)
-        put(at, view.viewport.width.toFloat(), view.viewport.height.toFloat(), over.layer.scale, over.layer.offset)
+        at = put(at, view.viewport.width.toFloat(), view.viewport.height.toFloat(), over.layer.scale, over.layer.offset)
+        val shape = layer.shape
+        if (shape != null) {
+            val o = shape.opening
+            at = put(at, o.width, o.height, o.lowerLid, o.frontNarrowing)
+            val oval = shape.oval
+            at = put(at, oval?.u ?: 0f, oval?.v ?: 0f, oval?.halfU ?: 1f, oval?.halfV ?: 1f)
+            val angle = shape.turn * PI.toFloat() / 180f
+            put(at, cos(angle), sin(angle), if (oval != null) 1f else 0f, shape.ovalTurn * PI.toFloat() / 180f)
+        }
         device.queue.writeBuffer(buffer, data)
     }
 
@@ -143,6 +182,7 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
 
     override fun close() {
         slots.forEach { it.close() }
+        shaped.close()
         fading.close()
         pipeline.close()
         shader.close()

@@ -7,7 +7,7 @@ import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfacePaint
 import dev.chieppa.squash.character.surface.SurfaceSection
-import dev.chieppa.squash.character.surface.isRun
+import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.character.surface.separatePieces
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.geom.LevelCut
@@ -27,7 +27,8 @@ import androidx.compose.ui.graphics.Color
  * A character's one surface as a fill: its root part's base slot, shaded by the carried shading normals, with each side of a pair's far
  * darkening laid over the surface as a layer that shows by that side's share of each vertex, so a far leg darkens and its join into the
  * body ramps; then each layer of its [paint] in order, each darkened the same way where it lies on a far side, a flat one unshaded. With
- * a [section], only that part's own section of the surface, its paint cut to it; else what of it shows under its garments, [skin]. Its eyes show in the look [toCamera] sees them in.
+ * a [section], only that part's own section of the surface, its paint cut to it; else what of it shows under its garments, [skin]. Its eyes show in the look seen
+ * along [toViewer] from each eye's middle, the way to the camera there.
  */
 fun surfaceDraw(
     surface: CharacterSurface,
@@ -39,6 +40,7 @@ fun surfaceDraw(
     shading: ObjectShading,
     toCamera: Vec3,
     section: SurfaceSection? = null,
+    toViewer: (Vec3) -> Vec3 = { toCamera },
 ): MeshDraw {
     val root = surface.field.runs.firstOrNull { it.part.socket == null } ?: surface.field.runs.first()
     val slot = color.parts[root.partId]?.baseSlot
@@ -53,12 +55,12 @@ fun surfaceDraw(
     } else {
         sideLayers(mesh, lit, own, shading, toCamera, shownCut.values(surface.positiveZ), shownCut.values(surface.negativeZ))
     }
-    val seen = paint?.seenFrom { toCamera }?.layers.orEmpty()
+    val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
     val layers = sides +
         shownLayers.flatMap { layer ->
             val layerLit = palette.colorOf(layer.slot) ?: fallback.base
-            if (layer.flat) return@flatMap listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit)))
+            if (layer.flat) return@flatMap listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit), shape = layer.shape))
             val layerOwn = palette.shadowOf(layer.slot)
             listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera))) +
                 sideLayers(layer.mesh, layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)
@@ -85,7 +87,7 @@ private fun sideLayers(mesh: RenderMesh, lit: Color, own: Color?, shading: Objec
 /** What of [part], a part of the one surface, still draws as its own mesh: its pieces that are not runs, a pad, with their own color. */
 fun piecesDraw(part: PlacedPart, color: PartColor?, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3): MeshDraw? {
     val pieces = separatePieces(part) ?: return null
-    val shown = part.surface.patches.filterNot(::isRun).map { it.name }.toSet()
+    val shown = part.surface.patches.filterNot { isFieldRun(part, it) }.map { it.name }.toSet()
     val own = color?.let { PartColor(it.baseSlot, it.layers.filter { layer -> layer.cut.patch in shown }) }
     return coloredPartDraw(
         pieces, own, palette, fallback, shading, part.bodySide(), toCamera, translation(part.origin), 0f,

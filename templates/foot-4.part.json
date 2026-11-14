@@ -188,6 +188,7 @@
     {
       "kind": "digits",
       "name": "toes",
+      "surface": "separate",
       "from": -0.21,
       "count": "$toes",
       "rings": 16,

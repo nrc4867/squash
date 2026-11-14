@@ -18,6 +18,9 @@ private const val GRADIENT_SHARE = 0.25f
 
 private const val TINY = 1e-12f
 
+/** How much the field must change along a line, per unit of its length, for a point to be moved onto the surface along that line. */
+private const val LEAST_SLOPE = 0.2f
+
 /**
  * Anchors resolved on a character's field rather than on any mesh: an anchor `(part, patch, u, v, offset)` starts at its point on its
  * run's own swept surface at (u, v), in body space, then moves along the joined field's gradient to where the field is zero, and off by its
@@ -61,6 +64,35 @@ class FieldAnchors(private val field: CharacterField) {
         val p = from + unit * far
         val normal = gradient(p)
         return p to if ((normal dot normal) > TINY) normal.normalized() else fallback
+    }
+
+    /**
+     * [from] moved along the line through it along [direction] to where the field is zero, by false position, with the surface's normal
+     * where it lands; as [onSurface] where the field barely changes along that line.
+     */
+    fun onSurfaceAlong(from: Vec3, direction: Vec3): Pair<Vec3, Vec3> {
+        val start = field.field.value(from)
+        if (abs(start) <= close) return onSurface(from, direction)
+        val unit = direction.normalized()
+        val slope = gradient(from) dot unit
+        if (abs(slope) < LEAST_SLOPE) return onSurface(from, direction)
+        var near = 0f
+        var nearValue = start
+        var far = -start / slope
+        var farValue = field.field.value(from + unit * far)
+        var steps = 0
+        while (abs(farValue) > close && steps < MOST_STEPS && farValue != nearValue) {
+            val next = far - farValue * (far - near) / (farValue - nearValue)
+            near = far
+            nearValue = farValue
+            far = next
+            farValue = field.field.value(from + unit * far)
+            steps++
+        }
+        if (abs(farValue) > close) return onSurface(from, direction)
+        val p = from + unit * far
+        val normal = gradient(p)
+        return p to if ((normal dot normal) > TINY) normal.normalized() else direction
     }
 
     /** The joined field's gradient at [p], by central differences. */

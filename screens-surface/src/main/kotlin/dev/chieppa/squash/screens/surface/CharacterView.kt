@@ -115,7 +115,7 @@ fun characterView(
         val face = faces.draws(id, view)
         ribbons += face.ribbons
         draw.copy(layers = draw.layers + face.layers)
-    } + state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center) }.orEmpty() + listOfNotNull(surface?.let { surfaceDraw(it, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center) })
+    } + state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center) }.orEmpty() + listOfNotNull(surface?.let { surfaceDraw(it, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center, toViewer = view::toViewer) })
     val lined = state.lines.parts.values.map { lines -> if (lines.part.id in inSurface) lines.withoutRuns() else lines }
     val oneLines = surface?.let { OneSurfaceLines(PosedSurface(it, state.paint, state.dress), lineWeightStrokes(state.character, state.work)) }
     val contour = if (oneLines != null) oneLines.contour(lined, view) else contourRibbon(lined, view)

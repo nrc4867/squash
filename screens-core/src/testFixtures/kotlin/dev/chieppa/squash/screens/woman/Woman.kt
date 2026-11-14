@@ -23,8 +23,12 @@ val EMPTY_WOMAN: SquashDocument by lazy {
     SquashDocument(Character(CharacterId("woman"), "Woman", plan.ref, palette = Palette(plan.palette.map { PaletteSlot(SlotName(it.name), it.color) })))
 }
 
-/** Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, the face, then the pose she is shown in. */
-fun womanCommands(): List<DocumentCommand> = womanBody() + womanHead() + womanColor() + womanFace() + SetDisplayPose(WOMAN_DISPLAY)
+/**
+ * Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, the face, the switch that
+ * builds her as one surface with its joins and her painted eyes, then the pose she is shown in.
+ */
+fun womanCommands(): List<DocumentCommand> =
+    womanBody() + womanHead() + womanColor() + womanFace() + womanOneSurface() + SetDisplayPose(WOMAN_DISPLAY)
 
 /** The woman as those commands leave it. */
 fun womanDocument(): SquashDocument = womanCommands().fold(EMPTY_WOMAN) { document, command -> command.apply(document).document }

@@ -53,14 +53,15 @@ class PersonFixtureTest {
     }
 
     @Test
-    fun theFaceHasTwoEyesAboutTheRoundHeadsLandmarkAndAMouth() {
+    fun theFaceHasPaintedEyesAboutTheRoundHeadsLandmarkAndAMouth() {
         val character = personDocument().character
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        assertEquals(2, head.groups.count { it.isEye })
+        assertEquals(0, head.groups.count { it.isEye }, "a one-surface head's eyes are painted, not drawn")
         val mouth = head.groups.single { !it.isEye }
         assertTrue(mouth.roles.single { it.role == MarkRole.LIP_LINE }.marks.isNotEmpty())
-        val lid = head.marks.first { it.id.value == "eye-l-lid" }
-        assertEquals(0.9f, lid.points.map { it.u }.average().toFloat(), 0.01f, "the left eye sits about the landmark's u")
+        val eye = character.paintedEyes.single()
+        assertEquals(HEAD, eye.anchor.part)
+        assertEquals(0.9f, eye.anchor.u, 0.01f, "the eye sits about the landmark's u")
     }
 
     @Test

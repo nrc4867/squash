@@ -12,6 +12,9 @@ import kotlin.math.abs
  */
 internal const val LIPSCHITZ = 1.5f
 
+/** Every sub-block of a block, as a mask. */
+private const val EVERY_SUB = -1L
+
 /** Reading a block's members and the joined field at its grid points. */
 internal object BlockReading {
     /**
@@ -19,9 +22,21 @@ internal object BlockReading {
      * judged from its middle, each one's field at its grid points, taken from [kept] for a member it already held, and its cells' sheets.
      * Null where nothing lies near, or, unless [forced], where its middle lies too far from the surface for the surface to cross it; [kept]
      * itself, or a copy of it bound to [field], where nothing it holds has changed. A grown member [kept] does not hold takes what [lent]
-     * holds of its solid in place of reading it there.
+     * holds of its solid in place of reading it there. An [exact] block reads every member whose box lies within reach of it at every grid
+     * point, standing in for nothing, so its values hold however fast a field changes.
      */
-    fun read(grid: BlockGrid, field: JoinedField, index: Map<MemberKey, Int>, key: Long, kept: SurfaceBlock?, forced: Boolean, lent: ChannelSource? = null): SurfaceBlock? {
+    fun read(
+        grid: BlockGrid,
+        field: JoinedField,
+        index: Map<MemberKey, Int>,
+        key: Long,
+        keptBlock: SurfaceBlock?,
+        forced: Boolean,
+        lentChannels: ChannelSource? = null,
+        exact: Boolean = false,
+    ): SurfaceBlock? {
+        val kept = keptBlock.takeUnless { exact }
+        val lent = lentChannels.takeUnless { exact }
         val middle = grid.middle(key)
         val margin = grid.halfDiagonal * LIPSCHITZ
         val count = field.members.size
@@ -50,6 +65,10 @@ internal object BlockReading {
         }
         val relevant = ArrayList<Int>()
         for (m in 0 until count) {
+            if (exact) {
+                if (boxes[m] <= grid.halfDiagonal + margin + field.reaches[m]) relevant += m.also { ownAt(it) }
+                continue
+            }
             if (boxes[m] - margin > least + margin + field.reaches[m]) continue
             if (ownAt(m) - margin <= least + margin + field.reaches[m]) relevant += m
         }
@@ -72,9 +91,9 @@ internal object BlockReading {
             } ?: borrowed[s]?.let { SubBlocks.KeptMiddles(it.middles, it.middlesRead, null) }
         }
         block.middles = middles
-        block.relevance = SubBlocks.relevance(grid, middles, leastAt, block.parentSlots, block.blends)
+        block.relevance = if (exact) LongArray(relevant.size) { EVERY_SUB } else SubBlocks.relevance(grid, middles, leastAt, block.parentSlots, block.blends)
         block.shareRelevance = SubBlocks.shareRelevance(grid, middles, leastAt, block.parentSlots, block.reaches)
-        val far = SubBlocks.far(grid, middles, block.parentSlots, block.blends)
+        val far = if (exact) 0L else SubBlocks.far(grid, middles, block.parentSlots, block.blends)
         block.exact = LongArray(relevant.size)
         block.channels = Array(relevant.size) { s ->
             val member = field.members[relevant[s]]

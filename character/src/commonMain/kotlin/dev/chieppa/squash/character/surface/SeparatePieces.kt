@@ -4,7 +4,7 @@ import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.geom.RenderMesh
 
 /**
- * [part]'s own mesh cut to its patches that are not runs, such as a pad laid on it, which stay their own small mesh on a part in the one
+ * [part]'s own mesh cut to its patches that are not runs of the field, such as a pad laid on it or toes built as their own mesh, which stay their own small mesh on a part in the one
  * surface; null when it has none. Its vertices are in the part's surface space, as the part's own mesh's are; taken from [mesh], the
  * part's mesh or the same in a pose.
  */
@@ -15,7 +15,7 @@ fun separatePieces(part: PlacedPart, mesh: RenderMesh = part.surface.mesh): Rend
     var any = false
     for (patch in patches) {
         val count = patch.nu * patch.nv
-        if (!isRun(patch)) {
+        if (!isFieldRun(part, patch)) {
             for (v in first until first + count) keep[v] = true
             any = true
         }

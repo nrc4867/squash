@@ -54,17 +54,24 @@ class CharacterSurface(
 
 /**
  * Where each smooth union between two parts shares the surface equally, its child's own field equal to its parent's, over the
- * triangles whose corners all lie on that union; a join whose part sets its ink off draws none.
+ * triangles whose corners all lie on that union and [keep] keeps; a join whose part [drawn] leaves out, by default one that sets its ink
+ * off, draws none.
  */
-internal fun joinCurves(field: CharacterField, mesh: SurfaceMesh, lines: TriangleLines): List<List<CurvePoint>> {
+internal fun joinCurves(
+    field: CharacterField,
+    mesh: SurfaceMesh,
+    lines: TriangleLines,
+    drawnRun: (FieldRun) -> Boolean = ::inked,
+    keep: (Int) -> Boolean = { true },
+): List<List<CurvePoint>> {
     val values = FloatArray(mesh.vertexCount)
     val pair = IntArray(mesh.vertexCount) { -1 }
-    val drawn = BooleanArray(field.runs.size) { inked(field.runs[it]) }
+    val drawn = BooleanArray(field.runs.size) { drawnRun(field.runs[it]) }
     for (v in 0 until mesh.vertexCount) {
         val winner = mesh.winners[v]
         val parent = mesh.parents[v]
         if (winner < 0 || parent < 0 || !drawn[winner]) continue
-        if (field.runs[winner].part === field.runs[parent].part) continue
+        if (field.runs[winner].part === field.runs[parent].part || !keep(v)) continue
         pair[v] = winner
         values[v] = mesh.parentOwn[v] - mesh.winnerOwn[v]
     }

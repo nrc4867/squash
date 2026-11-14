@@ -9,7 +9,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.PosedSurface
 import kotlinx.coroutines.flow.MutableStateFlow
 import dev.chieppa.squash.character.build.PartColor
-import dev.chieppa.squash.character.surface.isRun
+import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.character.surface.separatePieces
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.ResolvedPoint
@@ -65,7 +65,7 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
     val cuts: (PatchCut) -> RenderMesh = if (posed == null) ({ it.mesh }) else ({ part.posedCut(it, posed) })
     if (color.holds(part)) {
         val pieces = separatePieces(part.placedPart, posed ?: part.mesh) ?: return null
-        val shown = part.placedPart.surface.patches.filterNot(::isRun).mapTo(HashSet()) { it.name }
+        val shown = part.placedPart.surface.patches.filterNot { isFieldRun(part.placedPart, it) }.mapTo(HashSet()) { it.name }
         val own = color.body.parts[id]?.let { PartColor(it.baseSlot, it.layers.filter { held -> held.cut.patch in shown }) }
         return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
     }

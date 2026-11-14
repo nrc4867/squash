@@ -94,7 +94,7 @@ The spike (see Speed) meshed the field fennec, which is about 2.26 body units no
 | 0.0119 | 35,162 | 70,310 | 178 (0.3%) |
 | 0.0089 | 62,696 | 125,396 | 193 (0.2%) |
 
-The fennec's lofted parts hold 18,140 vertices today, its eyes another 3,840. **Recommended: 0.012 for the fennec's body** (about 35,000 vertices, 70,000 triangles), with paws and digits at half that once the adaptive form is in. The cell size is set per character from its parts' sizes: the body's cell is a fixed share of the median member's radius, and a member's own cells are at most a quarter of its smallest radius. Neither is a user setting. The renderer already uploads each mesh fresh and sizes its buffers to it, so the triangle count has no fixed limit; the CPU work that runs per vertex (contours, colour cuts, skinning) is what sets the budget, and 70,000 triangles is about twice today's, within what those systems handle for the dressed woman.
+The fennec's lofted parts hold 18,140 vertices today, its eyes another 3,840. **Recommended: 0.012 for the fennec's body** (about 35,000 vertices, 70,000 triangles), with paws and digits at half that once the adaptive form is in. The cell size is set per character from its parts' sizes: the body's cell is a fixed share of its root part's least half-extent, which no outfit swaps, and a member's own cells are at most a quarter of its smallest radius. Neither is a user setting. The renderer already uploads each mesh fresh and sizes its buffers to it, so the triangle count has no fixed limit; the CPU work that runs per vertex (contours, colour cuts, skinning) is what sets the budget, and 70,000 triangles is about twice today's, within what those systems handle for the dressed woman.
 
 ### Shading on one mesh
 
@@ -807,7 +807,7 @@ The dressed fennec wears every outfit (Winter: cap, scarf, sweater and boots; Ho
 - **A garment worn over the placed body** (`WornCover`). Before a garment is meshed it is resolved against the placed parts. Each branch stands off the garments under it: an inner garment's branch the whole way round the same part, over any of the same span, adds its ease, so the scarf sits over the sweater. Each part that comes out through a branch, found as the parts-built dressing finds it (a part on a socket inside the branch's range that the garment neither covers nor hides and that does not hang inside it), either gets a cuff branch over its first run, from inside the garment to past where it comes out by the cuff's size, or, with its cuff off, opens a hole where its own field lies inside the garment. A branch drawn standing off its ease, or hanging free past its part's end, reads its shell's solid in place of its grown run, joined as the run is; the shell is built a little past each end, so its hem is cut on its wall.
 - **Cuffs over separate parts.** A cuff over a part outside the body's field, such as an ear through the cap or the hood, sweeps that part's own run, grows it by the ease and joins it to the garment's run over its socket parent by a blend at least twice the ease, so the cuff is one surface with the garment.
 - **Partial garments.** A branch part of the way round is cut by its v range in the coverage, as in 1b. A garment reads a part's branch only on the part's first run, whose (u, v) a branch is drawn in, so the fennec's muzzle run does not read the cap's range in its own coordinates.
-- **Coverage near its zero is smoothed** along the garment's mesh before the cut (`smoothedNearZero`), so a hem crossing a fast change of shares runs across cells.
+- **Coverage near its zero is smoothed** along the garment's mesh before the cut (`smoothedNearZero`), so a hem crossing a fast change of shares runs across cells. No value moves more than a quarter cell, so a garment narrower than the smoothing, such as a sandal's strap, keeps its sign.
 - **Hiding along a curve** (`HiddenSkin`). What a garment hides is cut along the level curve where the skin, or an inner garment, lies 1.5 cells inside an outer garment's coverage, instead of hiding whole quads; skin round a part coming out through a hole stays shown. The body's far-side darkening layers read the cut. This ends the pale ragged collar edge seen from below.
 - **Loose ends** are placed on a one-surface character (`Dressing.endsOnly`), hung from their branch fitted over the layers under it, and rigged from the bone moving their part most at the part's vertex nearest the root.
 - **Garments mesh only round what they cover** (`RunClips`, `ClippedSolid`): a run a garment covers part of is kept to a box round its covered rings, one ring and six cells past them.
@@ -851,6 +851,64 @@ No woman outfit is timed: the woman is not on the one surface.
 **Open.** The person and woman outfits on the one surface: their bodies, their faces' drawn eyes (which a one surface does not draw), and the woman's skirts (which need the hanging push); the cap's ragged cuff corners; the bib specks; the edit-time regressions above; hiding tested again on the posed meshes.
 
 **The Face stage's angle versions (a note for the boards, not built).** With painted eyes, Face still shows the Angle versions band and the panes' "Writes Side version" and "Writes Front version" chips, which belong to drawn eyes. A painted eye has its own look, seen from every side, and an optional front look, seen within 20 degrees of facing it. What the boards would change: on a head with painted eyes, the Angle versions band gives way to a choice of Own look and Front look (or a Front look switch in Eyes, its tile shown only while it is on); the "Writes Side version" chip goes, since no side look exists; "Writes Front version" reads as editing the front look; Lock locks the panes to the front look; a dashed tile means a front look not yet made. A head with drawn eyes keeps the band as drawn. That is Nicholas's call.
+
+## Phase 3 finish results
+
+The dressed person and the dressed woman wear every outfit on the one surface, with painted eyes; the twin stays on parts.
+
+**What main holds.** Main before the one surface landed (6fdbc35) and main with it (1a58451) render dragon, koi, lizard, person, person-dressed, toucan, woman, woman-dressed, woman-twin and woman-twin-dressed alike: 113 images, none differ in any channel. The one-surface landing changed no example it left on parts.
+
+**An edit meshed again equals a fresh build.** A block read again whose grid point signs and sheets are as before takes its last read's placed vertices (`placesAs`, `takePlacement`) and is not counted as read anew. Its quads are built only for blocks read anew and their neighbours, so where such a block had no neighbour read anew, it kept the empty quads of its new read and the edited surface lacked its quads: 134 quads of the stack test's fennec at a cell of 0.1 of the root's half-extent, a few at 0.0487, none at 0.05, where every block read again happened to lie beside one read anew. The block now takes its last read's quads with its vertices, which the same signs and sheets make the same. `OneSurfaceEditCellsTest` builds the stack (surface, paint, garments, hidden skin) with kept builders at 0.0487, 0.05, 0.0731 and 0.1 of the root's half-extent against fresh builders, and fails at 0.0487 without the fix. The cell rule stays 0.05 of the root's least half-extent: at that share the fennec meshes at the 0.012 its triangle budget sets, and no outfit moves it.
+
+A further limit, not fixed: a block's channels keep exact values once read and bounds elsewhere, which agree in the union wherever each member's field changes no faster than `LIPSCHITZ`. A synthetic field eight times steeper than a distance gives an edit that differs from a fresh build near the blocks read exactly to close seams; the characters' fields stay inside the bound at every cell tested.
+
+**What is built, by fault.**
+
+- **Holes in the casual woman's temples**: blocks that disagree in sign with a neighbour at a shared grid point are read again exactly until the seams agree (`BlockSeams`). Fixed.
+- **Painted eyes.** The fennec's, the person's and the woman's eyes read as main's, as before. Kept.
+- **The fennec cap's red corner slivers**: fixed; from the side the cuff round the ear is still ragged, much as main's is. Open.
+- **The skirt in the walk.** A hanging branch is belled out of the legs as a cone hinged at its top (`hemFlare`, in `geom`, tested on its own), then pushed clear along the body's normals. Its line normals are turned as the push turns the cloth (`turnedNormals`), so its contour follows the pushed silhouette; its shading keeps the posed normals. The hems of a garment hanging free are drawn as its outline, since where the cloth turns up at the hem its own contour lies past the hem in what the garment does not cover. The flared hem is inked in every walk frame. Fixed.
+- **The blazer round the neck.** A garment grown over a run grows over the run's closed end as well, a lid past the end's ring; the woman's torso run ends at y 0.68 and the blazer's lid stood 0.045 above it, nearly to her jaw. Where a part the garment does not cover comes out through that end, coverage past the plane across the run at the end's ring (`RunEnd`) is kept only under a part coming out through the end that overhangs it, clear of that part, and ends a little short of the plane elsewhere. A part overhangs a point when the way out along the run from the point comes at least half the garment's ease nearer the part than the point lies, read every half ease out to eight eases. So the blazer and the blouse end at the base of the neck, which rises straight from the end, and the neck shows, as on main; and the person's jacket and shirt close round the base of his head, which sits over his torso's broad end. `OpenEndCoverageTest` checks both against a ball over the end and one beside it. Since coverage now reads the parts coming out through a garment's ends, an edit to such a part alone cuts the garment again on its kept surface rather than meshing and finishing it anew (`RecutGarmentTest`, a paw edit under a sweater down the whole leg, against the sweater built afresh). Fixed.
+- **The office lapels.** The blazer grown over her one surface stands further out over the bust than the lapels' Side drawing allowed, so most of each lapel lay inside it. The drawing stands 0.015 further out (`LAPEL_LIFT`, in the fixture), and the lapels fold over the blazer as on main. Fixed.
+- **The person's jacket.** Its flat, boxy top and the shirt's ring round the whole neck came from the open-end plane across his torso's broad end; with the rule above it closes round his head with rounded shoulders, a thin line of shirt at the head as on main from the side. Fixed. Its sleeves still meet the body under the arms, where main's are separate rounded sleeves: the jacket stands off the shirt, 0.06 in all, and his arms hang closer to the torso than that twice over, as they hang on his bare one surface too, so the grown sleeve and body run into one another. Open.
+- **The sandal's sole.** A band of the foot's run part of the way round follows the run's rounded underside up round the heel, with the toes, their own runs, reaching past it; that is how such a band reads on the one surface. The person's sandals now own a sole each, a slab drawn as his shoe's footprint with a margin on a socket under the ankle, as the woman's sandals do, and the bare toes rest on it. Fixed in the fixture.
+- **The woman's scarf** stands up her neck as a cowl. The scarf covers the neck as well as the torso's top, so the torso's end is not open to it, and its torso branch, grown by its own ease and the coat's and the top's under it, 0.092 in all, rises over the torso's closed end round the neck. Lowering the scarf's reach up the neck changes nothing. Opening an end to a part the garment also covers would open the trousers between the legs and the hood round the fennec's head as well, so it needs a rule for a lid under a covered part, not built. The dark sliver under the coat's collar at the front is the top under it showing between the coat's and the scarf's edges. Open.
+
+**Against the criteria,** by eye on the sheets in the scratchpad's `phase3-finish/sheets4/`, main above phase 3: `<example>-<outfit>` (full body front, 3/4, side), `-face` (front, 3/4, side), `-foot` and `-hand` (close-ups), `-pose-walk`, `-pose-salute` (the woman), `-pose-walk-0` to `-pose-walk-3` (the fennec).
+
+| Outfit | Result |
+|---|---|
+| Woman, Bare | Passes at rest, in the walk and the salute |
+| Woman, Beach | Passes |
+| Woman, Casual | Passes |
+| Woman, Dress | Passes at rest and in the walk: the flared hem is inked where it is pushed |
+| Woman, Goth | Passes |
+| Woman, Office | Passes: the neck shows and the lapels fold over the blazer |
+| Woman, Winter | Fails by the letter: the scarf stands up the neck where main shows the neck, and a dark sliver shows under the collar's front |
+| Person, Summer | Passes at the neck and the feet: the jacket closes round the head with rounded shoulders, the sandals are slabs under the feet with the toes resting on them. Fails by the letter under the arms, where the sleeves run into the body |
+| Person, Bare | Passes; eyes near main's |
+| Fennec, Winter | Passes; the cap's side cuff is ragged |
+| Fennec, Hooded and Bare | Pass; the face reads as main's |
+| An edit equals a fresh build | Passes at four cells |
+| No join or part named in code | Passes: open ends come from the socket tree, hanging from the branch's range |
+
+**Every unmoved example pixel for pixel as main.** Dragon, koi, lizard, toucan, woman-twin and woman-twin-dressed against `phase3-finish/main-look`: 49 images, none differ in any channel. Of the moved examples, against the round before (`final3` and `final4`), only the person's summer outfit and the woman's office outfit change, and one pixel of the woman's winter outfit at rest; every fennec image and the dress walk are as they were.
+
+**Timings,** `./gradlew :app:measure -Pmeasure="example=<example> outfits=<outfit> only=stack"`, each run the median of 21 warm edits, three runs each of main (1a58451) and this branch in turn on an otherwise idle machine, median of the three in ms with their range. Main's woman builds as parts.
+
+| Build | Main, fennec sweater | Branch, fennec sweater | Main, fennec winter | Branch, fennec winter | Main, woman casual | Branch, woman casual |
+|---|---|---|---|---|---|---|
+| Whole build | 236 (176–244) | 265 (258–267) | 329 (320–345) | 402 (396–414) | 386 (382–394) | 340 (339–352) |
+| Head edit | 54 (47–57) | 58 (55–62) | 103 (99–123) | 151 (151–160) | 202 (194–216) | 135 (129–144) |
+| Front-leg edit | 79 (79–80) | 94 (92–98) | 100 (97–103) | 150 (148–153) | | |
+| Torso edit, full cell | 182 (175–189) | 207 (207–209) | 272 (272–289) | 350 (342–354) | 310 (309–330) | 286 (286–335) |
+| Torso edit, coarse cell | 86 (85–86) | 95 (94–95) | 126 (124–129) | 147 (145–147) | 119 (115–122) | 122 (122–127) |
+
+The woman's casual outfit builds faster than main's parts build, its coarse torso edit alike. The fennec's edits still regress against main, by 4 to 15 ms with the sweater and 21 to 78 ms in winter, the garments' own work.
+
+The open-end rule reads the parts coming out through a garment's ends, so a head edit cuts the garments over the torso's end again on their kept surfaces. Three more runs each of main and the branch with it, on a machine shared with other work (every figure about half again the table's), hold the same ratios: the fennec's winter head edit 219 ms against main's 154 (1.42 times, 1.47 in the table), its front-leg edit 216 against 140 (1.54, 1.50), the sweater alone and the woman's casual outfit within the noise of main. The log is the scratchpad's `phase3-finish/ab4.log`.
+
+**Open.** The jacket's sleeves running into the body under the arms; the scarf up the woman's neck and the sliver under the coat's collar; the cap's side cuff; an edit equal to a fresh build where a field is steeper than `LIPSCHITZ`; the edit regressions.
 
 ## Risks and open questions
 

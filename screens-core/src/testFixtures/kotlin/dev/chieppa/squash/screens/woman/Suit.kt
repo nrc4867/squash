@@ -30,13 +30,18 @@ private const val FRONT = 0f
 /** How far each lapel leans in toward her middle as it runs down, in degrees. */
 private const val LAPEL_IN = -24f
 
+/** How far out the lapel stands past the blazer as it is grown over her one surface, so it folds over the blazer rather than into it. */
+private const val LAPEL_LIFT = 0.015f
+
 /**
  * A lapel in Side, from its top by the neck down to the button, front up: a thin sheet standing off the torso by the blouse's and
- * blazer's ease, following the bust forward and back in again to the waist.
+ * blazer's ease and [LAPEL_LIFT], following the bust forward and back in again to the waist.
  */
 private val LAPEL_SIDE = loop(
-    p(0.000f, 0.089f), p(0.050f, 0.133f), p(0.100f, 0.152f), p(0.150f, 0.132f), p(0.200f, 0.106f), p(0.270f, 0.098f),
-    p(0.270f, 0.090f), p(0.200f, 0.096f), p(0.150f, 0.122f), p(0.100f, 0.142f), p(0.050f, 0.123f), p(0.000f, 0.079f),
+    *listOf(
+        0.000f to 0.089f, 0.050f to 0.133f, 0.100f to 0.152f, 0.150f to 0.132f, 0.200f to 0.106f, 0.270f to 0.098f,
+        0.270f to 0.090f, 0.200f to 0.096f, 0.150f to 0.122f, 0.100f to 0.142f, 0.050f to 0.123f, 0.000f to 0.079f,
+    ).map { (x, y) -> p(x, y + LAPEL_LIFT) }.toTypedArray(),
 )
 
 /** The lapel's width, across: broad at the top, narrowing to a point at the button. */

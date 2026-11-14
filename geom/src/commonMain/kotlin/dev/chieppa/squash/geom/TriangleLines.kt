@@ -17,12 +17,19 @@ class CurvePoint(val position: Vec3, val normal: Vec3)
 /**
  * A triangle mesh read for its lines: vertices at [positions], three values each, [normals] beside them, and [triangles]; each edge
  * with the triangles either side of it, and each triangle's outward normal. A contour is found along its edges and a zero curve across
- * its faces. Never changes once made.
+ * its faces. With [kept], one value a vertex, its smooth contours are kept to where that is at least zero, cut across the faces where it
+ * crosses zero, as a fill cut along the same values ends. Never changes once made.
  */
-class TriangleLines(private val positions: FloatArray, private val normals: FloatArray, val triangles: IntArray, edges: TriangleEdges) {
+class TriangleLines(
+    private val positions: FloatArray,
+    private val normals: FloatArray,
+    val triangles: IntArray,
+    edges: TriangleEdges,
+    private val kept: FloatArray? = null,
+) {
     /** The lines of a mesh whose edges are found here. */
-    constructor(positions: FloatArray, normals: FloatArray, triangles: IntArray) :
-        this(positions, normals, triangles, TriangleEdges(positions, positions.size / 3, triangles).all())
+    constructor(positions: FloatArray, normals: FloatArray, triangles: IntArray, kept: FloatArray? = null) :
+        this(positions, normals, triangles, TriangleEdges(positions, positions.size / 3, triangles).all(), kept)
 
     private val vertexCount = positions.size / 3
     private val triangleCount = triangles.size / 3
@@ -104,7 +111,8 @@ class TriangleLines(private val positions: FloatArray, private val normals: Floa
             }
         }
         fun hollow(v: Int) = weight[v] > TINY && bend[v] / weight[v] < HOLLOW_CURVATURE
-        val curves = zeroCurves(facing) { t -> !(hollow(triangles[t * 3]) && hollow(triangles[t * 3 + 1]) && hollow(triangles[t * 3 + 2])) }
+        val runs = zeroRuns(facing) { t -> !(hollow(triangles[t * 3]) && hollow(triangles[t * 3 + 1]) && hollow(triangles[t * 3 + 2])) }
+        val curves = if (kept == null) runs.map { run -> run.map { crossing(it, facing) } } else runs.flatMap { keptPieces(it, facing, kept) }
         val shortest = SHORTEST_EDGES * meanEdge
         return curves.filter { curve -> curve.zipWithNext { a, b -> (b.position - a.position).length }.sum() >= shortest }.mapIndexed { piece, curve ->
             val closed = curve.size > 2 && curve.first().position == curve.last().position
@@ -121,7 +129,49 @@ class TriangleLines(private val positions: FloatArray, private val normals: Floa
      * The curves where [values], one per vertex, cross zero over the triangles [included] keeps, each placed along an edge in
      * proportion to the values at its ends, with the normal eased the same way. A closed curve repeats its first place last.
      */
-    fun zeroCurves(values: FloatArray, included: (Int) -> Boolean): List<List<CurvePoint>> {
+    fun zeroCurves(values: FloatArray, included: (Int) -> Boolean): List<List<CurvePoint>> = zeroRuns(values, included).map { run -> run.map { crossing(it, values) } }
+
+    /**
+     * The pieces of the zero curve of [values] along [run], a run of the edges it crosses, where [keep] read at its crossings is at least
+     * zero, each ending where [keep] crosses zero between two of them.
+     */
+    private fun keptPieces(run: List<Int>, values: FloatArray, keep: FloatArray): List<List<CurvePoint>> {
+        val pieces = ArrayList<List<CurvePoint>>()
+        var piece = ArrayList<CurvePoint>()
+        var last: CurvePoint? = null
+        var lastKeep = 0f
+        for (e in run) {
+            val point = crossing(e, values)
+            val here = carried(e, values, keep)
+            val before = last
+            if (before != null && (here >= 0f) != (lastKeep >= 0f)) {
+                val t = lastKeep / (lastKeep - here)
+                val n = before.normal * (1f - t) + point.normal * t
+                val edge = CurvePoint(before.position + (point.position - before.position) * t, if (n.length > TINY) n.normalized() else n)
+                piece.add(edge)
+                if (here < 0f) {
+                    pieces += piece
+                    piece = ArrayList()
+                }
+            }
+            if (here >= 0f) piece.add(point)
+            last = point
+            lastKeep = here
+        }
+        if (piece.size > 1) pieces += piece
+        return pieces.filter { it.size > 1 }
+    }
+
+    /** [carry] read where the zero curve of [values] crosses edge [e]. */
+    private fun carried(e: Int, values: FloatArray, carry: FloatArray): Float {
+        val a = values[edgeA[e]]
+        val b = values[edgeB[e]]
+        val t = if (a != b) a / (a - b) else 0.5f
+        return carry[edgeA[e]] * (1f - t) + carry[edgeB[e]] * t
+    }
+
+    /** The runs of edges the zero curve of [values] crosses over the triangles [included] keeps. */
+    private fun zeroRuns(values: FloatArray, included: (Int) -> Boolean): List<List<Int>> {
         val edges = edgeA.size
         val links = IntArray(edges * 2)
         val linked = ByteArray(edges)
@@ -139,7 +189,7 @@ class TriangleLines(private val positions: FloatArray, private val normals: Floa
                 }
             }
         }
-        return walkedLinks(links, linked).map { run -> run.map { crossing(it, values) } }
+        return walkedLinks(links, linked)
     }
 
     private fun link(links: IntArray, linked: ByteArray, from: Int, to: Int) {

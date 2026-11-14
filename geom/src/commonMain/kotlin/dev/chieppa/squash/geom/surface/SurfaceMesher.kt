@@ -41,6 +41,10 @@ class SurfaceMesher(val cell: Float) {
         private var needs: Array<List<Long>> = emptyArray()
         private var alike: BooleanArray = BooleanArray(0)
         private val forced = HashSet<Long>()
+
+        /** Blocks read this run whose seams with their neighbours are not yet checked, and those read again exactly to close a seam. */
+        private val unchecked = HashSet<Long>()
+        private val exact = HashSet<Long>()
         private var assembly: MeshAssembly? = null
         private var done: SurfaceMesh? = null
 
@@ -68,15 +72,29 @@ class SurfaceMesher(val cell: Float) {
                     }
                     Stage.READ_DONE -> {
                         takeResults()
+                        unchecked += pending
                         val missing = missingNeighbours()
                         if (missing.isEmpty()) {
-                            stage = Stage.QUADS
+                            stage = Stage.SEAMS
                             continue
                         }
                         pending = missing
                         pendingSet = missing.toHashSet()
                         forced += missing
                         return readTasks(missing, forcedAll = true)
+                    }
+                    Stage.SEAMS -> {
+                        val torn = BlockSeams.disagreeing(grid, map, unchecked).filter { it !in exact }.sorted()
+                        unchecked.clear()
+                        if (torn.isEmpty()) {
+                            stage = Stage.QUADS
+                            continue
+                        }
+                        pending = torn
+                        pendingSet = torn.toHashSet()
+                        exact += torn
+                        stage = Stage.READ_DONE
+                        return readTasks(torn, forcedAll = true)
                     }
                     Stage.QUADS -> {
                         val requad = HashSet<Long>()
@@ -123,7 +141,7 @@ class SurfaceMesher(val cell: Float) {
             val before = keys.map { map[it] }
             return keys.mapIndexed { i, key ->
                 {
-                    val block = BlockReading.read(grid, next, index, key, blocks[key], forcedAll || key in forced, lent)
+                    val block = BlockReading.read(grid, next, index, key, blocks[key], forcedAll || key in forced, lent, exact = key in exact)
                     results[i] = block
                     if (block != null) {
                         block.needed = BlockReading.neighboursNeeded(grid, block)
@@ -219,5 +237,5 @@ class SurfaceMesher(val cell: Float) {
         }
     }
 
-    private enum class Stage { READ, READ_DONE, QUADS, RESOLVE, PLACE, GATHER, CUT, FINISH, DONE }
+    private enum class Stage { READ, READ_DONE, SEAMS, QUADS, RESOLVE, PLACE, GATHER, CUT, FINISH, DONE }
 }

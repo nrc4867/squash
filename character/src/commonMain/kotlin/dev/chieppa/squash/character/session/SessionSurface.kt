@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.surface.HeldMesh
 import dev.chieppa.squash.character.surface.characterMeshNode
 import dev.chieppa.squash.character.surface.characterSurfaceNode
 import dev.chieppa.squash.character.surface.surfaceGarmentsNode
+import dev.chieppa.squash.character.surface.shownPaintNode
 import dev.chieppa.squash.character.surface.surfacePaintNode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.graph.Graph
@@ -55,6 +56,9 @@ class SessionSurface(graph: Graph, history: History<SquashDocument>, placed: Nod
         surface,
         graph.surfaceGarmentsNode(mesh, history.document.map { surfaceCovers(it.character) }.distinctUntilChanged()),
     )
+
+    /** The [paint] as it shows under the [dress]: kept to the skin the garments leave showing. */
+    val shownPaint: Node<*, HeldPaint> = graph.shownPaintNode(surface, paint, dress)
 
     private val shownPosed = MutableStateFlow<Node<*, HeldPosedSurface>?>(null)
 

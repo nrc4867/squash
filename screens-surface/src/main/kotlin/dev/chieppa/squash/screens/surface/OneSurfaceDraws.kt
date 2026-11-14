@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.surface
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
+import dev.chieppa.squash.geom.ContourPoint
+import dev.chieppa.squash.geom.ContourRun
 import dev.chieppa.squash.geom.CurvePoint
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
@@ -33,6 +35,16 @@ fun hemDraws(dress: SurfaceDress, view: SurfaceView, rule: LineRule, color: Colo
  */
 fun joinDraws(surface: CharacterSurface, view: SurfaceView, rule: LineRule, color: Color): List<RibbonDraw> =
     facedCurveDraws(surface.joins, view, rule, color, surface.mesh.cell)
+
+/**
+ * The hems of [dress]'s garments hanging free, as the cloth's outline: an open edge of cloth hanging free outlines it from either side,
+ * and where the cloth turns, its own contour lies past the hem, cut away with what the garment does not cover.
+ */
+fun hangingHems(dress: SurfaceDress): List<ContourRun> = dress.garments.filter { it.cover.hanging }.flatMap { garment ->
+    garment.hems.filter { it.size > 1 }.map { curve ->
+        ContourRun(curve.map { ContourPoint(it.position, 1f) }, curve.size > 2 && curve.first().position == curve.last().position)
+    }
+}
 
 /** [curves] as ink where they face [view], in [layer]: see [joinDraws]. */
 internal fun facedCurveDraws(curves: List<List<CurvePoint>>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, layer: DepthLayer = DepthLayer.SCENE): List<RibbonDraw> = curves.flatMap { curve ->

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.document.EyeLook
+import dev.chieppa.squash.geom.ChartAlmond
+import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.SurfaceUv
 import kotlin.math.PI
@@ -27,7 +29,10 @@ private val BROW_LINE = listOf(-1.0f to 1.5f, -0.1f to 2.05f, 0.8f to 2.1f)
  * and v at the eye's middle, the opening's middle at the origin: its fills as shapes and its ink lines as places along them.
  */
 class EyeShapes(private val look: EyeLook) {
-    private val rim = almond()
+    /** The opening as an almond before its tilts, and its fills' ovals before the eye's tilt, as a renderer reads them at each fragment. */
+    val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing)
+
+    private val rim = List(OVAL_POINTS) { i -> almond.rim(2.0 * PI * i / OVAL_POINTS).let { turned(it.u, it.v, turn) } }
 
     /** The opening: an almond, rounder over the top than under, narrowed toward its back corner. */
     val opening: ColorShape = ColorShape.Border(rim)
@@ -38,47 +43,63 @@ class EyeShapes(private val look: EyeLook) {
     private val irisMiddle = SurfaceUv(look.irisForward, look.irisUp)
     private val irisHigh = look.irisSize * look.irisRatio
 
-    val iris: ColorShape = oval(irisMiddle, look.irisSize, irisHigh)
+    val irisOval = ChartOval(irisMiddle.u, irisMiddle.v, look.irisSize, irisHigh)
 
-    val pupil: ColorShape = if (look.slit) {
-        oval(irisMiddle, look.irisSize * SLIT_WIDTH, irisHigh * SLIT_HEIGHT)
+    val pupilOval = if (look.slit) {
+        ChartOval(irisMiddle.u, irisMiddle.v, look.irisSize * SLIT_WIDTH, irisHigh * SLIT_HEIGHT)
     } else {
-        oval(irisMiddle, look.irisSize * look.pupilSize, irisHigh * look.pupilSize)
+        ChartOval(irisMiddle.u, irisMiddle.v, look.irisSize * look.pupilSize, irisHigh * look.pupilSize)
     }
 
-    val highlight: ColorShape = oval(
-        SurfaceUv(irisMiddle.u + look.highlightForward * look.irisSize, irisMiddle.v + look.highlightUp * irisHigh),
+    val highlightOval = ChartOval(
+        irisMiddle.u + look.highlightForward * look.irisSize,
+        irisMiddle.v + look.highlightUp * irisHigh,
         look.irisSize * look.highlightSize,
-        look.irisSize * look.highlightSize,
+        irisHigh * look.highlightSize,
     )
 
+    val iris: ColorShape = oval(irisOval)
+    val pupil: ColorShape = oval(pupilOval)
+    val highlight: ColorShape = oval(highlightOval)
+
+    /** The opening's turn, its own tilt and the eye's, in degrees. */
+    val turn: Float get() = look.tilt + look.openingTilt
+
+    /** The fills' ovals' turn, the eye's tilt, in degrees. */
+    val fillTurn: Float get() = look.tilt
+
     /** The lash flick at the opening's back corner. */
-    val lashes: List<SurfaceUv>? = if (look.lashes) line(LASH_LINE) else null
+    val lashes: List<SurfaceUv>? = if (look.lashes) lashLine() else null
 
     /** The brow over the opening. */
-    val brow: List<SurfaceUv>? = if (look.brow) line(BROW_LINE) else null
+    val brow: List<SurfaceUv>? = if (look.brow) browLine() else null
 
-    private fun almond(): List<SurfaceUv> =
+    private fun oval(o: ChartOval): ColorShape.Border = ColorShape.Border(
         List(OVAL_POINTS) { i ->
             val angle = 2.0 * PI * i / OVAL_POINTS
-            val along = cos(angle).toFloat()
-            val over = sin(angle).toFloat()
-            val open = over * (if (over > 0f) 1f else look.lowerLid) * (1f - look.frontNarrowing * along)
-            turned(-look.width * along, look.height * open)
-        }
-
-    private fun oval(middle: SurfaceUv, halfU: Float, halfV: Float): ColorShape.Border = ColorShape.Border(
-        List(OVAL_POINTS) { i ->
-            val angle = 2.0 * PI * i / OVAL_POINTS
-            turned(middle.u + halfU * cos(angle).toFloat(), middle.v + halfV * sin(angle).toFloat())
+            turned(o.u + o.halfU * cos(angle).toFloat(), o.v + o.halfV * sin(angle).toFloat(), look.tilt)
         },
     )
 
-    private fun line(points: List<Pair<Float, Float>>): List<SurfaceUv> = points.map { (u, v) -> turned(look.width * u, look.height * v) }
+    /** The lash flick's places, set at the opening's back corner as its own tilt turns it, then turned with the eye. */
+    private fun lashLine(): List<SurfaceUv> {
+        val corner = turned(-look.width, 0f, look.openingTilt)
+        return LASH_LINE.map { (u, v) -> turned(corner.u + look.width * (u + 1f), corner.v + look.height * v, look.tilt) }
+    }
 
-    /** ([u], [v]) turned by the look's tilt about the opening's middle. */
-    private fun turned(u: Float, v: Float): SurfaceUv {
-        val angle = look.tilt * PI.toFloat() / 180f
+    /** The brow's places, raised by the look's brow raise and turned by its brow tilt about its middle place, then turned with the eye. */
+    private fun browLine(): List<SurfaceUv> {
+        val places = BROW_LINE.map { (u, v) -> SurfaceUv(look.width * u, look.height * v + look.browRaise) }
+        val middle = places[places.size / 2]
+        return places.map { p ->
+            val own = turned(p.u - middle.u, p.v - middle.v, look.browTilt)
+            turned(middle.u + own.u, middle.v + own.v, look.tilt)
+        }
+    }
+
+    /** ([u], [v]) turned by [degrees] about the opening's middle. */
+    private fun turned(u: Float, v: Float, degrees: Float): SurfaceUv {
+        val angle = degrees * PI.toFloat() / 180f
         val c = cos(angle)
         val s = sin(angle)
         return SurfaceUv(u * c - v * s, u * s + v * c)
