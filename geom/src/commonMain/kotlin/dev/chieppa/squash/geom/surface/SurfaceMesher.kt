@@ -5,6 +5,9 @@ import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.MemberKey
 
+/** Blocks one piece of the seams' check takes. */
+private const val SEAM_CHUNK = 256
+
 /** How far past a changed member's reach its blocks are read again, in the grid's block half-diagonals. */
 private const val DIRTY_MARGINS = 4f
 
@@ -45,6 +48,7 @@ class SurfaceMesher(val cell: Float) {
         /** Blocks read this run whose seams with their neighbours are not yet checked, and those read again exactly to close a seam. */
         private val unchecked = HashSet<Long>()
         private val exact = HashSet<Long>()
+        private var seams: Array<Set<Long>?> = emptyArray()
         private var assembly: MeshAssembly? = null
         private var done: SurfaceMesh? = null
 
@@ -84,8 +88,17 @@ class SurfaceMesher(val cell: Float) {
                         return readTasks(missing, forcedAll = true)
                     }
                     Stage.SEAMS -> {
-                        val torn = BlockSeams.disagreeing(grid, map, unchecked).filter { it !in exact }.sorted()
+                        val checking = unchecked.toList()
                         unchecked.clear()
+                        val found = arrayOfNulls<Set<Long>>((checking.size + SEAM_CHUNK - 1) / SEAM_CHUNK)
+                        seams = found
+                        stage = Stage.SEAMS_DONE
+                        return checking.chunked(SEAM_CHUNK).mapIndexed { i, keys -> { found[i] = BlockSeams.disagreeing(grid, map, keys) } }.ifEmpty { listOf({}) }
+                    }
+                    Stage.SEAMS_DONE -> {
+                        val all = HashSet<Long>()
+                        for (part in seams) if (part != null) all += part
+                        val torn = all.filter { it !in exact }.sorted()
                         if (torn.isEmpty()) {
                             stage = Stage.QUADS
                             continue
@@ -99,9 +112,14 @@ class SurfaceMesher(val cell: Float) {
                     Stage.QUADS -> {
                         val requad = HashSet<Long>()
                         for (key in fresh) around(key) { if (it in map) requad += it }
-                        val owned = requad.map { key -> map.getValue(key).let { if (key in fresh) it else it.copy(placing = true) }.also { map[key] = it } }
+                        val owned = requad.map { key -> map.getValue(key).let { if (key in fresh) it else it.copy(placing = false) }.also { map[key] = it } }
                         stage = Stage.RESOLVE
-                        return owned.map { block -> { BlockReading.buildQuads(grid, block) { map[it] } } }
+                        return owned.map { block ->
+                            {
+                                if (block.key !in fresh) block.ownPlacing()
+                                BlockReading.buildQuads(grid, block) { map[it] }
+                            }
+                        }
                     }
                     Stage.RESOLVE -> {
                         val built = MeshAssembly(grid, next, map, fresh, blocks, kept, field)
@@ -237,5 +255,5 @@ class SurfaceMesher(val cell: Float) {
         }
     }
 
-    private enum class Stage { READ, READ_DONE, SEAMS, QUADS, RESOLVE, PLACE, GATHER, CUT, FINISH, DONE }
+    private enum class Stage { READ, READ_DONE, SEAMS, SEAMS_DONE, QUADS, RESOLVE, PLACE, GATHER, CUT, FINISH, DONE }
 }

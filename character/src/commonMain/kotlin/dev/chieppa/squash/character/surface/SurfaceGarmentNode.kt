@@ -62,20 +62,27 @@ private sealed interface DressSource {
     class Worn(val held: HeldGarments) : DressSource
 }
 
-/** [garments] worn on [surface], with the skin they hide found in parallel on the graph's dispatcher. See [HiddenSkin]. */
+/**
+ * [garments] worn on [surface], with the skin they hide found in parallel on the graph's dispatcher, the coverage read at vertices kept
+ * from the last surfaces taken from the last run. See [HiddenSkin].
+ */
 fun Graph.surfaceDressNode(surface: Node<*, HeldSurface>, garments: Node<*, HeldGarments>): Node<*, HeldDress> {
     val body = follow<HeldSurface, DressSource>(surface, cacheSize = 1, stage = BuildStages.ASSEMBLY) { DressSource.Body(it) }
     val worn = follow<HeldGarments, DressSource>(garments, cacheSize = 1, stage = BuildStages.ASSEMBLY) { DressSource.Worn(it) }
+    val memo = CoverageMemo()
+    val lock = Mutex()
     return gather(MutableStateFlow(Unit), { mapOf(BODY to body, WORN to worn) }, cacheSize = 1, stage = BuildStages.ASSEMBLY) { gathered ->
         val held = (gathered.values[BODY] as? DressSource.Body)?.held?.surface ?: return@gather HeldDress(null)
         val made = (gathered.values[WORN] as? DressSource.Worn)?.held?.garments ?: return@gather HeldDress(null)
         if (made.isEmpty()) return@gather HeldDress(SurfaceDress.NONE)
-        val hiding = HiddenSkin(held, made)
-        while (true) {
-            currentCoroutineContext().ensureActive()
-            IN_PARALLEL(hiding.next() ?: break)
+        lock.withLock {
+            val hiding = HiddenSkin(held, made, memo)
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                IN_PARALLEL(hiding.next() ?: break)
+            }
+            HeldDress(SurfaceDress(hiding.worn, hiding.skin, hiding.shownSkin, hiding.under))
         }
-        HeldDress(SurfaceDress(hiding.worn, hiding.skin, hiding.shownSkin, hiding.under))
     }
 }
 

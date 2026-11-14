@@ -24,6 +24,7 @@ class GarmentBuilder {
     private val shells = ShellCache()
     private val solids = RunSolids()
     private val clips = RunClips()
+    private val coverage = CoverageMemo()
 
     /**
      * One build of [covers]' garments, worn over [body], on the body meshed as [mesh] from [field]: each garment's mesher's batches, then
@@ -35,58 +36,79 @@ class GarmentBuilder {
         private val body: AssembledCharacter,
         covers: List<GarmentCover>,
     ) {
-        private val pending = ArrayDeque(covers.mapIndexed { i, cover -> WornCover.of(cover, body, covers.take(i), shells) }.also { shells.settle() }.flatMap { it.pieces(body) })
-        private val made = ArrayList<SurfaceGarment>()
-        private var cover: WornCover? = null
-        private var run: SurfaceMesher.MeshRun? = null
-        private var finish: SurfaceFinish? = null
-        private var cutting: GarmentCut? = null
-        private var grown: CharacterField? = null
-        private var recut: CharacterSurface? = null
+        private val pieces = covers.mapIndexed { i, cover -> WornCover.of(cover, body, covers.take(i), shells) }.also { shells.settle() }.flatMap { it.pieces(body) }
+        private val made = arrayOfNulls<SurfaceGarment>(pieces.size)
+        private var works: List<Piece>? = null
 
-        /** What the last batch [next] gave works on. */
+        init {
+            coverage.begin()
+        }
+
+        /** What the last batch [next] gave works on, the first of the garments' at once. */
         var stage: DressStage = DressStage.MESH
             private set
 
+        /** The next batch: every garment still being made gives its next batch, so the garments are made beside one another. */
         fun next(): List<() -> Unit>? {
-            while (true) {
+            val running = works ?: begin().also { works = it }
+            val tasks = ArrayList<() -> Unit>()
+            var first: DressStage? = null
+            for (work in running) {
+                val batch = work.next() ?: continue
+                if (first == null) first = work.stage
+                tasks += batch
+            }
+            if (first == null) {
+                clips.settle()
+                coverage.settle()
+                return null
+            }
+            stage = first
+            return tasks
+        }
+
+        /** A piece of work for each garment that is not kept whole, those kept whole taken as they are. */
+        private fun begin(): List<Piece> = pieces.indices.mapNotNull { i ->
+            val nextCover = pieces[i]
+            val nextField = garmentField(field, nextCover, body, solids, clips) ?: return@mapNotNull null
+            val last = kept[nextCover.garment.id to nextCover.piece]
+            if (last != null && last.shape == shapeOf(nextCover, nextField)) {
+                if (last.cut == cutOf(nextCover)) {
+                    made[i] = last.garment
+                    return@mapNotNull null
+                }
+                return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.surface)
+            }
+            val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell) }
+            Piece(i, nextCover, nextField, mesher.begin(nextField.field, mesh.channels), null)
+        }
+
+        /** One garment being made: meshed by [run] and finished, or cut again on its kept surface [recut]. */
+        private inner class Piece(val index: Int, val cover: WornCover, val grown: CharacterField, val run: SurfaceMesher.MeshRun?, val recut: CharacterSurface?) {
+            private var finish: SurfaceFinish? = null
+            private var cutting: GarmentCut? = null
+            private var done = false
+            var stage: DressStage = DressStage.MESH
+                private set
+
+            fun next(): List<() -> Unit>? {
+                if (done) return null
                 stage = DressStage.MESH
-                run?.let { meshing -> meshing.next()?.let { return it } }
-                val making = finish ?: run?.let { SurfaceFinish(checkNotNull(grown), it.mesh).also { f -> finish = f } }
+                run?.next()?.let { return it }
+                val making = finish ?: run?.let { SurfaceFinish(grown, it.mesh).also { f -> finish = f } }
                 if (making != null) {
                     stage = DressStage.FINISH
                     making.next()?.let { return it }
                 }
-                val surface = making?.surface ?: recut
-                if (surface != null) {
-                    stage = DressStage.CUT
-                    val worn = checkNotNull(cover)
-                    val cut = cutting ?: GarmentCut(worn, surface, membersOf(worn.holes, field, body, solids), membersOf(worn.outThroughEnds, field, body, solids)).also { cutting = it }
-                    cut.next()?.let { return it }
-                    val garment = cut.garment
-                    kept[garment.cover.garment.id to garment.cover.piece] = Kept(shapeOf(garment.cover, checkNotNull(grown)), cutOf(garment.cover), garment)
-                    made += garment
-                    run = null
-                    finish = null
-                    cutting = null
-                    recut = null
-                }
-                val nextCover = pending.removeFirstOrNull() ?: return null.also { clips.settle() }
-                val nextField = garmentField(field, nextCover, body, solids, clips) ?: continue
-                val last = kept[nextCover.garment.id to nextCover.piece]
-                if (last != null && last.shape == shapeOf(nextCover, nextField)) {
-                    if (last.cut == cutOf(nextCover)) {
-                        made += last.garment
-                        continue
-                    }
-                    cover = nextCover
-                    grown = nextField
-                    recut = last.garment.surface
-                    continue
-                }
-                cover = nextCover
-                grown = nextField
-                run = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell) }.begin(nextField.field, mesh.channels)
+                val surface = making?.surface ?: checkNotNull(recut)
+                stage = DressStage.CUT
+                val cut = cutting ?: GarmentCut(cover, surface, membersOf(cover.holes, field, body, solids), membersOf(cover.outThroughEnds, field, body, solids), coverage, cover.garment.id to cover.piece).also { cutting = it }
+                cut.next()?.let { return it }
+                val garment = cut.garment
+                kept[garment.cover.garment.id to garment.cover.piece] = Kept(shapeOf(garment.cover, grown), cutOf(garment.cover), garment)
+                made[index] = garment
+                done = true
+                return null
             }
         }
 
@@ -94,7 +116,7 @@ class GarmentBuilder {
         private fun cutOf(worn: WornCover): Any = listOf(worn.key, membersOf(worn.holes + worn.outThroughEnds, field, body, solids).map { it.key })
 
         /** The garments made, innermost first, once [next] has given null. */
-        val garments: List<SurfaceGarment> get() = made.toList()
+        val garments: List<SurfaceGarment> get() = made.filterNotNull()
     }
 
     /** A build of [covers]' garments, worn over [body], on the body [mesh] meshes from [field]. */

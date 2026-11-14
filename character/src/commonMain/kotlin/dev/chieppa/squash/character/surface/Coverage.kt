@@ -111,6 +111,26 @@ class Coverage(
         return maxOf(plane, under)
     }
 
+    /**
+     * Whether the coverage at vertex [v] of [mesh] reads a part coming out through a hole or an end: whether it lies near enough a hole's
+     * box, or an open end's plane on a run it holds, for [at] to read that part there.
+     */
+    fun readsParts(mesh: SurfaceMesh, v: Int): Boolean {
+        if (holes.isEmpty() && ends.isEmpty()) return false
+        val at = Vec3(mesh.positions[v * 3], mesh.positions[v * 3 + 1], mesh.positions[v * 3 + 2])
+        for (hole in holes) if (hole.boxDistance(at) < reach + clear) return true
+        if (ends.isEmpty()) return false
+        for (k in 0 until HELD) {
+            val member = mesh.held[v * HELD + k]
+            if (member < 0) continue
+            val branch = branches[member] ?: continue
+            if (branch.ease <= 0f) continue
+            val local = field.field.members[member].local(at)
+            for (end in listOfNotNull(lowEnds[member], highEnds[member])) if (-end.past(local) - hemInset < reach) return true
+        }
+        return false
+    }
+
     /** Fills [out] at vertices [from] until [to] of [mesh]. */
     fun fill(mesh: SurfaceMesh, out: FloatArray, from: Int, to: Int) {
         for (v in from until to) out[v] = at(mesh, v)

@@ -196,13 +196,13 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
         }
         val shares = FloatArray(slots)
         surfaceShares(owns, block.parentSlots, block.blends, block.reaches, grid.cell * SHARE_BAND_CELLS, shares)
-        val order = (0 until slots).sortedByDescending { shares[it] }
+        val order = heaviest(shares)
         var kept = 0f
         for (k in 0 until minOf(HELD, slots)) kept += shares[order[k]]
         for (k in 0 until HELD) {
             val at = v * HELD + k
-            val s = order.getOrNull(k)
-            if (s == null || shares[s] <= 0f) {
+            val s = order[k]
+            if (s < 0 || shares[s] <= 0f) {
                 c.held[at] = -1
                 c.heldShares[at] = 0f
                 continue
@@ -213,6 +213,24 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
             c.heldV[at] = vs[s]
             c.heldOwn[at] = owns[s]
         }
+    }
+
+    /**
+     * The [HELD] slots of [shares] with the largest shares, largest first, the lower slot first between equal shares, as a stable sort
+     * by descending share orders them; -1 past the last slot.
+     */
+    private fun heaviest(shares: FloatArray): IntArray {
+        val order = IntArray(HELD) { -1 }
+        for (k in 0 until minOf(HELD, shares.size)) {
+            var best = -1
+            for (s in shares.indices) {
+                var taken = false
+                for (j in 0 until k) if (order[j] == s) taken = true
+                if (!taken && (best < 0 || shares[s].compareTo(shares[best]) > 0)) best = s
+            }
+            order[k] = best
+        }
+        return order
     }
 
     companion object {

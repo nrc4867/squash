@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.look.measure
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.CoverageMemo
 import dev.chieppa.squash.character.surface.DressStage
 import dev.chieppa.squash.character.surface.GarmentBuilder
 import dev.chieppa.squash.character.surface.GarmentCover
@@ -37,16 +38,17 @@ class StackInputs(val shapes: Map<PartId, HeldShapes>, val eyes: List<PaintedEye
 
 /**
  * Where an edit's stack time goes, stage by stage: the surface, its paint, its eyes, its weights, its dress and the dress's weights, each
- * run alone on all of [runAll]'s threads, the median of [PROFILED_RUNS] edits from [rest] to [edited] and back once warm; with [record],
+ * run alone on all of [runAll]'s threads, the median of [PROFILED_RUNS] edits through [states] in turn once warm; with [record],
  * [RECORDED_EDITS] more edits under a flight recording with the JDK's profile settings, kept in that folder by the run's label.
  */
 class SurfaceStackProfile(private val runAll: (List<() -> Unit>) -> Unit, private val inputs: StackInputs, private val record: File? = null) {
     private var lastBatches = ""
     private var lastKept: Int? = null
     private var lastCount = 0
+    private val hidings = HashMap<GarmentBuilder, CoverageMemo>()
     private val parallel: suspend (List<() -> Unit>) -> Unit = { tasks -> runAll(tasks) }
 
-    fun run(label: String, rest: AssembledCharacter, edited: AssembledCharacter, dragging: Boolean) {
+    fun run(label: String, states: List<AssembledCharacter>, dragging: Boolean) {
         val builder = SurfaceBuilder()
         val garments = GarmentBuilder()
         val skins = GarmentSkins()
@@ -56,20 +58,19 @@ class SurfaceStackProfile(private val runAll: (List<() -> Unit>) -> Unit, privat
             val t = TimeSource.Monotonic.markNow()
             return block().also { stages.getOrPut(stage) { ArrayList() } += t.elapsedNow().inWholeMicroseconds / 1000.0 }
         }
-        var flip = false
         val recording = record?.let { Recording(Configuration.getConfiguration("profile")) }
         repeat(WARM_EDITS + PROFILED_RUNS + (if (recording != null) RECORDED_EDITS else 0)) { i ->
             if (i == WARM_EDITS) stages.clear()
             if (i == WARM_EDITS + PROFILED_RUNS) recording?.start()
-            flip = !flip
+            val placed = states[i % states.size]
             val all = TimeSource.Monotonic.markNow()
-            val surface = timed("surface") { checkNotNull(builder.build(if (flip) edited else rest, dragging, runAll)) }
+            val surface = timed("surface") { checkNotNull(builder.build(placed, dragging, runAll)) }
             lastKept = surface.mesh.change?.kept
             lastCount = surface.mesh.vertexCount
             timed("paint") { runBlocking { SurfacePaint.of(surface, inputs.shapes, parallel, memo) } }
             timed("eyes") { runBlocking { SurfaceEyes.of(surface, inputs.eyes, parallel) } }
             timed("weights") { runBlocking { SurfaceSkin.of(inputs.rig, surface, parallel) } }
-            val dress = timed("dress") { dress(garments, surface, if (flip) edited else rest) { stage, ms -> stages.getOrPut("dress ${stage.name.lowercase()}") { ArrayList() }.addPart(ms) } }
+            val dress = timed("dress") { dress(garments, surface, placed) { stage, ms -> stages.getOrPut("dress ${stage.name.lowercase()}") { ArrayList() }.addPart(ms) } }
             timed("dress weights") { runBlocking { dress.garments.forEach { skins.of(inputs.rig, it, parallel) } } }
             stages.getOrPut("all, one after another") { ArrayList() } += all.elapsedNow().inWholeMicroseconds / 1000.0
         }
@@ -100,7 +101,7 @@ class SurfaceStackProfile(private val runAll: (List<() -> Unit>) -> Unit, privat
             batches += "${build.stage.name.lowercase()} ${tasks.size}: %.1f".format(ms)
         }
         val t = TimeSource.Monotonic.markNow()
-        val hiding = HiddenSkin(surface, build.garments)
+        val hiding = HiddenSkin(surface, build.garments, hidings.getOrPut(garments) { CoverageMemo() })
         while (true) runAll(hiding.next() ?: break)
         each[DressStage.HIDE] = t.elapsedNow().inWholeMicroseconds / 1000.0
         each.forEach { (stage, ms) -> took(stage, ms) }

@@ -910,6 +910,110 @@ The open-end rule reads the parts coming out through a garment's ends, so a head
 
 **Open.** The jacket's sleeves running into the body under the arms; the scarf up the woman's neck and the sliver under the coat's collar; the cap's side cuff; an edit equal to a fresh build where a field is steeper than `LIPSCHITZ`; the edit regressions.
 
+## Speed round 2 results
+
+Every example renders as main does: 147 images of the 13 examples, every outfit, the named poses and the face, hand and foot close-ups, rendered fresh from main and from the branch with `look ... outfits=all poses=all close=face,hand,foot`, compared byte for byte in every channel: 0 differ. "Edit equals fresh whole build" passes at the four cells of `OneSurfaceEditCellsTest` and in the stack tests.
+
+**How it was measured.** `measure ... only=stack` times each edit at eight sizes of the part in turn, each about 2% from the one before and none alike, so every run builds a size none of the seven builds before it was built at, as a drag does; nothing the builders keep holds more than the last build. Each timing is the median, 90th percentile and worst of 21 warm runs. Undo is timed as the build back to the size before the last edit; an outfit switch as the build to the example's next outfit and back. The profiles are `profile=true jfr=<folder>`, 40 edits under the flight recorder each, rolled up by stage (the innermost stage class on each sampled stack) and by method.
+
+**The profiles, fennec sweater, before** (main, samples on all threads):
+
+| Stage | Head | Front leg |
+|---|---|---|
+| Surface meshing, the body's and the garments' | 65% | 68% |
+| Eyes | 10% | 8% |
+| Hidden skin | 9% | 6% |
+| Paint | 8% | 3% |
+| Surface finishing | 5% | 7% |
+| Garment cut | 0% | 4% |
+| Weights | 1% | 2% |
+
+Hot methods, self: `SweptSolid.pairField` 34–35%, `PairGrid.cellAt` 9–11%, `PlaneFit.add` 5–6% (smoothing coverage near its zero, on one thread inside the hidden skin's and the cut's batches), `SweptSolid.read` 3–4%. The main thread held smoothing and the chart while the pool waited. GC: 16 and 26 collections, 75 and 168 ms of pauses over the 40 edits. Stage medians, one after another, sweater: head surface 42, paint 9, eyes 3, hidden skin 14 ms; front leg surface 49, garment meshed 19, finished 7, cut 12, hidden skin 14 ms.
+
+**After** (at the joins' commit, before the two smallest levers):
+
+| Stage | Head | Front leg |
+|---|---|---|
+| Surface meshing, the body's and the garments' | 66% | 69% |
+| Eyes | 12% | 5% |
+| Paint | 7% | 5% |
+| Surface finishing | 7% | 11% |
+| Hidden skin | 3% | 1% |
+| Garment cut | 0% | 2% |
+| Weights | 1% | 2% |
+
+Field reads (`pairField`, `cellAt`, `read`, `placeAt`, `scan`) are 53% of all samples; `PlaneFit` has gone from the top. GC: 6 and 8 collections, 43 and 68 ms of pauses. Stage medians: hidden skin 6 ms on either edit, garment cut 5.5 ms.
+
+**What was changed, one commit each.**
+
+| Lever | What it does | Gain, from the stage medians |
+|---|---|---|
+| Hidden skin and garment cut from kept coverage (lever 2) | Coverage read on a mesh is kept per surface and cover (`CoverageMemo`); the next read takes it at every vertex the mesh's change keeps with the same runs and reads only the rest. Smoothing it near its zero runs as parallel pieces, step by step (`NearZeroSmoothing`), without allocating per vertex | hidden skin 14 to 6 ms on every edit; cut 12 to 5.5 ms on a leg edit |
+| Garments beside one another | Every garment still being made gives its next batch each round, so the winter outfit's four garments mesh, finish and cut at once instead of in turn | winter edits, see the table |
+| Seams and quads in pieces; shares without sorting | The mesher checks neighbouring blocks' seams in parallel pieces, a block quadded again copies its placing arrays in its own piece, and a vertex's four heaviest shares are picked in place in the order a stable sort gives | 1–3 ms of one-thread work an edit |
+| Joins smoothed in parallel steps | The sixteen join-smoothing steps each run over every loosely held vertex in pieces, not one piece per join group, where one large group held a thread | about 1 ms of the body's finishing, 2 of a garment's |
+| Coverage kept where moved parts are not read | Where the parts coming out through a garment's holes or ends moved, a vertex keeps its coverage unless the last read or this one reads those parts there | the head edits that recut garments over the torso's end |
+
+**Timings,** `./gradlew :app:measure -Pmeasure="example=<example> outfits=<outfit> only=stack"`, three runs each of main (5f3bd3c, with this round's `measure` and nothing else) and the branch in turn on an otherwise idle machine. Each cell: the median of the three runs' medians with their range, the median of their 90th percentiles, and the worst single build of all three, in ms.
+
+Fennec, sweater:
+
+| Build | Main | Branch |
+|---|---|---|
+| Whole build | 264 (263–272) / 302 / 338 | 272 (269–280) / 314 / 370 |
+| Head edit | 51 (51–59) / 62 / 76 | 50 (48–54) / 69 / 78 |
+| Front-leg edit | 105 (101–112) / 122 / 144 | 94 (89–100) / 128 / 165 |
+| Torso edit, full cell | 216 (213–216) / 243 / 296 | 210 (210–217) / 247 / 284 |
+| Torso edit, coarse cell | 99 (97–99) / 110 / 128 | 93 (92–98) / 100 / 120 |
+| Undo, head | 55 (55–57) / 65 / 69 | 53 (51–57) / 60 / 72 |
+| Undo, front leg | 98 (95–101) / 113 / 124 | 90 (87–92) / 112 / 150 |
+| Undo, torso | 215 (212–216) / 249 / 256 | 196 (196–205) / 241 / 261 |
+| Outfit switch to the next | 207 (200–213) / 225 / 249 | 137 (136–150) / 167 / 211 |
+| Outfit switch back | 22 (22–22) / 24 / 34 | 22 (21–22) / 27 / 40 |
+
+Fennec, winter:
+
+| Build | Main | Branch |
+|---|---|---|
+| Whole build | 400 (399–423) / 447 / 527 | 352 (348–362) / 434 / 474 |
+| Head edit | 145 (144–191) / 158 / 228 | 115 (114–117) / 137 / 168 |
+| Front-leg edit | 144 (143–145) / 152 / 162 | 108 (105–111) / 123 / 133 |
+| Torso edit, full cell | 344 (339–348) / 357 / 379 | 336 (316–338) / 359 / 420 |
+| Torso edit, coarse cell | 152 (152–154) / 164 / 213 | 129 (126–135) / 155 / 169 |
+| Undo, head | 147 (146–177) / 153 / 209 | 115 (111–117) / 133 / 154 |
+| Undo, front leg | 145 (142–148) / 151 / 157 | 111 (110–116) / 134 / 151 |
+| Undo, torso | 349 (347–360) / 376 / 403 | 326 (325–330) / 356 / 457 |
+| Outfit switch to the next | 94 (94–96) / 100 / 103 | 94 (92–96) / 113 / 133 |
+| Outfit switch back | 182 (180–183) / 187 / 194 | 155 (149–155) / 164 / 528 |
+
+Woman, casual:
+
+| Build | Main | Branch |
+|---|---|---|
+| Whole build | 337 (335–362) / 355 / 418 | 325 (321–328) / 383 / 454 |
+| Head edit | 130 (128–130) / 141 / 158 | 108 (108–110) / 142 / 172 |
+| Arm edit | 125 (120–126) / 139 / 160 | 94 (90–96) / 116 / 136 |
+| Torso edit, full cell | 289 (281–290) / 331 / 353 | 257 (250–268) / 326 / 357 |
+| Torso edit, coarse cell | 124 (122–125) / 140 / 155 | 111 (111–113) / 137 / 148 |
+| Undo, head | 131 (129–133) / 138 / 157 | 107 (105–107) / 138 / 168 |
+| Undo, arm | 124 (115–125) / 138 / 172 | 95 (95–97) / 115 / 129 |
+| Undo, torso | 283 (282–286) / 308 / 341 | 247 (244–247) / 311 / 326 |
+| Outfit switch to the next | 91 (91–92) / 102 / 107 | 73 (66–74) / 81 / 89 |
+| Outfit switch back | 117 (112–121) / 133 / 144 | 84 (83–86) / 103 / 135 |
+
+**Against the goal.** Head and front-leg (or arm) edits, median against main: the fennec sweater's head edit 50 against 51 ms, at the 50 aimed for but no faster than main within the noise, its front leg 94 against 105; the winter head 115 against 145 and front leg 108 against 144; the woman's head 108 against 130 and arm 94 against 125. The 90th percentiles and the worst runs fall with the medians on the winter fennec and the woman's arm, and stay at main's on the sweater, where a few runs in each set of 21 took up to 165 ms against main's 144 on the front leg; what makes those runs slow was not found. One winter outfit switch back took 528 ms, once in 63. The torso edits gain 2–11% and the whole builds hold within the noise. The 50 ms goal is met only by the sweater's head edit at its median; the front leg misses by 44 ms with the sweater and 58 in winter, the woman by 44 to 58.
+
+**Levers not taken.**
+
+- **Finishing per block** (lever 1). Its smoothing takes 3 and 16 steps along the quads' sides, so a vertex's shading depends on everything within 19 rings, in the order of its neighbours' links; keeping it exactly needs that whole neighbourhood unchanged and its links in the same order, plus the contour edge map and join curves kept per block. Not built; the finishing is now 7–11% of samples.
+- **Garment vertices from the body's placed vertex** (lever 3). A vertex pushed out by the ease lands where the grown field's line search would only when the grown field is the body's moved uniformly, which a blend between differently eased branches breaks; telling where it is the same needs the line search's reads. Not built.
+- **Cuffs only where an edit reaches** (lever 4). Already so: a cuff is part of its garment's field, and the garment's mesher reads again only the blocks the changed members reach. The winter head edit's garment time is the cap itself, grown over the head that changed.
+- **Read less** (lever 5). The channels' exact masks are per sub-block, and they are also what lending to garments and keeping channels across edits trust; reading exactly only at the grid points that change the union needs exactness per grid point through all three. Sub-block middles taken from channels save under 4% of reads, since a changed member's middles are read before its channel. Not built.
+- **Moving rigidly moved parts** (lever 6). A paw moved by a leg edit moves off the grid: its channels must be read at the new grid points, and its vertices placed fresh, to equal a fresh build. Left out.
+- **A cache of recent builds** (lever 7). Not built: undo costs about an edit, and switching back to an outfit already reuses each garment kept whole by the garment builder.
+
+**What would close the gap.** Field reads are half of all samples, on the body and again on each garment an edit reaches. In order of likely gain: exactness per grid point in the channels, so only grid points where a member can change the union are read (about the part A estimate of a third of channel reads); a garment's placing seeded from the body's placed vertex and checked by one read, falling back to the line search; finishing kept per block with the 19-ring rule above; and the GPU spike's batched reads for what is left.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |

@@ -117,6 +117,14 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
         b.quadCount = quadCount
     }
 
+    /** Gives the block its own copies of what placing writes, as [copy] with placing does. */
+    fun ownPlacing() {
+        positions = positions.copyOf()
+        normals = normals.copyOf()
+        starts = starts.copyOf()
+        coordinates = coordinates.copy()
+    }
+
     /** The joined field at grid point [corner] of the block from its kept channels. */
     fun joinedAt(corner: Int): Float {
         var joined = Float.MAX_VALUE

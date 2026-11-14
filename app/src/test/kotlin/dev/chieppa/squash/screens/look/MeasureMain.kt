@@ -14,6 +14,8 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.GarmentCover
+import dev.chieppa.squash.character.surface.surfaceCovers
 import dev.chieppa.squash.screens.look.measure.SurfaceChecks
 import dev.chieppa.squash.screens.look.measure.SurfaceStackTimings
 import dev.chieppa.squash.screens.look.measure.SurfaceEdit
@@ -120,13 +122,26 @@ private fun oneSurface(name: String, session: CharacterSession, work: TestWork, 
 private fun stack(name: String, session: CharacterSession, work: TestWork, look: LookArgs) {
     val edits = surfaceEdits(session).filter { look.edits == null || it.label in look.edits }
     if (look.profile) SurfaceChecks(session, work).also { it.profile(name, edits) }.close()
-    SurfaceStackTimings(session, work).also { it.report(name, edits, coarse = setOf("torso"), look.profile, look.record) }.close()
+    SurfaceStackTimings(session, work).also { it.report(name, edits, coarse = setOf("torso"), look.profile, look.record, otherCovers(session, work)) }.close()
 }
 
-/** The edits timed: the head, a front leg and the torso each made 2% larger and back. */
+/** What the first outfit after the shown one wears, as a one surface wears it, or null with no other outfit; the shown outfit stays shown. */
+private fun otherCovers(session: CharacterSession, work: TestWork): List<GarmentCover>? {
+    val wardrobe = session.document.value.character.wardrobe
+    val shown = wardrobe.shown ?: return null
+    val other = wardrobe.outfits.map { it.id }.firstOrNull { it != shown } ?: return null
+    session.send(ShowOutfit(other))
+    work.settle(session)
+    val covers = surfaceCovers(session.document.value.character)
+    session.send(ShowOutfit(shown))
+    work.settle(session)
+    return covers
+}
+
+/** The edits timed: the head, a front leg or an arm, and the torso, each at sizes about 2% apart. */
 private fun surfaceEdits(session: CharacterSession): List<SurfaceEdit> {
     val character = session.document.value.character
-    return listOf("head" to "size", "front-leg-l" to "size", "torso" to "size").mapNotNull { (id, parameter) ->
+    return listOf("head" to "size", "front-leg-l" to "size", "arm-l" to "size", "torso" to "size").mapNotNull { (id, parameter) ->
         character.part(PartId(id))?.let { instance ->
             val rest = character.resolved(instance).params[parameter] ?: checkNotNull(session.builtTemplate(instance).defaults[parameter])
             SurfaceEdit(id, instance.id, parameter, rest)

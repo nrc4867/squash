@@ -15,6 +15,9 @@ private const val HOLE_CLEAR_EASES = 2f
 /** Vertices one piece of hiding work takes. */
 private const val HIDING_CHUNK = 2048
 
+/** What names a hiding read's slot in its memo. */
+private const val HIDING_SLOT = "hiding"
+
 /**
  * The work that finds what of [body] and of each of [garments], innermost first, the garments over it hide, in batches handed out by
  * [next] until it gives null, then read from [skin] and [worn]. The body is cut along the curve where it lies [HIDING_CELLS] cells and
@@ -23,7 +26,11 @@ private const val HIDING_CHUNK = 2048
  * opening still show and end on a smooth curve, each coverage eased near its zero as a garment's cut eases it; skin round a part coming
  * out through a garment's hole stays shown.
  */
-class HiddenSkin(private val body: CharacterSurface, private val garments: List<SurfaceGarment>) {
+class HiddenSkin(private val body: CharacterSurface, private val garments: List<SurfaceGarment>, private val memo: CoverageMemo = CoverageMemo()) {
+    init {
+        memo.begin()
+    }
+
     /** Each surface the garments may hide, the body first, and for each the garments over it. */
     private val surfaces: List<CharacterSurface> = listOf(body) + garments.map { it.surface }
     private val over: List<List<Int>> = surfaces.indices.map { s -> (s until garments.size).toList() }
@@ -44,6 +51,12 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
     private var stage = 0
     private var cuts: List<LevelCut?> = emptyList()
 
+    /** Each surface's coverage under each of its hiders as read, before it is smoothed. */
+    private var raw: List<List<CoverageMemo.Pending>> = emptyList()
+
+    /** Each coverage being smoothed near its zero, with its smoothing. */
+    private var smoothing: List<Pair<FloatArray, NearZeroSmoothing>>? = null
+
     /** What of the body shows: null where nothing is worn. */
     val skin: LevelCut? get() = cuts.firstOrNull()
 
@@ -55,22 +68,40 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
 
     fun next(): List<() -> Unit>? {
         if (garments.isEmpty()) return null
+        smoothing?.let { running ->
+            val tasks = running.mapNotNull { it.second.next() }
+            if (tasks.isNotEmpty()) return tasks.flatten()
+            running.forEach { (fan, smoothed) -> smoothed.result.copyInto(fan) }
+            smoothing = null
+            return surfaces.indices.flatMap { s ->
+                hiders[s].indices.flatMap { k -> chunked(surfaces[s].render.vertexCount - surfaces[s].mesh.vertexCount, HIDING_CHUNK) { from, to -> fanned(surfaces[s], fans[s][k], fans[s][k], from, to) } }
+            }
+        }
         stage++
         return when (stage) {
-            1 -> surfaces.indices.flatMap { s ->
-                val mesh = surfaces[s].mesh
-                hiders[s].flatMapIndexed { k, hider ->
-                    val reader = Coverage(surfaces[s].field, hider.cover, mesh.cell * COVERAGE_CELLS, hider.holes, hider.clear, hider.ends)
-                    chunked(mesh.vertexCount, HIDING_CHUNK) { from, to -> reader.fill(mesh, fans[s][k], from, to) }
+            1 -> {
+                val reads = surfaces.indices.map { s ->
+                    val mesh = surfaces[s].mesh
+                    hiders[s].mapIndexed { k, hider ->
+                        val reach = mesh.cell * COVERAGE_CELLS
+                        val reader = Coverage(surfaces[s].field, hider.cover, reach, hider.holes, hider.clear, hider.ends)
+                        val key = CoverageMemo.keyOf(hider.cover, reach, hider.clear)
+                        memo.read(listOf(HIDING_SLOT, s, k), key, CoverageMemo.partsOf(hider.holes, hider.ends), reader, surfaces[s].field, mesh, HIDING_CHUNK)
+                    }
                 }
+                raw = reads
+                reads.flatten().flatMap { it.tasks }
             }
-            2 -> surfaces.indices.flatMap { s ->
-                val mesh = surfaces[s].mesh
-                hiders[s].indices.forEach { k ->
-                    val band = mesh.cell * COVERAGE_CELLS
-                    smoothedNearZero(fans[s][k], mesh.triangles, mesh.vertexCount, band, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS).copyInto(fans[s][k])
+            2 -> {
+                memo.settle()
+                raw.forEachIndexed { s, reads -> reads.forEachIndexed { k, read -> read.values.copyInto(fans[s][k]) } }
+                smoothing = surfaces.indices.flatMap { s ->
+                    val mesh = surfaces[s].mesh
+                    hiders[s].indices.map { k ->
+                        fans[s][k] to NearZeroSmoothing(fans[s][k], mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS)
+                    }
                 }
-                hiders[s].indices.flatMap { k -> chunked(surfaces[s].render.vertexCount - surfaces[s].mesh.vertexCount, HIDING_CHUNK) { from, to -> fanned(surfaces[s], fans[s][k], fans[s][k], from, to) } }
+                next()
             }
             3 -> surfaces.indices.map { s -> { least(s) } }
             4 -> {

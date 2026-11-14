@@ -67,21 +67,29 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
                 val edgeWork = if (stage == 3) edges.next().orEmpty() else emptyList()
                 edgeWork + chunks(corners) { from, to -> smoothing.step(from, to) }.also { smoothing.swapNext() }
             }
-            stage == 3 + SMOOTHING_STEPS -> smoothing.groups.map { group -> { smoothing.smoothJoin(group) } }
-            stage == 4 + SMOOTHING_STEPS -> {
+            stage == 3 + SMOOTHING_STEPS -> {
+                smoothing.startJoins()
+                joinSteps()
+            }
+            stage < 3 + SMOOTHING_STEPS + JOIN_SMOOTHING_STEPS -> joinSteps()
+            stage == 3 + SMOOTHING_STEPS + JOIN_SMOOTHING_STEPS -> {
                 val out = FloatArray(count * RenderMesh.FLOATS_PER_VERTEX)
                 render = RenderMesh(out, fan.triangles)
                 val drawn = TriangleLines(mesh.positions, smoothing.normals, mesh.triangles, edges)
                 lines = drawn
                 listOf({ joins = joinCurves(field, mesh, drawn) }) + chunks(count) { from, to -> compose(from, to, out) }
             }
-            stage == 5 + SMOOTHING_STEPS -> {
+            stage == 4 + SMOOTHING_STEPS + JOIN_SMOOTHING_STEPS -> {
                 done = CharacterSurface(field, mesh, checkNotNull(render), checkNotNull(lines), joins, positive, negative, mesh.positions, smoothing.normals)
                 null
             }
             else -> null
         }
     }
+
+    /** One step of the joins' smoothing, its values taken in by the next batch. */
+    private fun joinSteps(): List<() -> Unit> =
+        chunks(smoothing.joining.size) { from, to -> smoothing.joinStep(from, to) }.ifEmpty { listOf({}) }.also { smoothing.swapNext() }
 
     private fun chunks(total: Int, work: (Int, Int) -> Unit): List<() -> Unit> =
         (0 until total step FINISH_CHUNK).map { from -> { work(from, minOf(total, from + FINISH_CHUNK)) } }

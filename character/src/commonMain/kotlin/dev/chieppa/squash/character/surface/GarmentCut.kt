@@ -27,6 +27,8 @@ class GarmentCut(
     private val surface: CharacterSurface,
     private val holes: List<JoinedMember> = emptyList(),
     private val ends: List<JoinedMember> = emptyList(),
+    private val memo: CoverageMemo = CoverageMemo(),
+    private val slot: Any = Unit,
 ) {
     private val mesh = surface.mesh
     private val coverage = FloatArray(mesh.vertexCount)
@@ -36,6 +38,8 @@ class GarmentCut(
     private var cut: LevelCut? = null
     private var hems: List<List<CurvePoint>> = emptyList()
     private var stage = 0
+    private var smoothing: NearZeroSmoothing? = null
+    private var read: CoverageMemo.Pending? = null
     private var done: SurfaceGarment? = null
 
     val garment: SurfaceGarment get() = checkNotNull(done) { "The garment has work left" }
@@ -44,11 +48,19 @@ class GarmentCut(
         stage++
         return when (stage) {
             1 -> {
-                val reader = Coverage(surface.field, cover, mesh.cell * COVERAGE_CELLS, holes, ends = ends)
-                chunked(mesh.vertexCount, CUT_CHUNK) { from, to -> reader.fill(mesh, coverage, from, to) }
+                val reach = mesh.cell * COVERAGE_CELLS
+                val reader = Coverage(surface.field, cover, reach, holes, ends = ends)
+                memo.read(slot, CoverageMemo.keyOf(cover, reach, 0f), CoverageMemo.partsOf(holes, ends), reader, surface.field, mesh, CUT_CHUNK).also { read = it }.tasks
             }
             2 -> {
-                smoothedNearZero(coverage, mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS).copyInto(coverage)
+                read?.values?.copyInto(coverage)
+                read = null
+                val running = smoothing ?: NearZeroSmoothing(coverage, mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS).also { smoothing = it }
+                running.next()?.let {
+                    stage--
+                    return it
+                }
+                running.result.copyInto(coverage)
                 kept = touchedTriangles(mesh.triangles, coverage)
                 val triangleEdges = TriangleEdges(surface.positions, mesh.vertexCount, kept).also { edges = it }
                 coverage.copyInto(fan)

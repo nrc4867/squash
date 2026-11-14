@@ -143,19 +143,31 @@ internal class ShadingSmoothing(private val mesh: SurfaceMesh, private val fan: 
         this.groups = groups
     }
 
-    /** [JOIN_SMOOTHING_STEPS] more steps of averaging over [group], each vertex moved by the square of how loosely it is held. */
-    fun smoothJoin(group: IntArray) {
-        repeat(JOIN_SMOOTHING_STEPS) {
-            for (v in group) {
-                val free = (1f - held[v]).coerceIn(0f, 1f)
-                average(normals, spare, v, SMOOTHING_FACTOR * free * free)
-                unit(spare, v, normals)
-                average(owned, spareOwned, v, SMOOTHING_FACTOR * free * free)
+    /** Every vertex of [groups], one after another, for [joinStep]: smoothing one reads only its group's and ones that stay as they are. */
+    var joining = IntArray(0)
+        private set
+
+    /** Starts the [JOIN_SMOOTHING_STEPS] steps over [groups]: the spare arrays take the values the vertices outside them keep. */
+    fun startJoins() {
+        joining = IntArray(groups.sumOf { it.size }).also { all ->
+            var at = 0
+            for (group in groups) {
+                group.copyInto(all, at)
+                at += group.size
             }
-            for (v in group) {
-                spare.copyInto(normals, v * 3, v * 3, v * 3 + 3)
-                spareOwned.copyInto(owned, v * 3, v * 3, v * 3 + 3)
-            }
+        }
+        normals.copyInto(spare)
+        owned.copyInto(spareOwned)
+    }
+
+    /** One step of averaging [joining]'s vertices [from] until [to], each moved by the square of how loosely it is held, into the spare arrays. */
+    fun joinStep(from: Int, to: Int) {
+        for (i in from until to) {
+            val v = joining[i]
+            val free = (1f - held[v]).coerceIn(0f, 1f)
+            average(normals, spare, v, SMOOTHING_FACTOR * free * free)
+            unit(spare, v, normals)
+            average(owned, spareOwned, v, SMOOTHING_FACTOR * free * free)
         }
     }
 
