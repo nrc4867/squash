@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.move
 
 import dev.chieppa.squash.screens.openSocketsNow
+import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.screens.addSocket
 import dev.chieppa.squash.screens.offerPickedSocket
 import dev.chieppa.squash.screens.sheet.SurfaceView
@@ -46,6 +47,8 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
 
     private fun assembled(): AssembledCharacter? = state.session.value?.assembly?.output?.value
 
+    private fun restSurface(): CharacterSurface? = state.session.value?.characterSurface?.output?.value?.surface
+
     private fun dots(): List<SocketHandle> {
         val character = assembled() ?: return emptyList()
         return moveHandles(character, null).filterIsInstance<SocketHandle>().filter { it.child == null }
@@ -73,7 +76,7 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
     /** Where a press at [pixel] places a socket: on a part's surface, away from every dot. */
     private fun placeAt(pixel: Offset, sight: SurfaceView, handles: HandleView): SocketPlace? {
         if (handleAt(dots(), pixel, curves.grabReach, handles) != null) return null
-        return assembled()?.let { socketPlaceAt(it, pixel, sight, handles) }
+        return assembled()?.let { socketPlaceAt(it, pixel, sight, handles, restSurface()) }
     }
 
     private fun preview(pane: Any, sight: SurfaceView): ViewportOverlay = buildOverlay {

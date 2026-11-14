@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.character.build.WeightedRun
 import dev.chieppa.squash.geom.ContourPoint
 import dev.chieppa.squash.geom.ContourRun
+import dev.chieppa.squash.geom.TriangleLines
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
@@ -42,10 +43,17 @@ class LineLayers(val behind: DepthLayer, val over: DepthLayer) {
     }
 }
 
-/** One ribbon along where [parts] turn edge on through [view], weighed by what lies on their surfaces, or null with none on show. */
-fun contourRibbon(parts: Collection<PartLines>, view: SurfaceView): StrokeRibbon? {
+/**
+ * One ribbon along where [parts], and the one-surface meshes [surfaces] a character has, turn edge on through [view], weighed by what lies on
+ * their surfaces, the one surfaces' by [weightAt] in space, or null with none on show.
+ */
+fun contourRibbon(parts: Collection<PartLines>, view: SurfaceView, surfaces: List<TriangleLines> = emptyList(), weightAt: ((Vec3) -> Float)? = null): StrokeRibbon? {
     val ribbons = parts.flatMap { part -> part.grids.flatMap { grid -> gridRibbons(grid.contours(view::toViewer), view) } }
-    return StrokeRibbon.joined(ribbons)
+    val own = surfaces.flatMap { lines ->
+        val runs = lines.smoothContours(view::toViewer)
+        gridRibbons(if (weightAt == null) runs else runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, weightAt(it.position)) }, run.closed, run.piece) }, view)
+    }
+    return StrokeRibbon.joined(ribbons + own)
 }
 
 /** Each of [runs] as a ribbon, thinned by the length on screen of the connected piece it belongs to, however its edges branch. */

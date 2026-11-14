@@ -8,6 +8,9 @@ import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
+import dev.chieppa.squash.document.SetOneSurface
+import dev.chieppa.squash.character.surface.FieldAnchors
+import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
@@ -83,6 +86,31 @@ class SurfaceToolsTest {
             val shown = assertNotNull(view.toPixel(resolved))
             assertTrue((shown - pixel).getDistance() < PIXEL_CLOSE * 2f, "the anchor shows at $shown for $pixel")
         }
+    }
+
+    @Test
+    fun aPickOnTheOneSurfaceResolvesOnItsFieldWhereItWasPickedAndASelectionLinesItsOwnSection() {
+        val session = session()
+        session.send(SetOneSurface(true))
+        settle(session)
+        val character = assertNotNull(session.assembly.output.value)
+        val surface = assertNotNull(session.characterSurface.output.value?.surface)
+        val anchors = FieldAnchors(surface.field)
+        val view = free(session, Vec3(0.2f, 0.4f, -1f))
+        for (part in listOf(TORSO, HEAD, TAIL)) {
+            val pixel = assertNotNull(view.toPixel(assertNotNull(character.part(part)?.box).center))
+            val hit = assertNotNull(surfaceHit(character, pixel, view, surface = surface))
+            val resolved = assertNotNull(anchors.resolve(hit.anchor))
+            val shown = assertNotNull(view.toPixel(resolved.position))
+            assertTrue((shown - pixel).getDistance() < PIXEL_CLOSE * 2f, "${hit.part.value}'s anchor shows at $shown for $pixel")
+        }
+        val lines = SurfaceLines(
+            assertNotNull(session.bodyLines.output.value), assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper,
+            androidx.compose.ui.graphics.Color.Black, 1f, oneSurface = OneSurfaceLines(PosedSurface(surface, null)),
+        )
+        val selected = lines.selected(TORSO, locked(session))
+        assertTrue(selected.any { it.layer == DepthLayer.BEHIND_FRONT }, "the section's contour")
+        assertTrue(selected.any { it.layer == DepthLayer.FRONT }, "the curve where it meets its neighbours")
     }
 
     @Test

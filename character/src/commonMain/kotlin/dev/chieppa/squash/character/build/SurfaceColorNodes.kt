@@ -1,6 +1,9 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.document.MarkKind
+import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.graph.Graph
@@ -31,19 +34,37 @@ private sealed interface ColorKey {
 }
 
 /**
- * A part's color shapes, cut to the surfaces they land on, following its [work] and those surfaces at the step of [detail]. Palette
- * colors are not among its inputs, so they cost it nothing, and a shape that did not change keeps its cut.
+ * What a part's color shapes are before they are cut: its [baseSlot], its [shapes] in layer order, the [surfaces] they land on and the
+ * [step] they flatten at; and the ink [lines] it draws over them: its marks in no group and its lip lines, fur aside.
  */
-fun Graph.partColorNode(
+data class HeldShapes(
+    val baseSlot: SlotName?,
+    val shapes: List<LandedShape>,
+    val surfaces: Map<PartId, PartSurface>,
+    val step: Int,
+    val lines: List<ResolvedMark> = emptyList(),
+)
+
+/** [work]'s ink lines: its marks in no group and those its groups hold as lip lines, fur aside. */
+fun inkLines(work: ResolvedSurfaceWork): List<ResolvedMark> {
+    val grouped = work.groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet()
+    val lips = work.groups.flatMap { group -> group.roles.filter { it.role == MarkRole.LIP_LINE }.flatMap { it.marks } }.toSet()
+    return work.marks.filter { it.kind != MarkKind.FUR && it.ink && (it.id !in grouped || it.id in lips) }
+}
+
+/**
+ * A part's color shapes where they land, each in the space of the part and patch its anchors name, following its [work] and those
+ * surfaces at the step of [detail].
+ */
+fun Graph.partShapesNode(
     input: Flow<PartColorInput>,
     part: PartId,
     work: Node<*, ResolvedSurfaceWork>,
     detail: Node<*, ColorSource>,
     surface: (PartId) -> Node<*, PartSurface>,
-): Node<*, HeldColor> {
+): Node<*, HeldShapes> {
     val own = follow<ResolvedSurfaceWork, ColorSource>(work, cacheSize = COLOR_CACHE, stage = BuildStages.SURFACE_WORK) { ColorSource.Work(it) }
     val wrapped = HashMap<PartId, Node<*, ColorSource>>()
-    val cuts = ShapeCuts()
     return gather(
         input.distinctUntilChanged(),
         sourcesOf = { shape ->
@@ -61,7 +82,18 @@ fun Graph.partColorNode(
         val surfaces = sources.entries.mapNotNull { (key, source) ->
             if (key is ColorKey.Surface) key.part to (source as ColorSource.Surface).surface else null
         }.toMap()
-        HeldColor(resolved.baseSlot, cuts.cuts(colorShapes(part, resolved, shape, surfaces), surfaces, step, cancellationCheck()))
+        HeldShapes(resolved.baseSlot, colorShapes(part, resolved, shape, surfaces), surfaces, step, inkLines(resolved))
+    }
+}
+
+/**
+ * A part's color shapes, cut to the surfaces they land on. Palette colors are not among its inputs, so they cost it nothing, and a shape
+ * that did not change keeps its cut.
+ */
+fun Graph.partColorNode(shapes: Node<*, HeldShapes>): Node<*, HeldColor> {
+    val cuts = ShapeCuts()
+    return follow(shapes, cacheSize = COLOR_CACHE, stage = BuildStages.SURFACE_WORK) { held ->
+        HeldColor(held.baseSlot, cuts.cuts(held.shapes, held.surfaces, held.step, cancellationCheck()))
     }
 }
 

@@ -26,7 +26,11 @@ class LookArgs(args: Array<String>) {
     /** The pose names asked for, or null for every named pose. */
     val poses: List<String>? = values["poses"]?.takeIf { it != ALL }?.split(',')
 
-    /** The close-ups asked for, among face, hand, foot, hands, the bare hand at rest, curled into a fist and open, and feet, the bare foot or paw at rest, curled, open and spread. */
+    /**
+     * The close-ups asked for, among face, hand, foot, hands, the bare hand at rest, curled into a fist and open, feet, the bare foot or
+     * paw at rest, curled, open and spread, joins, where the head, a forelimb and a hind limb meet the body, surface, the joins' spots, the
+     * outline close up and the mesh, and drag, a torso drag's end.
+     */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
     /** The shot list to render instead of the usual views: `reference` for the reference's 24 shots. */
@@ -44,8 +48,23 @@ class LookArgs(args: Array<String>) {
         Triple(part, name, value.toFloat())
     }.orEmpty()
 
+    /** With `surface=parts`, each example is built as its parts' own meshes even where its commands build it as one surface. */
+    val asParts: Boolean = values["surface"] == "parts"
+
     /** Whether measure prints every part's origin and box. */
     val parts: Boolean = values["parts"] == "true"
+
+    /** With `profile=true`, `measure` also prints where a one-surface build's time goes. */
+    val profile: Boolean = values["profile"] == "true"
+
+    /** With `only=stack`, `measure` prints only the one surface's stack timings. */
+    val stackOnly: Boolean = values["only"] == "stack"
+
+    /** The one-surface edits `measure` times, among head, front-leg-l and torso, or null for all of them. */
+    val edits: List<String>? = values["edits"]?.split(',')
+
+    /** With `jfr=<folder>` and a profile, `measure` records the profiled edits under the JDK's flight recorder into that folder. */
+    val record: File? = values["jfr"]?.let(::File)
 
     /** Body units to a metre of the reference frame, for the shots and the explicit camera. */
     val unitsPerMetre: Float = values["scale"]?.toFloat() ?: 1f
@@ -59,5 +78,9 @@ class LookArgs(args: Array<String>) {
         const val FOOT = "foot"
         const val HANDS = "hands"
         const val FEET = "feet"
+        const val JOINS = "joins"
+        const val SURFACE = "surface"
+        const val DRAG = "drag"
+        const val ANCHORS = "anchors"
     }
 }

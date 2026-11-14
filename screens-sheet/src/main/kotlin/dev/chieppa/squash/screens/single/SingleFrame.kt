@@ -2,6 +2,9 @@ package dev.chieppa.squash.screens.single
 
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
+import dev.chieppa.squash.screens.sheet.holds
+import dev.chieppa.squash.screens.sheet.rigSurfaceDraws
+import dev.chieppa.squash.screens.sheet.surfaceDraws
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.RibbonDraw
@@ -82,7 +85,7 @@ fun singleFrame(input: SingleInput): SceneFrame {
     val free = input.free ?: return SceneFrame(input.look.well)
     input.rig?.let { rig ->
         val placed = (selection.others + selection.part).filter { !it.planned }
-        val draws = listOf(fullGround(selection, input.look)) + placed.map { input.look.rigDraw(it, rig, input.look.lockedOutline, selection.posed) }
+        val draws = listOf(fullGround(selection, input.look)) + placed.mapNotNull { input.look.rigDraw(it, rig, input.look.lockedOutline, selection.posed) } + input.look.rigSurfaceDraws(rig, input.look.lockedOutline, selection.posed != null)
         val overlay = rig.overlay(FullView({ free }, input.width, input.height)) + input.freeOverlay
         return SceneFrame(input.look.well, listOf(SceneView(rect, free.viewProjection(input.width, input.height), draws)), overlay.clippedTo(rect.toRect()))
     }
@@ -113,13 +116,16 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val outline = if (surface != null) 0f else look.lockedOutline
     val sight = FullView({ camera }, input.width, input.height)
     if (input.hints.whole) {
-        selection.whole.filter { !it.planned }.forEach { add(look.colored(it, input.color, toCamera, outline, posed = posed.of(it)).withFace(it, surface, sight)) }
+        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, input.color, toCamera, outline, posed = posed.of(part))?.let { add(it.withFace(part, surface, sight)) } }
+        addAll(look.surfaceDraws(input.color, toCamera, posed != null))
         return@buildList
     }
-    add(look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part)).withFace(selection.part, surface, sight))
+    look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
+    if (input.color.holds(selection.part)) addAll(look.surfaceDraws(input.color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id))
     if (input.hints.ghost > 0f) {
+        addAll(look.surfaceDraws(input.color, toCamera, posed != null, look.ghostOutline, input.hints.ghost))
         selection.others
             .sortedByDescending { (it.center.toGpu() - camera.eye).length }
-            .forEach { add(look.colored(it, input.color, toCamera, look.ghostOutline, input.hints.ghost, posed = posed.of(it))) }
+            .forEach { part -> look.colored(part, input.color, toCamera, look.ghostOutline, input.hints.ghost, posed = posed.of(part))?.let(::add) }
     }
 }

@@ -23864,6 +23864,14 @@
                         "green": 0.25,
                         "blue": 0.12
                     }
+                },
+                {
+                    "name": "dark-iris",
+                    "color": {
+                        "red": 0.3,
+                        "green": 0.17,
+                        "blue": 0.09
+                    }
                 }
             ]
         },
@@ -25041,6 +25049,42 @@
                             "degrees": -18.0
                         }
                     ]
+                }
+            }
+        ],
+        "oneSurface": true,
+        "paintedEyes": [
+            {
+                "id": "eyes",
+                "anchor": {
+                    "part": "head",
+                    "u": 0.6,
+                    "v": 0.185
+                },
+                "look": {
+                    "white": "cream",
+                    "iris": "iris",
+                    "pupil": "ink",
+                    "highlight": "cream",
+                    "ink": "ink"
+                },
+                "front": {
+                    "width": 0.058,
+                    "height": 0.088,
+                    "lowerLid": 1.0,
+                    "frontNarrowing": 0.0,
+                    "tilt": 20.0,
+                    "irisSize": 0.052,
+                    "irisRatio": 1.15,
+                    "irisForward": 0.01,
+                    "irisUp": -0.012,
+                    "highlightSize": 0.32,
+                    "lashes": false,
+                    "white": "cream",
+                    "iris": "iris",
+                    "pupil": "ink",
+                    "highlight": "cream",
+                    "ink": "ink"
                 }
             }
         ]

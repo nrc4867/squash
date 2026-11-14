@@ -41,6 +41,7 @@ import dev.chieppa.squash.screens.fennec.SWEATER
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.WINTER
 import dev.chieppa.squash.screens.fennec.savedFennecDressed
+import dev.chieppa.squash.screens.fennec.asParts
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
@@ -65,9 +66,9 @@ private object NoDressFiles : FileChooser {
 class DressFlowTest {
     private val work = TestWork()
 
-    private fun ComposeUiTest.dressedOpen(): AppState {
+    private fun ComposeUiTest.dressedOpen(asParts: Boolean = false): AppState {
         val state = AppState(TemplateFolder.shipped(), work)
-        state.open(savedFennecDressed())
+        state.open(if (asParts) savedFennecDressed().asParts() else savedFennecDressed())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoDressFiles) }
         settle(work, state)
@@ -170,7 +171,7 @@ class DressFlowTest {
 
     @Test
     fun theLooseEndToolHangsAnEndFromAGarmentAndItsSectionSetsFollowThrough() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = dressedOpen()
+        val state = dressedOpen(asParts = true)
         val session = assertNotNull(state.session.value)
         key(Key.L)
         assertEquals(BuildTool.LOOSE_END, state.tool.value)

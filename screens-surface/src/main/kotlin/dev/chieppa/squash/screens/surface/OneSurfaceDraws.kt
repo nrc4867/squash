@@ -1,0 +1,72 @@
+package dev.chieppa.squash.screens.surface
+
+import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.SurfaceDress
+import dev.chieppa.squash.geom.CurvePoint
+import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.render.DepthLayer
+import dev.chieppa.squash.render.LineRule
+import dev.chieppa.squash.render.RibbonDraw
+import dev.chieppa.squash.render.RibbonPoint
+import dev.chieppa.squash.render.StrokeRibbon
+import dev.chieppa.squash.screens.sheet.SurfaceView
+
+/**
+ * How far toward the viewer a join's surface must face, as the cosine of its normal with the view, for its line to be drawn at all, and
+ * to take its full weight.
+ */
+private const val JOIN_LEAST_FACING = 0.15f
+private const val JOIN_FULL_FACING = 0.35f
+
+/** How many of the surface's cells a piece of join line runs at least to be drawn. */
+private const val JOIN_SHORTEST_CELLS = 6f
+
+/** The ink along each hem, neck opening and cuff of [dress]'s garments whose hem ink is on, where it faces [view]. */
+fun hemDraws(dress: SurfaceDress, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
+    dress.garments.filter { it.cover.garment.inkHem }.flatMap { facedCurveDraws(it.hems, view, rule, color, cell) }
+
+/**
+ * The ink along each inked join of [surface] where its surface faces [view]: each curve is cut where the surface turns from the viewer
+ * past [JOIN_LEAST_FACING],
+ * a piece shorter than [JOIN_SHORTEST_CELLS] of the surface's cells is left out, and a piece thins toward where the surface turns.
+ */
+fun joinDraws(surface: CharacterSurface, view: SurfaceView, rule: LineRule, color: Color): List<RibbonDraw> =
+    facedCurveDraws(surface.joins, view, rule, color, surface.mesh.cell)
+
+/** [curves] as ink where they face [view], in [layer]: see [joinDraws]. */
+internal fun facedCurveDraws(curves: List<List<CurvePoint>>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, layer: DepthLayer = DepthLayer.SCENE): List<RibbonDraw> = curves.flatMap { curve ->
+    val facing = curve.map { point -> point.normal dot view.toViewer(point.position).normalized() }
+    val closed = curve.size > 2 && curve.first().position == curve.last().position
+    val shortest = JOIN_SHORTEST_CELLS * cell
+    facedPieces(facing, closed).filter { piece -> length(piece.map { curve[it].position }) >= shortest }.mapNotNull { piece ->
+        val whole = closed && piece.size == curve.size
+        val points = piece.map { i ->
+            val weight = ((facing[i] - JOIN_LEAST_FACING) / (JOIN_FULL_FACING - JOIN_LEAST_FACING)).coerceIn(0f, 1f)
+            RibbonPoint(curve[i].position, curve[i].normal, weight)
+        }
+        StrokeRibbon.along(points, EVEN_WEIGHT, whole)?.let { RibbonDraw(it, rule, color, layer = layer) }
+    }
+}
+
+/** The runs of indices into a curve whose [facing] is above [JOIN_LEAST_FACING], joined across the start of a [closed] curve. */
+private fun facedPieces(facing: List<Float>, closed: Boolean): List<List<Int>> {
+    if (facing.all { it > JOIN_LEAST_FACING }) return listOf(facing.indices.toList())
+    val pieces = ArrayList<MutableList<Int>>()
+    var current: MutableList<Int>? = null
+    for (i in facing.indices) {
+        if (facing[i] > JOIN_LEAST_FACING) {
+            current = current ?: mutableListOf<Int>().also { pieces += it }
+            current += i
+        } else {
+            current = null
+        }
+    }
+    if (closed && pieces.size > 1 && facing.first() > JOIN_LEAST_FACING && facing.last() > JOIN_LEAST_FACING) {
+        val first = pieces.removeAt(0)
+        pieces.last().addAll(first.drop(1))
+    }
+    return pieces
+}
+
+private fun length(points: List<Vec3>): Float = points.zipWithNext { a, b -> (b - a).length }.sum()

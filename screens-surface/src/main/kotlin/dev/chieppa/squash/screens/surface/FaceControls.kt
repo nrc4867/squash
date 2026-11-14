@@ -88,7 +88,7 @@ internal fun MouthControls(session: CharacterSession, picked: PickedGroup, group
 }
 
 @Composable
-private fun ControlSlider(
+internal fun ControlSlider(
     label: StringResource,
     value: Float,
     tag: String,

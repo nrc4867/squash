@@ -25,6 +25,7 @@ import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.bodyThrough
 import dev.chieppa.squash.screens.surface.surfaceHit
+import dev.chieppa.squash.screens.sheet.surfaceThrough
 
 /** What a press in Dress lands on: a garment's branch or cuff, by what it [covers] and at [v] round the body under it, or a body [part]. */
 sealed interface DressHit {
@@ -35,7 +36,7 @@ sealed interface DressHit {
 /** What a press at [pixel] through [sight] lands on in the Dress stage, garments in front of the body, or null on nothing. */
 fun AppState.dressHit(pixel: Offset, sight: SurfaceView, garments: Boolean = true): DressHit? {
     val body = bodyThrough(sight) ?: return null
-    val hit = surfaceHit(body, pixel, sight, garments) ?: return null
+    val hit = surfaceHit(body, pixel, sight, garments, surfaceThrough(sight)) ?: return null
     val placed = body.part(hit.part)
     val covering = placed?.covering ?: return DressHit.OnBody(hit.part)
     val closed = placed.surface.patches.firstOrNull { it.name == hit.patch }?.closedV ?: true

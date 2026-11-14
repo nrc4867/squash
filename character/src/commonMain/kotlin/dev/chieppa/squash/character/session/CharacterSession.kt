@@ -36,6 +36,8 @@ import dev.chieppa.squash.character.build.furViewNode
 import dev.chieppa.squash.character.build.held
 import dev.chieppa.squash.character.build.partColorInputs
 import dev.chieppa.squash.character.build.partColorNode
+import dev.chieppa.squash.character.build.partShapesNode
+import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.build.partBlendNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
@@ -51,6 +53,10 @@ import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.socketFilletNode
 import dev.chieppa.squash.character.build.socketStripNode
 import dev.chieppa.squash.character.build.dressedNode
+import dev.chieppa.squash.character.surface.HeldSurface
+import dev.chieppa.squash.character.surface.fieldWorkNode
+import dev.chieppa.squash.character.surface.HeldPaint
+import dev.chieppa.squash.character.build.Dressing
 import dev.chieppa.squash.character.build.dressingOf
 import dev.chieppa.squash.character.build.dressedColorNode
 import dev.chieppa.squash.character.build.garmentColors
@@ -101,6 +107,7 @@ class CharacterSession(
     private val skeletons = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val defaults = mutableMapOf<Pair<TemplateRef, Boolean>, Node<*, PartSurface>>()
     private val works = mutableMapOf<PartId, Node<*, ResolvedSurfaceWork>>()
+    private val shapes = mutableMapOf<PartId, Node<*, HeldShapes>>()
     private val colors = mutableMapOf<PartId, Node<*, HeldColor>>()
     private val colorStep = MutableStateFlow(ColorDetail.START)
     private val colorDetail: Node<*, ColorSource> = graph.node(colorStep, stage = BuildStages.SURFACE_WORK) { ColorSource.Detail(it) }
@@ -113,29 +120,42 @@ class CharacterSession(
      * outfit wears. Made with the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
      * run is pending, and `failure` holds why a part's build failed.
      */
-    val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
-        graph.socketStripNode(
-            graph.socketFilletNode(
-                graph.assemblyNode(
-                    document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
-                    templates,
-                    ::surface,
-                    ::defaultSurface,
-                    ::skeleton,
-                ),
-            ),
+    val placed: Node<*, AssembledCharacter> = graph.socketFilletNode(
+        graph.assemblyNode(
+            document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
+            templates,
+            ::surface,
+            ::defaultSurface,
+            ::skeleton,
         ),
-        combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
     )
 
+    val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
+        graph.socketStripNode(placed, document.map { !it.character.oneSurface }.distinctUntilChanged()),
+        combine(document.map { dressingOf(it.character).let { dressing -> if (it.character.oneSurface) dressing.copy(endsOnly = true) else dressing } }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
+    )
+
+    /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
+    val oneSurface = SessionSurface(graph, history, placed, ::heldShapes)
+
+    /** The character's body as one surface while the document says so; null otherwise. */
+    val characterSurface: Node<*, HeldSurface> get() = oneSurface.surface
+
+    /** What is painted on [characterSurface]; null without one. */
+    val surfacePaint: Node<*, HeldPaint> get() = oneSurface.paint
+
     /**
-     * Every part's surface work as positions in body space, through [assembly]'s placement. Made with the session, so
-     * [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending.
+     * Every part's surface work as positions in body space, through [assembly]'s placement, landed on the one surface's field on a
+     * character built as one. Made with the session, so [Graph.settled] covers it from the start. Its `output` keeps the last result
+     * while a newer run is pending.
      */
-    val bodySurfaceWork: Node<*, BodySurfaceWork> = graph.bodySurfaceWorkNode(
-        document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
-        assembly,
-        ::surfaceWork,
+    val bodySurfaceWork: Node<*, BodySurfaceWork> = graph.fieldWorkNode(
+        graph.bodySurfaceWorkNode(
+            document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
+            assembly,
+            ::surfaceWork,
+        ),
+        oneSurface.mesh,
     )
 
     /**
@@ -167,7 +187,7 @@ class CharacterSession(
      */
     val posedBody: Node<*, AssembledCharacter> = graph.posedBodyNode(assembly, pose)
 
-    private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork)
+    private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork, oneSurface.posed)
 
     /** [bodySurfaceWork] resolved on [posedBody]'s grids: its own result while the pose leaves every part at rest. */
     val posedSurfaceWork: Node<*, BodySurfaceWork> = graph.follow(posedState, cacheSize = 1) { it.work }
@@ -246,10 +266,13 @@ class CharacterSession(
     fun surfaceWork(part: PartId): Node<*, ResolvedSurfaceWork> =
         works.getOrPut(part) { graph.partSurfaceWorkNode(document, part, ::surface) }
 
-    /** [part]'s color shapes, cut to the surfaces they land on; one per part for the session's life. */
-    fun heldColor(part: PartId): Node<*, HeldColor> = colors.getOrPut(part) {
-        graph.partColorNode(partColorInputs(document, part, templates), part, surfaceWork(part), colorDetail, ::surface)
+    /** [part]'s color shapes where they land, before they are cut; one per part for the session's life. */
+    fun heldShapes(part: PartId): Node<*, HeldShapes> = shapes.getOrPut(part) {
+        graph.partShapesNode(partColorInputs(document, part, templates), part, surfaceWork(part), colorDetail, ::surface)
     }
+
+    /** [part]'s color shapes, cut to the surfaces they land on; one per part for the session's life. */
+    fun heldColor(part: PartId): Node<*, HeldColor> = colors.getOrPut(part) { graph.partColorNode(heldShapes(part)) }
 
     private fun defaultSurface(template: TemplateRef, mirrored: Boolean): Node<*, PartSurface> =
         defaults.getOrPut(template to mirrored) { graph.defaultSurfaceNode(

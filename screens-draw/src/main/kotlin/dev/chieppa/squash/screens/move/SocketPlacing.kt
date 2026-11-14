@@ -10,6 +10,7 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.surfaceHit
+import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.stretch.frame.OverlayBuilder
 import kotlin.math.PI
 import kotlin.math.cos
@@ -31,9 +32,12 @@ private const val CIRCLE_STEPS = 32
 /** Where a press of Add socket would place a socket: on [part] at [u] and [v], the press on the body's right when [onRight]. */
 class SocketPlace(val part: PlacedPart, val u: Float, val v: Float, val onRight: Boolean)
 
-/** The place on the surface of a part of [character] showing at [pixel] that a socket would take, or null where none shows. */
-fun socketPlaceAt(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, handles: HandleView): SocketPlace? {
-    val hit = surfaceHit(character, pixel, sight) ?: return null
+/**
+ * The place on the surface of a part of [character] showing at [pixel] that a socket would take, or null where none shows; on its
+ * one [surface] where it has one.
+ */
+fun socketPlaceAt(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, handles: HandleView, surface: CharacterSurface? = null): SocketPlace? {
+    val hit = surfaceHit(character, pixel, sight, surface = surface) ?: return null
     val part = character.part(hit.part) ?: return null
     val place = if (hit.patch == BODY_PATCH) SurfacePlace(hit.u, hit.v) else surfaceUnder(part, pixel, handles) ?: return null
     val at = part.pointOn(place.u, place.v) ?: return null

@@ -106,6 +106,8 @@ data class PartTemplate(
     val grain: GrainSpec = GrainSpec(),
     @Doc("Present on a generic template, whose parts choose their own section, views, rings and segments.")
     val generic: GenericSpec? = null,
+    @Doc("On a character built as one surface: in the character's field, or thin or hard and built as its own mesh sitting on the body.")
+    val surface: SurfaceMethod = SurfaceMethod.FIELD,
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)

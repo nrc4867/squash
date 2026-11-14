@@ -77,7 +77,8 @@ internal fun AppState.pickFeature(character: Character, holder: PartId, feature:
 
 /**
  * The Face inspector, on the head whatever is selected: Eyes or Mouth, which eye an eye's work writes, the feature's controls, its roles as layers in
- * draw order with what each holds, and for the eyes the gaze. A head with no eyes or no mouth offers to add them.
+ * draw order with what each holds, and for the eyes the gaze. A head with no eyes or no mouth offers to add them. On a character built as one
+ * surface the eyes are its painted eyes (see [PaintedEyeSection]).
  */
 @Composable
 fun FaceSection(state: AppState, session: CharacterSession) {
@@ -90,9 +91,11 @@ fun FaceSection(state: AppState, session: CharacterSession) {
     val mouth = groups.firstOrNull { it.isMouth }
     val eyesName = stringResource(Res.string.face_eyes)
     val mouthName = stringResource(Res.string.face_mouth)
+    val painted = character.oneSurface && face.feature == FaceFeature.EYES
     DrawerSection(divider = false) {
         Segmented(FaceFeature.entries, face.feature, { state.pickFeature(character, holder, it) }, { if (it == FaceFeature.EYES) eyesName else mouthName }, Modifier.testTag(FaceTags.FEATURE), fill = true)
         when {
+            painted -> Unit
             face.feature == FaceFeature.EYES && eyes.isEmpty() ->
                 Button(stringResource(Res.string.face_new_eyes), {
                     val at = character.part(holder)?.let { eyeLandmark(session.builtTemplate(it)) }
@@ -107,6 +110,7 @@ fun FaceSection(state: AppState, session: CharacterSession) {
             face.feature == FaceFeature.EYES && eyes.size > 1 -> WhichEyeControl(state, holder, eyes)
         }
     }
+    if (painted) return PaintedEyeSection(state, session, character, holder)
     val picked = face.group?.takeIf { it.part == holder } ?: return
     val group = character.groupOf(picked) ?: return
     if (group.isEye) EyeControls(state, session, picked, group, eyes) else MouthControls(session, picked, group)

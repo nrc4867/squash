@@ -4,7 +4,11 @@ import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.screens.dragon.dragonDocument
+import dev.chieppa.squash.screens.fennec.FENNEC_POSES
 import dev.chieppa.squash.screens.fennec.fennecDocument
+import dev.chieppa.squash.screens.fennec.fennecOneSurfaceDocument
+import dev.chieppa.squash.screens.fennec.fennecOneSurfaceDressedDocument
+import dev.chieppa.squash.screens.fennec.fennecOneSurfaceRoundDocument
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
 import dev.chieppa.squash.screens.fennec.fennecWingedDocument
 import dev.chieppa.squash.screens.koi.koiDocument
@@ -24,6 +28,9 @@ import java.io.File
 private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "dragon" to ::dragonDocument,
     "fennec" to ::fennecDocument,
+    "fennec-one-surface" to ::fennecOneSurfaceDocument,
+    "fennec-one-surface-dressed" to ::fennecOneSurfaceDressedDocument,
+    "fennec-one-surface-round" to ::fennecOneSurfaceRoundDocument,
     "fennec-dressed" to ::fennecDressedDocument,
     "fennec-winged" to ::fennecWingedDocument,
     "koi" to ::koiDocument,
@@ -39,6 +46,10 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
 
 /** The poses an example is looked at in besides rest, by name. */
 private val POSES: Map<String, Map<String, Pose>> = mapOf(
+    "fennec" to FENNEC_POSES,
+    "fennec-one-surface" to FENNEC_POSES,
+    "fennec-one-surface-dressed" to FENNEC_POSES,
+    "fennec-dressed" to FENNEC_POSES,
     "woman" to WOMAN_POSES,
     "woman-dressed" to WOMAN_POSES,
     "woman-twin" to TWIN_POSES,

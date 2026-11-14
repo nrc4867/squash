@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.readDocument
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -22,18 +23,27 @@ val shippedLibrary: TemplateLibrary by lazy { TemplateFolder.shipped().let { Tem
 /** The example fennec, as saved under examples/. */
 fun savedFennec(): SquashDocument = readDocument(Path.of(System.getProperty("squash.examples"), "fennec.json").readText())
 
+/** The example fennec built as its parts' own meshes, for the systems only a character built that way has. */
+fun savedFennecAsParts(): SquashDocument = SetOneSurface(false).apply(savedFennec()).document
+
 /** The fennec assembled and rigged by a session's graph once it has settled. */
 class RiggedFennec(val assembled: AssembledCharacter, val rig: Rig)
 
 @OptIn(ExperimentalCoroutinesApi::class)
-val fennec: RiggedFennec by lazy {
+val fennec: RiggedFennec by lazy { rigged(savedFennec()) }
+
+/** The fennec built as its parts' own meshes, assembled and rigged. */
+val fennecAsParts: RiggedFennec by lazy { rigged(savedFennecAsParts()) }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun rigged(document: SquashDocument): RiggedFennec {
     var rigged: RiggedFennec? = null
     runTest {
-        val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(document, shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val node = SessionRig(session).rig
         runCurrent()
         check(session.graph.settled.value) { "The fennec's graph did not settle" }
         rigged = RiggedFennec(checkNotNull(session.assembly.output.value), checkNotNull(node.output.value))
     }
-    checkNotNull(rigged)
+    return checkNotNull(rigged)
 }

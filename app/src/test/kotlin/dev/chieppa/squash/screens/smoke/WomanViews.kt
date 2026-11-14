@@ -29,14 +29,7 @@ private val AROUND = listOf(0f, 40f, 90f)
 class WomanViews(private val work: TestWork, private val errors: MutableList<String>, private val images: File = SMOKE_IMAGES) {
     private fun CharacterSession.posedState(): CharacterState {
         work.settle(this)
-        return CharacterState(
-            assertNotNull(posedBody.output.value),
-            assertNotNull(bodyColor.output.value),
-            assertNotNull(posedSurfaceWork.output.value),
-            document.value.character.palette,
-            assertNotNull(posedLines.output.value),
-            fur = FurView.EMPTY,
-        )
+        return shownState()
     }
 
     /**

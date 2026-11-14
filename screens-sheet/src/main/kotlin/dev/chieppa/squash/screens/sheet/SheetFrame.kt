@@ -90,7 +90,8 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val toCamera = Vec3(eye.x, eye.y, eye.z) - selection.box.center
         val sight = FullView({ camera }, rect.width, rect.height)
         input.rig?.let { rig ->
-            val draws = listOf(fullGround(selection, look)) + placed.map { look.rigDraw(it, rig, look.fullOutline, selection.posed) }
+            val draws = listOf(fullGround(selection, look)) + placed.mapNotNull { look.rigDraw(it, rig, look.fullOutline, selection.posed) } +
+                look.rigSurfaceDraws(rig, look.fullOutline, selection.posed != null)
             return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws)
         }
         val posed = selection.posed
@@ -98,7 +99,8 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         val outline = if (surface != null) 0f else look.fullOutline
         val shownPlanned = if (posed != null) emptyList() else planned
         val draws = listOf(fullGround(selection, look)) +
-            placed.map { look.colored(it, input.color, toCamera, outline, posed = posed.of(it)).withFace(it, surface, sight) } +
+            placed.mapNotNull { look.colored(it, input.color, toCamera, outline, posed = posed.of(it))?.withFace(it, surface, sight) } +
+            look.surfaceDraws(input.color, toCamera, posed != null) +
             shownPlanned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
         val ribbons = surface?.figure(sight) ?: look.borderRibbons(input.color)
         val fur = look.furDraws(input.fullFur, input.color, toCamera, selection)
@@ -133,11 +135,14 @@ internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection
     lockedGround(body, basis, selection, look)?.let(::add)
     val outline = if (ribbons) 0f else look.lockedOutline
     if (hints.whole) {
-        selection.whole.filter { !it.planned }.forEach { add(faced(it to look.colored(it, color, basis.back, outline, posed = posed.of(it)))) }
+        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, color, basis.back, outline, posed = posed.of(part))?.let { add(faced(part to it)) } }
+        addAll(look.surfaceDraws(color, basis.back, posed != null))
         return@buildList
     }
     addAll(ghosts(selection, basis, look, hints, color, posed))
-    if (view in selection.outlines) add(faced(selection.part to look.colored(selection.part, color, basis.back, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))))
+    if (view !in selection.outlines) return@buildList
+    look.colored(selection.part, color, basis.back, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(faced(selection.part to it)) }
+    if (color.holds(selection.part)) addAll(look.surfaceDraws(color, basis.back, posed != null, layer = DepthLayer.FRONT, only = selection.part.id))
 }
 
 /** The lines through a locked [camera] on [view]: the whole figure's when [hints] show it whole, else the selection's once it is drawn in that view. */
@@ -158,16 +163,17 @@ internal fun MeshDraw.withFace(part: SheetPart, surface: SurfaceRibbons?, view: 
 private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints, color: PaneColor?, posed: Map<PartId, RenderMesh>?): List<MeshDraw> {
     val strength = hints.ghost
     if (strength <= 0f) return emptyList()
-    return selection.others
+    return look.surfaceDraws(color, basis.back, posed != null, look.ghostOutline, strength) + selection.others
         .filter { posed == null || !it.planned }
         .sortedBy { it.center dot basis.back }
-        .map { look.colored(it, color, basis.back, look.ghostOutline, strength, posed = posed.of(it)) }
+        .mapNotNull { look.colored(it, color, basis.back, look.ghostOutline, strength, posed = posed.of(it)) }
 }
 
 /** What a locked camera from [basis] in the pane of [body] draws as the Rig stage shows it: the ground and every placed part in [rig]'s colors, posed. */
 internal fun rigDraws(body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, rig: RigShading): List<MeshDraw> =
     listOfNotNull(lockedGround(body, basis, selection, look)) +
-        (selection.others + selection.part).filter { !it.planned }.map { look.rigDraw(it, rig, look.lockedOutline, selection.posed) }
+        (selection.others + selection.part).filter { !it.planned }.mapNotNull { look.rigDraw(it, rig, look.lockedOutline, selection.posed) } +
+        look.rigSurfaceDraws(rig, look.lockedOutline, selection.posed != null)
 
 /**
  * The ground as an ellipse behind the character, in a pane that looks along it: the disc under the character as [basis] sees

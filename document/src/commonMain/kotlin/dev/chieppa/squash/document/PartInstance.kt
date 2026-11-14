@@ -16,6 +16,8 @@ enum class Side {
  * and [Character.overridesOf] are how anything reads them. [side] outlasts a broken pair, since the part still sits on that side.
  * [role] is what the part is to the body, which both sides of a pair share; [roleGuessed] says it was guessed and not yet confirmed.
  * [garment] is the garment that owns the part, which builds only while that garment is worn, or null for a part of the body.
+ * [blend] is the radius, in body units, of the smooth union where the part meets the part its [socket] is on when the character is built
+ * as one surface; null takes the part's own default.
  * See HLD: data-model, Mirroring is shared data plus overrides, Roles, and Garments.
  */
 @Serializable
@@ -30,6 +32,7 @@ data class PartInstance(
     val role: Role? = null,
     val roleGuessed: Boolean = false,
     val garment: GarmentId? = null,
+    val blend: Float? = null,
 ) {
     init {
         if (pair == null) {

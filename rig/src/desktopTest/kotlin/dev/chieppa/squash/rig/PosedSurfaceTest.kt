@@ -43,7 +43,7 @@ class PosedSurfaceTest {
     private val kneeBent = Pose(listOf(BonePose(leg, "knee", 70f)))
 
     private fun TestScope.posedSession(): Pair<CharacterSession, SessionPose> {
-        val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(savedFennecAsParts(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val pose = SessionPose(session)
         listOf(leg, PartId("back-paw-l")).forEach { session.send(SetParameter(it, JoinParams.INK, 1f)) }
         runCurrent()

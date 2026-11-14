@@ -178,3 +178,13 @@ private class LineWeighing(character: AssembledCharacter, private val work: Body
 
     fun markWeights(part: PartId): Map<MarkId, List<Float>> = work.parts[part]?.marks.orEmpty().associate { it.id to weigh(it.points) }
 }
+
+/** Every line weight [work] holds on [character], each anchor's stretch on the part it names, acting by distance in space. */
+fun lineWeightStrokes(character: AssembledCharacter, work: BodySurfaceWork): List<WeightStroke> = work.parts.values.flatMap { held ->
+    held.lineWeights.flatMap { weight ->
+        weight.points.groupBy { it.anchor.part }.mapNotNull { (part, points) ->
+            val length = character.part(part)?.surface?.axisLength ?: return@mapNotNull null
+            WeightStroke(points.map { it.position }, weight.radius * length, weight.amount)
+        }
+    }
+}

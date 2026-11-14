@@ -22,7 +22,8 @@ fun placeSurfaceWork(
     return BodySurfaceWork(parts.mapValues { (_, work) -> checkCancelled(); work.placedBy(moved) })
 }
 
-private fun ResolvedSurfaceWork.placedBy(point: (ResolvedPoint) -> ResolvedPoint?): ResolvedSurfaceWork {
+/** This work with each point moved by [point], one it gives null for dropping as a dangling anchor does. */
+fun ResolvedSurfaceWork.placedBy(point: (ResolvedPoint) -> ResolvedPoint?): ResolvedSurfaceWork {
     val placedMarks = marks.mapNotNull { it.placedBy(point) }
     val kept = placedMarks.mapTo(hashSetOf()) { it.id }
     return ResolvedSurfaceWork(

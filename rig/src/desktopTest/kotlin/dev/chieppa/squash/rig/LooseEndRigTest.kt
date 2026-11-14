@@ -42,7 +42,7 @@ class LooseEndRigTest {
     private val end = looseEndPartId(scarf, endId)
 
     private fun TestScope.scarfed(): Pair<CharacterSession, SessionPose> {
-        val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(savedFennecAsParts(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val pose = SessionPose(session)
         val slot = GarmentSlot(GarmentSlotId("neck"), "Neck")
         val garment = Garment(

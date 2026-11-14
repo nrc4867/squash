@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.surface.surfaceCovers
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
@@ -30,13 +31,13 @@ fun Graph.bodyFurNode(
     val placed = follow<AssembledCharacter, FurSource>(assembly, stage = BuildStages.SURFACE_WORK) { FurSource.Placed(it) }
     val resolved = follow<BodySurfaceWork, FurSource>(work, stage = BuildStages.SURFACE_WORK) { FurSource.Work(it) }
     return gather(
-        document.map { furInputs(it.character, templates) }.distinctUntilChanged(),
+        document.map { furInputs(it.character, templates) to surfaceCovers(it.character) }.distinctUntilChanged(),
         sourcesOf = { mapOf(FurKey.PLACED to placed, FurKey.WORK to resolved) },
         stage = BuildStages.SURFACE_WORK,
     ) { (inputs, sources) ->
         val character = (sources.getValue(FurKey.PLACED) as FurSource.Placed).character
         val held = (sources.getValue(FurKey.WORK) as FurSource.Work).work
-        bodyFur(inputs, held, character, cancellationCheck())
+        bodyFur(inputs.first, held, character, cancellationCheck(), inputs.second)
     }
 }
 

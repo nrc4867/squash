@@ -5,7 +5,6 @@ import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.GarmentId
-import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
@@ -31,21 +30,6 @@ private const val MIDDLE_SAMPLES = 16
 
 /** How far either side of a place, in u, the surface is read for which way the part runs there. */
 private const val TANGENT_STEP = 0.01f
-
-/** What placing a part reads of it from the document. */
-data class AssemblyPart(
-    val id: PartId,
-    val template: TemplateRef,
-    val socket: SocketRef?,
-    val pair: PairId?,
-    val side: Side?,
-    val placement: Map<String, Float> = emptyMap(),
-    val role: Role? = null,
-    /** Where the garments worn put its children's sockets on it as it shows, by the same keys as [placement], when they move any. */
-    val wornSockets: Map<String, Float> = emptyMap(),
-    /** The garment that owns it, or null for a part of the body. */
-    val owner: GarmentId? = null,
-)
 
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
 class PlacedPart(
@@ -78,6 +62,8 @@ class PlacedPart(
     val strips: List<StripJoin> = emptyList(),
     /** The garment that owns it, a part of its own on a socket, or null for a part of the body and for a garment's branch. */
     val owner: GarmentId? = null,
+    /** The blend of the join at its socket the document holds, or null for its default. */
+    val blend: Float? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -117,7 +103,7 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
     fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding, strips: List<StripJoin> = this.strips): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips, owner)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips, owner, blend)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */
@@ -201,7 +187,7 @@ private class Assembler(
         val owned = part.owner != null
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side, owned) else Vec3.ZERO
         val anchor = if (spec != null && parent != null) socketPoint(parent, spec, socketV(parent, spec, part.side), part.side, owned) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner)
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner, blend = part.blend)
     }
 
     /**

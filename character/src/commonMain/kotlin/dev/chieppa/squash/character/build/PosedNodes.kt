@@ -1,5 +1,8 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.surface.HeldPosedSurface
+import dev.chieppa.squash.character.surface.PosedSurface
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.graph.Graph
@@ -8,6 +11,7 @@ import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -23,7 +27,7 @@ fun Graph.held(node: Node<*, out Any>): Node<*, Held> {
     return follow(node as Node<*, Any>, cacheSize = 1) { Held(it) }
 }
 
-private enum class PosedKey { REST, POSE, SHOWN, REST_WORK, STATE, REST_HELD }
+private enum class PosedKey { REST, POSE, SHOWN, REST_WORK, STATE, REST_HELD, SURFACE }
 
 /**
  * The character in a pose with its surface work resolved there: [body] is [rest] in the pose and [work] is [restWork] on [body]'s
@@ -69,13 +73,16 @@ fun Graph.posedStateNode(
     assembly: Node<*, AssembledCharacter>,
     body: Node<*, AssembledCharacter>,
     restWork: Node<*, BodySurfaceWork>,
+    surface: StateFlow<Node<*, HeldPosedSurface>?> = MutableStateFlow(null),
 ): Node<*, PosedState> {
     val sources = mapOf(PosedKey.REST to held(assembly), PosedKey.SHOWN to held(body), PosedKey.REST_WORK to held(restWork))
+    val surfaces = HashMap<Node<*, HeldPosedSurface>, Node<*, Held>>()
+    val inputs = document.map { doc -> doc.character.parts.associate { it.id to surfaceWorkInput(doc.character, it.id) } }.distinctUntilChanged()
     return gather(
-        document.map { doc -> doc.character.parts.associate { it.id to surfaceWorkInput(doc.character, it.id) } }.distinctUntilChanged().map(::Held),
-        sourcesOf = { sources },
+        combine(inputs, surface) { byPart, posed -> Held(byPart) to posed },
+        sourcesOf = { (_, posed) -> posed?.let { sources + (PosedKey.SURFACE to surfaces.getOrPut(it) { held(it) }) } ?: sources },
         cacheSize = POSED_CACHE,
-    ) { (inputs, held) ->
+    ) { (input, held) ->
         val rest = held.getValue(PosedKey.REST).value as AssembledCharacter
         val shown = held.getValue(PosedKey.SHOWN).value as AssembledCharacter
         val work = held.getValue(PosedKey.REST_WORK).value as BodySurfaceWork
@@ -83,11 +90,48 @@ fun Graph.posedStateNode(
             PosedState(rest, rest, work, work)
         } else {
             @Suppress("UNCHECKED_CAST")
-            val byPart = inputs.value as Map<PartId, SurfaceWorkInput>
-            PosedState(rest, shown, work, posedSurfaceWork(work, byPart, shown, shown.carriedFrom(rest), cancellationCheck()))
+            val byPart = input.first.value as Map<PartId, SurfaceWorkInput>
+            val posed = posedSurfaceWork(work, byPart, shown, shown.carriedFrom(rest), cancellationCheck())
+            val carry = ((held[PosedKey.SURFACE]?.value as HeldPosedSurface?)?.posed)?.let { carriedOn(it, work) }
+            PosedState(rest, shown, work, carry?.let { posed.withCarried(it, work) } ?: posed)
         }
     }
 }
+
+/**
+ * Where [posed], a one surface in a pose, carries each point of [work] at rest that lies on one of its runs, by the point's anchor; null
+ * while the pose leaves the surface at rest.
+ */
+private fun carriedOn(posed: PosedSurface, work: BodySurfaceWork): Map<Anchor, ResolvedPoint>? {
+    val carry = posed.carry ?: return null
+    val runs = posed.surface.field.runs.mapTo(HashSet()) { it.partId to it.patch.name }
+    val out = HashMap<Anchor, ResolvedPoint>()
+    work.parts.values.forEach { held ->
+        held.placedBy { point ->
+            if (point.anchor.part to point.anchor.patch in runs && point.anchor !in out) out[point.anchor] = carry(point)
+            point
+        }
+    }
+    return out
+}
+
+/**
+ * This work with each point [carried] holds by its anchor taken from there; a part none of whose points it moves keeps its work as the
+ * same object, as a part the pose leaves at rest does.
+ */
+private fun BodySurfaceWork.withCarried(carried: Map<Anchor, ResolvedPoint>, rest: BodySurfaceWork): BodySurfaceWork =
+    BodySurfaceWork(parts.mapValues { (id, held) ->
+        val atRest = rest.parts[id]
+        val restPoints = HashMap<Anchor, ResolvedPoint>()
+        atRest?.placedBy { point -> point.also { restPoints[it.anchor] = it } }
+        var moved = held !== atRest
+        val shown = held.placedBy { point ->
+            val to = carried[point.anchor] ?: return@placedBy point.also { if (restPoints[it.anchor] != it) moved = true }
+            if (restPoints[point.anchor] != to) moved = true
+            to
+        }
+        if (moved || atRest == null) shown else atRest
+    })
 
 /** A node following [state] and [rest], what is held at rest of the kind it derives: [rest]'s own result while [state] is at rest. */
 private fun <O : Any> Graph.posedFrom(

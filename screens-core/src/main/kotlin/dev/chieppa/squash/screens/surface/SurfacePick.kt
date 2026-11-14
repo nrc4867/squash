@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.surface
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.isRun
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
@@ -19,15 +21,22 @@ private const val EDGE_STEPS = 6
 
 /**
  * The nearest place on any placed part of the body of [character] showing at [pixel], or null where none does; garments are passed
- * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds.
+ * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds. With [surface], the
+ * character's one surface, the runs of the parts it holds are found on it, and only their other patches on the parts' own meshes.
  */
-fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, garments: Boolean = false): SurfaceHit? {
+fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, garments: Boolean = false, surface: CharacterSurface? = null): SurfaceHit? {
     var best: SurfaceHit? = null
     var nearest = Float.POSITIVE_INFINITY
+    if (surface != null) SurfaceMeshPick(surface, sight).hit(pixel)?.let { (hit, depth) ->
+        best = hit
+        nearest = depth
+    }
+    val inSurface = surface?.parts.orEmpty()
     for (part in character.parts) {
         val id = part.id ?: continue
         if (part.covering != null && !garments) continue
         for (patch in part.surface.patches) {
+            if (id in inSurface && isRun(patch)) continue
             hitOn(part, id, patch, pixel, sight, nearest)?.let { (hit, depth) ->
                 best = hit
                 nearest = depth
@@ -41,13 +50,15 @@ fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView,
  * The place on [character] showing at [pixel], or, where none does, the one showing nearest it within [reach] body units on screen. It is found along
  * the line from [pixel] to the closest of the surface's points, so it lies on what the viewer sees of the surface.
  */
-fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, reach: Float): SurfaceHit? {
-    surfaceHit(character, pixel, sight)?.let { return it }
-    var closest: Offset? = null
-    var nearest = Float.POSITIVE_INFINITY
+fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, reach: Float, surface: CharacterSurface? = null): SurfaceHit? {
+    surfaceHit(character, pixel, sight, surface = surface)?.let { return it }
+    var closest: Offset? = surface?.let { SurfaceMeshPick(it, sight).nearestShown(pixel) { point -> reach * sight.pixelsPerUnitAt(point) } }
+    var nearest = closest?.let { (it - pixel).getDistance() } ?: Float.POSITIVE_INFINITY
+    val inSurface = surface?.parts.orEmpty()
     for (part in character.parts) {
         if (part.id == null || part.covering != null) continue
         for (patch in part.surface.patches) {
+            if (part.id in inSurface && isRun(patch)) continue
             for (index in 0 until patch.nu * patch.nv) {
                 val point = part.origin + part.surface.shown(patch.point(index))
                 val shown = sight.toPixel(point) ?: continue
@@ -60,11 +71,11 @@ fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: Surfac
         }
     }
     var inside = closest ?: return null
-    var hit = surfaceHit(character, inside, sight)
+    var hit = surfaceHit(character, inside, sight, surface = surface)
     var outside = pixel
     repeat(EDGE_STEPS) {
         val middle = (inside + outside) / 2f
-        val there = surfaceHit(character, middle, sight)
+        val there = surfaceHit(character, middle, sight, surface = surface)
         if (there != null) {
             hit = there
             inside = middle

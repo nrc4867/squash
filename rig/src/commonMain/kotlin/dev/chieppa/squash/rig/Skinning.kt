@@ -107,30 +107,10 @@ private fun RigPart.skinnedBy(transforms: List<Affine>, twists: List<BoneTwist?>
         val at = v * RenderMesh.FLOATS_PER_VERTEX
         val normal = vertices.vec(at + RenderMesh.NORMAL_OFFSET_FLOATS)
         val proxy = vertices.vec(at + RenderMesh.PROXY_OFFSET_FLOATS)
-        var moved = Vec3.ZERO
-        var turned = Vec3.ZERO
-        var turnedProxy = Vec3.ZERO
-        var total = 0f
-        for (slot in 0 until MAX_INFLUENCES) {
-            val bone = weights.bones[v * MAX_INFLUENCES + slot]
-            if (bone < 0) continue
-            val w = weights.weights[v * MAX_INFLUENCES + slot]
-            val transform = transforms[bone]
-            val twist = twists[bone]
-            val back = twist?.backOf(point)
-            if (twist != null && back != null) {
-                moved += transform(twist.pivot + back * (point - twist.pivot)) * w
-                turned += transform.normals * (back * normal) * w
-                turnedProxy += transform.normals * (back * proxy) * w
-            } else {
-                moved += transform(point) * w
-                turned += transform.normals * normal * w
-                turnedProxy += transform.normals * proxy * w
-            }
-            total += w
-        }
-        if (total <= 0f) continue
-        val posed = moved * (1f / total)
+        val blended = blendVertex(point, normal, proxy, weights.bones, weights.weights, v * MAX_INFLUENCES, transforms, twists) ?: continue
+        val posed = blended.position
+        val turned = blended.normal
+        val turnedProxy = blended.proxy
         positions[v * 3] = posed.x
         positions[v * 3 + 1] = posed.y
         positions[v * 3 + 2] = posed.z
@@ -141,13 +121,56 @@ private fun RigPart.skinnedBy(transforms: List<Affine>, twists: List<BoneTwist?>
     return Skinned(positions, RenderMesh(vertices, mesh.indices))
 }
 
+/** A vertex skinned: where it goes, and its normal and shading normal turned, neither yet made unit. */
+internal class BlendedVertex(val position: Vec3, val normal: Vec3, val proxy: Vec3)
+
+/**
+ * [point] with its [normal] and [proxy] skinned by the [MAX_INFLUENCES] bones and weights from [at] in [bones] and [weights], under
+ * [transforms] and [twists]; null when it follows no bone.
+ */
+internal fun blendVertex(
+    point: Vec3,
+    normal: Vec3,
+    proxy: Vec3,
+    bones: IntArray,
+    weights: FloatArray,
+    at: Int,
+    transforms: List<Affine>,
+    twists: List<BoneTwist?>,
+): BlendedVertex? {
+    var moved = Vec3.ZERO
+    var turned = Vec3.ZERO
+    var turnedProxy = Vec3.ZERO
+    var total = 0f
+    for (slot in 0 until MAX_INFLUENCES) {
+        val bone = bones[at + slot]
+        if (bone < 0) continue
+        val w = weights[at + slot]
+        val transform = transforms[bone]
+        val twist = twists[bone]
+        val back = twist?.backOf(point)
+        if (twist != null && back != null) {
+            moved += transform(twist.pivot + back * (point - twist.pivot)) * w
+            turned += transform.normals * (back * normal) * w
+            turnedProxy += transform.normals * (back * proxy) * w
+        } else {
+            moved += transform(point) * w
+            turned += transform.normals * normal * w
+            turnedProxy += transform.normals * proxy * w
+        }
+        total += w
+    }
+    if (total <= 0f) return null
+    return BlendedVertex(moved * (1f / total), turned, turnedProxy)
+}
+
 private const val MIN_NORMAL_LENGTH = 1e-9f
 
-private fun Vec3.unitOr(fallback: Vec3): Vec3 = if (length > MIN_NORMAL_LENGTH) normalized() else fallback
+internal fun Vec3.unitOr(fallback: Vec3): Vec3 = if (length > MIN_NORMAL_LENGTH) normalized() else fallback
 
-private fun FloatArray.vec(at: Int) = Vec3(this[at], this[at + 1], this[at + 2])
+internal fun FloatArray.vec(at: Int) = Vec3(this[at], this[at + 1], this[at + 2])
 
-private fun FloatArray.put(at: Int, value: Vec3) {
+internal fun FloatArray.put(at: Int, value: Vec3) {
     this[at] = value.x
     this[at + 1] = value.y
     this[at + 2] = value.z

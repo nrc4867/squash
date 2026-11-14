@@ -98,6 +98,7 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
         DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
             RoleRow(state, open, character, part)
             TemplateRow(state, part.id, template)
+            key(part.id) { SocketBlendRow(open, part, template) }
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }
     }

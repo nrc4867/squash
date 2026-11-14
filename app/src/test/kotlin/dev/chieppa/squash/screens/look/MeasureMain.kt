@@ -13,6 +13,10 @@ import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.screens.look.measure.SurfaceChecks
+import dev.chieppa.squash.screens.look.measure.SurfaceStackTimings
+import dev.chieppa.squash.screens.look.measure.SurfaceEdit
 import dev.chieppa.squash.screens.look.measure.armDepthInside
 import dev.chieppa.squash.screens.look.measure.armInside
 import dev.chieppa.squash.screens.look.measure.bareSkin
@@ -65,7 +69,12 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
         val rest = checkNotNull(session.assembly.output.value)
         println("$name: arm volume inside the torso at rest ${armInside(rest).format()}")
         legOutsideSkirt(rest).takeIf { it.isNotEmpty() }?.let { println("$name: leg volume outside the skirt at rest ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(rest)}") }
+        if (look.stackOnly) {
+            if (outfit == outfits.first()) stack(name, session, work, look)
+            continue
+        }
         report(name, shown, head?.let(shown::part), dressed = outfit != null)
+        if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { oneSurface(name, session, work, it, look.profile) }
         if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }
         if (outfit != outfits.first()) continue
         for ((pose, set) in poses) {
@@ -92,6 +101,38 @@ private fun pushTime(body: AssembledCharacter): Double {
 }
 
 private const val TIMED_RUNS = 21
+
+/**
+ * The one surface's checks, and its build timed whole and after the head, a front leg and the torso are each made 2% larger and back;
+ * with `profile=true`, where the time of a whole build and of each edit goes.
+ */
+private fun oneSurface(name: String, session: CharacterSession, work: TestWork, surface: CharacterSurface, profile: Boolean) {
+    val checks = SurfaceChecks(session, work)
+    checks.report(name, surface, VIEWS.map { it.first to probeAzimuth(it.second) })
+    val edits = surfaceEdits(session)
+    if (profile) checks.profile(name, edits)
+    checks.timings(name, edits, coarse = setOf("torso"))
+    checks.close()
+    SurfaceStackTimings(session, work).also { it.report(name, edits, coarse = setOf("torso"), profile) }.close()
+}
+
+/** The one surface's stack timed alone, over the edits [look] names, stage by stage when it asks for a profile. */
+private fun stack(name: String, session: CharacterSession, work: TestWork, look: LookArgs) {
+    val edits = surfaceEdits(session).filter { look.edits == null || it.label in look.edits }
+    if (look.profile) SurfaceChecks(session, work).also { it.profile(name, edits) }.close()
+    SurfaceStackTimings(session, work).also { it.report(name, edits, coarse = setOf("torso"), look.profile, look.record) }.close()
+}
+
+/** The edits timed: the head, a front leg and the torso each made 2% larger and back. */
+private fun surfaceEdits(session: CharacterSession): List<SurfaceEdit> {
+    val character = session.document.value.character
+    return listOf("head" to "size", "front-leg-l" to "size", "torso" to "size").mapNotNull { (id, parameter) ->
+        character.part(PartId(id))?.let { instance ->
+            val rest = character.resolved(instance).params[parameter] ?: checkNotNull(session.builtTemplate(instance).defaults[parameter])
+            SurfaceEdit(id, instance.id, parameter, rest)
+        }
+    }
+}
 
 private fun posed(session: CharacterSession, work: TestWork): AssembledCharacter {
     work.settle(session)

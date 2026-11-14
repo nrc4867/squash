@@ -4,16 +4,21 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetParameter
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.look.LookArgs.Companion.ANCHORS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FACE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FEET
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FOOT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
+import dev.chieppa.squash.screens.look.LookArgs.Companion.DRAG
+import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
+import dev.chieppa.squash.screens.look.LookArgs.Companion.SURFACE
 import dev.chieppa.squash.screens.smoke.CloseUps
 import dev.chieppa.squash.screens.smoke.WomanViews
 import dev.chieppa.squash.screens.look.shots.ReferenceShot
@@ -48,6 +53,7 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
         val sessionPose = SessionPose(session)
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+        if (look.asParts) session.send(SetOneSurface(false))
         work.settle(session)
         if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
         val views = WomanViews(work, errors, folder)
@@ -79,6 +85,14 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
             }
             if (FACE in look.close) parts.head?.let { views.keep(session, "$name-face", parts.faceFramed(it), FACE_AZIMUTHS, FACE_TILE, FACE_TILE) }
             if (FOOT in look.close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
+            if (JOINS in look.close) {
+                parts.head?.let { closeUps.keepAround(session, it, "$name-neck") }
+                parts.arm?.let { closeUps.keepAround(session, it, "$name-shoulder") }
+                parts.leg?.let { closeUps.keepAround(session, it, "$name-hip") }
+            }
+            if (SURFACE in look.close) OneSurfaceLook(work, errors, folder).keepAll(session, name)
+            if (ANCHORS in look.close) AnchorsLook(work, errors, folder).keep(session, name)
+            if (DRAG in look.close) session.document.value.character.parts.firstOrNull { it.socket == null }?.let { OneSurfaceLook(work, errors, folder).keepDrag(session, name, it.id) }
             for ((pose, set) in poses) {
                 session.send(SetPose(set))
                 views.keep(session, "$name-pose-$pose")

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.shell.Stage
 
@@ -28,3 +29,11 @@ fun AppState.posesAnyPane(): Boolean = posesPane(stage.value, poseView.value, lo
 /** The open character as the pane [sight] looks through shows it: in its pose where [showsPose], else at rest. */
 fun AppState.bodyThrough(sight: SurfaceView): AssembledCharacter? =
     session.value?.let { if (showsPose(sight)) it.posedBody else it.assembly }?.output?.value
+
+/** The open character's one surface as the pane [sight] looks through shows it, posed where [showsPose]; null for a character without one. */
+fun AppState.surfaceThrough(sight: SurfaceView): CharacterSurface? {
+    val open = session.value ?: return null
+    val rest = open.characterSurface.output.value?.surface ?: return null
+    if (!showsPose(sight)) return rest
+    return open.oneSurface.posed.value?.output?.value?.posed?.surface ?: rest
+}

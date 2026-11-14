@@ -52,6 +52,7 @@ object ShellTags {
     const val STATUS_END = "status.end"
     const val STATUS_STAGE = "status.stage"
     const val PART_EMPTY = "part.empty"
+    const val SOCKET_BLEND = "part.socket-blend"
     const val ROLE_CHIP = "part.role"
     const val GENERIC = "part.generic"
     const val GENERIC_SECTION = "part.generic.section"

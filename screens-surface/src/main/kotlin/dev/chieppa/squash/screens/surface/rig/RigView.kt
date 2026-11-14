@@ -48,7 +48,8 @@ fun rememberRigShading(state: AppState): RigShading? {
     val look = with(LocalDensity.current) { JointLook(c.surfaceFloat, c.inkStrong, c.accent, JOINT_RADIUS.toPx(), JOINT_EDGE.toPx(), LIT_RADIUS.toPx()) }
     val lit = state.rig.heat
     val layers = remember(seams, heated) { rig.parts.associate { it.id to seams[it.id].orEmpty() + heated[it.id].orEmpty() } }
-    return RigShading(colors, layers) { sight -> jointDots(rig, points, sight, look, lit) }
+    val surface = rememberRigSurface(state, rig, colors, heat)
+    return RigShading(colors, layers, { sight -> jointDots(rig, points, sight, look, lit) }, surface)
 }
 
 /**

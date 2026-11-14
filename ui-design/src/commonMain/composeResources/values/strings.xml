@@ -117,6 +117,7 @@
     <string name="shell_part_on">on</string>
     <string name="shell_part_off">off</string>
     <string name="shell_part_none">No part selected</string>
+    <string name="shell_part_blend">Join blend</string>
 
     <string name="shell_step_add">Add %1$s</string>
     <string name="shell_step_remove">Remove %1$s</string>
@@ -124,6 +125,9 @@
     <string name="shell_step_outline">%1$s outline</string>
     <string name="shell_step_outlines">%1$s outlines</string>
     <string name="shell_step_parameter">%1$s %2$s</string>
+    <string name="shell_step_blend">Join blend %1$s</string>
+    <string name="shell_step_one_surface">One surface</string>
+    <string name="shell_step_painted_eye">Painted eye</string>
 
     <string name="shell_save_failed">Couldn\'t save: %1$s</string>
     <string name="shell_open_failed">Couldn\'t open %1$s</string>
@@ -273,6 +277,13 @@
     <string name="face_shape">Shape</string>
     <string name="face_dilation">Dilation</string>
     <string name="face_width">Width</string>
+    <string name="face_eye_height">Height</string>
+    <string name="face_eye_tilt">Tilt</string>
+    <string name="face_eye_look_out">Look out</string>
+    <string name="face_iris_size">Iris</string>
+    <string name="face_pupil_size">Pupil</string>
+    <string name="face_highlight_size">Highlight</string>
+    <string name="face_slit">Slit pupil</string>
     <string name="face_value">%1$s</string>
     <string name="face_mouth_smile">Smile</string>
     <string name="face_mouth_frown">Frown</string>

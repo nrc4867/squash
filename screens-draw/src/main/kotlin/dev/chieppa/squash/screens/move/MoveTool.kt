@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.move
 
 import dev.chieppa.squash.screens.openSocketsNow
+import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.screens.addSocket
 import dev.chieppa.squash.screens.pickSocket
 import dev.chieppa.squash.character.block.DigitTips
@@ -95,7 +96,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                     }
                 }
                 if (mode != MoveMode.PLACE_PART) {
-                    val place = assembled()?.let { socketPlaceAt(it, down.position, sight, handles) } ?: return@awaitEachGesture
+                    val place = assembled()?.let { socketPlaceAt(it, down.position, sight, handles, restSurface()) } ?: return@awaitEachGesture
                     val part = place.part.id ?: return@awaitEachGesture
                     down.consume()
                     when (mode) {
@@ -110,7 +111,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                 drag(handle, down.id, down.position, handles)
             }
         }
-        .then(hover.track(this, pane, key, { state.move.mode.value != MoveMode.PLACE_PART }) { pointer -> assembled()?.let { socketPlaceAt(it, pointer, sight, handles) } })
+        .then(hover.track(this, pane, key, { state.move.mode.value != MoveMode.PLACE_PART }) { pointer -> assembled()?.let { socketPlaceAt(it, pointer, sight, handles, restSurface()) } })
 
     /**
      * What a press would place under the pointer in this [pane]: a socket and its twin while Pair is on, a joint on the axis with the
@@ -141,6 +142,8 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
     }
 
     private fun assembled(): AssembledCharacter? = state.session.value?.assembly?.output?.value
+
+    private fun restSurface(): CharacterSurface? = state.session.value?.characterSurface?.output?.value?.surface
 
     /** The selected part's joint whose dot shows under [pixel], within reach, as the part and the joint's name. */
     private fun jointDotAt(pixel: Offset, view: HandleView): Pair<PlacedPart, String>? {

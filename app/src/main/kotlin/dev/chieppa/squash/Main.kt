@@ -50,6 +50,7 @@ fun main() {
         format = SquashFormat(runBlocking { getString(Res.string.shell_file_type) }),
         artist = GpuRestPoseArtist,
     )
+    state.openAsLaunched()
     application {
         StretchWindow(
             onCloseRequest = { state.whenSaved(::exitApplication) },

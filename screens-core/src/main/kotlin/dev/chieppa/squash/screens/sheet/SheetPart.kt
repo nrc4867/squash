@@ -33,6 +33,7 @@ import dev.chieppa.squash.document.isBranchPart
  */
 class SheetPart(private val placed: PlacedPart, val seeThrough: Boolean = false) {
     val id: PartId? get() = placed.id
+    val placedPart: PlacedPart get() = placed
     val mesh: RenderMesh get() = placed.surface.mesh
     val origin: Vec3 get() = placed.origin
     val mirrored: Boolean get() = placed.mirrored

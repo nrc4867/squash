@@ -2098,6 +2098,13 @@
             }
           ]
         },
+        "surface": {
+          "description": "On a character built as one surface: in the character's field, or thin or hard and built as its own mesh sitting on the body.",
+          "enum": [
+            "field",
+            "separate"
+          ]
+        },
         "blocks": {
           "type": "array",
           "items": {

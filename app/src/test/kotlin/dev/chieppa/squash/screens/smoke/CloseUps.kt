@@ -51,14 +51,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
 
     private fun CharacterSession.posedState(): CharacterState {
         work.settle(this)
-        return CharacterState(
-            assertNotNull(posedBody.output.value),
-            assertNotNull(bodyColor.output.value),
-            assertNotNull(posedSurfaceWork.output.value),
-            document.value.character.palette,
-            assertNotNull(posedLines.output.value),
-            fur = FurView.EMPTY,
-        )
+        return shownState()
     }
 
     /** [part] alone and the part it hangs from, from six sides, one tile each, kept as the image [name]. */

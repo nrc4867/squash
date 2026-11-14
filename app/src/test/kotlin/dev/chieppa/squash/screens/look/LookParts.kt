@@ -12,6 +12,12 @@ class LookParts(private val character: Character) {
     val head: PartId? = first(Role.HEAD)
     val hand: PartId? = first(Role.HAND)
     val foot: PartId? = first(Role.FOOT)
+    val arm: PartId? = first(Role.ARM)
+    val leg: PartId? = first(Role.LEG)
+    val tail: PartId? = first(Role.TAIL)
+
+    /** Both sides of the arm pair, or the one arm. */
+    val arms: List<PartId> = character.parts.filter { it.role == Role.ARM }.map { it.id }
 
     /** The head and every part sitting on it, as a face close-up frames them. */
     fun faceFramed(head: PartId): Set<PartId> = setOf(head) + character.parts.filter { it.socket?.parent == head }.map { it.id }

@@ -12,13 +12,20 @@ import dev.chieppa.squash.geom.posed
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
+import kotlinx.coroutines.flow.Flow
 
 /** The parts joined to their parents by strips: what sits on a body at a neck, a shoulder, a hip, a wrist or an ankle, and a head on a neck. */
 private val JOINED = setOf(Role.NECK, Role.HEAD, Role.ARM, Role.LEG, Role.HAND, Role.FOOT)
 
-/** [assembly] with each part of [JOINED]'s roles joined to its parent by a strip, see [withSocketStrips]. */
-fun Graph.socketStripNode(assembly: Node<*, AssembledCharacter>): Node<AssembledCharacter, AssembledCharacter> =
-    follow(assembly, stage = BuildStages.ASSEMBLY) { it.withSocketStrips(cancellationCheck()) }
+/**
+ * [assembly] with each part of [JOINED]'s roles joined to its parent by a strip while [stripped] says so, see [withSocketStrips]; as it
+ * is otherwise, for a character built as one surface, whose joins are its field's.
+ */
+fun Graph.socketStripNode(assembly: Node<*, AssembledCharacter>, stripped: Flow<Boolean>): Node<*, AssembledCharacter> =
+    gather(stripped, { mapOf(Unit to assembly) }, stage = BuildStages.ASSEMBLY) { gathered ->
+        val placed = gathered.values.getValue(Unit)
+        if (gathered.shape) placed.withSocketStrips(cancellationCheck()) else placed
+    }
 
 /**
  * This character with a strip of quads where each part of [JOINED]'s roles meets its parent, in place of the overlap: the part that

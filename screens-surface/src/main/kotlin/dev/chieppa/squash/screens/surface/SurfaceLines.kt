@@ -30,6 +30,8 @@ import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.sheet.rememberObjectShading
+import dev.chieppa.squash.screens.sheet.rememberPaneSurface
+import dev.chieppa.squash.character.build.lineWeightStrokes
 import dev.chieppa.squash.screens.sheet.inkedBorders
 import dev.chieppa.stretch.theme.Stretch
 
@@ -57,6 +59,8 @@ fun characterLook(rules: LineRules, density: Float): CharacterLook {
 /**
  * The character's lines as the panes ask for them, for one state of the graph: contours for each camera, then creases, inked region
  * borders and marks at the interior weight, on the surface. A camera that holds still costs nothing, since its lines are kept until the state changes.
+ * With [oneSurface], the parts it holds are lined as that surface: its contour, its joins and hems, the marks its paint inks, and a
+ * selected part's own section.
  */
 class SurfaceLines(
     private val lines: BodyLines,
@@ -69,7 +73,10 @@ class SurfaceLines(
     private val picked: PickedStroke? = null,
     private val faces: FaceWork? = null,
     private val pickedWeight: PickedLineWeight? = null,
+    private val oneSurface: OneSurfaceLines? = null,
 ) : SurfaceRibbons {
+    private val inSurface: Set<PartId> = oneSurface?.parts.orEmpty()
+
     private val kept = object : LinkedHashMap<Any, List<RibbonDraw>>(KEPT_VIEWS, 1f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
     }
@@ -77,18 +84,23 @@ class SurfaceLines(
     override fun figure(view: SurfaceView): List<RibbonDraw> = kept.getOrPut(if (view is FullView) Triple(view.current, view.width, view.height) else view) { figureDraws(view) }
 
     private fun figureDraws(view: SurfaceView): List<RibbonDraw> = buildList {
-        val parts = lines.parts.values
-        contourRibbon(parts, view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
+        val parts = lines.parts.values.map { if (it.part.id in inSurface) it.withoutRuns() else it }
+        val contour = if (oneSurface != null) oneSurface.contour(parts, view) else contourRibbon(parts, view)
+        contour?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
+        oneSurface?.let { addAll(it.inks(view, look, ink)) }
         work.parts.forEach { (id, held) ->
-            addAll(interiorInk(id, held, DepthLayer.SCENE))
-            faces?.let { addAll(it.draws(id, view).ribbons) }
+            addAll(interiorInk(id, held, DepthLayer.SCENE, view))
+            if (id !in inSurface) faces?.let { addAll(it.draws(id, view).ribbons) }
         }
     }
 
     override fun selected(part: PartId, view: SurfaceView): List<RibbonDraw> {
         val key = if (view is FullView) part to view.current else part to view
         return kept.getOrPut(key) {
+            if (oneSurface != null && part in inSurface) {
+                return@getOrPut oneSurface.selected(part, view, look, ink, figureRadius) + work.parts[part]?.let { interiorInk(part, it, DepthLayer.FRONT, view) }.orEmpty()
+            }
             val held = lines.parts[part] ?: return@getOrPut emptyList()
             selectionDraws(part, held, view)
         }
@@ -97,15 +109,19 @@ class SurfaceLines(
     private fun selectionDraws(part: PartId, held: PartLines, view: SurfaceView): List<RibbonDraw> = buildList {
         contourRibbon(listOf(held), view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.SELECTION, figureRadius)) }
         addAll(creaseDraws(held, look.creases, ink, DepthLayer.FRONT))
-        work.parts[part]?.let { addAll(interiorInk(part, it, DepthLayer.FRONT)) }
+        work.parts[part]?.let { addAll(interiorInk(part, it, DepthLayer.FRONT, view)) }
         faces?.let { held -> held.draws(part, view).ribbons.mapTo(this) { it.copy(layer = DepthLayer.FRONT) } }
     }
 
-    override fun faceLayers(part: PartId, view: SurfaceView): List<ColorLayerDraw> = faces?.draws(part, view)?.layers.orEmpty()
+    override fun faceLayers(part: PartId, view: SurfaceView): List<ColorLayerDraw> = if (part in inSurface) emptyList() else faces?.draws(part, view)?.layers.orEmpty()
 
-    /** What is inked on [id]'s surface at the interior weight: its strokes, tapered, and its region borders, closed. */
-    private fun interiorInk(id: PartId, held: ResolvedSurfaceWork, layer: DepthLayer): List<RibbonDraw> = buildList {
-        held.looseMarks().filterNot { it.kind == MarkKind.FUR }.mapNotNullTo(this) { mark ->
+    /**
+     * What is inked on [id]'s surface at the interior weight: its strokes, tapered, and its region borders, closed; on a part of the one
+     * surface, the strokes its paint inks.
+     */
+    private fun interiorInk(id: PartId, held: ResolvedSurfaceWork, layer: DepthLayer, view: SurfaceView): List<RibbonDraw> = buildList {
+        val strokes = if (oneSurface != null && id in inSurface) oneSurface.marks(id, view) else held.looseMarks()
+        strokes.filterNot { it.kind == MarkKind.FUR }.mapNotNullTo(this) { mark ->
             if (mark.source == picked?.id) {
                 mark.lineDraw(lines.parts[id], look.marks.copy(interiorPixels = look.marks.interiorPixels * PICKED_WIDENS, silhouettePixels = look.marks.silhouettePixels * PICKED_WIDENS), picked.color, taper, DepthLayer.FRONT)
             } else {
@@ -152,7 +168,8 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
     val cheats = document.character.gazeCheats
-    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats) {
+    val oneSurface = rememberPaneSurface(open)?.shown(posed)
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats, oneSurface) {
         val shown = lines
         val held = work
         val whole = character
@@ -163,7 +180,8 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
             val look = characterLook(rules, density)
             val parts = shown.parts.mapValues { it.value.part }
             val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view, eye -> locked ?: bins.binOf(part, view, eye) }
-            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight)
+            val surface = oneSurface?.let { OneSurfaceLines(it, lineWeightStrokes(whole, held)) }
+            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, surface)
         }
     }
 }

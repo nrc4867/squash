@@ -1,6 +1,8 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.AreaSpec
+import dev.chieppa.squash.character.surface.GarmentCover as WornOnSurface
+import dev.chieppa.squash.character.surface.coversAnchor
 import dev.chieppa.squash.character.model.GrainSpec
 import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.Anchor
@@ -97,9 +99,16 @@ data class BodyFur(val parts: Map<PartId, PartFur>, val figureRadius: Float = 0f
 /**
  * The fur strokes in [work], each following the grain of the part holding it, each with its [FurRoot.room], which [furView] shows them by. A root on a part
  * or patch not there is dropped, and one under a garment [character] wears is kept apart in [PartFur.covered], its room read among every stroke of its
- * part. [checkCancelled] runs before each part.
+ * part; on a one surface, the garments of [surfaceCovers] cover a root their branch's range holds on its part's first run. [checkCancelled]
+ * runs before each part.
  */
-fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character: AssembledCharacter, checkCancelled: () -> Unit = {}): BodyFur {
+fun bodyFur(
+    inputs: Map<PartId, PartFurInput>,
+    work: BodySurfaceWork,
+    character: AssembledCharacter,
+    checkCancelled: () -> Unit = {},
+    surfaceCovers: List<WornOnSurface> = emptyList(),
+): BodyFur {
     val placed = character.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap()
     val worn = character.garmentCovers()
     return BodyFur(
@@ -111,7 +120,8 @@ fun bodyFur(inputs: Map<PartId, PartFurInput>, work: BodySurfaceWork, character:
                 val root = mark.points.first()
                 val surface = placed[root.anchor.part]?.surface ?: return@mapNotNull null
                 val patch = surface.patches.firstOrNull { it.name == root.anchor.patch } ?: return@mapNotNull null
-                val covered = worn.any { it.covers(root.anchor.part, root.anchor.u, root.anchor.v, root.position) }
+                val covered = worn.any { it.covers(root.anchor.part, root.anchor.u, root.anchor.v, root.position) } ||
+                    surfaceCovers.any { cover -> cover.coversAnchor(root.anchor, surface) }
                 rootOn(mark, surface, field, slotUnder(root.anchor, root.position, held, input.areas, patch.closedV))?.let { it to covered }
             }.sortedBy { orderOf(it.first.id) }
             if (found.isEmpty()) return@mapNotNull null

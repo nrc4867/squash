@@ -28,6 +28,7 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PART_INK
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.bodyThrough
+import dev.chieppa.squash.screens.sheet.surfaceThrough
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import kotlin.math.round
@@ -121,7 +122,7 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
  */
 class CombTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDragTool(state, ink, lineWidth) {
     override fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
-        state.bodyThrough(sight)?.let { surfaceHitWithin(it, pixel, sight, COMB_REACH_UNITS) }
+        state.bodyThrough(sight)?.let { surfaceHitWithin(it, pixel, sight, COMB_REACH_UNITS, state.surfaceThrough(sight)) }
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return

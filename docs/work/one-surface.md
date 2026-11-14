@@ -1,0 +1,873 @@
+# One surface per character
+
+A plan for building every character's body as one seamless surface, meshed from the blended field of its parts, with the parts kept as coordinates on that surface. The plan is approved (see Decisions).
+
+## Summary
+
+**What changes.**
+
+- **One mesh per character.** The body is meshed whole from one field: each part's drawn outlines sweep a solid, and each solid joins its socket parent's by a smooth union. There are no per-part grids to cut, so a join has no edge, no seam and no buried point.
+- **Parts become coordinates.** Every vertex of that mesh carries, for each part near it, how much it belongs to that part (its share) and where it lies on that part (u along the spine, v around it). Paint, regions, marks, fur, landmarks, sockets and rig weights read those coordinates instead of grid cells. A stored (u, v) means what it means today, so saved anchors do not move.
+- **Garments are the body grown.** A garment is the body's field offset by its ease, meshed the same way, with its hems, openings and holes cut along smooth level curves of the coordinates instead of along grid rows.
+- **Ink comes from the one surface.** The contour, hems and inked borders are found on one mesh with no rule for joins.
+- **Eyes are painted on the head.** They are a parametric eye drawn on the head's surface by its coordinates, so they wrap as the head turns and give the three-quarter eye of the original fennec.
+- **Retired:** socket strips, socket fillets, garment fillets, the arm-on-body ring push's ring form, per-part recasting onto the field, buried points, seam points, seated eyeballs, laying garments over joins, and every contour exception for joins.
+
+**What stays.**
+
+- Drawing, every draw tool, the outlines and what they mean. Each part's slices are still built from its drawing; they now sweep the part's solid instead of being the mesh.
+- Commands, undo, the document's anchors, the palette, the stages and their tools, posing, the pose solver, the body curve and the display pose.
+- The light, the two-tone shading with its proxy normals, the outline weights and the line style. Nothing about the look is changed to imitate anything; the proxy normals are carried onto the one mesh so a part shades as it does now.
+- Thin parts (ears, wings, fins, loose ends) and hard parts (claws, horns, beaks, nails, owned parts such as a heel) stay separate meshes sitting on the body.
+
+**Decisions for Nicholas** (each is detailed under Decisions).
+
+1. **Retire fixed topology.** In this design a template gives no mesh a fixed topology; the character's mesh changes its vertices whenever its shape is edited (never when it is posed). Every rule, doc, test and system that assumes it is listed with its replacement under Fixed topology.
+2. **Move every saved character onto the one surface** when it opens, rather than keeping the lofted-and-strips build alive for old files.
+3. **Thin and hard parts stay separate meshes**, meeting the body with an inked overlap as an ear does today; the toucan's beak and every claw are hard parts.
+4. **A coarser surface while a large part is dragged.** A torso edit cannot reach 50 ms at full detail; while a drag is in progress the surface is meshed at twice the cell size, and at full detail when the drag ends.
+5. **The default eye.** Start the fennec's painted eye from the original fennec's eye, re-expressed as parameters, with the factor sheet's best row kept as a preset.
+6. **Blended joins are inked by default (decided).** A join draws its line along the curve where the two parts' shares are equal, as the reference draws a leg against a body; the join's ink switch turns it off.
+7. **The Dress inspector loses Fillet.** Garment joins are always smooth, so the setting has nothing to do.
+8. **Golden fixtures change kind.** Per-template vertex-by-vertex mesh fixtures give way to fixtures of sampled field values and part coordinates, plus mesh invariants.
+
+**The proof**, the first build step after approval: the bare fennec and the winter outfit's sweater on one surface, judged on the fennec test's round 5 sheets (full body, the walk, the joins' spot sheets, the dressed winter views and walk). It passes with clean joins, a clean sweater, a head or leg edit in 50 ms or less, and no join special case anywhere in its code path. Every other example keeps building as it does now until its phase.
+
+## Why
+
+The fennec test (branch `fennec-test`) rebuilt the fennec from blended fields: drawn outlines became swept solids joined to their socket parent by a smooth union. That part worked: the neck, shoulders and hips became one surface, eyes sat in the head, and the walk held. But each part kept its own (u, v) grid, cast onto the blended surface by rays and cut where another part owned the surface. That hybrid needed a new patch at the joins in every system that runs over the surface:
+
+- seam points, with fallbacks for when the seam cannot be found, to close holes where two cut grids meet;
+- burying cast faces that fold, flatten or crease;
+- leaving contour edges out where both ends were cast, to remove ticks and curls inside join bands;
+- the eyeball's `seatShown`, so the ball's lid would not lie over the head's paint;
+- garments copying the cast body grid (`ShellBuilder.laidOverJoin`), which left the dressed fennec's collar, shoulders and boot cuffs ragged and crumpled.
+
+Five rounds took a one-part edit from 276 ms to about 50 ms and removed fault after fault, but each fix was another join rule, and the next system to run over the surface would need its own. The faults come from cutting grids, not from the field. One surface meshed from the field has no cut grids to patch.
+
+The fennec test is a parts bin and the yardstick, not a base. Taken from it: `SweptSolid`, `JoinedField` with parent-only unions, `PartInstance.blend` with `SetSocketBlend` and the Join blend slider, the field-read speedups (`QuickAngles`, flat arrays, false position), and the eye parameters. Left behind: `RunRecast`, `WalledRays`, `RecastMemo`, `SeamPoint`, `SeatedCap`, buried points, `Patch.facing`, `seatShown`, `handedCuts`, `laidOverJoin` and the contour exceptions.
+
+## The surface
+
+### The field
+
+The character's field is the fennec test's joined field, with two changes.
+
+- **Members are runs.** Each swept run of a part (a head's skull and muzzle, each digit of a paw or hand) is its own member, joined to the run or part it grows from. A part's runs join each other by the part's own blend (the paw's `merge` for its toes), and the part's first run joins its socket parent's by the socket's blend. Siblings never blend: two legs, or a tail and a hind leg, meet by a plain union.
+- **Cuts stay inside a part.** A part's own cut, such as a paw's flat sole, is a smooth intersection applied to that part's field before the union, so it flattens nothing else. Claws are hard parts (see Thin and hard parts), so the sole does not cut them.
+
+Each member's field is distance-like: negative inside, near the true distance close to the surface. The field is evaluated only near the surface (see Speed).
+
+### The mesher
+
+**Recommended: a dual mesher on a sparse block grid** (one vertex in each cell the surface crosses, one quad across each grid edge it crosses), placed by projection onto the surface, with feature placement available per cell, and a manifold split for cells that hold two sheets.
+
+What the papers say, in their own terms:
+
+- **Marching cubes** (Lorensen and Cline, 1987) puts vertices on grid edges and triangulates each cell from a table of its corner signs. It is simple and watertight, but the triangles near a cell corner are thin slivers, and vertices pinned to edges cannot follow a sharp edge. Slivers matter here: the contour runs along mesh edges and the colour cuts split triangles, so slivers show as jagged ink and fragile cuts.
+- **Surface nets** (Gibson, 1998, constrained elastic surface nets) put one node in each cell the surface crosses, link nodes in neighbouring cells, and relax the net by moving each node toward its neighbours while keeping it inside its own cell. The result is a quad mesh of near-even vertices with mostly valence four, smooth, and without the slivers of a per-cell table.
+- **Dual contouring** (Ju, Losasso, Schaefer and Warren, 2002) builds the same dual topology from Hermite data (crossing points and their normals) and places each cell's vertex by minimizing a quadratic error over the tangent planes of its crossings, which reproduces sharp edges and corners. It works on an octree, so cells of different sizes join without cracks. Its known faults are non-manifold vertices where one cell holds two sheets of surface, and vertices placed outside their cell.
+- **Manifold dual contouring** (Schaefer, Ju and Warren, 2007) gives a cell one vertex per connected component of its surface instead of one vertex in total, which removes the non-manifold vertices while keeping the dual topology.
+- **Dual marching cubes** (Schaefer and Warren, 2004) contours a grid dual to the octree to fit features with fewer cells; more machinery than this needs.
+- **Extended marching cubes** (Kobbelt, Botsch, Schwanecke and Seidel, 2001) inserts feature vertices into marching cubes' cells from the normals; dual contouring reaches the same feature placement more simply.
+- **Continuation polygonization** (Bloomenthal, 1988) visits only cells next to cells already found on the surface, from a seed. The sparse block grid below gets the same narrow band by testing blocks against the distance-like field.
+- **Particle sampling** (Witkin and Heckbert, 1994) spreads repelling particles over the surface for even samples, and **Delaunay refinement** (Boissonnat and Oudot, 2005) gives guaranteed triangle quality. Both are iterative and global, need a separate connection step or global restructuring, and give no cheap way to mesh again only where an edit reached.
+- **Isotropic remeshing** (Botsch and Kobbelt, 2004: split long edges, collapse short ones, flip toward valence six, relax tangentially, project back) can follow any of the above for even triangles. It is held in reserve if the proof's sheets show uneven triangles in the ink.
+
+Why the dual mesher fits Squash:
+
+- **Ink.** Even quads with vertices inside their cells give the contour and the colour cuts the kind of mesh they have today, a regular grid of near-square quads, instead of slivers.
+- **Incremental.** A vertex belongs to one cell and a quad to one grid edge, so a block of cells can be meshed again on its own and joins its neighbours exactly, keyed by global cell index. The rest of the mesh stays the same objects.
+- **Sharp features.** The topology is the same with or without features; only where a vertex is placed changes. A cell marked sharp (a beak's edge, a ridge a template asks for) places its vertex by the quadratic error of dual contouring; every other cell is placed by Gibson's in-cell relaxation and then projected onto the surface along the field's gradient. In practice the hard edges (claws, horns, beaks) are separate hard parts, so the feature placement is for the rare ridge on the body.
+- **Thin and close.** Two toes or fingers in one cell would share a vertex; the manifold split gives each its own.
+- **Adaptive.** The octree form lets small parts (fingers, toes) take cells half or a quarter of the body's, with no cracks between sizes. The proof uses one cell size; the adaptive form comes in the creatures phase (see Phases).
+
+### Resolution and triangle budget
+
+The spike (see Speed) meshed the field fennec, which is about 2.26 body units nose to tail tip, 1.34 tall and 0.61 wide:
+
+| Cell size | Vertices | Triangles | Triangles with a corner under 10° |
+|---|---|---|---|
+| 0.0357 | 3,834 | 7,672 | 100 (1.3%) |
+| 0.0238 | 8,700 | 17,408 | 84 (0.5%) |
+| 0.0178 | 15,533 | 31,034 | 114 (0.4%) |
+| 0.0119 | 35,162 | 70,310 | 178 (0.3%) |
+| 0.0089 | 62,696 | 125,396 | 193 (0.2%) |
+
+The fennec's lofted parts hold 18,140 vertices today, its eyes another 3,840. **Recommended: 0.012 for the fennec's body** (about 35,000 vertices, 70,000 triangles), with paws and digits at half that once the adaptive form is in. The cell size is set per character from its parts' sizes: the body's cell is a fixed share of the median member's radius, and a member's own cells are at most a quarter of its smallest radius. Neither is a user setting. The renderer already uploads each mesh fresh and sizes its buffers to it, so the triangle count has no fixed limit; the CPU work that runs per vertex (contours, colour cuts, skinning) is what sets the budget, and 70,000 triangles is about twice today's, within what those systems handle for the dressed woman.
+
+### Shading on one mesh
+
+The two-tone look comes from proxy normals: each slice's ellipse normal, carried to the mesh per vertex and smoothed over the part. On one mesh, a vertex's proxy normal is the share-weighted blend of each owning part's proxy normal at that vertex's (u, v), read from that part's slices exactly as today, then smoothed as today (`SmoothedShading`). A vertex deep in one part shades exactly as that part's own grid would; across a join the shadow edge runs over the fillet as one curve. Far-part darkening becomes a per-vertex amount (the shares of the far paired parts) instead of a per-mesh flag, so a far leg darkens and its fillet into the body ramps. The light, the shadow tones and the outline weights do not change.
+
+## Parts as coordinates
+
+### What a vertex carries
+
+For each member near it, a vertex holds:
+
+- **Its share**: how much of the surface there is that member's. Where a member is not in any blend with its neighbours, the member whose own field is least owns the vertex outright. Across a smooth union of a child c with its parent p and blend k, the child's share is the union's own mixing weight, clamp(0.5 + 0.5 (d_p − d_c) / k, 0, 1), so the shares change exactly where the surface changes from one part's shape to the other's, and sum to one. Shares of a part's runs add up to the part's share.
+- **Its place on the member**: u along the member's spine and v around it, found from the member's swept solid. The solid already finds, for any point, the two rings whose planes hold it and how far it lies between them, and the direction round the ring; u is the rings' u eased by that share, and v is the ring's section parameter in that direction, from a table the solid keeps beside its radii. Past an end ring u carries on along the end ring's axis, so a point on a fillet below a leg's first ring reads a u a little under 0, and a pole reads the end ring's u.
+
+Only members with a share above a small floor, or within their blend of the vertex, are kept: at most four a vertex, as rig weights are.
+
+### What a stored (u, v) means
+
+A stored anchor is `(part, patch, u, v, offset)`, and keeps that form. The patch is the member: a part's run by its name (`body`, `muzzle`, `pad:<name>`, a digit `toes:i`), as today. u and v are the same template coordinates as today, defined by the same rings swept from the same drawing, so an anchor laid on a lofted fennec's leg lands on the same place on the one surface's leg. What differs is only where the surface is near a join: the lofted grid had the leg's rings running into the body; the one surface has the fillet there, and the leg's coordinates read the fillet as the leg's continuation.
+
+### How an anchor becomes a position
+
+An anchor resolves on the field, not the mesh: start from its point on its member's own swept surface at (u, v), then move along the field's gradient to where the joined field is zero, and off by its offset along the normal there. On a part's own share that is where the anchor would land without the join, moved a little by the blend; in a fillet it lands on the fillet. An anchor whose point lies inside another member's share, past the wall, still resolves on the surface where its move ends, so a stroke that runs onto the fillet keeps going smoothly. This needs no mesh, so the resolved surface work does not wait on meshing, and it reads the same field the pose moves (see The rig).
+
+Picking goes the other way: a ray hits a triangle of the character mesh, the part is the member with the largest share at the hit, and the anchor is that member's (u, v) interpolated across the triangle, with v unwrapped across its seam and a pole read in a small flat chart round it.
+
+### Surviving a redraw
+
+The coordinates are defined by the rings, and the rings by the drawing, exactly as now. A redraw moves the surface and leaves each anchor's (u, v) meaning the same place on the part. Vertices do not survive a redraw where the field changed, and nothing stores a vertex: every vertex's coordinates are computed again from the solids, so what reads coordinates (paint, weights) follows the redraw.
+
+## Surface work on one surface
+
+- **Brush strokes** already measure their radius and fade by distance in space. On one surface a stroke resolves its anchors on the field, and each vertex's opacity is its distance from the resolved curve, cut along each triangle where that distance crosses the radius. No chart is involved, so a stroke crosses a join as it crosses the middle of a part.
+- **Shapes within one part** (filled areas the template names, pads, nails, beans, regions drawn on one part): each vertex where that part has a share takes its signed distance from the shape in the part's own (u, v), scaled to body units by the part's length per u and its girth; the shape is cut where that crosses zero, through each triangle's edges. Hard edges stay crisp at any zoom; the edge follows the shape, not the grid. v wraps across its seam; near a pole the test is made in the pole's flat chart.
+- **Shapes across parts** (a sock from paw to leg, a face mask from muzzle to skull, the cream from jaw down the throat): the border's anchors resolve onto the field, the curve between them is laid on the surface, and the mesh is cut along that curve, the inside taken as the side the border's order gives. This replaces today's closing past socket rings, and replaces handing paint across joins.
+- **A part's base colour** is the part's own section: everything where its share is the largest, cut along the curve where its share equals its neighbour's. Fur meeting cream at a join meets on that curve.
+- **Marks** resolve their anchors on the field and lay the curve between them on the surface. Floating strokes keep their frame from the part's coordinates at the root (along u, across v, out of the surface).
+- **Fur** roots resolve as anchors. Grain reads the owning part's frame at the root, blended by share across a join. The fur rule's spacing walks the one surface instead of each part's grid.
+- **Line weights** act by distance in space, as now.
+- **Sockets and landmarks** read the parent's own swept surface at (u, v), as `A socket reads the built surface` does now, so placing parts does not wait on the character's mesh. A child's place is unchanged by the field.
+- **The face map** casts its rays at the field instead of the head's grid.
+
+## Ink
+
+- **The contour** is found on the character's mesh, the garments' meshes and the separate parts' meshes, along edges between faces toward and away from the camera, as now. There are no buried corners, no cast points and no end caps on the body, so every exception for them goes. The ribbon's smoothing of the edge path stays.
+- **Joins** are inked by default: the line is the curve where the two parts' shares are equal, drawn as a crease ribbon, faded where the surface turns away. The join's ink switch turns it off.
+- **Separate parts** meeting the body keep the overlap crease they draw today: the curve on the part where it leaves the body's field.
+- **Hems and openings** are the garment mesh's open edges, which lie on smooth level curves (see Garments); their ink is on by the hem switch, as now.
+- **Region borders** are their cut curves.
+
+## Eyes
+
+An eye is painted on the head's surface. It is a mark group whose shapes are made from parameters instead of drawn per view, so the roles, controls and gaze of Eyes and gaze still apply.
+
+- **Where it sits.** Its middle is an anchor on the head (the head's eye landmark by default, moved by the Face tools), with the eye's facing the head's surface normal there turned `lookOut` degrees outward.
+- **How it is painted.** Each shape is an oval in the plane square to the eye's facing, projected along the facing onto the head and cut on the head's mesh by each vertex's signed distance from it in that plane. Because the paint lies on the curved head, it foreshortens and wraps as the head turns: the near eye in three-quarter is the original fennec's three-quarter eye, and the far eye can never stand past the head's outline, since nothing stands off the surface.
+- **Its parameters**, kept from the fennec test, each a slider labelled from resources: opening size, opening height to width, opening tilt, look outward, iris colour (a palette slot) and iris size, round or slit pupil, highlight size, lids in the head's colour (the head's own base shows outside the opening, so the lid is the head itself), and a lash line along the opening's upper edge, plus a brow line as a mark above it.
+- **Gaze** moves the iris, pupil and highlight within the opening in the eye's plane, clipped by the opening, which is the surface eye's solve in Eyes and gaze.
+- **Drawn eyes stay.** A head can still hold per-view drawn eye marks; a character uses one or the other.
+
+The fennec's factor sheet's best row (dark-brown iris, round pupil, iris filling the opening, a larger highlight, eyes lower and closer, a brow line) becomes a preset; the default starts from the original fennec's eye re-expressed in these parameters (decision 5).
+
+## Thin and hard parts
+
+Some parts are thinner than any useful cell, or need edges the field rounds off:
+
+- **Thin**: ears, membrane wings, fins, a koi's tail and fins, loose ends.
+- **Hard**: claws, nails, horns, a beak, teeth, and garment-owned parts (a heel, buttons, a buckle, shades).
+- **Pads** with a thickness (nose leather) stay the small meshes they are, laid on the surface.
+
+They stay separate meshes built by their own blocks as today (`membrane`, `pad`, a lofted run). They attach as they do now: placed at their socket, read on the parent's own swept surface, and sunk into the body by the socket's sink, so their root lies inside the body's field and the body hides it. Their ink is the overlap crease of the curve where they leave the body's field. Their rig is their own bones, with the parent's bone fading in toward the root by the seam rule. A template marks such a part with `"surface": "separate"`; everything else is in the field.
+
+A claw on a toe sits on the toe's tip socket with a small sink; a horn on the head the same. The toucan's beak is a hard part: its edge is a cartoon beak's line, which the overlap crease draws.
+
+## Creatures
+
+- **Paws and feet** (paw 5's `toes`, `merge`, `claws`, `pads`): the palm and each toe are members of the paw, the toes joined to the palm by `merge`, so a mitten is a large merge and separate toes a small one. Claws are hard parts on the toes' tips. Beans and the main pad are areas painted in the paw's own coordinates (cut by the paw's (u, v), one chart over palm and toes, so the pad is whole across the toes' roots). The sole's flat cut applies to the paw's own field.
+- **Hands** (hand 5's webs, knuckles, cup, nails): fingers are members joined to the palm by the web's blend; nails are hard parts or painted areas on the fingers' tips.
+- **Dragon**: body, neck, tail, legs and head in the field; wings thin; horns and claws hard.
+- **Lizard**: body, legs, tail and toes in the field; claws hard.
+- **Toucan**: body, head and legs in the field; the beak hard; the feet's toes in the field, claws hard.
+- **Koi**: body in the field; fins and tail thin.
+- **The woman and the twin**: torso, neck, head, arms, legs, hands (palm and fingers) and feet (heel, ball, toes) in the field, with the adaptive cells for fingers and toes; hair as a garment-like offset of the head (see Garments) when the hair shell is built.
+
+Generalizing is the point of the design: a creature needs no join rule, only parts with solids, blends at its sockets, and a separate mark on the parts that are thin or hard.
+
+## Garments
+
+### A garment's surface
+
+A garment covers parts over ranges of their coordinates, as a branch does now. Its surface is the zero level of
+
+g(p) = min( f_covered(p) − ease(p), drawn(p) )
+
+- **f_covered** is the joined field of the parts it covers, with their blends, so a sleeve joins the sweater's body with the same fillet the leg joins the torso with. No garment fillet, no laying over a join.
+- **ease(p)** is the branch's ease, read at the vertex's coordinates on the part under it. A drawn Side or Top outline that stands off further than the ease becomes a swept solid of the branch's own (drawn(p)), joined by a plain union, so a skirt hanging free from the waist is the drawn solid below the body.
+- **Layers**: an outer garment's covered field is the inner garment's surface, so eases add as they do now.
+
+The garment is meshed by the same mesher, over its covered region only (a thin band round the body), and each garment vertex carries the body's coordinates at the point it grows from (where the gradient leads back to the body).
+
+### Edges as level curves
+
+- **Coverage** is a function on the garment's surface: for each part the garment covers, the signed distance, in body units, inside its u range (and its v range for a branch part of the way round); for each part it does not cover, minus the distance into that part's share. The share-weighted sum of those is one smooth function, and the garment is cut where it is zero. So a hem lies along a smooth curve at the drawn u, a neck opening along a smooth curve round where the head takes over, and a sleeve's cuff where the paw does, none of them following a cell.
+- **Holes** where a part comes through (a tail through trousers) are the same: the part through it is not covered, so its share opens the hole.
+- **Cuffs** are a narrow band beside a hole or hem whose ease grows by the cuff's size, part of the same field, so the cuff is one surface with the garment.
+- **Hidden skin**: a body triangle is hidden where all its corners lie inside the garment's field by more than a sliver and coverage is above the hem's margin there, so skin seen through a neck opening still shows. Posed, the test runs again on the posed meshes, as Hiding does now.
+- **Owned parts and loose ends** stay separate parts as they are.
+
+### What a garment keeps
+
+The document's garment keeps its branches (part, u range, v range, ease, outlines, surface work), slot, layer, changes, join and edge ink, colour and loose ends. Its fillet goes (decision 7). A branch's surface work is anchored in its part's coordinates; a branch part of the way round whose stored v is a share of its own span is read as part v by `fromV + v (toV − fromV)` (the migration checks which it is and converts).
+
+## The rig
+
+### Weights
+
+A vertex's weights are its shares times each part's own weights at its coordinates:
+
+w(bone) = Σ over parts i of share_i × W_i(u_i, v_i)(bone)
+
+W_i is today's rule for one part: the joint owning u, joint bands over the part's radius, digit bands over the digit's radius. Across a join the shares give the parent-to-child blend, so the seam band is the union's own mixing, widened to at least today's seam reach where the blend is narrower than the seam radius, so a shoulder with a tight blend still bends smoothly. A vertex keeps at most four bones, renormalized.
+
+- **Painted seams** plug in where they do now: `SeamPaint` is asked with each vertex's address (its part coordinates), body position and guessed share, and its strokes act by distance in space, as now.
+- **Tidy** finds pieces on the one mesh by its edges, as `MeshPieces` does on any mesh.
+- **Garments** take the weights of the body at the coordinates they grow from. **Separate parts** keep their own.
+
+### Skinning a mesh whose topology changes
+
+The mesh changes its vertices only when the shape is edited. The rig follows the assembly already, so an edit builds the weights again for the new mesh; a pose only skins. Skinning stays linear blend on the CPU (`Rig.posed`), producing a posed mesh with the same vertices in the same order, and everything that reads the pose (posed surface work, lines, fur, colour cuts laid on the posed mesh, hiding) reads that posed mesh by vertex, as `PartSurface.posed` does now. Weights are rebuilt only for the blocks an edit meshed again; vertices kept from the last mesh keep their weights.
+
+### Bending joints
+
+Linear blend skinning with the bands is what the walk uses now, and what the proof judges. A posed arm or leg on the body (`withArmsOnBody`) becomes a push of the vertices whose arm share is large, grouped by their arm u instead of by ring. If the proof's walk shows the shoulder or hip fillet collapsing at deep bends, the remedy is implicit skinning (Vaillant, Barthe, Guennebaud, Cani, Rohmer, Wyvill, Gourmel and Paulin, 2013): skin by the bones, then move each vertex back onto the zero level of the posed parts' fields composed by their joins, which keeps volume at the joint and gives contact where the arm presses the body, without changing the topology. Each member's solid moves rigidly with its bone(s), so the posed field is the same field read in each bone's space. It is planned for after the creatures phase unless the proof needs it sooner.
+
+## Speed
+
+### The spike
+
+A throwaway timing test (not committed) meshed the field fennec's joined field with a plain surface net on a block grid, on this machine (8 logical cores, JDK 25), median of 5 warm runs, eyeballs left out. Blocks are 8 cells a side; a block is meshed only where the field at its middle is within 1.5 half-diagonals of zero. Vertices take the mean of their cell's edge crossings, then one step along the gradient (central differences, 7 field reads a vertex) onto the surface.
+
+One field read costs about 0.9 µs at a random point in the body's box and about 0.55 µs near the surface, single-threaded.
+
+Whole fennec, from nothing:
+
+| Cell | Field reads | One thread | 8 threads | of which: reads / meshing / projection |
+|---|---|---|---|---|
+| 0.0357 | 88 k | 82 ms | 32 ms | 13 / 10 / 5 |
+| 0.0238 | 196 k | 153 ms | 34 ms | 18 / 5 / 7 |
+| 0.0178 | 367 k | 281–302 ms | 63–88 ms | 34–43 / 10–26 / 13–15 |
+| 0.0119 | 806 k | 567–681 ms | 139–149 ms | 68–72 / 23–26 / 27–29 |
+| 0.0089 | 1.47 M | 1129 ms | 290–322 ms | 127–177 / 47–48 / 75–85 |
+
+Field reads for a one-part edit, 8 threads, only the blocks within the edited member's box grown by its reach and a block (the cost the incremental mesher pays before meshing those blocks):
+
+| Cell | Front leg | Head |
+|---|---|---|
+| 0.0178 | 16 ms (166 blocks) | 14 ms (214 blocks) |
+| 0.0119 | 21 ms (283 blocks) | 21 ms (410 blocks) |
+| 0.0089 | 28 ms (419 blocks) | 36 ms (716 blocks) |
+
+Also measured: leaving out of each block the members whose field at the block's middle shows they cannot matter there changed nothing (the reads near the surface are of the members that do matter). The projection left vertices within 0.004 to 0.006 of the surface at the coarser cells after one step, 0.0008 at 0.0089; two steps or false position along the gradient are wanted.
+
+### Reaching 50 ms
+
+At 0.012 a leg or head edit spends about 21 ms reading the field, plus meshing, placing and coordinating the blocks it reaches. The plan to bring it under 50 ms:
+
+- **Blocks are the unit.** The mesh is held per block of 8³ cells: corner values, vertices keyed by global cell index, quads, coordinates, shading normals, weights. An edit marks dirty the blocks within the changed members' old and new boxes grown by their reach; everything else is kept as the same objects, and downstream caches (colour cuts, contours' grids, weights) are kept per block too.
+- **Member channels.** Each corner near the surface keeps the own field of each member within reach of it (at most four or so). An edit reads only the changed member's field at the dirty corners and recombines the union from the kept channels, which is arithmetic. This should take the leg edit's reads from 21 ms to well under 10.
+- **Projection without reads.** Vertices are placed from the corner values already held (in-cell relaxation, then a step along the gradient interpolated from the corners), reading the field only to finish in cells that need it.
+- **Coordinates from the same read.** A member's swept solid finds a point's ring pair and direction when it reads its field; reading u, v there costs nothing extra if both come from the same call.
+- **Threads.** Blocks are meshed in parallel on the graph's dispatcher's threads, cancelled with the node.
+- **Large parts.** A torso edit reaches most of the body, so it costs about a whole build (about 140 ms at 0.012). While a drag is in progress, a large edit meshes at twice the cell size (about 35 ms in the spike) and at full detail when the drag ends (decision 4).
+
+Estimated leg edit at 0.012 with these: reads 5 to 8 ms, meshing the dirty blocks 5, placing 3, coordinates and shading 5 to 8, weights 3, so about 25 to 30 ms before colour cuts and lines, which keep their own per-block caches. The proof measures this; it is an estimate until then.
+
+## The derived-data graph
+
+| Node | Now | One surface |
+|---|---|---|
+| Slice row (per part) | Drawing to slices to patches | Unchanged: drawing to slices |
+| Part mesh (per part) | Patches to the part's mesh | Only for separate parts |
+| Swept solid (per part) | Inside the field join | New node: slices to the part's solid, its runs as members, and the (u, v) tables |
+| Assembly | Places parts by sockets on their own surfaces | Unchanged; sockets read each part's own swept surface |
+| Fillets, field joins, strips | Three nodes after the assembly | Gone |
+| Character field | Inside the field join | New: members, blends and parents from the assembly; cheap, keyed by each member's solid and place |
+| Character surface | None | New: the incremental mesher with its blocks and member channels; vertices, quads, coordinates, shares, shading normals |
+| Garment surfaces | Dressed node lofting branches | Per worn garment: its field and mesh over the covered blocks, its coverage cut; layered innermost first |
+| Surface work | Anchors resolved on each part's grid | Anchors resolved on the character field; does not wait on the mesh |
+| Colour | Shapes cut on each patch's grid | Shapes cut on the character mesh per block, by coordinates or by surface curves |
+| Lines | Each part's grids, creases | The character mesh, garment meshes and separate parts; share-level creases where inked |
+| Fur | Roots on each part's grid | Roots resolved on the field; spacing over the one surface |
+| Rig | Weights per part's vertices | Weights per character vertex from shares and coordinates, per block |
+| Posed | Skins each part | Skins the character mesh, the garments and the separate parts |
+
+A vertex's identity is its cell, so a block that an edit did not reach keeps every vertex, and every per-block cache with it.
+
+## The data model and saved documents
+
+### What changes
+
+- `PartInstance.blend`: the smooth union's blend at the part's socket, null for the default (a quarter of the solid's least box extent). Both sides of a pair share it. Taken from the fennec test.
+- Templates: `surface` is `field` (in the one surface, the default for body parts) or `separate` (thin and hard parts). `seated` does not come back. A field template's ring and segment counts are how finely its drawing is sampled into the solid, not a mesh's topology; changing them changes the solid only by sampling.
+- Painted eyes: a new eye item in the head's surface work holding its anchor and parameters, mirrored by flag as a centre part's marks are.
+- Garments: `fillet` goes.
+- Nothing stores a vertex, a cell or a mesh.
+
+### Migration, format 14 to 15
+
+- **Template pins.** Each body part pinned to a lofted template version moves to the field version made from it, with the same id, the next version number and the same drawings, parameters, joints, sockets, areas and landmarks. The new versions ship beside the old, as every template version does; a part already separate (an ear, a wing) keeps its pin with `separate` added to its template.
+- **Anchors.** Unchanged: `(part, patch, u, v, offset)` keeps its meaning. Anchors that name a patch the new version does not build are kept and drop at resolution as dangling anchors do now. A u below 0 or above 1, which a strip's range used, reads on the extended chart past the end ring.
+- **Garments.** `fillet` is dropped. Branch anchors on a branch part of the way round are converted to part v if they were stored as a share of the span.
+- **Eyes.** Drawn per-view eye marks are kept as they are; a character moves to painted eyes only by choosing it in the Face stage.
+- **`PartInstance.blend`** is absent, so null.
+- Everything else (palette, outlines, marks, regions, paint, line weights, seam strokes, fur, grain, poses, expressions, wardrobe) passes through unchanged.
+
+The example characters are rewritten from their commands, as now, once each moves in its phase.
+
+## Fixed topology
+
+In this design a template gives a part's mesh no fixed topology, and a character's mesh changes its vertices whenever its shape changes. This is decision 1. What assumes it, and what replaces it:
+
+### Rules
+
+| Where | What it says | Replaced by |
+|---|---|---|
+| CLAUDE.md, Never fake the pipeline | Board 4 is done when a drawn outline produces a mesh with the template's fixed topology through the real slice build | ...produces the character's surface through the real slice build, field and mesher |
+| CLAUDE.md, test tiers | Golden: generated meshes against fixtures | Golden: sampled fields, coordinates and schemas against fixtures; mesh invariants on meshes |
+| CLAUDE.md, modules | geom: slices to meshes, mesh invariants; rig: weights from part ownership with joint and seam bands | geom: slices to solids, the mesher, mesh invariants; rig: weights from shares and part coordinates with joint bands |
+
+### Design docs
+
+| Where | What it says | Replaced by |
+|---|---|---|
+| data-model, intro | The mesh is generated with fixed topology; weights and marks address the slices | The surface is meshed from the parts' solids; weights and marks address part coordinates |
+| data-model, Identity and versions | A template version that changes its ring or segment count is a migration | Changing sampling counts is an ordinary new version; anchors are template coordinates, not vertices |
+| data-model, Topology block; Fixed topology per template version; Rings can focus; Refits are local | Ring i maps to u, segment j to v; anchors reach vertices by arithmetic; focus packs rings | Ring and segment counts sample the drawing into the solid; focus samples a stretch more finely; anchors reach the surface through the solid and the field |
+| data-model, Surface work on the mesh | An anchor lands at `positionAt` on the patch; posed grids keep slices so u, v land on the same rings | An anchor lands on the field from its member's swept surface; posed meshes keep their vertices |
+| data-model, The rig | A vertex follows the joint owning its u; seam band by ring radii | Shares times each part's own rule; the seam is the union's mixing, widened to the seam reach |
+| data-model, Garments | A branch is the body's slices grown, at the part's segment count; joins are fillets; hiding by u and v | A garment is the covered field grown by ease, cut along coverage curves; joins are the field's |
+| data-model, Part template file format | `version` changes when topology changes; `topology` with rings and segments | `version` changes when what the template builds changes; `topology` becomes `sampling` for field parts |
+| look, Shading | Proxy normals per slice per vertex | The same normals, share-blended on the one mesh |
+| look, Color is vector (Cutting, Where a shape reaches) | Shapes cut along rings, lines of points and diagonals; wrap across v seam; close past socket rings | Shapes cut along each triangle by a per-vertex function (coordinate distance or surface curve) |
+| look, Where parts meet; Field joins | Strips, fillets, field joins with casting, burying, seam points | One surface; separate parts by overlap |
+| look, The contour | Exceptions for end rings, strips and buried corners | None |
+| look, Eyes and gaze | Seated eyeball | Painted eye |
+| pipeline, Part templates | Fixed ring and segment counts | Sampling counts |
+| parts | Templates by version with rings | Field and separate templates |
+| boards (working notes), Shape · Generic part | Rings and Segments rows | Rows stay for separate generic parts only |
+
+### Code
+
+| System | Relies on | Replaced by |
+|---|---|---|
+| `Patch`, `MeshBuilder`, `PatchMesh`, `RenderMesh.of(PartMesh)` | nu by nv grid per patch, poles, vertex order | Kept for separate parts; the character mesh is its own type, rendered as one `RenderMesh` with per-vertex part data |
+| `PatchSurface.positionAt`, `surfaceAt`, `PatchGrid` | Bilinear lookups on the grid | Anchor resolution on the field; triangle lookups on the mesh for picks |
+| `ShapeCut`, `GridPieces`, `SoftBrushCut`, `BrushSweep`, `FadeField`, `CutOnMesh`, `CutMerge` | Cuts along rings, columns, diagonals; grid coordinates | Cuts along triangles by per-vertex functions, per block |
+| `LineGrid`, `ZeroCurves` | Contours and zero curves on grid cells | The same on triangles |
+| `ProxyNormals`, `SmoothedShading` | Per-ring normals, part-wide smoothing | Share-blended normals, smoothing on the character mesh per block |
+| `SocketStrips`, `StripPlan`, `StripShape`, `StripJoin`, `BridgeStrip`, `SocketFillets`, `PartBlendNode`, `geom/blend` | Strips and fillets between grids | Gone |
+| `SocketCrease` | Crease on the part's grid | Separate parts only, on the field |
+| `ShellBuilder`, `ShellInside`, `HemPush`, `GarmentBranches`, `GarmentCover`, `GarmentHiding`, `GarmentJoins`, `GarmentStrips`, `GarmentEdges`, `HangingBranches` | Rings and columns under each branch ring; fillets; hiding by u and v | Garment field and mesh, coverage cuts, hiding by the garment's field; the hanging push by vertices grouped by u |
+| `Weights`, `SeamBand`, `StripWeights`, `GarmentWeights`, `PartRings`, `BoneTree` | Vertices addressed as anchors in grid order; ring middles | Weights from shares and coordinates; ring middles from the slices (unchanged) |
+| `Skinning`, `PosedSurface`, `PosedBody`, `PosedNodes`, `PosedWork`, `ArmsOnBody` | Same vertices in the same order; ring-wise push | Same vertices in the same order across a pose (still true); push by vertices grouped by u |
+| `SurfacePick` | Projects every patch point and tests cells | Ray against the character mesh, coordinates by interpolation |
+| `FaceMap`, `EyeDraws`, `EyeFacing`, `LineEditTool` | `positionAt`, `surfaceAt` on the head's grid | The field |
+| `PartBend` (jaw) | Turns grid vertices past a u | Turns the head member's solid past the u, so the jaw's opening is meshed |
+| `MeshShift`, `JoinedDigits` buried flags | Grid indices | Gone |
+| `TemplateLint` ring and segment checks | Counts against joints and sections | Sampling checks for field parts; unchanged for separate parts |
+| `MeshInvariants` | Watertight by ring grid | Watertight and manifold by edges on any mesh |
+
+### Tests and fixtures
+
+| Fixture or test | Pins | Replaced by |
+|---|---|---|
+| `character/src/desktopTest/golden/<template>-<version>.txt` (52) | Every vertex of each template's default build | For field templates: the solid's field at fixed sample points and the (u, v) read there; for separate templates: kept |
+| `oversketch-*.txt`, `OversketchLocalityTest` | Vertex-level locality of an oversketch | Locality in the solid: field values far from the stroke unchanged |
+| `color-cut.txt` | Cut meshes on the grid | Cut areas and boundary lengths on the one surface |
+| `surface-anchors.txt`, `SurfaceAnchorGoldenTest` | Anchors on grid vertices through oversketches | The same anchors' resolved positions on the field through the same oversketches |
+| `rig/.../fennec-bones.txt` | Bones from ring middles | Unchanged |
+| Tests named for topology (`DrawnPartTest.aSideOutlineAloneBuildsTheFixedTopology`, `SpineBuildTest.theOutlinesBuildTheTemplatesTopology`, `SessionMeshTest.aPartHasAMeshOnceSettledInTheTemplatesTopology`, `MovePlacementTest.aTurnedPartKeepsItsTopologyAndItsUp`) | Grid sizes | The surface is meshed, watertight and on the field; the part's coordinates cover its share |
+| Rebuild tests asserting the same vertices (`LeaningLegsRebuildTest`, `BodyChangeBuildTest`) | Vertex-for-vertex restore | Undo restores the same blocks (same objects) and the same field |
+| Strip, fillet and field-join tests (`SocketStripsTest`, `SocketFilletsTest`, `GarmentJoinsTest`, `FieldJoinsTest`, `RunRecastTest`) | Systems that retire | Retired with them |
+| `examples/*.json` | Anchors and template pins | Rewritten from their commands with the new pins, in each example's phase |
+
+## The UI
+
+**Stays the same:** every Draw tool and what a drawing means; Move, sockets, joints and landmarks; Color's Fill, Brush and Region; Lines; the Pose stage and its handles; the Rig stage's seam strokes and Tidy; Dress's outfits, slots, branches and their ranges, ease and outlines; every command.
+
+**Changes:**
+
+- **Join blend per socket**: the Shape inspector's Join blend slider on a selected part, from the fennec test (`SocketBlendRow`, `SetSocketBlend` on both sides of a pair).
+- **Selection** shows the selected part as its share of the surface, outlined by the curve where its share falls to its neighbour's.
+- **Face**: the Eyes section holds the painted eye's sliders and swatches, and Add eyes makes painted eyes on a head in the field.
+- **Dress**: Fillet goes from the joins and edges section.
+- **Generic parts**: Rings and Segments show only for separate generic parts.
+- **Rig shading** colours each vertex by its bones' shares, as now, on the one mesh.
+
+No new panels and no explanatory text.
+
+## What retires
+
+Socket strips and their posed form; socket fillets; the grid-preserving implicit blend (`geom/blend`, `PartBlendNode`); garment fillets and garment strips; laying garments over joins; per-part casting onto the field (`RunRecast`, `WalledRays`, `RecastMemo`), seam points, buried points and buried faces, `Patch.facing`; seated eyeballs (`SeatedCap`, `seatShown`), the eye `oval` and `lid` blocks; handing paint across joins (`handedCuts`); the contour's exceptions for end caps, strips, cast and buried points; fixed topology for body parts; vertex-by-vertex mesh goldens for field templates. The lofted build of body parts retires once every example has moved; the lofted build stays for separate parts.
+
+## Phases
+
+| Phase | What | Done when |
+|---|---|---|
+| 0. Approval | Nicholas answers the decisions | Each decision is answered in this file |
+| 1. The proof | The fennec's body and the winter sweater on one surface, behind a per-character switch; the field, the mesher with blocks and member channels, coordinates and shares, shading, colour by coordinates, ink, painted eyes, rig weights and posing, the sweater's field, coverage and hiding | The proof passes (below) |
+| 2. Surface work on one surface | Every surface tool and node on the one surface: picks, marks, regions across parts, fur, line weights, the face map, Face's painted eyes, selection, Rig stage | The fennec, the dressed fennec bare and the winged fennec build on one surface, their surface work lands where it did, and the screens' tests pass on them |
+| 3. Garments whole | Parts of the way round, hanging free with its push, layers, cuffs, holes, owned parts, loose ends, posed hiding | Every outfit of the dressed fennec, the dressed person and the dressed woman passes its look sheets with no ragged or crumpled edges |
+| 4. Creatures | The adaptive cells; paws, hands, claws, mittens; separate and hard parts; dragon, lizard, toucan, koi, the woman and the twin | All examples build on one surface; the twin's compare mean is at least what it is now (0.824) and no shot's band falls by more than 0.025; a one-part edit on the woman stays near 50 ms |
+| 5. Migration and retiring | Format 15, the template versions, the examples rewritten, retired code and tests removed, the HLD rewritten | No body part builds lofted; `check` and `check -Pslow` pass; nothing in What retires remains |
+| 6. Joints | Implicit skinning, if the walk sheets need it | The walk's shoulders and hips keep their volume at the walk's deepest bends on the spot sheets |
+
+## The proof
+
+The first build step after approval, on this branch.
+
+**Proposed: the proof in two steps.** The proof below is as broad as the five rounds of the fennec test, so it is split, each step judged before the next starts:
+
+- **1a, go or no-go on the mesher.** The bare fennec meshed, shaded and inked, with no paint, eyes, rig or garment. It passes with clean joins (one smooth join line each), an outline as smooth as main's at close-up in every view (a contour that steps at cell scale fails), and a head, front-leg and torso edit timed, median of 21 warm runs, head and leg at 50 ms or less. The coarser surface while dragging (decision 4) is shown as a before-and-after of the drag's end, so the change at release can be judged before decision 4 is accepted.
+- **1b, everything on top.** Colour by coordinates including a region cut across parts (the cream chest and socks), the painted eyes, rig weights and the walk, and the winter sweater with its hem, neck opening and cuffs as level-curve edges. Anchors near joins are checked to resolve on the right side and to stay still across a redraw that does not move them.
+
+The pass list below is the union of the two steps.
+
+**What is built.** The bare fennec (`examples/fennec.json`'s drawings) on one surface, its eyes painted with the default eye of decision 5, and the winter outfit's sweater over it. Nothing else of the winter outfit, and no other example changes: everything else builds and renders pixel for pixel as main.
+
+**How it is judged.** The same sheets as the fennec test's round 5, made by `look` with `close=face,foot,joins` and the walk: the full body front, three-quarter and side; the walk; the joins' spot sheets (neck, shoulders, hips, ankles, the forelegs' parting); the dressed views of the sweater front, three-quarter and side, its face, and its walk; beside main and beside round 5.
+
+**It passes when:**
+
+- **Clean joins.** At the neck, shoulders, hips, tail root and ankles, at rest and through the walk: the join's line is one smooth stroke along the equal-share curve, and there is no other line, tick, curl, dot, hole, speck, wedge of wrong colour or ragged edge on any spot sheet.
+- **A clean sweater.** No flare, scribble, crumple or pale edge at the collar, shoulders, sleeves or cuffs, at rest and through the walk; the hem, neck opening and cuffs are smooth curves.
+- **Edits near 50 ms.** A head edit and a front-leg edit (the part made 2% larger or back), median of 21 warm runs, each 50 ms or less from the edit to the settled surface with its coordinates, shading and weights; a torso edit reported, with its drag-time cost at the coarser cell.
+- **No join special cases.** In the proof's code path, nothing names a join: no strip, fillet, cast, buried point, seam point, seated ball, `laidOverJoin` or contour exception, and no code reads whether a point is near a join except the share formula itself.
+- **Eyes.** The painted eye wraps in three-quarter as the original fennec's does, never crosses the head's outline, and its sliders work.
+- **Numbers.** `measure` on the proof beside main and round 5: profile depth, face in shade, terminator blotches, digit gaps, the walk's volume.
+
+Risks the proof is meant to settle: the contour's look on a dual mesh, the paws' toes at the body's cell size, and the shoulder and hip in the walk under linear blend skinning.
+
+## Decisions
+
+1. **Retire fixed topology** (see Fixed topology). Recommended: yes; it is the design.
+2. **Move saved characters onto the one surface when they open.** The alternative keeps both builds alive, and with them every strip, fillet and grid rule this plan retires. Recommended: move them; anchors keep their meaning, so the move is template pins and a dropped fillet.
+3. **Thin and hard parts stay separate.** Ears, wings, fins, loose ends; claws, nails, horns, beaks, teeth, owned parts. Recommended: yes, with the toucan's beak hard.
+4. **Coarser while dragging a large part.** Recommended: yes; it is the real pipeline at twice the cell, and the full surface follows the drag's end. The alternative is a torso edit of about 140 ms.
+5. **The default eye.** Recommended: start from the original fennec's eye in parameters, with the factor sheet's best row as a preset.
+6. **Blended joins are inked by default.** Decided by Nicholas: the equal-share curve is drawn unless the join's switch is off.
+7. **Fillet goes from Dress.** Recommended: yes.
+8. **Golden fixtures of fields and coordinates** instead of vertices for field templates. Recommended: yes.
+
+### Approved
+
+Nicholas approved the plan:
+
+- Decisions 1, 2, 3, 4, 5, 7 and 8 as recommended.
+- Decision 6 as amended: blended joins are inked by default along the equal-share curve, and the join's switch turns the line off.
+- The proof is split into 1a and 1b, as proposed under The proof; 1b starts only after Nicholas has judged 1a.
+
+## 1a results
+
+Built behind `Character.oneSurface` (command `SetOneSurface`), off for every saved character; the example `fennec-one-surface` is the fennec with it on. Every other example renders pixel for pixel as main (131 images of 13 examples, every outfit, face, hand and foot close-ups, compared byte for byte).
+
+**What is built.** Each part's runs become swept solids, joined parent-only by smooth unions, a part's later runs cut inside the part (`geom/field`). The surface is meshed by a dual mesher over a sparse grid of 8³-cell blocks, with the manifold split per cell, vertices started at the mean of their edge crossings, relaxed toward their neighbours inside the cell and projected onto the field, and each block keeping every member's own field at its grid points, so an edit reads only the changed member again, and only in the blocks its old and new boxes reach (`geom/surface`). Each vertex keeps the four members with the largest shares of the surface there, with each one's (u, v) on its run and its own field. Shading takes the surface's normal smoothed over four rings and turns it as each owning part's own build turns its shading normal at the vertex's (u, v), weighed by share and by nearness to that part's surface. Ink: the contour is interpolated across faces from per-vertex facing (Hertzmann and Zorin) on the one mesh, with no exception anywhere; each inked join gets one line along its equal-share curve, eased, faded with facing, and off where the join's ink switch is. Ears and the nose pad stay separate meshes. While a gesture is open the surface meshes at twice the cell; the full cell follows when it ends. The part drawer has a join blend slider for field parts on a one-surface character.
+
+**Timings,** median of 21 warm runs after 5, on this machine's threads, from the placed character to the settled surface with coordinates, shading, contours' edge map and join lines (rig weights do not exist yet in 1a). An edit is the part's `size` made 2% larger, alternating with back. The ranges are two runs of `measure`.
+
+| Build | ms | Target |
+|---|---|---|
+| Whole surface, 34 808 vertices, 1102 blocks at cell 0.012 | 1070 to 1089 | — |
+| Head edit | 188 to 234 | 50: fails |
+| Front-leg edit (moves the paw and its toes) | 293 to 354 | 50: fails |
+| Torso edit, full cell | 1047 to 1071 | reported |
+| Torso edit, coarse cell (while dragging) | 490 | reported |
+
+Where a head edit's time goes: reading the changed members' channels in about 400 blocks, 100 ms; quads 7 ms; numbering the whole mesh and placing the fresh blocks' vertices with their coordinates, 80 to 100 ms; shading, contours and join lines over the whole mesh, 25 ms. The member channels work (a block the edit does not reach is untouched), but the field reads of a swept solid at every grid point of a reached block, and the whole-mesh assembly and shading, are each over the budget on their own. The torso at the coarse cell is still half a second, so decision 4 does not by itself make a torso drag interactive.
+
+**Against the pass list.**
+
+| Criterion | Result |
+|---|---|
+| One smooth join line at the neck, shoulders, hips, tail root and ankles | The join lines themselves are single smooth strokes. Fails on the rest of the criterion: the two-tone terminator near the joins steps at cell scale (a sawtooth edge where the light and dark tones meet under the jaw, at the shoulder's three-quarter view and round the tail root), and the underside of the forelegs' parting shows a few streaks and a small contour fragment |
+| Outline as smooth as main at close-up in every view | Passes by eye on the outline close-ups, with the contour interpolated across faces; relaxation before projection is in from the start; isotropic remeshing near the silhouette was not needed |
+| No join special cases | Passes: no strip, fillet, cast, buried point, seam point, seated ball or contour exception in the code path; only the join line reads shares, as decision 6 asks |
+| Paws' toes at the body's cell | The toes read as scallops on the paw's outline from the front and as bumps from above, not as separate toes; they melt together underneath |
+| Drag sheet (decision 4) | The coarse surface while dragging is close to the full one at full-body size: toes soften and the terminator's edges coarsen, with no change of shape |
+| Closed manifold | 0 open edges and 0 edges on more than two triangles |
+
+`measure` beside main and round 5 measures the parts' own meshes, which the one surface does not change, so its numbers are main's; the one surface adds its own lines (mesh size, outline pieces per view, join lines, timings).
+
+**Open problems for 1b or a 1a round 2.** The terminator's cell-scale steps need shading that is smooth below the cell: more rings of normal smoothing, shading normals from the field's gradient interpolated per pixel, or a finer cell near the terminator. Edit times need field reads cut, either sparse reads inside a block (exact values only near the zero set) or cheaper swept-solid evaluation, and assembly and shading kept per block instead of over the whole mesh. The paws want the adaptive cells of phase 4.
+
+## 1a fix results
+
+Still behind `Character.oneSurface`; every other example still renders pixel for pixel as main (the same 131 images, byte for byte).
+
+**Where a whole build's time went, and goes.** `measure` with `profile=true` prints each batch of a build: what its pieces took together, how long the batch took on the machine's 8 threads, and the work between batches on one. The spike's figures are its own phases at cell 0.0119.
+
+| Stage, whole fennec at cell 0.012 | 1a | Fix | Spike |
+|---|---|---|---|
+| Members from the placed parts | 2 ms | 2 ms | — |
+| Field reads into the blocks' member channels, with each block's cells and manifold split | 646 ms on 8 threads (5.1 s of work, 98% busy) | 92 ms (0.68 s, 93%) | 68–72 ms |
+| Taking the read blocks, their neighbours, quads | 27 ms on one thread, 2 ms on 8 | 27 ms, 2 ms | 23–26 ms (meshing) |
+| Relaxing, projecting, shares and (u, v) | 119 ms (0.92 s, 97%) | 37 ms (0.27 s, 92%) | 27–29 ms (one projection step, no coordinates) |
+| Numbering the mesh, gathering, cutting quads | 5 ms on one thread | 3 ms on one, 1 ms on 8 | — |
+| Shading and ink | 22 ms on one thread | 10 ms, mostly on 8 | — |
+| Whole build, profiled once | 825 ms | 184 ms | 139–149 ms |
+
+What made 1a slow, against the spike:
+
+- **Four times the field reads.** 1a read 4.5 million member fields for the channels and 0.76 million for placing, where the spike read 0.8 million joined fields of about two members each. Every member a block might matter to was read at all 729 of its grid points, and a member's reach counted its children's widest blend (the head's 0.15 for the torso), so most blocks read four to six members everywhere.
+- **Each read twice as dear.** A swept-solid read cost 1.2 µs near the surface, against the spike's 0.55 µs a joined read: it looked at every ring pair and read about 20 of them in full, because pairs were tried in order along the run and the first ones set a loose bound.
+- **Placing read every member.** Each vertex's line search and coordinates read every member its block held.
+
+What the fix does about each:
+
+- **Sub-blocks.** Each block is cut into 64 sub-blocks of 2³ cells. A member's field is read at a sub-block's middle only where bounds from its block's middle or its octant's middle cannot show it leaves the union unchanged there. Its channel is read exactly only in sub-blocks where it can change the union and the union can change sign. Everywhere else it stands in by a bound: below it where the surface is near, and its middle's value where only the union's sign matters. Both are bounds chosen so that the joined field at every grid point a crossing uses comes out exactly as a full read gives it. Reads for a whole build fell to 0.9 million for the channels and 0.36 million for placing.
+- **Cheaper swept-solid reads.** The pair whose planes the point lies least far beyond is read first. Another pair is read only where the point lies less far beyond its planes, and nearer its middles' segment, than the least so far. About 6 pairs are read in full instead of 20, for 0.53–0.66 µs a read.
+- **Placing.** A vertex reads only the members that can change the union round its sub-block for its position, and those that can hold a share there for its coordinates. Its line search stops at a thousandth of a cell. A vertex whose cell, corners, start and members are unchanged since the last mesh takes its old placing.
+- **Edits.** A block an edit re-reads is kept whole when nothing it holds changed, and keeps its placing when its field and members' reach are unchanged. The mesh's gathering, quad cutting and finishing run in parallel batches.
+
+Threads: every batch keeps the 8 threads 85–98% busy. The work between batches is on one thread: about 10 ms of an edit's time, and 35 ms of a whole build's (27 of them taking 10 662 block reads).
+
+**Timings,** median of 21 warm runs after 5 warm-up runs, exactly as in 1a: the placed character to the settled surface with coordinates, shading, contours and join lines, the part's `size` 2% larger alternating with back, on 8 threads. Runs of `measure` on this machine vary by up to 10 ms between runs, so each figure is the range over two runs.
+
+| Build | 1a | Fix | Target |
+|---|---|---|---|
+| Whole surface, 34 808 vertices, cell 0.012 | 1070–1089 ms | 206–207 ms | — |
+| Head edit | 188–234 ms | 50–54 ms | 50 ms: fails, just |
+| Front-leg edit | 293–354 ms | 57–58 ms | 50 ms: fails |
+| Torso edit, full cell | 1047–1071 ms | 185–186 ms | reported |
+| Torso edit, coarse cell (while dragging) | 490 ms | 71–72 ms | reported |
+
+**Head and front-leg edits do not reliably reach 50 ms.** Before the surface was shaded as quad fans, which doubled the finishing work, runs gave 38–47 ms for the head and 49–55 ms for the leg; the fans cost about 4 ms. What remains in a front-leg edit, which moves the leg, the paw and its four toes:
+
+- About 20 ms of field reads on 8 threads: 0.12 million channel reads, 0.09 million sub-block middles and 0.13 million while placing.
+- About 13 ms placing 8 600 vertices.
+- About 10 ms of single-threaded bookkeeping.
+- About 8 ms of finishing.
+
+Getting under 50 ms with margin would still need:
+
+- A cheaper swept-solid read, for instance a coarse distance grid per run to start each read from the right pair with a tight bound.
+- Numbering, gathering and finishing kept per block, so an edit's bookkeeping and finishing scale with the blocks it touches, not the mesh.
+- Fewer re-placed vertices where an edit only moves a part rigidly.
+
+**Shading.** The shadow edge stepped at cell scale because each quad was shaded as two triangles split along one diagonal: where the shading normal bends fast, as in a fillet, the line where light meets shade kinked at every diagonal. The surface is now shaded as a fan of four triangles round a middle vertex in each quad, whose values are the mean of its corners'. Each part's shading turn is averaged over the same four rings of neighbours as the normal. The cel bands, colours, light and outline style are unchanged; only where the edge falls moved. Shading is still per vertex: per-pixel normals were not needed for the edge to read smooth at the spot sheets' close-up.
+
+**Ink.** A contour is left out where the surface plainly bends toward the viewer across it, a hollow where a closed surface always hides it, and where it is shorter than four of the mesh's edges.
+
+**Spot cameras.** A spot's camera stands 4 units out, or, where another part of the character lies on the line out past the body round the spot, just short of that part.
+
+**By eye.**
+
+| Criterion | 1a | Fix |
+|---|---|---|
+| Clean joins: neck | fail, sawtooth shadow edge under the jaw | pass at rest: the shadow edge and the join line are smooth curves; the edge waves gently at cell scale in places |
+| Clean joins: shoulders | fail, sawtooth edge in three-quarter view, a light wedge at the silhouette | sawtooth gone; a small light wedge where the leg meets the silhouette from the side remains, a fail by the letter |
+| Clean joins: hips | fail, ragged edge | pass at rest |
+| Clean joins: tail root | fail, ragged edge, cameras inside the body | pass from the views that see it; from the front the chest hides it, as it hides it at full view |
+| Clean joins: ankles | pass | pass |
+| Forelegs' parting | fail, streaks and a contour fragment | streaks gone; a few short ticks of join line where the leg joins meet the chest from below remain, a fail by the letter |
+| Outline as smooth as main | pass | pass, no change from 1a |
+
+Sheets, 1a beside the fix: full body, each join spot, outline close-ups, paws, the drag before and after its end, and the mesh.
+
+## 1b part A results
+
+Still behind `Character.oneSurface`. Part A is the speed, shading and ink work; paint, eyes, the rig, anchors and the sweater are the rest of 1b.
+
+**Speed: what is built.**
+
+- **A pair grid per run.** Each swept solid keeps a coarse grid over its box in its own space, a twelfth of its longest side a cell, reaching half its size past the box (`PairGrid`). A cell, found the first time a read lands in it, keeps the ring pairs that can give the field anywhere in it: the pair least at its middle first, then the rest by a lower bound over the cell (how far beyond the pair's planes, and how far from its middles' segment less its widest ring). A read tries that pair, then the others until the bound passes the least so far, and falls back to every pair outside the grid or where the cell's bound is beaten. The field is exactly the least over all pairs, as before (`PairGridTest` checks 4 000 points in, near and far from a bent, swelling run). Because the grid is in the run's own space, a part that only moves keeps its run's solid and every cell already found: a front-leg edit moves the paw and its four toes, and their reads go straight to the right pair.
+- **Placing reads once.** A vertex's coordinates take the members' fields and places from the line search's last kept read.
+- **Bookkeeping.** Block keys are spread over all their bits, so hashed tables keep neighbouring blocks in different buckets. The run's pending blocks are held as a set; a mesher run rebinds kept blocks only when the members moved in the list. The mesh is numbered per block by arrays; joining each block's quads to the numbered vertices is a parallel batch, followed by keeping the whole quads in order.
+- **Finishing.** Building the quad fan, linking it, the face normals and the contours' edge map (`TriangleEdges`, three parallel batches beside the others) run in parallel pieces; the join curves are found beside the last batch, from an edge-indexed table.
+
+What did not go in: finishing kept per block, reusing the last surface's shading for blocks no change reached. With the work above in parallel pieces, finishing a leg edit takes about 6 ms on 8 threads, and the per-block form would trade that for a second identity of every vertex across meshes; not worth it at this size.
+
+**Where a front-leg edit's time goes** (one profiled run each, on 8 threads):
+
+| Stage | Before | Part A |
+|---|---|---|
+| Members from the placed parts | 0.2 ms | 0.2 ms |
+| One-thread work between batches, all of it | 6.7 ms | 4.0 ms |
+| Field reads into the reached blocks' channels | 18.9 ms (148 ms of work) | 18.1 ms (138 ms) |
+| Quads, joining them to the numbered vertices | 0.9 ms | 1.3 ms |
+| Relaxing, placing, shares and (u, v) | 12.0 ms (86 ms of work) | 6.7 ms (48 ms) |
+| Gathering, cutting quads | 0.5 ms | 0.5 ms |
+| Shading, contours' edge map, join lines | 8.3 ms | 6.0 ms |
+| All | 48.3 ms | 39.6 ms |
+
+**Timings,** median of 21 warm runs after 5, measured as in 1a (`./gradlew :app:measure -Pmeasure="example=fennec-one-surface"`), three runs each, before and after on the same day. This machine's runs moved by up to 15 ms from run to run while other work shared it, so each figure is the range.
+
+| Build | Before | Part A | Target |
+|---|---|---|---|
+| Whole surface | 154–210 ms | 127–183 ms | — |
+| Head edit | 40–52 ms | 30–40 ms | about 40, at most 50: passes |
+| Front-leg edit | 43–60 ms | 37–47 ms | about 40, at most 50: passes the limit, the 40 only in the best run |
+| Torso edit, full cell | 132–186 ms | 119–131 ms | reported |
+| Torso edit, coarse cell | 64–71 ms | 56–59 ms | reported |
+
+On one thread, which other work on the machine disturbs less, a head edit fell from about 152 ms of work to 121 ms and a front-leg edit from about 188 ms to 156 ms.
+
+What would take the front-leg edit reliably under 40 ms: its reads, now the largest stage at about 18 ms. A read still evaluates about two pairs in full at about 50 ns each, and an edit reads about 170 000 times. Either fewer reads (the dirty margin round a changed member is four block half-diagonals; the channels' exact reads could stop at the sub-blocks the surface actually crosses) or a cheaper pair (precomputing each pair's frame along its slab so a read does one square root instead of three) would close it.
+
+**Shading: what is built.** The waves the shadow edge followed are the swept solids' own: each run's surface bends a little at every ring, and with the turns and the true field gradient both taken out, the edge still waved. So:
+
+- Each vertex reads its owning runs' own shading normals, weighed by share and by nearness to each run's own surface. Where the runs hold the vertex whole it shades exactly as the part's own build does; across a join the surface's own normal takes over by as much as the runs leave unheld.
+- The normals and the runs' shading are smoothed on the mesh's own vertices along the quads' sides (no diagonal, so nothing leans one way), three steps everywhere, then sixteen more by the square of how loosely the vertex is held, in groups that are smoothed apart in parallel. Inside a part nothing more moves; across a join the edge becomes a smooth curve.
+- Each quad's middle takes the mean of its corners. Light, the two tones, the far-side darkening and the outline are unchanged; per-pixel normals in the renderer were not needed.
+
+**Ink.** A join's line is cut where its surface faces the viewer less than a cosine of 0.15, thinning to nothing there from full weight at 0.35, and a piece shorter than six cells is left out.
+
+**By eye,** fix beside part A. Sheets in the scratchpad's `one-surface-1b/partA/sheets/`: `full-body.png`, `join-neck.png`, `join-shoulder.png`, `join-hip.png`, `join-tail-root.png`, `join-front-ankle.png`, `join-back-ankle.png`, `join-parting.png`, `outline-close-ups.png`, `paws.png`, `drag-pop.png`, `wireframe.png`.
+
+| Criterion | Fix | Part A |
+|---|---|---|
+| Neck: notches in the shadow edge under the jaw and at the back of the neck | fail | pass at the back of the neck and down the throat; under the jaw the edge is smooth with one soft bump where the head's own shading meets the neck, no notch |
+| Shoulders: ragged tone crops | fail | the shoulder's shadow edge is smooth; under the far paw, where the far-side darkening meets the paw's own shadow, small ragged crops remain: fail by the letter |
+| Shoulders: light wedge where the leg meets the silhouette from the side | fail | narrower, still there: fail |
+| Forelegs from below: short join-line ticks | fail | the two line ends now taper into each other instead of stopping short; one small tick remains where the far leg's join meets its contour: fail by the letter |
+| Hips, ankles | pass | pass |
+| Tail root | pass | the shadow patch beside the tail root, seen from behind and below, comes to a point where it was rounded: no notch or rag, but a new shape to judge |
+| Outline as smooth as main | pass | pass, unchanged |
+| Elsewhere: bands, colours, outline | — | the same bands, colours and outline; the head's shadow in the front view reaches a little further under the muzzle, where the head's two runs join |
+
+Every other example renders pixel for pixel as main (131 images of 13 examples, compared byte for byte).
+
+## 1b results
+
+Still behind `Character.oneSurface`. Part A was the speed, shading and ink work; part B is the paint, eyes, rig, anchors and sweater. The examples are `fennec-one-surface` (bare, painted eyes), `fennec-one-surface-round` (the round eye preset) and `fennec-one-surface-dressed` (the dressed fennec's wardrobe, wearing an outfit of the winter sweater alone).
+
+**What is built.**
+
+- **Paint by coordinates.** Each colour shape a part holds (template areas, regions, strokes) is read at every surface vertex its run holds as a signed distance in the run's own (u, v), measured in body units by how long a unit of u and of v is on the run there (`UvShapeDistance`, `RunScales`). It is kept to the run's own section of the surface, the side of each neighbour where its own field is the lower, so a shape ends exactly on the join's line. The surface is cut along each triangle where that value crosses zero (`LevelCut`), and each cut is a colour layer laid on the surface with its far-side darkening. A part whose base slot differs from the root's paints its own section. Paint is a node of its own after the surface; it lays its shapes in parallel.
+- **Painted eyes** (`PaintedEye`, `EyeLook`, `SetPaintedEye`, held on the character for the proof). An eye's middle is an anchor on the head resolved on the field; its facing is the surface's normal there turned by `lookOut`. Its fills (white, iris, pupil, highlight) are ovals and an almond in the plane square to that facing, scaled by how far the surface runs per unit of the head's u and v there, projected along the facing onto the head and cut on the surface; its lid line, lash flick and brow are ink lines laid on the surface with the lid's tapered weight. The default look is the original fennec's three-quarter eye in these parameters (opening 0.075 by 0.052 of the head's u and v at u 0.60, v 0.185, the lower lid 0.72 of the upper, the front corner wider, the iris 0.05 across set forward and up, pupil 0.58 of it, highlight 0.3). The round preset (`ROUND_EYE`) is row h of the fennec test's factor sheet: a dark-brown iris filling the opening, a round pupil, a larger highlight, set lower and nearer the middle, with the brow.
+- **Face marks.** Every ink mark in no group and every lip line a part on the surface holds is resolved again on the field and drawn as it is on main: the mouth and the muzzle creases.
+- **Anchors on the field** (`FieldAnchors`). An anchor starts at its point on its run's own swept surface at (u, v), moves along the field's gradient there to the zero of the joined field by false position, and off by its offset along the normal there.
+- **Rig.** Each vertex's weights are each run's share of it times that part's own weights at the vertex's (u, v), read from the part's own rig (`SurfaceSkin`). A vertex follows only the runs in its own line of joins (what it grows from, what grows from it, and its siblings on the same parent), so a paw never follows the paw beside it. A quad joining two parts no join relates, which touch closer than a cell (the hind paws' inner toes), is left out once a pose parts them. The surface, its paint layers, its ink marks and its garments are skinned by linear blend skinning as the parts are (`posedSurface`). The walk is looked at in four moments of a stride.
+- **The sweater.** A garment's field is the covered parts' runs, each grown by its branch's ease and joined as the body joins them (`garmentField`), meshed by the same mesher with a mesher kept per garment, so an edit meshes it again only where the edited member reaches, and kept whole while nothing it covers changed. Its coverage is the share-weighted distance into each branch's u range along the run (`coverage`); the garment is cut where coverage is zero, so its hem, neck opening and cuffs are smooth level curves, inked as hems. Body quads well inside the coverage are hidden. The garment takes the body's weights at the coordinates it grows from. Ears stay separate. Not built: the branch's drawn Side outline (the hem's flare), cuffs as their own band, layers.
+- **No socket strips on a one-surface character.** The strips' extra patches were drawn over the surface as pieces; that was the light wedge at the shoulder from the side on the part A sheets.
+
+**Migration.** None: saved characters are not migrated, and 1b does not need it. The painted eyes are a new optional list on the character, empty unless set.
+
+**Timings,** median of 21 warm runs after 5, measured on `fennec-one-surface-dressed` (`./gradlew :app:measure -Pmeasure="example=fennec-one-surface-dressed"`), an edit being the part's `size` 2% larger alternating with back, on this machine's 8 threads. The stack is what the graph runs after an edit: the surface, then beside one another its paint and eyes, its weights, and the sweater meshed, finished, cut and weighted.
+
+| Build | Surface alone | Stack: surface, paint, eyes, weights, sweater | Target |
+|---|---|---|---|
+| Whole build | 101 ms | 356–376 ms | — |
+| Head edit | 31–33 ms | 88–144 ms | 50: fails |
+| Front-leg edit | 27–28 ms | 147–166 ms | 50: fails |
+| Torso edit, full cell | 76–81 ms | 319–332 ms | reported |
+| Torso edit, coarse cell | 34–35 ms | 117–130 ms | reported |
+
+On the whole surface the stages beside the surface take: paint and eyes 29–38 ms, weights 7–8 ms, the sweater from nothing 186–220 ms. The parts' own rig, which the surface's weights read, takes 10–11 ms and runs before them. The ranges are three runs of `measure`, before and after keeping a garment whole, and its weights, while nothing it covers changed, laying paint shapes in parallel and resolving anchors by false position.
+
+Where the time goes over the limit, estimated from the stage medians above (no edit was profiled stage by stage), and the next levers:
+
+- **Head edit:** the sweater is kept whole, so what is left over the surface's 31 ms is paint and eyes laid again over the whole surface (29–38 ms on its own) and the skin the sweater hides found again. Lever: keep each paint layer, and the hidden skin, per block, laying again only the blocks the edit meshed again, as the surface keeps its blocks.
+- **Front-leg edit:** the sleeve is meshed again only where the leg reaches, but the sweater's finishing (shading, contours, coverage, cut, hems) runs over its whole mesh, then its weights over all its vertices. Lever: finishing and weights per block for garments, the read-less lever named in part A (a tighter dirty margin, exact channel reads only in the sub-blocks the surface crosses), and precomputed pair frames, now for two meshes an edit.
+
+**Against the pass list,** by eye on the sheets in the scratchpad's `one-surface-1b/sheets/`, each main, fennec test round 5 and 1b in rows: `full-body-bare`, `full-body-dressed`, `face-front`, `face-three-quarter`, `face-side`, `face-round-preset`, `join-{neck,shoulder,hip}-{bare,dressed}`, `spot-{neck,shoulder,hip,tail-root,front-ankle,back-ankle,parting}` (1b's six-sided spots, bare and dressed), `sweater-edges`, `paws`, `walk-{0..3}-{bare,dressed}` and `anchors`. Round 5 has one walk pose and no dressed join close-ups or anchors; those rows are marked missing.
+
+| Criterion | Result |
+|---|---|
+| Paint matches main's, regions across parts | Passes: the cream chest, muzzle and cheeks, the black tail tip, the inner ears, claws, beans and pads read as main's. The cream meets fur exactly on each join's line. Where the chest's own border crosses the shoulder's fillet, from the front, the edge waves at cell scale, as the torso's (u, v) read off its own surface waves: a fail by the letter |
+| Eyes: the default from the original eye, read at least as well as main's | Three-quarter: passes, the almond, the forward iris clipped by the upper lid, the highlight, lid line, lash flick and brow read as main's three-quarter eye and wrap with the head. Front: reads, as slanted almonds rather than main's round front drawing. Side: reads, smaller than main's side drawing, since one painted eye is seen edge-on where main swaps in a drawing. The far eye never crosses the outline |
+| Round preset | Built from row h's factors (dark-brown iris filling the opening, round pupil, larger highlight, lower and nearer the middle, brow). Front reads rounder and darker than the default eye and the side keeps its shape; the opening still slants, so it is not main's round front drawing |
+| Eye sliders | Not built: the eye is a document item set by a command, with no Face stage section yet (phase 2) |
+| Face marks as on main | Passes: the mouth lines and muzzle creases sit where main's do |
+| Rig and walk: no tearing, pops or shading jumps at the joins | Passes on the four walk moments, bare and dressed, after two fixes: a vertex follows only its own line of joins (paws had followed the paw beside them), and the hind paws' touching inner toes part instead of stretching. The joins bend under linear blend skinning without visible collapse at the walk's angles |
+| Anchors near joins sit where expected and survive an edit of the neighbouring part | Passes: rings on each side of every join line stay on their side and on their part when the torso is made 6% larger (`anchors`); `FieldAnchorsTest` checks it |
+| Sweater does not crumple; hem, neck opening and cuffs are smooth curves | Passes at rest and through the walk: no crumple, flare or scribble, against round 5's crumpled collar and shoulders. Two marks remain: seen from below, the cream through the neck opening ends in the hidden skin's quad steps, a pale ragged edge at the collar (fail by the letter); the far sleeve's far-side darkening shows as a blocky patch in some walk frames |
+| Ears and separate pieces stay separate | Passes |
+| No join special cases | Passes: nothing names a join; weights read lineage through the field's parent links, and the contact quads are found by the same relation, not by part names |
+| Every other example pixel for pixel as main | Passes: 131 images of 13 examples, 0 differ |
+| Edits within 50 ms with everything on | Fails: see the timings |
+
+**Low-priority items from part A.** The light wedge where the foreleg meets the silhouette from the side was the socket strips' patches drawn over the surface; with no strips on a one-surface character it is gone from the shoulder spot. The tick under the forelegs no longer shows from below, but seen from behind and below one join line there breaks in two short pieces. The ragged tone crops under the far paw were not judged again and stay open.
+
+**Open.** The edit times; the chest border's waves on a fillet; the collar's pale edge from below; eye sliders and the Face stage; the branch's drawn Side outline, cuff bands and layers for garments; posed hiding (hiding is found at rest and carried); the toes at the body's cell (phase 4's adaptive cells).
+
+## Speed round results
+
+Still behind `Character.oneSurface`. Everything the stack lays on the one surface (paint, eyes, the sweater, the skin it hides, the weights) renders pixel for pixel as in 1b: 42 images of `fennec-one-surface` and `fennec-one-surface-dressed` (every join spot, face, paws, walk frames, outline, mesh) compared byte for byte, 0 differ. Every other example renders pixel for pixel as main (131 images of 13 examples, 0 differ).
+
+**How it was profiled.** `./gradlew :app:measure -Pmeasure="example=fennec-one-surface-dressed outfits=<outfit> only=stack profile=true edits=head,front-leg-l jfr=<folder>"` times the stack alone; with `profile=true` it also runs each stage of 11 warm edits one after another and prints each stage's median, and with `jfr=` it records 40 more edits under the JDK's flight recorder with its profile settings. The recordings were rolled up by stage (the innermost stage class on each sampled stack), by method, by allocation site, and for GC pauses and parked threads. The stopwatch medians of 21 warm runs remain the pass and fail numbers.
+
+**What the recorder showed before** (winter outfit, head and front-leg edits; samples on all threads):
+
+| Stage | Head | Front leg |
+|---|---|---|
+| Surface meshing (field reads, placing) | 56% | 54% |
+| Eyes | 12% | 9% |
+| Paint | 9% | 7% |
+| Garment cut (coverage, level cut, kept triangles, edges), on one thread | 5% | 16% |
+| Weights, body and garments, on one thread | 9% | 9% |
+| Surface finishing | 6% | 4% |
+
+Hot methods, self: `SweptSolid.pairField` 29%, `SweptSolid.read` 11%, `HashMap.getNode` 6–10% and `Integer.valueOf` 3–4% (the level cut's and the chart's boxed maps and lists), `UvShapeDistance.nearest` 3% (eyes read at every head vertex), `RunWeights.add` and `WeightBlend.write` (sorting a boxed list per vertex). The main thread held 31–37% of all samples: eyes, weights, the garment cut and the hidden skin ran there while the pool waited. GC: 18 and 35 collections over the 40 edits, 77 and 196 ms of pauses; the largest allocation sites were the mesher's blocks, `CellTables.components` (a union-find array for every cell, crossed or not) and boxed integers. Parked waits: 967 and 1391 parks, the pool's threads idle while one thread worked.
+
+**What was changed, from that.**
+
+- **Level cuts** index their vertices by array and crossed edges by an open-addressed long map, with growable int and float lists (`geom/collections`), so no cut boxes anything.
+- **The chart** is built once a surface with counting arrays and shared by paint and eyes; joining several runs' triangles uses a flag array, not a boxed distinct.
+- **Eyes** read only the head vertices within the opening's reach of the eye's middle that face it, and the iris, pupil and highlight only where the opening is not far outside. The values everywhere else are what the full read clamps to, so the paint is the same.
+- **Paint** is incremental per vertex: each mesh matches its vertices against the mesher's last mesh (`MeshChange`: same block, same values, every member it holds the same member placed and joined the same way), and a shape takes its value from the last painting at every vertex that matches. A head edit keeps 22–23 thousand of 35 thousand vertices, a front-leg edit 28 thousand of 34 thousand. The ink lines are resolved as one more parallel piece.
+- **Weights** run in parallel chunks, and choose each vertex's heaviest four bones without sorting a list.
+- **The garment** is grown from the body's mesh rather than its finished surface: the one surface is meshed in one graph node and finished in the next, and the garments node takes the mesh, so a garment is meshed, finished and cut while the body is being finished. Its mesher's dirty blocks follow the body's changed members as before, and a grown member reads its channel from the body's block where the body read the same solid there, less its ease, exactly as its own read would give it (`ChannelSource`). Its coverage, cut, kept triangles' edges and hems are parallel batches of the garment build. The skin it hides is a node of its own over the finished body and the garments, in parallel chunks.
+- **The mesher's reads**: a block keeps its members' fields at its middle and its octants' middles, so a kept member is not read there again; a cell's union-find is made only where the surface crosses the cell; a block's quads are held unboxed.
+
+What was not done: hidden skin and garment weights kept per vertex (each is now under 2 ms); per-block finishing of the body or the garment; the read levers of part A (a tighter dirty margin, exact reads only in sub-blocks the surface crosses, precomputed pair frames). The last of these changes the field slightly and so the look.
+
+**Stages after,** each run alone on the pool's 8 threads, medians of 11 edits:
+
+| Stage | Head, sweater | Head, winter | Front leg, sweater | Front leg, winter |
+|---|---|---|---|---|
+| Surface | 35 ms | 34 ms | 42 ms | 31 ms |
+| Paint | 7 ms | 6 ms | 5 ms | 5 ms |
+| Eyes | 4 ms | 4 ms | 4 ms | 4 ms |
+| Weights | 1.7 ms | 1.6 ms | 1.7 ms | 1.5 ms |
+| Garments meshed / finished / cut | kept whole | 16 / 4 / 1 ms (the cap) | 14 / 5 / 3 ms | 32 / 10 / 5 ms |
+| Hidden skin | 0.5 ms | 1.1 ms | 0.5 ms | 1.1 ms |
+| Garment weights | 0 ms | 0.7 ms | 1.0 ms | 1.7 ms |
+| All, one after another | 49 ms | 70 ms | 78 ms | 93 ms |
+
+Before, on the winter outfit, the same stages one after another took 154–175 ms for a head edit (surface 49–59, paint 12, eyes 27, weights 10, garments 51–58, garment weights 3) and 246–252 ms for a front-leg edit (surface 44–52, paint 11–13, eyes 25–26, weights 9–10, garments 126–143, garment weights 9).
+
+**What the recorder shows after:** surface meshing (the body's and the garments') is 71–79% of all samples; finishing 8–11%; paint 3–9%, eyes 1–4%, weights 2–5%, the garment cut too small to show. Hot methods, self: `SweptSolid.pairField` 35%, `SweptSolid.read` 12–16%, `SurfaceBlock.findCells` and `BlockReading.buildQuads` 2–6% each, `TriangleEdges.ownEdges` 4–6%. Of the samples inside `SweptSolid.read` on a front-leg edit, 32% are channel reads, 26% sub-block middles, 37% placing vertices and 5% block middles. GC: 9–21 collections over the 40 edits, 37–133 ms of pauses. The main thread holds 7–10% of samples, with 2–32 parks against 967–1391: the pool does not wait on single-threaded work, though its threads still take uneven shares of the samples (the busiest about four times the least busy on a head edit), the short finishing and garment batches leaving some idle.
+
+**Timings,** median of 21 warm runs after 5, an edit being the part's `size` 2% larger alternating with back, as in 1b. The stack runs as the graph runs it: the surface meshed; the garments grown, meshed and cut beside the surface's finishing; then beside one another paint and eyes, the weights, and the hidden skin with the garments' weights. Three runs of `measure` each on a quiet machine; runs while other work shared the machine were up to 50% slower and are not counted. `winter-sweater` is the sweater alone, the stack this round was set; `winter` is the example's first outfit (cap, sweater, boots and scarf), which the 1b figures were measured on.
+
+| Build | 1b (winter) | Speed, winter | Speed, sweater alone | Target |
+|---|---|---|---|---|
+| Whole build | 356–376 ms | 277–283 ms | 210–229 ms | — |
+| Head edit | 88–144 ms | 59–64 ms | 50–51 ms | 50, about 40: sweater passes at the limit, not the 40; winter fails |
+| Front-leg edit | 147–166 ms | 84–87 ms | 70–73 ms | 50: fails |
+| Torso edit, full cell | 319–332 ms | 231–232 ms | 168 ms | reported |
+| Torso edit, coarse cell | 117–130 ms | 85–86 ms | 71–80 ms | reported |
+
+The code as this round found it, measured the same day on the winter outfit, gave 92–95 ms for a head edit and 181–199 ms for a front-leg edit.
+
+**Against the goal.** Head edits with the sweater on reach 50 ms, at the limit and not the 40 aimed for; front-leg edits fail, by about 20 ms with the sweater and 35 ms with the winter outfit. "Edit equals fresh whole build" still passes, and `OneSurfaceStackTest` checks the same for the whole stack: after a leg edit, the surface, paint and eyes, the sweater, the skin it hides, and the body's and the sweater's weights match the stack built afresh.
+
+**What would close the gap.** Both edits are now bound by field reads: about half of all samples are inside `SweptSolid.read`, on the body and again on each garment the edit reaches. A front-leg edit reads the leg, both paws and their toes again in about 860 blocks (160 ms of work on 8 threads) before the sleeve reads them again for itself. In order of likely gain:
+
+- **Cheaper pair reads**: each pair's frame along its slab precomputed so a read takes one square root instead of three. This is about a third of every read, but changes the field a little, and with it the look.
+- **Fewer reads per block**: exact channel reads only in the sub-blocks the surface crosses, and sub-block middles taken from the channel where the channel already holds them (each middle is a grid point).
+- **Placing without reads** where an edit only moves a part (the paws and toes of a leg edit): their vertices moved by the part's move rather than placed again.
+- **Garments from the body's placing**: a garment vertex near the body read from the body's placing rather than placed again on the grown field.
+- **Finishing per block**, body and garment, as 1b part A described; with the garment beside the body's finishing it saves less than it would have.
+
+**By eye.** No change: the sheets in the scratchpad's `one-surface-speed/sheets/` set 1b above this round for the full body bare and dressed, the face in front and three-quarter view, the sweater's neck opening, cuffs and hem, and a walk frame bare and dressed, each labelled with the pixels that differ (none).
+
+**Open from this round.** The secondary items were not reached: the default eye's front view still reads as a slanted almond rather than main's round front eye; the pale ragged collar edge from below (the hidden skin hides whole quads, so the cream through the neck opening ends in quad steps; cutting the body's fill along the coverage level instead of hiding quads would end it on a smooth curve); the blocky dark patch on the far sleeve in some walk frames (the garment's far-side darkening, carried per vertex from the body's shares). In the app the weights node waits for the dress node, which `measure` runs beside it; and an edit rebuilds the parts' rig, which the weights read, so in the app the weights are read again in full.
+
+## Phase 2 results
+
+The fennec, the dressed fennec and the winged fennec are built as one surface: `fennecCommands()` ends with `SetOneSurface(true)` and the painted eyes, and their example files are written again from it (`./gradlew :screens-core:test -PupdateGoldens`). `fennec-one-surface` is the fennec. The feathered wing template is `"surface": "separate"`, so the wings stay pieces on the surface as the ears do. `look ... surface=parts` renders an example as its parts' own meshes, for comparing with main.
+
+**What is built.**
+
+- **Picks on the one surface.** Every surface tool (paint, regions, strokes, fur, marks, Move, Add part, Dress's press tools) picks on the one surface's mesh and lands the hit in the part whose run holds the largest share there, at that run's (u, v) (`SurfaceMeshPick`).
+- **Selection as a section.** A selected part is drawn as its own section of the surface, the triangles where its run holds the largest share, cut along its equal-share curve (`SurfaceSection`), with the rest ghosted; its section's contour and border are inked. Its fur stands on its section.
+- **Surface work on the field.** Strokes, region points, fur roots and marks are placed on the field as anchors are (`fieldWork`), at rest; in a pose each is carried by the vertex nearest it at rest (`PosedSurface.carry`).
+- **Paint across a fillet.** A shape's distance, read in its run's own (u, v), is eased toward its neighbours' where a vertex lies off its run's own surface, on the blend into the next part, before it is kept to the run's section and cut. The chest's border runs smoothly over the shoulder's fillet and ends on the join's line.
+- **Line weights.** The surface's contour takes each part's line weight at the run that holds the largest share there, so the back's heavier line runs on the one surface.
+- **Face's painted eyes.** Eyes in Face shows the selected head's painted eye: Width, Height, Tilt, Look out, Iris, Pupil and Highlight sliders, a Slit pupil switch, and Layers (Brow, Lashes, Lid outline switches and each fill's swatch). An eye can hold a front look; a view within 20 degrees of facing the eye sees the front look, any other the eye's own, so Angle versions' Front edits the front look. A head with no painted eye shows Add eyes. No board draws the painted eye's controls; they follow Controls' slider rows and Layers' swatch rows.
+- **The fennec's front eye.** The fennec's eyes hold a front look from its front drawing: an upright oval as tall as it is wide, the iris filling it, no lashes. The three-quarter look is unchanged.
+- **The face map on the surface.** `CharacterSurface.faceMap` casts the head's face map onto the one surface; no phase 2 example draws on it.
+- **Rig stage.** The one surface is coloured by its weights, with seam and heat layers laid on it; separate pieces are coloured as their parts.
+- **Panes.** Sheet, Single and the stage views draw the one surface whole, ghosted or as the selected section.
+- **Tests on the parts-built fennec.** What only a parts-built character has (strips' weights, the drawn eyes' angle versions, a garment's loose end) is tested on the fennec built as parts (`asParts()`), since the fennec is now one surface.
+
+**Against the criteria,** by eye on the sheets in the scratchpad's `one-surface-phase2/sheets/`, each main above phase 2: `full-body-{fennec,dressed-bare,winged}`, `face-*`, `region-{neck,shoulder,hip}-*`, `walk-fennec`, `walk-dressed-bare`, `chest-front-fennec`, `chest-three-quarter-fennec`, `eyes-front-fennec`, `eyes-three-quarter-fennec`, `wings-winged` and `back-line-weight-fennec`. The winged fennec has no walk. App screenshots of the wired panes are in `one-surface-phase2/app/`: `shape-torso`, `face-head`, `rig` and `color-torso`.
+
+| Criterion | Result |
+|---|---|
+| The fennec, the dressed fennec bare and the winged fennec build on one surface | Passes |
+| Their surface work lands where it did on main | Passes, with these differences: the cream chest meets the legs' fur at the inked join lines, where main's leg fur rose over the chest; the front mouth is subtler than main's smile; the side eye is smaller than main's side drawing, one painted eye seen edge-on; the toes and claws in side view are less divided than main's; a small notch in the muzzle's cream border in three-quarter view |
+| The screens' tests pass on them | Passes: `./gradlew check` passes. Tests of what only a parts-built character has run on the fennec built as parts |
+| Panes wired to the one surface | Passes: Shape with the torso selected shows its section with its fur, the rest ghosted; Face shows the painted eye's controls; Rig colours the surface by weight; Color paints the surface |
+| Face eye sliders | Built; no board draws them, so they follow the nearest board rows (Controls' sliders, Layers' swatches). Face stays verifiable, with its verify steps in `boards.md` |
+| Default front eye round like main's, three-quarter unchanged | Passes (`eyes-front-fennec`, `eyes-three-quarter-fennec`) |
+| Chest border smooth across the shoulder fillet | Passes (`chest-front-fennec`, `chest-three-quarter-fennec`) |
+| Per-character switch set in the examples' commands | Passes |
+| Golden example files written by the documented command | Passes |
+| Every other example pixel for pixel as main | Passes: 113 images of 10 examples, 0 differ |
+| Speed does not regress | Fails for a head edit with the sweater alone, by about 6 ms; the front-leg edits and the winter head edit hold within the noise, the winter front leg 2–3 ms slower (below) |
+
+**Timings,** `./gradlew :app:measure -Pmeasure="example=fennec-one-surface-dressed outfits=<outfit> only=stack"`, each run the median of 21 warm edits; six runs each, the phase's start and phase 2 run in turn on the same machine, since other work on it moved single runs by up to 40%. Each cell is the median of the six runs, in ms, with their range.
+
+| Edit | Start, sweater alone | Phase 2, sweater alone | Start, winter | Phase 2, winter |
+|---|---|---|---|---|
+| Head | 50 (41–61) | 56 (51–62) | 61 (59–69) | 61 (60–72) |
+| Front leg | 74 (59–81) | 74 (70–96) | 85 (83–89) | 88 (87–98) |
+
+Where the head edit's time goes: with the sweater kept whole, paint is on the edit's longest path, and it takes about 10 ms against 7.7 ms at the start (`profile=true`): each run's section is laid on the whole surface every edit and each shape's eased values every edit; only the distances are taken from the last painting at the vertices an edit keeps. Eyes take about 3 ms against 4.4 ms, each eye, look and side laid in parallel. Lever: carry the sections and eased values across meshes at the kept vertices, as the distances are.
+
+**Open.** The head edit's paint time; the painted eye's gaze is not wired to the look sliders' pose; the posed surface work is carried by the nearest vertex at rest, not by the field in the pose; a region whose shapes span several parts is laid as each part's pieces kept to their sections (no example has one); the dressed fennec's outfits on one surface are phase 3's (the winter outfit builds, its scarf does not show).
+
+## Phase 3 results
+
+The dressed fennec wears every outfit (Winter: cap, scarf, sweater and boots; Hooded: hood and sweater; Bare) whole on the one surface. The dressed person, the dressed woman and the twin still build as their parts, pixel for pixel as main. Phase 3 is therefore not done: its criterion names the person's and the woman's outfits too.
+
+**What is built.**
+
+- **A garment worn over the placed body** (`WornCover`). Before a garment is meshed it is resolved against the placed parts. Each branch stands off the garments under it: an inner garment's branch the whole way round the same part, over any of the same span, adds its ease, so the scarf sits over the sweater. Each part that comes out through a branch, found as the parts-built dressing finds it (a part on a socket inside the branch's range that the garment neither covers nor hides and that does not hang inside it), either gets a cuff branch over its first run, from inside the garment to past where it comes out by the cuff's size, or, with its cuff off, opens a hole where its own field lies inside the garment. A branch drawn standing off its ease, or hanging free past its part's end, reads its shell's solid in place of its grown run, joined as the run is; the shell is built a little past each end, so its hem is cut on its wall.
+- **Cuffs over separate parts.** A cuff over a part outside the body's field, such as an ear through the cap or the hood, sweeps that part's own run, grows it by the ease and joins it to the garment's run over its socket parent by a blend at least twice the ease, so the cuff is one surface with the garment.
+- **Partial garments.** A branch part of the way round is cut by its v range in the coverage, as in 1b. A garment reads a part's branch only on the part's first run, whose (u, v) a branch is drawn in, so the fennec's muzzle run does not read the cap's range in its own coordinates.
+- **Coverage near its zero is smoothed** along the garment's mesh before the cut (`smoothedNearZero`), so a hem crossing a fast change of shares runs across cells.
+- **Hiding along a curve** (`HiddenSkin`). What a garment hides is cut along the level curve where the skin, or an inner garment, lies 1.5 cells inside an outer garment's coverage, instead of hiding whole quads; skin round a part coming out through a hole stays shown. The body's far-side darkening layers read the cut. This ends the pale ragged collar edge seen from below.
+- **Loose ends** are placed on a one-surface character (`Dressing.endsOnly`), hung from their branch fitted over the layers under it, and rigged from the bone moving their part most at the part's vertex nearest the root.
+- **Garments mesh only round what they cover** (`RunClips`, `ClippedSolid`): a run a garment covers part of is kept to a box round its covered rings, one ring and six cells past them.
+- **Touching quads in a pose.** Where a pose leaves out the touching quads of two unrelated runs (the boots' touching toes), each garment's cut is made again over what is left and its lines read only the triangles kept, so the boots do not stretch between the feet in the walk.
+- **Fur under garments.** A fur root that a one-surface garment's branch covers on its part's first run is kept apart as covered, as on a parts-built character.
+- **Paint speed.** Each shape's distances and each run's section are read in pieces of a run's vertices across the threads; a vertex kept from the last mesh takes its section, and its eased value where it lies further from any re-meshed vertex than easing reaches (`ChartEasing`, `ChartLay`, `PaintMemo`).
+
+**Not built.** The hanging push (a skirt pushed out of the legs it hangs over, in each pose). Owned parts in an outfit on a one surface: they are placed and drawn as separate parts, as phase 2 left them, but no fennec garment owns one, so none is judged. Hiding found again in each pose beyond what coverage gives: coverage reads coordinates, which a pose does not change, so what it hides follows the pose, but a pose that carries skin out through a garment's wall is not tested again. Moving the dressed person and the dressed woman onto the one surface.
+
+**Timings,** `./gradlew :app:measure -Pmeasure="example=fennec-one-surface-dressed outfits=<outfit> only=stack"`, each run the median of 21 warm edits; four runs each, the phase start (ca502d5) and phase 3 in turn on the same machine. Median of the four runs in ms, with their range.
+
+| Build | Start, sweater | Phase 3, sweater | Start, winter | Phase 3, winter |
+|---|---|---|---|---|
+| Whole build | 214 (171–222) | 239 (218–245) | 287 (277–291) | 327 (322–332) |
+| Head edit | 50 (45–64) | 53 (48–58) | 60 (59–60) | 96 (93–97) |
+| Front-leg edit | 74 (68–77) | 80 (76–84) | 87 (85–88) | 97 (94–100) |
+| Torso edit, full cell | 166 (161–169) | 182 (168–183) | 230 (230–232) | 275 (270–277) |
+| Torso edit, coarse cell | 69 (68–72) | 86 (81–89) | 85 (84–90) | 125 (124–130) |
+
+The winter outfit at the start meshed a cap without ear cuffs and a scarf under the sweater; it now meshes the cap's ear cuffs, which a head edit moves, and those cuffs are most of the head edit's 36 ms more. With the sweater alone the edits regress by a few ms: the sweater's drawn Side outline now gives it its shell, whose solid the garment reads itself rather than from the body's channels (about 3 ms of a front-leg edit), and the hidden skin is cut along a curve over the whole body (about 2.6 ms more than hiding quads). Levers: cut the hidden skin only over the quads its curve crosses, keeping whole the quads either side; read a shell's channels once per edit; mesh the ear cuffs again only where a head edit moves them. Paint on a head edit with the sweater alone, profiled stage by stage, is 8.1–8.6 ms against 10.0–10.7 ms at the start in the same runs.
+
+No woman outfit is timed: the woman is not on the one surface.
+
+**Against the criteria,** by eye on the sheets in the scratchpad's `one-surface-phase3/sheets/`, main above phase 3: `fennec-<outfit>-full-body`, `-face`, `-walk-{0..3}` (main's look has no walk frames of the dressed fennec, so those rows are marked missing), `-edge-collar-front`, `-edge-head-three-quarter`, `-edge-sleeve-hem-side`, `fennec-winter-edge-boots`, `fennec-winter-edge-scarf`, and phase 3's six-sided spots `fennec-<outfit>-spot-{neck,shoulder,hip,front-ankle,parting}-phase3`. App screenshot of the Dress stage on the one surface: `one-surface-phase3/app/dress-winter.png`.
+
+| Outfit or criterion | Result |
+|---|---|
+| Fennec, Winter | Passes by eye at full body and in the walk: the cap with its ear cuffs, the scarf over the sweater with its loose end, the sweater with its drawn flare, the boots over the sleeves. Fails by the letter on edges: the cap's lower corners, where the ear cuffs meet its side edge, are ragged at cell scale; the boot tops show small serrations; a near boot's sole shows a small hole in one walk frame where its touching quads are left out |
+| Fennec, Hooded | Passes at full body, face and walk; seen from below, two small cream specks of chest show through the sweater beside the bib, where the head's blend into the chest stands out past the grown torso (fails by the letter) |
+| Fennec, Bare | Passes, as in phase 2 |
+| Person, Summer | Not moved: builds as parts, pixel for pixel as main. Fails the phase criterion |
+| Woman, every outfit | Not moved: builds as parts, pixel for pixel as main. Fails the phase criterion |
+| Twin, dressed | Kept on parts, as asked; pixel for pixel as main, so its compare mean is unchanged |
+| Pale ragged collar edge from below | Fixed: the cream through the neck opening ends on a smooth curve (`fennec-hooded-spot-neck-phase3`, bottom right) |
+| Blocky dark patch on the far sleeve in walk frames | Not seen in the four walk frames of either outfit |
+| Paint speed on the sweater head edit | Improved, 8.1–8.6 ms against 10.0–10.7 ms; not back to 7.7 |
+| Edits do not regress | Fails: see the timings |
+| No join special cases | Passes: nothing names a join; holes and cuffs come from the socket tree and coverage, touching quads from the field's parent links |
+| Every unmoved example pixel for pixel as main | Passes: 113 images of 10 examples, 0 differ |
+
+**Open.** The person and woman outfits on the one surface: their bodies, their faces' drawn eyes (which a one surface does not draw), and the woman's skirts (which need the hanging push); the cap's ragged cuff corners; the bib specks; the edit-time regressions above; hiding tested again on the posed meshes.
+
+**The Face stage's angle versions (a note for the boards, not built).** With painted eyes, Face still shows the Angle versions band and the panes' "Writes Side version" and "Writes Front version" chips, which belong to drawn eyes. A painted eye has its own look, seen from every side, and an optional front look, seen within 20 degrees of facing it. What the boards would change: on a head with painted eyes, the Angle versions band gives way to a choice of Own look and Front look (or a Front look switch in Eyes, its tile shown only while it is on); the "Writes Side version" chip goes, since no side look exists; "Writes Front version" reads as editing the front look; Lock locks the panes to the front look; a dashed tile means a front look not yet made. A head with drawn eyes keeps the band as drawn. That is Nicholas's call.
+
+## Risks and open questions
+
+| Risk or question | Recommendation |
+|---|---|
+| The contour on a dual mesh steps at cell scale where the grid runs across the silhouette, where lofted rings ran along it | Judge on the proof's sheets. If it shows, place vertices by relaxation before projection, and if still needed run a pass of isotropic remeshing near the silhouette; failing that, interpolate the contour across faces from per-vertex facing (Hertzmann and Zorin, 2000) and cut the fill to it |
+| The paws' toes and the fingers need finer cells than the body | The adaptive cells in phase 4; bring them into the proof if the paws read lumpy at 0.012 |
+| A torso edit misses 50 ms | Decision 4; member channels make the full-detail rebuild after the drag about a whole build |
+| Linear blend skinning collapses a fillet at deep bends | Judge the walk in the proof; implicit skinning in phase 6 |
+| Coordinates past a member's end ring (a fillet below a leg's first ring) are an extrapolation | They are only read where the member has a share, which ends within its blend; check paint on fillets in the proof |
+| A swept solid is only near a distance where a run swells or bends hard, which loosens block tests and projection | Keep the 1.5 half-diagonal margin; two projection steps; the spike's thin-triangle share stayed under 1.5% |
+| Two sheets of surface in one cell (toes, fingers, a tail beside a leg) | Manifold split from the start |
+| Regions drawn across parts are cut by surface curves, a new kind of cut | Build it in phase 2 against the fennec's cream and socks; keep within-part shapes on the coordinate cut, which is the common case |
+| Field reads dominate | Member channels and projection from corner values; field-read speedups from the fennec test kept |
+| Garments over a pose: the garment is skinned, not meshed again, so a deep bend can push skin through it | As now: garments keep about half their offset on the inside of a bend; hiding runs again per pose |
+| A hair shell is not built yet | When it is, it is a garment-like offset of the head |
+
+## Docs that change if this is approved
+
+These state the opposite of this plan and are rewritten in phase 5 (the HLD) and on approval (the plan document): the decided Part representation item; the data model's introduction (one representation, fixed topology); Fixed topology per template version; Where parts meet, where a socket's border stays inked by default, which this plan keeps; the shared-format paragraph; Surface work stays attached; and face marks switching angle versions, which the painted eyes replace. Each part is still described by a few drawn curves: outlines become slices and slices sweep a solid, and a stored (u, v) keeps its meaning. Only the generated mesh stops having a fixed topology.

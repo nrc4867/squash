@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.Hanging
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.geom.Vec3
 
 /** A garment's loose end as the rig holds it: its chain of [bones] and its [part], weighted along them. */
 internal class LooseEndRig(val bones: List<Bone>, val part: RigPart)
@@ -14,7 +15,8 @@ fun looseJoint(k: Int): String = "end-$k"
 
 /**
  * The rig of every loose end [character] wears, its bones numbered on after [body]'s: a chain of its bones down the strip from
- * its root, the first hanging from the bone that moves the branch most at the root, turning across the strip so it swings toward and
+ * its root, the first hanging from the bone that moves the branch most at the root, or where the branch is not rigged, as on a one
+ * surface, the bone that moves its part most at the part's vertex nearest the root, turning across the strip so it swings toward and
  * away from the body; each vertex follows the bone whose span holds it, shared with the one before it over the first half of the span.
  * See HLD: data-model, Garments.
  */
@@ -22,8 +24,9 @@ internal fun looseEndRigs(character: AssembledCharacter, rigged: List<RigPart>, 
     var next = body.size
     return character.parts.mapNotNull { placed ->
         val hanging = placed.hanging ?: return@mapNotNull null
-        val branch = rigged.firstOrNull { it.id == hanging.branch } ?: return@mapNotNull null
-        val carrier = branch.weights.of(hanging.vertex).maxByOrNull { it.second }?.first ?: return@mapNotNull null
+        val carried = rigged.firstOrNull { it.id == hanging.branch }?.let { it.weights.of(hanging.vertex) }
+            ?: rigged.firstOrNull { it.id == hanging.end.branch }?.let { it.weights.of(nearestTo(it, hanging.root)) }
+        val carrier = carried?.maxByOrNull { it.second }?.first ?: return@mapNotNull null
         val id = requireNotNull(placed.id)
         val bones = List(hanging.bones) { k ->
             Bone(
@@ -39,6 +42,23 @@ internal fun looseEndRigs(character: AssembledCharacter, rigged: List<RigPart>, 
         }
         LooseEndRig(bones, strip(placed, hanging, id, carrier, next)).also { next += hanging.bones }
     }
+}
+
+/** The vertex of [part] lying nearest [point] at rest. */
+private fun nearestTo(part: RigPart, point: Vec3): Int {
+    var best = 0
+    var least = Float.MAX_VALUE
+    for (v in 0 until part.rest.size / 3) {
+        val dx = part.rest[v * 3] - point.x
+        val dy = part.rest[v * 3 + 1] - point.y
+        val dz = part.rest[v * 3 + 2] - point.z
+        val d = dx * dx + dy * dy + dz * dz
+        if (d < least) {
+            least = d
+            best = v
+        }
+    }
+    return best
 }
 
 private fun strip(placed: PlacedPart, hanging: Hanging, id: PartId, carrier: Int, first: Int): RigPart {

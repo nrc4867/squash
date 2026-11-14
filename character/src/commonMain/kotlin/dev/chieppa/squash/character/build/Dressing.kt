@@ -17,9 +17,10 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin; [covers] is
- * whether the skin and the inner layers the garments cover are hidden.
+ * whether the skin and the inner layers the garments cover are hidden. With [endsOnly], as on a one surface, which meshes the garments
+ * itself, only the garments' loose ends are placed.
  */
-data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap(), val covers: Boolean = true)
+data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap(), val covers: Boolean = true, val endsOnly: Boolean = false)
 
 /** How the garments show: drawn whole over what they cover, see-through with the body whole under them, or not at all. View state, never saved. */
 enum class GarmentLook { SHOWN, GHOSTED, HIDDEN }
@@ -66,6 +67,7 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
  */
 fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
     if (dressing.worn.isEmpty()) return this
+    if (dressing.endsOnly) return withLooseEnds(dressing)
     val through = HashMap<PartId, MutableSet<PartId>>()
     val layers = dressing.worn.mapIndexed { layer, garment ->
         val under = dressing.worn.take(layer)
@@ -100,6 +102,19 @@ fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit 
         part.hiddenBy(if (passes.isEmpty()) all else all.filter { it !is Hider.Inside || it.part !in passes })
     }
     return AssembledCharacter(body + dressed + ends, sockets)
+}
+
+/** This character with the loose ends of the garments [dressing] wears, each hung from its branch fitted over the layers under it. */
+private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledCharacter {
+    val ends = dressing.worn.flatMapIndexed { layer, garment ->
+        val under = dressing.worn.take(layer)
+        val pieces = garment.looseEnds.map { it.branch }.distinct().mapNotNull { id ->
+            val branch = garment.branch(id) ?: return@mapNotNull null
+            part(id)?.let { branchOver(garment, branch.fittedOver(under, dressing.twins), it) }
+        }
+        looseEnds(garment, pieces, this)
+    }
+    return if (ends.isEmpty()) this else AssembledCharacter(parts + ends, sockets)
 }
 
 /**

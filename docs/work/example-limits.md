@@ -144,3 +144,18 @@ Read while joining the toes to the foot's and paw's fields and moving the twin, 
 - `fennec/FennecBody.kt`, `dragon/DragonBody.kt`, `dragon/Dragon.kt`: how the paws were drawn and clawed (outlines on the paw, claw parts on tip sockets), to drop what the joined paw now does itself.
 - `character/.../block/Field.kt`: that a joined field's run ignores drawn outlines, so the fennec's paw drawing would have shaped only its booted, toeless paw. The skill now says the paw is shaped by parameters.
 - No code was read to find which way a toe's nail faces: renders of `close=feet` told it (a toe's v = 0.25 faces its side until rolled -90 degrees).
+
+### The one-surface fennec's eyes, walk and sweater
+
+Read while giving the one-surface fennec painted eyes, a walk and the winter sweater alone:
+
+- `fennec/FennecMarks.kt`: the drawn three-quarter eye's place, lid, iris, brow and lash numbers, to set the painted eye's defaults to them. A face reference listing each example's eye drawing in numbers would have done.
+- `fennec/FennecDressed.kt`: the ids of the body slot and the sweater, to make an outfit of the sweater alone. A `measure` or reference line listing an example's garments, slots and outfits would have done.
+- The fennec test's `fennec/FennecPoses.kt`: the walk's bones and angles (the leg pairs' `hip` and `knee`, the tail's `root`, the head's `neck`), spread here over four moments of a stride. A list of each example's bone names in the skill would have done.
+
+### The fennecs on one surface
+
+Read while building the fennec, the dressed fennec and the winged fennec as one surface:
+
+- `fennec/FennecMarks.kt`: the front angle version of the drawn eye (its size, roundness and iris), to set the painted eye's front look to it. The same face reference as above, listing each angle version, would have done.
+- `PartTemplate.kt`, `Enums.kt` (`SurfaceMethod`) and `CharacterField.kt`: which templates stay separate pieces (`"surface": "separate"`) and how a template says so, to keep the winged fennec's feathered wings as pieces. A reference line listing each template's surface setting would have done.

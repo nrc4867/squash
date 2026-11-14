@@ -16,12 +16,12 @@ private const val NEGLIGIBLE = 0.05f
 class StripWeightsTest {
     @Test
     fun aStripsEndsFollowWhatTheyMeet() {
-        val strung = fennec.assembled.parts.filter { it.covering == null && it.strips.isNotEmpty() }
+        val strung = fennecAsParts.assembled.parts.filter { it.covering == null && it.strips.isNotEmpty() }
         assertTrue(strung.isNotEmpty(), "the fennec's joins are strips")
         for (tube in strung) for (strip in tube.strips) {
-            val tubeWeights = checkNotNull(fennec.rig.part(checkNotNull(tube.id))).weights
-            val hostWeights = checkNotNull(fennec.rig.part(strip.host)).weights
-            val host = checkNotNull(fennec.assembled.part(strip.host))
+            val tubeWeights = checkNotNull(fennecAsParts.rig.part(checkNotNull(tube.id))).weights
+            val hostWeights = checkNotNull(fennecAsParts.rig.part(strip.host)).weights
+            val host = checkNotNull(fennecAsParts.assembled.part(strip.host))
             val (own, ownFirst) = checkNotNull(tube.patchWithFirst(strip.tube))
             val (patch, first) = checkNotNull(tube.patchWithFirst(strip.patch))
             val (onHost, hostFirst) = checkNotNull(host.patchWithFirst(strip.hostPatch))

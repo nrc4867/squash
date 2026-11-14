@@ -57,6 +57,9 @@ import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetSlotLabel
 import dev.chieppa.squash.document.SetParameters
+import dev.chieppa.squash.document.SetSocketBlend
+import dev.chieppa.squash.document.SetOneSurface
+import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.AddSeamStrokes
 import dev.chieppa.squash.document.PutSeamStrokes
@@ -89,6 +92,9 @@ import dev.chieppa.squash.uidesign.generated.shell_step_break_pair
 import dev.chieppa.squash.uidesign.generated.shell_step_outline
 import dev.chieppa.squash.uidesign.generated.shell_step_outlines
 import dev.chieppa.squash.uidesign.generated.shell_step_parameter
+import dev.chieppa.squash.uidesign.generated.shell_step_blend
+import dev.chieppa.squash.uidesign.generated.shell_step_painted_eye
+import dev.chieppa.squash.uidesign.generated.shell_step_one_surface
 import dev.chieppa.squash.uidesign.generated.shell_step_remove
 import dev.chieppa.stretch.core.Command
 import dev.chieppa.stretch.ui.formatNumber
@@ -106,6 +112,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val outline = stringResource(Res.string.shell_step_outline, FIRST)
     val outlines = stringResource(Res.string.shell_step_outlines, FIRST)
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
+    val blend = stringResource(Res.string.shell_step_blend, FIRST)
+    val oneSurface = stringResource(Res.string.shell_step_one_surface)
+    val paintedEye = stringResource(Res.string.shell_step_painted_eye)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
     val retemplated = stringResource(Res.string.anatomy_step_template, FIRST)
@@ -153,6 +162,9 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters -> moved
+            is SetSocketBlend -> blend.replace(FIRST, command.blend?.let(::formatNumber).orEmpty())
+            is SetOneSurface -> oneSurface
+            is SetPaintedEye -> paintedEye
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
             is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))
             is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())

@@ -34,6 +34,7 @@ import dev.chieppa.squash.screens.fennec.EARS_BACK
 import dev.chieppa.squash.screens.fennec.EAR_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.savedFennec
+import dev.chieppa.squash.screens.fennec.asParts
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.sheet.SheetPane
@@ -43,6 +44,7 @@ import dev.chieppa.squash.screens.surface.ExpressionTags
 import dev.chieppa.squash.screens.surface.FACE_FRONT
 import dev.chieppa.squash.screens.surface.FACE_WRITES_TAG
 import dev.chieppa.squash.screens.surface.FaceTags
+import dev.chieppa.squash.screens.surface.PaintedEyeTags
 import dev.chieppa.squash.screens.surface.HeadAngleTags
 import dev.chieppa.squash.screens.surface.LinesDrawerTags
 import dev.chieppa.stretch.document.DocumentFormat
@@ -67,9 +69,10 @@ private object NoFaceFiles : FileChooser {
 class FaceFlowTest {
     private val work = TestWork()
 
-    private fun ComposeUiTest.fennecOpen(): AppState {
+    /** The saved fennec open in the app; its drawn eyes and their marks show only when it is built [asParts]. */
+    private fun ComposeUiTest.fennecOpen(asParts: Boolean = true): AppState {
         val state = AppState(TemplateFolder.shipped(), work)
-        state.open(savedFennec())
+        state.open(if (asParts) savedFennec().asParts() else savedFennec())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoFaceFiles) }
         settle(work) { state.session.value?.graph?.settled?.value == true && state.session.value?.bodyLines?.output?.value != null }
@@ -89,6 +92,29 @@ class FaceFlowTest {
     private fun ComposeUiTest.stage(key: Key) {
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(key) }
         waitForIdle()
+    }
+
+    @Test
+    fun aOneSurfaceHeadsPaintedEyesTakeTheirControlsInTheLookOrFrontLookShown() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen(asParts = false)
+        val session = assertNotNull(state.session.value)
+        stage(Key.Four)
+        fun eye() = session.document.value.character.paintedEyes.single()
+        val look = eye().look
+        onNodeWithTag(PaintedEyeTags.WIDTH).performScrollTo().performMouseInput { click(Offset(width - 1f, centerY)) }
+        waitForIdle()
+        assertTrue(eye().look.width > look.width, "Width widens the eye's look, to ${eye().look.width}")
+
+        onNodeWithTag(ExpressionTags.version(FACE_FRONT)).performClick()
+        waitForIdle()
+        val front = assertNotNull(eye().front)
+        onNodeWithTag(PaintedEyeTags.HEIGHT).performScrollTo().performMouseInput { click(Offset(1f, centerY)) }
+        waitForIdle()
+        assertTrue(assertNotNull(eye().front).height < front.height, "with Front picked, Height shapes the front look")
+        assertEquals(look.height, eye().look.height, "and leaves the look")
+        onNodeWithTag(PaintedEyeTags.line("brow")).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(!front.brow, assertNotNull(eye().front).brow, "the brow's switch")
     }
 
     @Test

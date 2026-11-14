@@ -52,6 +52,8 @@ compose.desktop {
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // -Pdevtools=<port> serves screenshots of the windows on 127.0.0.1.
         providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
+        // -Popen=<file> opens it in the workspace at launch, in -Pstage=<STAGE> with -Pselect=<part> selected.
+        listOf("open", "stage", "select").forEach { name -> providers.gradleProperty(name).orNull?.let { jvmArgs += "-Dsquash.$name=$it" } }
         nativeDistributions {
             packageName = "Squash"
             packageVersion = project.version.toString().substringBefore('-')

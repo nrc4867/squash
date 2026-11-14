@@ -44,7 +44,7 @@ class GarmentRigTest {
     private val outfit = OutfitId("winter")
 
     private fun TestScope.dressedSession(): Pair<CharacterSession, SessionPose> {
-        val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(savedFennecAsParts(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val pose = SessionPose(session)
         val slot = GarmentSlot(GarmentSlotId("legs"), "Legs")
         val garment = Garment(sleeve, "Sleeve", slot.id, branches = listOf(GarmentBranch(leg, 0f, 1f)))

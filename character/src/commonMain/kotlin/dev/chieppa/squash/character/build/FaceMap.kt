@@ -16,13 +16,18 @@ import kotlin.math.sin
 /** Below this a triangle seen from ahead has no area and is passed over. */
 private const val MIN_AREA = 1e-12f
 
+/** Where a ray from straight ahead meets a head first, at a place on its flat face that [flat] gives each point in. */
+internal fun interface FaceCast {
+    fun hit(x: Float, y: Float, flat: (Vec3) -> Triple<Float, Float, Float>): Anchor?
+}
+
 /**
  * A head's face as a flat drawing, seen from straight ahead: x to the character's left, y up, in the units its outlines are drawn in,
  * from the part's origin. A place on it maps to the anchor on the body patch that a ray from straight ahead meets first, so what is
  * drawn on the flat face lands where a front view would show it. Built from the head as drawn, it holds for that drawing; anchors keep
- * their u and v when the head is drawn again, as every mark's do.
+ * their u and v when the head is drawn again, as every mark's do. A face map of a head on a one surface casts its rays at that surface.
  */
-class FaceMap private constructor(private val part: PartId, private val patch: Patch, facing: Vec3, private val scale: Float) {
+class FaceMap internal constructor(facing: Vec3, private val scale: Float, private val cast: FaceCast) {
     private val ahead = facing.normalized()
     private val up = (Vec3.Y - ahead * (Vec3.Y dot ahead)).normalized()
     private val left = up cross ahead
@@ -41,7 +46,23 @@ class FaceMap private constructor(private val part: PartId, private val patch: P
 
     private fun flat(p: Vec3) = Triple((p dot left) / scale, (p dot up) / scale, p dot ahead)
 
-    private fun hit(x: Float, y: Float): Anchor? {
+    private fun hit(x: Float, y: Float): Anchor? = cast.hit(x, y, ::flat)
+
+    companion object {
+        const val RING_POINTS = 16
+
+        /** The face of [part], a [template] head built from [data], or null when it builds no body patch. */
+        fun of(part: PartId, template: PartTemplate, data: PartData): FaceMap? {
+            val body = PartBuilder.build(template, data).firstOrNull { it.name == BODY_PATCH } ?: return null
+            val scale = data.params[SIZE_PARAM] ?: template.defaults[SIZE_PARAM] ?: 1f
+            return FaceMap(PartBuilder.facing(template), scale, GridCast(part, body))
+        }
+    }
+}
+
+/** Rays cast at the triangles of [patch]'s grid, [part]'s body patch built alone. */
+private class GridCast(private val part: PartId, private val patch: Patch) : FaceCast {
+    override fun hit(x: Float, y: Float, flat: (Vec3) -> Triple<Float, Float, Float>): Anchor? {
         var best: Anchor? = null
         var nearest = Float.NEGATIVE_INFINITY
         val us = patch.ringUs
@@ -73,15 +94,7 @@ class FaceMap private constructor(private val part: PartId, private val patch: P
         return best
     }
 
-    companion object {
-        const val RING_POINTS = 16
-        private val TRIANGLES = listOf(listOf(0, 1, 2), listOf(0, 2, 3))
-
-        /** The face of [part], a [template] head built from [data], or null when it builds no body patch. */
-        fun of(part: PartId, template: PartTemplate, data: PartData): FaceMap? {
-            val body = PartBuilder.build(template, data).firstOrNull { it.name == BODY_PATCH } ?: return null
-            val scale = data.params[SIZE_PARAM] ?: template.defaults[SIZE_PARAM] ?: 1f
-            return FaceMap(part, body, PartBuilder.facing(template), scale)
-        }
+    private companion object {
+        val TRIANGLES = listOf(listOf(0, 1, 2), listOf(0, 2, 3))
     }
 }
