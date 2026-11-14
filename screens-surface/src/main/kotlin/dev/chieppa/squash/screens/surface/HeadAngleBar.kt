@@ -23,6 +23,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sin
+import dev.chieppa.squash.screens.surface.eyes.paintsEyes
 import org.jetbrains.compose.resources.stringResource
 
 private val SLIDER_WIDTH = 200.dp
@@ -37,13 +38,14 @@ object HeadAngleTags {
 
 /**
  * The Head angle control over Single while a face group is picked: how far the head has turned to the view [toViewer], 0 side on to 90 ahead, which [turn] moves, keeping the side the
- * camera is on, the version the view shows, and the version a stroke writes.
+ * camera is on, the version the view shows, and the version a stroke writes; painted eyes have no versions to name.
  */
 @Composable
 fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
     val open by state.session.collectAsState()
     val assembled = open?.assembly?.output?.collectAsState()?.value
     val picked = state.face.group ?: return
+    val painted = open?.document?.collectAsState()?.value?.character?.let(state::paintsEyes) == true
     val head = assembled?.part(picked.part) ?: return
     val angle = headAngle(head, toViewer)
     val forward = PartBuilder.axes(head.template).along
@@ -65,7 +67,9 @@ fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
             valueRange = 0f..RIGHT_ANGLE,
         )
         RowText(stringResource(Res.string.face_degrees, angle.roundToInt()))
-        Chip(stringResource(Res.string.face_showing, version), Modifier.testTag(HeadAngleTags.VERSION))
-        FaceVersionChip(state.face.version ?: bin)
+        if (!painted) {
+            Chip(stringResource(Res.string.face_showing, version), Modifier.testTag(HeadAngleTags.VERSION))
+            FaceVersionChip(state.face.version ?: bin)
+        }
     }
 }

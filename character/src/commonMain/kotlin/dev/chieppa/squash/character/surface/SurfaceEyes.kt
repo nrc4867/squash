@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.WidthStop
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.document.PaintedEye
+import dev.chieppa.squash.document.shownFront
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.ChartOval
@@ -59,12 +60,12 @@ object SurfaceEyes {
         val chart = surface.chart
         val anchors = FieldAnchors(surface.field)
         val placed = eyes.map { eye -> placeOf(chart, anchors, eye) }
-        val looks = eyes.map { eye -> listOfNotNull(eye.look, eye.front) }
+        val looks = eyes.map { eye -> listOfNotNull(eye.look, eye.shownFront()) }
         val painted = eyes.indices.map { e -> looks[e].map { arrayOfNulls<SurfacePaint>(sidesOf(eyes[e]).size) } }
         runAll(
             eyes.indices.filter { placed[it] != null }.flatMap { e ->
                 looks[e].indices.flatMap { l ->
-                    sidesOf(eyes[e]).mapIndexed { side, anchor -> { painted[e][l][side] = paintOne(chart, anchors, eyes[e].id, looks[e][l], anchor, side) } }
+                    sidesOf(eyes[e]).mapIndexed { side, anchor -> { painted[e][l][side] = paintOne(chart, anchors, eyes[e], looks[e][l], anchor, side) } }
                 }
             },
         )
@@ -88,21 +89,47 @@ object SurfaceEyes {
         return middle.position to head.turn * PartBuilder.facing(head.template)
     }
 
-    private fun paintOne(chart: SurfaceChart, anchors: FieldAnchors, id: String, look: EyeLook, anchor: Anchor, side: Int): SurfacePaint {
-        val mirrored = side > 0
-        val surface = chart.surface
-        val middle = anchors.resolve(anchor.copy(offset = 0f)) ?: return SurfacePaint.NONE
+    /**
+     * Where each side of [eye] lies on [surface] in its own look, its own side first: its middle, and how far body space runs per unit of
+     * its chart forward and up. A side whose anchor does not resolve is left out.
+     */
+    fun framesOf(surface: CharacterSurface, eye: PaintedEye): List<EyeChartFrame> {
+        val anchors = FieldAnchors(surface.field)
+        return sidesOf(eye).mapIndexedNotNull { side, anchor ->
+            frameOf(surface, anchors, anchor, side > 0, eye.look)?.let { EyeChartFrame(it.middle.position, it.across * it.along, it.up * it.around, it.facing, side > 0) }
+        }
+    }
+
+    /** One side's frame: where its middle resolves, its head's members, and the chart's directions and scales there. */
+    private class Frame(val middle: ResolvedPoint, val members: List<Int>, val facing: Vec3, val up: Vec3, val across: Vec3, val along: Float, val around: Float)
+
+    private fun frameOf(surface: CharacterSurface, anchors: FieldAnchors, anchor: Anchor, mirrored: Boolean, look: EyeLook): Frame? {
+        val middle = anchors.resolve(anchor.copy(offset = 0f)) ?: return null
         val run = surface.field.runs.indexOfFirst { it.partId == anchor.part && it.patch.name == anchor.patch }
-        if (run < 0) return SurfacePaint.NONE
+        if (run < 0) return null
         val members = surface.field.runs.indices.filter { surface.field.runs[it].partId == anchor.part }
         val head = surface.field.runs[run].part
-        val (forward, down) = chartOf(anchors, anchor, mirrored, head) ?: return SurfacePaint.NONE
+        val (forward, down) = chartOf(anchors, anchor, mirrored, head) ?: return null
         val along = forward.length / (2f * CHART_STEP)
         val around = down.length / (2f * CHART_STEP)
         val facing = turnedOut(middle.normal, middle.position, look.lookOut)
-        val up = flattened(down * -1f, facing) ?: return SurfacePaint.NONE
-        val across = flattened(forward - up * (forward dot up), facing) ?: return SurfacePaint.NONE
-        val shapes = EyeShapes(look)
+        val up = flattened(down * -1f, facing) ?: return null
+        val across = flattened(forward - up * (forward dot up), facing) ?: return null
+        return Frame(middle, members, facing, up, across, along, around)
+    }
+
+    private fun paintOne(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, anchor: Anchor, side: Int): SurfacePaint {
+        val id = eye.id
+        val surface = chart.surface
+        val frame = frameOf(surface, anchors, anchor, side > 0, look) ?: return SurfacePaint.NONE
+        val middle = frame.middle
+        val members = frame.members
+        val facing = frame.facing
+        val up = frame.up
+        val across = frame.across
+        val along = frame.along
+        val around = frame.around
+        val shapes = EyeShapes(look, eye.gazeForward, eye.gazeUp)
         val reach = EYE_REACH * look.width * along
         val mesh = surface.mesh
         val rim = (shapes.opening as ColorShape.Border).points.maxOf { sqrt((it.u * along).let { a -> a * a } + (it.v * around).let { b -> b * b }) }

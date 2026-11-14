@@ -47,7 +47,21 @@ data class EyeLook(
 /**
  * An eye painted on a head built as one surface: its middle at [anchor], which names the head, and its [look]. A [mirrored] eye is
  * painted again on the other side of the head's plane, its anchor's v read as 1 - v. With a [front] look, a view that sees the head
- * from the front shows the eye in that look instead, as a front drawing does.
+ * from the front shows the eye [fromFront] of the way from its look to that one (see [shownFront]). Its iris, pupil and highlight look
+ * [gazeForward] of the opening's half width toward the head's front and [gazeUp] of its half height up, clipped by the opening.
  */
 @Serializable
-data class PaintedEye(val id: String, val anchor: Anchor, val look: EyeLook = EyeLook(), val mirrored: Boolean = true, val front: EyeLook? = null)
+data class PaintedEye(
+    val id: String,
+    val anchor: Anchor,
+    val look: EyeLook = EyeLook(),
+    val mirrored: Boolean = true,
+    val front: EyeLook? = null,
+    val fromFront: Float = 1f,
+    val gazeForward: Float = 0f,
+    val gazeUp: Float = 0f,
+) {
+    init {
+        require(fromFront in 0f..1f) { "From front is between 0 and 1, not $fromFront" }
+    }
+}

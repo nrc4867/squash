@@ -19,7 +19,8 @@ enum class FaceFeature { EYES, MOUTH }
 /**
  * What the face tools remember, and act on only while Face is on screen: the [feature] the inspector shows, the [group] picked and the [role] Draw mark
  * and Edit curves work in, whether an eye's work writes [bothEyes], the angle [version] they write, the one the view shows if none, and whether it is
- * [locked], so the view shows it from any camera too; and the test gaze's [gazeTarget] in body space, which is not part of the character.
+ * [locked], so the view shows it from any camera too; the test gaze's [gazeTarget] in body space, which is not part of the character; and
+ * whether a painted eye's More section is [moreOpen].
  */
 @Stable
 class FaceEditState {
@@ -30,6 +31,7 @@ class FaceEditState {
     var version by mutableStateOf<CameraBin?>(null)
     var locked by mutableStateOf(false)
     var gazeTarget by mutableStateOf<Vec3?>(null)
+    var moreOpen by mutableStateOf(false)
 
     /** The version the view shows from any camera, when one is locked. */
     val lockedVersion: CameraBin? get() = version.takeIf { locked }

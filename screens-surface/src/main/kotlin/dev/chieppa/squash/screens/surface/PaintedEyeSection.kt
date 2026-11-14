@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
@@ -13,39 +14,47 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.EyeLook
+import dev.chieppa.squash.document.MOST_GAZE
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetEyeFromFront
+import dev.chieppa.squash.document.SetEyeGaze
+import dev.chieppa.squash.document.SetEyeRoundness
 import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.frontAmount
+import dev.chieppa.squash.document.roundness
+import dev.chieppa.squash.document.styled
+import dev.chieppa.squash.document.withHighlight
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.surface.paint.SlotChoice
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
-import dev.chieppa.squash.uidesign.generated.face_controls
-import dev.chieppa.squash.uidesign.generated.face_eye_height
-import dev.chieppa.squash.uidesign.generated.face_eye_look_out
-import dev.chieppa.squash.uidesign.generated.face_eye_tilt
+import dev.chieppa.squash.uidesign.generated.face_colors
+import dev.chieppa.squash.uidesign.generated.face_from_front
+import dev.chieppa.squash.uidesign.generated.face_gaze
+import dev.chieppa.squash.uidesign.generated.face_gaze_forward
+import dev.chieppa.squash.uidesign.generated.face_gaze_up
 import dev.chieppa.squash.uidesign.generated.face_highlight_size
-import dev.chieppa.squash.uidesign.generated.face_iris_size
-import dev.chieppa.squash.uidesign.generated.face_layers
+import dev.chieppa.squash.uidesign.generated.face_more
 import dev.chieppa.squash.uidesign.generated.face_new_eyes
-import dev.chieppa.squash.uidesign.generated.face_pupil_size
+import dev.chieppa.squash.uidesign.generated.face_pupil
+import dev.chieppa.squash.uidesign.generated.face_pupil_round
+import dev.chieppa.squash.uidesign.generated.face_pupil_slit
 import dev.chieppa.squash.uidesign.generated.face_role_brow
-import dev.chieppa.squash.uidesign.generated.face_role_highlight
 import dev.chieppa.squash.uidesign.generated.face_role_iris
 import dev.chieppa.squash.uidesign.generated.face_role_lashes
 import dev.chieppa.squash.uidesign.generated.face_role_lid
 import dev.chieppa.squash.uidesign.generated.face_role_pupil
 import dev.chieppa.squash.uidesign.generated.face_role_white
-import dev.chieppa.squash.uidesign.generated.face_slit
-import dev.chieppa.squash.uidesign.generated.face_width
+import dev.chieppa.squash.uidesign.generated.face_roundness
 import dev.chieppa.stretch.frame.DrawerSection
-import dev.chieppa.stretch.frame.ListRow
-import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
+import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Toggle
+import dev.chieppa.stretch.ui.VectorField
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -56,26 +65,23 @@ private const val PAINTED_EYES_ID = "eyes"
 private const val DEFAULT_U = 0.6f
 private const val DEFAULT_V = 0.2f
 
-/** How far the opening's and iris's sliders reach, as shares of the head's u and v. */
-private val OPENING_RANGE = 0.01f..0.15f
-private val IRIS_RANGE = 0.01f..0.1f
+/** How far Roundness reaches: from four times as wide as tall to half as tall again as wide. */
+private val ROUNDNESS_RANGE = 0.25f..1.5f
 
-/** How far the tilt and look-out sliders reach, in degrees. */
-private val TURN_RANGE = -45f..45f
+/** How far a step of the gaze's fields moves it. */
+private const val GAZE_STEP = 0.05f
 
-private val SWATCH_GAP = 8.dp
+private val SWATCH_GAP = 6.dp
 
 /** Test tags for the painted eye's controls. */
 object PaintedEyeTags {
     const val NEW = "face.painted.new"
-    const val WIDTH = "face.painted.width"
-    const val HEIGHT = "face.painted.height"
-    const val TILT = "face.painted.tilt"
-    const val LOOK_OUT = "face.painted.look-out"
-    const val IRIS = "face.painted.iris"
+    const val ROUNDNESS = "face.painted.roundness"
     const val PUPIL = "face.painted.pupil"
+    const val MORE = "face.painted.more"
+    const val FROM_FRONT = "face.painted.from-front"
     const val HIGHLIGHT = "face.painted.highlight"
-    const val SLIT = "face.painted.slit"
+    const val GAZE = "face.painted.gaze"
 
     fun fill(name: String) = "face.painted.fill.$name"
 
@@ -83,9 +89,9 @@ object PaintedEyeTags {
 }
 
 /**
- * The Eyes of a head on a one surface: its painted eye's controls and its layers, each fill with its swatch and each line switched on or
- * off. With the front angle version picked, they work on the eye's front look, which starts as its look. A head with no painted eye
- * offers to add one at its eye landmark.
+ * The Eyes of a head on a one surface: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
+ * front, its highlight, its gaze and its lines. Size, turn and place are the panes' handles. A head with no painted eye offers to add one
+ * at its eye landmark.
  */
 @Composable
 internal fun PaintedEyeSection(state: AppState, session: CharacterSession, character: Character, holder: PartId) {
@@ -100,47 +106,67 @@ internal fun PaintedEyeSection(state: AppState, session: CharacterSession, chara
         }
         return
     }
-    val front = state.face.version == FACE_FRONT
-    val look = if (front) eye.front ?: eye.look else eye.look
+    val look = eye.look
     val drag = rememberCommandDrag(session)
-    fun changed(change: (EyeLook) -> EyeLook) = SetPaintedEye(eye.id, if (front) eye.copy(front = change(look)) else eye.copy(look = change(look)))
-    fun set(change: (EyeLook) -> EyeLook) = drag.update(changed(change))
-    fun now(change: (EyeLook) -> EyeLook) = session.send(changed(change))
-    DrawerSection(stringResource(Res.string.face_controls)) {
-        ControlSlider(Res.string.face_width, look.width, PaintedEyeTags.WIDTH, drag::finish, OPENING_RANGE) { v -> set { it.copy(width = v) } }
-        ControlSlider(Res.string.face_eye_height, look.height, PaintedEyeTags.HEIGHT, drag::finish, OPENING_RANGE) { v -> set { it.copy(height = v) } }
-        ControlSlider(Res.string.face_eye_tilt, look.tilt, PaintedEyeTags.TILT, drag::finish, TURN_RANGE, shown = { it.roundToWhole() }) { v -> set { it.copy(tilt = v) } }
-        ControlSlider(Res.string.face_eye_look_out, look.lookOut, PaintedEyeTags.LOOK_OUT, drag::finish, TURN_RANGE, shown = { it.roundToWhole() }) { v -> set { it.copy(lookOut = v) } }
-        ControlSlider(Res.string.face_iris_size, look.irisSize, PaintedEyeTags.IRIS, drag::finish, IRIS_RANGE) { v -> set { it.copy(irisSize = v) } }
-        ControlSlider(Res.string.face_pupil_size, look.pupilSize, PaintedEyeTags.PUPIL, drag::finish) { v -> set { it.copy(pupilSize = v) } }
-        ControlSlider(Res.string.face_highlight_size, look.highlightSize, PaintedEyeTags.HIGHLIGHT, drag::finish) { v -> set { it.copy(highlightSize = v) } }
-        LineToggle(Res.string.face_slit, PaintedEyeTags.SLIT, look.slit) { on -> now { it.copy(slit = on) } }
+    fun styled(change: (EyeLook) -> EyeLook) = session.send(SetPaintedEye(eye.id, eye.styled(change)))
+    DrawerSection {
+        ControlSlider(Res.string.face_roundness, eye.roundness, PaintedEyeTags.ROUNDNESS, drag::finish, ROUNDNESS_RANGE) { drag.update(SetEyeRoundness(eye.id, it)) }
+        val round = stringResource(Res.string.face_pupil_round)
+        val slit = stringResource(Res.string.face_pupil_slit)
+        SettingRow(stringResource(Res.string.face_pupil)) {
+            Segmented(listOf(false, true), look.slit, { on -> styled { it.copy(slit = on) } }, { if (it) slit else round }, Modifier.weight(1f).testTag(PaintedEyeTags.PUPIL), fill = true)
+        }
+        SettingRow(stringResource(Res.string.face_colors)) {
+            FillSwatch(character, session, Res.string.face_role_iris, "iris", look.iris) { slot -> styled { it.copy(iris = slot) } }
+            Spacer(Modifier.width(SWATCH_GAP))
+            FillSwatch(character, session, Res.string.face_role_pupil, "pupil", look.pupil) { slot -> styled { it.copy(pupil = slot) } }
+            Spacer(Modifier.width(SWATCH_GAP))
+            FillSwatch(character, session, Res.string.face_role_white, "white", look.white) { slot -> styled { it.copy(white = slot) } }
+        }
     }
-    DrawerSection(stringResource(Res.string.face_layers), divider = false) {
-        LineToggle(Res.string.face_role_brow, PaintedEyeTags.line("brow"), look.brow) { on -> now { it.copy(brow = on) } }
-        LineToggle(Res.string.face_role_lashes, PaintedEyeTags.line("lashes"), look.lashes) { on -> now { it.copy(lashes = on) } }
-        LineToggle(Res.string.face_role_lid, PaintedEyeTags.line("lid"), look.lid) { on -> now { it.copy(lid = on) } }
-        FillRow(character, session, Res.string.face_role_highlight, "highlight", look.highlight) { slot -> now { it.copy(highlight = slot) } }
-        FillRow(character, session, Res.string.face_role_pupil, "pupil", look.pupil) { slot -> now { it.copy(pupil = slot) } }
-        FillRow(character, session, Res.string.face_role_iris, "iris", look.iris) { slot -> now { it.copy(iris = slot) } }
-        FillRow(character, session, Res.string.face_role_white, "white", look.white) { slot -> now { it.copy(white = slot) } }
-    }
+    MoreSection(state, session, eye)
 }
 
-private fun Float.roundToWhole(): Float = kotlin.math.round(this)
-
-/** A fill of the eye: its swatch, which opens the palette, and its name. */
+/** The eye's less used settings, folded away until opened. */
 @Composable
-private fun FillRow(character: Character, session: CharacterSession, label: StringResource, name: String, slot: SlotName?, onPick: (SlotName) -> Unit) {
-    val title = stringResource(label)
-    ListRow(false, {}) {
-        SlotChoice(character.palette, slot, title, PaintedEyeTags.fill(name), { PaintedEyeTags.fill("$name.${it.value}") }, onPick, editor = session)
-        Spacer(Modifier.width(SWATCH_GAP))
-        RowText(title, Modifier.weight(1f))
+private fun MoreSection(state: AppState, session: CharacterSession, eye: PaintedEye) {
+    val look = eye.look
+    val drag = rememberCommandDrag(session)
+    fun styled(change: (EyeLook) -> EyeLook) = session.send(SetPaintedEye(eye.id, eye.styled(change)))
+    Box(Modifier.testTag(PaintedEyeTags.MORE)) {
+        DrawerSection(stringResource(Res.string.face_more), divider = false, collapsed = !state.face.moreOpen, onCollapsedChange = { state.face.moreOpen = !it }) {
+            ControlSlider(Res.string.face_from_front, eye.frontAmount, PaintedEyeTags.FROM_FRONT, drag::finish) { drag.update(SetEyeFromFront(eye.id, it)) }
+            ControlSlider(Res.string.face_highlight_size, look.highlightSize, PaintedEyeTags.HIGHLIGHT, drag::finish) { size ->
+                drag.update(SetPaintedEye(eye.id, eye.withHighlight(size)))
+            }
+            val gaze = stringResource(Res.string.face_gaze)
+            val axes = listOf(stringResource(Res.string.face_gaze_forward), stringResource(Res.string.face_gaze_up))
+            SettingRow(gaze) {
+                VectorField(
+                    listOf(eye.gazeForward, eye.gazeUp),
+                    { axis, value -> drag.update(if (axis == 0) SetEyeGaze(eye.id, value, eye.gazeUp) else SetEyeGaze(eye.id, eye.gazeForward, value)) },
+                    gaze,
+                    Modifier.testTag(PaintedEyeTags.GAZE),
+                    axes = axes,
+                    step = GAZE_STEP,
+                    range = -MOST_GAZE..MOST_GAZE,
+                    onValueChangeFinished = drag::finish,
+                )
+            }
+            LineToggle(Res.string.face_role_brow, PaintedEyeTags.line("brow"), look.brow) { on -> styled { it.copy(brow = on) } }
+            LineToggle(Res.string.face_role_lashes, PaintedEyeTags.line("lashes"), look.lashes) { on -> styled { it.copy(lashes = on) } }
+            LineToggle(Res.string.face_role_lid, PaintedEyeTags.line("lid"), look.lid) { on -> styled { it.copy(lid = on) } }
+        }
     }
 }
 
-/** A line or setting of the eye switched on or off. */
+/** A fill of the eye as its swatch, which opens the palette, named by its tooltip. */
+@Composable
+private fun FillSwatch(character: Character, session: CharacterSession, label: StringResource, name: String, slot: SlotName?, onPick: (SlotName) -> Unit) {
+    SlotChoice(character.palette, slot, stringResource(label), PaintedEyeTags.fill(name), { PaintedEyeTags.fill("$name.${it.value}") }, onPick, editor = session)
+}
+
+/** A line of the eye switched on or off. */
 @Composable
 private fun LineToggle(label: StringResource, tag: String, on: Boolean, onChange: (Boolean) -> Unit) {
     val title = stringResource(label)

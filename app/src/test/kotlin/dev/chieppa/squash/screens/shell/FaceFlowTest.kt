@@ -95,26 +95,37 @@ class FaceFlowTest {
     }
 
     @Test
-    fun aOneSurfaceHeadsPaintedEyesTakeTheirControlsInTheLookOrFrontLookShown() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun aOneSurfaceHeadsPaintedEyeShowsThreeRowsAndMoreWithNoAngleVersions() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen(asParts = false)
         val session = assertNotNull(state.session.value)
         stage(Key.Four)
         fun eye() = session.document.value.character.paintedEyes.single()
         val look = eye().look
-        onNodeWithTag(PaintedEyeTags.WIDTH).performScrollTo().performMouseInput { click(Offset(width - 1f, centerY)) }
-        waitForIdle()
-        assertTrue(eye().look.width > look.width, "Width widens the eye's look, to ${eye().look.width}")
+        onNodeWithTag(PaintedEyeTags.ROUNDNESS).performScrollTo().assertExists()
+        onNodeWithTag(PaintedEyeTags.PUPIL).performScrollTo().assertExists()
+        listOf("iris", "pupil", "white").forEach { onNodeWithTag(PaintedEyeTags.fill(it)).performScrollTo().assertExists() }
+        onNodeWithTag(PaintedEyeTags.FROM_FRONT).assertDoesNotExist()
+        onNodeWithTag(ExpressionTags.version(FACE_FRONT)).assertDoesNotExist()
+        onNodeWithTag(ExpressionTags.NEUTRAL).assertExists()
+        onNodeWithTag(FACE_WRITES_TAG).assertDoesNotExist()
 
-        onNodeWithTag(ExpressionTags.version(FACE_FRONT)).performClick()
+        onNodeWithTag(PaintedEyeTags.ROUNDNESS).performMouseInput { click(Offset(width - 1f, centerY)) }
         waitForIdle()
-        val front = assertNotNull(eye().front)
-        onNodeWithTag(PaintedEyeTags.HEIGHT).performScrollTo().performMouseInput { click(Offset(1f, centerY)) }
+        assertTrue(eye().look.height / eye().look.width > look.height / look.width, "Roundness rounds the eye")
+        onNode(hasText("Slit") and hasAnyAncestor(hasTestTag(PaintedEyeTags.PUPIL))).performClick()
         waitForIdle()
-        assertTrue(assertNotNull(eye().front).height < front.height, "with Front picked, Height shapes the front look")
-        assertEquals(look.height, eye().look.height, "and leaves the look")
+        assertTrue(eye().look.slit && assertNotNull(eye().front).slit, "Slit sets both looks' pupil")
+
+        onNode(hasText("MORE") and hasAnyAncestor(hasTestTag(PaintedEyeTags.MORE))).performScrollTo().performClick()
+        waitForIdle()
+        listOf(PaintedEyeTags.FROM_FRONT, PaintedEyeTags.HIGHLIGHT, PaintedEyeTags.GAZE).forEach { onNodeWithTag(it).performScrollTo().assertExists() }
+        listOf("brow", "lashes", "lid").forEach { onNodeWithTag(PaintedEyeTags.line(it)).performScrollTo().assertExists() }
+        onNodeWithTag(PaintedEyeTags.FROM_FRONT).performMouseInput { click(Offset(1f, centerY)) }
+        waitForIdle()
+        assertTrue(eye().fromFront < 0.05f, "From front at its least shows one look at every angle, at ${eye().fromFront}")
         onNodeWithTag(PaintedEyeTags.line("brow")).performScrollTo().performClick()
         waitForIdle()
-        assertEquals(!front.brow, assertNotNull(eye().front).brow, "the brow's switch")
+        assertEquals(!look.brow, eye().look.brow, "the brow's switch")
     }
 
     @Test

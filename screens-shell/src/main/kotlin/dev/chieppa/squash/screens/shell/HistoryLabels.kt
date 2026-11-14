@@ -60,6 +60,10 @@ import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.SetSocketBlend
 import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaintedEye
+import dev.chieppa.squash.document.SetEyeFrame
+import dev.chieppa.squash.document.SetEyeFromFront
+import dev.chieppa.squash.document.SetEyeGaze
+import dev.chieppa.squash.document.SetEyeRoundness
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.AddSeamStrokes
 import dev.chieppa.squash.document.PutSeamStrokes
@@ -164,7 +168,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetParameters -> moved
             is SetSocketBlend -> blend.replace(FIRST, command.blend?.let(::formatNumber).orEmpty())
             is SetOneSurface -> oneSurface
-            is SetPaintedEye -> paintedEye
+            is SetPaintedEye, is SetEyeRoundness, is SetEyeFromFront, is SetEyeGaze, is SetEyeFrame -> paintedEye
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
             is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))
             is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())

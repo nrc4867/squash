@@ -21,6 +21,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.surface.eyes.paintsEyes
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.shell_drawer_angle_versions
 import dev.chieppa.squash.uidesign.generated.shell_drawer_expressions
@@ -45,8 +46,9 @@ fun FaceInspector(state: AppState, session: CharacterSession) {
 }
 
 /**
- * The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions. While it is up the face tools
- * work on the head's eyes from the start; once it goes, the picked version, its lock and the test gaze go with it.
+ * The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions, which painted eyes have
+ * none of. While it is up the face tools work on the head's eyes from the start; once it goes, the picked version, its lock and the test
+ * gaze go with it.
  */
 @Composable
 fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
@@ -57,6 +59,13 @@ fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
         val character = document?.character ?: return@LaunchedEffect
         val at = head ?: return@LaunchedEffect
         if (state.face.group?.let(character::groupOf) == null) state.pickFeature(character, at, state.face.feature)
+    }
+    val painted = document?.character?.let(state::paintsEyes) == true
+    LaunchedEffect(painted) {
+        if (painted) {
+            state.face.version = null
+            state.face.locked = false
+        }
     }
     DisposableEffect(state) {
         onDispose {
@@ -72,10 +81,12 @@ fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
                 BandHeader(stringResource(Res.string.shell_drawer_expressions)) { ExpressionActions(state) }
                 ExpressionsDrawer(state)
             }
-            VerticalDivider()
-            Column(Modifier.width(VERSIONS_WIDTH)) {
-                BandHeader(stringResource(Res.string.shell_drawer_angle_versions)) { AngleVersionActions(state) }
-                AngleVersionsDrawer(state)
+            if (!painted) {
+                VerticalDivider()
+                Column(Modifier.width(VERSIONS_WIDTH)) {
+                    BandHeader(stringResource(Res.string.shell_drawer_angle_versions)) { AngleVersionActions(state) }
+                    AngleVersionsDrawer(state)
+                }
             }
         }
     }

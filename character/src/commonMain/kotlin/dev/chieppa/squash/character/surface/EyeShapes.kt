@@ -26,9 +26,10 @@ private val BROW_LINE = listOf(-1.0f to 1.5f, -0.1f to 2.05f, 0.8f to 2.1f)
 
 /**
  * The shapes of a painted eye of [look], in its own chart: u forward toward the head's front and v up, each a share of the head's own u
- * and v at the eye's middle, the opening's middle at the origin: its fills as shapes and its ink lines as places along them.
+ * and v at the eye's middle, the opening's middle at the origin: its fills as shapes and its ink lines as places along them. The iris,
+ * pupil and highlight look [gazeForward] of the opening's half width forward and [gazeUp] of its half height up.
  */
-class EyeShapes(private val look: EyeLook) {
+class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Float = 0f) {
     /** The opening as an almond before its tilts, and its fills' ovals before the eye's tilt, as a renderer reads them at each fragment. */
     val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing)
 
@@ -40,7 +41,7 @@ class EyeShapes(private val look: EyeLook) {
     /** The lid line round the opening, from its back corner over the top and under the bottom, its first place repeated last. */
     val lid: List<SurfaceUv>? = if (look.lid) rim + rim.first() else null
 
-    private val irisMiddle = SurfaceUv(look.irisForward, look.irisUp)
+    private val irisMiddle = SurfaceUv(look.irisForward + gazeForward * look.width, look.irisUp + gazeUp * look.height)
     private val irisHigh = look.irisSize * look.irisRatio
 
     val irisOval = ChartOval(irisMiddle.u, irisMiddle.v, look.irisSize, irisHigh)
