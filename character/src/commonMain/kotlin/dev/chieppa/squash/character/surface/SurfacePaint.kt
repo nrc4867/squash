@@ -26,11 +26,12 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
 
     /**
      * This paint's layers kept to where [shown], one value a vertex of [surface]'s drawn mesh, is at least zero, as the skin its garments
-     * leave showing; its marks and eyes as they are. Itself where [shown] does not fit the layers.
+     * leave showing, laid on [render], the same vertices moved or posed; its marks and eyes as they are. Itself where [shown] does not fit
+     * the layers.
      */
-    fun within(shown: FloatArray, surface: CharacterSurface): SurfacePaint {
+    fun within(shown: FloatArray, surface: CharacterSurface, render: RenderMesh = surface.render): SurfacePaint {
         if (shown.size != surface.render.vertexCount || layers.any { it.values.size != shown.size }) return this
-        return SurfacePaint(layers.mapNotNull { it.within(shown, surface, surface.render) }, marks, eyes)
+        return SurfacePaint(layers.mapNotNull { it.within(shown, surface, render) }, marks, eyes)
     }
 
     /** This paint laid on [render], the same surface moved. */

@@ -13,10 +13,14 @@ private const val DEFAULT_CACHE_SIZE = 64
 /** What a gathered node reads: the [shape] its sources came from and each source's latest result. */
 data class Gathered<S, K, V>(val shape: S, val values: Map<K, V>)
 
-/** The derived-data graph. Settled when no node is dirty or running. Runs compute on [dispatcher], inside [scope]. */
+/**
+ * The derived-data graph. Settled when no node is dirty or running. Runs compute on [dispatcher], inside [scope]. A node's cache keeps
+ * only the results of runs that started while [keeps] said so.
+ */
 class Graph(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
+    private val keeps: () -> Boolean = { true },
 ) : Settled {
     private val changes = MutableStateFlow(0L)
     private val nodes = MutableStateFlow<List<Node<*, *>>>(emptyList())
@@ -33,7 +37,7 @@ class Graph(
      * it in [progress].
      */
     fun <I, O : Any> node(input: Flow<I>, cacheSize: Int = DEFAULT_CACHE_SIZE, stage: String? = null, compute: suspend (I) -> O): Node<I, O> {
-        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed)
+        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed, keeps, Epoch::now)
         nodes.update { it + node }
         node.start(input)
         return node
@@ -45,7 +49,7 @@ class Graph(
      * [progress].
      */
     fun <I : Any, O : Any> follow(upstream: Node<*, I>, cacheSize: Int = DEFAULT_CACHE_SIZE, stage: String? = null, compute: suspend (I) -> O): Node<I, O> {
-        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed)
+        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed, keeps, Epoch::now)
         nodes.update { it + node }
         node.follow(upstream)
         return node
@@ -64,16 +68,17 @@ class Graph(
         stage: String? = null,
         compute: suspend (Gathered<S, K, V>) -> O,
     ): Node<Gathered<S, K, V>, O> {
-        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed)
+        val node = Node(scope, dispatcher, cacheSize, stage, compute, ::changed, keeps, Epoch::now)
         nodes.update { it + node }
         node.gather(shape, sourcesOf, ::Gathered)
         return node
     }
 
     private fun changed() {
+        Epoch.move()
+        changes.update { it + 1 }
         val dirty = nodes.value.filterNot { it.isClean }
         dirtied.update { if (dirty.isEmpty()) emptySet() else it + dirty }
-        changes.update { it + 1 }
     }
 
     private fun readProgress(): GraphProgress {

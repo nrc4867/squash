@@ -18,6 +18,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.DRAG
 import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
+import dev.chieppa.squash.screens.look.LookArgs.Companion.RELEASE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.SURFACE
 import dev.chieppa.squash.screens.smoke.CloseUps
 import dev.chieppa.squash.screens.smoke.WomanViews
@@ -92,6 +93,7 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
             }
             if (SURFACE in look.close) OneSurfaceLook(work, errors, folder).keepAll(session, name)
             if (ANCHORS in look.close) AnchorsLook(work, errors, folder).keep(session, name)
+            if (RELEASE in look.close) parts.arm?.let { OneSurfaceLook(work, errors, folder).keepRelease(session, name, it, parts.head?.let(parts::faceFramed)) }
             if (DRAG in look.close) session.document.value.character.parts.firstOrNull { it.socket == null }?.let { OneSurfaceLook(work, errors, folder).keepDrag(session, name, it.id) }
             for ((pose, set) in poses) {
                 session.send(SetPose(set))

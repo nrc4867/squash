@@ -29,7 +29,7 @@ class LookArgs(args: Array<String>) {
     /**
      * The close-ups asked for, among face, hand, foot, hands, the bare hand at rest, curled into a fist and open, feet, the bare foot or
      * paw at rest, curled, open and spread, joins, where the head, a forelimb and a hind limb meet the body, surface, the joins' spots, the
-     * outline close up and the mesh, and drag, a torso drag's end.
+     * outline close up and the mesh, drag, a torso drag's end, and release, a Move drag of a forelimb's socket during and after it.
      */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
@@ -81,6 +81,7 @@ class LookArgs(args: Array<String>) {
         const val JOINS = "joins"
         const val SURFACE = "surface"
         const val DRAG = "drag"
+        const val RELEASE = "release"
         const val ANCHORS = "anchors"
     }
 }

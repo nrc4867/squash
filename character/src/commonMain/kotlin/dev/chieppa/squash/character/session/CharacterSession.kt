@@ -90,7 +90,9 @@ class CharacterSession(
     dispatcher: CoroutineDispatcher,
 ) {
     val history = History(initial)
-    val graph = Graph(scope, dispatcher)
+
+    /** The graph deriving the character; its nodes keep in their caches only what is made while no gesture is open. */
+    val graph = Graph(scope, dispatcher) { !history.inGesture }
 
     /**
      * The nodes that read a view's camera, which an orbit reruns every frame. They are apart from [graph], whose settled and

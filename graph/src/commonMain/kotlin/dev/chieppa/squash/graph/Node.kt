@@ -13,10 +13,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlin.concurrent.Volatile
 
 /**
  * One step of derived data. A new input cancels the run in progress and starts another, unless the cache already holds
- * that input's result. [output] keeps the previous result until the new one is ready.
+ * that input's result. [output] keeps the previous result until the new one is ready. The cache holds the results most recently made
+ * or taken from it, of runs that started while [keeps] said so; of the others it holds only the latest, which joins the rest if its
+ * input comes again.
  */
 class Node<I, O : Any> internal constructor(
     private val scope: CoroutineScope,
@@ -25,6 +28,8 @@ class Node<I, O : Any> internal constructor(
     internal val stage: String?,
     private val compute: suspend (I) -> O,
     private val changed: () -> Unit,
+    private val keeps: () -> Boolean = { true },
+    private val epoch: () -> Long = { NO_EPOCH },
 ) {
     private class Published<O>(val generation: Long, val value: O?, val failure: Throwable?)
 
@@ -32,6 +37,7 @@ class Node<I, O : Any> internal constructor(
     private val completed = MutableStateFlow(0L)
     private val published = MutableStateFlow(Published<O>(0L, null, null))
     private val cache = MutableStateFlow<Map<I, O>>(emptyMap())
+    private val passing = MutableStateFlow<Pair<I, O>?>(null)
     private var running: Job? = null
     private var upstream: Node<*, *>? = null
     private val delivered = MutableStateFlow(0L)
@@ -48,15 +54,32 @@ class Node<I, O : Any> internal constructor(
     /** What the latest run threw, or null if it succeeded. A following node also holds what the node it follows threw. */
     val failure: StateFlow<Throwable?> = DerivedStateFlow({ published.value.failure }, published)
 
-    /** Clean only once the node it follows, if any, is clean and its latest result has reached this one. */
+    /** [isClean] as last read, with the [epoch] it was read at: the epoch shifted left by one, the lowest bit set when clean. */
+    @Volatile
+    private var cleanRead = NO_EPOCH
+
+    /**
+     * Clean only once the node it follows, if any, is clean and its latest result has reached this one. Read once for each [epoch],
+     * which a change in any graph moves on.
+     */
     internal val isClean: Boolean
         get() {
-            val followed = upstream
-            val caughtUp = followed == null || (followed.isClean && delivered.value == followed.published.value.generation)
-            val gathered = gathering.value
-            val gatheredAll = gathered == null || (gathered.sources.values.all { it.isClean } && gathered.seen.value == gathered.generations)
-            return caughtUp && gatheredAll && completed.value >= latest.value
+            val now = epoch()
+            val read = cleanRead
+            if (now != NO_EPOCH && read != NO_EPOCH && read shr 1 == now) return read and 1L == 1L
+            val clean = readClean()
+            if (now != NO_EPOCH) cleanRead = (now shl 1) or (if (clean) 1L else 0L)
+            return clean
         }
+
+    /** [isClean] read afresh for this node, its sources read as last read in this epoch. */
+    internal fun readClean(): Boolean {
+        val followed = upstream
+        val caughtUp = followed == null || (followed.isClean && delivered.value == followed.published.value.generation)
+        val gathered = gathering.value
+        val gatheredAll = gathered == null || (gathered.sources.values.all { it.isClean } && gathered.seen.value == gathered.generations)
+        return caughtUp && gatheredAll && completed.value >= latest.value
+    }
 
     /** Collects unconfined, so a new input marks the node dirty inside the call that set it. */
     internal fun start(input: Flow<I>) {
@@ -82,8 +105,9 @@ class Node<I, O : Any> internal constructor(
 
     /**
      * Takes as input what [inputOf] makes of each value of [shape] and the results of the nodes [sourcesOf] names for it. It
-     * runs once all of them have a result, and again when any has a new one. The first failure among them becomes this
-     * node's, keeping its last result. Results reach one loop in turn, whichever thread each source finishes on.
+     * runs once all of them have a result, and again when any has a new one; what it makes while any of them is still dirty or
+     * running is not kept in its cache. The first failure among them becomes this node's, keeping its last result. Results reach one
+     * loop in turn, whichever thread each source finishes on.
      */
     internal fun <S, K, V : Any> gather(shape: Flow<S>, sourcesOf: (S) -> Map<K, Node<*, V>>, inputOf: (S, Map<K, V>) -> I) {
         val wake = Channel<Unit>(Channel.CONFLATED)
@@ -105,7 +129,7 @@ class Node<I, O : Any> internal constructor(
                 values.values.all { it != null } -> {
                     @Suppress("UNCHECKED_CAST")
                     val input = inputOf(value, values as Map<K, V>)
-                    if (input != lastInput) accept(input)
+                    if (input != lastInput) accept(input, settled = sources.values.all { it.readClean() })
                     lastInput = input
                     lastFailure = null
                 }
@@ -137,19 +161,22 @@ class Node<I, O : Any> internal constructor(
         finish(latest.updateAndGet { it + 1 }, null, failure)
     }
 
-    private fun accept(value: I) {
+    /** Takes [value] as input; a result made from it is kept in the cache only when it is [settled], made from sources none of which was dirty. */
+    private fun accept(value: I, settled: Boolean = true) {
         val generation = latest.updateAndGet { it + 1 }
         changed()
         running?.cancel()
-        val cached = cache.value[value]
+        val cached = cache.value[value] ?: passing.value?.takeIf { it.first == value }?.second
         if (cached != null) {
+            remember(value, cached)
             finish(generation, cached, null)
             return
         }
+        val keep = settled && keeps()
         running = scope.launch(dispatcher) {
             try {
                 val result = compute(value)
-                remember(value, result)
+                if (keep) remember(value, result) else if (settled) passing.value = value to result
                 finish(generation, result, null)
             } catch (e: CancellationException) {
                 throw e
@@ -162,18 +189,25 @@ class Node<I, O : Any> internal constructor(
     private fun remember(input: I, result: O) {
         cache.update { old ->
             val next = LinkedHashMap(old)
+            next.remove(input)
             next[input] = result
             if (next.size > cacheSize) next.remove(next.keys.first())
             next
         }
     }
 
-    /** Generations only move forward, so a stale run that finishes late never replaces a newer result. */
+    /**
+     * Generations only move forward, so a stale run that finishes late never replaces a newer result. The run counts as done before its
+     * result is published, so a node the result wakes reads this one as clean.
+     */
     private fun finish(generation: Long, value: O?, failure: Throwable?) {
+        completed.update { maxOf(it, generation) }
         published.update { old ->
             if (old.generation > generation) old else Published(generation, value ?: old.value, failure)
         }
-        completed.update { maxOf(it, generation) }
         changed()
     }
 }
+
+/** The epoch of a node made with no graph to read it from, whose cleanness is read afresh each time. */
+private const val NO_EPOCH = -1L

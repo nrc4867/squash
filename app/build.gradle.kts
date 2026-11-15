@@ -53,7 +53,9 @@ compose.desktop {
         // -Pdevtools=<port> serves screenshots of the windows on 127.0.0.1.
         providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
         // -Popen=<file> opens it in the workspace at launch, in -Pstage=<STAGE> with -Pselect=<part> selected.
-        listOf("open", "stage", "select").forEach { name -> providers.gradleProperty(name).orNull?.let { jvmArgs += "-Dsquash.$name=$it" } }
+        // A relative -Popen path is read from the project's root, not from this module's folder the app runs in.
+        providers.gradleProperty("open").orNull?.let { jvmArgs += "-Dsquash.open=${rootProject.file(it).path}" }
+        listOf("stage", "select").forEach { name -> providers.gradleProperty(name).orNull?.let { jvmArgs += "-Dsquash.$name=$it" } }
         nativeDistributions {
             packageName = "Squash"
             packageVersion = project.version.toString().substringBefore('-')
@@ -65,7 +67,8 @@ compose.desktop {
 // ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot" renders examples to app/build/look;
 // ./gradlew :app:measure -Pmeasure="example=woman-dressed" prints their checks. Both run the real graph with no test runner.
 // ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>" sets look's shots beside reference renders.
-listOf("look" to "LookMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt").forEach { (name, main) ->
+// ./gradlew :app:drag -Pdrag="example=fennec-dressed outfits=winter drags=move:front-leg-l" times scripted drags through the app's graph.
+listOf("look" to "LookMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt", "drag" to "drag.DragMainKt").forEach { (name, main) ->
     tasks.register<JavaExec>(name) {
         group = "verification"
         classpath = sourceSets["test"].runtimeClasspath

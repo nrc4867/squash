@@ -33,6 +33,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew :app:measure -Pmeasure="example=woman-dressed"  # print an example's quality checks as numbers
 ./gradlew :app:look -Plook="example=woman-twin-dressed shots=reference"  # render the reference's 24 shots through its cameras
 ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>"  # those shots beside the reference renders, overlays and silhouette IoU under app/build/compare
+./gradlew :app:drag -Pdrag="example=fennec-dressed outfits=winter drags=move:front-leg-l,pose:front-leg-l:knee switch=true"  # scripted drags, undo and outfit switches timed through the app's graph
 ```
 
 Stop a running app before rebuilding; a rebuild under a running app breaks it. To see the running app, use Stretch's screenshot endpoint as described in `../stretch/.claude/skills/app-screenshot/SKILL.md`, never a desktop screenshot.

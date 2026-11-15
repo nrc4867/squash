@@ -1014,6 +1014,56 @@ Woman, casual:
 
 **What would close the gap.** Field reads are half of all samples, on the body and again on each garment an edit reaches. In order of likely gain: exactness per grid point in the channels, so only grid points where a member can change the union are read (about the part A estimate of a third of channel reads); a garment's placing seeded from the body's placed vertex and checked by one read, falling back to the line search; finishing kept per block with the 19-ring rule above; and the GPU spike's batched reads for what is left.
 
+## Drag feel results
+
+**What a drag does.** While a gesture is open the body meshes at twice the cell (`COARSE_FACTOR`), and everything grown from that mesh follows it: each garment meshes at the body's coarse cell, and paint, eyes, hidden skin and surface work are laid on the coarse surface. The weights and the posed surface wait for the gesture's end unless a pane draws them (`skinShown`). A pose drag leaves the placed character as it is and keeps the full surface. Each node of the one surface's stack keeps its last `KEPT_BUILDS` (4) settled builds by input, so undo, redo and an outfit worn again take them as they were; results made while a gesture is open are not kept. Releasing builds the full stack again.
+
+**How it was measured.** `./gradlew :app:drag` opens the example as the app does, on `Dispatchers.Default` with every node the app makes, and plays a 24-move Move drag of a forelimb's socket (mirror on) through one transaction; each move is timed until both graphs settle. Every play starts a tenth of a step past the one before, so no move repeats an input any cache holds. One warm play, then five timed; each cell is the median, 90th percentile and worst in ms, on an 8-core machine with nothing else running. Repeating the same command moves the median of a later move by up to ±10 ms.
+
+| Character, outfit | Each later move | Shown frame | First move | Release | Undo | Redo | Outfit switch, there / back |
+|---|---|---|---|---|---|---|---|
+| Fennec, bare, front leg | 64 / 94 / 112 | 43 | 65 | 76 | 25 | 30 | |
+| Fennec, winter, front leg | 78 / 101 / 129 | 77 | 115 | 285 | 54 / 203 | 27 | 65 / 66 |
+| Fennec, winter, knee pose | 8 / 9 / 17 | 2 | 18 | 81 | 4 | 10 | |
+| Woman, casual, arm | 114 / 131 / 171 | 98 | 158 | 245 | 80 / 212 | 28 | 59 / 123 |
+| Person, summer, arm | 110 / 159 / 215 | 99 | 164 | 230 | 101 / 251 | 84 | 64 / 181 |
+
+Against main (b01ca55, the same harness): the winter fennec's front-leg move 310 ms, release 1520, undo and redo 1986 and 2011, outfit switch 2319; the woman's arm move 250.
+
+**Against the goal.** No dressed character's move settles under 50 ms; the bare fennec's shown frame does. Per node, for a winter fennec front-leg move (median of 96 moves, each node's own run, with everything else running beside it): the coarse body mesh 25 ms, then the garments 42 (their first read of the field alone 22, re-reading the whole of both front boots and a third of the sweater), then the hidden skin 8; beside them the surface finishing 9, the paint 10–13, the surface work landed on the field 20, the fur after it 24–28, and the parts' socket creases 22. The longest chains are mesh, garments, hidden skin (about 75 ms) and mesh, surface work, fur (about 73 ms).
+
+**Levers tried and not kept.**
+
+- A coarser drag cell. At three and four times the body's cell the garments re-read 222 blocks instead of 566 but each block costs more, and the body mesh stays at about 25 ms: later moves 59 and 73 ms against 58–82 at twice, within the noise.
+- Gathers that run only once all their sources are settled (the hidden skin, the shown paint and the fur, which each run twice a move, once on the garments or surface work of the move before). Later moves 68 and 69 ms against 70 and 76 with the same build: within the noise.
+
+**What would close the gap** is the list in the speed round 2 results: field reads are the body mesh and each garment's mesh, and a moved boot or sleeve is read whole. Reading fewer grid points, garments placed from the body's vertices, moving rigidly moved parts without meshing them again, or the GPU reads of `gpu-field-spike`. Each changes the mesher or adds a GPU path, and waits for a decision. Fur and surface work have no coarse form yet; a thinned fur while dragging is a look decision.
+
+**Identity.** The 147 images of the 13 examples (every outfit, the named poses, the face, hand and foot close-ups), rendered from this branch and from main and compared in RGBA byte for byte: every image equals main's. One image, `woman-dressed/winter-rest`, differs by one pixel between two renders of main itself, and the branch's equals one of them; across three renders of the branch, `woman-twin-dressed/beach-rest` once differed from main by two pixels and equalled it on the other two.
+
+**Release equals a fresh build.** `look close=release` renders the Move drag's last move, the release, and a session opened afresh on the released document. The winter fennec and the casual woman: the release equals the fresh build in RGBA, whole figure and face. The summer person with an arm's socket moved along the torso: see "Drag speed results".
+
+## Drag speed results
+
+**Surfaces shown with their own paint and dress.** The graph settles a build's surface before the paint and dress laid on it, so after an edit or an outfit switch the newest surface can meet the last build's dress or paint. A dress (`SurfaceDress.on`) and the paint (`HeldPaint.on`) name the surface they are laid on. The panes show a surface only with the paint and dress laid on it, and keep the last surface that had both until then (`LastPaneSurface`); the skin and posed nodes keep their last result while the dress or paint is still another surface's, and the shown paint keeps the whole paint while the dress is. Paint kept to the skin a pose shows is cut on the rest mesh's triangles, which its candidates index, and laid on the posed mesh, which leaves out the quads where parts touch. `SurfacePairingTest` plays outfit switches on the test dispatcher and checks every pairing the panes and the posed node see, and a pose that parts quads.
+
+**Release equals a fresh build.** `look close=release`: the winter fennec and the casual woman's release equals the fresh build in RGBA, whole figure and face. The summer person with an arm's socket moved along the torso builds afresh; its face equals the release, its whole figure differs from the release in 501 bytes of RGBA; both show the forearms inside the shirt.
+
+**Identity.** The 147 images of the 13 examples, rendered from this branch and compared in RGBA with main's: 142 equal. The four `fennec-dressed/hooded-pose-walk-*` images differ: over the whole figure. In main's first frame the fennec stands unposed with its hood cut ragged and its ears' outlines apart from them; in this branch's it walks with the hood whole. `woman-dressed/winter-rest` differs by one pixel, the pixel two renders of main differ by.
+
+**Ceilings of the two drag levers.** Measured with throwaway changes, each later move of a 24-move Move drag of the front leg, three timed plays, median / 90th percentile / worst in ms:
+
+| Character, outfit | As built | No fur while a gesture is open | No line search placing garment vertices while coarse | Both |
+|---|---|---|---|---|
+| Fennec, winter, front leg | 78 / 129 / 188 | 78 / 110 / 131 | 82 / 123 / 146 | 52 / 77 / 92 |
+| Woman, casual, arm | 120 / 165 / 187 | | | 116 / 157 / 186 |
+
+Each lever alone leaves the other chain as long (body mesh, garments, hidden skin; body mesh, surface work, fur). Both at their limit (no fur at all, garment vertices left where relaxation puts them, off the surface) bring the fennec to 52 ms, with the body mesh at 18 ms and the garments still about 30 ms after it, most of it their blocks' field reads. A thinned fur and a garment placing that is checked and falls back cost more than either limit, so neither lever reaches 50 ms on the fennec. The woman has no fur and her move is set by the coarse body mesh (52 ms) and the posed surface and lines after it (103 and 120 ms), which neither lever touches.
+
+A garment vertex seeded from the body's placed vertex pushed out by the ease and confirmed by one read lies on the garment's surface, but not where the line search from the vertex's relaxed start lands, so its renders cannot equal the line search's; only a form used while a gesture is open, where the full build follows the release, keeps the rest renders as they are.
+
+Neither lever is built.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |

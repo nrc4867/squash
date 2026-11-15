@@ -139,7 +139,6 @@ fun rememberPaneSurface(open: CharacterSession): PaneSurface? {
     val posedNode by remember(open) { open.oneSurface.posed }.collectAsState()
     val posed by remember(posedNode) { posedNode?.output ?: MutableStateFlow(null) }.collectAsState()
     val rest = surface?.surface ?: return null
-    return remember(rest, paint, dress, posed) {
-        PaneSurface(PosedSurface(rest, paint?.paint, dress?.dress), posed?.posed?.takeIf { it.surface !== rest })
-    }
+    val last = remember(open) { LastPaneSurface() }
+    return remember(rest, paint, dress, posed) { last.next(rest, paint, dress?.dress, posed?.posed) }
 }

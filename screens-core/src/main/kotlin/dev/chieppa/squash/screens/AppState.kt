@@ -25,6 +25,7 @@ import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.screens.shell.RestPoseArtist
 import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.screens.sheet.followSkinShown
 import dev.chieppa.squash.screens.shell.stage
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.catalog.openSockets
@@ -199,6 +200,7 @@ class AppState(
         pose.clear()
         dress.clear()
         posing.value = SessionPose(opened, held = rig.held)
+        sessionScope.launch(Dispatchers.Unconfined) { followSkinShown(opened) }
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
         mirror.value = true

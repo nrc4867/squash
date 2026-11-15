@@ -11,14 +11,26 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 
-/** What the paint node holds: the one surface's paint, or null for a character built as its parts' own meshes. */
-class HeldPaint(val paint: SurfacePaint?)
+/** What the paint node holds: the one surface's paint, laid [on] that surface, or null for a character built as its parts' own meshes. */
+class HeldPaint(val paint: SurfacePaint?, val on: CharacterSurface? = null) {
+    /** Whether this paint is laid on [surface], or holds none. */
+    fun isOn(surface: CharacterSurface): Boolean = paint == null || on === surface
+}
 
 /**
  * A one surface as a pose shows it, with its [paint] laid on it and its [dress] worn as posed, each null where it has none, and [carry],
  * which moves a point on the surface at rest to where the pose carries it, null while the pose leaves it at rest.
  */
-class PosedSurface(val surface: CharacterSurface, val paint: SurfacePaint?, val dress: SurfaceDress? = null, val carry: ((ResolvedPoint) -> ResolvedPoint)? = null)
+class PosedSurface(val surface: CharacterSurface, val paint: SurfacePaint?, val dress: SurfaceDress? = null, val carry: ((ResolvedPoint) -> ResolvedPoint)? = null) {
+    companion object {
+        /**
+         * [surface] at rest with [paint] and [dress], or null where either was laid on another surface: the graph's nodes settle one
+         * after another, so the surface of one build can meet the paint or dress of the build before.
+         */
+        fun laid(surface: CharacterSurface, paint: HeldPaint?, dress: SurfaceDress?): PosedSurface? =
+            if (paint?.isOn(surface) == false || dress?.isOn(surface) == false) null else PosedSurface(surface, paint?.paint, dress)
+    }
+}
 
 /** What a posed-surface node holds: the surface in its pose, or null for a character built as its parts' own meshes. */
 class HeldPosedSurface(val posed: PosedSurface?)
@@ -41,17 +53,17 @@ data class PaintInput(val parts: List<PartId>, val eyes: List<PaintedEye>)
  * See [SurfacePaint.of] and [SurfaceEyes]. Its shapes and its eyes are laid in parallel on the graph's dispatcher.
  */
 fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput>, shapes: (PartId) -> Node<*, HeldShapes>): Node<*, HeldPaint> {
-    val surfaceSource = follow<HeldSurface, PaintSource>(surface, cacheSize = 1, stage = BuildStages.SURFACE_WORK) { PaintSource.Surface(it) }
+    val surfaceSource = follow<HeldSurface, PaintSource>(surface, cacheSize = KEPT_BUILDS, stage = BuildStages.SURFACE_WORK) { PaintSource.Surface(it) }
     val wrapped = HashMap<PartId, Node<*, PaintSource>>()
     val memo = PaintMemo()
     return gather(
         input,
         sourcesOf = { held ->
             mapOf(PaintKey(null) to surfaceSource) + held.parts.associate { id ->
-                PaintKey(id) to wrapped.getOrPut(id) { follow<HeldShapes, PaintSource>(shapes(id), cacheSize = 1, stage = BuildStages.SURFACE_WORK) { PaintSource.Shapes(it) } }
+                PaintKey(id) to wrapped.getOrPut(id) { follow<HeldShapes, PaintSource>(shapes(id), cacheSize = KEPT_BUILDS, stage = BuildStages.SURFACE_WORK) { PaintSource.Shapes(it) } }
             }
         },
-        cacheSize = 1,
+        cacheSize = KEPT_BUILDS,
         stage = BuildStages.SURFACE_WORK,
     ) { gathered ->
         val held = (gathered.values[PaintKey(null)] as? PaintSource.Surface)?.held?.surface ?: return@gather HeldPaint(null)
@@ -59,7 +71,7 @@ fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput
         coroutineScope {
             val eyes = async { SurfaceEyes.of(held, gathered.shape.eyes, IN_PARALLEL) }
             val paint = SurfacePaint.of(held, shapes, IN_PARALLEL, memo)
-            HeldPaint(paint + eyes.await())
+            HeldPaint(paint + eyes.await(), held)
         }
     }
 }

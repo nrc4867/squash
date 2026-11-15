@@ -21,14 +21,15 @@ private enum class ShownKey { BODY, PAINT, DRESS }
  * through a garment over hidden skin. The paint as it is where nothing is worn.
  */
 fun Graph.shownPaintNode(surface: Node<*, HeldSurface>, paint: Node<*, HeldPaint>, dress: Node<*, HeldDress>): Node<*, HeldPaint> {
-    val body = follow<HeldSurface, ShownSource>(surface, cacheSize = 1, stage = BuildStages.ASSEMBLY) { ShownSource.Body(it) }
-    val painted = follow<HeldPaint, ShownSource>(paint, cacheSize = 1, stage = BuildStages.ASSEMBLY) { ShownSource.Paint(it) }
-    val worn = follow<HeldDress, ShownSource>(dress, cacheSize = 1, stage = BuildStages.ASSEMBLY) { ShownSource.Dress(it) }
-    return gather(MutableStateFlow(Unit), { mapOf(ShownKey.BODY to body, ShownKey.PAINT to painted, ShownKey.DRESS to worn) }, cacheSize = 1, stage = BuildStages.ASSEMBLY) { gathered ->
+    val body = follow<HeldSurface, ShownSource>(surface, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { ShownSource.Body(it) }
+    val painted = follow<HeldPaint, ShownSource>(paint, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { ShownSource.Paint(it) }
+    val worn = follow<HeldDress, ShownSource>(dress, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { ShownSource.Dress(it) }
+    return gather(MutableStateFlow(Unit), { mapOf(ShownKey.BODY to body, ShownKey.PAINT to painted, ShownKey.DRESS to worn) }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
         val held = (gathered.values[ShownKey.PAINT] as ShownSource.Paint).held
         val on = (gathered.values[ShownKey.BODY] as ShownSource.Body).held.surface
-        val shown = (gathered.values[ShownKey.DRESS] as ShownSource.Dress).held.dress?.shown
+        val dress = (gathered.values[ShownKey.DRESS] as ShownSource.Dress).held.dress
+        val shown = dress?.shown
         val laid = held.paint
-        if (on == null || laid == null || shown == null) held else HeldPaint(laid.within(shown, on))
+        if (on == null || laid == null || shown == null || !dress.isOn(on) || !held.isOn(on)) held else HeldPaint(laid.within(shown, on), on)
     }
 }

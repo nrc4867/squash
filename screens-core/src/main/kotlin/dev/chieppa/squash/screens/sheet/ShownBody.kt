@@ -1,9 +1,12 @@
 package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.shell.Stage
+import kotlinx.coroutines.flow.combine
 
 /** Whether the panes show the character in its pose or at rest, outside the Pose stage, which always shows the pose. View state, never saved. */
 enum class PoseView { POSED, REST }
@@ -37,3 +40,10 @@ fun AppState.surfaceThrough(sight: SurfaceView): CharacterSurface? {
     if (!showsPose(sight)) return rest
     return open.oneSurface.posed.value?.output?.value?.posed?.surface ?: rest
 }
+
+/** Whether a pane draws the one surface's weights or its posed form: the Rig stage's weights, or a [pose] that moves a bone where a pane shows the pose. */
+fun drawsSkin(stage: Stage, view: PoseView, pose: Pose): Boolean = stage == Stage.RIG || (posesPane(stage, view, locked = false) && !pose.isRest)
+
+/** Tells [open] whether a pane draws its skin, by [drawsSkin], for as long as the caller collects. */
+suspend fun AppState.followSkinShown(open: CharacterSession) =
+    combine(stage, poseView, open.document) { shown, view, doc -> drawsSkin(shown, view, doc.character.shownPose) }.collect { open.oneSurface.skinShown.value = it }

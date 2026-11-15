@@ -15,9 +15,19 @@ import kotlinx.coroutines.sync.withLock
 /**
  * The garments a one surface wears, innermost first, each cut to what shows of it, and what of the body shows, [skin], cut where
  * [shown], one value a vertex of the body's drawn mesh, is at least zero; null where nothing is worn. [under] holds for the body, then
- * each garment, how far each of its vertices lies inside the coverage of the garments over it, the most of any.
+ * each garment, how far each of its vertices lies inside the coverage of the garments over it, the most of any. [on] is the body's surface
+ * whose drawn mesh [skin], [shown] and [under] are laid on.
  */
-class SurfaceDress(val garments: List<SurfaceGarment>, val skin: LevelCut?, val shown: FloatArray? = null, val under: List<FloatArray> = emptyList()) {
+class SurfaceDress(
+    val garments: List<SurfaceGarment>,
+    val skin: LevelCut?,
+    val shown: FloatArray? = null,
+    val under: List<FloatArray> = emptyList(),
+    val on: CharacterSurface? = null,
+) {
+    /** Whether this dress is worn on [surface]: it holds nothing laid on the body, or what it holds is laid on [surface]'s drawn mesh. */
+    fun isOn(surface: CharacterSurface): Boolean = (skin == null && shown == null && under.isEmpty()) || on === surface
+
     companion object {
         val NONE = SurfaceDress(emptyList(), null)
     }
@@ -41,7 +51,7 @@ fun surfaceCovers(character: Character): List<GarmentCover> =
 fun Graph.surfaceGarmentsNode(meshed: Node<*, HeldMesh>, covers: Flow<List<GarmentCover>>): Node<*, HeldGarments> {
     val builder = GarmentBuilder()
     val lock = Mutex()
-    return gather(covers, { mapOf(Unit to meshed) }, cacheSize = 1, stage = BuildStages.ASSEMBLY) { gathered ->
+    return gather(covers, { mapOf(Unit to meshed) }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
         val body = gathered.values.getValue(Unit).meshed ?: return@gather HeldGarments(null)
         if (gathered.shape.isEmpty()) return@gather HeldGarments(emptyList())
         lock.withLock {
@@ -67,11 +77,11 @@ private sealed interface DressSource {
  * from the last surfaces taken from the last run. See [HiddenSkin].
  */
 fun Graph.surfaceDressNode(surface: Node<*, HeldSurface>, garments: Node<*, HeldGarments>): Node<*, HeldDress> {
-    val body = follow<HeldSurface, DressSource>(surface, cacheSize = 1, stage = BuildStages.ASSEMBLY) { DressSource.Body(it) }
-    val worn = follow<HeldGarments, DressSource>(garments, cacheSize = 1, stage = BuildStages.ASSEMBLY) { DressSource.Worn(it) }
+    val body = follow<HeldSurface, DressSource>(surface, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { DressSource.Body(it) }
+    val worn = follow<HeldGarments, DressSource>(garments, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { DressSource.Worn(it) }
     val memo = CoverageMemo()
     val lock = Mutex()
-    return gather(MutableStateFlow(Unit), { mapOf(BODY to body, WORN to worn) }, cacheSize = 1, stage = BuildStages.ASSEMBLY) { gathered ->
+    return gather(MutableStateFlow(Unit), { mapOf(BODY to body, WORN to worn) }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
         val held = (gathered.values[BODY] as? DressSource.Body)?.held?.surface ?: return@gather HeldDress(null)
         val made = (gathered.values[WORN] as? DressSource.Worn)?.held?.garments ?: return@gather HeldDress(null)
         if (made.isEmpty()) return@gather HeldDress(SurfaceDress.NONE)
@@ -81,7 +91,7 @@ fun Graph.surfaceDressNode(surface: Node<*, HeldSurface>, garments: Node<*, Held
                 currentCoroutineContext().ensureActive()
                 IN_PARALLEL(hiding.next() ?: break)
             }
-            HeldDress(SurfaceDress(hiding.worn, hiding.skin, hiding.shownSkin, hiding.under))
+            HeldDress(SurfaceDress(hiding.worn, hiding.skin, hiding.shownSkin, hiding.under, held))
         }
     }
 }

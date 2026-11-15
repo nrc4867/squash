@@ -1,6 +1,9 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.IN_TURN
+import dev.chieppa.squash.character.surface.RunAll
+import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfaceGarment
 import dev.chieppa.squash.character.surface.SurfacePaint
@@ -12,28 +15,34 @@ private const val POKE_SLACK_CELLS = 0.5f
 /** How far from a vertex, in cells, the garment over it is looked for. */
 private const val POKE_REACH_CELLS = 4f
 
+/** How many vertices a piece of the search for skin pushed through takes. */
+private const val POKE_CHUNK = 2048
+
 /**
  * The body and each garment as [dress] wears them on a posed [body] and posed [garments], with what the pose carries out through a
  * garment over it hidden too: a vertex inside the coverage of a garment over it at rest that the pose leaves outside that garment's
  * surface, or less than [POKE_SLACK_CELLS] cells inside it, is cut away along the curve where it comes out, and the body's paint with
- * it. [restIndices] are the body's drawn mesh's at rest. What coverage hides follows the pose by itself, since coverage reads coordinates; this finds what a pose pushes through the cloth.
+ * it. [rest] is the body at rest, whose drawn mesh the paint's layers were cut on; posed, a pose may leave out quads where parts touch.
+ * What coverage hides follows the pose by itself, since coverage reads coordinates; this finds what a pose pushes through the cloth.
  */
-class PosedHiding(private val body: CharacterSurface, private val restIndices: IntArray, private val garments: List<SurfaceGarment>, private val dress: SurfaceDress) {
-    /** The body's paint kept to the skin that shows posed, and the dress as posed. */
-    fun of(paint: SurfacePaint?): Pair<SurfacePaint?, SurfaceDress> {
+class PosedHiding(private val body: CharacterSurface, private val rest: CharacterSurface, private val garments: List<SurfaceGarment>, private val dress: SurfaceDress) {
+    private val restIndices = rest.render.indices
+
+    /** The body's paint kept to the skin that shows posed, and the dress as posed, the search for what came through run in pieces by [runAll]. */
+    suspend fun of(paint: SurfacePaint?, runAll: RunAll = IN_TURN): Pair<SurfacePaint?, SurfaceDress> {
         val restShown = dress.shown
-        if (restShown == null) return paint to SurfaceDress(garments, dress.skin, null, dress.under)
-        if (garments.isEmpty() || dress.under.size != garments.size + 1) return paint to SurfaceDress(garments, recut(body, restShown), restShown, dress.under)
+        if (restShown == null) return paint to SurfaceDress(garments, dress.skin, null, dress.under, body)
+        if (garments.isEmpty() || dress.under.size != garments.size + 1) return paint to SurfaceDress(garments, recut(body, restShown), restShown, dress.under, body)
         val surfaces = listOf(body) + garments.map { it.surface }
         val near = garments.map { garment -> NearestVertex(garment.surface.positions, garment.surface.mesh.cell) }
         val shown = surfaces.mapIndexed { s, surface ->
             val base = if (s == 0) restShown else garments[s - 1].shownValues
-            pushedThrough(surface, base, dress.under[s], (s until garments.size).toList(), near)
+            pushedThrough(surface, base, dress.under[s], (s until garments.size).toList(), near, runAll)
         }
         val skin = recut(body, shown[0] ?: restShown)
         val worn = garments.mapIndexed { i, garment -> shown[i + 1]?.let { garment.within(LevelCut.of(it, garment.surface.render.indices), it) } ?: garment }
-        val shownPaint = shown[0]?.let { values -> paint?.within(values, body) } ?: paint
-        return shownPaint to SurfaceDress(worn, skin, shown[0] ?: restShown, dress.under)
+        val shownPaint = shown[0]?.let { values -> paint?.within(values, rest, body.render) } ?: paint
+        return shownPaint to SurfaceDress(worn, skin, shown[0] ?: restShown, dress.under, body)
     }
 
     /** [surface]'s skin cut where [values] are at least zero, along its drawn mesh as posed: the rest cut where the pose keeps every quad and the values are the rest's. */
@@ -44,29 +53,32 @@ class PosedHiding(private val body: CharacterSurface, private val restIndices: I
      * [base] lowered where [surface]'s vertices that lie inside the coverage of the garments [outer] over it, as [under] says, have come
      * out through one of them; null where none has.
      */
-    private fun pushedThrough(surface: CharacterSurface, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>): FloatArray? {
+    private suspend fun pushedThrough(surface: CharacterSurface, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>, runAll: RunAll): FloatArray? {
         if (outer.isEmpty()) return null
         val cell = surface.mesh.cell
         val corners = surface.mesh.vertexCount
         val positions = surface.positions
-        var out: FloatArray? = null
-        for (v in 0 until corners) {
-            if (under[v] <= 0f || base[v] < 0f) continue
-            var least = Float.MAX_VALUE
-            for (g in outer) {
-                val garment = garments[g]
-                val q = near[g].within(positions, v, cell * POKE_REACH_CELLS) ?: continue
-                if (garment.coverage[q] < 0f) continue
-                val gp = garment.surface.positions
-                val gn = garment.surface.lineNormals
-                val inside = (gp[q * 3] - positions[v * 3]) * gn[q * 3] + (gp[q * 3 + 1] - positions[v * 3 + 1]) * gn[q * 3 + 1] + (gp[q * 3 + 2] - positions[v * 3 + 2]) * gn[q * 3 + 2]
-                least = minOf(least, inside - cell * POKE_SLACK_CELLS)
+        val lowered = base.copyOf()
+        val lowers = BooleanArray((corners + POKE_CHUNK - 1) / POKE_CHUNK)
+        runAll(chunked(corners, POKE_CHUNK) { from, until ->
+            for (v in from until until) {
+                if (under[v] <= 0f || base[v] < 0f) continue
+                var least = Float.MAX_VALUE
+                for (g in outer) {
+                    val garment = garments[g]
+                    val q = near[g].within(positions, v, cell * POKE_REACH_CELLS) ?: continue
+                    if (garment.coverage[q] < 0f) continue
+                    val gp = garment.surface.positions
+                    val gn = garment.surface.lineNormals
+                    val inside = (gp[q * 3] - positions[v * 3]) * gn[q * 3] + (gp[q * 3 + 1] - positions[v * 3 + 1]) * gn[q * 3 + 1] + (gp[q * 3 + 2] - positions[v * 3 + 2]) * gn[q * 3 + 2]
+                    least = minOf(least, inside - cell * POKE_SLACK_CELLS)
+                }
+                if (least >= base[v]) continue
+                lowered[v] = least
+                lowers[from / POKE_CHUNK] = true
             }
-            if (least >= base[v]) continue
-            val lowered = out ?: base.copyOf().also { out = it }
-            lowered[v] = least
-        }
-        val made = out ?: return null
+        })
+        val made = lowered.takeIf { lowers.any { it } } ?: return null
         val indices = surface.render.indices
         for (tri in 0 until indices.size / 3) {
             val middle = indices[tri * 3 + 2]

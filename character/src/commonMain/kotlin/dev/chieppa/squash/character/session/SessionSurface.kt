@@ -21,6 +21,7 @@ import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.stretch.core.History
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,10 +36,16 @@ import kotlinx.coroutines.flow.map
  * [dress] it wears; and the node that shows it posed, which the rig gives through [showPosed].
  */
 class SessionSurface(graph: Graph, history: History<SquashDocument>, placed: Node<*, AssembledCharacter>, shapes: (PartId) -> Node<*, HeldShapes>) {
+    /** Whether a gesture is open on the history: a drag in progress. */
+    private val gesture: Flow<Boolean> = combine(history.document, history.steps) { _, _ -> history.inGesture }.distinctUntilChanged()
+
+    /** Whether a pane draws the surface's weights or its posed form; the views set it. While none does, the coarse surface of a drag is not skinned. */
+    val skinShown = MutableStateFlow(true)
+
     /** The character meshed as one surface, before its surface is finished. */
     val mesh: Node<*, HeldMesh> = graph.characterMeshNode(
         placed,
-        combine(history.document, history.steps) { doc, _ -> SurfaceMode(doc.character.oneSurface, history.inGesture) }.distinctUntilChanged(),
+        combine(history.document.map { it.character.oneSurface }.distinctUntilChanged(), gesture) { on, open -> SurfaceMode(on, open) }.distinctUntilChanged(),
     )
 
     val surface: Node<*, HeldSurface> = graph.characterSurfaceNode(mesh)

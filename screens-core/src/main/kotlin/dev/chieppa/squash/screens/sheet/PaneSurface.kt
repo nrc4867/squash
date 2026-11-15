@@ -1,6 +1,8 @@
 package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.HeldPaint
+import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.surface.SurfaceSection
 import dev.chieppa.squash.document.PartId
@@ -30,6 +32,22 @@ class PaneSurface(val rest: PosedSurface, val posed: PosedSurface?) {
     fun section(part: PartId, posedPane: Boolean): SurfaceSection {
         val surface = shown(posedPane).surface
         return synchronized(sections) { sections.getOrPut(part to surface) { SurfaceSection(surface, part) } }
+    }
+}
+
+/**
+ * The pane surface each settled piece of a one surface makes, one after another: the surface with its paint and dress where both are
+ * laid on it, else the last surface that had both, since the graph settles the surface of a build before its paint and dress.
+ */
+class LastPaneSurface {
+    private var kept: PaneSurface? = null
+
+    /** What the panes show of [rest] with [paint] and [dress], and [posed], the surface in the shown pose. */
+    fun next(rest: CharacterSurface, paint: HeldPaint?, dress: SurfaceDress?, posed: PosedSurface?): PaneSurface {
+        val laid = PosedSurface.laid(rest, paint, dress)
+        if (laid != null) return PaneSurface(laid, posed?.takeIf { it.surface !== rest }).also { kept = it }
+        val held = kept?.rest ?: PosedSurface(rest, null)
+        return PaneSurface(held, posed?.takeIf { it.surface !== held.surface })
     }
 }
 

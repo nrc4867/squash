@@ -11,15 +11,18 @@ import dev.chieppa.squash.character.surface.HeldPosedSurface
 import dev.chieppa.squash.character.surface.HeldSurface
 import dev.chieppa.squash.character.surface.IN_PARALLEL
 import dev.chieppa.squash.character.surface.IN_TURN
+import dev.chieppa.squash.character.surface.KEPT_BUILDS
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.graph.Node
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.concurrent.Volatile
 
 /**
  * A one surface's skin: its weights from [rig], with the [surface] they were read on, and the [dress] it wears with each garment's
- * weights, [garments], read from the body's at the coordinates it grows from; null pieces for a character without one.
+ * weights, [garments], read from the body's at the coordinates it grows from; null pieces for a character without one, and while the
+ * skin waits for a gesture's end.
  */
 class HeldSkin(val rig: Rig, val surface: CharacterSurface?, val skin: SurfaceSkin?, val dress: SurfaceDress? = null, val garments: List<SurfaceSkin> = emptyList())
 
@@ -28,50 +31,60 @@ private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
 /**
  * The session's one surface in the shown pose: its [skin], made again when the rig or the surface changes, and the surface [posed] by
  * it with its paint, rerun when the pose changes. Both are nodes of the session's graph, so its `settled` covers them; the session
- * shows [posed] as its posed surface.
+ * shows [posed] as its posed surface. While no pane draws them, the coarse surface of a drag is neither skinned nor posed: both hold none
+ * until the full surface follows the drag's end.
  */
 class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flow<Pose>) {
     private val graph = session.graph
     private val garmentSkins = GarmentSkins()
-
-    val skin: Node<*, HeldSkin> = graph.gather(
-        MutableStateFlow(Unit),
-        {
-            mapOf(
-                SkinSource.RIG to graph.follow<Rig, Any>(rig, cacheSize = 1) { it },
-                SkinSource.SURFACE to graph.follow<HeldSurface, Any>(session.characterSurface, cacheSize = 1) { it },
-                SkinSource.DRESS to graph.follow<HeldDress, Any>(session.oneSurface.dress, cacheSize = 1) { it },
-            )
+    private val sources: Map<SkinSource, Node<*, Any>> = mapOf(
+        SkinSource.RIG to graph.follow<Rig, Any>(rig, cacheSize = KEPT_BUILDS) { it },
+        SkinSource.SURFACE to graph.gather<Boolean, SkinSource, HeldSurface, Any>(session.oneSurface.skinShown, { mapOf(SkinSource.SURFACE to session.characterSurface) }, cacheSize = KEPT_BUILDS) { gathered ->
+            val held = gathered.values.getValue(SkinSource.SURFACE)
+            if (held.coarse && !gathered.shape) HeldSurface(null, coarse = true) else held
         },
-        cacheSize = 1,
-    ) { gathered ->
+        SkinSource.DRESS to graph.follow<HeldDress, Any>(session.oneSurface.dress, cacheSize = KEPT_BUILDS) { it },
+    )
+
+    /** The last skin made with its dress worn on its surface, which a run whose dress is still the last surface's keeps. */
+    @Volatile
+    private var lastSkin: HeldSkin? = null
+
+    val skin: Node<*, HeldSkin> = graph.gather(MutableStateFlow(Unit), { sources }, cacheSize = KEPT_BUILDS) { gathered ->
         val held = gathered.values.getValue(SkinSource.RIG) as Rig
-        val surface = (gathered.values.getValue(SkinSource.SURFACE) as HeldSurface).surface
+        val surface = (gathered.values.getValue(SkinSource.SURFACE) as HeldSurface).surface ?: return@gather HeldSkin(held, null, null)
         val dress = (gathered.values.getValue(SkinSource.DRESS) as HeldDress).dress
+        if (dress?.isOn(surface) == false) return@gather lastSkin ?: HeldSkin(held, null, null)
         val garments = dress?.garments.orEmpty().map { garment -> garmentSkins.of(held, garment, IN_PARALLEL) }
-        HeldSkin(held, surface, surface?.let { SurfaceSkin.of(held, it, IN_PARALLEL) }, dress, garments)
+        HeldSkin(held, surface, SurfaceSkin.of(held, surface, IN_PARALLEL), dress, garments).also { lastSkin = it }
     }
 
-    private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = 1) { it }
-    private val paintSource = graph.follow<HeldPaint, Any>(session.oneSurface.shownPaint, cacheSize = 1) { it }
+    private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }
+    private val paintSource = graph.follow<HeldPaint, Any>(session.oneSurface.shownPaint, cacheSize = KEPT_BUILDS) { it }
+
+    /** The last posed surface made with its paint laid on its surface, which a run whose paint is still another surface's keeps. */
+    @Volatile
+    private var lastPosed: HeldPosedSurface? = null
 
     val posed: Node<*, HeldPosedSurface> = graph.gather(
         pose,
         { mapOf(SkinSource.SKIN to skinSource, SkinSource.PAINT to paintSource) },
-        cacheSize = 1,
+        cacheSize = KEPT_BUILDS,
     ) { gathered ->
         val held = gathered.values.getValue(SkinSource.SKIN) as HeldSkin
-        val paint = (gathered.values.getValue(SkinSource.PAINT) as HeldPaint).paint
+        val laid = gathered.values.getValue(SkinSource.PAINT) as HeldPaint
+        val paint = laid.paint
         val surface = held.surface
         val skin = held.skin
         if (surface == null || skin == null) return@gather HeldPosedSurface(null)
+        if (!laid.isOn(surface)) return@gather lastPosed ?: HeldPosedSurface(null)
         val frames = boneFrames(held.rig, gathered.shape)
         val body = posedSurface(surface, skin, paint, frames)
         val worn = held.dress?.let { dress ->
             val moved = dress.garments.mapIndexed { i, garment -> garment.movedTo(hangingPushed(garment, posedSurface(garment.surface, held.garments[i], null, frames).surface, body.surface)) }
-            PosedHiding(body.surface, surface.render.indices, moved, dress).of(body.paint)
+            PosedHiding(body.surface, surface, moved, dress).of(body.paint, IN_PARALLEL)
         }
-        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry))
+        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry)).also { lastPosed = it }
     }
 
     init {
