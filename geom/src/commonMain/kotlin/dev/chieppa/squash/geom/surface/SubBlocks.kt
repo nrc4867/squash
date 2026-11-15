@@ -1,7 +1,7 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.geom.field.JoinedMember
+import dev.chieppa.squash.geom.field.FieldAsk
 import dev.chieppa.squash.geom.field.smoothMin
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -124,11 +124,12 @@ internal object SubBlocks {
      * they were read. Which values were read goes into the block's [SurfaceBlock.middlesRead] and the octants' into
      * [SurfaceBlock.octants]. Beside them, the most the least of the members' fields can be at each sub-block's middle.
      */
-    fun middles(
+    suspend fun middles(
+        ask: FieldAsk,
+        relevant: List<Int>,
         grid: BlockGrid,
         block: SurfaceBlock,
         slots: Int,
-        member: (Int) -> JoinedMember,
         centres: FloatArray,
         kept: (Int) -> KeptMiddles?,
     ): Pair<FloatArray, FloatArray> {
@@ -141,6 +142,7 @@ internal object SubBlocks {
         val octants = FloatArray(OCTANTS)
         val margin = LIPSCHITZ * grid.halfDiagonal
         val leastCentre = centres.minOrNull() ?: 0f
+        val octantsWanted = BooleanArray(slots)
         for (s in 0 until slots) {
             val k = held[s]
             if (k != null) read[s] = k.read
@@ -157,9 +159,21 @@ internal object SubBlocks {
                 for (sub in 0 until SUBS) upper[sub] = minOf(upper[sub], out[s * SUBS + sub])
                 continue
             }
+            octantsWanted[s] = true
+        }
+        val octantAsked = IntArray(slots * OCTANTS) { -1 }
+        for (s in 0 until slots) if (octantsWanted[s]) {
+            val known = held[s]?.octants
+            for (o in 0 until OCTANTS) {
+                if (known == null || known[o].isNaN()) octantAsked[s * OCTANTS + o] = ask.own(relevant[s], octantMiddle(grid, block, o))
+            }
+        }
+        ask.answered()
+        for (s in 0 until slots) if (octantsWanted[s]) {
+            val k = held[s]
             val known = k?.octants
             for (o in 0 until OCTANTS) {
-                octants[o] = if (known != null && !known[o].isNaN()) known[o] else member(s).own(octantMiddle(grid, block, o))
+                octants[o] = if (known != null && !known[o].isNaN()) known[o] else ask.field(octantAsked[s * OCTANTS + o])
                 octantsRead[s * OCTANTS + o] = octants[o]
             }
             for (sub in 0 until SUBS) {
@@ -170,12 +184,30 @@ internal object SubBlocks {
             }
         }
         val swing = swing(grid)
+        val ahead = IntArray(slots * SUBS) { -1 }
+        if (ask.gathers) {
+            for (s in 0 until slots) {
+                val reach = BLEND_TIMES * block.blends[s]
+                for (sub in 0 until SUBS) {
+                    if ((read[s] shr sub) and 1L == 1L) continue
+                    if (out[s * SUBS + sub] - swing > upper[sub] + swing + reach) continue
+                    ahead[s * SUBS + sub] = ask.own(relevant[s], middle(grid, block.i0, block.j0, block.k0, sub))
+                }
+            }
+            ask.answered()
+        }
         for (s in 0 until slots) {
             val reach = BLEND_TIMES * block.blends[s]
             for (sub in 0 until SUBS) {
                 if ((read[s] shr sub) and 1L == 1L) continue
                 if (out[s * SUBS + sub] - swing > upper[sub] + swing + reach) continue
-                out[s * SUBS + sub] = member(s).own(middle(grid, block.i0, block.j0, block.k0, sub))
+                out[s * SUBS + sub] = if (ahead[s * SUBS + sub] >= 0) {
+                    ask.field(ahead[s * SUBS + sub])
+                } else {
+                    val i = ask.own(relevant[s], middle(grid, block.i0, block.j0, block.k0, sub))
+                    ask.answered()
+                    ask.field(i)
+                }
                 read[s] = read[s] or (1L shl sub)
                 upper[sub] = minOf(upper[sub], out[s * SUBS + sub])
             }
@@ -247,12 +279,26 @@ internal object SubBlocks {
     }
 
     /**
-     * [member]'s field at block ([i0], [j0], [k0])'s grid points: read where a sub-block in [exact] holds the point; where a sub-block not
-     * in [far] holds it, the bound its field at that sub-block's middle gives, from [middles]; and elsewhere, where only the union's sign
-     * matters, its field at the middle of a sub-block holding it. [from], when given, holds values already read wherever a sub-block in
-     * [kept] holds the point, which are kept.
+     * Asks for member [m]'s field at the grid points of block ([i0], [j0], [k0]) that a sub-block in [exact] holds, unless [from] is given
+     * and a sub-block in [kept] holds the point; the index of each point's answer, -1 where none is asked.
      */
-    fun channel(grid: BlockGrid, member: JoinedMember, i0: Int, j0: Int, k0: Int, exact: Long, far: Long, middles: FloatArray, from: FloatArray?, kept: Long): FloatArray {
+    fun askChannel(ask: FieldAsk, m: Int, grid: BlockGrid, i0: Int, j0: Int, k0: Int, exact: Long, from: FloatArray?, kept: Long): IntArray {
+        val asked = IntArray(BLOCK_CORNERS) { -1 }
+        val held = if (from != null) kept else 0L
+        for (k in 0..BLOCK) for (j in 0..BLOCK) for (i in 0..BLOCK) {
+            val corner = BlockGrid.corner(i, j, k)
+            val subs = cornerSubs[corner]
+            if (subs and held == 0L && subs and exact != 0L) asked[corner] = ask.own(m, grid.point(i0 + i, j0 + j, k0 + k))
+        }
+        return asked
+    }
+
+    /**
+     * A member's field at a block's grid points: [from]'s where a sub-block in [kept] holds the point; the answer [ask] holds where
+     * [asked] (see [askChannel]) gives one; where a sub-block not in [far] holds it, the bound its field at that sub-block's middle gives,
+     * from [middles]; and elsewhere, where only the union's sign matters, its field at the middle of a sub-block holding it.
+     */
+    fun channel(ask: FieldAsk, asked: IntArray, far: Long, middles: FloatArray, from: FloatArray?, kept: Long, grid: BlockGrid): FloatArray {
         val out = FloatArray(BLOCK_CORNERS)
         val held = if (from != null) kept else 0L
         val half = SUB * 0.5f
@@ -261,7 +307,7 @@ internal object SubBlocks {
             val subs = cornerSubs[corner]
             out[corner] = when {
                 subs and held != 0L -> from!![corner]
-                subs and exact != 0L -> member.own(grid.point(i0 + i, j0 + j, k0 + k))
+                asked[corner] >= 0 -> ask.field(asked[corner])
                 subs and far.inv() != 0L -> {
                     val sub = (subs and far.inv()).countTrailingZeroBits()
                     val di = (i - (sub % SUBS_SIDE * SUB + half)) * grid.cell

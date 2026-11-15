@@ -2,6 +2,9 @@ package dev.chieppa.squash.screens.look.drag
 
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ShowOutfit
+import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.fieldgpu.GpuFieldReads
+import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.screens.look.LookArgs
 import dev.chieppa.squash.screens.look.exampleDocument
 import dev.chieppa.squash.screens.look.measure.RunStats
@@ -20,6 +23,10 @@ fun main(args: Array<String>) {
     val drag = DragArgs(args)
     for (example in look.examples) {
         val document = exampleDocument(example, look.fromFile, look.examplesFolder)
+        if (drag.reads.size > 1 || drag.reads.firstOrNull() == "gpu") {
+            compareReads(example, document, look, drag)
+            continue
+        }
         DragSession(document, CloseUps.shippedLibrary()).use { open ->
             val outfit = look.outfits?.firstOrNull()?.let { id -> document.character.wardrobe.outfits.first { it.id.value == id }.id }
             outfit?.let { open.session.send(ShowOutfit(it)) }
@@ -32,16 +39,36 @@ fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+/** Plays [document]'s gestures on one session for each of [DragArgs.reads] in turn, play by play. */
+private fun compareReads(example: String, document: SquashDocument, look: LookArgs, drag: DragArgs) {
+    val gpu = GpuFieldReads()
+    val sides = drag.reads.map { it to DragSession(document, CloseUps.shippedLibrary(), if (it == "gpu") gpu else CpuFieldReads) }
+    val outfit = look.outfits?.firstOrNull()?.let { id -> document.character.wardrobe.outfits.first { it.id.value == id }.id }
+    for ((_, open) in sides) {
+        outfit?.let { open.session.send(ShowOutfit(it)) }
+        open.settle()
+    }
+    val name = "$example ${outfit?.value ?: "as saved"}"
+    for (n in drag.scriptCount) DragAb(sides, drag.runs).time(name) { open -> drag.scripts(open)[n] }
+    gpu.failure?.let { println("$name: GPU reads failed: $it") }
+    println("$name: GPU reads in all: ${gpu.stats}")
+    sides.forEach { it.second.close() }
+    gpu.close()
+}
+
 /**
  * What the drag command was asked for: `drags=move:<part>,pose:<part>:<joint>`, `switch=true` for the outfit switch, `runs=<n>`, and
- * `jfr=<folder>` to record each gesture's timed runs.
+ * `jfr=<folder>` to record each gesture's timed runs; `reads=cpu,gpu` plays each gesture on a session reading its fields on each, in turn.
  */
 class DragArgs(args: Array<String>) {
     private val values: Map<String, String> = args.flatMap { it.split(' ') }.filter { '=' in it }.associate { it.substringBefore('=') to it.substringAfter('=') }
     val runs: Int = values["runs"]?.toInt() ?: DEFAULT_RUNS
     val switch: Boolean = values["switch"] == "true"
     val record: File? = values["jfr"]?.let(::File)
+    val reads: List<String> = values["reads"]?.split(',').orEmpty()
     private val drags: List<List<String>> = values["drags"]?.split(',')?.map { it.split(':') }.orEmpty()
+
+    val scriptCount: IntRange get() = drags.indices
 
     fun scripts(open: DragSession): List<DragScript> = drags.map { drag ->
         val character = open.session.document.value.character

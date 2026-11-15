@@ -3,6 +3,8 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.geom.LevelCut
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import kotlinx.coroutines.currentCoroutineContext
@@ -46,10 +48,10 @@ fun surfaceCovers(character: Character): List<GarmentCover> =
 /**
  * Each garment of [covers] grown from the body [meshed] meshes, built by a [GarmentBuilder] the node keeps, each batch of its work run in
  * parallel on the graph's dispatcher, a stale run stopping between batches. It needs the body's mesh only, so it runs beside the body's
- * finishing. See [SurfaceGarment].
+ * finishing. Its fields are read through [reads]. See [SurfaceGarment].
  */
-fun Graph.surfaceGarmentsNode(meshed: Node<*, HeldMesh>, covers: Flow<List<GarmentCover>>): Node<*, HeldGarments> {
-    val builder = GarmentBuilder()
+fun Graph.surfaceGarmentsNode(meshed: Node<*, HeldMesh>, covers: Flow<List<GarmentCover>>, reads: FieldReads = CpuFieldReads): Node<*, HeldGarments> {
+    val builder = GarmentBuilder(reads)
     val lock = Mutex()
     return gather(covers, { mapOf(Unit to meshed) }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
         val body = gathered.values.getValue(Unit).meshed ?: return@gather HeldGarments(null)

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import dev.chieppa.squash.geom.surface.SurfaceMesher
 import kotlin.math.abs
@@ -15,9 +17,9 @@ const val COARSE_FACTOR = 2f
  * Builds characters' surfaces, keeping between builds each run's solid and the blocks of the last surface at the full cell and at the
  * coarse one, so a build after an edit meshes again only where the edited member reaches. The cell, [cellShare] of the root's least
  * half-extent (see [fieldOf]), stays the one it started at while the character's own drifts less than a quarter from it, so an edit does
- * not move every cell. One build at a time.
+ * not move every cell. The meshers read the field through [reads]. One build at a time.
  */
-class SurfaceBuilder(private val cellShare: Float = CELL_SHARE) {
+class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val reads: FieldReads = CpuFieldReads) {
     private val solids = RunSolids()
     private var cell = 0f
     private var fine: SurfaceMesher? = null
@@ -56,8 +58,8 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE) {
         val field = fieldOf(character, solids, cellShare) ?: return null
         if (fine == null || abs(field.cell / cell - 1f) > CELL_DRIFT) {
             cell = field.cell
-            fine = SurfaceMesher(cell)
-            coarse = SurfaceMesher(cell * COARSE_FACTOR)
+            fine = SurfaceMesher(cell, reads)
+            coarse = SurfaceMesher(cell * COARSE_FACTOR, reads)
         }
         val mesher = checkNotNull(if (dragging) coarse else fine)
         return Build(CharacterField(field.field, field.runs, mesher.cell), mesher)

@@ -22,6 +22,8 @@ import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.stretch.core.History
 import kotlinx.coroutines.flow.Flow
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,9 +35,16 @@ import kotlinx.coroutines.flow.map
  * A session's character as one surface, made with the session so [Graph.settled] covers its nodes from the start: the [surface] meshed
  * ([mesh]) and finished from its parts [placed] on their sockets while the document says so, at the coarse cell while a gesture is
  * open, null otherwise; the [paint] laid on it, every part's color shapes from [shapes] by their coordinates and its painted eyes; the
- * [dress] it wears; and the node that shows it posed, which the rig gives through [showPosed].
+ * [dress] it wears; and the node that shows it posed, which the rig gives through [showPosed]. The body's and the garments' meshers read
+ * their fields through [reads].
  */
-class SessionSurface(graph: Graph, history: History<SquashDocument>, placed: Node<*, AssembledCharacter>, shapes: (PartId) -> Node<*, HeldShapes>) {
+class SessionSurface(
+    graph: Graph,
+    history: History<SquashDocument>,
+    placed: Node<*, AssembledCharacter>,
+    shapes: (PartId) -> Node<*, HeldShapes>,
+    reads: FieldReads = CpuFieldReads,
+) {
     /** Whether a gesture is open on the history: a drag in progress. */
     private val gesture: Flow<Boolean> = combine(history.document, history.steps) { _, _ -> history.inGesture }.distinctUntilChanged()
 
@@ -46,6 +55,7 @@ class SessionSurface(graph: Graph, history: History<SquashDocument>, placed: Nod
     val mesh: Node<*, HeldMesh> = graph.characterMeshNode(
         placed,
         combine(history.document.map { it.character.oneSurface }.distinctUntilChanged(), gesture) { on, open -> SurfaceMode(on, open) }.distinctUntilChanged(),
+        reads,
     )
 
     val surface: Node<*, HeldSurface> = graph.characterSurfaceNode(mesh)
@@ -61,7 +71,7 @@ class SessionSurface(graph: Graph, history: History<SquashDocument>, placed: Nod
     /** What the surface wears: each garment of the shown outfit grown from it and cut along its coverage, and the skin it hides. */
     val dress: Node<*, HeldDress> = graph.surfaceDressNode(
         surface,
-        graph.surfaceGarmentsNode(mesh, history.document.map { surfaceCovers(it.character) }.distinctUntilChanged()),
+        graph.surfaceGarmentsNode(mesh, history.document.map { surfaceCovers(it.character) }.distinctUntilChanged(), reads),
     )
 
     /** The [paint] as it shows under the [dress]: kept to the skin the garments leave showing. */

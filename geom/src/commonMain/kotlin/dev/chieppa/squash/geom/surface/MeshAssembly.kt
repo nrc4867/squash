@@ -1,7 +1,9 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.JoinedField
+import dev.chieppa.squash.geom.field.ReadRounds
 
 /** Vertices one piece of placing work takes, blocks one piece of gathering takes and quads one piece of cutting takes. */
 private const val PLACE_CHUNK = 128
@@ -19,6 +21,7 @@ internal class MeshAssembly(
     private val map: Map<Long, SurfaceBlock>,
     private val fresh: Set<Long>,
     private val previous: Map<Long, SurfaceBlock>,
+    private val reads: FieldReads,
     private val last: SurfaceMesh? = null,
     private val lastField: JoinedField? = null,
 ) {
@@ -96,8 +99,8 @@ internal class MeshAssembly(
         return Vec3(block.initial[l * 3], block.initial[l * 3 + 1], block.initial[l * 3 + 2])
     }
 
-    /** Pieces of work placing every vertex of a fresh block and every vertex beside one. */
-    fun placeTasks(): List<() -> Unit> {
+    /** Rounds of work placing every vertex of a fresh block and every vertex beside one. */
+    fun placeRounds(): ReadRounds {
         compact()
         val placing = BooleanArray(total)
         order.forEachIndexed { b, block -> if (block.key in fresh) placing.fill(true, bases[b], bases[b + 1]) }
@@ -127,33 +130,29 @@ internal class MeshAssembly(
         val chosen = IntArray(chosenCount)
         var at = 0
         for (v in 0 until total) if (placing[v]) chosen[at++] = v
-        val placer = VertexPlacement(grid, field)
-        return (0 until chosenCount step PLACE_CHUNK).map { from ->
-            {
-                for (i in from until minOf(chosenCount, from + PLACE_CHUNK)) {
-                    val v = chosen[i]
-                    val block = block(v)
-                    val l = local(v)
-                    val own = initial(v)
-                    var sum = Vec3.ZERO
-                    var n = 0
-                    var k = start[v]
-                    while (k < start[v + 1]) {
-                        val other = links[k]
-                        var seen = false
-                        for (j in start[v] until k) if (links[j] == other) seen = true
-                        if (!seen) {
-                            sum += initial(other)
-                            n++
-                        }
-                        k++
-                    }
-                    val mean = if (n == 0) null else sum * (1f / n)
-                    val begin = VertexPlacement.relaxed(own, mean, block.cellLow(grid, block.vertexCell[l]), grid.cell)
-                    val before = previous[block.key]
-                    if (before == null || before === block || !block.takeVertex(l, begin, before)) placer.place(block, l, begin)
+        val placer = VertexPlacement(grid)
+        return ReadRounds(reads, field.members, chosenCount, PLACE_CHUNK) { i ->
+            val v = chosen[i]
+            val block = block(v)
+            val l = local(v)
+            val own = initial(v)
+            var sum = Vec3.ZERO
+            var n = 0
+            var k = start[v]
+            while (k < start[v + 1]) {
+                val other = links[k]
+                var seen = false
+                for (j in start[v] until k) if (links[j] == other) seen = true
+                if (!seen) {
+                    sum += initial(other)
+                    n++
                 }
+                k++
             }
+            val mean = if (n == 0) null else sum * (1f / n)
+            val begin = VertexPlacement.relaxed(own, mean, block.cellLow(grid, block.vertexCell[l]), grid.cell)
+            val before = previous[block.key]
+            if (before == null || before === block || !block.takeVertex(l, begin, before)) placer.place(this, block, l, begin)
         }
     }
 
@@ -241,7 +240,7 @@ internal class MeshAssembly(
     /** The mesh, once its vertices are gathered and its quads cut. */
     fun mesh(): SurfaceMesh = SurfaceMesh(
         grid.cell, positions, normals, triangles, winners, parents, shares, winnerOwn, parentOwn, held, heldShares, heldU, heldV, heldOwn, order.size,
-        ChannelSource(grid.cell, map), keys, bases,
+        ChannelSource(grid.cell, map, reads.generation), keys, bases,
     ).also { mesh ->
         if (last != null && lastField != null) {
             last.change = null

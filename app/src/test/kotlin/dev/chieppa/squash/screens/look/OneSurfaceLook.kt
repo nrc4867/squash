@@ -114,7 +114,7 @@ class OneSurfaceLook(private val work: TestWork, private val errors: MutableList
         work.settle(session)
         keep(session, views, "after")
         TestWork().use { afresh ->
-            val opened = CharacterSession(session.document.value, session.templates, afresh.scope, afresh.dispatcher)
+            val opened = CharacterSession(session.document.value, session.templates, afresh.scope, afresh.dispatcher, session.reads)
             SessionPose(opened)
             afresh.settle(opened)
             keep(opened, WomanViews(afresh, errors, folder), "fresh")

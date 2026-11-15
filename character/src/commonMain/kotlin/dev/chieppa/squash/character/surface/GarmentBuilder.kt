@@ -3,6 +3,9 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
+import dev.chieppa.squash.geom.field.ReadRounds
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import dev.chieppa.squash.geom.surface.SurfaceMesher
 
@@ -14,9 +17,10 @@ enum class DressStage { MESH, FINISH, CUT, HIDE }
  * where the edited member reaches, keeping each garment whole while nothing it covers changed, and cutting it again on its kept surface
  * where only a part coming out through it moved. A garment needs only the body's field
  * and mesh, not its finished surface, and reads its channels from the body's blocks where they hold the same solids. One build at a
- * time; hand out its batches with [Build.next] until it has none.
+ * time; hand out its batches with [Build.next] until it has none; where reads are gathered, the garments' rounds of reads are read
+ * together. The meshers read the garments' fields through [reads].
  */
-class GarmentBuilder {
+class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
     private val meshers = HashMap<Triple<GarmentId, PartId?, Float>, SurfaceMesher>()
 
     /** Each garment's last build, with what its surface was grown from and what it was cut by. */
@@ -53,7 +57,13 @@ class GarmentBuilder {
             val running = works ?: begin().also { works = it }
             val tasks = ArrayList<() -> Unit>()
             var first: DressStage? = null
+            val asking = running.mapNotNull { it.asking }
+            if (asking.isNotEmpty()) {
+                first = DressStage.MESH
+                tasks += { ReadRounds.answerTogether(reads, asking) }
+            }
             for (work in running) {
+                if (work.asking != null) continue
                 val batch = work.next() ?: continue
                 if (first == null) first = work.stage
                 tasks += batch
@@ -79,7 +89,7 @@ class GarmentBuilder {
                 }
                 return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.surface)
             }
-            val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell) }
+            val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell, reads) }
             Piece(i, nextCover, nextField, mesher.begin(nextField.field, mesh.channels), null)
         }
 
@@ -90,6 +100,9 @@ class GarmentBuilder {
             private var done = false
             var stage: DressStage = DressStage.MESH
                 private set
+
+            /** The round of reads the garment's mesher waits on, answered beside the other garments'. */
+            val asking: ReadRounds? get() = if (done || finish != null) null else run?.asking
 
             fun next(): List<() -> Unit>? {
                 if (done) return null

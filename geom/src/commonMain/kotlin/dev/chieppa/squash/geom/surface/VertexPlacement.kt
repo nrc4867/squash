@@ -1,11 +1,7 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.geom.field.JoinedField
-import dev.chieppa.squash.geom.field.PLACE_ARRAY
-import dev.chieppa.squash.geom.field.PLACE_FIELD
-import dev.chieppa.squash.geom.field.PLACE_U
-import dev.chieppa.squash.geom.field.PLACE_V
+import dev.chieppa.squash.geom.field.FieldAsk
 import dev.chieppa.squash.geom.field.smoothMin
 import kotlin.math.abs
 
@@ -33,9 +29,9 @@ private const val LINE_STEPS = 4
  * their runs read where it lands. Only the members that can change the union near the vertex's sub-block are read for the field, and those
  * that can hold a share there for its coordinates.
  */
-internal class VertexPlacement(private val grid: BlockGrid, private val field: JoinedField) {
+internal class VertexPlacement(private val grid: BlockGrid) {
     /** Places vertex [v] of [block] from [start] and writes its position, normal and coordinates into the block. */
-    fun place(block: SurfaceBlock, v: Int, start: Vec3) {
+    suspend fun place(ask: FieldAsk, block: SurfaceBlock, v: Int, start: Vec3) {
         val slots = block.keys.size
         val owns = Probe(slots)
         val gradient = FloatArray(4)
@@ -51,15 +47,19 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
         var at = start
         if (length > TINY && slots > 0) {
             val off = FloatArray(1)
-            at = alongLine(block, read, start, g * (1f / length), owns, off)
+            at = alongLine(ask, block, read, start, g * (1f / length), owns, off, here = false)
             if (off[0] > grid.cell * CLOSE_SHARE) {
                 val step = grid.cell * GRADIENT_STEP_SHARE
-                val sampled = Vec3(
-                    joined(block, read, at + Vec3(step, 0f, 0f), owns) - joined(block, read, at - Vec3(step, 0f, 0f), owns),
-                    joined(block, read, at + Vec3(0f, step, 0f), owns) - joined(block, read, at - Vec3(0f, step, 0f), owns),
-                    joined(block, read, at + Vec3(0f, 0f, step), owns) - joined(block, read, at - Vec3(0f, 0f, step), owns),
+                val around = arrayOf(
+                    at + Vec3(step, 0f, 0f), at - Vec3(step, 0f, 0f),
+                    at + Vec3(0f, step, 0f), at - Vec3(0f, step, 0f),
+                    at + Vec3(0f, 0f, step), at - Vec3(0f, 0f, step),
                 )
-                if (sampled.length > TINY) at = alongLine(block, read, at, sampled.normalized(), owns, off)
+                val firsts = IntArray(around.size) { askAt(ask, block, read, around[it]) }
+                ask.answeredHere()
+                val values = FloatArray(around.size) { joinedFrom(ask, firsts[it], block, read, owns) }
+                val sampled = Vec3(values[0] - values[1], values[2] - values[3], values[4] - values[5])
+                if (sampled.length > TINY) at = alongLine(ask, block, read, at, sampled.normalized(), owns, off, here = true)
             }
         }
         block.positions[v * 3] = at.x
@@ -70,26 +70,27 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
         block.normals[v * 3] = normal.x
         block.normals[v * 3 + 1] = normal.y
         block.normals[v * 3 + 2] = normal.z
-        coordinate(block, read, held, v, at, owns)
+        coordinate(ask, block, read, held, v, at, owns)
 
     }
 
     /**
      * The point on the line from [from] along [n] where the joined field is zero, by secant steps until two reads bracket it and false
      * position between them after, no step longer than [MOST_STEP_CELLS] cells; the nearest to zero it read when it finds none. How far
-     * from zero the field lies there goes into [off].
+     * from zero the field lies there goes into [off]. Reads past the first two, and all of them when [here], are read where asked (see
+     * [FieldAsk.answeredHere]).
      */
-    private fun alongLine(block: SurfaceBlock, read: BooleanArray, from: Vec3, n: Vec3, owns: Probe, off: FloatArray): Vec3 {
+    private suspend fun alongLine(ask: FieldAsk, block: SurfaceBlock, read: BooleanArray, from: Vec3, n: Vec3, owns: Probe, off: FloatArray, here: Boolean): Vec3 {
         val most = grid.cell * MOST_STEP_CELLS
         val done = grid.cell * DONE_SHARE
         var t0 = 0f
-        var f0 = joined(block, read, from, owns)
+        var f0 = joined(ask, block, read, from, owns, here)
         owns.keep(from)
         off[0] = abs(f0)
         if (abs(f0) <= done) return from
         var t1 = (-f0).coerceIn(-most, most)
         val p1 = from + n * t1
-        var f1 = joined(block, read, p1, owns)
+        var f1 = joined(ask, block, read, p1, owns, here)
         if (abs(f1) < abs(f0)) owns.keep(p1)
         var bestT = if (abs(f1) < abs(f0)) t1 else t0
         var bestF = minOf(abs(f0), abs(f1))
@@ -99,7 +100,7 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
             var t2 = t1 - f1 * (t1 - t0) / (f1 - f0)
             if (!bracketed) t2 = t2.coerceIn(t1 - most, t1 + most)
             val p2 = from + n * t2
-            val f2 = joined(block, read, p2, owns)
+            val f2 = joined(ask, block, read, p2, owns, here = true)
             if (abs(f2) < bestF) {
                 bestF = abs(f2)
                 bestT = t2
@@ -121,15 +122,33 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
 
     private fun n0(start: Vec3, at: Vec3): Vec3 = (at - start).let { if (it.length > TINY) it.normalized() else Vec3.Y }
 
-    /** The joined field at [p] from the members [block] holds, their own fields and places left in [owns]. */
-    private fun joined(block: SurfaceBlock, read: BooleanArray, p: Vec3, owns: Probe): Float {
+    /** The joined field at [p] from the members [block] holds, their own fields and places left in [owns]; read where asked when [here]. */
+    private suspend fun joined(ask: FieldAsk, block: SurfaceBlock, read: BooleanArray, p: Vec3, owns: Probe, here: Boolean): Float {
+        val first = askAt(ask, block, read, p)
+        if (here) ask.answeredHere() else ask.answered()
+        return joinedFrom(ask, first, block, read, owns)
+    }
+
+    /** Asks for the place at [p] of each member [block] holds that [read] says, in slot order; the index of the first answer. */
+    private fun askAt(ask: FieldAsk, block: SurfaceBlock, read: BooleanArray, p: Vec3): Int {
+        var first = -1
+        for (s in read.indices) {
+            val m = block.members[s]
+            if (m >= 0 && read[s]) ask.place(m, p).let { if (first < 0) first = it }
+        }
+        return first
+    }
+
+    /** The joined field from the answers [askAt] asked from [first] on, the members' own fields and places left in [owns]. */
+    private fun joinedFrom(ask: FieldAsk, first: Int, block: SurfaceBlock, read: BooleanArray, owns: Probe): Float {
+        var at = first
         for (s in read.indices) {
             val m = block.members[s]
             if (m >= 0 && read[s]) {
-                field.members[m].place(p, owns.out)
-                owns.owns[s] = owns.out[PLACE_FIELD]
-                owns.us[s] = owns.out[PLACE_U]
-                owns.vs[s] = owns.out[PLACE_V]
+                owns.owns[s] = ask.field(at)
+                owns.us[s] = ask.u(at)
+                owns.vs[s] = ask.v(at)
+                at++
             } else {
                 owns.owns[s] = Float.MAX_VALUE
             }
@@ -147,13 +166,18 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
      * Reads every member [block] holds at [p] with its place, taking those [placed] read for the field from [probe] where it last kept
      * them at [p], and writes vertex [v]'s owner, its shares and places.
      */
-    private fun coordinate(block: SurfaceBlock, placed: BooleanArray, read: BooleanArray, v: Int, p: Vec3, probe: Probe) {
+    private suspend fun coordinate(ask: FieldAsk, block: SurfaceBlock, placed: BooleanArray, read: BooleanArray, v: Int, p: Vec3, probe: Probe) {
         val slots = block.keys.size
         val owns = FloatArray(slots)
         val us = FloatArray(slots)
         val vs = FloatArray(slots)
-        val out = FloatArray(PLACE_ARRAY)
         val fromProbe = probe.keptAt == p
+        val asked = IntArray(slots) { -1 }
+        for (s in 0 until slots) {
+            val m = block.members[s]
+            if (m >= 0 && read[s] && !(fromProbe && placed[s])) asked[s] = ask.place(m, p)
+        }
+        ask.answered()
         for (s in 0 until slots) {
             val m = block.members[s]
             if (m < 0 || !read[s]) {
@@ -166,10 +190,9 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
                 vs[s] = probe.bestVs[s]
                 continue
             }
-            field.members[m].place(p, out)
-            owns[s] = out[PLACE_FIELD]
-            us[s] = out[PLACE_U]
-            vs[s] = out[PLACE_V]
+            owns[s] = ask.field(asked[s])
+            us[s] = ask.u(asked[s])
+            vs[s] = ask.v(asked[s])
         }
         var winner = -1
         var least = Float.MAX_VALUE
@@ -260,7 +283,6 @@ internal class VertexPlacement(private val grid: BlockGrid, private val field: J
 
 /** The members' own fields and places at the point last read, and at the point last kept, with [keep]. */
 private class Probe(slots: Int) {
-    val out = FloatArray(PLACE_ARRAY)
     val owns = FloatArray(slots)
     val us = FloatArray(slots)
     val vs = FloatArray(slots)

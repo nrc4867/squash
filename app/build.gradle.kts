@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":screens-draw"))
     implementation(project(":screens-surface"))
     implementation(project(":screens-dress"))
+    implementation(project(":field-gpu"))
     implementation("dev.chieppa.stretch:stretch-core")
     implementation("dev.chieppa.stretch:stretch-theme")
     implementation("dev.chieppa.stretch:stretch-ui")
@@ -52,10 +53,10 @@ compose.desktop {
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // -Pdevtools=<port> serves screenshots of the windows on 127.0.0.1.
         providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
-        // -Popen=<file> opens it in the workspace at launch, in -Pstage=<STAGE> with -Pselect=<part> selected.
+        // -Popen=<file> opens it in the workspace at launch, in -Pstage=<STAGE> with -Pselect=<part> selected; -Preads=gpu reads fields on the GPU.
         // A relative -Popen path is read from the project's root, not from this module's folder the app runs in.
         providers.gradleProperty("open").orNull?.let { jvmArgs += "-Dsquash.open=${rootProject.file(it).path}" }
-        listOf("stage", "select").forEach { name -> providers.gradleProperty(name).orNull?.let { jvmArgs += "-Dsquash.$name=$it" } }
+        listOf("stage", "select", "reads").forEach { name -> providers.gradleProperty(name).orNull?.let { jvmArgs += "-Dsquash.$name=$it" } }
         nativeDistributions {
             packageName = "Squash"
             packageVersion = project.version.toString().substringBefore('-')

@@ -72,6 +72,8 @@ import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.stretch.core.History
@@ -82,12 +84,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
-/** One open character: its document with undo, and the graph that derives from it. Views read this and send commands. */
+/**
+ * One open character: its document with undo, and the graph that derives from it, run on [dispatcher], its one surface's fields read
+ * through [reads]. Views read this and send commands.
+ */
 class CharacterSession(
     initial: SquashDocument,
     val templates: TemplateLibrary,
     scope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
+    val reads: FieldReads = CpuFieldReads,
 ) {
     val history = History(initial)
 
@@ -138,7 +144,7 @@ class CharacterSession(
     )
 
     /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
-    val oneSurface = SessionSurface(graph, history, placed, ::heldShapes)
+    val oneSurface = SessionSurface(graph, history, placed, ::heldShapes, reads)
 
     /** The character's body as one surface while the document says so; null otherwise. */
     val characterSurface: Node<*, HeldSurface> get() = oneSurface.surface

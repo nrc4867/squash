@@ -1,6 +1,9 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldBatch
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.Solid
@@ -82,6 +85,39 @@ class SurfaceMesherTest {
         assertContentEquals(whole.positions, again.positions)
         assertContentEquals(whole.triangles, again.triangles)
         assertContentEquals(whole.shares, again.shares)
+    }
+
+    @Test
+    fun readsGatheredIntoBatchesMeshAsReadsAnsweredAtOnce() {
+        val gathering = GatheringReads()
+        val atOnce = SurfaceMesher(CELL)
+        val batched = SurfaceMesher(CELL, gathering)
+        for (field in listOf(body(Vec3(RADIUS * 1.2f, 0f, 0f)), body(Vec3(RADIUS * 1.3f, 0.02f, 0f)))) {
+            val one = meshed(atOnce, field)
+            val other = meshed(batched, field)
+            assertContentEquals(one.positions, other.positions)
+            assertContentEquals(one.normals, other.normals)
+            assertContentEquals(one.triangles, other.triangles)
+            assertContentEquals(one.shares, other.shares)
+            assertContentEquals(one.heldU, other.heldU)
+            assertContentEquals(one.heldV, other.heldV)
+        }
+        assertTrue(gathering.batches > 0 && gathering.largest > 1000, "reads went out in batches")
+    }
+
+    /** The CPU's reads, gathered into batches. */
+    private class GatheringReads : FieldReads {
+        var batches = 0
+        var largest = 0
+
+        override fun read(batch: FieldBatch) {
+            batches++
+            largest = maxOf(largest, batch.size)
+            CpuFieldReads.read(batch)
+        }
+
+        override val gathers: Boolean get() = true
+        override val generation: Int get() = 0
     }
 
     private fun meshed(mesher: SurfaceMesher, field: JoinedField): SurfaceMesh {

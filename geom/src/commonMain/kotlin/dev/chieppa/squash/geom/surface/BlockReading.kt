@@ -1,6 +1,7 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.collections.IntList
+import dev.chieppa.squash.geom.field.FieldAsk
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.MemberKey
 import dev.chieppa.squash.geom.field.smoothMin
@@ -25,7 +26,8 @@ internal object BlockReading {
      * holds of its solid in place of reading it there. An [exact] block reads every member whose box lies within reach of it at every grid
      * point, standing in for nothing, so its values hold however fast a field changes.
      */
-    fun read(
+    suspend fun read(
+        ask: FieldAsk,
         grid: BlockGrid,
         field: JoinedField,
         index: Map<MemberKey, Int>,
@@ -45,32 +47,45 @@ internal object BlockReading {
         val centre = BlockGrid.corner(BLOCK / 2, BLOCK / 2, BLOCK / 2)
         val owns = FloatArray(count) { Float.NaN }
         val centreSlots = kept?.centreKeys?.withIndex()?.associate { (s, k) -> k to s }.orEmpty()
-        fun ownAt(m: Int): Float {
-            if (!owns[m].isNaN()) return owns[m]
-            val memberKey = field.members[m].key
-            val s = keptSlots[memberKey]
-            val seen = centreSlots[memberKey]
-            owns[m] = when {
-                seen != null -> kept!!.centreOwns[seen]
-                s != null && SubBlocks.subsOf(centre) and kept!!.exact[s] != 0L -> kept.channels[s][centre]
-                else -> field.members[m].own(middle)
+
+        /**
+         * Each of [ms]' own field at the middle not yet known: kept where the kept block holds it there, read where asked otherwise. Where
+         * reads are gathered, a kept channel's value at the middle is not taken, so every middle is read alike.
+         */
+        suspend fun ownAt(ms: List<Int>) {
+            val asked = IntArray(ms.size) { -1 }
+            ms.forEachIndexed { n, m ->
+                if (!owns[m].isNaN()) return@forEachIndexed
+                val memberKey = field.members[m].key
+                val s = keptSlots[memberKey]
+                val seen = centreSlots[memberKey]
+                when {
+                    seen != null -> owns[m] = kept!!.centreOwns[seen]
+                    s != null && !ask.gathers && SubBlocks.subsOf(centre) and kept!!.exact[s] != 0L -> owns[m] = kept.channels[s][centre]
+                    else -> asked[n] = ask.own(m, middle)
+                }
             }
-            return owns[m]
+            ask.answeredHere()
+            ms.forEachIndexed { n, m -> if (asked[n] >= 0) owns[m] = ask.field(asked[n]) }
         }
+        val inside = (0 until count).filter { boxes[it] == 0f }
+        ownAt(inside)
         var least = Float.MAX_VALUE
-        for (m in 0 until count) if (boxes[m] == 0f) least = minOf(least, ownAt(m))
+        for (m in inside) least = minOf(least, owns[m])
         if (least == Float.MAX_VALUE) {
             val closest = (0 until count).minByOrNull { boxes[it] } ?: return null
-            least = ownAt(closest)
+            ownAt(listOf(closest))
+            least = owns[closest]
         }
         val relevant = ArrayList<Int>()
-        for (m in 0 until count) {
-            if (exact) {
-                if (boxes[m] <= grid.halfDiagonal + margin + field.reaches[m]) relevant += m.also { ownAt(it) }
-                continue
-            }
-            if (boxes[m] - margin > least + margin + field.reaches[m]) continue
-            if (ownAt(m) - margin <= least + margin + field.reaches[m]) relevant += m
+        if (exact) {
+            val near = (0 until count).filter { boxes[it] <= grid.halfDiagonal + margin + field.reaches[it] }
+            ownAt(near)
+            relevant += near
+        } else {
+            val near = (0 until count).filter { boxes[it] - margin <= least + margin + field.reaches[it] }
+            ownAt(near)
+            for (m in near) if (owns[m] - margin <= least + margin + field.reaches[m]) relevant += m
         }
         if (relevant.isEmpty()) return null
         if (!forced && abs(joinedAtMiddle(field, relevant, owns)) > margin + grid.cell) return null
@@ -84,7 +99,7 @@ internal object BlockReading {
             val member = field.members[relevant[s]]
             if (lent == null || member.ease == 0f || keptSlots[member.key] != null) null else lent.lend(key, member)
         }
-        val (middles, leastAt) = SubBlocks.middles(grid, block, relevant.size, { s -> field.members[relevant[s]] }, FloatArray(relevant.size) { owns[relevant[it]] }) { s ->
+        val (middles, leastAt) = SubBlocks.middles(ask, relevant, grid, block, relevant.size, FloatArray(relevant.size) { owns[relevant[it]] }) { s ->
             keptSlots[field.members[relevant[s]].key]?.let { k ->
                 val octants = kept!!.octants.takeIf { it.isNotEmpty() }?.copyOfRange(k * SurfaceBlock.OCTANT_COUNT, (k + 1) * SurfaceBlock.OCTANT_COUNT)
                 SubBlocks.KeptMiddles(kept.middles.copyOfRange(k * SUBS, k * SUBS + SUBS), kept.middlesRead[k], octants)
@@ -95,7 +110,11 @@ internal object BlockReading {
         block.shareRelevance = SubBlocks.shareRelevance(grid, middles, leastAt, block.parentSlots, block.reaches)
         val far = if (exact) 0L else SubBlocks.far(grid, middles, block.parentSlots, block.blends)
         block.exact = LongArray(relevant.size)
-        block.channels = Array(relevant.size) { s ->
+        val reading = arrayOfNulls<IntArray>(relevant.size)
+        val froms = arrayOfNulls<FloatArray>(relevant.size)
+        val helds = LongArray(relevant.size)
+        val kepts = arrayOfNulls<FloatArray>(relevant.size)
+        for (s in relevant.indices) {
             val member = field.members[relevant[s]]
             val k = keptSlots[member.key]
             val need = block.relevance[s] and far.inv()
@@ -103,11 +122,17 @@ internal object BlockReading {
             val held = if (k != null) kept!!.exact[k] else other?.exact ?: 0L
             block.exact[s] = need or held
             if (k != null && need and held.inv() == 0L && kept!!.far == far) {
-                kept.channels[k]
+                kepts[s] = kept.channels[k]
             } else {
                 val from = if (k != null) kept!!.channels[k] else other?.channel
-                SubBlocks.channel(grid, member, block.i0, block.j0, block.k0, need, far, middles.copyOfRange(s * SUBS, s * SUBS + SUBS), from, held)
+                froms[s] = from
+                helds[s] = held
+                reading[s] = SubBlocks.askChannel(ask, relevant[s], grid, block.i0, block.j0, block.k0, need, from, held)
             }
+        }
+        ask.answered()
+        block.channels = Array(relevant.size) { s ->
+            kepts[s] ?: SubBlocks.channel(ask, checkNotNull(reading[s]), far, middles.copyOfRange(s * SUBS, s * SUBS + SUBS), froms[s], helds[s], grid)
         }
         block.far = far
         if (kept != null && kept.far == far && kept.keys.contentEquals(block.keys) && kept.relevance.contentEquals(block.relevance) &&

@@ -1,9 +1,15 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.MemberKey
+import dev.chieppa.squash.geom.field.ReadRounds
+
+/** Blocks one piece of work reads where the reads are gathered into batches. */
+private const val GATHERED_CHUNK = 8
 
 /** Blocks one piece of the seams' check takes. */
 private const val SEAM_CHUNK = 256
@@ -19,18 +25,27 @@ private const val DIRTY_MARGINS = 4f
  * mean of its sheet's edge crossings, relaxed toward its neighbours inside its cell as Gibson's surface nets do, and projected onto the
  * field; one quad across each grid edge the surface crosses. Not safe for two runs at once.
  */
-class SurfaceMesher(val cell: Float) {
+class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldReads) {
     private val grid = BlockGrid(cell)
     private var blocks: Map<Long, SurfaceBlock> = emptyMap()
     private var field: JoinedField? = null
     private var kept: SurfaceMesh? = null
+    private var generation = reads.generation
 
     /**
      * A run meshing [next]: hand out its batches of work with [MeshRun.next], each batch's pieces independent of one another, until it
      * has none, then read [MeshRun.mesh]. The mesher keeps what the run made only once the run is done. A grown member a block has not
      * kept reads its channel from [lent], when given on this grid, where that holds its solid's.
      */
-    fun begin(next: JoinedField, lent: ChannelSource? = null): MeshRun = MeshRun(next, lent?.takeIf { it.cell == cell })
+    fun begin(next: JoinedField, lent: ChannelSource? = null): MeshRun {
+        if (reads.generation != generation) {
+            generation = reads.generation
+            blocks = emptyMap()
+            field = null
+            kept = null
+        }
+        return MeshRun(next, lent?.takeIf { it.cell == cell && it.generation == generation })
+    }
 
     /** One run of the mesher over a field. */
     inner class MeshRun internal constructor(private val next: JoinedField, private val lent: ChannelSource?) {
@@ -51,12 +66,24 @@ class SurfaceMesher(val cell: Float) {
         private var seams: Array<Set<Long>?> = emptyArray()
         private var assembly: MeshAssembly? = null
         private var done: SurfaceMesh? = null
+        private var reading: ReadRounds? = null
+
+        /**
+         * The round of reads the run waits on, where its reads are gathered, for the caller to answer beside other runs' with
+         * [ReadRounds.answerTogether] before it calls [next] again; [next] gives a batch answering it alone otherwise.
+         */
+        val asking: ReadRounds? get() = reading?.takeIf { !it.answered && it.waiting() }
 
         /** The mesh the run made, once [next] has given null. */
         val mesh: SurfaceMesh get() = checkNotNull(done) { "The run has work left" }
 
         /** The next batch of work, or null when the run is done. */
         fun next(): List<() -> Unit>? {
+            reading?.let { rounds ->
+                if (rounds.answered) return rounds.tasks()
+                if (rounds.waiting()) return listOf({ rounds.answer() })
+                reading = null
+            }
             while (true) {
                 when (stage) {
                     Stage.READ -> {
@@ -122,14 +149,16 @@ class SurfaceMesher(val cell: Float) {
                         }
                     }
                     Stage.RESOLVE -> {
-                        val built = MeshAssembly(grid, next, map, fresh, blocks, kept, field)
+                        val built = MeshAssembly(grid, next, map, fresh, blocks, reads, kept, field)
                         assembly = built
                         stage = Stage.PLACE
                         return built.resolveTasks()
                     }
                     Stage.PLACE -> {
                         stage = Stage.GATHER
-                        return checkNotNull(assembly).placeTasks()
+                        val rounds = checkNotNull(assembly).placeRounds()
+                        reading = rounds
+                        return rounds.tasks()
                     }
                     Stage.GATHER -> {
                         stage = Stage.CUT
@@ -157,9 +186,9 @@ class SurfaceMesher(val cell: Float) {
             needs = Array(keys.size) { emptyList() }
             alike = BooleanArray(keys.size)
             val before = keys.map { map[it] }
-            return keys.mapIndexed { i, key ->
-                {
-                    val block = BlockReading.read(grid, next, index, key, blocks[key], forcedAll || key in forced, lent, exact = key in exact)
+            val rounds = ReadRounds(reads, next.members, keys.size, if (reads.gathers) GATHERED_CHUNK else 1) { i ->
+                val key = keys[i]
+                val block = BlockReading.read(this, grid, next, index, key, blocks[key], forcedAll || key in forced, lent, exact = key in exact)
                     results[i] = block
                     if (block != null) {
                         block.needed = BlockReading.neighboursNeeded(grid, block)
@@ -167,8 +196,9 @@ class SurfaceMesher(val cell: Float) {
                         val old = before[i]
                         alike[i] = old != null && block.channels !== old.channels && block.placesAs(old)
                     }
-                }
             }
+            reading = rounds
+            return rounds.tasks()
         }
 
         private fun takeResults() {

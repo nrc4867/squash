@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.look
 
+import dev.chieppa.squash.fieldgpu.GpuFieldReads
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.screens.look.shots.ShotCamera
 import java.io.File
 
@@ -16,6 +19,9 @@ class LookArgs(args: Array<String>) {
 
     /** The examples to look at, by file name. */
     val examples: List<String> = values["example"]?.split(',') ?: listOf("woman-dressed")
+
+    /** Where the sessions read their fields: `reads=gpu` on the GPU, the CPU otherwise. */
+    val reads: FieldReads by lazy { if (values["reads"] == "gpu") GpuFieldReads() else CpuFieldReads }
 
     /** Read each example's saved file rather than build it from its fixture's commands. */
     val fromFile: Boolean = values["file"] == "true"

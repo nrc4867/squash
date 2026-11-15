@@ -268,6 +268,22 @@ class SweptSolid internal constructor(
         return if (inSlab && r < r0 + (r1 - r0) * t) -nearest else nearest
     }
 
+    /** The run's rings as flat arrays, for reading its field elsewhere with the same values it reads by. */
+    fun rings(): RunRings = RunRings(
+        count,
+        FloatArray(count * 3) { floatArrayOf(mx[it / 3], my[it / 3], mz[it / 3])[it % 3] },
+        FloatArray(count * 3) { floatArrayOf(tx[it / 3], ty[it / 3], tz[it / 3])[it % 3] },
+        FloatArray(count * 3) { floatArrayOf(ux[it / 3], uy[it / 3], uz[it / 3])[it % 3] },
+        us.copyOf(),
+        gaps.copyOf(),
+        reaches.copyOf(),
+        FloatArray(count * RING_ANGLES).also { all -> for (i in 0 until count) tables[i].radii.copyInto(all, i * RING_ANGLES) },
+        FloatArray(count * RING_ANGLES).also { all -> for (i in 0 until count) tables[i].vs?.copyInto(all, i * RING_ANGLES) },
+        BooleanArray(count) { tables[it].vs != null },
+        startPerU,
+        endPerU,
+    )
+
     /** Writes u and v for a point [along] pair [pair] at [angle] round, its u carried on past either end of the run. */
     private fun placeAt(pair: Int, along: Float, angle: Float, out: FloatArray) {
         val k = pair + 1

@@ -11,6 +11,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.load.withSaved
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
+import dev.chieppa.squash.screens.Workers
 import dev.chieppa.squash.screens.shell.GpuRestPoseArtist
 import dev.chieppa.squash.screens.shell.RecentStore
 import dev.chieppa.squash.screens.shell.KeymapStore
@@ -49,6 +50,7 @@ fun main() {
         recent = recent,
         format = SquashFormat(runBlocking { getString(Res.string.shell_file_type) }),
         artist = GpuRestPoseArtist,
+        workers = Workers(fieldReads = launchedFieldReads()),
     )
     state.openAsLaunched()
     application {

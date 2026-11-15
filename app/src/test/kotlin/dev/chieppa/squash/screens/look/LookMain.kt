@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 private fun render(example: String, look: LookArgs, errors: MutableList<String>) {
     val folder = File(look.imagesFolder, example)
     TestWork().use { work ->
-        val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
+        val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
         if (look.asParts) session.send(SetOneSurface(false))

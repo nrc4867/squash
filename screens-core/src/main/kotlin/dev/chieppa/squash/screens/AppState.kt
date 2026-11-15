@@ -194,7 +194,7 @@ class AppState(
         val job = SupervisorJob(scope.coroutineContext[Job])
         sessionJob = job
         val sessionScope = scope + job
-        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope, workers.compute)
+        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope, workers.compute, workers.fieldReads)
         file.value = DocumentSession(format, document, storage, path, opened.history)
         rig.clear()
         pose.clear()

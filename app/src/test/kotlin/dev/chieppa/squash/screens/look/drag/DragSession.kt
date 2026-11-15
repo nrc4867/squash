@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.look.drag
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.rig.SessionPose
 import kotlinx.coroutines.CoroutineScope
@@ -17,11 +19,11 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A character opened as the app opens it: a session and its pose on the app's own dispatcher, every node of the graph the app makes for
- * it, with each named node's results watched, so a step can say which nodes ran and when each finished.
+ * it, its fields read through the reads given, with each named node's results watched, so a step can say which nodes ran and when each finished.
  */
-class DragSession(document: SquashDocument, templates: TemplateLibrary) : AutoCloseable {
+class DragSession(document: SquashDocument, templates: TemplateLibrary, reads: FieldReads = CpuFieldReads) : AutoCloseable {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val session = CharacterSession(document, templates, scope, Dispatchers.Default)
+    val session = CharacterSession(document, templates, scope, Dispatchers.Default, reads)
     val pose = SessionPose(session)
 
     /** When each watched node last gave a result, in nanoseconds of [System.nanoTime], since [mark]. */

@@ -2,6 +2,8 @@ package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BuildStages
+import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
@@ -32,10 +34,10 @@ class HeldSurface(val surface: CharacterSurface?, val coarse: Boolean = false)
 /**
  * The character [placed] holds, its parts on their sockets before any strip or garment, meshed as one surface while [mode] says so:
  * each batch of the mesher's work run in parallel on the graph's dispatcher, a stale run stopping between batches. A gesture that leaves
- * the placed character as it was, as a pose drag does, keeps its full mesh. See [SurfaceBuilder].
+ * the placed character as it was, as a pose drag does, keeps its full mesh. Its field is read through [reads]. See [SurfaceBuilder].
  */
-fun Graph.characterMeshNode(placed: Node<*, AssembledCharacter>, mode: Flow<SurfaceMode>): Node<*, HeldMesh> {
-    val builder = SurfaceBuilder()
+fun Graph.characterMeshNode(placed: Node<*, AssembledCharacter>, mode: Flow<SurfaceMode>, reads: FieldReads = CpuFieldReads): Node<*, HeldMesh> {
+    val builder = SurfaceBuilder(reads = reads)
     val lock = Mutex()
     var full: HeldMesh? = null
     return gather(mode, sourcesOf = { if (it.on) mapOf(PLACED to placed) else emptyMap() }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
