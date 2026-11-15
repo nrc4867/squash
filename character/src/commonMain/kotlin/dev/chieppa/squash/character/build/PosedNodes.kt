@@ -31,9 +31,16 @@ private enum class PosedKey { REST, POSE, SHOWN, REST_WORK, STATE, REST_HELD, SU
 
 /**
  * The character in a pose with its surface work resolved there: [body] is [rest] in the pose and [work] is [restWork] on [body]'s
- * grids. While the pose leaves every part at rest, [body] is [rest] and [work] is [restWork] themselves.
+ * grids. While the pose leaves every part at rest, [body] is [rest] and [work] is [restWork] themselves. [outlined], while the one
+ * surface shown in the pose is a drag's coarse surface, holds the parts that surface holds, and the pose's lines are outlines only.
  */
-class PosedState(val rest: AssembledCharacter, val body: AssembledCharacter, val restWork: BodySurfaceWork, val work: BodySurfaceWork) {
+class PosedState(
+    val rest: AssembledCharacter,
+    val body: AssembledCharacter,
+    val restWork: BodySurfaceWork,
+    val work: BodySurfaceWork,
+    val outlined: Set<PartId>? = null,
+) {
     val atRest: Boolean get() = body === rest
 
     /** The parts the pose moves or shows more or less of. */
@@ -92,8 +99,10 @@ fun Graph.posedStateNode(
             @Suppress("UNCHECKED_CAST")
             val byPart = input.first.value as Map<PartId, SurfaceWorkInput>
             val posed = posedSurfaceWork(work, byPart, shown, shown.carriedFrom(rest), cancellationCheck())
-            val carry = ((held[PosedKey.SURFACE]?.value as HeldPosedSurface?)?.posed)?.let { carriedOn(it, work) }
-            PosedState(rest, shown, work, carry?.let { posed.withCarried(it, work) } ?: posed)
+            val surface = held[PosedKey.SURFACE]?.value as HeldPosedSurface?
+            val carry = surface?.posed?.let { carriedOn(it, work) }
+            val outlined = surface?.posed?.takeIf { surface.coarse }?.surface?.field?.runs?.mapTo(HashSet()) { it.partId }
+            PosedState(rest, shown, work, carry?.let { posed.withCarried(it, work) } ?: posed, outlined)
         }
     }
 }
@@ -149,10 +158,15 @@ private fun <O : Any> Graph.posedFrom(
     }
 }
 
-/** The character's lines in [state]'s pose: [rest], the lines at rest, itself while the pose leaves every part at rest. See [posedLines]. */
+/**
+ * The character's lines in [state]'s pose: [rest], the lines at rest, itself while the pose leaves every part at rest; outlines only
+ * while [PosedState.outlined] says so. See [posedLines] and [outlinedLines].
+ */
 fun Graph.posedLinesNode(state: Node<*, PosedState>, rest: Node<*, BodyLines>): Node<*, BodyLines> =
     posedFrom(MutableStateFlow(Unit), state, rest) { _, posed, lines ->
-        posedLines(lines, posed.body, posed.moved, posed.work, posed::workMoved, cancellationCheck())
+        val outlined = posed.outlined
+        if (outlined != null) outlinedLines(lines, posed.body, posed.moved, outlined, cancellationCheck())
+        else posedLines(lines, posed.body, posed.moved, posed.work, posed::workMoved, cancellationCheck())
     }
 
 /** Every part's fur in [state]'s pose: [rest], the fur at rest, itself while the pose leaves every part at rest. See [posedFur]. */

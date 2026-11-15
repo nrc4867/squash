@@ -2,7 +2,9 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.geom.LineGrid
+import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.WeightStroke
 import dev.chieppa.squash.geom.lineWeightAt
@@ -27,10 +29,11 @@ fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}): M
         id to partGrids(placed)
     }.toMap()
 
-/** [placed]'s patches in body space, with lines of plain weight, and none along the skin a garment hides. */
-fun partGrids(placed: PlacedPart): List<LineGrid> {
+/** [placed]'s patches in body space, or those [kept] keeps, with lines of plain weight, and none along the skin a garment hides. */
+fun partGrids(placed: PlacedPart, kept: (Patch) -> Boolean = { true }): List<LineGrid> {
     val hidden = hiddenPoints(placed)
-    return placed.surface.patches.mapIndexed { i, patch ->
+    return placed.surface.patches.mapIndexedNotNull { i, patch ->
+        if (!kept(patch)) return@mapIndexedNotNull null
         val grid = LineGrid.of(patch, placed.origin, placed.surface::shown)
         hidden?.get(i)?.let(grid::hiding) ?: grid
     }
@@ -126,6 +129,19 @@ fun posedLines(
     }.toMap()
     return BodyLines(parts)
 }
+
+/**
+ * [body], a pose of the character [rest] holds the lines of, outlined only: a part the pose moved has its grids on [body], of plain
+ * weight and without the runs a one surface holding [inSurface] outlines itself, and no crease or mark weights; every other part keeps
+ * its lines from [rest].
+ */
+fun outlinedLines(rest: BodyLines, body: AssembledCharacter, moved: Set<PartId>, inSurface: Set<PartId>, checkCancelled: () -> Unit = {}): BodyLines =
+    BodyLines(body.parts.mapNotNull { placed ->
+        val id = placed.id ?: return@mapNotNull null
+        checkCancelled()
+        val kept = rest.parts[id]?.takeIf { id !in moved }
+        id to (kept ?: PartLines(placed, partGrids(placed) { id !in inSurface || !isFieldRun(placed, it) }, emptyList(), emptyMap()))
+    }.toMap())
 
 /**
  * Whether the pose has moved [placed]'s parent where its crease is found: any of the parent's points within [placed]'s own reach of its

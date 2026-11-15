@@ -1064,6 +1064,33 @@ A garment vertex seeded from the body's placed vertex pushed out by the ease and
 
 Neither lever is built.
 
+## Drag posed results
+
+**What a drag does to the posed chain.** While a pane draws the posed surface and a gesture meshes the coarse surface, the skin and the posed surface it makes are marked coarse (`HeldSkin.coarse`, `HeldPosedSurface.coarse`). The coarse surface is posed without the search for skin a pose pushes through a garment: its dress keeps the skin shown at rest (`PosedHiding.kept`), so a sliver of skin can show at a cuff or hem until the release. The pose's lines are outlines only (`outlinedLines`): a part the pose moves has its grids found on the posed body, at plain weight and without the runs the one surface outlines itself, with no crease and no mark weights; a part it leaves keeps its lines at rest. A shown pose at rest skins and poses nothing, as `skinShown` already says. Releasing builds the full chain, which equals a fresh build (`DragPosedTest`). Outside a drag the body's vertices are posed in pieces in parallel, and each garment is posed and pushed clear of what hangs inside it beside the others.
+
+**Ceilings.** Measured with throwaway switches in one run, plays of each alternated: no weights made afresh (every vertex on the root bone, which also leaves the surface unposed), no posed hiding, the rest lines as the posed lines, and all three. The rest of the chain stays as long as it was with any one of them alone; all three together cut the process CPU of each later move by 29% and end the posed chain about 140 ms after the surface instead of 300 (the machine was loaded about four times over, so every number was about four times its quiet value).
+
+**Copied weights are not built.** Each coarse vertex taking the weights of the nearest vertex of the last full skin, found through a grid of buckets, cost about five times what making the weights afresh does: the weights are read through the mesh's own owners and joins and take 2–5 ms, so they are no lever.
+
+**How it was measured.** The machine was shared with another session's builds throughout, so each case ran in one JVM with the drag-time forms switched off and on, play by play: six timed plays of each, 24 moves each, median / 90th percentile / worst of each later move in ms, and the process CPU time of a move (all threads), which the other load moves less. Off stands for main: the same build with the coarse forms and the parallel posing switched off.
+
+| Character, outfit | Each later move, off | Each later move, on | CPU a move, off / on |
+|---|---|---|---|
+| Woman, casual, arm | 385 / 647 / 1030 | 291 / 568 / 926 | 672 / 547 |
+| Fennec, winter, front leg | 148 / 221 / 300 | 142 / 221 / 375 | 438 / 453 |
+| Person, summer, arm | 175 / 225 / 290 | 140 / 177 / 280 | 516 / 406 |
+| Fennec, winter, knee pose | 9.6 / 12.6 / 25.8 | 9.5 / 12.7 / 26.3 | 16 / 16 |
+
+The winter fennec's shown pose is its rest pose, so neither its Move drag nor its knee drag runs the posed chain's drag-time forms; its numbers move within the noise.
+
+**The woman's chain.** When each watched node last finished in a later move, median ms, off then on: the coarse body mesh 182 and 158, the surface 225 and 190, the dress 290 and 256, the skin 300 and 264, the posed surface 345 and 289, the posed lines 384 and 291. After the dress, the posed chain took 94 ms and takes 35. Summed over a move, the posed node's body posing takes 91 ms, its garments and their push clear of what hangs inside them 38 (71 in turn), the posed hiding 3 (45), and the posed lines 2 (363); the posed node and the lines run four to eight times a move, once for each source that arrives. Her move is now set by the coarse body mesh and the garments meshed on it, and after them the posing of the body.
+
+**What it looks like.** `look close=release` on the casual woman: the frame mid-drag differs from main's mid-drag frame in one pixel, since the panes line a part the one surface holds by its own contour, joins and hems and never drew the creases and runs the full posed lines find for it. The release equals the fresh build in RGBA for the casual woman and the winter fennec, whole figure and face.
+
+**Identity.** The 147 images of the 13 examples, rendered from this branch and compared in RGBA with main's: 146 equal; `woman-dressed/winter-foot` differed by two pixels in one render of the branch and equalled main's in a second, as two renders of main equal each other.
+
+**What would shorten it further.** The skin and the posed surface run again when the rig of a move arrives, well before its surface, and pose the last surface once more for nothing; waiting for a rig and a surface placed from the same character would save that work. A garment's push clear of what hangs inside it could wait for the release as the hiding does. The full posed lines find grids and creases for every moved part the one surface holds, which the panes do not draw; finding them only where something reads them would shorten the release and every pose drag too.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |

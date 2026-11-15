@@ -32,8 +32,8 @@ class PosedSurface(val surface: CharacterSurface, val paint: SurfacePaint?, val 
     }
 }
 
-/** What a posed-surface node holds: the surface in its pose, or null for a character built as its parts' own meshes. */
-class HeldPosedSurface(val posed: PosedSurface?)
+/** What a posed-surface node holds: the surface in its pose, or null for a character built as its parts' own meshes; [coarse] while dragged. */
+class HeldPosedSurface(val posed: PosedSurface?, val coarse: Boolean = false)
 
 /** What the paint reads: the surface, or one holder's shapes. */
 private sealed interface PaintSource {

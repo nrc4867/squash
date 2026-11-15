@@ -45,6 +45,13 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
         return shownPaint to SurfaceDress(worn, skin, shown[0] ?: restShown, dress.under, body)
     }
 
+    /**
+     * The body's paint and the dress as posed with only what coverage hides hidden, nothing searched for that the pose pushes through a
+     * garment: the dress's skin kept as it is at rest.
+     */
+    fun kept(paint: SurfacePaint?): Pair<SurfacePaint?, SurfaceDress> =
+        paint to SurfaceDress(garments, dress.shown?.let { recut(body, it) } ?: dress.skin, dress.shown, dress.under, body)
+
     /** [surface]'s skin cut where [values] are at least zero, along its drawn mesh as posed: the rest cut where the pose keeps every quad and the values are the rest's. */
     private fun recut(surface: CharacterSurface, values: FloatArray): LevelCut? =
         if (values === dress.shown && surface.render.indices.contentEquals(restIndices)) dress.skin else LevelCut.of(values, surface.render.indices)

@@ -15,6 +15,9 @@ import dev.chieppa.squash.character.surface.KEPT_BUILDS
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.graph.Node
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.concurrent.Volatile
@@ -22,9 +25,16 @@ import kotlin.concurrent.Volatile
 /**
  * A one surface's skin: its weights from [rig], with the [surface] they were read on, and the [dress] it wears with each garment's
  * weights, [garments], read from the body's at the coordinates it grows from; null pieces for a character without one, and while the
- * skin waits for a gesture's end.
+ * skin waits for a gesture's end; [coarse] on the coarse surface of a drag.
  */
-class HeldSkin(val rig: Rig, val surface: CharacterSurface?, val skin: SurfaceSkin?, val dress: SurfaceDress? = null, val garments: List<SurfaceSkin> = emptyList())
+class HeldSkin(
+    val rig: Rig,
+    val surface: CharacterSurface?,
+    val skin: SurfaceSkin?,
+    val dress: SurfaceDress? = null,
+    val garments: List<SurfaceSkin> = emptyList(),
+    val coarse: Boolean = false,
+)
 
 private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
 
@@ -32,7 +42,8 @@ private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
  * The session's one surface in the shown pose: its [skin], made again when the rig or the surface changes, and the surface [posed] by
  * it with its paint, rerun when the pose changes. Both are nodes of the session's graph, so its `settled` covers them; the session
  * shows [posed] as its posed surface. While no pane draws them, the coarse surface of a drag is neither skinned nor posed: both hold none
- * until the full surface follows the drag's end.
+ * until the full surface follows the drag's end. While a pane does, the coarse surface is posed without looking for skin the pose
+ * pushes through a garment ([PosedHiding.kept]).
  */
 class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flow<Pose>) {
     private val graph = session.graph
@@ -52,11 +63,12 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
 
     val skin: Node<*, HeldSkin> = graph.gather(MutableStateFlow(Unit), { sources }, cacheSize = KEPT_BUILDS) { gathered ->
         val held = gathered.values.getValue(SkinSource.RIG) as Rig
-        val surface = (gathered.values.getValue(SkinSource.SURFACE) as HeldSurface).surface ?: return@gather HeldSkin(held, null, null)
+        val shown = gathered.values.getValue(SkinSource.SURFACE) as HeldSurface
+        val surface = shown.surface ?: return@gather HeldSkin(held, null, null)
         val dress = (gathered.values.getValue(SkinSource.DRESS) as HeldDress).dress
         if (dress?.isOn(surface) == false) return@gather lastSkin ?: HeldSkin(held, null, null)
         val garments = dress?.garments.orEmpty().map { garment -> garmentSkins.of(held, garment, IN_PARALLEL) }
-        HeldSkin(held, surface, SurfaceSkin.of(held, surface, IN_PARALLEL), dress, garments).also { lastSkin = it }
+        HeldSkin(held, surface, SurfaceSkin.of(held, surface, IN_PARALLEL), dress, garments, shown.coarse).also { lastSkin = it }
     }
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }
@@ -79,12 +91,17 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         if (surface == null || skin == null) return@gather HeldPosedSurface(null)
         if (!laid.isOn(surface)) return@gather lastPosed ?: HeldPosedSurface(null)
         val frames = boneFrames(held.rig, gathered.shape)
-        val body = posedSurface(surface, skin, paint, frames)
+        val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL)
         val worn = held.dress?.let { dress ->
-            val moved = dress.garments.mapIndexed { i, garment -> garment.movedTo(hangingPushed(garment, posedSurface(garment.surface, held.garments[i], null, frames).surface, body.surface)) }
-            PosedHiding(body.surface, surface, moved, dress).of(body.paint, IN_PARALLEL)
+            val moved = coroutineScope {
+                dress.garments.mapIndexed { i, garment ->
+                    async { garment.movedTo(hangingPushed(garment, posedSurface(garment.surface, held.garments[i], null, frames).surface, body.surface)) }
+                }.awaitAll()
+            }
+            val hiding = PosedHiding(body.surface, surface, moved, dress)
+            if (held.coarse) hiding.kept(body.paint) else hiding.of(body.paint, IN_PARALLEL)
         }
-        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry)).also { lastPosed = it }
+        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry), held.coarse).also { lastPosed = it }
     }
 
     init {
