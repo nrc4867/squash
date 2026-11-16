@@ -3,6 +3,9 @@ package dev.chieppa.squash.screens.look
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
+import dev.chieppa.squash.screens.cat.CAT_POSES
+import dev.chieppa.squash.screens.cat.catDocument
+import dev.chieppa.squash.screens.cat.catDressedDocument
 import dev.chieppa.squash.screens.dragon.dragonDocument
 import dev.chieppa.squash.screens.fennec.FENNEC_POSES
 import dev.chieppa.squash.screens.fennec.fennecDocument
@@ -24,6 +27,8 @@ import java.io.File
 
 /** Each example by the name of its file under `examples/`, as its fixture's commands make it. */
 private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
+    "cat" to ::catDocument,
+    "cat-dressed" to ::catDressedDocument,
     "dragon" to ::dragonDocument,
     "fennec" to ::fennecDocument,
     "fennec-one-surface" to ::fennecOneSurfaceDocument,
@@ -42,6 +47,8 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
 
 /** The poses an example is looked at in besides rest, by name. */
 private val POSES: Map<String, Map<String, Pose>> = mapOf(
+    "cat" to CAT_POSES,
+    "cat-dressed" to CAT_POSES,
     "fennec" to FENNEC_POSES,
     "fennec-one-surface" to FENNEC_POSES,
     "fennec-one-surface-dressed" to FENNEC_POSES,

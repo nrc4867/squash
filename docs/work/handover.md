@@ -15,6 +15,15 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | after 8c603e5 | Field reads through the `FieldReads` seam: `CpuFieldReads`, and `GpuFieldReads` in `field-gpu`; the app reads on the CPU unless launched with `-Preads=gpu` |
 | hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
 
+## Examples
+
+| File | What |
+|---|---|
+| `cat.json` | A ginger tabby on all fours on the canine plan, built as one surface from its first command: mitten paws (`paw` 5, four toes merged at 1.4, claws drawn in, beans), stripes and tail rings as regions, white chest, muzzle and paws, painted green eyes with slit pupils, whiskers and mouth as mirrored marks, the tail curled up in the display pose, a walk in four moments |
+| `cat-dressed.json` | The cat in Vampire (a cape over the back and flanks, open under the chest, its collar the cuff the head comes up through; fangs inked by a garment that redraws the head's surface) and Hotdog (a sausage over the body, a bun open over the back, a zigzag of mustard beads the sausage owns) |
+| `fennec*.json`, `woman*.json` | One surface, painted eyes |
+| `dragon`, `koi`, `lizard`, `toucan`, `woman-twin*` | Parts |
+
 Dragon, koi, lizard, toucan and the twin still build as parts and render as before the one surface landed (checked in RGB against 6fdbc35).
 
 ## Where speed stands
@@ -31,6 +40,8 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The woman after a release shows lines across the forehead.
 - Painted eyes are not driven by the Pose stage's look-at tool.
 - The Face board needs Nicholas's verification.
+- The cat's garments are what a body on all fours can wear today ("Creatures" in `example-limits.md`): no cape hangs free and no bun has its own shape, since an open branch takes neither drawn outlines nor a run past its part's ends, and a hanging branch on a torso resting forward flares into a sheet; the mustard is beads, since a garment's own marks and regions are not painted.
+- The cat's moves are slow for one surface: a front-leg move about 140 ms bare, 170 in Vampire and 250 in Hotdog; a knee pose drag 39, 126 and 191.
 - Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
 
 ## Next, in order
