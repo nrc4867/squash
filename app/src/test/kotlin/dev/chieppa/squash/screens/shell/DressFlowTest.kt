@@ -4,6 +4,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
@@ -103,7 +104,7 @@ class DressFlowTest {
         onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Dress · Draw garment", substring = true)
         onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("Sweater · Body · 2 branches · 1 join", substring = true)
         val steps = session.history.steps.value.done.size
-        onNodeWithTag(DressTags.INK_HEM).performClick()
+        onNodeWithTag(DressTags.INK_HEM).performScrollTo().performClick()
         waitForIdle()
         val inked = assertIs<SetEdgeInk>(session.history.steps.value.done.last())
         assertEquals(false, inked.hem)
@@ -192,5 +193,20 @@ class DressFlowTest {
         assertEquals(0.75f, hung.end.v)
         assertEquals(SWEATER, state.dress.garment.value, "the press picks the garment")
         onNodeWithTag(DressTags.looseEnd(hung.end.id)).assertExists()
+    }
+
+    @Test
+    fun pickingALayerLeavesItsRowWhereItWas() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = dressedOpen()
+        for (garment in listOf(SWEATER, CAP, BOOTS, SCARF)) {
+            val row = onNodeWithTag(DressTags.layer(garment))
+            row.performScrollTo()
+            waitForIdle()
+            val before = row.getUnclippedBoundsInRoot().top
+            row.performClick()
+            waitForIdle()
+            assertEquals(garment, state.dress.garment.value)
+            assertEquals(before, row.getUnclippedBoundsInRoot().top, "picking $garment moved its row")
+        }
     }
 }

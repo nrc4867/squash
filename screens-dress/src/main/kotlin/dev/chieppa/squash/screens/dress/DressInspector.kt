@@ -51,8 +51,9 @@ private const val MAX_LOOSE_BONES = 10
 private val READOUT_WIDTH = 40.dp
 
 /**
- * The Dress inspector: the armed tool's options, then the picked garment, its joins and edges, its color and the body under it, then
- * the worn garments' layers.
+ * The Dress inspector: the worn garments' layers, then the armed tool's options, then the picked garment, its joins and edges, its
+ * color and the body under it. The layers come first because the rest changes with the pick, so picking one leaves its row where
+ * it was.
  */
 @Composable
 fun DressInspector(state: AppState, session: CharacterSession) {
@@ -61,6 +62,7 @@ fun DressInspector(state: AppState, session: CharacterSession) {
     val picked by state.dress.garment.collectAsState()
     val character = document.character
     val garment = picked?.let(character.wardrobe::garment)
+    LayersSection(state, session, character)
     if (tool.dresses) ToolOptions(state, session, tool, character, garment)
     if (garment != null) {
         GarmentSection(state, session, character, garment)
@@ -69,7 +71,6 @@ fun DressInspector(state: AppState, session: CharacterSession) {
         GarmentColorSection(session, character, garment)
         BodyUnderSection(state, session, character, garment)
     }
-    LayersSection(state, session, character)
 }
 
 /** The armed garment tool's options. */
