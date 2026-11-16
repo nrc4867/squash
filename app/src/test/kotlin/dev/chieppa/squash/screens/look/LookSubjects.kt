@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.screens.cat.CAT_POSES
 import dev.chieppa.squash.screens.cat.catDocument
 import dev.chieppa.squash.screens.cat.catDressedDocument
+import dev.chieppa.squash.screens.dragon.DRAGON_POSES
 import dev.chieppa.squash.screens.dragon.dragonDocument
 import dev.chieppa.squash.screens.fennec.FENNEC_POSES
 import dev.chieppa.squash.screens.fennec.fennecDocument
@@ -18,6 +19,7 @@ import dev.chieppa.squash.screens.koi.KOI_POSES
 import dev.chieppa.squash.screens.koi.koiDocument
 import dev.chieppa.squash.screens.lizard.LIZARD_POSES
 import dev.chieppa.squash.screens.lizard.lizardDocument
+import dev.chieppa.squash.screens.toucan.TOUCAN_POSES
 import dev.chieppa.squash.screens.toucan.toucanDocument
 import dev.chieppa.squash.screens.twin.TWIN_POSES
 import dev.chieppa.squash.screens.twin.twinDocument
@@ -51,12 +53,14 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
 private val POSES: Map<String, Map<String, Pose>> = mapOf(
     "cat" to CAT_POSES,
     "cat-dressed" to CAT_POSES,
+    "dragon" to DRAGON_POSES,
     "fennec" to FENNEC_POSES,
     "fennec-one-surface" to FENNEC_POSES,
     "fennec-one-surface-dressed" to FENNEC_POSES,
     "fennec-dressed" to FENNEC_POSES,
     "koi" to KOI_POSES,
     "lizard" to LIZARD_POSES,
+    "toucan" to TOUCAN_POSES,
     "woman" to WOMAN_POSES,
     "woman-dressed" to WOMAN_POSES,
     "woman-twin" to TWIN_POSES,

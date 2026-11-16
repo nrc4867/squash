@@ -778,537 +778,7 @@
                     },
                     "surface": {
                         "baseSlot": "scales",
-                        "marks": [
-                            {
-                                "id": "eye-l-lid",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.425,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4350481,
-                                        "v": 0.174
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4625,
-                                        "v": 0.15496668
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.148
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5375,
-                                        "v": 0.15496668
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5649519,
-                                        "v": 0.174
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.575,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5649519,
-                                        "v": 0.21872
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5375,
-                                        "v": 0.23242399
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.23744
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4625,
-                                        "v": 0.23242399
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4350481,
-                                        "v": 0.21872
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.425,
-                                        "v": 0.2
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "eye-l-white",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.41375,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4253053,
-                                        "v": 0.1701
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.456875,
-                                        "v": 0.14821169
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.1402
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.543125,
-                                        "v": 0.14821169
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5746947,
-                                        "v": 0.1701
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.58625,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5746947,
-                                        "v": 0.2299
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.543125,
-                                        "v": 0.25178832
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.25980002
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.456875,
-                                        "v": 0.25178832
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4253053,
-                                        "v": 0.2299
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.41375,
-                                        "v": 0.2
-                                    }
-                                ],
-                                "ink": false
-                            },
-                            {
-                                "id": "eye-l-pupil",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.46625,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.47077164,
-                                        "v": 0.1883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.483125,
-                                        "v": 0.179735
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.17660001
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.516875,
-                                        "v": 0.179735
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5292283,
-                                        "v": 0.1883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.53375,
-                                        "v": 0.2
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5292283,
-                                        "v": 0.2117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.516875,
-                                        "v": 0.220265
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.2234
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.483125,
-                                        "v": 0.220265
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.47077164,
-                                        "v": 0.2117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.46625,
-                                        "v": 0.2
-                                    }
-                                ],
-                                "ink": false
-                            },
-                            {
-                                "id": "eye-r-lid",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.425,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4350481,
-                                        "v": 0.826
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4625,
-                                        "v": 0.8450333
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.852
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5375,
-                                        "v": 0.8450333
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5649519,
-                                        "v": 0.826
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.575,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5649519,
-                                        "v": 0.78128
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5375,
-                                        "v": 0.767576
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.76256
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4625,
-                                        "v": 0.767576
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4350481,
-                                        "v": 0.78128
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.425,
-                                        "v": 0.8
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "eye-r-white",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.41375,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4253053,
-                                        "v": 0.8299
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.456875,
-                                        "v": 0.8517883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.8598
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.543125,
-                                        "v": 0.8517883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5746947,
-                                        "v": 0.8299
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.58625,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5746947,
-                                        "v": 0.7701
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.543125,
-                                        "v": 0.7482117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.7402
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.456875,
-                                        "v": 0.7482117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.4253053,
-                                        "v": 0.7701
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.41375,
-                                        "v": 0.8
-                                    }
-                                ],
-                                "ink": false
-                            },
-                            {
-                                "id": "eye-r-pupil",
-                                "points": [
-                                    {
-                                        "part": "head",
-                                        "u": 0.46625,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.47077164,
-                                        "v": 0.8117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.483125,
-                                        "v": 0.820265
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.8234
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.516875,
-                                        "v": 0.820265
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5292283,
-                                        "v": 0.8117
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.53375,
-                                        "v": 0.8
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5292283,
-                                        "v": 0.7883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.516875,
-                                        "v": 0.77973497
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.5,
-                                        "v": 0.7766
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.483125,
-                                        "v": 0.77973497
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.47077164,
-                                        "v": 0.7883
-                                    },
-                                    {
-                                        "part": "head",
-                                        "u": 0.46625,
-                                        "v": 0.8
-                                    }
-                                ],
-                                "ink": false
-                            }
-                        ],
                         "groups": [
-                            {
-                                "id": "eye-l",
-                                "name": "eye-l",
-                                "roles": [
-                                    {
-                                        "role": "white",
-                                        "ink": false,
-                                        "marks": [
-                                            "eye-l-white"
-                                        ]
-                                    },
-                                    {
-                                        "role": "iris"
-                                    },
-                                    {
-                                        "role": "pupil",
-                                        "ink": false,
-                                        "marks": [
-                                            "eye-l-pupil"
-                                        ]
-                                    },
-                                    {
-                                        "role": "highlight"
-                                    },
-                                    {
-                                        "role": "lid",
-                                        "marks": [
-                                            "eye-l-lid"
-                                        ]
-                                    },
-                                    {
-                                        "role": "lashes"
-                                    },
-                                    {
-                                        "role": "brow"
-                                    }
-                                ],
-                                "clips": [
-                                    {
-                                        "by": "lid",
-                                        "clipped": "white"
-                                    },
-                                    {
-                                        "by": "lid",
-                                        "clipped": "iris"
-                                    },
-                                    {
-                                        "by": "lid",
-                                        "clipped": "pupil"
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "eye-r",
-                                "name": "eye-r",
-                                "roles": [
-                                    {
-                                        "role": "white",
-                                        "ink": false,
-                                        "marks": [
-                                            "eye-r-white"
-                                        ]
-                                    },
-                                    {
-                                        "role": "iris"
-                                    },
-                                    {
-                                        "role": "pupil",
-                                        "ink": false,
-                                        "marks": [
-                                            "eye-r-pupil"
-                                        ]
-                                    },
-                                    {
-                                        "role": "highlight"
-                                    },
-                                    {
-                                        "role": "lid",
-                                        "marks": [
-                                            "eye-r-lid"
-                                        ]
-                                    },
-                                    {
-                                        "role": "lashes"
-                                    },
-                                    {
-                                        "role": "brow"
-                                    }
-                                ],
-                                "clips": [
-                                    {
-                                        "by": "lid",
-                                        "clipped": "white"
-                                    },
-                                    {
-                                        "by": "lid",
-                                        "clipped": "iris"
-                                    },
-                                    {
-                                        "by": "lid",
-                                        "clipped": "pupil"
-                                    }
-                                ]
-                            },
                             {
                                 "id": "mouth",
                                 "name": "mouth",
@@ -2545,9 +2015,58 @@
                         "green": 0.16,
                         "blue": 0.14
                     }
+                },
+                {
+                    "name": "iris",
+                    "color": {
+                        "red": 0.98,
+                        "green": 0.7,
+                        "blue": 0.16
+                    }
+                },
+                {
+                    "name": "pupil",
+                    "color": {
+                        "red": 0.16,
+                        "green": 0.07,
+                        "blue": 0.06
+                    }
                 }
             ]
-        }
+        },
+        "oneSurface": true,
+        "paintedEyes": [
+            {
+                "id": "eyes",
+                "anchor": {
+                    "part": "head",
+                    "u": 0.5,
+                    "v": 0.2
+                },
+                "look": {
+                    "width": 0.07,
+                    "height": 0.045,
+                    "lowerLid": 0.8,
+                    "frontNarrowing": 0.25,
+                    "tilt": -8.0,
+                    "irisSize": 0.06,
+                    "irisRatio": 1.0,
+                    "irisForward": 0.006,
+                    "irisUp": 0.0,
+                    "pupilSize": 0.5,
+                    "slit": true,
+                    "highlightSize": 0.25,
+                    "lashes": false,
+                    "browRaise": 0.01,
+                    "browTilt": -12.0,
+                    "white": "iris",
+                    "iris": "iris",
+                    "pupil": "pupil",
+                    "highlight": "belly",
+                    "ink": "pupil"
+                }
+            }
+        ]
     },
     "format": 14
 }

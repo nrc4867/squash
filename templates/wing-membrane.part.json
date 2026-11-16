@@ -15,6 +15,7 @@
     "thickness": { "default": 0.045, "min": 0.02, "max": 0.2 },
     "sag":       { "default": 0.22, "min": 0.0, "max": 0.6 }
   },
+  "surface": "separate",
   "blocks": [
     { "kind": "tube",   "name": "body", "u": [0.0, 0.4], "radius": "$thickness", "taper": 0.6 },
     { "kind": "toeRow", "name": "fingers", "u": [0.38, 1.0], "count": 4, "spread": 0, "radius": 0.016, "v": 0.5, "rings": 16, "segments": 8,

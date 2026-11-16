@@ -14,6 +14,7 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | 8c603e5 | Pose drags: the coarse surface posed without the posed hiding, lined by outlines only, posing in parallel |
 | after 8c603e5 | Field reads through the `FieldReads` seam: `CpuFieldReads`, and `GpuFieldReads` in `field-gpu`; the app reads on the CPU unless launched with `-Preads=gpu` |
 | creatures-1 | The koi and the lizard on one surface with painted eyes, `fin` and `sheet` marked separate; `PartRoles.upright` reads the root's Move rest, and a limb's chain ends where its hand or paw hangs, so the woman's Pose rows name her feet and a picked hand curls ("Koi and lizard results") |
+| creatures-2 | The toucan and the dragon on one surface with painted eyes; `beak`, `beak-lower`, `tail-feathers`, `wing-membrane`, `horn` and `spike` marked separate; named poses for both ("Toucan and dragon results") |
 | hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
 
 ## Examples
@@ -25,9 +26,11 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | `fennec*.json`, `woman*.json` | One surface, painted eyes |
 | `koi.json` | One surface: the body in the field, its fins and tail fin thin and separate; painted gold eyes with a dark iris; named poses `swim-0` to `swim-3` and `rise` |
 | `lizard.json` | One surface: body, head, legs, paddle feet and tail in the field, the tail's join widened and unlined; painted yellow eyes; named poses `walk-0` to `walk-3` and `bask` |
-| `dragon`, `toucan`, `woman-twin*` | Parts |
+| `toucan.json` | One surface: torso, head, legs and toes in the field, the beak's halves hard and the tail and wings thin, separate; painted eyes in their pale rings; named poses `walk-0` to `walk-3` and `call` |
+| `dragon.json` | One surface: torso, head, tail, legs and clawed paws in the field, the membrane wings thin and the horns and spikes hard, separate; painted amber slit eyes; named poses `walk-0` to `walk-3` and `roar` |
+| `woman-twin*` | Parts |
 
-Dragon, toucan and the twin still build as parts and render as before the one surface landed (checked in RGB against 6fdbc35).
+The twin still builds as parts and renders as before the one surface landed (checked in RGB against 6fdbc35).
 
 ## Where speed stands
 
@@ -45,6 +48,7 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The Face board needs Nicholas's verification.
 - The cat's garments are what a body on all fours can wear today ("Creatures" in `example-limits.md`): no cape hangs free and no bun has its own shape, since an open branch takes neither drawn outlines nor a run past its part's ends, and a hanging branch on a torso resting forward flares into a sheet; the mustard is beads, since a garment's own marks and regions are not painted.
 - The cat's moves are slow for one surface: a front-leg move about 140 ms bare, 170 in Vampire and 250 in Hotdog; a knee pose drag 39, 126 and 191.
+- The dragon's moves are slow for one surface: a front-leg move about 141 ms, a knee pose drag 61; its claws are paw 5's field points, not separate parts ("Toucan and dragon results").
 - The lizard has paddle feet with no toes or claws; the koi's tail fin shows two small ink marks near its root ("Koi and lizard results").
 - Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
 
@@ -54,7 +58,7 @@ Digits (a part's row of toes or fingers) mesh at a quarter of the body's cell th
 
 ## Next, in order
 
-1. Phase 4, creatures: the dragon, toucan and the twin onto one surface; the twin's compare IoU must not drop.
+1. Phase 4, creatures: the twin onto one surface; its compare IoU must not drop.
 2. Phase 5: format 15 migration, the parts build and drawn eyes retired, the HLD rewritten.
 3. Phase 6, joints, only if the walk sheets need it.
 

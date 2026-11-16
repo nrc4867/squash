@@ -181,3 +181,12 @@ Read while building the cat and dressing it:
 - `character/.../build/Dressing.kt` (`garmentColors`): that a branch's surface work is not painted, only its base slot, so the mustard became owned beads (entry 14). The same reference.
 - `fennec/FennecMarks.kt`, `fennec/FennecColor.kt`: the head template's muzzle patch and how marks and regions anchor on it, for the whiskers, mouth and fangs. A reference drawing each template's patches and their u and v would have done.
 - No code was read for the eye: renders placed it, after a first try on the skull's side (v 0.20) was not seen from the front; on the canine `head`, an eye seen from the front sits near the muzzle's root (u 0.72, v 0.17).
+
+### The toucan and the dragon on one surface
+
+Read while moving the toucan and the dragon onto one surface:
+
+- `templates/*.part.json` for each template's joint names (`hip`, `heel`, `neck`, `jaw`, `root`, `tail1` to `tail5`, `shoulder`) and eye landmark, to write the named poses and place the painted eyes. A reference listing each template's joints, limits and landmarks would have done.
+- `character/.../surface/CharacterField.kt` and `DigitLevels.kt`: which of a template's blocks become field runs, digits at a quarter cell, or separate pieces, and that a `"surface": "separate"` on a block (as `foot-4`'s) separates that block alone. The same per-template surface reference as above.
+- `character/.../block/Digits.kt`, `JoinedDigits.kt`: that paw 5's claws are capsules grown in the paw's own field and painted, not parts, so the dragon's claws cannot be marked separate without a tip socket on the paw. The parameter reference.
+- `document/.../Region.kt`: that a region's points are its `border`, for a fixture test. The command reference.

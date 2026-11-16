@@ -14,6 +14,7 @@
     "size":   { "default": 1.0,  "min": 0.4, "max": 2.5 },
     "spread": { "default": 0.2,  "min": 0.08, "max": 0.6 }
   },
+  "surface": "separate",
   "blocks": [
     { "kind": "tube",  "u": [0.0, 1.0], "radius": "$spread", "taper": 1.6 },
     { "kind": "cap",   "end": "end", "shape": "round" },

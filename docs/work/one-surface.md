@@ -1217,6 +1217,34 @@ Fresh surface build (`SurfaceBuilder` whole, eight threads, median of 10 after 2
 
 **Open.** Digits at a quarter add about 60 ms to the bare fennec's front-leg move and 77% to the cat's fresh build. The cat's paws keep small sock flecks. The palm and the rest of a hand at the body's cell show a slightly stepped outline beside the finer fingers in the hand close-up from outside.
 
+## Toucan and dragon results
+
+The toucan and the dragon build on one surface from their first command, with painted eyes in place of drawn starter eyes. Neither needed a part redrawn.
+
+**What is built.**
+
+- **The toucan.** Torso, head, legs and feet are in the field; the feet's four toes are digits of a `toeRow`, so they mesh at a quarter of the body's cell. `beak`, `beak-lower` and `tail-feathers` carry `"surface": "separate"`, so the beak's two halves are hard pieces sunk into the head, inked by the overlap crease, and the tail is a thin piece, as the feathered wings already were; no character on one surface used these templates, so none takes a new version. The bird foot has no claws to mark. Its eyes are painted at the bird head's side eye landmark, in the middle of the pale eye-ring regions: a dark green iris filling a small round opening, a black pupil, a pale highlight and a lid line (`toucan/ToucanFace.kt`). The mouth group stays, so opening it still swings the lower beak.
+- **The dragon.** Torso, head, tail, legs and paws are in the field (it has no neck part; the head sits on the torso's neck socket, as the fennec's does). `wing-membrane`, `horn` and `spike` carry `"surface": "separate"`: the membrane wings are thin pieces and the horns and the back and tail spikes hard ones; the ears were separate already. Its claws are `paw` 5's own, grown past each toe's tip in the paw's field at a quarter cell and painted in the `claw` slot, as the fennec's are, not separate pieces: paw 5 offers no tip socket to sit a claw part on. Its eyes are painted at the head's eye landmark: a narrow slanted amber eye with an upright slit pupil, a small highlight and a brow line (`dragon/DragonFace.kt`), on two new palette slots, `iris` and `pupil`.
+- **Named poses** for the look command: the toucan's `walk-0` to `walk-3` (the legs swinging one against the other and folding at the heel, the head bobbing, the tail tipping) and `call` (head back, beak open, tail cocked); the dragon's `walk-0` to `walk-3` (legs in diagonal pairs, the tail swaying, the head nodding) and `roar` (head thrown up, wings raised, tail lifted and curled).
+
+**Against the asks,** by eye on the sheets in the scratchpad's `creatures-2/`, main above the branch: `toucan-as-saved`, `toucan-as-saved-face`, `toucan-as-saved-foot`, `dragon-as-saved`, `dragon-as-saved-face`, `dragon-as-saved-foot`, `dragon-hand`; the branch's poses in `toucan-poses` and `dragon-poses`.
+
+| Ask | Result |
+|---|---|
+| Builds cleanly on one surface | Passes: no holes, melted parts or broken paint in any view or pose. The toucan's head flows into its torso from the side with a crease line in front; the dragon's legs, paws and tail join with crease lines where they meet the body |
+| Hard and thin parts | The beak's halves keep their hard edge and dark tips, inked where they leave the head; horns, spikes and the membrane wings sit as before |
+| Toes and claws | The toucan's toes and the dragon's three toes and claws read as separate digits at a quarter cell |
+| Other examples as main | Passes: cat, cat-dressed, fennec, fennec-dressed, fennec-winged, koi, lizard, woman, woman-dressed, woman-twin and woman-twin-dressed, 210 images, none differ in any channel |
+
+**Drag timings** (`drag`, median of each later move, 90th percentile in brackets): the toucan's leg move 67.7 ms (91.1), a pose drag on its heel 23.4 (26.9); the dragon's front-leg move 141.3 (176.9), its knee pose drag 61.4 (77.1).
+
+**Open.**
+
+- The dragon's moves are slow for a bare character, as the cat's are: its paws' long toes and claws at a quarter cell.
+- The dragon's claws are field points, not separate hard parts; a separate claw would need a tip socket on paw 5.
+- In the dragon's foot close-ups one view sits inside the leg and shows its flat end with a ragged rim, as the lizard's does.
+- The roar's open jaw does not show in the renders.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |

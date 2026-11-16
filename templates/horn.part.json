@@ -14,6 +14,7 @@
     "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
     "girth": { "default": 0.2,  "min": 0.05, "max": 0.6 }
   },
+  "surface": "separate",
   "blocks": [
     { "kind": "tube", "u": [0.0, 1.0], "radius": "$girth", "taper": 0.12 },
     { "kind": "cap",  "end": "end", "shape": "pointed" }

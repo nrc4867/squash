@@ -52,15 +52,19 @@ class ToucanFixtureTest {
     }
 
     @Test
-    fun theFaceHasTwoSideEyesAndAMouth() {
+    fun itIsOneSurfaceWithPaintedSideEyesInTheirRingsAndAMouth() {
         val character = toucanDocument().character
+        assertTrue(character.oneSurface)
+        val eyes = character.paintedEyes.single()
+        assertEquals(TOUCAN_EYES, eyes.id)
+        assertEquals(HEAD, eyes.anchor.part)
+        assertTrue(eyes.mirrored)
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        assertEquals(2, head.groups.count { it.isEye })
+        assertEquals(0, head.groups.count { it.isEye })
         assertEquals(1, head.groups.count { it.isMouth })
-        val left = head.marks.first { it.id.value == "eye-l-lid" }.points.map { it.v }.average()
-        val right = head.marks.first { it.id.value == "eye-r-lid" }.points.map { it.v }.average()
-        assertEquals(0.26, left, 0.01, "the left eye sits about the landmark on the head's side")
-        assertEquals(0.74, right, 0.01, "the right eye sits across the middle")
+        val ring = head.regions.first { it.id.value == "eye-ring-l" }.border.dropLast(1)
+        assertEquals(eyes.anchor.u.toDouble(), ring.map { it.u }.average(), 0.01, "the left eye sits in the middle of its ring")
+        assertEquals(eyes.anchor.v.toDouble(), ring.map { it.v }.average(), 0.01)
         assertEquals(setOf("eye-ring-l", "eye-ring-r"), head.regions.map { it.id.value }.toSet())
     }
 

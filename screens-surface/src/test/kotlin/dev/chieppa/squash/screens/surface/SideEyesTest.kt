@@ -13,7 +13,7 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.sheet.FullView
-import dev.chieppa.squash.screens.toucan.toucanDocument
+import dev.chieppa.squash.screens.toucan.toucanDrawnEyesDocument
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 private val HEAD = PartId("head")
 
-/** Side-set eyes, the toucan's, read their angle versions from their own facing and lean their gaze out along it. See HLD: parts, Side-set eyes. */
+/** Side-set drawn eyes, the toucan's built as parts, read their angle versions from their own facing and lean their gaze out along it. See HLD: parts, Side-set eyes. */
 class SideEyesTest {
     private val work = TestWork()
 
@@ -48,7 +48,7 @@ class SideEyesTest {
     @Test
     fun theFennecsEyesAreSetToTheFrontAndTheToucansToTheSide() {
         val fennec = faceOf(openSession(fennecDocument(), work))
-        val toucan = faceOf(openSession(toucanDocument(), work))
+        val toucan = faceOf(openSession(toucanDrawnEyesDocument(), work))
         println("eyes turned from the head: fennec ${eyeTurns(fennec)}, toucan ${eyeTurns(toucan)}")
         assertEquals(emptyList(), sideEyes(fennec.head, fennec.work, FACE_SIDE), "the fennec's face reads the head's angle")
         assertEquals(2, sideEyes(toucan.head, toucan.work, FACE_SIDE).size, "both of the toucan's eyes are set to the side")
@@ -56,7 +56,7 @@ class SideEyesTest {
 
     @Test
     fun aToucansEyeShowsItsFrontVersionSquareOnFromTheSide() {
-        val toucan = faceOf(openSession(toucanDocument(), work))
+        val toucan = faceOf(openSession(toucanDrawnEyesDocument(), work))
         val eyes = sideEyes(toucan.head, toucan.work, FACE_SIDE)
         val near = eyes.maxBy { it.facing dot Vec3(0f, 0f, -1f) }
         val fromSide = sight(toucan, Vec3(0f, 0f, -1f))
@@ -85,7 +85,7 @@ class SideEyesTest {
 
     @Test
     fun aToucanLookingAheadKeepsItsPupilsOffTheLid() {
-        val session = openSession(toucanDocument(), work)
+        val session = openSession(toucanDrawnEyesDocument(), work)
         val toucan = faceOf(session)
         val marks = toucan.work.marks.associateBy { it.id }
         val frames = toucan.work.groups.filter { it.isEye }.mapNotNull { eyeFrame(it, marks, toucan.head, FACE_SIDE) }

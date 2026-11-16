@@ -1,9 +1,5 @@
 package dev.chieppa.squash.screens.toucan
 
-import dev.chieppa.squash.character.catalog.template
-import dev.chieppa.squash.character.face.eyeLandmark
-import dev.chieppa.squash.character.face.newEyesCommand
-import dev.chieppa.squash.character.face.newMouthCommand
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
@@ -21,12 +17,12 @@ import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetMark
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
-import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.readDocument
 import kotlin.math.PI
 import kotlin.math.cos
@@ -87,16 +83,14 @@ private fun feather(id: String, u: Float, face: (Float) -> Float) = SetMark(
  * The toucan's colors: black on the body, head, wings and tail, the bib and throat in the belly slot, the beak's two halves
  * yellow-orange with their tips dark, a pale ring round each side eye as a region, blue-grey legs and feet, and feather lines on the wings.
  */
-fun toucanColor(): List<DocumentCommand> {
-    val head = checkNotNull(shipped.template(TemplateId("head-bird")))
-    val eye = checkNotNull(eyeLandmark(head))
-    return toucanPalette() + listOf(
+fun toucanColor(): List<DocumentCommand> =
+    toucanPalette() + listOf(
         SetBaseSlot(TORSO, BODY),
         SetAreaFill(TORSO, "bib", BELLY),
         SetBaseSlot(HEAD, BODY),
         SetAreaFill(HEAD, "throat", BELLY),
-        SetRegion(HEAD, RegionId("eye-ring-l"), Region(RegionId("eye-ring-l"), ring(HEAD, eye.u, eye.v), EYE_RING)),
-        SetRegion(HEAD, RegionId("eye-ring-r"), Region(RegionId("eye-ring-r"), ring(HEAD, eye.u, 1f - eye.v), EYE_RING)),
+        SetRegion(HEAD, RegionId("eye-ring-l"), Region(RegionId("eye-ring-l"), ring(HEAD, TOUCAN_EYE_U, TOUCAN_EYE_V), EYE_RING)),
+        SetRegion(HEAD, RegionId("eye-ring-r"), Region(RegionId("eye-ring-r"), ring(HEAD, TOUCAN_EYE_U, 1f - TOUCAN_EYE_V), EYE_RING)),
         SetBaseSlot(BEAK, BEAK_COLOR),
         SetAreaFill(BEAK, "tip", BEAK_TIP),
         SetBaseSlot(BEAK_LOWER, BEAK_COLOR),
@@ -106,19 +100,9 @@ fun toucanColor(): List<DocumentCommand> {
         SetBaseSlot(FOOT_L, LEG_COLOR),
         SetBaseSlot(TAIL, BODY),
     ) + FEATHERS.mapIndexed { i, u -> feather("feather-$i", u) { it } } + FEATHERS.mapIndexed { i, u -> feather("feather-under-$i", u) { 1f - it } }
-}
-
-/** The face: two eyes as the Face stage's Add eyes places them about the bird head's side eye landmark, and a mouth whose open swings the lower beak. */
-fun toucanFace(before: Character): List<DocumentCommand> {
-    val head = checkNotNull(shipped.template(TemplateId("head-bird")))
-    return listOfNotNull(newEyesCommand(before, HEAD, eyeLandmark(head))) + newMouthCommand(HEAD)
-}
 
 /** Every command that makes the toucan, in the order a person would send them. */
-fun toucanCommands(): List<DocumentCommand> {
-    val shaped = (toucanBody() + toucanColor()).fold(EMPTY_TOUCAN) { document, command -> command.apply(document).document }
-    return toucanBody() + toucanColor() + toucanFace(shaped.character)
-}
+fun toucanCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + toucanBody() + toucanColor() + toucanFace()
 
 /** The toucan as those commands leave it. */
 fun toucanDocument(): SquashDocument = toucanCommands().fold(EMPTY_TOUCAN) { document, command -> command.apply(document).document }
