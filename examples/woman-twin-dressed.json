@@ -9568,7 +9568,6 @@
                             "ease": 0.0085
                         }
                     ],
-                    "fillet": 0.33834597,
                     "color": "denim"
                 },
                 {
@@ -9640,7 +9639,6 @@
                             "ease": 0.0115
                         }
                     ],
-                    "fillet": 0.09594883,
                     "color": "suit"
                 },
                 {
@@ -10206,7 +10204,6 @@
                             }
                         }
                     ],
-                    "fillet": 0.056746535,
                     "color": "suit"
                 },
                 {
@@ -10629,7 +10626,6 @@
                             "ease": 0.006
                         }
                     ],
-                    "fillet": 0.0927835,
                     "color": "plum"
                 },
                 {
@@ -10649,7 +10645,6 @@
                             "ease": 0.0065
                         }
                     ],
-                    "fillet": 0.067365274,
                     "color": "black-denim"
                 },
                 {
@@ -10780,7 +10775,6 @@
                             "ease": 0.015
                         }
                     ],
-                    "fillet": 0.1814516,
                     "color": "boot",
                     "changes": {
                         "foot-l": {
@@ -12553,7 +12547,6 @@
             ],
             "shown": "beach"
         },
-        "oneSurface": true,
         "paintedEyes": [
             {
                 "id": "eyes",
@@ -12585,5 +12578,5 @@
             }
         ]
     },
-    "format": 14
+    "format": 15
 }

@@ -7,7 +7,6 @@ import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CoverPart
 import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.DEFAULT_GARMENT_FILLET
 import dev.chieppa.squash.document.FIRST_LAYER
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
@@ -54,14 +53,7 @@ fun wardrobeSlots(): List<DocumentCommand> = SLOTS.map { (id, name) -> AddGarmen
 /** The commands that put [color] in the palette as [slot]. */
 fun cloth(slot: SlotName, red: Float, green: Float, blue: Float): DocumentCommand = SetPaletteSlot(slot, SlotColor(red, green, blue))
 
-/** How wide the fillet where a garment's branches meet is drawn, in body units, whatever the length of the branch that comes out. */
-private const val JOIN_WIDTH = 0.045f
-
-/**
- * The commands that add a garment in [slot] at [layer], colored [color], covering each of [branches] and changing [changes]. A garment's
- * fillet is a share of the length of the child branch it joins; it is set so the fillet is [JOIN_WIDTH] wide on the shortest of them,
- * reading each limb's drawn length from [limbLengths].
- */
+/** The commands that add a garment in [slot] at [layer], colored [color], covering each of [branches] and changing [changes]. */
 fun garment(
     id: GarmentId,
     name: String,
@@ -70,18 +62,10 @@ fun garment(
     branches: List<GarmentBranch>,
     layer: Int = FIRST_LAYER,
     changes: Map<PartId, BodyPartChange> = emptyMap(),
-    limbLengths: Map<PartId, Float> = LIMB_LENGTHS,
 ): List<DocumentCommand> =
-    listOf(AddGarment(Garment(id, name, slot, layer = layer, fillet = filletFor(branches, limbLengths))), SetGarmentColor(id, color)) +
+    listOf(AddGarment(Garment(id, name, slot, layer = layer)), SetGarmentColor(id, color)) +
         branches.map { CoverPart(id, it) } +
         changes.map { (part, change) -> SetBodyPartChange(id, part, change) }
-
-/** The fillet share that makes the join [JOIN_WIDTH] wide where the shortest branch on a limb comes out, the default where none does. */
-private fun filletFor(branches: List<GarmentBranch>, limbLengths: Map<PartId, Float>): Float {
-    val limbs = branches.filter { it.part in limbLengths }
-    val shortest = limbs.minOfOrNull { (it.to - it.from) * limbLengths.getValue(it.part) } ?: return DEFAULT_GARMENT_FILLET
-    return (JOIN_WIDTH / shortest).coerceAtMost(DEFAULT_GARMENT_FILLET)
-}
 
 /** A part [garment] owns, of the generic [template], on [socket]: built only while the garment is worn, riding the bone it sits on. */
 fun owned(garment: GarmentId, id: PartId, template: String, socket: SocketRef): DocumentCommand =

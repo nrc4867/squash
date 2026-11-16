@@ -10,7 +10,6 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.surface.faceMap
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkId
@@ -42,7 +41,6 @@ class FieldAnchorsTest {
     @Test
     fun anchorsNearAJoinLandOnTheSurfaceOnTheirOwnPartsSide() = runTest {
         val session = surfaceSession(torsoPart, leftLeg).also {
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val surface = session.surface()
@@ -61,7 +59,6 @@ class FieldAnchorsTest {
     @Test
     fun anAnchorOnTheLegStaysOnItWhenTheTorsoGrows() = runTest {
         val session = surfaceSession(torsoPart, leftLeg).also {
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val before = assertNotNull(FieldAnchors(session.surface().field).resolve(onLeg)).position - session.origin(leftLeg.id)
@@ -77,7 +74,6 @@ class FieldAnchorsTest {
     fun aPartsSurfaceWorkLandsOnTheSurfaceInBodySpace() = runTest {
         val session = surfaceSession(torsoPart, leftLeg).also {
             it.send(SetMark(torsoPart.id, MarkId("stripe"), Mark(MarkId("stripe"), listOf(onTorso, onTorso.copy(u = 0.7f), Anchor(leftLeg.id, BODY_PATCH, 0.1f, 0.3f)))))
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val surface = session.surface()
@@ -94,7 +90,6 @@ class FieldAnchorsTest {
         val tuft = MarkId("tuft")
         val session = surfaceSession(torsoPart, leftLeg).also {
             it.send(SetMark(torsoPart.id, tuft, Mark(tuft, listOf(onTorso), kind = MarkKind.FUR)))
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val surface = session.surface()
@@ -106,7 +101,6 @@ class FieldAnchorsTest {
     fun aFaceMapOnTheOneSurfaceLandsWhereARayFromAheadMeetsIt() = runTest {
         val head = PartInstance(PartId("head"), templateRef("head"), SocketRef(torsoPart.id, "neck"))
         val session = surfaceSession(torsoPart, head).also {
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val surface = session.surface()

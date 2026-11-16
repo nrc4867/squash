@@ -23,7 +23,6 @@ import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetWardrobe
 import dev.chieppa.squash.document.Side
@@ -63,7 +62,6 @@ internal object StackFixture {
         val sweater = GarmentId("sweater")
         val outfit = OutfitId("winter")
         val garment = Garment(sweater, "Sweater", slot.id, branches = listOf(GarmentBranch(torso.id, 0.1f, 0.6f), GarmentBranch(leg.id, 0f, legTo)))
-        session.send(SetOneSurface(true))
         session.send(SetPaintedEye("eyes", PaintedEye("eyes", Anchor(head.id, BODY_PATCH, 0.6f, 0.185f), EyeLook())))
         session.send(SetWardrobe(Wardrobe(listOf(garment), listOf(slot), listOf(Outfit(outfit, "Winter", mapOf(slot.id to sweater))), outfit)))
         runCurrent()

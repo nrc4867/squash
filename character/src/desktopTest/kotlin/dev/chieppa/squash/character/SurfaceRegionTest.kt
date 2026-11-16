@@ -5,7 +5,6 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
@@ -27,7 +26,6 @@ class SurfaceRegionTest {
         val session = surfaceSession(torsoPart, leftLeg).also {
             it.send(SetPaletteSlot(sock, SlotColor(0.9f, 0.9f, 0.9f)))
             it.send(SetRegion(leftLeg.id, RegionId("sock"), Region(RegionId("sock"), border, sock)))
-            it.send(SetOneSurface(true))
             it.settle()
         }
         val surface = assertNotNull(session.characterSurface.output.value?.surface)

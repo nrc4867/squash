@@ -62,7 +62,6 @@ class TwinFixtureTest {
     @Test
     fun sheIsBuiltAsOneSurfaceWithHerHairAsHairParts() {
         val character = twinDocument().character
-        assertTrue(character.oneSurface)
         val hair = character.parts.filter { it.role == Role.HAIR }
         assertEquals(listOf("hair-cap", "hair", "hair", "hair"), hair.map { it.template.id.value })
     }

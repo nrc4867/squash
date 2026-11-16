@@ -150,7 +150,7 @@ class SurfaceWorkResolveTest {
 
     @Test
     fun aBorderAcrossASocketLandsOnEachPartItNamesInBodySpace() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
         val border = listOf(on(leftLeg, 0.2f, 0.2f), on(leftLeg, 0.2f, 0.7f), on(torsoPart, 0.8f, 0.25f))
         session.send(SetRegion(leftLeg.id, RegionId("sock"), Region(RegionId("sock"), border, fur)))
         session.settle()

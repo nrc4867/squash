@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import kotlin.test.Test
@@ -187,7 +188,7 @@ class LeaningLegsTest : LeaningLegsBench() {
     @Test
     fun assemblingAtOnceAgreesWithTheGraph() = runTest {
         val session = session()
-        apply(session, lean(frontLeft))
+        apply(session, SetOneSurface(false), lean(frontLeft))
         val character = session.document.value.character
         val plan = assertNotNull(library.plan(character.bodyPlan))
         val now = assembleNow(assemblyParts(character), { character.resolved(it) ?: PartData() }, plan, library)

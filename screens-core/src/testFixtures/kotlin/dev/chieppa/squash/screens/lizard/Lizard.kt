@@ -12,7 +12,6 @@ import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetPaletteSlot
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.SlotName
@@ -75,7 +74,7 @@ fun lizardColor(): List<DocumentCommand> = listOf(
 ) + stripes(LIZARD_BODY, BODY_STRIPES) + stripes(TAIL, TAIL_STRIPES)
 
 /** Every command that makes the lizard, in the order a person would send them. */
-fun lizardCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + lizardBody() + lizardColor() + lizardFace()
+fun lizardCommands(): List<DocumentCommand> = lizardBody() + lizardColor() + lizardFace()
 
 /** The lizard as those commands leave it. */
 fun lizardDocument(): SquashDocument = lizardCommands().fold(EMPTY_LIZARD) { document, command -> command.apply(document).document }

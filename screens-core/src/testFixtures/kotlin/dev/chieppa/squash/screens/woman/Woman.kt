@@ -24,8 +24,8 @@ val EMPTY_WOMAN: SquashDocument by lazy {
 }
 
 /**
- * Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, the face, the switch that
- * builds her as one surface with its joins and her painted eyes, then the pose she is shown in.
+ * Every command that makes the woman undressed, in the order a person would send them: shape, hair, color, the face, her one
+ * surface's joins and her painted eyes, then the pose she is shown in.
  */
 fun womanCommands(): List<DocumentCommand> =
     womanBody() + womanHead() + womanColor() + womanFace() + womanOneSurface() + SetDisplayPose(WOMAN_DISPLAY)

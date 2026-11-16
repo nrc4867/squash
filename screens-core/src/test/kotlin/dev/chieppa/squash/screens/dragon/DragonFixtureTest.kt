@@ -40,7 +40,6 @@ class DragonFixtureTest {
     @Test
     fun itIsOneSurfaceWithPaintedEyesAndAMouth() {
         val character = dragonDocument().character
-        assertTrue(character.oneSurface)
         assertEquals(listOf(DRAGON_EYES), character.paintedEyes.map { it.id })
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
         assertEquals(0, head.groups.count { it.isEye })

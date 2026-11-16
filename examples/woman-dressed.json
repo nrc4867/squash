@@ -7797,7 +7797,6 @@
                             "ease": 0.015
                         }
                     ],
-                    "fillet": 0.24193549,
                     "color": "tee"
                 },
                 {
@@ -7816,7 +7815,6 @@
                             "ease": 0.015
                         }
                     ],
-                    "fillet": 0.07804371,
                     "color": "blouse",
                     "changes": {
                         "neck": {
@@ -7842,7 +7840,6 @@
                             "to": 0.88
                         }
                     ],
-                    "fillet": 0.08247801,
                     "color": "suit"
                 },
                 {
@@ -7862,7 +7859,6 @@
                             "ease": 0.015
                         }
                     ],
-                    "fillet": 0.074825406,
                     "color": "plum"
                 },
                 {
@@ -7881,7 +7877,6 @@
                             "ease": 0.032
                         }
                     ],
-                    "fillet": 0.074825406,
                     "color": "coat",
                     "changes": {
                         "neck": {
@@ -7907,7 +7902,6 @@
                             "ease": 0.02
                         }
                     ],
-                    "fillet": 0.1841244,
                     "color": "khaki"
                 },
                 {
@@ -7927,7 +7921,6 @@
                             "ease": 0.02
                         }
                     ],
-                    "fillet": 0.04935293,
                     "color": "suit"
                 },
                 {
@@ -7947,7 +7940,6 @@
                             "ease": 0.012
                         }
                     ],
-                    "fillet": 0.04935293,
                     "color": "denim"
                 },
                 {
@@ -7967,7 +7959,6 @@
                             "ease": 0.012
                         }
                     ],
-                    "fillet": 0.04935293,
                     "color": "black-denim"
                 },
                 {
@@ -8665,7 +8656,6 @@
                             "ease": 0.022
                         }
                     ],
-                    "fillet": 0.14080101,
                     "color": "boot",
                     "changes": {
                         "foot-l": {
@@ -10035,7 +10025,6 @@
             ],
             "shown": "casual"
         },
-        "oneSurface": true,
         "paintedEyes": [
             {
                 "id": "eyes",
@@ -10069,5 +10058,5 @@
             }
         ]
     },
-    "format": 14
+    "format": 15
 }

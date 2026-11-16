@@ -12,7 +12,6 @@ import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
@@ -62,7 +61,7 @@ fun dragonColor(): List<DocumentCommand> = listOf(
 )
 
 /** Every command that makes the dragon, in the order a person would send them. */
-fun dragonCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + dragonBody() + dragonColor() + dragonFace()
+fun dragonCommands(): List<DocumentCommand> = dragonBody() + dragonColor() + dragonFace()
 
 /** The dragon as those commands leave it. */
 fun dragonDocument(): SquashDocument = dragonCommands().fold(EMPTY_DRAGON) { document, command -> command.apply(document).document }

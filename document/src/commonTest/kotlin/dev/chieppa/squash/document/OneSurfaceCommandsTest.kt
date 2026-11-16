@@ -21,10 +21,10 @@ class OneSurfaceCommandsTest {
         .apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("blank"), 1)))).document
 
     @Test
-    fun theSwitchTurnsOnAndUndoes() {
+    fun theSwitchTurnsOffAndUndoes() {
         scenario(placed) {
-            run(SetOneSurface(true))
-            expect { assertTrue(it.character.oneSurface) }
+            run(SetOneSurface(false))
+            expect { assertFalse(it.character.oneSurface) }
             undo()
             expect(placed)
         }

@@ -8,7 +8,6 @@ import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.SetLineRules
 import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.character.surface.FieldAnchors
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.document.SetRegion
@@ -91,7 +90,6 @@ class SurfaceToolsTest {
     @Test
     fun aPickOnTheOneSurfaceResolvesOnItsFieldWhereItWasPickedAndASelectionLinesItsOwnSection() {
         val session = session()
-        session.send(SetOneSurface(true))
         settle(session)
         val character = assertNotNull(session.assembly.output.value)
         val surface = assertNotNull(session.characterSurface.output.value?.surface)

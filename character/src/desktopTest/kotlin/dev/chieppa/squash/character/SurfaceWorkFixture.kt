@@ -37,9 +37,9 @@ private val legPair = PairId("front-legs")
 val leftLeg = PartInstance(PartId("leg-l"), templateRef("leg"), SocketRef(torsoPart.id, "front-leg"), pair = legPair, side = Side.LEFT)
 val rightLeg = PartInstance(PartId("leg-r"), templateRef("leg"), SocketRef(torsoPart.id, "front-leg"), pair = legPair, side = Side.RIGHT)
 
-/** A session over [parts] on a fennec, with the shipped templates and plans. */
-fun TestScope.surfaceSession(vararg parts: PartInstance): CharacterSession {
-    val empty = SquashDocument(Character(CharacterId("fennec"), "Fennec", BodyPlanRef(BodyPlanId("canine-quadruped"), 1)))
+/** A session over [parts] on a fennec, with the shipped templates and plans, its body each part's own mesh when [asParts]. */
+fun TestScope.surfaceSession(vararg parts: PartInstance, asParts: Boolean = false): CharacterSession {
+    val empty = SquashDocument(Character(CharacterId("fennec"), "Fennec", BodyPlanRef(BodyPlanId("canine-quadruped"), 1), oneSurface = !asParts))
     return CharacterSession(
         AddParts(parts.toList()).apply(empty).document,
         TemplateLibrary(shipped.parts, shipped.plans),

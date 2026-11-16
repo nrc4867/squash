@@ -13,7 +13,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetBaseSlot
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
@@ -66,7 +65,7 @@ fun koiColor(): List<DocumentCommand> = listOf(
 )
 
 /** Every command that makes the koi, in the order a person would send them. */
-fun koiCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + koiBody() + koiColor() + koiFace()
+fun koiCommands(): List<DocumentCommand> = koiBody() + koiColor() + koiFace()
 
 /** The koi as those commands leave it. */
 fun koiDocument(): SquashDocument = koiCommands().fold(EMPTY_KOI) { document, command -> command.apply(document).document }

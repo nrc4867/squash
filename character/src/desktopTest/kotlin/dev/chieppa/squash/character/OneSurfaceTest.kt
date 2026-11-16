@@ -30,7 +30,6 @@ private const val JOIN_FIXTURE_STEP = 1e-4f
 @OptIn(ExperimentalCoroutinesApi::class)
 class OneSurfaceTest {
     private suspend fun TestScope.oneSurface() = surfaceSession(torsoPart, leftLeg).also {
-        it.send(SetOneSurface(true))
         it.settle()
     }
 

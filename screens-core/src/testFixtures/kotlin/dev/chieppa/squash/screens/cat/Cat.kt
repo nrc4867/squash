@@ -6,7 +6,6 @@ import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.SetDisplayPose
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.screens.shell.SquashFormat
@@ -17,8 +16,8 @@ const val CAT_RESOURCE = "cat.json"
 /** The character before any command: a name on the canine plan, which carries any four-legged body. */
 val EMPTY_CAT = SquashDocument(Character(CharacterId("cat"), "Cat", BodyPlanRef(BodyPlanId("canine-quadruped"), 1)))
 
-/** Every command that makes the cat: built as one surface from the start, its body, coat, face and display pose. */
-fun catCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + catBody() + catColor() + catFace() + SetDisplayPose(CAT_DISPLAY)
+/** Every command that makes the cat: its body, coat, face and display pose. */
+fun catCommands(): List<DocumentCommand> = catBody() + catColor() + catFace() + SetDisplayPose(CAT_DISPLAY)
 
 /** The cat as those commands leave it. */
 fun catDocument(): SquashDocument = catCommands().fold(EMPTY_CAT) { document, command -> command.apply(document).document }

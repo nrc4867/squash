@@ -17,10 +17,10 @@ const val FENNEC_RESOURCE = "fennec.json"
 val EMPTY_FENNEC = SquashDocument(Character(CharacterId("fennec"), "Fennec", BodyPlanRef(BodyPlanId("canine-quadruped"), 1)))
 
 /**
- * Every command that makes the fennec, from drawn outlines to surface work, in the order a person would send them, then the switch that
- * builds it as one surface and its painted eyes.
+ * Every command that makes the fennec, from drawn outlines to surface work, in the order a person would send them, then its painted
+ * eyes.
  */
-fun fennecCommands(): List<DocumentCommand> = fennecBody() + fennecColor() + fennecMarks() + listOf(SetOneSurface(true)) + fennecPaintedEyes()
+fun fennecCommands(): List<DocumentCommand> = fennecBody() + fennecColor() + fennecMarks() + fennecPaintedEyes()
 
 /** The fennec as those commands leave it. */
 fun fennecDocument(): SquashDocument = fennecCommands().fold(EMPTY_FENNEC) { document, command -> command.apply(document).document }

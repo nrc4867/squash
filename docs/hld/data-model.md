@@ -38,7 +38,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Project | The cast (character copies, each with its library version) and scenes | Document file |
 | Library | Characters, later objects and sets, each as a chain of versions | Library files |
 | Wardrobe | The character's garments, its wardrobe slots in order, its outfits and the outfit Build shows | Document, on the character |
-| Garment | Its slot, layer, a branch per covered part (u range, ease, Side and Top outlines, surface work), join ink switches, hem and cuff ink, fillet, colour, body-part changes, loose ends | Document, in the wardrobe |
+| Garment | Its slot, layer, a branch per covered part (u range, ease, Side and Top outlines, surface work), join ink switches, hem and cuff ink, colour, body-part changes, loose ends | Document, in the wardrobe |
 | Body-part change | What a worn garment does to one part: hide, through (cuff, its size and ink), redraw (outlines, params and surface work on the part's template) or swap (a template and its data) | Document, in a garment |
 | Owned part | A part instance a garment owns (`PartInstance.garment`): built, placed and rigged as any part while the garment is worn | Document, on the character |
 | Outfit | A name and at most one garment per wardrobe slot | Document, in the wardrobe |

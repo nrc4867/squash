@@ -28,9 +28,13 @@ private const val FUR_KIND = "fur"
 private const val FUR_RULE_KEY = "fur"
 private const val SHOW_NEAR_KEY = "showNear"
 private const val FUR_ID_PREFIX = "fur-"
+private const val ONE_SURFACE_KEY = "oneSurface"
+private const val WARDROBE_KEY = "wardrobe"
+private const val GARMENTS_KEY = "garments"
+private const val FILLET_KEY = "fillet"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -71,6 +75,19 @@ private fun poseOnCharacter(document: JsonObject): JsonObject = document
 
 /** Format 12 to 13: a part gains a role. A save without one reads its template's, or none. */
 private fun rolesOnParts(document: JsonObject): JsonObject = document
+
+/**
+ * Format 14 to 15: every body is one surface, so a character drops its one surface switch and each garment its fillet, and a head's
+ * drawn eyes become painted ones (see [drawnEyesPainted]).
+ */
+private fun oneSurfaceOnly(document: JsonObject): JsonObject {
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    val wardrobe = character[WARDROBE_KEY] as? JsonObject
+    val garments = wardrobe?.get(GARMENTS_KEY) as? JsonArray
+    val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
+    val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
+    return JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(JsonObject(moved))))
+}
 
 /** Format 13 to 14: a character gains a wardrobe. A save without one wears nothing. */
 private fun wardrobeOnCharacter(document: JsonObject): JsonObject = document

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /** How far a branch stands off its part's surface where nothing drawn takes it further, in body units. */
 const val DEFAULT_EASE = 0.03f
@@ -16,7 +17,7 @@ const val GARMENT_PART_PREFIX = "garment/"
 
 /**
  * One garment of a character's wardrobe: the [slot] it fills, its [layer] counted out from the skin, the [branches] it is built
- * from, one per covered part, which [joins] are inked, whether its hem and cuffs are, the [fillet] at its joins, its [color], what
+ * from, one per covered part, which [joins] are inked, whether its hem and cuffs are, the [fillet] at its joins when built as parts, never saved, its [color], what
  * it does to the body parts under it ([changes], by part) and its [looseEnds]. See HLD: data-model, Garments.
  */
 @Serializable
@@ -29,7 +30,7 @@ data class Garment(
     val joins: Set<PartId> = emptySet(),
     val inkHem: Boolean = true,
     val inkCuffs: Boolean = true,
-    val fillet: Float = DEFAULT_GARMENT_FILLET,
+    @Transient val fillet: Float = DEFAULT_GARMENT_FILLET,
     val color: SlotName? = null,
     val changes: Map<PartId, BodyPartChange> = emptyMap(),
     val looseEnds: List<LooseEnd> = emptyList(),

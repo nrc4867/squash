@@ -75,7 +75,7 @@ class SurfaceAnchorGoldenTest {
 
     @Test
     fun anchorsHeldFixedFollowTheMeshThroughOversketches() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
         session.settle()
         val vertices = listOf(12 to 3, 24 to 6, 36 to 9)
         val anchors = vertices.map { (ring, segment) -> session.onVertex(leftLeg, ring, segment) }

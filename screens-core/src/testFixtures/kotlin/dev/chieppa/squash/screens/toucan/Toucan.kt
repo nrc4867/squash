@@ -17,7 +17,6 @@ import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetMark
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
@@ -102,7 +101,7 @@ fun toucanColor(): List<DocumentCommand> =
     ) + FEATHERS.mapIndexed { i, u -> feather("feather-$i", u) { it } } + FEATHERS.mapIndexed { i, u -> feather("feather-under-$i", u) { 1f - it } }
 
 /** Every command that makes the toucan, in the order a person would send them. */
-fun toucanCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + toucanBody() + toucanColor() + toucanFace()
+fun toucanCommands(): List<DocumentCommand> = toucanBody() + toucanColor() + toucanFace()
 
 /** The toucan as those commands leave it. */
 fun toucanDocument(): SquashDocument = toucanCommands().fold(EMPTY_TOUCAN) { document, command -> command.apply(document).document }

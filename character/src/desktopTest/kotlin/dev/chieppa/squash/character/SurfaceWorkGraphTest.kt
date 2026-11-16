@@ -105,7 +105,7 @@ class SurfaceWorkGraphTest {
 
     @Test
     fun aParentsRedrawMovesAChildsBodyPositionsAndNotItsOwn() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
         session.send(SetMark(leftLeg.id, mark.id, mark))
         session.settle()
         val own = session.surfaceWork(leftLeg.id).output.value

@@ -24764,7 +24764,6 @@
             ],
             "shown": "winter"
         },
-        "oneSurface": true,
         "paintedEyes": [
             {
                 "id": "eyes",
@@ -24801,5 +24800,5 @@
             }
         ]
     },
-    "format": 14
+    "format": 15
 }

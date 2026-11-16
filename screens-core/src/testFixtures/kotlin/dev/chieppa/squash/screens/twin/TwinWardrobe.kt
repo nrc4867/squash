@@ -33,7 +33,7 @@ const val WAIST_LAYER = 2
 const val OVER_LAYER = 3
 const val BELT_LAYER = 4
 
-/** The twin's garment: the woman's helper, its joins sized by the twin's own limb lengths. */
+/** The twin's garment, made by the woman's helper. */
 internal fun twinGarment(
     id: GarmentId,
     name: String,
@@ -42,7 +42,7 @@ internal fun twinGarment(
     branches: List<GarmentBranch>,
     layer: Int = FIRST_LAYER,
     changes: Map<PartId, BodyPartChange> = emptyMap(),
-): List<DocumentCommand> = garment(id, name, slot, color, branches, layer, changes, LIMB_LENGTHS)
+): List<DocumentCommand> = garment(id, name, slot, color, branches, layer, changes)
 
 /** The commands that put the reference colour [hex] in the palette as [slot]. */
 internal fun cloth(slot: SlotName, hex: Int): DocumentCommand = SetPaletteSlot(slot, color(hex))

@@ -22,6 +22,7 @@ import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.Outfit
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetWardrobe
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
@@ -151,7 +152,7 @@ class HangingBranchTest {
     }
 
     private fun TestScope.session(document: SquashDocument): CharacterSession {
-        val session = CharacterSession(document, library, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(SetOneSurface(false).apply(document).document, library, backgroundScope, StandardTestDispatcher(testScheduler))
         runCurrent()
         check(session.graph.settled.value)
         return session

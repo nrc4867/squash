@@ -40,9 +40,6 @@ const val HIP_SOCKET = 3
 /** The hand-made socket at the end of a limb or the neck that takes what hangs from it. */
 const val END_SOCKET = 1
 
-/** How long her arms, legs and neck are drawn, which a garment's branches over them are measured by. */
-internal val LIMB_LENGTHS = mapOf(ARM_L to ARM_LENGTH, LEG_L to LEG_LENGTH, NECK to NECK_LENGTH)
-
 /** Up the torso, as a share of its length, where the shoulder joints and the hip joints stand. */
 internal fun torsoU(height: Float) = (height - PELVIS_HEIGHT) / TORSO_LENGTH
 private const val SHOULDER_HEIGHT = 1.318f
