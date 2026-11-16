@@ -2,12 +2,13 @@ package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.AssemblyPart
-import dev.chieppa.squash.character.build.Dressing
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.build.Holed
 import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.character.build.branchOver
+import dev.chieppa.squash.character.build.throughHoles
 import dev.chieppa.squash.character.build.assembleNow
 import dev.chieppa.squash.character.build.assemblyParts
-import dev.chieppa.squash.character.build.dressedIn
 import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.Character
@@ -30,7 +31,7 @@ import dev.chieppa.squash.document.cuffPartId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.test.assertSame
 
 /** Parts a garment owns: built only while it is worn, and standing outside every garment, never cut through or hidden by one. */
@@ -60,12 +61,16 @@ class OwnedPartsTest {
     )
 
     @Test
-    fun aGarmentCutsNoHoleForAPartItOwnsAndHidesNoneOfIt() {
-        val owned = body(hat).dressedIn(Dressing(listOf(cap)))
-        assertNull(owned.part(cuffPartId(hat, brim)), "no cuff round an owned part")
-        assertNull(assertNotNull(owned.part(brim)).hiding, "nothing of an owned part is hidden")
-        val plain = body(null).dressedIn(Dressing(listOf(cap)))
-        assertNotNull(plain.part(cuffPartId(hat, brim)), "a body part there comes through with a cuff")
+    fun aGarmentCutsNoHoleForAPartItOwns() {
+        fun holed(character: AssembledCharacter): Holed {
+            val placed = assertNotNull(branchOver(cap, cap.branches.single(), assertNotNull(character.part(head))))
+            return throughHoles(cap, placed, character, emptyMap()) {}
+        }
+        val owned = holed(body(hat))
+        assertTrue(owned.cuffs.isEmpty() && brim !in owned.through, "no hole or cuff round an owned part")
+        val plain = holed(body(null))
+        assertTrue(brim in plain.through, "a body part there comes through")
+        assertNotNull(plain.cuffs.singleOrNull { it.id == cuffPartId(hat, brim) }, "with a cuff")
     }
 
     @Test

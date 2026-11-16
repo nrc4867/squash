@@ -1,15 +1,14 @@
 package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
  * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
  * the [pose] it stands in, the [displayPose] under it, its [wardrobe] and its [paintedEyes]. The pose is the character's one working pose until shots hold a
  * pose per key. The display pose is saved with the character and shows it as it is meant to be seen, a biped's arms brought down from
- * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is built as one surface meshed from its parts' joined solids;
- * [oneSurface] off builds it as each part's own mesh instead, which is never saved. See HLD: data-model.
+ * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is built as one surface meshed from its parts' joined solids.
+ * See HLD: data-model.
  */
 @Serializable
 data class Character(
@@ -28,7 +27,6 @@ data class Character(
     val pose: Pose = Pose(),
     val displayPose: Pose = Pose(),
     val wardrobe: Wardrobe = Wardrobe(),
-    @Transient val oneSurface: Boolean = true,
     val paintedEyes: List<PaintedEye> = emptyList(),
 ) {
     init {

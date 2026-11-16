@@ -153,7 +153,6 @@ class DocumentFormatTest {
         assertEquals(listOf("torso", "head", "leg-l", "leg-r"), character.parts.map { it.id.value })
         val pins = saved.getValue("parts").jsonArray.map { it.jsonObject.getValue("template").jsonObject.let { pin -> pin.getValue("id").jsonPrimitive.content to pin.getValue("version").jsonPrimitive.int } }
         assertEquals(pins, character.parts.map { it.template.id.value to it.template.version })
-        assertTrue(character.oneSurface)
         assertEquals(0.12f, character.part(PartId("leg-l"))?.blend, "a join's blend is kept")
         assertEquals(listOf("vest"), character.wardrobe.garments.map { it.id.value })
         assertEquals(DEFAULT_GARMENT_FILLET, character.wardrobe.garments.single().fillet)

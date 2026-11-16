@@ -61,7 +61,6 @@ import dev.chieppa.squash.document.SetSlotLabel
 import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.SetSocketBlend
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetEyeFrame
 import dev.chieppa.squash.document.SetEyeFromFront
@@ -101,7 +100,6 @@ import dev.chieppa.squash.uidesign.generated.shell_step_outlines
 import dev.chieppa.squash.uidesign.generated.shell_step_parameter
 import dev.chieppa.squash.uidesign.generated.shell_step_blend
 import dev.chieppa.squash.uidesign.generated.shell_step_painted_eye
-import dev.chieppa.squash.uidesign.generated.shell_step_one_surface
 import dev.chieppa.squash.uidesign.generated.shell_step_remove
 import dev.chieppa.stretch.core.Command
 import dev.chieppa.stretch.ui.formatNumber
@@ -120,7 +118,6 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val outlines = stringResource(Res.string.shell_step_outlines, FIRST)
     val parameter = stringResource(Res.string.shell_step_parameter, FIRST, SECOND)
     val blend = stringResource(Res.string.shell_step_blend, FIRST)
-    val oneSurface = stringResource(Res.string.shell_step_one_surface)
     val paintedEye = stringResource(Res.string.shell_step_painted_eye)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
@@ -172,7 +169,6 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters, is AddParameters -> moved
             is SetSocketBlend -> blend.replace(FIRST, command.blend?.let(::formatNumber).orEmpty())
-            is SetOneSurface -> oneSurface
             is SetPaintedEye, is SetEyeRoundness, is SetEyeFromFront, is SetEyeGaze, is SetEyeFrame -> paintedEye
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
             is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))

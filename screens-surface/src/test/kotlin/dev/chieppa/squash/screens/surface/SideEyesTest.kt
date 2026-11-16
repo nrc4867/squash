@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 private val HEAD = PartId("head")
 
-/** Side-set drawn eyes, the toucan's built as parts, read their angle versions from their own facing and lean their gaze out along it. See HLD: parts, Side-set eyes. */
+/** Side-set drawn eyes, the toucan's, read their angle versions from their own facing and lean their gaze out along it. See HLD: parts, Side-set eyes. */
 class SideEyesTest {
     private val work = TestWork()
 

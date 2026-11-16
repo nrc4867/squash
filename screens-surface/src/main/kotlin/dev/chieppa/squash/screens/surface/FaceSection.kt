@@ -91,7 +91,7 @@ fun FaceSection(state: AppState, session: CharacterSession) {
     val mouth = groups.firstOrNull { it.isMouth }
     val eyesName = stringResource(Res.string.face_eyes)
     val mouthName = stringResource(Res.string.face_mouth)
-    val painted = character.oneSurface && face.feature == FaceFeature.EYES
+    val painted = face.feature == FaceFeature.EYES
     DrawerSection(divider = false) {
         Segmented(FaceFeature.entries, face.feature, { state.pickFeature(character, holder, it) }, { if (it == FaceFeature.EYES) eyesName else mouthName }, Modifier.testTag(FaceTags.FEATURE), fill = true)
         when {

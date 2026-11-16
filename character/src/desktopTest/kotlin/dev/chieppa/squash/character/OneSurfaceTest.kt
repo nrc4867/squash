@@ -3,7 +3,6 @@ package dev.chieppa.squash.character
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.COARSE_FACTOR
 import dev.chieppa.squash.character.surface.SurfaceBuilder
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.surface.HELD
@@ -17,7 +16,6 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Points sampled along the line from the torso's origin to the leg's. */
@@ -26,7 +24,7 @@ private const val SAMPLES = 16
 /** Fixture values are written as whole numbers of this step. */
 private const val JOIN_FIXTURE_STEP = 1e-4f
 
-/** A torso and a front leg built as one surface: the field and the coordinates its vertices hold, the switch and the coarse cell while dragging. */
+/** A torso and a front leg built as one surface: the field and the coordinates its vertices hold, and the coarse cell while dragging. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OneSurfaceTest {
     private suspend fun TestScope.oneSurface() = surfaceSession(torsoPart, leftLeg).also {
@@ -99,7 +97,7 @@ class OneSurfaceTest {
     }
 
     @Test
-    fun aDragMeshesAtTheCoarseCellAndTheSwitchTurnsTheSurfaceOff() = runTest {
+    fun aDragMeshesAtTheCoarseCellAndItsCommitMeshesAtTheFullCell() = runTest {
         val session = oneSurface()
         val cell = session.surface().mesh.cell
         val gesture = session.history.begin()
@@ -109,9 +107,6 @@ class OneSurfaceTest {
         gesture.commit()
         session.settle()
         assertEquals(cell, session.surface().mesh.cell, 1e-6f)
-        session.send(SetOneSurface(false))
-        session.settle()
-        assertNull(session.characterSurface.output.value?.surface)
     }
 
     private fun nearestVertex(surface: CharacterSurface, p: Vec3): Int =

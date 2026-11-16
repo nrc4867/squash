@@ -60,7 +60,7 @@ fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
         val at = head ?: return@LaunchedEffect
         if (state.face.group?.let(character::groupOf) == null) state.pickFeature(character, at, state.face.feature)
     }
-    val painted = document?.character?.let(state::paintsEyes) == true
+    val painted = document != null && state.paintsEyes()
     LaunchedEffect(painted) {
         if (painted) {
             state.face.version = null

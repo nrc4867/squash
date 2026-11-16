@@ -55,7 +55,7 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
     var paper: Color = Color.White
     private val eyeHandles = PaintedEyeHandles(state)
 
-    private val paintsEyes: Boolean get() = state.session.value?.let { state.paintsEyes(it.document.value.character) } == true
+    private val paintsEyes: Boolean get() = state.session.value != null && state.paintsEyes()
 
     /** Takes a press near what the tool itself shows, ahead of the surface under it; true when it took it. */
     protected open suspend fun AwaitPointerEventScope.pressedOwn(down: PointerInputChange, sight: SurfaceView): Boolean = false

@@ -35,9 +35,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
-private const val MESH_CLOSE = 1e-5f
-
-/** Anchors held fixed through oversketches of a part and of its parent: what they render at follows the mesh. */
+/** Anchors held fixed through oversketches of a part and of its parent: what they render at follows the one surface. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceAnchorGoldenTest {
     private val fur = SlotName("fur")
@@ -63,19 +61,15 @@ class SurfaceAnchorGoldenTest {
         send(SetExpressionMarks(glad, leftLeg.id, eye, MarkRole.LID, listOf(line("lid", points[0], points[2]))))
     }
 
-    private fun CharacterSession.assertOnMesh(part: PartInstance, points: List<ResolvedPoint>, vertices: List<Pair<Int, Int>>) {
-        val surface = builtSurface(part)
-        val patch = surface.body()
-        val origin = assertNotNull(assembly.output.value?.part(part.id)).origin
-        points.zip(vertices).forEach { (point, vertex) ->
-            val (ring, segment) = vertex
-            assertClose(origin + surface.shown(patch.point(patch.index(ring, segment))), point.position, MESH_CLOSE)
-        }
+    /** Asserts every one of [points] lies on the one surface. */
+    private fun CharacterSession.assertOnSurface(points: List<ResolvedPoint>) {
+        val surface = assertNotNull(characterSurface.output.value?.surface)
+        points.forEach { assertEquals(0f, surface.field.field.value(it.position), surface.field.cell * 0.01f, "${it.anchor} lands on the surface") }
     }
 
     @Test
-    fun anchorsHeldFixedFollowTheMeshThroughOversketches() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
+    fun anchorsHeldFixedFollowTheSurfaceThroughOversketches() = runTest {
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
         session.settle()
         val vertices = listOf(12 to 3, 24 to 6, 36 to 9)
         val anchors = vertices.map { (ring, segment) -> session.onVertex(leftLeg, ring, segment) }
@@ -85,8 +79,8 @@ class SurfaceAnchorGoldenTest {
         fun marks(part: PartInstance) = assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(part.id)).marks.single().points
         val stages = mutableListOf<String>()
         fun record(name: String) {
-            session.assertOnMesh(leftLeg, marks(leftLeg), vertices)
-            session.assertOnMesh(rightLeg, marks(rightLeg), vertices)
+            session.assertOnSurface(marks(leftLeg))
+            session.assertOnSurface(marks(rightLeg))
             assertEquals(anchors, marks(leftLeg).map { it.anchor }, "the document's anchors never move")
             stages += "$name\n${fixtureOf(assertNotNull(session.bodySurfaceWork.output.value))}"
         }

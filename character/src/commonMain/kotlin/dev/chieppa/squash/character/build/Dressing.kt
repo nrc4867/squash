@@ -13,15 +13,10 @@ import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.character.model.SurfaceMethod
-import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 
-/**
- * What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin; [covers] is
- * whether the skin and the inner layers the garments cover are hidden. With [endsOnly], as on a one surface, which meshes the garments
- * itself, only the garments' loose ends are placed.
- */
-data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap(), val covers: Boolean = true, val endsOnly: Boolean = false)
+/** What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin. */
+data class Dressing(val worn: List<Garment> = emptyList(), val twins: Map<PartId, PartId> = emptyMap())
 
 /** How the garments show: drawn whole over what they cover, see-through with the body whole under them, or not at all. View state, never saved. */
 enum class GarmentLook { SHOWN, GHOSTED, HIDDEN }
@@ -30,13 +25,12 @@ enum class GarmentLook { SHOWN, GHOSTED, HIDDEN }
 data class GarmentView(val look: GarmentLook = GarmentLook.SHOWN, val hidden: Set<GarmentId> = emptySet())
 
 /**
- * This dressing as [view] shows it: without the garments it hides, with nothing hidden under them when ghosted, and with none worn when
- * hidden. The garments' body-part changes are the document's and hold whatever the view.
+ * This dressing as [view] shows it: without the garments it hides, and with none worn when hidden. The garments' body-part changes are
+ * the document's and hold whatever the view.
  */
 fun Dressing.seenAs(view: GarmentView): Dressing = when (view.look) {
     GarmentLook.HIDDEN -> Dressing()
-    GarmentLook.GHOSTED -> copy(worn = worn.filter { it.id !in view.hidden }, covers = false)
-    GarmentLook.SHOWN -> if (view.hidden.isEmpty()) this else copy(worn = worn.filter { it.id !in view.hidden })
+    GarmentLook.GHOSTED, GarmentLook.SHOWN -> if (view.hidden.isEmpty()) this else copy(worn = worn.filter { it.id !in view.hidden })
 }
 
 /** The dressing [character] wears. */
@@ -53,57 +47,11 @@ fun Graph.dressedNode(assembled: Node<*, AssembledCharacter>, dressing: Flow<Dre
     sourcesOf = { mapOf(Unit to assembled) },
     stage = BuildStages.ASSEMBLY,
 ) { (worn, built) ->
-    val checkCancelled = cancellationCheck()
-    built.getValue(Unit).dressedIn(worn, checkCancelled)
+    built.getValue(Unit).dressedIn(worn)
 }
 
-/**
- * This character wearing what [dressing] holds: a part for every branch of every worn garment, on each covered part and its twin,
- * placed where that part is and fitted over the layers under it; each branch joined by fillet to the branch over the part its own part
- * sits on, and carried over the strip joining its part at its start, see [stripOver]; a hole and a cuff where a body part comes out through a branch;
- * a branch that hangs free pushed out of the parts hanging inside it, see [pushedClear]; the skin the branches and cuffs cover hidden, but for a part
- * that comes out through a branch, which that branch leaves whole, as the hole leaves the branch open where the part fills it; each layer's faces
- * an outer layer covers hidden, but never a part a garment owns, which stands outside them all; each branch and cuff inking its hem, cuffs and joins as the garment's switches say; and each garment's
- * loose ends hung from their branches; with [Dressing.covers] off nothing under a garment is hidden. See HLD: data-model, Garments.
- */
-fun AssembledCharacter.dressedIn(dressing: Dressing, checkCancelled: () -> Unit = {}): AssembledCharacter {
-    if (dressing.worn.isEmpty()) return this
-    if (dressing.endsOnly) return withLooseEnds(dressing)
-    val through = HashMap<PartId, MutableSet<PartId>>()
-    val layers = dressing.worn.mapIndexed { layer, garment ->
-        val under = dressing.worn.take(layer)
-        val branches = garment.branches.flatMap { branch ->
-            listOfNotNull(branch.part, dressing.twins[branch.part]).mapNotNull { id ->
-                checkCancelled()
-                part(id)?.let { branchOver(garment, branch.fittedOver(under, dressing.twins), it) }
-            }
-        }
-        joined(garment, branches, this, checkCancelled).map { edgeInked(garment, stripOver(it, this), this, dressing.twins) }.flatMap { branch ->
-            val holed = throughHoles(garment, branch, this, dressing.twins, checkCancelled)
-            holed.through.forEach { part -> through.getOrPut(part, ::HashSet) += requireNotNull(holed.branch.id) }
-            listOf(holed.branch.pushedClear(this)) + holed.cuffs
-        }
-    }
-    if (!dressing.covers) {
-        val shells = layers.flatten()
-        return AssembledCharacter(parts + shells + dressing.worn.flatMap { garment -> looseEnds(garment, shells, this) }, sockets)
-    }
-    val covers = layers.map { parts -> parts.filter { !isCuffPart(requireNotNull(it.id)) }.mapNotNull(::hiderOf) }
-    val dressed = layers.flatMapIndexed { layer, parts ->
-        val outer = covers.drop(layer + 1).flatten()
-        parts.map { it.hiddenBy(outer) }
-    }
-    if (dressed.isEmpty()) return this
-    val ends = dressing.worn.flatMap { garment -> looseEnds(garment, dressed, this) }
-    val all = layers.flatten().mapNotNull(::hiderOf)
-    val body = parts.map { part ->
-        checkCancelled()
-        if (part.owner != null) return@map part
-        val passes = through[part.id].orEmpty()
-        part.hiddenBy(if (passes.isEmpty()) all else all.filter { it !is Hider.Inside || it.part !in passes })
-    }
-    return AssembledCharacter(body + dressed + ends, sockets)
-}
+/** This character wearing what [dressing] holds, which the one surface meshes itself: see [withLooseEnds]. See HLD: data-model, Garments. */
+fun AssembledCharacter.dressedIn(dressing: Dressing): AssembledCharacter = if (dressing.worn.isEmpty()) this else withLooseEnds(dressing)
 
 /**
  * This character with the loose ends of the garments [dressing] wears, each hung from its branch fitted over the layers under it, and

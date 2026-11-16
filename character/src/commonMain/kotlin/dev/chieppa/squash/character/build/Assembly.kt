@@ -58,8 +58,6 @@ class PlacedPart(
     val hanging: Hanging? = null,
     /** What hides faces of it under a garment, so a pose can decide again; null when nothing does. */
     val hiding: Hiding? = null,
-    /** The strips that join it to the parts it meets, each a patch of its own surface. See [withSocketStrips]. */
-    val strips: List<StripJoin> = emptyList(),
     /** The garment that owns it, a part of its own on a socket, or null for a part of the body and for a garment's branch. */
     val owner: GarmentId? = null,
     /** The blend of the join at its socket the document holds, or null for its default. */
@@ -102,8 +100,8 @@ class PlacedPart(
         if (patch == null) surface.patches.firstOrNull { it.covers(u) } else surface.patches.firstOrNull { it.name == patch }
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
-    fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding, strips: List<StripJoin> = this.strips): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips, owner, blend)
+    fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding): PlacedPart =
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */

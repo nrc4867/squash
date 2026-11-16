@@ -4,7 +4,6 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetParameter
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
@@ -55,7 +54,6 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
-        if (look.asParts) session.send(SetOneSurface(false))
         work.settle(session)
         if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
         val views = WomanViews(work, errors, folder)

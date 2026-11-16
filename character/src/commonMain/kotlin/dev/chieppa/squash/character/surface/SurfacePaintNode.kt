@@ -11,7 +11,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 
-/** What the paint node holds: the one surface's paint, laid [on] that surface, or null for a character built as its parts' own meshes. */
+/** What the paint node holds: the one surface's paint, laid [on] that surface, or null for a character with no part in the field. */
 class HeldPaint(val paint: SurfacePaint?, val on: CharacterSurface? = null) {
     /** Whether this paint is laid on [surface], or holds none. */
     fun isOn(surface: CharacterSurface): Boolean = paint == null || on === surface
@@ -32,7 +32,7 @@ class PosedSurface(val surface: CharacterSurface, val paint: SurfacePaint?, val 
     }
 }
 
-/** What a posed-surface node holds: the surface in its pose, or null for a character built as its parts' own meshes; [coarse] while dragged. */
+/** What a posed-surface node holds: the surface in its pose, or null for a character with no part in the field; [coarse] while dragged. */
 class HeldPosedSurface(val posed: PosedSurface?, val coarse: Boolean = false)
 
 /** What the paint reads: the surface, or one holder's shapes. */

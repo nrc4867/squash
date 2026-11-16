@@ -57,9 +57,6 @@ class LookArgs(args: Array<String>) {
         Triple(part, name, value.toFloat())
     }.orEmpty()
 
-    /** With `surface=parts`, each example is built as its parts' own meshes even where its commands build it as one surface. */
-    val asParts: Boolean = values["surface"] == "parts"
-
     /** Whether measure prints every part's origin and box. */
     val parts: Boolean = values["parts"] == "true"
 

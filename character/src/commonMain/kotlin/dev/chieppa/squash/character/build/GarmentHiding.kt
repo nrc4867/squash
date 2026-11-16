@@ -81,29 +81,6 @@ internal fun PlacedPart.hiddenBy(hiders: List<Hider>): PlacedPart {
     return withShown(keptFaces(all, flags), record)
 }
 
-/** This part with the vertices [hidden] marks hidden wherever it goes, as well as what was hidden before; itself when it marks none. */
-internal fun PlacedPart.alwaysHiding(hidden: BooleanArray): PlacedPart {
-    if (hidden.none { it }) return this
-    val mesh = surface.mesh
-    val held = hiding
-    val fixed = BooleanArray(mesh.vertexCount) { (held?.fixed?.get(it) ?: false) || hidden[it] }
-    val flags = BooleanArray(mesh.vertexCount) { (held?.flags?.get(it) ?: false) || fixed[it] }
-    val all = held?.indices ?: mesh.indices
-    return withShown(keptFaces(all, flags), Hiding(all, fixed, held?.inside.orEmpty(), held?.whole.orEmpty(), flags))
-}
-
-/**
- * This part with the vertices in [freed] no longer always hidden and those [under] marks always hidden: a strip's foot that slid in a
- * pose. What garments hide of the freed vertices is decided again by [hiddenAgain].
- */
-internal fun PlacedPart.refixed(freed: Set<Int>, under: BooleanArray): PlacedPart {
-    val held = hiding ?: return alwaysHiding(under)
-    val fixed = BooleanArray(held.fixed.size) { (held.fixed[it] && it !in freed) || under[it] }
-    if (fixed.contentEquals(held.fixed)) return this
-    val flags = BooleanArray(fixed.size) { fixed[it] || (held.flags[it] && !(held.fixed[it] && it in freed)) }
-    return withShown(keptFaces(held.indices, flags), Hiding(held.indices, fixed, held.inside, held.whole, flags))
-}
-
 /** Calls [visit] with each vertex of this part's mesh, its u and its v on its patch. */
 private inline fun PlacedPart.forEachVertex(visit: (vertex: Int, u: Float, v: Float) -> Unit) {
     var vertex = 0

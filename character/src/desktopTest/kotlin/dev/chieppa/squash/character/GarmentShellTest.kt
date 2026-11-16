@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.Dressing
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assembleNow
+import dev.chieppa.squash.character.build.branchOver
 import dev.chieppa.squash.character.build.dressedIn
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.Garment
@@ -52,8 +53,15 @@ class GarmentShellTest {
         assembleNow(placed, { PartData() }, plan, library)
     }
 
-    private fun dressed(vararg branches: GarmentBranch) =
-        body.dressedIn(Dressing(listOf(Garment(sweater, "Sweater", branches = branches.toList())), mapOf(legL to legR)))
+    /** The body with a sweater of [branches] built over it, each on its part and that part's twin. */
+    private fun dressed(vararg branches: GarmentBranch): AssembledCharacter {
+        val garment = Garment(sweater, "Sweater", branches = branches.toList())
+        val twins = mapOf(legL to legR)
+        val shells = branches.flatMap { branch ->
+            listOfNotNull(branch.part, twins[branch.part]).mapNotNull { id -> body.part(id)?.let { branchOver(garment, branch, it) } }
+        }
+        return AssembledCharacter(body.parts + shells, body.sockets)
+    }
 
     /** A rectangle from [from] to [to] along x and [half] either side of y = 0, as joined straight cubics. */
     private fun box(from: Float, to: Float, half: Float): OutlineCurve {
@@ -123,22 +131,5 @@ class GarmentShellTest {
     @Test
     fun nothingWornLeavesTheCharacterAsItIs() {
         assertTrue(body.dressedIn(Dressing()) === body)
-    }
-
-    @Test
-    fun theSkinUnderABranchIsHiddenAndItsGridKept() {
-        val character = dressed(GarmentBranch(torso, 0.3f, 0.9f, EASE))
-        val bare = assertNotNull(body.part(torso)).surface
-        val covered = assertNotNull(character.part(torso)).surface
-        assertEquals(bare.mesh.vertexCount, covered.mesh.vertexCount, "every vertex stays, so anchors still land")
-        assertTrue(covered.mesh.indices.size < bare.mesh.indices.size, "triangles under the sweater are left out")
-        val shell = assertNotNull(character.part(branchPartId(sweater, torso)))
-        val inside = dev.chieppa.squash.geom.ShellInside(shell.surface.patches.single(), { shell.origin + shell.surface.shown(it) })
-        val torsoOrigin = assertNotNull(character.part(torso)).origin
-        for (t in 0 until covered.mesh.indices.size / 3) {
-            val corners = (0 until 3).map { torsoOrigin + covered.mesh.position(covered.mesh.indices[t * 3 + it]) }
-            assertTrue(corners.any { !inside.covers(it) }, "triangle $t shows and lies where the sweater does not cover it")
-        }
-        assertTrue(assertNotNull(character.part(torso)).surface.patches === bare.patches)
     }
 }

@@ -39,39 +39,13 @@ class CreaseParents {
     internal fun of(parent: PlacedPart): List<PlacedGrid> = held.getOrPut(parent) { parent.sweptPatches().map { PlacedGrid(parent, it) } }
 }
 
-/**
- * Where [placed] comes out of its parent in [character], or null for a part that does not meet one. For a garment's branch or cuff,
- * the edges it inks instead: see [garmentEdges].
- */
+/** Where [placed] comes out of its parent in [character], or null for a part that does not meet one. */
 fun socketCrease(character: AssembledCharacter, placed: PlacedPart, parents: CreaseParents = CreaseParents()): SocketCrease? {
     val id = placed.id ?: return null
-    if (placed.covering != null) return garmentEdges(character, placed, parents)
-    character.stripJoining(id)?.let { (tube, strip) -> return if (placed.joinInked()) stripCrease(placed, tube, strip) else null }
     val parent = placed.socket?.parent?.let(character::part) ?: return null
     val runs = crossingRuns(placed, id, parents.of(parent))
     return if (runs.isEmpty()) null else SocketCrease(id, runs)
 }
-
-/**
- * The line round [placed]'s join with its parent, which [strip] on [tube] makes: the ring the strip meets when [placed] is the tube,
- * else the strip's foot on [placed]. Null when the strip's patch is gone.
- */
-private fun stripCrease(placed: PlacedPart, tube: PlacedPart, strip: StripJoin): SocketCrease? {
-    val id = requireNotNull(placed.id)
-    val run = if (tube === placed) {
-        val patch = placed.surface.patches.firstOrNull { it.name == strip.tube } ?: return null
-        val u = patch.ringUs[strip.ring]
-        (0 until patch.nv).map { j -> resolvedOn(placed, id, patch, u, j.toFloat() / patch.segments) }
-    } else {
-        val patch = placed.surface.patches.firstOrNull { it.name == strip.hostPatch } ?: return null
-        strip.foot.map { resolvedOn(placed, id, patch, it.u, it.v) }
-    }
-    if (run.isEmpty()) return null
-    return SocketCrease(id, listOf(run + run.first()))
-}
-
-private fun resolvedOn(placed: PlacedPart, id: PartId, patch: Patch, u: Float, v: Float): ResolvedPoint =
-    ResolvedPoint(Anchor(id, patch.name, u, v), placed.origin + placed.surface.shown(patch.positionAt(u, v)), placed.surface.shown(patch.surfaceAt(u, v).normal))
 
 /** The runs on [placed], part [id], where its surface crosses out of the surface [within] holds. */
 internal fun crossingRuns(placed: PlacedPart, id: PartId, within: List<PlacedGrid>): List<List<ResolvedPoint>> {

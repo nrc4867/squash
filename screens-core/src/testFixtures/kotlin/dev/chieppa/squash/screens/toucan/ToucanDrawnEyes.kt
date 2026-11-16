@@ -6,14 +6,13 @@ import dev.chieppa.squash.character.face.newEyesCommand
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
-import dev.chieppa.squash.screens.fennec.asParts
 
 /**
- * The toucan built as its parts' own meshes with drawn eyes: Add eyes' two starter eyes about the bird head's side eye landmark, one on
- * each side, for what only side-set drawn eyes show.
+ * The toucan with drawn eyes: Add eyes' two starter eyes about the bird head's side eye landmark, one on each side, for what only
+ * side-set drawn eyes show.
  */
 fun toucanDrawnEyesDocument(): SquashDocument {
-    val parts = toucanDocument().asParts()
+    val parts = toucanDocument()
     val head = checkNotNull(TemplateFolder.shipped().template(TemplateId("head-bird")))
     val eyes = checkNotNull(newEyesCommand(parts.character, HEAD, eyeLandmark(head)))
     return eyes.apply(parts).document

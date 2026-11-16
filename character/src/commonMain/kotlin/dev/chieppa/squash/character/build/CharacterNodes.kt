@@ -46,7 +46,7 @@ fun plannedData(spread: Float): PartData = if (spread == 0f) PartData() else Par
 /** The surface of an [unplaced] part that resolves to [data], built at [lengthFactor] of its length, on a socket unless it is a root. */
 fun surfaceOf(unplaced: PartTemplate, data: PartData, mirrored: Boolean, checkCancelled: () -> Unit = {}, lengthFactor: Float = 1f, onSocket: Boolean = true): PartSurface {
     val template = unplaced.asBuilt(data.params, onSocket)
-    val patches = PartBuilder.blended(template, data, checkCancelled, lengthFactor)
+    val patches = PartBuilder.build(template, data, checkCancelled, lengthFactor)
     return PartSurface.of(PartBuilder.mesh("", template, patches, checkCancelled), PartBuilder.axes(template), mirrored, checkCancelled)
 }
 
@@ -141,5 +141,5 @@ fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: Bod
         surfaceOf(templates[ref], plannedData(plan?.spreadFor(ref.id) ?: 0f), mirrored, lengthFactor = lengths.ofPlanned(ref))
     }
     val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
-    return assemble(parts, surfaces, plan, templates, ::default, lengths).withSocketFillets().withSocketStrips()
+    return assemble(parts, surfaces, plan, templates, ::default, lengths)
 }

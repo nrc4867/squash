@@ -35,15 +35,14 @@ class SurfaceDress(
     }
 }
 
-/** What the garments node holds: the garments a one surface wears, innermost first, or null for a character built as its parts' own meshes. */
+/** What the garments node holds: the garments the one surface wears, innermost first, or null for a character with no part in the field. */
 class HeldGarments(val garments: List<SurfaceGarment>?)
 
-/** What the dress node holds: the one surface's dress, or null for a character built as its parts' own meshes. */
+/** What the dress node holds: the one surface's dress, or null for a character with no part in the field. */
 class HeldDress(val dress: SurfaceDress?)
 
-/** What a one-surface [character] wears: its shown outfit's garments, innermost first, each with what it covers; none when it is not one surface. */
-fun surfaceCovers(character: Character): List<GarmentCover> =
-    if (character.oneSurface) character.wardrobe.worn.sortedBy { it.layer }.map { GarmentCover.of(it, character) } else emptyList()
+/** What [character] wears: its shown outfit's garments, innermost first, each with what it covers. */
+fun surfaceCovers(character: Character): List<GarmentCover> = character.wardrobe.worn.sortedBy { it.layer }.map { GarmentCover.of(it, character) }
 
 /**
  * Each garment of [covers] grown from the body [meshed] meshes, built by a [GarmentBuilder] the node keeps, each batch of its work run in

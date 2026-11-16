@@ -38,14 +38,13 @@ fun posedFur(
     workMoved: (PartId) -> Boolean,
     checkCancelled: () -> Unit = {},
 ): BodyFur {
-    val worn by lazy { body.garmentCovers() }
     val parts = rest.parts.mapValues { (id, fur) ->
         val input = inputs[id]?.takeIf { id in carried || workMoved(id) }
         val held = work.parts[id]
         checkCancelled()
         when {
-            input != null && held != null -> fur.rootedOn(id, input, held, body, worn)
-            id in moved && (fur.covered.isNotEmpty() || fur.roots.isNotEmpty()) -> fur.coveredAgain(worn)
+            input != null && held != null -> fur.rootedOn(id, input, held, body)
+            id in moved && (fur.covered.isNotEmpty() || fur.roots.isNotEmpty()) -> fur.coveredAgain()
             else -> fur
         }
     }

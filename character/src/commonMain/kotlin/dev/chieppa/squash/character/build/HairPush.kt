@@ -138,9 +138,8 @@ private fun easeAt(branches: List<GarmentBranch>, u: Float): Float {
     return ease
 }
 
-/** What [character] wears grown from its body, by part, on both sides of a pair; nothing on a character built as parts, whose garments are placed parts. */
+/** What [character] wears grown from its body, by part, on both sides of a pair. */
 fun wornOver(character: Character): WornOver {
-    if (!character.oneSurface) return emptyMap()
     val out = HashMap<PartId, MutableList<GarmentBranch>>()
     for (garment in character.worn) for ((part, branch) in GarmentCover.of(garment, character).branches) out.getOrPut(part) { ArrayList() } += branch
     return out

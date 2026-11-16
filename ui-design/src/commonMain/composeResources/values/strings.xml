@@ -124,7 +124,6 @@
     <string name="shell_step_outlines">%1$s outlines</string>
     <string name="shell_step_parameter">%1$s %2$s</string>
     <string name="shell_step_blend">Join blend %1$s</string>
-    <string name="shell_step_one_surface">One surface</string>
     <string name="shell_step_painted_eye">Painted eye</string>
 
     <string name="shell_save_failed">Couldn\'t save: %1$s</string>

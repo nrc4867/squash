@@ -4,14 +4,6 @@ import dev.chieppa.stretch.core.Applied
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Builds the character's body as one surface when [on], and as each part's own mesh when not. */
-@Serializable
-@SerialName("setOneSurface")
-data class SetOneSurface(val on: Boolean) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> =
-        Applied(document.copy(character = document.character.copy(oneSurface = on)), SetOneSurface(document.character.oneSurface))
-}
-
 /**
  * Sets the [blend] of the join at [part]'s socket, and at the other side's of its pair, which shares it: the radius of the smooth union
  * where the part meets its parent on a character built as one surface. Null takes the part's default.

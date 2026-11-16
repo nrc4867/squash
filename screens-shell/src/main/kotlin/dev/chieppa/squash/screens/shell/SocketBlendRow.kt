@@ -33,14 +33,13 @@ private const val BLEND_MAX = 0.2f
 private val BLEND_READOUT_WIDTH = 52.dp
 
 /**
- * The blend of the smooth union at [part]'s socket, on a character built as one surface, for a part in its field: the value the join
- * uses, its own or the default, and a slider that sets it on the part and its pair, one drag one undo step. Nothing for a part outside the
- * field, with no socket, or on a character built from its parts.
+ * The blend of the smooth union at [part]'s socket, for a part in the one surface's field: the value the join uses, its own or the
+ * default, and a slider that sets it on the part and its pair, one drag one undo step. Nothing for a part outside the field or with no
+ * socket.
  */
 @Composable
 internal fun SocketBlendRow(session: CharacterSession, part: PartInstance, template: PartTemplate) {
-    val document by session.document.collectAsState()
-    if (!document.character.oneSurface || template.surface != SurfaceMethod.FIELD || part.socket == null) return
+    if (template.surface != SurfaceMethod.FIELD || part.socket == null) return
     val held by session.characterSurface.output.collectAsState()
     val field = held?.surface?.field
     val first = field?.runs?.indexOfFirst { it.first && it.partId == part.id }?.takeIf { it >= 0 }

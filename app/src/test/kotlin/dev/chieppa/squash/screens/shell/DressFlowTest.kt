@@ -30,10 +30,6 @@ import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.PickGarment
 import dev.chieppa.squash.document.SetBodyPartChange
 import dev.chieppa.squash.document.SetEdgeInk
-import dev.chieppa.squash.document.SetLooseEnd
-import dev.chieppa.squash.screens.dress.DressHit
-import dev.chieppa.squash.screens.dress.LooseEndTool
-import dev.chieppa.squash.screens.fennec.SCARF_END
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
@@ -44,14 +40,12 @@ import dev.chieppa.squash.screens.fennec.CAP
 import dev.chieppa.squash.screens.fennec.BOOTS
 import dev.chieppa.squash.screens.library.LibraryTab
 import dev.chieppa.squash.screens.fennec.EAR_L
-import dev.chieppa.squash.screens.fennec.FEET_SLOT
 import dev.chieppa.squash.screens.fennec.HOODED
 import dev.chieppa.squash.screens.fennec.SCARF
 import dev.chieppa.squash.screens.fennec.SWEATER
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.WINTER
 import dev.chieppa.squash.screens.fennec.savedFennecDressed
-import dev.chieppa.squash.screens.fennec.asParts
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
@@ -81,9 +75,9 @@ class DressFlowTest {
 
     private val work = TestWork()
 
-    private fun ComposeUiTest.dressedOpen(asParts: Boolean = false): AppState {
+    private fun ComposeUiTest.dressedOpen(): AppState {
         val state = AppState(TemplateFolder.shipped(), work)
-        state.open(if (asParts) savedFennecDressed().asParts() else savedFennecDressed())
+        state.open(savedFennecDressed())
         state.screen.value = Screen.WORKSPACE
         setStretchContent { SquashApp(state, NoDressFiles) }
         settle(work, state)
@@ -179,32 +173,6 @@ class DressFlowTest {
         assertIs<BodyPartChange.Through>(change.change)
         onNodeWithTag(DressTags.cuff(EAR_L)).assertExists()
         onNodeWithTag(DressTags.cuffSize(EAR_L)).assertExists()
-    }
-
-    @Test
-    fun theLooseEndToolHangsAnEndFromAGarmentAndItsSectionSetsFollowThrough() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
-        val state = dressedOpen(asParts = true)
-        val session = assertNotNull(state.session.value)
-        key(Key.L)
-        assertEquals(BuildTool.LOOSE_END, state.tool.value)
-        onNodeWithTag(DressTags.looseEnd(SCARF_END)).assertExists()
-        onNodeWithTag(DressTags.follow(SCARF_END)).performScrollTo().performClick()
-        waitForIdle()
-        val followed = assertIs<SetLooseEnd>(session.history.steps.value.done.last())
-        assertEquals(false, followed.end.followThrough)
-        assertEquals(SCARF_END, followed.end.id)
-        state.undo()
-
-        val covering = assertNotNull(session.assembly.output.value?.parts?.firstNotNullOfOrNull { it.covering?.takeIf { c -> c.garment == SWEATER && c.part == TORSO } })
-        state.dress.looseBones.value = 3
-        LooseEndTool(state).pressed(DressHit.OnGarment(covering, 0.75f))
-        waitForIdle()
-        val hung = assertIs<SetLooseEnd>(session.history.steps.value.done.last())
-        assertEquals(SWEATER, hung.garment)
-        assertEquals(3, hung.end.bones)
-        assertEquals(0.75f, hung.end.v)
-        assertEquals(SWEATER, state.dress.garment.value, "the press picks the garment")
-        onNodeWithTag(DressTags.looseEnd(hung.end.id)).assertExists()
     }
 
     @Test

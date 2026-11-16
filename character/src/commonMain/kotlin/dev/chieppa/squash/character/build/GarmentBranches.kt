@@ -84,7 +84,7 @@ internal fun PlacedPart.inking(ink: GarmentInk): PlacedPart {
 
 /** This branch or cuff with [covering] in place of its own. */
 internal fun PlacedPart.covered(covering: Covering): PlacedPart =
-    PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, strips)
+    PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding)
 
 /** [garment]'s [branch] built over [covered], or null when the part has no swept patch to build it on. */
 internal fun branchOver(garment: Garment, branch: GarmentBranch, covered: PlacedPart): PlacedPart? {

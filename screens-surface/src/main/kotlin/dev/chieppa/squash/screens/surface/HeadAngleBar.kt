@@ -45,7 +45,7 @@ fun HeadAngleBar(state: AppState, toViewer: Vec3, turn: (Vec3) -> Unit) {
     val open by state.session.collectAsState()
     val assembled = open?.assembly?.output?.collectAsState()?.value
     val picked = state.face.group ?: return
-    val painted = open?.document?.collectAsState()?.value?.character?.let(state::paintsEyes) == true
+    val painted = open?.document?.collectAsState()?.value != null && state.paintsEyes()
     val head = assembled?.part(picked.part) ?: return
     val angle = headAngle(head, toViewer)
     val forward = PartBuilder.axes(head.template).along

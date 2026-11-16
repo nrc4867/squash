@@ -5,7 +5,6 @@ import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.screens.shell.SquashFormat
@@ -27,9 +26,6 @@ fun fennecDocument(): SquashDocument = fennecCommands().fold(EMPTY_FENNEC) { doc
 
 /** The fennec built as one surface, as its commands build it. */
 fun fennecOneSurfaceDocument(): SquashDocument = fennecDocument()
-
-/** [this] built as its parts' own meshes rather than as one surface, for what only a character built that way shows. */
-fun SquashDocument.asParts(): SquashDocument = SetOneSurface(false).apply(this).document
 
 /** [document] as the example file holds it: what File, Save writes. */
 fun fennecText(document: SquashDocument): String = SquashFormat().plainText(document) + "\n"

@@ -105,7 +105,7 @@ class SurfaceWorkGraphTest {
 
     @Test
     fun aParentsRedrawMovesAChildsBodyPositionsAndNotItsOwn() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
         session.send(SetMark(leftLeg.id, mark.id, mark))
         session.settle()
         val own = session.surfaceWork(leftLeg.id).output.value
@@ -116,9 +116,9 @@ class SurfaceWorkGraphTest {
 
         assertSame(own, session.surfaceWork(leftLeg.id).output.value)
         val after = assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(leftLeg.id)).marks.single().points
-        val origin = assertNotNull(session.assembly.output.value?.part(leftLeg.id)).origin
         assertNotEquals(before.map { it.position }, after.map { it.position })
-        assertEquals(own?.marks?.single()?.points?.map { it.position + origin }, after.map { it.position })
+        val surface = assertNotNull(session.characterSurface.output.value?.surface)
+        after.forEach { assertEquals(0f, surface.field.field.value(it.position), surface.field.cell * 0.01f, "${it.anchor} lands on the surface") }
     }
 
     @Test

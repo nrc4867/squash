@@ -1,6 +1,7 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.build.JoinParams
+import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddMarks
@@ -21,6 +22,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -43,7 +45,7 @@ class PosedSurfaceTest {
     private val kneeBent = Pose(listOf(BonePose(leg, "knee", 70f)))
 
     private fun TestScope.posedSession(): Pair<CharacterSession, SessionPose> {
-        val session = CharacterSession(savedFennecAsParts(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
+        val session = CharacterSession(savedFennec(), shippedLibrary, backgroundScope, StandardTestDispatcher(testScheduler))
         val pose = SessionPose(session)
         listOf(leg, PartId("back-paw-l")).forEach { session.send(SetParameter(it, JoinParams.INK, 1f)) }
         runCurrent()
@@ -103,10 +105,14 @@ class PosedSurfaceTest {
         val rest = checkNotNull(session.bodyLines.output.value)
         session.pose(kneeBent, this)
         val lines = checkNotNull(session.posedLines.output.value)
-        assertSame(rest.parts[torso], lines.parts[torso])
         val bent = lines.parts.getValue(leg)
         val surface = surfaceOf(posed, bent.part)
         val toViewer = { _: Vec3 -> Vec3(0f, 0f, -1f) }
+        fun torsoContour(of: BodyLines) = of.parts.getValue(torso).grids.flatMap { grid -> grid.contours(toViewer).flatMap { run -> run.points.map { it.position } } }
+        val restTorso = torsoContour(rest)
+        val posedTorso = torsoContour(lines)
+        assertEquals(restTorso.size, posedTorso.size, "The torso's contour keeps its points")
+        restTorso.zip(posedTorso).forEach { (a, b) -> assertTrue((a - b).length < STILL, "The torso's contour stays where it rests") }
         val contour = bent.grids.flatMap { grid -> grid.contours(toViewer).flatMap { run -> run.points.map { it.position } } }
         assertTrue(contour.isNotEmpty())
         assertOn(contour, surface, "A contour point")
@@ -140,7 +146,10 @@ class PosedSurfaceTest {
         val points = work.parts.getValue(leg).marks.first { it.id == stroke }.points
         assertOn(points.map { it.position }, surfaceOf(posed, checkNotNull(session.posedBody.output.value?.part(leg))), "A stroke point")
         assertTrue(points.zip(rest).any { (a, b) -> (a.position - b.position).length > MOVED }, "The stroke stays where it rests")
-        assertSame(checkNotNull(session.bodySurfaceWork.output.value).parts[torso], work.parts[torso])
+        val restTorso = checkNotNull(session.bodySurfaceWork.output.value).parts.getValue(torso).marks.flatMap { it.points }
+        val posedTorso = work.parts.getValue(torso).marks.flatMap { it.points }
+        val drift = restTorso.zip(posedTorso).maxOf { (a, b) -> (a.position - b.position).length }
+        assertTrue(drift < STILL, "The torso's marks stay where they rest, moved $drift")
     }
 
     @Test

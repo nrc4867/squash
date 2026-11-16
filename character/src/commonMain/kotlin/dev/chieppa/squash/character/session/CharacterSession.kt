@@ -38,7 +38,6 @@ import dev.chieppa.squash.character.build.partColorInputs
 import dev.chieppa.squash.character.build.partColorNode
 import dev.chieppa.squash.character.build.partShapesNode
 import dev.chieppa.squash.character.build.HeldShapes
-import dev.chieppa.squash.character.build.partBlendNode
 import dev.chieppa.squash.character.build.partMeshNode
 import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
@@ -51,13 +50,10 @@ import dev.chieppa.squash.character.build.posedStateNode
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.skeletonRowNode
 import dev.chieppa.squash.character.build.sliceRowNode
-import dev.chieppa.squash.character.build.socketFilletNode
-import dev.chieppa.squash.character.build.socketStripNode
 import dev.chieppa.squash.character.build.dressedNode
 import dev.chieppa.squash.character.surface.HeldSurface
 import dev.chieppa.squash.character.surface.fieldWorkNode
 import dev.chieppa.squash.character.surface.HeldPaint
-import dev.chieppa.squash.character.build.Dressing
 import dev.chieppa.squash.character.build.dressingOf
 import dev.chieppa.squash.character.build.dressedColorNode
 import dev.chieppa.squash.character.build.garmentColors
@@ -111,7 +107,6 @@ class CharacterSession(
     private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
     private val meshes = mutableMapOf<PartId, Node<PartBuild, PartMesh>>()
-    private val blends = mutableMapOf<PartId, Node<PartBuild, PartBuild>>()
     private val surfaces = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val skeletons = mutableMapOf<PartId, Node<*, PartSurface>>()
     private val defaults = mutableMapOf<Pair<TemplateRef, Boolean>, Node<*, PartSurface>>()
@@ -129,25 +124,23 @@ class CharacterSession(
      * outfit wears. Made with the session, so [Graph.settled] covers every part from the start. Its `output` keeps the last character while a newer
      * run is pending, and `failure` holds why a part's build failed.
      */
-    val placed: Node<*, AssembledCharacter> = graph.socketFilletNode(
-        graph.assemblyNode(
-            document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
-            templates,
-            ::surface,
-            ::defaultSurface,
-            ::skeleton,
-        ),
+    val placed: Node<*, AssembledCharacter> = graph.assemblyNode(
+        document.map { AssemblyShape(assemblyParts(it.character), templates.plan(it.character.bodyPlan), lengths.of(it.character)) }.distinctUntilChanged(),
+        templates,
+        ::surface,
+        ::defaultSurface,
+        ::skeleton,
     )
 
     val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
-        graph.socketStripNode(placed, document.map { !it.character.oneSurface }.distinctUntilChanged()),
-        combine(document.map { dressingOf(it.character).let { dressing -> if (it.character.oneSurface) dressing.copy(endsOnly = true) else dressing } }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
+        placed,
+        combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
     )
 
     /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
     val oneSurface = SessionSurface(graph, history, placed, ::heldShapes, reads)
 
-    /** The character's body as one surface while the document says so; null otherwise. */
+    /** The character's body as one surface; null for a character with no part in the field. */
     val characterSurface: Node<*, HeldSurface> get() = oneSurface.surface
 
     /** What is painted on [characterSurface]; null without one. */
@@ -247,10 +240,7 @@ class CharacterSession(
      * session's life. Its `output` keeps the last mesh while a newer run is pending or cancelled, and `failure` holds why
      * the latest build failed. A part not in the document has an empty mesh.
      */
-    fun mesh(part: PartId): Node<PartBuild, PartMesh> = meshes.getOrPut(part) { graph.partMeshNode(blended(part), part) }
-
-    /** The node filleting [part]'s crossings when its template asks, following [patches]; one per part for the session's life. */
-    fun blended(part: PartId): Node<PartBuild, PartBuild> = blends.getOrPut(part) { graph.partBlendNode(patches(part)) }
+    fun mesh(part: PartId): Node<PartBuild, PartMesh> = meshes.getOrPut(part) { graph.partMeshNode(patches(part), part) }
 
     /** What [part] shows on its side, derived from its mesh; one per part for the session's life, following its side. */
     fun surface(part: PartId): Node<*, PartSurface> = surfaces.getOrPut(part) {

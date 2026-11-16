@@ -17,6 +17,3 @@ internal fun coverOf(branch: PlacedPart): GarmentCover = when (val hider = hider
     is Hider.Over -> GarmentCover { part, u, v, _ -> part == hider.part && hider.covers(u, v) }
     null -> GarmentCover { _, _, _, _ -> false }
 }
-
-/** What every garment branch and cuff this character wears covers of the body. */
-fun AssembledCharacter.garmentCovers(): List<GarmentCover> = parts.filter { part -> part.covering != null }.map(::coverOf)

@@ -4,7 +4,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
-import dev.chieppa.squash.character.build.withHangingPushed
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Pose
@@ -87,22 +86,12 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
             propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
             legOutsideSkirt(body).takeIf { it.isNotEmpty() }?.let {
                 println("$name, $pose: leg volume outside the skirt ${it.format()}, skirt vertices inside a leg ${skirtInsideLegs(body)}")
-                println("$name, $pose: hanging branches pushed in %.2f ms".format(pushTime(body)))
                 armInsideSkirt(body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: arm and hand vertices inside the skirt $it") }
             }
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
     }
 }
-
-/** How long pushing [body]'s hanging branches out of what hangs inside them takes, the median of [TIMED_RUNS] runs once warm, in ms. */
-private fun pushTime(body: AssembledCharacter): Double {
-    repeat(TIMED_RUNS) { body.withHangingPushed() }
-    val runs = List(TIMED_RUNS) { measureTime { body.withHangingPushed() }.inWholeMicroseconds / 1000.0 }
-    return runs.sorted()[TIMED_RUNS / 2]
-}
-
-private const val TIMED_RUNS = 21
 
 /**
  * The one surface's checks, and its build timed whole and after the head, a front leg and the torso are each made 2% larger and back;

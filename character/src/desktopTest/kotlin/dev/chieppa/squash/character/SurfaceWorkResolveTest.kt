@@ -150,12 +150,11 @@ class SurfaceWorkResolveTest {
 
     @Test
     fun aBorderAcrossASocketLandsOnEachPartItNamesInBodySpace() = runTest {
-        val session = surfaceSession(torsoPart, leftLeg, rightLeg, asParts = true)
+        val session = surfaceSession(torsoPart, leftLeg, rightLeg)
         val border = listOf(on(leftLeg, 0.2f, 0.2f), on(leftLeg, 0.2f, 0.7f), on(torsoPart, 0.8f, 0.25f))
         session.send(SetRegion(leftLeg.id, RegionId("sock"), Region(RegionId("sock"), border, fur)))
         session.settle()
 
-        val assembled = assertNotNull(session.assembly.output.value)
         val body = assertNotNull(session.bodySurfaceWork.output.value)
         val left = assertNotNull(body.parts[leftLeg.id]).regions.single().border
         val right = assertNotNull(body.parts[rightLeg.id]).regions.single().border
@@ -163,10 +162,8 @@ class SurfaceWorkResolveTest {
         assertEquals(listOf(rightLeg.id, rightLeg.id, torsoPart.id), right.map { it.anchor.part })
         assertEquals(0.75f, right.last().anchor.v, "a part in the middle of the body reads 1 - v from the right")
 
-        val legOrigin = assertNotNull(assembled.part(leftLeg.id)).origin
-        val legPatch = session.builtSurface(leftLeg).body()
-        assertClose(legOrigin + legPatch.positionAt(0.2f, 0.2f), left[0].position, 1e-5f)
-        assertClose(session.builtSurface(torsoPart).body().positionAt(0.8f, 0.25f), left[2].position, 1e-5f)
+        val surface = assertNotNull(session.characterSurface.output.value?.surface)
+        (left + right).forEach { assertEquals(0f, surface.field.field.value(it.position), surface.field.cell * 0.01f, "${it.anchor} lands on the surface") }
         left.zip(right).forEach { (l, r) ->
             assertClose(l.position.mirrored, r.position)
             assertClose(l.normal.mirrored, r.normal)

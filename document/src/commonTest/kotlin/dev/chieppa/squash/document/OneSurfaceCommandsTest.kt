@@ -9,7 +9,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The one-surface switch, a socket's blend and a painted eye: each a step that undoes, the blend shared by a pair, and neither written while unset. */
+/** A socket's blend and a painted eye: each a step that undoes, the blend shared by a pair, and the blend not written while unset. */
 class OneSurfaceCommandsTest {
     private val tube = TemplateRef(TemplateId("tube"), 1)
     private val body = PartInstance(PartId("body"), tube)
@@ -19,16 +19,6 @@ class OneSurfaceCommandsTest {
     private val right = PartInstance(PartId("leg-r"), tube, socket, side = Side.RIGHT, pair = pair)
     private val placed = AddParts(listOf(body, left, right))
         .apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("blank"), 1)))).document
-
-    @Test
-    fun theSwitchTurnsOffAndUndoes() {
-        scenario(placed) {
-            run(SetOneSurface(false))
-            expect { assertFalse(it.character.oneSurface) }
-            undo()
-            expect(placed)
-        }
-    }
 
     @Test
     fun aPaintedEyeIsSetChangedAndRemovedEachAStepThatUndoes() {
@@ -71,11 +61,11 @@ class OneSurfaceCommandsTest {
     }
 
     @Test
-    fun bothSurviveASaveAndNeitherIsWrittenUnset() {
-        val set = SetOneSurface(true).apply(SetSocketBlend(left.id, BLEND).apply(placed).document).document
+    fun aBlendSurvivesASaveAndIsNotWrittenUnset() {
+        val set = SetSocketBlend(left.id, BLEND).apply(placed).document
         assertEquals(set, readDocument(Json.encodeToString(SquashDocument.serializer(), set)))
         val plain = Json.encodeToString(SquashDocument.serializer(), placed)
-        assertFalse("\"blend\"" in plain || "\"oneSurface\"" in plain, "a character without them writes neither")
+        assertFalse("\"blend\"" in plain, "a character without one writes none")
     }
 
     private companion object {
