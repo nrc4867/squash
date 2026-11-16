@@ -38,7 +38,11 @@ import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
 import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import dev.chieppa.squash.screens.surface.FaceBand
-import dev.chieppa.squash.screens.dress.rememberCoverTool
+import dev.chieppa.squash.screens.dress.rememberEdgeEditTool
+import dev.chieppa.squash.screens.dress.rememberEdgeEraseTool
+import dev.chieppa.squash.screens.dress.rememberEdgeSmoothTool
+import dev.chieppa.squash.screens.dress.rememberEdgeTool
+import dev.chieppa.squash.screens.dress.rememberHoleTool
 import dev.chieppa.squash.screens.dress.rememberGarmentSelectTool
 import dev.chieppa.squash.screens.dress.rememberLooseEndTool
 import dev.chieppa.squash.document.SeamBrush
@@ -104,7 +108,11 @@ fun WorkspaceScreen(shell: Shell) {
     val smoothWeight = rememberSeamStrokeTool(state, SeamBrush.SMOOTH)
     val poseTools = rememberPoseTools(state)
     val garmentSelect = rememberGarmentSelectTool(state)
-    val cover = rememberCoverTool(state)
+    val edge = rememberEdgeTool(state)
+    val hole = rememberHoleTool(state)
+    val edgeEdit = rememberEdgeEditTool(state)
+    val edgeErase = rememberEdgeEraseTool(state)
+    val edgeSmooth = rememberEdgeSmoothTool(state)
     val looseEnd = rememberLooseEndTool(state)
     val stage by state.stage.collectAsState()
     val armedTool: PaneTool = poseTools.of(armed) ?: when (armed) {
@@ -133,11 +141,11 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
-        BuildTool.COVER -> cover
-        BuildTool.DRAW_GARMENT -> draw
-        BuildTool.EDIT_GARMENT -> edit
-        BuildTool.ERASE_GARMENT -> erase
-        BuildTool.SMOOTH_GARMENT -> smooth
+        BuildTool.EDGE -> edge
+        BuildTool.HOLE -> hole
+        BuildTool.EDIT_GARMENT -> edgeEdit
+        BuildTool.ERASE_GARMENT -> edgeErase
+        BuildTool.SMOOTH_GARMENT -> edgeSmooth
         BuildTool.LOOSE_END -> looseEnd
         BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> if (stage == Stage.DRESS) garmentSelect else selectPart
     }

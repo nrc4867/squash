@@ -20,7 +20,7 @@ import dev.chieppa.squash.document.PickGarment
 import dev.chieppa.squash.document.RenameGarment
 import dev.chieppa.squash.document.RenameOutfit
 import dev.chieppa.squash.document.Role
-import dev.chieppa.squash.document.SetEdgeInk
+import dev.chieppa.squash.document.SetHemInk
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.Together
@@ -136,10 +136,10 @@ class WardrobeThumbnailsTest {
     fun anEditToOneGarmentRendersOnlyItAndTheOutfitsWearingIt() {
         val session = dressed()
         work.settle(session)
-        session.send(SetEdgeInk(HAT, hem = false, cuffs = true))
+        session.send(SetHemInk(HAT, false))
         work.settle(session)
         assertEquals(listOf(null, HAT), artist.scenes.drop(5).map { it.around }, "Winter, which wears the hat, and the hat; not the cap, the coat or Bare")
-        session.send(SetEdgeInk(CAP, hem = false, cuffs = true))
+        session.send(SetHemInk(CAP, false))
         work.settle(session)
         assertEquals(listOf(CAP), artist.scenes.drop(7).map { it.around }, "no outfit wears the cap")
     }
@@ -210,7 +210,7 @@ class WardrobeThumbnailsTest {
         val winter = assertNotNull(wardrobeScene(document, WardrobeShot.OfOutfit(WINTER)))
         assertEquals(listOf(HAT, COAT), winter.worn)
         assertEquals(cap.document, assertNotNull(wardrobeScene(RenameGarment(CAP, "Beret").apply(document).document, WardrobeShot.OfGarment(CAP))).document)
-        val hatEdited = SetEdgeInk(HAT, hem = false, cuffs = true).apply(document).document
+        val hatEdited = SetHemInk(HAT, false).apply(document).document
         assertEquals(cap, wardrobeScene(hatEdited, WardrobeShot.OfGarment(CAP)), "another garment's edit leaves it")
     }
 

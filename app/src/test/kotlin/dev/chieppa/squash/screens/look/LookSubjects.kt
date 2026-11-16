@@ -47,6 +47,19 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "woman-dressed" to ::womanDressedDocument,
     "woman-twin" to ::twinDocument,
     "woman-twin-dressed" to ::twinDressedDocument,
+    "fennec-boots-drawn" to ::fennecBootsDrawnDocument,
+    "woman-tee-drawn" to ::womanTeeDrawnDocument,
+    "woman-tee-band-drawn" to ::womanTeeBandDrawnDocument,
+    "fennec-sandals-drawn" to ::fennecSandalsDrawnDocument,
+    "fennec-top-hat-drawn" to ::fennecTopHatDrawnDocument,
+    "fennec-top-hat-ears-in" to ::fennecTopHatEarsInDocument,
+    "fennec-boots-first" to ::fennecBootsFirstDocument,
+    "woman-tee-hem" to { womanTeeStepDocument(1) },
+    "woman-tee-sleeve" to { womanTeeStepDocument(2) },
+    "woman-tee-pressed" to { womanTeeStepDocument(3) },
+    "fennec-sandals-loop" to { fennecSandalsStepDocument(1) },
+    "fennec-sandals-straps" to { fennecSandalsStepDocument(3) },
+    "fennec-sandals-sole-pressed" to { fennecSandalsStepDocument(4) },
 )
 
 /** The poses an example is looked at in besides rest, by name. */

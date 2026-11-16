@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.dress
 
-import dev.chieppa.squash.document.AddWornGarment
 import dev.chieppa.squash.document.DuplicateOutfit
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
@@ -16,9 +15,7 @@ import dev.chieppa.squash.document.SetGarmentSlot
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.library.Renaming
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.uidesign.generated.Res
-import dev.chieppa.squash.uidesign.generated.dress_garment_name
 import dev.chieppa.squash.uidesign.generated.dress_outfit_name
 import org.jetbrains.compose.resources.getString
 
@@ -48,18 +45,11 @@ fun AppState.showOutfit(outfit: OutfitId?) {
     if (open.document.value.character.wardrobe.shown != outfit) open.send(ShowOutfit(outfit))
 }
 
-/**
- * Makes a garment in [slot], wears it in the shown outfit there, in one step, then picks it, opens its name for typing and arms Cover.
- */
+/** Makes a garment in [slot], worn at once in a color of its own, picks it, opens its name for typing and arms Edge. */
 suspend fun AppState.newGarmentIn(slot: GarmentSlotId) {
-    val open = session.value ?: return
-    val wardrobe = open.document.value.character.wardrobe
-    val garment = newGarmentIn(wardrobe) { getString(Res.string.dress_garment_name, it) }.copy(slot = slot)
-    open.send(AddWornGarment(garment, wardrobe.shown))
-    dress.garment.value = garment.id
-    library.garmentCursor.value = garment.id
-    library.renaming.value = Renaming.OfGarment(garment.id, new = true)
-    tool.value = BuildTool.COVER
+    val garment = newGarment(slot) ?: return
+    library.garmentCursor.value = garment
+    library.renaming.value = Renaming.OfGarment(garment, new = true)
 }
 
 /** Adds a copy of [outfit] with its picks after it and shows the copy, one step. */

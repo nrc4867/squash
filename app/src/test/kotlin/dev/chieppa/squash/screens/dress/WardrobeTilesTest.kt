@@ -115,21 +115,24 @@ class WardrobeTilesTest {
         key(DressTags.GARMENT_NAME, Key.Enter)
         assertEquals("Garment 1", state.wardrobe.garments.single().name, "Enter on an empty field keeps the automatic name")
         assertNull(state.library.renaming.value)
+        assertEquals(listOf("Slot 1"), state.wardrobe.slots.map { it.name }, "the first garment makes its slot")
+        assertEquals(listOf("Outfit 1"), state.wardrobe.outfits.map { it.name }, "and an outfit wearing it")
+        assertEquals(state.wardrobe.garments.single().id, state.wardrobe.worn.single().id)
 
         onNodeWithTag(DressTags.NEW_SLOT).performScrollTo().performClick()
         settle(work, state) { onAllNodesWithTag(DressTags.SLOT_NAME).fetchSemanticsNodes().isNotEmpty() }
         assertEquals("", typed(DressTags.SLOT_NAME))
-        placeholder(DressTags.SLOT_NAME, "Slot 1")
+        placeholder(DressTags.SLOT_NAME, "Slot 2")
         onNodeWithTag(DressTags.SLOT_NAME).performTextInput("Head")
         key(DressTags.SLOT_NAME, Key.Enter)
-        assertEquals("Head", state.wardrobe.slots.single().name)
+        assertEquals("Head", state.wardrobe.slots.last().name)
 
         onNodeWithTag(DressTags.NEW_OUTFIT, useUnmergedTree = true).performScrollTo().performClick()
         settle(work, state) { onAllNodesWithTag(DressTags.OUTFIT_NAME).fetchSemanticsNodes().isNotEmpty() }
         assertEquals("", typed(DressTags.OUTFIT_NAME))
         onNodeWithTag(DressTags.OUTFIT_NAME).performTextInput("Snow")
         key(DressTags.OUTFIT_NAME, Key.Escape)
-        assertEquals("Outfit 1", state.wardrobe.outfits.single().name, "Esc on a new outfit keeps its automatic name")
+        assertEquals("Outfit 2", state.wardrobe.outfits.last().name, "Esc on a new outfit keeps its automatic name")
         assertNull(state.library.renaming.value)
     }
 

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.woman
 
+import dev.chieppa.squash.screens.dress.fittedTo
 import dev.chieppa.squash.character.build.GenericParams
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddParts
@@ -53,7 +54,7 @@ fun wardrobeSlots(): List<DocumentCommand> = SLOTS.map { (id, name) -> AddGarmen
 /** The commands that put [color] in the palette as [slot]. */
 fun cloth(slot: SlotName, red: Float, green: Float, blue: Float): DocumentCommand = SetPaletteSlot(slot, SlotColor(red, green, blue))
 
-/** The commands that add a garment in [slot] at [layer], colored [color], covering each of [branches] and changing [changes]. */
+/** The commands that add a garment in [slot] at [layer], colored [color], covering each of [branches] fitted as they stand off, and changing [changes]. */
 fun garment(
     id: GarmentId,
     name: String,
@@ -63,9 +64,10 @@ fun garment(
     layer: Int = FIRST_LAYER,
     changes: Map<PartId, BodyPartChange> = emptyMap(),
 ): List<DocumentCommand> =
-    listOf(AddGarment(Garment(id, name, slot, layer = layer)), SetGarmentColor(id, color)) +
-        branches.map { CoverPart(id, it) } +
-        changes.map { (part, change) -> SetBodyPartChange(id, part, change) }
+    fittedTo(Garment(id, name, slot, layer = layer), branches).let { (fitted, covering) ->
+        listOf(AddGarment(fitted), SetGarmentColor(id, color)) + covering.map { CoverPart(id, it) } +
+            changes.map { (part, change) -> SetBodyPartChange(id, part, change) }
+    }
 
 /** A part [garment] owns, of the generic [template], on [socket]: built only while the garment is worn, riding the bone it sits on. */
 fun owned(garment: GarmentId, id: PartId, template: String, socket: SocketRef): DocumentCommand =

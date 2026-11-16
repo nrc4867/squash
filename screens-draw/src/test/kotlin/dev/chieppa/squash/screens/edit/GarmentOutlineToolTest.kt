@@ -59,7 +59,7 @@ class GarmentOutlineToolTest {
 
     @Test
     fun drawGarmentWritesTheBranchAndLeavesThePart() = runComposeUiTest {
-        val bench = dressed(BuildTool.DRAW_GARMENT, branchSide = null)
+        val bench = dressed(BuildTool.EDIT_GARMENT, branchSide = null)
         val part = bench.outline()
         showPane(DrawOutlineTool(bench.state, TEST_STROKE_LOOK, TEST_CURVE_LOOK), bench.camera())
         mouseDrag(loop(bench, cx = 0.6f))
@@ -81,7 +81,7 @@ class GarmentOutlineToolTest {
 
     @Test
     fun aDrawingInDressWithNoGarmentPickedDoesNothing() = runComposeUiTest {
-        val bench = dressed(BuildTool.DRAW_GARMENT, branchSide = null)
+        val bench = dressed(BuildTool.EDIT_GARMENT, branchSide = null)
         bench.state.dress.garment.value = null
         val steps = bench.steps()
         showPane(DrawOutlineTool(bench.state, TEST_STROKE_LOOK, TEST_CURVE_LOOK), bench.camera())
@@ -92,7 +92,7 @@ class GarmentOutlineToolTest {
 
     @Test
     fun whileRedrawingTheToolsWriteTheRedrawAndKeepItsOtherViews() = runComposeUiTest {
-        val bench = dressed(BuildTool.DRAW_GARMENT, branchSide = LEG_SIDE)
+        val bench = dressed(BuildTool.EDIT_GARMENT, branchSide = LEG_SIDE)
         val top = edges(0f to 0.3f, 1f to 0f, 0f to -0.3f)
         bench.session.send(SetBodyPartChange(SLEEVE, bench.id, BodyPartChange.Redraw(PartData(outlines = mapOf(View.TOP to top)))))
         bench.state.dress.redrawing.value = bench.id

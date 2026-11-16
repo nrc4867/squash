@@ -107,23 +107,23 @@ fun hotdog(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SAUSAGE_SKIN, SlotColor(0.80f, 0.32f, 0.22f)),
     SetPaletteSlot(BUN_CRUST, SlotColor(0.90f, 0.66f, 0.36f)),
     SetPaletteSlot(MUSTARD, SlotColor(0.98f, 0.82f, 0.12f)),
-    AddGarment(Garment(SAUSAGE, "Sausage", BODY_SLOT)),
+    AddGarment(Garment(SAUSAGE, "Sausage", BODY_SLOT, fit = SAUSAGE_EASE)),
     SetGarmentColor(SAUSAGE, SAUSAGE_SKIN),
     CoverPart(
         SAUSAGE,
         GarmentBranch(
-            CAT_TORSO, SAUSAGE_FROM, SAUSAGE_TO, ease = SAUSAGE_EASE,
+            CAT_TORSO, SAUSAGE_FROM, SAUSAGE_TO,
             outlines = mapOf(View.SIDE to SAUSAGE_SIDE, View.TOP to SAUSAGE_TOP, View.FRONT to ROUND),
             surface = SurfaceWork(paint = Paint(listOf(mustard()))),
         ),
     ),
     SetBodyPartChange(SAUSAGE, CAT_TAIL, BodyPartChange.Through(cuff = false)),
-    AddGarment(Garment(BUN, "Bun", OUTER_SLOT, layer = BUN_LAYER)),
+    AddGarment(Garment(BUN, "Bun", OUTER_SLOT, layer = BUN_LAYER, fit = BUN_EASE)),
     SetGarmentColor(BUN, BUN_CRUST),
     CoverPart(
         BUN,
         GarmentBranch(
-            CAT_TORSO, BUN_FROM, BUN_TO, ease = BUN_EASE,
+            CAT_TORSO, BUN_FROM, BUN_TO,
             outlines = mapOf(View.SIDE to BUN_SIDE, View.TOP to BUN_TOP, View.FRONT to BUN_FRONT),
             fromV = BUN_ROUND_FROM, toV = BUN_ROUND_TO,
         ),

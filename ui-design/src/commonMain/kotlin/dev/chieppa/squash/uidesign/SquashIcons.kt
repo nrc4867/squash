@@ -95,12 +95,6 @@ object SquashIcons {
             stroke("M3 4.5v7M5.5 4.5v7M8 4.5v7M10.5 4.5v7M13 4.5v7")
         }
     }
-    val Cover: ImageVector by lazy {
-        icon("cover") {
-            stroke("M2 8c0-4 12-4 12 0s-12 4-12 0z")
-            stroke("M5 4.6v6.8M8 4v8M11 4.6v6.8")
-        }
-    }
     val DeleteSocket: ImageVector by lazy {
         icon("delete-socket") {
             stroke("M3 4.5h10M6.5 4.5V3h3v1.5")
@@ -121,13 +115,6 @@ object SquashIcons {
             stroke("M12 3v10M10 5l2-2 2 2M10 11l2 2 2-2")
         }
     }
-    val DrawGarment: ImageVector by lazy {
-        icon("draw-garment") {
-            stroke("M5.5 2.5L1.75 5l1.5 3L5 7v6.5h6.5V10")
-            stroke("M5.5 2.5c.3 1.2 1.2 2 2.5 2")
-            stroke("M12.75 2l1.75 1.75L9.25 9l-2.5.5.5-2.5z")
-        }
-    }
     val DrawMark: ImageVector by lazy {
         icon("draw-mark") {
             stroke("M11.5 1.5l3 3-6.5 6.5-3.5.5.5-3.5z")
@@ -144,6 +131,13 @@ object SquashIcons {
         icon("draw-outline") {
             stroke("M10.5 2.5l3 3-8 8h-3v-3z")
             stroke("M9 4l3 3")
+        }
+    }
+    val Edge: ImageVector by lazy {
+        icon("edge") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            stroke("M2.7 9.4C4.3 10.7 6.1 11.3 8 11.3s3.7-.6 5.3-1.9")
+            fill("M12.2 9.4a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z")
         }
     }
     val EditCurves: ImageVector by lazy {
@@ -218,6 +212,20 @@ object SquashIcons {
             stroke("M8 1.5v13")
             stroke("M8 3C4.6 3 2.5 5.2 2.5 8s2.1 5 5.5 5")
             stroke("M11 3.6h.01M13.3 6.6h.01M13.3 9.4h.01M11 12.4h.01")
+        }
+    }
+    val Hole: ImageVector by lazy {
+        icon("hole") {
+            stroke("M5 2.5h6a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3z")
+            stroke("M6.1 8a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0 -3.8 0z")
+            stroke("M11.90 8.00A3.9 3.9 0 0 1 11.60 9.49")
+            stroke("M10.76 10.76A3.9 3.9 0 0 1 9.49 11.60")
+            stroke("M8.00 11.90A3.9 3.9 0 0 1 6.51 11.60")
+            stroke("M5.24 10.76A3.9 3.9 0 0 1 4.40 9.49")
+            stroke("M4.10 8.00A3.9 3.9 0 0 1 4.40 6.51")
+            stroke("M5.24 5.24A3.9 3.9 0 0 1 6.51 4.40")
+            stroke("M8.00 4.10A3.9 3.9 0 0 1 9.49 4.40")
+            stroke("M10.76 5.24A3.9 3.9 0 0 1 11.60 6.51")
         }
     }
     val Join: ImageVector by lazy {

@@ -65,7 +65,7 @@ private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledChara
             val covered = part(id)
             val separate = parts.any { it.socket?.parent == id && it.owner == null && it.template.surface == SurfaceMethod.SEPARATE }
             if (covered == null || !separate) return@flatMap emptyList()
-            val placed = branchOver(garment, branch.fittedOver(under, dressing.twins), covered) ?: return@flatMap emptyList()
+            val placed = branchOver(garment, branch.copy(ease = garment.easeOf(branch)).fittedOver(under, dressing.twins), covered) ?: return@flatMap emptyList()
             throughHoles(garment, placed, this, dressing.twins) {}.cuffs.mapNotNull { it.covering }
                 .filter { cuff -> part(cuff.part)?.template?.surface == SurfaceMethod.SEPARATE }
                 .map { cuff -> Hider.Over(cuff.part, -1f, cuff.to, 0f, 1f) }
@@ -80,7 +80,7 @@ private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledChara
         val under = dressing.worn.take(layer)
         val pieces = garment.looseEnds.map { it.branch }.distinct().mapNotNull { id ->
             val branch = garment.branch(id) ?: return@mapNotNull null
-            part(id)?.let { branchOver(garment, branch.fittedOver(under, dressing.twins), it) }
+            part(id)?.let { branchOver(garment, branch.copy(ease = garment.easeOf(branch)).fittedOver(under, dressing.twins), it) }
         }
         looseEnds(garment, pieces, this)
     }
@@ -94,7 +94,7 @@ private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledChara
 private fun GarmentBranch.fittedOver(under: List<Garment>, twins: Map<PartId, PartId>): GarmentBranch {
     val below = under.sumOf { garment ->
         garment.branches.filter { (it.part == part || twins[it.part] == part) && it.allRound && it.from < to && it.to > from }
-            .sumOf { it.ease.toDouble() }
+            .sumOf { garment.easeOf(it).toDouble() }
     }.toFloat()
     return if (below == 0f) this else copy(ease = ease + below)
 }

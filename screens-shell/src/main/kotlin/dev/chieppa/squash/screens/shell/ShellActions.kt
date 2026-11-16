@@ -35,11 +35,11 @@ object ShellActions {
     val STAGE_RIG = ActionId("stage-rig")
     val STAGE_DRESS = ActionId("stage-dress")
     val STAGE_POSE = ActionId("stage-pose")
-    val DRAW_GARMENT = ActionId(BuildTool.DRAW_GARMENT.actionId)
+    val EDGE = ActionId(BuildTool.EDGE.actionId)
+    val HOLE = ActionId(BuildTool.HOLE.actionId)
     val EDIT_GARMENT = ActionId(BuildTool.EDIT_GARMENT.actionId)
     val ERASE_GARMENT = ActionId(BuildTool.ERASE_GARMENT.actionId)
     val SMOOTH_GARMENT = ActionId(BuildTool.SMOOTH_GARMENT.actionId)
-    val COVER = ActionId(BuildTool.COVER.actionId)
     val LOOSE_END = ActionId(BuildTool.LOOSE_END.actionId)
     val NEW_GARMENT = ActionId("new-garment")
     val DRESS_HALF_OUTLINE = ActionId("dress-half-outline")
@@ -181,11 +181,11 @@ fun Shell.registerActions() {
     tool(BuildTool.ERASE_WEIGHT, "erase-weight", "X")
     tool(BuildTool.SMOOTH_WEIGHT, "smooth-weight", "S")
 
-    tool(BuildTool.DRAW_GARMENT, "draw-garment", "D")
+    tool(BuildTool.EDGE, "edge", "D")
+    tool(BuildTool.HOLE, "hole", "O")
     tool(BuildTool.EDIT_GARMENT, "edit-curves", "E")
     tool(BuildTool.ERASE_GARMENT, "erase", "X")
     tool(BuildTool.SMOOTH_GARMENT, "smooth", "S")
-    tool(BuildTool.COVER, "cover", "C")
     tool(BuildTool.LOOSE_END, "loose-end", "L")
     action(ShellActions.NEW_GARMENT, "new-garment", chord("N"), inWorkspace, Stage.DRESS.keyMode) { scope.launch { state.newGarment() } }
     action(ShellActions.DRESS_HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.DRESS.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }

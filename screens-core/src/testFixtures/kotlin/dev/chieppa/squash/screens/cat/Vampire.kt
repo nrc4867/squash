@@ -74,12 +74,12 @@ private fun fang(id: String, v: (Float) -> Float) = Mark(
 /** The vampire's cape with its collar, the tail through a slit in it, and fangs inked under the mouth by a garment that redraws only the head's surface. */
 fun vampire(): List<DocumentCommand> = listOf(
     SetPaletteSlot(CAPE_CLOTH, SlotColor(0.16f, 0.12f, 0.20f)),
-    AddGarment(Garment(CAPE, "Cape", OUTER_SLOT, layer = CAPE_LAYER)),
+    AddGarment(Garment(CAPE, "Cape", OUTER_SLOT, layer = CAPE_LAYER, fit = CAPE_EASE)),
     SetGarmentColor(CAPE, CAPE_CLOTH),
     CoverPart(
         CAPE,
         GarmentBranch(
-            CAT_TORSO, CAPE_FROM, CAPE_TO, ease = CAPE_EASE,
+            CAT_TORSO, CAPE_FROM, CAPE_TO,
             outlines = mapOf(View.SIDE to CAPE_SIDE, View.TOP to CAPE_TOP, View.FRONT to CAPE_FRONT),
             fromV = -CAPE_ROUND, toV = CAPE_ROUND,
         ),

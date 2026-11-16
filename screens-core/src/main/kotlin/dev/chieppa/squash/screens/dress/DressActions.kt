@@ -18,6 +18,12 @@ import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.Wardrobe
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.shell.BuildTool
+import dev.chieppa.squash.document.AddWornGarment
+import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.SNUG_FIT
+import dev.chieppa.squash.document.SetPaletteSlot
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.dress_garment_name
 import dev.chieppa.squash.uidesign.generated.dress_outfit_name
@@ -45,11 +51,35 @@ fun Character.newLooseEnd(garment: Garment, part: PartId, v: Float, bones: Int, 
     return SetLooseEnd(garment.id, LooseEnd(LooseEndId(id), branch.part, v, bones, fromHem))
 }
 
-/** A garment new to [wardrobe], named [name] with its number, in no slot and with nothing covered. */
+/** A garment new to [wardrobe], named [name] with its number, in no slot, with nothing covered and a snug fit. */
 inline fun newGarmentIn(wardrobe: Wardrobe, name: (Int) -> String): Garment {
     val (id, number) = freshNumbered(NEW_GARMENT, wardrobe.garments.map { it.id.value }.toSet())
-    return Garment(GarmentId(id), name(number))
+    return Garment(GarmentId(id), name(number), fit = SNUG_FIT)
 }
+
+/** The names the slot and the outfit made with a new garment take. */
+class NewGarmentNames(val slot: String, val outfit: String)
+
+/**
+ * The commands that make [garment] in [slot], or in the first slot when none is given, worn at once, in a color of its own, as one
+ * step: a character with no slot gains one, and one showing no outfit shows its first, or gains one when it has none.
+ */
+fun Character.newGarmentCommand(garment: Garment, slot: GarmentSlotId?, names: NewGarmentNames): DocumentCommand {
+    val commands = ArrayList<DocumentCommand>()
+    val into = slot ?: wardrobe.slots.firstOrNull()?.id ?: newSlotIn(wardrobe) { names.slot }.also { commands += AddGarmentSlot(it) }.id
+    val color = SlotName(garment.id.value)
+    commands += SetPaletteSlot(color, garmentColor(garment.id), label = garment.name)
+    val outfit = wardrobe.shown ?: wardrobe.outfits.firstOrNull()?.id ?: newOutfitIn(wardrobe) { names.outfit }.also { commands += AddOutfit(it) }.id
+    if (wardrobe.shown != outfit) commands += ShowOutfit(outfit)
+    commands += AddWornGarment(garment.copy(slot = into, color = color), outfit)
+    return Together(commands)
+}
+
+/** The names [newGarmentCommand] gives a slot and an outfit new to [wardrobe], read from the app's strings. */
+suspend fun newGarmentNames(wardrobe: Wardrobe): NewGarmentNames = NewGarmentNames(
+    newSlotIn(wardrobe) { getString(Res.string.dress_slot_name, it) }.name,
+    newOutfitIn(wardrobe) { getString(Res.string.dress_outfit_name, it) }.name,
+)
 
 /** A slot new to [wardrobe], named [name] with its number. */
 inline fun newSlotIn(wardrobe: Wardrobe, name: (Int) -> String): GarmentSlot {
@@ -63,12 +93,19 @@ inline fun newOutfitIn(wardrobe: Wardrobe, name: (Int) -> String): Outfit {
     return Outfit(OutfitId(id), name(number))
 }
 
-/** Adds a new garment to the open character's wardrobe and picks it; its id, or null with no character open. */
-suspend fun AppState.newGarment(): GarmentId? {
+/**
+ * Makes a new garment, worn at once in its own color (see [newGarmentCommand]), in [slot] or the picked garment's, picks it and arms
+ * Edge; its id, or null with no character open.
+ */
+suspend fun AppState.newGarment(slot: GarmentSlotId? = null): GarmentId? {
     val open = session.value ?: return null
-    val garment = newGarmentIn(open.document.value.character.wardrobe) { getString(Res.string.dress_garment_name, it) }
-    open.send(AddGarment(garment))
+    val character = open.document.value.character
+    val names = newGarmentNames(character.wardrobe)
+    val garment = newGarmentIn(character.wardrobe) { getString(Res.string.dress_garment_name, it) }
+    val into = slot ?: dress.garment.value?.let(character.wardrobe::garment)?.slot
+    open.send(character.newGarmentCommand(garment, into, names))
     dress.garment.value = garment.id
+    tool.value = BuildTool.EDGE
     return garment.id
 }
 

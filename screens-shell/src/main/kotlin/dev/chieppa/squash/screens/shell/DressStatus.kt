@@ -12,7 +12,6 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.dress.holeCount
-import dev.chieppa.squash.screens.dress.joinCount
 import dev.chieppa.squash.screens.dress.partsUnder
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.dress_no_slot
@@ -24,10 +23,8 @@ import dev.chieppa.squash.uidesign.generated.dress_status_tool
 import dev.chieppa.stretch.frame.StatusItem
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import dev.chieppa.squash.uidesign.generated.dress_count_branch
-import dev.chieppa.squash.uidesign.generated.dress_count_branches
-import dev.chieppa.squash.uidesign.generated.dress_count_join
-import dev.chieppa.squash.uidesign.generated.dress_count_joins
+import dev.chieppa.squash.uidesign.generated.dress_count_edge
+import dev.chieppa.squash.uidesign.generated.dress_count_edges
 import dev.chieppa.squash.uidesign.generated.dress_count_hole
 import dev.chieppa.squash.uidesign.generated.dress_count_holes
 
@@ -38,7 +35,7 @@ private const val NAME_JOIN = ", "
 @Composable
 private fun counted(count: Int, one: StringResource, many: StringResource): String = stringResource(if (count == 1) one else many, count)
 
-/** The Dress stage's start of the status bar: the stage and its armed tool, Dress · Draw garment. */
+/** The Dress stage's start of the status bar: the stage and its armed tool, Dress · Edge. */
 @Composable
 internal fun DressStatusTool(tool: BuildTool) {
     val label = toolLabel(tool)?.takeIf { tool.dresses } ?: return
@@ -46,7 +43,7 @@ internal fun DressStatusTool(tool: BuildTool) {
 }
 
 /**
- * The Dress stage's end of the status bar, by what the armed tool works on: the picked garment's slot, branches and joins while a
+ * The Dress stage's end of the status bar, by what the armed tool works on: the picked garment's slot, edges and holes while a
  * garment tool other than Edit curves is armed; the body under it, what it covers and its holes, with Edit curves; the shown outfit's
  * filled slots and layers with Loose end or no tool, or with no garment picked.
  */
@@ -63,12 +60,13 @@ internal fun DressStatusSummary(state: AppState, session: CharacterSession, char
         }
         garment != null && tool.dresses && tool != BuildTool.LOOSE_END -> {
             val slot = garment.slot?.let(wardrobe::slot)?.name ?: stringResource(Res.string.dress_no_slot)
+            val holes = garment.edges.count { it.hole }
             stringResource(
                 Res.string.dress_status_garment,
                 garment.name,
                 slot,
-                counted(garment.branches.size, Res.string.dress_count_branch, Res.string.dress_count_branches),
-                counted(character.joinCount(garment), Res.string.dress_count_join, Res.string.dress_count_joins),
+                counted(garment.edges.size - holes, Res.string.dress_count_edge, Res.string.dress_count_edges),
+                counted(holes, Res.string.dress_count_hole, Res.string.dress_count_holes),
             )
         }
         else -> {

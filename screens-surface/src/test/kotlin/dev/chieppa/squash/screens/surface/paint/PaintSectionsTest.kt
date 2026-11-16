@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.surface.keptAlong
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.ShapeSource
 import dev.chieppa.squash.character.build.TemplateLibrary

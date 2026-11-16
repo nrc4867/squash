@@ -155,7 +155,15 @@ class DocumentFormatTest {
         assertEquals(pins, character.parts.map { it.template.id.value to it.template.version })
         assertEquals(0.12f, character.part(PartId("leg-l"))?.blend, "a join's blend is kept")
         assertEquals(listOf("vest"), character.wardrobe.garments.map { it.id.value })
-        assertEquals(DEFAULT_GARMENT_FILLET, character.wardrobe.garments.single().fillet)
+        assertEquals(null, character.wardrobe.garments.single().fit, "a garment saved before fits stands off by its branches' eases")
+    }
+
+    @Test
+    fun aFormatFifteenSaveDropsItsGarmentsCuffInk() {
+        val fifteen = """{"format": 15, "character": {"id": "vest", "name": "Vest", "bodyPlan": {"id": "canine-quadruped", "version": 1}, "wardrobe": {"garments": [{"id": "vest", "name": "Vest", "inkHem": false, "inkCuffs": false}]}}}"""
+        val garment = readDocument(fifteen).character.wardrobe.garments.single()
+        assertEquals(false, garment.inkHem)
+        assertEquals(emptyList(), garment.edges)
     }
 
     @Test

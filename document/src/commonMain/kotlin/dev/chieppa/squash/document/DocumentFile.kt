@@ -32,9 +32,10 @@ private const val ONE_SURFACE_KEY = "oneSurface"
 private const val WARDROBE_KEY = "wardrobe"
 private const val GARMENTS_KEY = "garments"
 private const val FILLET_KEY = "fillet"
+private const val INK_CUFFS_KEY = "inkCuffs"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -87,6 +88,18 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
     return JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(JsonObject(moved))))
+}
+
+/**
+ * Format 15 to 16: a garment's one ink switch inks every edge, its cuffs too, so a garment drops its own cuff ink; and a garment gains
+ * a fit, drawn edges, a fill and Tuck choices, which a save without them reads as none, each branch standing off by its own ease.
+ */
+private fun hemInkAlone(document: JsonObject): JsonObject {
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    val wardrobe = character[WARDROBE_KEY] as? JsonObject ?: return document
+    val garments = wardrobe[GARMENTS_KEY] as? JsonArray ?: return document
+    val kept = JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(garments.map { JsonObject(it.jsonObject - INK_CUFFS_KEY) })))
+    return JsonObject(document + (CHARACTER_KEY to JsonObject(character + (WARDROBE_KEY to kept))))
 }
 
 /** Format 13 to 14: a character gains a wardrobe. A save without one wears nothing. */

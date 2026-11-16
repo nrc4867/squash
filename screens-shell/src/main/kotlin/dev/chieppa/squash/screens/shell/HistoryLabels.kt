@@ -31,6 +31,7 @@ import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BreakPair
 import dev.chieppa.squash.document.JoinPair
+import dev.chieppa.squash.document.AddWornGarment
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.SetTemplate
 import dev.chieppa.squash.document.UpdateFromLibrary
@@ -156,7 +157,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val dress = dressLabels(views)
     fun label(command: Command<SquashDocument>): String =
         when (command) {
-            is Together -> command.commands.firstOrNull()?.let(::label).orEmpty()
+            is Together -> (command.commands.firstOrNull { it is AddWornGarment } ?: command.commands.firstOrNull())?.let(::label).orEmpty()
             is AddPart -> add.replace(FIRST, partName(command.part))
             is AddParts -> add.replace(FIRST, command.parts.firstOrNull()?.let(::partName).orEmpty())
             is RemovePart -> remove.replace(FIRST, "")

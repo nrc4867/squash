@@ -3068,7 +3068,6 @@
                         {
                             "part": "torso",
                             "from": -0.41,
-                            "ease": 0.05,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -3625,7 +3624,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.05
                 },
                 {
                     "id": "fangs",
@@ -3722,7 +3722,6 @@
                             "part": "torso",
                             "from": -0.06,
                             "to": 0.98,
-                            "ease": 0.04,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -4465,7 +4464,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.04
                 },
                 {
                     "id": "bun",
@@ -4477,7 +4477,6 @@
                             "part": "torso",
                             "from": -0.09,
                             "to": 1.02,
-                            "ease": 0.06,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -4916,7 +4915,8 @@
                             "toV": 0.78
                         }
                     ],
-                    "color": "bun"
+                    "color": "bun",
+                    "fit": 0.06
                 }
             ],
             "slots": [
@@ -5010,5 +5010,5 @@
             }
         ]
     },
-    "format": 15
+    "format": 16
 }

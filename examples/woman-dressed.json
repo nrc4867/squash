@@ -7768,8 +7768,7 @@
                         {
                             "part": "torso",
                             "from": 0.68,
-                            "to": 0.85,
-                            "ease": 0.008
+                            "to": 0.85
                         }
                     ],
                     "color": "swim",
@@ -7778,7 +7777,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.008
                 },
                 {
                     "id": "tee",
@@ -7788,16 +7788,15 @@
                         {
                             "part": "torso",
                             "from": 0.1,
-                            "to": 0.96,
-                            "ease": 0.015
+                            "to": 0.96
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.3,
-                            "ease": 0.015
+                            "to": 0.3
                         }
                     ],
-                    "color": "tee"
+                    "color": "tee",
+                    "fit": 0.015
                 },
                 {
                     "id": "blouse",
@@ -7806,13 +7805,11 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "from": 0.08,
-                            "ease": 0.015
+                            "from": 0.08
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.93,
-                            "ease": 0.015
+                            "to": 0.93
                         }
                     ],
                     "color": "blouse",
@@ -7821,7 +7818,8 @@
                             "type": "through",
                             "cuffSize": 0.35
                         }
-                    }
+                    },
+                    "fit": 0.015
                 },
                 {
                     "id": "blazer",
@@ -7840,7 +7838,8 @@
                             "to": 0.88
                         }
                     ],
-                    "color": "suit"
+                    "color": "suit",
+                    "fit": 0.03
                 },
                 {
                     "id": "dark-top",
@@ -7850,16 +7849,15 @@
                         {
                             "part": "torso",
                             "from": 0.1,
-                            "to": 0.96,
-                            "ease": 0.015
+                            "to": 0.96
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.97,
-                            "ease": 0.015
+                            "to": 0.97
                         }
                     ],
-                    "color": "plum"
+                    "color": "plum",
+                    "fit": 0.015
                 },
                 {
                     "id": "coat",
@@ -7868,13 +7866,11 @@
                     "layer": 3,
                     "branches": [
                         {
-                            "part": "torso",
-                            "ease": 0.032
+                            "part": "torso"
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.97,
-                            "ease": 0.032
+                            "to": 0.97
                         }
                     ],
                     "color": "coat",
@@ -7883,7 +7879,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.032
                 },
                 {
                     "id": "shorts",
@@ -7893,16 +7890,15 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.3,
-                            "ease": 0.02
+                            "to": 0.3
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.26,
-                            "ease": 0.02
+                            "to": 0.26
                         }
                     ],
-                    "color": "khaki"
+                    "color": "khaki",
+                    "fit": 0.02
                 },
                 {
                     "id": "trousers",
@@ -7912,16 +7908,15 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.3,
-                            "ease": 0.02
+                            "to": 0.3
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.97,
-                            "ease": 0.02
+                            "to": 0.97
                         }
                     ],
-                    "color": "suit"
+                    "color": "suit",
+                    "fit": 0.02
                 },
                 {
                     "id": "jeans",
@@ -7931,16 +7926,15 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.3,
-                            "ease": 0.012
+                            "to": 0.3
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.97,
-                            "ease": 0.012
+                            "to": 0.97
                         }
                     ],
-                    "color": "denim"
+                    "color": "denim",
+                    "fit": 0.012
                 },
                 {
                     "id": "black-jeans",
@@ -7950,16 +7944,15 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.3,
-                            "ease": 0.012
+                            "to": 0.3
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.97,
-                            "ease": 0.012
+                            "to": 0.97
                         }
                     ],
-                    "color": "black-denim"
+                    "color": "black-denim",
+                    "fit": 0.012
                 },
                 {
                     "id": "skirt",
@@ -7971,7 +7964,6 @@
                             "part": "torso",
                             "from": -0.5882353,
                             "to": 0.32,
-                            "ease": 0.02,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -8280,7 +8272,8 @@
                             }
                         }
                     ],
-                    "color": "skirt"
+                    "color": "skirt",
+                    "fit": 0.02
                 },
                 {
                     "id": "tank-top",
@@ -8290,8 +8283,7 @@
                         {
                             "part": "torso",
                             "from": 0.42,
-                            "to": 0.95,
-                            "ease": 0.01
+                            "to": 0.95
                         }
                     ],
                     "color": "tank",
@@ -8300,7 +8292,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.01
                 },
                 {
                     "id": "sandals",
@@ -8310,11 +8303,11 @@
                         {
                             "part": "foot-l",
                             "from": 0.56,
-                            "to": 0.61,
-                            "ease": 0.005
+                            "to": 0.61
                         }
                     ],
-                    "color": "sandal"
+                    "color": "sandal",
+                    "fit": 0.005
                 },
                 {
                     "id": "sneakers",
@@ -8322,8 +8315,7 @@
                     "slot": "feet",
                     "branches": [
                         {
-                            "part": "foot-l",
-                            "ease": 0.01
+                            "part": "foot-l"
                         }
                     ],
                     "color": "canvas",
@@ -8638,7 +8630,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.01
                 },
                 {
                     "id": "boots",
@@ -8647,13 +8640,11 @@
                     "layer": 3,
                     "branches": [
                         {
-                            "part": "foot-l",
-                            "ease": 0.022
+                            "part": "foot-l"
                         },
                         {
                             "part": "leg-l",
-                            "from": 0.66,
-                            "ease": 0.022
+                            "from": 0.66
                         }
                     ],
                     "color": "boot",
@@ -8968,7 +8959,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.022
                 },
                 {
                     "id": "pumps",
@@ -9320,12 +9312,12 @@
                         {
                             "part": "hair",
                             "to": 0.82,
-                            "ease": 0.035,
                             "fromV": -0.34,
                             "toV": 0.34
                         }
                     ],
-                    "color": "knit"
+                    "color": "knit",
+                    "fit": 0.035
                 },
                 {
                     "id": "scarf",
@@ -9335,13 +9327,11 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "from": 0.92,
-                            "ease": 0.045
+                            "from": 0.92
                         },
                         {
                             "part": "neck",
-                            "to": 0.6,
-                            "ease": 0.045
+                            "to": 0.6
                         }
                     ],
                     "color": "scarf",
@@ -9351,7 +9341,8 @@
                             "branch": "torso",
                             "v": 0.04
                         }
-                    ]
+                    ],
+                    "fit": 0.045
                 },
                 {
                     "id": "mittens",
@@ -9359,8 +9350,7 @@
                     "slot": "hands",
                     "branches": [
                         {
-                            "part": "hand-l",
-                            "ease": 0.006
+                            "part": "hand-l"
                         }
                     ],
                     "color": "knit",
@@ -9603,7 +9593,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.006
                 },
                 {
                     "id": "choker",
@@ -9613,11 +9604,11 @@
                         {
                             "part": "neck",
                             "from": 0.3,
-                            "to": 0.5,
-                            "ease": 0.005
+                            "to": 0.5
                         }
                     ],
-                    "color": "patent"
+                    "color": "patent",
+                    "fit": 0.005
                 },
                 {
                     "id": "makeup",
@@ -9905,11 +9896,11 @@
                         {
                             "part": "torso",
                             "from": 0.27,
-                            "to": 0.305,
-                            "ease": 0.006
+                            "to": 0.305
                         }
                     ],
-                    "color": "belt"
+                    "color": "belt",
+                    "fit": 0.006
                 }
             ],
             "slots": [
@@ -10058,5 +10049,5 @@
             }
         ]
     },
-    "format": 15
+    "format": 16
 }

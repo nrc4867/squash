@@ -9534,13 +9534,11 @@
                         {
                             "part": "torso",
                             "from": 0.6121213,
-                            "to": 0.6393938,
-                            "ease": 0.0035
+                            "to": 0.6393938
                         },
                         {
                             "part": "neck",
-                            "to": 0.12,
-                            "ease": 0.0035
+                            "to": 0.12
                         }
                     ],
                     "color": "swim",
@@ -9549,7 +9547,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.0035
                 },
                 {
                     "id": "shorts",
@@ -9559,16 +9558,15 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.37878788,
-                            "ease": 0.0085
+                            "to": 0.37878788
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.16501236,
-                            "ease": 0.0085
+                            "to": 0.16501236
                         }
                     ],
-                    "color": "denim"
+                    "color": "denim",
+                    "fit": 0.0085
                 },
                 {
                     "id": "sandals",
@@ -9585,11 +9583,11 @@
                         {
                             "part": "foot-l",
                             "from": 0.56,
-                            "to": 0.61,
-                            "ease": 0.004
+                            "to": 0.61
                         }
                     ],
-                    "color": "swim"
+                    "color": "swim",
+                    "fit": 0.004
                 },
                 {
                     "id": "shades",
@@ -9604,8 +9602,7 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "from": 0.35606062,
-                            "ease": 0.0045
+                            "from": 0.35606062
                         }
                     ],
                     "color": "blouse",
@@ -9618,7 +9615,8 @@
                             "type": "through",
                             "cuff": false
                         }
-                    }
+                    },
+                    "fit": 0.0045
                 },
                 {
                     "id": "blazer",
@@ -9629,17 +9627,19 @@
                         {
                             "part": "torso",
                             "from": 0.09090909,
-                            "ease": 0.0135,
                             "fromV": 0.05,
                             "toV": 0.95
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.9160156,
-                            "ease": 0.0115
+                            "to": 0.9160156
                         }
                     ],
-                    "color": "suit"
+                    "color": "suit",
+                    "fit": 0.0135,
+                    "partFits": {
+                        "arm-l": 0.0115
+                    }
                 },
                 {
                     "id": "trousers",
@@ -9649,13 +9649,11 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.40151513,
-                            "ease": 0.009
+                            "to": 0.40151513
                         },
                         {
                             "part": "leg-l",
                             "to": 0.983871,
-                            "ease": 0.009,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -10204,7 +10202,8 @@
                             }
                         }
                     ],
-                    "color": "suit"
+                    "color": "suit",
+                    "fit": 0.009
                 },
                 {
                     "id": "cream-top",
@@ -10214,16 +10213,18 @@
                         {
                             "part": "torso",
                             "from": 0.38636363,
-                            "to": 0.9469697,
-                            "ease": 0.006
+                            "to": 0.9469697
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.2,
-                            "ease": 0.01
+                            "to": 0.2
                         }
                     ],
-                    "color": "cream"
+                    "color": "cream",
+                    "fit": 0.006,
+                    "partFits": {
+                        "arm-l": 0.01
+                    }
                 },
                 {
                     "id": "skirt",
@@ -10235,7 +10236,6 @@
                             "part": "torso",
                             "from": -0.46212122,
                             "to": 0.40909088,
-                            "ease": 0.013,
                             "outlines": {
                                 "side": {
                                     "points": [
@@ -10592,7 +10592,8 @@
                             }
                         }
                     ],
-                    "color": "teal"
+                    "color": "teal",
+                    "fit": 0.013
                 },
                 {
                     "id": "dress-belt",
@@ -10603,11 +10604,11 @@
                         {
                             "part": "torso",
                             "from": 0.40757564,
-                            "to": 0.43181813,
-                            "ease": 0.0155
+                            "to": 0.43181813
                         }
                     ],
-                    "color": "tan"
+                    "color": "tan",
+                    "fit": 0.0155
                 },
                 {
                     "id": "dark-top",
@@ -10617,16 +10618,15 @@
                         {
                             "part": "torso",
                             "from": 0.33333328,
-                            "to": 0.9469697,
-                            "ease": 0.006
+                            "to": 0.9469697
                         },
                         {
                             "part": "arm-l",
-                            "to": 0.9472656,
-                            "ease": 0.006
+                            "to": 0.9472656
                         }
                     ],
-                    "color": "plum"
+                    "color": "plum",
+                    "fit": 0.006
                 },
                 {
                     "id": "black-jeans",
@@ -10636,16 +10636,18 @@
                     "branches": [
                         {
                             "part": "torso",
-                            "to": 0.37878788,
-                            "ease": 0.0085
+                            "to": 0.37878788
                         },
                         {
                             "part": "leg-l",
-                            "to": 0.8287841,
-                            "ease": 0.0065
+                            "to": 0.8287841
                         }
                     ],
-                    "color": "black-denim"
+                    "color": "black-denim",
+                    "fit": 0.0085,
+                    "partFits": {
+                        "leg-l": 0.0065
+                    }
                 },
                 {
                     "id": "goth-belt",
@@ -10656,11 +10658,11 @@
                         {
                             "part": "torso",
                             "from": 0.34242424,
-                            "to": 0.37575752,
-                            "ease": 0.0125
+                            "to": 0.37575752
                         }
                     ],
-                    "color": "belt"
+                    "color": "belt",
+                    "fit": 0.0125
                 },
                 {
                     "id": "choker",
@@ -10669,11 +10671,11 @@
                     "branches": [
                         {
                             "part": "neck",
-                            "to": 0.18,
-                            "ease": 0.006
+                            "to": 0.18
                         }
                     ],
-                    "color": "choker"
+                    "color": "choker",
+                    "fit": 0.006
                 },
                 {
                     "id": "pumps",
@@ -10682,7 +10684,6 @@
                     "branches": [
                         {
                             "part": "foot-l",
-                            "ease": 0.0032,
                             "fromV": 0.3,
                             "toV": 0.7
                         }
@@ -10702,7 +10703,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.0032
                 },
                 {
                     "id": "pump-vamps",
@@ -10712,11 +10714,11 @@
                     "branches": [
                         {
                             "part": "foot-l",
-                            "from": 0.5655555,
-                            "ease": 0.0032
+                            "from": 0.5655555
                         }
                     ],
-                    "color": "patent"
+                    "color": "patent",
+                    "fit": 0.0032
                 },
                 {
                     "id": "flats",
@@ -10725,7 +10727,6 @@
                     "branches": [
                         {
                             "part": "foot-l",
-                            "ease": 0.003,
                             "fromV": 0.33,
                             "toV": 0.67
                         }
@@ -10743,7 +10744,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.003
                 },
                 {
                     "id": "flat-vamps",
@@ -10753,11 +10755,11 @@
                     "branches": [
                         {
                             "part": "foot-l",
-                            "from": 0.57666665,
-                            "ease": 0.003
+                            "from": 0.57666665
                         }
                     ],
-                    "color": "tan"
+                    "color": "tan",
+                    "fit": 0.003
                 },
                 {
                     "id": "boots",
@@ -10766,13 +10768,11 @@
                     "layer": 3,
                     "branches": [
                         {
-                            "part": "foot-l",
-                            "ease": 0.0085
+                            "part": "foot-l"
                         },
                         {
                             "part": "leg-l",
-                            "from": 0.69230765,
-                            "ease": 0.015
+                            "from": 0.69230765
                         }
                     ],
                     "color": "boot",
@@ -10788,6 +10788,10 @@
                                 }
                             }
                         }
+                    },
+                    "fit": 0.0085,
+                    "partFits": {
+                        "leg-l": 0.015
                     }
                 },
                 {
@@ -12578,5 +12582,5 @@
             }
         ]
     },
-    "format": 15
+    "format": 16
 }

@@ -94,19 +94,50 @@ data class SetJoinInk(val garment: GarmentId, val part: PartId, val inked: Boole
     }
 }
 
-/** Sets whether [garment]'s hem and its cuffs are inked. */
+/** Sets whether [garment]'s edges are inked: its hems, its holes' edges and its cuffs. */
 @Serializable
-@SerialName("setEdgeInk")
-data class SetEdgeInk(val garment: GarmentId, val hem: Boolean, val cuffs: Boolean) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> =
-        document.garmentChanged(garment) { it.copy(inkHem = hem, inkCuffs = cuffs) }
+@SerialName("setHemInk")
+data class SetHemInk(val garment: GarmentId, val inked: Boolean) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(inkHem = inked) }
 }
 
-/** Sets how wide the fillets at [garment]'s joins are. */
+/** Sets how far [garment] stands off the body. */
 @Serializable
-@SerialName("setGarmentFillet")
-data class SetGarmentFillet(val garment: GarmentId, val fillet: Float) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(fillet = fillet) }
+@SerialName("setGarmentFit")
+data class SetGarmentFit(val garment: GarmentId, val fit: Float) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        require(fit >= 0f) { "A garment's fit is negative" }
+        return document.garmentChanged(garment) { it.copy(fit = fit) }
+    }
+}
+
+/** Sets how far [garment] stands off [part], or of the pair it leads, in place of the garment's fit; null takes the override away. */
+@Serializable
+@SerialName("setPartFit")
+data class SetPartFit(val garment: GarmentId, val part: PartId, val fit: Float?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        document.requirePart(part)
+        require(fit == null || fit >= 0f) { "A part's fit is negative" }
+        held.copy(partFits = if (fit == null) held.partFits - part else held.partFits + (part to fit))
+    }
+}
+
+/** Sets the edges drawn for [garment] and the places pressed to fill between them. */
+@Serializable
+@SerialName("setGarmentEdges")
+data class SetGarmentEdges(val garment: GarmentId, val edges: List<GarmentEdge>, val fill: List<Anchor>) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(edges = edges, fill = fill) }
+}
+
+/** Records the Tuck choice for [kind] on [part] in [garment], or takes it away when [tucked] is null. */
+@Serializable
+@SerialName("setTuck")
+data class SetTuck(val garment: GarmentId, val part: PartId, val kind: TuckKind, val tucked: Boolean?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        document.requirePart(part)
+        val others = held.tucks.filterNot { it.part == part && it.kind == kind }
+        held.copy(tucks = if (tucked == null) others else others + TuckChoice(part, kind, tucked))
+    }
 }
 
 /** Colours [garment] from palette slot [color], or from the part's own while null. */

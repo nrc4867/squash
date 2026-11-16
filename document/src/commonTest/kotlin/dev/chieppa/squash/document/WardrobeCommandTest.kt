@@ -16,6 +16,7 @@ import dev.chieppa.stretch.test.scenario
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
@@ -165,13 +166,35 @@ class WardrobeCommandTest {
     }
 
     @Test
-    fun inkFilletColorAndLooseEnds() {
+    fun edgesFillAndTucksAreSetAndUndone() {
+        val start = WinterFennec.dressed()
+        val ring = SurfaceCurve(listOf(Anchor(LEG_L, u = 0.5f, v = 0f), Anchor(LEG_L, u = 0.5f, v = 0.5f)), closed = true)
+        scenario(start) {
+            run(SetGarmentEdges(SWEATER, listOf(GarmentEdge(ring)), listOf(Anchor(TORSO, u = 0.5f, v = 0.25f))))
+            run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, false))
+            run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, true))
+            expect {
+                val sweater = checkNotNull(it.wardrobe.garment(SWEATER))
+                assertEquals(listOf(GarmentEdge(ring)), sweater.edges)
+                assertTrue(sweater.drawn)
+                assertEquals(listOf(TuckChoice(LEG_L, TuckKind.TOES, true)), sweater.tucks)
+            }
+            run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, null))
+            expect { assertEquals(emptyList(), it.wardrobe.garment(SWEATER)?.tucks) }
+            repeat(4) { undo() }
+            expect(start)
+        }
+    }
+
+    @Test
+    fun inkFitColorAndLooseEnds() {
         val start = WinterFennec.dressed()
         val end = LooseEnd(LooseEndId("tail"), TORSO)
         scenario(start) {
             run(SetJoinInk(SWEATER, LEG_L, true))
-            run(SetEdgeInk(SWEATER, hem = false, cuffs = true))
-            run(SetGarmentFillet(SWEATER, 0.5f))
+            run(SetHemInk(SWEATER, false))
+            run(SetGarmentFit(SWEATER, 0.05f))
+            run(SetPartFit(SWEATER, LEG_L, 0.08f))
             run(SetGarmentColor(SWEATER, SlotName("cream")))
             run(SetLooseEnd(SWEATER, end))
             run(SetLooseEnd(SWEATER, end.copy(bones = 3)))
@@ -179,7 +202,9 @@ class WardrobeCommandTest {
                 val sweater = checkNotNull(it.wardrobe.garment(SWEATER))
                 assertEquals(setOf(LEG_L), sweater.joins)
                 assertEquals(false, sweater.inkHem)
-                assertEquals(0.5f, sweater.fillet)
+                assertEquals(0.05f, sweater.fit)
+                assertEquals(mapOf(LEG_L to 0.08f), sweater.partFits)
+                assertEquals(0.08f, sweater.easeOf(checkNotNull(sweater.branch(LEG_L))))
                 assertEquals(SlotName("cream"), sweater.color)
                 assertEquals(listOf(end.copy(bones = 3)), sweater.looseEnds)
             }
@@ -187,7 +212,7 @@ class WardrobeCommandTest {
             expect { assertEquals(emptySet(), it.wardrobe.garment(SWEATER)?.joins) }
             run(RemoveLooseEnd(SWEATER, end.id))
             expect { assertEquals(emptyList(), it.wardrobe.garment(SWEATER)?.looseEnds) }
-            repeat(8) { undo() }
+            repeat(9) { undo() }
             expect(start)
         }
     }

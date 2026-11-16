@@ -9,13 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.character.build.Covering
-import dev.chieppa.squash.document.CoverPart
-import dev.chieppa.squash.document.Character
-import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.Garment
-import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.UncoverPart
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.isToolPress
@@ -88,32 +82,10 @@ class GarmentSelectTool(state: AppState) : DressPressTool(state) {
     }
 }
 
-/** Cover: a press on a body part gives the picked garment a branch over it, or takes the branch it has there off; on a garment it picks it. */
-@Stable
-class CoverTool(state: AppState) : DressPressTool(state) {
-    override val findsGarments: Boolean get() = false
-
-    override fun pressed(hit: DressHit) {
-        val part = (hit as? DressHit.OnBody)?.part ?: return
-        state.selectLeader(part)
-        val session = state.session.value ?: return
-        val garment = state.dress.garment.value?.let(session.document.value.character.wardrobe::garment) ?: return
-        coverToggle(session.document.value.character, garment, part)?.let(session::send)
-    }
-}
-
 /** Selects [part], or the leader of its pair, since a garment's branch on a pair is drawn on its leader. */
 fun AppState.selectLeader(part: PartId) {
     val character = session.value?.document?.value?.character
     selectedPart.value = character?.part(part)?.let(character::leaderOf)?.id ?: part
-}
-
-/** The command a Cover press on [part] sends for [garment]: its branch there taken off, or a new branch over it, keyed by the pair's leader; null for no part. */
-fun coverToggle(character: Character, garment: Garment, part: PartId): DocumentCommand? {
-    val instance = character.part(part) ?: return null
-    val leader = character.leaderOf(instance)
-    val held = character.covers(garment, instance)
-    return if (held != null) UncoverPart(garment.id, held.part) else CoverPart(garment.id, GarmentBranch(leader.id))
 }
 
 @Composable
@@ -142,6 +114,3 @@ class LooseEndTool(state: AppState) : DressPressTool(state) {
 
 @Composable
 fun rememberLooseEndTool(state: AppState): LooseEndTool = remember(state) { LooseEndTool(state) }
-
-@Composable
-fun rememberCoverTool(state: AppState): CoverTool = remember(state) { CoverTool(state) }

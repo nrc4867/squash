@@ -1,13 +1,12 @@
 package dev.chieppa.squash.document
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 /** How far a branch stands off its part's surface where nothing drawn takes it further, in body units. */
 const val DEFAULT_EASE = 0.03f
 
-/** How wide the fillet where two branches of a garment meet, in body units. */
-const val DEFAULT_GARMENT_FILLET = 0.35f
+/** How far a garment stands off the body where nothing drawn takes it further, snug, in body units: a new garment's fit. */
+const val SNUG_FIT = 0.015f
 
 /** The first layer, nearest the skin. */
 const val FIRST_LAYER = 1
@@ -17,8 +16,11 @@ const val GARMENT_PART_PREFIX = "garment/"
 
 /**
  * One garment of a character's wardrobe: the [slot] it fills, its [layer] counted out from the skin, the [branches] it is built
- * from, one per covered part, which [joins] are inked, whether its hem and cuffs are, the [fillet] at its joins when built as parts, never saved, its [color], what
- * it does to the body parts under it ([changes], by part) and its [looseEnds]. See HLD: data-model, Garments.
+ * from, one per covered part, which [joins] are inked, whether its edges are ([inkHem]), its [color], what it does to the body parts
+ * under it ([changes], by part) and its [looseEnds]. [fit] is how far it stands off the body, with [partFits] overriding it on a part
+ * or pair by the pair's leader; with no fit each branch stands off by its own ease. The [edges] drawn on the body and the [fill]
+ * pressed between them say which parts it covers and how far, written into its branches and changes; [tucks] are the Tuck choices
+ * made for the small parts inside it. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -29,11 +31,14 @@ data class Garment(
     val branches: List<GarmentBranch> = emptyList(),
     val joins: Set<PartId> = emptySet(),
     val inkHem: Boolean = true,
-    val inkCuffs: Boolean = true,
-    @Transient val fillet: Float = DEFAULT_GARMENT_FILLET,
     val color: SlotName? = null,
     val changes: Map<PartId, BodyPartChange> = emptyMap(),
     val looseEnds: List<LooseEnd> = emptyList(),
+    val fit: Float? = null,
+    val partFits: Map<PartId, Float> = emptyMap(),
+    val edges: List<GarmentEdge> = emptyList(),
+    val fill: List<Anchor> = emptyList(),
+    val tucks: List<TuckChoice> = emptyList(),
 ) {
     init {
         require(branches.distinctBy { it.part }.size == branches.size) { "Garment ${id.value} covers a part twice" }
@@ -41,6 +46,12 @@ data class Garment(
     }
 
     fun branch(part: PartId): GarmentBranch? = branches.firstOrNull { it.part == part }
+
+    /** How far [branch] stands off its part: its part's own fit, else the garment's, else the branch's own ease. */
+    fun easeOf(branch: GarmentBranch): Float = partFits[branch.part] ?: fit ?: branch.ease
+
+    /** Whether its branches and changes are written from its drawn [edges]. */
+    val drawn: Boolean get() = edges.isNotEmpty()
 
     /** This garment with [part]'s branch changed by [change]. */
     internal fun withBranch(part: PartId, change: (GarmentBranch) -> GarmentBranch): Garment {

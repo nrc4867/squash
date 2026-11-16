@@ -7,6 +7,7 @@ import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.SetBodyPartChange
 import dev.chieppa.squash.document.CoverPart
+import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
@@ -97,19 +98,19 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
     SetPaletteSlot(HOOD_WOOL, SlotColor(0.78f, 0.24f, 0.22f)),
     AddGarmentSlot(GarmentSlot(HEAD_SLOT, "Head")),
     AddGarmentSlot(GarmentSlot(BODY_SLOT, "Body")),
-    AddGarment(Garment(SWEATER, "Sweater", BODY_SLOT)),
+    AddGarment(Garment(SWEATER, "Sweater", BODY_SLOT, fit = DEFAULT_EASE)),
     CoverPart(SWEATER, GarmentBranch(TORSO, SWEATER_FROM, SWEATER_TO, outlines = mapOf(View.SIDE to SWEATER_SIDE))),
     CoverPart(SWEATER, GarmentBranch(FRONT_LEG_L, 0f, SLEEVE_TO)),
     SetGarmentColor(SWEATER, SWEATER_WOOL),
-    AddGarment(Garment(HOOD, "Hood", HEAD_SLOT)),
+    AddGarment(Garment(HOOD, "Hood", HEAD_SLOT, fit = DEFAULT_EASE)),
     CoverPart(HOOD, GarmentBranch(HEAD, 0f, HOOD_TO)),
     SetGarmentColor(HOOD, HOOD_WOOL),
-    AddGarment(Garment(CAP, "Cap", HEAD_SLOT)),
+    AddGarment(Garment(CAP, "Cap", HEAD_SLOT, fit = DEFAULT_EASE)),
     CoverPart(CAP, GarmentBranch(HEAD, 0f, CAP_TO, fromV = -CAP_ROUND, toV = CAP_ROUND)),
     SetGarmentColor(CAP, HOOD_WOOL),
     SetPaletteSlot(BOOT_LEATHER, SlotColor(0.36f, 0.24f, 0.18f)),
     AddGarmentSlot(GarmentSlot(FEET_SLOT, "Feet")),
-    AddGarment(Garment(BOOTS, "Boots", FEET_SLOT, layer = BOOTS_LAYER)),
+    AddGarment(Garment(BOOTS, "Boots", FEET_SLOT, layer = BOOTS_LAYER, fit = DEFAULT_EASE)),
     SetGarmentColor(BOOTS, BOOT_LEATHER),
 ) + BOOTED.flatMap { paw ->
     listOf(
@@ -119,7 +120,7 @@ fun fennecDressing(): List<DocumentCommand> = listOf(
 } + listOf(FRONT_LEG_L, BACK_LEG_L).map { CoverPart(BOOTS, GarmentBranch(it, SHAFT_FROM, 1f)) } + listOf(
     SetPaletteSlot(SCARF_WOOL, SlotColor(0.92f, 0.82f, 0.36f)),
     AddGarmentSlot(GarmentSlot(NECK_SLOT, "Neck")),
-    AddGarment(Garment(SCARF, "Scarf", NECK_SLOT, layer = SCARF_LAYER)),
+    AddGarment(Garment(SCARF, "Scarf", NECK_SLOT, layer = SCARF_LAYER, fit = DEFAULT_EASE)),
     CoverPart(SCARF, GarmentBranch(TORSO, SCARF_FROM, SCARF_TO)),
     SetGarmentColor(SCARF, SCARF_WOOL),
     SetLooseEnd(SCARF, LooseEnd(SCARF_END, TORSO, v = SCARF_END_V)),

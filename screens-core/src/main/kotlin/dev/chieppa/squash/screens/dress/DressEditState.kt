@@ -15,6 +15,9 @@ class DressEditState {
     /** The garment the inspector and the garment tools work on. */
     val garment = MutableStateFlow<GarmentId?>(null)
 
+    /** The picked garment's edge picked in the inspector, by its place in the garment's edges, whose points the edge tools show. */
+    val edge = MutableStateFlow<Int?>(null)
+
     /** The part whose Redraw by the picked garment the outline tools draw on, or null for the garment's branches. */
     val redrawing = MutableStateFlow<dev.chieppa.squash.document.PartId?>(null)
 
@@ -53,6 +56,7 @@ class DressEditState {
 
     fun clear() {
         garment.value = null
+        edge.value = null
         redrawing.value = null
         hidden.value = emptySet()
     }

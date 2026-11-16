@@ -24629,7 +24629,8 @@
                             "to": 0.78
                         }
                     ],
-                    "color": "sweater"
+                    "color": "sweater",
+                    "fit": 0.03
                 },
                 {
                     "id": "hood",
@@ -24641,7 +24642,8 @@
                             "to": 0.42
                         }
                     ],
-                    "color": "hood"
+                    "color": "hood",
+                    "fit": 0.03
                 },
                 {
                     "id": "cap",
@@ -24655,7 +24657,8 @@
                             "toV": 0.22
                         }
                     ],
-                    "color": "hood"
+                    "color": "hood",
+                    "fit": 0.03
                 },
                 {
                     "id": "boots",
@@ -24696,7 +24699,8 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "fit": 0.03
                 },
                 {
                     "id": "scarf",
@@ -24717,7 +24721,8 @@
                             "branch": "torso",
                             "v": 0.55
                         }
-                    ]
+                    ],
+                    "fit": 0.03
                 }
             ],
             "slots": [
@@ -24800,5 +24805,5 @@
             }
         ]
     },
-    "format": 15
+    "format": 16
 }

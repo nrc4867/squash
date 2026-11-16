@@ -35,7 +35,7 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
         val v = if (part.side == Side.RIGHT && !parent.mirrored) 1f - spec.v else spec.v
         !keeps(part) && spec.u in covering.from..covering.to && coverOf(branch).covers(covering.part, spec.u, v, part.origin)
     }
-    val ease = (garment.branch(covering.part) ?: twins[covering.part]?.let(garment::branch))?.ease ?: DEFAULT_EASE
+    val ease = (garment.branch(covering.part) ?: twins[covering.part]?.let(garment::branch))?.let(garment::easeOf) ?: DEFAULT_EASE
     var holed = if (hanging.isEmpty()) branch else branch.covered(covering.hangingOver(hanging))
     val cuffs = through.mapNotNull { part ->
         checkCancelled()
@@ -46,7 +46,7 @@ internal fun throughHoles(garment: Garment, branch: PlacedPart, body: AssembledC
             if (garment.inkHem) holed = holed.inking(GarmentInk(crossings = setOf(id)))
             return@mapNotNull null
         }
-        val inked = garment.inkCuffs && change.inkCuff
+        val inked = garment.inkHem && change.inkCuff
         cuffOver(garment.id, part, exitOf(part, branch) + change.cuffSize, ease)
             ?.let { cuff -> if (inked) cuff.inking(GarmentInk(hem = true, crossings = setOfNotNull(branch.id))) else cuff }
     }

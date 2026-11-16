@@ -249,12 +249,12 @@ class DressedFennecSmokeTest {
     }
 
     @Test
-    fun dressShowsTheBodyUnderTheCapAsW15() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+    fun dressShowsTheCapWithHoleArmedAsW17() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
         val bench = opened()
         key(Key.Six)
-        key(Key.E)
+        key(Key.O)
         bench.state.dress.garment.value = CAP
         bench.state.selectedPart.value = HEAD
-        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w15", window = true)
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w17", window = true)
     }
 }

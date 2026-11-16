@@ -43,8 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import dev.chieppa.squash.screens.dress.newGarment
 import dev.chieppa.squash.uidesign.generated.dress_new_garment
-import dev.chieppa.squash.uidesign.generated.dress_tool_cover
-import dev.chieppa.squash.uidesign.generated.dress_tool_draw
+import dev.chieppa.squash.uidesign.generated.dress_tool_edge
+import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
 import dev.chieppa.squash.uidesign.generated.stage_dress
 import dev.chieppa.stretch.ui.Tooltip
@@ -141,26 +141,26 @@ private fun PaintTools(tool: BuildTool, state: AppState) {
 @Composable
 private fun dressSections(tool: BuildTool, state: AppState): List<ToolSection> {
     val icons = mapOf(
-        BuildTool.DRAW_GARMENT to SquashIcons.DrawGarment,
+        BuildTool.EDGE to SquashIcons.Edge,
+        BuildTool.HOLE to SquashIcons.Hole,
         BuildTool.EDIT_GARMENT to SquashIcons.EditCurves,
         BuildTool.ERASE_GARMENT to SquashIcons.Erase,
         BuildTool.SMOOTH_GARMENT to SquashIcons.SmoothCurve,
-        BuildTool.COVER to SquashIcons.Cover,
         BuildTool.LOOSE_END to SquashIcons.LooseEnd,
     )
     val labels = mapOf(
-        BuildTool.DRAW_GARMENT to stringResource(Res.string.dress_tool_draw),
+        BuildTool.EDGE to stringResource(Res.string.dress_tool_edge),
+        BuildTool.HOLE to stringResource(Res.string.dress_tool_hole),
         BuildTool.EDIT_GARMENT to stringResource(Res.string.shell_action_edit_curves),
         BuildTool.ERASE_GARMENT to stringResource(Res.string.edit_tool_erase),
         BuildTool.SMOOTH_GARMENT to stringResource(Res.string.smooth_tool),
-        BuildTool.COVER to stringResource(Res.string.dress_tool_cover),
         BuildTool.LOOSE_END to stringResource(Res.string.dress_tool_loose_end),
     )
     val armed = tool.takeIf { it in icons }
     val newGarment = stringResource(Res.string.dress_new_garment)
     val scope = rememberCoroutineScope()
     return listOf(
-        ToolSection(ShellTags.section("dress"), stringResource(Res.string.stage_dress), icons[armed] ?: SquashIcons.DrawGarment, icons.size, armed) {
+        ToolSection(ShellTags.section("dress"), stringResource(Res.string.stage_dress), icons[armed] ?: SquashIcons.Edge, icons.size, armed) {
             icons.forEach { (each, icon) -> StripTool(each, icon, labels.getValue(each), tool, state::armTool) }
         },
         ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {

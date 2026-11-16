@@ -20,14 +20,15 @@ private const val CUFF_FROM = -1f
 
 /**
  * The parts a garment covers on a one surface and how, as the document says: each branch's part, and the other side of its pair, which
- * the branch covers mirrored, by the branch; and each part's [twins].
+ * the branch covers mirrored, by the branch standing off by the garment's fit there (see [Garment.easeOf]); and each part's [twins].
  */
 data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentBranch>, val twins: Map<PartId, PartId> = emptyMap()) {
     companion object {
         /** What [garment] covers on [character], its branches read on both sides of a pair. */
         fun of(garment: Garment, character: Character): GarmentCover {
             val branches = LinkedHashMap<PartId, GarmentBranch>()
-            for (branch in garment.branches) {
+            for (held in garment.branches) {
+                val branch = held.copy(ease = garment.easeOf(held))
                 branches[branch.part] = branch
                 val part = character.part(branch.part) ?: continue
                 character.twinOf(part)?.let { twin -> branches.putIfAbsent(twin.id, branch) }
