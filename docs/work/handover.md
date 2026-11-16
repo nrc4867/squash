@@ -13,6 +13,7 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | 047eebb | Drag feel and speed: a drag's whole stack coarse, recent full builds kept for undo, redo and outfit switches; each surface shown only with its own paint and dress |
 | 8c603e5 | Pose drags: the coarse surface posed without the posed hiding, lined by outlines only, posing in parallel |
 | after 8c603e5 | Field reads through the `FieldReads` seam: `CpuFieldReads`, and `GpuFieldReads` in `field-gpu`; the app reads on the CPU unless launched with `-Preads=gpu` |
+| hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
 
 Dragon, koi, lizard, toucan and the twin still build as parts and render as before the one surface landed (checked in RGB against 6fdbc35).
 
@@ -30,6 +31,7 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The woman after a release shows lines across the forehead.
 - Painted eyes are not driven by the Pose stage's look-at tool.
 - The Face board needs Nicholas's verification.
+- Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
 
 ## Next, in order
 

@@ -23,6 +23,7 @@ enum class Role {
     @SerialName("wing") WING,
     @SerialName("fin") FIN,
     @SerialName("horn") HORN,
+    @SerialName("hair") HAIR,
     @SerialName("other") OTHER,
     ;
 

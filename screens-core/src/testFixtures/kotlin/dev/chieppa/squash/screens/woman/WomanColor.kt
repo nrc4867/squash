@@ -20,7 +20,7 @@ val NAILS = SlotName("nails")
 
 /** The parts her skin covers, by their left side where they pair. */
 private val SKIN_PARTS = listOf(TORSO, NECK, HEAD, ARM_L, HAND_L, LEG_L, FOOT_L)
-private val HAIR_PARTS = listOf(HAIR, HAIR_FALL, LOCK_L)
+private val HAIR_PARTS = listOf(HAIR, HAIR_FALL, FALL_INNER_L, FALL_OUTER_L, LOCK_L)
 
 /** Her palette: fair skin, warm brown hair, hazel eyes, soft rose lips and cheeks; and a base slot for every part. */
 fun womanColor(): List<DocumentCommand> = listOf(

@@ -44,6 +44,7 @@ import dev.chieppa.squash.character.build.partSurfaceNode
 import dev.chieppa.squash.character.build.partSurfaceWorkNode
 import dev.chieppa.squash.character.build.plannedLengthFactor
 import dev.chieppa.squash.character.build.posedBodyNode
+import dev.chieppa.squash.character.build.wornOver
 import dev.chieppa.squash.character.build.posedFurNode
 import dev.chieppa.squash.character.build.posedLinesNode
 import dev.chieppa.squash.character.build.posedStateNode
@@ -193,7 +194,7 @@ class CharacterSession(
      * The character in the pose [showPose] gave: [assembly] with each part the pose moves on its posed mesh, or [assembly]'s own result
      * while the pose leaves every part at rest. What follows a pose reads this, so `settled` covers it. See HLD: data-model, The rig.
      */
-    val posedBody: Node<*, AssembledCharacter> = graph.posedBodyNode(assembly, pose)
+    val posedBody: Node<*, AssembledCharacter> = graph.posedBodyNode(assembly, pose, document.map { wornOver(it.character) }.distinctUntilChanged())
 
     private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork, oneSurface.posed)
 

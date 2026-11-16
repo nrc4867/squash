@@ -56,18 +56,26 @@ class PosedState(
 /**
  * [assembly] in the pose [pose] holds the node of, once a rig gives one, with what the garments hide decided again in the pose: the
  * character itself while the pose leaves every part at rest or before there is a pose, its moved arms lying on the body rather than through
- * it and turned out clear of a skirt hanging beside them, its strips built again where the pose carried them and its hanging branches pushed out of what hangs inside them. See [posedBy],
- * [withArmsOnBody], [withArmsClearOfSkirts], [withStripsPosed], [withHangingPushed] and [hiddenAgain].
+ * it and turned out clear of a skirt hanging beside them, its strips built again where the pose carried them, its hanging branches pushed out of what hangs inside them
+ * and its hair pushed out of the body it lies against. See [posedBy], [withArmsOnBody], [withArmsClearOfSkirts], [withStripsPosed], [withHangingPushed],
+ * [withHairPushed], over the garments [worn] grows from the body, and [hiddenAgain].
  */
-fun Graph.posedBodyNode(assembly: Node<*, AssembledCharacter>, pose: StateFlow<Node<*, Held>?>): Node<*, AssembledCharacter> {
+fun Graph.posedBodyNode(
+    assembly: Node<*, AssembledCharacter>,
+    pose: StateFlow<Node<*, Held>?>,
+    worn: Flow<WornOver> = MutableStateFlow(emptyMap()),
+): Node<*, AssembledCharacter> {
     val rest = held(assembly)
     return gather(
-        pose,
-        sourcesOf = { posed -> listOfNotNull(PosedKey.REST to rest, posed?.let { PosedKey.POSE to it }).toMap() },
+        combine(pose, worn) { posed, over -> posed to over },
+        sourcesOf = { (posed, _) -> listOfNotNull(PosedKey.REST to rest, posed?.let { PosedKey.POSE to it }).toMap() },
         cacheSize = POSED_CACHE,
-    ) { (_, sources) ->
+    ) { (shape, sources) ->
         val character = sources.getValue(PosedKey.REST).value as AssembledCharacter
-        (sources[PosedKey.POSE]?.value as PosedParts?)?.let { character.posedBy(it).withArmsOnBody(character).withArmsClearOfSkirts(character).withStripsPosed(character).withHangingPushed().hiddenAgain(character) } ?: character
+        (sources[PosedKey.POSE]?.value as PosedParts?)?.let {
+            character.posedBy(it).withArmsOnBody(character).withArmsClearOfSkirts(character).withStripsPosed(character).withHangingPushed()
+                .withHairPushed(shape.second).hiddenAgain(character)
+        } ?: character
     }
 }
 

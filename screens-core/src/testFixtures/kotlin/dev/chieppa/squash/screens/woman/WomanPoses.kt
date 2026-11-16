@@ -1,15 +1,20 @@
 package dev.chieppa.squash.screens.woman
 
 import dev.chieppa.squash.document.BonePose
+import dev.chieppa.squash.document.JointMode
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 
-/** Her hand-made bones by name: a tube's own bone at its root, the arm's shoulder and elbow, the leg's knee, and the round head's neck. */
+/** Her bones by name: a tube's own bone at its root, the arm's shoulder and elbow, the leg's knee, and the round head's neck. */
 private const val TUBE_BASE = "base"
 private const val ARM_SHOULDER = "joint.1"
 private const val ARM_ELBOW = "joint.2"
 private const val KNEE = "joint.1"
 private const val NECK_TURN = "neck"
+
+/** Her torso's hand-made joints at the ribs and the chest. */
+private const val RIBS = "joint.2"
+private const val CHEST = "joint.3"
 
 /**
  * How far her display pose brings each arm down from the A-pose she is built in, leaning it in across its shoulder's hinge, so it hangs
@@ -46,5 +51,27 @@ val WOMAN_SALUTE = Pose(listOf(
     BonePose(HEAD, NECK_TURN, -12f),
 ))
 
+/** How far the head turns to look over a shoulder, tilts toward one, and the chest bends forward, in degrees. */
+private const val HEAD_TURN = 60f
+private const val HEAD_TILT = 25f
+private const val CHEST_BEND = 20f
+
+/** The left arm raised overhead from the shoulder. */
+private const val ARM_UP = -150f
+
+/** The head turned to look over her left shoulder, and over her right. */
+val WOMAN_LOOK_LEFT = Pose(WOMAN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, turn = HEAD_TURN, mode = JointMode.FREE))
+val WOMAN_LOOK_RIGHT = Pose(WOMAN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, turn = -HEAD_TURN, mode = JointMode.FREE))
+
+/** The head tilted toward her left shoulder. */
+val WOMAN_TILT = Pose(WOMAN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, lean = HEAD_TILT, mode = JointMode.FREE))
+
+/** Bent forward at the chest and ribs, and the left arm raised overhead. */
+val WOMAN_BEND = Pose(WOMAN_DISPLAY.bones + BonePose(TORSO, RIBS, CHEST_BEND, mode = JointMode.FREE) + BonePose(TORSO, CHEST, CHEST_BEND, mode = JointMode.FREE))
+val WOMAN_ARM_UP = Pose(listOf(BonePose(ARM_L, ARM_SHOULDER, ARM_UP, mode = JointMode.FREE)))
+
 /** The poses she is looked at in, by name. */
-val WOMAN_POSES: Map<String, Pose> = mapOf("walk" to WOMAN_WALK, "salute" to WOMAN_SALUTE)
+val WOMAN_POSES: Map<String, Pose> = mapOf(
+    "walk" to WOMAN_WALK, "salute" to WOMAN_SALUTE, "look-left" to WOMAN_LOOK_LEFT, "look-right" to WOMAN_LOOK_RIGHT, "tilt" to WOMAN_TILT,
+    "bend" to WOMAN_BEND, "arm-up" to WOMAN_ARM_UP,
+)

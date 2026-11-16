@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.IN_TURN
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.character.surface.chunked
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import dev.chieppa.squash.geom.surface.HELD
 import kotlin.math.floor
@@ -19,6 +20,8 @@ private const val SKIN_CHUNK = 2048
  * it, so deep in a part it follows the part as the part's own mesh would, and across a join the shares blend parent into child. Only
  * the runs in the line of joins through the vertex's own run count, the runs it grows from, those growing from it and those growing from
  * the same run as it, so a vertex on one paw never follows the other paw however near that lies, while two legs share their crotch.
+ * A vertex of a hair part follows only that part and the part it sits on, never further up its line of joins, so hair over a nape
+ * follows the head and not the neck or torso under it.
  * A quad of the mesh whose corners belong to runs no line of joins relates, two parts touching closer than the mesh's cell, is in
  * [contacts]: a pose that parts them leaves it out rather than stretch it.
  */
@@ -54,7 +57,7 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
                 for (k in 0 until HELD) {
                     val member = mesh.held[v * HELD + k]
                     if (member < 0) continue
-                    if (own >= 0 && !lineage.related(own, member)) continue
+                    if (own >= 0 && !lineage.weighs(own, member)) continue
                     val reader = readers.getOrPut(member) { RunWeights.of(rig, surface, member) } ?: continue
                     reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], mesh.heldShares[v * HELD + k])
                 }
@@ -97,12 +100,31 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
     }
 }
 
-/** Which runs of a surface's field a line of joins relates, each standing for its part's first run: the same part, one growing from the other, however far up, or both from the same run. */
+/**
+ * Which runs of a surface's field a line of joins relates, each standing for its part's first run: the same part, one growing from the
+ * other, however far up, or both from the same run.
+ */
 private class Lineage(surface: CharacterSurface) {
     private val members = surface.field.field.members
 
     /** Each member's part's first member, which stands for all of the part's runs. */
     private val first = IntArray(members.size) { m -> members.indexOfFirst { it.part == members[m].part } }
+
+    /** Whether each member is a run of a hair part. */
+    private val hair = BooleanArray(members.size) { m -> surface.field.runs[m].part.role == Role.HAIR }
+
+    /**
+     * Whether a vertex won by [own] takes weights from [member]: as [related], except that a hair part and any other part relate only
+     * where the other is the part the hair sits on.
+     */
+    fun weighs(own: Int, member: Int): Boolean {
+        val x = first[own]
+        val y = first[member]
+        if (x == y) return true
+        if (hair[x]) return members[x].parent >= 0 && first[members[x].parent] == y
+        if (hair[y]) return members[y].parent >= 0 && first[members[y].parent] == x
+        return related(own, member)
+    }
 
     fun related(a: Int, b: Int): Boolean {
         val x = first[a]

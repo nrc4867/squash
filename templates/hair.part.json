@@ -1,0 +1,26 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hair",
+  "version": 1,
+  "name": "Hair",
+  "role": "hair",
+  "axis": { "rest": [0, -1, 0], "length": 0.6 },
+  "openEnd": "start",
+  "topology": { "rings": 48, "segments": 16 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "circle",
+  "params": {
+    "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
+    "girth": { "default": 0.12, "min": 0.02, "max": 0.6 }
+  },
+  "generic": { "rings": { "min": 16, "max": 96 }, "segments": { "min": 6, "max": 32 } },
+  "surface": "separate",
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$girth", "taper": 0.6 },
+    { "kind": "cap",   "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "root", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint", "name": "sway", "u": 0.35, "hinge": "x", "limits": [-30, 30] },
+    { "kind": "joint", "name": "tip", "u": 0.7, "hinge": "x", "limits": [-30, 30] }
+  ]
+}

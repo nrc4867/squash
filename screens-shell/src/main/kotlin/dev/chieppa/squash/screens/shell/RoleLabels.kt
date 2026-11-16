@@ -10,6 +10,7 @@ import dev.chieppa.squash.uidesign.generated.role_fin
 import dev.chieppa.squash.uidesign.generated.role_foot
 import dev.chieppa.squash.uidesign.generated.role_front_leg
 import dev.chieppa.squash.uidesign.generated.role_front_paw
+import dev.chieppa.squash.uidesign.generated.role_hair
 import dev.chieppa.squash.uidesign.generated.role_hand
 import dev.chieppa.squash.uidesign.generated.role_head
 import dev.chieppa.squash.uidesign.generated.role_horn
@@ -38,6 +39,7 @@ private val NAMES: Map<Role, StringResource> = mapOf(
     Role.WING to Res.string.role_wing,
     Role.FIN to Res.string.role_fin,
     Role.HORN to Res.string.role_horn,
+    Role.HAIR to Res.string.role_hair,
     Role.OTHER to Res.string.role_other,
 )
 

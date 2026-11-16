@@ -587,6 +587,7 @@
     <string name="role_wing">Wing</string>
     <string name="role_fin">Fin</string>
     <string name="role_horn">Horn</string>
+    <string name="role_hair">Hair</string>
     <string name="role_other">Other</string>
     <string name="role_front_leg">Front leg</string>
     <string name="role_front_paw">Front paw</string>

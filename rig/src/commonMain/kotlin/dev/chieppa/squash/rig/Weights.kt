@@ -2,6 +2,7 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.Vec3
 
 /** The most bones one vertex follows. */
@@ -163,11 +164,11 @@ private fun heldShares(given: Map<Int, Float>): Map<Int, Float> {
     return if (total <= most) given else given.mapValues { it.value * most / total }
 }
 
-/** A child's seam as its parent's vertices meet it. */
+/** A child's seam as its parent's vertices meet it; hair has none, so a scalp never follows the hair growing from it. */
 private class Rim(val seam: Seam, val bone: Int, val anchor: Vec3, val radius: Float) {
     companion object {
         fun of(child: RiggedPart, parent: RiggedPart, index: Map<BoneName, Int>, reach: JointReach): Rim? {
-            if (child.joints.isEmpty) return null
+            if (child.joints.isEmpty || child.placed.role == Role.HAIR) return null
             val anchor = child.placed.anchor ?: return null
             val bone = index[child.bone(0)] ?: return null
             return Rim(Seam(child.id), bone, anchor, seamRadius(child, parent) * reach.of(child.id, child.joints.specs[0].name))

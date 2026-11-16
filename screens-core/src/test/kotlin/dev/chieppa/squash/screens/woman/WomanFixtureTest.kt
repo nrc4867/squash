@@ -42,7 +42,7 @@ class WomanFixtureTest {
         val character = womanDocument().character
         assertTrue(character.parts.none { it.roleGuessed })
         assertEquals(
-            mapOf(Role.BODY to 1, Role.NECK to 1, Role.HEAD to 1, Role.ARM to 2, Role.HAND to 2, Role.LEG to 2, Role.FOOT to 2, Role.OTHER to 4),
+            mapOf(Role.BODY to 1, Role.NECK to 1, Role.HEAD to 1, Role.ARM to 2, Role.HAND to 2, Role.LEG to 2, Role.FOOT to 2, Role.HAIR to 8),
             character.parts.groupingBy { checkNotNull(it.role) }.eachCount(),
         )
         assertTrue(!shipped.roles(character).fourLegged)

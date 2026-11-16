@@ -161,7 +161,7 @@ The fennec's factor sheet's best row (dark-brown iris, round pupil, iris filling
 
 Some parts are thinner than any useful cell, or need edges the field rounds off:
 
-- **Thin**: ears, membrane wings, fins, a koi's tail and fins, loose ends.
+- **Thin**: ears, membrane wings, fins, a koi's tail and fins, loose ends, hair's locks and clumps (role hair, pushed out of the body in each pose; see Hair shell results).
 - **Hard**: claws, nails, horns, a beak, teeth, and garment-owned parts (a heel, buttons, a buckle, shades).
 - **Pads** with a thickness (nose leather) stay the small meshes they are, laid on the surface.
 
@@ -177,7 +177,7 @@ A claw on a toe sits on the toe's tip socket with a small sink; a horn on the he
 - **Lizard**: body, legs, tail and toes in the field; claws hard.
 - **Toucan**: body, head and legs in the field; the beak hard; the feet's toes in the field, claws hard.
 - **Koi**: body in the field; fins and tail thin.
-- **The woman and the twin**: torso, neck, head, arms, legs, hands (palm and fingers) and feet (heel, ball, toes) in the field, with the adaptive cells for fingers and toes; hair as a garment-like offset of the head (see Garments) when the hair shell is built.
+- **The woman and the twin**: torso, neck, head, arms, legs, hands (palm and fingers) and feet (heel, ball, toes) in the field, with the adaptive cells for fingers and toes; hair as a `hair-cap` in the field riding the head's bone, and its fall and locks as `hair` parts of their own meshes (see Hair shell results).
 
 Generalizing is the point of the design: a creature needs no join rule, only parts with solids, blends at its sockets, and a separate mark on the parts that are thin or hard.
 
@@ -220,6 +220,7 @@ W_i is today's rule for one part: the joint owning u, joint bands over the part'
 - **Painted seams** plug in where they do now: `SeamPaint` is asked with each vertex's address (its part coordinates), body position and guessed share, and its strokes act by distance in space, as now.
 - **Tidy** finds pieces on the one mesh by its edges, as `MeshPieces` does on any mesh.
 - **Garments** take the weights of the body at the coordinates they grow from. **Separate parts** keep their own.
+- **Hair** in the field weighs only its own run and its socket parent's, never further up its line of joins.
 
 ### Skinning a mesh whose topology changes
 
@@ -1124,6 +1125,35 @@ An earlier run of the same four cases, before a gathering piece stopped asking a
 **GPU path.** An edit built again by kept builders equals a fresh build on the same reads (`GpuReadsSmokeTest`, the winter fennec's front leg grown 3%, body and garments, at the full cell and the drag's coarse one), and `look close=release reads=gpu` gives a release equal to the fresh build in RGBA for the casual woman and the winter fennec, whole figure and face. Parity, GPU against CPU on the same batches (`-Pslow`): `GpuFieldReadsTest` on three made-up runs (one mirrored, one clipped and eased), 20,000 reads, the field within 1.8e-7 and v within 1.2e-7, no sign apart; `GpuReadsSmokeTest` on every batch of the winter fennec's builds, 2.3 million reads, the field within 4.3e-6, 217 signs apart all within 3e-8 of zero, and of 477,000 placed reads 347 apart in v and 3,378 in u by over 1e-3 (548 of them within 0.01 of the surface; median 0.03, largest 0.40), where two pairs of rings give the same field and the GPU's scan and the CPU's pair grid take different ones. The test holds the field to 1e-5, sign changes to within 1e-6 of zero, and placed reads apart to one in 1,000 in v, one in 100 in u and one in 500 in u near the surface. The 147 images on the GPU path against the CPU's: 87 differ, in 4,077 pixels in all of 1.08 million an image, a median of 18 among those that differ; the worst are the summer person (929, 720 and 349 pixels: the mark on the forearm drawn a few pixels over with a stray fleck beside it, and the sleeve's cuff lines a pixel over), the winter fennec's foot close-up (268: the boot's shading edge) and its walk poses (81–93).
 
 **Not built.** The whole placing on the GPU in one kernel (line search, union and coordinates), which would take the placing's three rounds to one and its CPU tails with them; the CPU's pair grid on the GPU; reads outside the mesher (coverage for the hidden skin and the cut, anchors), still read one point at a time on the CPU.
+
+## Hair shell results
+
+The woman and the dressed woman wear hair as hair parts: a `hair-cap` in her field, a fall of five `hair` clumps and a `hair` lock at each temple, each clump and lock its own mesh. The twin keeps its generic blob, tube and locks.
+
+**What is built.**
+
+- **The hair role and two templates.** `Role.HAIR`, labelled Hair with tile art of its own. `hair-cap`: a skull run with no joint, so it rides the bone of the part it sits on, in the field. `hair`: a generic tube resting down, `"surface": "separate"`, a pointed end and a chain of three sway joints (`root`, `sway` at 0.35, `tip` at 0.7). Both are data over existing blocks; a mane on a creature is the same parts on its neck's sockets.
+- **Weights.** A field vertex won by a hair run weighs only that run and its socket parent's (`SurfaceSkin`'s lineage), so the cap over the nape follows the head and not the neck or torso. A hair part gives its parent no rim (`Weights`), so the scalp never follows the hair; a hair part of its own follows its own chain, the head's bone fading in over its root band only.
+- **The push.** In each pose, after the hanging branches are pushed, each hair part of its own is pushed out of the posed parts other than hair, the part it sits on and that part's other children (`withHairPushed`, `StrandPush` in `geom`): each strand vertex reads its eight nearest body points and needs to stand `HAIR_CLEARANCE` (0.012) off each along its normal; a ring moves whole by its largest need; the strand swings as a rod from its root ring; three passes, each from where the last left it. On a one surface a body point a worn garment covers at its u stands out by the garments' eases (`wornOver`), so the fall lies over the coat; on a parts-built character the garment branches are placed parts and push the hair themselves. At rest nothing is pushed: the rest shape is drawn clear of the body.
+- **Clumps and tufts.** The fall is five clumps on sockets round the back of the head (the middle one, an inner pair and an outer pair, each shorter and narrower), each ending in the point a tuft at the end of its drawn Top gives it, so its hem breaks into points; two strand marks are inked down each clump, the crown's strands kept.
+
+**Against the asks,** by eye on the sheets in the scratchpad's `hair-shell/`, main above the branch in each: `woman-full-body` (front, 3/4, side, back, back 3/4), `woman-face`, `woman-head-turn` and `woman-head-turn-views` (look left, look right, tilt), `woman-body-pose` (the torso bent and the arm raised), `woman-walk` (walk and salute), `woman-dressed-<outfit>` for every outfit.
+
+| Ask | Result |
+|---|---|
+| The body does not drag the hair | Passes: with the torso bent, main's fall bends with the back; the branch's hangs from the head. `HairRigTest` finds no hair vertex of its own weighted to anything but its chain and the head, and the head only inside the root band; every cap vertex in the field follows the head's bone alone |
+| A head turn slides the fall over the shoulder | Passes: turned 60 degrees either way, main's fall lies in the back and shoulder; the branch's clumps lie over the shoulder. `HairRigTest` turns the head 70 degrees each way and finds no hair vertex inside the torso's solid by more than 0.004 |
+| Locks and strands, not a helmet | Better: the fall's hem breaks into five points and the clumps' overlap creases ink between them; the cap is still one smooth shape over the skull |
+| Garments wear over the hair | Passes: the beanie still covers the cap; the winter coat and every top lie under the fall |
+| Other examples as main | Passes: dragon, fennec, fennec-dressed, fennec-winged, koi, lizard, toucan, woman-twin and woman-twin-dressed, 83 images, none differ in any channel |
+
+**Open.**
+
+- The cap is the drawn crown in the field, standing off the skull by its drawing, not an offset grown from the head as a garment's branch is. Growing it from the head needs a part built over its parent's built surface, which the slice build does not do.
+- Hair has no weight: the fall turns rigidly with the head and the push only moves it out of the body, so in a bend or a tilt it does not hang toward the ground. Its chain's joints are there for a later sway or a hang solve.
+- The push reads the parts' own posed meshes, not the one surface's field, so on a one surface it is clear of the parts the field is joined from, within their meshes' error of the field (0.004 in the test).
+- The clumps part a little at the hem, showing the coat between them from behind; closer sockets or wider clumps close it, a matter of taste.
+- The twin still wears its blob and tubes.
 
 ## Risks and open questions
 
