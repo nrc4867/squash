@@ -40,7 +40,7 @@ private const val SAUSAGE_EASE = 0.04f
  * ends open, soft and thick: its halves' rims run along the sausage's flanks, well below its top, so the sausage shows all along it.
  */
 private const val BUN_FROM = -0.09f
-private const val BUN_TO = 0.98f
+private const val BUN_TO = 1.02f
 private const val BUN_ROUND_FROM = 0.22f
 private const val BUN_ROUND_TO = 0.78f
 private const val BUN_EASE = 0.06f
@@ -69,10 +69,10 @@ private val BUN_SIDE = loop(
     p(1.00f, -0.27f), p(0.80f, -0.31f), p(0.40f, -0.32f), p(0.10f, -0.30f), p(-0.05f, -0.22f),
 )
 
-/** The bun from above: wider than the sausage all along, so its halves bulge out either side, round at the back. */
+/** The bun from above: a little wider than the sausage, closing in toward the chest so its halves hug the flanks there, round at both ends. */
 private val BUN_TOP = loop(
-    p(-0.08f, 0f), p(-0.05f, 0.20f), p(0.08f, 0.32f), p(0.30f, 0.36f), p(0.60f, 0.36f), p(0.82f, 0.33f), p(1.00f, 0.30f),
-    p(1.00f, -0.30f), p(0.82f, -0.33f), p(0.60f, -0.36f), p(0.30f, -0.36f), p(0.08f, -0.32f), p(-0.05f, -0.20f),
+    p(-0.08f, 0f), p(-0.05f, 0.18f), p(0.08f, 0.29f), p(0.30f, 0.32f), p(0.60f, 0.31f), p(0.80f, 0.27f), p(1.00f, 0.25f),
+    p(1.00f, -0.25f), p(0.80f, -0.27f), p(0.60f, -0.31f), p(0.30f, -0.32f), p(0.08f, -0.29f), p(-0.05f, -0.18f),
 )
 
 /** The bun's section: full and round, a little flattened underneath, so each half reads as a puffy roll. */
