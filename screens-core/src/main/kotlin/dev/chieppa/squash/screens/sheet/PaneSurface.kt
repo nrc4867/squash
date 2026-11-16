@@ -55,7 +55,7 @@ class LastPaneSurface {
  * What [color]'s one surface draws in a pane, the pose's when [posedPane], seen with the camera at [toCamera], each eye
  * along [toViewer] from its middle: its garments, then the
  * surface with its paint, or with [only] that part's own section of it; each at [opacity] in [layer], outlined [outline] wide. Nothing
- * for a character without one.
+ * without a [color].
  */
 fun SheetLook.surfaceDraws(
     color: PaneColor?,
@@ -77,4 +77,4 @@ fun SheetLook.surfaceDraws(
 }
 
 /** Whether [part] draws as its section of [color]'s one surface rather than its own mesh. */
-fun PaneColor?.holds(part: SheetPart): Boolean = part.id != null && this?.surface?.parts?.contains(part.id) == true
+fun PaneColor?.holds(part: SheetPart): Boolean = this != null && part.id != null && surface.parts.contains(part.id)

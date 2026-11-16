@@ -30,7 +30,7 @@ class CatFixtureTest {
     }
 
     @Test
-    fun itIsBuiltAsOneSurfaceWithPaintedEyes() {
+    fun itIsBuiltWithPaintedEyes() {
         val character = catDocument().character
         assertEquals(listOf(CAT_EYES), character.paintedEyes.map { it.id })
     }

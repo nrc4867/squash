@@ -30,7 +30,7 @@ private val LIT_RADIUS = 7.dp
 /**
  * How the Rig stage shows the open character: each part in its Rig color with its seams' bands mixing the colors by weight, the
  * bone under the pointer or picked as a heat map over it, and a dot at every joint, all in the pose the panes show. Null before the
- * rig has run.
+ * rig and its surface have been built.
  */
 @Composable
 fun rememberRigShading(state: AppState): RigShading? {
@@ -48,7 +48,7 @@ fun rememberRigShading(state: AppState): RigShading? {
     val look = with(LocalDensity.current) { JointLook(c.surfaceFloat, c.inkStrong, c.accent, JOINT_RADIUS.toPx(), JOINT_EDGE.toPx(), LIT_RADIUS.toPx()) }
     val lit = state.rig.heat
     val layers = remember(seams, heated) { rig.parts.associate { it.id to seams[it.id].orEmpty() + heated[it.id].orEmpty() } }
-    val surface = rememberRigSurface(state, rig, colors, heat)
+    val surface = rememberRigSurface(state, rig, colors, heat) ?: return null
     return RigShading(colors, layers, { sight -> jointDots(rig, points, sight, look, lit) }, surface)
 }
 

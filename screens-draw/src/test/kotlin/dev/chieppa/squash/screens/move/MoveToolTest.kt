@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.move
 
+import dev.chieppa.squash.screens.restSurface
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
@@ -170,7 +171,7 @@ class MoveToolTest {
         val pixels = (1 until GRID).flatMap { row -> (1 until GRID).map { column -> Offset(600f * column / GRID, 400f * row / GRID) } }
         val press = pixels.first { pixel ->
             dots.all { (it - pixel).getDistance() > TEST_CURVE_LOOK.grabReach * 2 } &&
-                socketPlaceAt(bench.character, pixel, camera, LockedHandleView(camera))?.part?.id == bench.torso
+                socketPlaceAt(bench.character, pixel, camera, LockedHandleView(camera), bench.session.restSurface)?.part?.id == bench.torso
         }
         showPane(AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK), camera)
         val steps = bench.steps()

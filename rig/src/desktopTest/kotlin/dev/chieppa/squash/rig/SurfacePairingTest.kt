@@ -65,7 +65,7 @@ class SurfacePairingTest {
         runCurrent()
         val seen = ArrayList<Shown>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            combine(session.characterSurface.output, session.surfacePaint.output, session.oneSurface.dress.output) { surface, paint, dress ->
+            combine(session.characterSurface.output, session.surfacePaint.output, session.sessionSurface.dress.output) { surface, paint, dress ->
                 surface?.surface?.let { Shown(it, paint, dress?.dress) }
             }.collect { it?.let(seen::add) }
         }
@@ -90,7 +90,7 @@ class SurfacePairingTest {
         session.send(SetWardrobe(wardrobe))
         session.send(SetPose(Pose(listOf(BonePose(leg.id, "knee", 60f)))))
         runCurrent()
-        val posed = assertNotNull(session.oneSurface.posed.value)
+        val posed = assertNotNull(session.sessionSurface.posed.value)
         val failures = ArrayList<Throwable>()
         val shownPosed = ArrayList<PosedSurface>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { posed.failure.collect { it?.let(failures::add) } }
@@ -110,7 +110,7 @@ class SurfacePairingTest {
         session.send(SetBaseSlot(leg.id, SlotName("sock")))
         runCurrent()
         val rest = assertNotNull(session.characterSurface.output.value?.surface)
-        val dress = assertNotNull(session.oneSurface.dress.output.value?.dress)
+        val dress = assertNotNull(session.sessionSurface.dress.output.value?.dress)
         val paint = assertNotNull(session.surfacePaint.output.value?.paint)
         assertTrue(paint.layers.any { it.candidates.isNotEmpty() })
         val cell = rest.mesh.cell

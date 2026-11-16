@@ -50,11 +50,11 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     private val garmentSkins = GarmentSkins()
     private val sources: Map<SkinSource, Node<*, Any>> = mapOf(
         SkinSource.RIG to graph.follow<Rig, Any>(rig, cacheSize = KEPT_BUILDS) { it },
-        SkinSource.SURFACE to graph.gather<Boolean, SkinSource, HeldSurface, Any>(session.oneSurface.skinShown, { mapOf(SkinSource.SURFACE to session.characterSurface) }, cacheSize = KEPT_BUILDS) { gathered ->
+        SkinSource.SURFACE to graph.gather<Boolean, SkinSource, HeldSurface, Any>(session.sessionSurface.skinShown, { mapOf(SkinSource.SURFACE to session.characterSurface) }, cacheSize = KEPT_BUILDS) { gathered ->
             val held = gathered.values.getValue(SkinSource.SURFACE)
             if (held.coarse && !gathered.shape) HeldSurface(null, coarse = true) else held
         },
-        SkinSource.DRESS to graph.follow<HeldDress, Any>(session.oneSurface.dress, cacheSize = KEPT_BUILDS) { it },
+        SkinSource.DRESS to graph.follow<HeldDress, Any>(session.sessionSurface.dress, cacheSize = KEPT_BUILDS) { it },
     )
 
     /** The last skin made with its dress worn on its surface, which a run whose dress is still the last surface's keeps. */
@@ -72,7 +72,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     }
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }
-    private val paintSource = graph.follow<HeldPaint, Any>(session.oneSurface.shownPaint, cacheSize = KEPT_BUILDS) { it }
+    private val paintSource = graph.follow<HeldPaint, Any>(session.sessionSurface.shownPaint, cacheSize = KEPT_BUILDS) { it }
 
     /** The last posed surface made with its paint laid on its surface, which a run whose paint is still another surface's keeps. */
     @Volatile
@@ -105,7 +105,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     }
 
     init {
-        session.oneSurface.showPosed(posed)
+        session.sessionSurface.showPosed(posed)
     }
 }
 

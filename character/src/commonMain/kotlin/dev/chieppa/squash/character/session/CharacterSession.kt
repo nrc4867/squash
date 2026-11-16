@@ -138,13 +138,13 @@ class CharacterSession(
     )
 
     /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
-    val oneSurface = SessionSurface(graph, history, placed, ::heldShapes, reads)
+    val sessionSurface = SessionSurface(graph, history, placed, ::heldShapes, reads)
 
     /** The character's body as one surface; null for a character with no part in the field. */
-    val characterSurface: Node<*, HeldSurface> get() = oneSurface.surface
+    val characterSurface: Node<*, HeldSurface> get() = sessionSurface.surface
 
     /** What is painted on [characterSurface]; null without one. */
-    val surfacePaint: Node<*, HeldPaint> get() = oneSurface.paint
+    val surfacePaint: Node<*, HeldPaint> get() = sessionSurface.paint
 
     /**
      * Every part's surface work as positions in body space, through [assembly]'s placement, landed on the one surface's field on a
@@ -157,7 +157,7 @@ class CharacterSession(
             assembly,
             ::surfaceWork,
         ),
-        oneSurface.mesh,
+        sessionSurface.mesh,
     )
 
     /**
@@ -189,7 +189,7 @@ class CharacterSession(
      */
     val posedBody: Node<*, AssembledCharacter> = graph.posedBodyNode(assembly, pose, document.map { wornOver(it.character) }.distinctUntilChanged())
 
-    private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork, oneSurface.posed)
+    private val posedState: Node<*, PosedState> = graph.posedStateNode(document, assembly, posedBody, bodySurfaceWork, sessionSurface.posed)
 
     /** [bodySurfaceWork] resolved on [posedBody]'s grids: its own result while the pose leaves every part at rest. */
     val posedSurfaceWork: Node<*, BodySurfaceWork> = graph.follow(posedState, cacheSize = 1) { it.work }

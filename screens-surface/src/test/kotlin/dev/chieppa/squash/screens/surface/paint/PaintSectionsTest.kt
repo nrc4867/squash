@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.restSurface
 import dev.chieppa.squash.screens.surface.keptAlong
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.ShapeSource
@@ -63,7 +64,7 @@ class PaintSectionsTest {
     private fun hitOn(id: PartId, sight: SurfaceView): SurfaceHit {
         val character = assembled()
         val center = assertNotNull(character.part(id)?.box).center
-        return assertNotNull(surfaceHit(character, assertNotNull(sight.toPixel(center)), sight), "something shows at the middle of ${id.value}")
+        return assertNotNull(surfaceHit(character, assertNotNull(sight.toPixel(center)), sight, session.restSurface), "something shows at the middle of ${id.value}")
     }
 
     @Test
@@ -72,7 +73,7 @@ class PaintSectionsTest {
         val box = assertNotNull(character.box)
         val sight = sideView(box)
         assertEquals(TORSO, hitOn(TORSO, sight).part)
-        assertNull(surfaceHit(character, Offset(1f, 1f), sight))
+        assertNull(surfaceHit(character, Offset(1f, 1f), sight, session.restSurface))
     }
 
     @Test
@@ -81,7 +82,7 @@ class PaintSectionsTest {
         val sight = sideView(assertNotNull(character.box))
         val hit = hitOn(TORSO, sight)
         val pixel = assertNotNull(sight.toPixel(hit.position))
-        val again = assertNotNull(surfaceHit(character, pixel, sight))
+        val again = assertNotNull(surfaceHit(character, pixel, sight, session.restSurface))
         assertEquals(hit.u, again.u, 0.02f)
         assertEquals(hit.v, again.v, 0.02f)
     }

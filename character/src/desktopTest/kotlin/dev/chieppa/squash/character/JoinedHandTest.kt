@@ -26,7 +26,7 @@ class JoinedHandTest {
     private fun farthest(patch: Patch): Float = (0 until patch.nu * patch.nv).maxOf { patch.point(it).length }
 
     @Test
-    fun thePalmAndFingersAreRunsOnOneSurfaceThatRideEachOther() {
+    fun thePalmAndFingersAreRunsThatRideEachOther() {
         assertEquals(emptyList(), TemplateLint.lint(hand))
         val patches = PartBuilder.build(hand)
         assertEquals(listOf("body") + List(5) { "fingers:$it" }, patches.map { it.name })

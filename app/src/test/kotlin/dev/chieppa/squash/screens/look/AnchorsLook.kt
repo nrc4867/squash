@@ -30,7 +30,7 @@ private const val RING_POINTS = 10
 private const val EDIT_GROWTH = 1.06f
 
 /**
- * Anchors near each join of a one-surface character, before and after an edit of the part they grow from: at each join a ring of anchors
+ * Anchors near each join of a character, before and after an edit of the part they grow from: at each join a ring of anchors
  * on the parent and one on the child, each where its part holds most of the surface just inside the join, drawn as ink marks; then the
  * root part made larger, and the same spots again. The marks are taken off and the edit undone after.
  */
@@ -50,8 +50,8 @@ class AnchorsLook(work: TestWork, errors: MutableList<String>, folder: File) {
         val placed = checkNotNull(session.placed.output.value)
         val rows = joins.mapNotNull { placed.part(it.id)?.origin }.map { at -> SpotViews.AROUND.take(3).map { Spot(at, SPOT_RADIUS, it) } }
         spots.keep(session, rows, "$name-anchors-before")
-        val size = character.resolved(root).params[OneSurfaceLook.SIZE] ?: checkNotNull(session.builtTemplate(root).defaults[OneSurfaceLook.SIZE])
-        session.send(SetParameter(root.id, OneSurfaceLook.SIZE, size * EDIT_GROWTH))
+        val size = character.resolved(root).params[SurfaceCloseUps.SIZE] ?: checkNotNull(session.builtTemplate(root).defaults[SurfaceCloseUps.SIZE])
+        session.send(SetParameter(root.id, SurfaceCloseUps.SIZE, size * EDIT_GROWTH))
         settle(session)
         val moved = checkNotNull(session.placed.output.value)
         val after = joins.mapNotNull { moved.part(it.id)?.origin }.map { at -> SpotViews.AROUND.take(3).map { Spot(at, SPOT_RADIUS, it) } }

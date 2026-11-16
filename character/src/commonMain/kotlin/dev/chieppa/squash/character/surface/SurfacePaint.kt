@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.surface
 
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.build.LandedShape
 import dev.chieppa.squash.character.build.ResolvedMark
@@ -107,10 +108,21 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
             val anchors = FieldAnchors(surface.field)
             return held.filterKeys { it in surface.parts }.mapValues { (_, shapes) ->
                 shapes.lines.mapNotNull { mark ->
-                    val points = mark.points.mapNotNull { anchors.resolve(it.anchor) }
-                    if (points.size < 2) null else mark.copy(points = points, versions = emptyMap())
+                    val points = if (mark.kind == MarkKind.FLOATING) floatingFrom(mark.points, anchors) else mark.points.mapNotNull { anchors.resolve(it.anchor) }
+                    if (points == null || points.size < 2) null else mark.copy(points = points, versions = emptyMap())
                 }
             }
+        }
+
+        /**
+         * A floating mark's [points] with its root resolved again on the field and the rest of its flight carried with it, or null where the
+         * field holds no root. Every point of a floating mark names its root's anchor, so they are not resolved one by one.
+         */
+        private fun floatingFrom(points: List<ResolvedPoint>, anchors: FieldAnchors): List<ResolvedPoint>? {
+            val first = points.firstOrNull() ?: return null
+            val root = anchors.resolve(first.anchor) ?: return null
+            val moved = root.position - first.position
+            return points.mapIndexed { i, point -> if (i == 0) point.copy(position = root.position) else point.copy(position = point.position + moved) }
         }
 
         /** How far inside its runs' own section of [chart]'s surface each vertex [members] hold lies, those [earlier] keeps taken from there. */

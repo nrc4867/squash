@@ -26,7 +26,7 @@ class DragStackTest {
     fun aDragMeshesEverythingCoarseAndLeavesTheUnseenSkinUntilItsEnd() = runTest {
         val session = stackSession()
         val pose = SessionPose(session)
-        session.oneSurface.skinShown.value = false
+        session.sessionSurface.skinShown.value = false
         runCurrent()
         val full = assertNotNull(session.characterSurface.output.value?.surface).mesh.cell
         val gesture = session.history.begin()
@@ -34,7 +34,7 @@ class DragStackTest {
         runCurrent()
         check(session.graph.settled.value)
         assertTrue(assertNotNull(session.characterSurface.output.value?.surface).mesh.cell > full)
-        val dress = assertNotNull(session.oneSurface.dress.output.value?.dress)
+        val dress = assertNotNull(session.sessionSurface.dress.output.value?.dress)
         assertTrue(dress.garments.isNotEmpty() && dress.garments.all { it.surface.mesh.cell > full }, "the garments mesh at the coarse cell too")
         assertNull(pose.surface.skin.output.value?.skin, "no pane draws the weights, so they wait")
         assertNull(pose.surface.posed.output.value?.posed)
@@ -83,7 +83,7 @@ class DragStackTest {
         val session = stackSession()
         val pose = SessionPose(session)
         runCurrent()
-        session.oneSurface.skinShown.value = false
+        session.sessionSurface.skinShown.value = false
         runCurrent()
         val before = Built.of(session, pose)
         val gesture = session.history.begin()
@@ -120,8 +120,8 @@ class DragStackTest {
             fun of(session: CharacterSession, pose: SessionPose) = Built(
                 assertNotNull(session.characterSurface.output.value?.surface),
                 session.surfacePaint.output.value?.paint,
-                session.oneSurface.shownPaint.output.value?.paint,
-                session.oneSurface.dress.output.value?.dress,
+                session.sessionSurface.shownPaint.output.value?.paint,
+                session.sessionSurface.dress.output.value?.dress,
                 pose.surface.skin.output.value?.skin,
                 pose.surface.posed.output.value?.posed,
             )

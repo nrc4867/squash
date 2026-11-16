@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
  * eyes, garments, hidden skin and weights as the whole stack built afresh.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class OneSurfaceStackTest {
+class SurfaceStackTest {
     private val leg = StackFixture.leg
 
     @Test
@@ -63,7 +63,7 @@ class OneSurfaceStackTest {
         while (true) (garments.next() ?: break).forEach { it() }
         val freshHiding = HiddenSkin(fresh, garments.garments).run()
         val freshWorn = freshHiding.worn
-        val dress = assertNotNull(session.oneSurface.dress.output.value?.dress)
+        val dress = assertNotNull(session.sessionSurface.dress.output.value?.dress)
         assertEquals(freshWorn.size, dress.garments.size)
         freshWorn.zip(dress.garments).forEach { (a, b) -> assertSameGarment(a, b) }
         assertContentEquals(assertNotNull(freshHiding.skin).triangles, assertNotNull(dress.skin).triangles)
@@ -77,7 +77,7 @@ class OneSurfaceStackTest {
     }
 
     @Test
-    fun surfaceWorkOnTheOneSurfaceFollowsItIntoAPose() = runTest {
+    fun surfaceWorkFollowsItIntoAPose() = runTest {
         val session = stackSession()
         SessionPose(session)
         val stripe = MarkId("stripe")
@@ -85,7 +85,7 @@ class OneSurfaceStackTest {
         session.send(SetPose(Pose(listOf(BonePose(leg.id, "knee", 60f)))))
         runCurrent()
         check(session.graph.settled.value)
-        val posed = assertNotNull(session.oneSurface.posed.value?.output?.value?.posed).surface
+        val posed = assertNotNull(session.sessionSurface.posed.value?.output?.value?.posed).surface
         val rest = assertNotNull(session.bodySurfaceWork.output.value?.parts?.get(leg.id)).marks.first { it.id == stripe }.points
         val shown = assertNotNull(session.posedSurfaceWork.output.value?.parts?.get(leg.id)).marks.first { it.id == stripe }.points
         val cell = posed.mesh.cell

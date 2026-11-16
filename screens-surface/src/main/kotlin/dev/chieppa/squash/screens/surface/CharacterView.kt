@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.character.surface.SurfaceSection
 import dev.chieppa.squash.geom.laidOn
 
 import androidx.compose.runtime.Immutable
@@ -67,21 +68,23 @@ class CharacterState(
     val palette: Palette,
     val lines: BodyLines,
     val fur: FurView,
+    val surface: CharacterSurface,
     val taper: Float = LineRules.DEFAULT_TAPER,
     val shown: ExpressionId? = null,
     val target: Vec3? = null,
     val cheats: GazeCheats = GazeCheats(),
-    val surface: CharacterSurface? = null,
     val paint: SurfacePaint? = null,
     val dress: SurfaceDress? = null,
+    val only: Set<PartId>? = null,
 )
 
 /**
  * A view of [state] through [camera]. Every part's contour draws as a ribbon at the silhouette weight in the back of the depth
  * buffer, where only what clears the whole figure shows, and at the interior weight in the scene. [faceBin] says which camera bin
- * the face shows in each part holding one. Color layers lie on each part as it shows, posed or not. A character built as one surface
- * draws that surface, its paint, its contour, its joins' ink and its parts' ink marks resolved on it in place of the parts it
- * holds, which keep only their pieces that are not runs.
+ * the face shows in each part holding one. Color layers lie on each part as it shows, posed or not. The character's one surface
+ * draws, with its paint, its contour, its joins' ink and its parts' ink marks resolved on it in place of the parts it holds, which
+ * keep only their pieces that are not runs. With [CharacterState.only], the surface draws as those parts' own sections, lined by their
+ * sections' contours, and without garments.
  */
 fun characterView(
     rect: PixelRect,
@@ -104,7 +107,9 @@ fun characterView(
     val center = state.character.box?.center ?: Vec3.ZERO
     val ribbons = ArrayList<RibbonDraw>()
     val surface = state.surface
-    val inSurface = surface?.parts.orEmpty()
+    val inSurface = surface.parts
+    val garments = if (state.only == null) state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center) }.orEmpty() else emptyList()
+    val sections = state.only?.filter { it in surface.parts }?.map { SurfaceSection(surface, it) } ?: listOf(null)
     val filled = parts.mapNotNull { part ->
         val id = requireNotNull(part.id)
         if (id in inSurface) return@mapNotNull piecesDraw(part, state.color.parts[id], state.palette, fallback, shading, eye - center)
@@ -115,14 +120,19 @@ fun characterView(
         val face = faces.draws(id, view)
         ribbons += face.ribbons
         draw.copy(layers = draw.layers + face.layers)
-    } + state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center) }.orEmpty() + listOfNotNull(surface?.let { surfaceDraw(it, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center, toViewer = view::toViewer) })
+    } + garments + sections.map { surfaceDraw(surface, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center, it, view::toViewer) }
     val lined = state.lines.parts.values.map { lines -> if (lines.part.id in inSurface) lines.withoutRuns() else lines }
-    val oneLines = surface?.let { OneSurfaceLines(PosedSurface(it, state.paint, state.dress), lineWeightStrokes(state.character, state.work)) }
-    val contour = if (oneLines != null) oneLines.contour(lined, view) else contourRibbon(lined, view)
-    contour?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, state.character.box?.radius ?: 0f) }
-    lined.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
-    oneLines?.let { ribbons += it.inks(view, look, ink) }
+    val oneLines = PosedSurfaceLines(PosedSurface(surface, state.paint, state.dress), lineWeightStrokes(state.character, state.work))
+    val radius = state.character.box?.radius ?: 0f
+    if (state.only == null) {
+        oneLines.contour(lined, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, radius) }
+        lined.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
+        ribbons += oneLines.inks(view, look, ink)
+    } else {
+        state.only.filter { it in inSurface }.forEach { ribbons += oneLines.sectionContour(it, view, look, ink, radius) }
+    }
     state.paint?.seenFrom(view::toViewer)?.marks?.forEach { (id, marks) ->
+        if (state.only != null && id !in state.only) return@forEach
         marks.mapNotNull { it.lineDraw(state.lines.parts[id], look.marks, it.slot?.let(state.palette::colorOf) ?: ink, state.taper, DepthLayer.SCENE) }.forEach { ribbons += it }
     }
     for (part in parts) {

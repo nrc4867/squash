@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.restSurface
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -150,7 +151,7 @@ class PaintPointerFlowTest {
                 val pixel = view.toPixel(placed.origin + placed.surface.shown(patch.positionAt(u, v))) ?: return@mapNotNull null
                 val inside = pixel.x in 0f..view.width.toFloat() && pixel.y in 0f..view.height.toFloat()
                 if (!inside) return@mapNotNull null
-                surfaceHit(character, pixel, sight)?.takeIf { it.part == part }?.let { pixel to it }
+                surfaceHit(character, pixel, sight, assertNotNull(session.value).restSurface)?.takeIf { it.part == part }?.let { pixel to it }
             }
         }
     }
@@ -161,7 +162,7 @@ class PaintPointerFlowTest {
         val character = assertNotNull(assertNotNull(session.value).assembly.output.value)
         val sight = view
         val steps = generateSequence(from) { it - Offset(0f, SCAN_STEP.toFloat()) }.takeWhile { it.y > 0f }
-        val first = assertNotNull(steps.firstOrNull { surfaceHit(character, it, sight)?.part == part }, "${part.value} shows above $from")
+        val first = assertNotNull(steps.firstOrNull { surfaceHit(character, it, sight, assertNotNull(session.value).restSurface)?.part == part }, "${part.value} shows above $from")
         return first - Offset(0f, INTO_PART)
     }
 

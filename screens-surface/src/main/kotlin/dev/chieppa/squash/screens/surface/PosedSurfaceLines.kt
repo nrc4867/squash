@@ -15,14 +15,14 @@ import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.screens.sheet.SurfaceView
 
-/** How many parts' sections a [OneSurfaceLines] keeps the lines of. */
+/** How many parts' sections a [PosedSurfaceLines] keeps the lines of. */
 private const val KEPT_SECTIONS = 4
 
 /**
  * A character's one surface as its lines read it: [shown], the surface at rest or posed with its paint and dress, and the line weights
  * [strokes] that thicken its contour by distance in space.
  */
-class OneSurfaceLines(val shown: PosedSurface, private val strokes: List<WeightStroke> = emptyList()) {
+class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<WeightStroke> = emptyList()) {
     /** The parts the surface holds. */
     val parts: Set<PartId> get() = shown.surface.parts
 
@@ -50,17 +50,23 @@ class OneSurfaceLines(val shown: PosedSurface, private val strokes: List<WeightS
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<PartId, Pair<TriangleLines, List<List<CurvePoint>>>>) = size > KEPT_SECTIONS
     }
 
+    private fun sectionOf(part: PartId): Pair<TriangleLines, List<List<CurvePoint>>> = synchronized(sections) {
+        sections.getOrPut(part) {
+            val section = SurfaceSection(shown.surface, part)
+            TriangleLines(shown.surface.positions, shown.surface.lineNormals, section.triangles) to section.border()
+        }
+    }
+
     /** [part]'s own section's contour through [view] in front of what is ghosted, and the curve where it meets its neighbours. */
     fun selected(part: PartId, view: SurfaceView, look: CharacterLook, ink: Color, figureRadius: Float): List<RibbonDraw> {
-        val (lines, border) = synchronized(sections) {
-            sections.getOrPut(part) {
-                val section = SurfaceSection(shown.surface, part)
-                TriangleLines(shown.surface.positions, shown.surface.lineNormals, section.triangles) to section.border()
-            }
-        }
+        val (lines, border) = sectionOf(part)
         val contour = contourRibbon(emptyList(), view, listOf(lines), weightAt)?.let { contourDraws(it, look.lines, ink, LineLayers.SELECTION, figureRadius) }.orEmpty()
         return contour + facedCurveDraws(border, view, look.creases, ink, shown.surface.mesh.cell, DepthLayer.FRONT)
     }
+
+    /** [part]'s own section's contour through [view] as the figure's own is drawn, with nothing where it meets its neighbours. */
+    fun sectionContour(part: PartId, view: SurfaceView, look: CharacterLook, ink: Color, figureRadius: Float): List<RibbonDraw> =
+        contourRibbon(emptyList(), view, listOf(sectionOf(part).first), weightAt)?.let { contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius) }.orEmpty()
 }
 
 /** These lines of a part of the one surface: only its patches that are not runs, and no crease, since the surface's own joins ink it. */

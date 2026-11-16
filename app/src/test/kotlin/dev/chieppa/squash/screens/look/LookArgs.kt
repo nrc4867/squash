@@ -60,13 +60,13 @@ class LookArgs(args: Array<String>) {
     /** Whether measure prints every part's origin and box. */
     val parts: Boolean = values["parts"] == "true"
 
-    /** With `profile=true`, `measure` also prints where a one-surface build's time goes. */
+    /** With `profile=true`, `measure` also prints where a surface build's time goes. */
     val profile: Boolean = values["profile"] == "true"
 
     /** With `only=stack`, `measure` prints only the one surface's stack timings. */
     val stackOnly: Boolean = values["only"] == "stack"
 
-    /** The one-surface edits `measure` times, among head, front-leg-l and torso, or null for all of them. */
+    /** The surface edits `measure` times, among head, front-leg-l and torso, or null for all of them. */
     val edits: List<String>? = values["edits"]?.split(',')
 
     /** With `jfr=<folder>` and a profile, `measure` records the profiled edits under the JDK's flight recorder into that folder. */

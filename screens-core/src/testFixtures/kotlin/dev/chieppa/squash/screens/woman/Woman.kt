@@ -28,7 +28,7 @@ val EMPTY_WOMAN: SquashDocument by lazy {
  * surface's joins and her painted eyes, then the pose she is shown in.
  */
 fun womanCommands(): List<DocumentCommand> =
-    womanBody() + womanHead() + womanColor() + womanFace() + womanOneSurface() + SetDisplayPose(WOMAN_DISPLAY)
+    womanBody() + womanHead() + womanColor() + womanFace() + womanSurface() + SetDisplayPose(WOMAN_DISPLAY)
 
 /** The woman as those commands leave it. */
 fun womanDocument(): SquashDocument = womanCommands().fold(EMPTY_WOMAN) { document, command -> command.apply(document).document }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.restSurface
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -77,7 +78,7 @@ class SurfaceToolsTest {
         val center = assertNotNull(character.part(TORSO)?.box).center
         for (view in listOf(free(session, Vec3(0.2f, 0.4f, -1f)), locked(session))) {
             val pixel = assertNotNull(view.toPixel(center))
-            val hit = assertNotNull(surfaceHit(character, pixel, view))
+            val hit = assertNotNull(surfaceHit(character, pixel, view, session.restSurface))
             val placed = assertNotNull(character.part(hit.part))
             val resolved = assertNotNull(placed.surface.patches.first { it.name == hit.patch }).let { patch ->
                 placed.origin + placed.surface.shown(patch.positionAt(hit.u, hit.v))
@@ -88,7 +89,7 @@ class SurfaceToolsTest {
     }
 
     @Test
-    fun aPickOnTheOneSurfaceResolvesOnItsFieldWhereItWasPickedAndASelectionLinesItsOwnSection() {
+    fun aPickOnTheSurfaceResolvesOnItsFieldWhereItWasPickedAndASelectionLinesItsOwnSection() {
         val session = session()
         settle(session)
         val character = assertNotNull(session.assembly.output.value)
@@ -104,7 +105,7 @@ class SurfaceToolsTest {
         }
         val lines = SurfaceLines(
             assertNotNull(session.bodyLines.output.value), assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper,
-            androidx.compose.ui.graphics.Color.Black, 1f, oneSurface = OneSurfaceLines(PosedSurface(surface, null)),
+            androidx.compose.ui.graphics.Color.Black, 1f, surface = PosedSurfaceLines(PosedSurface(surface, null)),
         )
         val selected = lines.selected(TORSO, locked(session))
         assertTrue(selected.any { it.layer == DepthLayer.BEHIND_FRONT }, "the section's contour")
@@ -117,7 +118,7 @@ class SurfaceToolsTest {
         val character = assertNotNull(session.assembly.output.value)
         val view = locked(session)
         val head = assertNotNull(character.part(HEAD)?.box).center
-        assertEquals(HEAD, surfaceHit(character, view.toPixel(head), view)?.part)
+        assertEquals(HEAD, surfaceHit(character, view.toPixel(head), view, session.restSurface)?.part)
     }
 
     @Test
@@ -126,7 +127,7 @@ class SurfaceToolsTest {
         val view = free(session, Vec3(0.2f, 0.4f, -1f))
         val character = assertNotNull(session.assembly.output.value)
         val start = assertNotNull(view.toPixel(assertNotNull(character.part(TORSO)?.box).center))
-        val anchors = List(3) { assertNotNull(surfaceHit(character, start + Offset(it * 8f, 0f), view)).anchor }
+        val anchors = List(3) { assertNotNull(surfaceHit(character, start + Offset(it * 8f, 0f), view, session.restSurface)).anchor }
         val before = session.document.value
         val command = assertNotNull(strokeCommand(before.character, anchors, thisSide = false))
         session.send(command)
@@ -154,7 +155,7 @@ class SurfaceToolsTest {
         val character = assertNotNull(session.assembly.output.value)
         val center = assertNotNull(character.part(TORSO)?.box).center
         val view = free(session, Vec3(0.2f, 0.4f, -1f))
-        val hit = assertNotNull(surfaceHit(character, assertNotNull(view.toPixel(center)), view))
+        val hit = assertNotNull(surfaceHit(character, assertNotNull(view.toPixel(center)), view, session.restSurface))
         val radius = assertNotNull(weightRadius(character, hit, view, 24f))
         val length = assertNotNull(character.part(hit.part)).surface.axisLength
         val pixels = radius * length * view.pixelsPerUnitAt(hit.position)
@@ -213,7 +214,7 @@ class SurfaceToolsTest {
         val work = assertNotNull(session.bodySurfaceWork.output.value)
         val look = characterLook(LineRules(), 1f)
         val ink = androidx.compose.ui.graphics.Color.Black
-        val surface = SurfaceLines(lines, work, look, LineRules().taper, ink, 1f)
+        val surface = SurfaceLines(lines, work, look, LineRules().taper, ink, 1f, surface = PosedSurfaceLines(PosedSurface(session.restSurface, null)))
         val view = free(session, Vec3(0.6f, 0.3f, -1f))
         val whole = surface.figure(view)
         assertTrue(whole.any { it.layer == DepthLayer.BACK && it.rule.interiorPixels == 6f }, "the thick line shows 4 pixels across with the thin one's inner half")
@@ -235,7 +236,7 @@ class SurfaceToolsTest {
         fun drawn(ink: Boolean): SurfaceLines {
             session.send(SetRegion(holder, region.id, region.copy(ink = ink)))
             settle(session)
-            return SurfaceLines(lines, assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper, androidx.compose.ui.graphics.Color.Black, 1f)
+            return SurfaceLines(lines, assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper, androidx.compose.ui.graphics.Color.Black, 1f, surface = PosedSurfaceLines(PosedSurface(session.restSurface, null)))
         }
         val view = locked(session)
         val without = drawn(false).figure(view)

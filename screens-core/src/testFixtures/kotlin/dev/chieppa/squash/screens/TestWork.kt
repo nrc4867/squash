@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens
 
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.character.surface.CharacterSurface
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertTrue
@@ -41,3 +42,6 @@ class TestWork private constructor(val dispatcher: TestDispatcher, context: Coro
 
 /** Whether nothing in the session's graph or view graph is dirty or running. */
 val CharacterSession.settled: Boolean get() = graph.settled.value && viewGraph.settled.value
+
+/** The session's one surface at rest, which a settled session holds. */
+val CharacterSession.restSurface: CharacterSurface get() = checkNotNull(characterSurface.output.value?.surface) { "the surface has not settled" }

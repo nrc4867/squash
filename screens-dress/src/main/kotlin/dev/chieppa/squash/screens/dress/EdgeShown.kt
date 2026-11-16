@@ -110,7 +110,7 @@ internal suspend fun AwaitPointerEventScope.dragEdgePoint(state: AppState, down:
     var released = false
     try {
         released = followToRelease(down.id, {}) { pixel ->
-            val hit = state.bodyThrough(sight)?.let { surfaceHit(it, pixel, sight, surface = state.surfaceThrough(sight)) } ?: return@followToRelease
+            val hit = state.bodyThrough(sight)?.let { body -> state.surfaceThrough(sight)?.let { surfaceHit(body, pixel, sight, it) } } ?: return@followToRelease
             val points = curve.points.toMutableList().also { it[point] = shown.back(hit.anchor) }
             gesture.update(shapeCommands(character, body, garment, garment.withPoints(index, points), garment.fill))
         }

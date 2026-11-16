@@ -15,6 +15,6 @@ private const val HAIRLINE_BLEND = 0.012f
  * The commands that set her one surface's joins and eyes: a narrow blend under the jaw and where the cap of hair meets her head, her
  * body's joins unlined as the reference's skin is, and her painted eyes.
  */
-fun twinOneSurface(): List<DocumentCommand> = listOf(SetSocketBlend(HEAD, JAW_BLEND), SetSocketBlend(HAIR, HAIRLINE_BLEND)) +
+fun twinSurface(): List<DocumentCommand> = listOf(SetSocketBlend(HEAD, JAW_BLEND), SetSocketBlend(HAIR, HAIRLINE_BLEND)) +
     listOf(HEAD, NECK, ARM_L, HAND_L, LEG_L, FOOT_L).map { SetParameter(it, JoinParams.INK, 0f) } +
     twinPaintedEyes()

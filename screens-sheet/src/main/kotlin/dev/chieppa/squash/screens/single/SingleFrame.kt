@@ -20,7 +20,6 @@ import dev.chieppa.squash.screens.sheet.PaneColor
 import dev.chieppa.squash.screens.sheet.SheetHints
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SheetSelection
-import dev.chieppa.squash.screens.sheet.borderRibbons
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.clippedTo
 import dev.chieppa.squash.screens.sheet.colored
@@ -75,7 +74,7 @@ fun singleFrame(input: SingleInput): SceneFrame {
         }
         val posed = selection.posed?.takeIf { input.posedLocked }
         val surface = if (posed != null) input.posedSurface else input.surface
-        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, surface != null, posed) { (part, draw) -> draw.withFace(part, surface, locked) }
+        val draws = lockedDraws(locked.view, body, locked.basis, selection, input.look, input.hints, input.color, posed) { (part, draw) -> draw.withFace(part, surface, locked) }
         val overlay = lockedOverlay(locked.view, locked, selection, input.look, input.hints, active = null) + input.toolOverlay
         val fur = shownFurDraws(input.fur, locked.view in selection.outlines, locked.basis.back, selection, input.look, input.hints, input.color)
         val ribbons = lockedRibbons(locked.view, locked, selection, input.look, input.hints, input.color, surface)
@@ -97,7 +96,7 @@ fun singleFrame(input: SingleInput): SceneFrame {
 
 /** The lines through the free [camera]: the whole figure's when the hints show it whole, else the selection's. */
 private fun freeRibbons(selection: SheetSelection, camera: CameraView, input: SingleInput): List<RibbonDraw> {
-    val surface = input.freeSurface(selection) ?: return input.look.borderRibbons(input.color)
+    val surface = input.freeSurface(selection) ?: return emptyList()
     val view = FullView({ camera }, input.width, input.height)
     if (input.hints.whole) return surface.figure(view)
     return selection.part.id?.let { surface.selected(it, view) }.orEmpty()
@@ -113,14 +112,13 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val toCamera = Vec3(camera.eye.x, camera.eye.y, camera.eye.z) - selection.box.center
     val surface = input.freeSurface(selection)
     val posed = selection.posed
-    val outline = if (surface != null) 0f else look.lockedOutline
     val sight = FullView({ camera }, input.width, input.height)
     if (input.hints.whole) {
-        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, input.color, toCamera, outline, posed = posed.of(part))?.let { add(it.withFace(part, surface, sight)) } }
+        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, input.color, toCamera, 0f, posed = posed.of(part))?.let { add(it.withFace(part, surface, sight)) } }
         addAll(look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer))
         return@buildList
     }
-    look.colored(selection.part, input.color, toCamera, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
+    look.colored(selection.part, input.color, toCamera, 0f, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
     if (input.color.holds(selection.part)) addAll(look.surfaceDraws(input.color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id, toViewer = sight::toViewer))
     if (input.hints.ghost > 0f) {
         addAll(look.surfaceDraws(input.color, toCamera, posed != null, look.ghostOutline, input.hints.ghost, toViewer = sight::toViewer))

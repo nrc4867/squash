@@ -44,7 +44,7 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
 
     /** The place under [pixel] on the open character, or null. */
     protected open fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
-        state.bodyThrough(sight)?.let { surfaceHit(it, pixel, sight, surface = state.surfaceThrough(sight)) }
+        state.bodyThrough(sight)?.let { body -> state.surfaceThrough(sight)?.let { surfaceHit(body, pixel, sight, it) } }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, camera)
 

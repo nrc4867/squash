@@ -122,7 +122,7 @@ class FurStrokeTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDrag
  */
 class CombTool(state: AppState, ink: Color, lineWidth: Float) : SurfaceDragTool(state, ink, lineWidth) {
     override fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
-        state.bodyThrough(sight)?.let { surfaceHitWithin(it, pixel, sight, COMB_REACH_UNITS, state.surfaceThrough(sight)) }
+        state.bodyThrough(sight)?.let { body -> state.surfaceThrough(sight)?.let { surfaceHitWithin(body, pixel, sight, COMB_REACH_UNITS, it) } }
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return

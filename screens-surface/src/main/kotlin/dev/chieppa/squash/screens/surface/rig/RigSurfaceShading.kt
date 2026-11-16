@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * The open character's one surface as the Rig stage colors it, by [rig]'s weights on it: each vertex in the mean of its parts' [colors]
- * weighed by its bones' weights, over its root part's color, or with [heat] the heat map of that bone; null without one.
+ * weighed by its bones' weights, over its root part's color, or with [heat] the heat map of that bone; null until its skin is built.
  */
 @Composable
 fun rememberRigSurface(state: AppState, rig: Rig, colors: Map<PartId, Color>, heat: Int?): RigSurface? {

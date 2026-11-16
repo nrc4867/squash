@@ -37,7 +37,7 @@ class OpenEndCoverageTest {
     fun aGarmentReachingAnEndAPartComesOutThroughCoversNothingPastThatEndsRing() = runTest {
         val session = stackSession(legTo = 1f, withPaw = true)
         val surface = assertNotNull(session.characterSurface.output.value?.surface)
-        val garment = assertNotNull(session.oneSurface.dress.output.value?.dress).garments.first { StackFixture.leg.id in it.cover.branches }
+        val garment = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.first { StackFixture.leg.id in it.cover.branches }
         assertEquals(true, garment.cover.openEnds[StackFixture.leg.id]?.high, "the paw comes out through the leg's end")
         val run = surface.field.runs.indexOfFirst { it.partId == StackFixture.leg.id && it.first }
         val patch = surface.field.runs[run].patch

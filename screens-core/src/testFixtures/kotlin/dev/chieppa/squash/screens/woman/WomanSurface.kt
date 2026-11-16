@@ -15,7 +15,7 @@ private const val HAIRLINE_BLEND = 0.012f
  * The commands that set her one surface's joins and eyes: a narrow blend under the jaw and where the crown of her hair meets her
  * head, her body's joins unlined and her hairline inked, as her drawing has them, and her painted eyes.
  */
-fun womanOneSurface(): List<DocumentCommand> = listOf(SetSocketBlend(HEAD, JAW_BLEND)) +
+fun womanSurface(): List<DocumentCommand> = listOf(SetSocketBlend(HEAD, JAW_BLEND)) +
     SetSocketBlend(HAIR, HAIRLINE_BLEND) +
     listOf(HEAD, NECK, ARM_L, HAND_L, LEG_L, FOOT_L).map { SetParameter(it, JoinParams.INK, 0f) } +
     womanPaintedEyes()

@@ -20,7 +20,7 @@ class DragTimer(private val open: DragSession, private val runs: Int, private va
      * app shows them in the script's stage with the panes posed; the character ends as it began.
      */
     fun time(name: String, script: DragScript) {
-        open.session.oneSurface.skinShown.value = drawsSkin(script.stage, PoseView.POSED, open.session.document.value.character.shownPose)
+        open.session.sessionSurface.skinShown.value = drawsSkin(script.stage, PoseView.POSED, open.session.document.value.character.shownPose)
         open.settle()
         val first = ArrayList<Double>()
         val frames = ArrayList<Double>()

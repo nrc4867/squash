@@ -7,7 +7,7 @@ import kotlin.test.assertNotNull
 
 /** What the session shows, settled: its posed body, color, surface work and lines, without fur, and its one surface posed with its paint and dress. */
 fun CharacterSession.shownState(): CharacterState {
-    val posed = oneSurface.posed.value?.output?.value?.posed
+    val posed = sessionSurface.posed.value?.output?.value?.posed
     return CharacterState(
         assertNotNull(posedBody.output.value),
         assertNotNull(bodyColor.output.value),
@@ -15,8 +15,8 @@ fun CharacterSession.shownState(): CharacterState {
         document.value.character.palette,
         assertNotNull(posedLines.output.value),
         fur = FurView.EMPTY,
-        surface = posed?.surface ?: characterSurface.output.value?.surface,
+        surface = posed?.surface ?: assertNotNull(characterSurface.output.value?.surface),
         paint = posed?.paint ?: surfacePaint.output.value?.paint,
-        dress = posed?.dress ?: oneSurface.dress.output.value?.dress,
+        dress = posed?.dress ?: sessionSurface.dress.output.value?.dress,
     )
 }

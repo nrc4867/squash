@@ -95,13 +95,16 @@ internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = n
         document.value.character.palette,
         assertNotNull(bodyLines.output.value),
         fur = if (camera == null) FurView.EMPTY else assertNotNull(furView(PROBE_FUR_VIEW).output.value),
+        surface = assertNotNull(characterSurface.output.value?.surface),
+        paint = surfacePaint.output.value?.paint,
+        dress = sessionSurface.dress.output.value?.dress,
         shown = shown,
         target = target,
     )
 }
 
 /** This state with [shown] for its fur. */
-internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, color, work, palette, lines, shown, taper)
+internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, color, work, palette, lines, shown, surface, taper, paint = paint, dress = dress)
 
 /** The fennec through commands, the real graph and scene, flat and two-tone from three sides, left for a person to judge. */
 @Tag("slow")

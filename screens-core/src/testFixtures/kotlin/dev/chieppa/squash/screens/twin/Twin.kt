@@ -29,7 +29,7 @@ val EMPTY_TWIN: SquashDocument by lazy {
  * hair, colour, face, her one surface's joins and her painted eyes, then the pose she is shown in.
  */
 fun twinCommands(): List<DocumentCommand> =
-    twinBody() + twinHead() + twinHair() + twinColor() + twinFace() + twinOneSurface() + SetDisplayPose(TWIN_DISPLAY)
+    twinBody() + twinHead() + twinHair() + twinColor() + twinFace() + twinSurface() + SetDisplayPose(TWIN_DISPLAY)
 
 /** The twin as those commands leave it. */
 fun twinDocument(): SquashDocument = twinCommands().fold(EMPTY_TWIN) { document, command -> command.apply(document).document }

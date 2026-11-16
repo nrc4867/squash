@@ -24,7 +24,7 @@ class RecutGarmentTest {
     @Test
     fun aGarmentCutAgainRoundAnEditedPartMatchesTheGarmentBuiltAfresh() = runTest {
         val session = stackSession(legTo = 1f, withPaw = true)
-        val before = assertNotNull(session.oneSurface.dress.output.value?.dress).garments.first { StackFixture.leg.id in it.cover.branches }
+        val before = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.first { StackFixture.leg.id in it.cover.branches }
         assertTrue(StackFixture.paw.id in before.cover.outThroughEnds, "the paw comes out through the leg's end")
         session.send(SetParameter(StackFixture.paw.id, "size", EDITED_SIZE))
         runCurrent()
@@ -34,7 +34,7 @@ class RecutGarmentTest {
         val garments = GarmentBuilder().start(surface.field, surface.mesh, placed, surfaceCovers(session.document.value.character))
         while (true) (garments.next() ?: break).forEach { it() }
         val fresh = HiddenSkin(surface, garments.garments).run()
-        val dress = assertNotNull(session.oneSurface.dress.output.value?.dress)
+        val dress = assertNotNull(session.sessionSurface.dress.output.value?.dress)
         assertEquals(fresh.worn.size, dress.garments.size)
         fresh.worn.zip(dress.garments).forEach { (a, b) -> assertSameGarment(a, b) }
         assertContentEquals(assertNotNull(fresh.skin).triangles, assertNotNull(dress.skin).triangles)

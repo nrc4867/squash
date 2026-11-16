@@ -52,7 +52,7 @@ class ToucanFixtureTest {
     }
 
     @Test
-    fun itIsOneSurfaceWithPaintedSideEyesInTheirRingsAndAMouth() {
+    fun itHasPaintedSideEyesInTheirRingsAndAMouth() {
         val character = toucanDocument().character
         val eyes = character.paintedEyes.single()
         assertEquals(TOUCAN_EYES, eyes.id)

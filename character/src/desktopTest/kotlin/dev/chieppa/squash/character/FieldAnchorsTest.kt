@@ -86,7 +86,7 @@ class FieldAnchorsTest {
     }
 
     @Test
-    fun furRootedOnTheOneSurfaceStandsOnIt() = runTest {
+    fun furRootedOnTheSurfaceStandsOnIt() = runTest {
         val tuft = MarkId("tuft")
         val session = surfaceSession(torsoPart, leftLeg).also {
             it.send(SetMark(torsoPart.id, tuft, Mark(tuft, listOf(onTorso), kind = MarkKind.FUR)))
@@ -98,7 +98,7 @@ class FieldAnchorsTest {
     }
 
     @Test
-    fun aFaceMapOnTheOneSurfaceLandsWhereARayFromAheadMeetsIt() = runTest {
+    fun aFaceMapOnTheSurfaceLandsWhereARayFromAheadMeetsIt() = runTest {
         val head = PartInstance(PartId("head"), templateRef("head"), SocketRef(torsoPart.id, "neck"))
         val session = surfaceSession(torsoPart, head).also {
             it.settle()

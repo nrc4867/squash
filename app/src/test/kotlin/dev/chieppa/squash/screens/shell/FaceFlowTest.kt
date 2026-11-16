@@ -93,7 +93,7 @@ class FaceFlowTest {
     }
 
     @Test
-    fun aOneSurfaceHeadsPaintedEyeShowsThreeRowsAndMoreWithNoAngleVersions() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun aHeadsPaintedEyeShowsThreeRowsAndMoreWithNoAngleVersions() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
         stage(Key.Four)

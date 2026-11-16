@@ -33,12 +33,12 @@ fun AppState.posesAnyPane(): Boolean = posesPane(stage.value, poseView.value, lo
 fun AppState.bodyThrough(sight: SurfaceView): AssembledCharacter? =
     session.value?.let { if (showsPose(sight)) it.posedBody else it.assembly }?.output?.value
 
-/** The open character's one surface as the pane [sight] looks through shows it, posed where [showsPose]; null for a character without one. */
+/** The open character's one surface as the pane [sight] looks through shows it, posed where [showsPose]; null until it is built. */
 fun AppState.surfaceThrough(sight: SurfaceView): CharacterSurface? {
     val open = session.value ?: return null
     val rest = open.characterSurface.output.value?.surface ?: return null
     if (!showsPose(sight)) return rest
-    return open.oneSurface.posed.value?.output?.value?.posed?.surface ?: rest
+    return open.sessionSurface.posed.value?.output?.value?.posed?.surface ?: rest
 }
 
 /** Whether a pane draws the one surface's weights or its posed form: the Rig stage's weights, or a [pose] that moves a bone where a pane shows the pose. */
@@ -46,4 +46,4 @@ fun drawsSkin(stage: Stage, view: PoseView, pose: Pose): Boolean = stage == Stag
 
 /** Tells [open] whether a pane draws its skin, by [drawsSkin], for as long as the caller collects. */
 suspend fun AppState.followSkinShown(open: CharacterSession) =
-    combine(stage, poseView, open.document) { shown, view, doc -> drawsSkin(shown, view, doc.character.shownPose) }.collect { open.oneSurface.skinShown.value = it }
+    combine(stage, poseView, open.document) { shown, view, doc -> drawsSkin(shown, view, doc.character.shownPose) }.collect { open.sessionSurface.skinShown.value = it }

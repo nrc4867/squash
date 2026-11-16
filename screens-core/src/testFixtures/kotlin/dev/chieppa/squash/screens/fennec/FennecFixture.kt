@@ -24,9 +24,6 @@ fun fennecCommands(): List<DocumentCommand> = fennecBody() + fennecColor() + fen
 /** The fennec as those commands leave it. */
 fun fennecDocument(): SquashDocument = fennecCommands().fold(EMPTY_FENNEC) { document, command -> command.apply(document).document }
 
-/** The fennec built as one surface, as its commands build it. */
-fun fennecOneSurfaceDocument(): SquashDocument = fennecDocument()
-
 /** [document] as the example file holds it: what File, Save writes. */
 fun fennecText(document: SquashDocument): String = SquashFormat().plainText(document) + "\n"
 

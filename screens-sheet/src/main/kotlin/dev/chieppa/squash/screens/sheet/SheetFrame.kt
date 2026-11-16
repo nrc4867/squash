@@ -96,13 +96,12 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         }
         val posed = selection.posed
         val surface = if (posed != null) input.posedSurface else input.surface
-        val outline = if (surface != null) 0f else look.fullOutline
         val shownPlanned = if (posed != null) emptyList() else planned
         val draws = listOf(fullGround(selection, look)) +
-            placed.mapNotNull { look.colored(it, input.color, toCamera, outline, posed = posed.of(it))?.withFace(it, surface, sight) } +
+            placed.mapNotNull { look.colored(it, input.color, toCamera, 0f, posed = posed.of(it))?.withFace(it, surface, sight) } +
             look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer) +
             shownPlanned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
-        val ribbons = surface?.figure(sight) ?: look.borderRibbons(input.color)
+        val ribbons = surface?.figure(sight).orEmpty()
         val fur = look.furDraws(input.fullFur, input.color, toCamera, selection)
         return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws, ribbons, fur.layers)
     }
@@ -112,7 +111,7 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val posed = selection.posed?.takeIf { input.posedPanes }
     val surface = if (posed != null) input.posedSurface else input.surface
     val fur = input.lockedFur[view]?.let { shownFurDraws(it, view in selection.outlines, camera.basis.back, selection, look, input.hints, input.color) } ?: FurDraws.NONE
-    val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, surface != null, posed) { (part, draw) -> draw.withFace(part, surface, camera) }
+    val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, posed) { (part, draw) -> draw.withFace(part, surface, camera) }
     val traces = input.traces(camera.basis.back)
     return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, surface), fur.layers, traces.behind, traces.over)
 }
@@ -129,25 +128,24 @@ internal fun shownFurDraws(fur: ShownFur, drawn: Boolean, toCamera: Vec3, select
 
 /**
  * What a locked camera on [view] draws, from [basis] in the pane of [body]: the ground, the character ghosted and the selection once
- * [view] is drawn, with the outlines left to the ribbons when [ribbons] draw them.
+ * [view] is drawn, their outlines left to the ribbons.
  */
-internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null, ribbons: Boolean = false, posed: Map<PartId, RenderMesh>? = null, faced: (Pair<SheetPart, MeshDraw>) -> MeshDraw = { it.second }): List<MeshDraw> = buildList {
+internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null, posed: Map<PartId, RenderMesh>? = null, faced: (Pair<SheetPart, MeshDraw>) -> MeshDraw = { it.second }): List<MeshDraw> = buildList {
     lockedGround(body, basis, selection, look)?.let(::add)
-    val outline = if (ribbons) 0f else look.lockedOutline
     if (hints.whole) {
-        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, color, basis.back, outline, posed = posed.of(part))?.let { add(faced(part to it)) } }
+        selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, color, basis.back, 0f, posed = posed.of(part))?.let { add(faced(part to it)) } }
         addAll(look.surfaceDraws(color, basis.back, posed != null))
         return@buildList
     }
     addAll(ghosts(selection, basis, look, hints, color, posed))
     if (view !in selection.outlines) return@buildList
-    look.colored(selection.part, color, basis.back, outline, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(faced(selection.part to it)) }
+    look.colored(selection.part, color, basis.back, 0f, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(faced(selection.part to it)) }
     if (color.holds(selection.part)) addAll(look.surfaceDraws(color, basis.back, posed != null, layer = DepthLayer.FRONT, only = selection.part.id))
 }
 
 /** The lines through a locked [camera] on [view]: the whole figure's when [hints] show it whole, else the selection's once it is drawn in that view. */
 internal fun lockedRibbons(view: View, camera: LockedCamera, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor?, surface: SurfaceRibbons?): List<RibbonDraw> {
-    if (surface == null) return look.borderRibbons(color)
+    if (surface == null) return emptyList()
     if (hints.whole) return surface.figure(camera)
     val part = selection.part.id
     return if (part != null && view in selection.outlines) surface.selected(part, camera) else emptyList()

@@ -35,7 +35,7 @@ class PaintedEyeHandles(private val state: AppState) {
     private fun boxes(eye: PaintedEye, sight: SurfaceView): List<Pair<EyeChartFrame, EyeBox>> {
         val open = state.session.value ?: return emptyList()
         val rest = open.characterSurface.output.value?.surface ?: return emptyList()
-        val carry = if (state.showsPose(sight)) open.oneSurface.posed.value?.output?.value?.posed?.carry else null
+        val carry = if (state.showsPose(sight)) open.sessionSurface.posed.value?.output?.value?.posed?.carry else null
         val look = eye.look
         return SurfaceEyes.framesOf(rest, eye).mapNotNull { frame ->
             val shown = carry?.let { carried(frame, eye.anchor, look.width, it) } ?: frame

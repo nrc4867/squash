@@ -61,7 +61,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
         val kept = setOfNotNull(part, parent)
         val shown = AssembledCharacter(whole.character.parts.filter { it.id in kept }, emptyList())
         val lines = BodyLines(whole.lines.parts.filterKeys { it in kept })
-        val state = CharacterState(shown, whole.color, whole.work, whole.palette, lines, whole.fur)
+        val state = CharacterState(shown, whole.color, whole.work, whole.palette, lines, whole.fur, whole.surface, paint = whole.paint, dress = whole.dress, only = kept)
         val framed = listOf(assertNotNull(shown.part(part)))
         val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)

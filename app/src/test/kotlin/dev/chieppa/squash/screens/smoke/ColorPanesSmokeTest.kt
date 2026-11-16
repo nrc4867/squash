@@ -140,7 +140,7 @@ class ColorPanesSmokeTest {
         val paneBounds = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInRoot }
         val originX = paneBounds.minOf { it.left }
         val originY = paneBounds.minOf { it.top }
-        val shown = assertNotNull(color).let { PaneColor(it.body, it.palette, it.shading.copy(mode = shading), it.borders) }
+        val shown = assertNotNull(color).let { PaneColor(it.body, it.palette, it.shading.copy(mode = shading), it.surface) }
         val base = panesInput(assertNotNull(selection), assertNotNull(look), rects, width, height, SheetHints(whole = whole), color = shown)
         val image = renderSnapshot(sheetFrame(base), width, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
         val workspace = onNodeWithTag(ShellTags.WORKSPACE)

@@ -26,8 +26,8 @@ private const val JOIN_FIXTURE_STEP = 1e-4f
 
 /** A torso and a front leg built as one surface: the field and the coordinates its vertices hold, and the coarse cell while dragging. */
 @OptIn(ExperimentalCoroutinesApi::class)
-class OneSurfaceTest {
-    private suspend fun TestScope.oneSurface() = surfaceSession(torsoPart, leftLeg).also {
+class SurfaceBuildTest {
+    private suspend fun TestScope.sessionSurface() = surfaceSession(torsoPart, leftLeg).also {
         it.settle()
     }
 
@@ -35,7 +35,7 @@ class OneSurfaceTest {
 
     @Test
     fun theFieldAndTheCoordinatesAtTheJoinMatchTheirFixture() = runTest {
-        val session = oneSurface()
+        val session = sessionSurface()
         val surface = session.surface()
         val placed = assertNotNull(session.placed.output.value)
         val from = assertNotNull(placed.part(torsoPart.id)).origin
@@ -58,7 +58,7 @@ class OneSurfaceTest {
 
     @Test
     fun theSurfaceIsClosedAndInkedAtItsJoin() = runTest {
-        val surface = oneSurface().surface()
+        val surface = sessionSurface().surface()
         val uses = HashMap<Long, Int>()
         val t = surface.mesh.triangles
         for (tri in 0 until t.size / 3) for (c in 0 until 3) {
@@ -74,7 +74,7 @@ class OneSurfaceTest {
 
     @Test
     fun anEditMeshedAgainWhereItReachesMatchesTheWholeSurfaceBuiltAfresh() = runTest {
-        val session = oneSurface()
+        val session = sessionSurface()
         session.send(SetParameter(leftLeg.id, "size", 1.02f))
         session.settle()
         val edited = session.surface().mesh
@@ -86,7 +86,7 @@ class OneSurfaceTest {
 
     @Test
     fun theCellFollowsTheRootAloneSoAPartOnASocketChangesNoCell() = runTest {
-        val session = oneSurface()
+        val session = sessionSurface()
         val before = session.surface().mesh.cell
         session.send(SetParameter(leftLeg.id, "size", 1.5f))
         session.settle()
@@ -98,7 +98,7 @@ class OneSurfaceTest {
 
     @Test
     fun aDragMeshesAtTheCoarseCellAndItsCommitMeshesAtTheFullCell() = runTest {
-        val session = oneSurface()
+        val session = sessionSurface()
         val cell = session.surface().mesh.cell
         val gesture = session.history.begin()
         gesture.update(SetParameter(leftLeg.id, "size", 1.02f))

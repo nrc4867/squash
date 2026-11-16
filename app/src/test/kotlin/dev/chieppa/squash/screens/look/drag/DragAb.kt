@@ -22,7 +22,7 @@ class DragAb(private val sides: List<Pair<String, DragSession>>, private val run
     fun time(name: String, scripts: (DragSession) -> DragScript) {
         val made = sides.map { (_, open) -> scripts(open) }
         sides.forEachIndexed { s, (_, open) ->
-            open.session.oneSurface.skinShown.value = drawsSkin(made[s].stage, PoseView.POSED, open.session.document.value.character.shownPose)
+            open.session.sessionSurface.skinShown.value = drawsSkin(made[s].stage, PoseView.POSED, open.session.document.value.character.shownPose)
             open.settle()
         }
         val results = sides.map { Side() }

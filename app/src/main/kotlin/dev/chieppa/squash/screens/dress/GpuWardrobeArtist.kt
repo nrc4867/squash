@@ -92,7 +92,7 @@ class GpuWardrobeArtist : WardrobeArtist {
 
 /** What [session] shows, settled: its posed body, color, surface work and lines, without fur, and its one surface posed with its paint and dress. */
 private fun shownState(session: CharacterSession): CharacterState? {
-    val posed = session.oneSurface.posed.value?.output?.value?.posed
+    val posed = session.sessionSurface.posed.value?.output?.value?.posed
     return CharacterState(
         session.posedBody.output.value ?: return null,
         session.bodyColor.output.value ?: return null,
@@ -100,8 +100,8 @@ private fun shownState(session: CharacterSession): CharacterState? {
         session.document.value.character.palette,
         session.posedLines.output.value ?: return null,
         fur = FurView.EMPTY,
-        surface = posed?.surface ?: session.characterSurface.output.value?.surface,
+        surface = posed?.surface ?: session.characterSurface.output.value?.surface ?: return null,
         paint = posed?.paint ?: session.surfacePaint.output.value?.paint,
-        dress = posed?.dress ?: session.oneSurface.dress.output.value?.dress,
+        dress = posed?.dress ?: session.sessionSurface.dress.output.value?.dress,
     )
 }

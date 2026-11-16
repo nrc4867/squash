@@ -46,9 +46,9 @@ private val EVEN_WIDTH = MarkWidth(listOf(WidthStop(0f, 1f), WidthStop(1f, 1f)))
 
 /**
  * What the panes read to show a character's color, all of it derived: its [body] color, its [palette] and its [shading], with its
- * [borders]' ink, and its one [surface] where it has one.
+ * and its one [surface].
  */
-class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectShading, val borders: BodySurfaceWork? = null, val surface: PaneSurface? = null)
+class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectShading, val surface: PaneSurface)
 
 /**
  * [part] as a pane draws it. With [color], its base and layers show their slots at the shading the pane reads, darkened by side seen with the
@@ -76,14 +76,6 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
 /** The ribbon along each border this surface work inks, closed on itself. */
 fun ResolvedSurfaceWork.inkedBorders(): List<StrokeRibbon> =
     regions.filter { it.ink }.mapNotNull { StrokeRibbon.along(closedCurve(it.border), markProfile(EVEN_WIDTH)) }
-
-/** Every inked border as a ribbon in the character's ink, or nothing with no [PaneColor]. */
-fun SheetLook.borderRibbons(color: PaneColor?): List<RibbonDraw> {
-    val work = color?.borders ?: return emptyList()
-    val rule = LineRule(ghostOutline)
-    val ink = color.palette.colorOf(INK_SLOT) ?: part.ink
-    return work.parts.values.flatMap { it.inkedBorders() }.map { RibbonDraw(it, rule, ink) }
-}
 
 /** A smooth closed curve through [points], which meets the mesh's own curve through them closely enough for a line drawn on it. */
 private fun closedCurve(points: List<ResolvedPoint>): List<RibbonPoint> {
@@ -116,27 +108,26 @@ fun CameraView.pixelsPerUnit(height: Int): Float = height / (2f * (eye - target)
 fun largestColorScale(cameras: Collection<LockedCamera>, full: CameraView?, fullHeight: Int): Float =
     max(cameras.maxOfOrNull { it.fit.pixelsPerUnit } ?: 0f, full?.pixelsPerUnit(fullHeight) ?: 0f)
 
-/** What the open character's color reads now, or null with none open. */
+/** What the open character's color reads now, or null with none open or until its surface is built. */
 @Composable
 fun rememberPaneColor(state: AppState): PaneColor? {
     val session by state.session.collectAsState()
     val open = session ?: return null
     val document by remember(open) { open.document }.collectAsState()
     val body by remember(open) { open.bodyColor.output }.collectAsState()
-    val work by remember(open) { open.bodySurfaceWork.output }.collectAsState()
     val shading = rememberObjectShading(state)
-    val surface = rememberPaneSurface(open)
+    val surface = rememberPaneSurface(open) ?: return null
     val shown = body ?: return null
-    return PaneColor(shown, document.character.palette, shading, work, surface)
+    return PaneColor(shown, document.character.palette, shading, surface)
 }
 
-/** The open character's one surface with its paint and dress, at rest and in the shown pose, or null for a character without one. */
+/** The open character's one surface with its paint and dress, at rest and in the shown pose, or null until its graph has built it. */
 @Composable
 fun rememberPaneSurface(open: CharacterSession): PaneSurface? {
     val surface by remember(open) { open.characterSurface.output }.collectAsState()
     val paint by remember(open) { open.surfacePaint.output }.collectAsState()
-    val dress by remember(open) { open.oneSurface.dress.output }.collectAsState()
-    val posedNode by remember(open) { open.oneSurface.posed }.collectAsState()
+    val dress by remember(open) { open.sessionSurface.dress.output }.collectAsState()
+    val posedNode by remember(open) { open.sessionSurface.posed }.collectAsState()
     val posed by remember(posedNode) { posedNode?.output ?: MutableStateFlow(null) }.collectAsState()
     val rest = surface?.surface ?: return null
     val last = remember(open) { LastPaneSurface() }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.restSurface
 import dev.chieppa.squash.screens.TestWork
 
 import androidx.compose.ui.graphics.Color
@@ -98,11 +99,11 @@ class FurViewTest {
         val camera = sideCamera(center(TAIL), Vec3(3f, 1f, -4f))
         val sight = FullView({ camera }, VIEW_PIXELS, VIEW_PIXELS)
         val middle = assertNotNull(sight.toPixel(center(TAIL)))
-        val away = generateSequence(middle) { it + androidx.compose.ui.geometry.Offset(0f, -4f) }.first { surfaceHit(character, it, sight) == null } + androidx.compose.ui.geometry.Offset(0f, -8f)
-        val taken = assertNotNull(surfaceHitWithin(character, away, sight, 1f))
+        val away = generateSequence(middle) { it + androidx.compose.ui.geometry.Offset(0f, -4f) }.first { surfaceHit(character, it, sight, session.restSurface) == null } + androidx.compose.ui.geometry.Offset(0f, -8f)
+        val taken = assertNotNull(surfaceHitWithin(character, away, sight, 1f, session.restSurface))
         val shown = assertNotNull(sight.toPixel(taken.position))
         assertTrue(hypot(shown.x - away.x, shown.y - away.y) < 24f, "it lies at the edge next to the press")
-        assertEquals(null, surfaceHitWithin(character, androidx.compose.ui.geometry.Offset(0f, 0f), sight, 0.01f), "out of reach takes nothing")
+        assertEquals(null, surfaceHitWithin(character, androidx.compose.ui.geometry.Offset(0f, 0f), sight, 0.01f, session.restSurface), "out of reach takes nothing")
     }
 
     @Test

@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.sheet.colorOf
+import dev.chieppa.squash.character.surface.PosedSurface
+import dev.chieppa.squash.screens.restSurface
 import dev.chieppa.squash.screens.TestWork
 
 import androidx.compose.ui.geometry.Offset
@@ -120,15 +123,21 @@ class FloatingMarksTest {
 
     @Test
     fun aStrokeDrawsInItsColorAndWithoutOneInInk() {
-        val inked = send()
-        val colored = send(StrokeLook(slot = SlotName("cream")))
-        work.settle(session)
         val ink = Color.Black
         val palette = session.document.value.character.palette
-        val lines = SurfaceLines(assertNotNull(session.bodyLines.output.value), assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper, ink, 1f, palette)
         val camera = sideCamera(Vec3(0f, 0.5f, 0f))
-        val colors = lines.figure(FullView({ camera }, FLOAT_VIEW_PIXELS, FLOAT_VIEW_PIXELS)).map { it.color }
-        assertTrue(colors.count { it != ink } == 1, "only $colored is not in ink, $inked is")
+        fun drawn(): List<Color> {
+            work.settle(session)
+            val lines = SurfaceLines(assertNotNull(session.bodyLines.output.value), assertNotNull(session.bodySurfaceWork.output.value), characterLook(LineRules(), 1f), LineRules().taper, ink, 1f, palette, surface = PosedSurfaceLines(PosedSurface(session.restSurface, session.surfacePaint.output.value?.paint)))
+            return lines.figure(FullView({ camera }, FLOAT_VIEW_PIXELS, FLOAT_VIEW_PIXELS)).map { it.color }
+        }
+        val cream = assertNotNull(palette.colorOf(SlotName("cream")))
+        val before = drawn()
+        send()
+        val inked = drawn()
+        assertTrue(inked.count { it == ink } == before.count { it == ink } + 1 && inked.count { it == cream } == 0, "a stroke with no color draws in ink")
+        send(StrokeLook(slot = SlotName("cream")))
+        assertTrue(drawn().count { it == cream } == 1, "a stroke with a color draws in it")
     }
 
     @Test

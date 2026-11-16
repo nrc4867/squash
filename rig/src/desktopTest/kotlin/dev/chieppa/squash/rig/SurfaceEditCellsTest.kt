@@ -36,7 +36,7 @@ private val CELL_SHARES = listOf(0.0487f, 0.05f, 0.0731f, 0.1f)
  * reaches gives the same surface, paint, garments and hidden skin as builders that have built nothing before.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class OneSurfaceEditCellsTest {
+class SurfaceEditCellsTest {
     @Test
     fun anEditBuiltWhereItReachesMatchesAFreshBuildAtEveryCell() = runTest {
         val session = stackSession()

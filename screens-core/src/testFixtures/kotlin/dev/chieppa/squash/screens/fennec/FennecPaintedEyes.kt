@@ -39,36 +39,11 @@ val FENNEC_FRONT_EYE = FENNEC_EYE.copy(
     lashes = false,
 )
 
-/** The dark-brown iris the round preset shows. */
+/** The dark-brown iris the fennec's eyes show. */
 val DARK_IRIS = SlotName("dark-iris")
-
-/**
- * The round preset: a rounder opening, a dark-brown iris filling it, a round pupil, a larger highlight, the eye set a little lower and
- * nearer the middle, and a brow.
- */
-val ROUND_EYE = FENNEC_EYE.copy(
-    width = 0.066f,
-    height = 0.07f,
-    lowerLid = 0.95f,
-    frontNarrowing = 0.05f,
-    irisSize = 0.058f,
-    irisRatio = 1.15f,
-    irisForward = 0.008f,
-    irisUp = 0f,
-    pupilSize = 0.5f,
-    highlightSize = 0.42f,
-    iris = DARK_IRIS,
-)
-
-/** Where the round preset sits. */
-val ROUND_EYE_PLACE = Anchor(HEAD, BODY_PATCH, 0.60f, 0.17f)
 
 /** The fennec's painted eyes, both sides, in [look] at [place]. */
 fun fennecPaintedEyes(look: EyeLook = FENNEC_EYE, place: Anchor = Anchor(HEAD, BODY_PATCH, EYE_U, EYE_V), front: EyeLook? = FENNEC_FRONT_EYE): List<DocumentCommand> = listOf(
     SetPaletteSlot(DARK_IRIS, SlotColor(0.30f, 0.17f, 0.09f)),
     SetPaintedEye(PAINTED_EYES, PaintedEye(PAINTED_EYES, place, look, front = front)),
 )
-
-/** The fennec built as one surface with the round preset's eyes. */
-fun fennecOneSurfaceRoundDocument(): SquashDocument =
-    fennecPaintedEyes(ROUND_EYE, ROUND_EYE_PLACE, front = null).fold(fennecOneSurfaceDocument()) { document, command -> command.apply(document).document }

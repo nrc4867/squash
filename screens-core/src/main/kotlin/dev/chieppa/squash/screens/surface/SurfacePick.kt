@@ -21,17 +21,17 @@ private const val EDGE_STEPS = 6
 
 /**
  * The nearest place on any placed part of the body of [character] showing at [pixel], or null where none does; garments are passed
- * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds. With [surface], the
- * character's one surface, the runs of the parts it holds are found on it, and only their other patches on the parts' own meshes.
+ * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds. The runs of the parts
+ * [surface], the character's one surface, holds are found on it, and only their other patches on the parts' own meshes.
  */
-fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, garments: Boolean = false, surface: CharacterSurface? = null): SurfaceHit? {
+fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, surface: CharacterSurface, garments: Boolean = false): SurfaceHit? {
     var best: SurfaceHit? = null
     var nearest = Float.POSITIVE_INFINITY
-    if (surface != null) SurfaceMeshPick(surface, sight).hit(pixel)?.let { (hit, depth) ->
+    SurfaceMeshPick(surface, sight).hit(pixel)?.let { (hit, depth) ->
         best = hit
         nearest = depth
     }
-    val inSurface = surface?.parts.orEmpty()
+    val inSurface = surface.parts
     for (part in character.parts) {
         val id = part.id ?: continue
         if (part.covering != null && !garments) continue
@@ -50,11 +50,11 @@ fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView,
  * The place on [character] showing at [pixel], or, where none does, the one showing nearest it within [reach] body units on screen. It is found along
  * the line from [pixel] to the closest of the surface's points, so it lies on what the viewer sees of the surface.
  */
-fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, reach: Float, surface: CharacterSurface? = null): SurfaceHit? {
+fun surfaceHitWithin(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, reach: Float, surface: CharacterSurface): SurfaceHit? {
     surfaceHit(character, pixel, sight, surface = surface)?.let { return it }
-    var closest: Offset? = surface?.let { SurfaceMeshPick(it, sight).nearestShown(pixel) { point -> reach * sight.pixelsPerUnitAt(point) } }
+    var closest: Offset? = SurfaceMeshPick(surface, sight).nearestShown(pixel) { point -> reach * sight.pixelsPerUnitAt(point) }
     var nearest = closest?.let { (it - pixel).getDistance() } ?: Float.POSITIVE_INFINITY
-    val inSurface = surface?.parts.orEmpty()
+    val inSurface = surface.parts
     for (part in character.parts) {
         if (part.id == null || part.covering != null) continue
         for (patch in part.surface.patches) {

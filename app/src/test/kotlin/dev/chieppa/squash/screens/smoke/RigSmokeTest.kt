@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.smoke
 
+import dev.chieppa.squash.screens.restSurface
+import dev.chieppa.squash.screens.sheet.RigSurface
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
@@ -44,10 +46,12 @@ class RigSmokeTest {
         val seams = seamLayers(rig, colors)
         val knee = assertNotNull(rig.indexOf(BoneName(PartId("front-leg-l"), "knee")))
         val heat = heatLayers(rig, knee)
+        val surface = session.restSurface
+        val skin = RigSurface(surface.parts, colors.getValue(PartId("torso")), emptyList(), surface.render, null)
         val errors = CopyOnWriteArrayList<String>()
         val rects = sheetPaneRects(RIG_WIDTH, RIG_HEIGHT, 2)
         for ((name, layers) in listOf("rig-parts" to seams, "rig-heat-knee" to seams.mapValues { (id, it) -> it + heat[id].orEmpty() })) {
-            val image = renderPanes(selection, SMOKE_LOOK, rects, RIG_WIDTH, RIG_HEIGHT, errors::add, RigShading(colors, layers))
+            val image = renderPanes(selection, SMOKE_LOOK, rects, RIG_WIDTH, RIG_HEIGHT, errors::add, RigShading(colors, layers, surface = skin))
             keepImage(image.pixels, image.width, name)
             assertNotBlank(image.pixels, name)
             val full = rects[SheetPane.FULL.ordinal]

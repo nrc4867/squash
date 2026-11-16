@@ -31,11 +31,10 @@ private const val FACE_TILE = 600
 private val FULL_VIEWS = listOf(0f, 40f, 90f).map(::probeAzimuth)
 
 /**
- * The sheets a character built as one surface is judged on, each beside the same sheet of the character as its parts build it: a spot
- * close-up of each join from six sides; the outline close up at its silhouette from the front, three-quarter and side; the mesh itself;
+ * The sheets a character's one surface is judged on: a spot close-up of each join from six sides; the outline close up at its silhouette from the front, three-quarter and side; the mesh itself;
  * and the end of a torso drag, at the coarse cell while the gesture is open and at the full one after.
  */
-class OneSurfaceLook(private val work: TestWork, private val errors: MutableList<String>, private val folder: File) {
+class SurfaceCloseUps(private val work: TestWork, private val errors: MutableList<String>, private val folder: File) {
     private val spots = SpotViews(work, errors, folder)
 
     fun keepAll(session: CharacterSession, name: String) {
@@ -63,7 +62,7 @@ class OneSurfaceLook(private val work: TestWork, private val errors: MutableList
             val shoulder = origin(parts.arm)
             if (shoulder != null) keepWireframe(surface, FULL_VIEWS, WIRE_TILE, File(folder, "$name-wireframe-shoulder.png"), shoulder, JOIN_RADIUS)
         }
-        session.oneSurface.dress.output.value?.dress?.garments?.forEach { worn ->
+        session.sessionSurface.dress.output.value?.dress?.garments?.forEach { worn ->
             keepWireframe(worn.surface, FULL_VIEWS, WIRE_TILE, File(folder, "$name-wireframe-${worn.cover.garment.id.value}.png"), owners = true)
         }
     }

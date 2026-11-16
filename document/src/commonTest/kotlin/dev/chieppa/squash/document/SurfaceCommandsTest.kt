@@ -10,7 +10,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** A socket's blend and a painted eye: each a step that undoes, the blend shared by a pair, and the blend not written while unset. */
-class OneSurfaceCommandsTest {
+class SurfaceCommandsTest {
     private val tube = TemplateRef(TemplateId("tube"), 1)
     private val body = PartInstance(PartId("body"), tube)
     private val socket = SocketRef(body.id, "socket.1")

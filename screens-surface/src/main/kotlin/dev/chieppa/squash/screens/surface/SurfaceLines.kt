@@ -59,8 +59,8 @@ fun characterLook(rules: LineRules, density: Float): CharacterLook {
 /**
  * The character's lines as the panes ask for them, for one state of the graph: contours for each camera, then creases, inked region
  * borders and marks at the interior weight, on the surface. A camera that holds still costs nothing, since its lines are kept until the state changes.
- * With [oneSurface], the parts it holds are lined as that surface: its contour, its joins and hems, the marks its paint inks, and a
- * selected part's own section.
+ * The parts [surface] holds are lined as that surface: its contour, its joins and hems, the marks its paint inks, and a selected
+ * part's own section; the parts it does not hold are lined by their own meshes.
  */
 class SurfaceLines(
     private val lines: BodyLines,
@@ -73,9 +73,9 @@ class SurfaceLines(
     private val picked: PickedStroke? = null,
     private val faces: FaceWork? = null,
     private val pickedWeight: PickedLineWeight? = null,
-    private val oneSurface: OneSurfaceLines? = null,
+    private val surface: PosedSurfaceLines,
 ) : SurfaceRibbons {
-    private val inSurface: Set<PartId> = oneSurface?.parts.orEmpty()
+    private val inSurface: Set<PartId> = surface.parts
 
     private val kept = object : LinkedHashMap<Any, List<RibbonDraw>>(KEPT_VIEWS, 1f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
@@ -85,10 +85,9 @@ class SurfaceLines(
 
     private fun figureDraws(view: SurfaceView): List<RibbonDraw> = buildList {
         val parts = lines.parts.values.map { if (it.part.id in inSurface) it.withoutRuns() else it }
-        val contour = if (oneSurface != null) oneSurface.contour(parts, view) else contourRibbon(parts, view)
-        contour?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
+        surface.contour(parts, view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
-        oneSurface?.let { addAll(it.inks(view, look, ink)) }
+        addAll(surface.inks(view, look, ink))
         work.parts.forEach { (id, held) ->
             addAll(interiorInk(id, held, DepthLayer.SCENE, view))
             if (id !in inSurface) faces?.let { addAll(it.draws(id, view).ribbons) }
@@ -98,8 +97,8 @@ class SurfaceLines(
     override fun selected(part: PartId, view: SurfaceView): List<RibbonDraw> {
         val key = if (view is FullView) part to view.current else part to view
         return kept.getOrPut(key) {
-            if (oneSurface != null && part in inSurface) {
-                return@getOrPut oneSurface.selected(part, view, look, ink, figureRadius) + work.parts[part]?.let { interiorInk(part, it, DepthLayer.FRONT, view) }.orEmpty()
+            if (part in inSurface) {
+                return@getOrPut surface.selected(part, view, look, ink, figureRadius) + work.parts[part]?.let { interiorInk(part, it, DepthLayer.FRONT, view) }.orEmpty()
             }
             val held = lines.parts[part] ?: return@getOrPut emptyList()
             selectionDraws(part, held, view)
@@ -120,7 +119,7 @@ class SurfaceLines(
      * surface, the strokes its paint inks.
      */
     private fun interiorInk(id: PartId, held: ResolvedSurfaceWork, layer: DepthLayer, view: SurfaceView): List<RibbonDraw> = buildList {
-        val strokes = if (oneSurface != null && id in inSurface) oneSurface.marks(id, view) else held.looseMarks()
+        val strokes = if (id in inSurface) surface.marks(id, view) else held.looseMarks()
         strokes.filterNot { it.kind == MarkKind.FUR }.mapNotNullTo(this) { mark ->
             if (mark.source == picked?.id) {
                 mark.lineDraw(lines.parts[id], look.marks.copy(interiorPixels = look.marks.interiorPixels * PICKED_WIDENS, silhouettePixels = look.marks.silhouettePixels * PICKED_WIDENS), picked.color, taper, DepthLayer.FRONT)
@@ -143,7 +142,7 @@ data class PickedLineWeight(val id: LineWeightId, val color: Color)
 fun ResolvedSurfaceWork.looseMarks() = groups.flatMap { group -> group.roles.flatMap { it.marks } }.toSet().let { grouped -> marks.filter { it.id !in grouped } }
 
 /**
- * The open character's lines, on its posed surface when [posed] and at rest otherwise, or null until its graph has built them. The
+ * The open character's lines, on its posed surface when [posed] and at rest otherwise, or null until its graph has built them and its surface. The
  * face's parts are the ones the lines were found on, so the face and the lines always lie on the same surface.
  */
 @Composable
@@ -168,20 +167,19 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
     val cheats = document.character.gazeCheats
-    val oneSurface = rememberPaneSurface(open)?.shown(posed)
-    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats, oneSurface) {
+    val surface = rememberPaneSurface(open)?.shown(posed)
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats, surface) {
         val shown = lines
         val held = work
         val whole = character
         val radius = whole?.box?.radius
-        if (shown == null || held == null || whole == null || radius == null) {
+        if (shown == null || held == null || whole == null || radius == null || surface == null) {
             null
         } else {
             val look = characterLook(rules, density)
             val parts = shown.parts.mapValues { it.value.part }
             val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view, eye -> locked ?: bins.binOf(part, view, eye) }
-            val surface = oneSurface?.let { OneSurfaceLines(it, lineWeightStrokes(whole, held)) }
-            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, surface)
+            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, PosedSurfaceLines(surface, lineWeightStrokes(whole, held)))
         }
     }
 }

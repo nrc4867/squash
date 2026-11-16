@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface
 
+import dev.chieppa.squash.screens.restSurface
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -110,7 +111,7 @@ class FurPointerFlowTest {
             AROUND.mapNotNull { v ->
                 val pixel = view.toPixel(placed.origin + placed.surface.shown(patch.positionAt(u, v))) ?: return@mapNotNull null
                 if (pixel.x !in 0f..view.width.toFloat() || pixel.y !in 0f..view.height.toFloat()) return@mapNotNull null
-                surfaceHit(character, pixel, view)?.takeIf { it.part == part }?.let { pixel }
+                surfaceHit(character, pixel, view, assertNotNull(session.value).restSurface)?.takeIf { it.part == part }?.let { pixel }
             }
         }
         assertTrue(pixels.isNotEmpty(), "${part.value} shows in the free pane")
@@ -182,7 +183,7 @@ class FurPointerFlowTest {
         val (from, to) = state.across(TORSO)
         val view = assertNotNull(seen?.view)
         val character = assertNotNull(session.assembly.output.value)
-        val anchors = listOf(from, (from + to) / 2f, to).map { assertNotNull(surfaceHit(character, it, view)).anchor }
+        val anchors = listOf(from, (from + to) / 2f, to).map { assertNotNull(surfaceHit(character, it, view, session.restSurface)).anchor }
         val command = assertNotNull(strokeCommand(session.document.value.character, anchors, thisSide = false))
         runOnIdle { session.send(command) }
         settle(session)

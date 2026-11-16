@@ -32,7 +32,7 @@ class DragSession(document: SquashDocument, templates: TemplateLibrary, reads: F
 
     init {
         watched().forEach { (name, node) -> watch(name, node) }
-        scope.launch(Dispatchers.Unconfined) { session.oneSurface.posed.collect { node -> node?.let { watch("posed surface", it) } } }
+        scope.launch(Dispatchers.Unconfined) { session.sessionSurface.posed.collect { node -> node?.let { watch("posed surface", it) } } }
         settle()
     }
 
@@ -62,11 +62,11 @@ class DragSession(document: SquashDocument, templates: TemplateLibrary, reads: F
     private fun watched(): List<Pair<String, Node<*, *>>> = buildList {
         add("placed" to session.placed)
         add("assembly" to session.assembly)
-        add("surface mesh" to session.oneSurface.mesh)
+        add("surface mesh" to session.sessionSurface.mesh)
         add("surface" to session.characterSurface)
         add("paint" to session.surfacePaint)
-        add("dress" to session.oneSurface.dress)
-        add("shown paint" to session.oneSurface.shownPaint)
+        add("dress" to session.sessionSurface.dress)
+        add("shown paint" to session.sessionSurface.shownPaint)
         add("surface work" to session.bodySurfaceWork)
         add("lines" to session.bodyLines)
         add("color" to session.bodyColor)

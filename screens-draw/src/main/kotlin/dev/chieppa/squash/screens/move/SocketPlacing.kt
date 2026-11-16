@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.surfaceHit
@@ -33,15 +34,21 @@ private const val CIRCLE_STEPS = 32
 class SocketPlace(val part: PlacedPart, val u: Float, val v: Float, val onRight: Boolean)
 
 /**
- * The place on the surface of a part of [character] showing at [pixel] that a socket would take, or null where none shows; on its
- * one [surface] where it has one.
+ * The place on the surface of a part of [character] showing at [pixel] that a socket would take, or null where none shows; found on
+ * its one [surface].
  */
-fun socketPlaceAt(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, handles: HandleView, surface: CharacterSurface? = null): SocketPlace? {
-    val hit = surfaceHit(character, pixel, sight, surface = surface) ?: return null
+fun socketPlaceAt(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, handles: HandleView, surface: CharacterSurface): SocketPlace? {
+    val hit = surfaceHit(character, pixel, sight, surface) ?: return null
     val part = character.part(hit.part) ?: return null
     val place = if (hit.patch == BODY_PATCH) SurfacePlace(hit.u, hit.v) else surfaceUnder(part, pixel, handles) ?: return null
     val at = part.pointOn(place.u, place.v) ?: return null
     return SocketPlace(part, place.u, place.v, at.z > 0f)
+}
+
+/** [socketPlaceAt] on the open character's settled surface, or null with no [character] or until the surface is built. */
+fun AppState.socketPlaceAt(character: AssembledCharacter?, pixel: Offset, sight: SurfaceView, handles: HandleView): SocketPlace? {
+    val surface = session.value?.characterSurface?.output?.value?.surface ?: return null
+    return character?.let { socketPlaceAt(it, pixel, sight, handles, surface) }
 }
 
 /** A socket's place and the way it faces, in body space. */

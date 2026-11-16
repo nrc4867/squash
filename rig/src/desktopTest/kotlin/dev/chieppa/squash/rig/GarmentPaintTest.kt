@@ -33,21 +33,21 @@ class GarmentPaintTest {
     fun aBranchsRegionAndStrokeArePaintedOnTheGarmentAndGoneWithThem() = runTest {
         val session = stackSession()
         val sweater = GarmentId("sweater")
-        val plain = assertNotNull(session.oneSurface.dress.output.value?.dress).garments.single()
+        val plain = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.single()
         assertNull(plain.paint, "a garment with no shapes of its own holds no paint")
         val band = Region(RegionId("band"), listOf(torso(0.3f, -0.2f), torso(0.4f, -0.2f), torso(0.4f, 0.2f), torso(0.3f, 0.2f)), stripe)
         val stroke = BrushStroke(BrushStrokeId("dab"), listOf(torso(0.5f, 0f), torso(0.55f, 0.05f)), dab, radius = 0.05f)
         session.send(SetBranchSurface(sweater, StackFixture.torso.id, SurfaceWork(regions = listOf(band), paint = Paint(listOf(stroke)))))
         runCurrent()
         check(session.graph.settled.value)
-        val garment = assertNotNull(session.oneSurface.dress.output.value?.dress).garments.single()
+        val garment = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.single()
         val layers = assertNotNull(garment.paint).layers
         assertEquals(listOf(stripe, dab), layers.map { it.slot })
         assertTrue(layers.all { it.mesh.vertexCount > 0 }, "each shape lands on the garment")
-        val body = assertNotNull(session.oneSurface.paint.output.value?.paint).layers
+        val body = assertNotNull(session.sessionSurface.paint.output.value?.paint).layers
         assertTrue(body.none { it.slot == stripe || it.slot == dab }, "the body under it is not painted")
         session.history.undo()
         runCurrent()
-        assertNull(assertNotNull(session.oneSurface.dress.output.value?.dress).garments.single().paint)
+        assertNull(assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.single().paint)
     }
 }
