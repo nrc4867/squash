@@ -22,6 +22,7 @@ import dev.chieppa.squash.character.build.isGeneric
 import dev.chieppa.squash.character.catalog.VIEW_ORDER
 import dev.chieppa.squash.character.catalog.isDrawnByHand
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.screens.library.FAINT
 import dev.chieppa.squash.screens.shell.PartTileArt
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.hasTileArt
@@ -44,9 +45,6 @@ private val TILE_ICON = 28.dp
 /** How far a dragged tile turns, in degrees, counterclockwise. */
 private const val LIFT_TURN = -4f
 
-/** How faint a tile a pick cannot take shows. */
-internal const val DIM = 0.38f
-
 private const val VIEW_JOIN = ", "
 
 /** A template's tile: its art over its name, faint unless [lit]; its tooltip names it, the views a person draws and its joints. */
@@ -54,7 +52,7 @@ private const val VIEW_JOIN = ", "
 internal fun PartTile(template: PartTemplate, lit: Boolean) {
     val views = VIEW_ORDER.filter { template.views[it]?.isDrawnByHand() == true }.map { viewLabel(it) }.joinToString(VIEW_JOIN)
     Tooltip(stringResource(Res.string.library_tile_tip, template.name, views, template.jointCount())) {
-        TileFace(template, Modifier.alpha(if (lit) 1f else DIM).border(Stretch.stroke, Stretch.colors.linePanel, Stretch.shapes.rowShape))
+        TileFace(template, Modifier.alpha(if (lit) 1f else FAINT).border(Stretch.stroke, Stretch.colors.linePanel, Stretch.shapes.rowShape))
     }
 }
 

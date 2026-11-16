@@ -3,21 +3,11 @@ package dev.chieppa.squash.screens.move
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
-import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
-import dev.chieppa.squash.character.catalog.newCharacter
-import dev.chieppa.squash.character.catalog.openSockets
-import dev.chieppa.squash.character.catalog.placeOnSocket
-import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
-import dev.chieppa.squash.document.AddParts
-import dev.chieppa.squash.document.PartData
-import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
-import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
@@ -25,8 +15,6 @@ import dev.chieppa.squash.screens.edit.mouseDrag
 import dev.chieppa.squash.screens.edit.showPane
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LockedCamera
-import dev.chieppa.squash.screens.sheet.SheetFit
-import dev.chieppa.squash.screens.sheet.sheetSelection
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
 import java.nio.file.Path
 import kotlin.math.abs
@@ -47,46 +35,12 @@ class MoveToolTest {
 
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
-    /** A dog with its front legs placed, settled, and a Side pane on the left leg. */
-    private inner class Bench {
-        val state = AppState(folder, work)
-        val leg: PartId
-        val torso: PartId
-
-        init {
-            val plan = folder.plans.first()
-            val new = newCharacter(plan, folder, "Fennec")
-            state.open(new.document).also { open -> new.commands.forEach(open::send) }
-            torso = new.root
-            val session = assertNotNull(state.session.value)
-            val socket = openSockets(session.document.value, plan, folder).first { it.name == "front-leg" }
-            val parts = placeOnSocket(socket, assertNotNull(folder.template(socket.takes.first())), session.document.value)
-            session.send(AddParts(parts))
-            leg = parts.first { it.side == Side.LEFT }.id
-            state.selectedPart.value = leg
-            state.screen.value = Screen.WORKSPACE
-        }
-
-        val session get() = assertNotNull(state.session.value)
-        val character: AssembledCharacter get() = assertNotNull(session.assembly.output.value)
-
-        fun params() = session.document.value.character.resolved(torso) ?: PartData()
-
-        fun camera(view: View = View.SIDE): LockedCamera {
-            val part = assertNotNull(sheetSelection(character, leg, emptyMap())).part
-            return LockedCamera(view, part.axes, SheetFit(part.origin, 200f, 4f), 600, 400, part.origin)
-        }
-
-        fun steps() = session.history.steps.value.done.size
-    }
+    /** A fennec with its front legs placed and a Side pane on the left leg. */
+    private inner class Bench : LegBench(folder, work)
 
     private fun tool(bench: Bench) = MoveTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
 
-    private fun androidx.compose.ui.test.ComposeUiTest.settled(bench: Bench) {
-        settle(work) {
-            bench.session.graph.settled.value && bench.session.assembly.output.value?.part(bench.leg) != null
-        }
-    }
+    private fun androidx.compose.ui.test.ComposeUiTest.settled(bench: Bench) = bench.settleIn(this)
 
     private class Locked(private val camera: LockedCamera) : HandleView {
         override fun toPixel(point: Vec3): Offset = camera.toPixel(point)
