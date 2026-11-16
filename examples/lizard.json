@@ -1010,7 +1010,8 @@
                         "joint.2.hinge": 0.0,
                         "joint.2.low": -45.0,
                         "joint.2.high": 45.0,
-                        "joint.2.u": 0.66
+                        "joint.2.u": 0.66,
+                        "join.ink": 0.0
                     },
                     "surface": {
                         "baseSlot": "skin",
@@ -1348,7 +1349,8 @@
                         ]
                     }
                 },
-                "role": "tail"
+                "role": "tail",
+                "blend": 0.1
             },
             {
                 "id": "front-leg-l",
@@ -1697,11 +1699,7 @@
                     },
                     "params": {
                         "landmark.1.u": 0.45,
-                        "landmark.1.v": 0.2,
-                        "socket.1.u": 0.45,
-                        "socket.1.v": 0.2,
-                        "socket.1.outward": 0.0,
-                        "socket.1.pair": 1.0
+                        "landmark.1.v": 0.2
                     },
                     "surface": {
                         "baseSlot": "skin",
@@ -1776,34 +1774,6 @@
                     }
                 },
                 "role": "head"
-            },
-            {
-                "id": "eye-l",
-                "template": {
-                    "id": "blob",
-                    "version": 1
-                },
-                "socket": {
-                    "parent": "head",
-                    "socket": "socket.1"
-                },
-                "pair": "eyes",
-                "side": "left",
-                "role": "other"
-            },
-            {
-                "id": "eye-r",
-                "template": {
-                    "id": "blob",
-                    "version": 1
-                },
-                "socket": {
-                    "parent": "head",
-                    "socket": "socket.1"
-                },
-                "pair": "eyes",
-                "side": "right",
-                "role": "other"
             }
         ],
         "pairs": {
@@ -2178,82 +2148,6 @@
                 "surface": {
                     "baseSlot": "skin"
                 }
-            },
-            "eyes": {
-                "params": {
-                    "size": 0.22
-                },
-                "surface": {
-                    "baseSlot": "eye",
-                    "regions": [
-                        {
-                            "id": "pupil",
-                            "border": [
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.82000005,
-                                    "v": 0.25
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.7905256,
-                                    "v": 0.3
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.71000004,
-                                    "v": 0.33660254
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.6,
-                                    "v": 0.35
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.49,
-                                    "v": 0.33660254
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.40947443,
-                                    "v": 0.3
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.38000003,
-                                    "v": 0.25
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.40947443,
-                                    "v": 0.2
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.49,
-                                    "v": 0.16339746
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.6,
-                                    "v": 0.15
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.71000004,
-                                    "v": 0.16339746
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.7905256,
-                                    "v": 0.2
-                                }
-                            ],
-                            "slot": "pupil"
-                        }
-                    ]
-                }
             }
         },
         "palette": {
@@ -2299,7 +2193,37 @@
                     }
                 }
             ]
-        }
+        },
+        "oneSurface": true,
+        "paintedEyes": [
+            {
+                "id": "eyes",
+                "anchor": {
+                    "part": "head",
+                    "u": 0.45,
+                    "v": 0.2
+                },
+                "look": {
+                    "width": 0.09,
+                    "height": 0.07,
+                    "lowerLid": 1.0,
+                    "frontNarrowing": 0.0,
+                    "irisSize": 0.13,
+                    "irisRatio": 1.0,
+                    "irisForward": 0.0,
+                    "irisUp": 0.0,
+                    "pupilSize": 0.4,
+                    "highlightSize": 0.25,
+                    "lashes": false,
+                    "brow": false,
+                    "white": "eye",
+                    "iris": "eye",
+                    "pupil": "pupil",
+                    "highlight": "belly",
+                    "ink": "stripe"
+                }
+            }
+        ]
     },
     "format": 14
 }

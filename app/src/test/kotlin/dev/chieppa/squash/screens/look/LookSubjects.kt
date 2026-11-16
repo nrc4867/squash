@@ -14,7 +14,9 @@ import dev.chieppa.squash.screens.fennec.fennecOneSurfaceDressedDocument
 import dev.chieppa.squash.screens.fennec.fennecOneSurfaceRoundDocument
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
 import dev.chieppa.squash.screens.fennec.fennecWingedDocument
+import dev.chieppa.squash.screens.koi.KOI_POSES
 import dev.chieppa.squash.screens.koi.koiDocument
+import dev.chieppa.squash.screens.lizard.LIZARD_POSES
 import dev.chieppa.squash.screens.lizard.lizardDocument
 import dev.chieppa.squash.screens.toucan.toucanDocument
 import dev.chieppa.squash.screens.twin.TWIN_POSES
@@ -53,6 +55,8 @@ private val POSES: Map<String, Map<String, Pose>> = mapOf(
     "fennec-one-surface" to FENNEC_POSES,
     "fennec-one-surface-dressed" to FENNEC_POSES,
     "fennec-dressed" to FENNEC_POSES,
+    "koi" to KOI_POSES,
+    "lizard" to LIZARD_POSES,
     "woman" to WOMAN_POSES,
     "woman-dressed" to WOMAN_POSES,
     "woman-twin" to TWIN_POSES,

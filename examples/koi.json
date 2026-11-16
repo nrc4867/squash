@@ -1290,34 +1290,6 @@
                     }
                 },
                 "role": "fin"
-            },
-            {
-                "id": "eye-l",
-                "template": {
-                    "id": "blob",
-                    "version": 1
-                },
-                "socket": {
-                    "parent": "body",
-                    "socket": "eye"
-                },
-                "pair": "eyes",
-                "side": "left",
-                "role": "other"
-            },
-            {
-                "id": "eye-r",
-                "template": {
-                    "id": "blob",
-                    "version": 1
-                },
-                "socket": {
-                    "parent": "body",
-                    "socket": "eye"
-                },
-                "pair": "eyes",
-                "side": "right",
-                "role": "other"
             }
         ],
         "pairs": {
@@ -1467,82 +1439,6 @@
                 "surface": {
                     "baseSlot": "fin"
                 }
-            },
-            "eyes": {
-                "params": {
-                    "size": 0.38
-                },
-                "surface": {
-                    "baseSlot": "eye",
-                    "regions": [
-                        {
-                            "id": "pupil",
-                            "border": [
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.8,
-                                    "v": 0.25
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.7665064,
-                                    "v": 0.305
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.675,
-                                    "v": 0.3452628
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.55,
-                                    "v": 0.36
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.425,
-                                    "v": 0.3452628
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.33349365,
-                                    "v": 0.305
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.3,
-                                    "v": 0.25
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.33349365,
-                                    "v": 0.195
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.425,
-                                    "v": 0.1547372
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.55,
-                                    "v": 0.14
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.675,
-                                    "v": 0.1547372
-                                },
-                                {
-                                    "part": "eye-l",
-                                    "u": 0.7665064,
-                                    "v": 0.195
-                                }
-                            ],
-                            "slot": "pupil"
-                        }
-                    ]
-                }
             }
         },
         "palette": {
@@ -1596,7 +1492,36 @@
                     }
                 }
             ]
-        }
+        },
+        "oneSurface": true,
+        "paintedEyes": [
+            {
+                "id": "eyes",
+                "anchor": {
+                    "part": "body",
+                    "u": 0.86,
+                    "v": 0.2
+                },
+                "look": {
+                    "width": 0.035,
+                    "height": 0.06,
+                    "lowerLid": 1.0,
+                    "frontNarrowing": 0.0,
+                    "irisSize": 0.045,
+                    "irisRatio": 1.0,
+                    "irisForward": 0.0,
+                    "irisUp": 0.0,
+                    "pupilSize": 0.6,
+                    "lashes": false,
+                    "brow": false,
+                    "white": "eye",
+                    "iris": "pupil",
+                    "pupil": "pupil",
+                    "highlight": "belly",
+                    "ink": "patch"
+                }
+            }
+        ]
     },
     "format": 14
 }

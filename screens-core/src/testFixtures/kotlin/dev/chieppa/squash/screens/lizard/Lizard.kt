@@ -12,6 +12,7 @@ import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetPaletteSlot
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotColor
 import dev.chieppa.squash.document.SlotName
@@ -53,7 +54,7 @@ private fun stripes(part: PartId, at: List<Float>): List<DocumentCommand> =
 
 /**
  * The lizard's colors: green skin with a paler belly along the body's and the tail's undersides and dark stripes across the back
- * and the tail, each a region; the legs, feet and head the skin's green, and yellow eyes with a dark pupil as a region on each.
+ * and the tail, each a region; the legs, feet and head the skin's green.
  */
 fun lizardColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(SKIN, SlotColor(0.36f, 0.62f, 0.27f)),
@@ -68,15 +69,13 @@ fun lizardColor(): List<DocumentCommand> = listOf(
     SetBaseSlot(BACK_LEG_L, SKIN),
     SetBaseSlot(FRONT_FOOT_L, SKIN),
     SetBaseSlot(BACK_FOOT_L, SKIN),
-    SetBaseSlot(EYE_L, EYE),
     spot(LIZARD_BODY, "belly", BELLY, 0.5f, 0.5f, 0.42f, 0.16f),
     spot(TAIL, "belly", BELLY, 0.3f, 0.5f, 0.28f, 0.12f),
     spot(HEAD, "chin", BELLY, 0.4f, 0.5f, 0.3f, 0.14f),
-    spot(EYE_L, "pupil", PUPIL, 0.6f, 0.25f, 0.22f, 0.1f),
 ) + stripes(LIZARD_BODY, BODY_STRIPES) + stripes(TAIL, TAIL_STRIPES)
 
 /** Every command that makes the lizard, in the order a person would send them. */
-fun lizardCommands(): List<DocumentCommand> = lizardBody() + lizardColor()
+fun lizardCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + lizardBody() + lizardColor() + lizardFace()
 
 /** The lizard as those commands leave it. */
 fun lizardDocument(): SquashDocument = lizardCommands().fold(EMPTY_LIZARD) { document, command -> command.apply(document).document }

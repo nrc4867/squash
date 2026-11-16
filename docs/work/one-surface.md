@@ -1155,6 +1155,34 @@ The woman and the dressed woman wear hair as hair parts: a `hair-cap` in her fie
 - The clumps part a little at the hem, showing the coat between them from behind; closer sockets or wider clumps close it, a matter of taste.
 - The twin still wears its blob and tubes.
 
+## Koi and lizard results
+
+The koi and the lizard build on one surface from their first command, with painted eyes in place of blob eyes. Neither needed a part redrawn.
+
+**What is built.**
+
+- **The koi.** Its body is the field. `fin` and `sheet` carry `"surface": "separate"`, so the dorsal, pectoral and anal fins and the tail fin are thin pieces sunk into the body as the fennec's ears are; the mark changes no build, so neither template takes a new version. Its eyes are painted on the body itself (a fish has no head part): a gold ring round a large dark iris and a pale highlight, a lid line, no lashes or brow (`koi/KoiFace.kt`).
+- **The lizard.** Body, head, legs, paddle feet and tail are all in the field; it has no toes or claws to mark. The tail's socket blend is widened to 0.1 and its join unlined, so the body's rear flows into the tail instead of stepping down to it; the other joins keep their crease line. Its eyes are painted at the head's face landmark: a yellow iris filling the opening, a dark round pupil, a lid line (`lizard/LizardFace.kt`).
+- **Named poses** for both, for the look command: the koi's `swim-0` to `swim-3` (a side-to-side wave down the body and the tail fin) and `rise`; the lizard's `walk-0` to `walk-3` (legs in diagonal pairs, spine and tail swaying) and `bask` (head up, tail lifted and curled).
+- **Upright by Move.** `PartRoles.upright` reads the root part's template as Move places it, so the woman, whose torso stands up by its Move rest, names her limbs Left foot and Right foot in Pose. A limb's chain ends at the bone its hand or paw hangs from, so her arm, which has a shoulder joint of its own before the elbow, is named by her hand, bends at the elbow and shows the hand's Curl.
+
+**Against the asks,** by eye on the sheets in the scratchpad's `creatures-1/`, main above the branch: `koi-as-saved`, `koi-face`, `lizard-as-saved`, `lizard-as-saved-face`, `lizard-as-saved-foot`, `lizard-hand`; the branch's poses in `koi-poses` and `lizard-poses`.
+
+| Ask | Result |
+|---|---|
+| Builds cleanly on one surface | Passes: no holes, melted parts or broken paint in any view or pose; the koi's silhouette is smoother than its parts build, and the lizard's head, legs and feet join with a crease line where they meet |
+| Joins | The lizard's tail flows out of the body; at a sharply bent tail joint (`bask`) a small kink shows under the root |
+| Toes at the body's cell | The lizard's feet are paddles with no toes, which read as a clean foot shape at the body's cell |
+| Other examples as main | Passes: cat, cat-dressed, dragon, fennec, fennec-dressed, fennec-winged, toucan, woman, woman-dressed, woman-twin and woman-twin-dressed, 202 images, none differ in any channel |
+
+**Drag timings** (`drag`, median of each later move, 90th percentile in brackets): the koi's pectoral move 7.9 ms (9.3), a pose drag on its body's middle joint 7.5 (9.3); the lizard's front-leg move 25.4 (50.1), its knee pose drag 18.5 (20.6).
+
+**Open.**
+
+- The lizard has no toes or claws: its feet are drawn paddles. Toes and claws would be a redraw on `paw` 5 or `foot` 4, waiting on finer cells for digits.
+- The koi's tail fin shows two small ink marks near its root, as its parts build does.
+- In the lizard's foot close-ups, the view from above sits inside the leg and shows the ankle's crease through it in broken arcs.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |

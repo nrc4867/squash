@@ -29,8 +29,6 @@ val TAIL_FIN = PartId("tail-fin")
 val PECTORAL_L = PartId("pectoral-l")
 val PECTORAL_R = PartId("pectoral-r")
 val ANAL = PartId("anal")
-val EYE_L = PartId("eye-l")
-val EYE_R = PartId("eye-r")
 
 /** How far each of the body's hand-made joints bends either way, in degrees. */
 private val BODY_BEND = Limits(-35f, 35f)
@@ -40,7 +38,6 @@ const val DORSAL_SOCKET = "dorsal"
 const val TAIL_SOCKET = "tail"
 const val PECTORAL_SOCKET = "pectoral"
 const val ANAL_SOCKET = "anal"
-const val EYE_SOCKET = "eye"
 
 private fun ref(id: String) = TemplateRef(TemplateId(id), 1)
 
@@ -53,13 +50,6 @@ private fun finPair() = AddParts(
     listOf(
         PartInstance(PECTORAL_L, ref("fin"), on(PECTORAL_SOCKET), pair = PairId("pectorals"), side = Side.LEFT, role = Role.FIN),
         PartInstance(PECTORAL_R, ref("fin"), on(PECTORAL_SOCKET), pair = PairId("pectorals"), side = Side.RIGHT, role = Role.FIN),
-    ),
-)
-
-private fun pair(id: String, template: String, socket: String, role: Role, left: PartId, right: PartId) = AddParts(
-    listOf(
-        PartInstance(left, ref(template), on(socket), pair = PairId(id), side = Side.LEFT, role = role, roleGuessed = true),
-        PartInstance(right, ref(template), on(socket), pair = PairId(id), side = Side.RIGHT, role = role, roleGuessed = true),
     ),
 )
 
@@ -98,8 +88,8 @@ private val ANAL_SIDE = drawn(p(0f, 0.05f), p(0.04f, 0.045f), p(0.075f, 0.02f), 
  * The koi's shape on the fish plan: its body tube drawn in Side and Top with three hand-made joints along it, so the body curve
  * bends it along its length, a dorsal fin on the plan's back socket, a pair of pectoral fins low on the sides behind the head, an
  * anal fin underneath and a tail fin at the rear, each a fin or sheet drawn as a planform in its best view and its thickness in the
- * other, turned into place with Move's angles; and a pair of blob eyes on the head. A fin takes the role its template gives it, the
- * tail's sheet and the eyes' blob the guess Add part gives them, then chosen.
+ * other, turned into place with Move's angles. A fin takes the role its template gives it, the tail's sheet the guess Add part
+ * gives it, then chosen. The fins and the tail are thin, built as their own pieces; the body is the one surface.
  */
 fun koiBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(PartInstance(KOI_BODY, ref("tube"), role = Role.BODY))),
@@ -111,9 +101,7 @@ fun koiBody(): List<DocumentCommand> = listOf(
     AddParts(listOf(guessed(TAIL_FIN, "sheet", TAIL_SOCKET, Role.TAIL))),
     finPair(),
     AddParts(listOf(PartInstance(ANAL, ref("fin"), on(ANAL_SOCKET), role = Role.FIN))),
-    pair("eyes", "blob", EYE_SOCKET, Role.OTHER, EYE_L, EYE_R),
     SetRole(TAIL_FIN, Role.TAIL),
-    SetRole(EYE_L, Role.OTHER),
     SetOutlines(DORSAL, mapOf(View.SIDE to DORSAL_SIDE, View.TOP to thin(0.13f, 0.012f))),
     SetParameter(DORSAL, PlacementParams.LEAN, 55f),
     SetOutlines(TAIL_FIN, mapOf(View.SIDE to TAIL_SIDE, View.TOP to thin(0.19f, 0.014f))),
@@ -122,5 +110,4 @@ fun koiBody(): List<DocumentCommand> = listOf(
     SetParameter(PECTORAL_L, PlacementParams.LEAN, -20f),
     SetOutlines(ANAL, mapOf(View.SIDE to ANAL_SIDE, View.TOP to thin(0.08f, 0.008f))),
     SetParameter(ANAL, PlacementParams.LEAN, -50f),
-    SetParameter(EYE_L, "size", 0.38f),
 )

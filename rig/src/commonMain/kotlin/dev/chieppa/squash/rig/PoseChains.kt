@@ -44,9 +44,9 @@ fun poseChains(rig: Rig): PoseChains {
     fun withRole(of: Set<Role>) = rig.parts.filter { roles[it.id] in of && it.id in bonesOf }.map { it.id }
     val limbs = withRole(Role.LIMBS).mapNotNull { leg ->
         val bones = bonesOf.getValue(leg).takeIf { it.size >= LIMB_JOINTS } ?: return@mapNotNull null
-        val end = bones[2]
-        val paw = children[leg].orEmpty().firstOrNull { roles[it] in Role.LIMB_ENDS && rig.parents[bonesOf.getValue(it).first()] == end }
-        Limb(leg, paw, bones[0], bones[1], end, paw?.let { bonesOf.getValue(it).first() }, plants(roles[leg], upright))
+        val paw = children[leg].orEmpty().firstOrNull { roles[it] in Role.LIMB_ENDS && rig.parents[bonesOf.getValue(it).first()] in bones.drop(LIMB_JOINTS - 1) }
+        val end = paw?.let { bones.indexOf(rig.parents[bonesOf.getValue(it).first()]) } ?: (LIMB_JOINTS - 1)
+        Limb(leg, paw, bones[end - 2], bones[end - 1], bones[end], paw?.let { bonesOf.getValue(it).first() }, plants(roles[leg], upright))
     }
     val tails = withRole(setOf(Role.TAIL)).filter { bonesOf.getValue(it).size >= 2 }.map { Tail(it, bonesOf.getValue(it)) }
     val look = withRole(setOf(Role.HEAD)).firstOrNull()?.let { head ->

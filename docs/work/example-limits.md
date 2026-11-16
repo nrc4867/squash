@@ -28,7 +28,7 @@ Each entry: what falls short, where it comes from, and the feature that would cl
 
 Her torso, neck, arms, legs and hair are generic parts on the Blank plan; her head, hands and feet are templates. What generic parts lacked:
 
-- **Upright is read from the template.** `PartRoles.upright` (`character/role/PartRoles.kt`) reads the root template's rest axis, not a part's `move.rest`, so a tube torso turned to rest up is not upright to the catalog, though the rig's `isUpright` reads the placed axis and is. `isForelimb` reads the template's rest the same way. Fix: read the placed axis in both.
+- **Forelimbs are read from the template.** `PartRoles.isForelimb` (`character/role/PartRoles.kt`) reads the parent template's rest axis, not a part's `move.rest`, so on a tube body turned by Move the front half is read along the template's rest. Fix: read the placed axis, as `PartRoles.upright` does.
 - **No head.** A generic blob faces along its axis (`PlacedPart.facing`, `FaceBins.kt`) and has no `faces`, so a blob resting up faces up to the face bins, gaze and Look, and reads its Side as an outline, not a profile. `head-round` version 2's face direction, profile ridge, ring focus, neck joint and eye landmark are why it stays.
 - **No digits.** The toe row, its per-digit shape, joints and webs are template blocks; a generic part has none, so the hands and feet stay `hand-3` and `foot-2`.
 - **No blend.** See entry 2. Plan sockets sink 1.6 to 2.2 template depths, hand-made ones 1 unless `socket.<n>.sink` says more.

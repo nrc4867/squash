@@ -33,6 +33,7 @@ import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.squash.screens.toucan.savedToucan
+import dev.chieppa.squash.screens.woman.savedWoman
 import dev.chieppa.squash.screens.biped.undrawnBiped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
@@ -101,6 +102,21 @@ class PoseInspectorTest {
         val pose = checkNotNull(state.session.value).document.value.character.pose
         assertEquals(1f, checkNotNull(rig.curlOf(pose, HAND_L)), 1e-4f)
         assertEquals(1f, checkNotNull(rig.curlOf(pose, HAND_R)), 1e-4f, "Mirror curls the twin")
+    }
+
+    @Test
+    fun aWomanUprightByMoveNamesHerFeetAndCurlsAPickedHand() = runComposeUiTest {
+        val state = AppState(shipped, work).also {
+            it.open(savedWoman())
+            it.tool.value = BuildTool.DRAG
+            it.pose.limb = HAND_L
+        }
+        showInspector(state)
+        onNodeWithText("Left foot", useUnmergedTree = true).assertExists()
+        onNodeWithText("Right foot", useUnmergedTree = true).assertExists()
+        onNodeWithTag(PoseInspectorTags.pin(PartId("foot-l"))).assertExists()
+        onNodeWithTag(PoseInspectorTags.pin(HAND_L)).assertDoesNotExist()
+        onNodeWithTag(PoseInspectorTags.CURL).assertExists()
     }
 
     @Test

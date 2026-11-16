@@ -13,6 +13,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Region
 import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SetBaseSlot
+import dev.chieppa.squash.document.SetOneSurface
 import dev.chieppa.squash.document.SetRegion
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
@@ -49,7 +50,7 @@ private fun spot(part: PartId, id: String, slot: SlotName, u: Float, v: Float, d
 
 /**
  * The koi's colors, over the fish plan's palette: an orange body with a white belly and a few black patches on its back and sides, each
- * a region, paler fins, and eyes with a dark pupil as a region on each.
+ * a region, and paler fins.
  */
 fun koiColor(): List<DocumentCommand> = listOf(
     SetBaseSlot(KOI_BODY, SCALE),
@@ -57,17 +58,15 @@ fun koiColor(): List<DocumentCommand> = listOf(
     SetBaseSlot(TAIL_FIN, FIN),
     SetBaseSlot(PECTORAL_L, FIN),
     SetBaseSlot(ANAL, FIN),
-    SetBaseSlot(EYE_L, EYE),
     spot(KOI_BODY, "belly", BELLY, 0.5f, 0.5f, 0.38f, 0.17f),
     spot(KOI_BODY, "saddle", PATCH, 0.52f, 0.12f, 0.08f, 0.06f),
     spot(KOI_BODY, "shoulder", PATCH, 0.7f, 0.86f, 0.05f, 0.05f),
     spot(KOI_BODY, "flank", PATCH, 0.33f, 0.2f, 0.06f, 0.05f),
     spot(KOI_BODY, "stalk", PATCH, 0.17f, 0.82f, 0.05f, 0.06f),
-    spot(EYE_L, "pupil", PUPIL, 0.55f, 0.25f, 0.25f, 0.11f),
 )
 
 /** Every command that makes the koi, in the order a person would send them. */
-fun koiCommands(): List<DocumentCommand> = koiBody() + koiColor()
+fun koiCommands(): List<DocumentCommand> = listOf(SetOneSurface(true)) + koiBody() + koiColor() + koiFace()
 
 /** The koi as those commands leave it. */
 fun koiDocument(): SquashDocument = koiCommands().fold(EMPTY_KOI) { document, command -> command.apply(document).document }

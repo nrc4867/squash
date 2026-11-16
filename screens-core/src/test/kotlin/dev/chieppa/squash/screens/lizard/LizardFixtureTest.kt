@@ -55,7 +55,7 @@ class LizardFixtureTest {
         assertTrue(parts.all { it.template.id.value in setOf("tube", "blob") })
         assertTrue(parts.none { it.roleGuessed })
         assertEquals(
-            mapOf(Role.BODY to 1, Role.TAIL to 1, Role.ARM to 2, Role.LEG to 2, Role.HAND to 2, Role.FOOT to 2, Role.HEAD to 1, Role.OTHER to 2),
+            mapOf(Role.BODY to 1, Role.TAIL to 1, Role.ARM to 2, Role.LEG to 2, Role.HAND to 2, Role.FOOT to 2, Role.HEAD to 1),
             parts.groupingBy { checkNotNull(it.role) }.eachCount(),
         )
     }

@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.lizard
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.RestDirection
 import dev.chieppa.squash.character.model.Hinge
@@ -16,6 +17,7 @@ import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetRole
+import dev.chieppa.squash.document.SetSocketBlend
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
@@ -28,8 +30,6 @@ import dev.chieppa.squash.screens.fennec.p
 val LIZARD_BODY = PartId("body")
 val TAIL = PartId("tail")
 val HEAD = PartId("head")
-val EYE_L = PartId("eye-l")
-val EYE_R = PartId("eye-r")
 val FRONT_LEG_L = PartId("front-leg-l")
 val FRONT_LEG_R = PartId("front-leg-r")
 val BACK_LEG_L = PartId("back-leg-l")
@@ -45,9 +45,8 @@ const val FRONT_LEG_SOCKET = 2
 const val BACK_LEG_SOCKET = 3
 const val HEAD_SOCKET = 4
 
-/** The hand-made socket at a leg's end that takes its foot, and the one on the head that takes the eyes. */
+/** The hand-made socket at a leg's end that takes its foot. */
 const val FOOT_SOCKET = 1
-const val EYE_SOCKET = 1
 
 /** The body's hand-made joints: the tail's base, two along the spine and the neck. */
 private val BODY_JOINTS = listOf(0.12f, 0.4f, 0.64f, 0.88f)
@@ -56,6 +55,9 @@ private val BODY_BEND = Limits(-30f, 30f)
 /** The tail's hand-made joints, a third and two thirds along it. */
 private val TAIL_JOINTS = listOf(0.33f, 0.66f)
 private val TAIL_BEND = Limits(-45f, 45f)
+
+/** How wide the blend where the tail leaves the body is, so the body's rear flows into the tail with no line between them. */
+private const val TAIL_BLEND = 0.1f
 
 /** A leg's knee, halfway down it, bending one way. */
 private const val KNEE = 0.5f
@@ -111,8 +113,8 @@ private val HEAD_TOP = loop(
  * The lizard's shape on the Blank plan, built by hand: a long tube body drawn in Side and Top with four joints along it; a long tube
  * tail on a socket at its rear end, turned to rest back and given two joints, which makes the guess say tail; four short tube legs on
  * two paired sockets low on its sides, each resting down and splayed out, with a knee and a flat tube foot on a socket at its end; and
- * a blob head on a socket at its front end, drawn as a wedge, with a landmark for its face and two blob eyes on a paired socket. Every
- * part's role is the guess Add part gives it, then chosen.
+ * a blob head on a socket at its front end, drawn as a wedge, with a landmark for its face. Every part's role is the guess Add part
+ * gives it, then chosen, and every part is in the one surface.
  */
 fun lizardBody(): List<DocumentCommand> = buildList {
     add(AddParts(listOf(PartInstance(LIZARD_BODY, ref("tube"), role = Role.BODY))))
@@ -128,6 +130,8 @@ fun lizardBody(): List<DocumentCommand> = buildList {
     add(SetRole(TAIL, Role.TAIL))
     add(SetOutlines(TAIL, mapOf(View.SIDE to TAIL_SIDE, View.TOP to TAIL_TOP)))
     TAIL_JOINTS.forEachIndexed { i, u -> add(HandJoints.add(TAIL, i + 1, u, Hinge.X, TAIL_BEND, stretch = false)) }
+    add(SetSocketBlend(TAIL, TAIL_BLEND))
+    add(SetParameter(TAIL, JoinParams.INK, 0f))
 
     add(pair("front-legs", "tube", FRONT_LEG_L to on(LIZARD_BODY, FRONT_LEG_SOCKET), FRONT_LEG_R to on(LIZARD_BODY, FRONT_LEG_SOCKET), Role.OTHER))
     add(pair("back-legs", "tube", BACK_LEG_L to on(LIZARD_BODY, BACK_LEG_SOCKET), BACK_LEG_R to on(LIZARD_BODY, BACK_LEG_SOCKET), Role.OTHER))
@@ -151,8 +155,4 @@ fun lizardBody(): List<DocumentCommand> = buildList {
     add(SetRole(HEAD, Role.HEAD))
     add(SetOutlines(HEAD, mapOf(View.SIDE to HEAD_SIDE, View.TOP to HEAD_TOP)))
     add(HandLandmarks.add(HEAD, 1, 0.45f, 0.2f))
-    add(HandSockets.add(HEAD, EYE_SOCKET, 0.45f, 0.2f, 0f, paired = true))
-    add(pair("eyes", "blob", EYE_L to on(HEAD, EYE_SOCKET), EYE_R to on(HEAD, EYE_SOCKET), Role.OTHER))
-    add(SetRole(EYE_L, Role.OTHER))
-    add(SetParameter(EYE_L, "size", 0.22f))
 }

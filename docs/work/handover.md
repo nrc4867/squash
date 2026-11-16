@@ -13,6 +13,7 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | 047eebb | Drag feel and speed: a drag's whole stack coarse, recent full builds kept for undo, redo and outfit switches; each surface shown only with its own paint and dress |
 | 8c603e5 | Pose drags: the coarse surface posed without the posed hiding, lined by outlines only, posing in parallel |
 | after 8c603e5 | Field reads through the `FieldReads` seam: `CpuFieldReads`, and `GpuFieldReads` in `field-gpu`; the app reads on the CPU unless launched with `-Preads=gpu` |
+| creatures-1 | The koi and the lizard on one surface with painted eyes, `fin` and `sheet` marked separate; `PartRoles.upright` reads the root's Move rest, and a limb's chain ends where its hand or paw hangs, so the woman's Pose rows name her feet and a picked hand curls ("Koi and lizard results") |
 | hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
 
 ## Examples
@@ -22,9 +23,11 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | `cat.json` | A ginger tabby on all fours on the canine plan, built as one surface from its first command: mitten paws (`paw` 5, four toes merged at 1.4, claws drawn in, beans), stripes and tail rings as regions, white chest, muzzle and paws, painted green eyes with slit pupils, whiskers and mouth as mirrored marks, the tail curled up in the display pose, a walk in four moments |
 | `cat-dressed.json` | The cat in Vampire (a cape over the back and flanks, open under the chest, its collar the cuff the head comes up through; fangs inked by a garment that redraws the head's surface) and Hotdog (a sausage over the body, a bun open over the back, a zigzag of mustard beads the sausage owns) |
 | `fennec*.json`, `woman*.json` | One surface, painted eyes |
-| `dragon`, `koi`, `lizard`, `toucan`, `woman-twin*` | Parts |
+| `koi.json` | One surface: the body in the field, its fins and tail fin thin and separate; painted gold eyes with a dark iris; named poses `swim-0` to `swim-3` and `rise` |
+| `lizard.json` | One surface: body, head, legs, paddle feet and tail in the field, the tail's join widened and unlined; painted yellow eyes; named poses `walk-0` to `walk-3` and `bask` |
+| `dragon`, `toucan`, `woman-twin*` | Parts |
 
-Dragon, koi, lizard, toucan and the twin still build as parts and render as before the one surface landed (checked in RGB against 6fdbc35).
+Dragon, toucan and the twin still build as parts and render as before the one surface landed (checked in RGB against 6fdbc35).
 
 ## Where speed stands
 
@@ -42,11 +45,12 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The Face board needs Nicholas's verification.
 - The cat's garments are what a body on all fours can wear today ("Creatures" in `example-limits.md`): no cape hangs free and no bun has its own shape, since an open branch takes neither drawn outlines nor a run past its part's ends, and a hanging branch on a torso resting forward flares into a sheet; the mustard is beads, since a garment's own marks and regions are not painted.
 - The cat's moves are slow for one surface: a front-leg move about 140 ms bare, 170 in Vampire and 250 in Hotdog; a knee pose drag 39, 126 and 191.
+- The lizard has paddle feet with no toes or claws; the koi's tail fin shows two small ink marks near its root ("Koi and lizard results").
 - Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
 
 ## Next, in order
 
-1. Phase 4, creatures: adaptive cells for toes, fingers and claws; the dragon, lizard, toucan, koi and the twin onto one surface; the twin's compare IoU must not drop.
+1. Phase 4, creatures: adaptive cells for toes, fingers and claws; the dragon, toucan and the twin onto one surface; the twin's compare IoU must not drop.
 2. Phase 5: format 15 migration, the parts build and drawn eyes retired, the HLD rewritten.
 3. Phase 6, joints, only if the walk sheets need it.
 

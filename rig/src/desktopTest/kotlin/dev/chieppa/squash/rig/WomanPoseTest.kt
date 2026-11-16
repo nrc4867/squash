@@ -19,8 +19,9 @@ import kotlin.test.assertTrue
 
 private val FOOT_L = PartId("foot-l")
 private val FOOT_R = PartId("foot-r")
-/** Her arms, which name her reaching limbs: her hands hang past their ends. */
-private val ARM_L = PartId("arm-l")
+/** Her hands, which name her reaching limbs, and her arms, which find them too. */
+private val HAND_L = PartId("hand-l")
+private val HAND_R = PartId("hand-r")
 private val ARM_R = PartId("arm-r")
 private val WOMAN_NECK = PartId("neck")
 private val WOMAN_TORSO = PartId("torso")
@@ -55,11 +56,14 @@ class WomanPoseTest {
     fun theBodyStandsUprightAndItsArmsReachWhileItsFeetPlant() {
         assertTrue(woman.isUpright)
         val limbs = solver.chains.limbs.associateBy { it.id }
-        assertEquals(setOf(FOOT_L, FOOT_R, ARM_L, ARM_R), limbs.keys)
+        assertEquals(setOf(FOOT_L, FOOT_R, HAND_L, HAND_R), limbs.keys)
         assertTrue(limbs.getValue(FOOT_L).plants && limbs.getValue(FOOT_R).plants)
-        assertTrue(!limbs.getValue(ARM_L).plants && !limbs.getValue(ARM_R).plants)
+        assertTrue(!limbs.getValue(HAND_L).plants && !limbs.getValue(HAND_R).plants)
+        val arm = limbs.getValue(HAND_L)
+        assertEquals(woman.parents[woman.bones.indexOfFirst { it.name.part == HAND_L }], arm.end, "the arm's chain ends where the hand hangs")
+        assertEquals("joint.2", woman.bones[arm.lower].name.joint, "the elbow is the arm's bend")
         val handles = solver.handles(standing)
-        assertTrue(ARM_L in handles.ends && ARM_R in handles.ends, "each arm has its dot")
+        assertTrue(HAND_L in handles.ends && HAND_R in handles.ends, "each arm has its dot")
         assertEquals(setOf(FOOT_L, FOOT_R), handles.pins.keys, "only the feet are pinned")
     }
 
