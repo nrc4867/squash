@@ -33,6 +33,8 @@ import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.dress.DressTags
 import dev.chieppa.squash.screens.fennec.CAP
+import dev.chieppa.squash.screens.fennec.BOOTS
+import dev.chieppa.squash.screens.library.LibraryTab
 import dev.chieppa.squash.screens.fennec.EAR_L
 import dev.chieppa.squash.screens.fennec.FEET_SLOT
 import dev.chieppa.squash.screens.fennec.HOODED
@@ -122,26 +124,23 @@ class DressFlowTest {
     }
 
     @Test
-    fun theBandShowsOutfitsAndSlotsAndTheLayersListNamesWhoWins() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun garmentsShowOutfitsAndSlotsAndTheLayersListNamesWhoWins() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = dressedOpen()
         val session = assertNotNull(state.session.value)
-        onNodeWithTag(ShellTags.DRESS_BAND).assertExists()
-        onNodeWithTag(DressTags.outfit(HOODED)).performClick()
+        state.library.tab.value = LibraryTab.GARMENTS
+        waitForIdle()
+        onNodeWithTag(DressTags.outfit(HOODED), useUnmergedTree = true).performScrollTo().performClick()
         waitForIdle()
         assertEquals(HOODED, assertIs<ShowOutfit>(session.history.steps.value.done.last()).outfit)
         state.undo()
         waitForIdle()
         assertEquals(WINTER, session.document.value.character.wardrobe.shown)
 
-        onNodeWithTag(DressTags.slot(FEET_SLOT)).performClick()
-        waitForIdle()
-        onNodeWithTag(DressTags.POPOVER).assertExists()
-        onNodeWithTag(DressTags.PICK_NONE).performClick()
+        onNodeWithTag(DressTags.garmentTile(BOOTS), useUnmergedTree = true).performScrollTo().performClick()
         waitForIdle()
         val pick = assertIs<PickGarment>(session.history.steps.value.done.last())
-        assertNull(pick.garment, "None takes the feet's garment off")
+        assertNull(pick.garment, "a press on the worn boots takes them off")
         state.undo()
-        state.dress.openSlot.value = null
         waitForIdle()
 
         onNodeWithTag(DressTags.layer(SCARF)).assertExists()

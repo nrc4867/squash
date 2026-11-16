@@ -38,7 +38,6 @@ import dev.chieppa.squash.screens.surface.rememberSurfaceLines
 import dev.chieppa.squash.screens.surface.rememberSurfaceStrokeTool
 import dev.chieppa.squash.screens.surface.rememberLineEditTool
 import dev.chieppa.squash.screens.surface.FaceBand
-import dev.chieppa.squash.screens.dress.DressBand
 import dev.chieppa.squash.screens.dress.rememberCoverTool
 import dev.chieppa.squash.screens.dress.rememberGarmentSelectTool
 import dev.chieppa.squash.screens.dress.rememberLooseEndTool
@@ -57,7 +56,6 @@ import dev.chieppa.squash.screens.surface.rememberEditMarkTool
 import dev.chieppa.squash.screens.surface.rememberEraseMarkTool
 import dev.chieppa.squash.screens.surface.rememberGazeTargetTool
 import dev.chieppa.squash.screens.surface.rememberSelectPartTool
-import dev.chieppa.squash.screens.shell.AddPartPopover
 import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_toast_refit
@@ -69,12 +67,8 @@ import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.stretch.frame.ToastHost
 import org.jetbrains.compose.resources.getString
 
-/** Where Add part's popover opens over the panes: below the strip, at the right, as the board draws it. */
-private val POPOVER_TOP = 44.dp
-private val POPOVER_END = 24.dp
-
 /**
- * The Build workspace: the panes and their tool strip, and under them the Face or Dress stage's band, in the frame's viewport. In Rig the panes
+ * The Build workspace: the panes and their tool strip, and under them the Face stage's band, in the frame's viewport. In Rig the panes
  * show the rig, and in Pose every pane shows the character in its pose.
  */
 @Composable
@@ -170,10 +164,8 @@ fun WorkspaceScreen(shell: Shell) {
                 singleFoot = if (facing) ({ toViewer, turn -> HeadAngleBar(state, toViewer, turn) }) else null,
                 rig = if (rigging) rememberRigShading(state) else null,
             )
-            Box(Modifier.align(Alignment.TopEnd).padding(top = POPOVER_TOP, end = POPOVER_END)) { AddPartPopover(state) }
         }
         if (facing) FaceBand(state)
-        if (stage == Stage.DRESS) DressBand(state)
     }
 }
 

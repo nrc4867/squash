@@ -35,7 +35,9 @@ import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.SetTemplate
 import dev.chieppa.squash.document.UpdateFromLibrary
 import dev.chieppa.squash.uidesign.generated.anatomy_step_pair
-import dev.chieppa.squash.uidesign.generated.anatomy_step_template
+import dev.chieppa.squash.uidesign.generated.history_replace_part
+import dev.chieppa.squash.uidesign.generated.history_remove_parts
+import dev.chieppa.squash.document.RemoveParts
 import dev.chieppa.squash.uidesign.generated.anatomy_update
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.PartInstance
@@ -122,7 +124,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val paintedEye = stringResource(Res.string.shell_step_painted_eye)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
-    val retemplated = stringResource(Res.string.anatomy_step_template, FIRST)
+    val replaced = stringResource(Res.string.history_replace_part, FIRST, SECOND)
+    val removedParts = stringResource(Res.string.history_remove_parts, FIRST)
     val updated = stringResource(Res.string.anatomy_update)
     val moved = stringResource(Res.string.move_step)
     val palette = stringResource(Res.string.color_step_palette, FIRST)
@@ -162,7 +165,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is RemovePart -> remove.replace(FIRST, "")
             is BreakPair -> breakPair
             is JoinPair -> joinPair
-            is SetTemplate -> retemplated.replace(FIRST, displayName(command.template.id.value))
+            is SetTemplate -> replaced.replace(FIRST, displayName(command.part.value)).replace(SECOND, displayName(command.template.id.value))
+            is RemoveParts -> removedParts.replace(FIRST, command.parts.firstOrNull()?.let { displayName(it.value) }.orEmpty())
             is UpdateFromLibrary -> updated
             is SetOutline -> outline.replace(FIRST, views[command.view].orEmpty())
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })

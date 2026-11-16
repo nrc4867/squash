@@ -138,7 +138,7 @@ class ReferencesFlowTest {
         onNode(hasText("Front") and hasAnyAncestor(hasTestTag(ReferencesTags.TRACE_IN))).performClick()
         waitForIdle()
         assertNotNull(session.document.value.character.traces[View.FRONT])
-        onNodeWithTag(ReferencesTags.DELETE).performClick()
+        onNodeWithTag(ReferencesTags.DELETE).performScrollTo().performClick()
         waitForIdle()
         assertTrue(session.document.value.references.images.isEmpty())
         assertTrue(session.document.value.character.traces.isEmpty())

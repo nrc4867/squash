@@ -8,7 +8,8 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
-import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.screens.library.LibraryState
+import dev.chieppa.squash.screens.library.LibraryTab
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.edit.CurveEditState
 import dev.chieppa.squash.screens.edit.PaintEditState
@@ -149,15 +150,17 @@ class AppState(
     /** What the Move tool remembers: its mode, the next socket's angle and pair, and the hand-made socket picked. */
     val move = MoveEditState()
 
-    /** What the Dress stage remembers: the garment picked, the slot popover, the garments out of view and how garments show. */
+    /** What the Dress stage remembers: the garment picked, the garments out of view and how garments show. */
     val dress = DressEditState()
 
     /** Whether the panes outside Pose show the pose or the rest pose. */
     val poseView = MutableStateFlow(PoseView.POSED)
 
-    /** The open socket Add part's popover is open on, and the type it would add there. */
+    /** The open socket Library targets, which a pick there adds to. */
     val addingSocket = MutableStateFlow<OpenSocket?>(null)
-    val addingType = MutableStateFlow<TemplateId?>(null)
+
+    /** What the Library drawer remembers. */
+    val library = LibraryState()
 
     private val scope get() = workers.scope
     private var sessionJob: Job? = null
@@ -206,7 +209,7 @@ class AppState(
         mirror.value = true
         activeView.value = View.SIDE
         clearEdits()
-        // Undo can remove the selected part or the parent of the socket Add part is open on, so both follow the document.
+        // Undo can remove the selected part or the parent of the socket Library targets, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
                 if (selectedPart.value?.let(current.character::part) == null) selectedPart.value = current.character.parts.firstOrNull()?.id
@@ -244,6 +247,7 @@ class AppState(
     /** Drops what the tools remember of the character that was open. */
     private fun clearEdits() {
         closeAddPart()
+        library.clear()
         move.clear()
         curves.clear()
         spine.clear()
@@ -274,15 +278,16 @@ class AppState(
         screen.value = Screen.WORKSPACE
     }
 
-    /** Opens Add part's popover on [socket], with the first type it takes chosen. */
+    /** Has Library target [socket], on Parts, with its cursor on the first type the socket takes. */
     fun offerSocket(socket: OpenSocket) {
         addingSocket.value = socket
-        addingType.value = socket.takes.first()
+        library.tab.value = LibraryTab.PARTS
+        library.cursor.value = socket.takes.first()
     }
 
+    /** Drops Library's socket target. */
     fun closeAddPart() {
         addingSocket.value = null
-        addingType.value = null
     }
 
     /** Arms [next], showing its stage, or puts the tool down when it is already armed, which leaves the panes to look at. */

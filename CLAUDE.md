@@ -10,6 +10,7 @@ A desktop tool for making cartoon characters in one style: draw a part once, Squ
 | Status of every screen against its board | `docs/work/boards.md` |
 | The screens, the specification for every UI | [Squash flow of work](https://claude.ai/artifact/KfBGmYcUEuoRJuhvGky3CT) |
 | The Build workspace's stages, strip, keys and inspector, which replace their boards in Squash flow of work | [Squash flow of work · restructure](https://claude.ai/artifact/81F1TgKZKUdhUVPzKZs9zJ) |
+| Library: the Build workspace's parts and garments drawer, which replaces boards W2 and W14 of the restructure | [Squash parts and outfits rethink · Spec: Library drawer](https://claude.ai/artifact/4sq6ucMkoUW2E1NiHNwxTm) |
 | The plan these docs were exported from | [Squash: plan](https://claude.ai/artifact/9sKH64ERAeZktGEtNmQBfP) |
 | Stretch: design, components, conventions | [Stretch: design](https://claude.ai/artifact/VtgHzTtWDUYiVa6eKSqpJR), `../stretch/docs/` |
 
@@ -45,11 +46,11 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Layer | Module | Holds |
 | --- | --- | --- |
 | App | `app` | Entry point; `SquashApp`, which wires the screens together and registers modes, drawers and commands with the Stretch frame |
-| Interfaces | `screens-shell` | Home, New character, the Build frame and its chrome, Add part's popover |
+| Interfaces | `screens-shell` | Home, New character, the Build frame and its chrome, the Library drawer and its Parts half, the Parts tree |
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
 | Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
 | Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions; the Rig stage's view, seam stroke tools and inspector |
-| Interfaces | `screens-dress` | The Dress stage: its inspector (garment, joins and edges, color, body under, layers), the outfits and slots band, the slot popover, and the press tools that pick a garment, cover a part and hang a loose end |
+| Interfaces | `screens-dress` | The Dress stage: its inspector (garment, joins and edges, color, body under, layers), Library's Garments half (outfits, garments by slot and their menus), and the press tools that pick a garment, cover a part and hang a loose end |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |

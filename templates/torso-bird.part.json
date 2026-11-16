@@ -3,7 +3,7 @@
   "format": 1,
   "id": "torso-bird",
   "version": 1,
-  "name": "Torso",
+  "name": "Perched torso",
   "role": "body",
   "axis": { "rest": [0.643, 0.766, 0], "length": 0.6 },
   "openEnd": null,

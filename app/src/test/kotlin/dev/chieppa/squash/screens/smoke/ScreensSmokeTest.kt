@@ -208,7 +208,7 @@ class ScreensSmokeTest {
         assertEquals(setOf("neck", "front-leg", "back-leg", "tail"), open.map { it.name }.toSet())
         for (socket in open) onNodeWithTag(ShellTags.addSocket(socket.name)).assertExists()
         onNodeWithTag(ShellTags.addSocket("front-leg")).performClick()
-        assertCaptured(ShellTags.ADD_PART)
+        assertCaptured(ShellTags.LIBRARY)
         assertCaptured(ShellTags.WORKSPACE)
     }
 
@@ -229,7 +229,7 @@ class ScreensSmokeTest {
         val session = createCharacter(state)
         assertSettled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         assertSettled(session)
         settle(work) { selection?.part?.id == state.selectedPart.value && selection != null }
         val leg = assertNotNull(selection)
@@ -329,7 +329,7 @@ class ScreensSmokeTest {
         val session = createCharacter(state)
         assertSettled(session)
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         assertSettled(session)
         runOnIdle { state.layout.value = SheetLayout.SINGLE }
         settle(work) { onAllNodesWithText("Front leg · L · side").fetchSemanticsNodes().isNotEmpty() }

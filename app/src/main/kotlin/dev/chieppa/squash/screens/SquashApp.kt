@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.screens.shell.BuildContent
+import dev.chieppa.squash.screens.dress.library.GarmentsLibrary
 import dev.chieppa.squash.screens.shell.BuildScreens
 import dev.chieppa.squash.screens.shell.HomeScreen
 import dev.chieppa.squash.screens.shell.KeymapStore
@@ -48,6 +49,7 @@ private val BUILD_CONTENT = BuildContent(
     workspace = { shell -> WorkspaceScreen(shell) },
     inspector = { state, session, stage -> StageInspector(state, session, stage) },
     referencesDrawer = { state -> ReferenceDrawers(state) },
+    garments = { state -> GarmentsLibrary(state) },
 )
 
 /** The window's content: the current screen over [state], with what every screen shares, and the keymap kept in [keys]. */

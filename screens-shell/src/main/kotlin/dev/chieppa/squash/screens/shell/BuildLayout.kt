@@ -7,6 +7,7 @@ import dev.chieppa.stretch.frame.Side
 /** The Build frame's drawers. */
 object DrawerIds {
     const val PARTS = "parts"
+    const val LIBRARY = "library"
     const val REFERENCES = "references"
     const val HISTORY = "history"
     const val HELP = "help"
@@ -22,6 +23,7 @@ private const val REFERENCES_WIDTH = 440f
 val DEFAULT_LAYOUT = FrameLayout(
     listOf(
         DrawerPlacement(DrawerIds.PARTS, Side.Left, width = LEFT_WIDTH, open = true),
+        DrawerPlacement(DrawerIds.LIBRARY, Side.Left, width = LEFT_WIDTH, open = true),
         DrawerPlacement(DrawerIds.REFERENCES, Side.Left, width = REFERENCES_WIDTH),
         DrawerPlacement(DrawerIds.HISTORY, Side.Left, width = LEFT_WIDTH),
         DrawerPlacement(DrawerIds.HELP, Side.Left, width = LEFT_WIDTH, bottom = true),

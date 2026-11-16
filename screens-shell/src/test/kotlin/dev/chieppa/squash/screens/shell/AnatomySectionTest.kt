@@ -41,6 +41,11 @@ import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import java.nio.file.Files
 import kotlin.io.path.exists
+import dev.chieppa.squash.screens.shell.library.LibraryDrawerContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -49,6 +54,9 @@ import kotlin.test.assertTrue
 
 private val LEG_A = PartId("leg-a")
 private val LEG_B = PartId("leg-b")
+
+private val LIBRARY_WIDTH = 300.dp
+private val LIBRARY_HEIGHT = 900.dp
 
 /** Move's four modes with Add joint's fields, the Anatomy section, Pair with… and Save as template's dialog. See board W12. */
 @OptIn(ExperimentalTestApi::class)
@@ -160,15 +168,17 @@ class AnatomySectionTest {
     }
 
     @Test
-    fun aSavedTemplateIsOfferedAtOnceByTheTemplateMenuAndAddPart() = runComposeUiTest {
+    fun aSavedTemplateIsOfferedAtOnceByLibrarysReplaceAndAdd() = runComposeUiTest {
         val tube = assertNotNull(shipped.template(TemplateId("tube"))).ref
         session.send(HandSockets.add(body, 1, 0.3f, 0.35f, 0f, paired = false))
         session.send(HandSockets.add(body, 2, 0.3f, 0.65f, 0f, paired = false))
         session.send(AddParts(listOf(PartInstance(LEG_A, tube, SocketRef(body, HandSockets.name(1))))))
         state.selectedPart.value = LEG_A
         setContent {
-            inspector()()
-            StretchTheme(StretchThemes.Ink) { AddPartPopover(state) }
+            Row {
+                Box(Modifier.weight(1f)) { inspector()() }
+                StretchTheme(StretchThemes.Ink) { Box(Modifier.size(LIBRARY_WIDTH, LIBRARY_HEIGHT)) { LibraryDrawerContent(state) {} } }
+            }
         }
         onNodeWithTag(ShellTags.SAVE_TEMPLATE).performScrollTo().performClick()
         waitForIdle()
@@ -178,17 +188,17 @@ class AnatomySectionTest {
         val longLeg = TemplateId("long-leg")
         assertNotNull(state.templates.template(longLeg), "the catalog holds it without a restart")
 
-        onNodeWithTag(ShellTags.TEMPLATE_MENU).performScrollTo().performClick()
+        onNodeWithTag(ShellTags.libraryTile(longLeg.value), useUnmergedTree = true).performScrollTo().performClick()
         waitForIdle()
-        onNodeWithText("Long leg").performScrollTo().performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         waitForIdle()
-        assertEquals(longLeg, session.document.value.character.part(LEG_A)?.template?.id, "the Template menu offers it")
+        assertEquals(longLeg, session.document.value.character.part(LEG_A)?.template?.id, "Library's Replace offers it")
 
         state.offerSocket(state.openSocketsNow().first { it.name == HandSockets.name(2) })
         waitForIdle()
-        onNodeWithTag(ShellTags.addTile(longLeg.value)).performSemanticsAction(SemanticsActions.OnClick)
+        onNodeWithTag(ShellTags.libraryTile(longLeg.value), useUnmergedTree = true).performScrollTo().performClick()
         waitForIdle()
-        state.addPart()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         waitForIdle()
         val added = session.document.value.character.parts.last()
         assertEquals(longLeg, added.template.id, "Add part offers it")

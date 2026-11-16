@@ -24,12 +24,15 @@ import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
 import dev.chieppa.stretch.frame.ViewportOverlay
+import dev.chieppa.stretch.frame.dropTarget
+import dev.chieppa.squash.screens.addPart
+import dev.chieppa.squash.screens.library.TemplateDrag
 import dev.chieppa.stretch.frame.buildOverlay
 
 /**
- * Add part: a dot on every open socket, in the locked panes and Full, larger and accent on the one Add part's popover is open on.
- * Pressing a dot opens the popover there. A press on a part's surface away from the dots places a hand-made socket there, with the
- * Move tool's outward angle and pair flag and previewed under the pointer as Add socket previews it, and opens the popover on it.
+ * Add part: a dot on every open socket, in the locked panes and Full, larger and accent on the one Library targets.
+ * Pressing a dot targets its socket in Library, and a Library tile dropped on a dot whose socket takes it is added there. A press on a part's surface away from the dots places a hand-made socket there, with the
+ * Move tool's outward angle and pair flag and previewed under the pointer as Add socket previews it, and targets it in Library.
  */
 class AddPartTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
     /** Where a press would place a socket. */
@@ -72,6 +75,20 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
             }
         }
         .then(hover.track(this, pane, key, { true }) { pointer -> placeAt(pointer, sight, handles) })
+        .dropTarget<TemplateDrag>(
+            accepts = { true },
+            onDrop = { drag, at -> dropOn(drag, at, handles) },
+        )
+
+    /** Adds a tile dragged from Library on the dot it lands on, where that socket takes it; false sends the tile back. */
+    private fun dropOn(drag: TemplateDrag, at: Offset, handles: HandleView): Boolean {
+        val dot = handleAt(dots(), at, curves.grabReach, handles) as? SocketHandle ?: return false
+        val socket = state.openSocketsNow().firstOrNull { it.ref.parent == dot.owner && it.ref.socket == dot.socket } ?: return false
+        if (drag.template !in socket.takes) return false
+        state.offerSocket(socket)
+        state.addPart(drag.template)
+        return true
+    }
 
     /** Where a press at [pixel] places a socket: on a part's surface, away from every dot. */
     private fun placeAt(pixel: Offset, sight: SurfaceView, handles: HandleView): SocketPlace? {

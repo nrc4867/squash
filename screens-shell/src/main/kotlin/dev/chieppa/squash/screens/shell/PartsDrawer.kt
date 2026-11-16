@@ -6,6 +6,23 @@ import dev.chieppa.squash.uidesign.generated.dress_hidden
 import dev.chieppa.squash.uidesign.generated.dress_through
 import dev.chieppa.squash.uidesign.generated.dress_bare
 import androidx.compose.foundation.background
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import dev.chieppa.squash.screens.library.LibraryTab
+import dev.chieppa.squash.screens.library.removePart
+import dev.chieppa.squash.screens.library.replaceable
+import dev.chieppa.squash.uidesign.generated.parts_menu_add
+import dev.chieppa.squash.uidesign.generated.parts_menu_add_tips
+import dev.chieppa.squash.uidesign.generated.parts_menu_remove
+import dev.chieppa.squash.uidesign.generated.parts_menu_replace
+import dev.chieppa.squash.uidesign.generated.parts_tips
+import dev.chieppa.squash.uidesign.generated.parts_tips_count
+import dev.chieppa.stretch.frame.ContextMenuPopup
+import dev.chieppa.stretch.frame.MenuItem
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
@@ -55,9 +72,13 @@ private val SWATCH_SHAPE = RoundedCornerShape(3.dp)
 private val TRAILING_GAP = 6.dp
 private const val NOTE_JOIN = " · "
 
-/** The open character's parts and empty sockets: a part selects, and a socket, shown as a row to add, opens Add part's popover on it. */
+/**
+ * The open character's parts and empty sockets: a part selects, and a socket, shown as a row to add, targets it in Library. A part's
+ * empty digit tips fold into one row, closed at first, which targets them all. A row's context menu, or Shift F10, holds Replace… and
+ * Remove (Del) for a part no garment owns, and Add… for a socket; [openLibrary] shows Library for Replace…
+ */
 @Composable
-fun PartsDrawerContent(state: AppState) {
+fun PartsDrawerContent(state: AppState, openLibrary: () -> Unit = {}) {
     val session by state.session.collectAsState()
     val open = session ?: return
     val document by open.document.collectAsState()
@@ -65,12 +86,14 @@ fun PartsDrawerContent(state: AppState) {
     val selected by state.selectedPart.collectAsState()
     val socket by state.addingSocket.collectAsState()
     var collapsed by remember { mutableStateOf(emptySet<Any>()) }
+    var openedTips by remember { mutableStateOf(emptySet<Any>()) }
+    var menu by remember { mutableStateOf<Pair<PartRow, Offset>?>(null) }
 
     val mirror by state.mirror.collectAsState()
     val left = stringResource(Res.string.shell_tree_left)
     val right = stringResource(Res.string.shell_tree_right)
     val names = socketNames(remember(document) { state.openSocketsNow() })
-    val roots = partTree(document, plan, state.templates, mirror, { if (it == Side.LEFT) left else right }, names)
+    val roots = partTree(document, plan, state.templates, mirror, { if (it == Side.LEFT) left else right }, names, stringResource(Res.string.parts_tips))
     val guesses = roleLabels(state.templates.roles(document.character).fourLegged)
     val rows = flattenTree(roots) { true }.map { it.node.item }
     val stage by state.stage.collectAsState()
@@ -83,35 +106,103 @@ fun PartsDrawerContent(state: AppState) {
     val current = rows.firstOrNull { it is PartRow.Open && it.socket == socket } ?: rows.firstOrNull { it is PartRow.SideOf && it.part.id == selected } ?: rows.firstOrNull {
         it is PartRow.Placed && (it.part.id == selected || document.twin(it.part)?.id == selected)
     }
+    val tips = rows.filterIsInstance<PartRow.Tips>().map<PartRow, Any> { it.key }.toSet()
     DrawerSection(plan.name, divider = false) {
-        Tree(
-            roots = roots,
-            key = { it.key },
-            label = { it.label },
-            expanded = rows.map<PartRow, Any> { it.key }.toSet() - collapsed,
-            onExpandedChange = { key, expanded -> collapsed = if (expanded) collapsed - key else collapsed + key },
-            selection = setOfNotNull(current?.key),
-            onSelectionChange = { keys ->
-                val key = keys.lastOrNull { it != current?.key } ?: keys.lastOrNull()
-                when (val row = rows.firstOrNull { it.key == key }) {
-                    is PartRow.Placed -> state.selectPart(row.part.id)
-                    is PartRow.SideOf -> state.selectPart(row.part.id)
-                    is PartRow.Open -> state.offerSocket(row.socket)
-                    null -> Unit
-                }
+        Box(
+            Modifier.onKeyEvent { event ->
+                val delete = event.type == KeyEventType.KeyDown && (event.key == Key.Delete || event.key == Key.Backspace)
+                val part = (current as? PartRow.Placed)?.part ?: (current as? PartRow.SideOf)?.part
+                if (delete && part != null && replaceable(part)) state.removePart(part.id)
+                delete && part != null
             },
-            leading = { RowSwatch(it) },
-            trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(TRAILING_GAP), verticalAlignment = Alignment.CenterVertically) {
-                    RowUnseated(it)
-                    RowRole(it, guesses)
-                    RowState(it)
-                    notes(it)?.let { note -> RowDressNote(it, note) }
-                }
-            },
-        )
+        ) {
+            Tree(
+                roots = roots,
+                key = { it.key },
+                label = { it.label },
+                expanded = rows.map<PartRow, Any> { it.key }.toSet() - tips - collapsed + openedTips,
+                onExpandedChange = { key, expanded ->
+                    if (key in tips) {
+                        openedTips = if (expanded) openedTips + key else openedTips - key
+                    } else {
+                        collapsed = if (expanded) collapsed - key else collapsed + key
+                    }
+                },
+                selection = setOfNotNull(current?.key),
+                onSelectionChange = { keys ->
+                    val key = keys.lastOrNull { it != current?.key } ?: keys.lastOrNull()
+                    rows.firstOrNull { it.key == key }?.let { pressRow(state, it) }
+                },
+                onContextMenu = { row, at -> menu = row to at },
+                leading = { RowSwatch(it) },
+                trailing = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(TRAILING_GAP), verticalAlignment = Alignment.CenterVertically) {
+                        RowUnseated(it)
+                        RowRole(it, guesses)
+                        RowState(it)
+                        notes(it)?.let { note -> RowDressNote(it, note) }
+                    }
+                },
+            )
+            ContextMenuPopup(menu?.second, { menu = null }) { close ->
+                menu?.first?.let { row -> PartRowMenu(state, row, openLibrary, close) }
+            }
+        }
     }
 }
+
+/** What a press on [row] does: a part selects, a socket or a folded tips row is targeted in Library. */
+private fun pressRow(state: AppState, row: PartRow) {
+    when (row) {
+        is PartRow.Placed -> state.selectPart(row.part.id)
+        is PartRow.SideOf -> state.selectPart(row.part.id)
+        is PartRow.Open -> state.offerSocket(row.socket)
+        is PartRow.Tips -> state.offerSocket(row.sockets.first())
+    }
+}
+
+/** The menu of a row in Parts: Replace… and Remove for a part no garment owns, Add… for a socket, Add to all tips for a tips row. */
+@Composable
+private fun PartRowMenu(state: AppState, row: PartRow, openLibrary: () -> Unit, close: () -> Unit) {
+    when (row) {
+        is PartRow.Placed, is PartRow.SideOf -> {
+            val part = (row as? PartRow.Placed)?.part ?: (row as PartRow.SideOf).part
+            if (!replaceable(part)) return
+            Box(Modifier.testTag(ShellTags.PART_MENU_REPLACE)) {
+                MenuItem(stringResource(Res.string.parts_menu_replace), {
+                    close()
+                    state.closeAddPart()
+                    state.selectPart(part.id)
+                    state.library.tab.value = LibraryTab.PARTS
+                    state.library.cursor.value = part.template.id
+                    openLibrary()
+                }, icon = SquashIcons.ReplacePart)
+            }
+            Box(Modifier.testTag(ShellTags.PART_MENU_REMOVE)) {
+                MenuItem(stringResource(Res.string.parts_menu_remove), {
+                    close()
+                    state.removePart(part.id)
+                }, icon = SquashIcons.RemovePart, keys = DELETE_KEY)
+            }
+        }
+        is PartRow.Open -> Box(Modifier.testTag(ShellTags.PART_MENU_ADD)) {
+            MenuItem(stringResource(Res.string.parts_menu_add), {
+                close()
+                state.offerSocket(row.socket)
+            }, icon = SquashIcons.AddPart, keys = ENTER_KEY)
+        }
+        is PartRow.Tips -> Box(Modifier.testTag(ShellTags.PART_MENU_ADD)) {
+            MenuItem(stringResource(Res.string.parts_menu_add_tips), {
+                close()
+                state.offerSocket(row.sockets.first())
+            }, icon = SquashIcons.AddPart, keys = ENTER_KEY)
+        }
+    }
+}
+
+/** The keys the Parts menu names beside its items. */
+private const val DELETE_KEY = "Del"
+private const val ENTER_KEY = "Enter"
 
 /** A part's base color; with none, filled once it has an outline and hollow until then. */
 @Composable
@@ -125,6 +216,10 @@ private fun RowSwatch(row: PartRow) {
     }
     if (row is PartRow.Open) {
         Icon(SquashIcons.AddPart, c.inkControl, Modifier.testTag(ShellTags.partRow(row.tagName)), size = 12.dp)
+        return
+    }
+    if (row is PartRow.Tips) {
+        Icon(SquashIcons.AddPart, c.inkControl, Modifier.testTag(ShellTags.tipsRow(row.tagName)), size = 12.dp)
         return
     }
     Box(
@@ -173,6 +268,7 @@ private fun RowState(row: PartRow) {
         row is PartRow.SideOf -> if (row.differs) stringResource(Res.string.shell_tree_differs) else null
         row is PartRow.Placed && row.drawn -> if (row.part.pair != null) stringResource(Res.string.shell_tree_pair, PAIR_SIZE) else null
         row is PartRow.Open -> openSocketCount(row.socket)
+        row is PartRow.Tips -> stringResource(Res.string.parts_tips_count, row.sockets.size, openSocketCount(row.sockets.first()))
         else -> stringResource(Res.string.shell_tree_to_draw)
     } ?: return
     BasicText(

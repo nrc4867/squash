@@ -89,6 +89,11 @@ class Shell(
         }
     }
 
+    /** Opens the Library drawer, where it is shut. */
+    fun showLibrary() {
+        if (layout.get(DrawerIds.LIBRARY)?.open != true) layout = layout.open(DrawerIds.LIBRARY)
+    }
+
     /** Takes a layout from the frame, except on New character, which shows every drawer shut. */
     fun changeLayout(next: FrameLayout) {
         if (state.screen.value != Screen.NEW_CHARACTER) layout = next

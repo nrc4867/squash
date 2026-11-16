@@ -13,10 +13,11 @@ typealias ToolSections = @Composable (kind: PartDrawerKind, state: AppState, ses
 
 /**
  * What the Build frame holds from the screens beside the shell: the workspace in its viewport, the inspector for the stage on screen,
- * and the References drawer.
+ * the References drawer and Library's Garments half.
  */
 class BuildContent(
     val workspace: @Composable (Shell) -> Unit,
     val inspector: @Composable ColumnScope.(AppState, CharacterSession, Stage) -> Unit = { _, _, _ -> },
     val referencesDrawer: @Composable (AppState) -> Unit = {},
+    val garments: @Composable (AppState) -> Unit = {},
 )

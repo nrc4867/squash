@@ -55,6 +55,8 @@ import dev.chieppa.squash.uidesign.generated.pose_tool_turn
 import dev.chieppa.squash.uidesign.generated.pose_tool_pin
 import dev.chieppa.squash.uidesign.generated.pose_tool_look
 import dev.chieppa.squash.uidesign.generated.shell_drawer_parts
+import dev.chieppa.squash.uidesign.generated.shell_drawer_library
+import dev.chieppa.squash.uidesign.generated.library_search
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
 import dev.chieppa.squash.uidesign.generated.face_tool_draw
@@ -80,6 +82,8 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.REDO to Res.string.shell_action_redo,
     ShellActions.COMMANDS to Res.string.shell_action_commands,
     ShellActions.PARTS to Res.string.shell_drawer_parts,
+    ShellActions.LIBRARY to Res.string.shell_drawer_library,
+    ShellActions.LIBRARY_SEARCH to Res.string.library_search,
     ShellActions.HISTORY to Res.string.shell_drawer_history,
     ShellActions.INSPECTOR to Res.string.shell_drawer_inspector,
     ShellActions.STAGE_SHAPE to Res.string.stage_shape,
@@ -161,6 +165,8 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "redo" -> StretchIcons.Redo
     "command" -> StretchIcons.Command
     "parts" -> SquashIcons.Parts
+    "library" -> SquashIcons.Library
+    "search" -> StretchIcons.Search
     "history" -> StretchIcons.Clock
     "part" -> SquashIcons.Part
     "help" -> StretchIcons.Help

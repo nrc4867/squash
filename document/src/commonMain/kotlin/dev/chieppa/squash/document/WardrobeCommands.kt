@@ -136,6 +136,32 @@ data class PickGarment(val outfit: OutfitId, val slot: GarmentSlotId, val garmen
     }
 }
 
+/** Adds [outfit], named [name], after [source] with the same picks, and shows it. */
+@Serializable
+@SerialName("duplicateOutfit")
+data class DuplicateOutfit(val source: OutfitId, val outfit: OutfitId, val name: String) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.wardrobeChanged { wardrobe ->
+        val from = requireNotNull(wardrobe.outfit(source)) { "No outfit ${source.value}" }
+        require(wardrobe.outfit(outfit) == null) { "Outfit ${outfit.value} already exists" }
+        val at = wardrobe.outfits.indexOf(from) + 1
+        val copy = Outfit(outfit, name, from.picks)
+        wardrobe.copy(outfits = wardrobe.outfits.take(at) + copy + wardrobe.outfits.drop(at), shown = outfit)
+    }
+}
+
+/** Adds [garment], which sits in a slot, and has [outfit] wear it there in place of what it wore; with no outfit it is only added. */
+@Serializable
+@SerialName("addWornGarment")
+data class AddWornGarment(val garment: Garment, val outfit: OutfitId?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.wardrobeChanged { wardrobe ->
+        val slot = requireNotNull(garment.slot) { "Garment ${garment.id.value} sits in no slot" }
+        require(wardrobe.garment(garment.id) == null) { "Garment ${garment.id.value} already exists" }
+        require(outfit == null || wardrobe.outfit(outfit) != null) { "No outfit ${outfit?.value}" }
+        val added = wardrobe.copy(garments = wardrobe.garments + garment)
+        added.copy(outfits = added.outfits.map { if (it.id == outfit) it.copy(picks = it.picks + (slot to garment.id)) else it })
+    }
+}
+
 /** Shows [outfit] on the character in Build, or the bare body when null. */
 @Serializable
 @SerialName("showOutfit")

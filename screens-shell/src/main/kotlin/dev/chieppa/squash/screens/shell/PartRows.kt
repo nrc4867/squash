@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.shell
 
+import dev.chieppa.squash.character.block.DigitTips
 import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.character.catalog.isLeader
@@ -53,13 +54,20 @@ sealed interface PartRow {
         override val key get() = "${socket.parent.value}/${socket.name}"
         override val tagName get() = socket.name
     }
+
+    /** A part's empty digit tips, folded into one row that holds a row for each. */
+    data class Tips(val sockets: List<OpenSocket>, override val label: String) : PartRow {
+        override val key get() = "${sockets.first().parent.value}/tips"
+        override val tagName get() = sockets.first().parent.value
+    }
 }
 
 /**
  * The Parts tree: each placed part under the part it sits on, and each open socket under the part that has it. A
  * pair reads as one row, as the boards draw it, until its
  * sides can differ: with [mirror] off or once a side has overrides, each side has a row of its own under it, named by [sideLabel]. A
- * socket's row reads [socketLabel] of its name, and so does a part's whose parent does not offer the socket it sits on.
+ * socket's row reads [socketLabel] of its name, and so does a part's whose parent does not offer the socket it sits on. A part's empty
+ * digit tips fold into one row, [tipsLabel], holding a row for each.
  */
 fun partTree(
     document: SquashDocument,
@@ -68,6 +76,7 @@ fun partTree(
     mirror: Boolean = true,
     sideLabel: (Side) -> String = { it.name },
     socketLabel: (String) -> String = ::displayName,
+    tipsLabel: String = "",
 ): List<TreeNode<PartRow>> {
     val parts = document.character.parts
     val open = openSockets(document, plan, templates).groupBy { it.parent }
@@ -75,7 +84,9 @@ fun partTree(
     val unseated = unseatedParts(document, plan, templates)
     fun node(part: PartInstance): TreeNode<PartRow> {
         val placed = parts.filter { it.isLeader && it.socket?.parent == part.id }.map(::node)
-        val waiting = open[part.id].orEmpty().map { TreeNode<PartRow>(PartRow.Open(it, socketLabel(it.name))) }
+        val (tips, others) = open[part.id].orEmpty().partition { DigitTips.indexOf(it.name) != null }
+        val folded = if (tips.isEmpty()) emptyList() else listOf(TreeNode<PartRow>(PartRow.Tips(tips, tipsLabel), tips.map { TreeNode(PartRow.Open(it, socketLabel(it.name))) }))
+        val waiting = others.map { TreeNode<PartRow>(PartRow.Open(it, socketLabel(it.name))) } + folded
         val guessed = roles.resolved(part).takeIf { roles.isGuess(part) }
         val seat = part.socket?.takeIf { part.id in unseated }?.let { socketLabel(it.socket) }
         val row = PartRow.Placed(part, partName(part, templates), document.isDrawn(part), document.baseColor(part), guessed, seat)

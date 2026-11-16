@@ -7,7 +7,7 @@ import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 
-/** Test tags for the Dress stage's inspector, band and slot popover. */
+/** Test tags for the Dress stage's inspector and Library's Garments half. */
 object DressTags {
     const val TOOL = "dress.tool"
     const val OFFSET = "dress.tool.offset"
@@ -24,13 +24,23 @@ object DressTags {
     const val LAYERS = "dress.layers"
     const val BODY_UNDER = "dress.bodyUnder"
     const val HOLES = "dress.holes"
-    const val NEW_OUTFIT = "dress.band.newOutfit"
-    const val NEW_SLOT = "dress.band.newSlot"
-    const val POPOVER = "dress.slot.popover"
-    const val RENAME_SLOT = "dress.slot.rename"
-    const val SLOT_NAME = "dress.slot.name"
-    const val REMOVE_SLOT = "dress.slot.remove"
-    const val PICK_NONE = "dress.slot.none"
+    const val OUTFITS = "library.outfits"
+    const val NEW_OUTFIT = "library.newOutfit"
+    const val NEW_SLOT = "library.newSlot"
+    const val NO_SLOT = "library.noSlot"
+    const val NO_GARMENTS = "library.noGarments"
+    const val SLOT_NAME = "library.slotName"
+    const val OUTFIT_NAME = "library.outfitName"
+    const val GARMENT_NAME = "library.garmentName"
+    const val MENU_WEAR = "library.menu.wear"
+    const val MENU_RENAME = "library.menu.rename"
+    const val MENU_MOVE = "library.menu.move"
+    const val MENU_REMOVE = "library.menu.remove"
+    const val MENU_DUPLICATE = "library.menu.duplicate"
+    const val MENU_NEW_OUTFIT = "library.menu.newOutfit"
+    const val MENU_RENAME_SLOT = "library.menu.renameSlot"
+    const val MENU_NEW_SLOT = "library.menu.newSlot"
+    const val MENU_REMOVE_SLOT = "library.menu.removeSlot"
 
     fun covers(part: PartId) = "dress.garment.covers.${part.value}"
     fun branch(part: PartId, view: View) = "dress.garment.branch.${part.value}.${view.name}"
@@ -45,11 +55,13 @@ object DressTags {
     fun inkCuff(part: PartId) = "dress.bodyUnder.inkCuff.${part.value}"
     fun swap(part: PartId) = "dress.bodyUnder.swap.${part.value}"
     fun hole(part: PartId) = "dress.holes.${part.value}"
-    fun outfit(outfit: OutfitId) = "dress.band.outfit.${outfit.value}"
-    fun slot(slot: GarmentSlotId) = "dress.band.slot.${slot.value}"
+    fun outfit(outfit: OutfitId) = "library.outfit.${outfit.value}"
+    fun slot(slot: GarmentSlotId) = "library.slot.${slot.value}"
+    fun garmentTile(garment: GarmentId) = "library.garment.${garment.value}"
+    fun newIn(slot: GarmentSlotId) = "library.new.${slot.value}"
+    fun moveTo(slot: GarmentSlotId?) = "library.menu.move.${slot?.value ?: "none"}"
     fun looseEnd(end: LooseEndId) = "dress.looseEnd.${end.value}"
     fun follow(end: LooseEndId) = "dress.looseEnd.follow.${end.value}"
     fun spring(end: LooseEndId) = "dress.looseEnd.spring.${end.value}"
     fun collide(end: LooseEndId) = "dress.looseEnd.collide.${end.value}"
-    fun pick(garment: GarmentId) = "dress.slot.pick.${garment.value}"
 }

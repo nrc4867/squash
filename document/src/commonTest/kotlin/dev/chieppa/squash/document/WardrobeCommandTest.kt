@@ -212,6 +212,52 @@ class WardrobeCommandTest {
     }
 
     @Test
+    fun duplicatingAnOutfitCopiesItsPicksAndShowsTheCopyInOneStep() {
+        val start = WinterFennec.dressed()
+        val copy = OutfitId("outfit-1")
+        scenario(start) {
+            run(DuplicateOutfit(WINTER, copy, "Winter 2"))
+            expect {
+                val wardrobe = it.wardrobe
+                assertEquals(wardrobe.outfit(WINTER)?.picks, wardrobe.outfit(copy)?.picks)
+                assertEquals(copy, wardrobe.shown)
+                assertEquals(wardrobe.outfits.indexOfFirst { o -> o.id == WINTER } + 1, wardrobe.outfits.indexOfFirst { o -> o.id == copy })
+            }
+            undo()
+            expect(start)
+        }
+    }
+
+    @Test
+    fun aNewWornGarmentTakesItsSlotInTheOutfitInOneStep() {
+        val start = WinterFennec.dressed()
+        val socks = Garment(GarmentId("garment-1"), "Garment 1", slot = FEET_SLOT)
+        scenario(start) {
+            run(AddWornGarment(socks, WINTER))
+            expect {
+                assertEquals(socks.id, it.wardrobe.outfit(WINTER)?.picks?.get(FEET_SLOT))
+                assertEquals(socks, it.wardrobe.garment(socks.id))
+            }
+            undo()
+            expect(start)
+            run(AddWornGarment(socks.copy(id = GarmentId("garment-2")), null))
+            expect { assertEquals(start.wardrobe.outfits, it.wardrobe.outfits) }
+        }
+        assertFailsWith<IllegalArgumentException> { AddWornGarment(socks.copy(slot = null), WINTER).apply(start) }
+    }
+
+    @Test
+    fun theNewWardrobeCommandsSerialize() {
+        val commands = listOf<DocumentCommand>(
+            DuplicateOutfit(WINTER, OutfitId("outfit-1"), "Winter 2"),
+            AddWornGarment(Garment(GarmentId("garment-1"), "Garment 1", slot = FEET_SLOT), WINTER),
+        )
+        commands.forEach { command ->
+            assertEquals(command, Json.decodeFromString(DocumentCommand.serializer(), Json.encodeToString(DocumentCommand.serializer(), command)))
+        }
+    }
+
+    @Test
     fun everyCommandAndItsUndoSerialize() {
         val json = Json
         var document = WinterFennec.body()

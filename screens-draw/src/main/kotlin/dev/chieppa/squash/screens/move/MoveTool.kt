@@ -52,7 +52,7 @@ import dev.chieppa.stretch.frame.buildOverlay
 /**
  * Move: a dot on every socket and on the selected part's joints, in the locked panes and Full. Dragging a socket's dot slides
  * it over its parent's surface, and a joint's along its part, as one undo step, on the pair or with Mirror off on that side.
- * Pressing a socket's dot without moving selects the part on it, or opens Add part's popover on an empty one, and picks a hand-made
+ * Pressing a socket's dot without moving selects the part on it, or targets an empty one in Library, and picks a hand-made
  * one. In Add socket a press on a part's surface places a socket there, previewed under the pointer, and a press on a hand-made
  * socket's dot picks it. In Add joint a press on a part places a joint at that u on its axis, and a press on a dot of the selected
  * part's joints picks it; in Add landmark a press places a landmark there. A drag the pane loses restores what was there.

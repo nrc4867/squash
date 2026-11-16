@@ -24,6 +24,8 @@ object ShellActions {
     val REDO = ActionId("redo")
     val COMMANDS = ActionId("commands")
     val PARTS = ActionId("drawer-parts")
+    val LIBRARY = ActionId("drawer-library")
+    val LIBRARY_SEARCH = ActionId("library-search")
     val HISTORY = ActionId("drawer-history")
     val INSPECTOR = ActionId("drawer-inspector")
     val STAGE_SHAPE = ActionId("stage-shape")
@@ -117,6 +119,11 @@ fun Shell.registerActions() {
     action(ShellActions.REDO, "redo", chord("Ctrl Shift Z"), { state.session.value?.history?.canRedo == true }) { state.redo() }
     action(ShellActions.COMMANDS, "command", chord("Ctrl K")) { palette = true }
     action(ShellActions.PARTS, "parts", available = inFrame) { toggle(DrawerIds.PARTS) }
+    action(ShellActions.LIBRARY, "library", chord("Ctrl L"), inWorkspace) { toggle(DrawerIds.LIBRARY) }
+    action(ShellActions.LIBRARY_SEARCH, "search", chord("Ctrl F"), inWorkspace) {
+        showLibrary()
+        state.library.requestSearch()
+    }
     action(ShellActions.ADD_PART, "add-part", chord("T"), inWorkspace) {
         state.armTool(BuildTool.ADD_PART)
         if (state.tool.value == BuildTool.ADD_PART) state.offerPickedSocket()

@@ -3,6 +3,9 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import dev.chieppa.squash.screens.shell.library.LibraryDrawerContent
+import dev.chieppa.squash.uidesign.generated.shell_drawer_library
 import androidx.compose.ui.Modifier
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -33,6 +36,8 @@ import androidx.compose.runtime.getValue
 @Composable
 fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, viewport: @Composable BoxScope.() -> Unit) {
     val shown = shownLayout(shell.layout, screen)
+    val target by shell.state.addingSocket.collectAsState()
+    LaunchedEffect(target) { if (target != null) shell.showLibrary() }
     StretchApp(
         layout = shown,
         onLayoutChange = shell::changeLayout,
@@ -47,7 +52,7 @@ fun BuildFrame(shell: Shell, screen: Screen, modifier: Modifier = Modifier, view
 
 /** What [layout] shows on [screen]: New character has every drawer shut. */
 private fun shownLayout(layout: FrameLayout, screen: Screen): FrameLayout =
-    if (screen == Screen.NEW_CHARACTER) layout.close(DrawerIds.PARTS).close(DrawerIds.INSPECTOR) else layout
+    if (screen == Screen.NEW_CHARACTER) layout.close(DrawerIds.PARTS).close(DrawerIds.LIBRARY).close(DrawerIds.INSPECTOR) else layout
 
 /** A stage's name, which titles the inspector and the stage switcher. */
 val Stage.label: StringResource
@@ -77,7 +82,16 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val keys = LocalActionKeys.current
     val open = session
     val parts = DrawerSpec(DrawerIds.PARTS, stringResource(Res.string.shell_drawer_parts), SquashIcons.Parts, keys = keys(ActionKeys.PARTS)) {
-        PartsDrawerContent(state)
+        PartsDrawerContent(state, shell::showLibrary)
+    }
+    val library = DrawerSpec(
+        DrawerIds.LIBRARY,
+        stringResource(Res.string.shell_drawer_library),
+        SquashIcons.Library,
+        keys = keys(ShellActions.LIBRARY.value),
+        scrolls = false,
+    ) {
+        LibraryDrawerContent(state) { shell.content.garments(state) }
     }
     val inspector = DrawerSpec(
         DrawerIds.INSPECTOR,
@@ -90,13 +104,14 @@ private fun buildDrawers(shell: Shell, screen: Screen): List<DrawerSpec> {
     val help = DrawerSpec(DrawerIds.HELP, stringResource(Res.string.shell_drawer_help), StretchIcons.Help) {
         KeymapEditor(shell.keymap, shell.registry.all.toList(), onChange = shell::keymapChanged)
     }
-    if (open == null) return listOf(parts, help, inspector)
+    if (open == null) return listOf(parts, library, help, inspector)
     val labels = historyLabels()
     val history = DrawerSpec(DrawerIds.HISTORY, stringResource(Res.string.shell_drawer_history), StretchIcons.Clock) {
         HistoryPanel(open.history, labels)
     }
     return listOf(
         parts,
+        library,
         DrawerSpec(DrawerIds.REFERENCES, stringResource(Res.string.shell_drawer_references), SquashIcons.References) { shell.content.referencesDrawer(state) },
         history,
         help,

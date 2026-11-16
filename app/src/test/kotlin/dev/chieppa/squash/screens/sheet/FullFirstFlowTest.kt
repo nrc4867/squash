@@ -64,7 +64,7 @@ class FullFirstFlowTest {
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         waitForIdle()
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         settle(work, state)
         return assertNotNull(state.session.value)
     }

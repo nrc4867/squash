@@ -49,7 +49,10 @@ import dev.chieppa.stretch.test.setStretchContent
 import java.nio.file.Files
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.nameWithoutExtension
+import dev.chieppa.squash.screens.library.libraryMode
+import kotlin.test.assertFalse
 import kotlin.test.Test
+import kotlin.test.assertNull
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -118,22 +121,22 @@ class ShellFlowTest {
     }
 
     @Test
-    fun aSocketRowOpensAddPartAndAddingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
+    fun aSocketRowTargetsItInLibraryAndAddingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRowState("front-leg")).assertTextContains("pair")
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
         waitForIdle()
-        onNodeWithTag(ShellTags.ADD_PART).assertExists()
-        assertEquals(TemplateId("leg"), state.addingType.value)
-        onNodeWithTag(ShellTags.addTile("leg")).assertExists()
-        onNodeWithTag(ShellTags.addTile("tail")).assertDoesNotExist()
-        onNodeWithText("Add to Front leg socket").assertExists()
+        onNodeWithTag(ShellTags.LIBRARY).assertExists()
+        assertEquals(TemplateId("leg"), state.library.cursor.value)
+        assertTrue(state.libraryMode().lit(TemplateId("leg")))
+        assertFalse(state.libraryMode().lit(TemplateId("tail")), "a type the socket does not take dims")
+        onNodeWithTag(ShellTags.LIBRARY_PICK).assertTextContains("Add leg")
         assertEquals(Screen.WORKSPACE, state.screen.value, "the workspace stays")
 
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         waitForIdle()
-        onNodeWithTag(ShellTags.ADD_PART).assertDoesNotExist()
+        assertNull(state.addingSocket.value, "the target clears")
         val document = assertNotNull(state.session.value).document.value
         val legs = document.character.parts.filter { it.socket?.socket == "front-leg" }
         assertEquals(2, legs.size)
@@ -142,7 +145,7 @@ class ShellFlowTest {
     }
 
     @Test
-    fun tListsTheOpenSocketsAndEnterAddsWhileEscCloses() = runDesktopComposeUiTest(1600, 900) {
+    fun tListsTheOpenSocketsAndEnterAddsWhileEscDropsTheTarget() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.WORKSPACE).performKeyInput { pressKey(Key.T) }
@@ -152,13 +155,15 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.addSocket("tail")).performClick()
         waitForIdle()
         assertEquals("tail", state.addingSocket.value?.name)
-        onNodeWithTag(ShellTags.ADD_PART).performKeyInput { pressKey(Key.Escape) }
+        onNodeWithTag(ShellTags.LIBRARY_SEARCH).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_SEARCH).performKeyInput { pressKey(Key.Escape) }
         waitForIdle()
         assertEquals(null, state.addingSocket.value)
-        assertEquals(BuildTool.ADD_PART, state.tool.value, "Esc closes the popover and leaves the tool")
+        assertEquals(BuildTool.ADD_PART, state.tool.value, "Esc drops the target and leaves the tool")
         onNodeWithTag(ShellTags.addSocket("tail")).performClick()
         waitForIdle()
-        onNodeWithTag(ShellTags.ADD_PART).performKeyInput { pressKey(Key.Enter) }
+        onNodeWithTag(ShellTags.LIBRARY_SEARCH).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_SEARCH).performKeyInput { pressKey(Key.Enter) }
         waitForIdle()
         val session = assertNotNull(state.session.value)
         assertTrue(session.document.value.character.parts.any { it.socket?.socket == "tail" })
@@ -170,7 +175,7 @@ class ShellFlowTest {
         val state = AppState(shipped, work)
         createCharacter(state)
         onNodeWithTag(ShellTags.partRow("tail")).performClick()
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         val session = assertNotNull(state.session.value)
         waitForIdle()
         assertEquals(2, session.document.value.character.parts.size)
@@ -210,9 +215,9 @@ class ShellFlowTest {
         waitForIdle()
         onNodeWithTag(ShellTags.partRow("paw")).performClick()
         waitForIdle()
-        onNodeWithTag(ShellTags.addTile("paw")).assertExists()
-        onNodeWithTag(ShellTags.addTile("leg")).assertDoesNotExist()
-        onNodeWithTag(ShellTags.viewChip("SIDE")).assertExists()
+        onNodeWithTag(ShellTags.libraryTile("paw"), useUnmergedTree = true).assertExists()
+        assertTrue(state.libraryMode().lit(TemplateId("paw")))
+        assertFalse(state.libraryMode().lit(TemplateId("leg")))
     }
 
     @Test
@@ -363,7 +368,7 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.tool(BuildTool.ERASE)).assertExists()
         onNodeWithTag(ShellTags.MIRROR).assertIsNotEnabled()
         onNodeWithTag(ShellTags.partRow("front-leg")).performClick()
-        onNodeWithTag(ShellTags.ADD_PART_ADD).performClick()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         waitForIdle()
         onNodeWithTag(ShellTags.MIRROR).assertIsEnabled()
         onAllNodesWithTag(ShellTags.sideRow("front-leg.left")).assertCountEquals(0)

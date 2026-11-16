@@ -53,13 +53,13 @@ class AppStateTest {
         val session = assertNotNull(state.session.value)
         val socket = openSockets(session.document.value, caninePlan, shipped).first { it.name == "front-leg" }
         state.offerSocket(socket)
-        assertEquals(TemplateId("leg"), state.addingType.value, "the popover opens on the first type the socket takes")
+        assertEquals(TemplateId("leg"), state.library.cursor.value, "Library's cursor goes to the first type the socket takes")
         state.addPart()
         val parts = session.document.value.character.parts.filter { it.socket?.socket == "front-leg" }
         assertEquals(2, parts.size)
         assertEquals(parts.first { it.isLeader }.id, state.selectedPart.value)
         assertEquals(Screen.WORKSPACE, state.screen.value)
-        assertNull(state.addingSocket.value, "and the popover closes")
+        assertNull(state.addingSocket.value, "and the target drops")
         session.history.undo()
         assertTrue(session.document.value.character.parts.none { it.socket?.socket == "front-leg" }, "a pair is one undo step")
     }
@@ -70,7 +70,7 @@ class AppStateTest {
         val session = assertNotNull(state.session.value)
         val socket = openSockets(session.document.value, caninePlan, shipped).first { it.name == "tail" }
         state.offerSocket(socket)
-        state.addingType.value = TemplateId("leg")
+        state.library.cursor.value = TemplateId("leg")
         val before = session.document.value
         state.addPart()
         assertEquals(before, session.document.value)

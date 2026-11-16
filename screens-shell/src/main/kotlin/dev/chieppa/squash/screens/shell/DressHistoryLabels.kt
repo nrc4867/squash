@@ -54,12 +54,16 @@ import dev.chieppa.squash.uidesign.generated.dress_step_loose_end
 import dev.chieppa.squash.uidesign.generated.dress_step_outline
 import dev.chieppa.squash.uidesign.generated.dress_step_pick
 import dev.chieppa.squash.uidesign.generated.dress_step_range
-import dev.chieppa.squash.uidesign.generated.dress_step_remove_garment
+import dev.chieppa.squash.uidesign.generated.history_remove_garment
 import dev.chieppa.squash.uidesign.generated.dress_step_remove_loose_end
-import dev.chieppa.squash.uidesign.generated.dress_step_remove_outfit
+import dev.chieppa.squash.uidesign.generated.history_remove_outfit
 import dev.chieppa.squash.uidesign.generated.dress_step_remove_slot
-import dev.chieppa.squash.uidesign.generated.dress_step_rename_garment
-import dev.chieppa.squash.uidesign.generated.dress_step_rename_outfit
+import dev.chieppa.squash.uidesign.generated.history_rename_garment
+import dev.chieppa.squash.uidesign.generated.history_new_worn_garment
+import dev.chieppa.squash.uidesign.generated.history_duplicate_outfit
+import dev.chieppa.squash.document.AddWornGarment
+import dev.chieppa.squash.document.DuplicateOutfit
+import dev.chieppa.squash.uidesign.generated.history_rename_outfit
 import dev.chieppa.squash.uidesign.generated.dress_step_rename_slot
 import dev.chieppa.squash.uidesign.generated.dress_step_show
 import dev.chieppa.squash.uidesign.generated.dress_step_slot
@@ -88,9 +92,10 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
         when (command) {
             is SetWardrobe -> text(Res.string.dress_step_wardrobe)
             is AddGarment -> text(Res.string.dress_step_add_garment, command.garment.name)
-            is RemoveGarment -> text(Res.string.dress_step_remove_garment)
+            is RemoveGarment -> text(Res.string.history_remove_garment, name(command.garment))
             is SetGarment -> text(Res.string.dress_step_garment, command.garment.name)
-            is RenameGarment -> text(Res.string.dress_step_rename_garment, command.name)
+            is RenameGarment -> text(Res.string.history_rename_garment, command.name)
+            is AddWornGarment -> text(Res.string.history_new_worn_garment, command.garment.slot?.let { displayName(it.value) }.orEmpty())
             is CoverPart -> text(Res.string.dress_step_cover, name(command.garment), name(command.branch.part))
             is UncoverPart -> text(Res.string.dress_step_uncover, name(command.garment), name(command.part))
             is SetBranchRange -> text(Res.string.dress_step_range, name(command.garment))
@@ -111,8 +116,9 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
             is RemoveGarmentSlot -> text(Res.string.dress_step_remove_slot)
             is RenameGarmentSlot -> text(Res.string.dress_step_rename_slot, command.name)
             is AddOutfit -> text(Res.string.dress_step_add_outfit, command.outfit.name)
-            is RemoveOutfit -> text(Res.string.dress_step_remove_outfit)
-            is RenameOutfit -> text(Res.string.dress_step_rename_outfit, command.name)
+            is RemoveOutfit -> text(Res.string.history_remove_outfit, displayName(command.outfit.value))
+            is RenameOutfit -> text(Res.string.history_rename_outfit, command.name)
+            is DuplicateOutfit -> text(Res.string.history_duplicate_outfit, displayName(command.source.value))
             is PickGarment -> command.garment?.let { text(Res.string.dress_step_pick, name(it)) } ?: text(Res.string.dress_step_unpick)
             is ShowOutfit -> command.outfit?.let { text(Res.string.dress_step_show, displayName(it.value)) } ?: text(Res.string.dress_step_bare)
             else -> ""
@@ -121,12 +127,12 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
 }
 
 private val DRESS_STEPS = listOf(
-    Res.string.dress_step_wardrobe, Res.string.dress_step_add_garment, Res.string.dress_step_remove_garment, Res.string.dress_step_garment,
-    Res.string.dress_step_rename_garment, Res.string.dress_step_cover, Res.string.dress_step_uncover, Res.string.dress_step_range,
+    Res.string.dress_step_wardrobe, Res.string.dress_step_add_garment, Res.string.history_remove_garment, Res.string.dress_step_garment,
+    Res.string.history_rename_garment, Res.string.history_new_worn_garment, Res.string.dress_step_cover, Res.string.dress_step_uncover, Res.string.dress_step_range,
     Res.string.dress_step_around, Res.string.dress_step_ease, Res.string.dress_step_outline, Res.string.dress_step_surface,
     Res.string.dress_step_join_ink, Res.string.dress_step_edge_ink, Res.string.dress_step_fillet, Res.string.dress_step_color,
     Res.string.dress_step_change, Res.string.dress_step_loose_end, Res.string.dress_step_remove_loose_end, Res.string.dress_step_slot,
     Res.string.dress_step_layers, Res.string.dress_step_add_slot, Res.string.dress_step_remove_slot, Res.string.dress_step_rename_slot,
-    Res.string.dress_step_add_outfit, Res.string.dress_step_remove_outfit, Res.string.dress_step_rename_outfit, Res.string.dress_step_pick,
+    Res.string.dress_step_add_outfit, Res.string.history_remove_outfit, Res.string.history_rename_outfit, Res.string.history_duplicate_outfit, Res.string.dress_step_pick,
     Res.string.dress_step_unpick, Res.string.dress_step_show, Res.string.dress_step_bare,
 )

@@ -3,7 +3,7 @@
   "format": 1,
   "id": "torso-upright",
   "version": 1,
-  "name": "Torso",
+  "name": "Upright torso",
   "role": "body",
   "axis": { "rest": [0, 1, 0], "length": 0.8 },
   "openEnd": null,

@@ -90,14 +90,14 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
     if (template.isGeneric) {
         DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
             RoleRow(state, open, character, part)
-            TemplateRow(state, part.id, template)
+            TemplateRow(state, part.id)
         }
         GenericSection(open, part.id, template, base.params, !mirror)
         DrawerSection { rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } } }
     } else {
         DrawerSection(stringResource(Res.string.shell_part_template, template.name)) {
             RoleRow(state, open, character, part)
-            TemplateRow(state, part.id, template)
+            TemplateRow(state, part.id)
             key(part.id) { SocketBlendRow(open, part, template) }
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }

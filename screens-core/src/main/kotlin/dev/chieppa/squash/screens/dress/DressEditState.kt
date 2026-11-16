@@ -3,13 +3,12 @@ package dev.chieppa.squash.screens.dress
 import dev.chieppa.squash.character.build.GarmentLook
 import dev.chieppa.squash.character.build.GarmentView
 import dev.chieppa.squash.document.GarmentId
-import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.LooseEnd
 import dev.chieppa.squash.document.SquashDocument
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * What the Dress stage remembers: the garment picked, the slot whose popover is open, the garments left out of view, how the garments
+ * What the Dress stage remembers: the garment picked, the garments left out of view, how the garments
  * show in Dress and in every other stage, and the Loose end tool's options. Never saved or undone.
  */
 class DressEditState {
@@ -18,9 +17,6 @@ class DressEditState {
 
     /** The part whose Redraw by the picked garment the outline tools draw on, or null for the garment's branches. */
     val redrawing = MutableStateFlow<dev.chieppa.squash.document.PartId?>(null)
-
-    /** The slot of the shown outfit whose popover is open. */
-    val openSlot = MutableStateFlow<GarmentSlotId?>(null)
 
     /** The garments left out of view by the layers list's Show buttons. */
     val hidden = MutableStateFlow<Set<GarmentId>>(emptySet())
@@ -48,18 +44,16 @@ class DressEditState {
         hidden.value = if (id in hidden.value) hidden.value - id else hidden.value + id
     }
 
-    /** Keeps the picked garment and the open slot to what [document] holds, picking the first worn garment when none is. */
+    /** Keeps the picked garment to what [document] holds, picking the first worn garment when none is. */
     fun follow(document: SquashDocument) {
         val wardrobe = document.character.wardrobe
         if (garment.value?.let(wardrobe::garment) == null) garment.value = wardrobe.worn.lastOrNull()?.id ?: wardrobe.garments.firstOrNull()?.id
-        if (openSlot.value?.let(wardrobe::slot) == null) openSlot.value = null
         hidden.value = hidden.value.filterTo(mutableSetOf()) { wardrobe.garment(it) != null }
     }
 
     fun clear() {
         garment.value = null
         redrawing.value = null
-        openSlot.value = null
         hidden.value = emptySet()
     }
 }

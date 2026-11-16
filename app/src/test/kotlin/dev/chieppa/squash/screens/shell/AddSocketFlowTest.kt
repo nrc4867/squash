@@ -18,6 +18,8 @@ import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.newest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.TemplateId
+import androidx.compose.ui.test.performScrollTo
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetPose
@@ -161,11 +163,12 @@ class AddSocketFlowTest {
         key(Key.T)
         assertEquals(BuildTool.ADD_PART, state.tool.value)
         assertEquals(socket, state.addingSocket.value?.ref)
-        state.templates.newest.forEach { onNodeWithTag(ShellTags.addTile(it.id.value)).assertExists() }
-        onNodeWithText("Torso · socket 1").assertExists()
-        onNodeWithTag(ShellTags.addTile("wing-feathered")).performClick()
+        state.templates.newest.forEach { onNodeWithTag(ShellTags.libraryTile(it.id.value), useUnmergedTree = true).assertExists() }
+        onNodeWithTag(ShellTags.LIBRARY_PICK).assertExists()
+        onNodeWithTag(ShellTags.libraryTile("wing-feathered"), useUnmergedTree = true).performScrollTo().performClick()
+        assertEquals(TemplateId("wing-feathered"), state.library.cursor.value)
         waitForIdle()
-        onNodeWithTag(ShellTags.ADD_PART).performKeyInput { pressKey(Key.Enter) }
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
         settle(state)
         assertEquals(steps + 2, session.history.steps.value.done.size, "the pair is one step")
         assertIs<AddParts>(session.history.steps.value.done.last())

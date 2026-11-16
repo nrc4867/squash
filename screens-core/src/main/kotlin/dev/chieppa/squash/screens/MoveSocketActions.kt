@@ -81,7 +81,7 @@ fun AppState.pickSocket(parent: PartId, socket: String) {
     move.picked.value = (HandSockets.idOf(socket) ?: HandSockets.rowOf(socket))?.let { SocketRef(parent, HandSockets.name(it)) }
 }
 
-/** Opens Add part's popover on the picked socket while it is empty, which T does with a socket picked. */
+/** Targets the picked socket in Library while it is empty, which T does with a socket picked. */
 fun AppState.offerPickedSocket() {
     val picked = move.picked.value ?: return
     openSocketsNow().firstOrNull { it.ref == picked }?.let(::offerSocket)

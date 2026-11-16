@@ -71,6 +71,7 @@ import dev.chieppa.stretch.gpu.GpuOptions
 import dev.chieppa.stretch.test.setStretchContent
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
+import dev.chieppa.squash.screens.library.LibraryTab
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -238,13 +239,13 @@ class DressedFennecSmokeTest {
     }
 
     @Test
-    fun dressShowsTheFeetSlotAndTheLayersAsW14() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+    fun dressShowsLibrarysGarmentsAndTheLayersAsL5() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
         val bench = opened()
         key(Key.Six)
         key(Key.L)
         bench.state.dress.garment.value = SCARF
-        bench.state.dress.openSlot.value = FEET_SLOT
-        keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w14", window = true)
+        bench.state.library.tab.value = LibraryTab.GARMENTS
+        keepSheet(bench, assertNotNull(bench.move), posed = false, "library-l5", window = true)
     }
 
     @Test

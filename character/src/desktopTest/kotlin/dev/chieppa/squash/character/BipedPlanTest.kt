@@ -55,7 +55,7 @@ class BipedPlanTest {
         val planned = assembled.parts.filter { it.planned }.groupingBy { it.template.id.value }.eachCount()
         assertEquals(mapOf("head-round" to 1, "arm" to 2, "hand" to 2, "leg" to 2, "foot" to 2), planned)
         assertTrue(shipped.roles(document.character).upright)
-        assertEquals(mapOf("Torso" to 1, "Round head" to 1, "Arm" to 2, "Leg" to 2), plan.chips(shipped).associate { it.name to it.count })
+        assertEquals(mapOf("Upright torso" to 1, "Round head" to 1, "Arm" to 2, "Leg" to 2), plan.chips(shipped).associate { it.name to it.count })
         assertEquals(6, plan.partCount(shipped))
     }
 

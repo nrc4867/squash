@@ -64,7 +64,7 @@ class BirdPlanTest {
             planned,
         )
         assertTrue(shipped.roles(document.character).upright)
-        assertEquals(mapOf("Torso" to 1, "Bird head" to 1, "Wing" to 2, "Bird leg" to 2, "Tail feathers" to 1), plan.chips(shipped).associate { it.name to it.count })
+        assertEquals(mapOf("Perched torso" to 1, "Bird head" to 1, "Wing" to 2, "Bird leg" to 2, "Tail feathers" to 1), plan.chips(shipped).associate { it.name to it.count })
         assertEquals(8, plan.partCount(shipped))
     }
 
