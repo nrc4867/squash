@@ -12,14 +12,14 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
-import dev.chieppa.squash.screens.person.ARM_L
-import dev.chieppa.squash.screens.person.personDressedDocument
+import dev.chieppa.squash.screens.woman.ARM_L
+import dev.chieppa.squash.screens.woman.womanDressedDocument
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import org.junit.jupiter.api.Tag
 
 /**
- * What one step of a pose drag costs on the dressed fennec and the dressed person: a bone turned a little further each step, the
+ * What one step of a pose drag costs on the dressed fennec and the dressed woman: a bone turned a little further each step, the
  * session settled after each, the posed body, surface work, lines and fur with it, and of that what deciding again what the garments
  * hide takes. The medians over the steps go to the test's output.
  */
@@ -34,15 +34,15 @@ class DressedPoseStepBenchTest {
     }
 
     @Test
-    fun theDressedPerson() = measure("dressed person, shoulder", personDressedDocument(), ARM_L, "shoulder")
+    fun theDressedWoman() = measure("dressed woman, shoulder", womanDressedDocument(), ARM_L, "joint.1", -STEP_DEGREES)
 
-    private fun measure(name: String, document: SquashDocument, part: PartId, joint: String) {
+    private fun measure(name: String, document: SquashDocument, part: PartId, joint: String, step: Float = STEP_DEGREES) {
         val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
         SessionPose(session)
         work.settle(session)
-        val times = (0 until WARM + STEPS).map { step ->
+        val times = (0 until WARM + STEPS).map { index ->
             val started = System.nanoTime()
-            session.send(SetPose(Pose(listOf(BonePose(part, joint, step.toFloat() * STEP_DEGREES)))))
+            session.send(SetPose(Pose(listOf(BonePose(part, joint, index.toFloat() * step)))))
             work.settle(session)
             (System.nanoTime() - started) / 1e6
         }.drop(WARM).sorted()

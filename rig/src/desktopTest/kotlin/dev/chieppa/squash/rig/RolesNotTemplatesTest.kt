@@ -31,7 +31,7 @@ import kotlin.test.assertNotNull
 /** How near two solves of the same pose must agree, in body units. */
 private const val SAME = 1e-5f
 
-/** The fennec, the person and the toucan pose by their parts' roles: with every template id renamed, their rigs, handles and solves are the same. */
+/** The fennec, the woman and the toucan pose by their parts' roles: with every template id renamed, their rigs, handles and solves are the same. */
 class RolesNotTemplatesTest {
     private val renamed = mapOf(
         "torso-bird" to "kind-p", "head-bird" to "kind-q", "beak-lower" to "kind-r", "beak" to "kind-s", "leg-bird" to "kind-t", "foot-bird" to "kind-u",
@@ -86,12 +86,12 @@ class RolesNotTemplatesTest {
     }
 
     @Test
-    fun thePersonWithEveryTemplateIdRenamedPosesTheSame() {
+    fun theWomanWithEveryTemplateIdRenamedPosesTheSame() {
         val folder = renamedFolder()
-        val text = Path.of(System.getProperty("squash.examples"), "person.json").readText()
+        val text = Path.of(System.getProperty("squash.examples"), "woman.json").readText()
         val shipped = rigOf(readDocument(text), shippedLibrary)
         val document = readDocument(rename(Json.parseToJsonElement(text), Spot.DOCUMENT).toString())
-        assertEquals(setOf("kind-k", "kind-l", "kind-m", "kind-n", "kind-e", "kind-o", "kind-i"), document.character.parts.map { it.template.id.value }.toSet())
+        assertEquals(setOf("kind-h", "kind-l", "kind-n", "kind-o", "kind-i"), document.character.parts.map { it.template.id.value }.toSet())
         val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
         assertEquals(shipped.bones.map { it.name }, rig.bones.map { it.name })
         shipped.bones.indices.forEach { assertNear(shipped.bones[it].pivot, rig.bones[it].pivot) }
@@ -103,9 +103,9 @@ class RolesNotTemplatesTest {
         assertEquals(curveBones(shipped)?.let { listOf(it.behind, it.spine, it.ahead) }, curveBones(rig)?.let { listOf(it.behind, it.spine, it.ahead) })
 
         val planted = Pose(planted = setOf(PartId("foot-l"), PartId("foot-r")))
-        val hand = assertNotNull(before.chains.limb(PartId("hand-r")))
+        val arm = assertNotNull(before.chains.limb(PartId("arm-r")))
         val solves = listOf<(PoseSolver) -> Pose>(
-            { it.reach(planted, hand, it.endOf(planted, hand) + Vec3(0.1f, 0.4f, 0.1f)).pose },
+            { it.reach(planted, arm, it.endOf(planted, arm) + Vec3(0.1f, 0.4f, 0.1f)).pose },
             { it.moveBody(planted, Vec3(0.03f, -0.08f, 0f)).pose },
             { it.look(planted, Vec3(1.2f, 1.2f, 0.4f)).pose },
         )

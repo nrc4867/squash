@@ -9,8 +9,6 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.EMPTY_FENNEC
 import dev.chieppa.squash.screens.fennec.fennecCommands
-import dev.chieppa.squash.screens.person.EMPTY_PERSON
-import dev.chieppa.squash.screens.person.personCommands
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration
@@ -20,7 +18,7 @@ import org.junit.jupiter.api.Tag
 private const val ROUNDS = 5
 
 /**
- * What the implicit blend adds to a character's build, with the test-only blended hand, paw and leg against the shipped ones: the
+ * What the implicit blend adds to a character's build, with the test-only blended paw and leg against the shipped ones: the
  * whole session settled from its commands, and the blend steps alone. Numbers go to the test's output.
  */
 @Tag("slow")
@@ -57,9 +55,6 @@ class BlendBenchTest {
         val fillets = average { AssembledCharacter(assembled.parts, assembled.sockets).withSocketFillets() }
         println("$name: socket fillets $fillets")
     }
-
-    @Test
-    fun thePerson() = bench("person", EMPTY_PERSON, personCommands())
 
     @Test
     fun theFennec() = bench("fennec", EMPTY_FENNEC, fennecCommands())

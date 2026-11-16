@@ -31,12 +31,11 @@ Every character is a real 3D body underneath, built from part templates (torso, 
 
 ![The Pose stage: the fennec's body curve drawn through its spine, its four paws planted, and the spine, neck, head and tail angles](docs/images/pose.png)
 
-The same tools build any creature, from a bird to a winged fennec to a person.
+The same tools build any creature, from a bird to a winged fennec.
 
 <p align="center">
   <img src="docs/images/toucan.png" alt="A toucan posed with one wing raised" width="32%">
   <img src="docs/images/winged-fennec.png" alt="A fennec with wings, posed" width="32%">
-  <img src="docs/images/person.png" alt="A dressed person mid-step" width="32%">
 </p>
 
 ## Local development

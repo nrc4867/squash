@@ -28,12 +28,12 @@ import dev.chieppa.squash.rig.curlOf
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.savedFennec
-import dev.chieppa.squash.screens.person.savedPerson
 import dev.chieppa.squash.screens.rig.rigNow
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.squash.screens.toucan.savedToucan
+import dev.chieppa.squash.screens.biped.undrawnBiped
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
@@ -73,7 +73,7 @@ class PoseInspectorTest {
     @Test
     fun anUprightCharactersFeetAreItsPlantedRowsAndItsHandsAreNot() = runComposeUiTest {
         val state = AppState(shipped, work).also {
-            it.open(savedPerson())
+            it.open(undrawnBiped())
             it.tool.value = BuildTool.DRAG
         }
         showInspector(state)
@@ -88,7 +88,7 @@ class PoseInspectorTest {
     @Test
     fun aPickedHandCurlsItsFingersInOneStepAndTheTwinsWithMirror() = runComposeUiTest {
         val state = AppState(shipped, work).also {
-            it.open(savedPerson())
+            it.open(undrawnBiped())
             it.tool.value = BuildTool.DRAG
             it.pose.limb = HAND_L
         }
@@ -106,7 +106,7 @@ class PoseInspectorTest {
     @Test
     fun aPickedFingerJointNamesItsDigitInTheTurnSection() = runComposeUiTest {
         val state = AppState(shipped, work).also {
-            it.open(savedPerson())
+            it.open(undrawnBiped())
             it.tool.value = BuildTool.TURN
             it.pose.pick(BoneName(HAND_L, "fingers:1.2"), false)
         }

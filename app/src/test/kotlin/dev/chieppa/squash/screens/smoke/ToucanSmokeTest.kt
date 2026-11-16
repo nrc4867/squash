@@ -112,8 +112,9 @@ private object NoToucanFiles : FileChooser {
 }
 
 /**
- * The person, built from its commands on the biped plan, in every pane with its colors, lines and face: in Shape with Move armed,
- * in Pose with a hand raised while both feet stay planted, and with the spine bent forward by a Side stroke of the body curve.
+ * The toucan, built from its commands on the bird plan, in every pane with its colors, lines and face: in Shape with Move armed, in
+ * Pose spreading a wing with both feet planted, lifting a foot and gripping with its toes and turning its head to look, and with its
+ * beak opened.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)

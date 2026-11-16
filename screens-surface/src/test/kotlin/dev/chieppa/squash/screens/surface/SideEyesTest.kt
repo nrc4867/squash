@@ -12,7 +12,6 @@ import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.fennecDocument
-import dev.chieppa.squash.screens.person.personDocument
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.toucan.toucanDocument
 import kotlin.math.abs
@@ -47,13 +46,11 @@ class SideEyesTest {
     }
 
     @Test
-    fun theFennecsAndThePersonsEyesAreSetToTheFrontAndTheToucansToTheSide() {
+    fun theFennecsEyesAreSetToTheFrontAndTheToucansToTheSide() {
         val fennec = faceOf(openSession(fennecDocument(), work))
-        val person = faceOf(openSession(personDocument(), work))
         val toucan = faceOf(openSession(toucanDocument(), work))
-        println("eyes turned from the head: fennec ${eyeTurns(fennec)}, person ${eyeTurns(person)}, toucan ${eyeTurns(toucan)}")
+        println("eyes turned from the head: fennec ${eyeTurns(fennec)}, toucan ${eyeTurns(toucan)}")
         assertEquals(emptyList(), sideEyes(fennec.head, fennec.work, FACE_SIDE), "the fennec's face reads the head's angle")
-        assertEquals(emptyList(), sideEyes(person.head, person.work, FACE_SIDE), "the person's face reads the head's angle")
         assertEquals(2, sideEyes(toucan.head, toucan.work, FACE_SIDE).size, "both of the toucan's eyes are set to the side")
     }
 

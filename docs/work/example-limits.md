@@ -39,7 +39,7 @@ Each line: the source file opened, the fact needed, and what could have told it 
 
 There is a schema for templates and plans (`schema/`) but none for the document or its commands, and no command reference.
 
-- `screens-core/src/testFixtures/.../person/*.kt`, `fennec/*.kt`, `lizard/*.kt`: how commands are ordered and folded, the empty document, pairs set by their left side only, and roles chosen after a guess. A how-to with one worked example would.
+- `screens-core/src/testFixtures/.../fennec/*.kt`, `lizard/*.kt`: how commands are ordered and folded, the empty document, pairs set by their left side only, and roles chosen after a guess. A how-to with one worked example would.
 - `document/.../Garment.kt`: what `from`, `to`, `fromV`, `toV`, `ease`, `layer` and `fillet` mean, and their defaults. A document schema with KDoc descriptions, as the template schema has.
 - `document/.../BodyPartChange.kt`, `Worn.kt`, `PartData.kt`, `SurfaceWork.kt`: that Redraw lays its data over the part's (outlines and parameters replaced by key, marks and regions by id), Swap replaces it, and the outermost garment wins. A command reference.
 - `document/.../GarmentCommands.kt`, `WardrobeCommands.kt`: the list of wardrobe commands. A command reference.

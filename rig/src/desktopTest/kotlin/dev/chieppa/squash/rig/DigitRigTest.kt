@@ -30,7 +30,7 @@ private const val EDGE_FLOOR = 1e-4f
 
 /** The digits of a hand and a bird's foot hang from their wrist as chains of their own, curl toward the underside and grip. */
 class DigitRigTest {
-    private val person get() = personRig
+    private val hands get() = webbedHandRig
     private val toucan get() = toucanRig
 
     private fun Rig.point(positions: FloatArray, vertex: Int) = Vec3(positions[vertex * 3], positions[vertex * 3 + 1], positions[vertex * 3 + 2])
@@ -67,22 +67,22 @@ class DigitRigTest {
 
     @Test
     fun aCurledHandsWebsFollowTheirDigitsWithoutTearingOrSmearing() {
-        val hand = checkNotNull(person.part(HAND_L))
-        val curled = person.posed(person.curled(Pose(), listOf(HAND_L), 1f)).parts.getValue(HAND_L)
+        val hand = checkNotNull(hands.part(HAND_L))
+        val curled = hands.posed(hands.curled(Pose(), listOf(HAND_L), 1f)).parts.getValue(HAND_L)
         val byPatch = hand.vertices.indices.groupBy { hand.vertices[it].patch }
         val webs = byPatch.filterKeys { it.startsWith(WEB) }
         assertEquals(4, webs.size, "a web between each pair of neighbouring digits")
         for ((patch, vertices) in webs) {
             val digits = spannedBy(patch)
-            val followed = vertices.flatMap { v -> hand.weights.of(v).mapNotNull { (bone, _) -> person.bones[bone].digit?.patch } }.toSet()
+            val followed = vertices.flatMap { v -> hand.weights.of(v).mapNotNull { (bone, _) -> hands.bones[bone].digit?.patch } }.toSet()
             assertEquals(digits, followed, "$patch follows both its digits")
             val fingers = digits.map { byPatch.getValue(it) }
-            val fingerStretch = fingers.map { person.stretchOf(it, FINGER_SEGMENTS, hand.rest, curled) }
+            val fingerStretch = fingers.map { hands.stretchOf(it, FINGER_SEGMENTS, hand.rest, curled) }
             val most = maxOf(KEPT.endInclusive, fingerStretch.maxOf { it.endInclusive } * DIGITS_SHARE)
             val least = minOf(KEPT.start, fingerStretch.minOf { it.start } / DIGITS_SHARE)
-            val stretch = person.stretchOf(vertices, WEB_SEGMENTS, hand.rest, curled)
+            val stretch = hands.stretchOf(vertices, WEB_SEGMENTS, hand.rest, curled)
             assertTrue(stretch.start >= least && stretch.endInclusive <= most, "$patch stretches $stretch, its digits $fingerStretch")
-            val near = { positions: FloatArray, v: Int -> fingers.flatten().minOf { (person.point(positions, it) - person.point(positions, v)).length } }
+            val near = { positions: FloatArray, v: Int -> fingers.flatten().minOf { (hands.point(positions, it) - hands.point(positions, v)).length } }
             vertices.forEach { v ->
                 assertTrue(near(curled, v) <= near(hand.rest, v) * most + EDGE_FLOOR, "$patch vertex $v leaves its digits: ${near(hand.rest, v)} to ${near(curled, v)}")
             }
@@ -91,48 +91,48 @@ class DigitRigTest {
 
     @Test
     fun aHandsDigitsBranchFromItsWrist() {
-        val bones = person.bones.filter { it.name.part == HAND_L }
+        val bones = hands.bones.filter { it.name.part == HAND_L }
         assertEquals(1 + 2 + 4 * 3, bones.size)
         assertEquals(listOf("fingers:0.1", "fingers:0.2"), bones.filter { it.digit?.patch == "fingers:0" }.map { it.name.joint })
-        assertEquals(BoneName(HAND_L, "wrist"), person.bone(BoneName(HAND_L, "fingers:3.1"))?.parent)
-        assertEquals(BoneName(HAND_L, "fingers:3.2"), person.bone(BoneName(HAND_L, "fingers:3.3"))?.parent)
-        assertTrue(person.stretchedBy[checkNotNull(person.indexOf(BoneName(HAND_L, "wrist")))] < 0, "no stretch of the wrist reaches a finger")
+        assertEquals(BoneName(HAND_L, "wrist"), hands.bone(BoneName(HAND_L, "fingers:3.1"))?.parent)
+        assertEquals(BoneName(HAND_L, "fingers:3.2"), hands.bone(BoneName(HAND_L, "fingers:3.3"))?.parent)
+        assertTrue(hands.stretchedBy[checkNotNull(hands.indexOf(BoneName(HAND_L, "wrist")))] < 0, "no stretch of the wrist reaches a finger")
     }
 
     @Test
     fun noDigitFollowsAnotherDigitsBones() {
-        val hand = checkNotNull(person.part(HAND_L))
+        val hand = checkNotNull(hands.part(HAND_L))
         for ((vertex, address) in hand.vertices.withIndex()) {
-            val digits = hand.weights.of(vertex).mapNotNull { (bone, _) -> person.bones[bone].digit?.patch }.toSet()
+            val digits = hand.weights.of(vertex).mapNotNull { (bone, _) -> hands.bones[bone].digit?.patch }.toSet()
             assertTrue(digits.all { it in spannedBy(address.patch) }, "$address follows $digits")
         }
     }
 
     @Test
     fun aWholeCurlClosesEveryFingerTowardThePalmAndLeavesThePalmStill() {
-        val hand = checkNotNull(person.part(HAND_L))
-        val curled = person.posed(person.curled(Pose(), listOf(HAND_L), 1f)).parts.getValue(HAND_L)
+        val hand = checkNotNull(hands.part(HAND_L))
+        val curled = hands.posed(hands.curled(Pose(), listOf(HAND_L), 1f)).parts.getValue(HAND_L)
         val palm = hand.vertices.indices.filter { hand.vertices[it].patch == "palm" }
-        palm.forEach { assertTrue((person.point(curled, it) - person.point(hand.rest, it)).length < STILL, "palm vertex $it moved") }
-        val middle = palm.map { person.point(hand.rest, it) }.reduce(Vec3::plus) * (1f / palm.size)
-        val under = palm.filter { hand.vertices[it].v in 0.45f..0.55f }.map { person.point(hand.rest, it) - middle }.reduce(Vec3::plus).normalized()
+        palm.forEach { assertTrue((hands.point(curled, it) - hands.point(hand.rest, it)).length < STILL, "palm vertex $it moved") }
+        val middle = palm.map { hands.point(hand.rest, it) }.reduce(Vec3::plus) * (1f / palm.size)
+        val under = palm.filter { hand.vertices[it].v in 0.45f..0.55f }.map { hands.point(hand.rest, it) - middle }.reduce(Vec3::plus).normalized()
         for (digit in 0 until 5) {
-            val tip = person.tipOf(HAND_L, "fingers:$digit")
-            val rest = person.point(hand.rest, tip)
-            val moved = person.point(curled, tip)
+            val tip = hands.tipOf(HAND_L, "fingers:$digit")
+            val rest = hands.point(hand.rest, tip)
+            val moved = hands.point(curled, tip)
             assertTrue((moved - rest) dot under > 0f, "finger $digit curls toward the palm's underside")
             assertTrue((moved - middle).length < (rest - middle).length * (1f - CLOSES) || digit == 0, "finger $digit closes on the palm")
         }
-        assertEquals(1f, person.curlOf(person.curled(Pose(), listOf(HAND_L), 1f), HAND_L) ?: 0f, STILL)
-        assertEquals(0f, person.curlOf(Pose(), HAND_L) ?: -1f)
+        assertEquals(1f, hands.curlOf(hands.curled(Pose(), listOf(HAND_L), 1f), HAND_L) ?: 0f, STILL)
+        assertEquals(0f, hands.curlOf(Pose(), HAND_L) ?: -1f)
     }
 
     @Test
     fun aCurledPairIsMirrored() {
-        val posed = person.posed(person.curled(Pose(), listOf(HAND_L, HAND_R), 0.6f)).parts
+        val posed = hands.posed(hands.curled(Pose(), listOf(HAND_L, HAND_R), 0.6f)).parts
         val left = posed.getValue(HAND_L)
         val right = posed.getValue(HAND_R)
-        val plane = (checkNotNull(person.part(HAND_L)).rest[2] + checkNotNull(person.part(HAND_R)).rest[2]) / 2f
+        val plane = (checkNotNull(hands.part(HAND_L)).rest[2] + checkNotNull(hands.part(HAND_R)).rest[2]) / 2f
         for (v in 0 until left.size / 3) {
             assertEquals(left[v * 3], right[v * 3], MIRRORED)
             assertEquals(left[v * 3 + 1], right[v * 3 + 1], MIRRORED)

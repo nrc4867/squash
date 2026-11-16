@@ -10,14 +10,14 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
-import dev.chieppa.squash.screens.person.ARM_L
-import dev.chieppa.squash.screens.person.personDressedDocument
+import dev.chieppa.squash.screens.woman.ARM_L
+import dev.chieppa.squash.screens.woman.womanDressedDocument
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Tag
 
-/** Close views of the dressed fennec and person in deep poses, where a garment meets what comes out of it: the turned neck, the bent knee and the raised arm. */
+/** Close views of the dressed fennec and woman in deep poses, where a garment meets what comes out of it: the turned neck, the bent knee and the raised arm. */
 @Tag("slow")
 class GarmentPoseCloseUpSmokeTest {
     private val work = TestWork()
@@ -39,5 +39,5 @@ class GarmentPoseCloseUpSmokeTest {
     fun theFennecsBentKnee() = keep(fennecDressedDocument(), BonePose(FRONT_LEG_L, "knee", 110f), FRONT_LEG_L, "garment-close-knee")
 
     @Test
-    fun thePersonsRaisedArm() = keep(personDressedDocument(), BonePose(ARM_L, "shoulder", 80f), ARM_L, "garment-close-shoulder")
+    fun theWomansRaisedArm() = keep(womanDressedDocument(), BonePose(ARM_L, "joint.1", -80f), ARM_L, "garment-close-shoulder")
 }

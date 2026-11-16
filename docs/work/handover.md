@@ -22,8 +22,6 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 
 ## Open items carried
 
-- The person's jacket sleeves run into the body under the arms.
-- The summer person with an arm's socket moved along the torso: the fresh build's whole figure differs from the release in 501 bytes of RGBA, and both show the forearms inside the shirt.
 - The woman's winter scarf rises up the neck as a cowl; a sliver under the coat collar.
 - The fennec cap's ear cuff is ragged from the side.
 - An edited surface can differ from a fresh one where a field is steeper than `LIPSCHITZ` (no real character is).

@@ -13,8 +13,6 @@ import dev.chieppa.squash.screens.fennec.fennecDressedDocument
 import dev.chieppa.squash.screens.fennec.fennecWingedDocument
 import dev.chieppa.squash.screens.koi.koiDocument
 import dev.chieppa.squash.screens.lizard.lizardDocument
-import dev.chieppa.squash.screens.person.personDocument
-import dev.chieppa.squash.screens.person.personDressedDocument
 import dev.chieppa.squash.screens.toucan.toucanDocument
 import dev.chieppa.squash.screens.twin.TWIN_POSES
 import dev.chieppa.squash.screens.twin.twinDocument
@@ -35,8 +33,6 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "fennec-winged" to ::fennecWingedDocument,
     "koi" to ::koiDocument,
     "lizard" to ::lizardDocument,
-    "person" to ::personDocument,
-    "person-dressed" to ::personDressedDocument,
     "toucan" to ::toucanDocument,
     "woman" to ::womanDocument,
     "woman-dressed" to ::womanDressedDocument,

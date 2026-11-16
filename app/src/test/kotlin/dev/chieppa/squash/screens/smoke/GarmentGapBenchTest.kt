@@ -17,14 +17,14 @@ import dev.chieppa.squash.screens.look.measure.shownCorners
 import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
-import dev.chieppa.squash.screens.person.ARM_L
-import dev.chieppa.squash.screens.person.personDressedDocument
+import dev.chieppa.squash.screens.woman.ARM_L
+import dev.chieppa.squash.screens.woman.womanDressedDocument
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import org.junit.jupiter.api.Tag
 
 /**
- * What a pose leaves showing under the dressed fennec's and the dressed person's clothes, read on the posed body the session shows. A
+ * What a pose leaves showing under the dressed fennec's and the dressed woman's clothes, read on the posed body the session shows. A
  * vertex is seen when rays from it along at least [SEEN_WAYS] of [WAYS_OUT] leave the character crossing no face it shows. A hole is
  * a vertex of the body or of an inner layer that a face of its whole mesh has as a corner, that no shown face has, and that is seen: a
  * look through to where nothing is drawn. Shown again is a vertex hidden at rest that a shown face has as a corner in the pose and is
@@ -43,19 +43,19 @@ class GarmentGapBenchTest {
         "neck 40" to Pose(listOf(BonePose(HEAD, "neck", 40f))),
     )
 
-    /** The arm's elbow bends the negative way, as far as its limit of 145°. */
-    private val personPoses = listOf(
-        "elbow 90" to Pose(listOf(BonePose(ARM_L, "elbow", -90f))),
-        "elbow 120" to Pose(listOf(BonePose(ARM_L, "elbow", -120f))),
-        "elbow 145" to Pose(listOf(BonePose(ARM_L, "elbow", -145f))),
-        "shoulder 80" to Pose(listOf(BonePose(ARM_L, "shoulder", 80f))),
+    /** The arm's elbow, its second joint, bends the negative way, as far as its limit of 145°; its shoulder, the first, raises it the negative way. */
+    private val womanPoses = listOf(
+        "elbow 90" to Pose(listOf(BonePose(ARM_L, "joint.2", -90f))),
+        "elbow 120" to Pose(listOf(BonePose(ARM_L, "joint.2", -120f))),
+        "elbow 145" to Pose(listOf(BonePose(ARM_L, "joint.2", -145f))),
+        "shoulder 80" to Pose(listOf(BonePose(ARM_L, "joint.1", -80f))),
     )
 
     @Test
     fun theDressedFennec() = measure("dressed fennec", fennecDressedDocument(), fennecPoses)
 
     @Test
-    fun theDressedPerson() = measure("dressed person", personDressedDocument(), personPoses)
+    fun theDressedWoman() = measure("dressed woman", womanDressedDocument(), womanPoses)
 
     private fun measure(character: String, document: SquashDocument, poses: List<Pair<String, Pose>>) {
         val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
