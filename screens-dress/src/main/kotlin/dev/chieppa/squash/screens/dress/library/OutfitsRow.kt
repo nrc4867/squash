@@ -50,9 +50,12 @@ import org.jetbrains.compose.resources.stringResource
 /** The narrowest an outfit or garment tile gets before its grid drops a column. */
 internal val WARDROBE_CELL = 80.dp
 
-/** A cell of the Outfits row: an outfit, or New. */
+/**
+ * A cell of the Outfits row: an outfit, by its id so the cell stays the same one while the outfit changes, or New. A new cell
+ * would scroll its outfit into view again whenever an outfit's picks change.
+ */
 private sealed interface OutfitCell {
-    data class Of(val outfit: Outfit) : OutfitCell
+    data class Of(val outfit: OutfitId) : OutfitCell
     data object New : OutfitCell
 }
 
@@ -64,7 +67,7 @@ private sealed interface OutfitCell {
 internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
     val scope = rememberCoroutineScope()
     val renaming by state.library.renaming.collectAsState()
-    val cells = wardrobe.outfits.map<Outfit, OutfitCell> { OutfitCell.Of(it) } + OutfitCell.New
+    val cells = wardrobe.outfits.map<Outfit, OutfitCell> { OutfitCell.Of(it.id) } + OutfitCell.New
     val shown = wardrobe.shown?.let(wardrobe::outfit)
     fun rename(outfit: Outfit) {
         state.library.renaming.value = Renaming.OfOutfit(outfit.id)
@@ -73,12 +76,12 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
     DrawerSection(stringResource(Res.string.dress_outfits)) {
         PickerGrid(
             items = cells,
-            cursor = shown?.let { OutfitCell.Of(it) },
-            onCursorChange = { cell -> if (cell is OutfitCell.Of) state.showOutfit(cell.outfit.id) },
+            cursor = shown?.let { OutfitCell.Of(it.id) },
+            onCursorChange = { cell -> if (cell is OutfitCell.Of) state.showOutfit(cell.outfit) },
             pickOnClick = { it == OutfitCell.New },
             onPick = { cell ->
                 when (cell) {
-                    is OutfitCell.Of -> rename(cell.outfit)
+                    is OutfitCell.Of -> state.library.renaming.value = Renaming.OfOutfit(cell.outfit)
                     OutfitCell.New -> scope.launch { state.newOutfit() }
                 }
             },
@@ -99,7 +102,7 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
         ) { cell, _ ->
             when (cell) {
                 is OutfitCell.Of -> {
-                    val outfit = cell.outfit
+                    val outfit = wardrobe.outfit(cell.outfit) ?: return@PickerGrid
                     val newOutfit = stringResource(Res.string.dress_new_outfit)
                     ContextMenuArea(
                         menu = { close ->

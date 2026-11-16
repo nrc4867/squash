@@ -63,9 +63,9 @@ import org.jetbrains.compose.resources.stringResource
 
 private val NEW_SLOT_PAD = 14.dp
 
-/** A cell of a slot's grid: a garment, or New in that slot. */
+/** A cell of a slot's grid: a garment, by its id so the cell stays the same one while the garment changes, or New in that slot. */
 private sealed interface GarmentCell {
-    data class Of(val garment: Garment) : GarmentCell
+    data class Of(val garment: GarmentId) : GarmentCell
     data class New(val slot: GarmentSlotId) : GarmentCell
 }
 
@@ -108,7 +108,7 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
     val renaming by state.library.renaming.collectAsState()
     val cursor by state.library.garmentCursor.collectAsState()
     val outfit = wardrobe.shown?.let(wardrobe::outfit)
-    val cells = garments.map<Garment, GarmentCell> { GarmentCell.Of(it) } + listOfNotNull(slot?.let { GarmentCell.New(it.id) })
+    val cells = garments.map<Garment, GarmentCell> { GarmentCell.Of(it.id) } + listOfNotNull(slot?.let { GarmentCell.New(it.id) })
     val title = slot?.name ?: stringResource(Res.string.library_no_slot)
     val openers = remember { mutableMapOf<GarmentId, ContextMenuOpener>() }
     val slotMenu: (@Composable ColumnScope.(() -> Unit) -> Unit)? = if (slot == null) null else { close ->
@@ -141,12 +141,12 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
             }
             PickerGrid(
                 items = cells,
-                cursor = cells.firstOrNull { it is GarmentCell.Of && it.garment.id == cursor },
-                onCursorChange = { cell -> if (cell is GarmentCell.Of) state.library.garmentCursor.value = cell.garment.id },
+                cursor = cells.firstOrNull { it is GarmentCell.Of && it.garment == cursor },
+                onCursorChange = { cell -> if (cell is GarmentCell.Of) state.library.garmentCursor.value = cell.garment },
                 pickOnClick = { true },
                 onPick = { cell ->
                     when (cell) {
-                        is GarmentCell.Of -> state.wear(cell.garment.id)
+                        is GarmentCell.Of -> state.wear(cell.garment)
                         is GarmentCell.New -> scope.launch { state.newGarmentIn(cell.slot) }
                     }
                 },
@@ -169,13 +169,16 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
                 minCell = WARDROBE_CELL,
             ) { cell, _ ->
                 when (cell) {
-                    is GarmentCell.Of -> GarmentTile(
-                        state,
-                        wardrobe,
-                        cell.garment,
-                        worn = outfit?.picks?.get(cell.garment.slot) == cell.garment.id && cell.garment.slot != null,
-                        opener = openers.getOrPut(cell.garment.id) { ContextMenuOpener() },
-                    )
+                    is GarmentCell.Of -> {
+                        val garment = garments.firstOrNull { it.id == cell.garment } ?: return@PickerGrid
+                        GarmentTile(
+                            state,
+                            wardrobe,
+                            garment,
+                            worn = outfit?.picks?.get(garment.slot) == garment.id && garment.slot != null,
+                            opener = openers.getOrPut(garment.id) { ContextMenuOpener() },
+                        )
+                    }
                     is GarmentCell.New -> {
                         val empty = outfit != null && outfit.picks[cell.slot] == null
                         Tooltip(stringResource(Res.string.library_new_garment)) {
