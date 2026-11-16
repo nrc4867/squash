@@ -63,23 +63,27 @@ inline fun newOutfitIn(wardrobe: Wardrobe, name: (Int) -> String): Outfit {
     return Outfit(OutfitId(id), name(number))
 }
 
-/** Adds a new garment to the open character's wardrobe and picks it. */
-suspend fun AppState.newGarment() {
-    val open = session.value ?: return
+/** Adds a new garment to the open character's wardrobe and picks it; its id, or null with no character open. */
+suspend fun AppState.newGarment(): GarmentId? {
+    val open = session.value ?: return null
     val garment = newGarmentIn(open.document.value.character.wardrobe) { getString(Res.string.dress_garment_name, it) }
     open.send(AddGarment(garment))
     dress.garment.value = garment.id
+    return garment.id
 }
 
-/** Adds a new slot to the open character's wardrobe. */
-suspend fun AppState.newSlot() {
-    val open = session.value ?: return
-    open.send(AddGarmentSlot(newSlotIn(open.document.value.character.wardrobe) { getString(Res.string.dress_slot_name, it) }))
+/** Adds a new slot to the open character's wardrobe; its id, or null with no character open. */
+suspend fun AppState.newSlot(): GarmentSlotId? {
+    val open = session.value ?: return null
+    val slot = newSlotIn(open.document.value.character.wardrobe) { getString(Res.string.dress_slot_name, it) }
+    open.send(AddGarmentSlot(slot))
+    return slot.id
 }
 
-/** Adds a new outfit to the open character's wardrobe and shows it, in one step. */
-suspend fun AppState.newOutfit() {
-    val open = session.value ?: return
+/** Adds a new outfit to the open character's wardrobe and shows it, in one step; its id, or null with no character open. */
+suspend fun AppState.newOutfit(): OutfitId? {
+    val open = session.value ?: return null
     val outfit = newOutfitIn(open.document.value.character.wardrobe) { getString(Res.string.dress_outfit_name, it) }
     open.send(Together(listOf(AddOutfit(outfit), ShowOutfit(outfit.id))))
+    return outfit.id
 }

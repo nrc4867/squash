@@ -58,7 +58,7 @@ suspend fun AppState.newGarmentIn(slot: GarmentSlotId) {
     open.send(AddWornGarment(garment, wardrobe.shown))
     dress.garment.value = garment.id
     library.garmentCursor.value = garment.id
-    library.renaming.value = Renaming.OfGarment(garment.id)
+    library.renaming.value = Renaming.OfGarment(garment.id, new = true)
     tool.value = BuildTool.COVER
 }
 

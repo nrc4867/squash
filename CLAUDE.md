@@ -32,6 +32,7 @@ Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). 
 ./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
 ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"  # render examples to PNGs under app/build/look (needs a GPU)
 ./gradlew :app:measure -Pmeasure="example=woman-dressed"  # print an example's quality checks as numbers
+./gradlew :app:look -Plook="example=fennec-dressed thumbs=true"  # render and time an example's Library outfit and garment thumbnails, under app/build/look/<example>/thumbs
 ./gradlew :app:look -Plook="example=woman-twin-dressed shots=reference"  # render the reference's 24 shots through its cameras
 ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>"  # those shots beside the reference renders, overlays and silhouette IoU under app/build/compare
 ./gradlew :app:drag -Pdrag="example=fennec-dressed outfits=winter drags=move:front-leg-l,pose:front-leg-l:knee switch=true"  # scripted drags, undo and outfit switches timed through the app's graph

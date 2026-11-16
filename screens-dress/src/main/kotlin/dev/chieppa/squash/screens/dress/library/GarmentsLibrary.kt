@@ -25,6 +25,7 @@ import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.Wardrobe
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.dress.DressTags
+import dev.chieppa.squash.screens.dress.WardrobeShot
 import dev.chieppa.squash.screens.dress.newGarment
 import dev.chieppa.squash.screens.dress.newGarmentIn
 import dev.chieppa.squash.screens.dress.newSlot
@@ -83,27 +84,28 @@ fun GarmentsLibrary(state: AppState) {
     val query by state.library.query.collectAsState()
     val scope = rememberCoroutineScope()
     val wardrobe = document.character.wardrobe
+    val thumbs = rememberWardrobeThumbs(state, open)
     Column {
-        OutfitsRow(state, wardrobe)
+        OutfitsRow(state, wardrobe, thumbs)
         if (wardrobe.garments.isEmpty()) {
             EmptyState(SquashIcons.Garment, stringResource(Res.string.library_no_garments), Modifier.testTag(DressTags.NO_GARMENTS), stringResource(Res.string.library_new_garment)) {
-                scope.launch { state.newGarment() }
+                scope.launch { state.newGarment()?.let { state.library.renaming.value = Renaming.OfGarment(it, new = true) } }
             }
             return@Column
         }
         val shown = if (query.isBlank()) wardrobe.garments else fuzzySearch(query.trim(), wardrobe.garments) { listOf(it.name) }
-        wardrobe.slots.forEach { slot -> SlotGroup(state, wardrobe, slot, shown.filter { it.slot == slot.id }) }
+        wardrobe.slots.forEach { slot -> SlotGroup(state, wardrobe, slot, shown.filter { it.slot == slot.id }, thumbs) }
         val loose = shown.filter { it.slot == null }
-        if (loose.isNotEmpty()) SlotGroup(state, wardrobe, null, loose)
+        if (loose.isNotEmpty()) SlotGroup(state, wardrobe, null, loose, thumbs)
         Box(Modifier.padding(NEW_SLOT_PAD)) {
-            Button(stringResource(Res.string.dress_new_slot), { scope.launch { state.newSlot() } }, Modifier.testTag(DressTags.NEW_SLOT), kind = ButtonKind.Quiet, icon = SquashIcons.AddSlot)
+            Button(stringResource(Res.string.dress_new_slot), { scope.launch { state.newNamedSlot() } }, Modifier.testTag(DressTags.NEW_SLOT), kind = ButtonKind.Quiet, icon = SquashIcons.AddSlot)
         }
     }
 }
 
 /** One slot's group, or with no [slot] the garments in none: its garments and New, under a header whose menu holds the slot's own items. */
 @Composable
-private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, garments: List<Garment>) {
+private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, garments: List<Garment>, thumbs: WardrobeThumbs) {
     val scope = rememberCoroutineScope()
     val renaming by state.library.renaming.collectAsState()
     val cursor by state.library.garmentCursor.collectAsState()
@@ -121,7 +123,7 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
         Box(Modifier.testTag(DressTags.MENU_NEW_SLOT)) {
             MenuItem(stringResource(Res.string.dress_new_slot), {
                 close()
-                scope.launch { state.newSlot() }
+                scope.launch { state.newNamedSlot() }
             }, icon = SquashIcons.AddSlot)
         }
         Box(Modifier.testTag(DressTags.MENU_REMOVE_SLOT)) {
@@ -133,11 +135,12 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
     }
     Box(Modifier.testTag(slot?.let { DressTags.slot(it.id) } ?: DressTags.NO_SLOT)) {
         DrawerSection(title, count = garments.size.toString(), menu = slotMenu) {
-            if (slot != null && renaming == Renaming.OfSlot(slot.id)) {
-                RenameField(slot.name, stringResource(Res.string.slot_name_field), {
+            val slotRenaming = renaming as? Renaming.OfSlot
+            if (slot != null && slotRenaming?.slot == slot.id) {
+                RenameField(slot.name, slotRenaming.new, stringResource(Res.string.slot_name_field), {
                     state.renameSlot(slot.id, it)
-                    state.library.renaming.value = null
-                }, { state.library.renaming.value = null }, Modifier.fillMaxWidth().testTag(DressTags.SLOT_NAME))
+                    state.library.doneRenaming(slotRenaming)
+                }, { state.library.doneRenaming(slotRenaming) }, Modifier.fillMaxWidth().testTag(DressTags.SLOT_NAME))
             }
             PickerGrid(
                 items = cells,
@@ -177,6 +180,7 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
                             garment,
                             worn = outfit?.picks?.get(garment.slot) == garment.id && garment.slot != null,
                             opener = openers.getOrPut(garment.id) { ContextMenuOpener() },
+                            thumbs = thumbs,
                         )
                     }
                     is GarmentCell.New -> {
@@ -195,9 +199,14 @@ private fun SlotGroup(state: AppState, wardrobe: Wardrobe, slot: GarmentSlot?, g
     }
 }
 
+/** Adds a new slot from the Library and opens its name for typing. */
+private suspend fun AppState.newNamedSlot() {
+    newSlot()?.let { library.renaming.value = Renaming.OfSlot(it, new = true) }
+}
+
 /** A garment's tile with its menu, which [opener] opens from the grid's keyboard cursor. */
 @Composable
-private fun GarmentTile(state: AppState, wardrobe: Wardrobe, garment: Garment, worn: Boolean, opener: ContextMenuOpener) {
+private fun GarmentTile(state: AppState, wardrobe: Wardrobe, garment: Garment, worn: Boolean, opener: ContextMenuOpener, thumbs: WardrobeThumbs) {
     val renaming by state.library.renaming.collectAsState()
     val slotName = garment.slot?.let(wardrobe::slot)?.name ?: stringResource(Res.string.library_no_slot)
     ContextMenuArea({ close -> GarmentMenu(state, wardrobe, garment, worn, close) }, Modifier.testTag(DressTags.garmentTile(garment.id)), opener) {
@@ -210,12 +219,16 @@ private fun GarmentTile(state: AppState, wardrobe: Wardrobe, garment: Garment, w
                     loose -> TileLook.LOOSE
                     else -> TileLook.PLAIN
                 },
+                art = if (loose) null else thumbs.art(WardrobeShot.OfGarment(garment.id)),
+                artDescription = garment.name,
+                artPlace = if (loose) Modifier else thumbs.place(WardrobeShot.OfGarment(garment.id)),
             ) {
-                if (renaming == Renaming.OfGarment(garment.id)) {
-                    RenameField(garment.name, stringResource(Res.string.garment_name_field), {
+                val named = renaming as? Renaming.OfGarment
+                if (named?.garment == garment.id) {
+                    RenameField(garment.name, named.new, stringResource(Res.string.garment_name_field), {
                         state.renameGarment(garment.id, it)
-                        state.library.renaming.value = null
-                    }, { state.library.renaming.value = null }, Modifier.testTag(DressTags.GARMENT_NAME))
+                        state.library.doneRenaming(named)
+                    }, { state.library.doneRenaming(named) }, Modifier.testTag(DressTags.GARMENT_NAME))
                 } else {
                     TileCaption(garment.name, warn = loose)
                 }

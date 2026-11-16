@@ -13,13 +13,13 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 
 /**
- * Workers for a test: the graph, the art and file reads queue on one scheduler and run only when the test [drain]s it, on the
+ * Workers for a test: the graph, the art, thumbnails and file reads queue on one scheduler and run only when the test [drain]s it, on the
  * test's own thread. [context] joins the scope, for a handler that collects failures. [TestWorkCloser] closes every one when its
  * test ends.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class TestWork private constructor(val dispatcher: TestDispatcher, context: CoroutineContext) :
-    Workers(CoroutineScope(SupervisorJob() + dispatcher + context), dispatcher, dispatcher), AutoCloseable {
+    Workers(CoroutineScope(SupervisorJob() + dispatcher + context), dispatcher, dispatcher, thumbnails = dispatcher), AutoCloseable {
     init {
         TestWorkCloser.opened(this)
     }

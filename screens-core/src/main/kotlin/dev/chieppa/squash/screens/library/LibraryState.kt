@@ -10,11 +10,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /** The Library drawer's two halves. */
 enum class LibraryTab { PARTS, GARMENTS }
 
-/** What the Library drawer's Garments half has open for typing a new name in place. */
+/**
+ * What the Library drawer's Garments half has open for typing a name in place. A [new] item's field opens empty over its automatic
+ * name, which it keeps unless a name is typed.
+ */
 sealed interface Renaming {
-    data class OfGarment(val garment: GarmentId) : Renaming
-    data class OfOutfit(val outfit: OutfitId) : Renaming
-    data class OfSlot(val slot: GarmentSlotId) : Renaming
+    val new: Boolean
+
+    data class OfGarment(val garment: GarmentId, override val new: Boolean = false) : Renaming
+    data class OfOutfit(val outfit: OutfitId, override val new: Boolean = false) : Renaming
+    data class OfSlot(val slot: GarmentSlotId, override val new: Boolean = false) : Renaming
 }
 
 /**
@@ -41,6 +46,11 @@ class LibraryState {
     val searchRequests = MutableStateFlow(0)
 
     val renaming = MutableStateFlow<Renaming?>(null)
+
+    /** Closes [done]'s name field, unless another has opened since. */
+    fun doneRenaming(done: Renaming) {
+        renaming.compareAndSet(done, null)
+    }
 
     fun folded(character: CharacterId): Set<LibraryGroup> = folds.value[character].orEmpty()
 

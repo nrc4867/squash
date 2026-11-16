@@ -44,6 +44,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import dev.chieppa.squash.screens.dress.DressEditState
+import dev.chieppa.squash.screens.dress.WardrobeArtist
+import dev.chieppa.squash.screens.dress.WardrobeThumbnails
 import dev.chieppa.squash.screens.sheet.PoseView
 import kotlinx.coroutines.launch
 import java.util.EnumMap
@@ -63,6 +65,8 @@ class AppState(
     val storage: DocumentStorage = FileStorage,
     /** What renders rest pose art offscreen; with none, a screen shows no art. */
     val artist: RestPoseArtist? = null,
+    /** What renders outfit and garment thumbnails offscreen; with none, their tiles show icons. */
+    wardrobeArtist: WardrobeArtist? = null,
 ) {
     /** The loaded templates and plans, which Save as template adds to. */
     val catalog = TemplateCatalog(templates)
@@ -161,6 +165,9 @@ class AppState(
 
     /** What the Library drawer remembers. */
     val library = LibraryState()
+
+    /** The Library's outfit and garment thumbnails. */
+    val wardrobeThumbnails = WardrobeThumbnails(wardrobeArtist, workers.thumbnails)
 
     private val scope get() = workers.scope
     private var sessionJob: Job? = null

@@ -39,6 +39,9 @@ class LookArgs(args: Array<String>) {
      */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
+    /** With `thumbs=true`, each example's Library outfit and garment thumbnails, timed, instead of the usual views. */
+    val thumbs: Boolean = values["thumbs"] == "true"
+
     /** The shot list to render instead of the usual views: `reference` for the reference's 24 shots. */
     val shots: String? = values["shots"]
 

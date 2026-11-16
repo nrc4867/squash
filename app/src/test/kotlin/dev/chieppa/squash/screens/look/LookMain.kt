@@ -50,6 +50,7 @@ fun main(args: Array<String>) {
 
 private fun render(example: String, look: LookArgs, errors: MutableList<String>) {
     val folder = File(look.imagesFolder, example)
+    if (look.thumbs) return renderThumbnails(example, look, errors, folder)
     TestWork().use { work ->
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)

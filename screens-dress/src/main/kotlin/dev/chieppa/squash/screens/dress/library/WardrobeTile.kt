@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.dress.library
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,14 +15,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.screens.dress.DressTags
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
@@ -44,7 +51,9 @@ internal enum class TileLook {
     NEW_EMPTY,
 }
 
-private val TILE_HEIGHT = 72.dp
+/** A garment tile's height, and an outfit tile's, which shows a whole character standing. */
+internal val TILE_HEIGHT = 72.dp
+internal val OUTFIT_TILE_HEIGHT = 96.dp
 private val TILE_PAD = 6.dp
 private val TILE_ICON = 24.dp
 private val CHECK = 12.dp
@@ -53,14 +62,19 @@ private const val DASH = 5f
 private const val FAINT = 0.38f
 
 /**
- * A tile of Library's Garments half: [icon] over [caption], drawn by [look]. A press goes to the grid the
- * tile sits in; the tile itself takes no focus, which stays with the grid. [caption] can be a field while the name is being typed.
+ * A tile of Library's Garments half, [height] tall: its [art], or [icon] until there is art, over [caption], drawn by [look]. [artPlace]
+ * goes on the box the art fills, the same with or without art. A press goes to the grid the tile sits in; the tile itself takes no focus,
+ * which stays with the grid. [caption] can be a field while the name is being typed.
  */
 @Composable
 internal fun WardrobeTile(
     icon: ImageVector,
     look: TileLook,
     faint: Boolean = false,
+    art: ImageBitmap? = null,
+    artDescription: String? = null,
+    artPlace: Modifier = Modifier,
+    height: Dp = TILE_HEIGHT,
     caption: @Composable () -> Unit,
 ) {
     val c = Stretch.colors
@@ -75,7 +89,7 @@ internal fun WardrobeTile(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(TILE_HEIGHT)
+            .height(height)
             .alpha(if (faint) FAINT else 1f)
             .background(if (warn) c.warnWash else Color.Transparent, shape)
             .then(
@@ -89,14 +103,18 @@ internal fun WardrobeTile(
             ),
     ) {
         Column(
-            Modifier.fillMaxSize().padding(TILE_PAD),
+            Modifier.fillMaxSize().padding(RING),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         ) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Icon(icon, if (warn) c.warnInk else c.inkMuted, size = TILE_ICON)
+            Box(Modifier.fillMaxWidth().weight(1f).then(artPlace), contentAlignment = Alignment.Center) {
+                if (art != null) {
+                    Image(art, artDescription, Modifier.fillMaxSize().clip(shape).testTag(DressTags.THUMBNAIL), contentScale = ContentScale.Fit)
+                } else {
+                    Icon(icon, if (warn) c.warnInk else c.inkMuted, size = TILE_ICON)
+                }
             }
-            caption()
+            Box(Modifier.padding(start = TILE_PAD - RING, end = TILE_PAD - RING, bottom = TILE_PAD - RING)) { caption() }
         }
         if (look == TileLook.ON) Box(Modifier.align(Alignment.TopEnd).padding(TILE_PAD)) { Icon(StretchIcons.Check, c.ringSelected, size = CHECK) }
     }

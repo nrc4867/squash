@@ -32,6 +32,9 @@ object DressTags {
     const val SLOT_NAME = "library.slotName"
     const val OUTFIT_NAME = "library.outfitName"
     const val GARMENT_NAME = "library.garmentName"
+
+    /** An outfit or garment tile's thumbnail, once rendered. */
+    const val THUMBNAIL = "library.thumbnail"
     const val MENU_WEAR = "library.menu.wear"
     const val MENU_RENAME = "library.menu.rename"
     const val MENU_MOVE = "library.menu.move"

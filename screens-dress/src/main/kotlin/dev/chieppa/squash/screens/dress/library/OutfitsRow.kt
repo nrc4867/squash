@@ -21,6 +21,7 @@ import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.Wardrobe
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.dress.DressTags
+import dev.chieppa.squash.screens.dress.WardrobeShot
 import dev.chieppa.squash.screens.dress.duplicateOutfit
 import dev.chieppa.squash.screens.dress.newOutfit
 import dev.chieppa.squash.screens.dress.removeOutfit
@@ -64,7 +65,7 @@ private sealed interface OutfitCell {
  * the shown outfit in place, Ctrl D duplicates it and Del removes it; its context menu holds New outfit, Duplicate, Rename and Remove.
  */
 @Composable
-internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
+internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe, thumbs: WardrobeThumbs) {
     val scope = rememberCoroutineScope()
     val renaming by state.library.renaming.collectAsState()
     val cells = wardrobe.outfits.map<Outfit, OutfitCell> { OutfitCell.Of(it.id) } + OutfitCell.New
@@ -82,7 +83,7 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
             onPick = { cell ->
                 when (cell) {
                     is OutfitCell.Of -> state.library.renaming.value = Renaming.OfOutfit(cell.outfit)
-                    OutfitCell.New -> scope.launch { state.newOutfit() }
+                    OutfitCell.New -> scope.launch { state.newNamedOutfit() }
                 }
             },
             contentDescription = stringResource(Res.string.dress_outfits),
@@ -109,7 +110,7 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
                             Box(Modifier.testTag(DressTags.MENU_NEW_OUTFIT)) {
                                 MenuItem(newOutfit, {
                                     close()
-                                    scope.launch { state.newOutfit() }
+                                    scope.launch { state.newNamedOutfit() }
                                 }, icon = SquashIcons.NewOutfit)
                             }
                             Box(Modifier.testTag(DressTags.MENU_DUPLICATE)) {
@@ -137,12 +138,17 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
                         WardrobeTile(
                             SquashIcons.Garment,
                             if (outfit.id == wardrobe.shown) TileLook.ON else TileLook.PLAIN,
+                            art = thumbs.art(WardrobeShot.OfOutfit(outfit.id)),
+                            artDescription = outfit.name,
+                            artPlace = thumbs.place(WardrobeShot.OfOutfit(outfit.id)),
+                            height = OUTFIT_TILE_HEIGHT,
                         ) {
-                            if (renaming == Renaming.OfOutfit(outfit.id)) {
-                                RenameField(outfit.name, stringResource(Res.string.outfit_name_field), {
+                            val named = renaming as? Renaming.OfOutfit
+                            if (named?.outfit == outfit.id) {
+                                RenameField(outfit.name, named.new, stringResource(Res.string.outfit_name_field), {
                                     state.renameOutfit(outfit.id, it)
-                                    state.library.renaming.value = null
-                                }, { state.library.renaming.value = null }, Modifier.testTag(DressTags.OUTFIT_NAME))
+                                    state.library.doneRenaming(named)
+                                }, { state.library.doneRenaming(named) }, Modifier.testTag(DressTags.OUTFIT_NAME))
                             } else {
                                 TileCaption(outfit.name)
                             }
@@ -151,7 +157,7 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
                 }
                 OutfitCell.New -> Tooltip(stringResource(Res.string.dress_new_outfit)) {
                     Box(Modifier.testTag(DressTags.NEW_OUTFIT)) {
-                        WardrobeTile(SquashIcons.AddPart, TileLook.NEW) {
+                        WardrobeTile(SquashIcons.AddPart, TileLook.NEW, height = OUTFIT_TILE_HEIGHT) {
                             TileCaption(stringResource(Res.string.dress_new))
                         }
                     }
@@ -159,6 +165,11 @@ internal fun OutfitsRow(state: AppState, wardrobe: Wardrobe) {
             }
         }
     }
+}
+
+/** Adds a new outfit from the Library, shows it and opens its name for typing. */
+private suspend fun AppState.newNamedOutfit() {
+    newOutfit()?.let { library.renaming.value = Renaming.OfOutfit(it, new = true) }
 }
 
 /** The keys Library's menus name beside their items. */
