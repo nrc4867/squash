@@ -47,7 +47,6 @@ object DressTags {
     fun join(part: PartId) = "dress.joins.ink.${part.value}"
     fun layer(garment: GarmentId) = "dress.layers.row.${garment.value}"
     fun layerShow(garment: GarmentId) = "dress.layers.show.${garment.value}"
-    fun layerGrip(garment: GarmentId) = "dress.layers.grip.${garment.value}"
     fun clash(part: PartId) = "dress.layers.clash.${part.value}"
     fun change(part: PartId) = "dress.bodyUnder.change.${part.value}"
     fun cuff(part: PartId) = "dress.bodyUnder.cuff.${part.value}"

@@ -1,8 +1,15 @@
 package dev.chieppa.squash.screens.shell
 
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.document.SetLayers
+import dev.chieppa.squash.screens.dress.movedLayer
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onChildren
@@ -59,6 +66,10 @@ import kotlin.test.assertTrue
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
+/** From a layer row's content back to the middle of its grip. */
+private val GRIP_REACH = 12.dp
+private const val DRAG_STEPS = 20
+
 private object NoDressFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
@@ -67,6 +78,7 @@ private object NoDressFiles : FileChooser {
 /** The Dress stage in the app whole, over the dressed fennec: W13's strip, inspector and status, W14's band, popover and layers, W15's body under a garment. */
 @OptIn(ExperimentalTestApi::class)
 class DressFlowTest {
+
     private val work = TestWork()
 
     private fun ComposeUiTest.dressedOpen(asParts: Boolean = false): AppState {
@@ -144,7 +156,7 @@ class DressFlowTest {
         state.undo()
         waitForIdle()
 
-        onNodeWithTag(DressTags.layer(SCARF)).assertExists()
+        onNodeWithTag(DressTags.layer(SCARF), useUnmergedTree = true).assertExists()
         onNodeWithTag(DressTags.clash(TORSO)).assertExists()
         onNodeWithText("Scarf over Sweater", useUnmergedTree = true).assertExists()
         onNodeWithTag(DressTags.layerShow(SCARF)).performScrollTo().performClick()
@@ -196,10 +208,44 @@ class DressFlowTest {
     }
 
     @Test
+    fun draggingALayersGripLiftsItsRowAndMovesItInOneStep() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = dressedOpen()
+        val session = assertNotNull(state.session.value)
+        val outerFirst = session.document.value.character.wardrobe.worn.reversed().map { it.id }
+        val moving = outerFirst.first()
+        val name = assertNotNull(session.document.value.character.wardrobe.garment(moving)).name
+        val row = onNodeWithTag(DressTags.layer(moving), useUnmergedTree = true)
+        row.performScrollTo()
+        waitForIdle()
+        val bounds = row.getUnclippedBoundsInRoot()
+        val steps = session.history.steps.value.done.size
+        fun shown() = onAllNodesWithText(name, useUnmergedTree = true).fetchSemanticsNodes().size
+        val named = shown()
+        val grip = with(density) { Offset((bounds.left - GRIP_REACH).toPx(), ((bounds.top + bounds.bottom) / 2).toPx()) }
+        val slot = with(density) { (bounds.bottom - bounds.top).toPx() }
+        onAllNodes(isRoot()).onFirst().performMouseInput {
+            moveTo(grip)
+            press()
+            repeat(DRAG_STEPS) { moveBy(Offset(0f, 2 * slot / DRAG_STEPS)) }
+        }
+        waitForIdle()
+        assertEquals(named + 1, shown(), "the row lifts and follows the pointer")
+        assertEquals(steps, session.history.steps.value.done.size, "nothing moves before the grip lets go")
+        onAllNodes(isRoot()).onFirst().performMouseInput { release() }
+        settle(work, state)
+        waitForIdle()
+        assertEquals(steps + 1, session.history.steps.value.done.size)
+        assertIs<SetLayers>(session.history.steps.value.done.last())
+        val after = session.document.value.character.wardrobe.worn.reversed().map { it.id }
+        assertEquals(movedLayer(outerFirst, 0, 2), after)
+        assertEquals(named, shown())
+    }
+
+    @Test
     fun pickingALayerLeavesItsRowWhereItWas() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = dressedOpen()
         for (garment in listOf(SWEATER, CAP, BOOTS, SCARF)) {
-            val row = onNodeWithTag(DressTags.layer(garment))
+            val row = onNodeWithTag(DressTags.layer(garment), useUnmergedTree = true)
             row.performScrollTo()
             waitForIdle()
             val before = row.getUnclippedBoundsInRoot().top

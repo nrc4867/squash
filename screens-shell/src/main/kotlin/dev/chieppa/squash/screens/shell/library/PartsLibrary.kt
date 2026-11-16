@@ -128,7 +128,7 @@ internal fun PartsLibrary(state: AppState, mode: LibraryMode, focus: GridFocus, 
                                 null
                             }
                         },
-                        preview = { PartTile(template, lit = true) },
+                        preview = { LiftedPartTile(template) },
                     ),
                 ) { PartTile(template, lit) }
             }

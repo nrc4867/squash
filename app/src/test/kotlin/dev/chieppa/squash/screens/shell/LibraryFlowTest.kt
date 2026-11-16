@@ -1,8 +1,12 @@
 package dev.chieppa.squash.screens.shell
 
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.requestFocus
@@ -43,6 +47,7 @@ import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.document.FileChooser
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import dev.chieppa.stretch.frame.DragAndDropHost
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -62,6 +67,12 @@ private object NoLibraryFiles : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
+private const val LIFT_STEPS = 10
+private const val LIFT_STEP = 20f
+
+/** How far, in dp, a turned preview's bounds may reach past the tile's. */
+private const val LIFT_SLACK = 8f
+
 /** Library's flows F1 to F6 and its keys, in the app whole. See the rethink's spec, boards L1 to L7. */
 @OptIn(ExperimentalTestApi::class)
 class LibraryFlowTest {
@@ -69,7 +80,7 @@ class LibraryFlowTest {
 
     private fun ComposeUiTest.created(): AppState {
         val state = AppState(TemplateFolder.shipped(), work)
-        setStretchContent { SquashApp(state, NoLibraryFiles) }
+        setStretchContent { DragAndDropHost { SquashApp(state, NoLibraryFiles) } }
         onNodeWithTag(ShellTags.NEW_NAME).performTextInput("Fennec")
         onNodeWithTag(ShellTags.NEW_CREATE).performClick()
         settle(work, state)
@@ -308,5 +319,30 @@ class LibraryFlowTest {
         onNodeWithTag(ShellTags.libraryGroup("TAIL")).performKeyInput { pressKey(Key.Enter) }
         waitForIdle()
         assertTrue(session.document.value.character.parts.any { it.socket?.socket == "tail" })
+    }
+
+    @Test
+    fun aDraggedTileLiftsAtTheTilesOwnSize() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        created()
+        val tile = onNodeWithTag(ShellTags.libraryTile("leg"), useUnmergedTree = true)
+        tile.performScrollTo()
+        waitForIdle()
+        val bounds = tile.getUnclippedBoundsInRoot()
+        val start = with(density) { Offset(((bounds.left + bounds.right) / 2).toPx(), ((bounds.top + bounds.bottom) / 2).toPx()) }
+        onAllNodes(isRoot()).onFirst().performMouseInput {
+            moveTo(start)
+            press()
+            repeat(LIFT_STEPS) { moveBy(Offset(LIFT_STEP, 0f)) }
+        }
+        waitForIdle()
+        val lifted = onNodeWithTag(ShellTags.LIBRARY_LIFTED, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertEquals((bounds.right - bounds.left).value, (lifted.right - lifted.left).value, LIFT_SLACK, "the preview is as wide as the tile")
+        assertEquals((bounds.bottom - bounds.top).value, (lifted.bottom - lifted.top).value, LIFT_SLACK, "and as tall")
+        onAllNodes(isRoot()).onFirst().performMouseInput {
+            moveTo(start)
+            release()
+        }
+        waitForIdle()
+        onNodeWithTag(ShellTags.LIBRARY_LIFTED, useUnmergedTree = true).assertDoesNotExist()
     }
 }
