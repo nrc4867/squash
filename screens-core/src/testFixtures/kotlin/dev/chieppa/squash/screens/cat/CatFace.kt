@@ -56,7 +56,7 @@ private fun line(id: String, width: MarkWidth, vararg points: Pair<Float, Float>
 
 /** Three whiskers fanning back from the whisker pad, each tapering to its tip. */
 private fun whiskers(): List<DocumentCommand> = listOf(
-    line("whisker-1", TAPER, 0.86f to 0.17f, 0.66f to 0.15f, 0.46f to 0.15f),
+    line("whisker-1", TAPER, 0.86f to 0.19f, 0.66f to 0.20f, 0.48f to 0.21f),
     line("whisker-2", TAPER, 0.86f to 0.21f, 0.66f to 0.22f, 0.44f to 0.24f),
     line("whisker-3", TAPER, 0.86f to 0.25f, 0.66f to 0.29f, 0.48f to 0.33f),
 )

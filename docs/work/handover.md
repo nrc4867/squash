@@ -18,6 +18,7 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
 | twin-surface | The twin and the dressed twin on one surface with painted eyes, her hair a cap in the field and a fall and locks as hair parts; every example is now on one surface ("Twin results") |
 | garments-2 | Open garment branches read their drawings and a range past their part's ends as shells cut by their v range; a Front outline is a branch's section; a drawn end past a level end closes; cloth hangs and flares only past an end that points down, and open shells are pushed out of legs and tail; a garment's regions and brush strokes are painted. The cat's Vampire (free cape, collar, trail) and Hotdog (round sausage, painted mustard, puffy bun) redone ("Garments 2 results") |
+| look-fixes | The cat's top whisker drawn level along its whisker pad, so it no longer runs up the bridge of its nose to its eyes; the open look items read again ("Look fixes results") |
 
 ## Examples
 
@@ -40,12 +41,13 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 
 ## Open items carried
 
-- The woman's winter scarf rises up the neck as a cowl; a sliver under the coat collar.
+- The woman's winter scarf rises up the neck as a cowl, a sliver of the top showing under the coat's collar: the scarf's torso branch stands off the coat's and the top's eases as well as its own, 0.092 in all, over the torso's closed end round the neck, where the coat is open and cut short; a stand-off that holds only where the layers under it reach is not built ("Look fixes results").
 - The fennec cap's ear cuff is ragged from the side.
 - An edited surface can differ from a fresh one where a field is steeper than `LIPSCHITZ` (no real character is).
 - A drag's later moves: fur left out and garment vertices placed without a line search together bring the winter fennec to 52 ms and leave the woman at 116 ("Drag speed results"); neither is built.
 - Dressed moves are over 50 ms; the levers left are the garments' work other than reads (meshing, finishing, cuts, cuffs, the hanging push) and, for pose drags, the full posed lines nothing draws while dragging.
-- The woman after a release shows lines across the forehead.
+- The woman after a release shows lines across the forehead: not reproduced in `look` renders of an arm's Move drag (each of its moves, the release, at rest, undo and redo, on CPU and GPU reads); not the same as the cat's nose-bridge lines, which were a whisker mark ("Look fixes results").
+- The cat's painted eyes sit near the nose from the side: the eye's anchor lies on the skull's front where the muzzle joins it; moved back it leaves the front view ("Look fixes results").
 - Painted eyes are not driven by the Pose stage's look-at tool.
 - The Face board needs Nicholas's verification.
 - The cat's garments: an open edge is a cut with no rolled rim, so the bun's halves read as one shell cut open; a drawn range running past its drawing leaves a speck; a garment's marks are not drawn; a cape's flanks ride the spine and are not re-hung toward world down when a pose tilts the body ("Garments 2 results").
