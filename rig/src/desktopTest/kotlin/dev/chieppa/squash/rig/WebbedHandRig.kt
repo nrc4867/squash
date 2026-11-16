@@ -23,8 +23,6 @@ private val WEBBED_HAND = TemplateRef(TemplateId("hand"), 3)
 /** How far the biped plan spreads the arms out from the body, in degrees. */
 private const val ARM_SPREAD = 45f
 
-private val TORSO = PartId("torso")
-
 /** A pair placed as Add part places it on a paired socket of the biped plan, each side on its own parent. */
 private fun pair(id: String, template: TemplateRef, role: Role, left: Pair<PartId, PartId>, right: Pair<PartId, PartId>, socket: String, spread: Float = 0f) = AddParts(
     listOf(
