@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.model.Mirror
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
+import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameters
 import kotlin.math.roundToInt
@@ -95,17 +96,18 @@ object HandSockets {
 
     /**
      * The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired], a part on
-     * it sunk [sink] times its own depth, or once with null: one undo step.
+     * it sunk [sink] times its own depth, or once with null: one undo step. It fails on a part that already holds socket [id]; [move]
+     * moves one.
      */
-    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null): SetParameters =
-        SetParameters(part, mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink))
+    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null): AddParameters =
+        AddParameters(part, mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink))
 
     /**
      * The command that places a row of [count] sockets on [part] from [u] to [to] at [v], [outward] degrees from the normal, mirrored when
-     * [paired], parts on it starting at [size] on the first and [falloff] of that on the last: one undo step.
+     * [paired], parts on it starting at [size] on the first and [falloff] of that on the last: one undo step. It fails as [add] does.
      */
-    fun addRow(part: PartId, id: Int, u: Float, to: Float, v: Float, outward: Float, paired: Boolean, count: Int, size: Float, falloff: Float): SetParameters =
-        SetParameters(
+    fun addRow(part: PartId, id: Int, u: Float, to: Float, v: Float, outward: Float, paired: Boolean, count: Int, size: Float, falloff: Float): AddParameters =
+        AddParameters(
             part,
             add(part, id, u, v, outward, paired).values + mapOf(count(id) to count.toFloat(), to(id) to to, size(id) to size, falloff(id) to falloff),
         )

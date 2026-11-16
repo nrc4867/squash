@@ -1,13 +1,19 @@
 package dev.chieppa.squash.screens.woman
 
+import dev.chieppa.squash.character.build.AssemblyPart
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.assemblyParts
+import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.screens.fennec.fennecText
 import dev.chieppa.squash.screens.shell.SquashFormat
 import java.io.File
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -17,6 +23,10 @@ import kotlin.test.assertTrue
 
 private const val SAVED_FILE = "../examples/$WOMAN_DRESSED_RESOURCE"
 private const val UPDATE_PROPERTY = "squash.updateGoldens"
+
+/** Where round her head its back lies, her face at v = 0, and how far either way of it a hair part's socket may lie: behind the ears. */
+private const val HEAD_BACK_V = 0.5f
+private const val BEHIND_EARS = 0.25f
 
 /** The saved dressed woman stays what her commands make. Regenerate with ./gradlew :screens-core:test -PupdateGoldens and review the diff. */
 class WomanDressedFixtureTest {
@@ -73,5 +83,21 @@ class WomanDressedFixtureTest {
             val built = assemblyParts(wearing(outfit)).filter { it.owner != null }.map { it.id }.toSet()
             assertEquals(parts, built, outfit.value)
         }
+    }
+
+    @Test
+    fun inEveryOutfitEveryHairPartSitsOnTheBackOfHerHeadWhereTheUndressedWomansDoes() {
+        val bare = assemblyParts(womanDocument().character)
+        val undressed = socketsOfHairOn(bare)
+        assertEquals(bare.count { it.role == Role.HAIR && it.socket?.parent == HEAD }, undressed.size)
+        for ((part, socket) in undressed) assertTrue(abs(socket.v - HEAD_BACK_V) < BEHIND_EARS, "$part sits at v ${socket.v}")
+        for (outfit in OUTFITS.map { it.first } + BARE) assertEquals(undressed, socketsOfHairOn(assemblyParts(wearing(outfit))), outfit.value)
+    }
+
+    /** Each hair part on the head among [parts], with the head's socket it sits on as placing reads it. */
+    private fun socketsOfHairOn(parts: List<AssemblyPart>): Map<PartId, SocketSpec> {
+        val head = assertNotNull(parts.firstOrNull { it.id == HEAD })
+        val sockets = HandSockets.specs(head.placement + head.wornSockets).associateBy { it.name }
+        return parts.filter { it.role == Role.HAIR && it.socket?.parent == HEAD }.associate { it.id to assertNotNull(sockets[it.socket!!.socket], "${it.id}'s socket") }
     }
 }

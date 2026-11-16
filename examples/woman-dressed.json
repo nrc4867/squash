@@ -1790,17 +1790,22 @@
                         "socket.3.outward": 0.0,
                         "socket.3.pair": 1.0,
                         "socket.3.sink": 0.5,
-                        "socket.4.u": 0.5701975,
-                        "socket.4.v": 0.0,
+                        "socket.4.u": 0.79,
+                        "socket.4.v": 0.585,
                         "socket.4.outward": 0.0,
                         "socket.4.pair": 1.0,
-                        "socket.4.sink": 0.0,
+                        "socket.4.sink": 0.3,
                         "socket.5.u": 0.79,
                         "socket.5.v": 0.67,
                         "socket.5.outward": 0.0,
                         "socket.5.pair": 1.0,
                         "socket.5.sink": 0.3,
-                        "join.ink": 0.0
+                        "join.ink": 0.0,
+                        "socket.6.u": 0.5701975,
+                        "socket.6.v": 0.0,
+                        "socket.6.outward": 0.0,
+                        "socket.6.pair": 1.0,
+                        "socket.6.sink": 0.0
                     },
                     "surface": {
                         "baseSlot": "skin",
@@ -3329,7 +3334,7 @@
                 },
                 "socket": {
                     "parent": "head",
-                    "socket": "socket.4"
+                    "socket": "socket.6"
                 },
                 "pair": "shades",
                 "side": "left",
@@ -3344,7 +3349,7 @@
                 },
                 "socket": {
                     "parent": "head",
-                    "socket": "socket.4"
+                    "socket": "socket.6"
                 },
                 "pair": "shades",
                 "side": "right",

@@ -19,6 +19,7 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -95,6 +96,19 @@ class HandSocketsTest {
         val deleted = HandSockets.delete(torso, 1).apply(placed).document
         assertEquals(emptyList(), deleted.handOpen())
         assertEquals(document.character.part(torso), deleted.character.part(torso))
+    }
+
+    @Test
+    fun placingASocketOnANumberInUseFailsAndMovingItMovesIt() {
+        val (document, torso) = rooted()
+        val placed = HandSockets.add(torso, 1, 0.5f, 0.2f, 0f, paired = true).apply(document).document
+        assertFailsWith<IllegalArgumentException> { HandSockets.add(torso, 1, 0.3f, 0f, 0f, paired = false).apply(placed) }
+        assertFailsWith<IllegalArgumentException> { HandSockets.addRow(torso, 1, 0.3f, 0.6f, 0f, 0f, paired = false, count = 3, size = 1f, falloff = 1f).apply(placed) }
+        val moved = HandSockets.move(torso, 1, 0.3f, 0f).apply(placed).document
+        val socket = HandSockets.specs(moved.character.resolvedShape(assertNotNull(moved.character.part(torso))).params).single()
+        assertEquals(0.3f, socket.u)
+        assertEquals(0f, socket.v)
+        assertTrue(moved.handOpen().single().paired)
     }
 
     @Test

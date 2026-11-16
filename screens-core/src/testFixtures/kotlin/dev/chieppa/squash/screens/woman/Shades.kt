@@ -25,8 +25,11 @@ val FRAME = SlotName("frame")
 val LENS = SlotName("lens")
 val GLINT = SlotName("glint")
 
-/** The head's socket the shades sit on: one paired socket at the bridge of the nose, between the eyes, which both halves share. */
-private const val BRIDGE_SOCKET = 4
+/**
+ * The head's socket the shades sit on: one paired socket at the bridge of the nose, between the eyes, which both halves share. It takes
+ * the first id past the hair's, since placing a socket on an id in use moves the parts already on it.
+ */
+private const val BRIDGE_SOCKET = FALL_OUTER_SOCKET + 1
 private val BRIDGE by lazy { FACE.on(0f, BRIDGE_HEIGHT) }
 
 /** How high up the face the bridge sits, on the nose between the eyes. */
