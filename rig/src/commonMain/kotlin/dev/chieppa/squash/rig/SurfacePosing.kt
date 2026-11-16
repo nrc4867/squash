@@ -68,13 +68,15 @@ private const val POSE_CHUNK = 4096
 private const val QUAD_INDICES = 6
 private const val QUAD_FAN_INDICES = 12
 
-/** These indices, [width] a quad, without the quads [left] marks. */
+/** These indices, [width] a quad, without the quads [left] marks; the triangles standing alone after the quads kept as they are. */
 private fun IntArray.keptQuads(left: BooleanArray, width: Int): IntArray {
-    val kept = IntArray(left.count { !it } * width)
+    val tail = size - left.size * width
+    val kept = IntArray(left.count { !it } * width + tail)
     var at = 0
     for (quad in left.indices) if (!left[quad]) {
         copyInto(kept, at, quad * width, quad * width + width)
         at += width
     }
+    copyInto(kept, at, left.size * width, size)
     return kept
 }

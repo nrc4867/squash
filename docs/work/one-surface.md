@@ -1183,12 +1183,46 @@ The koi and the lizard build on one surface from their first command, with paint
 - The koi's tail fin shows two small ink marks near its root, as its parts build does.
 - In the lizard's foot close-ups, the view from above sits inside the leg and shows the ankle's crease through it in broken arcs.
 
+## Adaptive cells results
+
+**What is built.** Digits mesh at a quarter of the body's cell and everything else at the body's cell (see `docs/hld/architecture.md`, Cell levels). A digit is a run of a part's row of toes or fingers, a `digits` or `toeRow` block's (`isDigitRun`), so the fennec's and the cat's paw toes and the woman's fingers go finer, and her palms, feet, hair and every other run stay at the body's cell; a row that builds no digits, as under a shoe or a glove, leaves nothing finer. `AdaptiveMesher` runs one `SurfaceMesher` a level over its `MeshRegion`, the octants a finer level takes holding no vertex, the grid points a block shares with a coarser level blended from the coarser grid's, and `LevelSeams` joins neighbouring levels with one face across each crossed finer edge of the boundary. The mesh holds its quads first and the seams' lone triangles after them (`SurfaceMesh.quadCount`), and the shading fan, shading smoothing, charts, skin contacts, posing and hanging push take both.
+
+**Mesh invariants.** `AdaptiveMesherTest`: a palm with three digits closer than the body's cell, the digits two levels finer, meshes closed and manifold (every edge on two triangles, run opposite ways), every vertex on the field, every triangle facing out, its quads first, each two triangles sharing a diagonal, and lone triangles after them; at one level the digits melt together and two levels finer each digit's side facing the next is meshed; an edit meshed again by kept meshers equals the same field meshed whole and keeps vertices; with every member at level 0 the mesh is the single mesher's. The fennec, the cat and the woman: 0 open edges and 0 edges on more than two triangles.
+
+**Cost.** Measured in one JVM with a throwaway switch of the digits' level, alternated build by build and play by play. Another session was working on the machine: the load was 2 to 11% around the fresh builds and 7 to 54% around the drags, so the drags' medians are noisier than the paired differences.
+
+Fresh surface build (`SurfaceBuilder` whole, eight threads, median of 10 after 2 warm):
+
+| Example | Digits at the body's cell | Digits at a quarter |
+|---|---|---|
+| Fennec | 33,030 vertices; 208 ms; CPU 1,250 | 72,786; 333 ms (+60%); CPU 1,906 |
+| Cat | 35,300; 447 ms; CPU 1,438 | 81,806; 793 ms (+77%); CPU 2,500 |
+| Woman | 30,022; 157 ms; CPU 922 | 50,796; 224 ms (+43%); CPU 1,281 |
+| Woman, dressed, as saved | 29,738; 149 ms; CPU 953 | 50,512; 227 ms (+52%); CPU 1,297 |
+| Fennec, dressed, as saved | 32,214; 141 ms | 32,214; 136 ms |
+
+`./gradlew :app:drag`, two sessions played in turn, four timed plays of 23 later moves: each later move median / 90th percentile / worst in ms, and the paired difference move by move.
+
+| Case | Digits at the body's cell | Digits at a quarter | Paired |
+|---|---|---|---|
+| Fennec, winter, front-leg move | 81.6 / 106.0 / 138.0 | 82.6 / 104.0 / 152.8 | +0.6 (the boots' paws build no toes) |
+| Fennec, winter, knee pose | 7.5 / 8.2 / 9.0 | 7.2 / 8.3 / 20.4 | -0.3 |
+| Woman, casual, arm move | 144.5 / 160.3 / 181.9 | 181.8 / 244.9 / 451.3 | +37.4; CPU a move 672 to 969; release 281 to 401 |
+| Fennec, bare, front-leg move | 92.4 / 124.6 / 232.6 | 152.7 / 188.0 / 284.5 | +59.4; CPU a move 375 to 641; release 148 to 261 |
+| Fennec, bare, knee pose | 9.3 / 10.5 / 14.6 | 9.1 / 10.4 / 12.9 | -0.1 |
+
+**What it looks like.** The fennec's paws show four separate toes from the front, side and below, each with its own outline and claw, and keep them through the walk; at the body's cell they read as scallops and melt together underneath. The woman's fingers are separate, each with its own outline and its nail painted whole, where at the body's cell they merge into a ragged mitten with nails cut into slivers. The cat's mitten paws still read as mittens, with shallow lobes at the front and cleaner sock and bean edges; small flecks of the sock's edge remain on the front and the sole. No seam, step or shading change shows where the cell changes. No example puts a garment over digits: boots, shoes and gloves set their rows to none.
+
+**Images changed.** Of 321 images of 13 examples (every outfit, the named poses, face, hand, foot, hands and feet close-ups), compared in RGB with digits at the body's cell, 131 differ, each a whole figure, pose, foot close-up or face of: the cat; the dressed cat's bare, Hotdog and Vampire outfits; the fennec; the dressed fennec's bare and hooded outfits; the winged fennec; the woman; and the dressed woman's bare, beach, casual, dress, goth and office outfits. The faces differ in 16 to 73 pixels: a paw or hand at the frame's edge, and on the cat's side view the cream's edge on the cheek a pixel over. Unchanged: the dragon, koi, lizard, toucan, the twin and the dressed twin, the winter fennec and the winter woman, and every hand and foot template close-up.
+
+**Open.** Digits at a quarter add about 60 ms to the bare fennec's front-leg move and 77% to the cat's fresh build. The cat's paws keep small sock flecks. The palm and the rest of a hand at the body's cell show a slightly stepped outline beside the finer fingers in the hand close-up from outside.
+
 ## Risks and open questions
 
 | Risk or question | Recommendation |
 |---|---|
 | The contour on a dual mesh steps at cell scale where the grid runs across the silhouette, where lofted rings ran along it | Judge on the proof's sheets. If it shows, place vertices by relaxation before projection, and if still needed run a pass of isotropic remeshing near the silhouette; failing that, interpolate the contour across faces from per-vertex facing (Hertzmann and Zorin, 2000) and cut the fill to it |
-| The paws' toes and the fingers need finer cells than the body | The adaptive cells in phase 4; bring them into the proof if the paws read lumpy at 0.012 |
+| The paws' toes and the fingers need finer cells than the body | Digits mesh at a quarter of the body's cell (Adaptive cells results) |
 | A torso edit misses 50 ms | Decision 4; member channels make the full-detail rebuild after the drag about a whole build |
 | Linear blend skinning collapses a fillet at deep bends | Judge the walk in the proof; implicit skinning in phase 6 |
 | Coordinates past a member's end ring (a fillet below a leg's first ring) are an extrapolation | They are only read where the member has a share, which ends within its blend; check paint on fillets in the proof |

@@ -58,12 +58,13 @@ internal class ShadingSmoothing(private val mesh: SurfaceMesh, private val fan: 
     }
 
     /**
-     * Each of the mesh's vertices' neighbours along its quads' sides, never across a quad, so smoothing spreads alike every way round:
-     * for each quad round it, in the quads' order, the corner after it and the corner before it.
+     * Each of the mesh's vertices' neighbours along its faces' sides, never across a quad, so smoothing spreads alike every way round:
+     * for each quad, then each triangle standing alone, round it, in order, the corner after it and the corner before it.
      */
     fun link() {
         start = IntArray(corners + 1)
         for (q in 0 until quads) for (k in 0 until 4) start[fan.corner(q, k) + 1] += 2
+        for (s in 0 until fan.singles) for (k in 0 until 3) start[fan.singleCorner(s, k) + 1] += 2
         for (v in 0 until corners) start[v + 1] += start[v]
         links = IntArray(start[corners])
         val filled = IntArray(corners)
@@ -71,6 +72,11 @@ internal class ShadingSmoothing(private val mesh: SurfaceMesh, private val fan: 
             val v = fan.corner(q, k)
             links[start[v] + filled[v]++] = fan.corner(q, (k + 1) % 4)
             links[start[v] + filled[v]++] = fan.corner(q, (k + 3) % 4)
+        }
+        for (s in 0 until fan.singles) for (k in 0 until 3) {
+            val v = fan.singleCorner(s, k)
+            links[start[v] + filled[v]++] = fan.singleCorner(s, (k + 1) % 3)
+            links[start[v] + filled[v]++] = fan.singleCorner(s, (k + 2) % 3)
         }
     }
 

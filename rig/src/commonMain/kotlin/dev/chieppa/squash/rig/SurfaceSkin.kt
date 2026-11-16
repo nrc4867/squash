@@ -39,7 +39,7 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
             val lineage = Lineage(surface)
             runAll(chunked(corners, SKIN_CHUNK) { from, to -> cornerWeights(rig, surface, lineage, from, to, bones, weights) })
             val indices = surface.render.indices
-            val contacts = BooleanArray(mesh.triangleCount / 2)
+            val contacts = BooleanArray(mesh.quadCount)
             runAll(
                 chunked(count - corners, SKIN_CHUNK) { from, to -> middleWeights(indices, corners, from, to, bones, weights) } +
                     chunked(contacts.size, SKIN_CHUNK) { from, to -> for (quad in from until to) contacts[quad] = touching(mesh, lineage, quad) },

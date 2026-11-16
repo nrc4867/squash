@@ -4,7 +4,7 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.surface.SurfaceMesh
-import dev.chieppa.squash.geom.surface.SurfaceMesher
+import dev.chieppa.squash.geom.surface.AdaptiveMesher
 import kotlin.math.abs
 
 /** How far a character's own cell may drift from the one its surface is meshed at before the surface is meshed again whole at the new one. */
@@ -15,22 +15,23 @@ const val COARSE_FACTOR = 2f
 
 /**
  * Builds characters' surfaces, keeping between builds each run's solid and the blocks of the last surface at the full cell and at the
- * coarse one, so a build after an edit meshes again only where the edited member reaches. The cell, [cellShare] of the root's least
+ * coarse one, so a build after an edit meshes again only where the edited member reaches. Digits mesh at finer cells (see
+ * [digitLevels]) in both, the coarse surface's every level at twice the full one's. The cell, [cellShare] of the root's least
  * half-extent (see [fieldOf]), stays the one it started at while the character's own drifts less than a quarter from it, so an edit does
  * not move every cell. The meshers read the field through [reads]. One build at a time.
  */
 class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val reads: FieldReads = CpuFieldReads) {
     private val solids = RunSolids()
     private var cell = 0f
-    private var fine: SurfaceMesher? = null
-    private var coarse: SurfaceMesher? = null
+    private var fine: AdaptiveMesher? = null
+    private var coarse: AdaptiveMesher? = null
 
     /**
      * One build: hand out its batches with [next] until it has none, then read [surface]; or hand out only the mesher's with
      * [nextMeshing], then read [mesh] and finish it apart.
      */
-    inner class Build internal constructor(val field: CharacterField, mesher: SurfaceMesher) {
-        private val run: SurfaceMesher.MeshRun = mesher.begin(field.field)
+    inner class Build internal constructor(val field: CharacterField, mesher: AdaptiveMesher, levels: IntArray) {
+        private val run: AdaptiveMesher.Run = mesher.begin(field.field, levels)
         private var meshed = false
         private var finish: SurfaceFinish? = null
 
@@ -58,11 +59,11 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val read
         val field = fieldOf(character, solids, cellShare) ?: return null
         if (fine == null || abs(field.cell / cell - 1f) > CELL_DRIFT) {
             cell = field.cell
-            fine = SurfaceMesher(cell, reads)
-            coarse = SurfaceMesher(cell * COARSE_FACTOR, reads)
+            fine = AdaptiveMesher(cell, reads)
+            coarse = AdaptiveMesher(cell * COARSE_FACTOR, reads)
         }
         val mesher = checkNotNull(if (dragging) coarse else fine)
-        return Build(CharacterField(field.field, field.runs, mesher.cell), mesher)
+        return Build(CharacterField(field.field, field.runs, mesher.cell), mesher, digitLevels(field))
     }
 
     /** [character]'s surface, built with [runAll] running each batch of work; null when it has no field part. */

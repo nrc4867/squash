@@ -48,9 +48,13 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The lizard has paddle feet with no toes or claws; the koi's tail fin shows two small ink marks near its root ("Koi and lizard results").
 - Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
 
+## Adaptive cells
+
+Digits (a part's row of toes or fingers) mesh at a quarter of the body's cell through `AdaptiveMesher`, closed and manifold across each change, every other run at the body's cell (see "Adaptive cells results"). The fennec's toes and the woman's fingers read as separate digits; the cat's mittens still read as mittens. It costs 43 to 77% on a fresh surface build of a character with digits and about 37 to 60 ms on a bare front-leg or dressed arm move.
+
 ## Next, in order
 
-1. Phase 4, creatures: adaptive cells for toes, fingers and claws; the dragon, toucan and the twin onto one surface; the twin's compare IoU must not drop.
+1. Phase 4, creatures: the dragon, toucan and the twin onto one surface; the twin's compare IoU must not drop.
 2. Phase 5: format 15 migration, the parts build and drawn eyes retired, the HLD rewritten.
 3. Phase 6, joints, only if the walk sheets need it.
 

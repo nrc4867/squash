@@ -180,13 +180,17 @@ class SurfaceChart(val surface: CharacterSurface) {
         return out
     }
 
-    /** Those of [triangles] whose quad has a corner [near] flags, in order. */
+    /** Those of [triangles] whose quad, or itself where it stands alone, has a corner [near] flags, in order. */
     fun trianglesNear(triangles: IntArray, near: BooleanArray): IntArray {
         val out = IntList()
         for (tri in triangles) {
-            val quad = tri / 4
             var any = false
-            for (k in 0 until 4) if (near[indices[(quad * 4 + k) * 3]]) any = true
+            if (indices[tri * 3 + 2] < corners) {
+                for (k in 0 until 3) if (near[indices[tri * 3 + k]]) any = true
+            } else {
+                val quad = tri / 4
+                for (k in 0 until 4) if (near[indices[(quad * 4 + k) * 3]]) any = true
+            }
             if (any) out.add(tri)
         }
         return out.toArray()

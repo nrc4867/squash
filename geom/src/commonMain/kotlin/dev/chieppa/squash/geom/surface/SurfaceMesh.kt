@@ -10,7 +10,8 @@ import kotlin.concurrent.Volatile
  * [parentOwn]); and the [HELD] members with the largest shares of the surface there ([held], -1 for none), each one's share
  * ([heldShares]), where on its run the vertex lies ([heldU], [heldV]) and its own field ([heldOwn]), [HELD] values a vertex. Members are
  * indices into the field meshed. [cell] is the grid's cell size and [blocks] how many blocks it read; [channels] lends what its blocks
- * read to the meshing of a field grown from this one.
+ * read to the meshing of a field grown from this one. The first [quadCount] pairs of [triangles] are each a quad's two triangles, its
+ * corners in order at the pair's indices 0, 1, 4 and 5; the triangles after them stand alone, where cells of two sizes meet.
  */
 class SurfaceMesh(
     val cell: Float,
@@ -31,6 +32,7 @@ class SurfaceMesh(
     val channels: ChannelSource? = null,
     internal val blockKeys: LongArray = LongArray(0),
     internal val blockStarts: IntArray = IntArray(1),
+    val quadCount: Int = triangles.size / 6,
 ) {
     /**
      * How this mesh differs from the one its mesher made before it, null where there was none: each vertex's place in that mesh where

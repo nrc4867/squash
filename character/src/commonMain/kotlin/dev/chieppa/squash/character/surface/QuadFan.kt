@@ -5,16 +5,23 @@ import dev.chieppa.squash.geom.surface.SurfaceMesh
 /**
  * A mesh's quads, each two of its triangles, cut instead into four triangles round a new vertex at the quad's middle, so that light and
  * shade read across a quad the same whichever way its diagonal ran: the mesh's [SurfaceMesh.vertexCount]
- * vertices first, then one a quad. A middle vertex takes the mean of its four corners' values.
+ * vertices first, then one a quad. A middle vertex takes the mean of its four corners' values. The mesh's triangles that stand alone
+ * follow the quads' four each in [triangles] as they are, with no middle.
  */
 class QuadFan(mesh: SurfaceMesh) {
     /** How many vertices the mesh had, and how many the fan has. */
     val corners = mesh.vertexCount
-    val count: Int = corners + mesh.triangleCount / 2
+    val count: Int = corners + mesh.quadCount
+
+    /** How many of the mesh's triangles stand alone. */
+    val singles: Int = mesh.triangleCount - mesh.quadCount * 2
 
     /** Each middle vertex's four corners, in order round its quad. */
     private val around = IntArray((count - corners) * 4)
-    val triangles = IntArray((count - corners) * 12)
+    val triangles = IntArray((count - corners) * 12 + singles * 3).also { out ->
+        val from = mesh.quadCount * 6
+        mesh.triangles.copyInto(out, (count - corners) * 12, from, from + singles * 3)
+    }
 
     /** Each vertex's place: the mesh's own at once, each middle's once [build] and then [fill] have set it. */
     val positions: FloatArray
@@ -32,6 +39,9 @@ class QuadFan(mesh: SurfaceMesh) {
             for (k in 0 until 4) for (c in 0 until 3) triangles[q * 12 + k * 3 + c] = triangleCorner(q * 4 + k, c)
         }
     }
+
+    /** Corner [c] of the mesh's triangle [s] that stands alone. */
+    fun singleCorner(s: Int, c: Int): Int = meshTriangles[(count - corners) * 6 + s * 3 + c]
 
     /** Corner [k] of quad [q], read from the mesh, so it is known before [build]. */
     fun corner(q: Int, k: Int): Int = meshTriangles[q * 6 + QUAD_CORNERS[k]]

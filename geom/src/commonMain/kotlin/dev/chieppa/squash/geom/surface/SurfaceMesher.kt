@@ -31,24 +31,36 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
     private var field: JoinedField? = null
     private var kept: SurfaceMesh? = null
     private var generation = reads.generation
+    private var region = MeshRegion.ALL
+
+    /** The blocks the last run kept, for joining this mesher's surface to a finer or coarser one's. */
+    internal val keptBlocks: Map<Long, SurfaceBlock> get() = blocks
+
+    internal val keptGrid: BlockGrid get() = grid
 
     /**
      * A run meshing [next]: hand out its batches of work with [MeshRun.next], each batch's pieces independent of one another, until it
      * has none, then read [MeshRun.mesh]. The mesher keeps what the run made only once the run is done. A grown member a block has not
-     * kept reads its channel from [lent], when given on this grid, where that holds its solid's.
+     * kept reads its channel from [lent], when given on this grid, where that holds its solid's. Only the blocks [within] names are meshed.
      */
-    fun begin(next: JoinedField, lent: ChannelSource? = null): MeshRun {
+    fun begin(next: JoinedField, lent: ChannelSource? = null, within: MeshRegion = MeshRegion.ALL): MeshRun {
         if (reads.generation != generation) {
             generation = reads.generation
             blocks = emptyMap()
             field = null
             kept = null
         }
-        return MeshRun(next, lent?.takeIf { it.cell == cell && it.generation == generation })
+        val changed = if (within == region) emptySet() else within.changedFrom(region, grid)
+        return MeshRun(next, lent?.takeIf { it.cell == cell && it.generation == generation }, within, changed)
     }
 
     /** One run of the mesher over a field. */
-    inner class MeshRun internal constructor(private val next: JoinedField, private val lent: ChannelSource?) {
+    inner class MeshRun internal constructor(
+        private val next: JoinedField,
+        private val lent: ChannelSource?,
+        private val within: MeshRegion,
+        private val regionChanged: Set<Long>,
+    ) {
         private val index: Map<MemberKey, Int> = next.members.withIndex().associate { (i, m) -> m.key to i }
         private val map = HashMap(blocks)
         private val fresh = HashSet<Long>()
@@ -92,6 +104,7 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
                         pendingSet = dirty
                         val last = kept
                         if (pending.isEmpty() && last != null) {
+                            region = within
                             field = next
                             done = last
                             stage = Stage.DONE
@@ -171,6 +184,7 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
                     Stage.FINISH -> {
                         val mesh = checkNotNull(assembly).mesh()
                         blocks = map
+                        region = within
                         field = next
                         kept = mesh
                         done = mesh
@@ -188,7 +202,10 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
             val before = keys.map { map[it] }
             val rounds = ReadRounds(reads, next.members, keys.size, if (reads.gathers) GATHERED_CHUNK else 1) { i ->
                 val key = keys[i]
-                val block = BlockReading.read(this, grid, next, index, key, blocks[key], forcedAll || key in forced, lent, exact = key in exact)
+                val block = if (!within.meshes(grid, key)) null else BlockReading.read(
+                    this, grid, next, index, key, blocks[key], forcedAll || key in forced, lent, exact = key in exact,
+                    coarser = within.coarserBeside(grid, grid.bx(key), grid.by(key), grid.bz(key)), excluded = within.excluded(grid, key),
+                )
                     results[i] = block
                     if (block != null) {
                         block.needed = BlockReading.neighboursNeeded(grid, block)
@@ -218,8 +235,8 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
         /** Blocks next to a read block across a face the surface crosses that the run holds none of. */
         private fun missingNeighbours(): List<Long> {
             val missing = HashSet<Long>()
-            pending.forEachIndexed { i, key -> for (n in needs[i]) if (n !in map && n !in forced) missing += n }
-            for (key in pending) if (key !in map) around(key) { n ->
+            pending.forEachIndexed { i, key -> for (n in needs[i]) if (n !in map && n !in forced && within.meshes(grid, n)) missing += n }
+            for (key in pending) if (key !in map && within.meshes(grid, key)) around(key) { n ->
                 val block = map[n]
                 if (block != null && n !in pendingSet && key in block.needed && key !in forced) missing += key
             }
@@ -257,6 +274,7 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
                 next.members.forEachIndexed { i, member -> addBox(member, next.reaches[i] + margin, keys) }
                 return keys
             }
+            for (key in regionChanged) if (key in map || within.meshes(grid, key)) keys += key
             val before = last.members.withIndex().associate { (i, m) -> m.key to i }
             val near = grid.halfDiagonal + grid.cell
             next.members.forEachIndexed { i, member ->
@@ -281,7 +299,21 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
          */
         private fun addBox(member: JoinedMember, grow: Float, into: MutableSet<Long>, keptOnly: Boolean = false) {
             val g = Vec3(grow, grow, grow)
-            grid.blocksIn(member.low - g, member.high + g) { if (!keptOnly || it in map) into += it }
+            val low = member.low - g
+            val high = member.high + g
+            val inside = within.inside
+            val count = (grid.blockOf(high.x) - grid.blockOf(low.x) + 1).toLong() * (grid.blockOf(high.y) - grid.blockOf(low.y) + 1) *
+                (grid.blockOf(high.z) - grid.blockOf(low.z) + 1)
+            if (inside != null && inside.size < count) {
+                for (key in inside) {
+                    if (grid.bx(key) !in grid.blockOf(low.x)..grid.blockOf(high.x) || grid.by(key) !in grid.blockOf(low.y)..grid.blockOf(high.y) ||
+                        grid.bz(key) !in grid.blockOf(low.z)..grid.blockOf(high.z)
+                    ) continue
+                    if ((!keptOnly || key in map) && within.meshes(grid, key)) into += key
+                }
+                return
+            }
+            grid.blocksIn(low, high) { if ((!keptOnly || it in map) && within.meshes(grid, it)) into += it }
         }
     }
 

@@ -61,7 +61,7 @@ fun hangingPushed(garment: SurfaceGarment, moved: CharacterSurface, body: Charac
     val width = RenderMesh.FLOATS_PER_VERTEX
     for (v in 0 until corners) for (a in 0 until 3) vertices[v * width + a] = placed[v * 3 + a]
     val triangles = moved.mesh.triangles
-    for (quad in 0 until triangles.size / 6) {
+    for (quad in 0 until moved.mesh.quadCount) {
         val middle = corners + quad
         if (middle * width >= vertices.size) break
         for (a in 0 until 3) {

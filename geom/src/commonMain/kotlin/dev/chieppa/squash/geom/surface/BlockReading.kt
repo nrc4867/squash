@@ -24,7 +24,8 @@ internal object BlockReading {
      * Null where nothing lies near, or, unless [forced], where its middle lies too far from the surface for the surface to cross it; [kept]
      * itself, or a copy of it bound to [field], where nothing it holds has changed. A grown member [kept] does not hold takes what [lent]
      * holds of its solid in place of reading it there. An [exact] block reads every member whose box lies within reach of it at every grid
-     * point, standing in for nothing, so its values hold however fast a field changes.
+     * point, standing in for nothing, so its values hold however fast a field changes. The grid points it shares with the blocks
+     * [coarser] names are blended from the coarser grid's (see [CoarserFaces]), and the cells of its [excluded] octants hold no surface.
      */
     suspend fun read(
         ask: FieldAsk,
@@ -36,6 +37,8 @@ internal object BlockReading {
         forced: Boolean,
         lentChannels: ChannelSource? = null,
         exact: Boolean = false,
+        coarser: Int = 0,
+        excluded: Int = 0,
     ): SurfaceBlock? {
         val kept = keptBlock.takeUnless { exact }
         val lent = lentChannels.takeUnless { exact }
@@ -135,11 +138,13 @@ internal object BlockReading {
             kepts[s] ?: SubBlocks.channel(ask, checkNotNull(reading[s]), far, middles.copyOfRange(s * SUBS, s * SUBS + SUBS), froms[s], helds[s], grid)
         }
         block.far = far
-        if (kept != null && kept.far == far && kept.keys.contentEquals(block.keys) && kept.relevance.contentEquals(block.relevance) &&
+        if (kept != null && kept.coarser == coarser && kept.excluded == excluded && kept.far == far && kept.keys.contentEquals(block.keys) && kept.relevance.contentEquals(block.relevance) &&
             kept.shareRelevance.contentEquals(block.shareRelevance) && block.channels.indices.all { block.channels[it] === kept.channels[it] }
         ) {
             return if (kept.members.contentEquals(block.members)) kept else kept.copy(placing = false).also { it.bind(field, index) }
         }
+        block.coarser = coarser
+        block.excluded = excluded
         block.findCells(grid)
         return block
     }

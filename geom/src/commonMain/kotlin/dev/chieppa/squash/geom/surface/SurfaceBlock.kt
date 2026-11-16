@@ -50,6 +50,15 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
 
     var corners = FloatArray(BLOCK_CORNERS)
 
+    /**
+     * Which of the 26 blocks round this one mesh at a coarser cell, as bits of [MeshRegion.besideBit]: the grid points this block shares
+     * with them take the field blended from the coarser grid's points (see [findCells]).
+     */
+    var coarser = 0
+
+    /** Which of the block's octants a finer mesher meshes, as bits of [octantOf]: their cells hold no vertex here. */
+    var excluded = 0
+
     /** The blocks beside this one across a face the surface crosses (see [BlockReading.neighboursNeeded]). */
     var needed: List<Long> = emptyList()
 
@@ -103,6 +112,8 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
         b.blends = blends
         b.reaches = reaches
         b.corners = corners
+        b.coarser = coarser
+        b.excluded = excluded
         b.needed = needed
         b.edgeSheets = edgeSheets
         b.cellFirst = cellFirst
@@ -149,9 +160,13 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
         reaches = FloatArray(keys.size) { s -> members[s].let { if (it >= 0) field.reaches[it] else 0f } }
     }
 
-    /** Fills [corners] from the channels, finds each cell's sheets and starts a vertex for each at the mean of its crossings. */
+    /**
+     * Fills [corners] from the channels, those shared with a [coarser] block blended from the coarser grid's points, finds the sheets of
+     * each cell outside the [excluded] octants and starts a vertex for each at the mean of its crossings.
+     */
     fun findCells(grid: BlockGrid) {
         for (c in 0 until BLOCK_CORNERS) corners[c] = joinedAt(c)
+        if (coarser != 0) CoarserFaces.blend(corners, coarser)
         val values = FloatArray(CellTables.CORNERS)
         val sheetsOf = IntArray(BLOCK_CELLS)
         var total = 0
@@ -160,7 +175,12 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
             for (c in 0 until CellTables.CORNERS) {
                 values[c] = corners[BlockGrid.corner(ci + CellTables.cornerX(c), cj + CellTables.cornerY(c), ck + CellTables.cornerZ(c))]
             }
-            val sheets = CellTables.components(values, edgeSheets, cell * CellTables.EDGES)
+            val sheets = if (excluded != 0 && excluded shr octantOf(ci, cj, ck) and 1 == 1) {
+                edgeSheets.fill(-1, cell * CellTables.EDGES, (cell + 1) * CellTables.EDGES)
+                0
+            } else {
+                CellTables.components(values, edgeSheets, cell * CellTables.EDGES)
+            }
             sheetsOf[cell] = sheets
             if (sheets > 0) {
                 cellFirst[cell] = total
@@ -246,6 +266,9 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
     }
 
     companion object {
+        /** The octant of a block cell ([ci], [cj], [ck]) lies in, 0 to 7. */
+        fun octantOf(ci: Int, cj: Int, ck: Int): Int = ci / (BLOCK / 2) + 2 * (cj / (BLOCK / 2)) + 4 * (ck / (BLOCK / 2))
+
         /** The octants a block is cut into, each four cells a side. */
         const val OCTANT_COUNT = 8
 

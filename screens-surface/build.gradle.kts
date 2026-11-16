@@ -18,6 +18,8 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+    // The examples' surfaces mesh their digits at a quarter of the body's cell; the suite's sessions hold them past the default heap.
+    maxHeapSize = "1g"
     val templates = rootProject.layout.projectDirectory.dir("templates")
     inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.templates", templates.asFile.path)

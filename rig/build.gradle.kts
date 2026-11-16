@@ -24,6 +24,8 @@ kotlin {
 }
 
 tasks.withType<Test>().configureEach {
+    // The examples' surfaces mesh their digits at a quarter of the body's cell; the suite's sessions hold them past the default heap.
+    maxHeapSize = "1g"
     val examples = rootProject.layout.projectDirectory.dir("examples")
     inputs.dir(examples).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.examples", examples.asFile.path)
