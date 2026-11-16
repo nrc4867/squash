@@ -14,8 +14,8 @@ import dev.chieppa.squash.document.SlotName
 
 val GINGER = SlotName("ginger")
 val STRIPE = SlotName("stripe")
-/** The white: the plan's base slot, which a part or patch given no other colour shows, so the paws' toes are white too. */
-val WHITE = SlotName("fur")
+/** The white of the chest, the muzzle and the paws. */
+val WHITE = SlotName("white")
 val PAD_PINK = SlotName("pad")
 val CLAW_SLOT = SlotName("claw")
 val NOSE_PINK = SlotName("nose")

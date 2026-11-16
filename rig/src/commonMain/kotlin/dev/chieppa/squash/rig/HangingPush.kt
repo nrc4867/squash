@@ -23,7 +23,8 @@ private const val PUSH_FACTOR = 0.5f
  * [CLEAR_EASES] of its ease outside the body's surface, where
  * that surface is a part the garment does not cover, is moved out along the body's normal there until it clears it, the push eased over
  * the garment's quads so the cloth moves as one sheet. Its lines read normals turned as the push turns the cloth, so its contour follows
- * the pushed silhouette; its shading keeps the posed normals. A garment with no branch hanging free, or nothing inside it, is left as it is.
+ * the pushed silhouette; its shading keeps the posed normals. A garment with no branch hanging over its part, or nothing inside it, is left
+ * as it is.
  */
 fun hangingPushed(garment: SurfaceGarment, moved: CharacterSurface, body: CharacterSurface): CharacterSurface {
     if (!garment.cover.hanging) return moved
@@ -74,17 +75,19 @@ fun hangingPushed(garment: SurfaceGarment, moved: CharacterSurface, body: Charac
 
 /**
  * The body's vertices held most by a part [garment] does not cover that hangs inside it: a part on a socket within the range of a branch
- * hanging free, or a part on such a part.
+ * that hangs over what comes out of its part (see [dev.chieppa.squash.character.surface.WornCover.hangsOver]), or a part on such a part.
  */
 private fun hangingInside(garment: SurfaceGarment, body: CharacterSurface): IntArray {
     val runs = body.field.runs
     val covered = garment.cover.branches.keys
+    val hangs = garment.cover.hangsOver
     val parts = runs.map { it.part }.distinctBy { it.id }
     val under = HashSet<PartId>()
     for (part in parts) {
         val spec = part.socketSpec ?: continue
-        val branch = part.socket?.parent?.let { garment.cover.branchOf(it) } ?: continue
-        if (branch.allRound && (branch.from < 0f || branch.to > 1f) && spec.u in branch.from..branch.to) part.id?.let { under += it }
+        val parent = part.socket?.parent ?: continue
+        val branch = garment.cover.branchOf(parent) ?: continue
+        if (parent in hangs && spec.u in branch.from..branch.to) part.id?.let { under += it }
     }
     var grew = true
     while (grew) {

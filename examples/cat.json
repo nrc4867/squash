@@ -544,7 +544,7 @@
                                         "v": 0.84
                                     }
                                 ],
-                                "slot": "fur"
+                                "slot": "white"
                             },
                             {
                                 "id": "stripe-1-l",
@@ -1326,7 +1326,7 @@
                                         "v": 0.64
                                     }
                                 ],
-                                "slot": "fur"
+                                "slot": "white"
                             },
                             {
                                 "id": "chin",
@@ -1367,7 +1367,7 @@
                                         "v": 0.7
                                     }
                                 ],
-                                "slot": "fur"
+                                "slot": "white"
                             },
                             {
                                 "id": "brow-1-l",
@@ -2896,7 +2896,7 @@
                     "height": 0.16
                 },
                 "surface": {
-                    "baseSlot": "fur"
+                    "baseSlot": "white"
                 }
             },
             "back-paws": {
@@ -2911,7 +2911,7 @@
                     "height": 0.16
                 },
                 "surface": {
-                    "baseSlot": "fur"
+                    "baseSlot": "white"
                 }
             }
         },
@@ -2934,7 +2934,7 @@
                     }
                 },
                 {
-                    "name": "fur",
+                    "name": "white",
                     "color": {
                         "red": 0.99,
                         "green": 0.96,
@@ -3049,10 +3049,10 @@
                     "highlightSize": 0.36,
                     "lashes": false,
                     "brow": false,
-                    "white": "fur",
+                    "white": "white",
                     "iris": "iris",
                     "pupil": "ink",
-                    "highlight": "fur",
+                    "highlight": "white",
                     "ink": "ink"
                 },
                 "front": {
@@ -3070,10 +3070,10 @@
                     "highlightSize": 0.36,
                     "lashes": false,
                     "brow": false,
-                    "white": "fur",
+                    "white": "white",
                     "iris": "iris",
                     "pupil": "ink",
-                    "highlight": "fur",
+                    "highlight": "white",
                     "ink": "ink"
                 }
             }

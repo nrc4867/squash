@@ -47,11 +47,12 @@ fun surfaceCovers(character: Character): List<GarmentCover> =
 
 /**
  * Each garment of [covers] grown from the body [meshed] meshes, built by a [GarmentBuilder] the node keeps, each batch of its work run in
- * parallel on the graph's dispatcher, a stale run stopping between batches. It needs the body's mesh only, so it runs beside the body's
+ * parallel on the graph's dispatcher, a stale run stopping between batches, then its own shapes painted on it ([GarmentPaints]). It needs the body's mesh only, so it runs beside the body's
  * finishing. Its fields are read through [reads]. See [SurfaceGarment].
  */
 fun Graph.surfaceGarmentsNode(meshed: Node<*, HeldMesh>, covers: Flow<List<GarmentCover>>, reads: FieldReads = CpuFieldReads): Node<*, HeldGarments> {
     val builder = GarmentBuilder(reads)
+    val paints = GarmentPaints()
     val lock = Mutex()
     return gather(covers, { mapOf(Unit to meshed) }, cacheSize = KEPT_BUILDS, stage = BuildStages.ASSEMBLY) { gathered ->
         val body = gathered.values.getValue(Unit).meshed ?: return@gather HeldGarments(null)
@@ -62,7 +63,7 @@ fun Graph.surfaceGarmentsNode(meshed: Node<*, HeldMesh>, covers: Flow<List<Garme
                 currentCoroutineContext().ensureActive()
                 IN_PARALLEL(build.next() ?: break)
             }
-            HeldGarments(build.garments)
+            HeldGarments(paints.painted(build.garments, IN_PARALLEL))
         }
     }
 }

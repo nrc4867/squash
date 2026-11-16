@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.PartColor
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.PaintLayer
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfacePaint
 import dev.chieppa.squash.character.surface.SurfaceSection
@@ -57,25 +58,28 @@ fun surfaceDraw(
     }
     val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
-    val layers = sides +
-        shownLayers.flatMap { layer ->
-            val layerLit = palette.colorOf(layer.slot) ?: fallback.base
-            if (layer.flat) return@flatMap listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit), shape = layer.shape))
-            val layerOwn = palette.shadowOf(layer.slot)
-            listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera))) +
-                sideLayers(layer.mesh, layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)
-        }
+    val layers = sides + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
     return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = layers)
 }
 
-/** Each garment of [dress] as a fill in its color slot, shaded and darkened on a far side as the surface is. */
+/** Each garment of [dress] as a fill in its color slot, then its own paint's layers, shaded and darkened on a far side as the surface is. */
 fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3): List<MeshDraw> = dress.garments.map { garment ->
     val slot = garment.cover.garment.color
     val lit = palette.colorOf(slot) ?: fallback.base
     val own = palette.shadowOf(slot)
     val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
     val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
-    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = sides)
+    val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
+    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = sides + painted)
+}
+
+/** One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat. */
+private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3): List<ColorLayerDraw> {
+    val layerLit = palette.colorOf(layer.slot) ?: fallback.base
+    if (layer.flat) return listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit), shape = layer.shape))
+    val layerOwn = palette.shadowOf(layer.slot)
+    return listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera))) +
+        sideLayers(layer.mesh, layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)
 }
 
 /** [mesh] darkened as each side of the body's plane shows from [toCamera], by each vertex's share of that side, [positive] and [negative]. */

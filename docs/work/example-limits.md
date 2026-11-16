@@ -21,8 +21,8 @@ Each entry: what falls short, where it comes from, and the feature that would cl
 12. **Curves.** The bust is only the torso's Side outline standing forward across its whole width: no separation, nothing from the front but shading. A front section is one shape for the whole part (`views.front: section`), so the chest cannot have a different section from the waist. Fix: sections drawn at several places along a part.
 13. **One hinge a joint.** Every joint turns about one axis (`HandJoints` hinge x, y or z), so a raised arm swings forward across the face rather than out to the side; a pose's lean and turn reach across the hinge only as far as the tip's nearer limit, unless the bone is free, as the woman's display pose frees her elbows to turn her palms in. A tube's own root joint keeps the template's limits (±60), so a hand-made shoulder sits just below it. Fix: ball joints, or two hinges a joint.
 
-14. **Garments on a body on all fours.** Found dressing the cat (`examples/cat-dressed.json`, fixtures under `screens-core/src/testFixtures/kotlin/dev/chieppa/squash/screens/cat/`). A branch part of the way round (`fromV` to `toV` under 1) reads neither its drawn Side and Top outlines nor a range past its part's ends: its shell is the grown run at its ease alone, so a cape open under the belly cannot flare or trail past the rump, and a bun open over the back cannot be drawn rounder or longer than the body. A branch the whole way round that runs past the rump of a torso resting forward hangs free, and its hem flare, a cone hinged at the branch's top, spreads into a sheet wider than the character. A branch's own surface work (marks, regions) is not painted, only its base slot, so a mustard squiggle down a sausage cannot be drawn on it. The torso's Front section shapes every garment over it, so a bun takes the body's section. Fix: shells for open branches; hanging read along the body's own down rather than the torso's axis; garment surface work painted; a section drawn per branch.
-15. **A paw's toes take the plan's base slot.** On a one surface the `paw` 5 toes' run paints the plan's base palette slot where the part's base slot is another, so a white paw on a ginger cat shows ginger specks between its toes; filling the paw's `toes` area hides the specks and the beans with them. The cat names its white slot `fur`, the canine plan's base, so both agree. Fix: the toes' run reads the part's base slot.
+14. **Garments on a body on all fours.** Found dressing the cat (`examples/cat-dressed.json`, fixtures under `screens-core/src/testFixtures/kotlin/dev/chieppa/squash/screens/cat/`). A branch part of the way round reads its drawn Side, Top and Front outlines and a range past its part's ends as a shell built the whole way round and cut by its v range, so the cape flares and trails past the rump and the bun is drawn rounder and longer than the body; past a level end a drawing sets its size exactly and closes where it ends. Cloth hangs and flares only past an end that points down, and an open branch with a shell is pushed out of the legs and tail in each pose. A branch's regions and brush strokes are painted on it, so the mustard is a stroke. Still missing: a branch's own marks are not drawn; an open garment is one sheet, so a bun's rim has no thickness and reads as a cut edge; a range running on past where its drawing ends closes to a point and leaves a speck of ink, so a drawn branch's range ends with its drawing; a hole cut round a leg far below its root is ragged, so the bun hides the legs inside it instead. Fix: marks on garments; a rolled rim on an open edge.
+15. **Specks where a paw's runs meet.** On a one surface a part whose base slot differs from the root's is painted run by run, each run's layer kept to its own section, and where three runs meet between a `paw` 5's merged toes the sections leave a few specks of the root's slot (a ginger dot or two on the cat's white paws, about a pixel across at close-up size). The paw's toes paint the paw's own base slot: the cat's white is a slot of its own. Fix: a part's base painted over the union of its runs' sections.
 
 ## What the template-free route could not do
 
@@ -177,10 +177,37 @@ Read while building the person and the woman as one surface with painted eyes:
 
 Read while building the cat and dressing it:
 
+- `character/.../surface/GarmentCover.kt` and `geom/.../ShellBuilder.kt`: where a garment's drawing is read in the part's own x (negative past the rump), that the range must run past the drawing's end for a drawn end to close, and that the shell is cut by the branch's v range (entry 14). A garment reference with a drawn example of each would have done.
+- `app/.../look` renders only from the front, three-quarter and side, so judging a cape's trail and a bun's opening wanted a test printing the garment mesh's extent and coverage; a top and a back view in `look`'s defaults would have done.
+- `fennec/FennecMarks.kt`: the drawn three-quarter eye's place, lid, iris, brow and lash numbers, to set the painted eye's defaults to them. A face reference listing each example's eye drawing in numbers would have done.
+- `fennec/FennecDressed.kt`: the ids of the body slot and the sweater, to make an outfit of the sweater alone. A `measure` or reference line listing an example's garments, slots and outfits would have done.
+- The fennec test's `fennec/FennecPoses.kt`: the walk's bones and angles (the leg pairs' `hip` and `knee`, the tail's `root`, the head's `neck`), spread here over four moments of a stride. A list of each example's bone names in the skill would have done.
+
+### The fennecs on one surface
+
+Read while building the fennec, the dressed fennec and the winged fennec as one surface:
+
+- `fennec/FennecMarks.kt`: the front angle version of the drawn eye (its size, roundness and iris), to set the painted eye's front look to it. The same face reference as above, listing each angle version, would have done.
+- `PartTemplate.kt`, `Enums.kt` (`SurfaceMethod`) and `CharacterField.kt`: which templates stay separate pieces (`"surface": "separate"`) and how a template says so, to keep the winged fennec's feathered wings as pieces. A reference line listing each template's surface setting would have done.
+
+### The person and the woman on one surface
+
+Read while building the person and the woman as one surface with painted eyes:
+
+- `character/.../face/StarterFace.kt`: the person's drawn eyes are Add eyes' starter eyes, so their lid's half width and height and the pupil's share are the painted eye's starting numbers. A face reference listing each example's eye drawing in numbers would have done.
+- `character/.../surface/SurfaceEyes.kt`, `EyeShapes.kt`: that a painted eye's lengths are shares of the head's u and v at its middle, its width along u and its height along v on a head facing along its axis, and across v and up u on an upright head, so a round iris on the woman's head needs a height about one and a half times its width; that `frontNarrowing` narrows the back corner when positive; and that a shape smaller than about a cell, such as a small pupil or highlight, paints as a jagged patch or not at all. A reference for the eye's parameters, drawn on a head of each kind, would have done.
+- `character/.../surface/CharacterSurface.kt`, `build/StripJoin.kt`: that a one-surface join is inked unless its part's `join.ink` parameter is 0, so the woman's neck, wrists, ankles and hips needed it set to draw as her parts did. The parameter reference.
+- `character/.../surface/SurfacePaint.kt`, `ChartEasing.kt`, with a printout of the head's shares: why the woman's lips and blush did not paint. Her hair's blob lay over the skull with the default socket blend, so the hair held a third of every face vertex and the face's paint was eased away; a narrow blend at the hairline (`SetSocketBlend`) keeps the face the head's. A measure line printing each part's largest share over its own section would have said it.
+- `character/.../surface/Coverage.kt`, `GarmentField.kt`: that a garment reads a part's branch only on its first run, so the sandal over the person's `foot` 2, whose heel block comes before its body, covered only the heel. The first run is now the body run where a part has one.
+
+### The cat
+
+Read while building the cat and dressing it:
+
 - `character/.../surface/GarmentCover.kt`: why the cape's and the bun's drawn outlines changed nothing; a branch's shell solid is built only for a branch the whole way round (entry 14). A garment reference saying which branch fields an open branch reads would have done.
 - `character/.../build/Dressing.kt` (`garmentColors`): that a branch's surface work is not painted, only its base slot, so the mustard became owned beads (entry 14). The same reference.
 - `fennec/FennecMarks.kt`, `fennec/FennecColor.kt`: the head template's muzzle patch and how marks and regions anchor on it, for the whiskers, mouth and fangs. A reference drawing each template's patches and their u and v would have done.
-- No code was read for the eye: renders placed it, after a first try on the skull's side (v 0.20) was not seen from the front; on the canine `head`, an eye seen from the front sits near the muzzle's root (u 0.72, v 0.17).
+- No code was read for the eye: renders placed it, after a first try on the skull's side (v 0.20) was not seen from the front; on the canine `head`, an eye seen from the front sits near the muzzle's root (u 0.68, v 0.14); further toward the muzzle (u 0.72) the anchor lies inside the muzzle's blend and lands on the muzzle's flank, near the nose from the side.
 
 ### The toucan and the dragon on one surface
 

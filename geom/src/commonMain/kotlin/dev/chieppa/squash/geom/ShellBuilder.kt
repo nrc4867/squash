@@ -21,8 +21,18 @@ private const val PAST_POLE = 1e-3f
  */
 class Shell(val patch: Patch, val bodyRings: IntArray, val bodyColumns: IntArray)
 
-/** How a shell ring is pushed out past its ease: a height or width it must reach and how far its centre moves to meet it. */
-data class ShellReach(val height: Float? = null, val width: Float? = null, val up: Float = 0f, val side: Float = 0f)
+/**
+ * How a shell ring is pushed out past its ease: a height or width it must reach and how far its centre moves to meet it, and a [section]
+ * of its own in place of the body's, null to keep the body's; [outside] when the ring lies past every end of a drawing that sets its size.
+ */
+data class ShellReach(
+    val height: Float? = null,
+    val width: Float? = null,
+    val up: Float = 0f,
+    val side: Float = 0f,
+    val section: ClosedSpline? = null,
+    val outside: Boolean = false,
+)
 
 /** Builds shells over a body's slices. See HLD: data-model, Garments. */
 object ShellBuilder {
@@ -30,7 +40,9 @@ object ShellBuilder {
      * A shell named [name] over [body] from [from] to [to] in u in [rings] rings, each the body's slice there grown by
      * [ease] on every side. Past either end of [body] the shell carries on along its end slice's frame at the size of the ring nearest
      * that end that is not a pole, unless [closeOnPoles] and that end is a pole the shell runs past: then it ends on the pole, its rings drawing closer
-     * together toward it. [reach] may take a ring further out, never further in than the ease. A pole of the body stays a pole.
+     * together toward it. [reach] may take a ring further out, never further in than the ease, and give it a section of its own. A pole of the body stays a pole.
+     * Past the start, when [drawnPastStart], and past the end, when [drawnPastEnd], no body lies under a ring to hold it open: it takes
+     * the drawn size exactly, smaller than the ease too, and closes to a point outside the drawing, so a drawn end rounds off.
      * From [fromV] to [toV] round it, a span under 1, the shell is open round, its columns evenly spaced over that span and as many
      * as the body's over it, plus one. [body] must be swept.
      */
@@ -45,6 +57,8 @@ object ShellBuilder {
         fromV: Float = 0f,
         toV: Float = 1f,
         closeOnPoles: Boolean = false,
+        drawnPastStart: Boolean = false,
+        drawnPastEnd: Boolean = false,
     ): Shell {
         val slices = requireNotNull(body.slices) { "Patch ${body.name} is not swept" }
         require(rings >= 2) { "A shell needs two rings, not $rings" }
@@ -58,7 +72,13 @@ object ShellBuilder {
             val u = start + (end - start) * spacing(i.toFloat() / (rings - 1), closesAtStart, closesAtEnd)
             bodyRings[i] = nearestRing(slices, u)
             val under = sliceAt(slices, u, perU, closesAtStart, closesAtEnd)
-            if (under.isPole) under else grownBy(under, ease, reach(under.copy(height = under.height + 2f * ease, width = under.width + 2f * ease)))
+            val drawnPast = (drawnPastStart && u < slices.first().u) || (drawnPastEnd && u > slices.last().u)
+            val reached = if (under.isPole) null else reach(under.copy(height = under.height + 2f * ease, width = under.width + 2f * ease))
+            when {
+                reached == null -> under
+                drawnPast -> drawnTo(under, ease, reached)
+                else -> grownBy(under, ease, reached)
+            }
         }
         if (toV - fromV >= 1f) return Shell(SliceBuilder.loft(name, grown, body.nv), bodyRings, IntArray(body.nv) { it })
         val columns = ceil((toV - fromV) * body.nv).toInt().coerceAtLeast(1) + 1
@@ -94,7 +114,17 @@ object ShellBuilder {
         val side = if (width > eased.width) reach.side else 0f
         val frame = eased.frame
         val center = frame.center + frame.up * up + frame.side * side
-        return eased.copy(frame = frame.copy(center = center), height = height, width = width)
+        return eased.copy(frame = frame.copy(center = center), height = height, width = width, section = reach.section ?: eased.section)
+    }
+
+    /** [slice] grown by [ease] and then set to the drawn size [reach] gives it, or closed to a point outside the drawing. */
+    private fun drawnTo(slice: Slice, ease: Float, reach: ShellReach): Slice {
+        val eased = slice.copy(height = slice.height + 2f * ease, width = slice.width + 2f * ease, section = reach.section ?: slice.section)
+        if (reach.outside) return eased.copy(height = 0f, width = 0f)
+        val frame = eased.frame
+        val up = if (reach.height != null) reach.up else 0f
+        val side = if (reach.width != null) reach.side else 0f
+        return eased.copy(frame = frame.copy(center = frame.center + frame.up * up + frame.side * side), height = reach.height ?: eased.height, width = reach.width ?: eased.width)
     }
 
     /** The body's slice at [u]: between its two neighbours, or carried on from the end slice past either end. */

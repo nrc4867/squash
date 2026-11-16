@@ -2,6 +2,8 @@ package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.build.SHELL_PAST
+import dev.chieppa.squash.character.build.endPointsDown
 import dev.chieppa.squash.character.build.branchOver
 import dev.chieppa.squash.character.build.throughHoles
 import dev.chieppa.squash.document.Character
@@ -9,8 +11,6 @@ import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
 
-/** How far past each end of its range, in its part's u, a branch drawn or hanging free is built, so its hem is cut along its wall. */
-private const val SHELL_PAST = 0.08f
 
 /** How near an end of its parent's run, in u, a part's socket lies for the part to come out through that end. */
 private const val END_SOCKET = 0.02f
@@ -43,8 +43,10 @@ data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentB
  * each part that comes out through it with a cuff, a cuff branch from inside the garment to past where the part comes out by the cuff's
  * size, the parts in [cuffs]; [holes], the parts that come out through its wall with none, which open the garment where they lie inside
  * it; [openEnds], for each part, the ends of it (low, high) a branch reaches through which a part the garment does not cover comes out;
- * and [shells], each branch the garment draws standing off its ease or hanging free past its part's end, as its shell over its part;
- * [piece], the part at the root of this piece where the garment is worn in pieces that meet nowhere (see [pieces]), else null.
+ * and [shells], each branch the garment draws standing off its ease or running past its part's end ([drawsShell]), as its shell the whole
+ * way round its part, which coverage cuts to a branch part of the way round; [hangsFree], the parts whose branch runs past an end of
+ * the part that points down at rest, as a skirt below an upright torso does, not along a body lying level; [piece], the part at the root
+ * of this piece where the garment is worn in pieces that meet nowhere (see [pieces]), else null.
  */
 class WornCover(
     val cover: GarmentCover,
@@ -54,20 +56,27 @@ class WornCover(
     val shells: Map<PartId, PlacedPart>,
     val piece: PartId? = null,
     val openEnds: Map<PartId, OpenEnds> = emptyMap(),
+    val hangsFree: Set<PartId> = emptySet(),
 ) {
     val garment: Garment get() = cover.garment
 
     /** The parts that come out through the ends of its branches' parts that it reaches. */
     val outThroughEnds: Set<PartId> get() = openEnds.values.flatMapTo(HashSet()) { it.parts }
 
-    /** Whether a branch the whole way round hangs free past an end of its part, as a skirt below the torso does. */
-    val hanging: Boolean get() = branches.values.any { it.allRound && (it.from < -SHELL_PAST || it.to > 1f + SHELL_PAST) }
+    /**
+     * The parts whose branch hangs over what comes out of them, pushed clear of it in each pose: a branch that [hangsFree], or one part
+     * of the way round with a shell of its own, as a cape over a back or a bun open over it.
+     */
+    val hangsOver: Set<PartId> get() = hangsFree + shells.keys.filter { branches[it]?.allRound == false }
+
+    /** Whether any branch [hangsOver] what comes out of its part. */
+    val hanging: Boolean get() = hangsOver.isNotEmpty()
 
     /** The branch over [part], one of the garment's own or a cuff's; null where the garment does not cover it. */
     fun branchOf(part: PartId): GarmentBranch? = branches[part]
 
     /** What equals for the same branches, cuffs, holes, shells, piece and open ends, the shells by their objects. */
-    val key: List<Any?> = listOf(cover, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds)
+    val key: List<Any?> = listOf(cover, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree)
 
     /** What equals for the same garment grown the same way, whatever comes out through it: the branches, cuffs, shells and piece. */
     val shapeKey: List<Any?> = listOf(cover, branches, cuffs, shells.mapValues { Same(it.value.surface) }, piece)
@@ -82,6 +91,7 @@ class WornCover(
             val holes = HashSet<PartId>()
             val built = HashMap<PartId, PlacedPart>()
             val open = HashMap<PartId, OpenEnds>()
+            val free = HashSet<PartId>()
             for ((part, branch) in fitted) {
                 val covered = body.part(part) ?: continue
                 val comes = body.parts.any { child ->
@@ -100,11 +110,13 @@ class WornCover(
                 }
                 val ends = outThroughEnd(body, part, branch, cover)
                 if (ends.isNotEmpty()) open[part] = ends
-                if (branch.allRound && (branch.outlines.isNotEmpty() || branch.from < -SHELL_PAST || branch.to > 1f + SHELL_PAST)) {
-                    shells.over(garment, branch.copy(from = branch.from - SHELL_PAST, to = branch.to + SHELL_PAST), covered)?.let { built[part] = it }
+                if (branch.drawsShell) {
+                    val whole = branch.copy(from = branch.from - SHELL_PAST, to = branch.to + SHELL_PAST, fromV = 0f, toV = 1f)
+                    shells.over(garment, whole, covered)?.let { built[part] = it }
                 }
+                if (branch.allRound && hangsDownPast(branch, covered)) free += part
             }
-            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open)
+            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free)
         }
 
         /** This branch over [part] standing off the garments [under] it: each one's branch the whole way round the part over any of its span adds its ease. */
@@ -116,6 +128,13 @@ class WornCover(
         }
     }
 }
+
+/** Whether this branch reads a shell of its own: drawn standing off its ease, or running past an end of its part. */
+val GarmentBranch.drawsShell: Boolean get() = outlines.isNotEmpty() || from < -SHELL_PAST || to > 1f + SHELL_PAST
+
+/** Whether [branch] runs past an end of [covered] whose way out points down at rest, so cloth past it hangs under its own weight. */
+internal fun hangsDownPast(branch: GarmentBranch, covered: PlacedPart): Boolean =
+    (branch.from < -SHELL_PAST && covered.endPointsDown(high = false)) || (branch.to > 1f + SHELL_PAST && covered.endPointsDown(high = true))
 
 /** Branch shells built over placed parts, kept while the branch and the part's surface and place are the same. */
 class ShellCache {
