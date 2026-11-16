@@ -1,11 +1,7 @@
 package dev.chieppa.squash.screens.twin
 
 import dev.chieppa.squash.character.build.GenericParams
-import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandSockets
-import dev.chieppa.squash.character.build.RestDirection
-import dev.chieppa.squash.character.model.Hinge
-import dev.chieppa.squash.character.model.Limits
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.OutlineCurve
@@ -15,7 +11,6 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameter
-import dev.chieppa.squash.document.SetRole
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.View
@@ -45,9 +40,6 @@ private const val LOCK_HEIGHT = 0.06f
 
 /** The sockets seat each hair part on the skull rather than sinking it in. */
 private const val ON_SKULL = 0f
-
-private val FALL_JOINTS = listOf(0.3f, 0.65f)
-private val FALL_SWAY = Limits(-30f, 30f)
 
 private const val HAIR_RINGS = 64
 private const val HAIR_SEGMENTS = 32
@@ -85,19 +77,18 @@ private val FALL_TOP = loop(
 )
 
 /**
- * A curtain of hair each side, from beside the temple down past the jaw to the shoulder, framing the face in front and running back to the
- * fall behind the ear: broad front to back in Side, thin across in Top.
+ * A curtain of hair each side, from beside the temple down past the jaw to just above the shoulder, clear of it in every pose, framing
+ * the face in front and running back to the fall behind the ear: broad front to back in Side, thin across in Top.
  */
 private val LOCK_SIDE = loop(
-    p(0.000f, 0.010f), p(0.080f, 0.008f), p(0.160f, 0.000f), tuft(0.230f, -0.010f), p(0.200f, -0.040f), tuft(0.230f, -0.075f), p(0.180f, -0.120f),
-    p(0.080f, -0.130f), p(0.000f, -0.110f),
+    p(0.000f, 0.010f), p(0.052f, 0.008f), p(0.104f, 0.000f), tuft(0.150f, -0.010f), p(0.130f, -0.040f), tuft(0.150f, -0.075f), p(0.117f, -0.120f),
+    p(0.052f, -0.130f), p(0.000f, -0.110f),
 )
-private val LOCK_TOP = loop(p(0.000f, 0.012f), p(0.100f, 0.012f), p(0.200f, 0.008f), tuft(0.230f, 0.000f), p(0.200f, -0.008f), p(0.100f, -0.012f), p(0.000f, -0.012f))
+private val LOCK_TOP = loop(p(0.000f, 0.012f), p(0.065f, 0.012f), p(0.130f, 0.008f), tuft(0.150f, 0.000f), p(0.130f, -0.008f), p(0.065f, -0.012f), p(0.000f, -0.012f))
 
 private fun on(part: PartId, socket: Int) = SocketRef(part, HandSockets.name(socket))
 
 private fun hairShape(part: PartId, side: OutlineCurve, top: OutlineCurve) = listOf(
-    SetRole(part, Role.OTHER),
     SetOutlines(part, mapOf(View.SIDE to side, View.TOP to top)),
     SetParameter(part, "size", HEAD_SIZE),
     GenericParams.rings(part, HAIR_RINGS),
@@ -105,30 +96,28 @@ private fun hairShape(part: PartId, side: OutlineCurve, top: OutlineCurve) = lis
 )
 
 /**
- * The hair, drawn in the head's units as the reference's: a cap over the skull with side-swept bangs, a long fall down the back to the
- * middle of it, and a lock each side framing the face.
+ * The hair, drawn in the head's units as the reference's, as hair parts: a cap over the skull with side-swept bangs in the head's field,
+ * riding the head's bone, and a long fall down the back to the middle of it and a lock each side framing the face, each its own mesh on its
+ * own chain of bones.
  */
 fun twinHair(): List<DocumentCommand> = buildList {
     add(HandSockets.add(HEAD, CAP_SOCKET, headU(CAP_HEIGHT), HEAD_BACK, 0f, paired = false, sink = ON_SKULL))
     add(HandSockets.add(HEAD, FALL_SOCKET, headU(FALL_HEIGHT), HEAD_BACK, 0f, paired = false, sink = ON_SKULL))
     add(HandSockets.add(HEAD, LOCK_SOCKET, headU(LOCK_HEIGHT), HEAD_LEFT, 0f, paired = true, sink = ON_SKULL))
 
-    add(AddParts(listOf(PartInstance(HAIR, ref("blob"), on(HEAD, CAP_SOCKET), role = Role.OTHER, roleGuessed = true))))
+    add(AddParts(listOf(PartInstance(HAIR, ref("hair-cap"), on(HEAD, CAP_SOCKET), role = Role.HAIR))))
     addAll(hairShape(HAIR, CAP_SIDE, CAP_TOP))
 
-    add(AddParts(listOf(PartInstance(HAIR_FALL, ref("tube"), on(HEAD, FALL_SOCKET), role = Role.OTHER, roleGuessed = true))))
-    add(RestDirection.restIn(HAIR_FALL, RestDirection.DOWN))
+    add(AddParts(listOf(PartInstance(HAIR_FALL, ref("hair"), on(HEAD, FALL_SOCKET), role = Role.HAIR))))
     addAll(hairShape(HAIR_FALL, FALL_SIDE, FALL_TOP))
-    FALL_JOINTS.forEachIndexed { i, u -> add(HandJoints.add(HAIR_FALL, i + 1, u, Hinge.X, FALL_SWAY, stretch = false)) }
 
     add(
         AddParts(
             listOf(
-                PartInstance(LOCK_L, ref("tube"), on(HEAD, LOCK_SOCKET), pair = PairId("locks"), side = Side.LEFT, role = Role.OTHER, roleGuessed = true),
-                PartInstance(LOCK_R, ref("tube"), on(HEAD, LOCK_SOCKET), pair = PairId("locks"), side = Side.RIGHT, role = Role.OTHER, roleGuessed = true),
+                PartInstance(LOCK_L, ref("hair"), on(HEAD, LOCK_SOCKET), pair = PairId("locks"), side = Side.LEFT, role = Role.HAIR),
+                PartInstance(LOCK_R, ref("hair"), on(HEAD, LOCK_SOCKET), pair = PairId("locks"), side = Side.RIGHT, role = Role.HAIR),
             ),
         ),
     )
-    add(RestDirection.restIn(LOCK_L, RestDirection.DOWN))
     addAll(hairShape(LOCK_L, LOCK_SIDE, LOCK_TOP))
 }

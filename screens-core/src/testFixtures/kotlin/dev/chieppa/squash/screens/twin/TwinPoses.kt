@@ -99,5 +99,25 @@ val TWIN_WAVE = Pose(listOf(
 private const val SHADES_TIP = 57.3f
 val TWIN_SHADES_UP = Pose(listOf(BonePose(SHADES_L, TUBE_BASE, turn = SHADES_TIP, mode = JointMode.FREE), BonePose(SHADES_R, TUBE_BASE, turn = SHADES_TIP, mode = JointMode.FREE)))
 
-/** The poses she is looked at in, by name, as the reference names them; the shades tipped up are a pose of the shades alone. */
-val TWIN_POSES: Map<String, Pose> = mapOf("walk" to TWIN_WALK, "wave" to TWIN_WAVE, "shades-up" to TWIN_SHADES_UP)
+/** How far the head turns to look over a shoulder, tilts toward one, and the chest bends forward at the torso's spine joint, in degrees. */
+private const val HEAD_TURN = 60f
+private const val HEAD_TILT = 25f
+private const val CHEST_BEND = -25f
+private const val SPINE = "joint.2"
+
+/** The head turned to look over her left shoulder, and over her right, and tilted toward her left shoulder. */
+val TWIN_LOOK_LEFT = Pose(TWIN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, turn = HEAD_TURN, mode = JointMode.FREE))
+val TWIN_LOOK_RIGHT = Pose(TWIN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, turn = -HEAD_TURN, mode = JointMode.FREE))
+val TWIN_TILT = Pose(TWIN_DISPLAY.bones + BonePose(HEAD, NECK_TURN, lean = HEAD_TILT, mode = JointMode.FREE))
+
+/** Bent forward at the chest, so the fall hangs from the head rather than lying along the back. */
+val TWIN_BEND = Pose(TWIN_DISPLAY.bones + BonePose(TORSO, CHEST, CHEST_BEND, mode = JointMode.FREE) + BonePose(TORSO, SPINE, CHEST_BEND, mode = JointMode.FREE))
+
+/**
+ * The poses she is looked at in, by name: the reference's, the shades tipped up a pose of the shades alone, and the head turns, the tilt
+ * and the bend that show how her hair lies.
+ */
+val TWIN_POSES: Map<String, Pose> = mapOf(
+    "walk" to TWIN_WALK, "wave" to TWIN_WAVE, "shades-up" to TWIN_SHADES_UP, "look-left" to TWIN_LOOK_LEFT, "look-right" to TWIN_LOOK_RIGHT,
+    "tilt" to TWIN_TILT, "bend" to TWIN_BEND,
+)

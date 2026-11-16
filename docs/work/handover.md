@@ -16,6 +16,7 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | creatures-1 | The koi and the lizard on one surface with painted eyes, `fin` and `sheet` marked separate; `PartRoles.upright` reads the root's Move rest, and a limb's chain ends where its hand or paw hangs, so the woman's Pose rows name her feet and a picked hand curls ("Koi and lizard results") |
 | creatures-2 | The toucan and the dragon on one surface with painted eyes; `beak`, `beak-lower`, `tail-feathers`, `wing-membrane`, `horn` and `spike` marked separate; named poses for both ("Toucan and dragon results") |
 | hair-shell | Hair as parts: `Role.HAIR`, the `hair-cap` and `hair` templates, hair weighted to its own chain and the head alone, pushed out of the body in each pose; the woman and the dressed woman wear a cap, a fall of five clumps and two locks ("Hair shell results") |
+| twin-surface | The twin and the dressed twin on one surface with painted eyes, her hair a cap in the field and a fall and locks as hair parts; every example is now on one surface ("Twin results") |
 
 ## Examples
 
@@ -28,9 +29,9 @@ The one-surface plan is `docs/work/one-surface.md`; its results sections hold ev
 | `lizard.json` | One surface: body, head, legs, paddle feet and tail in the field, the tail's join widened and unlined; painted yellow eyes; named poses `walk-0` to `walk-3` and `bask` |
 | `toucan.json` | One surface: torso, head, legs and toes in the field, the beak's halves hard and the tail and wings thin, separate; painted eyes in their pale rings; named poses `walk-0` to `walk-3` and `call` |
 | `dragon.json` | One surface: torso, head, tail, legs and clawed paws in the field, the membrane wings thin and the horns and spikes hard, separate; painted amber slit eyes; named poses `walk-0` to `walk-3` and `roar` |
-| `woman-twin*` | Parts |
+| `woman-twin*` | One surface, painted eyes matched to her drawn ones, fingers and toes at the digit cell; her hair a `hair-cap` in the field and a fall and two locks as `hair` parts, the locks ending above the shoulder ("Twin results") |
 
-The twin still builds as parts and renders as before the one surface landed (checked in RGB against 6fdbc35).
+Every example builds on one surface.
 
 ## Where speed stands
 
@@ -50,7 +51,9 @@ Measurements are in "Drag feel results", "Drag speed results" and "GPU reads res
 - The cat's moves are slow for one surface: a front-leg move about 140 ms bare, 170 in Vampire and 250 in Hotdog; a knee pose drag 39, 126 and 191.
 - The dragon's moves are slow for one surface: a front-leg move about 141 ms, a knee pose drag 61; its claws are paw 5's field points, not separate parts ("Toucan and dragon results").
 - The lizard has paddle feet with no toes or claws; the koi's tail fin shows two small ink marks near its root ("Koi and lizard results").
-- Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the twin still wears blob and tube hair ("Hair shell results").
+- Hair: the cap is drawn, not grown from the head; the fall has no weight, so it turns with the head rather than hanging ("Hair shell results").
+- The dressed woman's middle fall clump hangs in front of her face in every outfit, from the front, three-quarter and side; the bare woman's hangs down her back.
+- The twin: her compare IoU is reported, not a gate ("Twin results"); a hanging skirt shades dark below its upper band, as the woman's does; her painted brows take the ink colour, not her brown brow slot.
 
 ## Adaptive cells
 
@@ -58,9 +61,14 @@ Digits (a part's row of toes or fingers) mesh at a quarter of the body's cell th
 
 ## Next, in order
 
-1. Phase 4, creatures: the twin onto one surface; its compare IoU must not drop.
-2. Phase 5: format 15 migration, the parts build and drawn eyes retired, the HLD rewritten.
-3. Phase 6, joints, only if the walk sheets need it.
+1. Phase 5. Every example now builds on one surface, so nothing an example shows still needs the lofted build of body parts. What phase 5 involves:
+   - One surface by default: a new character starts on it (the app never sends `SetOneSurface`, so a character made in New character builds as parts), and the switch, `Character.oneSurface`, `asParts()`, `look surface=parts` and the `fennec-one-surface*` fixtures go.
+   - Format 15 and its migration ("Migration, format 14 to 15"): field versions of the body templates, `fillet` dropped, `PartInstance.blend` absent, drawn eye groups kept on documents that have them.
+   - The examples written again under format 15 from their commands.
+   - Retiring what "What retires" lists (strips, socket and garment fillets, the grid-preserving blend, recasting, seated eyeballs, the eye `oval` and `lid` blocks, handed cuts, fixed topology for body parts and its mesh goldens), with the tests that only cover them; the lofted build stays for separate parts.
+   - The HLD rewritten ("Docs that change if this is approved"), CLAUDE.md's rules on fixed topology and mesh goldens, and `example-limits.md` brought up to date.
+   - Done when no body part builds lofted and `check` and `check -Pslow` pass.
+2. Phase 6, joints, only if the walk sheets need it.
 
 ## How rounds are run
 

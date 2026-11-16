@@ -26,9 +26,10 @@ val EMPTY_TWIN: SquashDocument by lazy {
 /**
  * Every command that makes the twin undressed: a woman built in metres from a numeric description of a reference character, standing on
  * the ground with +Y up and facing forward, so cameras placed in the reference's frame see her as the reference renders do. Shape, head,
- * hair, colour, face, then the pose she is shown in.
+ * hair, colour, face, the switch that builds her as one surface with its joins and her painted eyes, then the pose she is shown in.
  */
-fun twinCommands(): List<DocumentCommand> = twinBody() + twinHead() + twinHair() + twinColor() + twinFace() + SetDisplayPose(TWIN_DISPLAY)
+fun twinCommands(): List<DocumentCommand> =
+    twinBody() + twinHead() + twinHair() + twinColor() + twinFace() + twinOneSurface() + SetDisplayPose(TWIN_DISPLAY)
 
 /** The twin as those commands leave it. */
 fun twinDocument(): SquashDocument = twinCommands().fold(EMPTY_TWIN) { document, command -> command.apply(document).document }

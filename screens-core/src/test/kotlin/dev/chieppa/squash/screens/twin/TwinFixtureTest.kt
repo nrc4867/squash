@@ -42,20 +42,29 @@ class TwinFixtureTest {
         val character = twinDocument().character
         assertTrue(character.parts.none { it.roleGuessed })
         assertEquals(
-            mapOf(Role.BODY to 1, Role.NECK to 1, Role.HEAD to 1, Role.ARM to 2, Role.HAND to 2, Role.LEG to 2, Role.FOOT to 2, Role.OTHER to 4),
+            mapOf(Role.BODY to 1, Role.NECK to 1, Role.HEAD to 1, Role.ARM to 2, Role.HAND to 2, Role.LEG to 2, Role.FOOT to 2, Role.HAIR to 4),
             character.parts.groupingBy { checkNotNull(it.role) }.eachCount(),
         )
         assertTrue(!shipped.roles(character).fourLegged)
     }
 
     @Test
-    fun theFaceHasTwoFullEyesAndAMouth() {
+    fun theFaceHasPaintedEyesAndAMouth() {
         val character = twinDocument().character
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        val eyes = head.groups.filter { it.isEye }
-        assertEquals(2, eyes.size)
-        assertTrue(eyes.all { eye -> eye.roles.all { it.marks.isNotEmpty() } }, "every eye fills all seven of its roles")
+        assertEquals(0, head.groups.count { it.isEye }, "a one-surface head's eyes are painted, not drawn")
+        val eye = character.paintedEyes.single()
+        assertEquals(HEAD, eye.anchor.part)
+        assertTrue(eye.mirrored && eye.look.lashes && eye.look.brow, "both eyes, with lashes and a brow")
         assertEquals(1, head.groups.count { !it.isEye })
+    }
+
+    @Test
+    fun sheIsBuiltAsOneSurfaceWithHerHairAsHairParts() {
+        val character = twinDocument().character
+        assertTrue(character.oneSurface)
+        val hair = character.parts.filter { it.role == Role.HAIR }
+        assertEquals(listOf("hair-cap", "hair", "hair", "hair"), hair.map { it.template.id.value })
     }
 
     @Test

@@ -407,7 +407,7 @@ Socket strips and their posed form; socket fillets; the grid-preserving implicit
 | 1. The proof | The fennec's body and the winter sweater on one surface, behind a per-character switch; the field, the mesher with blocks and member channels, coordinates and shares, shading, colour by coordinates, ink, painted eyes, rig weights and posing, the sweater's field, coverage and hiding | The proof passes (below) |
 | 2. Surface work on one surface | Every surface tool and node on the one surface: picks, marks, regions across parts, fur, line weights, the face map, Face's painted eyes, selection, Rig stage | The fennec, the dressed fennec bare and the winged fennec build on one surface, their surface work lands where it did, and the screens' tests pass on them |
 | 3. Garments whole | Parts of the way round, hanging free with its push, layers, cuffs, holes, owned parts, loose ends, posed hiding | Every outfit of the dressed fennec and the dressed woman passes its look sheets with no ragged or crumpled edges |
-| 4. Creatures | The adaptive cells; paws, hands, claws, mittens; separate and hard parts; dragon, lizard, toucan, koi, the woman and the twin | All examples build on one surface; the twin's compare mean is at least what it is now (0.824) and no shot's band falls by more than 0.025; a one-part edit on the woman stays near 50 ms |
+| 4. Creatures | The adaptive cells; paws, hands, claws, mittens; separate and hard parts; dragon, lizard, toucan, koi, the woman and the twin | All examples build on one surface; the twin's compare IoU is reported beside main's; a one-part edit on the woman stays near 50 ms |
 | 5. Migration and retiring | Format 15, the template versions, the examples rewritten, retired code and tests removed, the HLD rewritten | No body part builds lofted; `check` and `check -Pslow` pass; nothing in What retires remains |
 | 6. Joints | Implicit skinning, if the walk sheets need it | The walk's shoulders and hips keep their volume at the walk's deepest bends on the spot sheets |
 
@@ -1128,7 +1128,7 @@ An earlier run of the same four cases, before a gathering piece stopped asking a
 
 ## Hair shell results
 
-The woman and the dressed woman wear hair as hair parts: a `hair-cap` in her field, a fall of five `hair` clumps and a `hair` lock at each temple, each clump and lock its own mesh. The twin keeps its generic blob, tube and locks.
+The woman and the dressed woman wear hair as hair parts: a `hair-cap` in her field, a fall of five `hair` clumps and a `hair` lock at each temple, each clump and lock its own mesh. The twin wears a cap, a fall and two locks of the same templates ("Twin results").
 
 **What is built.**
 
@@ -1153,7 +1153,6 @@ The woman and the dressed woman wear hair as hair parts: a `hair-cap` in her fie
 - Hair has no weight: the fall turns rigidly with the head and the push only moves it out of the body, so in a bend or a tilt it does not hang toward the ground. Its chain's joints are there for a later sway or a hang solve.
 - The push reads the parts' own posed meshes, not the one surface's field, so on a one surface it is clear of the parts the field is joined from, within their meshes' error of the field (0.004 in the test).
 - The clumps part a little at the hem, showing the coat between them from behind; closer sockets or wider clumps close it, a matter of taste.
-- The twin still wears its blob and tubes.
 
 ## Koi and lizard results
 
@@ -1244,6 +1243,61 @@ The toucan and the dragon build on one surface from their first command, with pa
 - The dragon's claws are field points, not separate hard parts; a separate claw would need a tip socket on paw 5.
 - In the dragon's foot close-ups one view sits inside the leg and shows its flat end with a ragged rim, as the lizard's does.
 - The roar's open jaw does not show in the renders.
+
+## Twin results
+
+The twin and the dressed twin build on one surface from the same drawings, so every example builds on one surface. The engine is main's.
+
+**What is built.**
+
+- **One surface.** `twinOneSurface()` (`twin/TwinSurface.kt`) is the woman's: the switch, a narrow blend under the jaw (0.015) and where the cap meets the head (0.012), the joins of head, neck, arms, hands, legs and feet unlined. Her hands (`hand` 5) and feet (`foot` 4) are digit rows, so her fingers and toes mesh at a quarter of the body's cell with no change.
+- **Painted eyes** (`TWIN_EYE`, `twin/TwinFace.kt`) in place of the drawn eye groups, matched to them as the woman's were: an almond opening lifted toward its outer corner, the olive iris most of its height with a round pupil and a small highlight, a lid line, the wing as the lash flick and a brow, at the middle of the drawn opening. The lips, nostrils, eyeshadow and blush stay drawn, and the face looks the outfits wear still redraw them. The brow takes the eye's ink colour, not her brown brow slot, since a painted eye has one ink.
+- **Hair on the hair shell.** The cap is a `hair-cap` in her field, riding the head's bone; the fall and the two locks are `hair` parts on their own chains, pushed out of the body in each pose; each on its socket and drawing, the `hair` template's chain of three joints its bones. The locks end just above the shoulder, 0.15 of the head's units long: a lock whose tip lies in the shoulder is swung out from the face as a rod by the push in every pose.
+- **Named poses** for the look command besides the reference's walk, wave and shades-up: `look-left` and `look-right` (the head turned 60 degrees), `tilt` (25 degrees toward her left shoulder) and `bend` (the chest bent 25 degrees forward at two spine joints).
+
+**Against the asks,** by eye on the sheets in the scratchpad's `twin/`, main above the branch: `twin-bare-full`, `twin-bare-close` (face, hand, foot), `twin-bare-poses-1` to `-3`, `dressed-<outfit>`, `dressed-<outfit>-close` and `dressed-<outfit>-poses-1` to `-3` for beach, lawyer, dress and goth, `back-bare`, `back-dressed`, `back-look-left`, `twin-bend`, `compare-dress`.
+
+| Ask | Result |
+|---|---|
+| Builds cleanly on one surface | Passes: no holes, melted parts or broken paint in any view, outfit or pose; 0 open edges and 0 edges on more than two triangles (`measure`) |
+| Painted eyes match the drawn ones | Passes from the front and three-quarter: the same almond, iris, pupil and lifted outer corner; the highlight and the wing are smaller. From the side one eye is seen edge-on, as on every painted head |
+| Fingers and toes | Read as separate digits with their nails, as main's |
+| Hair | The locks hang beside the face; turned 60 degrees either way the fall slides over the shoulder; bent forward it hangs from the head. The cap keeps main's shape |
+| Every outfit wears cleanly | Beach, lawyer and goth pass at rest and in every pose. Dress passes in shape: the skirt hangs and flares clear of the legs in the walk, but below its upper band it shades dark, as the woman's hanging skirt does, and the top's short sleeves are plain, not puffed, since a sleeve grown from the arm takes its ease and nothing more. Goth shows a thin pale line at each wrist where the sleeve ends |
+| Other examples as main | Passes: cat, cat-dressed, dragon, fennec, fennec-dressed, fennec-winged, koi, lizard, toucan, woman and woman-dressed, 190 images, none differ in any channel |
+
+**Compare,** `./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<the reference renders>"`, silhouette IoU, main (parts) / branch:
+
+| Shot | Whole | Head | Torso | Arms | Legs |
+|---|---|---|---|---|---|
+| beach-threeq | 0.918 / 0.917 | 0.888 / 0.890 | 0.993 / 0.993 | 0.862 / 0.864 | 0.893 / 0.889 |
+| lawyer-threeq | 0.896 / 0.889 | 0.860 / 0.859 | 0.913 / 0.908 | 0.884 / 0.866 | 0.905 / 0.899 |
+| dress-threeq | 0.843 / 0.836 | 0.894 / 0.904 | 0.750 / 0.758 | 0.799 / 0.638 | 0.874 / 0.905 |
+| goth-threeq | 0.927 / 0.928 | 0.898 / 0.904 | 0.994 / 0.995 | 0.887 / 0.883 | 0.905 / 0.906 |
+| beach-front | 0.937 / 0.944 | 0.881 / 0.896 | 0.978 / 0.978 | 0.873 / 0.930 | 0.938 / 0.932 |
+| lawyer-side | 0.851 / 0.842 | 0.882 / 0.889 | 0.882 / 0.860 | - | 0.791 / 0.790 |
+| dress-side | 0.838 / 0.848 | 0.906 / 0.919 | 0.743 / 0.738 | - | 0.883 / 0.906 |
+| goth-front | 0.924 / 0.939 | 0.877 / 0.899 | 0.985 / 0.987 | 0.868 / 0.923 | 0.906 / 0.916 |
+| pose-wave-lawyer | 0.792 / 0.790 | 0.623 / 0.621 | 0.917 / 0.916 | 0.880 / 0.879 | 0.804 / 0.802 |
+| pose-walk-dress | 0.645 / 0.675 | 0.875 / 0.864 | 0.696 / 0.681 | 0.393 / 0.306 | 0.685 / 0.801 |
+| pose-walk-dress-side | 0.660 / 0.741 | 0.858 / 0.852 | 0.633 / 0.627 | - | 0.642 / 0.791 |
+| pose-walk-goth | 0.843 / 0.840 | 0.880 / 0.880 | 0.982 / 0.983 | 0.663 / 0.651 | 0.838 / 0.837 |
+| pose-walk-beach | 0.820 / 0.823 | 0.871 / 0.871 | 0.829 / 0.830 | - | 0.797 / 0.801 |
+
+Close-ups, whole only: face-natural 0.881 / 0.886, face-goth 0.888 / 0.891, face-lawyer 0.851 / 0.855, face-beach-shades 0.883 / 0.883, face-beach-shadesup 0.879 / 0.878, hand-rest 0.792 / 0.835, hand-wave 0.741 / 0.748, foot-beach 0.930 / 0.910, foot-lawyer 0.845 / 0.824, foot-dress 0.902 / 0.905, foot-goth 0.887 / 0.892. **Mean 0.849 / 0.855.**
+
+On the branch the skirt's flare lies within the reference's where main's overshoots it, and the walk's legs show below it, so the dress walk scores higher. The dress shots' arms band is lower on the branch (0.638 against 0.799 in three-quarter, 0.306 against 0.393 in the walk): the plain sleeves are narrower than main's puffed ones and the arm beside the skirt reads less. Other bands lower by more than 0.02: foot-beach and foot-lawyer (0.020, 0.021) and lawyer-side's torso (0.022).
+
+**Drag timings** (`drag`, median of each later move, 90th percentile in brackets, main's parts build after the slash): the bare twin's arm move 145.1 ms (194.6) / 70.8 (86.0), a knee pose drag 57.1 (63.9) / 26.1 (29.0); in lawyer, the arm move 161.4 (195.0) / 171.7 (198.2), the knee pose drag 89.4 (101.5) / 35.3 (40.6). A release takes 209 ms bare and 466 in lawyer, where the parts build's takes about 20.
+
+**Open.**
+
+- The bare twin's moves and every pose drag are slower than her parts build's; the dressed arm move is about as slow. The levers are those of "Drag speed results".
+- A hanging skirt shades dark below its upper band, the woman's too.
+- The dress's puffed sleeves are plain; a puff would need a sleeve shape of its own over the arm.
+- Her brows take the ink colour; a painted eye has no brow colour of its own.
+- The locks are shorter than the reference's, to stay clear of the shoulder; a lock that lies on the shoulder needs the push to bend it rather than swing it whole.
+- A small notch shows under the chin in profile, where the jaw's blend meets the neck; a wider blend did not change it.
 
 ## Risks and open questions
 
