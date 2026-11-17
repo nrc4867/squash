@@ -57,6 +57,9 @@ class LookArgs(args: Array<String>) {
         Triple(part, name, value.toFloat())
     }.orEmpty()
 
+    /** With `paint=test`, test regions painted over the example before it renders (see [paintTest]). */
+    val paintTest: Boolean = values["paint"] == "test"
+
     /** Whether measure prints every part's origin and box. */
     val parts: Boolean = values["parts"] == "true"
 

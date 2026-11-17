@@ -1,7 +1,7 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 60
+internal const val COLOR_LAYER_FLOATS = 76
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
@@ -22,6 +22,10 @@ struct Layer {
     opening: vec4<f32>,
     oval: vec4<f32>,
     turn_and_oval: vec4<f32>,
+    positive_lit_and_on: vec4<f32>,
+    positive_shadow: vec4<f32>,
+    negative_lit_and_on: vec4<f32>,
+    negative_shadow: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> layer: Layer;
@@ -85,6 +89,31 @@ fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
 @fragment
 fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
     return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), in.alpha);
+}
+
+struct SidedOut {
+    @builtin(position) clip: vec4<f32>,
+    @location(0) proxy: vec3<f32>,
+    @location(1) sides: vec2<f32>,
+};
+
+@vertex
+fn vs_sided(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @location(2) proxy: vec3<f32>, @location(3) positive: f32, @location(4) negative: f32) -> SidedOut {
+    let layered = lifted(position, normal, proxy);
+    var out: SidedOut;
+    out.clip = layered.clip;
+    out.proxy = layered.proxy;
+    out.sides = vec2<f32>(positive * layer.positive_lit_and_on.w, negative * layer.negative_lit_and_on.w);
+    return out;
+}
+
+// The layer's tone with its far sides' tones over it by each side's share, as fading layers of those tones drawn over it in turn would show.
+@fragment
+fn fs_sided(in: SidedOut) -> @location(0) vec4<f32> {
+    var color = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb);
+    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.positive_lit_and_on.rgb, layer.positive_shadow.rgb), clamp(in.sides.x, 0.0, 1.0));
+    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.negative_lit_and_on.rgb, layer.negative_shadow.rgb), clamp(in.sides.y, 0.0, 1.0));
+    return vec4<f32>(color, 1.0);
 }
 
 struct ShapedOut {

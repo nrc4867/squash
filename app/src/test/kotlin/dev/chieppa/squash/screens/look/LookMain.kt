@@ -54,6 +54,7 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+        if (look.paintTest) paintTestOf(session, example)
         work.settle(session)
         if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
         val views = WomanViews(work, errors, folder)
@@ -128,3 +129,11 @@ private fun renderShots(session: CharacterSession, work: TestWork, example: Stri
 /** The outfits asked for that the example has, or its shown state alone when it has none. */
 private fun outfitsOf(session: CharacterSession, look: LookArgs) =
     session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }
+
+/** The test regions over [session]'s character, the eyeliner over its first painted eye. */
+fun paintTestOf(session: CharacterSession, example: String) {
+    val character = session.document.value.character
+    val eye = character.paintedEyes.firstOrNull()?.anchor?.let { it.u to it.v }
+    val base = if (example.startsWith("woman")) "skin" else "fur"
+    paintTest(session, eye, "ink", "cream", base)
+}

@@ -44,18 +44,19 @@ class SurfaceChart(val surface: CharacterSurface) {
         }
         val triangleCount = indices.size / 3
         val start = IntArray(corners + 1)
-        for (tri in 0 until triangleCount) for (c in 0 until 2) {
+        val round = if (count == corners) 3 else 2
+        for (tri in 0 until triangleCount) for (c in 0 until round) {
             val v = indices[tri * 3 + c]
             if (v < corners) start[v + 1]++
         }
         for (v in 0 until corners) start[v + 1] += start[v]
-        val round = IntArray(start[corners])
+        val around = IntArray(start[corners])
         val filled = start.copyOf(corners)
-        for (tri in 0 until triangleCount) for (c in 0 until 2) {
+        for (tri in 0 until triangleCount) for (c in 0 until round) {
             val v = indices[tri * 3 + c]
-            if (v < corners) round[filled[v]++] = tri
+            if (v < corners) around[filled[v]++] = tri
         }
-        trianglesRound = round
+        trianglesRound = around
         trianglesStart = start
     }
 

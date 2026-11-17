@@ -47,7 +47,7 @@ suspend fun posedSurface(surface: CharacterSurface, skin: SurfaceSkin, paint: Su
     })
     val parted = skin.contacts.any { it }
     val fan = surface.render.indices
-    val drawn = if (!parted) fan else fan.keptQuads(skin.contacts, QUAD_FAN_INDICES)
+    val drawn = if (!parted) fan else fan.keptQuads(skin.contacts, if (surface.render.vertexCount > corners) QUAD_FAN_INDICES else QUAD_INDICES)
     val render = RenderMesh(vertices, drawn)
     val triangles = if (!parted) surface.mesh.triangles else surface.mesh.triangles.keptQuads(skin.contacts, QUAD_INDICES)
     val posed = surface.movedTo(render, positions, lineNormals, triangles)

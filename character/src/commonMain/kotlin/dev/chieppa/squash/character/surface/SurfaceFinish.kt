@@ -15,20 +15,20 @@ private const val TINY = 1e-12f
 
 /**
  * The work that makes a [CharacterSurface] of a meshed [field], in batches whose pieces are independent of one another, handed out by
- * [next] until it gives null, then read from [surface]. It shades the mesh's [QuadFan], so no quad's diagonal shows where light meets
- * shade, and draws its lines on the mesh itself. At each of the mesh's vertices it reads the owning runs' own shading and how much of
+ * [next] until it gives null, then read from [surface]. It shades the mesh as its [QuadFan] draws it and draws its lines on the mesh
+ * itself. At each of the mesh's vertices it reads the owning runs' own shading and how much of
  * the vertex that holds (see [ownShading]), and takes the surface's own normal from the quads round it by area. Both are averaged with
  * their neighbours' along the quads' sides [SMOOTHING_STEPS] times, so no cell's facet shows and a share that changes from one vertex
  * to the next never shows as a step; then [JOIN_SMOOTHING_STEPS] times more by as much as the runs leave the vertex unheld, so across a
  * join, where the swept solids' small waves meet, light meets shade along a smooth curve. The shading normal is the runs' own shading
- * plus the surface's normal by as much as they leave unheld: inside a part it shades as the part's own build does. Each quad's middle
- * takes the mean of its corners'.
+ * plus the surface's normal by as much as they leave unheld: inside a part it shades as the part's own build does. Where the fan has quad
+ * middles, each takes the mean of its corners'.
  */
 class SurfaceFinish(private val field: CharacterField, private val mesh: SurfaceMesh) {
     private val fan = QuadFan(mesh)
     private val count = fan.count
     private val corners = fan.corners
-    private val quads = count - corners
+    private val quads = fan.middles
     private val fieldNormals = fan.spread(mesh.normals, 3)
     private val smoothing = ShadingSmoothing(mesh, fan, fieldNormals)
 

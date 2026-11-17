@@ -3,24 +3,25 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 
 /**
- * A mesh's quads, each two of its triangles, cut instead into four triangles round a new vertex at the quad's middle, so that light and
- * shade read across a quad the same whichever way its diagonal ran: the mesh's [SurfaceMesh.vertexCount]
- * vertices first, then one a quad. A middle vertex takes the mean of its four corners' values. The mesh's triangles that stand alone
- * follow the quads' four each in [triangles] as they are, with no middle.
+ * The mesh as it is drawn: by default the mesh's own [SurfaceMesh.vertexCount] vertices and its triangles, two a quad. With [fanned],
+ * each quad is cut instead into four triangles round a new vertex at its middle, the mean of its four corners' values, the mesh's vertices
+ * first and then one a quad, and the mesh's triangles that stand alone follow the quads' four each in [triangles] as they are.
  */
-class QuadFan(mesh: SurfaceMesh) {
+class QuadFan(mesh: SurfaceMesh, val fanned: Boolean = false) {
     /** How many vertices the mesh had, and how many the fan has. */
     val corners = mesh.vertexCount
-    val count: Int = corners + mesh.quadCount
+    val quads = mesh.quadCount
+    val middles = if (fanned) quads else 0
+    val count: Int = corners + middles
 
     /** How many of the mesh's triangles stand alone. */
     val singles: Int = mesh.triangleCount - mesh.quadCount * 2
 
     /** Each middle vertex's four corners, in order round its quad. */
-    private val around = IntArray((count - corners) * 4)
-    val triangles = IntArray((count - corners) * 12 + singles * 3).also { out ->
+    private val around = IntArray(middles * 4)
+    val triangles = if (!fanned) mesh.triangles else IntArray(middles * 12 + singles * 3).also { out ->
         val from = mesh.quadCount * 6
-        mesh.triangles.copyInto(out, (count - corners) * 12, from, from + singles * 3)
+        mesh.triangles.copyInto(out, middles * 12, from, from + singles * 3)
     }
 
     /** Each vertex's place: the mesh's own at once, each middle's once [build] and then [fill] have set it. */
@@ -41,7 +42,7 @@ class QuadFan(mesh: SurfaceMesh) {
     }
 
     /** Corner [c] of the mesh's triangle [s] that stands alone. */
-    fun singleCorner(s: Int, c: Int): Int = meshTriangles[(count - corners) * 6 + s * 3 + c]
+    fun singleCorner(s: Int, c: Int): Int = meshTriangles[quads * 6 + s * 3 + c]
 
     /** Corner [k] of quad [q], read from the mesh, so it is known before [build]. */
     fun corner(q: Int, k: Int): Int = meshTriangles[q * 6 + QUAD_CORNERS[k]]

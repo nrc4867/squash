@@ -27,11 +27,13 @@ fun main(args: Array<String>) {
             compareReads(example, document, look, drag)
             continue
         }
+        val opening = System.nanoTime()
         DragSession(document, CloseUps.shippedLibrary()).use { open ->
             val outfit = look.outfits?.firstOrNull()?.let { id -> document.character.wardrobe.outfits.first { it.id.value == id }.id }
             outfit?.let { open.session.send(ShowOutfit(it)) }
             open.settle()
             val name = "$example ${outfit?.value ?: "as saved"}"
+            println("$name: open ${(System.nanoTime() - opening) / 1_000_000} ms")
             for (script in drag.scripts(open)) DragTimer(open, drag.runs, drag.record).time(name, script)
             if (drag.switch) DragTimer(open, drag.runs).switchOutfits(name)
         }

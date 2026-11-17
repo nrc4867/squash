@@ -24,7 +24,7 @@ private const val TINY = 1e-12f
  */
 internal class ShadingSmoothing(private val mesh: SurfaceMesh, private val fan: QuadFan, private val fallback: FloatArray) {
     private val corners = fan.corners
-    private val quads = fan.count - corners
+    private val quads = fan.quads
     private var start = IntArray(0)
     private var links = IntArray(0)
     private var spare = FloatArray(corners * 3)

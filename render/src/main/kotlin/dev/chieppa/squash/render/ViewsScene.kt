@@ -37,7 +37,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
             for (draw in view.draws) {
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
                 if (draw.opacity < 1f) continue
-                for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), (layer.shape?.chart ?: layer.alphas)?.let(::uploadedAlphasFor), layer, draw, view)
+                for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.extras.map(::uploadedAlphasFor), layer, draw, view)
             }
             for (layer in view.fur) {
                 layer.ink?.let { ribbons.draw(pass, ribbonSlot++, it, view) }
@@ -65,8 +65,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
                 wanted[draw.mesh] = Unit
                 for (layer in draw.layers) {
                     wanted[layer.mesh] = Unit
-                    layer.alphas?.let { wantedAlphas[it] = Unit }
-                    layer.shape?.let { wantedAlphas[it.chart] = Unit }
+                    layer.extras.forEach { wantedAlphas[it] = Unit }
                 }
             }
         }
@@ -88,3 +87,4 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
         images.close()
     }
 }
+

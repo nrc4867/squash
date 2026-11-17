@@ -17,6 +17,7 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.ColorLayerDraw
+import dev.chieppa.squash.render.LayerSides
 import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.ObjectShading
@@ -58,7 +59,7 @@ fun surfaceDraw(
     }
     val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
-    val layers = sides + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
+    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
     return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = layers)
 }
 
@@ -70,7 +71,7 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
     val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
     val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
     val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
-    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = sides + painted)
+    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = listOfNotNull(sides) + painted)
 }
 
 /** One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat. */
@@ -78,15 +79,22 @@ private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartM
     val layerLit = palette.colorOf(layer.slot) ?: fallback.base
     if (layer.flat) return listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit), shape = layer.shape))
     val layerOwn = palette.shadowOf(layer.slot)
-    return listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera))) +
-        sideLayers(layer.mesh, layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)
+    val tones = DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera)
+    return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)))
 }
 
 /** [mesh] darkened as each side of the body's plane shows from [toCamera], by each vertex's share of that side, [positive] and [negative]. */
-private fun sideLayers(mesh: RenderMesh, lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): List<ColorLayerDraw> =
-    listOf(BodySide.POSITIVE_Z to positive, BodySide.NEGATIVE_Z to negative).mapNotNull { (side, shares) ->
-        shares?.let { ColorLayerDraw(mesh, DefaultToneRule.tones(lit, own, shading, side, toCamera), it) }
-    }
+private fun sideLayers(mesh: RenderMesh, lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): ColorLayerDraw? =
+    layerSides(lit, own, shading, toCamera, positive, negative)?.let { ColorLayerDraw(mesh, DefaultToneRule.tones(lit, own, shading, null, toCamera), sides = it) }
+
+/** The far sides' tones of [lit] and [own] by [positive] and [negative] shares, or null where neither side holds any. */
+private fun layerSides(lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): LayerSides? {
+    if (positive == null && negative == null) return null
+    return LayerSides(
+        DefaultToneRule.tones(lit, own, shading, BodySide.POSITIVE_Z, toCamera), positive,
+        DefaultToneRule.tones(lit, own, shading, BodySide.NEGATIVE_Z, toCamera), negative,
+    )
+}
 
 /** What of [part], a part of the one surface, still draws as its own mesh: its pieces that are not runs, a pad, with their own color. */
 fun piecesDraw(part: PlacedPart, color: PartColor?, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3): MeshDraw? {
