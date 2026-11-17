@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.block
 
 import dev.chieppa.squash.character.build.BuildContext
+import dev.chieppa.squash.character.build.UndrawnSilhouettes
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
@@ -8,12 +9,11 @@ import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Rides
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.geom.field.Blended
 import dev.chieppa.squash.geom.field.BlendedField
-import dev.chieppa.squash.geom.field.Capsule
 import dev.chieppa.squash.geom.field.DigitAxis
 import dev.chieppa.squash.geom.field.DigitClaims
 import dev.chieppa.squash.geom.field.FieldDigits
+import dev.chieppa.squash.geom.field.FieldFit
 import dev.chieppa.squash.geom.field.FieldLoft
 import dev.chieppa.squash.geom.field.RingFrame
 import kotlin.math.sin
@@ -39,16 +39,11 @@ private const val FOLLOW_OUT = 2.6f
 /** Within how many radii of the nearest digit's axis another digit's shares a vertex's bones. */
 private const val ACROSS = 0.35f
 
-/** How far past its seam, in its radii, a digit reaches in the field the field's own run is cut through. */
-private const val ROOT_REACH = 2f * MARGIN
-
 /** Of a joined digit's rings, how many run from its start inside the field to its root. */
 private const val ROOT_RINGS = 4
 
 /** How many of a joined digit's rings close its tip. */
 private const val TIP_RINGS = 4
-
-private const val DEGREES_TO_RADIANS = (kotlin.math.PI / 180.0).toFloat()
 
 /**
  * A part's [Field] with a [Digits] row joined to it: one field holding both, the digits' axes, which digit owns which part of the
@@ -66,11 +61,16 @@ internal class JoinedDigits private constructor(
     val axes: List<DigitAxis>,
     val claims: DigitClaims,
     val spans: List<Span>,
+    /** How the solid is fitted to the part's drawing, or null when it is not. */
+    val fit: FieldFit?,
 ) {
     private val length = ctx.solidLength
 
     /** The patch name of the [k]th built digit. */
-    fun patchName(k: Int) = row.patchOf(k)
+    fun patchName(k: Int) = row.patchOf(k, built[k])
+
+    /** The u of the field's run at [a] along the axis, read where that plane comes from on the solid as it stands undrawn. */
+    fun fieldU(a: Float): Float = (fit?.naturalAlong(a) ?: a) / length - own.from
 
     /** Where along the part's axis the field's run stops open: past every digit's seam by the overlap and a ring, inside the field's own reach. */
     fun fieldEnd(): Float {
@@ -152,81 +152,27 @@ internal class JoinedDigits private constructor(
 
         private fun make(ctx: BuildContext, own: Field, row: Digits): JoinedDigits {
             val built = row.builtDigits(ctx)
-            val claw = clawOf(ctx, row)
-            val clawCurl = row.nail?.let { ctx.value(it.curl) } ?: 0f
-            val bean = row.pad?.takeIf { it.isOn(ctx.values) }?.let { ctx.value(it.rise) } ?: 0f
             val length = ctx.solidLength
             val reach = ctx.value(row.reach)
             val thickness = ctx.value(row.thickness)
-            val taper = ctx.value(row.taper)
-            val swell = ctx.value(row.knuckle)
-            val knuckles = ctx.value(row.knuckles)
-            val merge = ctx.value(row.merge)
-            val axes = built.map { i ->
+            val claw = clawOf(ctx, row)
+            val natural = built.map { i ->
                 val digit = row.digits[i]
                 val root = point(ctx, digit.root.map { Param.of(it) })
                 val digitLength = digit.length * length * reach
-                DigitAxis(own.cupped(ctx, root), digit.direction(), digitLength, digit.radius * length * thickness, claw * digitLength)
+                DigitAxis(own.cupped(ctx, root), digit.direction(ctx.value(row.spread)), digitLength, digit.radius * length * thickness, claw * digitLength)
             }
-            val solids = ArrayList<Blended>()
-            val roots = ArrayList<Blended>()
-            val join = ctx.value(requireNotNull(row.join)) * length
-            val joins = ArrayList<Float>()
-            val rootJoins = ArrayList<Float>()
-            built.forEachIndexed { k, i ->
-                val digit = row.digits[i]
-                val axis = axes[k]
-                val blend = axis.radius * merge
-                fun radiusAt(s: Float) = axis.radius * (1f + (taper - 1f) * s) * (if (s > 0f && digit.joints.any { kotlin.math.abs(it - s) < 1e-4f }) 1f + swell else 1f)
-                val tipRadius = radiusAt(1f)
-                val bodyEnd = 1f - tipRadius / axis.length
-                val stops = (listOf(0f) + digit.joints.filter { it > 0f && it < bodyEnd } + bodyEnd).distinct()
-                stops.zipWithNext().forEach { (a, b) ->
-                    solids += Blended(Capsule(axis.at(a), axis.at(b), radiusAt(a), if (b == bodyEnd) tipRadius else radiusAt(b)), blend)
-                    joins += join * digit.join
-                }
-                if (claw > 0f) {
-                    val back = backOf(axis.direction, digit.roll * DEGREES_TO_RADIANS)
-                    val clawLength = claw * axis.length
-                    val base = axis.at(bodyEnd) + back * (tipRadius * CLAW_BACK)
-                    val point = axis.at(1f + claw) - back * (clawLength * clawCurl)
-                    solids += Blended(Capsule(base, point, tipRadius * CLAW_ROOT, tipRadius * CLAW_POINT), blend)
-                    joins += join * digit.join
-                }
-                row.pad?.takeIf { bean > 0f }?.let { pad ->
-                    val back = backOf(axis.direction, digit.roll * DEGREES_TO_RADIANS)
-                    val r = axis.radius * bean
-                    val at = axis.at(pad.at) - back * (axis.radius - r * BEAN_SINK)
-                    solids += Blended(Capsule(at, at, r), blend)
-                    joins += join * digit.join
-                }
-                if (knuckles * digit.knuckle > 0f) {
-                    val back = backOf(axis.direction, digit.roll * DEGREES_TO_RADIANS)
-                    solids += Blended(Capsule(axis.root + back * (axis.radius * KNUCKLE_BACK), axis.root + back * (axis.radius * KNUCKLE_BACK), axis.radius * knuckles * digit.knuckle), blend)
-                    joins += join * digit.join
-                    roots += solids.last()
-                    rootJoins += join * digit.join
-                }
-            }
-            val palm = own.field(ctx)
+            val views = ctx.views
+            val fit = if (own.fit && views != null) UndrawnSilhouettes.of(ctx).fitTo(views) else null
+            val axes = if (fit == null) natural else natural.map(fit::axis)
+            val palm = own.field(ctx).fitted(fit)
             val seams = FloatArray(axes.size) { emerges(palm, axes[it]) - SEAM * axes[it].radius / axes[it].length }
-            axes.forEachIndexed { k, axis ->
-                val clip = seams[k] + ROOT_REACH * axis.radius / axis.length
-                roots += Blended(Capsule(axis.at(0f), axis.at(clip), axis.radius, axis.radius * (1f + (taper - 1f) * clip)), axis.radius * merge)
-                rootJoins += join * row.digits[built[k]].join
-            }
-            val field = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids, join, joins.toFloatArray()), palm.cup)
-            val rootsField = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(roots, join, rootJoins.toFloatArray()), palm.cup)
-            return JoinedDigits(ctx, own, row, built, field, rootsField, axes, DigitClaims(axes, seams, CLAIM), built.map { row.span(it) })
+            val solids = DigitSolids.of(ctx, row, built, axes, seams)
+            val join = ctx.value(requireNotNull(row.join)) * length
+            val field = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.whole, join, solids.wholeJoins), palm.cup, fit)
+            val rootsField = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.roots, join, solids.rootJoins), palm.cup, fit)
+            return JoinedDigits(ctx, own, row, built, field, rootsField, axes, DigitClaims(axes, seams, CLAIM), built.map { row.span(it) }, fit)
         }
-
-        /** A claw's thickness where it leaves the tip and at its point, in the tip's radii, and how far toward the back it grows from. */
-        private const val CLAW_ROOT = 0.75f
-        private const val CLAW_POINT = 0.12f
-        private const val CLAW_BACK = 0.2f
-
-        /** How far a toe bean's ball sinks into its digit's underside, as a share of each radius. */
-        private const val BEAN_SINK = 0.5f
 
         /** How many of a digit's tip rings more a claw takes. */
         private const val CLAW_RINGS = 4
@@ -245,9 +191,6 @@ internal class JoinedDigits private constructor(
         private const val EMERGE = 1f
         private const val EMERGE_STEP = 0.1f
         private const val EMERGE_BEHIND = 1f
-
-        /** How far toward its back, in its radii, a digit's knuckle ball sits from its root. */
-        private const val KNUCKLE_BACK = 0.3f
 
         /** The direction of a digit's back, v = 0.25 round its rings, for a digit along [direction] rolled [roll] radians. */
         fun backOf(direction: Vec3, roll: Float): Vec3 = RingFrame.of(direction, roll).side

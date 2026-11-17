@@ -1,0 +1,58 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "foot-bird",
+  "version": 4,
+  "name": "Bird foot",
+  "role": "foot",
+  "axis": { "rest": [1, 0, 0], "length": 0.24 },
+  "openEnd": null,
+  "topology": { "rings": 36, "segments": 32 },
+  "views": { "side": "height", "top": "width", "front": "cap" },
+  "section": "circle",
+  "params": {
+    "size":         { "default": 1.0, "min": 0.4, "max": 2.5 },
+    "toes":         { "default": 3, "values": [2, 3, 4] },
+    "hallux":       { "default": true },
+    "toeLength":    { "default": 1.0, "min": 0.4, "max": 2.0 },
+    "toeThickness": { "default": 1.0, "min": 0.5, "max": 1.8 },
+    "spread":       { "default": 1.0, "min": 0.2, "max": 1.8 },
+    "knuckle":      { "default": 0.2, "min": 0.0, "max": 0.6 },
+    "merge":        { "default": 0.2, "min": 0.0, "max": 2.0 },
+    "web":          { "default": 0.03, "min": 0.0, "max": 0.2 },
+    "claws":        { "default": true },
+    "claw":         { "default": 0.3, "min": 0.0, "max": 1.2 },
+    "clawCurl":     { "default": 0.0, "min": -1.0, "max": 1.0 },
+    "pads":         { "default": true },
+    "padSize":      { "default": 0.35, "min": 0.0, "max": 0.8 },
+    "width":        { "default": 0.12, "min": 0.06, "max": 0.3 }
+  },
+  "blocks": [
+    { "kind": "field", "fit": true, "u": [0.0, 1.0], "from": 0.0,
+      "parts": [
+        { "name": "ankle", "shape": "ellipsoid", "at": [0.06, 0.0, 0.0], "radii": [0.11, 0.1, 0.1] },
+        { "name": "pad", "shape": "ellipsoid", "at": [0.22, -0.05, 0.0], "radii": [0.15, 0.065, "$width"], "blend": 0.06 }
+      ],
+      "floor": { "at": -0.135, "blend": 0.02 } },
+    { "kind": "digits", "name": "toes", "from": 0.0, "count": "$toes", "rings": 30, "segments": 16,
+      "taper": 0.45, "knuckle": "$knuckle", "reach": "$toeLength", "thickness": "$toeThickness", "spread": "$spread",
+      "hinge": "x", "limits": [-15, 80], "join": "$web", "merge": "$merge",
+      "digits": [
+        { "root": [0.3, -0.06, -0.025], "toward": [0.97, -0.03, -0.24], "length": 0.6, "radius": 0.05, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [2] },
+        { "root": [0.3, -0.06, 0.025], "toward": [0.97, -0.03, 0.24], "length": 0.6, "radius": 0.05, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [2] },
+        { "root": [0.29, -0.06, -0.045], "toward": [0.87, -0.03, -0.5], "length": 0.52, "radius": 0.045, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [3] },
+        { "root": [0.31, -0.06, 0.0], "toward": [1.0, -0.03, 0.0], "length": 0.64, "radius": 0.05, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [3] },
+        { "root": [0.29, -0.06, 0.045], "toward": [0.87, -0.03, 0.5], "length": 0.52, "radius": 0.045, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [3] },
+        { "root": [0.28, -0.06, -0.06], "toward": [0.74, -0.03, -0.67], "length": 0.46, "radius": 0.042, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [4] },
+        { "root": [0.31, -0.06, -0.022], "toward": [0.97, -0.03, -0.24], "length": 0.6, "radius": 0.046, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [4] },
+        { "root": [0.31, -0.06, 0.022], "toward": [0.97, -0.03, 0.24], "length": 0.6, "radius": 0.046, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [4] },
+        { "root": [0.28, -0.06, 0.06], "toward": [0.74, -0.03, 0.67], "length": 0.46, "radius": 0.042, "joints": [0, 0.4, 0.72], "roll": -90, "counts": [4] },
+        { "name": "back", "if": "$hallux", "root": [0.16, -0.06, 0.0], "toward": [-1.0, -0.08, 0.0], "length": 0.34, "radius": 0.045, "joints": [0, 0.55], "roll": -90 }
+      ],
+      "nail": { "name": "claw", "if": "$claws", "at": 0.9, "length": 0.16, "width": 0.3, "color": "claw", "claw": "$claw", "curl": "$clawCurl" },
+      "pad": { "name": "pad", "if": "$pads", "at": 0.45, "length": 0.3, "width": 0.3, "color": "pad", "rise": "$padSize" } },
+    { "kind": "joint", "name": "ankle", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "area", "name": "top", "u": [0.0, 0.4], "v": [0.75, 0.25], "tag": "fill" },
+    { "kind": "area", "name": "toes", "u": [0.0, 1.0], "v": [0, 1], "tag": "fill", "patch": "toes" }
+  ]
+}

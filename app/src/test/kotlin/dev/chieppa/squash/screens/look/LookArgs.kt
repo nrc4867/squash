@@ -57,6 +57,15 @@ class LookArgs(args: Array<String>) {
         Triple(part, name, value.toFloat())
     }.orEmpty()
 
+    /** Templates to swap parts to before anything else, from `template=part:id:version,...`, each sent as Set template. */
+    val templates: List<Pair<String, String>> = values["template"]?.split(',')?.map { entry ->
+        require(entry.count { it == ':' } == 2) { "template takes part:id:version, not $entry" }
+        entry.substringBefore(':') to entry.substringAfter(':')
+    }.orEmpty()
+
+    /** Outlines to start from template and drag after the parameters are set, from `outline=part:along:across,...` (see [OutlineDrag]). */
+    val outlineDrags: List<OutlineDrag> = values["outline"]?.split(',')?.map(OutlineDrag::parse).orEmpty()
+
     /** With `paint=test`, test regions painted over the example before it renders (see [paintTest]). */
     val paintTest: Boolean = values["paint"] == "test"
 

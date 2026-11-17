@@ -43,6 +43,15 @@ class ViewSizing private constructor(
 
     private fun floored(extent: Float): Float = max(extent, length * MIN_EXTENT_OF_LENGTH)
 
+    /** How far along the rest axis from the socket plane, in body units, the plane of [u] lies: the inverse of [uAt]. */
+    fun alongAt(u: Float): Float = stationOf(u) * scale
+
+    /** Whether the height view is drawn, so [upAt] reads a drawing. */
+    val hasHeight: Boolean get() = height != null
+
+    /** How far toward the part's up, in body units, the height view's midline lies at [u]; 0 where that view is not drawn. */
+    fun upAt(u: Float): Float = (height?.midAt(stationOf(u)) ?: 0f) * scale
+
     /** The full height the height view gives at [u], or null if that view is not drawn. */
     fun heightAt(u: Float): Float? = height?.let { floored(it.extentAt(stationOf(u)) * scale) }
 

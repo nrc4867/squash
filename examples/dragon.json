@@ -1385,7 +1385,7 @@
                 "id": "front-paw-l",
                 "template": {
                     "id": "paw",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "front-leg-l",
@@ -1399,7 +1399,7 @@
                 "id": "front-paw-r",
                 "template": {
                     "id": "paw",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "front-leg-r",
@@ -1413,7 +1413,7 @@
                 "id": "back-paw-l",
                 "template": {
                     "id": "paw",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "back-leg-l",
@@ -1427,7 +1427,7 @@
                 "id": "back-paw-r",
                 "template": {
                     "id": "paw",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "back-leg-r",

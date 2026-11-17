@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.block
 
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.character.build.BuildContext
+import dev.chieppa.squash.character.build.UndrawnSilhouettes
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
@@ -15,6 +16,7 @@ import dev.chieppa.squash.geom.field.Bend
 import dev.chieppa.squash.geom.field.Cup
 import dev.chieppa.squash.geom.field.DrawnRing
 import dev.chieppa.squash.geom.field.FieldLoft
+import dev.chieppa.squash.geom.ViewSizing
 import dev.chieppa.squash.geom.field.Floor
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -46,6 +48,8 @@ data class Field(
     val bend: FieldBend? = null,
     @Doc("How far the first solid's edges come toward the part's negative side, as a fraction of the axis length, growing as the square of how far they lie from its middle: a cupped palm. Digits joined to the field keep their roots on it.")
     val cup: Param = Param.of(0f),
+    @Doc("Whether drawn Side and Top outlines fit the whole solid, digits and all: its reach along the axis, and its height, width and midline at each point along it, take the drawing's, the template's numbers shaping what lies within.")
+    val fit: Boolean = false,
 ) : Block {
     override fun run() = u
 
@@ -54,8 +58,9 @@ data class Field(
     override fun build(ctx: BuildContext): List<Patch> {
         val length = ctx.solidLength
         JoinedDigits.of(ctx)?.let { joined -> return listOf(joinedRun(ctx, joined)) }
-        val field = field(ctx)
         val views = ctx.views
+        if (fit && views != null) return listOf(fittedRun(ctx, views))
+        val field = field(ctx)
         val drawn: (Float) -> DrawnRing? = if (views == null) { _ -> null } else { u ->
             val at = views.uAt((u + from) * length)
             if (at <= 0f || at >= 1f) null else views.heightAt(at).let { height -> DrawnRing(height, views.widthAt(at), height?.let { views.centreAt(at) }) }
@@ -67,13 +72,24 @@ data class Field(
         return listOf(patch)
     }
 
+    /** The run over the field fitted to the drawing, its u read where each ring's plane comes from on the field as it stands undrawn. */
+    private fun fittedRun(ctx: BuildContext, views: ViewSizing): Patch {
+        val length = ctx.solidLength
+        val natural = field(ctx)
+        val fitted = natural.fitted(UndrawnSilhouettes.of(ctx).fitTo(views))
+        val toNatural = { a: Float -> fitted.fit?.naturalAlong(a) ?: a }
+        return FieldLoft.loft(
+            name ?: BODY_PATCH, fitted, ctx.axes, ctx.template.topology.rings, ctx.template.topology.segments,
+            uOf = { a -> toNatural(a) / length - from }, checkCancelled = ctx.checkCancelled,
+        )
+    }
+
     /**
      * The run over the field with digits joined to it, each digit only as far as just past its seam: rays stop where they first leave
      * the solid, and the run stops open past the digits' seams; what the digits own is buried, and every vertex takes its bones by its place.
      */
     private fun joinedRun(ctx: BuildContext, joined: JoinedDigits): Patch {
-        val length = ctx.solidLength
-        val uOf = { a: Float -> a / length - from }
+        val uOf = joined::fieldU
         val patch = FieldLoft.loft(
             name ?: BODY_PATCH, joined.rootsField, ctx.axes, ctx.template.topology.rings, ctx.template.topology.segments,
             uOf = uOf, checkCancelled = ctx.checkCancelled, end = joined.fieldEnd(), firstCrossing = true, shadedBy = joined.field,

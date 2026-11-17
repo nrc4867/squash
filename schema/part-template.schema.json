@@ -622,6 +622,29 @@
               "type": "null"
             }
           ]
+        },
+        "name": {
+          "description": "A name that sets the digit outside the row's count, built whatever the count, its patch, joints and marks named for it: a hind toe.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "description": "A flag that builds the named digit only while it is on.",
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -775,6 +798,18 @@
         },
         "thickness": {
           "description": "Every digit's thickness is multiplied by this.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "spread": {
+          "description": "Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.",
           "oneOf": [
             {
               "type": "number"
@@ -976,6 +1011,10 @@
               "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
             }
           ]
+        },
+        "fit": {
+          "description": "Whether drawn Side and Top outlines fit the whole solid, digits and all: its reach along the axis, and its height, width and midline at each point along it, take the drawing's, the template's numbers shaping what lies within.",
+          "type": "boolean"
         }
       },
       "required": [

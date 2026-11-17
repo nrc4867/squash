@@ -6,6 +6,9 @@ import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
+import dev.chieppa.squash.document.SetTemplate
+import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
@@ -53,7 +56,10 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
     TestWork().use { work ->
         val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)
+        look.templates.forEach { (part, ref) -> session.send(SetTemplate(PartId(part), TemplateRef(TemplateId(ref.substringBefore(':')), ref.substringAfter(':').toInt()))) }
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+        work.settle(session)
+        look.outlineDrags.forEach { it.apply(session, work) }
         if (look.paintTest) paintTestOf(session, example)
         work.settle(session)
         if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)

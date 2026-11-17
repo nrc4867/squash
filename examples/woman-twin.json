@@ -1708,7 +1708,7 @@
                 "id": "hand-l",
                 "template": {
                     "id": "hand",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "arm-l",
@@ -1722,7 +1722,7 @@
                 "id": "hand-r",
                 "template": {
                     "id": "hand",
-                    "version": 5
+                    "version": 6
                 },
                 "socket": {
                     "parent": "arm-r",
@@ -1736,7 +1736,7 @@
                 "id": "foot-l",
                 "template": {
                     "id": "foot",
-                    "version": 4
+                    "version": 5
                 },
                 "socket": {
                     "parent": "leg-l",
@@ -1750,7 +1750,7 @@
                 "id": "foot-r",
                 "template": {
                     "id": "foot",
-                    "version": 4
+                    "version": 5
                 },
                 "socket": {
                     "parent": "leg-r",

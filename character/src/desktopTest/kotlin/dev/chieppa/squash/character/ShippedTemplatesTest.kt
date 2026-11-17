@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.block.Field
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.lint.SocketFit
 import dev.chieppa.squash.character.model.End
@@ -34,9 +35,9 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4),
-                "foot-bird" to listOf(1, 2, 3), "hair" to listOf(1), "hair-cap" to listOf(1), "hand" to listOf(1, 2, 3, 4, 5), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
-                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4, 5), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
+                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4, 5),
+                "foot-bird" to listOf(1, 2, 3, 4), "hair" to listOf(1), "hair-cap" to listOf(1), "hand" to listOf(1, 2, 3, 4, 5, 6), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
+                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4, 5, 6), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1), "wing-membrane" to listOf(1),
             ),
             versions,
@@ -66,7 +67,7 @@ class ShippedTemplatesTest {
     @Test
     fun randomParametersInsideTheirRangesBuild() {
         val random = Random(1)
-        for (template in shipped.parts) {
+        for (template in shipped.parts.filterNot(::buildsAsTheVersionBefore)) {
             repeat(RANDOM_BUILDS) {
                 val params = template.params.filterValues { it.values != null || (it.min != null && it.max != null) }.mapValues { (_, spec) ->
                     spec.values?.random(random) ?: (spec.min!! + random.nextFloat() * (spec.max!! - spec.min))
@@ -118,6 +119,13 @@ class ShippedTemplatesTest {
         val moved = body.points.copyOf().also { it[body.index(8, 5) * Patch.COMPONENTS + 1] += FIXTURE_STEP * 2f }
         val changed = patches.map { if (it === body) Patch(it.name, it.nu, it.nv, it.closedV, it.slices, moved, it.boneU) else it }
         assertNotEquals(templateFixture(PartBuilder.mesh("paw", paw, patches)), templateFixture(PartBuilder.mesh("paw", paw, changed)))
+    }
+
+    /** Whether [template] differs from its version before only in fitting its field to a drawing, so with nothing drawn it builds the same. */
+    private fun buildsAsTheVersionBefore(template: PartTemplate): Boolean {
+        val before = shipped.parts.singleOrNull { it.id == template.id && it.version == template.version - 1 } ?: return false
+        val unfitted = template.blocks.map { if (it is Field) it.copy(fit = false) else it }
+        return unfitted == before.blocks && template.params == before.params
     }
 
     private fun assertBuildHolds(template: PartTemplate, params: Map<String, Float>) {

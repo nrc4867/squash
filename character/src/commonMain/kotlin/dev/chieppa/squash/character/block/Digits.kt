@@ -27,6 +27,9 @@ import dev.chieppa.squash.geom.field.DigitLoft
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.sqrt
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.max
@@ -84,6 +87,8 @@ data class Digits(
     val reach: Param = Param.of(1f),
     @Doc("Every digit's thickness is multiplied by this.")
     val thickness: Param = Param.of(1f),
+    @Doc("Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.")
+    val spread: Param = Param.of(1f),
     @Doc("Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it.")
     val hinge: Hinge = Hinge.X,
     @Doc("Degrees the joints turn within.")
@@ -109,64 +114,82 @@ data class Digits(
 
     override fun countedPatches(values: Map<String, Float>): Set<String> {
         if (condition?.let { values[it.name] == 0f } == true) return emptySet()
-        return builtOf(count?.resolve(values)?.roundToInt() ?: digits.size).indices.map(::patchOf).toSet()
+        val built = builtOf(count?.resolve(values)?.roundToInt() ?: digits.size, values)
+        return built.indices.map { patchOf(it, built[it]) }.toSet()
     }
 
-    /** The patch of the [k]th digit the row builds, counted from 0 whichever of [digits] it is. */
-    internal fun patchOf(k: Int) = "$rowName:$k"
+    /** The patch of the [k]th digit the row builds, [digits]' [i]th: named for the digit where it has a name, else for [k], counted from 0 whichever of [digits] it is. */
+    internal fun patchOf(k: Int, i: Int) = digits[i].name?.let { "$rowName:$it" } ?: "$rowName:$k"
 
     /**
-     * The places in [digits] of the digits a row of [count] builds, in order: those that list [count] among their counts, or the first
-     * [count] when no digit lists any.
+     * The places in [digits] of the unnamed digits a row of [count] builds, in order: those that list [count] among their counts, or the
+     * first [count] when no digit lists any.
      */
-    private fun builtOf(count: Int): List<Int> =
-        if (digits.any { it.counts != null }) digits.indices.filter { digits[it].counts?.contains(count) == true }
-        else (0 until count.coerceIn(0, digits.size)).toList()
+    private fun countedOf(count: Int): List<Int> {
+        val unnamed = digits.indices.filter { digits[it].name == null }
+        return if (unnamed.any { digits[it].counts != null }) unnamed.filter { digits[it].counts?.contains(count) == true }
+        else unnamed.take(count.coerceIn(0, unnamed.size))
+    }
+
+    /** The places in [digits] of every digit a row of [count] builds with [values]: the counted ones, then each named one whose flag is on. */
+    private fun builtOf(count: Int, values: Map<String, Float>): List<Int> =
+        countedOf(count) + digits.indices.filter { digits[it].name != null && digits[it].isOn(values) }
 
     /** The places in [digits] of the digits [ctx]'s build makes. */
-    internal fun builtDigits(ctx: BuildContext): List<Int> = builtOf(count?.let { ctx.value(it).roundToInt() } ?: digits.size)
+    internal fun builtDigits(ctx: BuildContext): List<Int> = builtOf(count?.let { ctx.value(it).roundToInt() } ?: digits.size, ctx.values)
 
     override fun areas(values: Map<String, Float>): List<AreaSpec> {
-        val built = builtOf(count?.or(values)?.roundToInt() ?: digits.size)
+        val built = builtOf(count?.or(values)?.roundToInt() ?: digits.size, values)
         val nails = nail?.takeIf { it.isOn(values) }?.let { nail ->
             val claw = nail.claw.or(values)
             built.mapIndexed { k, i ->
                 val end = if (claw > 0f) 1f + claw else nail.at + nail.length / 2f
-                oval("${nail.name}:$k", k, i, nail.at - nail.length / 2f, end, BACK, nail.width, nail.color, round = claw == 0f)
+                oval(markOf(nail.name, k, i), k, i, nail.at - nail.length / 2f, end, BACK, nail.width, nail.color, round = claw == 0f)
             }
         }.orEmpty()
         val pads = pad?.takeIf { it.isOn(values) }?.let { pad ->
-            built.mapIndexed { k, i -> oval("${pad.name}:$k", k, i, pad.at - pad.length / 2f, pad.at + pad.length / 2f, UNDER, pad.width, pad.color, round = true) }
+            built.mapIndexed { k, i -> oval(markOf(pad.name, k, i), k, i, pad.at - pad.length / 2f, pad.at + pad.length / 2f, UNDER, pad.width, pad.color, round = true) }
         }.orEmpty()
         return nails + pads
     }
+
+    /** The name of mark [mark] on the [k]th built digit, [digits]' [i]th: named for the digit where it has a name. */
+    private fun markOf(mark: String, k: Int, i: Int) = "$mark:${digits[i].name ?: k}"
 
     /** An area on the [k]th built digit, [digits]' [i]th, from [from] to [to] along it, [width] of a turn round it about [around]. */
     private fun oval(name: String, k: Int, i: Int, from: Float, to: Float, around: Float, width: Float, color: String, round: Boolean): AreaSpec {
         val span = span(i)
         fun u(share: Float) = span.start + (span.end - span.start) * share
         return AreaSpec(
-            name, Span(u(from), u(to)), Span((around - width / 2f).mod(1f), (around + width / 2f).mod(1f)), AreaTag.FILL, patchOf(k), color, round = round,
+            name, Span(u(from), u(to)), Span((around - width / 2f).mod(1f), (around + width / 2f).mod(1f)), AreaTag.FILL, patchOf(k, i), color, round = round,
         )
     }
 
-    /** Digit [i]'s u along the part from its root to its tip, fixed by the template's numbers so a pose's joints stay where the rings are. */
+    /**
+     * Digit [i]'s u along the part from its root to its tip, fixed by the template's numbers so a pose's joints stay where the rings are;
+     * a digit pointing back runs up from its root's u as far as it reaches back.
+     */
     internal fun span(i: Int): Span {
         val digit = digits[i]
         val direction = digit.direction()
-        return Span(digit.root[0] - from, digit.root[0] + direction.x * digit.length - from)
+        return Span(digit.root[0] - from, digit.root[0] + abs(direction.x) * digit.length - from)
     }
 
-    /** Each built digit's chain, the row's count read from how many of its patches [patches] holds, which picks the digits a count builds. */
+    /**
+     * Each built digit's chain: the row's count read from how many of its numbered patches [patches] holds, which picks the digits a
+     * count builds, and a named digit wherever its patch is there.
+     */
     override fun digitChains(patches: Set<String>): List<DigitChain> {
-        val built = builtOf(patches.count { it.startsWith("$rowName:") && it.removePrefix("$rowName:").toIntOrNull() != null })
-        return built.indices.filter { patchOf(it) in patches }.map { k ->
+        val counted = countedOf(patches.count { it.startsWith("$rowName:") && it.removePrefix("$rowName:").toIntOrNull() != null })
+        val built = counted + digits.indices.filter { digits[it].name != null && "$rowName:${digits[it].name}" in patches }
+        return built.indices.filter { patchOf(it, built[it]) in patches }.map { k ->
             val digit = digits[built[k]]
             val span = span(built[k])
+            val patch = patchOf(k, built[k])
             val specs = digit.joints.mapIndexed { j, share ->
-                JointSpec("${patchOf(k)}.${j + 1}", span.start + (span.end - span.start) * share, null, digit.hinge ?: hinge, digit.limits ?: limits, stretch = false)
+                JointSpec("$patch.${j + 1}", span.start + (span.end - span.start) * share, null, digit.hinge ?: hinge, digit.limits ?: limits, stretch = false)
             }
-            DigitChain(patchOf(k), k, span, false, specs)
+            DigitChain(patch, k, span, digit.pointsBack(), specs)
         }
     }
 
@@ -175,7 +198,7 @@ data class Digits(
         val section = SectionProfile.CIRCLE.spline(segments)
         return builtDigits(ctx).mapIndexed { k, i ->
             ctx.checkCancelled()
-            segment(ctx, i, patchOf(k), section)
+            segment(ctx, i, patchOf(k, i), section)
         }
     }
 
@@ -190,8 +213,7 @@ data class Digits(
             roll = digit.roll * DEGREES_TO_RADIANS, buriedBefore = joined.buriedBefore(k),
             begins = FloatArray(joined.axes.size) { joined.buriedBefore(it) }, checkCancelled = ctx.checkCancelled,
         )
-        val length = ctx.solidLength
-        patch.withBuried(patch.buried, joined.rides(patch, ctx.axes) { a -> a / length - joined.own.from })
+        patch.withBuried(patch.buried, joined.rides(patch, ctx.axes, joined::fieldU))
     }
 
     /**
@@ -204,7 +226,7 @@ data class Digits(
         val span = span(i)
         val length = digit.length * ctx.solidLength * ctx.value(reach)
         val radius = digit.radius * ctx.solidLength * ctx.value(thickness)
-        val direction = digit.direction()
+        val direction = digit.direction(ctx.value(spread))
         val root = point(ctx, digit.root.map { Param.of(it) })
         val toward = ctx.axes.point(direction.x, direction.y, direction.z)
         val rootAt = ctx.axes.point(root.x, root.y, root.z)
@@ -246,7 +268,7 @@ data class Digits(
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.param("join", join) + ctx.param("knuckles", knuckles) + ctx.param("merge", merge) +
         ctx.atLeast("rings", rings, MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS) + ctx.param("count", count) +
-            ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) +
+            ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) + ctx.param("spread", spread) +
             nail?.let { ctx.param("nail.claw", it.claw) + ctx.param("nail.curl", it.curl) }.orEmpty() +
             pad?.let { ctx.param("pad.rise", it.rise) }.orEmpty() +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") }
@@ -277,13 +299,34 @@ data class DigitSegment(
     val knuckle: Float = 1f,
     @Doc("The row counts it is built at, so a row holds a spread of digits for each count; unset on every digit, a count builds the first digits.")
     val counts: List<Int>? = null,
+    @Doc("A name that sets the digit outside the row's count, built whatever the count, its patch, joints and marks named for it: a hind toe.")
+    val name: String? = null,
+    @SerialName("if")
+    @Doc("A flag that builds the named digit only while it is on.")
+    val condition: ParamRef? = null,
 ) {
     fun direction(): Vec3 = Vec3(toward[0], toward[1], toward[2]).normalized()
+
+    /** Its direction with its angle from the part's axis, seen from above, multiplied by [spread]; a digit pointing back keeps its own. */
+    fun direction(spread: Float): Vec3 {
+        val d = direction()
+        if (spread == 1f || d.x <= 0f) return d
+        val flat = sqrt(d.x * d.x + d.z * d.z)
+        val angle = atan2(d.z, d.x) * spread
+        return Vec3(flat * cos(angle), d.y, flat * sin(angle)).normalized()
+    }
+
+    /** Whether it points back along the part from its root, a hind toe. */
+    fun pointsBack(): Boolean = direction().x < 0f
+
+    fun isOn(values: Map<String, Float>): Boolean = condition?.let { values[it.name] != 0f } ?: true
 
     fun lint(ctx: LintContext, field: String): List<Finding> =
         (if (root.size != COORDINATES) ctx.finding("$field.root", "a place is three numbers") else emptyList()) +
             (if (toward.size != COORDINATES) ctx.finding("$field.toward", "a direction is three numbers") else emptyList()) +
-            (if (toward.size == COORDINATES && direction().x <= 0f) ctx.finding("$field.toward", "a digit runs forward along the part") else emptyList()) +
+            (if (toward.size == COORDINATES && direction().x == 0f) ctx.finding("$field.toward", "a digit runs forward or back along the part") else emptyList()) +
+            (if (condition != null && name == null) ctx.finding("$field.if", "a digit a flag builds has a name") else emptyList()) +
+            ctx.flag("$field.if", condition) +
             DigitJoints.lintShares(ctx, "$field.joints", joints)
 }
 
