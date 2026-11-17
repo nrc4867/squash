@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.shell
 
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
+import dev.chieppa.squash.screens.Screen
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.document.DocumentFormat
@@ -15,6 +16,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import dev.chieppa.squash.screens.move.BodyAxis
+import dev.chieppa.squash.screens.move.HANDLE_DRAG_KEY_MODE
 
 class ShellKeysTest {
     private val work = TestWork()
@@ -122,5 +125,30 @@ class ShellKeysTest {
         assertEquals(listOf(KeyChord("U", ctrl = true, alt = true)), next.keymap.keysFor(ShellActions.UNDO))
         assertTrue(next.keymap.keysFor(ShellActions.MIRROR).isEmpty())
         assertEquals(listOf(KeyChord.parse("D")), next.keymap.keysFor(ActionId(BuildTool.DRAW_OUTLINE.actionId)))
+    }
+
+    @Test
+    fun whileAHandleDragsXYAndZHoldItToAnAxisAndArrowsNudgeWithMoveArmed() {
+        val shell = shell()
+        val state = shell.state
+        state.screen.value = Screen.WORKSPACE
+        fun dragKey(key: String) = shell.keymap.resolve(KeyChord.parse(key), HANDLE_DRAG_KEY_MODE)?.id?.value
+        assertEquals(BuildTool.ERASE.actionId, shell.resolve("X", Stage.SHAPE), "X erases while nothing drags")
+        assertNull(dragKey("X"))
+        state.move.dragging.value = true
+        assertEquals(ShellActions.dragAxis(BodyAxis.X).value, dragKey("X"))
+        assertEquals(ShellActions.dragAxis(BodyAxis.Y).value, dragKey("Y"))
+        assertEquals(ShellActions.dragAxis(BodyAxis.Z).value, dragKey("Z"))
+        assertNotNull(shell.keymap.resolve(KeyChord.parse("Y"), HANDLE_DRAG_KEY_MODE)).run.invoke()
+        assertEquals(BodyAxis.Y, state.move.axis.value)
+        assertNotNull(shell.keymap.resolve(KeyChord.parse("Y"), HANDLE_DRAG_KEY_MODE)).run.invoke()
+        assertNull(state.move.axis.value, "pressed again, it frees the drag")
+        state.move.dragging.value = false
+
+        state.armTool(BuildTool.MOVE)
+        assertEquals(ShellActions.NUDGE_LEFT.value, shell.resolve("Left", Stage.SHAPE))
+        assertEquals(ShellActions.NUDGE_UP_FAR.value, shell.resolve("Shift Up", Stage.SHAPE))
+        state.armTool(BuildTool.DRAW_OUTLINE)
+        assertNull(shell.resolve("Left", Stage.SHAPE), "arrows nudge only with Move armed")
     }
 }

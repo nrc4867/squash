@@ -59,7 +59,7 @@ class AddPartDropTest {
         val bench = LegBench(folder, work)
         val camera: LockedCamera
         val view: LockedHandleView
-        val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
+        val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK, TEST_DRAG_GUIDE_LOOK)
         val tail: SocketHandle
         val tailSocket: OpenSocket
         val refusing: SocketHandle

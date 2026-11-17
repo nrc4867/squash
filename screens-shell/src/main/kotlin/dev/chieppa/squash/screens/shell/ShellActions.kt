@@ -19,6 +19,11 @@ import dev.chieppa.squash.character.build.GarmentLook
 import dev.chieppa.squash.screens.sheet.PoseView
 import dev.chieppa.squash.screens.dress.newGarment
 import kotlinx.coroutines.launch
+import dev.chieppa.squash.screens.move.BodyAxis
+import dev.chieppa.squash.screens.move.HANDLE_DRAG_KEY_MODE
+import dev.chieppa.squash.screens.move.NUDGE_STEP
+import dev.chieppa.squash.screens.move.NUDGE_STEP_LARGE
+import dev.chieppa.squash.screens.move.nudgeSelected
 
 /** The shell's actions. An action's text key is its id. */
 object ShellActions {
@@ -95,7 +100,32 @@ object ShellActions {
     val DELETE_POINT = ActionId("delete-point")
     val HALF_OUTLINE = ActionId("half-outline")
     val ADD_PART = ActionId(BuildTool.ADD_PART.actionId)
+    val NUDGE_LEFT = ActionId("nudge-left")
+    val NUDGE_RIGHT = ActionId("nudge-right")
+    val NUDGE_UP = ActionId("nudge-up")
+    val NUDGE_DOWN = ActionId("nudge-down")
+    val NUDGE_LEFT_FAR = ActionId("nudge-left-far")
+    val NUDGE_RIGHT_FAR = ActionId("nudge-right-far")
+    val NUDGE_UP_FAR = ActionId("nudge-up-far")
+    val NUDGE_DOWN_FAR = ActionId("nudge-down-far")
+
+    /** The action that holds a handle's drag to [axis], or frees it from that axis. */
+    fun dragAxis(axis: BodyAxis) = ActionId("drag-axis-" + axis.name.lowercase())
 }
+
+/** An arrow key's nudge of the selected part: its action, its key, and how far it goes across and up the pane, in steps. */
+private class Nudge(val id: ActionId, val key: String, val right: Float, val up: Float)
+
+private val NUDGES = listOf(
+    Nudge(ShellActions.NUDGE_LEFT, "Left", -NUDGE_STEP, 0f),
+    Nudge(ShellActions.NUDGE_RIGHT, "Right", NUDGE_STEP, 0f),
+    Nudge(ShellActions.NUDGE_UP, "Up", 0f, NUDGE_STEP),
+    Nudge(ShellActions.NUDGE_DOWN, "Down", 0f, -NUDGE_STEP),
+    Nudge(ShellActions.NUDGE_LEFT_FAR, "Shift Left", -NUDGE_STEP_LARGE, 0f),
+    Nudge(ShellActions.NUDGE_RIGHT_FAR, "Shift Right", NUDGE_STEP_LARGE, 0f),
+    Nudge(ShellActions.NUDGE_UP_FAR, "Shift Up", 0f, NUDGE_STEP_LARGE),
+    Nudge(ShellActions.NUDGE_DOWN_FAR, "Shift Down", 0f, -NUDGE_STEP_LARGE),
+)
 
 private fun chord(keys: String) = listOf(KeyChord.parse(keys))
 
@@ -158,6 +188,15 @@ fun Shell.registerActions() {
     action(ShellActions.FIT_PANE, null, chord("F"), inWorkspace) { state.fitUnderPointer() }
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
     action(ShellActions.MIRROR, "mirror", chord("M"), { inWorkspace() && state.mirrorApplies() }) { state.mirror.value = !state.mirror.value }
+
+    val dragging = { inWorkspace() && state.move.dragging.value }
+    BodyAxis.entries.forEach { axis -> action(ShellActions.dragAxis(axis), null, chord(axis.name), dragging, HANDLE_DRAG_KEY_MODE) { state.move.holdAxis(axis) } }
+    val nudging = { inWorkspace() && state.tool.value == BuildTool.MOVE && !state.move.dragging.value }
+    for (nudge in NUDGES) {
+        action(nudge.id, null, chord(nudge.key), nudging, Stage.SHAPE.keyMode) {
+            state.nudgeSelected(state.hoveredView.value ?: state.activeView.value, nudge.right, nudge.up)
+        }
+    }
 
     Stage.entries.filter { it.holdsSelect }.forEach { stage ->
         action(ActionId(selectActionId(stage)), "select", chord("V"), inWorkspace, stage.keyMode) { state.putToolDown() }

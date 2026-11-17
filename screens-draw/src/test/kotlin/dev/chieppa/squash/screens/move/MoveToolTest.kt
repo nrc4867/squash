@@ -39,7 +39,7 @@ class MoveToolTest {
     /** A fennec with its front legs placed and a Side pane on the left leg. */
     private inner class Bench : LegBench(folder, work)
 
-    private fun tool(bench: Bench) = MoveTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
+    private fun tool(bench: Bench) = MoveTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK, TEST_DRAG_GUIDE_LOOK)
 
     private fun androidx.compose.ui.test.ComposeUiTest.settled(bench: Bench) = bench.settleIn(this)
 
@@ -152,7 +152,7 @@ class MoveToolTest {
         val open = moveHandles(bench.character, bench.leg).filterIsInstance<SocketHandle>()
         val leg = open.first { it.socket == "front-leg" }
         val tail = open.first { it.socket == "tail" }
-        val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK)
+        val add = AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK, TEST_DRAG_GUIDE_LOOK)
         showPane(add, camera)
         mouseDrag(listOf(view.toPixel(leg.position)))
         assertNotEquals("front-leg", bench.state.addingSocket.value?.name, "a placed part's socket has no dot to press")
@@ -173,7 +173,7 @@ class MoveToolTest {
             dots.all { (it - pixel).getDistance() > TEST_CURVE_LOOK.grabReach * 2 } &&
                 socketPlaceAt(bench.character, pixel, camera, LockedHandleView(camera), bench.session.restSurface)?.part?.id == bench.torso
         }
-        showPane(AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK), camera)
+        showPane(AddPartTool(bench.state, SMOKE_LOOK, TEST_CURVE_LOOK, TEST_DRAG_GUIDE_LOOK), camera)
         val steps = bench.steps()
         mouseDrag(listOf(press))
         waitForIdle()

@@ -35,9 +35,6 @@ private const val JOINT_SHARE = 0.75f
 /** A landmark's dot, this share of a socket's. */
 private const val LANDMARK_SHARE = 0.6f
 
-/** The middle of [part] at [u], between its surface's top and underside, in body space. */
-internal fun axisMiddle(part: PlacedPart, u: Float) = part.pointOn(u, 0f)?.let { top -> part.pointOn(u, 0.5f)?.let { (top + it) * 0.5f } }
-
 /** [part]'s axis as a dashed line through [sight], as Add joint shows the part it adds to. */
 fun OverlayBuilder.dashedAxis(part: PlacedPart, sight: SurfaceView, look: SheetLook) {
     val points = (0..AXIS_STEPS).mapNotNull { i -> axisMiddle(part, i.toFloat() / AXIS_STEPS)?.let(sight::toPixel) }

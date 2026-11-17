@@ -18,6 +18,7 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.TEST_CURVE_LOOK
 import dev.chieppa.squash.screens.move.MoveTool
+import dev.chieppa.squash.screens.move.TEST_DRAG_GUIDE_LOOK
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.SheetInput
@@ -70,7 +71,7 @@ class MoveSmokeTest {
         val selection = assertNotNull(sheetSelection(character, leg, emptyMap()))
         val rects = sheetPaneRects(MOVE_WIDTH, MOVE_HEIGHT, 2)
         val input = panesInput(selection, SMOKE_LOOK, rects, MOVE_WIDTH, MOVE_HEIGHT)
-        val tool = MoveTool(state, SMOKE_LOOK, TEST_CURVE_LOOK)
+        val tool = MoveTool(state, SMOKE_LOOK, TEST_CURVE_LOOK, TEST_DRAG_GUIDE_LOOK)
         val full = assertNotNull(input.full)
         val fullRect = rects[SheetPane.FULL.ordinal]
         val frame = sheetFrame(

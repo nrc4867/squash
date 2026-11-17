@@ -39,6 +39,7 @@ import dev.chieppa.squash.screens.shell.LocalActionKeys
 import dev.chieppa.stretch.frame.caps
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.squash.screens.shell.keyMode
+import dev.chieppa.squash.screens.move.HANDLE_DRAG_KEY_MODE
 import dev.chieppa.squash.screens.shell.ReferenceDrawers
 import dev.chieppa.squash.screens.shell.StageInspector
 import androidx.compose.runtime.getValue
@@ -60,7 +61,8 @@ fun SquashApp(state: AppState, chooser: FileChooser = rememberFileChooser(null),
     val screen by state.screen.collectAsState()
     val file by state.file.collectAsState()
     val stage by state.stage.collectAsState()
-    val mode = if (screen == Screen.WORKSPACE) stage.keyMode else null
+    val dragging by state.move.dragging.collectAsState()
+    val mode = if (screen != Screen.WORKSPACE) null else if (dragging) HANDLE_DRAG_KEY_MODE else stage.keyMode
     val keys: (String) -> List<String> = { id -> shell.keymap.keysFor(ActionId(id)).firstOrNull()?.caps().orEmpty() }
     CompositionLocalProvider(LocalActionText provides actionText(), LocalActionKeys provides keys) {
         Box(Modifier.fillMaxSize().focusHome().actionKeys(shell.keymap, mode)) {

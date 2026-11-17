@@ -19,6 +19,8 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+    // The Move tests open the shipped fennec, whose surface meshes its digits at a quarter of the body's cell, past the default heap.
+    maxHeapSize = "1g"
     val templates = rootProject.layout.projectDirectory.dir("templates")
     inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.templates", templates.asFile.path)

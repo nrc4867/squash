@@ -3,15 +3,12 @@ package dev.chieppa.squash.screens.move
 import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.addSocket
 import dev.chieppa.squash.screens.pickSocket
-import dev.chieppa.squash.character.block.DigitTips
-import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.screens.addJoint
 import dev.chieppa.squash.screens.addLandmark
 import dev.chieppa.squash.screens.jointPlace
 import dev.chieppa.squash.screens.pickJoint
-import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -26,16 +23,9 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.character.build.PlacementParams
-import dev.chieppa.squash.character.build.moveSocket
-import dev.chieppa.squash.character.session.CharacterSession
-import dev.chieppa.squash.document.DocumentCommand
-import dev.chieppa.squash.document.SetParameter
-import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.draw.followToRelease
 import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.edit.CurveLook
 import dev.chieppa.squash.screens.edit.rememberCurveLook
@@ -44,7 +34,6 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.SheetLook
 import dev.chieppa.squash.screens.sheet.rememberSheetLook
-import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 
@@ -54,10 +43,14 @@ import dev.chieppa.stretch.frame.buildOverlay
  * Pressing a socket's dot without moving selects the part on it, or targets an empty one in Library, and picks a hand-made
  * one. In Add socket a press on a part's surface places a socket there, previewed under the pointer, and a press on a hand-made
  * socket's dot picks it. In Add joint a press on a part places a joint at that u on its axis, and a press on a dot of the selected
- * part's joints picks it; in Add landmark a press places a landmark there. A drag the pane loses restores what was there.
+ * part's joints picks it, and dragging it moves it along its part; in Add landmark a press places a landmark there. Every drag is a
+ * [HandleDrag], held to an axis, slowed and snapped as it says. Arrow keys nudge the selected part's socket.
  */
-class MoveTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
+class MoveTool(private val state: AppState, var look: SheetLook, var curves: CurveLook, var guides: DragGuideLook) : PaneTool {
     private var dragging by mutableStateOf(false)
+
+    /** The drag of a socket's or a joint's dot. */
+    private val drag = HandleDrag(state)
 
     /** Where Add socket, Add joint or Add landmark would place under the pointer. */
     private val hover = SocketHover()
@@ -70,9 +63,10 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
 
     override fun fullInput(view: FullView): Modifier = presses(FULL, view, FullHandleView(view), view.width to view.height)
 
-    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = drawn(LockedHandleView(camera)) + preview(view, camera)
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay =
+        drawn(LockedHandleView(camera)) + preview(view, camera) + dragGuides(drag.shown, view, guides)
 
-    override fun fullOverlay(view: FullView): ViewportOverlay = drawn(FullHandleView(view)) + preview(FULL, view)
+    override fun fullOverlay(view: FullView): ViewportOverlay = drawn(FullHandleView(view)) + preview(FULL, view) + dragGuides(drag.shown, FULL, guides)
 
     private fun presses(pane: Any, sight: SurfaceView, handles: HandleView, key: Any): Modifier = Modifier
         .pointerInput(this, pane, key) {
@@ -91,6 +85,8 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                     if (joint != null) {
                         down.consume()
                         joint.first.id?.let { state.pickJoint(it, joint.second) }
+                        val movable = handles().filterIsInstance<JointHandle>().firstOrNull { it.part.id == joint.first.id && it.name == joint.second }
+                        if (movable != null) drag(movable, down.id, down.position, pane, handles)
                         return@awaitEachGesture
                     }
                 }
@@ -107,7 +103,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                 }
                 handle ?: return@awaitEachGesture
                 down.consume()
-                drag(handle, down.id, down.position, handles)
+                drag(handle, down.id, down.position, pane, handles)
             }
         }
         .then(hover.track(this, pane, key, { state.move.mode.value != MoveMode.PLACE_PART }) { pointer -> placeAt(pointer, sight, handles) })
@@ -170,52 +166,20 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
         }
     }
 
-    private suspend fun AwaitPointerEventScope.drag(handle: MoveHandle, id: PointerId, start: Offset, view: HandleView) {
-        val session = state.session.value ?: return
+    private suspend fun AwaitPointerEventScope.drag(handle: MoveHandle, id: PointerId, start: Offset, pane: Any, view: HandleView) {
         dragging = true
-        var gesture: History<SquashDocument>.Transaction? = null
-        var released = false
         try {
-            var moved = false
-            released = followToRelease(id, {}) { pixel ->
-                moved = moved || (pixel - start).getDistance() > viewConfiguration.touchSlop
-                if (!moved) return@followToRelease
-                val command = commandFor(session, handle, pixel, view) ?: return@followToRelease
-                val open = gesture ?: session.history.begin().also { gesture = it }
-                open.update(command)
-            }
-            if (released && !moved) pressed(handle)
+            with(drag) { follow(handle, id, start, pane, view) { pressed(handle) } }
         } finally {
             dragging = false
-            val open = gesture
-            if (open != null) if (released) open.commit() else open.cancel()
-        }
-    }
-
-    private fun commandFor(session: CharacterSession, handle: MoveHandle, pixel: Offset, view: HandleView): DocumentCommand? = when (handle) {
-        is SocketHandle -> if (DigitTips.isTip(handle.socket)) null else surfaceUnder(handle.parent, pixel, view)?.let { place ->
-            val parent = handle.parent.id ?: return null
-            val number = HandSockets.idOf(handle.socket)
-            val owner = handle.owner ?: parent
-            if (number != null) {
-                HandSockets.move(owner, number, place.u, if (handle.side == Side.RIGHT && !handle.parent.mirrored) 1f - place.v else place.v)
-            } else {
-                moveSocket(session.document.value.character, parent, handle.socket, handle.side, place.u, place.v, handle.parent.mirrored, state.thisSide)
-            }
-        }
-        is JointHandle -> {
-            val part = handle.part.id ?: return null
-            val thisSide = state.thisSide && session.document.value.character.part(part)?.pair != null
-            val name = HandJoints.idOf(handle.name)?.let(HandJoints::u) ?: PlacementParams.joint(handle.name)
-            SetParameter(part, name, jointUnder(handle, pixel, view), thisSide)
         }
     }
 
     private fun pressed(handle: MoveHandle) {
         if (handle !is SocketHandle) return
         handle.owner?.let { state.pickSocket(it, handle.socket) }
-        if (handle.child != null) {
-            state.selectPart(handle.child)
+        handle.child?.let {
+            state.selectPart(it)
             return
         }
         state.openSocketsNow().firstOrNull { it.ref.parent == handle.owner && it.ref.socket == handle.socket }?.let(state::offerSocket)
@@ -227,8 +191,10 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
 fun rememberMoveTool(state: AppState): MoveTool {
     val look = rememberSheetLook()
     val curves = rememberCurveLook()
-    return remember(state) { MoveTool(state, look, curves) }.also {
+    val guides = rememberDragGuideLook()
+    return remember(state) { MoveTool(state, look, curves, guides) }.also {
         it.look = look
         it.curves = curves
+        it.guides = guides
     }
 }

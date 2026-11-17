@@ -37,14 +37,17 @@ import dev.chieppa.stretch.frame.buildOverlay
 
 /**
  * Add part: a dot on every open socket, in the locked panes and Full, larger and accent on the one Library targets.
- * Pressing a dot targets its socket in Library. While a Library tile drags, the dots whose sockets take it are large and accent and
+ * Pressing a dot targets its socket in Library, and dragging it moves the socket over its part as Move's [HandleDrag] does. While a Library tile drags, the dots whose sockets take it are large and accent and
  * the rest faint, and a dot also lights on each filled socket whose part swaps with the tile's template ([swapsWith]) and can change
  * to it ([canBecome]); near a dot
  * that takes it the tile snaps beside it, and dropping it there adds it on that socket or gives the part there its template. A press on a part's
  * surface away from the dots places a hand-made socket there, with the Move tool's outward angle and pair flag and previewed under
  * the pointer as Add socket previews it, and targets it in Library.
  */
-class AddPartTool(private val state: AppState, var look: SheetLook, var curves: CurveLook) : PaneTool {
+class AddPartTool(private val state: AppState, var look: SheetLook, var curves: CurveLook, var guides: DragGuideLook) : PaneTool {
+    /** The drag of an open socket's dot. */
+    private val move = HandleDrag(state)
+
     /** Where a press would place a socket. */
     private val hover = SocketHover()
 
@@ -57,9 +60,10 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
 
     override fun fullInput(view: FullView): Modifier = presses(FULL, view, FullHandleView(view), view.width to view.height)
 
-    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = drawn(view, LockedHandleView(camera)) + preview(view, camera)
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay =
+        drawn(view, LockedHandleView(camera)) + preview(view, camera) + dragGuides(move.shown, view, guides)
 
-    override fun fullOverlay(view: FullView): ViewportOverlay = drawn(FULL, FullHandleView(view)) + preview(FULL, view)
+    override fun fullOverlay(view: FullView): ViewportOverlay = drawn(FULL, FullHandleView(view)) + preview(FULL, view) + dragGuides(move.shown, FULL, guides)
 
     private fun assembled(): AssembledCharacter? = state.session.value?.assembly?.output?.value
 
@@ -97,7 +101,7 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
                 val dot = handleAt(dots(), down.position, curves.grabReach, handles) as? SocketHandle
                 if (dot != null) {
                     down.consume()
-                    socketOf(dot, state.openSocketsNow())?.let(state::offerSocket)
+                    with(move) { follow(dot, down.id, down.position, pane, handles) { socketOf(dot, state.openSocketsNow())?.let(state::offerSocket) } }
                     return@awaitEachGesture
                 }
                 val place = placeAt(down.position, sight, handles) ?: return@awaitEachGesture
@@ -168,9 +172,11 @@ fun rememberAddPartTool(state: AppState): AddPartTool {
     val look = rememberSheetLook()
     val curves = rememberCurveLook()
     val drags = LocalDragAndDrop.current
-    return remember(state) { AddPartTool(state, look, curves) }.also {
+    val guides = rememberDragGuideLook()
+    return remember(state) { AddPartTool(state, look, curves, guides) }.also {
         it.look = look
         it.curves = curves
+        it.guides = guides
         it.drop.drags = drags
     }
 }

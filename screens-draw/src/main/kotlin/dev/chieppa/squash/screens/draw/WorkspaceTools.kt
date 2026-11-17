@@ -33,6 +33,7 @@ import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.draw_tool_hint
 import dev.chieppa.squash.uidesign.generated.edit_curves_hint
 import dev.chieppa.squash.uidesign.generated.edit_mirror_none
+import dev.chieppa.squash.uidesign.generated.move_tool_hint
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
 import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
@@ -118,6 +119,7 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
     val erase = stringResource(Res.string.edit_tool_erase)
     val smooth = stringResource(Res.string.smooth_tool)
     val move = stringResource(Res.string.move_tool)
+    val moveHint = stringResource(Res.string.move_tool_hint, move)
     val icons = mapOf(
         BuildTool.DRAW_OUTLINE to drawIcon,
         BuildTool.SPINE_WIDTH to SquashIcons.SpineAndWidth,
@@ -133,7 +135,7 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
         StripTool(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, curves, tool, state::armTool, hint = curvesHint)
         StripTool(BuildTool.ERASE, SquashIcons.Erase, erase, tool, state::armTool)
         StripTool(BuildTool.SMOOTH, SquashIcons.SmoothCurve, smooth, tool, state::armTool)
-        StripTool(BuildTool.MOVE, SquashIcons.Move, move, tool, state::armTool)
+        StripTool(BuildTool.MOVE, SquashIcons.Move, move, tool, state::armTool, hint = moveHint)
     }
 }
 

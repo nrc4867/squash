@@ -3,6 +3,18 @@ package dev.chieppa.squash.screens.shell
 import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
 import dev.chieppa.squash.uidesign.generated.sheet_pane_swap
 import dev.chieppa.squash.uidesign.generated.move_tool
+import dev.chieppa.squash.uidesign.generated.move_nudge_left
+import dev.chieppa.squash.uidesign.generated.move_nudge_right
+import dev.chieppa.squash.uidesign.generated.move_nudge_up
+import dev.chieppa.squash.uidesign.generated.move_nudge_down
+import dev.chieppa.squash.uidesign.generated.move_nudge_left_far
+import dev.chieppa.squash.uidesign.generated.move_nudge_right_far
+import dev.chieppa.squash.uidesign.generated.move_nudge_up_far
+import dev.chieppa.squash.uidesign.generated.move_nudge_down_far
+import dev.chieppa.squash.uidesign.generated.move_drag_axis_x
+import dev.chieppa.squash.uidesign.generated.move_drag_axis_y
+import dev.chieppa.squash.uidesign.generated.move_drag_axis_z
+import dev.chieppa.squash.screens.move.BodyAxis
 import dev.chieppa.squash.uidesign.generated.select_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -149,6 +161,17 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.DELETE_POINT to Res.string.shell_action_delete_point,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.ADD_PART to Res.string.add_part,
+    ShellActions.NUDGE_LEFT to Res.string.move_nudge_left,
+    ShellActions.NUDGE_RIGHT to Res.string.move_nudge_right,
+    ShellActions.NUDGE_UP to Res.string.move_nudge_up,
+    ShellActions.NUDGE_DOWN to Res.string.move_nudge_down,
+    ShellActions.NUDGE_LEFT_FAR to Res.string.move_nudge_left_far,
+    ShellActions.NUDGE_RIGHT_FAR to Res.string.move_nudge_right_far,
+    ShellActions.NUDGE_UP_FAR to Res.string.move_nudge_up_far,
+    ShellActions.NUDGE_DOWN_FAR to Res.string.move_nudge_down_far,
+    ShellActions.dragAxis(BodyAxis.X) to Res.string.move_drag_axis_x,
+    ShellActions.dragAxis(BodyAxis.Y) to Res.string.move_drag_axis_y,
+    ShellActions.dragAxis(BodyAxis.Z) to Res.string.move_drag_axis_z,
 ) + Stage.entries.filter { it.holdsSelect }.associate { ActionId(selectActionId(it)) to Res.string.select_tool }
 
 /** The name of the action arming [tool], or null for a tool with none. */

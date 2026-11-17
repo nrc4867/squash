@@ -6,13 +6,9 @@ import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.geom.Vec3
-import kotlin.math.floor
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 
-private const val SEARCH_STEPS = 48
-private const val REFINE_STEPS = 8
-private const val REFINE_ROUNDS = 3
 private const val JOINT_SAMPLES = 128
 
 /** How close to each other, in u, two joints may come, and how far from a part's ends one may go. */
@@ -28,13 +24,13 @@ interface HandleView {
 }
 
 /** A locked pane as a [HandleView]. */
-internal class LockedHandleView(private val camera: LockedCamera) : HandleView {
+class LockedHandleView(private val camera: LockedCamera) : HandleView {
     override fun toPixel(point: Vec3): Offset = camera.toPixel(point)
     override fun toViewer(point: Vec3): Vec3 = camera.basis.back
 }
 
 /** Full's free camera as a [HandleView]. */
-internal class FullHandleView(private val view: FullView) : HandleView {
+class FullHandleView(private val view: FullView) : HandleView {
     override fun toPixel(point: Vec3): Offset? = view.toPixel(point)
     override fun toViewer(point: Vec3): Vec3 = view.toViewer(point)
 }
@@ -46,7 +42,7 @@ sealed interface MoveHandle {
 
 /**
  * Socket [socket] of part [owner], lying on [parent], which is the owner or its twin, as the part on [side] sits on it. [child] is
- * that part, or null while the socket is empty.
+ * that part, or null while the socket is empty. [place] is where on [parent]'s surface it lies, where that is known exactly.
  */
 class SocketHandle(
     val parent: PlacedPart,
@@ -55,6 +51,7 @@ class SocketHandle(
     val child: PartId?,
     override val position: Vec3,
     val owner: PartId? = parent.id,
+    val place: SurfacePlace? = null,
 ) : MoveHandle
 
 /** Joint [name] of [part], at [u], free to move within [range]. */
@@ -72,7 +69,9 @@ fun moveHandles(character: AssembledCharacter, selected: PartId?): List<MoveHand
         val socket = part.socket ?: return@mapNotNull null
         val parent = character.part(socket.parent) ?: return@mapNotNull null
         val at = part.anchor ?: return@mapNotNull null
-        SocketHandle(parent, socket.socket, part.side, part.id, at)
+        val spec = part.socketSpec
+        val place = spec?.let { SurfacePlace(it.u, if (part.side == Side.RIGHT && !parent.mirrored) 1f - it.v else it.v) }
+        SocketHandle(parent, socket.socket, part.side, part.id, at, place = place)
     }
     val open = character.sockets.mapNotNull { socket ->
         val parent = character.part(socket.on) ?: return@mapNotNull null
@@ -113,38 +112,5 @@ fun jointUnder(handle: JointHandle, pixel: Offset, view: HandleView): Float {
     } ?: handle.u
 }
 
-/** A place on a part's surface. */
-data class SurfacePlace(val u: Float, val v: Float)
-
-/** The place on [part]'s surface facing the viewer that shows closest to [pixel], or null when none faces the viewer. */
-fun surfaceUnder(part: PlacedPart, pixel: Offset, view: HandleView): SurfacePlace? {
-    fun distanceAt(u: Float, v: Float): Float? {
-        val point = part.pointOn(u, v) ?: return null
-        val normal = part.normalAt(u, v) ?: return null
-        if ((normal dot view.toViewer(point)) < 0f) return null
-        return (view.toPixel(point) ?: return null).minus(pixel).getDistance()
-    }
-    var best: SurfacePlace? = null
-    var bestDistance = Float.POSITIVE_INFINITY
-    fun consider(u: Float, v: Float) {
-        val distance = distanceAt(u, v) ?: return
-        if (distance < bestDistance) {
-            bestDistance = distance
-            best = SurfacePlace(u, v)
-        }
-    }
-    for (i in 0..SEARCH_STEPS) for (j in 0 until SEARCH_STEPS) consider(i.toFloat() / SEARCH_STEPS, j.toFloat() / SEARCH_STEPS)
-    var step = 1f / SEARCH_STEPS
-    repeat(REFINE_ROUNDS) {
-        val centre = best ?: return null
-        for (i in -REFINE_STEPS..REFINE_STEPS) {
-            for (j in -REFINE_STEPS..REFINE_STEPS) {
-                val u = (centre.u + step * i / REFINE_STEPS).coerceIn(0f, 1f)
-                val v = centre.v + step * j / REFINE_STEPS
-                consider(u, v - floor(v))
-            }
-        }
-        step /= REFINE_STEPS / 2f
-    }
-    return best
-}
+/** The middle of [part] at [u], between its surface's top and underside, in body space. */
+fun axisMiddle(part: PlacedPart, u: Float) = part.pointOn(u, 0f)?.let { top -> part.pointOn(u, 0.5f)?.let { (top + it) * 0.5f } }
