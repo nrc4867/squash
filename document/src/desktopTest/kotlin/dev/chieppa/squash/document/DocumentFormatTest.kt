@@ -22,6 +22,8 @@ class DocumentFormatTest {
     private val formatFour = File("src/desktopTest/fixtures/format-4.json").readText()
     private val formatFive = File("src/desktopTest/fixtures/format-5.json").readText()
     private val formatFourteen = File("src/desktopTest/fixtures/format-14.json").readText()
+    private val formatSixteenDrawnAndPainted = File("src/desktopTest/fixtures/format-16-drawn-and-painted.json").readText()
+    private val formatSixteenDrawnOnly = File("src/desktopTest/fixtures/format-16-drawn-only.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
 
     @Test
@@ -229,6 +231,30 @@ class DocumentFormatTest {
         val character = readDocument(saved).character
         assertEquals(emptyList(), character.parts.flatMap { checkNotNull(character.resolved(it)).surface.groups.filter { group -> group.id.value == "eye" } })
         assertTrue(character.parts.all { part -> checkNotNull(character.resolved(part)).surface.marks.none { it.id.value == "eye-lid" } }, "the eye's marks go with it")
+    }
+
+    @Test
+    fun aFormatSixteenSaveWithDrawnAndPaintedEyesDropsTheDrawnOnes() {
+        val character = readDocument(formatSixteenDrawnAndPainted).character
+        assertEquals(listOf("mine"), character.paintedEyes.map { it.id })
+        val head = checkNotNull(character.resolved(PartId("head"))).surface
+        assertEquals(listOf("smile"), head.groups.map { it.id.value })
+        assertEquals(listOf("smile-line"), head.marks.map { it.id.value })
+        assertEquals(setOf("smile"), character.expressions.single().marks.keys.map { it.value }.toSet())
+    }
+
+    @Test
+    fun aFormatSixteenSaveWithOnlyDrawnEyesGetsAPaintedPair() {
+        val character = readDocument(formatSixteenDrawnOnly).character
+        val eye = character.paintedEyes.single()
+        assertEquals("eyes", eye.id)
+        assertTrue(eye.mirrored)
+        assertEquals(PartId("head"), eye.anchor.part)
+        assertEquals(0.3f, eye.anchor.u, 1e-5f)
+        assertEquals(0.2f, eye.anchor.v, 1e-5f)
+        assertEquals(SlotName("cream"), eye.look.white)
+        assertEquals(SlotName("ink"), eye.look.pupil)
+        assertEquals(listOf("smile"), checkNotNull(character.resolved(PartId("head"))).surface.groups.map { it.id.value })
     }
 
     @Test

@@ -42,11 +42,23 @@ private val FILLS = mapOf("white" to "white", "iris" to "iris", "pupil" to "pupi
 /** The look key that says whether a painted eye draws what each drawn role held. */
 private val DRAWN_LINES = mapOf(LID_ROLE to "lid", LASHES_ROLE to "lashes", BROW_ROLE to "brow")
 
+/** Every role a drawn eye's group held. */
+private val EYE_ROLES = setOf("white", "iris", "pupil", "highlight", LID_ROLE, LASHES_ROLE, BROW_ROLE)
+
 /** The id painted eyes made from drawn ones take, or this followed by the head's id when a painted eye holds it already. */
 private const val PAINTED_EYES_ID = "eyes"
 
 /** Halfway round a part, past which a v lies on its right. */
 private const val HALF_ROUND = 0.5f
+
+/**
+ * [document], a saved document, with every drawn eye gone: the character's drawn eyes painted (see [drawnEyesPainted]) and every eye
+ * group left over dropped (see [leftoverEyeGroupsDropped]). A drawn eye group is one holding a role of an eye.
+ */
+internal fun drawnEyesRemoved(document: JsonObject): JsonObject {
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    return leftoverEyeGroupsDropped(JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(character))))
+}
 
 /**
  * [character], a saved character's JSON, with its drawn eyes painted: every unpaired part loses its eye groups, by their lid, and the
@@ -135,7 +147,7 @@ private fun rolesOf(group: JsonObject): List<JsonObject> = group[ROLES_KEY]?.jso
 
 private fun roleName(role: JsonObject): String = role.getValue(ROLE_KEY).jsonPrimitive.content
 
-private fun isEyeGroup(group: JsonObject): Boolean = rolesOf(group).any { roleName(it) == LID_ROLE }
+private fun isEyeGroup(group: JsonObject): Boolean = rolesOf(group).any { roleName(it) in EYE_ROLES }
 
 private fun roleMarkIds(role: JsonObject): List<String> = role[MARKS_KEY]?.jsonArray.orEmpty().map { it.jsonPrimitive.content }
 

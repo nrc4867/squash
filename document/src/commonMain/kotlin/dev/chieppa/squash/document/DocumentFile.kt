@@ -35,7 +35,7 @@ private const val FILLET_KEY = "fillet"
 private const val INK_CUFFS_KEY = "inkCuffs"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -79,7 +79,7 @@ private fun rolesOnParts(document: JsonObject): JsonObject = document
 
 /**
  * Format 14 to 15: every body is one surface, so a character drops its one surface switch and each garment its fillet, and a head's
- * drawn eyes become painted ones (see [drawnEyesPainted]); an eye group left on a paired part is dropped (see [leftoverEyeGroupsDropped]).
+ * drawn eyes become painted ones (see [drawnEyesRemoved]).
  */
 private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val character = document.getValue(CHARACTER_KEY).jsonObject
@@ -87,7 +87,7 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val garments = wardrobe?.get(GARMENTS_KEY) as? JsonArray
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
-    return leftoverEyeGroupsDropped(JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(JsonObject(moved)))))
+    return drawnEyesRemoved(JsonObject(document + (CHARACTER_KEY to JsonObject(moved))))
 }
 
 /**

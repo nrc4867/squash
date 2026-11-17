@@ -1,0 +1,288 @@
+{
+    "format": 16,
+    "character": {
+        "id": "bear",
+        "name": "Bear",
+        "bodyPlan": {
+            "id": "canine-quadruped",
+            "version": 1
+        },
+        "parts": [
+            {
+                "id": "torso",
+                "template": {
+                    "id": "torso",
+                    "version": 1
+                }
+            },
+            {
+                "id": "head",
+                "template": {
+                    "id": "head",
+                    "version": 1
+                },
+                "socket": {
+                    "parent": "torso",
+                    "socket": "neck"
+                },
+                "own": {
+                    "surface": {
+                        "marks": [
+                            {
+                                "id": "blink-lid",
+                                "points": [
+                                    {
+                                        "part": "head",
+                                        "u": 0.26,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.18000000000000002
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.33999999999999997,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.22
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "blink-white",
+                                "points": [
+                                    {
+                                        "part": "head",
+                                        "u": 0.25,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.17
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.35,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.23
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "blink-pupil",
+                                "points": [
+                                    {
+                                        "part": "head",
+                                        "u": 0.29,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.19
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.31,
+                                        "v": 0.2
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.3,
+                                        "v": 0.21000000000000002
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "smile-line",
+                                "points": [
+                                    {
+                                        "part": "head",
+                                        "u": 0.44,
+                                        "v": 0.4
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.5,
+                                        "v": 0.39
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.56,
+                                        "v": 0.4
+                                    },
+                                    {
+                                        "part": "head",
+                                        "u": 0.5,
+                                        "v": 0.41000000000000003
+                                    }
+                                ]
+                            }
+                        ],
+                        "groups": [
+                            {
+                                "id": "blink",
+                                "name": "blink",
+                                "roles": [
+                                    {
+                                        "role": "white",
+                                        "fill": "cream",
+                                        "marks": [
+                                            "blink-white"
+                                        ]
+                                    },
+                                    {
+                                        "role": "iris"
+                                    },
+                                    {
+                                        "role": "pupil",
+                                        "fill": "ink",
+                                        "marks": [
+                                            "blink-pupil"
+                                        ]
+                                    },
+                                    {
+                                        "role": "highlight"
+                                    },
+                                    {
+                                        "role": "lid",
+                                        "marks": [
+                                            "blink-lid"
+                                        ]
+                                    },
+                                    {
+                                        "role": "lashes"
+                                    },
+                                    {
+                                        "role": "brow"
+                                    }
+                                ],
+                                "clips": [
+                                    {
+                                        "by": "lid",
+                                        "clipped": "white"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "smile",
+                                "name": "smile",
+                                "roles": [
+                                    {
+                                        "role": "lipLine",
+                                        "marks": [
+                                            "smile-line"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "palette": {
+            "slots": [
+                {
+                    "name": "cream",
+                    "color": {
+                        "red": 0.9,
+                        "green": 0.9,
+                        "blue": 0.8
+                    }
+                },
+                {
+                    "name": "ink",
+                    "color": {
+                        "red": 0.1,
+                        "green": 0.1,
+                        "blue": 0.1
+                    }
+                }
+            ]
+        },
+        "expressions": [
+            {
+                "id": "shut",
+                "name": "Shut",
+                "marks": {
+                    "blink": {
+                        "shared": {
+                            "lid": [
+                                {
+                                    "id": "blink-lid",
+                                    "points": [
+                                        {
+                                            "part": "head",
+                                            "u": 0.26,
+                                            "v": 0.2
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.3,
+                                            "v": 0.18000000000000002
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.33999999999999997,
+                                            "v": 0.2
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.3,
+                                            "v": 0.22
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "smile": {
+                        "shared": {
+                            "lipLine": [
+                                {
+                                    "id": "smile-line",
+                                    "points": [
+                                        {
+                                            "part": "head",
+                                            "u": 0.44,
+                                            "v": 0.4
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.5,
+                                            "v": 0.39
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.56,
+                                            "v": 0.4
+                                        },
+                                        {
+                                            "part": "head",
+                                            "u": 0.5,
+                                            "v": 0.41000000000000003
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "gazeCheats": {
+            "cameraBias": 0.4
+        }
+    }
+}
