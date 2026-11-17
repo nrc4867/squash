@@ -25,6 +25,9 @@ import dev.chieppa.squash.document.changedSections
 import dev.chieppa.squash.document.moved
 import dev.chieppa.squash.document.sections
 import dev.chieppa.squash.geom.BezierPath
+import dev.chieppa.squash.geom.FAITHFUL_FIT
+import dev.chieppa.squash.geom.OversketchOptions
+import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.geom.Vec2
@@ -82,7 +85,7 @@ class OversketchLocalityTest {
             val y = upperRun(x, height) * (if (upper) 1f else -1f)
             Vec2(x, y)
         }
-        return assertNotNull(cleanStroke(samples, PLANE, PIXEL)).path.toOutline()
+        return assertNotNull(cleanStroke(samples, PLANE, PIXEL, StrokeOptions(fit = FAITHFUL_FIT))).path.toOutline()
     }
 
     /** A rounded run with a wave in it, so the fit keeps several sections as a real drawing does. */
@@ -190,7 +193,7 @@ class OversketchLocalityTest {
     private fun TestScope.overdraw(view: View, curve: OutlineCurve, height: Float, name: String) {
         val session = drawnSession()
         val before = session.body()
-        val result = assertNotNull(oversketchedOutline(curve, bump(height), PLANE, PIXEL))
+        val result = assertNotNull(oversketchedOutline(curve, bump(height), PLANE, PIXEL, OversketchOptions(stroke = StrokeOptions(fit = FAITHFUL_FIT))))
         assertEquals(curve.points.take(result.firstSection * 3 + 1), result.curve.points.take(result.firstSection * 3 + 1))
         val addedSections = result.curve.sections - curve.sections + result.replaced
         assertEquals(

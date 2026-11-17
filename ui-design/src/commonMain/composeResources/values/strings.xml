@@ -45,6 +45,9 @@
     <string name="shell_action_draw">Draw outline</string>
     <string name="shell_action_edit_curves">Edit curves</string>
     <string name="shell_action_start_template">Start from template</string>
+    <string name="shell_action_simplify_outline">Simplify outline</string>
+    <string name="shell_action_delete_point">Delete point</string>
+    <string name="shell_action_simplify_part">Simplify part</string>
     <string name="shell_action_reset_layout">Reset layout</string>
     <string name="shell_action_put_down">Put the tool down</string>
 
@@ -178,11 +181,13 @@
 
     <string name="draw_stroke">Stroke</string>
     <string name="draw_smooth">Smooth</string>
+    <string name="draw_fit">Fit</string>
+    <string name="draw_fit_range">Smooth ↔ Faithful</string>
     <string name="draw_stabilizer">Stabilizer</string>
     <string name="draw_snap_line">Snap line</string>
     <string name="draw_snap_guides">Snap to guides</string>
     <string name="draw_half_outline">Half outline</string>
-    <string name="draw_tool_hint">%1$s · Corner (Alt) · Smooth (Shift)</string>
+    <string name="draw_tool_hint">%1$s · Corner (Alt) · Smooth (Shift) · Line (Ctrl) · Ellipse (Ctrl Shift) · Free of guides (Alt held first)</string>
     <string name="draw_close_end">Close end</string>
     <string name="draw_hold_snap">Hold to snap</string>
     <string name="draw_hint">Hint</string>
@@ -209,6 +214,11 @@
     <string name="edit_none">none</string>
     <string name="edit_chip_pixels">%1$s px</string>
     <string name="edit_refit">Refit</string>
+    <string name="edit_simplify">Simplify</string>
+    <string name="edit_delete_point">Delete point</string>
+    <string name="edit_curves_hint">%1$s · Add point (Alt-click the curve) · Delete point (Del) · Free of guides (Alt-drag)</string>
+    <string name="edit_simplify_outline">Outline</string>
+    <string name="edit_simplify_part">Whole part</string>
     <string name="edit_status_section">%1$d section touched</string>
     <string name="edit_status_sections">%1$d sections touched</string>
     <string name="edit_toast_section">Section %1$d</string>
@@ -370,6 +380,8 @@
     <string name="anatomy_step_pair">Pair parts</string>
     <string name="anatomy_update">Update from library</string>
     <string name="edit_tool_mirror">Mirror</string>
+    <string name="sheet_pane_focus">Make this view large</string>
+    <string name="edit_mirror_none">%1$s · no left and right in this view</string>
     <string name="color_section_paint">Paint</string>
     <string name="color_section_shading">Shading</string>
     <string name="color_shading_flat">Flat</string>

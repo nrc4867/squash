@@ -13,6 +13,7 @@ import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.DEFAULT_OVERSKETCH_FALLOFF
+import dev.chieppa.squash.geom.DEFAULT_STROKE_FIT
 import dev.chieppa.squash.geom.DEFAULT_STROKE_SMOOTH
 import dev.chieppa.squash.geom.DEFAULT_STROKE_STABILIZER
 import dev.chieppa.squash.geom.OversketchOptions
@@ -48,6 +49,9 @@ class CurveEditState {
     var falloff by mutableStateOf(DEFAULT_OVERSKETCH_FALLOFF)
     var snapEnds by mutableStateOf(true)
     var smooth by mutableStateOf(DEFAULT_STROKE_SMOOTH)
+
+    /** How closely a stroke's curve follows it, from 0, smooth with few points, to 1, faithful. */
+    var fit by mutableStateOf(DEFAULT_STROKE_FIT)
     var snapLine by mutableStateOf(true)
     var closeEnd by mutableStateOf(true)
     var holdSnap by mutableStateOf(true)
@@ -86,13 +90,13 @@ class CurveEditState {
     /** How far each fitted outline strays from its stroke, in screen pixels. Outlines not fitted here have no entry. */
     private val fitErrors = mutableStateMapOf<OutlineCurve, Float>()
 
-    val strokeOptions: StrokeOptions get() = StrokeOptions(smooth, snapLine, closeEnd)
+    val strokeOptions: StrokeOptions get() = StrokeOptions(smooth, snapLine, closeEnd, fit = fit)
 
     val options: OversketchOptions get() = OversketchOptions(falloff, snapEnds, strokeOptions)
 
-    /** [strokeOptions] for a stroke in [view] with [marks] forced along it. */
-    fun strokeOptions(view: View, marks: List<StrokeMark>): StrokeOptions =
-        strokeOptions.copy(half = centreLine(view).takeIf { halfOutline }, marks = marks)
+    /** [strokeOptions] for a stroke in [view] with [marks] forced along it, drawn as a half and its mirror image with Half outline or when [mirrored]. */
+    fun strokeOptions(view: View, marks: List<StrokeMark>, mirrored: Boolean = false): StrokeOptions =
+        strokeOptions.copy(half = centreLine(view).takeIf { halfOutline || mirrored }, marks = marks)
 
     fun recordFit(curve: OutlineCurve, errorPixels: Float) {
         fitErrors[curve] = errorPixels

@@ -12,7 +12,12 @@ data class StrokeOptions(
     val half: CentreLine? = null,
     /** What the hand forced along this stroke, in the stroke's own units. */
     val marks: List<StrokeMark> = emptyList(),
-)
+    /** How closely the curve follows the stroke, from 0, smooth with few points, to 1, faithful. */
+    val fit: Float = DEFAULT_STROKE_FIT,
+) {
+    /** How far, in plane units, the curve fitted to a stroke may stray from it, for a screen pixel of [pixel] and a curve [span] across. */
+    fun tolerance(pixel: Float, span: Float): Float = fitTolerance(fit, pixel, span)
+}
 
 /**
  * What releasing a stroke now would make, in the plane's units. [cleanStroke] fits [shape] and nothing else, so the two

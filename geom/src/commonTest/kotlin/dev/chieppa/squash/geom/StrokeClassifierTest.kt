@@ -174,7 +174,7 @@ class StrokeClassifierTest {
     @Test
     fun aHeldShapeGoesThroughTheSameEndsAsAStroke() {
         val shape = EllipseShape(Vec2(0.6f, 0f), Vec2(1f, 0f), 0.4f, Vec2(1.6f, 0f), true)
-        val plain = StrokeOptions(smoothing = 0f)
+        val plain = StrokeOptions(smoothing = 0f, fit = FAITHFUL_FIT)
         val cut = assertNotNull(cleanStroke(shape.samples(PIXEL), StrokeEnds.CutAtPlane(), PIXEL, plain))
         val flat = cut.path.flatten()
         assertEquals(0f, flat.xs.first())

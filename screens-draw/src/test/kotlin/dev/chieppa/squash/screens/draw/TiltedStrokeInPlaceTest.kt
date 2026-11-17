@@ -107,6 +107,7 @@ class TiltedStrokeInPlaceTest {
         val bench = StrokeBench(tilted = true)
         with(bench) {
             settled()
+            state.mirror.value = false
             state.selectedPart.value = id.id
             val camera = camera(part(id.id), base.view)
             showPanes(camera)

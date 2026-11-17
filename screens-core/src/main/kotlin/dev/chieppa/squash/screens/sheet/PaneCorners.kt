@@ -1,20 +1,20 @@
 package dev.chieppa.squash.screens.sheet
 
-import dev.chieppa.squash.screens.shell.LocalActionKeys
-import dev.chieppa.squash.screens.shell.ActionKeys
-import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
-import dev.chieppa.squash.uidesign.generated.sheet_pane_zoom
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.platform.testTag
-import dev.chieppa.stretch.ui.Tooltip
-import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.geom.BodyView
+import dev.chieppa.squash.screens.shell.ActionKeys
+import dev.chieppa.squash.screens.shell.LocalActionKeys
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.edit_chip_pixels
@@ -25,11 +25,14 @@ import dev.chieppa.squash.uidesign.generated.sheet_chip_surface_only
 import dev.chieppa.squash.uidesign.generated.sheet_pane_back
 import dev.chieppa.squash.uidesign.generated.sheet_pane_bottom
 import dev.chieppa.squash.uidesign.generated.sheet_pane_far_side
+import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
 import dev.chieppa.squash.uidesign.generated.sheet_pane_flip
+import dev.chieppa.squash.uidesign.generated.sheet_pane_focus
 import dev.chieppa.squash.uidesign.generated.sheet_pane_front
 import dev.chieppa.squash.uidesign.generated.sheet_pane_full
 import dev.chieppa.squash.uidesign.generated.sheet_pane_side
 import dev.chieppa.squash.uidesign.generated.sheet_pane_top
+import dev.chieppa.squash.uidesign.generated.sheet_pane_zoom
 import dev.chieppa.squash.uidesign.generated.shell_view_back
 import dev.chieppa.squash.uidesign.generated.shell_view_bottom
 import dev.chieppa.squash.uidesign.generated.shell_view_far_side
@@ -38,10 +41,15 @@ import dev.chieppa.squash.uidesign.generated.shell_view_side
 import dev.chieppa.squash.uidesign.generated.shell_view_top
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.Viewport
+import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Chip
 import dev.chieppa.stretch.ui.ChipKind
+import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.ProgressBar
+import dev.chieppa.stretch.ui.Tooltip
+import dev.chieppa.stretch.ui.framedSurface
 import java.util.Locale
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -62,15 +70,45 @@ fun PaneViewport(
     short: Boolean = false,
     flipped: Boolean = false,
     onFlip: () -> Unit = {},
+    onFocus: (() -> Unit)? = null,
+    focusShown: Boolean = true,
 ) {
+    val topEnd: (@Composable () -> Unit)? = if (chip == null && onFocus == null) null else {
+        {
+            Row(horizontalArrangement = Arrangement.spacedBy(FOCUS_GAP), verticalAlignment = Alignment.CenterVertically) {
+                chip?.let { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneChipView(it, fitError, progress) } }
+                onFocus?.let { FocusButton(body, focusShown, it) }
+            }
+        }
+    }
     Viewport(
         modifier,
         nativeContent = true,
         topStart = { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneLabel(body, short, flipped, onFlip) } },
-        topEnd = chip?.let { { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneChipView(it, fitError, progress) } } },
+        topEnd = topEnd,
         bottomStart = bottomStart,
         bottomEnd = zoom?.let { { PaneZoom(it, onFit) } },
     ) {}
+}
+
+/**
+ * A small pane's button that makes it the large one, on an opaque pill as the pane's other corners are: a corner over the
+ * pane's native surface shows in a popup of its own, and only what the popup fills is sure to show there, whatever the pane
+ * redraws under it. The button and its tooltip stay composed while the pane is the large one, folded to no size and taking
+ * no clicks while not [shown], so making a pane large never takes a popup down in the middle of showing it.
+ */
+@Composable
+private fun FocusButton(body: BodyView?, shown: Boolean, onFocus: () -> Unit) {
+    val label = stringResource(Res.string.sheet_pane_focus)
+    val c = Stretch.colors
+    val look = if (shown) {
+        Modifier.testTag(paneFocusTag(body)).framedSurface(Stretch.shapes.pillShape, c.surfaceFloat, c.lineStrong, Stretch.stroke)
+    } else {
+        Modifier.size(0.dp).clipToBounds()
+    }
+    Tooltip(label) {
+        Box(look) { IconButton(SquashIcons.FocusPane, label, onFocus, enabled = shown) }
+    }
 }
 
 /** The pane's zoom while it is away from the fit; pressing it goes back. */
@@ -137,10 +175,15 @@ const val SURFACE_REFUSED_TAG = "sheet.pane.surfaceRefused"
 /** The test tag of the label that flips the pane looking from [body]. */
 fun paneFlipTag(body: BodyView) = "sheet.pane.flip.${body.name}"
 
+/** The test tag of the button that makes the pane looking from [body], or Full for null, the large one. */
+fun paneFocusTag(body: BodyView?) = "sheet.pane.focus.${body?.name ?: "FULL"}"
+
 /** The test tag of a pane's zoom readout. */
 const val PANE_ZOOM_TAG = "sheet.pane.zoom"
 
 private const val PERCENT = 100
+
+private val FOCUS_GAP = 6.dp
 
 /** The test tag of the Refit readout's bar. */
 const val REFIT_BAR_TAG = "sheet.refit.bar"

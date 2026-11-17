@@ -39,8 +39,17 @@ class StrokeCleanupTest {
     }
 
     @Test
+    fun theFirstFewSamplesOfALoopAreNoStrokeAtEitherFit() {
+        for (fit in listOf(FAITHFUL_FIT, DEFAULT_STROKE_FIT)) for (count in 2..12) {
+            val start = List(count) { Vec2(1f + it * 3f * PIXEL, 1f + (it % 2) * PIXEL) }
+            val stroke = cleanStroke(start, StrokeEnds.Closed, PIXEL, StrokeOptions(fit = fit))
+            assertTrue(stroke == null || stroke.path.segments.isNotEmpty(), "fit $fit, $count samples")
+        }
+    }
+
+    @Test
     fun aHandDrawnCircleBecomesAFewJoinedCubicsThatCloseExactly() {
-        val stroke = assertNotNull(cleanStroke(circle(Vec2(1f, 1f), 0.5f, 400), StrokeEnds.Closed, PIXEL))
+        val stroke = assertNotNull(cleanStroke(circle(Vec2(1f, 1f), 0.5f, 400), StrokeEnds.Closed, PIXEL, StrokeOptions(fit = FAITHFUL_FIT)))
         assertTrue(stroke.closed)
         assertJoined(stroke.path)
         assertEquals(stroke.path.segments.first().p0, stroke.path.segments.last().p3)

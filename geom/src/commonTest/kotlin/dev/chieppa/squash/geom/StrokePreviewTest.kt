@@ -85,8 +85,9 @@ class StrokePreviewTest {
             val released = stroke.path.segments.flatMap { it.sample(24) }
             val worstOut = preview.shape.maxOf { distanceToLine(it, released) }
             val worstBack = released.maxOf { distanceToLine(it, preview.shape) }
-            assertTrue(worstOut <= MATCH_PIXELS * PIXEL, "shown ${worstOut / PIXEL} px from the release, $ends $options")
-            assertTrue(worstBack <= MATCH_PIXELS * PIXEL, "released ${worstBack / PIXEL} px from what showed, $ends $options")
+            val match = MATCH_PIXELS * PIXEL + 2f * options.tolerance(PIXEL, longestSpan(preview.shape))
+            assertTrue(worstOut <= match, "shown ${worstOut / PIXEL} px from the release, $ends $options")
+            assertTrue(worstBack <= match, "released ${worstBack / PIXEL} px from what showed, $ends $options")
         }
     }
 

@@ -88,8 +88,9 @@ class StrokeHalfTest {
             }
             assertExactlySymmetric(stroke.path, CentreLine.ALONG_X)
             val released = stroke.path.segments.flatMap { it.sample(24) }
-            assertTrue(preview.shape.maxOf { distanceToLine(it, released) } <= TEST_MATCH_PIXELS * TEST_PIXEL, "shown off the release, $ends $options")
-            assertTrue(released.maxOf { distanceToLine(it, preview.shape) } <= TEST_MATCH_PIXELS * TEST_PIXEL, "released off what showed, $ends $options")
+            val match = (TEST_MATCH_PIXELS - 1f) * TEST_PIXEL + options.tolerance(TEST_PIXEL, longestSpan(preview.shape))
+            assertTrue(preview.shape.maxOf { distanceToLine(it, released) } <= match, "shown off the release, $ends $options")
+            assertTrue(released.maxOf { distanceToLine(it, preview.shape) } <= match, "released off what showed, $ends $options")
         }
     }
 

@@ -27,6 +27,9 @@ import dev.chieppa.squash.uidesign.generated.shell_action_reset_layout
 import dev.chieppa.squash.uidesign.generated.shell_action_put_down
 import dev.chieppa.squash.uidesign.generated.shell_action_save
 import dev.chieppa.squash.uidesign.generated.shell_action_save_as
+import dev.chieppa.squash.uidesign.generated.shell_action_delete_point
+import dev.chieppa.squash.uidesign.generated.shell_action_simplify_outline
+import dev.chieppa.squash.uidesign.generated.shell_action_simplify_part
 import dev.chieppa.squash.uidesign.generated.shell_action_start_template
 import dev.chieppa.squash.uidesign.generated.shell_action_undo
 import dev.chieppa.squash.uidesign.generated.shell_drawer_help
@@ -141,6 +144,9 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.SWAP_PANE to Res.string.sheet_pane_swap,
     ShellActions.MIRROR to Res.string.edit_tool_mirror,
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
+    ShellActions.SIMPLIFY_OUTLINE to Res.string.shell_action_simplify_outline,
+    ShellActions.SIMPLIFY_PART to Res.string.shell_action_simplify_part,
+    ShellActions.DELETE_POINT to Res.string.shell_action_delete_point,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.ADD_PART to Res.string.add_part,
 ) + Stage.entries.filter { it.holdsSelect }.associate { ActionId(selectActionId(it)) to Res.string.select_tool }

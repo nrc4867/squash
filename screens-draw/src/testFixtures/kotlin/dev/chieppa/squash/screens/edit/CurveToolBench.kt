@@ -98,7 +98,10 @@ fun edges(vararg corners: Pair<Float, Float>): OutlineCurve {
 /** Out from the socket plane along x and back, on the plane at both ends. */
 val LEG_SIDE = edges(0f to 0.5f, 0.5f to 0.5f, 1f to 0.5f, 1.5f to 0.5f, 2f to 0f, 1.5f to -0.5f, 0f to -0.5f)
 
-/** A leg in a session on its own, with [side] as its Side outline, and a pane to work in. */
+/**
+ * A leg in a session on its own, with [side] as its Side outline, and a pane to work in. Alone it has no pair, so it reads as a
+ * part down the body's middle; Mirror starts off, so a stroke in Top or Front draws what it draws.
+ */
 class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
     val id = PartId("p")
     val state: AppState
@@ -115,6 +118,7 @@ class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
         if (side != null) session.send(SetOutline(id, View.SIDE, side))
         state.session.value = session
         state.selectedPart.value = id
+        state.mirror.value = false
     }
 
     fun camera(view: View = View.SIDE) = LockedCamera(view, PartAxes.of(Vec3.X), SheetFit(Vec3(1f, 0f, 0f), SCALE), PANE_WIDTH, PANE_HEIGHT)

@@ -12,6 +12,8 @@ import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.anchorOf
 import dev.chieppa.squash.document.anchors
 import dev.chieppa.squash.geom.BezierPath
+import dev.chieppa.squash.geom.CentreLine
+import dev.chieppa.squash.screens.sheet.PaneLine
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.stretch.frame.OverlayBuilder
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -36,6 +38,10 @@ data class CurveLook(
     val affectedDash: Float,
     val affectedGap: Float,
     val grabReach: Float,
+    val symmetry: Color = Color.Gray,
+    val symmetryWidth: Float = 1f,
+    val symmetryDash: Float = 2f,
+    val symmetryGap: Float = 6f,
 )
 
 /** The curve drawing in the current theme and pixel density. */
@@ -56,6 +62,10 @@ fun rememberCurveLook(): CurveLook {
         affectedDash = px(8),
         affectedGap = px(6),
         grabReach = px(12),
+        symmetry = c.inkSubtle,
+        symmetryWidth = px(1),
+        symmetryDash = px(2),
+        symmetryGap = px(6),
     )
 }
 
@@ -91,4 +101,31 @@ private fun OverlayBuilder.anchorSquare(center: Offset, selected: Boolean, look:
     val square = Rect(center.x - look.anchorHalf, center.y - look.anchorHalf, center.x + look.anchorHalf, center.y + look.anchorHalf)
     rect(square, if (selected) look.ring else look.fill)
     outline(square, look.ring, look.anchorEdge)
+}
+
+/** How far either way along the pane a symmetry line runs, in multiples of the pane's longer side. */
+private const val SYMMETRY_REACH_OF_PANE = 4f
+
+/** The character's line of symmetry [line] across [camera]'s pane, far past both of its edges. */
+fun symmetryPaneLine(line: CentreLine, camera: LockedCamera): PaneLine {
+    val reach = SYMMETRY_REACH_OF_PANE * maxOf(camera.width, camera.height) * camera.planePixel
+    val (from, to) = when (line) {
+        CentreLine.ALONG_X -> CurvePoint(0f - reach, 0f) to CurvePoint(reach, 0f)
+        CentreLine.ALONG_Y -> CurvePoint(0f, 0f - reach) to CurvePoint(0f, reach)
+    }
+    return PaneLine(camera.toPixel(from), camera.toPixel(to))
+}
+
+/** The character's line of symmetry, faint and dotted. */
+fun OverlayBuilder.symmetryLine(line: CentreLine, camera: LockedCamera, look: CurveLook) {
+    val across = symmetryPaneLine(line, camera)
+    dashed(listOf(across.start, across.end), look.symmetry, look.symmetryWidth, look.symmetryDash, look.symmetryGap)
+}
+
+/** [curve] as release would store it: its line and its anchors, thin over the stroke. */
+fun OverlayBuilder.fittedCurve(curve: OutlineCurve, camera: LockedCamera, look: CurveLook) {
+    val flat = curve.toPath().flatten()
+    val pixels = flat.xs.indices.map { camera.toPixel(CurvePoint(flat.xs[it], flat.ys[it])) }
+    pixels.zipWithNext().forEach { (from, to) -> line(from, to, look.ring, look.handleWidth) }
+    for (anchor in curve.anchors) dot(camera.toPixel(curve.points[anchor]), look.handleRadius, look.ring)
 }

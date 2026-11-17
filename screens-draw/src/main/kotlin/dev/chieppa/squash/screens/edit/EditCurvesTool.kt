@@ -23,7 +23,14 @@ import dev.chieppa.squash.document.isAnchor
 import dev.chieppa.squash.document.moved
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.screens.AppState
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.isAltPressed
+import dev.chieppa.squash.character.build.withPointAdded
+import dev.chieppa.squash.geom.CentreLine
+import dev.chieppa.squash.screens.draw.SNAP_GUIDE_PIXELS
 import dev.chieppa.squash.screens.draw.isToolPress
+import dev.chieppa.squash.screens.shell.symmetryIn
+import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.squash.screens.draw.isToolRelease
 import dev.chieppa.squash.screens.draw.strokeEnds
 import dev.chieppa.squash.screens.sheet.LockedCamera
@@ -32,13 +39,25 @@ import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.ViewportOverlay
 
 /** Where in the document a drag is working. */
-private class DragTarget(val session: CharacterSession, val part: PartId, val view: View, val curve: OutlineCurve, val index: Int, val limit: CurveLimit?, val write: (View, OutlineCurve?) -> DocumentCommand?, val template: PartTemplate)
+private class DragTarget(
+    val session: CharacterSession,
+    val part: PartId,
+    val view: View,
+    val curve: OutlineCurve,
+    val index: Int,
+    val limit: CurveLimit?,
+    val write: (View, OutlineCurve?) -> DocumentCommand?,
+    val template: PartTemplate,
+    val symmetry: CentreLine?,
+)
 
 /**
  * Edit curves: a locked pane shows the stored outline's anchors and handles, and a press on one selects it and drags it.
  * The document follows the drag through one gesture on the history, so the panes, the mesh and the disagree highlight show
  * the live curve, and the drag is one undo step. A press on nothing clears the selection. A drag the pane loses restores
- * the curve.
+ * the curve. An Alt press on the curve away from its points adds an anchor there, splitting its section so the shape stays,
+ * and selects it. On a part down the body's middle, in a view that shows its left and right, the line of symmetry shows and an
+ * anchor dragged near it lands on it, unless Alt is held.
  */
 class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneTool {
     override val holdsFit: Boolean get() = state.curves.dragging
@@ -47,15 +66,34 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
 
     private fun outline(view: View): OutlineCurve? = state.editedOutline(view)
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = Modifier.pointerInput(this, view, camera) {
         awaitEachGesture {
             val down = awaitFirstDown()
             if (state.curves.dragging || !isToolPress(down)) return@awaitEachGesture
+            if (currentEvent.keyboardModifiers.isAltPressed && addPoint(view, camera, down.position)) {
+                down.consume()
+                return@awaitEachGesture
+            }
             val target = pressed(view, camera, down.position) ?: return@awaitEachGesture
             down.consume()
             state.curves.selection = CurveSelection(target.part, target.view, target.index)
             drag(target, down.id, camera, down.position)
         }
+    }
+
+    /** Adds an anchor to the outline in [view] where [pixel] is on it, away from its points, and selects it; false where there is no such place. */
+    private fun addPoint(view: View, camera: LockedCamera, pixel: Offset): Boolean {
+        val session = state.session.value ?: return false
+        val part = state.selectedPart.value ?: return false
+        val curve = state.editedOutline(view) ?: return false
+        val selected = state.curves.selectionIn(part, view, curve)?.index
+        if (curve.pointAt(pixel, look.grabReach, selected, camera::toPixel) != null) return false
+        val added = withPointAdded(curve, camera.toPlane(pixel), look.grabReach * camera.planePixel) ?: return false
+        val command = state.outlineWriter()?.invoke(view, added.curve) ?: return false
+        session.send(command)
+        state.curves.selection = CurveSelection(part, view, added.index)
+        return true
     }
 
     /** The point under [pixel], or null after clearing the selection when there is none. */
@@ -72,10 +110,11 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
         }
         val limit = (strokeEnds(view, session.builtTemplate(instance).openEnd) as? StrokeEnds.CutAtPlane)
             ?.let { CurveLimit(it.plane, it.above) }
-        return DragTarget(session, part, view, curve, index, limit, state.outlineWriter() ?: return null, session.builtTemplate(instance))
+        return DragTarget(session, part, view, curve, index, limit, state.outlineWriter() ?: return null, session.builtTemplate(instance), state.symmetryIn(view))
     }
 
     /** Follows [id] until it lets go, which commits what it moved, or goes away, which restores the start. */
+    @OptIn(ExperimentalComposeUiApi::class)
     private suspend fun AwaitPointerEventScope.drag(target: DragTarget, id: PointerId, camera: LockedCamera, from: Offset) {
         val start = target.curve.points[target.index]
         val grabbed = camera.toPlane(from)
@@ -93,7 +132,9 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
                 released = isToolRelease(event, change)
                 if (released || change.position == change.previousPosition) continue
                 val plane = camera.toPlane(change.position)
+                val free = event.keyboardModifiers.isAltPressed
                 val to = CurvePoint(start.x + plane.x - grabbed.x, start.y + plane.y - grabbed.y)
+                    .let { if (free || !isAnchor(target.index)) it else onSymmetry(it, target.symmetry, SNAP_GUIDE_PIXELS * camera.planePixel) }
                 last = target.curve.moved(target.index, to, target.limit, corner)
                 val open = gesture ?: target.session.history.begin().also { gesture = it }
                 target.write(target.view, last)?.let(open::update)
@@ -125,10 +166,18 @@ class EditCurvesTool(private val state: AppState, var look: CurveLook) : PaneToo
     }
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
-        val curve = outline(view)?.takeIf { view == state.activeView.value } ?: return ViewportOverlay.Empty
-        val part = state.selectedPart.value ?: return ViewportOverlay.Empty
-        return curvePoints(curve, state.curves.selectionIn(part, view, curve)?.index, camera, look)
+        val symmetry = state.symmetryIn(view)?.let { line -> buildOverlay { symmetryLine(line, camera, look) } } ?: ViewportOverlay.Empty
+        val curve = outline(view)?.takeIf { view == state.activeView.value } ?: return symmetry
+        val part = state.selectedPart.value ?: return symmetry
+        return symmetry + curvePoints(curve, state.curves.selectionIn(part, view, curve)?.index, camera, look)
     }
+}
+
+/** [point] moved onto [line] when it lies within [reach] of it. */
+internal fun onSymmetry(point: CurvePoint, line: CentreLine?, reach: Float): CurvePoint = when {
+    line == CentreLine.ALONG_X && kotlin.math.abs(point.y) <= reach -> point.copy(y = 0f)
+    line == CentreLine.ALONG_Y && kotlin.math.abs(point.x) <= reach -> point.copy(x = 0f)
+    else -> point
 }
 
 /** The tool for [state], kept across compositions and following the theme. */

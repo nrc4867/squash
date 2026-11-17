@@ -5,8 +5,10 @@ import dev.chieppa.squash.screens.AppState
 /**
  * Whether Mirror means anything now, which enables both its strip button and its key: off Face, where Both, Left and Right choose the eyes,
  * and off Dress, where a branch on a pair always covers both sides; with
- * a paired part selected, or with Stroke or Fur armed, which mirror across the middle of the body too; in Rig, on a character with a
- * pair, whose seams share their strokes, and in Pose, where a turn or a reset turns the twin the mirrored way.
+ * a paired part selected, or with Stroke or Fur armed, which mirror across the middle of the body too; in Shape, with a part down the
+ * body's middle selected and a view that shows its left and right active, where a stroke draws half the outline and its mirror image
+ * (see [symmetryIn]); in Rig, on a character with a pair, whose seams share their strokes, and in Pose, where a turn or a reset turns
+ * the twin the mirrored way.
  */
 fun AppState.mirrorApplies(): Boolean {
     if (stage.value == Stage.FACE || stage.value == Stage.DRESS) return false
@@ -14,5 +16,6 @@ fun AppState.mirrorApplies(): Boolean {
     val tool = tool.value
     if (tool == BuildTool.SURFACE_STROKE || tool == BuildTool.FUR_STROKE) return true
     val character = session.value?.document?.value?.character ?: return false
-    return selectedPart.value?.let(character::part)?.pair != null
+    if (selectedPart.value?.let(character::part)?.pair != null) return true
+    return stage.value == Stage.SHAPE && symmetryIn(activeView.value) != null
 }

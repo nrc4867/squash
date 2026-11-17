@@ -69,6 +69,8 @@ private fun evenParameters(segment: CubicBezier, spacing: Float): List<Float> {
     }
 }
 
-private fun CubicBezier.leaving(): Vec2 = ((listOf(p1, p2, p3).firstOrNull { it != p0 } ?: p0) - p0).unit()
+/** The direction this curve leaves its start in. */
+internal fun CubicBezier.leaving(): Vec2 = ((listOf(p1, p2, p3).firstOrNull { it != p0 } ?: p0) - p0).unit()
 
-private fun CubicBezier.arriving(): Vec2 = ((listOf(p2, p1, p0).firstOrNull { it != p3 } ?: p3) - p3).unit()
+/** The direction back along this curve from its end. */
+internal fun CubicBezier.arriving(): Vec2 = ((listOf(p2, p1, p0).firstOrNull { it != p3 } ?: p3) - p3).unit()

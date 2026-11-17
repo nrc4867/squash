@@ -179,7 +179,8 @@ class DrawOutlineToolTest {
         val early = assertNotNull(bench.tool.liveStroke).points.size
         val overlay = bench.tool.overlay(View.SIDE, camera)
         assertTrue(overlay.lines.isNotEmpty() && overlay.dots.isNotEmpty(), "the stroke and its tip")
-        assertTrue(bench.tool.overlay(View.TOP, camera(View.TOP)).isEmpty, "only in its own pane")
+        val other = bench.tool.overlay(View.TOP, camera(View.TOP))
+        assertTrue(other.dots.isEmpty() && other.rects.isEmpty() && other.lines.all { it.color == TEST_CURVE_LOOK.symmetry }, "only in its own pane")
         val first = assertNotNull(bench.tool.liveStroke).points.first()
         assertEquals(camera.toPlane(path[0]).x, first.x, 1e-3f, "in the view's plane")
 

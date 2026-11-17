@@ -15,6 +15,10 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import dev.chieppa.squash.geom.DEFAULT_STROKE_FIT
+import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.geom.fitTolerance
+import dev.chieppa.squash.geom.longestSpan
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -339,6 +343,8 @@ class HoldToSnapTest {
         val flat = curve.toPath().flatten()
         val pixels = flat.xs.indices.map { camera.toPixel(CurvePoint(flat.xs[it], flat.ys[it])) }
         val worst = shown.map(camera::toPixel).maxOf { point -> distanceToPaths(point, listOf(pixels)) }
-        assertTrue(worst < NEAR_PIXELS, "release strays $worst pixels from what was shown")
+        val span = longestSpan(shown.map { Vec2(it.x, it.y) })
+        val near = NEAR_PIXELS + fitTolerance(DEFAULT_STROKE_FIT, camera.planePixel, span) / camera.planePixel
+        assertTrue(worst < near, "release strays $worst pixels from what was shown")
     }
 }

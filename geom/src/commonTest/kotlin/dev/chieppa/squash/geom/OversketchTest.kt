@@ -73,7 +73,7 @@ class OversketchTest {
 
     @Test
     fun theNewSectionsFollowTheStrokeAwayFromTheJoins() {
-        val result = assertNotNull(oversketch(open, bump(1f, 2f, 0.3f), PLANE, PIXEL))
+        val result = assertNotNull(oversketch(open, bump(1f, 2f, 0.3f), PLANE, PIXEL, OversketchOptions(stroke = StrokeOptions(fit = FAITHFUL_FIT))))
         assertTrue(result.maxError / PIXEL < 2f, "the fit stays within a pixel or two")
         val highest = result.path.flatten().ys.max()
         assertEquals(1.3f, highest, 0.02f, "the middle of the stroke is the middle of the new span")

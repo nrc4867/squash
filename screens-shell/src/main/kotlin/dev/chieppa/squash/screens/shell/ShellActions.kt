@@ -3,6 +3,13 @@ package dev.chieppa.squash.screens.shell
 import dev.chieppa.squash.screens.sheet.SheetLayout
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.offerPickedSocket
+import dev.chieppa.squash.screens.draw.canDeletePoint
+import dev.chieppa.squash.screens.draw.canSimplify
+import dev.chieppa.squash.screens.draw.deleteSelectedPoint
+import dev.chieppa.squash.screens.draw.canSimplifyPart
+import dev.chieppa.squash.screens.draw.simplifyOutline
+import dev.chieppa.squash.screens.draw.simplifyPart
+import dev.chieppa.squash.screens.draw.simplifyView
 import dev.chieppa.squash.screens.draw.startFromTemplate
 import dev.chieppa.squash.screens.draw.templateStartView
 import dev.chieppa.stretch.core.Action
@@ -83,6 +90,9 @@ object ShellActions {
     val SWAP_PANE = ActionId("swap-pane")
     val MIRROR = ActionId("mirror")
     val START_TEMPLATE = ActionId("start-template")
+    val SIMPLIFY_OUTLINE = ActionId("simplify-outline")
+    val SIMPLIFY_PART = ActionId("simplify-part")
+    val DELETE_POINT = ActionId("delete-point")
     val HALF_OUTLINE = ActionId("half-outline")
     val ADD_PART = ActionId(BuildTool.ADD_PART.actionId)
 }
@@ -160,6 +170,9 @@ fun Shell.registerActions() {
     tool(BuildTool.SMOOTH, "smooth", "S")
     tool(BuildTool.MOVE, "move", "V")
     action(ShellActions.START_TEMPLATE, "start-template", available = { inWorkspace() && state.templateStartView() != null }, mode = Stage.SHAPE.keyMode) { state.startFromTemplate() }
+    action(ShellActions.SIMPLIFY_OUTLINE, null, available = { inWorkspace() && state.canSimplify(state.simplifyView()) }, mode = Stage.SHAPE.keyMode) { state.simplifyOutline() }
+    action(ShellActions.SIMPLIFY_PART, null, available = { inWorkspace() && state.canSimplifyPart() }, mode = Stage.SHAPE.keyMode) { state.simplifyPart() }
+    action(ShellActions.DELETE_POINT, null, chord("Delete"), { inWorkspace() && state.tool.value == BuildTool.EDIT_CURVES && state.canDeletePoint() }, Stage.SHAPE.keyMode) { state.deleteSelectedPoint() }
     action(ShellActions.HALF_OUTLINE, "half-outline", chord("H"), inWorkspace, Stage.SHAPE.keyMode) { state.curves.halfOutline = !state.curves.halfOutline }
 
     tool(BuildTool.FILL, "fill", "G")

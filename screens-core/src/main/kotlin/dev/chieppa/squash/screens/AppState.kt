@@ -114,6 +114,12 @@ class AppState(
         hoveredPane.value?.let { focused.value = it }
     }
 
+    /** Makes [pane] the large one: in Focus it takes the large place, and from Full first the layout turns to Focus with it there. */
+    fun focusPane(pane: SheetPane) {
+        focused.value = pane
+        if (layout.value == SheetLayout.FULL_FIRST) layout.value = SheetLayout.FOCUS
+    }
+
     /** Shows the pane under the pointer at its fit: a locked pane's zoom and pan go, and a free camera frames the part again. */
     fun fitUnderPointer() {
         if (hoveredPane.value == null) return

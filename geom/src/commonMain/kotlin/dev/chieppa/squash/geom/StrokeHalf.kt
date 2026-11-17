@@ -115,7 +115,7 @@ private fun squareRun(centre: CentreLine, from: Vec2, spacing: Float): List<Vec2
  * The fit of a mirrored [shape]: its first half between corners, and exactly that half's mirror image, so the outline is
  * symmetric to the bit. Where it meets the centre line with no corner the fit leaves square to the line, so the join is smooth.
  */
-internal fun fitMirrored(shape: List<Vec2>, closed: Boolean, centre: CentreLine, pixel: Float, options: StrokeOptions): List<CubicBezier> {
+internal fun fitMirrored(shape: List<Vec2>, closed: Boolean, centre: CentreLine, pixel: Float, options: StrokeOptions, tolerance: Float): List<CubicBezier> {
     val half = firstHalf(shape, closed, centre)
     val join = half.lastIndex
     val corners = strokeCorners(shape, closed, mirroredMarks(options.marks, centre), pixel)
@@ -130,7 +130,7 @@ internal fun fitMirrored(shape: List<Vec2>, closed: Boolean, centre: CentreLine,
         if (options.snapLine && isLine(section, pixel)) {
             listOf(straightCubic(section.first(), section.last()))
         } else {
-            fitSection(section, pixel, startTangent.takeIf { i == 0 }, endTangent.takeIf { i == cuts.lastIndex })
+            fitSection(section, pixel, tolerance, startTangent.takeIf { i == 0 }, endTangent.takeIf { i == cuts.lastIndex })
         }
     }
     return first + first.asReversed().map { CubicBezier(centre.mirror(it.p3), centre.mirror(it.p2), centre.mirror(it.p1), centre.mirror(it.p0)) }

@@ -37,8 +37,8 @@ class SpineShape internal constructor(
     /** The outlines as curves, fitted to the shapes as a stroke is for a screen pixel of size [pixel]. */
     fun fitted(pixel: Float): SpineFit {
         val spacing = strokeSpacing(pixel)
-        val sides = sidePieces.map { fitOpenRun(resample(it, spacing), pixel, null, null) }
-        val tops = topPieces.map { fitOpenRun(resample(it, spacing), pixel, null, null) }
+        val sides = sidePieces.map { fitOpenRun(resample(it, spacing), pixel, faithfulTolerance(pixel), null, null) }
+        val tops = topPieces.map { fitOpenRun(resample(it, spacing), pixel, faithfulTolerance(pixel), null, null) }
         return SpineFit(
             BezierPath(sides.flatMap { it.path.segments }),
             BezierPath(tops.flatMap { it.path.segments }),

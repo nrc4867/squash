@@ -111,7 +111,7 @@ class SmoothTool(private val state: AppState, var look: CurveLook) : PaneTool {
         val brush = SmoothBrush(state.curves.brushSize * RADIUS_OF_SIZE * pixel, state.curves.brushStrength)
         val ends = strokeEnds(target.view, target.template.openEnd)
         var from = camera.toShown(down.position).vec()
-        var brushed = BrushedPath(camera.shownCurve(target.curve).toPath(), ends, pixel).dab(from, brush)
+        var brushed = BrushedPath(camera.shownCurve(target.curve).toPath(), ends, pixel, state.curves.fit).dab(from, brush)
         var gesture: History<SquashDocument>.Transaction? = null
         var last = target.curve
         var released = false

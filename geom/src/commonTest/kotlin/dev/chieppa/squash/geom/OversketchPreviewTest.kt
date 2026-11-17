@@ -94,9 +94,10 @@ class OversketchPreviewTest {
     @Test
     fun aLoopOverTheCurveShowsWhatAWholeRedrawMakes() {
         val stroke = aroundLeg()
-        val preview = assertNotNull(oversketchPreview(leg, stroke, PLANE, PIXEL))
+        val faithful = OversketchOptions(stroke = StrokeOptions(fit = FAITHFUL_FIT))
+        val preview = assertNotNull(oversketchPreview(leg, stroke, PLANE, PIXEL, faithful))
         val whole = assertNotNull(preview.whole)
-        val release = assertNotNull(oversketch(leg, stroke, PLANE, PIXEL))
+        val release = assertNotNull(oversketch(leg, stroke, PLANE, PIXEL, faithful))
         assertEquals(leg.segments.size, release.replaced)
         val flat = release.path.segments.flatMap { it.sample(24) }
         val worst = whole.shape.maxOf { p -> (1 until flat.size).minOf { distanceToSegment(p, flat[it - 1], flat[it]) } }

@@ -18,6 +18,7 @@ import dev.chieppa.squash.screens.shell.selectActionId
 import dev.chieppa.squash.screens.sheet.StripTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.mirrorApplies
+import dev.chieppa.squash.screens.shell.selectedIsMiddle
 import dev.chieppa.squash.screens.shell.rememberPartIsDrawn
 import dev.chieppa.squash.screens.sheet.ToolSection
 import dev.chieppa.squash.screens.sheet.ToolSections
@@ -30,6 +31,8 @@ import dev.chieppa.squash.uidesign.generated.color_tool_pick
 import dev.chieppa.squash.uidesign.generated.color_tool_region_border
 import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.draw_tool_hint
+import dev.chieppa.squash.uidesign.generated.edit_curves_hint
+import dev.chieppa.squash.uidesign.generated.edit_mirror_none
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
 import dev.chieppa.squash.uidesign.generated.edit_tool_mirror
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
@@ -111,6 +114,7 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
     val drawHint = stringResource(Res.string.draw_tool_hint, draw)
     val spine = stringResource(Res.string.spine_tool)
     val curves = stringResource(Res.string.shell_action_edit_curves)
+    val curvesHint = stringResource(Res.string.edit_curves_hint, curves)
     val erase = stringResource(Res.string.edit_tool_erase)
     val smooth = stringResource(Res.string.smooth_tool)
     val move = stringResource(Res.string.move_tool)
@@ -126,7 +130,7 @@ private fun outlineSection(tool: BuildTool, state: AppState): ToolSection {
     return ToolSection(ShellTags.section("outline"), stringResource(Res.string.shell_tools_outline), icons[armed] ?: drawIcon, icons.size, armed) {
         StripTool(BuildTool.DRAW_OUTLINE, drawIcon, draw, tool, state::armTool, hint = drawHint)
         StripTool(BuildTool.SPINE_WIDTH, SquashIcons.SpineAndWidth, spine, tool, state::armTool)
-        StripTool(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, curves, tool, state::armTool)
+        StripTool(BuildTool.EDIT_CURVES, SquashIcons.EditCurves, curves, tool, state::armTool, hint = curvesHint)
         StripTool(BuildTool.ERASE, SquashIcons.Erase, erase, tool, state::armTool)
         StripTool(BuildTool.SMOOTH, SquashIcons.SmoothCurve, smooth, tool, state::armTool)
         StripTool(BuildTool.MOVE, SquashIcons.Move, move, tool, state::armTool)
@@ -225,7 +229,11 @@ private fun HalfOutlineButton(state: AppState, key: String = ActionKeys.HALF_OUT
     }
 }
 
-/** Mirror: on, a change writes the pair, off, the selected side alone, enabled by [mirrorApplies] as its key is. */
+/**
+ * Mirror: on, a change writes the pair, or draws a middle part's outline as a half and its mirror image, off, the selected side
+ * alone or the whole outline, enabled by [mirrorApplies] as its key is. On a middle part in a view with no left and right its
+ * tooltip says so.
+ */
 @Composable
 private fun MirrorButton(state: AppState) {
     val mirror by state.mirror.collectAsState()
@@ -233,9 +241,12 @@ private fun MirrorButton(state: AppState) {
     state.selectedPart.collectAsState().value
     state.tool.collectAsState().value
     state.stage.collectAsState().value
+    state.activeView.collectAsState().value
     val paired = state.mirrorApplies()
     val label = stringResource(Res.string.edit_tool_mirror)
-    Tooltip(label, LocalActionKeys.current(ActionKeys.MIRROR)) {
+    val unmirrored = stringResource(Res.string.edit_mirror_none, label)
+    val tip = if (!paired && state.stage.value == Stage.SHAPE && state.selectedIsMiddle()) unmirrored else label
+    Tooltip(tip, LocalActionKeys.current(ActionKeys.MIRROR)) {
         ToolButton(
             SquashIcons.Mirror,
             label,

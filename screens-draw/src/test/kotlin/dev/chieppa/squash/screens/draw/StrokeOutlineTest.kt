@@ -14,7 +14,9 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.FAITHFUL_FIT
 import dev.chieppa.squash.geom.StrokeEnds
+import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.stretch.test.scenario
 import kotlin.math.PI
 import kotlin.math.cos
@@ -44,7 +46,7 @@ class StrokeOutlineTest {
 
     @Test
     fun anOutlineHoldsThreePointsPerSegmentPlusOneAndItsErrorInPixels() {
-        val fitted = assertNotNull(fittedOutline(loop(1f), StrokeEnds.Closed, PIXEL))
+        val fitted = assertNotNull(fittedOutline(loop(1f), StrokeEnds.Closed, PIXEL, StrokeOptions(fit = FAITHFUL_FIT)))
         assertEquals(0, (fitted.curve.points.size - 1) % 3)
         assertTrue(fitted.errorPixels <= 1.5f, "${fitted.errorPixels} px")
     }

@@ -32,37 +32,52 @@ private class BezierFitter(
     private val squaredTolerance: Float,
     private val out: MutableList<CubicBezier>,
 ) {
+    private val single = SingleCubicFit(points, squaredTolerance)
+
     fun fit(first: Int, last: Int, startTangent: Vec2, endTangent: Vec2) {
-        if (last - first + 1 < POINTS_FOR_A_FIT) {
-            out += byChordThirds(points[first], points[last], startTangent, endTangent)
+        val fitted = single.fit(first, last, startTangent, endTangent)
+        if (fitted.squaredError <= squaredTolerance) {
+            out += fitted.curve
             return
         }
-        var parameters = chordLengths(first, last)
-        var curve = solveHandles(first, last, parameters, startTangent, endTangent)
-        var worst = worstPoint(curve, first, last, parameters)
-        if (worst.squaredError <= squaredTolerance * REPARAMETERIZE_SQUARED_FACTOR) {
-            var rounds = 0
-            while (worst.squaredError > squaredTolerance && rounds < MAX_REPARAMETERIZE) {
-                parameters = reparameterized(curve, first, parameters)
-                curve = solveHandles(first, last, parameters, startTangent, endTangent)
-                worst = worstPoint(curve, first, last, parameters)
-                rounds++
-            }
-        }
-        if (worst.squaredError <= squaredTolerance) {
-            out += curve
-            return
-        }
-        val tangent = tangentAt(worst.index)
-        fit(first, worst.index, startTangent, tangent * -1f)
-        fit(worst.index, last, tangent, endTangent)
+        val tangent = tangentAt(fitted.worst)
+        fit(first, fitted.worst, startTangent, tangent * -1f)
+        fit(fitted.worst, last, tangent, endTangent)
     }
 
     private fun tangentAt(index: Int): Vec2 {
         val tangent = ((points[index] - points[index - 1]).unit() + (points[index + 1] - points[index]).unit()).unit()
         return if (tangent == Vec2(0f, 0f)) (points[index + 1] - points[index]).unit() else tangent
     }
+}
 
+/** One cubic fitted to a run of points: the curve, the worst squared distance of a point inside the run from it, and that point. */
+internal class FittedCubic(val curve: CubicBezier, val squaredError: Float, val worst: Int)
+
+/**
+ * The single-cubic step of [fitCubics] over [points]: chord-length parameters, handle lengths by least squares with the end
+ * tangents fixed, and Newton-Raphson reparameterization while the error is within a few times [squaredTolerance], or for
+ * every round when [closest] asks for the closest cubic whatever the error.
+ */
+internal class SingleCubicFit(private val points: List<Vec2>, private val squaredTolerance: Float, private val closest: Boolean = false) {
+    fun fit(first: Int, last: Int, startTangent: Vec2, endTangent: Vec2): FittedCubic {
+        if (last - first + 1 < POINTS_FOR_A_FIT) {
+            return FittedCubic(byChordThirds(points[first], points[last], startTangent, endTangent), 0f, (first + last) / 2)
+        }
+        var parameters = chordLengths(first, last)
+        var curve = solveHandles(first, last, parameters, startTangent, endTangent)
+        var worst = worstPoint(curve, first, last, parameters)
+        if (closest || worst.squaredError <= squaredTolerance * REPARAMETERIZE_SQUARED_FACTOR) {
+            var rounds = 0
+            while ((closest || worst.squaredError > squaredTolerance) && rounds < MAX_REPARAMETERIZE) {
+                parameters = reparameterized(curve, first, parameters)
+                curve = solveHandles(first, last, parameters, startTangent, endTangent)
+                worst = worstPoint(curve, first, last, parameters)
+                rounds++
+            }
+        }
+        return FittedCubic(curve, worst.squaredError, worst.index)
+    }
     private fun chordLengths(first: Int, last: Int): FloatArray {
         val parameters = FloatArray(last - first + 1)
         for (i in 1 until parameters.size) {

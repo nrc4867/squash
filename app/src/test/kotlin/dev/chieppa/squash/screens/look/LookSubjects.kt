@@ -1,6 +1,8 @@
 package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.geom.DEFAULT_STROKE_FIT
+import dev.chieppa.squash.geom.FAITHFUL_FIT
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.readDocument
 import dev.chieppa.squash.screens.cat.CAT_POSES
@@ -56,6 +58,9 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "fennec-sandals-loop" to { fennecSandalsStepDocument(1) },
     "fennec-sandals-straps" to { fennecSandalsStepDocument(3) },
     "fennec-sandals-sole-pressed" to { fennecSandalsStepDocument(4) },
+    "fennec-redrawn-faithful" to { redrawnDocument(fennecDocument(), FAITHFUL_FIT) },
+    "fennec-redrawn-few-points" to { redrawnDocument(fennecDocument(), DEFAULT_STROKE_FIT) },
+    "fennec-redrawn-mirrored" to { redrawnDocument(fennecDocument(), DEFAULT_STROKE_FIT, mirrored = true) },
 )
 
 /** The poses an example is looked at in besides rest, by name. */

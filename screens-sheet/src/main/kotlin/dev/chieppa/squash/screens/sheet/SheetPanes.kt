@@ -174,9 +174,21 @@ private fun SheetSurface(state: AppState, layout: SheetLayout, tool: PaneTool?, 
                 short = layout == SheetLayout.FULL_FIRST || (layout == SheetLayout.FOCUS && pane != focused),
                 flipped = body in state.paneNavigation.flips,
                 onFlip = { body?.let(state.paneNavigation::flip) },
+                onFocus = { state.focusPane(pane) }.takeIf { hasSmallPanes(layout) },
+                focusShown = isSmallPane(layout, pane, focused),
             )
         }
     }
+}
+
+/** Whether [layout] has small panes, whose every pane keeps a focus button composed so a change of focus only shows or folds it. */
+internal fun hasSmallPanes(layout: SheetLayout): Boolean = layout == SheetLayout.FOCUS || layout == SheetLayout.FULL_FIRST
+
+/** Whether [pane] is one of [layout]'s small panes, which a button makes the large one: Focus's other three, and Full first's sheets. */
+internal fun isSmallPane(layout: SheetLayout, pane: SheetPane, focused: SheetPane): Boolean = when (layout) {
+    SheetLayout.FOCUS -> pane != focused
+    SheetLayout.FULL_FIRST -> pane != SheetPane.FULL
+    else -> false
 }
 
 /** Whether the open character's graph has been deriving, which is what a refit is, for longer than [SLOW_WORK_MILLIS]. */

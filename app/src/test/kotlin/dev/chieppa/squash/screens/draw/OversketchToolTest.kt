@@ -21,6 +21,7 @@ import dev.chieppa.squash.screens.edit.showPane
 import dev.chieppa.squash.screens.sheet.PartAxis
 import dev.chieppa.squash.screens.sheet.viewsDisagree
 import kotlin.math.sin
+import dev.chieppa.squash.character.build.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -29,6 +30,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val STROKE_POINTS = 40
+
+
+/** How far the default Fit lets a loop two hundred pixels across stray, and some. */
+private const val LOOSE_FIT_PIXELS = 6f
 
 @OptIn(ExperimentalTestApi::class)
 class OversketchToolTest {
@@ -50,7 +55,7 @@ class OversketchToolTest {
         val curve = assertNotNull(bench.outline())
         assertEquals(LEG_SIDE.points.take(4), curve.points.take(4), "the section before the span is exact")
         assertEquals(LEG_SIDE.points.takeLast(10), curve.points.takeLast(10), "the sections after it are exact")
-        assertEquals(0.7f, curve.points.maxOf { it.y }, 0.1f)
+        assertEquals(0.7f, curve.toPath().flatten().ys.max(), 0.1f)
         bench.session.history.undo()
         assertEquals(LEG_SIDE, bench.outline())
     }
@@ -103,7 +108,8 @@ class OversketchToolTest {
         val bench = CurveToolBench()
         val tool = tool(bench)
         assertEquals(7, tool.overlay(View.SIDE, bench.camera()).rects.size)
-        assertTrue(tool.overlay(View.TOP, bench.camera(View.TOP)).isEmpty)
+        val top = tool.overlay(View.TOP, bench.camera(View.TOP))
+        assertTrue(top.dots.isEmpty() && top.rects.isEmpty() && top.lines.all { it.color == TEST_CURVE_LOOK.symmetry }, "Top has no outline, only the line of symmetry")
     }
 
     @Test
@@ -117,7 +123,7 @@ class OversketchToolTest {
         }
         mouseDrag(loop)
         val drawn = assertNotNull(tool.fitErrorPixels(View.SIDE))
-        assertTrue(drawn > 0f && drawn < 3f, "the fitter holds to about a pixel, got $drawn")
+        assertTrue(drawn > 0f && drawn < LOOSE_FIT_PIXELS, "the fitter holds to its Fit, got $drawn")
         assertNull(tool.fitErrorPixels(View.TOP))
 
         val curve = assertNotNull(bench.outline())

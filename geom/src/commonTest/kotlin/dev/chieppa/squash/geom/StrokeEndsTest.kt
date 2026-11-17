@@ -84,7 +84,7 @@ class StrokeEndsTest {
     @Test
     fun closingAByChordLeavesTheStrokeOnItsLine() {
         val open = arc(Vec2(1f, 1f), sweep = 1.2 * PI)
-        val line = flat(assertNotNull(cleanStroke(open, StrokeEnds.Closed, PIXEL)))
+        val line = flat(assertNotNull(cleanStroke(open, StrokeEnds.Closed, PIXEL, StrokeOptions(fit = FAITHFUL_FIT))))
         val worst = open.maxOf { distanceToLine(it, line) }
         assertTrue(worst < 3f * PIXEL, "the stroke moved ${worst / PIXEL} px")
     }

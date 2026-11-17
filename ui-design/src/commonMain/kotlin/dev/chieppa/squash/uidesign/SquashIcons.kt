@@ -183,6 +183,13 @@ object SquashIcons {
             fill("M4.75 8.25a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
         }
     }
+    val FocusPane: ImageVector by lazy {
+        icon("focus-pane") {
+            stroke("M7 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9")
+            stroke("M8 8l5.5-5.5")
+            stroke("M9.5 2.5h4v4")
+        }
+    }
     val FrameAll: ImageVector by lazy {
         icon("frame-all") {
             stroke("M2.5 6V3.5a1 1 0 0 1 1-1H6")

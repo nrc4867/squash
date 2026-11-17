@@ -27,7 +27,8 @@ data class SmoothBrush(val radius: Float, val strength: Float)
  * A curve a smoothing brush is working on. It holds the curve as dense samples for the whole drag, so a drag's dabs add up
  * on the samples rather than on refits of refits. Only samples inside the brush move. An open curve's end samples hold still,
  * and a closed curve's seam moves as one point. [path] is the old curve wherever samples did not move, cut where they start
- * to, and a fit to the samples where they did. A pixel is a screen pixel's size in the plane's units.
+ * to, and a fit to the samples where they did, as [fit] sets for the old curve's span. A pixel is a screen pixel's size
+ * in the plane's units.
  */
 class BrushedPath private constructor(
     private val original: BezierPath,
@@ -35,19 +36,21 @@ class BrushedPath private constructor(
     private val moved: List<Vec2>,
     private val plane: StrokeEnds.CutAtPlane?,
     private val pixel: Float,
+    private val tolerance: Float,
 ) {
     private val closed = moved.first() == moved.last()
     private val count = if (closed) moved.lastIndex else moved.size
 
-    constructor(path: BezierPath, ends: StrokeEnds, pixel: Float) :
-        this(path, CurveSamples(path, strokeSpacing(pixel)), ends, pixel)
+    constructor(path: BezierPath, ends: StrokeEnds, pixel: Float, fit: Float = DEFAULT_STROKE_FIT) :
+        this(path, CurveSamples(path, strokeSpacing(pixel)), ends, pixel, fitTolerance(fit, pixel, longestSpan(path)))
 
-    private constructor(path: BezierPath, samples: CurveSamples, ends: StrokeEnds, pixel: Float) : this(
+    private constructor(path: BezierPath, samples: CurveSamples, ends: StrokeEnds, pixel: Float, tolerance: Float) : this(
         path,
         samples,
         samples.points,
         (ends as? StrokeEnds.CutAtPlane).takeIf { samples.points.first() != samples.points.last() },
         pixel,
+        tolerance,
     )
 
     /** The curve as the brush has left it. */
@@ -75,7 +78,7 @@ class BrushedPath private constructor(
         }
         if (!changed) return this
         if (closed) next[next.lastIndex] = next[0]
-        return BrushedPath(original, samples, next, plane, pixel)
+        return BrushedPath(original, samples, next, plane, pixel, tolerance)
     }
 
     /** Dabs of [brush] along the line from [from] to [to], [from] itself left out as the drag's last touch. */
@@ -174,7 +177,7 @@ class BrushedPath private constructor(
     }
 
     private fun fittedLine(shape: List<Vec2>, start: Vec2?, end: Vec2?): List<CubicBezier> =
-        fitOpenSegments(shape, pixel, start, end).toMutableList().apply {
+        fitOpenSegments(shape, pixel, tolerance, start, end).toMutableList().apply {
             this[0] = first().copy(p0 = shape.first())
             this[lastIndex] = last().copy(p3 = shape.last())
         }

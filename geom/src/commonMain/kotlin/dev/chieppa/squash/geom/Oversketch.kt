@@ -50,7 +50,7 @@ fun oversketch(
     val span = locateSpan(ruler, line, plane, pixel, options.snapEnds) ?: return null
     val shape = resample(spanLine(span, options.falloff, pixel), strokeSpacing(pixel))
     if (shape.size < 2) return null
-    val fit = fitOpenRun(shape, pixel, startTangent(span), endTangent(span), options.stroke.marks)
+    val fit = fitOpenRun(shape, pixel, options.stroke.tolerance(pixel, longestSpan(path)), startTangent(span), endTangent(span), options.stroke.marks)
     val exact = fit.path.segments.toMutableList().apply {
         this[0] = first().copy(p0 = shape.first())
         this[lastIndex] = last().copy(p3 = shape.last())

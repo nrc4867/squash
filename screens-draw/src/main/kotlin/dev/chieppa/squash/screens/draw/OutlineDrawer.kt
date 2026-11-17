@@ -17,6 +17,8 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.Readout
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.draw_close_end
+import dev.chieppa.squash.uidesign.generated.draw_fit
+import dev.chieppa.squash.uidesign.generated.draw_fit_range
 import dev.chieppa.squash.uidesign.generated.draw_hold_snap
 import dev.chieppa.squash.uidesign.generated.draw_half_outline
 import dev.chieppa.squash.uidesign.generated.draw_hint
@@ -45,6 +47,8 @@ private val ROW_GAP = 10.dp
 object OutlineDrawerTags {
     const val SMOOTH = "outline.smooth"
     const val SMOOTH_VALUE = "outline.smooth.value"
+    const val FIT = "outline.fit"
+    const val FIT_VALUE = "outline.fit.value"
     const val STABILIZER = "outline.stabilizer"
     const val STABILIZER_VALUE = "outline.stabilizer.value"
     const val SNAP_LINE = "outline.snapLine"
@@ -95,6 +99,7 @@ fun StrokeSection(state: AppState) {
     val hold = stringResource(Res.string.draw_hold_snap)
     DrawerSection(stringResource(Res.string.draw_stroke)) {
         SmoothRow(state)
+        FitRow(state)
         StabilizerRow(state)
         SettingRow(snap) {
             Spacer(Modifier.weight(1f))
@@ -125,6 +130,20 @@ internal fun SmoothRow(state: AppState) {
         Readout(
             stringResource(Res.string.edit_percent, (curves.smooth * PERCENT).roundToInt()),
             Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.SMOOTH_VALUE),
+        )
+    }
+}
+
+/** How closely a stroke's curve follows it, Smooth at the left with few points and Faithful at the right. */
+@Composable
+internal fun FitRow(state: AppState) {
+    val curves = state.curves
+    val range = stringResource(Res.string.draw_fit_range)
+    SettingRow(stringResource(Res.string.draw_fit)) {
+        Slider(curves.fit, { curves.fit = it }, range, Modifier.weight(1f).testTag(OutlineDrawerTags.FIT))
+        Readout(
+            stringResource(Res.string.edit_percent, (curves.fit * PERCENT).roundToInt()),
+            Modifier.width(PERCENT_WIDTH).testTag(OutlineDrawerTags.FIT_VALUE),
         )
     }
 }

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.geom
 
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.max
@@ -106,4 +107,17 @@ private fun inDrawingOrder(ring: List<Vec2>, start: Vec2, counterClockwise: Bool
     val first = ring.indices.minBy { (ring[it] - start).magnitude }
     val closed = ring.subList(first, ring.size) + ring.subList(0, first + 1)
     return if (counterClockwise) closed else closed.reversed()
+}
+
+/**
+ * The ellipse filling the box with [corner] and [opposite] at two opposite corners, its axes along x and y, drawn from its
+ * point nearest [corner]; null when the box is flat in either direction.
+ */
+fun ellipseInBox(corner: Vec2, opposite: Vec2): EllipseShape? {
+    val halfWidth = abs(opposite.x - corner.x) / 2f
+    val halfHeight = abs(opposite.y - corner.y) / 2f
+    if (halfWidth <= 0f || halfHeight <= 0f) return null
+    val center = (corner + opposite) * 0.5f
+    val major = if (halfWidth >= halfHeight) Vec2(halfWidth, 0f) else Vec2(0f, halfHeight)
+    return EllipseShape(center, major, minOf(halfWidth, halfHeight), corner, counterClockwise = true)
 }

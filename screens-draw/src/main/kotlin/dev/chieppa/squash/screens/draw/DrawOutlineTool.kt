@@ -14,6 +14,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.character.build.oversketchedOutline
@@ -30,6 +31,7 @@ import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.geom.StrokePreview
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.classifyStroke
+import dev.chieppa.squash.geom.samples
 import dev.chieppa.squash.geom.stabilizerString
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.CurveLook
@@ -38,7 +40,12 @@ import dev.chieppa.squash.screens.edit.affected
 import dev.chieppa.squash.screens.edit.curvePoints
 import dev.chieppa.squash.screens.edit.RefitReach
 import dev.chieppa.squash.screens.edit.refitReach
+import dev.chieppa.squash.screens.edit.fittedCurve
 import dev.chieppa.squash.screens.edit.rememberCurveLook
+import dev.chieppa.squash.screens.edit.symmetryLine
+import dev.chieppa.squash.screens.edit.symmetryPaneLine
+import dev.chieppa.squash.screens.shell.mirrorsIn
+import dev.chieppa.squash.screens.shell.symmetryIn
 import dev.chieppa.squash.screens.sheet.LiveStroke
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneLine
@@ -55,7 +62,12 @@ import dev.chieppa.stretch.frame.buildOverlay
  * stroke is one undo step. A stroke the pane loses midway sends nothing. The Outline drawer's assists all act on the samples
  * or the options, ahead of the preview and the release alike, so the two cannot part. With Hold to snap on, a stroke whose
  * pointer rests turns into the clean shape it best reads as, which the pointer adjusts until release and which stands in
- * for the stroke from then on, whole, so guides still catch it and Half outline and forced points do not touch it.
+ * for the stroke from then on, whole, so guides still catch it and Half outline and forced points do not touch it. Holding a
+ * [ModifierSnap] key does the same for as long as it is held: the stroke stands as a straight line or an ellipse from where
+ * it began to the pointer. Release fits the stroke to as few curve points as the drawer's Fit allows, and the curve it would
+ * store shows thin over the stroke as it grows. On a part down the body's middle, in a view that shows its left and right, the
+ * line of symmetry shows faintly, a stroke's ends and extremes catch it as they catch the guides, and with Mirror on the stroke
+ * draws half the outline and its mirror image. Alt held as the stroke starts draws it free of the guides and the line alike.
  */
 class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var curveLook: CurveLook) : PaneTool {
     private var strokeView: View?
@@ -66,8 +78,10 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
     private val capture = StrokeCapture()
     private var strokeCamera: LockedCamera? = null
     private var held by mutableStateOf<HeldShape?>(null)
+    private var modifierSnap by mutableStateOf<ModifierSnap?>(null)
     private var snapLines: List<PaneLine> = emptyList()
     private var snapGuides: List<SnapGuide> = emptyList()
+    private var freeOfGuides = false
 
     override val drawingIn: View? get() = strokeView
 
@@ -78,7 +92,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
             val stroke = strokeNow()
             val outline = outline(view)
             if (outline == null) {
-                if (!state.curves.halfOutline) return LiveStroke(view, stroke.samples)
+                if (!state.curves.halfOutline && !state.mirrorsIn(view)) return LiveStroke(view, stroke.samples)
                 return LiveStroke(view, firstStroke(view, stroke)?.shape?.map { CurvePoint(it.x, it.y) } ?: stroke.samples)
             }
             return LiveStroke(view, preview(view, outline, stroke)?.line?.map { CurvePoint(it.x, it.y) } ?: outlineSamples(outline))
@@ -91,15 +105,26 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
     /** What the stroke stands for now, what was drawn or the shape it snapped to, held to the guides. */
     private fun strokeNow(): SnappedStroke {
         val pixel = strokeCamera?.planePixel ?: 0f
-        val guides = if (state.curves.snapGuides) snapGuides else emptyList()
+        val guides = if (state.curves.snapGuides && !freeOfGuides) snapGuides else emptyList()
         val reach = SNAP_GUIDE_PIXELS * pixel
-        val shape = held ?: return SnappedStroke(capture.samples, capture.marks, capture.lineEnd, guides, reach)
-        return SnappedStroke(shape.points(pixel).map { it.vec() }, emptyList(), null, guides, reach)
+        val shape = snappedPoints(pixel) ?: return SnappedStroke(capture.samples, capture.marks, capture.lineEnd, guides, reach)
+        return SnappedStroke(shape, emptyList(), null, guides, reach)
     }
+
+    /** The shape the stroke stands as, held or under a modifier, as stroke points; null for a freehand stroke. */
+    private fun snappedPoints(pixel: Float): List<Vec2>? {
+        held?.let { shape -> return shape.points(pixel).map { it.vec() } }
+        val snap = modifierSnap ?: return null
+        val drawn = capture.samples
+        val shape = drawn.firstOrNull()?.let { snap.shape(it, drawn.last()) } ?: return null
+        return shape.samples(pixel)
+    }
+
+    private val snapped: Boolean get() = held != null || modifierSnap != null
 
     /** A snapped shape is already clean and already whole, so it is neither smoothed again nor mirrored. */
     private fun strokeOptions(view: View, stroke: SnappedStroke): StrokeOptions =
-        if (held != null) state.curves.strokeOptions.copy(smoothing = 0f) else state.curves.strokeOptions(view, stroke.marks)
+        if (snapped) state.curves.strokeOptions.copy(smoothing = 0f) else state.curves.strokeOptions(view, stroke.marks, state.mirrorsIn(view))
 
     private fun oversketchOptions(view: View, stroke: SnappedStroke): OversketchOptions =
         state.curves.options.copy(stroke = strokeOptions(view, stroke))
@@ -123,9 +148,11 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
             strokeCamera = camera
             strokeView = view
             state.curves.penPressure = penPressure(down)
-            snapLines = state.strokeSnapLines(camera)
-            snapGuides = snapLines.map(camera::guideInPlane)
             val modifiers = currentEvent.keyboardModifiers
+            freeOfGuides = modifiers.isAltPressed
+            snapLines = state.strokeSnapLines(camera) + listOfNotNull(state.symmetryIn(view)?.let { symmetryPaneLine(it, camera) })
+            snapGuides = snapLines.map(camera::guideInPlane)
+            modifierSnap = ModifierSnap.of(modifiers.isCtrlPressed, modifiers.isShiftPressed)
             capture.begin(camera.toPlane(down.position).vec(), stabilizerString(state.curves.stabilizer, camera.planePixel), modifiers.isAltPressed, modifiers.isShiftPressed)
             var forced: StrokeMarkKind? = null
             var forcedAt = Offset.Unspecified
@@ -136,7 +163,8 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
                     {
                         state.curves.penPressure = penPressure(it)
                         val pressed = currentEvent.keyboardModifiers
-                        forced = capture.modifiers(pressed.isAltPressed, pressed.isShiftPressed)
+                        modifierSnap = ModifierSnap.of(pressed.isCtrlPressed, pressed.isShiftPressed)
+                        forced = capture.modifiers(pressed.isAltPressed, pressed.isShiftPressed).takeIf { modifierSnap == null }
                         forcedAt = it.position
                     },
                     { snap(camera) },
@@ -150,6 +178,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
                 strokeCamera = null
                 capture.clear()
                 held = null
+                modifierSnap = null
                 state.curves.penPressure = null
             }
         }
@@ -163,7 +192,7 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
     }
 
     private fun snap(camera: LockedCamera) {
-        if (!state.curves.holdSnap || held != null) return
+        if (!state.curves.holdSnap || held != null || modifierSnap != null) return
         val samples = capture.samples
         val plane = selectedTemplate()?.takeIf { state.curves.closeEnd }?.let { strokeEnds(camera.view, it.openEnd) as? StrokeEnds.CutAtPlane }
         val shape = classifyStroke(samples, camera.planePixel, plane) ?: return
@@ -198,7 +227,8 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
 
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay {
         val outline = outline(view)
-        val points = outline?.takeIf { view == state.activeView.value }?.let { curvePoints(it, null, camera, curveLook) } ?: ViewportOverlay.Empty
+        val symmetry = state.symmetryIn(view)?.let { line -> buildOverlay { symmetryLine(line, camera, curveLook) } } ?: ViewportOverlay.Empty
+        val points = symmetry + (outline?.takeIf { view == state.activeView.value }?.let { curvePoints(it, null, camera, curveLook) } ?: ViewportOverlay.Empty)
         if (strokeView != view || capture.isEmpty) return points
         val stroke = strokeNow()
         val over = outline?.let { preview(view, it, stroke) }
@@ -221,7 +251,17 @@ class DrawOutlineTool(private val state: AppState, var look: StrokeLook, var cur
             listOfNotNull(over, over?.mirrored).forEach { part -> affected(part.touched.map { CurvePoint(it.x, it.y) }, camera, curveLook) }
             if (state.curves.snapGuides) caughtGuides(stroke.caught.map(snapLines::get), look)
             shown?.let { strokeGuide(it, tip, camera, look) }
+            released(view, stroke)?.let { fittedCurve(it, camera, curveLook) }
         }
+    }
+
+    /** The outline release would store for [stroke] now, as [finish] makes it. */
+    private fun released(view: View, stroke: SnappedStroke): OutlineCurve? {
+        val camera = strokeCamera ?: return null
+        val template = selectedTemplate() ?: return null
+        val ends = strokeEnds(view, template.openEnd)
+        val existing = outline(view) ?: return fittedOutline(stroke.samples, ends, camera.planePixel, strokeOptions(view, stroke))?.curve
+        return oversketchedOutline(existing, stroke.samples, ends, camera.planePixel, oversketchOptions(view, stroke))?.curve
     }
 
     private fun firstStroke(view: View, stroke: SnappedStroke): StrokePreview? {

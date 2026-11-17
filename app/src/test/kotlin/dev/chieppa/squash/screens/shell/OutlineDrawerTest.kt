@@ -18,7 +18,12 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.document.SetOutline
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.CentreLine
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import dev.chieppa.squash.geom.DEFAULT_STROKE_FIT
+import dev.chieppa.squash.geom.FAITHFUL_FIT
 import dev.chieppa.squash.geom.StrokeOptions
+import kotlin.math.roundToInt
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp
 import dev.chieppa.squash.screens.TestWork
@@ -88,6 +93,21 @@ class OutlineDrawerTest {
     }
 
     @Test
+    fun theFitRowRunsFromSmoothToFaithfulAndSetsTheStrokesFit() = runDesktopComposeUiTest(1600, 900) {
+        val state = AppState(shipped, work)
+        workspace(state)
+        waitForIdle()
+        assertEquals(DEFAULT_STROKE_FIT, state.curves.strokeOptions.fit)
+        onNodeWithTag(OutlineDrawerTags.FIT_VALUE).assertTextContains("${(DEFAULT_STROKE_FIT * 100).roundToInt()}%")
+        onNodeWithContentDescription("Smooth ↔ Faithful").assertExists()
+        onNodeWithTag(OutlineDrawerTags.FIT).performSemanticsAction(SemanticsActions.SetProgress) { it(1f) }
+        waitForIdle()
+        assertEquals(FAITHFUL_FIT, state.curves.fit)
+        onNodeWithTag(OutlineDrawerTags.FIT_VALUE).assertTextContains("100%")
+        assertEquals(state.curves.fit, state.curves.options.stroke.fit)
+    }
+
+    @Test
     fun theStrokeAssistsReadAsTheBoardDrawsThemAndSetTheOptions() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
         workspace(state)
@@ -126,7 +146,7 @@ class OutlineDrawerTest {
         waitForIdle()
         mainClock.advanceTimeBy(TOOLTIP_MILLIS)
         waitForIdle()
-        onNodeWithText("Draw outline · Corner (Alt) · Smooth (Shift)").assertExists()
+        onNodeWithText("Draw outline · Corner (Alt) · Smooth (Shift) · Line (Ctrl) · Ellipse (Ctrl Shift) · Free of guides (Alt held first)").assertExists()
     }
 
     @Test

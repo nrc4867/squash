@@ -1,9 +1,13 @@
 package dev.chieppa.squash.screens.edit
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -22,14 +26,24 @@ import dev.chieppa.squash.document.smoothed
 import dev.chieppa.squash.geom.StrokeEnds
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.OutlineRowsSection
+import dev.chieppa.squash.screens.draw.simplifyOutline
+import dev.chieppa.squash.screens.draw.simplifyPart
+import dev.chieppa.squash.screens.draw.deleteSelectedPoint
+import dev.chieppa.squash.screens.draw.simplifiable
+import dev.chieppa.squash.character.build.withPointDeleted
+import dev.chieppa.squash.document.isAnchor
 import dev.chieppa.squash.screens.draw.strokeEnds
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.edit_delete_point
 import dev.chieppa.squash.uidesign.generated.edit_falloff
 import dev.chieppa.squash.uidesign.generated.edit_handle
 import dev.chieppa.squash.uidesign.generated.edit_handle_corner
 import dev.chieppa.squash.uidesign.generated.edit_handle_smooth
 import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.edit_selected_point
+import dev.chieppa.squash.uidesign.generated.edit_simplify
+import dev.chieppa.squash.uidesign.generated.edit_simplify_outline
+import dev.chieppa.squash.uidesign.generated.edit_simplify_part
 import dev.chieppa.squash.uidesign.generated.edit_snap_ends
 import dev.chieppa.squash.uidesign.generated.edit_tool_oversketch
 import dev.chieppa.squash.uidesign.generated.edit_x
@@ -37,6 +51,7 @@ import dev.chieppa.squash.uidesign.generated.edit_y
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.NumberField
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
@@ -47,6 +62,7 @@ import org.jetbrains.compose.resources.stringResource
 private const val PERCENT = 100f
 private const val COORDINATE_STEP = 0.01f
 private val PERCENT_WIDTH = 36.dp
+private val SIMPLIFY_GAP = 8.dp
 
 /** Test tags for the drawer's controls. */
 object CurveDrawerTags {
@@ -54,17 +70,21 @@ object CurveDrawerTags {
     const val Y = "curves.y"
     const val FALLOFF = "curves.falloff"
     const val SNAP = "curves.snap"
+    const val SIMPLIFY_OUTLINE = "curves.simplify.outline"
+    const val DELETE_POINT = "curves.deletePoint"
+    const val SIMPLIFY_PART = "curves.simplify.part"
 
     fun outline(view: View) = "curves.outline.${view.name}"
 }
 
 private enum class HandleKind { SMOOTH, CORNER }
 
-/** The Outline curves drawer's sections: the selected point, the oversketch's settings and the outlines drawn. */
+/** The Outline curves drawer's sections: the selected point, the oversketch's settings, Simplify and the outlines drawn. */
 @Composable
 fun OutlineCurvesSections(state: AppState, session: CharacterSession, part: PartInstance, outlines: Map<View, OutlineCurve>) {
     SelectedPointSection(state, session, part, outlines)
     OversketchSection(state)
+    SimplifySection(state, outlines)
     OutlineRowsSection(state, outlines, CurveDrawerTags::outline)
 }
 
@@ -93,6 +113,14 @@ private fun SelectedPointSection(state: AppState, session: CharacterSession, par
             NumberField(point.y, { moveTo(point.copy(y = it)) }, y, Modifier.testTag(CurveDrawerTags.Y), step = COORDINATE_STEP)
         }
         HandleRow(state, session, part, selection, curve, limit)
+        if (isAnchor(selection.index)) {
+            Button(
+                stringResource(Res.string.edit_delete_point),
+                { state.deleteSelectedPoint() },
+                Modifier.fillMaxWidth().testTag(CurveDrawerTags.DELETE_POINT),
+                enabled = withPointDeleted(curve, selection.index) != null,
+            )
+        }
     }
 }
 
@@ -143,6 +171,30 @@ private fun OversketchSection(state: AppState) {
         SettingRow(snap) {
             Spacer(Modifier.weight(1f))
             Toggle(curves.snapEnds, { curves.snapEnds = it }, snap, Modifier.testTag(CurveDrawerTags.SNAP))
+        }
+    }
+}
+
+/** Refits the picked outline, or every outline of the part, to as few points as the Stroke section's Fit allows. */
+@Composable
+private fun SimplifySection(state: AppState, outlines: Map<View, OutlineCurve>) {
+    val active by state.activeView.collectAsState()
+    val view = state.curves.selection?.takeIf { it.part == state.selectedPart.value }?.view ?: active
+    val free = state.curves.drawing == null
+    DrawerSection(stringResource(Res.string.edit_simplify)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SIMPLIFY_GAP)) {
+            Button(
+                stringResource(Res.string.edit_simplify_outline),
+                { state.simplifyOutline(view) },
+                Modifier.weight(1f).testTag(CurveDrawerTags.SIMPLIFY_OUTLINE),
+                enabled = free && outlines[view].simplifiable(),
+            )
+            Button(
+                stringResource(Res.string.edit_simplify_part),
+                { state.simplifyPart() },
+                Modifier.weight(1f).testTag(CurveDrawerTags.SIMPLIFY_PART),
+                enabled = free && outlines.values.any { it.simplifiable() },
+            )
         }
     }
 }

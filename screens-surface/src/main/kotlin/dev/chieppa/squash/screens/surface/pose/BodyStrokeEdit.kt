@@ -9,6 +9,7 @@ import dev.chieppa.squash.geom.ArcPath
 import dev.chieppa.squash.geom.BezierPath
 import dev.chieppa.squash.geom.CubicBezier
 import dev.chieppa.squash.geom.StrokeEnds
+import dev.chieppa.squash.geom.FAITHFUL_FIT
 import dev.chieppa.squash.geom.StrokeOptions
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.cleanStroke
@@ -24,7 +25,7 @@ private const val POINTS_PER_SEGMENT = 3
  * plane. Null for a stroke too short to be one.
  */
 fun fitBodyStroke(samples: List<Vec2>, view: View, pixel: Float): BodyStroke? {
-    val clean = cleanStroke(samples, StrokeEnds.Closed, pixel, StrokeOptions(snapLine = false, closeEnd = false)) ?: return null
+    val clean = cleanStroke(samples, StrokeEnds.Closed, pixel, StrokeOptions(snapLine = false, closeEnd = false, fit = FAITHFUL_FIT)) ?: return null
     if (clean.path.segments.isEmpty()) return null
     return BodyStroke(view, clean.path.toOutline().points)
 }
