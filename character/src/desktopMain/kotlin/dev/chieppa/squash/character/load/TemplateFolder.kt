@@ -30,8 +30,10 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
             return load(parts + plans) { folder.resolve(it).readText() }
         }
 
-        /** Loads the templates packed into the app's resources, by the same rules as a folder. */
-        fun shipped(): TemplateFolder = load(shippedResource(SHIPPED_INDEX).lines().filter { it.isNotEmpty() }, ::shippedResource)
+        private val packed: TemplateFolder by lazy { load(shippedResource(SHIPPED_INDEX).lines().filter { it.isNotEmpty() }, ::shippedResource) }
+
+        /** The templates packed into the app's resources, loaded by the same rules as a folder once per process. */
+        fun shipped(): TemplateFolder = packed
 
         private fun load(files: List<String>, read: (String) -> String): TemplateFolder {
             val parts = files.filter { '/' !in it && it.endsWith(PART_SUFFIX) }.sorted()

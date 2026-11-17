@@ -11,7 +11,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import dev.chieppa.squash.character.build.TemplateLibrary
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.BodyPlanId
@@ -34,8 +33,8 @@ import dev.chieppa.squash.screens.sheet.PaneTool
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.test.setStretchContent
-import java.nio.file.Path
 import kotlin.math.sin
 
 const val PANE_TAG = "pane"
@@ -111,7 +110,7 @@ class CurveToolBench(side: OutlineCurve? = LEG_SIDE) {
     val work = TestWork()
 
     init {
-        val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+        val folder = shipped
         state = AppState(folder, work)
         session = CharacterSession(SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1))), TemplateLibrary(folder.parts), work.scope, work.dispatcher)
         session.send(AddPart(PartInstance(id, folder.parts.first { it.id.value == "leg" }.ref)))

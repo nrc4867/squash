@@ -12,7 +12,6 @@ import androidx.compose.ui.test.withKeyDown
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.PlacementParams
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
@@ -31,7 +30,7 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.sheet.SheetPart
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
-import java.nio.file.Path
+import dev.chieppa.squash.screens.shell.shipped
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,7 +50,7 @@ private const val OFF_LINE = 4f
 @OptIn(ExperimentalTestApi::class)
 class MovePrecisionTest {
     private val work = TestWork()
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
     private val state = AppState(folder, work).also {
         it.open(savedFennec())
         it.selectedPart.value = TORSO

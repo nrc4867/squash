@@ -3,7 +3,6 @@ package dev.chieppa.squash.screens.sheet
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartBuilder
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
@@ -16,11 +15,11 @@ import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.SceneView
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.frame.OverlayLine
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.Vec3 as GpuVec3
-import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,7 +28,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SheetFrameTest {
-    private val templates = TemplateFolder.load(Path.of(System.getProperty("squash.templates"))).parts
+    private val templates = shipped.parts
     private val look = SheetLook(
         Color.White, Color.Black, Color.Gray, Color.DarkGray, Color.Yellow, Color.Red, Color.LightGray,
         PartMaterial(Color.Green, Color(0xFF008000), Color.Black), 1f, 2f, 1f, 2f, 2f, 2f, 1f, 2f, 2f, 3f, 3f,

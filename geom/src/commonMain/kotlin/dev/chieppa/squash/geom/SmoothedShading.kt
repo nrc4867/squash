@@ -18,38 +18,70 @@ private const val TINY = 1e-9f
  * This mesh with its shading normals averaged over a ball round each vertex as wide as 0.8 of its thinnest extent, so two-tone's
  * terminator follows the part's large form and not the bumps a drawn outline puts in it: each neighbour weighs by a Gaussian of its
  * distance and the area round it, and one facing away from the vertex's own normal is left out, so the facing sides of two digits or a
- * thin sheet never mix.
+ * thin sheet never mix. A mesh like one smoothed before takes that result from [SmoothedMeshes].
  */
-fun RenderMesh.withSmoothedShading(): RenderMesh {
+fun RenderMesh.withSmoothedShading(): RenderMesh = SmoothedMeshes.of(this) { smoothedNow() }
+
+private fun RenderMesh.smoothedNow(): RenderMesh {
     val count = vertexCount
     if (count == 0) return this
-    val positions = Array(count) { position(it) }
-    var low = positions[0]
-    var high = positions[0]
-    for (p in positions) {
-        low = Vec3(min(low.x, p.x), min(low.y, p.y), min(low.z, p.z))
-        high = Vec3(max(high.x, p.x), max(high.y, p.y), max(high.z, p.z))
+    val positions = FloatArray(count * 3)
+    val proxies = FloatArray(count * 3)
+    for (v in 0 until count) {
+        val at = v * RenderMesh.FLOATS_PER_VERTEX
+        for (k in 0..2) {
+            positions[v * 3 + k] = vertices[at + k]
+            proxies[v * 3 + k] = vertices[at + RenderMesh.PROXY_OFFSET_FLOATS + k]
+        }
     }
-    val size = high - low
-    val reach = min(size.x, min(size.y, size.z)) * REACH_SHARE
+    var lowX = positions[0]
+    var lowY = positions[1]
+    var lowZ = positions[2]
+    var highX = lowX
+    var highY = lowY
+    var highZ = lowZ
+    for (v in 0 until count) {
+        lowX = min(lowX, positions[v * 3]); highX = max(highX, positions[v * 3])
+        lowY = min(lowY, positions[v * 3 + 1]); highY = max(highY, positions[v * 3 + 1])
+        lowZ = min(lowZ, positions[v * 3 + 2]); highZ = max(highZ, positions[v * 3 + 2])
+    }
+    val reach = min(highX - lowX, min(highY - lowY, highZ - lowZ)) * REACH_SHARE
     if (reach < TINY) return this
     val area = vertexAreas(positions)
-    val proxies = Array(count) { proxyAt(it) }
-    val grid = SpatialHash(positions, reach)
+    val grid = CellBuckets(positions, reach)
+    val reachSquared = reach * reach
     val spread = reach * SPREAD_SHARE
     val falloff = 1f / (2f * spread * spread)
     val out = vertices.copyOf()
     for (v in 0 until count) {
-        val own = proxies[v]
-        var sum = Vec3.ZERO
-        grid.near(positions[v]) { other ->
-            val d = positions[other] - positions[v]
-            val squared = d dot d
-            if (squared <= reach * reach) {
-                if ((own dot proxies[other]) > 0f) sum += proxies[other] * (exp(-squared * falloff) * area[other])
+        val px = positions[v * 3]
+        val py = positions[v * 3 + 1]
+        val pz = positions[v * 3 + 2]
+        val ox = proxies[v * 3]
+        val oy = proxies[v * 3 + 1]
+        val oz = proxies[v * 3 + 2]
+        var sx = 0f
+        var sy = 0f
+        var sz = 0f
+        grid.near(px, py, pz) { other ->
+            val dx = positions[other * 3] - px
+            val dy = positions[other * 3 + 1] - py
+            val dz = positions[other * 3 + 2] - pz
+            val squared = dx * dx + dy * dy + dz * dz
+            if (squared <= reachSquared) {
+                val qx = proxies[other * 3]
+                val qy = proxies[other * 3 + 1]
+                val qz = proxies[other * 3 + 2]
+                if (ox * qx + oy * qy + oz * qz > 0f) {
+                    val weight = exp(-squared * falloff) * area[other]
+                    sx += qx * weight
+                    sy += qy * weight
+                    sz += qz * weight
+                }
             }
         }
-        val smoothed = if (sum.length < TINY) own else sum.normalized()
+        val sum = Vec3(sx, sy, sz)
+        val smoothed = if (sum.length < TINY) Vec3(ox, oy, oz) else sum.normalized()
         val at = v * RenderMesh.FLOATS_PER_VERTEX + RenderMesh.PROXY_OFFSET_FLOATS
         out[at] = smoothed.x
         out[at + 1] = smoothed.y
@@ -58,19 +90,14 @@ fun RenderMesh.withSmoothedShading(): RenderMesh {
     return RenderMesh(out, indices)
 }
 
-private fun RenderMesh.proxyAt(vertex: Int): Vec3 {
-    val at = vertex * RenderMesh.FLOATS_PER_VERTEX + RenderMesh.PROXY_OFFSET_FLOATS
-    return Vec3(vertices[at], vertices[at + 1], vertices[at + 2])
-}
-
 /** A third of the area of every face round each vertex, so dense rings near a pole do not outweigh the rest. */
-private fun RenderMesh.vertexAreas(positions: Array<Vec3>): FloatArray {
-    val area = FloatArray(positions.size)
+private fun RenderMesh.vertexAreas(positions: FloatArray): FloatArray {
+    val area = FloatArray(positions.size / 3)
     for (t in 0 until indices.size / 3) {
         val a = indices[t * 3]
         val b = indices[t * 3 + 1]
         val c = indices[t * 3 + 2]
-        val third = ((positions[b] - positions[a]) cross (positions[c] - positions[a])).length / 6f
+        val third = ((point(positions, b) - point(positions, a)) cross (point(positions, c) - point(positions, a))).length / 6f
         area[a] += third
         area[b] += third
         area[c] += third
@@ -78,24 +105,62 @@ private fun RenderMesh.vertexAreas(positions: Array<Vec3>): FloatArray {
     return area
 }
 
-/** Points bucketed in cubes of [cell], for the points near one. */
-private class SpatialHash(private val points: Array<Vec3>, private val cell: Float) {
-    private val buckets = HashMap<Long, MutableList<Int>>()
+private fun point(positions: FloatArray, vertex: Int) = Vec3(positions[vertex * 3], positions[vertex * 3 + 1], positions[vertex * 3 + 2])
+
+/**
+ * Points of a flat xyz array bucketed in cubes of [cell], for the points near one. Each cube's points are held in index order, in
+ * one array sorted by cube, and a cube is found by binary search over the cubes' keys.
+ */
+private class CellBuckets(positions: FloatArray, private val cell: Float) {
+    private val keys: LongArray
+    private val starts: IntArray
+    private val members: IntArray
 
     init {
-        points.forEachIndexed { i, p -> buckets.getOrPut(key(cellOf(p.x), cellOf(p.y), cellOf(p.z))) { ArrayList() } += i }
+        val count = positions.size / 3
+        val own = LongArray(count) { key(cellOf(positions[it * 3]), cellOf(positions[it * 3 + 1]), cellOf(positions[it * 3 + 2])) }
+        val order = (0 until count).sortedWith(compareBy<Int> { own[it] }.thenBy { it })
+        members = order.toIntArray()
+        val distinct = ArrayList<Long>()
+        val firsts = ArrayList<Int>()
+        members.forEachIndexed { i, member ->
+            if (distinct.isEmpty() || distinct.last() != own[member]) {
+                distinct += own[member]
+                firsts += i
+            }
+        }
+        keys = distinct.toLongArray()
+        starts = IntArray(keys.size + 1) { if (it < firsts.size) firsts[it] else count }
     }
 
     private fun cellOf(value: Float) = floor(value / cell).toInt()
 
     private fun key(x: Int, y: Int, z: Int): Long = ((x.toLong() and MASK) shl 42) or ((y.toLong() and MASK) shl 21) or (z.toLong() and MASK)
 
-    /** Calls [each] with every point in the cubes round [p]'s. */
-    inline fun near(p: Vec3, each: (Int) -> Unit) {
-        val cx = cellOf(p.x)
-        val cy = cellOf(p.y)
-        val cz = cellOf(p.z)
-        for (x in cx - 1..cx + 1) for (y in cy - 1..cy + 1) for (z in cz - 1..cz + 1) buckets[key(x, y, z)]?.forEach(each)
+    private fun bucket(key: Long): Int {
+        var low = 0
+        var high = keys.size - 1
+        while (low <= high) {
+            val middle = (low + high) ushr 1
+            val at = keys[middle]
+            when {
+                at < key -> low = middle + 1
+                at > key -> high = middle - 1
+                else -> return middle
+            }
+        }
+        return -1
+    }
+
+    /** Calls [each] with every point in the cubes round the point at [x], [y], [z]'s cube, cube by cube in x, y, z order. */
+    inline fun near(x: Float, y: Float, z: Float, each: (Int) -> Unit) {
+        val cx = cellOf(x)
+        val cy = cellOf(y)
+        val cz = cellOf(z)
+        for (i in cx - 1..cx + 1) for (j in cy - 1..cy + 1) for (k in cz - 1..cz + 1) {
+            val found = bucket(key(i, j, k))
+            if (found >= 0) for (m in starts[found] until starts[found + 1]) each(members[m])
+        }
     }
 
     private companion object {

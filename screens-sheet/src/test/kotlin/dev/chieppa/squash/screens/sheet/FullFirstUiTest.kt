@@ -17,16 +17,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.settle
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
-import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -64,7 +63,7 @@ private class LockedOnlyTool : PaneTool {
 class FullFirstUiTest {
     private val work = TestWork()
 
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
     private val noSurface: SceneSurfaceContent = { _, _ -> }
 
     private fun opened(layout: SheetLayout = SheetLayout.FULL_FIRST) = AppState(folder, work).also {

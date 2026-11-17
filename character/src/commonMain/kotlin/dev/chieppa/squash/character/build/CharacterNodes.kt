@@ -37,7 +37,7 @@ fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Flow<
 
 /** A template's surface with nothing drawn, [mirrored] or not, leaning [spread] degrees out as its plan places it, at each of [lengthFactor]'s values. */
 fun Graph.defaultSurfaceNode(template: PartTemplate, mirrored: Boolean, lengthFactor: Flow<Float>, spread: Float = 0f): Node<Float, PartSurface> = node(lengthFactor, stage = BuildStages.SURFACE) { factor ->
-    surfaceOf(template, plannedData(spread), mirrored, cancellationCheck(), factor)
+    PlannedSurfaces.of(template, mirrored, spread, factor, cancellationCheck())
 }
 
 /** What a part the plan would place starts from: nothing drawn, leaning [spread] degrees out. */
@@ -138,7 +138,7 @@ fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: Bod
     val lengths = legLengths(parts, data, plan, templates)
     val defaults = HashMap<Pair<TemplateRef, Boolean>, PartSurface>()
     fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) {
-        surfaceOf(templates[ref], plannedData(plan?.spreadFor(ref.id) ?: 0f), mirrored, lengthFactor = lengths.ofPlanned(ref))
+        PlannedSurfaces.of(templates[ref], mirrored, plan?.spreadFor(ref.id) ?: 0f, lengths.ofPlanned(ref))
     }
     val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
     return assemble(parts, surfaces, plan, templates, ::default, lengths)

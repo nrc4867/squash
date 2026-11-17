@@ -36,7 +36,7 @@ private const val PIXELS = 400
 
 class FaceWorkTest {
     private val work = TestWork()
-    private val session: CharacterSession = openSession(fennecDocument(), work)
+    private val session: CharacterSession by lazy { openSession(fennecDocument(), work) }
 
     private fun faces(): FaceWork {
         work.settle(session)

@@ -16,7 +16,6 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.OpenSocket
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
@@ -28,12 +27,12 @@ import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.frame.DragAndDropHost
 import dev.chieppa.stretch.frame.LocalDragAndDrop
 import dev.chieppa.stretch.frame.OverlayDot
 import dev.chieppa.stretch.frame.dragSource
 import dev.chieppa.stretch.test.setStretchContent
-import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -49,7 +48,7 @@ private val OFF_DOT = Offset(7f, 4f)
 class AddPartDropTest {
     private val work = TestWork()
 
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
 
     /**
      * The fennec bench with Add part on its Side pane, a tile of [template] to drag, or of the tail socket's first template, and the

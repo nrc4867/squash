@@ -20,7 +20,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.TemplateLibrary
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.BodyPlanId
@@ -43,8 +42,8 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneViewport
 import dev.chieppa.squash.screens.sheet.PartAxes
 import dev.chieppa.squash.screens.sheet.SheetFit
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.test.setStretchContent
-import java.nio.file.Path
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -61,7 +60,7 @@ private const val SCALE = 100f
 
 @OptIn(ExperimentalTestApi::class)
 class DrawOutlineToolTest {
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
     private val look = TEST_STROKE_LOOK
     private val id = PartId("p")
 

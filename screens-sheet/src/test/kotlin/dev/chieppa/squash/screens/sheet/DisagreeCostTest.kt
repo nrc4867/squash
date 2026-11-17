@@ -2,16 +2,15 @@ package dev.chieppa.squash.screens.sheet
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.render.PartMaterial
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.stretch.gpu.CameraView
 import dev.chieppa.stretch.gpu.Vec3 as GpuVec3
-import java.nio.file.Path
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -93,7 +92,7 @@ class DisagreeCostTest {
     }
 
     private fun legPart(): SheetPart {
-        val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+        val folder = shipped
         val leg = folder.parts.first { it.id.value == "leg" }
         return sheetPartOf(leg)
     }

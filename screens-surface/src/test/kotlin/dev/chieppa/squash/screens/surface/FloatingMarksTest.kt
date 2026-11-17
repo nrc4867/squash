@@ -36,7 +36,7 @@ private const val PIXEL_HELD = 0.05f
 
 class FloatingMarksTest {
     private val work = TestWork()
-    private val session = openSession(fennecDocument(), work)
+    private val session by lazy { openSession(fennecDocument(), work) }
     private val root = Anchor(HEAD, u = 0.5f, v = 0.2f)
     private val flight = listOf(MarkFlight(0.02f, 0.03f, 0.1f), MarkFlight(0.04f, 0.09f, 0.2f))
 

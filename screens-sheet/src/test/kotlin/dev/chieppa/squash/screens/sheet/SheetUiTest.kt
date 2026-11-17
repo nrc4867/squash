@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.TemplateLibrary
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddPart
 import dev.chieppa.squash.document.BodyPlanId
@@ -46,8 +45,8 @@ import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.screens.shell.shipped
 import dev.chieppa.stretch.test.setStretchContent
-import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -56,7 +55,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class SheetUiTest {
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
 
     @Test
     fun theLayoutDropdownOffersEveryBuiltLayout() = runDesktopComposeUiTest(700, 300) {

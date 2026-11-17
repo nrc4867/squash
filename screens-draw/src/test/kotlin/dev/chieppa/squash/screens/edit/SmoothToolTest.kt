@@ -7,7 +7,6 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.toPath
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BodyPlanId
@@ -32,7 +31,7 @@ import dev.chieppa.squash.screens.sheet.SheetFit
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.PartDrawerKind
 import dev.chieppa.squash.screens.shell.partDrawerKind
-import java.nio.file.Path
+import dev.chieppa.squash.screens.shell.shipped
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.test.Test
@@ -146,7 +145,7 @@ class SmoothToolTest {
 
     @Test
     fun withMirrorOffOnlyThisSideChanges() = runComposeUiTest {
-        val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+        val folder = shipped
         val state = AppState(folder, work)
         val session = CharacterSession(
             SquashDocument(Character(CharacterId("c"), "Fennec", BodyPlanRef(BodyPlanId("p"), 1))),

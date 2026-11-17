@@ -5,6 +5,9 @@ import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 private const val RINGS = 24
@@ -81,5 +84,15 @@ class SmoothedShadingTest {
         for (v in 0 until drawn.vertexCount) for (i in 0 until RenderMesh.PROXY_OFFSET_FLOATS) {
             assertTrue(drawn.vertices[v * RenderMesh.FLOATS_PER_VERTEX + i] == smoothed.vertices[v * RenderMesh.FLOATS_PER_VERTEX + i])
         }
+    }
+
+    @Test
+    fun theSameMeshBuiltAgainTakesTheSameShadingAndAChangedOneItsOwn() {
+        val first = bumpedBall().withSmoothedShading()
+        assertContentEquals(first.vertices, bumpedBall().withSmoothedShading().vertices)
+        val moved = bumpedBall().let { ball -> RenderMesh(ball.vertices.copyOf().also { it[0] += 0.1f }, ball.indices) }
+        val smoothed = moved.withSmoothedShading()
+        assertEquals(moved.vertices[0], smoothed.vertices[0])
+        assertNotEquals(first.vertices.toList(), smoothed.vertices.toList())
     }
 }

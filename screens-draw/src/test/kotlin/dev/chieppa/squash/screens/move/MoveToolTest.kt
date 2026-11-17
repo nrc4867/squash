@@ -6,7 +6,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
-import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.Screen
@@ -17,7 +16,7 @@ import dev.chieppa.squash.screens.edit.showPane
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.smoke.SMOKE_LOOK
-import java.nio.file.Path
+import dev.chieppa.squash.screens.shell.shipped
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,7 +33,7 @@ private const val GRID = 24
 class MoveToolTest {
     private val work = TestWork()
 
-    private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
+    private val folder = shipped
 
     /** A fennec with its front legs placed and a Side pane on the left leg. */
     private inner class Bench : LegBench(folder, work)

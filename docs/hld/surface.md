@@ -104,7 +104,7 @@ Implicit skinning (Vaillant, Barthe, Guennebaud, Cani, Rohmer, Wyvill, Gourmel, 
 | --- | --- |
 | Slice row (per part) | Drawing to slices |
 | Part mesh (per part) | The part's patches as a lofted mesh: what separate parts draw, and what sockets, anchors and the field's solids are swept from |
-| Assembly | Parts placed by their sockets on each other's swept surfaces |
+| Assembly | Parts placed by their sockets on each other's swept surfaces, and a planned part on each open socket from its template with nothing drawn; those planned surfaces depend only on template, side, lean and length, so every session in the process shares them (`PlannedSurfaces`) |
 | Character field | Members, blends and parents from the assembly, keyed by each member's solid and place |
 | Character mesh and surface | The mesher's blocks and member channels; vertices, quads, coordinates, shares, shading normals, lines (`characterMeshNode`, `characterSurfaceNode`) |
 | Garment surfaces | Per worn garment, its field and mesh over the covered blocks and its coverage cut, innermost first |
