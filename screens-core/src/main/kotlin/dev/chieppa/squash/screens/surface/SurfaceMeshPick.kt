@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.surface
 
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.surface.HELD
 import dev.chieppa.squash.screens.sheet.SurfaceView
@@ -33,8 +34,8 @@ class SurfaceMeshPick(private val surface: CharacterSurface, private val sight: 
     /** Where vertex [v] lies, posed as the surface is. */
     fun at(v: Int): Vec3 = Vec3(surface.positions[v * 3], surface.positions[v * 3 + 1], surface.positions[v * 3 + 2])
 
-    /** The nearest place of the surface showing at [pixel] nearer than [limit], with its depth; null where none does. */
-    fun hit(pixel: Offset, limit: Float = Float.POSITIVE_INFINITY): Pair<SurfaceHit, Float>? {
+    /** The nearest place of the surface showing at [pixel] nearer than [limit], with its depth, on [only] alone when it names a part; null where none does. */
+    fun hit(pixel: Offset, limit: Float = Float.POSITIVE_INFINITY, only: PartId? = null): Pair<SurfaceHit, Float>? {
         val t = mesh.triangles
         var best = -1
         var nearest = limit
@@ -49,6 +50,7 @@ class SurfaceMeshPick(private val surface: CharacterSurface, private val sight: 
             val w = barycentric(pixel, a, b, c) ?: continue
             val depth = depths[a] * w[0] + depths[b] * w[1] + depths[c] * w[2]
             if (depth >= nearest) continue
+            if (only != null && heaviestMember(intArrayOf(a, b, c), w)?.let { surface.field.runs[it].partId } != only) continue
             nearest = depth
             best = tri
             weights = w

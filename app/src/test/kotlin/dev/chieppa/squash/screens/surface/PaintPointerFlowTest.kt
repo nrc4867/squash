@@ -65,7 +65,6 @@ import dev.chieppa.squash.screens.surface.paint.rememberBrushTool
 import dev.chieppa.squash.screens.surface.paint.rememberFillTool
 import dev.chieppa.squash.screens.surface.paint.rememberPaintEraseTool
 import dev.chieppa.squash.screens.surface.surfaceHit
-import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -93,16 +92,6 @@ private val AROUND = List(16) { it / 16f }
 private const val DRAG_STEP = 8f
 
 private val shipped = TemplateFolder.shipped()
-
-/** A tool that shows a test the free pane it was handed, so a test can find what shows where. */
-private class SeenFree(private val tool: PaneTool) : PaneTool by tool {
-    var view: FullView? = null
-
-    override fun fullOverlay(view: FullView): ViewportOverlay {
-        this.view = view
-        return tool.fullOverlay(view)
-    }
-}
 
 /** The paint tools and the Color drawer on the fennec, driven with the pointer through the panes as the app composes them. */
 @OptIn(ExperimentalTestApi::class)

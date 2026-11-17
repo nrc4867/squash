@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.single
 
-import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -25,7 +24,7 @@ import dev.chieppa.squash.screens.sheet.furCamera
 import dev.chieppa.squash.screens.sheet.furDraws
 import dev.chieppa.squash.screens.sheet.rememberFurView
 import dev.chieppa.squash.screens.sheet.SceneSurface
-import dev.chieppa.squash.screens.sheet.SheetHints
+import dev.chieppa.squash.screens.sheet.paneHints
 import dev.chieppa.squash.screens.sheet.largestColorScale
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.SheetPane
@@ -105,7 +104,7 @@ internal fun SingleSurface(
             free = camera.orbit.view,
             toolOverlay = overlay,
             freeOverlay = tool?.takeIf { it.takesFreeCamera && locked == null }?.fullOverlay(free) ?: ViewportOverlay.Empty,
-            hints = SheetHints(state.curves.templateHint, state.curves.ghost, tool?.showsWhole == true || rig != null || stage == Stage.DRESS),
+            hints = paneHints(state, tool, rig != null),
             color = color,
             surface = surface,
             fur = fur,

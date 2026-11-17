@@ -11,6 +11,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,22 @@ class ShellKeysTest {
         for (stage in Stage.entries) {
             assertEquals(ShellActions.FIT_PANE.value, shell.resolve("F", stage))
         }
+    }
+
+    @Test
+    fun vArmsSelectWhereTheStripHoldsItAndMoveInShape() {
+        val shell = shell()
+        assertEquals(BuildTool.MOVE.actionId, shell.resolve("V", Stage.SHAPE))
+        assertNull(shell.resolve("V", Stage.FACE))
+        for (stage in Stage.entries.filter { it.holdsSelect }) {
+            assertEquals(selectActionId(stage), shell.resolve("V", stage))
+        }
+        shell.state.armTool(BuildTool.BRUSH)
+        shell.state.selectPart(assertNotNull(shell.state.selectedPart.value))
+        assertNotNull(shell.keymap.resolve(KeyChord.parse("V"), Stage.COLOR.keyMode)).run.invoke()
+        assertEquals(BuildTool.NONE, shell.state.tool.value, "Select puts the brush down")
+        assertEquals(Stage.COLOR, shell.state.stage.value, "and stays in Color")
+        assertTrue(shell.state.partChosen.value, "keeping the choice")
     }
 
     @Test

@@ -23,3 +23,6 @@ val BuildTool.stage: Stage?
         poses -> Stage.POSE
         else -> Stage.SHAPE
     }
+
+/** Whether the stage's strip holds Select, which puts the tool down so a press picks what is under it. Shape picks with Move. */
+val Stage.holdsSelect: Boolean get() = this != Stage.SHAPE && this != Stage.FACE

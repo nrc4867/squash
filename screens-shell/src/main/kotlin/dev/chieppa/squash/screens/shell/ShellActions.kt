@@ -149,6 +149,10 @@ fun Shell.registerActions() {
     action(ShellActions.PUT_DOWN, null, chord("Esc"), { inWorkspace() && state.tool.value != BuildTool.NONE }) { state.putToolDown() }
     action(ShellActions.MIRROR, "mirror", chord("M"), { inWorkspace() && state.mirrorApplies() }) { state.mirror.value = !state.mirror.value }
 
+    Stage.entries.filter { it.holdsSelect }.forEach { stage ->
+        action(ActionId(selectActionId(stage)), "select", chord("V"), inWorkspace, stage.keyMode) { state.putToolDown() }
+    }
+
     tool(BuildTool.DRAW_OUTLINE, "pen", "D")
     tool(BuildTool.SPINE_WIDTH, "spine-and-width", "W")
     tool(BuildTool.EDIT_CURVES, "edit-curves", "E")

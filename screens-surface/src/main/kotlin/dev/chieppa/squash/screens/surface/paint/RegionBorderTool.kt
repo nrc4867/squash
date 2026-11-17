@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.edit.paintSlot
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.SurfaceTool
 import dev.chieppa.squash.screens.surface.SurfaceHit
@@ -44,16 +45,20 @@ private const val REGION_ID_PREFIX = "border-"
 /**
  * Region: draws a closed border on the surface, however many parts it crosses, as a new region held by the part it starts on, and leaves no region
  * picked, so the next drag draws another. The region picked in the inspector shows its points, which drag along the surface; a drag away from them
- * lets the region go and draws a new one.
+ * lets the region go and draws a new one. With a part chosen, a border is drawn on that part alone.
  */
 @Stable
 class RegionBorderTool(state: AppState, internal var look: SheetLook) : SurfaceTool(state) {
     private val drawn = mutableStateListOf<SurfaceHit>()
 
+    override val keepsToChosenPart: Boolean get() = true
+
+    override val startsOnEntry: Boolean get() = true
+
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         state.paint.selectedRegion = null
-        val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
+        val slot = state.paintSlot() ?: return
         drawn.clear()
         drawn += hit
         var last = down.position

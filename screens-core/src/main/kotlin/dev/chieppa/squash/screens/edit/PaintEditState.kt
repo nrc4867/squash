@@ -22,7 +22,7 @@ data class RegionRef(val part: PartId, val id: RegionId)
 /** What the paint tools remember between gestures. Never saved or undone. */
 @Stable
 class PaintEditState {
-    /** The slot the tools paint with; the first of the palette while this names none it holds. */
+    /** The slot picked to paint with; while this names none the palette holds, the tools take one by [slotIn]. */
     var slot by mutableStateOf<SlotName?>(null)
     var brushRadius by mutableFloatStateOf(DEFAULT_BRUSH_RADIUS)
     var softness by mutableFloatStateOf(0f)
@@ -34,8 +34,9 @@ class PaintEditState {
     /** The region picked in the inspector, whose points Region shows for dragging; with none, Region draws a new one. */
     var selectedRegion by mutableStateOf<RegionRef?>(null)
 
-    /** The slot the tools paint with in [palette], or null when it holds none. */
-    fun slotIn(palette: Palette): SlotName? = slot?.takeIf { palette.color(it) != null } ?: palette.slots.firstOrNull()?.name
+    /** The slot the tools paint with in [palette], the picked one or else the first that is not [base], or null when the palette holds none. */
+    fun slotIn(palette: Palette, base: SlotName? = null): SlotName? =
+        slot?.takeIf { palette.color(it) != null } ?: (palette.slots.firstOrNull { it.name != base } ?: palette.slots.firstOrNull())?.name
 
     fun clear() {
         slot = null

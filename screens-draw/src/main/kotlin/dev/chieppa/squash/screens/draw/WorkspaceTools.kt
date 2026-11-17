@@ -13,6 +13,8 @@ import dev.chieppa.squash.screens.shell.ActionKeys
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.LocalActionKeys
 import dev.chieppa.squash.screens.shell.Stage
+import dev.chieppa.squash.screens.shell.holdsSelect
+import dev.chieppa.squash.screens.shell.selectActionId
 import dev.chieppa.squash.screens.sheet.StripTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.shell.mirrorApplies
@@ -36,6 +38,7 @@ import dev.chieppa.squash.uidesign.generated.shell_action_edit_curves
 import dev.chieppa.squash.uidesign.generated.shell_tools_color
 import dev.chieppa.squash.uidesign.generated.shell_tools_outline
 import dev.chieppa.squash.uidesign.generated.shell_tools_symmetry
+import dev.chieppa.squash.uidesign.generated.select_tool
 import dev.chieppa.squash.uidesign.generated.smooth_tool
 import dev.chieppa.squash.uidesign.generated.spine_tool
 import dev.chieppa.stretch.ui.ToolButton
@@ -57,7 +60,8 @@ private const val SYMMETRY_TOOLS = 2
  * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
  * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part. Color holds
  * the paint tools and Lines holds [lines], Rig [rigs] and Pose [poses], each with Mirror; Face holds [faces]. Dress holds Draw garment, Edit curves,
- * Erase, Smooth, Cover and Loose end, then Mirror, always on since a branch on a pair covers both sides, and Half outline, then New garment.
+ * Erase, Smooth, Cover and Loose end, then Mirror, always on since a branch on a pair covers both sides, and Half outline, then New garment. Every
+ * stage that [holdsSelect] starts with Select.
  */
 @Composable
 fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, rigs: ToolSection? = null, poses: ToolSection? = null) {
@@ -65,7 +69,8 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
     val stage by state.stage.collectAsState()
     val addPart = stringResource(Res.string.add_part)
     val mirror = ToolSection(ShellTags.section("mirror"), stringResource(Res.string.edit_tool_mirror), SquashIcons.Mirror, 1) { MirrorButton(state) }
-    val sections = when (stage) {
+    val select = selectSection(tool, stage, state).takeIf { stage.holdsSelect }
+    val sections = listOfNotNull(select) + when (stage) {
         Stage.SHAPE -> listOfNotNull(
             outlineSection(tool, state),
             ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {
@@ -84,6 +89,18 @@ fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSecti
         Stage.POSE -> listOfNotNull(poses, mirror)
     }
     ToolSections(sections, Modifier.fillMaxWidth())
+}
+
+/** Select, lit while no other tool is armed: a press then picks what is under it and never paints or draws. */
+@Composable
+private fun selectSection(tool: BuildTool, stage: Stage, state: AppState): ToolSection {
+    val label = stringResource(Res.string.select_tool)
+    val armed = tool == BuildTool.NONE
+    return ToolSection(ShellTags.section("select"), label, SquashIcons.Select, 1, BuildTool.NONE.takeIf { armed }) {
+        Tooltip(label, LocalActionKeys.current(selectActionId(stage))) {
+            ToolButton(SquashIcons.Select, label, armed, state::putToolDown, Modifier.testTag(ShellTags.tool(BuildTool.NONE)), size = TOOL_SIZE, label = label.takeIf { armed })
+        }
+    }
 }
 
 @Composable

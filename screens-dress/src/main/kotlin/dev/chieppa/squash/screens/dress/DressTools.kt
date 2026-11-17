@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.build.Covering
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.choosePart
 import dev.chieppa.squash.screens.draw.isToolPress
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
@@ -85,7 +86,7 @@ class GarmentSelectTool(state: AppState) : DressPressTool(state) {
 /** Selects [part], or the leader of its pair, since a garment's branch on a pair is drawn on its leader. */
 fun AppState.selectLeader(part: PartId) {
     val character = session.value?.document?.value?.character
-    selectedPart.value = character?.part(part)?.let(character::leaderOf)?.id ?: part
+    choosePart(character?.part(part)?.let(character::leaderOf)?.id ?: part)
 }
 
 @Composable

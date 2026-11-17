@@ -96,6 +96,12 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
         }
         val posed = selection.posed
         val surface = if (posed != null) input.posedSurface else input.surface
+        if (input.hints.focus) {
+            val draws = listOf(fullGround(selection, look)) + selectionOverGhosts(selection, look, input.color, camera, sight, surface, input.hints.ghost)
+            val ribbons = selection.part.id?.let { surface?.selected(it, sight) }.orEmpty()
+            val fur = shownFurDraws(input.fullFur, true, toCamera, selection, look, input.hints, input.color)
+            return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws, ribbons, fur.layers)
+        }
         val shownPlanned = if (posed != null) emptyList() else planned
         val draws = listOf(fullGround(selection, look)) +
             placed.mapNotNull { look.colored(it, input.color, toCamera, 0f, posed = posed.of(it))?.withFace(it, surface, sight) } +
@@ -119,42 +125,69 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
 /** [part]'s mesh in this pose, or null for a part the pose holds none of or with no pose. */
 internal fun Map<PartId, RenderMesh>?.of(part: SheetPart): RenderMesh? = part.id?.let { this?.get(it) }
 
-/** What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show it whole, else the selection's in front when [drawn]. */
+/**
+ * What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show every part in full, else the selection's in front when
+ * [drawn] or when [hints] focus on it.
+ */
 internal fun shownFurDraws(fur: ShownFur, drawn: Boolean, toCamera: Vec3, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor?): FurDraws = when {
-    hints.whole -> look.furDraws(fur, color, toCamera, selection)
-    drawn -> look.furDraws(fur, color, toCamera, selection, selection.part.id?.let(::setOf).orEmpty(), DepthLayer.FRONT)
+    hints.allInFull -> look.furDraws(fur, color, toCamera, selection)
+    drawn || hints.focus -> look.furDraws(fur, color, toCamera, selection, selection.part.id?.let(::setOf).orEmpty(), DepthLayer.FRONT)
     else -> FurDraws.NONE
 }
 
 /**
  * What a locked camera on [view] draws, from [basis] in the pane of [body]: the ground, the character ghosted and the selection once
- * [view] is drawn, their outlines left to the ribbons.
+ * [view] is drawn, or always where [hints] focus on it, their outlines left to the ribbons.
  */
 internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null, posed: Map<PartId, RenderMesh>? = null, faced: (Pair<SheetPart, MeshDraw>) -> MeshDraw = { it.second }): List<MeshDraw> = buildList {
     lockedGround(body, basis, selection, look)?.let(::add)
-    if (hints.whole) {
+    if (hints.allInFull) {
         selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, color, basis.back, 0f, posed = posed.of(part))?.let { add(faced(part to it)) } }
         addAll(look.surfaceDraws(color, basis.back, posed != null))
         return@buildList
     }
     addAll(ghosts(selection, basis, look, hints, color, posed))
-    if (view !in selection.outlines) return@buildList
+    if (view !in selection.outlines && !hints.focus) return@buildList
     look.colored(selection.part, color, basis.back, 0f, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(faced(selection.part to it)) }
     if (color.holds(selection.part)) addAll(look.surfaceDraws(color, basis.back, posed != null, layer = DepthLayer.FRONT, only = selection.part.id))
 }
 
-/** The lines through a locked [camera] on [view]: the whole figure's when [hints] show it whole, else the selection's once it is drawn in that view. */
+/**
+ * The lines through a locked [camera] on [view]: the whole figure's when [hints] show every part in full, else the selection's once it is drawn in that
+ * view or where [hints] focus on it.
+ */
 internal fun lockedRibbons(view: View, camera: LockedCamera, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor?, surface: SurfaceRibbons?): List<RibbonDraw> {
     if (surface == null) return emptyList()
-    if (hints.whole) return surface.figure(camera)
+    if (hints.allInFull) return surface.figure(camera)
     val part = selection.part.id
-    return if (part != null && view in selection.outlines) surface.selected(part, camera) else emptyList()
+    return if (part != null && (view in selection.outlines || hints.focus)) surface.selected(part, camera) else emptyList()
 }
 
 /** This draw of [part] with its face over it, as [surface] shows it through [view]. */
 internal fun MeshDraw.withFace(part: SheetPart, surface: SurfaceRibbons?, view: SurfaceView): MeshDraw {
     val id = part.id ?: return this
     return surface?.faceLayers(id, view)?.takeIf { it.isNotEmpty() }?.let { copy(layers = layers + it) } ?: this
+}
+
+/** The selection in full in front, over the rest of the character at [ghost] strength, furthest ghost first, as the free [camera] seen through [sight] shows them. */
+internal fun selectionOverGhosts(
+    selection: SheetSelection,
+    look: SheetLook,
+    color: PaneColor?,
+    camera: CameraView,
+    sight: FullView,
+    surface: SurfaceRibbons?,
+    ghost: Float,
+): List<MeshDraw> = buildList {
+    val toCamera = Vec3(camera.eye.x, camera.eye.y, camera.eye.z) - selection.box.center
+    val posed = selection.posed
+    look.colored(selection.part, color, toCamera, 0f, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
+    if (color.holds(selection.part)) addAll(look.surfaceDraws(color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id, toViewer = sight::toViewer))
+    if (ghost <= 0f) return@buildList
+    addAll(look.surfaceDraws(color, toCamera, posed != null, look.ghostOutline, ghost, toViewer = sight::toViewer))
+    selection.others
+        .sortedByDescending { (it.center.toGpu() - camera.eye).length }
+        .forEach { part -> look.colored(part, color, toCamera, look.ghostOutline, ghost, posed = posed.of(part))?.let(::add) }
 }
 
 /** Everything but the selection, furthest from the viewer first so a nearer ghost blends over a further one. */

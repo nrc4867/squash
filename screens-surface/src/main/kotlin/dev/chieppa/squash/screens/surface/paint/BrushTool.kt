@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.edit.paintSlot
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.SurfaceTool
 import dev.chieppa.squash.screens.surface.SurfaceHit
@@ -43,7 +44,8 @@ private const val RING_POINTS = 48
 private const val TWO_PI = 6.2831855f
 
 /**
- * Lays down a brush stroke as one undo step, in anchors on whatever surface the pointer passes over, starting on the part that will hold it.
+ * Lays down a brush stroke as one undo step, in anchors on whatever surface the pointer passes over, starting on the part that will hold it;
+ * with a part chosen, on that part alone, from where the drag first reaches it.
  * The stroke's color arrives through the graph, one recut at a time: a new position waits for the last cut to finish, so a slow cut still
  * shows while the pointer moves, and the ring under the pointer is drawn at once.
  */
@@ -51,9 +53,13 @@ private const val TWO_PI = 6.2831855f
 class BrushTool(state: AppState, private val scope: CoroutineScope, internal var ringColor: Color = Color.Unspecified, internal var ringWidth: Float = 0f) : SurfaceTool(state) {
     private var ringAt by mutableStateOf<Pair<Vec3, Float>?>(null)
 
+    override val keepsToChosenPart: Boolean get() = true
+
+    override val startsOnEntry: Boolean get() = true
+
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
-        val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
+        val slot = state.paintSlot() ?: return
         val live = LiveStroke(session, hit.part, slot, state.paint.brushRadius, state.paint.softness, state.thisSide, scope)
         live.add(hit.anchor)
         showRing(hit, sight)

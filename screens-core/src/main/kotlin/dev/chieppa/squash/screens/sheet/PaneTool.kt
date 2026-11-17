@@ -62,6 +62,9 @@ interface PaneTool {
     /** Whether the panes show the whole character in full, with no ghosts, outlines or guides, since the tool works across parts. */
     val showsWhole: Boolean get() = false
 
+    /** Whether the tool keeps its presses to the part a person chose, which the panes then show over the rest of the character faded. */
+    val keepsToChosenPart: Boolean get() = false
+
     /** What the tool names in a pane's bottom corner about its work through that pane's sight, if anything. */
     val paneNote: (@Composable (SurfaceView) -> Unit)? get() = null
 }

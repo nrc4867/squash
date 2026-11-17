@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.edit.paintSlot
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.surface.SurfaceTool
 import dev.chieppa.squash.screens.surface.SurfaceHit
@@ -10,12 +11,14 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import dev.chieppa.squash.screens.AppState
 
-/** Colors the section under a press with the current slot, in one step. */
+/** Colors the section under a press with the current slot, in one step; with a part chosen, only a press on that part. */
 @Stable
 class FillTool(state: AppState) : SurfaceTool(state) {
+    override val keepsToChosenPart: Boolean get() = true
+
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
-        val slot = state.paint.slotIn(session.document.value.character.palette) ?: return
+        val slot = state.paintSlot() ?: return
         session.fillCommand(session.sectionAt(hit, state.paint.fillReach), slot, state.thisSide)?.let(session::send)
     }
 }

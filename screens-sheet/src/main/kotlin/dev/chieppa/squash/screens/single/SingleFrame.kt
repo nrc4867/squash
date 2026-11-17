@@ -1,8 +1,6 @@
 package dev.chieppa.squash.screens.single
 
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.DepthLayer
-import dev.chieppa.squash.screens.sheet.holds
 import dev.chieppa.squash.screens.sheet.rigSurfaceDraws
 import dev.chieppa.squash.screens.sheet.surfaceDraws
 import dev.chieppa.squash.render.MeshDraw
@@ -31,7 +29,7 @@ import dev.chieppa.squash.screens.sheet.lockedRibbons
 import dev.chieppa.squash.screens.sheet.RigShading
 import dev.chieppa.squash.screens.sheet.rigDraw
 import dev.chieppa.squash.screens.sheet.rigDraws
-import dev.chieppa.squash.screens.sheet.toGpu
+import dev.chieppa.squash.screens.sheet.selectionOverGhosts
 import dev.chieppa.squash.screens.sheet.toRect
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.CameraView
@@ -94,11 +92,11 @@ fun singleFrame(input: SingleInput): SceneFrame {
     return SceneFrame(input.look.well, listOf(shown), input.freeOverlay.clippedTo(rect.toRect()))
 }
 
-/** The lines through the free [camera]: the whole figure's when the hints show it whole, else the selection's. */
+/** The lines through the free [camera]: the whole figure's when the hints show every part in full, else the selection's. */
 private fun freeRibbons(selection: SheetSelection, camera: CameraView, input: SingleInput): List<RibbonDraw> {
     val surface = input.freeSurface(selection) ?: return emptyList()
     val view = FullView({ camera }, input.width, input.height)
-    if (input.hints.whole) return surface.figure(view)
+    if (input.hints.allInFull) return surface.figure(view)
     return selection.part.id?.let { surface.selected(it, view) }.orEmpty()
 }
 
@@ -113,17 +111,10 @@ private fun freeDraws(selection: SheetSelection, camera: CameraView, input: Sing
     val surface = input.freeSurface(selection)
     val posed = selection.posed
     val sight = FullView({ camera }, input.width, input.height)
-    if (input.hints.whole) {
+    if (input.hints.allInFull) {
         selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, input.color, toCamera, 0f, posed = posed.of(part))?.let { add(it.withFace(part, surface, sight)) } }
         addAll(look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer))
         return@buildList
     }
-    look.colored(selection.part, input.color, toCamera, 0f, layer = DepthLayer.FRONT, posed = posed.of(selection.part))?.let { add(it.withFace(selection.part, surface, sight)) }
-    if (input.color.holds(selection.part)) addAll(look.surfaceDraws(input.color, toCamera, posed != null, layer = DepthLayer.FRONT, only = selection.part.id, toViewer = sight::toViewer))
-    if (input.hints.ghost > 0f) {
-        addAll(look.surfaceDraws(input.color, toCamera, posed != null, look.ghostOutline, input.hints.ghost, toViewer = sight::toViewer))
-        selection.others
-            .sortedByDescending { (it.center.toGpu() - camera.eye).length }
-            .forEach { part -> look.colored(part, input.color, toCamera, look.ghostOutline, input.hints.ghost, posed = posed.of(part))?.let(::add) }
-    }
+    addAll(selectionOverGhosts(selection, look, input.color, camera, sight, surface, input.hints.ghost))
 }

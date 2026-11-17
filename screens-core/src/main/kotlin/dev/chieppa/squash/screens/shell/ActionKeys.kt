@@ -19,5 +19,8 @@ object ActionKeys {
     const val OPEN = "open"
 }
 
+/** The id of the action that arms Select in [stage], one for each stage that [holdsSelect], since each scopes its keys. */
+fun selectActionId(stage: Stage): String = "select-" + stage.name.lowercase()
+
 /** The id of the action that arms a tool. */
 val BuildTool.actionId: String get() = "tool-" + name.lowercase().replace('_', '-')

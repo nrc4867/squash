@@ -9,8 +9,10 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
+import dev.chieppa.squash.screens.chosenPart
 import dev.chieppa.squash.screens.draw.followToRelease
 import dev.chieppa.squash.screens.draw.isToolPress
+import dev.chieppa.squash.screens.draw.isToolRelease
 import dev.chieppa.squash.screens.sheet.FullView
 import dev.chieppa.squash.screens.sheet.LockedCamera
 import dev.chieppa.squash.screens.sheet.PaneTool
@@ -39,12 +41,20 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     /** Takes a press on [hit] at [pixel], following it until it lets go. Returns once the gesture is over. */
     protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView)
 
+    /** Whether a drag pressed off the chosen part starts once it reaches it, where the tool [keepsToChosenPart]. */
+    protected open val startsOnEntry: Boolean get() = false
+
+    /** Takes a press on no surface of the character, which the tool otherwise leaves to the pane. */
+    protected open fun pressedOffSurface() = Unit
+
     /** Takes a press near what the tool shows, ahead of the surface under it; true when it took it. */
     protected open suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean = false
 
-    /** The place under [pixel] on the open character, or null. */
-    protected open fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? =
-        state.bodyThrough(sight)?.let { body -> state.surfaceThrough(sight)?.let { surfaceHit(body, pixel, sight, it) } }
+    /** The place under [pixel] on the open character, on the chosen part alone where the tool [keepsToChosenPart], or null. */
+    protected open fun hitAt(pixel: Offset, sight: SurfaceView): SurfaceHit? {
+        val only = if (keepsToChosenPart) state.chosenPart() else null
+        return state.bodyThrough(sight)?.let { body -> state.surfaceThrough(sight)?.let { surfaceHit(body, pixel, sight, it, only = only) } }
+    }
 
     override fun pointerInput(view: View, camera: LockedCamera): Modifier = gestures(camera, camera)
 
@@ -55,9 +65,30 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
             val down = awaitFirstDown()
             if (!isToolPress(down)) return@awaitEachGesture
             if (pressedOverlay(down, sight)) return@awaitEachGesture
-            val hit = hitAt(down.position, sight) ?: return@awaitEachGesture
+            val hit = hitAt(down.position, sight)
+            if (hit != null) {
+                down.consume()
+                pressed(hit, down, sight)
+                return@awaitEachGesture
+            }
+            if (!startsOnEntry || state.chosenPart() == null) {
+                pressedOffSurface()
+                return@awaitEachGesture
+            }
             down.consume()
-            pressed(hit, down, sight)
+            val (entry, change) = entering(down, sight) ?: return@awaitEachGesture
+            pressed(entry, change, sight)
+        }
+    }
+
+    /** Follows [down], pressed off the chosen part, to the first place it reaches on it and the pointer there; null when it lets go first. */
+    private suspend fun AwaitPointerEventScope.entering(down: PointerInputChange, sight: SurfaceView): Pair<SurfaceHit, PointerInputChange>? {
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull { it.id == down.id } ?: return null
+            if (isToolRelease(event, change)) return null
+            change.consume()
+            hitAt(change.position, sight)?.let { return it to change }
         }
     }
 

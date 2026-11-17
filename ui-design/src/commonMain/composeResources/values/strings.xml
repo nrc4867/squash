@@ -402,6 +402,7 @@
     <string name="color_slot_rename">Double-click to rename</string>
     <string name="color_tool_region_border">Region</string>
     <string name="color_tool_fill">Fill</string>
+    <string name="select_tool">Select</string>
     <string name="color_tool_brush">Brush</string>
     <string name="color_tool_pick">Pick color</string>
     <string name="color_step_palette">Palette: %1$s</string>

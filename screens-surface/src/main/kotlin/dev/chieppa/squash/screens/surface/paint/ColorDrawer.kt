@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.surface.paint
 
+import dev.chieppa.squash.screens.edit.paintSlot
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
@@ -69,7 +70,8 @@ fun ColorDrawerContent(state: AppState, session: CharacterSession) {
 @Composable
 private fun PaintSection(state: AppState, session: CharacterSession, document: SquashDocument, tool: BuildTool) {
     val palette = document.character.palette
-    val current = state.paint.slotIn(palette)
+    state.selectedPart.collectAsState().value
+    val current = state.paintSlot()
     DrawerSection(stringResource(Res.string.color_section_paint)) {
         SlotSwatches(state, palette, current)
         SlotActions(state, session, document.character, current)

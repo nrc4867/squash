@@ -81,6 +81,9 @@ class AppState(
     val posing = MutableStateFlow<SessionPose?>(null)
     val selectedPart = MutableStateFlow<PartId?>(null)
 
+    /** Whether a person chose [selectedPart], by a press, a row or a tool, rather than the character choosing it as it opened; never saved. */
+    val partChosen = MutableStateFlow(false)
+
     /** The open character's file and saved state, over the session's history. */
     val file = MutableStateFlow<DocumentSession<SquashDocument>?>(null)
 
@@ -213,13 +216,17 @@ class AppState(
         sessionScope.launch(Dispatchers.Unconfined) { followSkinShown(opened) }
         session.value = opened
         selectedPart.value = document.character.parts.firstOrNull()?.id
+        partChosen.value = false
         mirror.value = true
         activeView.value = View.SIDE
         clearEdits()
         // Undo can remove the selected part or the parent of the socket Library targets, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
-                if (selectedPart.value?.let(current.character::part) == null) selectedPart.value = current.character.parts.firstOrNull()?.id
+                if (selectedPart.value?.let(current.character::part) == null) {
+                    selectedPart.value = current.character.parts.firstOrNull()?.id
+                    partChosen.value = false
+                }
                 val plan = templates.plan(current.character.bodyPlan)
                 if (plan != null && addingSocket.value?.let { it in openSockets(current, plan, templates) } == false) closeAddPart()
                 move.follow(current)
@@ -244,6 +251,7 @@ class AppState(
         session.value = null
         file.value = null
         selectedPart.value = null
+        partChosen.value = false
         clearEdits()
         rig.clear()
         pose.clear()
@@ -281,7 +289,7 @@ class AppState(
     }
 
     fun selectPart(part: PartId) {
-        selectedPart.value = part
+        choosePart(part)
         screen.value = Screen.WORKSPACE
     }
 

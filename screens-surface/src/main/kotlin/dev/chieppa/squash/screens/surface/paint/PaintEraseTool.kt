@@ -14,11 +14,15 @@ import dev.chieppa.squash.screens.surface.SurfaceHit
 import dev.chieppa.squash.screens.surface.SurfaceTool
 
 /**
- * Color's Erase: takes away each brush stroke and region the pointer presses or drags over, whichever shows on top there, as one undo step. A
- * drag the pane loses takes nothing away.
+ * Color's Erase: takes away each brush stroke and region the pointer presses or drags over, whichever shows on top there, as one undo step,
+ * on the chosen part alone when there is one. A drag the pane loses takes nothing away.
  */
 @Stable
 class PaintEraseTool(state: AppState) : SurfaceTool(state) {
+    override val keepsToChosenPart: Boolean get() = true
+
+    override val startsOnEntry: Boolean get() = true
+
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) {
         val session = state.session.value ?: return
         val gesture = session.history.begin()

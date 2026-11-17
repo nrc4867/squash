@@ -21,19 +21,21 @@ private const val EDGE_STEPS = 6
 
 /**
  * The nearest place on any placed part of the body of [character] showing at [pixel], or null where none does; garments are passed
- * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds. The runs of the parts
- * [surface], the character's one surface, holds are found on it, and only their other patches on the parts' own meshes.
+ * through unless [garments], when a garment's branch or cuff in front of the body is what the press finds. With [only], it is the
+ * nearest place on that part alone, found through whatever lies in front of it. The runs of the parts [surface], the character's one
+ * surface, holds are found on it, and only their other patches on the parts' own meshes.
  */
-fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, surface: CharacterSurface, garments: Boolean = false): SurfaceHit? {
+fun surfaceHit(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, surface: CharacterSurface, garments: Boolean = false, only: PartId? = null): SurfaceHit? {
     var best: SurfaceHit? = null
     var nearest = Float.POSITIVE_INFINITY
-    SurfaceMeshPick(surface, sight).hit(pixel)?.let { (hit, depth) ->
+    SurfaceMeshPick(surface, sight).hit(pixel, only = only)?.let { (hit, depth) ->
         best = hit
         nearest = depth
     }
     val inSurface = surface.parts
     for (part in character.parts) {
         val id = part.id ?: continue
+        if (only != null && id != only) continue
         if (part.covering != null && !garments) continue
         for (patch in part.surface.patches) {
             if (id in inSurface && isFieldRun(part, patch)) continue

@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.shell
 import dev.chieppa.squash.uidesign.generated.sheet_pane_fit
 import dev.chieppa.squash.uidesign.generated.sheet_pane_swap
 import dev.chieppa.squash.uidesign.generated.move_tool
+import dev.chieppa.squash.uidesign.generated.select_tool
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.chieppa.squash.uidesign.SquashIcons
@@ -142,7 +143,7 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.START_TEMPLATE to Res.string.shell_action_start_template,
     ShellActions.HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.ADD_PART to Res.string.add_part,
-)
+) + Stage.entries.filter { it.holdsSelect }.associate { ActionId(selectActionId(it)) to Res.string.select_tool }
 
 /** The name of the action arming [tool], or null for a tool with none. */
 internal fun toolLabel(tool: BuildTool): StringResource? = texts[ActionId(tool.actionId)]
@@ -174,6 +175,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "erase" -> SquashIcons.Erase
     "smooth" -> SquashIcons.SmoothCurve
     "move" -> SquashIcons.Move
+    "select" -> SquashIcons.Select
     "region-border" -> SquashIcons.RegionBorder
     "fill" -> SquashIcons.Fill
     "brush" -> SquashIcons.Brush
