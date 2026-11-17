@@ -4,13 +4,9 @@ import dev.chieppa.squash.screens.TestWork
 
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.BodySurfaceWork
-import dev.chieppa.squash.character.build.EyeFrame
-import dev.chieppa.squash.character.build.solveSurfaceGaze
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Anchor
-import dev.chieppa.squash.document.BODY_PATCH
-import dev.chieppa.squash.document.GazeCheats
 import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkRole
@@ -25,7 +21,7 @@ import dev.chieppa.squash.screens.fennec.EARS_FORWARD
 import dev.chieppa.squash.screens.fennec.EAR_L
 import dev.chieppa.squash.screens.fennec.HAPPY
 import dev.chieppa.squash.screens.fennec.HEAD
-import dev.chieppa.squash.screens.fennec.SLEEPY
+import dev.chieppa.squash.screens.fennec.MUZZLE_PATCH
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.lines.PickedGroup
 import dev.chieppa.squash.screens.sheet.FullView
@@ -35,8 +31,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private val EYE_L = MarkGroupId("eye-l")
-private val EYE_R = MarkGroupId("eye-r")
 private val MOUTH = MarkGroupId("mouth")
 private const val PIXELS = 400
 
@@ -44,12 +38,12 @@ class FaceWorkTest {
     private val work = TestWork()
     private val session: CharacterSession = openSession(fennecDocument(), work)
 
-    private fun faces(target: Vec3? = null): FaceWork {
+    private fun faces(): FaceWork {
         work.settle(session)
         val whole = assertNotNull(session.assembly.output.value)
         val work: BodySurfaceWork = assertNotNull(session.bodySurfaceWork.output.value)
         val character = session.document.value.character
-        val input = FaceInput(whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap(), work, session.bodyLines.output.value, character.palette, Vec3(0.4f, 0.8f, -0.4f), character.shownExpression, target, character.gazeCheats)
+        val input = FaceInput(whole.parts.mapNotNull { part -> part.id?.let { it to part } }.toMap(), work, session.bodyLines.output.value, character.palette, character.shownExpression)
         return FaceWork(input, LineRule(2f), Color.Black, 0.5f, FaceBinsHeld()::binOf)
     }
 
@@ -70,62 +64,6 @@ class FaceWorkTest {
         assertEquals(FACE_SIDE, FACE_BINS.binFor(38f, FACE_SIDE), "it holds past the edge")
         assertEquals(FACE_THREE_QUARTER, FACE_BINS.binFor(38f, FACE_THREE_QUARTER))
         assertEquals(FACE_THREE_QUARTER, FACE_BINS.binFor(42f, FACE_SIDE))
-    }
-
-    @Test
-    fun aShutEyeFillsNothingButItsLidStaysALine() {
-        val before = faces().draws(HEAD, side)
-        session.send(SetMarkControls(HEAD, EYE_L, MarkControls(open = 0f)))
-        session.send(SetMarkControls(HEAD, EYE_R, MarkControls(open = 0f)))
-        val shut = faces().draws(HEAD, side)
-        assertTrue(before.layers.size > shut.layers.size, "the white, iris, pupil and highlight go")
-        assertEquals(before.ribbons.size, shut.ribbons.size, "the lid, brow and lashes stay")
-    }
-
-    @Test
-    fun aLidOpensBetweenItsCornersWithNothingJumping() {
-        val lid = listOf(Vec2(0f, 0f), Vec2(1f, 1f), Vec2(2f, 0f), Vec2(1f, -0.5f), Vec2(0f, 0f))
-        assertEquals(lid, openedLid(lid, 1f))
-        val shut = openedLid(lid, 0f)
-        shut.forEach { assertEquals(0f, it.y, 1e-5f, "it lies on the corners' line") }
-        val half = openedLid(lid, 0.5f)
-        assertEquals(0.5f, half[1].y, 1e-5f)
-        assertEquals(-0.25f, half[3].y, 1e-5f)
-    }
-
-    @Test
-    fun aPupilStaysInsideItsLid() {
-        val lid = List(13) { i ->
-            val angle = 2.0 * Math.PI * i / 12
-            Vec2(0.5f + 0.075f * kotlin.math.cos(angle).toFloat(), 0.2f + 0.05f * kotlin.math.sin(angle).toFloat())
-        }
-        val from = Vec2(0.5f, 0.2f)
-        assertEquals(Vec2(0.01f, 0f), heldInLid(from, Vec2(0.01f, 0f), lid), "a small look is left alone")
-        val held = heldInLid(from, Vec2(1f, 1f), lid)
-        assertTrue(kotlin.math.abs(held.x) < 0.075f && kotlin.math.abs(held.y) < 0.05f, "$held stays in")
-    }
-
-    @Test
-    fun theGazeLooksAtItsTargetAndConvergesNearbyWithinALimit() {
-        val left = EyeFrame(Vec3(0f, 0f, -0.2f), Vec3(0f, 0f, -1f), Vec3.X, Vec3.Y, Vec2(0.1f, 0.1f))
-        val right = EyeFrame(Vec3(0f, 0f, 0.2f), Vec3(0f, 0f, 1f), Vec3.X, Vec3.Y, Vec2(0.1f, 0.1f))
-        val plain = GazeCheats(cameraBias = 0f, sizeCompensation = false)
-        val ahead = solveSurfaceGaze(listOf(left, right), Vec3(5f, 0f, 0f), Vec3.X, plain)
-        assertTrue(ahead.all { it.offset.x > 0.09f }, "both look forward along u")
-        val up = solveSurfaceGaze(listOf(left, right), Vec3(0f, 5f, 0f), Vec3.X, plain)
-        assertTrue(up.all { it.offset.y > 0.09f }, "both look up along v")
-        val biased = solveSurfaceGaze(listOf(left, right), Vec3(0f, 5f, 0f), Vec3.X, GazeCheats(0.5f, false))
-        assertTrue(biased.all { it.offset.x > 0f }, "the bias pulls them toward the camera")
-        val far = solveSurfaceGaze(listOf(left, right), Vec3(5f, 0f, 0f), Vec3(0.2f, 0f, -1f).normalized(), GazeCheats(0f, true))
-        assertTrue(far[1].scale > far[0].scale, "the eye turned from the camera draws larger")
-    }
-
-    @Test
-    fun aTargetMovesThePupilsOnTheFaceAndChangesNoPoints() {
-        val still = faces().draws(HEAD, side)
-        val looking = faces(Vec3(3f, 2f, 0f)).draws(HEAD, side)
-        assertEquals(still.layers.size, looking.layers.size)
-        assertTrue(still.layers.indices.any { !still.layers[it].mesh.vertices.contentEquals(looking.layers[it].mesh.vertices) }, "something of the eye moved")
     }
 
     @Test
@@ -155,7 +93,7 @@ class FaceWorkTest {
     }
 
     @Test
-    fun anExpressionsPoseTurnsTheEarsAndItsMarksReplaceTheRole() {
+    fun anExpressionsPoseTurnsTheEars() {
         work.settle(session)
         fun earTip() = assertNotNull(session.assembly.output.value?.part(EAR_L)).let { it.pointOn(0.9f, 0f) }
         val rest = assertNotNull(earTip())
@@ -169,51 +107,47 @@ class FaceWorkTest {
         session.send(ShowExpression(null))
         work.settle(session)
         assertEquals(rest, assertNotNull(earTip()), "neutral stands it back up")
-        val plain = faces().draws(HEAD, side)
-        session.send(ShowExpression(SLEEPY))
-        val sleepy = faces().draws(HEAD, side)
-        assertFalse(plain.layers.indices.all { plain.layers[it].mesh.vertices.contentEquals(sleepy.layers[it].mesh.vertices) }, "its lid clips the eye differently")
         session.send(ShowExpression(HAPPY))
         assertEquals(setOf("jaw"), shownJoints(session.document.value.character, HEAD, assertNotNull(session.templates.find(assertNotNull(session.document.value.character.part(HEAD)).template))).keys)
     }
 
     @Test
-    fun drawingARoleWritesItsVersionInTheExpressionShownAndAcrossToTheOtherEye() {
+    fun theFaceStageWorksOnTheHead() {
+        assertEquals(HEAD, session.document.value.character.faceHead(session.templates))
+    }
+
+    @Test
+    fun drawingARoleWritesItsVersionAndInTheExpressionShownTheExpressionsOwnMark() {
         val character = { session.document.value.character }
-        val picked = PickedGroup(HEAD, EYE_L)
-        val stroke = listOf(Anchor(HEAD, BODY_PATCH, 0.4f, 0.2f), Anchor(HEAD, BODY_PATCH, 0.5f, 0.15f))
-        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.BROW, stroke, FACE_SIDE, mirror = true)))
-        val left = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.BROW, HEAD))
-        assertEquals(stroke, left.versions[FACE_SIDE]?.points)
-        val right = assertNotNull(character().markIn(assertNotNull(character().groupOf(PickedGroup(HEAD, EYE_R))), MarkRole.BROW, HEAD))
-        assertEquals(0.8f, assertNotNull(right.versions[FACE_SIDE]).points.first().v, 1e-5f, "reflected across the middle")
+        val picked = PickedGroup(HEAD, MOUTH)
+        val stroke = listOf(Anchor(HEAD, MUZZLE_PATCH, 0.4f, 0.2f), Anchor(HEAD, MUZZLE_PATCH, 0.5f, 0.15f))
+        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.CORNERS, stroke, FACE_SIDE)))
+        val drawn = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.CORNERS, HEAD))
+        assertEquals(stroke, drawn.versions[FACE_SIDE]?.points)
         session.history.undo()
-        assertNotEquals(stroke, character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.BROW, HEAD)?.versions?.get(FACE_SIDE)?.points, "one undo takes both")
+        assertEquals(null, character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.CORNERS, HEAD), "one undo takes it")
 
         session.send(ShowExpression(HAPPY))
-        val brow = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.BROW, HEAD)).id
-        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.BROW, stroke, FACE_FRONT, mirror = false)))
-        val written = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.BROW, HEAD))
-        assertEquals(brow, written.id, "it writes the expression's own mark")
+        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.CORNERS, stroke, FACE_FRONT)))
+        val written = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.CORNERS, HEAD))
         assertEquals(stroke, written.versions[FACE_FRONT]?.points)
+        assertTrue(HAPPY.value in written.id.value, "it is the expression's own mark")
     }
 
     @Test
     fun aClosedRoleClosesAndMovingItsEndMovesBoth() {
         val character = { session.document.value.character }
-        val picked = PickedGroup(HEAD, EYE_L)
-        val stroke = listOf(Anchor(HEAD, BODY_PATCH, 0.4f, 0.2f), Anchor(HEAD, BODY_PATCH, 0.5f, 0.15f), Anchor(HEAD, BODY_PATCH, 0.5f, 0.25f))
-        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.IRIS, stroke, FACE_SIDE, mirror = false)))
-        val points = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.IRIS, HEAD)?.versions?.get(FACE_SIDE)).points
+        val picked = PickedGroup(HEAD, MOUTH)
+        val stroke = listOf(Anchor(HEAD, MUZZLE_PATCH, 0.4f, 0.2f), Anchor(HEAD, MUZZLE_PATCH, 0.5f, 0.15f), Anchor(HEAD, MUZZLE_PATCH, 0.5f, 0.25f))
+        session.send(assertNotNull(drawnMarkCommand(character(), picked, MarkRole.TEETH, stroke, FACE_SIDE)))
+        val points = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.TEETH, HEAD)?.versions?.get(FACE_SIDE)).points
         assertEquals(points.first(), points.last())
-        val to = Anchor(HEAD, BODY_PATCH, 0.42f, 0.21f)
-        session.send(assertNotNull(movedPlaceCommand(character(), picked, MarkRole.IRIS, FACE_SIDE, 0, to, mirror = false)))
-        val moved = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.IRIS, HEAD)?.versions?.get(FACE_SIDE)).points
+        val to = Anchor(HEAD, MUZZLE_PATCH, 0.42f, 0.21f)
+        session.send(assertNotNull(movedPlaceCommand(character(), picked, MarkRole.TEETH, FACE_SIDE, 0, to)))
+        val moved = assertNotNull(character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.TEETH, HEAD)?.versions?.get(FACE_SIDE)).points
         assertEquals(to, moved.first())
         assertEquals(to, moved.last())
-        session.send(assertNotNull(erasedMarkCommand(character(), picked, MarkRole.IRIS, FACE_SIDE)))
-        assertEquals(null, character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.IRIS, HEAD)?.versions?.get(FACE_SIDE), "that version goes")
+        session.send(assertNotNull(erasedMarkCommand(character(), picked, MarkRole.TEETH, FACE_SIDE)))
+        assertEquals(null, character().markIn(assertNotNull(character().groupOf(picked)), MarkRole.TEETH, HEAD)?.versions?.get(FACE_SIDE), "that version goes")
     }
-
-    private fun assertFalse(condition: Boolean, message: String) = assertTrue(!condition, message)
 }

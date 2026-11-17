@@ -79,16 +79,6 @@ data class ShowExpression(val id: ExpressionId?) : DocumentCommand {
     }
 }
 
-/** Sets how the character's pupils cheat. */
-@Serializable
-@SerialName("setGazeCheats")
-data class SetGazeCheats(val cheats: GazeCheats) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> {
-        val character = document.character
-        return Applied(document.copy(character = character.copy(gazeCheats = cheats)), SetGazeCheats(character.gazeCheats))
-    }
-}
-
 private fun Character.requireExpression(id: ExpressionId): ExpressionSet =
     requireNotNull(expressions.firstOrNull { it.id == id }) { "No expression ${id.value}" }
 

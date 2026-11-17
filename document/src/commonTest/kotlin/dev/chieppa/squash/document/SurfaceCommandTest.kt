@@ -120,7 +120,7 @@ class SurfaceCommandTest {
 
     @Test
     fun eachKindOfChangeUndoesAndRedoes() {
-        val group = eyeGroup(MarkGroupId("eye"), "Eye")
+        val group = mouthGroup(MarkGroupId("mouth"), "Mouth")
         assertUndoesAndRedoes(
             placed,
             SetBaseSlot(head.id, fur),
@@ -142,7 +142,7 @@ class SurfaceCommandTest {
             SetPaletteSlot(cream, SlotColor(1f, 0.9f, 0.8f)),
             SetPaletteSlot(fur, SlotColor(0.7f, 0.4f, 0.1f)),
             SetExpression(ExpressionId("glad"), ExpressionSet(ExpressionId("glad"), "Glad")),
-            SetExpressionMarks(ExpressionId("glad"), head.id, group.id, MarkRole.LID, listOf(mark("lid", 0.1f, 0.2f))),
+            SetExpressionMarks(ExpressionId("glad"), head.id, group.id, MarkRole.LIP_LINE, listOf(mark("lid", 0.1f, 0.2f))),
             SetFacePose(ExpressionId("glad"), FacePose(listOf(JointAngle(head.id, "jaw", 10f)))),
         )
     }
@@ -226,22 +226,17 @@ class SurfaceCommandTest {
         assertFailsWith<IllegalArgumentException> { MarkWidth(listOf(WidthStop(0.5f, 1f), WidthStop(0.2f, 1f))) }
         assertFailsWith<IllegalArgumentException> { SlotColor(1.5f, 0f, 0f) }
         assertFailsWith<IllegalArgumentException> { Palette(listOf(PaletteSlot(fur, SlotColor(0f, 0f, 0f)), PaletteSlot(fur, SlotColor(1f, 1f, 1f)))) }
-        assertFailsWith<IllegalArgumentException> { MarkGroup(MarkGroupId("g"), "G", listOf(GroupRole(MarkRole.LID), GroupRole(MarkRole.LID))) }
-        assertFailsWith<IllegalArgumentException> { MarkGroup(MarkGroupId("g"), "G", listOf(GroupRole(MarkRole.LID)), listOf(RoleClip(MarkRole.LID, MarkRole.PUPIL))) }
-        assertFailsWith<IllegalArgumentException> { MarkGroup(MarkGroupId("g"), "G", listOf(GroupRole(MarkRole.LID)), listOf(RoleClip(MarkRole.LID, MarkRole.LID))) }
+        assertFailsWith<IllegalArgumentException> { MarkGroup(MarkGroupId("g"), "G", listOf(GroupRole(MarkRole.LIP_LINE), GroupRole(MarkRole.LIP_LINE))) }
         assertFailsWith<IllegalArgumentException> { SurfaceWork(marks = listOf(mark("a", 0f, 1f), mark("a", 0f, 1f))) }
         assertFailsWith<IllegalArgumentException> { SetMark(head.id, MarkId("other"), mark("a", 0f, 1f)) }
     }
 
     @Test
-    fun anEyeGroupDrawsInItsFixedOrderWithTheLidClipping() {
-        val eye = eyeGroup(MarkGroupId("eye"), "Eye")
+    fun aMouthGroupDrawsInItsFixedOrder() {
         assertEquals(
-            listOf(MarkRole.WHITE, MarkRole.IRIS, MarkRole.PUPIL, MarkRole.HIGHLIGHT, MarkRole.LID, MarkRole.LASHES, MarkRole.BROW),
-            eye.roles.map { it.role },
+            listOf(MarkRole.INNER, MarkRole.TONGUE, MarkRole.TEETH, MarkRole.LIP_LINE, MarkRole.CORNERS),
+            mouthGroup(MarkGroupId("mouth"), "Mouth").roles.map { it.role },
         )
-        assertEquals(setOf(MarkRole.WHITE, MarkRole.IRIS, MarkRole.PUPIL), eye.clips.filter { it.by == MarkRole.LID }.map { it.clipped }.toSet())
-        assertEquals(5, mouthGroup(MarkGroupId("mouth"), "Mouth").roles.size)
     }
 
     @Test
@@ -271,7 +266,7 @@ class SurfaceCommandTest {
 
     @Test
     fun theSurfaceWorkRoundTripsThroughSave() {
-        val group = eyeGroup(MarkGroupId("eye"), "Eye")
+        val group = mouthGroup(MarkGroupId("mouth"), "Mouth")
         val glad = ExpressionSet(ExpressionId("glad"), "Glad", pose = FacePose(listOf(JointAngle(head.id, "jaw", 12f))))
         val saved = listOf<DocumentCommand>(
             SetBaseSlot(head.id, fur),
@@ -283,7 +278,7 @@ class SurfaceCommandTest {
             SetBrushStroke(head.id, BrushStrokeId("s"), stroke("s")),
             SetPaletteSlot(fur, SlotColor(0.1f, 0.2f, 0.3f)),
             SetExpression(glad.id, glad),
-            SetExpressionMarks(glad.id, head.id, group.id, MarkRole.BROW, listOf(mark("brow", 0.1f, 0.2f))),
+            SetExpressionMarks(glad.id, head.id, group.id, MarkRole.INNER, listOf(mark("brow", 0.1f, 0.2f))),
         ).fold(placed) { d, c -> c.apply(d).document }
         assertEquals(saved, readDocument(Json.encodeToString(SquashDocument.serializer(), saved)))
     }

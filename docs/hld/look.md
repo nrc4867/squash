@@ -94,7 +94,7 @@ Eyes carry the acting, so they are not loose marks. An eye is painted on the hea
 
 **The pupil system.** A `Gaze` on each character in a shot, keyed over time like a pose, is planned:
 
-- **Target.** A point in the scene, the camera, an anchor on another character (its eye landmark, so two characters look at each other), or free, where each eye is placed by hand. In Build the Gaze target tool places a test target, which is not part of the character.
+- **Target.** A point in the scene, the camera, an anchor on another character (its eye landmark, so two characters look at each other), or free, where each eye is placed by hand.
 - **Solve.** The direction from the eye's middle to the target, in the eye's plane, becomes the gaze shares, clamped to the opening. Near targets converge both eyes up to a convergence limit. A camera bias pulls both pupils a fraction toward the camera so they stay visible and reading at three-quarter views.
 - **In motion.** Eyes lead the head by a few frames when the target moves, and an optional blink fires on a large gaze change.
 

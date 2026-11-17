@@ -29,7 +29,6 @@ import dev.chieppa.squash.screens.sheet.PART_INK
 import dev.chieppa.squash.screens.sheet.SurfaceRibbons
 import dev.chieppa.squash.screens.sheet.SurfaceView
 import dev.chieppa.squash.screens.sheet.colorOf
-import dev.chieppa.squash.screens.sheet.rememberObjectShading
 import dev.chieppa.squash.screens.sheet.rememberPaneSurface
 import dev.chieppa.squash.character.build.lineWeightStrokes
 import dev.chieppa.squash.screens.sheet.inkedBorders
@@ -159,16 +158,13 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
     val palette = document.character.palette
     val picked = state.lines.pickedMark?.let { PickedStroke(it.id, Stretch.colors.accent) }
     val pickedWeight = state.lines.picked?.let { PickedLineWeight(it.id, Stretch.colors.accent) }
-    val toLight = rememberObjectShading(state).toLight
     val stage by state.stage.collectAsState()
     val facing = stage == Stage.FACE
-    val target = state.face.gazeTarget.takeIf { facing }
     val locked = state.face.lockedVersion.takeIf { facing }
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
-    val cheats = document.character.gazeCheats
     val surface = rememberPaneSurface(open)?.shown(posed)
-    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, toLight, target, locked, expression, cheats, surface) {
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, locked, expression, surface) {
         val shown = lines
         val held = work
         val whole = character
@@ -178,7 +174,7 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
         } else {
             val look = characterLook(rules, density)
             val parts = shown.parts.mapValues { it.value.part }
-            val faces = FaceWork(FaceInput(parts, held, shown, palette, toLight, expression, target, cheats), look.marks, ink, rules.taper) { part, view, eye -> locked ?: bins.binOf(part, view, eye) }
+            val faces = FaceWork(FaceInput(parts, held, shown, palette, expression), look.marks, ink, rules.taper) { part, view -> locked ?: bins.binOf(part, view) }
             SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, PosedSurfaceLines(surface, lineWeightStrokes(whole, held)))
         }
     }

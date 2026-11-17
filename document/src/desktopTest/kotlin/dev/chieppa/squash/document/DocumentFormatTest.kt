@@ -219,6 +219,19 @@ class DocumentFormatTest {
     }
 
     @Test
+    fun aDrawnEyeLeftOnAPairAndTheGazeCheatsAreDroppedWithTheRest() {
+        val eye = "{\"id\": \"eye\", \"name\": \"Eye\", \"roles\": [{\"role\": \"white\"}, {\"role\": \"lid\", \"marks\": [\"eye-lid\"]}], \"clips\": [{\"by\": \"lid\", \"clipped\": \"white\"}]}"
+        val mark = "{\"id\": \"eye-lid\", \"points\": [{\"part\": \"leg-l\", \"u\": 0.1, \"v\": 0.2}, {\"part\": \"leg-l\", \"u\": 0.2, \"v\": 0.2}]}"
+        val saved = formatFourteen
+            .replace("\"front-legs\": {}", "\"front-legs\": {\"surface\": {\"groups\": [$eye], \"marks\": [$mark]}}")
+            .replace("\"palette\":", "\"gazeCheats\": {\"cameraBias\": 0.5}, \"palette\":")
+        assertTrue("\"lid\"" in saved && "gazeCheats" in saved)
+        val character = readDocument(saved).character
+        assertEquals(emptyList(), character.parts.flatMap { checkNotNull(character.resolved(it)).surface.groups.filter { group -> group.id.value == "eye" } })
+        assertTrue(character.parts.all { part -> checkNotNull(character.resolved(part)).surface.marks.none { it.id.value == "eye-lid" } }, "the eye's marks go with it")
+    }
+
+    @Test
     fun aDirectDecodeOfAnOlderFormatIsStillRefused() {
         assertFailsWith<IllegalArgumentException> {
             kotlinx.serialization.json.Json.decodeFromString(SquashDocument.serializer(), formatOne)

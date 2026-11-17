@@ -84,7 +84,7 @@ private const val PROBE_FUR_VIEW = "probe"
 private const val WHISKER_MARGIN = 0.7f
 
 /** What the probe's views draw from this session as it stands, its fur through [camera] on a [width] by [height] surface. */
-internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT, shown: ExpressionId? = null, target: Vec3? = null): CharacterState {
+internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = null, width: Int = WIDTH, height: Int = HEIGHT, shown: ExpressionId? = null): CharacterState {
     camera?.let { showFurFrom(PROBE_FUR_VIEW, furCamera(it, width, height)) }
     work.settle(this)
     val character = assertNotNull(assembly.output.value)
@@ -99,7 +99,6 @@ internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = n
         paint = surfacePaint.output.value?.paint,
         dress = sessionSurface.dress.output.value?.dress,
         shown = shown,
-        target = target,
     )
 }
 

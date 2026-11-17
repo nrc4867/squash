@@ -2,7 +2,7 @@
 
 A desktop tool for making cel-shaded, outlined cartoon characters. Draw a part once from a few views, Squash builds a 3D body from it, and you pose that body as many times as you like. The look comes from comic line work: a thick outer outline, thinner interior lines, flat color, and fur, eyes and mouths drawn as marks on the body's surface.
 
-<p align="center"><img src="docs/images/fennec.png" alt="A fennec built in Squash: a tan body with a cream chest, tall pink-lined ears, a tufted tail, inked outlines and drawn eyes" width="420"></p>
+<p align="center"><img src="docs/images/fennec.png" alt="A fennec built in Squash: a tan body with a cream chest, tall pink-lined ears, a tufted tail, inked outlines and painted eyes" width="420"></p>
 
 Every character is a real 3D body underneath, built from part templates (torso, head, leg, paw, tail, wing, beak, fin and more) shaped by the outlines you draw. Turn the camera and you see the underside of a paw; pose the body and the lines, fur and face follow it.
 
@@ -19,13 +19,13 @@ Every character is a real 3D body underneath, built from part templates (torso, 
 | References | An image board for inspiration, a color picker over its images, and trace images placed behind or over any view |
 | Color | Fill, soft brush, curve-bordered regions and a color picker, all painted on the body's surface; flat or two-tone shading with the far side of each pair darker |
 | Lines | Line weight painted on the body, interior strokes on the surface or floating off it (whiskers), fur along the silhouette with a comb, creases where parts meet, and taper |
-| Face | Eyes and mouth as layered marks, with versions for front, three-quarter and side views that switch as the camera turns, a set of expressions, and a gaze target |
+| Face | Painted eyes, a mouth as layered marks with versions for front, three-quarter and side views that switch as the camera turns, and a set of expressions |
 | Rig | A skeleton from each part's joints, weights seeded from which part owns each area, and paint, erase and smooth brushes for the seams |
 | Dress | Garments drawn as shells over the body, with joins, hems and cuffs, holes for parts that come through, layers, outfits with named slots to mix and match, and loose ends that swing with follow-through |
 | Pose | One body curve for spine, neck, head and tail, which can stretch or squash the body while keeping its volume; limbs dragged by hand, with planted paws held in place |
 | Files | Undo for every change, a history of steps, recent files on Home, and characters saved as JSON with a JSON Schema for the format |
 
-![The Face stage: eye layers, expression thumbnails and angle versions under the fennec's head in four panes](docs/images/face.png)
+![The Face stage under the fennec's head in four panes](docs/images/face.png)
 
 ![The Dress stage: a fennec in a cap, scarf, sweater and boots, with the garment's outlines, its joins and the outfits and slots band](docs/images/dress.png)
 

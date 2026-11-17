@@ -35,8 +35,6 @@ import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.savedFennec
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.squash.screens.sheet.SheetLayout
-import dev.chieppa.squash.screens.sheet.SheetPane
-import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import dev.chieppa.squash.screens.shell.Stage
 import dev.chieppa.squash.screens.surface.ExpressionTags
 import dev.chieppa.squash.screens.surface.FACE_FRONT
@@ -165,7 +163,7 @@ class FaceFlowTest {
     }
 
     @Test
-    fun aLockedVersionAndTheTestGazeLastOnlyWhileFaceIsUp() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun aLockedVersionLastsOnlyWhileFaceIsUp() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         pickMouth(state)
         onNodeWithTag(ExpressionTags.LOCK).assertIsNotEnabled()
@@ -179,17 +177,10 @@ class FaceFlowTest {
         assertTrue(chips > 1, "every pane names the version a stroke writes")
         assertEquals(chips, onAllNodes(hasText("Writes Front version"), true).fetchSemanticsNodes().size)
 
-        stage(Key.G)
-        assertEquals(BuildTool.GAZE_TARGET, state.tool.value)
-        onNodeWithTag(sheetPaneTag(SheetPane.FULL)).performMouseInput { click(center + Offset(width / 4f, 0f)) }
-        waitForIdle()
-        assertNotNull(state.face.gazeTarget, "the Gaze tool moves the handle")
-
         stage(Key.One)
         assertEquals(Stage.SHAPE, state.stage.value)
         assertEquals(null, state.face.version, "the picked version goes with the band")
         assertEquals(false, state.face.locked)
-        assertEquals(null, state.face.gazeTarget, "and the test gaze")
     }
 
     @Test

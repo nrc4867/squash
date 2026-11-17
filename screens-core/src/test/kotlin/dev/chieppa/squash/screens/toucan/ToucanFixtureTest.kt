@@ -7,7 +7,6 @@ import dev.chieppa.squash.character.catalog.roles
 import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Role
-import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.screens.fennec.fennecText
 import dev.chieppa.squash.screens.shell.SquashFormat
@@ -59,7 +58,6 @@ class ToucanFixtureTest {
         assertEquals(HEAD, eyes.anchor.part)
         assertTrue(eyes.mirrored)
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        assertEquals(0, head.groups.count { it.isEye })
         assertEquals(1, head.groups.count { it.isMouth })
         val ring = head.regions.first { it.id.value == "eye-ring-l" }.border.dropLast(1)
         assertEquals(eyes.anchor.u.toDouble(), ring.map { it.u }.average(), 0.01, "the left eye sits in the middle of its ring")

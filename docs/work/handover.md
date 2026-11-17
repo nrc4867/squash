@@ -48,7 +48,7 @@ Look:
 Behaviour:
 
 - An edited surface can differ from a fresh one where a field is steeper than `LIPSCHITZ` (no real character is).
-- Painted eyes are not driven by the Pose stage's look-at tool or the Gaze target tool; their gaze is set on the eye.
+- Painted eyes are not driven by the Pose stage's look-at tool; their gaze is set on the eye.
 - Posed surface work is carried by the nearest vertex at rest, not by the field in the pose.
 - A region whose shapes span several parts is laid as each part's pieces kept to their sections (no example has one).
 - A pose that carries skin out through a garment's wall is not tested again beyond what coverage gives.
@@ -61,8 +61,7 @@ Digits (a part's row of toes or fingers) mesh at a quarter of the body's cell th
 
 ## Next, in order
 
-1. Drawn eyes give way to painted eyes on every head: the Face stage's drawn-eye controls, `EyeDraws.kt`, `EyeFacing.kt`, the eye half of `FaceWork.drawn`, the fennec's drawn eye marks, `ToucanDrawnEyes` and `SideEyesTest` go or move to painted eyes with `lookOut`. The mouth stays a drawn mark group.
-2. Phase 6, joints, only if the walk sheets need it: implicit skinning (`docs/hld/surface.md`, The rig on the surface).
+1. Phase 6, joints, only if the walk sheets need it: implicit skinning (`docs/hld/surface.md`, The rig on the surface).
 
 ## How rounds are run
 

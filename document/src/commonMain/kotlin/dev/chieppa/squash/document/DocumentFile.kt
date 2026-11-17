@@ -79,7 +79,7 @@ private fun rolesOnParts(document: JsonObject): JsonObject = document
 
 /**
  * Format 14 to 15: every body is one surface, so a character drops its one surface switch and each garment its fillet, and a head's
- * drawn eyes become painted ones (see [drawnEyesPainted]).
+ * drawn eyes become painted ones (see [drawnEyesPainted]); an eye group left on a paired part is dropped (see [leftoverEyeGroupsDropped]).
  */
 private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val character = document.getValue(CHARACTER_KEY).jsonObject
@@ -87,7 +87,7 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val garments = wardrobe?.get(GARMENTS_KEY) as? JsonArray
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
-    return JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(JsonObject(moved))))
+    return leftoverEyeGroupsDropped(JsonObject(document + (CHARACTER_KEY to drawnEyesPainted(JsonObject(moved)))))
 }
 
 /**
@@ -118,7 +118,7 @@ private fun furRulesLoseShowNear(document: JsonObject): JsonObject = withEverySu
 }
 
 /** [document] with [change] made to the surface work of every part's own data and overrides, and of every pair. */
-private fun withEverySurface(document: JsonObject, change: (JsonObject) -> JsonObject): JsonObject {
+internal fun withEverySurface(document: JsonObject, change: (JsonObject) -> JsonObject): JsonObject {
     fun changed(data: JsonElement): JsonElement {
         val held = data as? JsonObject ?: return data
         val surface = held[SURFACE_KEY] as? JsonObject ?: return data

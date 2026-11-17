@@ -6,7 +6,6 @@ import dev.chieppa.squash.character.build.bendsOf
 import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.catalog.newCharacter
 import dev.chieppa.squash.character.face.eyeLandmark
-import dev.chieppa.squash.character.face.newEyesCommand
 import dev.chieppa.squash.character.face.newMouthCommand
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.Character
@@ -18,7 +17,6 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetMarkControls
 import dev.chieppa.squash.document.SocketRef
-import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.geom.bent
 import dev.chieppa.squash.geom.surfaceAt
 import kotlin.test.Test
@@ -30,10 +28,13 @@ private val HEAD = PartId("head")
 private val BEAK = PartId("beak")
 private val LOWER = PartId("beak-lower")
 
+/** Halfway round a part, past which a v lies on its right. */
+private const val HALF_ROUND = 0.5f
+
 /** How squarely a side eye must face out to its side, as its normal's share across the head. */
 private const val SIDEWAYS = 0.7f
 
-/** A bird head with a beak: the lower half swings with the head's jaw as the mouth opens, and Add eyes sets one eye on each side. */
+/** A bird head with a beak: the lower half swings with the head's jaw as the mouth opens, and its eye landmark puts an eye on each side. */
 class BirdHeadTest {
     private val plan = shipped.plans.single { it.id.value == "bird" }
 
@@ -84,19 +85,14 @@ class BirdHeadTest {
     }
 
     @Test
-    fun addEyesSetsOneEyeOnEachSideOfTheHead() {
+    fun theEyeLandmarkSitsOnTheHeadsSideAndItsMirrorOnTheOther() {
         val head = template("head-bird")
-        val character = bird({ before -> assertNotNull(newEyesCommand(before, HEAD, eyeLandmark(head))) })
-        val surface = character.resolved(assertNotNull(character.part(HEAD))).surface
-        assertEquals(2, surface.groups.count { it.isEye })
+        val landmark = assertNotNull(eyeLandmark(head))
         val patch = PartBuilder.build(head).single()
         val axes = PartBuilder.axes(head)
-        val facing = listOf("eye-l-lid", "eye-r-lid").map { id ->
-            val points = surface.marks.single { it.id.value == id }.points
-            patch.surfaceAt(points.map { it.u }.average().toFloat(), points.map { it.v }.average().toFloat()).normal dot axes.side
-        }
+        val left = if (landmark.v > HALF_ROUND) 1f - landmark.v else landmark.v
+        val facing = listOf(left, 1f - left).map { v -> patch.surfaceAt(landmark.u, v).normal dot axes.side }
         assertTrue(facing.all { kotlin.math.abs(it) >= SIDEWAYS }, "each eye faces out to its side: $facing")
         assertTrue(facing[0] * facing[1] < 0f, "the two eyes face opposite sides")
     }
-
 }

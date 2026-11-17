@@ -10,13 +10,9 @@ import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.MouthShape
 import dev.chieppa.squash.geom.Vec2
 import kotlin.math.sign
-import kotlin.math.sqrt
 
 /** How far a blend has to go before marks that cannot morph switch. */
 private const val SWITCH_AT = 0.5f
-
-/** How far a pupil's middle may sit from the lid's, as a share of the lid's reach each way. */
-private const val LID_MARGIN = 0.7f
 
 /** How far a mouth's corner moves around the muzzle at full shape, in v. */
 private const val CORNER_LIFT = 0.07f
@@ -55,47 +51,6 @@ fun roleShapes(group: MarkGroup, role: MarkRole, own: Map<MarkId, ResolvedMark>,
         val to = shown[i].places
         shown[i].withPlaces(from.indices.map { from[it] + (to[it] - from[it]) * blend })
     }
-}
-
-/** The middle of these places, a last place on the first counted once. */
-fun List<Vec2>.middle(): Vec2 {
-    val held = if (size > 1 && first() == last()) dropLast(1) else this
-    return Vec2(held.sumOf { it.x.toDouble() }.toFloat() / held.size, held.sumOf { it.y.toDouble() }.toFloat() / held.size)
-}
-
-/** This lid opened by [open]: at 0 every place lies on the line between its two furthest apart, its corners, and at 1 it is as drawn. */
-fun openedLid(lid: List<Vec2>, open: Float): List<Vec2> {
-    if (open >= 1f) return lid
-    val first = lid.first()
-    val second = lid.maxBy { (it - first).let { d -> d.x * d.x + d.y * d.y } }
-    val along = second - first
-    val square = along.x * along.x + along.y * along.y
-    if (square == 0f) return lid
-    return lid.map { place ->
-        val off = place - first
-        val on = first + along * ((off.x * along.x + off.y * along.y) / square)
-        on + (place - on) * open.coerceAtLeast(0f)
-    }
-}
-
-/** [offset] held so a pupil at [from] plus it stays inside [lid] by a margin: within an ellipse in the lid's reach, about its middle. */
-fun heldInLid(from: Vec2, offset: Vec2, lid: List<Vec2>): Vec2 {
-    val middle = lid.middle()
-    val reachU = (lid.maxOf { it.x } - lid.minOf { it.x }) / 2f * LID_MARGIN
-    val reachV = (lid.maxOf { it.y } - lid.minOf { it.y }) / 2f * LID_MARGIN
-    if (reachU <= 0f || reachV <= 0f) return middle - from
-    val at = from + offset - middle
-    val out = sqrt(at.x * at.x / (reachU * reachU) + at.y * at.y / (reachV * reachV))
-    return if (out <= 1f) offset else middle + at * (1f / out) - from
-}
-
-/** These places moved by [by]. */
-fun List<Vec2>.movedBy(by: Vec2): List<Vec2> = map { it + by }
-
-/** These places scaled by [scale] about their middle. */
-fun List<Vec2>.scaledBy(scale: Float): List<Vec2> {
-    val middle = middle()
-    return map { middle + (it - middle) * scale }
 }
 
 /** The side of the underside these places lie on, and how far along each is from the end nearest it, 0 to 1. */

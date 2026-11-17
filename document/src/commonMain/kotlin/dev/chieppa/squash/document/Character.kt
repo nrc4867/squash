@@ -22,7 +22,6 @@ data class Character(
     val shading: CharacterShading = CharacterShading(),
     val lineRules: LineRules = LineRules(),
     val shownExpression: ExpressionId? = null,
-    val gazeCheats: GazeCheats = GazeCheats(),
     val traces: Map<View, Trace> = emptyMap(),
     val pose: Pose = Pose(),
     val displayPose: Pose = Pose(),

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.surface
 
 import dev.chieppa.squash.character.build.ResolvedMark
+import dev.chieppa.squash.character.build.ResolvedPoint
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkId
@@ -8,17 +9,22 @@ import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
+import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.clipClosed
 import dev.chieppa.squash.geom.cutShape
+import dev.chieppa.squash.geom.surfaceAt
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.Tones
 import dev.chieppa.squash.screens.sheet.colorOf
 
 /** Below this a mouth has not parted. */
 private const val LEAST_OPEN = 0.01f
+
+/** How many straight edges a filled mark's curve is flattened to between two of its places before it is clipped. */
+private const val STEPS_PER_GAP = 8
 
 /** How many gaps a mouth's inner shape runs along each lip, between the lip's own places. */
 private const val LIP_STEPS = 6
@@ -88,4 +94,27 @@ fun mouthDraws(
 private fun closedLoop(upper: List<Vec2>, lower: List<Vec2>): List<Vec2> {
     fun fine(places: List<Vec2>) = places.zipWithNext().flatMap { (a, b) -> List(LIP_STEPS) { a + (b - a) * (it.toFloat() / LIP_STEPS) } } + places.last()
     return fine(upper) + fine(lower).reversed().drop(1).dropLast(1)
+}
+
+/** Where the place at [u] and [v] of [patch] on [surface] lands in body space, the surface sitting at [origin], as an anchor like [like]. */
+internal fun resolvedOn(surface: PartSurface, origin: Vec3, like: ResolvedPoint, patch: Patch, u: Float, v: Float): ResolvedPoint {
+    val at = patch.surfaceAt(u, v)
+    return ResolvedPoint(like.anchor.copy(u = u, v = v), origin + surface.shown(at.position), surface.shown(at.normal))
+}
+
+/** A closed curve through [places], as a chain of short straight edges. A last place on the first is dropped. */
+internal fun closedThrough(places: List<Vec2>): List<Vec2> {
+    val held = if (places.first() == places.last()) places.dropLast(1) else places
+    val n = held.size
+    return (0 until n).flatMap { i ->
+        val p0 = held[(i + n - 1) % n]
+        val p1 = held[i]
+        val p2 = held[(i + 1) % n]
+        val p3 = held[(i + 2) % n]
+        List(STEPS_PER_GAP) { step ->
+            val t = step.toFloat() / STEPS_PER_GAP
+            val tt = t * t
+            (p1 * 2f + (p2 - p0) * t + (p0 * 2f - p1 * 5f + p2 * 4f - p3) * tt + (p1 * 3f - p0 - p2 * 3f + p3) * (tt * t)) * 0.5f
+        }
+    }
 }

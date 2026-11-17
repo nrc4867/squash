@@ -147,16 +147,16 @@ class SurfacePairTest : PairedFennec() {
 
     @Test
     fun controlsOnOneSideLeaveTheOtherAndUndoToTheShared() {
-        val eye = eyeGroup(MarkGroupId("eye"), "Eye")
+        val eye = mouthGroup(MarkGroupId("mouth"), "Mouth")
         scenario(placed) {
             run(SetMarkGroup(legL.id, eye.id, eye), SetMarkControls(legR.id, eye.id, MarkControls(open = 0.5f), thisSide = true))
             expect {
-                assertEquals(1f, it.surfaceOf(legL).groups.single().controls.open)
+                assertEquals(0f, it.surfaceOf(legL).groups.single().controls.open)
                 assertEquals(0.5f, it.surfaceOf(legR).groups.single().controls.open)
             }
             undo()
             expect {
-                assertEquals(1f, it.surfaceOf(legR).groups.single().controls.open)
+                assertEquals(0f, it.surfaceOf(legR).groups.single().controls.open)
                 assertEquals(SurfaceWork(), it.character.overridesOf(checkNotNull(it.character.part(legR.id))).surface)
             }
             run(SetMarkControls(legR.id, eye.id, MarkControls(open = 0.25f)))

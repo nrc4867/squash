@@ -9,7 +9,6 @@ import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.Mark
 import dev.chieppa.squash.document.MarkGroup
-import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkVersion
@@ -19,22 +18,14 @@ import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.expressionMarks
-import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.screens.lines.PickedGroup
 
 /** The roles whose marks close on themselves. */
-val CLOSED_ROLES = setOf(MarkRole.LID, MarkRole.WHITE, MarkRole.IRIS, MarkRole.PUPIL, MarkRole.HIGHLIGHT, MarkRole.INNER, MarkRole.TEETH, MarkRole.TONGUE)
-
+val CLOSED_ROLES = setOf(MarkRole.INNER, MarkRole.TEETH, MarkRole.TONGUE)
 
 /** The group [picked] names on [character], as its part shows it. */
 fun Character.groupOf(picked: PickedGroup): MarkGroup? =
     part(picked.part)?.let { resolved(it) }?.surface?.groups?.firstOrNull { it.id == picked.id }
-
-/** The other eye of [group] on its part, if it has one. */
-fun Character.twinOf(group: PickedGroup): MarkGroup? {
-    val own = groupOf(group)?.takeIf { it.isEye } ?: return null
-    return part(group.part)?.let { resolved(it) }?.surface?.groups?.firstOrNull { it.isEye && it.id != own.id }
-}
 
 /** The first mark [role] of [group] draws, in the shown expression where it names the role, else the group's own. */
 fun Character.markIn(group: MarkGroup, role: MarkRole, part: PartId): Mark? {
@@ -60,29 +51,23 @@ private fun Character.writing(part: PartId, group: MarkGroup, role: MarkRole, po
     return listOfNotNull(SetMark(part, written.id, written), joined?.let { SetMarkGroup(part, group.id, it) })
 }
 
-/** The command storing a stroke through [anchors] as what [role] of [picked] draws in [bin], closed where the role's marks close, and across the middle on the other eye with [mirror]. */
-fun drawnMarkCommand(character: Character, picked: PickedGroup, role: MarkRole, anchors: List<Anchor>, bin: CameraBin, mirror: Boolean): DocumentCommand? {
+/** The command storing a stroke through [anchors] as what [role] of [picked] draws in [bin], closed where the role's marks close. */
+fun drawnMarkCommand(character: Character, picked: PickedGroup, role: MarkRole, anchors: List<Anchor>, bin: CameraBin): DocumentCommand? {
     val group = character.groupOf(picked) ?: return null
     if (anchors.size < 2) return null
     val points = if (role in CLOSED_ROLES && anchors.first() != anchors.last()) anchors + anchors.first() else anchors
-    val twin = character.twinOf(picked).takeIf { mirror }
-    val mirrored = twin?.let { character.writing(picked.part, it, role, points.map { p -> p.copy(v = 1f - p.v) }, bin) }.orEmpty()
-    return Together(character.writing(picked.part, group, role, points, bin) + mirrored)
+    return Together(character.writing(picked.part, group, role, points, bin))
 }
 
-/** The command moving the place at [index] of what [role] of [picked] draws in [bin] to [to], on the other eye too with [mirror]; a closed mark's two ends move as one. */
-fun movedPlaceCommand(character: Character, picked: PickedGroup, role: MarkRole, bin: CameraBin, index: Int, to: Anchor, mirror: Boolean): DocumentCommand? {
+/** The command moving the place at [index] of what [role] of [picked] draws in [bin] to [to]; a closed mark's two ends move as one. */
+fun movedPlaceCommand(character: Character, picked: PickedGroup, role: MarkRole, bin: CameraBin, index: Int, to: Anchor): DocumentCommand? {
     val group = character.groupOf(picked) ?: return null
-    fun moved(of: MarkGroup, place: Anchor): List<DocumentCommand> {
-        val mark = character.markIn(of, role, picked.part) ?: return emptyList()
-        val held = mark.versions[bin]?.points ?: mark.points
-        if (index !in held.indices) return emptyList()
-        val closes = held.first() == held.last()
-        val points = held.mapIndexed { i, old -> if (i == index || (closes && (i == 0 || i == held.lastIndex) && (index == 0 || index == held.lastIndex))) place else old }
-        return character.writing(picked.part, of, role, points, bin)
-    }
-    val twin = character.twinOf(picked).takeIf { mirror }
-    return Together(moved(group, to) + twin?.let { moved(it, to.copy(v = 1f - to.v)) }.orEmpty())
+    val mark = character.markIn(group, role, picked.part) ?: return null
+    val held = mark.versions[bin]?.points ?: mark.points
+    if (index !in held.indices) return null
+    val closes = held.first() == held.last()
+    val points = held.mapIndexed { i, old -> if (i == index || (closes && (i == 0 || i == held.lastIndex) && (index == 0 || index == held.lastIndex))) to else old }
+    return Together(character.writing(picked.part, group, role, points, bin))
 }
 
 /** The command taking what [role] of [picked] draws in [bin] away: that version if the mark has others, else the mark. */

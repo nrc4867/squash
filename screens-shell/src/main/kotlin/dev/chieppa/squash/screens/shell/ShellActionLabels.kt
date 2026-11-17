@@ -60,7 +60,6 @@ import dev.chieppa.squash.uidesign.generated.library_search
 import dev.chieppa.squash.uidesign.generated.lines_tool_surface_stroke
 import dev.chieppa.squash.uidesign.generated.lines_tool_width
 import dev.chieppa.squash.uidesign.generated.face_tool_draw
-import dev.chieppa.squash.uidesign.generated.face_tool_gaze
 import dev.chieppa.squash.uidesign.generated.fur_comb_tool
 import dev.chieppa.squash.uidesign.generated.fur_tool
 import dev.chieppa.squash.uidesign.generated.smooth_tool
@@ -136,7 +135,6 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.DRAW_MARK to Res.string.face_tool_draw,
     ShellActions.EDIT_MARK to Res.string.shell_action_edit_curves,
     ShellActions.ERASE_MARK to Res.string.edit_tool_erase,
-    ShellActions.GAZE_TARGET to Res.string.face_tool_gaze,
     ShellActions.FIT_PANE to Res.string.sheet_pane_fit,
     ShellActions.PUT_DOWN to Res.string.shell_action_put_down,
     ShellActions.SWAP_PANE to Res.string.sheet_pane_swap,
@@ -185,7 +183,6 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "fur-stroke" -> SquashIcons.FurStroke
     "comb" -> SquashIcons.Comb
     "draw-mark" -> SquashIcons.DrawMark
-    "gaze-target" -> SquashIcons.GazeTarget
     "mirror" -> SquashIcons.Mirror
     "start-template" -> SquashIcons.StartFromTemplate
     "half-outline" -> SquashIcons.HalfOutline

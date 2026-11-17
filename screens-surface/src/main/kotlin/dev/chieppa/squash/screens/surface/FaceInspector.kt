@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.screens.AppState
-import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
 import dev.chieppa.squash.screens.surface.eyes.paintsEyes
 import dev.chieppa.squash.uidesign.generated.Res
@@ -39,7 +38,7 @@ private val HEADER_INSET = 12.dp
 /** The room the three angle versions' tiles take. */
 private val VERSIONS_WIDTH = 300.dp
 
-/** The Face inspector: Eyes or Mouth, and the picked one's controls, layers and gaze. */
+/** The Face inspector: Eyes or Mouth, the painted eyes' controls, and the mouth's controls and layers. */
 @Composable
 fun FaceInspector(state: AppState, session: CharacterSession) {
     FaceSection(state, session)
@@ -47,8 +46,7 @@ fun FaceInspector(state: AppState, session: CharacterSession) {
 
 /**
  * The band under the view for as long as Face is on screen: the expressions, and the shown one's angle versions, which painted eyes have
- * none of. While it is up the face tools work on the head's eyes from the start; once it goes, the picked version, its lock and the test
- * gaze go with it.
+ * none of. While it is up the face tools work on the head's eyes from the start; once it goes, the picked version and its lock go with it.
  */
 @Composable
 fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
@@ -71,7 +69,6 @@ fun FaceBand(state: AppState, modifier: Modifier = Modifier) {
         onDispose {
             state.face.version = null
             state.face.locked = false
-            state.face.gazeTarget = null
         }
     }
     Column(modifier.fillMaxWidth().background(Stretch.colors.surfacePanel).testTag(ShellTags.FACE_BAND)) {

@@ -29,9 +29,6 @@ import dev.chieppa.stretch.frame.OverlayBuilder
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.frame.buildOverlay
 import dev.chieppa.stretch.theme.Stretch
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /** How close a press takes a mark's place or line, in density independent pixels. */
 private const val REACH = 10f
@@ -42,13 +39,9 @@ private const val TARGET_RADIUS = 9f
 private const val TARGET_ARM = 13f
 private const val RING_STEPS = 24
 
-/** How far ahead of the head the gaze handle rests before it is moved, in the head's radii. */
-private const val GAZE_REACH = 3f
-
 /**
- * A tool working on the picked mark group and role, on the head. Every face tool shows the gaze handle in [accent], and names in each pane the
- * version a stroke there writes; while Face works on painted eyes it shows the picked eye's box and handles instead, in [selected] on [paper],
- * and takes presses on them first.
+ * A tool working on the picked mark group and role, on the head. Every face tool names in each pane the version a stroke there writes; while Face
+ * works on painted eyes it shows the picked eye's box and handles instead, in [selected] on [paper], and takes presses on them first.
  */
 abstract class FaceTool(state: AppState, var accent: Color, protected val density: Float) : SurfaceTool(state) {
     var selected: Color = Color.Black
@@ -74,23 +67,10 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
         return body?.part(part)
     }
 
-    /** Where the gaze handle is: the test target once moved, else ahead of the head in its pose, the way it faces. */
-    protected fun gazeAt(): Vec3? = state.face.gazeTarget ?: headIn(state.session.value?.posedBody?.output?.value)?.let { part ->
-        val box = part.box ?: return@let null
-        box.center + part.facing * (box.radius * GAZE_REACH)
-    }
-
-    /** The version the tool works in through [sight]: the one picked, else the one the view shows, a side-set eye's read from its own facing. */
+    /** The version the tool works in through [sight]: the one picked, else the one the view shows. */
     protected fun binThrough(sight: SurfaceView): CameraBin? = state.face.version ?: head(sight)?.let { part ->
-        val toViewer = sight.toViewer(part.box?.center ?: part.origin)
-        val headBin = FACE_BINS.binFor(headAngle(part, toViewer))
-        val work = state.session.value?.bodySurfaceWork?.output?.value?.parts?.get(part.id)
-        val eye = work?.let { sideEyes(part, it, headBin) }?.firstOrNull { it.group == picked?.id }
-        FACE_BINS.binFor(faceAngle(part, toViewer, eye))
+        FACE_BINS.binFor(headAngle(part, sight.toViewer(part.box?.center ?: part.origin)))
     }
-
-    /** Whether an eye's work writes both eyes. */
-    protected val mirrors: Boolean get() = state.face.bothEyes
 
     /** Where the places of what the role draws in [bin] show in body space, on the head as [sight]'s pane shows it. */
     protected fun placesIn(bin: CameraBin, sight: SurfaceView): List<Vec3> {
@@ -107,7 +87,7 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
 
     protected fun SurfaceView.pixelsOf(places: List<Vec3>): List<Offset?> = places.map(::toPixel)
 
-    /** What the tool itself draws through [sight], under the gaze handle. */
+    /** What the tool itself draws through [sight]. */
     protected open fun OverlayBuilder.drawn(sight: SurfaceView) = Unit
 
     final override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = shown(camera)
@@ -117,21 +97,6 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
     private fun shown(sight: SurfaceView): ViewportOverlay = buildOverlay {
         drawn(sight)
         with(eyeHandles) { drawn(sight, selected, paper, density) }
-        gazeHandle(sight)
-    }
-
-    private fun OverlayBuilder.gazeHandle(sight: SurfaceView) {
-        val at = gazeAt()?.let(sight::toPixel) ?: return
-        val width = LIVE_WIDTH * density
-        val arm = TARGET_ARM * density
-        val radius = TARGET_RADIUS * density
-        line(at + Offset(-arm, 0f), at + Offset(arm, 0f), accent, width)
-        line(at + Offset(0f, -arm), at + Offset(0f, arm), accent, width)
-        val ring = List(RING_STEPS + 1) { i ->
-            val angle = 2.0 * PI * i / RING_STEPS
-            at + Offset(radius * cos(angle).toFloat(), radius * sin(angle).toFloat())
-        }
-        ring.zipWithNext().forEach { (a, b) -> line(a, b, accent, width) }
     }
 
     override val paneNote: @Composable (SurfaceView) -> Unit = { sight -> if (!paintsEyes) binThrough(sight)?.let { FaceVersionChip(it) } }
@@ -156,7 +121,7 @@ class DrawMarkTool(state: AppState, var ink: Color, accent: Color, density: Floa
                     live += next.position
                 }
             }
-            if (released) drawnMarkCommand(session.document.value.character, group, drawing, anchors, bin, mirrors)?.let(session::send)
+            if (released) drawnMarkCommand(session.document.value.character, group, drawing, anchors, bin)?.let(session::send)
         } finally {
             live.clear()
         }
@@ -184,7 +149,7 @@ class EditMarkTool(state: AppState, accent: Color, density: Float) : FaceTool(st
         val gesture = session.history.begin()
         val released = followToRelease(down.id, {}) { pixel ->
             val hit = hitAt(pixel, sight)?.takeIf { it.part == group.part } ?: return@followToRelease
-            movedPlaceCommand(session.document.value.character, group, editing, bin, index, hit.anchor, mirrors)?.let(gesture::update)
+            movedPlaceCommand(session.document.value.character, group, editing, bin, index, hit.anchor)?.let(gesture::update)
         }
         if (released) gesture.commit() else gesture.cancel()
         return true
@@ -215,23 +180,6 @@ class EraseMarkTool(state: AppState, accent: Color, density: Float) : FaceTool(s
     }
 }
 
-/** Gaze target: a press anywhere in a pane puts the gaze handle there and a drag moves it, on the plane through it that faces the viewer. It is not part of the character. */
-class GazeTargetTool(state: AppState, accent: Color, density: Float) : FaceTool(state, accent, density) {
-
-    override suspend fun AwaitPointerEventScope.pressedOwn(down: PointerInputChange, sight: SurfaceView): Boolean {
-        val from = gazeAt() ?: return false
-        fun moveTo(pixel: Offset) {
-            pointFacingViewer(from, pixel, sight)?.let { state.face.gazeTarget = it }
-        }
-        down.consume()
-        moveTo(down.position)
-        followToRelease(down.id, {}, ::moveTo)
-        return true
-    }
-
-    override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) = Unit
-}
-
 @Composable
 fun rememberDrawMarkTool(state: AppState): DrawMarkTool = rememberFaceTool(state) { accent, density -> DrawMarkTool(state, PART_INK, accent, density) }
 
@@ -240,9 +188,6 @@ fun rememberEditMarkTool(state: AppState): EditMarkTool = rememberFaceTool(state
 
 @Composable
 fun rememberEraseMarkTool(state: AppState): EraseMarkTool = rememberFaceTool(state) { accent, density -> EraseMarkTool(state, accent, density) }
-
-@Composable
-fun rememberGazeTargetTool(state: AppState): GazeTargetTool = rememberFaceTool(state) { accent, density -> GazeTargetTool(state, accent, density) }
 
 @Composable
 private fun <T : FaceTool> rememberFaceTool(state: AppState, make: (Color, Float) -> T): T {

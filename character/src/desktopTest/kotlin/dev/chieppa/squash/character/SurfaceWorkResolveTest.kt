@@ -57,16 +57,16 @@ class SurfaceWorkResolveTest {
     fun everyItemKeepsItsIdsNamesAndOrderAtPointsOnTheSurface() = runTest {
         val session = surfaceSession(torsoPart)
         val points = onLeg(torsoPart)
-        val eye = MarkGroupId("eye")
+        val mouth = MarkGroupId("mouth")
         val glad = ExpressionId("glad")
         val commands = listOf(
             SetMark(torsoPart.id, MarkId("second"), line("second", *points.toTypedArray())),
             SetMark(torsoPart.id, MarkId("first"), Mark(MarkId("first"), points, ink = false, cameraLocked = true, versions = mapOf(CameraBin("side") to MarkVersion(points.reversed()))), index = 1),
-            SetMarkGroup(torsoPart.id, eye, MarkGroup(eye, "Eye", listOf(GroupRole(MarkRole.LID, marks = listOf(MarkId("first")))))),
+            SetMarkGroup(torsoPart.id, mouth, MarkGroup(mouth, "Mouth", listOf(GroupRole(MarkRole.LIP_LINE, marks = listOf(MarkId("first")))))),
             SetRegion(torsoPart.id, RegionId("patch"), Region(RegionId("patch"), points, fur, ink = true)),
             SetBrushStroke(torsoPart.id, BrushStrokeId("dab"), BrushStroke(BrushStrokeId("dab"), points.take(1), fur, 0.1f)),
             SetExpression(glad, ExpressionSet(glad, "Glad")),
-            SetExpressionMarks(glad, torsoPart.id, eye, MarkRole.LID, listOf(line("lid", *points.toTypedArray()))),
+            SetExpressionMarks(glad, torsoPart.id, mouth, MarkRole.LIP_LINE, listOf(line("lid", *points.toTypedArray()))),
         )
         commands.forEach(session::send)
         session.settle()
@@ -81,14 +81,14 @@ class SurfaceWorkResolveTest {
         assertEquals(false, work.marks[1].ink)
         assertEquals(true, work.marks[1].cameraLocked)
         assertEquals(expected.reversed(), work.marks[1].versions.getValue(CameraBin("side")).points.map { it.position })
-        assertEquals("Eye", work.groups.single().name)
+        assertEquals("Mouth", work.groups.single().name)
         assertEquals(expected, work.regions.single().border.map { it.position })
         assertEquals(fur, work.regions.single().slot)
         assertEquals(expected.take(1), work.strokes.single().points.map { it.position })
         assertEquals(0.1f, work.strokes.single().radius)
         val expression = work.expressions.single()
         assertEquals(glad to "Glad", expression.id to expression.name)
-        assertEquals(expected, expression.marks.getValue(eye).getValue(MarkRole.LID).single().points.map { it.position })
+        assertEquals(expected, expression.marks.getValue(mouth).getValue(MarkRole.LIP_LINE).single().points.map { it.position })
     }
 
     @Test
@@ -177,17 +177,17 @@ class SurfaceWorkResolveTest {
         val good = onLeg(torsoPart)
         val noPart = Anchor(PartId("gone"), u = 0.5f, v = 0.5f)
         val noPatch = on(torsoPart, 0.5f, 0.5f, patch = "wing")
-        val eye = MarkGroupId("eye")
+        val mouth = MarkGroupId("mouth")
         val glad = ExpressionId("glad")
         val commands = listOf(
             SetMark(torsoPart.id, MarkId("kept"), Mark(MarkId("kept"), listOf(good[0], noPart, good[1], noPatch), versions = mapOf(CameraBin("side") to MarkVersion(listOf(good[0], noPart))))),
             SetMark(torsoPart.id, MarkId("lost"), line("lost", good[0], noPart)),
-            SetMarkGroup(torsoPart.id, eye, MarkGroup(eye, "Eye", listOf(GroupRole(MarkRole.LID, marks = listOf(MarkId("lost"), MarkId("kept")))))),
+            SetMarkGroup(torsoPart.id, mouth, MarkGroup(mouth, "Mouth", listOf(GroupRole(MarkRole.LIP_LINE, marks = listOf(MarkId("lost"), MarkId("kept")))))),
             SetRegion(torsoPart.id, RegionId("kept"), Region(RegionId("kept"), good + noPatch, fur)),
             SetRegion(torsoPart.id, RegionId("lost"), Region(RegionId("lost"), good.take(2) + noPatch, fur)),
             SetBrushStroke(torsoPart.id, BrushStrokeId("lost"), BrushStroke(BrushStrokeId("lost"), listOf(noPart), fur, 0.1f)),
             SetExpression(glad, ExpressionSet(glad, "Glad")),
-            SetExpressionMarks(glad, torsoPart.id, eye, MarkRole.LID, listOf(line("lid", good[0], noPart))),
+            SetExpressionMarks(glad, torsoPart.id, mouth, MarkRole.LIP_LINE, listOf(line("lid", good[0], noPart))),
         )
         commands.forEach(session::send)
         session.settle()
@@ -222,7 +222,7 @@ class SurfaceWorkResolveTest {
         assertEquals(listOf(MarkId("kept")), work.groups.single().roles.single().marks)
         assertEquals("kept", work.regions.single().id.value)
         assertEquals(emptyList(), work.strokes)
-        assertEquals(emptyList(), work.expressions.single().marks.values.single().getValue(MarkRole.LID))
+        assertEquals(emptyList(), work.expressions.single().marks.values.single().getValue(MarkRole.LIP_LINE))
     }
 
     @Test

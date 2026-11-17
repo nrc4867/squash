@@ -40,7 +40,7 @@ class ShellKeysTest {
         val shell = shell()
         assertEquals(BuildTool.FILL.actionId, shell.resolve("G", Stage.COLOR))
         assertEquals(BuildTool.BRUSH.actionId, shell.resolve("B", Stage.COLOR))
-        assertEquals(BuildTool.GAZE_TARGET.actionId, shell.resolve("G", Stage.FACE))
+        assertEquals(BuildTool.DRAW_MARK.actionId, shell.resolve("D", Stage.FACE))
         assertEquals(BuildTool.COMB.actionId, shell.resolve("C", Stage.LINES))
         assertEquals(BuildTool.PAINT_WEIGHT.actionId, shell.resolve("D", Stage.RIG))
         assertEquals(BuildTool.ERASE_WEIGHT.actionId, shell.resolve("X", Stage.RIG))

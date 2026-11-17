@@ -10,16 +10,13 @@ import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.FurView
-import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfacePaint
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.build.lineWeightStrokes
-import dev.chieppa.squash.character.surface.isRun
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.ExpressionId
-import dev.chieppa.squash.document.GazeCheats
 import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.Palette
@@ -71,8 +68,6 @@ class CharacterState(
     val surface: CharacterSurface,
     val taper: Float = LineRules.DEFAULT_TAPER,
     val shown: ExpressionId? = null,
-    val target: Vec3? = null,
-    val cheats: GazeCheats = GazeCheats(),
     val paint: SurfacePaint? = null,
     val dress: SurfaceDress? = null,
     val only: Set<PartId>? = null,
@@ -101,9 +96,9 @@ fun characterView(
     val eye = Vec3(camera.eye.x, camera.eye.y, camera.eye.z)
     val view = FullView({ camera }, rect.width, rect.height)
     val faces = FaceWork(
-        FaceInput(parts.associateBy { requireNotNull(it.id) }, state.work, state.lines, state.palette, shading.toLight, state.shown, state.target, state.cheats),
+        FaceInput(parts.associateBy { requireNotNull(it.id) }, state.work, state.lines, state.palette, state.shown),
         look.marks, ink, state.taper,
-    ) { part, _, _ -> faceBin(requireNotNull(part.id)) }
+    ) { part, _ -> faceBin(requireNotNull(part.id)) }
     val center = state.character.box?.center ?: Vec3.ZERO
     val ribbons = ArrayList<RibbonDraw>()
     val surface = state.surface

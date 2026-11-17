@@ -10,6 +10,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+private const val CHARACTER_KEY = "character"
 private const val PARTS_KEY = "parts"
 private const val PAIR_KEY = "pair"
 private const val OWN_KEY = "own"
@@ -29,6 +30,7 @@ private const val ANCHOR_KEY = "anchor"
 private const val LOOK_KEY = "look"
 private const val PAINTED_EYES_KEY = "paintedEyes"
 private const val EXPRESSIONS_KEY = "expressions"
+private const val GAZE_CHEATS_KEY = "gazeCheats"
 
 private const val LID_ROLE = "lid"
 private const val LASHES_ROLE = "lashes"
@@ -50,7 +52,8 @@ private const val HALF_ROUND = 0.5f
  * [character], a saved character's JSON, with its drawn eyes painted: every unpaired part loses its eye groups, by their lid, and the
  * marks they hold, and the expressions lose those groups' marks. A part that had marks in one and no painted eye gains a mirrored
  * painted pair, its middle and its opening's half width and height those of the left eye's lid, or of its marks when it has no lid,
- * with the fills of its white, iris, pupil and highlight and a lid, lashes and brow where it drew them. A mouth stays as drawn.
+ * with the fills of its white, iris, pupil and highlight and a lid, lashes and brow where it drew them. A mouth stays as drawn, and the character's
+ * gaze cheats, which only drawn pupils read, go.
  */
 internal fun drawnEyesPainted(character: JsonObject): JsonObject {
     val parts = character[PARTS_KEY] as? JsonArray ?: return character
@@ -84,7 +87,36 @@ internal fun drawnEyesPainted(character: JsonObject): JsonObject {
         })
     }
     val eyes = if (painted.isEmpty()) emptyList() else listOf(PAINTED_EYES_KEY to JsonArray(painted))
-    return JsonObject(character + (PARTS_KEY to JsonArray(moved)) + eyes + listOfNotNull(expressions?.let { EXPRESSIONS_KEY to it }))
+    return JsonObject(character - GAZE_CHEATS_KEY + (PARTS_KEY to JsonArray(moved)) + eyes + listOfNotNull(expressions?.let { EXPRESSIONS_KEY to it }))
+}
+
+/**
+ * [document] with every eye group still held, on a paired part, its sides' overrides or a pair's data, dropped with the marks only
+ * those groups held and the expressions' marks for them. No painted eye replaces them.
+ */
+internal fun leftoverEyeGroupsDropped(document: JsonObject): JsonObject {
+    val dropped = mutableSetOf<String>()
+    val kept = mutableSetOf<String>()
+    val swept = withEverySurface(document) { surface ->
+        val groups = surface[GROUPS_KEY]?.jsonArray.orEmpty().map { it.jsonObject }
+        val (eyes, others) = groups.partition(::isEyeGroup)
+        kept += others.map { it.getValue(ID_KEY).jsonPrimitive.content }
+        if (eyes.isEmpty()) return@withEverySurface surface
+        dropped += eyes.map { it.getValue(ID_KEY).jsonPrimitive.content }
+        val going = eyes.flatMap { markIdsOf(it) }.toSet() - others.flatMap { markIdsOf(it) }.toSet()
+        val marks = surface[MARKS_KEY]?.jsonArray.orEmpty().filter { it.jsonObject.getValue(ID_KEY).jsonPrimitive.content !in going }
+        JsonObject(surface + (GROUPS_KEY to JsonArray(others)) + (MARKS_KEY to JsonArray(marks)))
+    }
+    val gone = dropped - kept
+    val character = swept.getValue(CHARACTER_KEY).jsonObject
+    val expressions = (character[EXPRESSIONS_KEY] as? JsonArray)?.let { held ->
+        JsonArray(held.map { expression ->
+            val shown = expression.jsonObject
+            val marks = shown[MARKS_KEY] as? JsonObject ?: return@map shown
+            JsonObject(shown + (MARKS_KEY to JsonObject(marks - gone)))
+        })
+    } ?: return swept
+    return JsonObject(swept + (CHARACTER_KEY to JsonObject(character + (EXPRESSIONS_KEY to expressions))))
 }
 
 /** The surface work of [part]'s own when it is unpaired and holds an eye group, else null. */

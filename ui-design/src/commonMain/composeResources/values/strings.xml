@@ -254,12 +254,10 @@
     <string name="shell_drawer_angle_versions">Angle versions</string>
     <string name="face_mouth">Mouth</string>
     <string name="face_eyes">Eyes</string>
-    <string name="face_both">Both</string>
     <string name="face_controls">Controls</string>
     <string name="face_layers">Layers</string>
     <string name="face_layer_empty">empty</string>
     <string name="face_layer_drawing">drawing</string>
-    <string name="face_layer_clips">clips</string>
     <string name="face_layer_fill">fill</string>
     <string name="face_layer_drawn">drawn</string>
     <string name="face_gaze">Gaze</string>
@@ -267,11 +265,8 @@
     <string name="face_writes">Writes %1$s version</string>
     <string name="face_new_eyes">Add eyes</string>
     <string name="face_new_mouth">Add mouth</string>
-    <string name="face_left">Left</string>
-    <string name="face_right">Right</string>
     <string name="face_open">Open</string>
     <string name="face_shape">Shape</string>
-    <string name="face_dilation">Dilation</string>
     <string name="face_width">Width</string>
     <string name="face_highlight_size">Highlight</string>
     <string name="face_roundness">Roundness</string>
@@ -292,7 +287,6 @@
     <string name="face_role_white">White</string>
     <string name="face_role_iris">Iris</string>
     <string name="face_role_pupil">Pupil</string>
-    <string name="face_role_highlight">Highlight</string>
     <string name="face_role_brow">Brow</string>
     <string name="face_role_lashes">Lashes</string>
     <string name="face_role_lip_line">Lip line</string>
@@ -300,10 +294,7 @@
     <string name="face_role_teeth">Teeth</string>
     <string name="face_role_tongue">Tongue</string>
     <string name="face_role_corners">Corners</string>
-    <string name="face_camera_bias">Camera bias</string>
-    <string name="face_size_compensation">Far pupil size</string>
     <string name="face_tool_draw">Draw mark</string>
-    <string name="face_tool_gaze">Gaze target</string>
     <string name="face_neutral">Neutral</string>
     <string name="face_new_expression">New expression</string>
     <string name="face_delete_expression">Delete expression</string>

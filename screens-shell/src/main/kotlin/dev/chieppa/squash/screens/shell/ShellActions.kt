@@ -78,7 +78,6 @@ object ShellActions {
     val DRAW_MARK = ActionId(BuildTool.DRAW_MARK.actionId)
     val EDIT_MARK = ActionId(BuildTool.EDIT_MARK.actionId)
     val ERASE_MARK = ActionId(BuildTool.ERASE_MARK.actionId)
-    val GAZE_TARGET = ActionId(BuildTool.GAZE_TARGET.actionId)
     val FIT_PANE = ActionId("fit-pane")
     val PUT_DOWN = ActionId("put-down")
     val SWAP_PANE = ActionId("swap-pane")
@@ -175,7 +174,6 @@ fun Shell.registerActions() {
     tool(BuildTool.DRAW_MARK, "draw-mark", "D")
     tool(BuildTool.EDIT_MARK, "edit-curves", "E")
     tool(BuildTool.ERASE_MARK, "erase", "X")
-    tool(BuildTool.GAZE_TARGET, "gaze-target", "G")
 
     tool(BuildTool.PAINT_WEIGHT, "paint-weight", "D")
     tool(BuildTool.ERASE_WEIGHT, "erase-weight", "X")

@@ -201,12 +201,6 @@ object SquashIcons {
             stroke("M5.5 2.5L2 5l1.5 3L5 7v6.5h6V7l1.5 1L14 5l-3.5-2.5a2.5 2.5 0 0 1-5 0z")
         }
     }
-    val GazeTarget: ImageVector by lazy {
-        icon("gaze-target") {
-            stroke("M4.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0z")
-            stroke("M8 1.5v3.5M8 11v3.5M1.5 8h3.5M11 8h3.5")
-        }
-    }
     val HalfOutline: ImageVector by lazy {
         icon("half-outline") {
             stroke("M8 1.5v13")

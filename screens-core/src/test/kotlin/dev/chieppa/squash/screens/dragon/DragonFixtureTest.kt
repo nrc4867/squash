@@ -6,7 +6,6 @@ import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.TemplateId
-import dev.chieppa.squash.document.isEye
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.screens.fennec.fennecText
 import dev.chieppa.squash.screens.shell.SquashFormat
@@ -42,7 +41,6 @@ class DragonFixtureTest {
         val character = dragonDocument().character
         assertEquals(listOf(DRAGON_EYES), character.paintedEyes.map { it.id })
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
-        assertEquals(0, head.groups.count { it.isEye })
         assertEquals(1, head.groups.count { it.isMouth })
     }
 

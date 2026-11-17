@@ -3,9 +3,6 @@ package dev.chieppa.squash.screens.shell
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -58,7 +55,6 @@ import dev.chieppa.squash.screens.surface.rememberCombTool
 import dev.chieppa.squash.screens.surface.rememberDrawMarkTool
 import dev.chieppa.squash.screens.surface.rememberEditMarkTool
 import dev.chieppa.squash.screens.surface.rememberEraseMarkTool
-import dev.chieppa.squash.screens.surface.rememberGazeTargetTool
 import dev.chieppa.squash.screens.surface.rememberSelectPartTool
 import dev.chieppa.squash.screens.surface.rememberFurStrokeTool
 import dev.chieppa.squash.uidesign.generated.Res
@@ -99,7 +95,6 @@ fun WorkspaceScreen(shell: Shell) {
     val drawMark = rememberDrawMarkTool(state)
     val editMark = rememberEditMarkTool(state)
     val eraseMark = rememberEraseMarkTool(state)
-    val gazeTarget = rememberGazeTargetTool(state)
     val traceHandles = rememberTraceHandles(state)
     val selectPart = rememberSelectPartTool(state)
     val addPart = rememberAddPartTool(state)
@@ -136,7 +131,6 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.DRAW_MARK -> drawMark
         BuildTool.EDIT_MARK -> editMark
         BuildTool.ERASE_MARK -> eraseMark
-        BuildTool.GAZE_TARGET -> gazeTarget
         BuildTool.PAINT_WEIGHT -> paintWeight
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight

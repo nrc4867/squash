@@ -64,7 +64,7 @@ private const val DASH = 4f
 private const val NEW_ID_PREFIX = "expression-"
 
 /** What a thumbnail leaves out, since a small drawing of plain lines reads better without rings inside rings. */
-private val THUMBNAIL_SKIPS = setOf(MarkRole.WHITE, MarkRole.PUPIL, MarkRole.HIGHLIGHT, MarkRole.TONGUE)
+private val THUMBNAIL_SKIPS = setOf(MarkRole.TONGUE)
 
 /** Test tags for the Face stage's band. */
 object ExpressionTags {

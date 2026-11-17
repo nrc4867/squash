@@ -46,8 +46,8 @@ There is a schema for templates and plans (`schema/`) but none for the document 
 - `document/.../Garment.kt`: what `from`, `to`, `fromV`, `toV`, `ease` and `layer` mean, and their defaults. A document schema with KDoc descriptions, as the template schema has.
 - `document/.../BodyPartChange.kt`, `Worn.kt`, `PartData.kt`, `SurfaceWork.kt`: that Redraw lays its data over the part's (outlines and parameters replaced by key, marks and regions by id), Swap replaces it, and the outermost garment wins. A command reference.
 - `document/.../GarmentCommands.kt`, `WardrobeCommands.kt`: the list of wardrobe commands. A command reference.
-- `document/.../MarkRole.kt`, `MarkGroupShapes.kt`, `Mark.kt`: an eye's seven roles, their draw order, which the lid clips, and a mark's fields. A schema.
-- `character/.../face/StarterFace.kt`: what Add eyes makes and where. The Face stage's doc.
+- `document/.../MarkRole.kt`, `MarkGroupShapes.kt`, `Mark.kt`: a mouth's five roles, their draw order, and a mark's fields. A schema.
+- `character/.../face/StarterFace.kt`: what Add mouth makes and the landmark Add eyes reads. The Face stage's doc.
 
 ### Hand-made parameters
 
@@ -69,7 +69,7 @@ There is a schema for templates and plans (`schema/`) but none for the document 
 
 - `geom/.../PartAxes.kt`: which way a part's up points (forward for a part resting up or down, up for one resting forward), and so where v = 0 lies and which way a Side outline's y runs. A doc of the part frame, or a headless command that prints the u and v at a body point.
 - `rig/.../PoseChains.kt`, `character/.../role/PartRoles.kt`: what makes a character upright and which way a hinge's positive angle turns. A pose reference, or a command that prints a rig's bones and limits.
-- `screens-surface/.../FaceBins.kt`, `EyeFacing.kt`: that face versions follow the head's axis and eyes more than 60° off it read their own. The Face stage's doc.
+- `screens-surface/.../FaceBins.kt`: that face versions follow the head's axis. The Face stage's doc.
 - Outline placement inside a part: that the drawn length sets the part's length, that the foot's toe end sits at its template length, that a blob starts at its socket. Only render loops found these; a headless measure of a built part's extents would.
 
 ### Rendering

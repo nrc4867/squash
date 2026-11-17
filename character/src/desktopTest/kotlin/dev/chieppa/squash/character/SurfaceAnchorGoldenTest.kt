@@ -39,7 +39,7 @@ import kotlin.test.assertNotNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceAnchorGoldenTest {
     private val fur = SlotName("fur")
-    private val eye = MarkGroupId("eye")
+    private val mouth = MarkGroupId("mouth")
     private val glad = ExpressionId("glad")
     private val legOversketch = outline(0f to 0.2f, 0.6f to 0.08f, 0.6f to -0.12f, 0f to -0.2f)
     private val torsoOversketch = outline(0f to 0.3f, 1.2f to 0.35f, 1.2f to -0.25f, 0f to -0.3f)
@@ -56,9 +56,9 @@ class SurfaceAnchorGoldenTest {
         send(SetMark(leftLeg.id, sock.id, sock))
         send(SetRegion(leftLeg.id, RegionId("patch"), Region(RegionId("patch"), across, fur)))
         send(SetBrushStroke(leftLeg.id, BrushStrokeId("dab"), BrushStroke(BrushStrokeId("dab"), points, fur, 0.05f)))
-        send(SetMarkGroup(leftLeg.id, eye, MarkGroup(eye, "Eye", listOf(GroupRole(MarkRole.LID)))))
+        send(SetMarkGroup(leftLeg.id, mouth, MarkGroup(mouth, "Mouth", listOf(GroupRole(MarkRole.LIP_LINE)))))
         send(SetExpression(glad, ExpressionSet(glad, "Glad")))
-        send(SetExpressionMarks(glad, leftLeg.id, eye, MarkRole.LID, listOf(line("lid", points[0], points[2]))))
+        send(SetExpressionMarks(glad, leftLeg.id, mouth, MarkRole.LIP_LINE, listOf(line("lid", points[0], points[2]))))
     }
 
     /** Asserts every one of [points] lies on the one surface. */
