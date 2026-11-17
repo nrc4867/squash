@@ -11,7 +11,7 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "circle",
   "params": {
-    "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
+    "size": { "doc": "Scales the part: its drawn length and width together.", "default": 1.0, "min": 0.4, "max": 2.5 }
   },
   "grain": { "toward": "start" },
   "blocks": [

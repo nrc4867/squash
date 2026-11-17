@@ -11,8 +11,8 @@
   "views": { "side": "height", "top": "width" },
   "section": "circle",
   "params": {
-    "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
-    "girth": { "default": 0.11, "min": 0.04, "max": 0.4 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.2, "max": 2.5 },
+    "girth": { "doc": "Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.11, "min": 0.04, "max": 0.4 }
   },
   "blocks": [
     { "kind": "tube",   "u": [0.0, 1.0], "radius": "$girth", "taper": 0.55 },

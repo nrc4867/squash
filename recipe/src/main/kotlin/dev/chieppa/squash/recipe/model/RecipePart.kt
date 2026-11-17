@@ -39,9 +39,23 @@ data class RecipePart(
     val outward: Float? = null,
     @Doc("Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.")
     val outlines: Map<View, RecipeOutline> = emptyMap(),
-    @Doc("Hand-made sockets on this part, for parts to sit on.")
+    @Doc("The direction the part rests in, in place of its template's (move.rest): a generic root resting up is a standing body.")
+    val rest: RecipeRest? = null,
+    @Doc("A generic part's section, views and sampling (generic.*).")
+    val generic: RecipeGeneric? = null,
+    @Doc("Hand-made sockets on this part, for parts to sit on (socket.<n>.*).")
     val sockets: List<RecipeSocket> = emptyList(),
-    @Doc("Template parameters and other part parameters by name, as toes, merge, claw, generic.rings or joint.<n>.u.")
+    @Doc("Hand-made joints on this part, each a bone poses name joint.<n> (joint.<n>.*).")
+    val joints: List<RecipeJoint> = emptyList(),
+    @Doc("Hand-made landmarks on this part (landmark.<n>.*).")
+    val landmarks: List<RecipeLandmark> = emptyList(),
+    @Doc("The template's own joints moved along the part, by name, to a u (move.joint.<name>).")
+    val jointsAt: Map<String, Float> = emptyMap(),
+    @Doc("Sockets this part offers moved, by name, to [u, v] for both sides (move.socket.<name>.u and .v).")
+    val socketsAt: Map<String, List<Float>> = emptyMap(),
+    @Doc("Whether the join where this part sits on its parent is inked as a line round it (join.ink); inked when left out.")
+    val inkJoin: Boolean? = null,
+    @Doc("Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name.")
     val params: Map<String, Float> = emptyMap(),
     @Doc("The palette slot the whole part is coloured.")
     val color: String? = null,
@@ -83,4 +97,12 @@ data class RecipeSocket(
     val mirrored: Boolean = false,
     @Doc("How deep a part sits in here, as a multiple of that part's own sink: 0 seats it on the surface; once when left out.")
     val sink: Float? = null,
+    @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` at one v, named socket.<n>.0, socket.<n>.1 and on.")
+    val count: Int? = null,
+    @Doc("A row's last socket's u.")
+    val to: Float? = null,
+    @Doc("The size a part placed on a row's first socket starts at.")
+    val size: Float? = null,
+    @Doc("The size a part placed on a row's last socket starts at, as a share of the first's.")
+    val falloff: Float? = null,
 )

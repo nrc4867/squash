@@ -11,9 +11,9 @@
   "views": { "side": "height", "top": "width" },
   "section": "circle",
   "params": {
-    "size":  { "default": 1.0,   "min": 0.2,  "max": 3.0 },
-    "girth": { "default": 0.22,  "min": 0.08, "max": 0.5 },
-    "curve": { "default": -0.08, "min": -0.3, "max": 0.0 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,   "min": 0.2,  "max": 3.0 },
+    "girth": { "doc": "Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.22,  "min": 0.08, "max": 0.5 },
+    "curve": { "doc": "How far the claw hooks toward its underside at its middle, a fraction of its length; more negative hooks more.", "default": -0.08, "min": -0.3, "max": 0.0 }
   },
   "blocks": [
     { "kind": "tube", "u": [0.0, 1.0], "radius": "$girth", "taper": 0.1 },

@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.lint.SocketFit
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.Hinge
+import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.MeshInvariants
@@ -125,8 +126,11 @@ class ShippedTemplatesTest {
     private fun buildsAsTheVersionBefore(template: PartTemplate): Boolean {
         val before = shipped.parts.singleOrNull { it.id == template.id && it.version == template.version - 1 } ?: return false
         val unfitted = template.blocks.map { if (it is Field) it.copy(fit = false) else it }
-        return unfitted == before.blocks && template.params == before.params
+        return unfitted == before.blocks && template.params.withoutDocs() == before.params.withoutDocs()
     }
+
+    /** Parameters as they build, their one-line meanings, which build nothing, left out. */
+    private fun Map<String, ParamSpec>.withoutDocs() = mapValues { it.value.copy(doc = null) }
 
     private fun assertBuildHolds(template: PartTemplate, params: Map<String, Float>) {
         val patches = PartBuilder.build(template, params)

@@ -14,6 +14,12 @@ A new character is an original model: draw its outlines and proportions yourself
 1. **List the reference's features in plain words**, one line each, and put the list in the recipe as `"x-features"` (keys starting `x-` are notes the build reads past). Cover at least: overall proportions (head to body, leg length, how tall against how long), the silhouette of each part (snout long and pointed or short and round, ear shape, tail shape), the nose point, every colour region on the face and body (a two-tone face, a muzzle patch, a chest blaze, a dark tail tip, socks), the eyes (shape, size, where they sit), mouth and marks, digits (toes, claws), and clothes.
 2. Read `docs/work/example-limits.md` for what the engine cannot do yet.
 3. Pick the plan: `canine-quadruped`, `biped`, `bird`, `fish` for a templated character, `blank` for a template-free one.
+4. Look up what you will use in the reference, `docs/reference/` (generated from the code, so it is current):
+   - `templates.md`: each template's rest, the length its outlines run to, which way Side's and Top's y face, what each view sets, its sockets (and which way each faces), joints with hinge, limits and which way positive degrees move them, paintable areas, patches, and every parameter with range, default and meaning.
+   - `plans.md`: each plan's root, sockets, slots and palette.
+   - `frames.md`: body space; which way u, v and each view's y run for a part resting forward, back, up, down or out; which way `degrees`, `lean`, `turn` and `twist` move a bone.
+   - `part-parameters.md`: every dotted part parameter and the recipe field that writes it.
+   - `face-and-clothes.md`: mouth group roles and controls; how garment fit, covers, redraws and swaps combine.
 
 When the recipe is done, **go down the feature list and point at the recipe entry that makes each one**. A feature with no entry is not done.
 
@@ -51,6 +57,25 @@ Options, as `key=value` after the recipe:
 | `reference=<png> eye=x,y,z target=x,y,z fov=30` | also render through that camera at the image's size and compare (below) |
 
 `tools/recipe.sh export <character.json> [out=<recipe.json>]` writes any character file as a recipe: start from an example this way. It prints `not carried:` for anything a recipe cannot hold.
+
+Paths may hold spaces. A recipe error exits 2 with the recipe's own message and nothing from Gradle after it.
+
+### Probe: answer frame questions without rendering
+
+```
+tools/recipe.sh probe recipes/<name>.recipe.json part=head uv=head:0.6,0.2 point=0.9,0.5,-0.1 face=head:0.1,0.1
+```
+
+About 10 s, no renders. It builds the recipe and prints, at rest, in body space (x forward, y up, z to the character's right):
+
+| Question | Prints |
+| --- | --- |
+| `part=<id>[,<id>]`, or `part=all` (the default with no question) | origin and box; which way u runs and Side's +y faces; which way v 0, 0.25, 0.5, 0.75 face; for a head, the reach of its `face` places; each joint with hinge, limits and body point; each socket with u, v, body point and which way it faces |
+| `uv=<part>:<u>,<v>[,<patch>]` | the body point there |
+| `point=<x>,<y>,<z>` | the part, patch, u and v nearest that body point |
+| `face=<head>:<x>,<y>` | the u and v at that place on the head's face |
+
+Use it before placing a socket, region, mark or eye by u and v, before posing a bone, and to find where a feature sits on another part. A question that cannot be answered prints why, the rest are still answered, and the run exits 2.
 
 Change one thing a run. Body first, rendered bare from three sides; fix proportions; then the face close-up; then hands and feet; then one garment at a time.
 
@@ -97,17 +122,17 @@ The schema is `schema/recipe.schema.json`; put `"$schema": "../schema/recipe.sch
 
 - One entry a part, **after the part it sits on**: `on` names it, `socket` the socket there. A recipe error lists the sockets a part offers.
 - A mirrored pair is one entry with `pair` (`{}` names the sides `<id>-l`, `<id>-r`); it is described as its left side and the right mirrors it. A pair on a pair (paws on legs) names the parent pair's id in `on`, and each side sits on its own side. Anywhere else (poses, covers, expressions) a side is named by its own id, and the pair's id means its left side.
-- `template` and optionally `version` (newest when left out). Templates are `templates/*.part.json`: their `params` are the parameter names, their sockets and joints are listed there. **Gap**: there is no generated catalog yet; reading the template JSON is allowed and is not a code read.
+- `template` and optionally `version` (newest when left out). `docs/reference/templates.md` lists every template with its sockets, joints, areas and parameters.
 - `role` is the template's, or guessed from where the part sits, when left out. Give it for a generic part (`tube`, `blob`) to be sure.
 - Shape: `outlines` by view, `size`, `lean`, `outward` (A-pose arms take 45), `params` by name, `blend` for how far the join with the parent reaches.
-- Hand-made sockets: `sockets: [{"n": 2, "u": 0.83, "v": 0.75, "mirrored": true, "sink": 0}]`, named `socket.<n>`. On an upright part v 0 faces forward, 0.5 back, 0.75 the character's left; on a part resting out v 0 is up, 0.25 back, 0.75 front. `sink` 0 seats a child on the surface; once by default (it sinks by the child's depth); a shoulder wants it shallow (0.25).
-- Hand-made joints on generic parts are parameters: `joint.<n>.u`, `.hinge`, `.low`, `.high` (degrees). `generic.rings` up to 96 and `generic.segments` up to 32 make a generic part fine; `move.rest` turns a generic root to rest up (2). **Gap**: these names come from the woman's recipe, not a reference.
+- Hand-made sockets: `sockets: [{"n": 2, "u": 0.83, "v": 0.75, "mirrored": true, "sink": 0}]`, named `socket.<n>`; `count`, `to`, `size` and `falloff` make a row (`socket.<n>.0` and on), as spines down a back. Which way v faces depends on how the part rests (`frames.md`: on a part resting forward v 0.25 is the character's left, on one resting up v 0.75 is), or ask the probe. `sink` 0 seats a child on the surface; once by default (it sinks by the child's depth); a shoulder wants it shallow (0.25).
+- Hand-made joints: `joints: [{"n": 1, "u": 0.5, "hinge": "x", "low": -145, "high": 0}]`, posed as `joint.<n>`. Also `rest` (`forward`, `back`, `up`, `down`, `out`) in place of the template's, `generic: {"section", "views", "rings", "segments"}` for a `tube`, `blob` or `sheet` (rings up to 96 and segments up to 32 make it fine), `landmarks`, `jointsAt` and `socketsAt` to move a template's joints and sockets, and `inkJoin: false` for an unlined join. `part-parameters.md` lists the dotted parameter each writes and the few left for `params`.
 
 ### Outlines
 
 - `through`: a few `[x, y]` places a smooth curve passes through; `corners` lists the indices that are sharp (an ear tip, a tail tuft); `closed: true` for a part drawn all round (a torso, a head). Few points: 6 to 14 for a torso or head, 3 to 9 for a limb, ear or tail. `bezier` gives the cubic points themselves (3n + 1) where you need exact handles.
-- x runs along the part's axis from its socket end; the drawn length is the part's length (`size` scales it). y is across: Side sets height, Top sets width, Front (where the template's views say `section`) sets the cross-section for the whole part, drawn in -1 to 1.
-- Side's y points up for a part resting forward or back, forward for a part resting up or down. A loop need not be symmetric: front and back are set apart, so a belly, a seat or a bust is drawn in Side.
+- x runs along the part's axis from its socket end, in body units, not 0 to 1: draw it out to the template's "outline x runs 0 to" length in `templates.md` (an ear 0.3, a leg 0.5) for the template's own length; the drawn length is the part's length (`size` scales it). y is across: Side sets height, Top sets width, Front (where the template's views say `section`) sets the cross-section for the whole part, drawn in -1 to 1.
+- Side's y points up for a part resting forward or back, forward for a part resting up or down; `frames.md` and each template's entry say it for every rest. A loop need not be symmetric: front and back are set apart, so a belly, a seat or a bust is drawn in Side.
 - Draw a toe or finger run as wide as the palm or foot: digits space themselves by the drawn width. End a templated part's outline at the template's length with a flat end (`foot-2` ends at 0.42).
 - `paw` 6, `hand` 6, `foot` 5 and `foot-bird` 4 fit their whole solid to drawn Side and Top outlines; undrawn, their parameters alone shape them. Leave them undrawn unless the parameters cannot get the shape.
 
@@ -120,8 +145,9 @@ The schema is `schema/recipe.schema.json`; put `"$schema": "../schema/recipe.sch
 
 ### Face
 
+- A `face` place must lie on the head as seen from ahead: `tools/recipe.sh probe <recipe> part=<head>` prints the reach of its x and y, which narrows toward the chin and the crown, so keep a mask's corners inside it.
 - Eyes are painted: `eyes: [{"id", "on": "<head>", "face": [x, y]}` or `"u"`, `"v"`, with `look` (opening `width`, `height`, `lowerLid`, `frontNarrowing`, `tilt`, `openingTilt`; `irisSize`, `irisRatio`, `irisForward`, `irisUp`; `pupilSize`, `slit`; `highlightSize`; `lid`, `lashes`, `brow`, `browRaise`, `browTilt`; and the slots `white`, `iris`, `pupil`, `highlight`, `ink`) and optionally a `front` look for front views. Mirrored across the head unless `mirrored: false`.
-- A mouth is a mark group on the head with five roles in draw order (`inner`, `tongue`, `teeth`, `lipLine`, `corners`), each naming marks on the head and optionally a `fill` slot and `ink: false`; the fennec's recipe has one.
+- A mouth is a mark group on the head with five roles in draw order (`inner`, `tongue`, `teeth`, `lipLine`, `corners`), each naming marks on the head and optionally a `fill` slot and `ink: false`; `face-and-clothes.md` says what each holds and what `controls` do, and the fennec's recipe has one.
 - `head-round` version 2 stands upright, its axis from chin to crown; put the neck's end socket at `sink: 0` and draw the head from the neck's top. Side is the profile, forward up in the drawing: up the front from the chin over the lips, nose and brow to the crown, down the back and forward under the jaw. **The nose point is the profile's most forward place**; a bump shorter than about 0.3 of the head's height (nose, lips, chin) stands out as a ridge, a longer one (a muzzle) swells the whole front. Top is the face's width up from the chin; Front the section seen from above.
 - Lips, blush and shadow are regions; ink strands on hair are marks. A head's hand-made sockets read v 0 at the face, 0.5 at the back, 0.75 at the left.
 - `expressions`: `{"id", "name", "joints": [{"part": "ear-l", "joint": "base", "degrees": 32}]}`.
@@ -129,20 +155,21 @@ The schema is `schema/recipe.schema.json`; put `"$schema": "../schema/recipe.sch
 ### Poses
 
 - A biped is built in A-pose: arms 45 degrees out (`outward`: 45), legs straight down. `displayPose` brings the arms down: a `lean` on the arm's root bone (`base` on a tube, `shoulder` on the `arm` template), leaving the arm 15 to 28 degrees out from the hips, a free twist at the elbow for the palms, the fingers a little curled (`fingers:<i>.<k>` negative, the thumb `fingers:4.<k>` positive).
-- A bone is `{"part", "joint", "degrees", "turn", "lean", "twist", "stretch", "mode": "free"|"limited"|"locked"}`. On a tube's `base`, positive degrees swing a limb back, `lean` out to the side (past limits with `mode: free`). Bend an elbow by `degrees` and aim it with `lean`; put a palm's roll as `twist` on the elbow, never on the hand's root. `turn` on an upright torso's `base` turns the whole body; on a spine joint the chest against the hips.
+- A bone is `{"part", "joint", "degrees", "turn", "lean", "twist", "stretch", "mode": "free"|"limited"|"locked"}`. `frames.md` gives which way each angle moves a bone for every rest and hinge: on a part resting down, hinge x, positive degrees swing it back and `lean` out to its side (past limits with `mode: free`). Bend an elbow by `degrees` and aim it with `lean`; put a palm's roll as `twist` on the elbow, never on the hand's root. `turn` on an upright torso's `base` turns the whole body; on a spine joint the chest against the hips.
 - `poses` are named poses the run renders; they are not saved in the character.
 
 ### Clothes
 
 - `wardrobe.slots` (`{"id": "top", "name": "Top"}`), `garments`, `outfits` (`{"id", "name", "picks": {"<slot>": "<garment>"}}`), `shown`.
 - A garment: `slot`, `layer` (under a waistband 1, a waistband 2, over both 3), `color`, `fit` (how far it stands off, about 0.015), `covers` (`{"part", "from", "to", "fromV", "toV", "outlines"}`; `to` past 1 runs on past the part's end, `from` below 0 before its start; a v span under 1 leaves an opening), `changes` by part, `looseEnds`.
+- How `partFits`, `fit` and a cover's `ease` combine, and what a redraw replaces, is in `face-and-clothes.md`.
 - Changes: `{"type": "through", "cuff": false}` for an armhole or neckline, `{"type": "through"}` for a cuff, `{"type": "hide"}`, `{"type": "redraw", "shape": {...}}` (outlines, params, colour or regions laid over the part: fewer toes, a dark lip), `{"type": "swap", "template": "blob", "shape": {...}}` (a closed shoe).
 - A skirt is a cover over the torso with `from` below -0.1, drawn in Side and Top along the torso's own x, negative below it; the legs hang inside it. Do not redraw the torso into a bell.
 - Rigid things a garment carries (shades, heels, buttons, a buckle) are parts with `"garment": "<id>"`, on a hand-made socket of the body part they sit on (`sink: 0` to seat them on the surface). Two garments' parts never reuse a socket number on one part.
 
 ## Tooling gaps: keep a log
 
-Every time you still have to read code, or guess and render to find out, add a line to `docs/work/recipe-gaps.md` under a heading for the character: the file or the trial, the fact you needed, and what tool or reference would have told you. Reading `templates/*.json`, `schema/*.json`, `docs/hld/` and other recipes is not a gap. Report the log's new lines when you finish.
+Every time you still have to read code, or guess and render to find out, add a line to `docs/work/recipe-gaps.md` under a heading for the character: the file or the trial, the fact you needed, and what tool or reference would have told you. Reading `docs/reference/`, `templates/*.json`, `schema/*.json`, `docs/hld/` and other recipes is not a gap; a fact the reference should hold and does not is. Report the log's new lines when you finish.
 
 ## Examples and goldens
 

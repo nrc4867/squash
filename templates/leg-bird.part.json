@@ -11,9 +11,9 @@
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",
   "params": {
-    "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "thickness": { "default": 0.08, "min": 0.04, "max": 0.3 },
-    "stance":    { "default": 0.1, "min": 0.0, "max": 0.3 }
+    "size":      { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "thickness": { "doc": "Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.08, "min": 0.04, "max": 0.3 },
+    "stance":    { "doc": "How far the undrawn leg bends toward its underside at the joint, a fraction of its length.", "default": 0.1, "min": 0.0, "max": 0.3 }
   },
   "blocks": [
     { "kind": "tube",   "u": [0.0, 1.0], "radius": "$thickness" },

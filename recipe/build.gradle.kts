@@ -10,6 +10,7 @@ kotlin {
 dependencies {
     api(project(":character"))
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.test {

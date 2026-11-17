@@ -26,51 +26,61 @@
   "section": "egg",
   "params": {
     "size": {
+      "doc": "Scales the part: its drawn length and width together.",
       "default": 1.0,
       "min": 0.4,
       "max": 2.5
     },
     "palmLength": {
+      "doc": "Palm's half length, a fraction of the hand's length.",
       "default": 0.2273,
       "min": 0.1,
       "max": 0.4
     },
     "palmWidth": {
+      "doc": "Palm's half width across the knuckles.",
       "default": 0.1864,
       "min": 0.08,
       "max": 0.35
     },
     "palmThickness": {
+      "doc": "Palm's half thickness, back to front.",
       "default": 0.0705,
       "min": 0.03,
       "max": 0.2
     },
     "wrist": {
+      "doc": "Wrist's radius where the arm meets the hand.",
       "default": 0.1091,
       "min": 0.04,
       "max": 0.25
     },
     "fingerLength": {
+      "doc": "Multiplies every finger's length.",
       "default": 1.0,
       "min": 0.5,
       "max": 1.6
     },
     "fingerThickness": {
+      "doc": "Multiplies every finger's thickness.",
       "default": 1.0,
       "min": 0.5,
       "max": 1.8
     },
     "cup": {
+      "doc": "How far the palm's edges curl toward the palm side into a cup; negative arches it back.",
       "default": 0.02,
       "min": -0.05,
       "max": 0.15
     },
     "web": {
+      "doc": "Radius of the smooth join between the fingers and the palm.",
       "default": 0.025,
       "min": 0.0,
       "max": 0.12
     },
     "knuckles": {
+      "doc": "Knuckle ball at each finger's root, a share of the finger's radius; 0 for none.",
       "default": 0.85,
       "min": 0.0,
       "max": 1.5

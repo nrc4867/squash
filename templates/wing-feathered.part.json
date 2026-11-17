@@ -11,8 +11,8 @@
   "views": { "top": "height", "side": "width", "front": "section" },
   "section": "lens",
   "params": {
-    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "chord": { "default": 0.22, "min": 0.1, "max": 0.8 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "chord": { "doc": "Wing's half chord (front to back) with nothing drawn, a fraction of its length.", "default": 0.22, "min": 0.1, "max": 0.8 }
   },
   "surface": "separate",
   "blocks": [

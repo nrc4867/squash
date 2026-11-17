@@ -1,8 +1,5 @@
 package dev.chieppa.squash.recipe.export
 
-import dev.chieppa.squash.character.build.HandSockets
-import dev.chieppa.squash.character.build.PlacementParams
-import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.Mark
@@ -18,12 +15,8 @@ import dev.chieppa.squash.recipe.model.RecipeMark
 import dev.chieppa.squash.recipe.model.RecipeOutline
 import dev.chieppa.squash.recipe.model.RecipeRegion
 import dev.chieppa.squash.recipe.model.RecipeShape
-import dev.chieppa.squash.recipe.model.RecipeSocket
 import dev.chieppa.squash.recipe.pen.PenCurves
 import dev.chieppa.squash.recipe.pen.PenPoint
-
-/** The keys a single hand-made socket's parameters use, which a recipe socket stands for. */
-private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink")
 
 /** [curve] as the few places it passes through when a smooth outline through them makes it exactly, else as its own Bézier points. */
 internal fun outline(curve: OutlineCurve): RecipeOutline = throughForm(curve) ?: RecipeOutline(bezier = curve.points.map { listOf(it.x, it.y) })
@@ -41,30 +34,6 @@ private fun throughForm(curve: OutlineCurve): RecipeOutline? {
 }
 
 internal fun outlines(curves: Map<View, OutlineCurve>): Map<View, RecipeOutline> = curves.mapValues { (_, c) -> outline(c) }
-
-/** A part's parameters split into the recipe's size, lean and outward, its hand-made sockets, and the rest by name. */
-internal class SplitParams(params: Map<String, Float>) {
-    val size: Float? = params[SIZE_PARAM]
-    val lean: Float? = params[PlacementParams.LEAN]
-    val outward: Float? = params[PlacementParams.OUTWARD]
-    val sockets: List<RecipeSocket>
-    val rest: Map<String, Float>
-
-    init {
-        val single = HandSockets.ids(params).filter { id ->
-            val keys = params.keys.filter { it.startsWith(HandSockets.name(id) + ".") }.map { it.removePrefix(HandSockets.name(id) + ".") }
-            keys.all { it in SOCKET_FIELDS } && "u" in keys && "v" in keys
-        }
-        sockets = single.map { id ->
-            RecipeSocket(
-                id, params.getValue(HandSockets.u(id)), params.getValue(HandSockets.v(id)), params[HandSockets.outward(id)] ?: 0f,
-                (params[HandSockets.pair(id)] ?: 0f) != 0f, params[HandSockets.sink(id)],
-            )
-        }
-        val lifted = single.flatMap { id -> SOCKET_FIELDS.map { "${HandSockets.name(id)}.$it" } }.toSet() + setOf(SIZE_PARAM, PlacementParams.LEAN, PlacementParams.OUTWARD)
-        rest = params.filterKeys { it !in lifted }
-    }
-}
 
 /** [anchors] in the shortest recipe form: u, v on [part]'s one patch when they all lie there, else the anchors themselves. */
 private fun uvForm(part: PartId, anchors: List<Anchor>): Pair<String, List<List<Float>>>? {
@@ -105,18 +74,12 @@ internal fun surfaceLeftOut(part: PartId, surface: SurfaceWork, notCarried: Muta
 
 /** [data], laid over [part] by a garment, as a recipe shape. */
 internal fun shape(part: PartId, data: PartData, notCarried: MutableList<String>, where: String): RecipeShape {
-    val split = SplitParams(data.params)
+    val split = SplitParams(data.params, anatomy = false)
     val surface = data.surface
     if (surface.marks.isNotEmpty() || surface.groups.isNotEmpty() || surface.lineWeights.isNotEmpty() || surface.fur != null) notCarried += "$where: marks, groups, fur or line weights on a garment's change"
     surfaceLeftOut(part, surface, notCarried)
     return RecipeShape(
-        split.size, split.lean, split.outward, outlines(data.outlines), split.rest + split.sockets.flatMap { socketParams(it) },
+        split.size, split.lean, split.outward, outlines(data.outlines), split.others,
         surface.baseSlot?.value, surface.areaFills.mapValues { it.value.value }, surface.regions.map { region(part, it) },
     )
 }
-
-/** A socket's parameters by name, for a shape that holds parameters alone. */
-private fun socketParams(socket: RecipeSocket): List<Pair<String, Float>> = listOfNotNull(
-    HandSockets.u(socket.n) to socket.u, HandSockets.v(socket.n) to socket.v, HandSockets.outward(socket.n) to socket.outward,
-    if (socket.mirrored) HandSockets.pair(socket.n) to 1f else null, socket.sink?.let { HandSockets.sink(socket.n) to it },
-)

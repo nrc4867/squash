@@ -11,9 +11,9 @@
   "views": { "side": "height", "top": "width", "front": "cap" },
   "section": "circle",
   "params": {
-    "size":      { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "thickness": { "default": 0.045, "min": 0.02, "max": 0.2 },
-    "sag":       { "default": 0.22, "min": 0.0, "max": 0.6 }
+    "size":      { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "thickness": { "doc": "Arm bone's radius at the wing's root, a fraction of the length.", "default": 0.045, "min": 0.02, "max": 0.2 },
+    "sag":       { "doc": "How far the membrane's free edge dips between fingers, a share of its reach.", "default": 0.22, "min": 0.0, "max": 0.6 }
   },
   "surface": "separate",
   "blocks": [

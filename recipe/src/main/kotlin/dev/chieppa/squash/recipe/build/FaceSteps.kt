@@ -16,7 +16,7 @@ import dev.chieppa.squash.document.SlotName
 internal fun BuildContext.faceAnchor(path: String, part: PartId, place: Pair<Float, Float>): Anchor {
     val map = faceMaps.getOrPut(part) { FaceMap.of(part, templateOf(part), document.character.resolvedShape(checkNotNull(document.character.part(part)))) }
         ?: fail(path, "${part.value} has no face to place on: its template builds no body patch")
-    return map.at(place.first, place.second) ?: fail(path, "(${place.first}, ${place.second}) lies off ${part.value}'s face as drawn")
+    return map.at(place.first, place.second) ?: fail(path, "(${place.first}, ${place.second}) lies off ${part.value}'s face as drawn; tools/recipe.sh probe <recipe> part=${part.value} prints its face's reach")
 }
 
 /** The painted eyes, each on its head. */

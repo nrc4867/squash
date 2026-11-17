@@ -1,6 +1,5 @@
 package dev.chieppa.squash.recipe.build
 
-import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.catalog.guessRole
 import dev.chieppa.squash.character.model.PartTemplate
@@ -69,8 +68,8 @@ internal fun BuildContext.offeredSockets(part: PartId): List<String> {
 
 /** Sends [part]'s hand-made sockets, parameters and outlines to its left side, which a pair shares. */
 private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate, part: RecipePart) {
-    part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", HandSockets.add(id, s.n, s.u, s.v, s.outward, s.mirrored, s.sink)) }
-    val params = shapeParams(part.size, part.lean, part.outward, part.params)
+    part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s)) }
+    val params = shapeParams(part.size, part.lean, part.outward, anatomyParams(path, part) + part.params)
     checkParams(path, template, params)
     if (params.isNotEmpty()) send("$path.params", SetParameters(id, params))
     if (part.outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, curves(path, part.outlines)))

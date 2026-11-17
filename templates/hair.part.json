@@ -11,8 +11,8 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "circle",
   "params": {
-    "size":  { "default": 1.0,  "min": 0.2, "max": 2.5 },
-    "girth": { "default": 0.12, "min": 0.02, "max": 0.6 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.2, "max": 2.5 },
+    "girth": { "doc": "Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.12, "min": 0.02, "max": 0.6 }
   },
   "generic": { "rings": { "min": 16, "max": 96 }, "segments": { "min": 6, "max": 32 } },
   "surface": "separate",

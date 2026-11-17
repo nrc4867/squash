@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # Builds a character recipe and judges it, headless, under the machine-wide build lock:
 #   tools/recipe.sh <recipe.json> [key=value ...]   the character file, renders, measurements, and with reference= a compare
+#   tools/recipe.sh probe <recipe.json> [question ...]   frame facts at rest, in body space (x forward, y up, z right), no renders:
+#     part=<id>[,<id>] or part=all (the default)   extent, axis and v directions, joints and sockets with body points
+#     uv=<part>:<u>,<v>[,<patch>]   the body point there        point=<x>,<y>,<z>   the part, u and v nearest that point
+#     face=<head>:<x>,<y>   the u and v at that place on the head's face (x to its left, y up)
 #   tools/recipe.sh export <character.json> [out=<recipe.json>]   a character file written as a recipe
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false, close=face,hand,foot
 # (also hands, feet, joins), outfits=<id,...|all>, poses=<name,...|all>, set=part:name:value,...,
 # reference=<png> eye=x,y,z target=x,y,z fov=<degrees> [ground=#rrggbb] [scale=<body units a metre>].
-# Paths may be relative to where it is run from. Prints every file it writes.
+# Paths may be relative to where it is run from and may hold spaces. Prints every file it writes. Exits 2 on a recipe error.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 here="$(pwd)"
@@ -20,22 +24,37 @@ absolute() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -m "$(realpath -m "$path")"; else realpath -m "$path"; fi
 }
 
+# A value with its percent signs and spaces encoded, so it survives the space-separated Gradle property.
+encoded() {
+  local value="${1//%/%25}"
+  printf '%s' "${value// /%20}"
+}
+
 if [ $# -eq 0 ]; then
-  sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
 fi
-if [ "$1" = "export" ]; then
-  args="export=$(absolute "$2")"
-  shift 2
-else
-  args="recipe=$(absolute "$1")"
-  shift
-fi
+case "$1" in
+  export|probe)
+    [ $# -ge 2 ] || { echo "tools/recipe.sh $1 needs a file" >&2; exit 2; }
+    args="$1=$(encoded "$(absolute "$2")")"
+    shift 2
+    ;;
+  *)
+    args="recipe=$(encoded "$(absolute "$1")")"
+    shift
+    ;;
+esac
 for option in "$@"; do
   case "$option" in
-    out=*|reference=*) args="$args ${option%%=*}=$(absolute "${option#*=}")" ;;
-    *) args="$args $option" ;;
+    out=*|reference=*) args="$args ${option%%=*}=$(encoded "$(absolute "${option#*=}")")" ;;
+    *) args="$args $(encoded "$option")" ;;
   esac
 done
+status="$(mktemp)"
+trap 'rm -f "$status"' EXIT
+args="$args status=$(encoded "$(absolute "$status")")"
 cd "$root"
-exec bash tools/gradle-locked.sh --max-workers=2 --priority=low -q --console=plain :app:recipe "-Precipe=$args"
+bash tools/gradle-locked.sh --max-workers=2 --priority=low -q --console=plain :app:recipe "-Precipe=$args"
+code="$(cat "$status" 2>/dev/null || true)"
+exit "${code:-1}"

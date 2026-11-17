@@ -26,13 +26,14 @@ Builds run at low priority on at most two workers (`gradle.properties`). Agents 
 ./gradlew :app:run                   # the app
 ./gradlew :app:run -Pdevtools=47811  # the app, with window screenshots at curl 127.0.0.1:47811/capture
 ./gradlew :app:createDistributable   # the packaged app, under app/build/compose/binaries/main/app/Squash
-./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/
+./gradlew generateSchemas            # JSON Schemas from the Kotlin model, into schema/, and the recipe reference, into docs/reference/
 ./gradlew :ui-design:generateIcons   # Squash icons from design/icons/*.svg
 ./gradlew :character:desktopTest -PupdateGoldens  # rewrite golden fixtures; a missing one fails without this
 ./gradlew :rig:desktopTest -PupdateGoldens        # rewrite the rig's golden fixtures
 ./gradlew :screens-core:test -PupdateGoldens  # rewrite examples/cat.json, examples/cat-dressed.json, examples/dragon.json, examples/fennec.json, examples/fennec-dressed.json, examples/fennec-winged.json, examples/koi.json, examples/lizard.json, examples/toucan.json, examples/woman.json, examples/woman-dressed.json, examples/woman-twin.json and examples/woman-twin-dressed.json, the example characters, from their commands
 ./gradlew :app:test --tests '*.smoke.LookProbe*' -Pslow -PlookProbe  # rewrite the images under docs/work/look-probe
 tools/recipe.sh recipes/fennec.recipe.json   # build a recipe headless: the character file, renders, measurements under build/recipes/<id> (needs a GPU)
+tools/recipe.sh probe recipes/fennec.recipe.json part=head uv=head:0.5,0.2 point=0.9,0.5,-0.1 face=head:0.1,0.1  # frame facts of a built recipe at rest, no renders
 tools/recipe.sh export examples/fennec.json out=<file>  # write a character file as a recipe
 ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"  # render examples to PNGs under app/build/look (needs a GPU)
 ./gradlew :app:measure -Pmeasure="example=woman-dressed"  # print an example's quality checks as numbers
@@ -63,13 +64,13 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Presentation | `field-gpu` | On `stretch-gpu`: `GpuFieldReads`, the one surface's field reads in a compute shader (see `docs/hld/architecture.md`, Field reads). Its GPU tests are slow |
 | Domain | `anim` | Later: clips and timing |
 | Domain | `rig` | The rig derived from the assembled character: bones from template joints in the socket tree, weights from part ownership with joint and seam bands and the `SeamPaint` seam, taken onto the surface's vertices by each part's share, linear blend skinning by a `Pose`, the session's rig and posed nodes |
-| Domain | `recipe` | Character recipes (`recipes/*.recipe.json`, schema `schema/recipe.schema.json`): the model and reader, the builder that sends a recipe's document commands with errors at the recipe's JSON path, and the export of a character as a recipe |
+| Domain | `recipe` | Character recipes (`recipes/*.recipe.json`, schema `schema/recipe.schema.json`): the model and reader, the builder that sends a recipe's document commands with errors at the recipe's JSON path, the export of a character as a recipe, and the probe that answers frame questions about a built one |
 | Domain | `character` | Part templates and body plans (the serializable model, loader, lint), the catalog over what is loaded (lookups, open sockets, new characters), slice building, the field and surface of the character, the slice row and surface work graph nodes, the open character session |
 | Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions, pose) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
 | Core | `geom` | Vectors, curves and their morphing and clipping, slices to solids, the joined field and its mesher, slices to meshes for separate parts, mesh invariants. No dependencies but the standard library |
 | Core | `annotations` | `@Range` and `@Doc` only. Depended on by `character`, `recipe` and `schema-gen`, nothing else |
-| Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors |
+| Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors, and the recipe reference under `docs/reference/` |
 
 Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it. Within Domain, `rig` and `recipe` sit above `character` and use it, and `anim` will sit above `rig`. The `screens-*` modules reach `ui-design`, `render`, `character` and Stretch through `screens-core` and never depend on each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent` that `app` supplies.
 
@@ -103,7 +104,7 @@ These are Stretch's conventions plus Squash's own. They apply from the first com
 
 **Comments describe the code as it stands.** Never the work that produced it: no reference to a request, a session, a change or an earlier behaviour. A comment is written only when the code cannot say it. Public APIs get a one-line KDoc where the name is not enough. The same rule holds for docs: state current behaviour only.
 
-**Docs.** High-level design in `docs/hld/`, one file per area, kept current, the only docs code may reference. Working notes, plans and handovers in `docs/work/`, deleted or folded into the HLD when the work merges. The readme holds a description with images of the app, a feature table, the local development guide and the license, nothing else: no links to Claude artifacts and no project state or progress. No Markdown scattered through source folders. No dates, session names or progress logs in docs.
+**Docs.** High-level design in `docs/hld/`, one file per area, kept current, the only docs code may reference. The recipe reference in `docs/reference/` is generated by `generateSchemas` and never edited by hand. Working notes, plans and handovers in `docs/work/`, deleted or folded into the HLD when the work merges. The readme holds a description with images of the app, a feature table, the local development guide and the license, nothing else: no links to Claude artifacts and no project state or progress. No Markdown scattered through source folders. No dates, session names or progress logs in docs.
 
 **Status protocol.** `docs/work/boards.md` holds the state of every board: planned, building, verifiable, verified. A session moves a board to building when it starts it and to verifiable when its verify steps pass, and writes those steps into the table. Only Nicholas sets verified. The same four states appear on the boards in the Squash flow of work artifact; a session that changes a state here changes the board's note there too, and changes nothing else in that artifact.
 

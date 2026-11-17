@@ -13,7 +13,10 @@ private val PASSED_ON = setOf("close", "outfits", "poses", "set", "reads", "scal
  * write ([out]), whether to stop after the character file ([buildOnly]) or skip [measure], and a [reference] image with its camera.
  */
 class RecipeArgs(args: Array<String>) {
-    private val values: Map<String, String> = args.flatMap { it.split(' ') }.filter { '=' in it }.associate { it.substringBefore('=') to it.substringAfter('=') }
+    /** Every `key=value` argument in order, a key given more than once kept each time; a value's spaces come percent-encoded. */
+    val entries: List<Pair<String, String>> = args.flatMap { it.split(' ') }.filter { '=' in it }.map { it.substringBefore('=') to decoded(it.substringAfter('=')) }
+
+    private val values: Map<String, String> = entries.toMap()
 
     val root = File(values["root"] ?: ".")
 
@@ -21,6 +24,12 @@ class RecipeArgs(args: Array<String>) {
 
     val recipe: File? = file("recipe")
     val export: File? = file("export")
+
+    /** A recipe to build and answer frame questions about, in place of rendering it. */
+    val probe: File? = file("probe")
+
+    /** Where the command writes its exit status, for the script that runs it through Gradle to exit with. */
+    val status: File? = file("status")
     val out: File? = file("out")
 
     /** With `render=false`, only the character file is written. */
@@ -45,3 +54,6 @@ class RecipeArgs(args: Array<String>) {
         return (defaults + passed).map { (k, v) -> "$k=$v" }.toTypedArray()
     }
 }
+
+/** [value] with `%20` and `%25`, which the recipe script writes for a space and a percent sign, read back. */
+private fun decoded(value: String): String = value.replace("%20", " ").replace("%25", "%")

@@ -11,8 +11,8 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "circle",
   "params": {
-    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "depth": { "default": 0.15, "min": 0.05, "max": 0.6 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "depth": { "doc": "Lower beak's radius at its root with nothing drawn, a fraction of its length.", "default": 0.15, "min": 0.05, "max": 0.6 }
   },
   "surface": "separate",
   "blocks": [

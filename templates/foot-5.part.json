@@ -26,11 +26,13 @@
   "section": "circle",
   "params": {
     "size": {
+      "doc": "Scales the part: its drawn length and width together.",
       "default": 1.0,
       "min": 0.4,
       "max": 2.5
     },
     "toes": {
+      "doc": "Toes built: 0 for a bare sole (a shoe), 5 for a foot with toes.",
       "default": 5,
       "values": [
         0,
@@ -38,45 +40,54 @@
       ]
     },
     "heel": {
+      "doc": "Heel ball's radius, a fraction of the foot's length.",
       "default": 0.1333,
       "min": 0.05,
       "max": 0.3
     },
     "ballWidth": {
+      "doc": "Half width across the ball of the foot, a fraction of the length.",
       "default": 0.1519,
       "min": 0.08,
       "max": 0.35
     },
     "ankle": {
+      "doc": "Ankle's radius where the leg meets the foot.",
       "default": 0.1111,
       "min": 0.05,
       "max": 0.3
     },
     "toeBox": {
+      "doc": "Builds a rounded toe box in place of toes, for a shoe; set toes 0 with it.",
       "default": false
     },
     "toeTip": {
+      "doc": "How far forward the toe box reaches, a fraction of the length.",
       "default": 0.663,
       "min": 0.5,
       "max": 1.0
     },
     "toeRound": {
+      "doc": "Radius of the toe box's front end.",
       "default": 0.0741,
       "min": 0.02,
       "max": 0.15
     },
     "pitch": {
+      "doc": "Degrees the forefoot turns up from the ball; negative points it down.",
       "default": 0,
       "min": -40,
       "max": 40,
       "unit": "deg"
     },
     "web": {
+      "doc": "Radius of the smooth join between the toes and the foot.",
       "default": 0.04,
       "min": 0.0,
       "max": 0.12
     },
     "merge": {
+      "doc": "How much neighbouring toes fuse: small stands them apart, 1 or more joins them to the tips.",
       "default": 0.35,
       "min": 0.0,
       "max": 2.0

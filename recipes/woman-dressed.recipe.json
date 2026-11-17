@@ -195,23 +195,13 @@
         {"n": 4, "u": 0.92, "v": 0.85, "mirrored": true, "sink": 0.0}, {"n": 5, "u": 0.52, "v": 0.0, "sink": 0.0},
         {"n": 6, "u": 0.288, "v": 0.0, "sink": 0.0}
       ],
-      "params": {
-        "move.rest": 2.0,
-        "generic.rings": 96.0,
-        "generic.segments": 32.0,
-        "joint.1.hinge": 0.0,
-        "joint.1.low": -25.0,
-        "joint.1.high": 25.0,
-        "joint.1.u": 0.32,
-        "joint.2.hinge": 0.0,
-        "joint.2.low": -25.0,
-        "joint.2.high": 25.0,
-        "joint.2.u": 0.55,
-        "joint.3.hinge": 0.0,
-        "joint.3.low": -25.0,
-        "joint.3.high": 25.0,
-        "joint.3.u": 0.8
-      },
+      "rest": "up",
+      "generic": {"rings": 96, "segments": 32},
+      "joints": [
+        {"n": 1, "u": 0.32, "low": -25, "high": 25},
+        {"n": 2, "u": 0.55, "low": -25, "high": 25},
+        {"n": 3, "u": 0.8, "low": -25, "high": 25}
+      ],
       "color": "skin"
     },
     {
@@ -234,7 +224,8 @@
         }
       },
       "sockets": [{"n": 1, "u": 1.0, "v": 0.0, "sink": 0.0}, {"n": 2, "u": 0.36, "v": 0.0, "sink": 0.0}],
-      "params": {"move.rest": 2.0, "join.ink": 0.0},
+      "rest": "up",
+      "inkJoin": false,
       "color": "skin"
     },
     {
@@ -263,21 +254,13 @@
         }
       },
       "sockets": [{"n": 1, "u": 1.0, "v": 0.5}],
-      "params": {
-        "move.rest": 3.0,
-        "generic.rings": 64.0,
-        "generic.segments": 24.0,
-        "joint.1.hinge": 0.0,
-        "joint.1.low": -170.0,
-        "joint.1.high": 60.0,
-        "joint.1.u": 0.06,
-        "joint.2.hinge": 0.0,
-        "joint.2.low": -145.0,
-        "joint.2.high": 0.0,
-        "joint.2.stretch": 1.0,
-        "joint.2.u": 0.5,
-        "join.ink": 0.0
-      },
+      "rest": "down",
+      "generic": {"rings": 64, "segments": 24},
+      "joints": [
+        {"n": 1, "u": 0.06, "low": -170, "high": 60},
+        {"n": 2, "u": 0.5, "low": -145, "high": 0, "stretch": true}
+      ],
+      "inkJoin": false,
       "color": "skin"
     },
     {
@@ -306,17 +289,12 @@
         }
       },
       "sockets": [{"n": 1, "u": 1.0, "v": 0.5}],
-      "params": {
-        "move.rest": 3.0,
-        "generic.rings": 64.0,
-        "generic.segments": 24.0,
-        "joint.1.hinge": 0.0,
-        "joint.1.low": 0.0,
-        "joint.1.high": 140.0,
-        "joint.1.stretch": 1.0,
-        "joint.1.u": 0.52,
-        "join.ink": 0.0
-      },
+      "rest": "down",
+      "generic": {"rings": 64, "segments": 24},
+      "joints": [
+        {"n": 1, "u": 0.52, "low": 0, "high": 140, "stretch": true}
+      ],
+      "inkJoin": false,
       "color": "skin"
     },
     {
@@ -329,7 +307,8 @@
       "role": "hand",
       "size": 1.05,
       "outward": 45.0,
-      "params": {"palmWidth": 0.21, "fingerThickness": 1.0, "fingerLength": 1.1, "join.ink": 0.0},
+      "inkJoin": false,
+      "params": {"palmWidth": 0.21, "fingerThickness": 1.0, "fingerLength": 1.1},
       "color": "skin"
     },
     {
@@ -342,7 +321,7 @@
       "role": "foot",
       "size": 1.18,
       "sockets": [{"n": 1, "u": 0.07, "v": 0.5, "sink": 0.0}, {"n": 2, "u": 0.21, "v": 0.5, "sink": 0.0}],
-      "params": {"join.ink": 0.0},
+      "inkJoin": false,
       "color": "skin"
     },
     {
@@ -390,7 +369,7 @@
         {"n": 5, "u": 0.79, "v": 0.67, "mirrored": true, "sink": 0.3},
         {"n": 6, "u": 0.5701975, "v": 0.0, "mirrored": true, "sink": 0.0}
       ],
-      "params": {"join.ink": 0.0},
+      "inkJoin": false,
       "color": "skin",
       "regions": [
         {
@@ -493,7 +472,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 64.0, "generic.segments": 32.0},
+      "generic": {"rings": 64, "segments": 32},
       "color": "hair",
       "marks": [
         {
@@ -557,7 +536,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 64.0, "generic.segments": 32.0},
+      "generic": {"rings": 64, "segments": 32},
       "color": "hair",
       "marks": [
         {
@@ -606,7 +585,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 64.0, "generic.segments": 32.0},
+      "generic": {"rings": 64, "segments": 32},
       "color": "hair",
       "marks": [
         {
@@ -655,7 +634,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 64.0, "generic.segments": 32.0},
+      "generic": {"rings": 64, "segments": 32},
       "color": "hair",
       "marks": [
         {
@@ -703,7 +682,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 64.0, "generic.segments": 32.0},
+      "generic": {"rings": 64, "segments": 32},
       "color": "hair"
     },
     {
@@ -735,7 +714,7 @@
           "closed": true
         }
       },
-      "params": {"generic.rings": 32.0, "generic.segments": 16.0},
+      "generic": {"rings": 32, "segments": 16},
       "color": "sandal"
     },
     {
@@ -762,7 +741,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 3.0, "generic.rings": 16.0, "generic.segments": 10.0},
+      "rest": "down",
+      "generic": {"rings": 16, "segments": 10},
       "color": "patent"
     },
     {
@@ -792,7 +772,8 @@
         }
       },
       "sockets": [{"n": 1, "u": 0.94, "v": 0.08, "sink": 0.0}],
-      "params": {"move.rest": 4.0, "generic.rings": 48.0, "generic.segments": 16.0},
+      "rest": "out",
+      "generic": {"rings": 48, "segments": 16},
       "color": "frame",
       "regions": [
         {
@@ -831,7 +812,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 1.0, "generic.rings": 16.0, "generic.segments": 8.0},
+      "rest": "back",
+      "generic": {"rings": 16, "segments": 8},
       "color": "frame"
     },
     {
@@ -861,7 +843,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 3.0, "generic.rings": 32.0, "generic.segments": 12.0},
+      "rest": "down",
+      "generic": {"rings": 32, "segments": 12},
       "color": "lapel"
     },
     {
@@ -883,7 +866,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 0.0, "generic.rings": 12.0, "generic.segments": 12.0},
+      "rest": "forward",
+      "generic": {"rings": 12, "segments": 12},
       "color": "button"
     },
     {
@@ -907,7 +891,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 0.0, "generic.rings": 16.0, "generic.segments": 16.0},
+      "rest": "forward",
+      "generic": {"rings": 16, "segments": 16},
       "color": "steel"
     },
     {
@@ -929,7 +914,8 @@
           "closed": true
         }
       },
-      "params": {"move.rest": 0.0, "generic.rings": 16.0, "generic.segments": 16.0},
+      "rest": "forward",
+      "generic": {"rings": 16, "segments": 16},
       "color": "steel"
     }
   ],

@@ -11,8 +11,8 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "egg",
   "params": {
-    "size":  { "default": 1.0,  "min": 0.4, "max": 2.5 },
-    "girth": { "default": 0.3,  "min": 0.1, "max": 0.7 }
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "girth": { "doc": "Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.3,  "min": 0.1, "max": 0.7 }
   },
   "grain": { "toward": "start" },
   "blocks": [

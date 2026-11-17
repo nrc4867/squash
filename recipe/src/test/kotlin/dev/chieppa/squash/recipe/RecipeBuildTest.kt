@@ -45,6 +45,8 @@ class RecipeBuildTest {
         assertTrue(character.parts.any { it.garment != null }, "a garment owns parts")
         assertTrue(!character.displayPose.isRest)
         assertEquals(woman.document, opened(woman.document))
+        val again = builder.build(RecipeJson.read(RecipeJson.write(exportRecipe(woman.document).recipe))).document
+        assertEquals(woman.document, again)
     }
 
     @Test

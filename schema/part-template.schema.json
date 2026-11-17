@@ -1882,6 +1882,17 @@
               "type": "null"
             }
           ]
+        },
+        "doc": {
+          "description": "What it does, in one line, as the generated reference shows it.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

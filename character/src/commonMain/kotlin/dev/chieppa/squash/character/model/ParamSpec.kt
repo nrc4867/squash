@@ -50,4 +50,6 @@ data class ParamSpec(
     val unit: String? = null,
     @Doc("The only values it takes, ascending, in place of min and max. A value between them is never offered.")
     val values: List<Float>? = null,
+    @Doc("What it does, in one line, as the generated reference shows it.")
+    val doc: String? = null,
 )

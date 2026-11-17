@@ -58,7 +58,7 @@ private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {
         val pivot = part.rings.middle(joint.u)
         val owns = index < joints.owning
         val end = if (owns) part.rings.middle(joints.spanEnd(index)) else pivot
-        boneOf(part.bone(index), if (index == 0) carrier else part.bone(index - 1), pivot, end, { part.rings.tangent(joint.u) }, hingeOf(joint.hinge, axes, mirrored), joint, mirrored, null)
+        boneOf(part.bone(index), if (index == 0) carrier else part.bone(index - 1), pivot, end, { part.rings.tangent(joint.u) }, hingeDirection(joint.hinge, axes, mirrored), joint, mirrored, null)
     }
     val digits = joints.digits.flatMapIndexed { d, digit ->
         val curl = if (digit.back) -DIGIT_CURL else DIGIT_CURL
@@ -66,7 +66,7 @@ private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {
             val pivot = part.rings.middle(joint.u, digit.patch)
             val end = part.rings.middle(joints.digitSpanEnd(d, k), digit.patch)
             val parent = part.bone(if (k == 0) joints.rootOf(d) else joints.indexOf(d, k - 1))
-            boneOf(part.bone(joints.indexOf(d, k)), parent, pivot, end, { part.rings.tangent(joint.u, digit.patch) }, hingeOf(joint.hinge, axes, mirrored) * curl, joint, mirrored, DigitPlace(digit.patch, digit.index, k + 1, digit.back))
+            boneOf(part.bone(joints.indexOf(d, k)), parent, pivot, end, { part.rings.tangent(joint.u, digit.patch) }, hingeDirection(joint.hinge, axes, mirrored) * curl, joint, mirrored, DigitPlace(digit.patch, digit.index, k + 1, digit.back))
         }
     }
     return chain + digits
@@ -103,7 +103,7 @@ private fun boneOf(
  * A hinge letter as a body-space direction: x across the part, y about its up, z about its own length. A mirrored part turns
  * the other way about the mirrored direction, so one angle poses a pair as mirror images.
  */
-private fun hingeOf(hinge: Hinge, axes: PartAxes, mirrored: Boolean): Vec3 {
+fun hingeDirection(hinge: Hinge, axes: PartAxes, mirrored: Boolean): Vec3 {
     val own = when (hinge) {
         Hinge.X -> axes.side
         Hinge.Y -> axes.up
