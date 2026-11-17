@@ -7,7 +7,7 @@ import dev.chieppa.squash.geom.TriangleLines
 import dev.chieppa.squash.geom.field.JoinedMember
 
 /**
- * A garment on a one surface: its whole grown [surface], the body's covered field grown by each branch's ease and meshed as the body is;
+ * A garment on the surface: its whole grown [surface], the body's covered field grown by each branch's ease and meshed as the body is;
  * its [coverage] at each of that mesh's vertices; and what of it is worn, [cut] from the surface where coverage is at least zero and
  * laid as [drawn], with its [hems], the curves where coverage is zero, eased, and its contour [lines], kept to where coverage is at least zero;
  * [drawnCoverage] is its coverage over the drawn mesh, middles too. Where an outer garment hides it, its cut keeps only what shows. The parts

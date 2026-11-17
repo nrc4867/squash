@@ -24,8 +24,8 @@ private const val LEAST_SLOPE = 0.2f
 /**
  * Anchors resolved on a character's field rather than on any mesh: an anchor `(part, patch, u, v, offset)` starts at its point on its
  * run's own swept surface at (u, v), in body space, then moves along the joined field's gradient to where the field is zero, and off by its
- * offset along the normal there. On a part's own share it lands where it would without the join, moved a little by the blend; on a fillet
- * it lands on the fillet. Null for an anchor naming a part or patch the field does not hold.
+ * offset along the normal there. On a part's own share it lands where it would without the join, moved a little by the blend; where
+ * parts blend it lands on the blend. Null for an anchor naming a part or patch the field does not hold.
  */
 class FieldAnchors(private val field: CharacterField) {
     private val close = field.cell * CLOSE_SHARE

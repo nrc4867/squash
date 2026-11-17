@@ -19,7 +19,7 @@ private const val END_SOCKET = 0.02f
 private const val CUFF_FROM = -1f
 
 /**
- * The parts a garment covers on a one surface and how, as the document says: each branch's part, and the other side of its pair, which
+ * The parts a garment covers and how, as the document says: each branch's part, and the other side of its pair, which
  * the branch covers mirrored, by the branch standing off by the garment's fit there (see [Garment.easeOf]); and each part's [twins].
  */
 data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentBranch>, val twins: Map<PartId, PartId> = emptyMap()) {

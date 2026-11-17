@@ -77,8 +77,7 @@ internal fun AppState.pickFeature(character: Character, holder: PartId, feature:
 
 /**
  * The Face inspector, on the head whatever is selected: Eyes or Mouth, which eye an eye's work writes, the feature's controls, its roles as layers in
- * draw order with what each holds, and for the eyes the gaze. A head with no eyes or no mouth offers to add them. On a character built as one
- * surface the eyes are its painted eyes (see [PaintedEyeSection]).
+ * draw order with what each holds, and for the eyes the gaze. A head with no eyes or no mouth offers to add them. The eyes are its painted eyes (see [PaintedEyeSection]).
  */
 @Composable
 fun FaceSection(state: AppState, session: CharacterSession) {

@@ -39,7 +39,7 @@ class DrawnPartTest {
     }
 
     @Test
-    fun aSideOutlineAloneBuildsTheFixedTopology() {
+    fun aSideOutlineAloneKeepsTheTemplatesSampling() {
         val patches = PartBuilder.build(leg, outlines = mapOf(View.SIDE to bentSide))
         val undrawn = PartBuilder.build(leg).single()
         val patch = patches.single()

@@ -44,7 +44,7 @@ private const val TINY = 1e-9f
 private const val ACROSS_AXIS = 0.5f
 
 /**
- * Eyes painted on a one-surface head. Each eye's middle is its anchor resolved on the field, and its facing the surface's normal there
+ * Eyes painted on a head. Each eye's middle is its anchor resolved on the field, and its facing the surface's normal there
  * turned outward by its look-out. Every shape of its [EyeShapes] lies in the plane square to that facing, its chart running along the
  * head's coordinates toward the front and the top (see [chartOf]), scaled by how far the surface runs per unit of the head's u and v there; each vertex of the surface near the
  * eye that faces it is projected along the facing into that plane and painted where it falls inside. So the paint foreshortens and wraps

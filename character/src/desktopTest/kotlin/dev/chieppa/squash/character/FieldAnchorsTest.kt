@@ -25,7 +25,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Anchors near a join resolved on a one surface's field: each lands on the surface, on its own part's side of the join, near where its
+ * Anchors near a join resolved on the field: each lands on the surface, on its own part's side of the join, near where its
  * part's own surface holds it, and stays put on its part when the neighbouring part is made larger.
  */
 @OptIn(ExperimentalCoroutinesApi::class)

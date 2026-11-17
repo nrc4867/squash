@@ -50,7 +50,7 @@ class SessionMeshTest {
     )
 
     @Test
-    fun aPartHasAMeshOnceSettledInTheTemplatesTopology() = runTest {
+    fun aPartHasAMeshOnceSettledAtTheTemplatesSampling() = runTest {
         val session = session(leg)
         val node = session.mesh(legId)
         assertSame(node, session.mesh(legId))

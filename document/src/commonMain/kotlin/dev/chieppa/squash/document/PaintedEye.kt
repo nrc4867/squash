@@ -45,7 +45,7 @@ data class EyeLook(
 )
 
 /**
- * An eye painted on a head built as one surface: its middle at [anchor], which names the head, and its [look]. A [mirrored] eye is
+ * An eye painted on a head: its middle at [anchor], which names the head, and its [look]. A [mirrored] eye is
  * painted again on the other side of the head's plane, its anchor's v read as 1 - v. With a [front] look, a view that sees the head
  * from the front shows the eye [fromFront] of the way from its look to that one (see [shownFront]). Its iris, pupil and highlight look
  * [gazeForward] of the opening's half width toward the head's front and [gazeUp] of its half height up, clipped by the opening.

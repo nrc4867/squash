@@ -12,7 +12,7 @@ internal class Holed(val branch: PlacedPart, val cuffs: List<PlacedPart>, val th
 /**
  * [branch], a branch of [garment], with a hole where each body part comes out through it, and the cuff round each such part that has
  * one. A part comes out through it when it sits on a socket inside the region [branch] covers and [garment] neither hides it nor
- * covers it with a branch of its own, which joins [branch] by its fillet alone, no garment owns it, and it does not hang inside [branch] out through its
+ * covers it with a branch of its own, no garment owns it, and it does not hang inside [branch] out through its
  * free end, which [branch] then [Covering.hangsOver] (see [hangingInside]); the hole
  * is the branch's faces inside that part, and the cuff runs from the part's root to its cuff size, as a share of the part's length, past
  * where it comes out. A cuff inks its far edge and where it comes out of [branch] when the garment's cuffs and its own change are inked;

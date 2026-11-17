@@ -875,7 +875,7 @@
           ]
         },
         "surface": {
-          "description": "On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.",
+          "description": "Whether the digits are in the body's field or each its own mesh sunk into the run before them.",
           "enum": [
             "field",
             "separate"
@@ -1854,7 +1854,7 @@
       "additionalProperties": false
     },
     "PartTemplate": {
-      "description": "A part template: axis, open end, topology, blocks, parameters and which view sets what.",
+      "description": "A part template: axis, open end, sampling, blocks, parameters and which view sets what.",
       "type": "object",
       "properties": {
         "$schema": {
@@ -1877,7 +1877,7 @@
           "type": "string"
         },
         "version": {
-          "description": "The template's own version; changes when its topology or joints change.",
+          "description": "The template's own version; changes when what the template builds changes.",
           "type": "integer",
           "minimum": 1.0
         },
@@ -2020,7 +2020,7 @@
           ]
         },
         "surface": {
-          "description": "On a character built as one surface: in the character's field, or thin or hard and built as its own mesh sitting on the body.",
+          "description": "Whether the part is in the character's field, or thin or hard and built as its own mesh sitting on the body.",
           "enum": [
             "field",
             "separate"
@@ -2483,7 +2483,7 @@
           ]
         },
         "surface": {
-          "description": "On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.",
+          "description": "Whether the digits are in the body's field or each its own mesh sunk into the run before them.",
           "enum": [
             "field",
             "separate"

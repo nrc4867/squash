@@ -3,7 +3,7 @@ package dev.chieppa.squash.character.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** How a part meets the body on a character built as one surface. */
+/** How a part meets the body. */
 @Serializable
 enum class SurfaceMethod {
     /** Its runs are members of the character's field, meshed with every other field part as one surface. */

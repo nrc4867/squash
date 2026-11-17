@@ -82,7 +82,7 @@ class MovePlacementTest {
     }
 
     @Test
-    fun aTurnedPartKeepsItsTopologyAndItsUp() {
+    fun aTurnedPartKeepsItsSamplingAndItsUp() {
         for (template in shipped.parts) {
             val rest = PartBuilder.axes(template)
             val turned = template.placedBy(mapOf(PlacementParams.OUTWARD to 50f, PlacementParams.LEAN to -50f))

@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
  * the [pose] it stands in, the [displayPose] under it, its [wardrobe] and its [paintedEyes]. The pose is the character's one working pose until shots hold a
  * pose per key. The display pose is saved with the character and shows it as it is meant to be seen, a biped's arms brought down from
- * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is built as one surface meshed from its parts' joined solids.
+ * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is one surface meshed from its parts' joined solids.
  * See HLD: data-model.
  */
 @Serializable

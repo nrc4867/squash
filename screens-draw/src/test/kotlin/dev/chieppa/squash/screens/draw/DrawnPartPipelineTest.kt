@@ -39,7 +39,7 @@ class DrawnPartPipelineTest {
     }
 
     @Test
-    fun aDrawnSideOutlineBuildsTheLegWithItsFixedTopologyAndItsSize() {
+    fun aDrawnSideOutlineBuildsTheLegWithTheTemplatesSamplingAndItsSize() {
         val leg = shipped.parts.first { it.id.value == "leg" }
         val plan = shipped.plans.first()
         val part = PartId("leg")

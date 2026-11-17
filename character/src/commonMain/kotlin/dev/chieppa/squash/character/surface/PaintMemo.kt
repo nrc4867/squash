@@ -10,7 +10,7 @@ import dev.chieppa.squash.geom.surface.SurfaceMesh
 class LaidShape(val distances: FloatArray, val values: FloatArray)
 
 /**
- * What each color shape and each run's section was last laid at on a one surface's mesh, kept between paintings so that a painting of the
+ * What each color shape and each run's section was last laid at on the surface's mesh, kept between paintings so that a painting of the
  * next mesh takes them at every vertex that mesh keeps from this one (see [SurfaceMesh.change]) and reads only near the vertices an edit
  * meshed again.
  */

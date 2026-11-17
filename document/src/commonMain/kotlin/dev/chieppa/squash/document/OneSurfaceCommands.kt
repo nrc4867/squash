@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Sets the [blend] of the join at [part]'s socket, and at the other side's of its pair, which shares it: the radius of the smooth union
- * where the part meets its parent on a character built as one surface. Null takes the part's default.
+ * where the part meets its parent. Null takes the part's default.
  */
 @Serializable
 @SerialName("setSocketBlend")

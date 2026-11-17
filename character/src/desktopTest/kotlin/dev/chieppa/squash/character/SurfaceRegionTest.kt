@@ -15,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** A region drawn up to a join on a one surface paints its own part up to the curve where the join shares the surface equally, and no further. */
+/** A region drawn up to a join paints its own part up to the curve where the join shares the surface equally, and no further. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceRegionTest {
     private val sock = SlotName("sock")

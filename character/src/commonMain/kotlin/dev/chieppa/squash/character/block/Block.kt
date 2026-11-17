@@ -66,7 +66,7 @@ sealed interface Block {
     /** The patches this block builds. */
     fun patchNames(): List<PatchName> = emptyList()
 
-    /** How the runs this block builds meet the body on a character built as one surface. */
+    /** How the runs this block builds meet the body. */
     fun surfaceMethod(): SurfaceMethod = SurfaceMethod.FIELD
 
     /** The shape this block closes [end] with, if it closes it. */

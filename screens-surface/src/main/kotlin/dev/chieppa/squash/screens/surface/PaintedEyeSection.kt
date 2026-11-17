@@ -89,7 +89,7 @@ object PaintedEyeTags {
 }
 
 /**
- * The Eyes of a head on a one surface: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
+ * The Eyes of a head: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
  * front, its highlight, its gaze and its lines. Size, turn and place are the panes' handles. A head with no painted eye offers to add one
  * at its eye landmark.
  */

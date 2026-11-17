@@ -98,7 +98,7 @@ data class Digits(
     val nail: DigitNail? = null,
     @Doc("A pad under each digit's tip, a toe bean: painted on its underside, and on digits joined to a field raised from it.")
     val pad: DigitPad? = null,
-    @Doc("On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.")
+    @Doc("Whether the digits are in the body's field or each its own mesh sunk into the run before them.")
     val surface: SurfaceMethod = SurfaceMethod.FIELD,
 ) : Block {
     internal val rowName get() = name ?: DEFAULT_ROW_NAME

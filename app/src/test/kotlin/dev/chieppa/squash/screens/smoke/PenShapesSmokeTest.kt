@@ -150,7 +150,7 @@ class PenShapesSmokeTest {
         settle(work) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== before && session.graph.settled.value }
         waitForIdle()
         val drawn = assertNotNull(selection)
-        assertEquals(before.vertexCount, drawn.part.mesh.vertexCount, "the template's topology")
+        assertEquals(before.vertexCount, drawn.part.mesh.vertexCount, "the template's sampling")
         assertNotEquals(0, onAllNodesWithText("1 drawn · 2 from template").fetchSemanticsNodes().size)
         render(panesInput(drawn, assertNotNull(look), pixels, width, height, outlines = outlines), "pen-shapes-from-template")
         keepWorkspace("pen-shapes-started")

@@ -257,7 +257,7 @@ class ScreensSmokeTest {
 
         val drawn = assertNotNull(selection)
         val mesh = drawn.part.mesh
-        assertEquals(fromTemplate.vertexCount, mesh.vertexCount, "drawing keeps the template's topology")
+        assertEquals(fromTemplate.vertexCount, mesh.vertexCount, "drawing keeps the template's sampling")
 
         val bounds = SheetPane.entries.map { onNodeWithTag(sheetPaneTag(it)).fetchSemanticsNode().boundsInRoot }
         val left = bounds.minOf { it.left }
@@ -350,7 +350,7 @@ class ScreensSmokeTest {
         settle(work) { selection?.outlines?.containsKey(View.SIDE) == true && selection?.part?.mesh !== fromTemplate }
         assertSettled(session)
         val drawn = assertNotNull(selection)
-        assertEquals(fromTemplate.vertexCount, drawn.part.mesh.vertexCount, "drawing in Single keeps the template's topology")
+        assertEquals(fromTemplate.vertexCount, drawn.part.mesh.vertexCount, "drawing in Single keeps the template's sampling")
 
         val thumbnails = onNodeWithTag(SingleTags.THUMBNAILS).captureToImage().argbPixels()
         assertNotEquals(0, thumbnails.countOf(assertNotNull(warn)), "the views not drawn are dashed in warn")

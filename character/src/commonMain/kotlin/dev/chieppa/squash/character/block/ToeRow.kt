@@ -99,7 +99,7 @@ data class ToeRow(
     val knuckle: Param = Param.of(0f),
     @Doc("A socket at every digit's tip, for a claw or a nail; none when left out.")
     val tips: DigitTips? = null,
-    @Doc("On a character built as one surface, whether the digits are in the body's field or each its own mesh sunk into the run before them.")
+    @Doc("Whether the digits are in the body's field or each its own mesh sunk into the run before them.")
     val surface: SurfaceMethod = SurfaceMethod.FIELD,
 ) : Block {
     override fun patchNames() = listOf(PatchName(rowName, repeats = true))

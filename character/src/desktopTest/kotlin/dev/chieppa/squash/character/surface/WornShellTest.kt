@@ -22,7 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** A garment worn on a one surface reads a shell of its own where a branch is drawn or runs past its part, open or whole round. */
+/** A garment worn on the surface reads a shell of its own where a branch is drawn or runs past its part, open or whole round. */
 class WornShellTest {
     private val library = TemplateLibrary(shipped.parts, shipped.plans)
     private val torso = PartId("torso")

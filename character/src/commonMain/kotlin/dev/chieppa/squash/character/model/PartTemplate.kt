@@ -48,7 +48,7 @@ data class MountSpec(
     val v: Float,
 )
 
-/** The body patch's fixed grid. */
+/** How finely a part's drawing is sampled: the rings and segments of its body patch's grid. */
 @Serializable
 data class Topology(
     @Doc("Rings along u.") @Range(min = 2.0)
@@ -79,14 +79,14 @@ data class ProfileSpec(
 
 /** The recipe for a part type. See HLD: data-model, Part template file format. */
 @Serializable
-@Doc("A part template: axis, open end, topology, blocks, parameters and which view sets what.")
+@Doc("A part template: axis, open end, sampling, blocks, parameters and which view sets what.")
 data class PartTemplate(
     @SerialName("\$schema")
     val schemaPath: String? = null,
     @Doc("The grammar version of the file.") @Range(min = 1.0, max = 1.0)
     val format: Int,
     val id: TemplateId,
-    @Doc("The template's own version; changes when its topology or joints change.") @Range(min = 1.0)
+    @Doc("The template's own version; changes when what the template builds changes.") @Range(min = 1.0)
     val version: Int,
     val name: String,
     @Doc("What a part of this type is to the body, which a part placed from it takes; none for a generic part, whose role is guessed from where it sits.")
@@ -106,7 +106,7 @@ data class PartTemplate(
     val grain: GrainSpec = GrainSpec(),
     @Doc("Present on a generic template, whose parts choose their own section, views, rings and segments.")
     val generic: GenericSpec? = null,
-    @Doc("On a character built as one surface: in the character's field, or thin or hard and built as its own mesh sitting on the body.")
+    @Doc("Whether the part is in the character's field, or thin or hard and built as its own mesh sitting on the body.")
     val surface: SurfaceMethod = SurfaceMethod.FIELD,
     val blocks: List<Block>,
 ) {

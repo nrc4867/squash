@@ -82,7 +82,7 @@ class SpineBuildTest {
     }
 
     @Test
-    fun theOutlinesBuildTheTemplatesTopology() {
+    fun theOutlinesKeepTheTemplatesSampling() {
         val undrawn = PartBuilder.build(tail).first()
         assertEquals(undrawn.nu to undrawn.nv, body.nu to body.nv)
         val mesh = PartBuilder.mesh("tail", tail, patches).patches.first()

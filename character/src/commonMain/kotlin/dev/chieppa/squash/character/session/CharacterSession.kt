@@ -147,8 +147,7 @@ class CharacterSession(
     val surfacePaint: Node<*, HeldPaint> get() = sessionSurface.paint
 
     /**
-     * Every part's surface work as positions in body space, through [assembly]'s placement, landed on the one surface's field on a
-     * character built as one. Made with the session, so [Graph.settled] covers it from the start. Its `output` keeps the last result
+     * Every part's surface work as positions in body space, through [assembly]'s placement, landed on the one surface's field. Made with the session, so [Graph.settled] covers it from the start. Its `output` keeps the last result
      * while a newer run is pending.
      */
     val bodySurfaceWork: Node<*, BodySurfaceWork> = graph.fieldWorkNode(
