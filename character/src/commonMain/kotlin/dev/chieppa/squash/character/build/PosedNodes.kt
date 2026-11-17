@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,7 +57,8 @@ class PosedState(
 /**
  * [assembly] in the pose [pose] holds the node of, once a rig gives one, with what the garments hide decided again in the pose: the
  * character itself while the pose leaves every part at rest or before there is a pose, with its hair pushed out of the body it lies
- * against. See [posedBy], [withHairPushed], over the garments [worn] grows from the body, and [hiddenAgain].
+ * against. See [posedBy], [withHairPushed], over the garments [worn] grows from the body, and [hiddenAgain]. The pose of a new
+ * assembly comes after the assembly, through its rig; a run on an assembly with a pose made for another waits for the next.
  */
 fun Graph.posedBodyNode(
     assembly: Node<*, AssembledCharacter>,
@@ -70,9 +72,9 @@ fun Graph.posedBodyNode(
         cacheSize = POSED_CACHE,
     ) { (shape, sources) ->
         val character = sources.getValue(PosedKey.REST).value as AssembledCharacter
-        (sources[PosedKey.POSE]?.value as PosedParts?)?.let {
-            character.posedBy(it).withHairPushed(shape.second).hiddenAgain(character)
-        } ?: character
+        val pose = sources[PosedKey.POSE]?.value as PosedParts? ?: return@gather character
+        if (!pose.isOf(character)) awaitCancellation()
+        character.posedBy(pose).withHairPushed(shape.second).hiddenAgain(character)
     }
 }
 

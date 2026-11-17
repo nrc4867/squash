@@ -156,11 +156,12 @@ object SurfaceEyes {
             layer(look.pupil, within(inside(shapes.pupil)), shapes.pupilOval),
             layer(look.highlight, within(inside(shapes.highlight)), shapes.highlightOval),
         )
+        val cell = anchors.cellOf(anchor.part, anchor.patch)
         fun mark(name: String, places: List<SurfaceUv>?, width: MarkWidth, alongFacing: Boolean = true): ResolvedMark? {
             places ?: return null
             val points = places.map { place ->
                 val inPlane = middle.position + across * (place.u * along) + up * (place.v * around)
-                val (position, normal) = if (alongFacing) anchors.onSurfaceAlong(inPlane, facing) else anchors.onSurface(inPlane, facing)
+                val (position, normal) = if (alongFacing) anchors.onSurfaceAlong(inPlane, facing, cell) else anchors.onSurface(inPlane, facing, cell)
                 ResolvedPoint(anchor, position, normal)
             }
             return ResolvedMark(MarkId("$id-$side-$name"), points, width, ink = true, cameraLocked = false, versions = emptyMap(), slot = look.ink)

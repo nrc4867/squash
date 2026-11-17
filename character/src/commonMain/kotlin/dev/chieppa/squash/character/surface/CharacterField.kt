@@ -22,9 +22,10 @@ private const val MERGE_PARAM = "merge"
 
 /**
  * The body's cell, as a share of its root's first run's least half-extent: the part on no socket, which no outfit swaps, so the cell
- * stays the same whatever the character wears. At this share the fennec's body meshes at the 0.012 its triangle budget sets.
+ * stays the same whatever the character wears. At this share the fennec's body meshes at 0.024, its head, hands and feet at half that
+ * and its digits at a quarter (see [digitLevels]).
  */
-const val CELL_SHARE = 0.05f
+const val CELL_SHARE = 0.1f
 
 /**
  * One member of a character's field: run [patchIndex], [patch], of [part], and whether it is the part's first run: its body run, whose

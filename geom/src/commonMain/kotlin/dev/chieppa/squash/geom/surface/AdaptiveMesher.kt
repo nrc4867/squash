@@ -7,7 +7,8 @@ import dev.chieppa.squash.geom.field.JoinedField
 /**
  * Meshes a joined field into one surface with cells of several sizes: the body at [cell], and around each member whose radius asks for
  * it (see [CellLevels]) cells of half or a quarter of that, each level by a [SurfaceMesher] of its own over the blocks its level holds,
- * the levels joined across their boundaries by [LevelSeams]. With every member at the body's cell the surface is level 0's mesh itself.
+ * the levels joined across their boundaries by [LevelSeams], and a sheet thinner than a cell that would pinch into an edge four quads
+ * share split there (see [pinchSplit]). With every member at the body's cell and no such sheet the surface is level 0's mesh itself.
  * Each level keeps its blocks, so the next field meshes again only where it differs. Not safe for two runs at once.
  */
 class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldReads) {
@@ -66,8 +67,8 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
         }
 
         private fun finish(parts: List<SurfaceMesh>, bases: IntArray, joined: SurfaceMesh?) {
-            val mesh = joined ?: parts[0]
-            if (joined != null) {
+            val mesh = pinchSplit(joined ?: parts[0])
+            if (mesh !== parts[0] || last !== lastParts.firstOrNull()) {
                 val before = last
                 if (before != null) {
                     val previousOf = IntArray(mesh.vertexCount) { -1 }

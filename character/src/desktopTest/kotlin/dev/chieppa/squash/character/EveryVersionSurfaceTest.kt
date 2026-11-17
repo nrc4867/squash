@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
  * The template versions whose part, built alone as one surface at the coarse cell, is not closed and manifold. An old file that
  * pins one opens rough; each is kept as it ships.
  */
-private val ROUGH_VERSIONS: List<String> = listOf("foot 3")
+private val ROUGH_VERSIONS: List<String> = emptyList()
 
 /** Every shipped version of a template whose runs are in the field builds a closed, manifold one surface on a character of that part alone. */
 class EveryVersionSurfaceTest {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import dev.chieppa.squash.character.build.BodyColor
+import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.PosedSurface
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,23 +54,24 @@ class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectSh
 /**
  * [part] as a pane draws it. With [color], its base and layers show their slots at the shading the pane reads, darkened by side seen with the
  * camera at [toCamera]; a part nothing has been placed on, or a character with no color, draws as the look's own. With [posed], the
- * part's mesh in a pose, it draws on that mesh with its layers laid on it, since a layer keeps its place on the patch. A part seen
+ * part as a pose shows it, it draws on that part's mesh with its layers laid on its patches, since a layer keeps its place on the patch. A part seen
  * through draws faint in the look's own fill with its outline. A part [color]'s one surface holds draws only its pieces that are not
  * runs, null with none; the surface draws the rest.
  */
-fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: RenderMesh? = null): MeshDraw? {
-    if (part.seeThrough) return draw(part, ghostOutline, opacity * SEE_THROUGH_OPACITY, layer).let { if (posed != null) it.copy(mesh = posed) else it }
+fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: PlacedPart? = null): MeshDraw? {
+    val mesh = posed?.surface?.mesh ?: part.mesh
+    if (part.seeThrough) return draw(part, ghostOutline, opacity * SEE_THROUGH_OPACITY, layer).copy(mesh = mesh)
     val id = part.id
-    if (color == null || id == null) return draw(part, outline, opacity, layer).let { if (posed != null) it.copy(mesh = posed) else it }
+    if (color == null || id == null) return draw(part, outline, opacity, layer).copy(mesh = mesh)
     val fallback = this.part.copy(ink = color.palette.colorOf(INK_SLOT) ?: this.part.ink)
-    val cuts: (PatchCut) -> RenderMesh = if (posed == null) ({ it.mesh }) else ({ part.posedCut(it, posed) })
+    val cuts: (PatchCut) -> RenderMesh = if (posed == null) ({ it.mesh }) else ({ part.posedCut(it, posed.surface) })
     if (color.holds(part)) {
-        val pieces = separatePieces(part.placedPart, posed ?: part.mesh) ?: return null
-        val shown = part.placedPart.surface.patches.filterNot { isFieldRun(part.placedPart, it) }.mapTo(HashSet()) { it.name }
+        val placed = posed ?: part.placedPart
+        val pieces = separatePieces(placed) ?: return null
+        val shown = placed.surface.patches.filterNot { isFieldRun(placed, it) }.mapTo(HashSet()) { it.name }
         val own = color.body.parts[id]?.let { PartColor(it.baseSlot, it.layers.filter { held -> held.cut.patch in shown }) }
         return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
     }
-    val mesh = posed ?: part.mesh
     return coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
 }
 

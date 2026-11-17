@@ -174,7 +174,13 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
             val eased = chart.easing.eased(distances, members, triangles, earlier?.carry.takeIf { before != null }, before?.values)
             val values = if (eased === distances) distances.copyOf() else eased
             for (i in values.indices) if (section[i] < values[i]) values[i] = section[i]
-            return PaintLayer.of(shape.slot, chart.surface, values, triangles) to LaidShape(distances, values)
+            val split = if (shape.shape == ColorShape.WholePatch) {
+                null
+            } else {
+                val closedV = chart.surface.field.runs[members.first()].patch.closedV
+                PaintSplits.of(chart, members, triangles, UvShapeDistance(shape.shape, closedV), closedV, eased, section, values)
+            }
+            return PaintLayer.of(shape.slot, chart.surface, values, triangles, split = split) to LaidShape(distances, values)
         }
     }
 }

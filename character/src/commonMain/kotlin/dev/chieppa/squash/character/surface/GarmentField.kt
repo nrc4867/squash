@@ -18,6 +18,9 @@ private const val NARROWEST_EASES = 0.5f
 /** How wide, in its garment's ease, the blend a cuff over a part outside the body's field joins the garment by is at least. */
 private const val CUFF_BLEND_EASES = 2f
 
+/** How many of its cells a garment's narrowest band spans at least: a garment narrower than that at the body's cell meshes finer. */
+private const val BAND_CELLS = 4f
+
 /**
  * A garment's field on a body's [field]: the first runs of the parts [worn] covers, whose (u, v) its branches read, each grown by its branch's ease and joined to the run it
  * grows from as the body joins them, where that run is covered too; a branch with a shell adds the shell's solid, grown already, its u
@@ -26,7 +29,9 @@ private const val CUFF_BLEND_EASES = 2f
  * has its run swept by [solids] and joined to the garment's run over its socket parent nearest its socket, by a blend at least
  * [CUFF_BLEND_EASES] of its ease, so a cuff over a thin part flows into the garment. Null when it covers no run.
  * Each run it covers only part of is kept by [clips] to round what it covers. Its runs keep their parts' own (u, v), so each of its
- * vertices knows where on the body it grows from.
+ * vertices knows where on the body it grows from. It meshes at the cell of the finest run it covers, no finer than [DETAIL_LEVEL] (see
+ * [digitLevels]), so a shoe or a hood is as fine as the foot or the head under it, halved again up to [DIGIT_LEVEL] times from the body's
+ * cell while its narrowest band, along a part or round it, spans fewer than [BAND_CELLS] cells, so a belt or a strap keeps its width.
  */
 fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacter, solids: RunSolids, clips: RunClips): CharacterField? {
     val kept = field.runs.indices.filter { field.runs[it].first && worn.branchOf(field.runs[it].partId) != null }
@@ -66,7 +71,33 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         members += JoinedMember(solid, placed.origin, placed.mirrored, blend, parent, nextPart++, ease)
     }
     if (runs.isEmpty()) return null
-    return CharacterField(JoinedField(members), runs, field.cell)
+    return CharacterField(JoinedField(members), runs, bandCell(field, worn, kept))
+}
+
+/**
+ * The cell [worn] meshes at over [field]'s runs [kept]: that of the finest of them, no finer than [DETAIL_LEVEL], halved further while
+ * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells.
+ */
+private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>): Float {
+    val levels = digitLevels(field)
+    var narrowest = Float.MAX_VALUE
+    for (run in kept) {
+        val at = field.runs[run]
+        val branch = checkNotNull(worn.branchOf(at.partId))
+        val partial = branch.from > 0f || branch.to < 1f
+        if (!partial && branch.allRound) continue
+        val scales = RunScales(at.patch)
+        val middle = ((branch.from + branch.to) / 2f).coerceIn(0f, 1f)
+        if (partial) narrowest = minOf(narrowest, (branch.to - branch.from) * scales.along(middle))
+        if (!branch.allRound) narrowest = minOf(narrowest, (branch.toV - branch.fromV) * scales.around(middle))
+    }
+    var level = kept.maxOfOrNull { minOf(levels[it], DETAIL_LEVEL) } ?: 0
+    var cell = field.cell / (1 shl level)
+    while (level < DIGIT_LEVEL && narrowest < BAND_CELLS * cell) {
+        cell /= 2f
+        level++
+    }
+    return cell
 }
 
 /** The members of [body]'s parts in [parts], each placed as it is: those of [field]'s runs, and each other part's first swept run. */

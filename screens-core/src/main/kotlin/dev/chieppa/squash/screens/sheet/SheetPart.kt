@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.OutlineCurve
@@ -17,7 +18,7 @@ import dev.chieppa.squash.geom.PartExtents
 import dev.chieppa.squash.geom.PatchCut
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.laidOn
-import dev.chieppa.squash.geom.showing
+import dev.chieppa.squash.geom.PartSurface
 import java.util.Collections
 import java.util.IdentityHashMap
 import dev.chieppa.squash.geom.Vec3
@@ -67,12 +68,12 @@ class SheetPart(private val placed: PlacedPart, val seeThrough: Boolean = false)
 
     private fun inBody(paths: List<List<Vec3>>) = paths.map { path -> path.map { origin + it } }
 
-    private val posedCuts = Collections.synchronizedMap(IdentityHashMap<PatchCut, Pair<RenderMesh, RenderMesh>>())
+    private val posedCuts = Collections.synchronizedMap(IdentityHashMap<PatchCut, Pair<PartSurface, RenderMesh>>())
 
-    /** [cut], a color layer on this part, laid on [posed], this part's mesh in a pose; kept while the pose holds. */
-    fun posedCut(cut: PatchCut, posed: RenderMesh): RenderMesh {
+    /** [cut], a color layer on this part, laid on [posed], this part's surface in a pose; kept while the pose holds. */
+    fun posedCut(cut: PatchCut, posed: PartSurface): RenderMesh {
         posedCuts[cut]?.takeIf { it.first === posed }?.let { return it.second }
-        val grid = placed.surface.showing(posed).grid(cut.patch) ?: return cut.mesh
+        val grid = posed.grid(cut.patch) ?: return cut.mesh
         return cut.laidOn(grid).also { posedCuts[cut] = posed to it }
     }
 }
@@ -81,7 +82,8 @@ class SheetPart(private val placed: PlacedPart, val seeThrough: Boolean = false)
  * What the panes draw from one assembled character: the [part] selected with the outlines the document holds for it, the
  * [others] around it, the [box] everything fills, the height of the [floor] and the [drawingScale] its size parameter sets.
  * [overridden] is the views this side holds for itself, and [hidden] what the pair holds under those while an edit lands on
- * the pair. [posed] is each part's mesh in the character's pose, or null while the pose leaves every bone at rest.
+ * the pair. [posed] is each part as the character's pose shows it, its patches and mesh together, or null while the pose leaves every
+ * bone at rest; a part the pose has not caught up with yet shows as the build the pose was found on has it.
  */
 class SheetSelection(
     val part: SheetPart,
@@ -92,7 +94,7 @@ class SheetSelection(
     val drawingScale: Float = 1f,
     val overridden: Set<View> = emptySet(),
     val hidden: Map<View, OutlineCurve> = emptyMap(),
-    val posed: Map<PartId, RenderMesh>? = null,
+    val posed: Map<PartId, PlacedPart>? = null,
 ) {
     /** Every part, the selection among them, with the see-through ones last so what lies behind them is drawn first. */
     val whole: List<SheetPart> get() = (others + part).sortedBy { it.seeThrough }
@@ -106,7 +108,7 @@ fun sheetSelection(
     drawingScale: Float = 1f,
     overridden: Set<View> = emptySet(),
     hidden: Map<View, OutlineCurve> = emptyMap(),
-    posed: Map<PartId, RenderMesh>? = null,
+    posed: Map<PartId, PlacedPart>? = null,
     ghosted: Boolean = false,
 ): SheetSelection? {
     val shown = character.parts.filter { it.box != null }.map { SheetPart(it, ghosted && it.id?.let(::isBranchPart) == true) }
@@ -116,17 +118,20 @@ fun sheetSelection(
 }
 
 /**
- * Each part's mesh in the open character's pose, as its posed lines were found on it so the two always agree, or null while [atRest]
- * or before the posed lines have been found.
+ * Each part as the open character's pose shows it, the part its posed lines were found on so the two always agree, or null while
+ * [atRest] or before the posed lines have been found.
  */
 @Composable
-private fun rememberPosedMeshes(state: AppState, atRest: Boolean): Map<PartId, RenderMesh>? {
+private fun rememberPosedParts(state: AppState, atRest: Boolean): Map<PartId, PlacedPart>? {
     val session by state.session.collectAsState()
     val open = session ?: return null
     val lines by remember(open) { open.posedLines.output }.collectAsState()
-    val meshes = remember(lines) { lines?.parts?.mapValues { it.value.part.surface.mesh } }
-    return if (atRest) null else meshes
+    val parts = remember(lines) { lines?.let(::posedParts) }
+    return if (atRest) null else parts
 }
+
+/** Each part as [lines] were found on it: in a pose, its patches and mesh as that pose shows them, from one build. */
+fun posedParts(lines: BodyLines): Map<PartId, PlacedPart> = lines.parts.mapValues { it.value.part }
 
 /**
  * The selected part and the character around it through the real build, or null while nothing is selected or it has not built yet.
@@ -154,7 +159,7 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val hidden = if (mirror && !dressing) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
     val held by state.rig.held.collectAsState()
     val poseView by state.poseView.collectAsState()
-    val posed = rememberPosedMeshes(state, document.character.shownWith(held).isRest || !posesPane(stage, poseView, locked = false))
+    val posed = rememberPosedParts(state, document.character.shownWith(held).isRest || !posesPane(stage, poseView, locked = false))
     val look by state.dress.look(stage == Stage.DRESS).collectAsState()
     val ghosted = look == GarmentLook.GHOSTED
     val assembled = character ?: return null

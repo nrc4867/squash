@@ -25,7 +25,7 @@ suspend fun fieldWork(work: BodySurfaceWork, field: CharacterField, runAll: RunA
         if (anchor.part to anchor.patch !in runs || point.normal == Vec3.ZERO) {
             point
         } else {
-            val (position, normal) = anchors.onSurface(point.position - point.normal * anchor.offset, point.normal)
+            val (position, normal) = anchors.onSurface(point.position - point.normal * anchor.offset, point.normal, anchors.cellOf(anchor.part, anchor.patch))
             ResolvedPoint(anchor, position + normal * anchor.offset, normal)
         }
     }

@@ -14,12 +14,14 @@ const val MIN_STRETCH = 0.1f
 /**
  * Every rigged part posed, by part: its vertices in body space, three floats a vertex in the order of [Rig.parts]' meshes, in
  * [parts]; in [meshes] the mesh the renderer draws, in the part's own space at its origin with its normals turned to match; and in
- * [turns] how its first bone turns, for a part the pose moves. A part the pose leaves where it rests keeps its rest mesh itself.
+ * [turns] how its first bone turns, for a part the pose moves; in [rests] the rest mesh each was posed from. A part the pose leaves
+ * where it rests keeps its rest mesh itself.
  */
 class PosedCharacter(
     val parts: Map<PartId, FloatArray>,
     override val meshes: Map<PartId, RenderMesh>,
     override val turns: Map<PartId, Mat3> = emptyMap(),
+    override val rests: Map<PartId, RenderMesh>,
 ) : PosedParts
 
 /**
@@ -80,7 +82,9 @@ fun Rig.posed(pose: Pose): PosedCharacter {
     val positions = HashMap<PartId, FloatArray>(parts.size)
     val meshes = HashMap<PartId, RenderMesh>(parts.size)
     val turns = HashMap<PartId, Mat3>()
+    val rests = HashMap<PartId, RenderMesh>(parts.size)
     for (part in parts) {
+        rests[part.id] = part.mesh
         if (part.restsUnder(transforms)) {
             positions[part.id] = part.rest.copyOf()
             meshes[part.id] = part.mesh
@@ -91,7 +95,7 @@ fun Rig.posed(pose: Pose): PosedCharacter {
             bones.indexOfFirst { it.name.part == part.id }.takeIf { it >= 0 }?.let { turns[part.id] = frames.turns[it] }
         }
     }
-    return PosedCharacter(positions, meshes, turns)
+    return PosedCharacter(positions, meshes, turns, rests)
 }
 
 private fun RigPart.restsUnder(transforms: List<Affine>): Boolean =

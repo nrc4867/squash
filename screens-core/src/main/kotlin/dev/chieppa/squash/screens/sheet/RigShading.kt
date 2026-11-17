@@ -8,6 +8,7 @@ import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.Tones
+import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.character.surface.separatePieces
 import dev.chieppa.stretch.frame.ViewportOverlay
@@ -40,13 +41,14 @@ class RigShading(
  * [part] as the Rig stage draws it: its flat color with its layers, on its mesh in [posed] when the pose moves it, outlined [outline] wide;
  * a part the rig's one surface holds draws only its pieces that are not runs, null with none.
  */
-fun SheetLook.rigDraw(part: SheetPart, rig: RigShading, outline: Float, posed: Map<PartId, RenderMesh>? = null): MeshDraw? {
+fun SheetLook.rigDraw(part: SheetPart, rig: RigShading, outline: Float, posed: Map<PartId, PlacedPart>? = null): MeshDraw? {
     val id = part.id
-    val shown = id?.let { posed?.get(it) } ?: part.mesh
+    val placed = id?.let { posed?.get(it) } ?: part.placedPart
+    val shown = placed.surface.mesh
     val base = id?.let(rig.colors::get) ?: this.part.base
     val material = PartMaterial(base, base, this.part.ink, Shading.FLAT)
     if (id != null && rig.surface.parts.contains(id)) {
-        return separatePieces(part.placedPart, shown)?.let { MeshDraw(it, material, part.model(), outline) }
+        return separatePieces(placed)?.let { MeshDraw(it, material, part.model(), outline) }
     }
     val layers = id?.let(rig.layers::get).orEmpty().map { ColorLayerDraw(shown, Tones(it.color, it.color), it.alphas) }
     return MeshDraw(shown, material, part.model(), outline, layers = layers)

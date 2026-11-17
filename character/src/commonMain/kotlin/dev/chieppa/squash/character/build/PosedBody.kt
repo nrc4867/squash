@@ -12,13 +12,21 @@ interface PosedParts {
 
     /** How the pose turns each rigged part, by the bone at its root. A part at rest may be left out. */
     val turns: Map<PartId, Mat3>
+
+    /** The rest mesh each of [meshes] was posed from: that part's own mesh in the character the pose was made for. */
+    val rests: Map<PartId, RenderMesh>
 }
 
+/** Whether this pose was made for [character]: each mesh it poses is posed from that part's own mesh there. */
+fun PosedParts.isOf(character: AssembledCharacter): Boolean = rests.all { (id, mesh) -> character.part(id)?.surface?.mesh === mesh }
+
 /**
- * This character in [pose]: each part the pose moves showing its posed mesh, its patches' points and normals read from it, and turned
- * as its root bone turns. A part the pose leaves at rest stays the same object, and with none moved this is the character itself.
+ * This character in [pose], a pose made for it (see [isOf]): each part the pose moves showing its posed mesh, its patches' points and
+ * normals read from it, and turned as its root bone turns. A part the pose leaves at rest stays the same object, and with none moved
+ * this is the character itself.
  */
 fun AssembledCharacter.posedBy(pose: PosedParts): AssembledCharacter {
+    require(pose.isOf(this)) { "A pose shows only the character it was made for" }
     var moved = false
     val shown = parts.map { part ->
         val mesh = part.id?.let(pose.meshes::get)

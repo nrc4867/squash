@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.screens.references.TraceDraws
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -122,8 +123,8 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, surface), fur.layers, traces.behind, traces.over)
 }
 
-/** [part]'s mesh in this pose, or null for a part the pose holds none of or with no pose. */
-internal fun Map<PartId, RenderMesh>?.of(part: SheetPart): RenderMesh? = part.id?.let { this?.get(it) }
+/** [part] as this pose shows it, or null for a part the pose holds none of or with no pose. */
+internal fun Map<PartId, PlacedPart>?.of(part: SheetPart): PlacedPart? = part.id?.let { this?.get(it) }
 
 /**
  * What [fur] adds to a pane with the camera at [toCamera]: the whole figure's when [hints] show every part in full, else the selection's in front when
@@ -139,7 +140,7 @@ internal fun shownFurDraws(fur: ShownFur, drawn: Boolean, toCamera: Vec3, select
  * What a locked camera on [view] draws, from [basis] in the pane of [body]: the ground, the character ghosted and the selection once
  * [view] is drawn, or always where [hints] focus on it, their outlines left to the ribbons.
  */
-internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null, posed: Map<PartId, RenderMesh>? = null, faced: (Pair<SheetPart, MeshDraw>) -> MeshDraw = { it.second }): List<MeshDraw> = buildList {
+internal fun lockedDraws(view: View, body: BodyView, basis: ViewBasis, selection: SheetSelection, look: SheetLook, hints: SheetHints, color: PaneColor? = null, posed: Map<PartId, PlacedPart>? = null, faced: (Pair<SheetPart, MeshDraw>) -> MeshDraw = { it.second }): List<MeshDraw> = buildList {
     lockedGround(body, basis, selection, look)?.let(::add)
     if (hints.allInFull) {
         selection.whole.filter { !it.planned }.forEach { part -> look.colored(part, color, basis.back, 0f, posed = posed.of(part))?.let { add(faced(part to it)) } }
@@ -191,7 +192,7 @@ internal fun selectionOverGhosts(
 }
 
 /** Everything but the selection, furthest from the viewer first so a nearer ghost blends over a further one. */
-private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints, color: PaneColor?, posed: Map<PartId, RenderMesh>?): List<MeshDraw> {
+private fun ghosts(selection: SheetSelection, basis: ViewBasis, look: SheetLook, hints: SheetHints, color: PaneColor?, posed: Map<PartId, PlacedPart>?): List<MeshDraw> {
     val strength = hints.ghost
     if (strength <= 0f) return emptyList()
     return look.surfaceDraws(color, basis.back, posed != null, look.ghostOutline, strength) + selection.others
