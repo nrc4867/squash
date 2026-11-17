@@ -115,6 +115,7 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
 | Presentation | `field-gpu` | On `stretch-gpu`: `GpuFieldReads`, the one surface's field reads in a compute shader |
 | Domain | `anim` | Later: clips and timing |
+| Domain | `recipe` | Character recipes: the recipe model and its JSON reader, the builder that sends a recipe's document commands, and the export of a character as a recipe (see Recipes) |
 | Domain | `rig` | The rig derived from the assembled character: bones, weights, seams and linear blend skinning of positions and normals, and the session's rig and posed nodes |
 | Domain | `character` | Part templates and body plans, the catalog over what is loaded, slice building, the slice row and surface work graph nodes, the open character session |
 | Core | `document` | The document types (character, part instances, outlines, anchors, grain, pose) and commands, on `stretch-core` |
@@ -126,6 +127,14 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 Stretch's modules sit below all of these. Within Domain, `rig` sits above `character` and uses it.
 
 The `screens-*` modules never depend on each other. What they share is in `screens-core`, or in `character` where it is plain domain. `screens-core` exists because `AppState`, `PaneTool` and the locked cameras use both `ui-design` and `render`, which sit beside each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent`, and `app` supplies it.
+
+### Recipes
+
+A recipe is a character as an artist describes it, in a JSON file with a published schema (`schema/recipe.schema.json`, generated from the `recipe` module's model): the body plan; the palette; the parts, each with its template and version, the part and socket it sits on, a pair described once as its left side, its role, its Side, Top and Front outlines as a few places a smooth curve passes through (or its Bézier points), its size, lean and outward lean, hand-made sockets and other parameters, its base colour, area fills, regions, marks, mark groups, fur and line weights; the painted eyes; the expressions' joint angles; the wardrobe's slots, garments (covers, fit, changes to the parts under them, loose ends) and outfits, with the parts garments own; the display pose; and named poses for rendering. A region's border, a mark's places and an eye can be given on a head's face as seen from straight ahead, mapped onto the head by its `FaceMap`.
+
+A recipe is not a second model. `RecipeBuilder` builds it by sending the document commands it stands for over the empty character on its plan, in a fixed order: the palette, the body parts placed and shaped, their surface work, the wardrobe's slots and garments, the owned parts, the eyes, the expressions, the outfits and the display pose. Before each command it checks what the recipe names (templates and versions, the sockets the parent offers as it stands, palette slots, parts placed above) and fails with a `RecipeException` holding the JSON path of the entry and what is wrong there; a command's own refusal is reported at the path of the entry that sent it. A parameter the template does not have is a warning, since dotted part parameters (`socket.<n>.u`, `joint.<n>.u`, `generic.rings`) are open-ended. `exportRecipe` writes a character back as a recipe, outlines as their few places where a smooth curve through them makes them exactly, and lists what a recipe cannot hold (brush strokes, seams, combed grain, a side's own values over its pair's, expression marks, garments' drawn edges and Tuck choices, reference images) instead of dropping it silently.
+
+`tools/recipe.sh <recipe>` runs the `:app:recipe` task headless under the build lock: it builds the recipe, writes the character file, renders the standard views and close-ups through the real graph, keeps the measurements, and with a reference image renders the character through the reference's camera beside it with a silhouette overlay and IoU. `tools/recipe.sh export <character>` writes a character file as a recipe. `recipes/` holds the shipped recipes; the recipe module's tests build each and open it as a saved file.
 
 ### Stages
 

@@ -27,6 +27,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(testFixtures(project(":screens-core")))
     testImplementation(testFixtures(project(":screens-draw")))
+    testImplementation(project(":recipe"))
 }
 
 tasks.test {
@@ -71,7 +72,8 @@ compose.desktop {
 // ./gradlew :app:measure -Pmeasure="example=woman-dressed" prints their checks. Both run the real graph with no test runner.
 // ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>" sets look's shots beside reference renders.
 // ./gradlew :app:drag -Pdrag="example=fennec-dressed outfits=winter drags=move:front-leg-l" times scripted drags through the app's graph.
-listOf("look" to "LookMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt", "drag" to "drag.DragMainKt", "tris" to "TrisMainKt").forEach { (name, main) ->
+// ./gradlew :app:recipe -Precipe="recipe=<file>" builds a recipe into a character and renders and measures it; tools/recipe.sh runs it.
+listOf("look" to "LookMainKt", "recipe" to "recipe.RecipeMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt", "drag" to "drag.DragMainKt", "tris" to "TrisMainKt").forEach { (name, main) ->
     tasks.register<JavaExec>(name) {
         group = "verification"
         classpath = sourceSets["test"].runtimeClasspath

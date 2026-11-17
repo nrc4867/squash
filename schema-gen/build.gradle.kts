@@ -10,6 +10,7 @@ kotlin {
 dependencies {
     implementation(project(":annotations"))
     implementation(project(":character"))
+    implementation(project(":recipe"))
     testImplementation(kotlin("test"))
     testImplementation(libs.json.schema.validator)
 }
@@ -20,6 +21,7 @@ application {
 
 val schemaDir = rootProject.layout.projectDirectory.dir("schema")
 val templatesDir = rootProject.layout.projectDirectory.dir("templates")
+val recipesDir = rootProject.layout.projectDirectory.dir("recipes")
 
 tasks.register<JavaExec>("generateSchemas") {
     group = "squash"
@@ -35,4 +37,6 @@ tasks.test {
     inputs.dir(templatesDir).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.schema", schemaDir.asFile.path)
     systemProperty("squash.templates", templatesDir.asFile.path)
+    inputs.dir(recipesDir).withPathSensitivity(PathSensitivity.RELATIVE)
+    systemProperty("squash.recipes", recipesDir.asFile.path)
 }

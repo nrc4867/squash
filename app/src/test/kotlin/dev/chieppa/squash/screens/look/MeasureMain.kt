@@ -9,6 +9,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
+import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
@@ -50,14 +51,20 @@ fun main(args: Array<String>) {
     println("measure: ${look.examples.joinToString()} in ${took.inWholeMilliseconds} ms")
 }
 
-private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
-    val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher)
+private fun measure(example: String, look: LookArgs) = measureDocument(example, exampleDocument(example, look.fromFile, look.examplesFolder), examplePoses(example), look)
+
+/**
+ * Prints [document]'s checks as [look] asks, each line headed [example] and the outfit: per outfit as shown, in the first outfit each of
+ * [namedPoses], and with [timings] the one surface's build timed whole and edit by edit.
+ */
+fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) = TestWork().use { work ->
+    val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
     SessionPose(session)
     look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
     work.settle(session)
     val head = LookParts(session.document.value.character).head
     val outfits = session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }
-    val poses = examplePoses(example).filterKeys { look.poses == null || it in look.poses }
+    val poses = namedPoses.filterKeys { look.poses == null || it in look.poses }
     for (outfit in outfits) {
         if (outfit != null) session.send(ShowOutfit(outfit))
         val name = "$example ${outfit?.value ?: "as saved"}"
@@ -69,7 +76,7 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
             continue
         }
         report(name, shown, head?.let(shown::part))
-        if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { sessionSurface(name, session, work, it, look.profile) }
+        if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { sessionSurface(name, session, work, it, look.profile, timings) }
         if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }
         if (outfit != outfits.first()) continue
         for ((pose, set) in poses) {
@@ -83,12 +90,13 @@ private fun measure(example: String, look: LookArgs) = TestWork().use { work ->
 }
 
 /**
- * The one surface's checks, and its build timed whole and after the head, a front leg and the torso are each made 2% larger and back;
+ * The one surface's checks, and with [timings] its build timed whole and after the head, a front leg and the torso are each made 2% larger and back;
  * with `profile=true`, where the time of a whole build and of each edit goes.
  */
-private fun sessionSurface(name: String, session: CharacterSession, work: TestWork, surface: CharacterSurface, profile: Boolean) {
+private fun sessionSurface(name: String, session: CharacterSession, work: TestWork, surface: CharacterSurface, profile: Boolean, timings: Boolean) {
     val checks = SurfaceChecks(session, work)
     checks.report(name, surface, VIEWS.map { it.first to probeAzimuth(it.second) })
+    if (!timings) return checks.close()
     val edits = surfaceEdits(session)
     if (profile) checks.profile(name, edits)
     checks.timings(name, edits, coarse = setOf("torso"))

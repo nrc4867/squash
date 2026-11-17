@@ -10,6 +10,7 @@ import dev.chieppa.squash.document.SetTemplate
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.ShowOutfit
+import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.look.LookArgs.Companion.ANCHORS
@@ -53,21 +54,29 @@ fun main(args: Array<String>) {
 private fun render(example: String, look: LookArgs, errors: MutableList<String>) {
     val folder = File(look.imagesFolder, example)
     if (look.thumbs) return renderThumbnails(example, look, errors, folder)
+    renderDocument(exampleDocument(example, look.fromFile, look.examplesFolder), examplePoses(example), look, errors, folder)
+}
+
+/**
+ * Renders [document] into [folder] as [look] asks: per outfit, the whole character in its display pose, at rest when that differs and in
+ * each of [namedPoses], and the close-ups; or the shots or explicit camera [look] names instead.
+ */
+fun renderDocument(document: SquashDocument, namedPoses: Map<String, Pose>, look: LookArgs, errors: MutableList<String>, folder: File) {
     TestWork().use { work ->
-        val session = CharacterSession(exampleDocument(example, look.fromFile, look.examplesFolder), CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
+        val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher, look.reads)
         val sessionPose = SessionPose(session)
         look.templates.forEach { (part, ref) -> session.send(SetTemplate(PartId(part), TemplateRef(TemplateId(ref.substringBefore(':')), ref.substringAfter(':').toInt()))) }
         look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
         work.settle(session)
         look.outlineDrags.forEach { it.apply(session, work) }
-        if (look.paintTest) paintTestOf(session, example)
+        if (look.paintTest) paintTestOf(session, document.character.id.value)
         work.settle(session)
-        if (look.shots != null) return@use renderShots(session, work, example, look, errors, folder)
+        if (look.shots != null) return@use renderShots(session, work, namedPoses, look, errors, folder)
         val views = WomanViews(work, errors, folder)
         val camera = look.camera?.let { ShotViews(work, errors, folder, look.unitsPerMetre) to it }
         val closeUps = CloseUps(work, errors, folder)
         val parts = LookParts(session.document.value.character)
-        val poses = examplePoses(example).filterKeys { look.poses == null || it in look.poses }
+        val poses = namedPoses.filterKeys { look.poses == null || it in look.poses }
         if (HAND in look.close) parts.hand?.let { closeUps.keep(session, it, "hand") }
         if (HANDS in look.close) parts.hand?.let { DigitCloseUps(closeUps, work, HAND).keep(session, sessionPose, it) }
         if (FEET in look.close) parts.foot?.let { DigitCloseUps(closeUps, work, FOOT, spreads = true).keep(session, sessionPose, it) }
@@ -111,13 +120,13 @@ private fun render(example: String, look: LookArgs, errors: MutableList<String>)
 }
 
 /**
- * Renders [example] through each shot of the list [look] names, into a `shots` folder beside its views, under the shots' own names: each
- * shot's outfit, then its pose from the example's named poses, rest for none.
+ * Renders the character through each shot of the list [look] names, into a `shots` folder beside its views, under the shots' own names: each
+ * shot's outfit, then its pose from [poses], rest for none.
  */
-private fun renderShots(session: CharacterSession, work: TestWork, example: String, look: LookArgs, errors: MutableList<String>, folder: File) {
+private fun renderShots(session: CharacterSession, work: TestWork, poses: Map<String, Pose>, look: LookArgs, errors: MutableList<String>, folder: File) {
     val shots = shotList(requireNotNull(look.shots))
     val views = ShotViews(work, errors, File(folder, SHOTS_FOLDER), look.unitsPerMetre)
-    val poses = examplePoses(example)
+    val example = session.document.value.character.id.value
     val outfits = session.document.value.character.wardrobe.outfits.associateBy { it.id.value }
     for (shot in shots) {
         outfits[shot.outfit]?.let { session.send(ShowOutfit(it.id)) }

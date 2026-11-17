@@ -18,6 +18,7 @@ import kotlin.test.assertTrue
 class SchemasTest {
     private val schemaFolder = Path.of(System.getProperty("squash.schema"))
     private val templates = Path.of(System.getProperty("squash.templates"))
+    private val recipes = Path.of(System.getProperty("squash.recipes"))
     private val mapper = ObjectMapper()
 
     private fun schema(name: String): JsonSchema =
@@ -70,5 +71,22 @@ class SchemasTest {
         val schema = "part-template.schema.json"
         assertEquals(emptySet(), errors(schema, leg.replace("\"format\": 1", "\"x-note\": 1, \"format\": 1")))
         assertEquals(emptySet(), errors(schema, leg.replace("\"\$thickness\"", "0.3")))
+    }
+
+    @Test
+    fun everyShippedRecipePassesItsSchema() {
+        val files = recipes.listDirectoryEntries("*.recipe.json")
+        assertTrue(files.isNotEmpty())
+        for (file in files) assertEquals(emptySet(), errors("recipe.schema.json", file.readText()), file.name)
+    }
+
+    @Test
+    fun theRecipeSchemaRejectsWhatTheRecipeReaderRejects() {
+        val schema = "recipe.schema.json"
+        val fennec = recipes.resolve("fennec.recipe.json").readText()
+        assertTrue(errors(schema, fennec.replace("\"template\": \"torso\"", "\"template\": \"torso\", \"colour\": \"fur\"")).isNotEmpty(), "unknown key")
+        assertTrue(errors(schema, fennec.replace("\"role\": \"body\"", "\"role\": \"trunk\"")).isNotEmpty(), "unknown role")
+        assertTrue(errors(schema, fennec.replace("\"color\": [0.9, 0.7, 0.43]", "\"color\": \"#e6b3\"")).isNotEmpty(), "bad colour")
+        assertEquals(emptySet(), errors(schema, fennec.replace("\"color\": [0.9, 0.7, 0.43]", "\"color\": \"#e6b36e\"")))
     }
 }

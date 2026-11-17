@@ -10,6 +10,8 @@ import dev.chieppa.squash.character.model.ParamSerializer
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SPAN_SERIAL_NAME
 import dev.chieppa.squash.character.model.SectionSpecSerializer
+import dev.chieppa.squash.recipe.model.Recipe
+import dev.chieppa.squash.recipe.model.RecipeColor
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
@@ -21,6 +23,11 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 private const val DISCRIMINATOR = "kind"
+
+/** The recipe's sealed types are told apart by kotlinx.serialization's default key. */
+private const val RECIPE_DISCRIMINATOR = "type"
+private const val COLOR_SIZE = 3
+private const val HEX_COLOR = "^#[0-9a-fA-F]{6}$"
 private const val POINT_SIZE = 2
 private const val DIRECTION_SIZE = 3
 private const val SPAN_SIZE = 2
@@ -59,6 +66,13 @@ object Schemas {
         SPAN_SERIAL_NAME to numbers(SPAN_SIZE, min = 0.0, max = 1.0),
         LIMITS_SERIAL_NAME to numbers(SPAN_SIZE),
         DIRECTION_SERIAL_NAME to numbers(DIRECTION_SIZE),
+        RecipeColor.SERIAL_NAME to anyOfTypes(
+            buildJsonObject {
+                put("type", "string")
+                put("pattern", HEX_COLOR)
+            },
+            numbers(COLOR_SIZE, min = 0.0, max = 1.0),
+        ),
         SectionSpecSerializer.SERIAL_NAME to anyOfTypes(
             buildJsonObject { put("enum", JsonArray(SectionSpecSerializer.profileNames.map(::JsonPrimitive))) },
             buildJsonObject {
@@ -74,14 +88,16 @@ object Schemas {
         prettyPrintIndent = "  "
     }
 
-    private val files: Map<String, SerialDescriptor> = mapOf(
-        "part-template.schema.json" to PartTemplate.serializer().descriptor,
-        "body-plan.schema.json" to BodyPlan.serializer().descriptor,
+    private val files: Map<String, Pair<SerialDescriptor, String>> = mapOf(
+        "part-template.schema.json" to (PartTemplate.serializer().descriptor to DISCRIMINATOR),
+        "body-plan.schema.json" to (BodyPlan.serializer().descriptor to DISCRIMINATOR),
+        "recipe.schema.json" to (Recipe.serializer().descriptor to RECIPE_DISCRIMINATOR),
     )
 
     /** Every schema file's name and text. */
-    fun render(): Map<String, String> = files.mapValues { (_, descriptor) ->
-        val schema: JsonElement = SchemaWalker(DISCRIMINATOR, fragments).schema(descriptor)
+    fun render(): Map<String, String> = files.mapValues { (_, file) ->
+        val (descriptor, discriminator) = file
+        val schema: JsonElement = SchemaWalker(discriminator, fragments).schema(descriptor)
         json.encodeToString(JsonElement.serializer(), schema) + "\n"
     }
 }

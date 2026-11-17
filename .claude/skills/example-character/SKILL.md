@@ -1,123 +1,158 @@
 ---
 name: example-character
-description: Make or improve an example character in Squash, dressed or not, from commands in a fixture, with its golden example file and smoke renders to judge it by. Use before adding or reshaping anything under examples/.
+description: Make or improve a Squash character, an example or a test model, dressed or not, by writing a recipe file, building it with one command and judging its renders. Use before adding or reshaping anything under examples/ or recipes/, or when asked for a new test model.
 ---
 
-# Make an example character
+# Make a character
 
-An example character is a list of document commands in a test fixture, folded over an empty document, saved as `examples/<name>.json` by a golden test, and judged by smoke renders. Nothing in the engine changes. A new character is an original model: draw its outlines and proportions yourself, never reshape another example's data; use the other examples' files for structure only. Read `docs/work/example-limits.md` first: it lists what Squash cannot do yet, and every place below that still needs a source file (marked **gap**).
+A character is a **recipe**: a JSON file (`recipes/<name>.recipe.json`, or anywhere for a private model) that says what the character is in artist terms. `tools/recipe.sh <recipe>` builds it into a character file the app opens, renders it, and measures it. You write the recipe, run the command, read the renders, change one thing, run again. No Kotlin and no source reading: if you find yourself opening a `.kt` file to learn what is possible, stop and log it as a tooling gap (below).
 
-## Files
+A new character is an original model: draw its outlines and proportions yourself, never reshape another example's data. Use the other recipes for structure only. Template-free characters (the `blank` plan, `tube`, `blob` and `sheet` parts) are fine.
 
-1. A package under `screens-core/src/testFixtures/kotlin/dev/chieppa/squash/screens/<name>/`, one responsibility a file, each under about 300 lines. The twin's (`twin/`) is the model for a character drawn to numbers; the woman's is the model otherwise: `Woman.kt` (empty document, `womanCommands()`, `womanDocument()`, `savedWoman()`), `WomanBody.kt`, `WomanHead.kt`, `WomanColor.kt`, `WomanFace.kt`, `WomanFaceMap.kt`, and for clothes `Wardrobe.kt` (slots and the `garment()`, `owned()`, `ownedPair()` and `propShape()` helpers), `Tops.kt`, `Bottoms.kt`, `Dress.kt`, `Shoes.kt`, `Pumps.kt`, `Accessories.kt`, `Shades.kt`, `Suit.kt`, `Belt.kt`, `WomanDressed.kt` (outfits).
-2. Fixture tests under `screens-core/src/test/kotlin/dev/chieppa/squash/screens/<name>/`, modelled on `woman/WomanFixtureTest.kt` and `WomanDressedFixtureTest.kt`: the saved file equals what the commands make, roles are chosen, it assembles and lints, and for clothes what each outfit wears.
-3. Smoke tests under `app/src/test/kotlin/dev/chieppa/squash/screens/smoke/`: `WomanSmokeTest.kt` (whole views per outfit, poses, close-ups through `WomanViews` and `CloseUps`) and `WomanShapeSmokeTest.kt` (the four panes in Shape and in Pose).
-4. The example files: `examples/<name>.json` (and `-dressed.json`), written by the golden test, never by hand.
-5. The `-PupdateGoldens` line in `CLAUDE.md` names every example file; add yours.
+## Before the first recipe line
 
-## Commands
+1. **List the reference's features in plain words**, one line each, and put the list in the recipe as `"x-features"` (keys starting `x-` are notes the build reads past). Cover at least: overall proportions (head to body, leg length, how tall against how long), the silhouette of each part (snout long and pointed or short and round, ear shape, tail shape), the nose point, every colour region on the face and body (a two-tone face, a muzzle patch, a chest blaze, a dark tail tip, socks), the eyes (shape, size, where they sit), mouth and marks, digits (toes, claws), and clothes.
+2. Read `docs/work/example-limits.md` for what the engine cannot do yet.
+3. Pick the plan: `canine-quadruped`, `biped`, `bird`, `fish` for a templated character, `blank` for a template-free one.
 
-JDK 25: `JAVA_HOME=~/.jdks/corretto-25.0.1`.
+When the recipe is done, **go down the feature list and point at the recipe entry that makes each one**. A feature with no entry is not done.
 
-- `./gradlew :screens-core:test --tests '*<Name>*' -PupdateGoldens`: write the example files. About 40 s. Run again without the flag to check them.
-- `./gradlew :app:look -Plook="example=<name>"`: render through the real graph with no test runner, every outfit in its display pose (`<outfit>.png`), at rest when that differs (`<outfit>-rest.png`) and in the example's named poses from the front, three-quarter and side, with face, hand and foot close-ups, into `app/build/look/<name>/`. Options: `outfits=a,b`, `poses=a,b`, `close=face,hand,foot` (`close=hands` instead renders a hand in six views as `hand-rest`, `hand-built`, `hand-curl` and `hand-open`: display pose, as built, curled 0.85 and open; `close=feet` the foot or paw the same way as `foot-*`, plus `foot-spread`, the toes fanned at their roots), `set=part:name:value,...` to try parameters on parts before rendering without touching the fixture (a pair's both sides; `set=back-paw-l:merge:1.0,back-paw-l:claws:0` renders the fennec with mitten back paws; `measure` takes it too), `out=<folder>`, `file=true` to read `examples/<name>.json` instead of the fixture's commands. About 30 s for the dressed woman's 36 images; needs the GPU. Named poses are listed per example in `screens/look/LookSubjects.kt`; a new example is added to its fixture map.
-- `./gradlew :app:measure -Pmeasure="example=<name>"`: with `parts=true` it also prints every part's origin and box as shown, heights from the ground under the soles: read these to place sockets and check proportions instead of guessing from renders. It prints the checks per outfit as numbers: arm volume inside the torso at rest and as shown, hip socket spread, the share of the face in shade per view, the smallest gap between digit tips, socket ring length (all and seen), the head's profile depth brow to chin and its deepest notch, skull vertices seen outside the hair, bare skin seen inside a garment's shell (as shown, and in each named pose of the first outfit asked for), the vertices of parts a garment owns that lie under cloth, how far each owned part strays from moving rigidly in each named pose, and the shading terminator per view with its blotches. No GPU.
-- `./gradlew :app:test --tests '*<Name>SmokeTest*' -Pslow`: the smoke tier's renders, kept for regressions. Images land in `app/build/smoke-images/<image>.png`.
-- `./gradlew check`: before landing, 2 to 4 minutes. The smoke tier is not in it.
+## The loop
 
-## Matching a reference
+```
+tools/recipe.sh recipes/<name>.recipe.json
+```
 
-When a character is built to match renders from another renderer (the twin, `screens-core/.../twin/`, matches the reference woman in `C:\Users\nicho\squash-reference\threejs-woman\`):
+From any folder; paths may be relative. It holds the machine-wide build lock (it waits if another build runs). It prints every file it writes:
 
-- Build in the reference's units and frame: metres, +Y up, facing forward. Squash's body frame is +X forward, -Z her left; the look command's reference frame maps the reference's +Z forward and +X left onto it and puts its y = 0 on the posed body's lowest vertex, so draw the torso's axis through the reference's hip midline and let the soles land wherever they land.
-- `./gradlew :app:look -Plook="example=<name> eye=x,y,z target=x,y,z fov=30 size=800x1000"` renders each outfit and named pose through one perspective camera given in the reference frame (`<outfit>-camera.png`); `scale=` sets body units a metre for a character drawn at another size.
-- `shots=reference` renders the reference's 24 shots (`look/shots/ReferenceShots.kt`: outfit, pose, camera, the reference's file names) into `app/build/look/<name>/shots/`. A shot's outfit and pose are looked up by name in the example, so name outfits and poses as the reference does (`rest` is the display pose; `shades-up` is a named pose).
-- `./gradlew :app:compare -Pcompare="example=<name> reference=<folder of the reference PNGs>"` writes `<shot>-pair.png` (reference left) and `<shot>-overlay.png` (blue reference only, red Squash only, grey both) into `app/build/compare/<name>/`, and prints and keeps `iou.txt`: the silhouette IoU per shot, whole and per head, torso, arms and legs band. The overlay says which way a part is off; `measure parts=true` says by how much.
-- Light and shading are Squash's own: judge shape and dressing, not tone.
+- `build/recipes/<id>/<id>.json` — the character file; open it in the app with `./gradlew :app:run -Popen=<file>`.
+- `build/recipes/<id>/renders/` — `<outfit>.png` (front, three-quarter, side in the display pose), `<outfit>-rest.png` when the display pose differs from rest, `<outfit>-pose-<name>.png` per named pose, `<outfit>-face.png`, `<outfit>-foot.png`, `hand.png`. A character with no outfits is `as-saved`.
+- `build/recipes/<id>/measure.txt` — the numbers (below).
 
-## Two routes: templated or template-free
+About 12 to 20 s a run, most of it Gradle starting. A recipe error stops the run before anything renders and says where, as a JSON path:
 
-Pick per part, with the renders as judge.
+```
+recipe error at $.parts[3].socket: torso has no socket "nek"; it offers neck, tail, front-leg, back-leg
+```
 
-- **Template-free** (Blank plan): `tube`, `blob` and `sheet` on hand-made sockets, with hand-made joints and landmarks. Use it wherever a template's built shape fights the figure: torso, limbs, neck, hair. You draw every outline; `generic.rings` up to 96 and `generic.segments` up to 32 make it fine. Costs (see the limits note): no blend, one hinge a joint, and the tube's root joint keeps ±60. A hand-made socket sinks once unless its `socket.<n>.sink` says more (`HandSockets.add(..., sink =)`).
-- **Templated**: a template earns its place only for blocks no generic part has: `hand-5` for a hand whose fingers grow out of the palm on one surface with webs, knuckles and nails, `foot-4` for a foot whose toes do the same with toenails, `paw-5` for a creature's paw (toes standing clear to a mitten, claws, pads); `head-round` for a head: version 2 stands upright on the neck's end, faces forward for the face bins, gaze and Look, reads Side as a profile and carries a neck joint and an eye landmark (version 1 rests forward with its face on the pole). The newest version of each template is the highest `version` among `templates/<id>*.part.json`; `ref(id)` in `fennec/FennecBody.kt` picks it.
-- Plans: `templates/plans/*.plan.json`. A templated character starts on a species plan (biped, bird, canine, fish); a template-free one on `blank`. Copy the plan's palette into the empty document as `woman/Woman.kt` does.
+Warnings (`recipe warning at $.parts[2].params.toe: template paw has no parameter "toe"; it has ...`) do not stop the build; read them.
 
-## Order of commands
+Options, as `key=value` after the recipe:
 
-1. Root part: `AddParts(PartInstance(id, ref, role = Role.BODY))`. A generic root rests forward; turn it with `RestDirection.restIn(part, UP)`.
-2. Sockets on the parent before parts on them: `HandSockets.add(part, n, u, v, outward, paired, sink)`, named `HandSockets.name(n)`. **Gap**: parameter names live in `character/.../build/HandSockets.kt`, `HandJoints.kt`, `HandLandmarks.kt`, `GenericShape.kt`, `Placement.kt`.
-3. Children: `AddParts` with `SocketRef(parent, socket)`. A generic part is added with `roleGuessed = true` and its role set after with `SetRole`, as Add part does. A pair is one `AddParts` with both sides (`pair = PairId`, `side`), and every later command names the left side only; the right mirrors it.
-4. Shape: `SetOutlines(part, mapOf(View.SIDE to ..., View.TOP to ..., View.FRONT to ...))`, `SetParameter` for `size`, `move.outward`, `move.lean`, `generic.*`, joints with `HandJoints.add`.
-5. Color: `SetPaletteSlot`, `SetBaseSlot`, `SetRegion`. Then face and marks (`SetMark`, `SetMarkGroup`). Then the display pose, `SetDisplayPose`. Then the wardrobe.
+| Option | Does |
+| --- | --- |
+| `render=false` | the character file only, a few seconds |
+| `measure=false` | skip the measurements |
+| `close=face,hand,foot` | close-ups (the default); `hands` and `feet` render the bare hand or paw at rest, curled, open (and spread) from six sides; `joins` the neck, shoulder and hip |
+| `outfits=a,b` or `all` | which outfits (default: the one the recipe shows) |
+| `poses=a,b` or `all` | which named poses (default all) |
+| `set=part:name:value,...` | try a parameter without editing the recipe |
+| `out=<folder>` | where to write |
+| `reference=<png> eye=x,y,z target=x,y,z fov=30` | also render through that camera at the image's size and compare (below) |
 
-## A-pose and the display pose
+`tools/recipe.sh export <character.json> [out=<recipe.json>]` writes any character file as a recipe: start from an example this way. It prints `not carried:` for anything a recipe cannot hold.
 
-- A biped is built, weighted and dressed in A-pose: arms 45 degrees out (`move.outward` 45; on the biped plan Add part starts them there from the shoulder's `spread`, which a fixture passes as the `AddParts` pair data), legs straight down from the hips. Garments are drawn over that pose.
-- The display pose, saved with the character, brings the arms down (`woman/WomanPoses.kt` `WOMAN_DISPLAY`: a lean on the arm's root bone, `base` on a tube, `shoulder` on the `arm` template, and a free twist at the elbow for the palms). The session shows the working pose over it: a pose names only the bones it changes, and naming a display bone replaces it.
-- The posed upper arm is pushed out of the torso (not out of garments, which hide what of it lies inside them), down to about the elbow; under the shoulder it may stay up to 0.8 of its radius inside the body's side, as a hanging arm presses in there, and below the push it lets go in one curve to the wrist, so the hand stays where the pose put it. The deeper the pose drives the arm into the torso, the further out the elbow bows, so leave the arm a little out from the hips in the display pose (about 15 to 25 degrees, and as far as 28 on a body as wide as its arms are long) rather than straight down. `measure` prints the arm's volume inside the torso past the armpit (0.36 of its length), which should be 0, and its deepest point inside the torso past the join.
-- Bend an elbow toward where it should point with the hinge's `degrees` and, across it, `lean` (`JointMode.FREE` past its limits): neither twists the forearm. A `twist` at the elbow rolls the forearm about its own length where the bend points, spread from none at the elbow to all of it at the wrist, as turning the palm does: put a palm's or a sole's roll there, on the elbow or the knee, never on the hand's or foot's own root bone, which turns whole and pinches the wrist. A `turn` is taken about the bone's rest line after the bend, so at a bent elbow it swings the bend about the upper arm's line as well; use it to swing a bend, as the twin's wave folds its forearm up.
-- Turn the hips and the chest about the vertical with `turn` on an upright torso: on its root bone (`base`) the whole body turns with the legs, and on a spine joint the chest turns against it, spread up the joint's span (the twin's walk, `twin/TwinPoses.kt`). Beside a skirt that hangs free the arm turns out at the shoulder until the hand clears it (up to about 20 degrees), so do not spread the arms per outfit for a skirt; measure prints `arm and hand vertices inside the skirt`.
-- Necks, arms, legs, hands and feet are joined to what they sit on by a smooth union of their solids, and a head to its neck, so the join is one surface with no ring. Draw a limb without a shoulder or hip bulge of its own at its root: the union makes the shoulder, whichever way the arm turns. A limb seated on the surface (`sink = 0f`) is joined too. The join's reach is the part's `blend` (`SetSocketBlend`), a quarter of its solid's least extent when unset. A join is inked along the curve where the two parts' shares of the surface are equal unless the joined part's `join.ink` is 0.
-- A garment never moves a socket: a Redraw that reshapes a part leaves what hangs from it where it hangs on the bare part, carried along only by the socket u the Redraw gives. Do not turn limbs in or out per outfit to clear a garment.
+Change one thing a run. Body first, rendered bare from three sides; fix proportions; then the face close-up; then hands and feet; then one garment at a time.
 
-## Drawing outlines
+## Judging
 
-- `p(x, y)`, `tuft(x, y)` (a corner), `loop(...)` (closed) and `drawn(...)` (open) are in `fennec/Pen.kt`.
+Read every PNG the run printed, with the feature list beside you. For each feature say whether it shows. Then read `measure.txt`:
+
+- `arm volume inside the torso` — should be 0 at rest and as shown.
+- `smallest gap between digit tips` — toes or fingers fused if near 0.
+- `profile depth brow to chin`, `deepest notch` — how much the face's profile stands out.
+- `face in shade` per view — above about 0.3 the face reads dark.
+- `terminator ... blotches` — shading blotches; aim for none.
+- `one surface ... open edges` — should be 0.
+- `owned part vertices under cloth`, `owned parts' drift from rigid` — for props a garment carries.
+
+### Matching a reference image
+
+With `reference=<png> eye=x,y,z target=x,y,z fov=<deg>` the run renders the character through that camera (reference frame: metres, +Y up, the character facing +Z with its left at +X, y = 0 on the soles; `scale=<body units per metre>` for a character drawn at another size) and writes `compare/pair.png` (reference left), `compare/overlay.png` (blue reference only, red Squash only, grey both) and the silhouette IoU. The reference's background is keyed by its top-left pixel, or `ground=#rrggbb`. Judge shape and dressing, not tone: light and shading are Squash's own.
+
+## The recipe
+
+The schema is `schema/recipe.schema.json`; put `"$schema": "../schema/recipe.schema.json"` at the top for checking in an editor. Every field has a description there. `recipes/fennec.recipe.json` (templated quadruped, fur, face marks) and `recipes/woman-dressed.recipe.json` (template-free biped, hand-made sockets and joints, outfits) are the worked examples.
+
+```json
+{
+  "format": 1, "id": "fennec", "name": "Fennec", "plan": "canine-quadruped",
+  "x-features": "tall ears with pink insides; cream muzzle and cheeks; dark tail tip",
+  "palette": [{"slot": "fur", "color": "#e6b36e"}, {"slot": "cream", "color": [0.99, 0.94, 0.82]}],
+  "parts": [
+    {"id": "torso", "template": "torso", "role": "body", "color": "fur",
+     "outlines": {"side": {"closed": true, "through": [[0, 0.03], [0.18, 0.22], [0.56, 0.22], [0.88, 0.36], [0.81, -0.05], [0.21, -0.14]]}}},
+    {"id": "head", "template": "head", "on": "torso", "socket": "neck", "size": 1.12, "color": "fur",
+     "regions": [{"id": "muzzle", "slot": "cream", "patch": "muzzle", "border": [[0.62, 0.31], [0.97, 0.24], [0.99, 0.5], [0.97, 0.76], [0.62, 0.69]]}]},
+    {"id": "ears", "template": "ear", "on": "head", "socket": "ear", "pair": {"left": "ear-l", "right": "ear-r"}, "outward": 16,
+     "outlines": {"top": {"through": [[0, 0.17], [0.42, 0.16], [0.72, 0], [0.42, -0.16], [0, -0.17]], "corners": [2]}}}
+  ],
+  "eyes": [{"id": "eyes", "on": "head", "u": 0.6, "v": 0.185, "look": {"white": "cream", "iris": "fur"}}],
+  "displayPose": [],
+  "poses": {"sit": [{"part": "back-leg-l", "joint": "hip", "degrees": -40}]}
+}
+```
+
+### Parts
+
+- One entry a part, **after the part it sits on**: `on` names it, `socket` the socket there. A recipe error lists the sockets a part offers.
+- A mirrored pair is one entry with `pair` (`{}` names the sides `<id>-l`, `<id>-r`); it is described as its left side and the right mirrors it. A pair on a pair (paws on legs) names the parent pair's id in `on`, and each side sits on its own side. Anywhere else (poses, covers, expressions) a side is named by its own id, and the pair's id means its left side.
+- `template` and optionally `version` (newest when left out). Templates are `templates/*.part.json`: their `params` are the parameter names, their sockets and joints are listed there. **Gap**: there is no generated catalog yet; reading the template JSON is allowed and is not a code read.
+- `role` is the template's, or guessed from where the part sits, when left out. Give it for a generic part (`tube`, `blob`) to be sure.
+- Shape: `outlines` by view, `size`, `lean`, `outward` (A-pose arms take 45), `params` by name, `blend` for how far the join with the parent reaches.
+- Hand-made sockets: `sockets: [{"n": 2, "u": 0.83, "v": 0.75, "mirrored": true, "sink": 0}]`, named `socket.<n>`. On an upright part v 0 faces forward, 0.5 back, 0.75 the character's left; on a part resting out v 0 is up, 0.25 back, 0.75 front. `sink` 0 seats a child on the surface; once by default (it sinks by the child's depth); a shoulder wants it shallow (0.25).
+- Hand-made joints on generic parts are parameters: `joint.<n>.u`, `.hinge`, `.low`, `.high` (degrees). `generic.rings` up to 96 and `generic.segments` up to 32 make a generic part fine; `move.rest` turns a generic root to rest up (2). **Gap**: these names come from the woman's recipe, not a reference.
+
+### Outlines
+
+- `through`: a few `[x, y]` places a smooth curve passes through; `corners` lists the indices that are sharp (an ear tip, a tail tuft); `closed: true` for a part drawn all round (a torso, a head). Few points: 6 to 14 for a torso or head, 3 to 9 for a limb, ear or tail. `bezier` gives the cubic points themselves (3n + 1) where you need exact handles.
 - x runs along the part's axis from its socket end; the drawn length is the part's length (`size` scales it). y is across: Side sets height, Top sets width, Front (where the template's views say `section`) sets the cross-section for the whole part, drawn in -1 to 1.
-- Which way Side's y points: up for a part resting forward or back; forward for a part resting up or down (the part frame's up is body forward when its axis is near vertical). v = 0 lies on that up side; a hand-made socket's v reads the left side (the woman's paired sockets sit at v 0.75 on her torso and 0.68 on her head, both resting up). On a part resting out, v = 0 is up, 0.25 back and 0.75 front. **Gap**: `geom/.../PartAxes.kt`.
-- A loop's y need not be symmetric: front and back are set apart, so a belly, a seat or a bust is drawn in Side.
-- Draw a toe or finger run as wide as the palm or foot: digits space themselves by the drawn width.
-- End the outline at the template's length on templated parts with a flat end (`foot-2` ends at 0.42).
+- Side's y points up for a part resting forward or back, forward for a part resting up or down. A loop need not be symmetric: front and back are set apart, so a belly, a seat or a bust is drawn in Side.
+- Draw a toe or finger run as wide as the palm or foot: digits space themselves by the drawn width. End a templated part's outline at the template's length with a flat end (`foot-2` ends at 0.42).
+- `paw` 6, `hand` 6, `foot` 5 and `foot-bird` 4 fit their whole solid to drawn Side and Top outlines; undrawn, their parameters alone shape them. Leave them undrawn unless the parameters cannot get the shape.
 
-## Face
+### Colour
 
-- `head-round` version 2 stands upright, its axis from the chin to the crown; its axis start sits on the socket, so put the neck's end socket at `sink = 0f` and draw the head from the neck's top, with the chin a little below it so the head's underside covers the neck's end. A head on a part of role neck is joined to it by a strip from the neck's end to a foot just under the jaw, so no ring shows there and the jaw keeps its edge.
-- Side is the profile, forward up in the drawing: up the front from the chin over the lips, the nose and the brow to the crown, down the back of the skull and forward under the jaw. Each height crosses it twice, so the jaw's underside is a floor from chin to nape. A bump of the profile shorter than about 0.3 of the head's height (a nose, lips, a chin) stands out as a narrow ridge; a longer one (a muzzle) swells the whole front. Draw a nose in the profile, not as a part.
-- Top is the face's width up from the chin (the Front pane shows it); Front is the section seen from above (the Top pane shows it), face up: broad across the front, round behind.
-- Place marks with `FaceMap.of(head, template, PartData(outlines, size))` (`character/.../build/FaceMap.kt`): `on(x, y)` is the anchor a front view shows at x to her left and y up, in the head's drawn units from the neck's top; `left = false` mirrors it; `ring(...)` a closed ring. `woman/WomanFaceMap.kt` builds hers, and the shades' bridge socket is placed by it too. Build the map from the same outlines the head is drawn with.
-- Eyes are painted: one `PaintedEye` (`SetPaintedEye`) holds an anchor on the head and an `EyeLook`, mirrored across the head's plane, with its fills as palette slots. `fennec/FennecPaintedEyes.kt` and `woman/WomanFace.kt` are the models.
-- A mouth is a group with five roles (lip line, inner, teeth, tongue, corners), each a mark; set a role's `fill` to a palette slot. `fennec/FennecMarks.kt` (versions per camera bin) is the model. **Gap**: `document/.../MarkRole.kt`, `MarkGroupShapes.kt`.
-- Lips, blush and shadow are regions; ink strands on hair are marks.
-- Hand-made sockets on the upright head read v = 0 at the face, 0.5 at the back and 0.75 at her left; a socket's `sink` moves a hair part's root in or out along the skull's normal, below 0 standing it off.
+- `palette`: `{"slot": "fur", "color": "#e6b36e"}` or `[r, g, b]` from 0 to 1. Every colour used anywhere is a slot named here.
+- A part's `color` is its base slot; `areas` fill areas its template names (`nail:0`..`nail:4` in `nails`, a paw's `pad` and `claw` slots are filled by naming those slots in the palette).
+- `regions`: an area in a slot, its border given one way: `border` as `[u, v]` on the part (`patch` for a template patch such as `muzzle`), **`face` as `[x, y]` on a head seen from straight ahead** (x to the character's left, negative for its right, y up, in the head's drawn units from its socket), or `anchors` across parts. A two-tone face is two or more regions on the head, each drawn in `face` coordinates: draw the light mask, then any darker patch over it, listed in the order they paint.
+- Marks: `marks` with `points`, `face` or `anchors`; `width` stops; `ink: false` for a filled shape; `slot` for a coloured line (a brow); `kind: "fur"` for a fur root. `fur.patches` lays rows of fur roots: `{"name": "chest", "rows": 14, "columns": 36, "u": [0.66, 0.97], "v": [0.2, 0.8]}`, with `fur.spacing` and `fur.length` in pixels.
 
-## Dress
+### Face
 
-- `wardrobeSlots()`, then per garment `AddGarment`, `SetGarmentColor`, `CoverPart(garment, GarmentBranch(part, from, to, ease, outlines, fromV = , toV = ))`, `SetBodyPartChange`. The `garment()` helper in `woman/Wardrobe.kt` does all four.
-- `from` and `to` are u along the covered part; `to` may run past 1 to continue past the part's far end, `from` below 0 to run on before its start. `fromV` to `toV` spanning less than 1 covers a region (an open front, a sole, a cap), crossing v 0 when `fromV` is negative. `ease` is how far the shell stands off: the `garment()` helper gives the garment the `fit` most of its branches stand off by and fits the other branches' parts apart (`partFits`), as Dress's Fit and Fit a part do; a garment built by hand takes `fit =` itself. `layer` counts out from the skin: under the waistband 1, waistband 2, over both 3.
-- A garment can instead be drawn as Dress draws it, from edges on the body and a fill (`edgeCommand`, `fillCommand`, `rootHoleCommand` in `screens-core`'s `dress` package, which need the session's assembly; `look/DrawnGarments.kt` builds its subjects so); its branches and changes are then written from the edges.
-- Changes per covered part: `Through(cuff = false)` for an armhole or neckline, `Through(cuffSize)` for a collar, `Redraw(PartData(...))` laid over the part (fewer toes, a moved arm, a dark lip region by the same region id), `Swap(templateRef, PartData)` for a closed shoe, `Hide`. A part sitting on a socket inside a branch goes through with a cuff unless changed.
-- A skirt is a branch over the torso that hangs free: `from` below 0 by more than 0.1 runs it down past the torso's start, and the legs on the hips inside it hang in it, covered with their hip strips, with no hole or cuff. Draw its Side and Top outlines along the torso's own x, negative below the torso, from the hem up to the waist, wide enough to clear the legs at rest; where the drawing lies inside the torso the ease holds. After every pose the hem is pushed out wherever a leg would cut it and the push spreads round and down, so do not redraw the torso into a bell (`woman/Dress.kt`).
-- Rigid things a garment carries (shades, heels, buttons, a buckle, lapels, a brim) are parts it owns: a hand-made socket on the body part they sit on (`HandSockets.add(part, n, u, v, 0f, paired, sink = 0f)`; a sink of 0 seats the part on the surface, the default sinks it along the normal), then `AddParts` with `PartInstance(..., role = Role.OTHER, garment = id)` after the garment exists (`owned()` and `ownedPair()` in `woman/Wardrobe.kt`), then the part's rest, outlines, size and base slot as for any generic part (`propShape()`), and regions for a second colour (the lens inside the frame in `woman/Shades.kt`). A pair on one paired socket gives mirrored halves; parts on an owned part's socket must be owned by the same garment. They build only while the garment is worn, ride the bone they sit on in every pose, are never cut or hidden by garments, and read a socket on a swapped part as the shoe shows (`woman/Pumps.kt`). Side moves a part's middle up and down; Top sets only its width, so draw a lapel's slant with `move.outward` and its stand-off over the bust in Side (`woman/Suit.kt`). Check them with measure's `owned part vertices under cloth` and `owned parts' drift from rigid`.
-- `AddOutfit`, `PickGarment(outfit, slot, garment)` per slot, `ShowOutfit`. Share garments between outfits by picking them in several. **Gap**: `document/.../Garment.kt`, `BodyPartChange.kt`, `Worn.kt`.
+- Eyes are painted: `eyes: [{"id", "on": "<head>", "face": [x, y]}` or `"u"`, `"v"`, with `look` (opening `width`, `height`, `lowerLid`, `frontNarrowing`, `tilt`, `openingTilt`; `irisSize`, `irisRatio`, `irisForward`, `irisUp`; `pupilSize`, `slit`; `highlightSize`; `lid`, `lashes`, `brow`, `browRaise`, `browTilt`; and the slots `white`, `iris`, `pupil`, `highlight`, `ink`) and optionally a `front` look for front views. Mirrored across the head unless `mirrored: false`.
+- A mouth is a mark group on the head with five roles in draw order (`inner`, `tongue`, `teeth`, `lipLine`, `corners`), each naming marks on the head and optionally a `fill` slot and `ink: false`; the fennec's recipe has one.
+- `head-round` version 2 stands upright, its axis from chin to crown; put the neck's end socket at `sink: 0` and draw the head from the neck's top. Side is the profile, forward up in the drawing: up the front from the chin over the lips, nose and brow to the crown, down the back and forward under the jaw. **The nose point is the profile's most forward place**; a bump shorter than about 0.3 of the head's height (nose, lips, chin) stands out as a ridge, a longer one (a muzzle) swells the whole front. Top is the face's width up from the chin; Front the section seen from above.
+- Lips, blush and shadow are regions; ink strands on hair are marks. A head's hand-made sockets read v 0 at the face, 0.5 at the back, 0.75 at the left.
+- `expressions`: `{"id", "name", "joints": [{"part": "ear-l", "joint": "base", "degrees": 32}]}`.
 
-## Render and look
+### Poses
 
-The look command above is the authoring loop. In a smoke test:
+- A biped is built in A-pose: arms 45 degrees out (`outward`: 45), legs straight down. `displayPose` brings the arms down: a `lean` on the arm's root bone (`base` on a tube, `shoulder` on the `arm` template), leaving the arm 15 to 28 degrees out from the hips, a free twist at the elbow for the palms, the fingers a little curled (`fingers:<i>.<k>` negative, the thumb `fingers:4.<k>` positive).
+- A bone is `{"part", "joint", "degrees", "turn", "lean", "twist", "stretch", "mode": "free"|"limited"|"locked"}`. On a tube's `base`, positive degrees swing a limb back, `lean` out to the side (past limits with `mode: free`). Bend an elbow by `degrees` and aim it with `lean`; put a palm's roll as `twist` on the elbow, never on the hand's root. `turn` on an upright torso's `base` turns the whole body; on a spine joint the chest against the hips.
+- `poses` are named poses the run renders; they are not saved in the character.
 
-1. `CloseUps.session(EMPTY, commands)` then `SessionPose(session)` builds the rig the posed views need.
-2. `WomanViews.keep(session, name)` renders the whole character from the front, three-quarter and side, with face versions from the head's angle; pass `framed = setOf(HEAD, ...)` for a close-up. `CloseUps.keep(session, part, name)` shows one part and its parent from six sides; `keepAround` the whole character framed on a part.
-3. `session.send(ShowOutfit(id))` and `session.send(SetPose(Pose(listOf(BonePose(part, bone, degrees)))))` between renders, in one session. Bone names: a tube's root `base`, hand-made `joint.<n>`, templates' own (`neck`, `wrist`).
-4. Read every PNG. Compare with `docs/images/fennec.png`.
+### Clothes
 
-## Loop that worked
+- `wardrobe.slots` (`{"id": "top", "name": "Top"}`), `garments`, `outfits` (`{"id", "name", "picks": {"<slot>": "<garment>"}}`), `shown`.
+- A garment: `slot`, `layer` (under a waistband 1, a waistband 2, over both 3), `color`, `fit` (how far it stands off, about 0.015), `covers` (`{"part", "from", "to", "fromV", "toV", "outlines"}`; `to` past 1 runs on past the part's end, `from` below 0 before its start; a v span under 1 leaves an opening), `changes` by part, `looseEnds`.
+- Changes: `{"type": "through", "cuff": false}` for an armhole or neckline, `{"type": "through"}` for a cuff, `{"type": "hide"}`, `{"type": "redraw", "shape": {...}}` (outlines, params, colour or regions laid over the part: fewer toes, a dark lip), `{"type": "swap", "template": "blob", "shape": {...}}` (a closed shoe).
+- A skirt is a cover over the torso with `from` below -0.1, drawn in Side and Top along the torso's own x, negative below it; the legs hang inside it. Do not redraw the torso into a bell.
+- Rigid things a garment carries (shades, heels, buttons, a buckle) are parts with `"garment": "<id>"`, on a hand-made socket of the body part they sit on (`sink: 0` to seat them on the surface). Two garments' parts never reuse a socket number on one part.
 
-Draw the body first and render bare from three sides; fix proportions; then the face close-up; then hand and foot close-ups; then one garment at a time with the whole views. Change one thing a run. Keep the image you judge by in the same session as the commands that made it.
+## Tooling gaps: keep a log
+
+Every time you still have to read code, or guess and render to find out, add a line to `docs/work/recipe-gaps.md` under a heading for the character: the file or the trial, the fact you needed, and what tool or reference would have told you. Reading `templates/*.json`, `schema/*.json`, `docs/hld/` and other recipes is not a gap. Report the log's new lines when you finish.
+
+## Examples and goldens
+
+- The shipped examples (`examples/*.json`) are still built from Kotlin fixtures under `screens-core/src/testFixtures/.../screens/<name>/` with golden tests (`./gradlew :screens-core:test -PupdateGoldens`); leave those as they are unless asked. `recipes/fennec.recipe.json` and `recipes/woman-dressed.recipe.json` build those two examples' characters, render for render.
+- A new example ships as `recipes/<name>.recipe.json`; the recipe module's tests build every recipe there.
 
 ## Gotchas
 
-- A missing example file fails the golden test: run with `-PupdateGoldens` once, then without.
-- `--tests` takes the class's simple name with a wildcard: `'*WomanSmokeTest.poses'`, not `'*WomanSmoke.poses'`.
-- Two garments' owned parts must not reuse a socket number on the same part: a later `HandSockets.add` with the same number moves the earlier socket, and the earlier garment's parts with it.
-- A leg swings about its own start, so start it at the hip joint, inside the pelvis, not where it leaves the pelvis's underside: a leg started low swings from too low a pivot and shortens the stride. The twin's legs start 0.868 m up, on sockets sunk into the torso's side (`HIP_SINK`, `HIP_V`), drawn slimmer inside the pelvis; garments over the leg read u from that start (`legU`), and a leg's branch from its own start, inside the pelvis, leaves no bare hip strip.
-- `sink = 0f` on a body socket seats the joint on the surface, where a reference's joint usually is, but a shoulder's sits a little inside the torso (the twin's `SHOULDER_SINK` 0.25 puts it 0.012 m in, at the reference's); the default sinks it by the child's depth along the surface's normal, which on a rounded end moves it sideways and up too.
-- In a pose, a tube's `base` bone with positive degrees swings an arm or a leg back, negative forward; `lean` on it swings the limb out to the side (past the template's limits with `JointMode.FREE`); a forearm folds up from an arm raised to the side by turning at the elbow (`turn`) as it bends.
-- A hand-made socket centres the child on the parent's surface, sunk once by default, so its root lies inside the parent and the union hides it. `socket.<n>.sink` sets it deeper; an A-pose arm wants it shallow, or its top lies inside the torso.
-- `hand` 5 joins its fingers to the palm's field: one surface, no line where a finger leaves the palm, webs between neighbours, a knuckle ball at each finger's root and a nail on each. Shape it with the same parameters as hand 4 plus `cup` (the palm's hollow, 0 flat), `web` (how far the union reaches between fingers; 0 leaves them standing apart) and `knuckles` (the knuckle balls, 0 none). The nails are areas `nail:0` to `nail:4` in the palette slot `nails`; fill the slot, or the areas, to colour them. Its joints are named as hand 4's and curl the same ways; the thumb's limits run -20 to 35, the fingers' -100 to 20, so the Pose stage's Curl closes the fingers to a fist and the thumb across it. A relaxed hand in the display pose wants every finger joint a little negative and the thumb's a little positive (`woman/WomanPoses.kt`); its palm faces the thigh with no palm twist. A paw or a claw is the same `digits` row: `merge` (in radii) runs from separate fingers at 0.2 to a mitten of shallow lobes near 1.5, and `nail.claw` with `nail.curl` turns each nail into a claw past the tip; `foot` 4 and `paw` 5 expose these as parameters.
-- `foot` 4 is `foot` 3 with its toes joined to the field: size 1 is metres, and a person's foot is `size` alone (the woman's 1.18 gives 0.28 m heel to big toe; `measure parts=true` prints the box). Its toenails are areas `nail:0` to `nail:4` in the slot `nails`; its toes have two joints each, `toes:<i>.1` and `.2`, and Curl closes them down. `merge` (0.35) and `web` (0.04) set how the toes meet; leave them unless a foot wants toes pressed together (raise `merge`) or standing apart (lower it). Its socket sits under the ankle bone and its sole 0.069 m below that at size 1, so a leg drawn to end at the ankle stands the foot on the ground; a foot replacing a flatter one makes the character that much taller. Shoes work as over `foot` 3.
-- `paw` 5 is a creature's paw, front or back, no drawing needed: `toes` 3, 4 or 5 (each its own spread; 0 for a boot), `toeLength` and `toeThickness`, `width` and `height` of the pad and `heel` its width at the back, then the range from clear toes to a mitten in `merge`: 0.15 to 0.3 toes that stand clear (a fox, a fennec, a dragon), about 1 shallow lobes (a house cat), 2 a rounded mass. Claws: `claw` (length in toe lengths: 0.45 a fox's, 0.9 a dragon's), `clawCurl` (toward the ground; above about 0.2 a long claw is cut flat by the sole), `claws` 0 retracts them; they paint the palette slot `claw`, which the canine plan carries and an example sets. Pads: `pads` 0 turns off the main pad and the toe beans, painted in the slot `pad`; `beans` raises each bean as a bump. Its toes are `toes:<i>` from 0 whatever the count, two joints each. `paw` 6, `hand` 6, `foot` 5 and `foot-bird` 4 fit their whole solid to drawn Side and Top outlines: undrawn, the parameters alone shape them; drawn, the outline sets the length, height and width along the part, toes and all, so draw these outlines from Start from template (`templateOutline`) and drag them, never freehand smaller than the toes reach. `paw` 5 and earlier ignore a drawing outside the pad.
-- `foot-bird` 4 is a bird's foot built as `paw` 6 is: `toes` 2, 3 or 4 forward, `hallux` the hind toe (`toes:back`), `toeLength`, `toeThickness`, `spread`, `knuckle`, `merge`, `web`, talons (`claws`, `claw`, `clawCurl`, slot `claw`) and pads (`pads`, `padSize`, slot `pad`).
-- `hand` 4 and `foot` 3 are blended: size 1 is metres at an adult's proportions; shape them with their parameters (`palmWidth`, `fingerLength`, `heel`, `ballWidth` and so on). A hand 4 rests palm toward the body's middle with its fingers spread forward; give it the arm's `move.outward` so it hangs along an A-pose arm. Its joints are `fingers:<i>.<k>`, index 0 to pinky 3 and the thumb 4, k 1 to 3: negative degrees curl a finger toward the palm, positive the thumb. A forearm turned or twisted at the elbow turns the hand too; to aim the elbow's bend without turning the hand, bend it by `degrees` and `lean` instead.
-- A shoe over `foot` 3 is a Redraw of the foot setting `toes` 0 and `toeBox` 1 (`toeTip`, `toeRound`; `pitch` and `move.lean` for a heel) and a branch over the foot to u 1, which closes over the toe box's round tip. A branch's v range is one opening along its whole length, so an open-topped shoe is a sides branch with a v range plus a vamp branch in another slot. A sole is an owned blob drawn as the footprint in Top and a slab in Side. A shoe branch over `foot-2` is open at the toe; there Swap the foot for a blob, and leave a swapped shoe one colour, since a region on a Swap's data stays where it lies at rest when the foot is posed.
-- A garment shared between outfits reads u on the part as other garments leave it; a Redraw that changes a part's length moves every other garment's range.
-- Wait on the graph, never a timer: `work.settle(session)` (inside `CloseUps`), `settle(work) { ... }` in a UI test.
+- A leg swings about its own start, so start it at the hip joint, inside the pelvis (a socket sunk into the torso's side), not where it leaves the pelvis's underside.
+- A garment never moves a socket; do not turn limbs per outfit to clear a garment.
+- A garment shared between outfits reads u on the part as other garments leave it; a redraw that changes a part's length moves every other garment's range.
+- `paw` 5: `toes` 3 to 5, `merge` 0.15 to 0.3 for toes standing clear, about 1 for a mitten; `claw` length, `clawCurl`, `claws` 0 retracts; `pads`, `beans`. `foot` 4 and 5: size 1 is metres; a person's foot is `size` alone (1.18 gives 0.28 m heel to toe).
+- A shoe over `foot` 3 is a redraw setting `toes` 0 and `toeBox` 1 plus a cover to u 1. A closed shoe over a later foot is a swap to a `blob`.

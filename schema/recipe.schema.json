@@ -1,0 +1,1878 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Recipe",
+  "$defs": {
+    "Anchor": {
+      "type": "object",
+      "properties": {
+        "part": {
+          "type": "string"
+        },
+        "patch": {
+          "type": "string"
+        },
+        "u": {
+          "type": "number"
+        },
+        "v": {
+          "type": "number"
+        },
+        "offset": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "part",
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "BonePose": {
+      "type": "object",
+      "properties": {
+        "part": {
+          "type": "string"
+        },
+        "joint": {
+          "type": "string"
+        },
+        "degrees": {
+          "type": "number"
+        },
+        "stretch": {
+          "type": "number"
+        },
+        "turn": {
+          "type": "number"
+        },
+        "lean": {
+          "type": "number"
+        },
+        "mode": {
+          "enum": [
+            "free",
+            "limited",
+            "locked"
+          ]
+        },
+        "keepVolume": {
+          "type": "boolean"
+        },
+        "twist": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "part",
+        "joint"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLook": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "lowerLid": {
+          "type": "number"
+        },
+        "frontNarrowing": {
+          "type": "number"
+        },
+        "tilt": {
+          "type": "number"
+        },
+        "openingTilt": {
+          "type": "number"
+        },
+        "lookOut": {
+          "type": "number"
+        },
+        "irisSize": {
+          "type": "number"
+        },
+        "irisRatio": {
+          "type": "number"
+        },
+        "irisForward": {
+          "type": "number"
+        },
+        "irisUp": {
+          "type": "number"
+        },
+        "pupilSize": {
+          "type": "number"
+        },
+        "slit": {
+          "type": "boolean"
+        },
+        "highlightSize": {
+          "type": "number"
+        },
+        "highlightForward": {
+          "type": "number"
+        },
+        "highlightUp": {
+          "type": "number"
+        },
+        "lid": {
+          "type": "boolean"
+        },
+        "lashes": {
+          "type": "boolean"
+        },
+        "brow": {
+          "type": "boolean"
+        },
+        "browRaise": {
+          "type": "number"
+        },
+        "browTilt": {
+          "type": "number"
+        },
+        "white": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "iris": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pupil": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "highlight": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ink": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "GarmentSlot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "GroupRole": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "lipLine",
+            "inner",
+            "teeth",
+            "tongue",
+            "corners"
+          ]
+        },
+        "ink": {
+          "type": "boolean"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "role"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Hide": {
+      "description": "The part is not built while the garment is worn.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "hide"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "JointAngle": {
+      "type": "object",
+      "properties": {
+        "part": {
+          "type": "string"
+        },
+        "joint": {
+          "type": "string"
+        },
+        "degrees": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "part",
+        "joint",
+        "degrees"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "LooseEnd": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "v": {
+          "type": "number"
+        },
+        "bones": {
+          "type": "integer"
+        },
+        "fromHem": {
+          "type": "boolean"
+        },
+        "followThrough": {
+          "type": "boolean"
+        },
+        "spring": {
+          "type": "number"
+        },
+        "collideBody": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "branch"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MarkControls": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "number"
+        },
+        "expressionBlend": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "mouthShape": {
+          "anyOf": [
+            {
+              "enum": [
+                "SMILE",
+                "FROWN",
+                "O",
+                "GRIMACE"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MarkFlight": {
+      "type": "object",
+      "properties": {
+        "along": {
+          "type": "number"
+        },
+        "across": {
+          "type": "number"
+        },
+        "out": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "along",
+        "across",
+        "out"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MarkGroup": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GroupRole"
+          }
+        },
+        "controls": {
+          "$ref": "#/$defs/MarkControls"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "roles"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MarkVersion": {
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Anchor"
+          }
+        },
+        "width": {
+          "$ref": "#/$defs/MarkWidth"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MarkWidth": {
+      "type": "object",
+      "properties": {
+        "stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WidthStop"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Outfit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "picks": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Recipe": {
+      "description": "A Squash character described as parts, outlines, colours, face, clothes and poses; built into a character file by sending the document commands it stands for.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "format": {
+          "description": "The recipe grammar version.",
+          "type": "integer",
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "id": {
+          "description": "The character's id, also the name of the files a build writes.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The character's name as the app shows it.",
+          "type": "string"
+        },
+        "plan": {
+          "description": "The body plan the character starts on: blank, biped, bird, canine-quadruped or fish.",
+          "type": "string"
+        },
+        "planVersion": {
+          "description": "The plan's version; the newest shipped when left out.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "palette": {
+          "description": "Named colours, in order. Every colour the recipe uses is a slot named here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeSlot"
+          }
+        },
+        "parts": {
+          "description": "The parts, each after the part it sits on. A garment's own parts (shades, a heel, a buckle) name their garment.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipePart"
+          }
+        },
+        "eyes": {
+          "description": "Painted eyes on a head.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeEye"
+          }
+        },
+        "expressions": {
+          "description": "Named expressions: joint angles of the face's parts, as ears back or a dropped jaw.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeExpression"
+          }
+        },
+        "wardrobe": {
+          "description": "Clothes: slots, garments and outfits.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeWardrobe"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "displayPose": {
+          "description": "The pose the character is saved and shown in, over the rest it is built in: a biped's arms brought down from A-pose.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BonePose"
+          }
+        },
+        "poses": {
+          "description": "Named poses the build renders besides the display pose; not saved in the character.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/BonePose"
+            }
+          }
+        }
+      },
+      "required": [
+        "format",
+        "id",
+        "name"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeChange": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Hide"
+        },
+        {
+          "$ref": "#/$defs/Redraw"
+        },
+        {
+          "$ref": "#/$defs/Swap"
+        },
+        {
+          "$ref": "#/$defs/Through"
+        }
+      ]
+    },
+    "RecipeCover": {
+      "description": "The garment over one part. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening.",
+      "type": "object",
+      "properties": {
+        "part": {
+          "type": "string"
+        },
+        "from": {
+          "description": "Where along the part it starts.",
+          "type": "number"
+        },
+        "to": {
+          "description": "Where along the part it ends.",
+          "type": "number"
+        },
+        "fromV": {
+          "description": "Where round the part it starts; below 0 to cross v 0.",
+          "type": "number"
+        },
+        "toV": {
+          "description": "Where round the part it ends.",
+          "type": "number"
+        },
+        "ease": {
+          "description": "How far it stands off the part where no outline takes it further, when the garment has no fit.",
+          "type": "number"
+        },
+        "outlines": {
+          "description": "Side and Top outlines along the part's own x where the cloth stands off further, as a skirt's flare.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "side",
+              "top",
+              "front"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/RecipeOutline"
+          }
+        }
+      },
+      "required": [
+        "part"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeExpression": {
+      "description": "A named expression.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "joints": {
+          "description": "Joint angles, each naming its part and joint; a mirrored part names each side's id.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JointAngle"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeEye": {
+      "description": "A painted eye on a head. Place it by u and v, or by face [x, y] seen from straight ahead (x to the character's left).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "on": {
+          "description": "The head it is painted on.",
+          "type": "string"
+        },
+        "patch": {
+          "description": "The patch u and v lie on.",
+          "type": "string"
+        },
+        "u": {
+          "description": "Where along the head its middle sits.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "v": {
+          "description": "Where round the head its middle sits.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "description": "Its middle as [x, y] on the face seen from straight ahead, in place of u and v.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "look": {
+          "description": "How it looks: opening, iris, pupil, highlight, lid, lashes, brow, and their palette slots (white, iris, pupil, highlight, ink).",
+          "$ref": "#/$defs/EyeLook"
+        },
+        "front": {
+          "description": "How it looks when the head is seen from the front; the look alone when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EyeLook"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fromFront": {
+          "description": "How far from its look to the front look a front view goes, 0 to 1.",
+          "type": "number"
+        },
+        "gazeForward": {
+          "description": "Gaze toward the head's front, a share of the opening's half width.",
+          "type": "number"
+        },
+        "gazeUp": {
+          "description": "Gaze up, a share of the opening's half height.",
+          "type": "number"
+        },
+        "mirrored": {
+          "description": "Whether it is painted again on the other side of the head.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "on"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeFur": {
+      "description": "Fur on a part: how its strokes show and patches of stroke roots.",
+      "type": "object",
+      "properties": {
+        "spacing": {
+          "description": "Pixels between strokes on screen.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "length": {
+          "description": "Pixels a stroke reaches.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "patches": {
+          "description": "Patches of stroke roots laid in staggered rows.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeFurPatch"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeFurPatch": {
+      "description": "A patch of fur stroke roots in staggered rows, each root a fur mark named <name>-<row>-<column>.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "rows": {
+          "description": "How many rows along the part.",
+          "type": "integer"
+        },
+        "columns": {
+          "description": "How many roots round it in each row.",
+          "type": "integer"
+        },
+        "u": {
+          "description": "[from, to] along the part.",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "v": {
+          "description": "[from, to] round the part; [0, 1] all round.",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "rows",
+        "columns",
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeGarment": {
+      "description": "A garment: a shell over the parts it covers, standing off them by its fit, and what it does to the parts under it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slot": {
+          "description": "The wardrobe slot it goes in.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layer": {
+          "description": "Counted out from the skin: under a waistband 1, a waistband 2, over both 3.",
+          "type": "integer"
+        },
+        "color": {
+          "description": "Its palette slot.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fit": {
+          "description": "How far it stands off the body, in body units; each cover's own ease when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "partFits": {
+          "description": "A fit for one covered part (a pair by its left side), over the garment's.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "inkHem": {
+          "description": "Whether its edges are inked.",
+          "type": "boolean"
+        },
+        "joins": {
+          "description": "Covered parts whose join with the next covered part is inked.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "covers": {
+          "description": "The parts it covers, one cover each; a pair's cover names its left side and covers both.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeCover"
+          }
+        },
+        "changes": {
+          "description": "What it does to body parts under it, by part (a pair by its left side).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/RecipeChange"
+          }
+        },
+        "looseEnds": {
+          "description": "Loose ends it hangs, as a scarf's tails.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LooseEnd"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeLineWeight": {
+      "description": "Heavier lines within radius of a stretch of the part.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "points": {
+          "description": "The stretch as [u, v] on the part.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "radius": {
+          "description": "How far it reaches, a share of the part's length.",
+          "type": "number"
+        },
+        "amount": {
+          "description": "How much heavier: a line's weight times 1 plus this.",
+          "type": "number"
+        },
+        "patch": {
+          "description": "The patch points lie on.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "points",
+        "radius",
+        "amount"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeMark": {
+      "description": "A mark: an ink line through its places, or a fur stroke from its one root. Give its places one way: points, face or anchors.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "description": "line, fur or floating.",
+          "enum": [
+            "line",
+            "fur",
+            "floating"
+          ]
+        },
+        "patch": {
+          "description": "The patch points lie on.",
+          "type": "string"
+        },
+        "points": {
+          "description": "Its places as [u, v] on the part.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "description": "On a head: its places as [x, y] on the face seen from straight ahead.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "anchors": {
+          "description": "Its places as anchors, each naming its part.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Anchor"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "description": "How its weight runs along it: stops at 0 to 1 along, each a share of the line's weight.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WidthStop"
+          }
+        },
+        "ink": {
+          "description": "Whether it is inked; a mark a group fills may be left un-inked.",
+          "type": "boolean"
+        },
+        "slot": {
+          "description": "Its colour; the ink's when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mirrored": {
+          "description": "On a part in the middle of the body: also shown mirrored on the other side.",
+          "type": "boolean"
+        },
+        "cameraLocked": {
+          "description": "Whether it sits where the light and camera put it rather than on the surface.",
+          "type": "boolean"
+        },
+        "versions": {
+          "description": "Its shape in named camera bins (front, three-quarter, side), replacing its places there.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/MarkVersion"
+          }
+        },
+        "flight": {
+          "description": "For a floating mark: the places it passes through off the surface, in body units from its root.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MarkFlight"
+          }
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeOutline": {
+      "description": "A drawn outline: a few [x, y] places it passes through (smooth, with corners where named), or the cubic Bézier points themselves. x runs along the part from its socket end; y is across.",
+      "type": "object",
+      "properties": {
+        "through": {
+          "description": "Places the outline passes through, [x, y] each. Few points: 6 to 14 for a body, 3 to 8 for a limb.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "corners": {
+          "description": "Indices into through that are sharp corners, as an ear's tip.",
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "closed": {
+          "description": "Whether through closes back to its first place, as a torso or head drawn all round does; an open outline runs from one side of the axis to the other.",
+          "type": "boolean"
+        },
+        "bezier": {
+          "description": "The Bézier points [x, y] themselves: a start point, then two handles and an end point per segment (3n + 1 points). In place of through.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipePair": {
+      "description": "The ids of a pair's two sides; <id>-l and <id>-r when left out.",
+      "type": "object",
+      "properties": {
+        "left": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "right": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipePart": {
+      "description": "A part, or with pair a mirrored pair described once as its left side.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The part's id; for a pair, the pair's id, its sides' ids under pair.",
+          "type": "string"
+        },
+        "template": {
+          "description": "The template it is built from: torso, head, head-round, leg, arm, paw, hand, foot, tail, ear, tube, blob, sheet and so on.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The template's version; the newest shipped when left out.",
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on": {
+          "description": "The part it sits on; a pair on a pair sits each side on its own side. Left out for the root part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "socket": {
+          "description": "The socket on that part: one of its template's or plan's sockets, or a hand-made socket.<n> it declares under sockets.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pair": {
+          "description": "Makes this a mirrored pair: its left and right parts' ids.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipePair"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "description": "What the part is to the body; its template's role, or guessed from where it sits, when left out.",
+          "anyOf": [
+            {
+              "enum": [
+                "body",
+                "spine",
+                "neck",
+                "head",
+                "jaw",
+                "ear",
+                "arm",
+                "hand",
+                "leg",
+                "foot",
+                "tail",
+                "wing",
+                "fin",
+                "horn",
+                "hair",
+                "other"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "garment": {
+          "description": "The garment that owns this part: it is built only while that garment is worn, as a heel, lens or buckle is.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "blend": {
+          "description": "How far the smooth join with the part it sits on reaches, in body units; a quarter of its least extent when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size": {
+          "description": "Scales the drawn part: its length and width together.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lean": {
+          "description": "Degrees the part leans toward its own up (move.lean).",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outward": {
+          "description": "Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward); an A-pose arm takes 45.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outlines": {
+          "description": "Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "side",
+              "top",
+              "front"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/RecipeOutline"
+          }
+        },
+        "sockets": {
+          "description": "Hand-made sockets on this part, for parts to sit on.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeSocket"
+          }
+        },
+        "params": {
+          "description": "Template parameters and other part parameters by name, as toes, merge, claw, generic.rings or joint.<n>.u.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "color": {
+          "description": "The palette slot the whole part is coloured.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "areas": {
+          "description": "Areas the template names, as a nail or a pad, each filled with a palette slot.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "regions": {
+          "description": "Painted regions on the part, each in a palette slot: a muzzle, a chest patch, a two-tone face.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeRegion"
+          }
+        },
+        "marks": {
+          "description": "Ink lines and fur strokes on the part.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeMark"
+          }
+        },
+        "groups": {
+          "description": "Mark groups, as a mouth: roles in draw order, each naming marks above.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MarkGroup"
+          }
+        },
+        "fur": {
+          "description": "How the part's fur strokes show, and patches of fur stroke roots laid in rows.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeFur"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lineWeights": {
+          "description": "Heavier lines along a stretch of the part.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeLineWeight"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "template"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeRegion": {
+      "description": "A painted region. Give its border one way: border ([u, v] on the part), face ([x, y] on a head's face seen from ahead) or anchors.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slot": {
+          "description": "The palette slot it is painted in.",
+          "type": "string"
+        },
+        "ink": {
+          "description": "Whether its border is inked as a line.",
+          "type": "boolean"
+        },
+        "patch": {
+          "description": "The patch its border's u, v lie on: body, or a patch the template names, as muzzle.",
+          "type": "string"
+        },
+        "border": {
+          "description": "The border as [u, v] on the part: u along it from its socket end, v round it.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "description": "On a head: the border as [x, y] on the face seen from straight ahead, x to the character's left (negative for the right), y up, in the head's drawn units from its socket.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "anchors": {
+          "description": "The border as anchors, each naming its part; for a region that runs across parts.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Anchor"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "slot"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeShape": {
+      "description": "A part's shape and colour as a garment lays it over the part.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outward": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outlines": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "side",
+              "top",
+              "front"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/RecipeOutline"
+          }
+        },
+        "params": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "areas": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeRegion"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeSlot": {
+      "description": "A named colour.",
+      "type": "object",
+      "properties": {
+        "slot": {
+          "description": "The name parts, regions and garments use for it.",
+          "type": "string"
+        },
+        "color": {
+          "description": "The colour: \"#rrggbb\", or [red, green, blue] from 0 to 1.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          ]
+        },
+        "shadow": {
+          "description": "Its own shadow tone; a warm shift of the colour when left out.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "label": {
+          "description": "What the app calls it; the slot's name when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "slot",
+        "color"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeSocket": {
+      "description": "A hand-made socket, named socket.<n>.",
+      "type": "object",
+      "properties": {
+        "n": {
+          "description": "Its number: the socket is named socket.<n>.",
+          "type": "integer"
+        },
+        "u": {
+          "description": "Where along the part, 0 at its socket end to 1 at its far end.",
+          "type": "number"
+        },
+        "v": {
+          "description": "Where round the part, as the left side reads it: on an upright part 0 faces forward, 0.25 her right, 0.5 back, 0.75 her left.",
+          "type": "number"
+        },
+        "outward": {
+          "description": "Degrees its outward direction turns from the surface's normal toward the part's end.",
+          "type": "number"
+        },
+        "mirrored": {
+          "description": "Whether it has a mirrored twin across the body's middle, for a pair to sit on.",
+          "type": "boolean"
+        },
+        "sink": {
+          "description": "How deep a part sits in here, as a multiple of that part's own sink: 0 seats it on the surface; once when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "n",
+        "u",
+        "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeWardrobe": {
+      "description": "Clothes: slots (places on the body an outfit fills once), garments and outfits.",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "description": "Places on the body, as top, bottom, feet, head; each outfit picks at most one garment a slot.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GarmentSlot"
+          }
+        },
+        "garments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeGarment"
+          }
+        },
+        "outfits": {
+          "description": "Named sets of garments: picks map a slot to a garment in it.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Outfit"
+          }
+        },
+        "shown": {
+          "description": "The outfit the character is saved wearing; bare when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Redraw": {
+      "description": "The part keeps its template and takes this shape over its own: outlines and parameters by name, regions by id.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "redraw"
+        },
+        "shape": {
+          "$ref": "#/$defs/RecipeShape"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Swap": {
+      "description": "The part takes another template with this shape while the garment is worn, as a closed shoe swaps a foot for a blob.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "swap"
+        },
+        "template": {
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shape": {
+          "$ref": "#/$defs/RecipeShape"
+        }
+      },
+      "required": [
+        "type",
+        "template"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Through": {
+      "description": "The part comes out through a hole: an armhole or neckline with cuff false, a collar or sleeve cuff with cuff true.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "through"
+        },
+        "cuff": {
+          "type": "boolean"
+        },
+        "cuffSize": {
+          "description": "How far the cuff reaches past the hole, a share of the part's length.",
+          "type": "number"
+        },
+        "inkCuff": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "WidthStop": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "number"
+        },
+        "scale": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "at",
+        "scale"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}
