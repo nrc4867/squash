@@ -25,9 +25,9 @@ private data class DotKey(val owner: PartId?, val socket: String, val side: Side
 private fun SocketHandle.key() = DotKey(owner, socket, side)
 
 /**
- * A Library tile's drag over Add part's dots. While it lasts, the dots whose sockets take the tile's template show large and in the
- * accent and the rest faint; near one that takes it, in [pane], the tile snaps beside that dot, which wears a ring, and a drop
- * there adds on its socket.
+ * A Library tile's drag over Add part's dots. While it lasts, the dots that take the tile's template show large and in the accent and
+ * the rest faint; near one that takes it, in [pane], the tile snaps beside that dot, which wears a ring, and a drop there adds on its
+ * socket, or replaces the part on it. What a dot takes is the tool's to say.
  */
 internal class SocketDrop {
     /** The window's drags, whose item lights the dots. */
@@ -38,9 +38,9 @@ internal class SocketDrop {
     /** The tile being dragged, while the pointer holds it. */
     fun dragged(): TemplateDrag? = drags?.item as? TemplateDrag
 
-    /** The dot within [reach] of [pixel] whose socket in [sockets] takes [drag]; dots that cannot take it are passed over. */
-    fun dotFor(drag: TemplateDrag, pixel: Offset, dots: List<SocketHandle>, sockets: List<OpenSocket>, reach: Float, view: HandleView): SocketHandle? =
-        handleAt(dots.filter { takes(it, drag, sockets) }, pixel, reach, view) as? SocketHandle
+    /** The dot within [reach] of [pixel] that [takes]; dots that cannot take the drag are passed over. */
+    fun dotFor(pixel: Offset, dots: List<SocketHandle>, takes: (SocketHandle) -> Boolean, reach: Float, view: HandleView): SocketHandle? =
+        handleAt(dots.filter(takes), pixel, reach, view) as? SocketHandle
 
     /** Where the tile goes while it is near [dot]: beside it, clear of its ring. */
     fun snapAt(dot: SocketHandle, view: HandleView, look: SheetLook): DropSnap? {
@@ -59,9 +59,9 @@ internal class SocketDrop {
         }
     }
 
-    /** [dot] in [pane] at [at] as it shows during [drag]: large and accent if its socket in [sockets] takes it, ringed while snapped to, else faint. */
-    fun OverlayBuilder.dragDot(pane: Any, dot: SocketHandle, at: Offset, drag: TemplateDrag, sockets: List<OpenSocket>, look: SheetLook) {
-        if (!takes(dot, drag, sockets)) {
+    /** [dot] in [pane] at [at] as it shows during a drag: large and accent where it [takes] the drag, ringed while snapped to, else faint. */
+    fun OverlayBuilder.dragDot(pane: Any, dot: SocketHandle, at: Offset, takes: Boolean, look: SheetLook) {
+        if (!takes) {
             dot(at, look.dotRadius + look.dotEdge, look.ring.faint())
             dot(at, look.dotRadius, look.dotFill.faint())
             return
@@ -70,9 +70,6 @@ internal class SocketDrop {
         dot(at, look.pickedDotRadius + look.dotEdge, look.ring)
         dot(at, look.pickedDotRadius, look.active)
     }
-
-    private fun takes(dot: SocketHandle, drag: TemplateDrag, sockets: List<OpenSocket>): Boolean =
-        socketOf(dot, sockets)?.let { drag.template in it.takes } == true
 
     /** The ring's middle, a dot's edge clear of a lit dot. */
     private fun ringRadius(look: SheetLook) = look.pickedDotRadius + look.dotEdge * 2 + look.ringWidth / 2

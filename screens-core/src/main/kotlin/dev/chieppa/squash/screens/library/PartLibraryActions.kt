@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.document.Wardrobe
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.addPart
+import dev.chieppa.squash.screens.canBecome
 import dev.chieppa.squash.screens.changeTemplate
 import dev.chieppa.squash.screens.templateChoices
 
@@ -60,6 +61,19 @@ fun AppState.pickFromLibrary(type: TemplateId) {
 fun AppState.replacePart(part: PartId, template: PartTemplate) {
     changeTemplate(part, template)
     library.added(template.id)
+}
+
+/**
+ * Gives [part], a part on a socket no garment owns, the template [type] where it can change to it keeping its drawing, selects it in
+ * place of any socket Library targets, and says whether it did: what a Library tile dropped on that part's socket does.
+ */
+fun AppState.replaceWith(part: PartId, type: TemplateId): Boolean {
+    val instance = session.value?.document?.value?.character?.part(part)?.takeIf(::replaceable) ?: return false
+    val template = templates.template(type)?.takeIf { canBecome(instance.id, it) } ?: return false
+    replacePart(instance.id, template)
+    closeAddPart()
+    selectPart(instance.id)
+    return true
 }
 
 /** [part], the other side of its pair and every part on any of them, outward from [part]. */

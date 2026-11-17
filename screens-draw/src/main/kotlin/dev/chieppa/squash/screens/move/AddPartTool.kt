@@ -27,12 +27,20 @@ import dev.chieppa.stretch.frame.LocalDragAndDrop
 import dev.chieppa.stretch.frame.dropTarget
 import dev.chieppa.squash.screens.addPart
 import dev.chieppa.squash.screens.library.TemplateDrag
+import dev.chieppa.squash.screens.library.replaceWith
+import dev.chieppa.squash.screens.library.replaceable
+import dev.chieppa.squash.screens.canBecome
+import dev.chieppa.squash.character.catalog.OpenSocket
+import dev.chieppa.squash.character.catalog.template
+import dev.chieppa.squash.character.model.swapsWith
 import dev.chieppa.stretch.frame.buildOverlay
 
 /**
  * Add part: a dot on every open socket, in the locked panes and Full, larger and accent on the one Library targets.
  * Pressing a dot targets its socket in Library. While a Library tile drags, the dots whose sockets take it are large and accent and
- * the rest faint; near one that takes it the tile snaps beside it, and dropping it there adds it on that socket. A press on a part's
+ * the rest faint, and a dot also lights on each filled socket whose part swaps with the tile's template ([swapsWith]) and can change
+ * to it ([canBecome]); near a dot
+ * that takes it the tile snaps beside it, and dropping it there adds it on that socket or gives the part there its template. A press on a part's
  * surface away from the dots places a hand-made socket there, with the Move tool's outward angle and pair flag and previewed under
  * the pointer as Add socket previews it, and targets it in Library.
  */
@@ -61,6 +69,26 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
         return moveHandles(character, null).filterIsInstance<SocketHandle>().filter { it.child == null }
     }
 
+    /**
+     * The dots a drag of [drag] shows: every open socket's, then each filled socket's whose part is of the template's swap family and
+     * can change to it.
+     */
+    private fun dragDots(drag: TemplateDrag): List<SocketHandle> {
+        val character = assembled() ?: return emptyList()
+        val template = state.templates.template(drag.template)
+        val filled = moveHandles(character, null).filterIsInstance<SocketHandle>().filter { dot ->
+            val child = dot.child ?: return@filter false
+            val part = state.session.value?.document?.value?.character?.part(child)?.takeIf(::replaceable) ?: return@filter false
+            val own = state.templates.template(part.template) ?: return@filter false
+            template != null && own.swapsWith(template) && state.canBecome(child, template)
+        }
+        return dots() + filled
+    }
+
+    /** Whether [dot] takes [drag]: its open socket takes the template, or the part on it can change to it. */
+    private fun takes(dot: SocketHandle, drag: TemplateDrag, sockets: List<OpenSocket>): Boolean =
+        if (dot.child != null) true else socketOf(dot, sockets)?.let { drag.template in it.takes } == true
+
     private fun presses(pane: Any, sight: SurfaceView, handles: HandleView, key: Any): Modifier = Modifier
         .pointerInput(this, pane, key) {
             awaitEachGesture {
@@ -86,13 +114,19 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
             onDrop = { drag, at -> dropOn(drag, at, handles) },
         )
 
-    /** The dot in reach of [at] whose socket takes [drag], the one the tile snaps to. */
-    private fun dotFor(drag: TemplateDrag, at: Offset, handles: HandleView): SocketHandle? =
-        drop.dotFor(drag, at, dots(), state.openSocketsNow(), curves.grabReach, handles)
+    /** The dot in reach of [at] that takes [drag], the one the tile snaps to. */
+    private fun dotFor(drag: TemplateDrag, at: Offset, handles: HandleView): SocketHandle? {
+        val sockets = state.openSocketsNow()
+        return drop.dotFor(at, dragDots(drag), { takes(it, drag, sockets) }, curves.grabReach, handles)
+    }
 
-    /** Adds a tile dragged from Library on the dot it snapped to, where that socket takes it; false sends the tile back. */
+    /**
+     * Adds a tile dragged from Library on the dot it snapped to, where that socket takes it, or gives the part on a filled socket its
+     * template; false sends the tile back.
+     */
     private fun dropOn(drag: TemplateDrag, at: Offset, handles: HandleView): Boolean {
         val dot = dotFor(drag, at, handles) ?: return false
+        dot.child?.let { return state.replaceWith(it, drag.template) }
         val socket = socketOf(dot, state.openSocketsNow()) ?: return false
         state.offerSocket(socket)
         state.addPart(drag.template)
@@ -115,10 +149,10 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
         val dragged = drop.dragged()
         val sockets = if (dragged != null) state.openSocketsNow() else emptyList()
         val adding = state.addingSocket.value?.ref
-        for (dot in dots()) {
+        for (dot in if (dragged != null) dragDots(dragged) else dots()) {
             val at = view.toPixel(dot.position) ?: continue
             if (dragged != null) {
-                with(drop) { dragDot(pane, dot, at, dragged, sockets, look) }
+                with(drop) { dragDot(pane, dot, at, takes(dot, dragged, sockets), look) }
                 continue
             }
             val picked = adding != null && adding.parent == dot.owner && adding.socket == dot.socket

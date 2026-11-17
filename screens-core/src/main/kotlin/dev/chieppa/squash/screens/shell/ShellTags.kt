@@ -30,6 +30,7 @@ object ShellTags {
     const val LIBRARY_PICK = "library.pick"
     const val LIBRARY_NO_MATCHES = "library.noMatches"
     const val LIBRARY_LIFTED = "library.lifted"
+    const val LIBRARY_MENU_REPLACE = "library.menu.replace"
     const val MOVE_MODE = "move.mode"
     const val SOCKET_OUTWARD = "move.socket.outward"
     const val SOCKET_PAIR = "move.socket.pair"

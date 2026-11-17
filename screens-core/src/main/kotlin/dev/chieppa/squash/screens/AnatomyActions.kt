@@ -9,6 +9,8 @@ import dev.chieppa.squash.character.build.savedTemplateId
 import dev.chieppa.squash.character.catalog.newest
 import dev.chieppa.squash.character.catalog.plan
 import dev.chieppa.squash.character.catalog.roles
+import dev.chieppa.squash.character.catalog.swapSeats
+import dev.chieppa.squash.character.catalog.swapTemplateCommand
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.load.freeId
@@ -22,7 +24,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetRole
-import dev.chieppa.squash.document.SetTemplate
 import dev.chieppa.squash.document.Together
 
 private const val FLAG_ON = 1f
@@ -100,26 +101,31 @@ fun AppState.unpair(part: PartId) {
 
 /**
  * The templates [part] can change to, keeping its drawing: each newest loaded template but its own whose views set height and width
- * as its own do, and that holds every socket of its own a child sits on. The root keeps its plan's template. See HLD: parts,
+ * as its own do, and on which every part on it finds a seat ([swapSeats]). The root keeps its plan's template. See HLD: parts,
  * Re-templating keeps the drawing.
  */
-fun AppState.templateChoices(part: PartId): List<PartTemplate> {
-    val document = session.value?.document?.value ?: return emptyList()
-    val instance = document.character.part(part)?.takeIf { it.socket != null } ?: return emptyList()
-    val own = templates.template(instance.template) ?: return emptyList()
-    val plan = templates.plan(document.character.bodyPlan)
-    val held = document.character.parts.mapNotNull { it.socket }.filter { it.parent == part && HandSockets.idOf(it.socket) == null }.map { it.socket }
+fun AppState.templateChoices(part: PartId): List<PartTemplate> = templates.newest.filter { canBecome(part, it) }
+
+/** Whether [part] can change to [template] as [templateChoices] offers it. */
+fun AppState.canBecome(part: PartId, template: PartTemplate): Boolean {
+    val document = session.value?.document?.value ?: return false
+    val instance = document.character.part(part)?.takeIf { it.socket != null } ?: return false
+    val own = templates.template(instance.template) ?: return false
     fun axisViews(template: PartTemplate) = template.views.filterValues { it in AXIS_READINGS }
-    return templates.newest.filter { template ->
-        val sockets = (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }).map { it.name }
-        template.id != own.id && axisViews(template) == axisViews(own) && sockets.containsAll(held)
-    }
+    return template.id != own.id && axisViews(template) == axisViews(own) &&
+        document.character.swapSeats(instance, own, template, templates.plan(document.character.bodyPlan)) != null
 }
 
-/** Gives [part] and its pair's other side [template], keeping outlines, parameters and surface work, one undo step; a typed template gives its role. */
+/**
+ * Gives [part] and its pair's other side [template], keeping outlines, parameters and surface work and seating the parts on them
+ * ([swapTemplateCommand]), one undo step.
+ */
 fun AppState.changeTemplate(part: PartId, template: PartTemplate) {
-    val role = template.role?.let { SetRole(part, it) }
-    session.value?.send(Together(listOfNotNull(SetTemplate(part, template.ref), role)))
+    val opened = session.value ?: return
+    val character = opened.document.value.character
+    val instance = character.part(part) ?: return
+    val own = templates.template(instance.template) ?: return
+    character.swapTemplateCommand(instance, own, template, templates.plan(character.bodyPlan))?.let(opened::send)
 }
 
 /**

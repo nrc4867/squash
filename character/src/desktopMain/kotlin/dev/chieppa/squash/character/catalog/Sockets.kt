@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SIZE_PARAM
+import dev.chieppa.squash.character.model.swapsWith
 import dev.chieppa.squash.character.role.PartRoles
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartData
@@ -34,20 +35,29 @@ val PartInstance.isLeader: Boolean get() = pair == null || side != Side.RIGHT
 fun SquashDocument.twin(part: PartInstance): PartInstance? =
     part.pair?.let { pair -> character.parts.firstOrNull { it.pair == pair && it.id != part.id } }
 
-/** Every socket with nothing on it, on the document's parts, offering the loaded templates it takes, or every loaded template when it names none. */
+/**
+ * Every socket with nothing on it, on the document's parts, offering the loaded templates it takes and every newest template that
+ * swaps with one of them ([swapsWith]), the named ones first, or every loaded template when it names none.
+ */
 fun openSockets(document: SquashDocument, plan: BodyPlan, templates: TemplateFolder): List<OpenSocket> {
     val parts = document.character.parts
     val filled = parts.mapNotNull { it.socket }.toSet()
     return parts.filter { it.isLeader }.flatMap { part ->
         val template = templates.template(part.template) ?: return@flatMap emptyList()
         socketsOn(plan, template, document.character.resolvedShape(part).params).mapNotNull { spec ->
-            val takes = if (spec.takes.isEmpty()) templates.newest.map { it.id } else spec.takes.filter { templates.template(it) != null }
+            val takes = if (spec.takes.isEmpty()) templates.newest.map { it.id } else templates.takingAlike(spec.takes)
             when {
                 takes.isEmpty() || SocketRef(part.id, spec.name) in filled -> null
                 else -> OpenSocket(part.id, spec.name, takes, spec.pair != null || part.pair != null, spec.scale, spec.spread)
             }
         }
     }
+}
+
+/** [named], those of them loaded, then every other newest template that swaps with one of them. */
+fun TemplateFolder.takingAlike(named: List<TemplateId>): List<TemplateId> {
+    val loaded = named.mapNotNull { template(it) }
+    return (loaded + newest.filter { other -> loaded.any { it.swapsWith(other) } }).map { it.id }.distinct()
 }
 
 /** The first open socket that takes [template], preferring [current] when it does. */

@@ -151,6 +151,41 @@ class LibraryFlowTest {
     }
 
     @Test
+    fun aSelectedLegTakesABirdLegFromATilesMenuAndAnArmFromThePressAndFooterKeepingItsPaws() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = created()
+        val session = assertNotNull(state.session.value)
+        state.add("back-leg", "leg")
+        state.add("paw", "paw")
+        val leg = session.document.value.character.parts.first { it.socket?.socket == "back-leg" }
+        state.selectPart(leg.id)
+        waitForIdle()
+        fun templatesOn(socket: String) = session.document.value.character.parts.filter { it.socket?.socket == socket }.map { it.template.id.value }
+
+        val steps = session.history.steps.value.done.size
+        onNodeWithTag(ShellTags.libraryTile("leg-bird"), useUnmergedTree = true).performScrollTo().performMouseInput { rightClick() }
+        waitForIdle()
+        onNodeWithTag(ShellTags.LIBRARY_MENU_REPLACE).performClick()
+        waitForIdle()
+        assertEquals(steps + 1, session.history.steps.value.done.size, "one step")
+        assertEquals(listOf("leg-bird", "leg-bird"), templatesOn("back-leg"))
+        assertEquals(listOf("paw", "paw"), templatesOn("foot"), "the paws stay on, at the bird legs' ends")
+        state.undo()
+        assertEquals(listOf("leg", "leg"), templatesOn("back-leg"))
+        assertEquals(listOf("paw", "paw"), templatesOn("paw"))
+
+        onNodeWithTag(ShellTags.libraryTile("arm"), useUnmergedTree = true).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithTag(ShellTags.LIBRARY_PICK).performClick()
+        waitForIdle()
+        assertEquals(listOf("arm", "arm"), templatesOn("back-leg"))
+        assertEquals(listOf("paw", "paw"), templatesOn("hand"))
+
+        onNodeWithTag(ShellTags.libraryTile("tail"), useUnmergedTree = true).performScrollTo().performMouseInput { rightClick() }
+        waitForIdle()
+        onNodeWithTag(ShellTags.LIBRARY_MENU_REPLACE).assertDoesNotExist()
+    }
+
+    @Test
     fun f3RemovingALegFromItsMenuTakesThePairAndItsPawsInOneStep() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = created()
         val session = assertNotNull(state.session.value)

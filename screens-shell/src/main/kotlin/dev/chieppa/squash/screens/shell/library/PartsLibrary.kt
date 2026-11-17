@@ -13,6 +13,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.newest
+import dev.chieppa.squash.character.catalog.partName
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.library.LibraryMode
@@ -21,11 +22,15 @@ import dev.chieppa.squash.screens.library.libraryShelves
 import dev.chieppa.squash.screens.library.pickFromLibrary
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.screens.shell.ShellTags
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.library_replace
 import dev.chieppa.squash.uidesign.generated.library_clear_search
 import dev.chieppa.squash.uidesign.generated.library_no_matches
 import dev.chieppa.squash.uidesign.generated.library_recent
+import dev.chieppa.stretch.frame.ContextMenuArea
 import dev.chieppa.stretch.frame.DrawerSection
+import dev.chieppa.stretch.frame.MenuItem
 import dev.chieppa.stretch.frame.dragSource
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.EmptyState
@@ -48,7 +53,8 @@ private class PartsGrid(val key: String, val items: List<PartTemplate>)
 /**
  * Library's Parts half: Recent, then the groups by body area, each a grid with a keyboard cursor. A press puts the cursor on a tile,
  * and Enter or a double-click picks it, which adds it on the socket targeted or gives it to the part selected; what that pick cannot
- * take is faint and skipped. A lit tile drags onto a socket's dot. Up from the first grid goes to [onLeaveTop], the search field.
+ * take is faint and skipped. A tile the selected part can change to holds Replace in its context menu. A lit tile drags onto a socket's
+ * dot. Up from the first grid goes to [onLeaveTop], the search field.
  */
 @Composable
 internal fun PartsLibrary(state: AppState, mode: LibraryMode, focus: GridFocus, onLeaveTop: () -> Unit) {
@@ -130,7 +136,13 @@ internal fun PartsLibrary(state: AppState, mode: LibraryMode, focus: GridFocus, 
                         },
                         preview = { LiftedPartTile(template) },
                     ),
-                ) { PartTile(template, lit) }
+                ) {
+                    if (mode is LibraryMode.Replace && template.id in mode.choices) {
+                        ContextMenuArea({ close -> ReplaceItem(state, mode, template, close) }) { PartTile(template, lit) }
+                    } else {
+                        PartTile(template, lit)
+                    }
+                }
             }
         }
 
@@ -154,5 +166,17 @@ internal fun PartsLibrary(state: AppState, mode: LibraryMode, focus: GridFocus, 
                 }
             }
         }
+    }
+}
+
+/** The Replace item of a tile's menu: gives the selected part [template], as a pick does. */
+@Composable
+private fun ReplaceItem(state: AppState, mode: LibraryMode.Replace, template: PartTemplate, close: () -> Unit) {
+    val part = partName(mode.part, state.templates)
+    Box(Modifier.testTag(ShellTags.LIBRARY_MENU_REPLACE)) {
+        MenuItem(stringResource(Res.string.library_replace, part.lowercase()), {
+            close()
+            state.pickFromLibrary(template.id)
+        }, icon = SquashIcons.ReplacePart)
     }
 }

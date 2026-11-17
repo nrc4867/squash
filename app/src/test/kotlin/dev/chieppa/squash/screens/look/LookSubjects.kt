@@ -11,6 +11,7 @@ import dev.chieppa.squash.screens.dragon.dragonDocument
 import dev.chieppa.squash.screens.fennec.FENNEC_POSES
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
+import dev.chieppa.squash.screens.fennec.fennecLimbsDocument
 import dev.chieppa.squash.screens.fennec.fennecWingedDocument
 import dev.chieppa.squash.screens.koi.KOI_POSES
 import dev.chieppa.squash.screens.koi.koiDocument
@@ -34,6 +35,7 @@ private val FIXTURES: Map<String, () -> SquashDocument> = mapOf(
     "fennec" to ::fennecDocument,
     "fennec-dressed" to ::fennecDressedDocument,
     "fennec-winged" to ::fennecWingedDocument,
+    "fennec-limbs" to ::fennecLimbsDocument,
     "koi" to ::koiDocument,
     "lizard" to ::lizardDocument,
     "toucan" to ::toucanDocument,
@@ -63,6 +65,7 @@ private val POSES: Map<String, Map<String, Pose>> = mapOf(
     "dragon" to DRAGON_POSES,
     "fennec" to FENNEC_POSES,
     "fennec-dressed" to FENNEC_POSES,
+    "fennec-limbs" to FENNEC_POSES,
     "koi" to KOI_POSES,
     "lizard" to LIZARD_POSES,
     "toucan" to TOUCAN_POSES,

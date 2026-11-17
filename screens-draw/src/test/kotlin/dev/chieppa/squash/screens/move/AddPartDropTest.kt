@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.catalog.OpenSocket
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.SocketRef
+import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.edit.PANE_TAG
@@ -50,8 +51,11 @@ class AddPartDropTest {
 
     private val folder = TemplateFolder.load(Path.of(System.getProperty("squash.templates")))
 
-    /** The fennec bench with Add part on its Side pane, a tile of the tail socket's first template to drag, and the dots it shows. */
-    private inner class Drop {
+    /**
+     * The fennec bench with Add part on its Side pane, a tile of [template] to drag, or of the tail socket's first template, and the
+     * dots it shows.
+     */
+    private inner class Drop(test: ComposeUiTest, template: String? = null) {
         val bench = LegBench(folder, work)
         val camera: LockedCamera
         val view: LockedHandleView
@@ -60,8 +64,9 @@ class AddPartDropTest {
         val tailSocket: OpenSocket
         val refusing: SocketHandle
         val drag: TemplateDrag
+        val leftLeg: SocketHandle
 
-        constructor(test: ComposeUiTest) {
+        init {
             bench.settleIn(test)
             camera = bench.camera()
             view = LockedHandleView(camera)
@@ -69,7 +74,8 @@ class AddPartDropTest {
             val dots = moveHandles(bench.character, null).filterIsInstance<SocketHandle>().filter { it.child == null }
             tail = dots.first { it.socket == "tail" }
             tailSocket = assertNotNull(socketOf(tail, sockets))
-            drag = TemplateDrag(tailSocket.takes.first())
+            drag = TemplateDrag(template?.let(::TemplateId) ?: tailSocket.takes.first())
+            leftLeg = moveHandles(bench.character, null).filterIsInstance<SocketHandle>().first { it.child == bench.leg }
             refusing = assertNotNull(
                 dots.firstOrNull { dot -> socketOf(dot, sockets)?.let { drag.template !in it.takes } == true && inPane(dot) },
                 "an open socket that does not take the tail's template",
@@ -184,5 +190,33 @@ class AddPartDropTest {
         val added = drop.bench.session.document.value.character.parts.filter { it.socket == SocketRef(drop.tailSocket.parent, drop.tailSocket.name) }
         assertTrue(added.isNotEmpty(), "a part sits on the tail socket")
         onNodeWithTag(LIFTED_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun aLimbDraggedOverAFilledLegSocketLightsItsDotAndADropThereSwapsThePairInOneStep() = runComposeUiTest {
+        val drop = Drop(this, "leg-bird")
+        show(drop)
+        val steps = drop.bench.steps()
+        dragTo(drop.pixel(drop.leftLeg) + OFF_DOT)
+        val lit = drop.dotsAt(drop.leftLeg)
+        assertTrue(lit.any { it.radius == SMOKE_LOOK.pickedDotRadius && it.color == SMOKE_LOOK.active }, "the filled leg socket's dot is large and accent: $lit")
+        windowRoot().performMouseInput { release() }
+        waitForIdle()
+        assertEquals(steps + 1, drop.bench.steps(), "replacing is one step")
+        val legs = drop.bench.session.document.value.character.parts.filter { it.socket?.socket == "front-leg" }
+        assertEquals(listOf("leg-bird", "leg-bird"), legs.map { it.template.id.value })
+        assertTrue(drop.bench.state.selectedPart.value in legs.map { it.id }, "the swapped leg is selected")
+        drop.bench.session.history.undo()
+        assertEquals(listOf("leg", "leg"), drop.bench.session.document.value.character.parts.filter { it.socket?.socket == "front-leg" }.map { it.template.id.value })
+    }
+
+    @Test
+    fun aTemplateNoFilledSocketCanTakeLightsNoDotOnThem() = runComposeUiTest {
+        val drop = Drop(this)
+        show(drop)
+        dragTo(Offset(4f, 4f))
+        val there = drop.dotsAt(drop.leftLeg)
+        assertTrue(there.none { it.color == SMOKE_LOOK.active }, "a tail cannot stand in for a leg, so no dot there is lit: $there")
+        windowRoot().performMouseInput { release() }
     }
 }
