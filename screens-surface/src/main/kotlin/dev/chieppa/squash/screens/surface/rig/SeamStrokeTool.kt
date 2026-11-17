@@ -75,8 +75,8 @@ class SeamStrokeTool(state: AppState, val brush: SeamBrush, private val scope: C
 
     private fun jointUnder(pixel: Offset, sight: SurfaceView): BoneName? {
         val rig = state.rigNow() ?: return null
-        val pose = state.rig.held.value ?: state.session.value?.document?.value?.character?.pose ?: return null
-        return jointAt(rig, jointPoints(rig, pose), pixel, sight)
+        val character = state.session.value?.document?.value?.character ?: return null
+        return jointAt(rig, jointPoints(rig, character, state.rig.held.value), pixel, sight)
     }
 
     override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean {

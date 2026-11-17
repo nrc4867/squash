@@ -38,12 +38,11 @@ fun rememberRigShading(state: AppState): RigShading? {
     val session by state.session.collectAsState()
     val document = session?.document?.collectAsState()?.value ?: return null
     val held by state.rig.held.collectAsState()
-    val pose = held ?: document.character.pose
     val colors = remember(document.character.parts) { rigPartColors(document.character) }
     val seams = remember(rig, colors) { seamLayers(rig, colors) }
     val heat = state.rig.heat?.let(rig::indexOf)
     val heated = remember(rig, heat) { heat?.let { heatLayers(rig, it) }.orEmpty() }
-    val points = remember(rig, pose) { jointPoints(rig, pose) }
+    val points = remember(rig, document.character, held) { jointPoints(rig, document.character, held) }
     val c = Stretch.colors
     val look = with(LocalDensity.current) { JointLook(c.surfaceFloat, c.inkStrong, c.accent, JOINT_RADIUS.toPx(), JOINT_EDGE.toPx(), LIT_RADIUS.toPx()) }
     val lit = state.rig.heat

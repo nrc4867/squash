@@ -47,7 +47,10 @@ data class Character(
     fun ownedBy(garment: GarmentId): List<PartInstance> = parts.filter { it.garment == garment }
 
     /** The pose the character shows: its working [pose], with each bone it leaves out standing as [displayPose] holds it. */
-    val shownPose: Pose get() = pose.over(displayPose)
+    val shownPose: Pose get() = shownWith(null)
+
+    /** [shownPose] with [held], a pose a view shows for a moment, in place of the working pose while it is not null. */
+    fun shownWith(held: Pose?): Pose = (held ?: pose).over(displayPose)
 
     /** The other side of [part]'s pair, or null for an unpaired part or a pair with one side placed. */
     fun twinOf(part: PartInstance): PartInstance? = part.pair?.let { pair -> parts.firstOrNull { it.pair == pair && it.id != part.id } }

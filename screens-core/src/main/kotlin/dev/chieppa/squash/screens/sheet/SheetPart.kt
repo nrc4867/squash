@@ -154,7 +154,7 @@ fun rememberSheetSelection(state: AppState): SheetSelection? {
     val hidden = if (mirror && !dressing) document.character.editBase(instance, thisSide = false).outlines.filterKeys { it in overridden } else emptyMap()
     val held by state.rig.held.collectAsState()
     val poseView by state.poseView.collectAsState()
-    val posed = rememberPosedMeshes(state, (held ?: document.character.pose).isRest || !posesPane(stage, poseView, locked = false))
+    val posed = rememberPosedMeshes(state, document.character.shownWith(held).isRest || !posesPane(stage, poseView, locked = false))
     val look by state.dress.look(stage == Stage.DRESS).collectAsState()
     val ghosted = look == GarmentLook.GHOSTED
     val assembled = character ?: return null

@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.surface.rig
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.rig.BoneName
@@ -19,6 +20,9 @@ fun jointPoints(rig: Rig, pose: Pose): List<Vec3> {
     val transforms = boneTransforms(rig, pose)
     return rig.bones.mapIndexed { i, bone -> transforms[i](bone.pivot) }
 }
+
+/** Where each of [rig]'s joints stands in the pose [character] is shown in, with [held] in place of its working pose, in the order of its bones. */
+fun jointPoints(rig: Rig, character: Character, held: Pose?): List<Vec3> = jointPoints(rig, character.shownWith(held))
 
 /** The joint whose dot lies under [pixel] through [sight], the nearest to it, or null when none lies within [JOINT_REACH_PIXELS]. */
 fun jointAt(rig: Rig, points: List<Vec3>, pixel: Offset, sight: SurfaceView): BoneName? {
