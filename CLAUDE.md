@@ -18,6 +18,8 @@ A desktop tool for making cartoon characters in one style: draw a part once, Squ
 
 Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). Stretch is found as the sibling folder `../stretch` or through `stretch.dir` in `~/.gradle/gradle.properties`.
 
+Builds run at low priority on at most two workers (`gradle.properties`). Agents run Gradle through `tools/gradle-locked.sh <tasks>`, never `./gradlew` directly: it holds one machine-wide lock (`~/.squash-gradle.lock`) so builds from the main checkout and every worktree never overlap, and waits while another holds it. While working, test only the modules touched (`tools/gradle-locked.sh :screens-core:test`); run the full `check` once at the end.
+
 ```
 ./gradlew check                      # every test tier except smoke
 ./gradlew check -Pslow               # also the smoke tier (needs a GPU) and the benchmarks
