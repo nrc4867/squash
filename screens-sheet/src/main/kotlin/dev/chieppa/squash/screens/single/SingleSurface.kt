@@ -120,7 +120,8 @@ internal fun SingleSurface(
         SceneSurface(frame.takeIf { sized }, Modifier.fillMaxSize())
         Viewport(
             Modifier.orbitNavigation(camera.orbit).then(drawing).hovered(SheetPane.FULL, null, state).testTag(SingleTags.VIEWPORT),
-            nativeContent = true,
+            grid = false,
+            well = false,
             topStart = {
                 Toolbar(Modifier.testTag(SingleTags.TOOLBAR)) {
                     SnapViewControl(direction) { body ->

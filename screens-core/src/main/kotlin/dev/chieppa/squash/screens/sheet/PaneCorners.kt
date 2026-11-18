@@ -83,7 +83,8 @@ fun PaneViewport(
     }
     Viewport(
         modifier,
-        nativeContent = true,
+        grid = false,
+        well = false,
         topStart = { Box(Modifier.testTag(PANE_CORNER_TAG)) { PaneLabel(body, short, flipped, onFlip) } },
         topEnd = topEnd,
         bottomStart = bottomStart,
@@ -92,10 +93,9 @@ fun PaneViewport(
 }
 
 /**
- * A small pane's button that makes it the large one, on an opaque pill as the pane's other corners are: a corner over the
- * pane's native surface shows in a popup of its own, and only what the popup fills is sure to show there, whatever the pane
- * redraws under it. The button and its tooltip stay composed while the pane is the large one, folded to no size and taking
- * no clicks while not [shown], so making a pane large never takes a popup down in the middle of showing it.
+ * A small pane's button that makes it the large one, on an opaque pill as the pane's other corners are. The button and its
+ * tooltip stay composed while the pane is the large one, folded to no size and taking no clicks while not [shown], so
+ * making a pane large never takes the tooltip down in the middle of showing it.
  */
 @Composable
 private fun FocusButton(body: BodyView?, shown: Boolean, onFocus: () -> Unit) {

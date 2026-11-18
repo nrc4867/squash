@@ -18,7 +18,7 @@ import dev.chieppa.squash.screens.sheet.LocalSceneSurface
 import dev.chieppa.squash.screens.sheet.rememberSceneSurface
 
 /**
- * Every screen but Home, in one Build frame that stays up as the screen changes, with one native surface they share. Only
+ * Every screen but Home, in one Build frame that stays up as the screen changes, with one GPU surface they share. Only
  * the viewport and the drawers that differ change. Focus comes back here on each change of screen or tool, since the inspector
  * changes with the tool, because what held it may be gone and keys need a focused element to reach the shortcuts.
  */

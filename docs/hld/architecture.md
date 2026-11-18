@@ -23,7 +23,7 @@ It is a character maker that knows anatomy, a posing and animation studio for th
 
 ## Platform
 
-Kotlin on the JVM, Compose Multiplatform for Desktop as the UI, and a small renderer of our own on WebGPU through `stretch-gpu`. Platform spikes confirmed this on Windows: pen pressure through Windows Ink works on a pen display; WebGPU renders in a native child window inside the Compose window at a steady 60 fps with no frame copies; Compose popups show over the 3D view in window-layer mode; orbiting 400 instances stays smooth. Window-layer mode crashes with Compose's default Direct3D renderer, so Compose runs on OpenGL, which `NativeSurfaces.enable()` sets before anything else in `main`.
+Kotlin on the JVM, Compose Multiplatform for Desktop as the UI, and a small renderer of our own on WebGPU through `stretch-gpu`. Platform spikes confirmed this on Windows: pen pressure through Windows Ink works on a pen display; WebGPU renders off screen on its own thread and is read back into the Compose UI about a frame behind; orbiting 400 instances stays smooth.
 
 Why it fits:
 
@@ -42,9 +42,9 @@ The renderer goes through a thin seam of our own (mesh, material, pass) so the c
 
 ### Desktop viewport
 
-Copying GPU frames into Compose is too slow (about 43 fps and 60 ms of delay at 2882x1660). A `NativeSurface` inside Stretch's `Viewport` is a native child window rendered by WebGPU on its own thread at display rate. Compose draws the panels around it, popups over it open as OS-level windows, and gizmos and stroke previews over the view are drawn by our renderer through the overlay pass. Mouse, pen and touch pass through to the Compose UI.
+A `GpuSurface` from `stretch-gpu` draws the scene with WebGPU on its own thread, off screen, and hands each frame to Compose as an image through a ring of buffers read back without waiting. The picture is an ordinary part of the Compose UI: the panes' corners, popups and menus draw over it and move with it in the same frame, and it never tears against the window. Gizmos and stroke previews over the view are drawn by our renderer through the overlay pass, so they stay locked to the scene. Mouse, pen and touch over it go to the Compose UI as anywhere else.
 
-The Sheet and Full first layouts are one `NativeSurface` drawing four viewports in one frame, with scissor and a camera per pane, and differ only in the rectangles. Four surfaces would mean four swapchains and four sets of popups. Every screen but Home sits in one Build frame, and the screens that draw in 3D share one surface: it moves with the screen, so its GPU device and uploaded meshes stay.
+The Sheet and Full first layouts are one `GpuSurface` drawing four viewports in one frame, with scissor and a camera per pane, and differ only in the rectangles; each pane's `Viewport` lies over it with no well or grid of its own. Four surfaces would mean four devices and four readbacks. Every screen but Home sits in one Build frame, and the screens that draw in 3D share one surface: it moves with the screen, so its GPU device and uploaded meshes stay.
 
 ## Architecture
 
@@ -178,7 +178,7 @@ Logic bugs come first, so almost every test is a plain JVM unit test that runs i
 | Command scenarios | A sequence of commands against a document, then assertions on state | `stretch-test`'s `scenario`, no UI | Constantly |
 | Golden | Generated meshes, rigs and schemas against saved fixtures | JUnit 5 | When a generator changes |
 | UI | A screen's structure and wiring, found by semantics tags; flows across screens are in `app`'s tests | `runComposeUiTest`, waits for idle on its own | Per UI module, seconds |
-| Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. A native surface needs a window, so the swapchain path and the window around `SquashApp` are not covered | Needs a GPU; JUnit tag `slow`, in `app`'s tests, run by `check -Pslow` | Before a merge only |
+| Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. The window around `SquashApp` and the surface's readback into it are not covered | Needs a GPU; JUnit tag `slow`, in `app`'s tests, run by `check -Pslow` | Before a merge only |
 | Benchmarks | Wall-clock cost of hot paths, printed, such as the sheet's highlight at stroke rate | JUnit tag `slow`, run by `check -Pslow` | When the path changes |
 
 - No test waits on the wall clock: no `Thread.sleep`, `delay` or `waitUntil`, and no polling. Graph and file work runs on a `TestWork` the test drains: `runCurrent` or `advanceUntilIdle` under `runTest`, `TestWork.settle` in a plain test, and `settle(work)` in a UI test, which runs the queued work and waits for idle round after round until its condition holds. Anything else is awaited through a hook, such as a state flow's `first`. A test that opens or saves a file gives `AppState` the fixtures' `DirectStorage`, which reads and writes on the caller's thread, so the file work finishes inside the work the test runs.

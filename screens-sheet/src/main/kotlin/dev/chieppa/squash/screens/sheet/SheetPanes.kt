@@ -49,7 +49,7 @@ fun sheetPaneTag(pane: SheetPane) = "sheet.pane.${pane.name}"
 
 /**
  * The workspace's viewport area as the boards draw it, in the layout the Layout control picks. In Sheet, the strip with
- * [tools] and the control, then Top, Full, Side and Front in one native surface; in Full first, the same panes in that
+ * [tools] and the control, then Top, Full, Side and Front in one GPU surface; in Full first, the same panes in that
  * surface with Full large above the other three; in Single, the strip with [tools] and the control above one viewport. A [tool] gets a locked view's pointer input and overlay, and Full's when it takes the free camera.
  * [paneToast] shows over the surface, at the bottom left of the panes or the foot of the one viewport. [surface] draws the
  * character's lines, in place of the meshes' own outlines, and [posedSurface] its lines on the posed surface, for the panes that show the

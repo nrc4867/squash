@@ -120,8 +120,8 @@ private object NoFiles : FileChooser {
 
 /**
  * Each screen of the app, composed whole over the templates packed into the app's resources, with a real graph behind
- * it, and captured to an image. A native surface has no window here, so the workspace's panes are rendered apart, with
- * the real scene on a real GPU device.
+ * it, and captured to an image. The test has no window for the GPU surface to read back into, so the workspace's panes are
+ * rendered apart, with the real scene on a real GPU device.
  */
 @Tag("slow")
 @OptIn(ExperimentalTestApi::class)

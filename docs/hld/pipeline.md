@@ -26,7 +26,7 @@ Not used, on purpose: trained models anywhere; Teddy-style inflation; sphere-mes
 
 ## Spikes
 
-Each spike is small, has no UI beyond what it needs, and ends in a pass or fail by eye. Spikes render in 3D on WebGPU through `stretch-gpu` in a `NativeSurface` inside the Stretch frame, as the real app will. The style test is a whole simple quadruped built with all nine spikes.
+Each spike is small, has no UI beyond what it needs, and ends in a pass or fail by eye. Spikes render in 3D on WebGPU through `stretch-gpu` in a `GpuSurface` inside the Stretch frame, as the real app will. The style test is a whole simple quadruped built with all nine spikes.
 
 1. **Parts from outlines.** Starter template files (torso, leg, paw, head, ear, tail) whose slices are sized from outlines drawn in the Sheet, with its four viewports in one surface; one outline alone also builds. Passes if each part matches the drawing in those views and looks plausible from others, the paw has pads underneath, the leg's open end sits inside the body at its socket, the head reads as skull and muzzle, and the highlight for views that disagree keeps up at stroke rate.
 2. **Oversketch.** Redraw part of an outline and drag a handle; the slices re-sample from the curves. Passes if only the touched section changes and surface marks stay attached through the refit.

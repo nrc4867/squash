@@ -25,7 +25,6 @@ import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.document.RecentFiles
 import dev.chieppa.stretch.document.appDataDirectory
 import dev.chieppa.stretch.document.rememberFileChooser
-import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
@@ -42,7 +41,6 @@ private const val SAVED_TEMPLATES = "templates"
 
 fun main() {
     DevTools.startIfRequested()
-    NativeSurfaces.enable()
     val store = RecentStore(appDataDirectory(APP_ID).resolve(RECENT_FILE))
     val keys = KeymapStore(appDataDirectory(APP_ID).resolve(KEYMAP_FILE))
     val recent = RecentFiles(store.load()).also { runBlocking { it.prune(FileStorage) } }
