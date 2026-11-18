@@ -17,6 +17,7 @@ import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Slice
 import dev.chieppa.squash.geom.ViewSizing
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.arcLengthAxis
 import dev.chieppa.squash.geom.covers
 
 /**
@@ -85,8 +86,9 @@ class BuildContext(
 
     fun length(param: Param): Float = value(param) * fullLength
 
-    /** Straight along the rest direction, or bent toward the underside at the template's bend point. */
+    /** Straight along the rest direction, bent toward the underside at the template's bend point, or the template's curve. */
     private fun restAxis(): AxisSpline {
+        if (template.axis.curve.isNotEmpty()) return curvedAxis()
         val end = axes.point(axisLength, 0f, 0f)
         val bend = template.axis.bend?.let { value(it) } ?: 0f
         if (bend == 0f) return AxisSpline(listOf(Vec3.ZERO, end))
@@ -95,6 +97,12 @@ class BuildContext(
             listOf(Vec3.ZERO, axes.point(axisLength * at, -bend * fullLength, 0f), end),
             floatArrayOf(0f, at, 1f),
         )
+    }
+
+    /** The smooth curve from the socket point through the template's places, its u by length along it. */
+    private fun curvedAxis(): AxisSpline {
+        val places = listOf(Vec3.ZERO) + template.axis.curve.map { axes.point(value(it.along), value(it.up), value(it.side)) }
+        return arcLengthAxis(places, axisLength)
     }
 
     /** Whether the template's [block] is switched on for this build. */

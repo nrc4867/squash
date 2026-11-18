@@ -75,8 +75,9 @@ data class LandedShape(val rank: Int, val slot: SlotName, val part: PartId, val 
 /** Every color shape [holder] holds, in layer order: its template's colored patches, its filled areas, its regions, its strokes. */
 fun colorShapes(holder: PartId, work: ResolvedSurfaceWork, input: PartColorInput, surfaces: Map<PartId, PartSurface>): List<LandedShape> {
     val own = surfaces[holder]?.patches.orEmpty()
+    val corners = regionCorners(work.regions)
     return patchSlotShapes(holder, work, input, own) + areaShapes(holder, work, input, own) +
-        work.regions.flatMap { region -> regionShapes(holder, region, input, surfaces) } +
+        work.regions.flatMap { region -> regionShapes(holder, region, corners.getValue(region), input, surfaces) } +
         work.strokes.flatMap { stroke -> strokeShapes(holder, stroke, surfaces[holder]?.axisLength ?: 0f) }
 }
 
@@ -133,16 +134,24 @@ private fun runsAlong(points: List<ResolvedPoint>): List<List<ResolvedPoint>> {
 
 private fun List<ResolvedPoint>.onPatch() = map { SurfaceUv(it.anchor.u, it.anchor.v) }
 
-private fun regionShapes(holder: PartId, region: ResolvedRegion, input: PartColorInput, surfaces: Map<PartId, PartSurface>): List<LandedShape> {
+/** The indices in [points] of those among [sharp]. */
+private fun cornersIn(points: List<ResolvedPoint>, sharp: Set<ResolvedPoint>): Set<Int> = points.indices.filterTo(HashSet()) { points[it] in sharp }
+
+private fun regionShapes(holder: PartId, region: ResolvedRegion, corners: Set<Int>, input: PartColorInput, surfaces: Map<PartId, PartSurface>): List<LandedShape> {
     val runs = runsAround(region.border)
     val source = ShapeSource.Border(holder, region.id)
-    if (runs.size == 1) return listOf(landed(RANK_REGION, region.slot, runs.single(), ColorShape.Border(runs.single().onPatch()), source))
+    val sharp = corners.mapTo(HashSet()) { region.border[it] }
+    if (runs.size == 1) {
+        val run = runs.single()
+        return listOf(landed(RANK_REGION, region.slot, run, ColorShape.Border(run.onPatch(), corners = cornersIn(run, sharp), curved = region.curved), source))
+    }
     val across = runs.indices.groupBy { runs[it].first().anchor.part to runs[it].first().anchor.patch }
     return across.map { (place, stretches) ->
         val points = stretches.flatMap { runs[it] }
         val beside = stretches.flatMap { listOf(runs[(it + runs.size - 1) % runs.size], runs[(it + 1) % runs.size]) }.map { it.first().anchor.part }
         val patch = surfaces[place.first]?.patches?.firstOrNull { it.name == place.second }
-        landed(RANK_REGION, region.slot, points, ColorShape.Border(points.onPatch(), closingOf(place.first, points, beside, input, patch)), source)
+        val shape = ColorShape.Border(points.onPatch(), closingOf(place.first, points, beside, input, patch), cornersIn(points, sharp), region.curved)
+        landed(RANK_REGION, region.slot, points, shape, source)
     }
 }
 

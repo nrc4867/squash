@@ -36,7 +36,15 @@ data class ResolvedMark(
     val slot: SlotName? = null,
 )
 
-data class ResolvedRegion(val id: RegionId, val border: List<ResolvedPoint>, val slot: SlotName, val ink: Boolean)
+/** A region's border as points, with [corners] as indices into [border] where it turns sharply, and whether the one surface lays it [curved]. */
+data class ResolvedRegion(
+    val id: RegionId,
+    val border: List<ResolvedPoint>,
+    val slot: SlotName,
+    val ink: Boolean,
+    val corners: Set<Int> = emptySet(),
+    val curved: Boolean = false,
+)
 
 data class ResolvedBrushStroke(val id: BrushStrokeId, val points: List<ResolvedPoint>, val slot: SlotName, val radius: Float, val softness: Float = 0f)
 

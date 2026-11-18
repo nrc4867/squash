@@ -34,7 +34,7 @@ object Reference {
                     listOf("plans.md", "each plan's root, sockets, slots and palette"),
                     listOf("part-parameters.md", "dotted part parameters (`move.*`, `socket.<n>.*`, `joint.<n>.*`, `generic.*`, `join.ink`, `rig.reach.*`) and the recipe fields that write them"),
                     listOf("frames.md", "body space, which way u, v and each view's y run for a part resting each way, and which way `degrees`, `lean`, `turn` and `twist` move a bone"),
-                    listOf("face-and-clothes.md", "mouth group roles and controls; how garment fit, covers, redraws and swaps combine"),
+                    listOf("face-and-clothes.md", "mouth group roles and controls; region borders, corners and two-tone faces; how a painted eye faces and lands on its head, wrapped or flat; how garment fit, covers, redraws and swaps combine"),
                 ),
             ),
         )

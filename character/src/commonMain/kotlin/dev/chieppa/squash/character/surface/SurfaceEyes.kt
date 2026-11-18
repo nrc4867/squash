@@ -48,7 +48,9 @@ private const val ACROSS_AXIS = 0.5f
  * turned outward by its look-out. Every shape of its [EyeShapes] lies in the plane square to that facing, its chart running along the
  * head's coordinates toward the front and the top (see [chartOf]), scaled by how far the surface runs per unit of the head's u and v there; each vertex of the surface near the
  * eye that faces it is projected along the facing into that plane and painted where it falls inside. So the paint foreshortens and wraps
- * as the head turns, and never stands past the head's outline. A mirrored eye is painted again with its anchor's v read as 1 - v.
+ * as the head turns, and never stands past the head's outline. A flat eye faces the way its head faces, turned out by its look-out, in
+ * place of the surface's normal, so the same projection lays it on the head as a decal seen undistorted from that facing. A mirrored eye
+ * is painted again with its anchor's v read as 1 - v.
  */
 object SurfaceEyes {
     /**
@@ -96,14 +98,14 @@ object SurfaceEyes {
     fun framesOf(surface: CharacterSurface, eye: PaintedEye): List<EyeChartFrame> {
         val anchors = FieldAnchors(surface.field)
         return sidesOf(eye).mapIndexedNotNull { side, anchor ->
-            frameOf(surface, anchors, anchor, side > 0, eye.look)?.let { EyeChartFrame(it.middle.position, it.across * it.along, it.up * it.around, it.facing, side > 0) }
+            frameOf(surface, anchors, anchor, side > 0, eye.look, eye.flat)?.let { EyeChartFrame(it.middle.position, it.across * it.along, it.up * it.around, it.facing, side > 0) }
         }
     }
 
     /** One side's frame: where its middle resolves, its head's members, and the chart's directions and scales there. */
     private class Frame(val middle: ResolvedPoint, val members: List<Int>, val facing: Vec3, val up: Vec3, val across: Vec3, val along: Float, val around: Float)
 
-    private fun frameOf(surface: CharacterSurface, anchors: FieldAnchors, anchor: Anchor, mirrored: Boolean, look: EyeLook): Frame? {
+    private fun frameOf(surface: CharacterSurface, anchors: FieldAnchors, anchor: Anchor, mirrored: Boolean, look: EyeLook, flat: Boolean): Frame? {
         val middle = anchors.resolve(anchor.copy(offset = 0f)) ?: return null
         val run = surface.field.runs.indexOfFirst { it.partId == anchor.part && it.patch.name == anchor.patch }
         if (run < 0) return null
@@ -112,7 +114,7 @@ object SurfaceEyes {
         val (forward, down) = chartOf(anchors, anchor, mirrored, head) ?: return null
         val along = forward.length / (2f * CHART_STEP)
         val around = down.length / (2f * CHART_STEP)
-        val facing = turnedOut(middle.normal, middle.position, look.lookOut)
+        val facing = turnedOut(if (flat) head.turn * PartBuilder.facing(head.template) else middle.normal, middle.position, look.lookOut)
         val up = flattened(down * -1f, facing) ?: return null
         val across = flattened(forward - up * (forward dot up), facing) ?: return null
         return Frame(middle, members, facing, up, across, along, around)
@@ -121,7 +123,7 @@ object SurfaceEyes {
     private fun paintOne(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, anchor: Anchor, side: Int): SurfacePaint {
         val id = eye.id
         val surface = chart.surface
-        val frame = frameOf(surface, anchors, anchor, side > 0, look) ?: return SurfacePaint.NONE
+        val frame = frameOf(surface, anchors, anchor, side > 0, look, eye.flat) ?: return SurfacePaint.NONE
         val middle = frame.middle
         val members = frame.members
         val facing = frame.facing

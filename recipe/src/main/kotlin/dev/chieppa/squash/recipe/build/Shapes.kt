@@ -63,7 +63,8 @@ internal fun BuildContext.checkParams(path: String, template: PartTemplate, para
 internal fun BuildContext.region(path: String, part: PartId, region: RecipeRegion): Region {
     val border = anchors(path, part, region.patch, region.border, region.face, region.anchors, "border")
     val slot = slot("$path.slot", region.slot)
-    return guard(path) { Region(RegionId(region.id), border, slot, region.ink) }
+    region.corners.forEachIndexed { i, c -> if (c !in border.indices) fail("$path.corners[$i]", "corner $c is not an index into the border (0 to ${border.lastIndex})") }
+    return guard(path) { Region(RegionId(region.id), border, slot, region.ink, region.corners.toSet(), region.curved) }
 }
 
 /** Anchors on [part] from exactly one of [uv] on [patch], [face] places on its face, or [given] anchors. */

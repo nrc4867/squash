@@ -769,6 +769,10 @@
         "mirrored": {
           "description": "Whether it is painted again on the other side of the head.",
           "type": "boolean"
+        },
+        "flat": {
+          "description": "Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -1663,7 +1667,7 @@
       "additionalProperties": false
     },
     "RecipeRegion": {
-      "description": "A painted region. Give its border one way: border ([u, v] on the part), face ([x, y] on a head's face seen from ahead) or anchors.",
+      "description": "A painted region. Give its border one way: border ([u, v] on the part), face ([x, y] on a head's face seen from ahead) or anchors. With curved, the border is a smooth closed curve through its places, so a few places make a round shape; corners makes some sharp. Two regions whose borders pass through the same places meet along one shared edge with no gap and no overlap, sharp where the borders part: draw a two-tone face as a light region and a dark one sharing the places of their boundary.",
       "type": "object",
       "properties": {
         "id": {
@@ -1728,6 +1732,17 @@
               "type": "null"
             }
           ]
+        },
+        "corners": {
+          "description": "Indices into the border's places that are sharp corners, as a chin's point.",
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "curved": {
+          "description": "Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; otherwise it runs straight between them there. Set it for a few-place shape.",
+          "type": "boolean"
         }
       },
       "required": [

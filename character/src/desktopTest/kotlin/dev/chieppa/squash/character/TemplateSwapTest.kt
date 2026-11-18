@@ -69,7 +69,7 @@ class TemplateSwapTest {
         val leg = sockets.first { it.name == "front-leg" }
         assertEquals(TemplateId("leg"), leg.takes.first(), "the plan's own leg comes first")
         assertEquals(setOf("leg", "leg-bird", "arm"), leg.takes.map { it.value }.toSet())
-        assertEquals(listOf("tail", "tail-feathers").toSet(), sockets.first { it.name == "tail" }.takes.map { it.value }.toSet())
+        assertEquals(listOf("tail", "tail-curve", "tail-feathers").toSet(), sockets.first { it.name == "tail" }.takes.map { it.value }.toSet())
     }
 
     @Test

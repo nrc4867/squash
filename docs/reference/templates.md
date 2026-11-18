@@ -12,7 +12,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `claw` | 1 | - | Claw | horn |
 | `ear` | 1 | - | Ear | ear |
 | `fin` | 1 | - | Fin | fin |
-| `foot` | 5 | 1, 2, 3, 4 | Foot | foot |
+| `foot` | 6 | 1, 2, 3, 4, 5 | Foot | foot |
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot |
 | `hair` | 1 | - | Hair | hair |
 | `hair-cap` | 1 | - | Hair cap | hair |
@@ -23,11 +23,12 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `horn` | 1 | - | Horn | horn |
 | `leg` | 1 | - | Leg | leg |
 | `leg-bird` | 1 | - | Bird leg | leg |
-| `paw` | 6 | 1, 2, 3, 4, 5 | Paw | foot |
+| `paw` | 7 | 1, 2, 3, 4, 5, 6 | Paw | foot |
 | `plate` | 1 | - | Plate | fin |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) |
 | `spike` | 1 | - | Spike | horn |
 | `tail` | 2 | 1 | Tail | tail |
+| `tail-curve` | 1 | - | Curved tail | tail |
 | `tail-feathers` | 1 | - | Tail feathers | tail |
 | `torso` | 2 | 1 | Torso | body |
 | `torso-bird` | 1 | - | Perched torso | body |
@@ -303,7 +304,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.08 | 0.02 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
-## foot 5
+## foot 6
 
 | fact | value |
 | --- | --- |
@@ -345,6 +346,7 @@ Parameters:
 | `toeRound` | 0.074 | 0.02 to 0.15 | Radius of the toe box's front end. |
 | `pitch` | 0 | -40 to 40 deg | Degrees the forefoot turns up from the ball; negative points it down. |
 | `web` | 0.04 | 0 to 0.12 | Radius of the smooth join between the toes and the foot. |
+| `spread` | 1 | 0.3 to 1.8 | Multiplies the fan angle of the toes and the gap between their roots: below 1 closer, above 1 wider. |
 | `merge` | 0.35 | 0 to 2 | How much neighbouring toes fuse: small stands them apart, 1 or more joins them to the tips. |
 
 ## foot-bird 4
@@ -745,7 +747,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 6
+## paw 7
 
 | fact | value |
 | --- | --- |
@@ -783,6 +785,7 @@ Parameters:
 | `toes` | 4 | one of 0, 3, 4, 5 | Toes built: 0 for none (a mitten or a boot), else 3 to 5. |
 | `toeLength` | 1 | 0.4 to 2 | Multiplies every toe's length. |
 | `toeThickness` | 1 | 0.5 to 1.8 | Multiplies every toe's thickness. |
+| `spread` | 1 | 0.3 to 1.8 | Multiplies the fan angle of the toes and the gap between their roots: below 1 closer, above 1 wider. |
 | `merge` | 0.25 | 0 to 2 | How much neighbouring toes fuse: 0.15 to 0.3 stand clear, about 1 a mitten. |
 | `web` | 0.05 | 0 to 0.2 | Radius of the smooth join between the toes and the paw. |
 | `claws` | 1 (on) | a flag: 1 or 0 | Builds claws; off retracts them. |
@@ -908,6 +911,59 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `thickness` | 0.12 | 0.04 to 0.4 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
+
+## tail-curve 1
+
+| fact | value |
+| --- | --- |
+| rests | back [-1, 0.2, 0] |
+| outline x runs 0 to | 0.7 |
+| Side's +y faces | up |
+| Top's +y faces | left |
+| views | side sets height; top sets width; front sets cap |
+| section | circle |
+| open end | start |
+| surface | field |
+
+Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
+
+| joint | u | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `root` | 0 | x | [-60, 60] | down |
+| `tail1` | 0.1 | x | [-30, 30] | down |
+| `tail2` | 0.2 | x | [-30, 30] | down |
+| `tail3` | 0.3 | x | [-30, 30] | down |
+| `tail4` | 0.4 | x | [-30, 30] | down |
+| `tail5` | 0.5 | x | [-30, 30] | down |
+| `tail6` | 0.6 | x | [-30, 30] | down |
+| `tail7` | 0.7 | x | [-30, 30] | down |
+| `tail8` | 0.8 | x | [-30, 30] | down |
+| `tail9` | 0.9 | x | [-30, 30] | down |
+| `tip` | 1 | x | [-30, 30] | down |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `tip` | body | [0.8, 1] | [0, 1] | fill | - |
+| `base` | body | [0, 0.25] | [0, 1] | fill | - |
+| `underside` | body | [0, 0.8] | [0.3, 0.7] | fill | - |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.4 to 2.5 | Scales the part: its length along the curve and its thickness together. |
+| `thickness` | 0.07 | 0.02 to 0.4 | Radius at the root with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
+| `taper` | 0.35 | 0.05 to 1 | Radius at the tip as a fraction of the radius at the root. |
+| `place1Along` | 0.3 | -1 to 1.5 | The curve's first place after the root, along the rest direction, as a fraction of the length. |
+| `place1Up` | -0.1 | -1 to 1 | The curve's first place after the root, toward the top, as a fraction of the length. |
+| `place2Along` | 0.6 | -1 to 1.5 | The curve's second place, along the rest direction. |
+| `place2Up` | -0.04 | -1 to 1 | The curve's second place, toward the top. |
+| `place3Along` | 0.85 | -1 to 1.5 | The curve's last place, the tip, along the rest direction. |
+| `place3Up` | 0.2 | -1 to 1 | The curve's last place, the tip, toward the top. |
 
 ## tail-feathers 1
 

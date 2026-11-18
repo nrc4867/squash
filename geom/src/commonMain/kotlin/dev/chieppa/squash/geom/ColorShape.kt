@@ -41,9 +41,16 @@ sealed interface ColorShape {
 
     /**
      * What a closed curve through [points] holds. A curve that goes once round a closed patch, enclosing nothing on it, holds
-     * the side toward the patch's last ring.
+     * the side toward the patch's last ring. The curve is smooth at each point but those in [corners], indices into [points], where
+     * it turns sharply; two borders through the same points between corners share that stretch of edge exactly. A cut follows the
+     * curve; a [UvShapeDistance] follows it when [curved], and otherwise runs straight between the points.
      */
-    data class Border(val points: List<SurfaceUv>, val closing: BorderClosing = BorderClosing.ON_ITSELF) : ColorShape {
+    data class Border(
+        val points: List<SurfaceUv>,
+        val closing: BorderClosing = BorderClosing.ON_ITSELF,
+        val corners: Set<Int> = emptySet(),
+        val curved: Boolean = false,
+    ) : ColorShape {
         override val isCurved: Boolean get() = true
     }
 

@@ -31,6 +31,7 @@ import dev.chieppa.squash.screens.surface.paint.SlotChoice
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_colors
+import dev.chieppa.squash.uidesign.generated.face_flat
 import dev.chieppa.squash.uidesign.generated.face_from_front
 import dev.chieppa.squash.uidesign.generated.face_gaze
 import dev.chieppa.squash.uidesign.generated.face_gaze_forward
@@ -82,6 +83,7 @@ object PaintedEyeTags {
     const val FROM_FRONT = "face.painted.from-front"
     const val HIGHLIGHT = "face.painted.highlight"
     const val GAZE = "face.painted.gaze"
+    const val FLAT = "face.painted.flat"
 
     fun fill(name: String) = "face.painted.fill.$name"
 
@@ -90,7 +92,7 @@ object PaintedEyeTags {
 
 /**
  * The Eyes of a head: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
- * front, its highlight, its gaze and its lines. Size, turn and place are the panes' handles. A head with no painted eye offers to add one
+ * front, its highlight, its gaze, whether it lies flat across the face and its lines. Size, turn and place are the panes' handles. A head with no painted eye offers to add one
  * at its eye landmark.
  */
 @Composable
@@ -153,6 +155,7 @@ private fun MoreSection(state: AppState, session: CharacterSession, eye: Painted
                     onValueChangeFinished = drag::finish,
                 )
             }
+            LineToggle(Res.string.face_flat, PaintedEyeTags.FLAT, eye.flat) { on -> session.send(SetPaintedEye(eye.id, eye.copy(flat = on))) }
             LineToggle(Res.string.face_role_brow, PaintedEyeTags.line("brow"), look.brow) { on -> styled { it.copy(brow = on) } }
             LineToggle(Res.string.face_role_lashes, PaintedEyeTags.line("lashes"), look.lashes) { on -> styled { it.copy(lashes = on) } }
             LineToggle(Res.string.face_role_lid, PaintedEyeTags.line("lid"), look.lid) { on -> styled { it.copy(lid = on) } }

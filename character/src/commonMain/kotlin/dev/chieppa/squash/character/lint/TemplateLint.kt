@@ -77,7 +77,15 @@ object TemplateLint {
 
     private fun axis(template: PartTemplate): List<Finding> {
         val context = LintContext(template, "$.axis")
-        return context.param("bend", template.axis.bend) + context.unit("bendAt", template.axis.bendAt) + bearing(context, template)
+        return context.param("bend", template.axis.bend) + context.unit("bendAt", template.axis.bendAt) + curve(context, template) + bearing(context, template)
+    }
+
+    /** Every place of a curved axis names numeric parameters. */
+    private fun curve(context: LintContext, template: PartTemplate): List<Finding> {
+        val places = template.axis.curve
+        return places.flatMapIndexed { i, place ->
+            context.param("curve[$i].along", place.along) + context.param("curve[$i].up", place.up) + context.param("curve[$i].side", place.side)
+        }
     }
 
     /** Move's angles keep an axis off the ground only from straight down, so a leg's squareness never reaches 0. */

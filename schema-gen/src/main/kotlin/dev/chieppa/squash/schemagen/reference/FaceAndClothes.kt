@@ -7,7 +7,9 @@ import dev.chieppa.squash.document.MouthShape
 import dev.chieppa.squash.document.mouthGroup
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeCover
+import dev.chieppa.squash.recipe.model.RecipeEye
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeRegion
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 
@@ -28,7 +30,7 @@ private fun roleName(role: MarkRole) = when (role) {
     MarkRole.CORNERS -> "corners"
 }
 
-/** Mouth groups, and how a garment's fit and its changes combine with the body. */
+/** Mouth groups, painted regions and how they meet, how a painted eye lies on its head, and how a garment's fit and its changes combine with the body. */
 internal object FaceAndClothes {
     fun render(): String = buildString {
         appendLine("# Face and clothes")
@@ -43,6 +45,39 @@ internal object FaceAndClothes {
         append(table(listOf("draw", "role", "holds"), order.mapIndexed { i, role -> listOf((i + 1).toString(), code(roleName(role)), roleMeaning(role)) }))
         appendLine()
         appendLine("`controls`: `open` 0 closed to 1 open (drives the jaw joint and parts the lips), `width` scales it across, `mouthShape` (" + MouthShape.entries.joinToString { code(it.name) } + ") bends the lip line, `expressionBlend` 0 at the group's own marks to 1 at the shown expression's. Each role's marks are mark ids on the same part.")
+        appendLine()
+        appendLine("## Regions")
+        appendLine()
+        append(
+            table(
+                listOf("question", "answer"),
+                listOf(
+                    listOf("the shape of a border", "with `curved`, a smooth closed curve through its places, so four or five places make a round patch; without it, straight between them on a part joined into the body's one surface, as a head on a neck"),
+                    listOf("a sharp point in a border", "`corners`: indices into its places"),
+                    listOf("a two-tone face", "a light region and a dark one whose borders pass through the same places along their boundary; they meet along one edge with no gap and no overlap, and turn sharply where the two borders part"),
+                    listOf("which shows where two overlap", "the later in the part's `regions`"),
+                    listOf("a region against the base colour", "its border alone, at any zoom"),
+                ),
+            ),
+        )
+        appendLine()
+        append(table(listOf("field", "meaning"), docs("region", RecipeRegion.serializer().descriptor)))
+        appendLine()
+        appendLine("## Eyes")
+        appendLine()
+        append(
+            table(
+                listOf("question", "answer"),
+                listOf(
+                    listOf("where an eye's shapes are drawn", "in a plane square to its facing, through its middle, its chart running toward the head's front and top"),
+                    listOf("which way an eye faces", "the surface's normal at its middle, turned out by the look's `lookOut`; with `flat`, the way the head faces, turned out likewise"),
+                    listOf("how it lands on the head", "each point of the plane is carried along the facing onto the surface, so seen from its facing the eye reads as drawn"),
+                    listOf("when to use `flat`", "a large eye on a small, round head, where facing the surface's normal follows the curve and the eye reads bent from the front"),
+                ),
+            ),
+        )
+        appendLine()
+        append(table(listOf("field", "meaning"), docs("eye", RecipeEye.serializer().descriptor)))
         appendLine()
         appendLine("## Garments")
         appendLine()

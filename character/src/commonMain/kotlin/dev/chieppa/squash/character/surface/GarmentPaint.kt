@@ -35,7 +35,8 @@ private fun branchShapes(branch: GarmentBranch, part: PartId, patch: String, axi
     fun uv(anchors: List<Anchor>) = anchors.filter { it.part == branch.part && it.patch == patch }.map { SurfaceUv(it.u, it.v) }
     val regions = branch.surface.regions.mapNotNull { region ->
         val points = uv(region.border)
-        if (points.size < 3) null else LandedShape(RANK_REGION, region.slot, part, patch, ColorShape.Border(points), ShapeSource.Border(part, region.id))
+        val corners = if (points.size == region.border.size) region.corners else emptySet()
+        if (points.size < 3) null else LandedShape(RANK_REGION, region.slot, part, patch, ColorShape.Border(points, corners = corners, curved = region.curved), ShapeSource.Border(part, region.id))
     }
     val strokes = branch.surface.paint.strokes.mapNotNull { stroke ->
         val points = uv(stroke.points)

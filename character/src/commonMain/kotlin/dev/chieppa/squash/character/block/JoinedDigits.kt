@@ -19,6 +19,8 @@ import dev.chieppa.squash.geom.field.RingFrame
 import kotlin.math.sin
 
 /** How far behind its root, in its radii, a joined digit's run takes over from the field's. */
+/** The index of a digit root's coordinate across the part. */
+private const val LATERAL = 2
 private const val SEAM = 0.6f
 
 /** How far either side of the seam, in radii, both runs show the surface, so they overlap. */
@@ -156,9 +158,11 @@ internal class JoinedDigits private constructor(
             val reach = ctx.value(row.reach)
             val thickness = ctx.value(row.thickness)
             val claw = clawOf(ctx, row)
+            val gap = ctx.value(row.gap)
+            val middle = built.map { row.digits[it].root[LATERAL] }.average().toFloat()
             val natural = built.map { i ->
                 val digit = row.digits[i]
-                val root = point(ctx, digit.root.map { Param.of(it) })
+                val root = point(ctx, digit.root.mapIndexed { axis, v -> Param.of(if (axis == LATERAL) middle + (v - middle) * gap else v) })
                 val digitLength = digit.length * length * reach
                 DigitAxis(own.cupped(ctx, root), digit.direction(ctx.value(row.spread)), digitLength, digit.radius * length * thickness, claw * digitLength)
             }

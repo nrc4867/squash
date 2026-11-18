@@ -47,6 +47,7 @@ import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -122,6 +123,10 @@ class FaceFlowTest {
         onNodeWithTag(PaintedEyeTags.line("brow")).performScrollTo().performClick()
         waitForIdle()
         assertEquals(!look.brow, eye().look.brow, "the brow's switch")
+        assertFalse(eye().flat, "an eye follows the head's curve until made flat")
+        onNodeWithTag(PaintedEyeTags.FLAT).performScrollTo().performClick()
+        waitForIdle()
+        assertTrue(eye().flat, "Flat lays the eye flat across the face")
     }
 
     @Test

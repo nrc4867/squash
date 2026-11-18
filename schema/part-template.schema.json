@@ -84,6 +84,55 @@
       },
       "additionalProperties": false
     },
+    "AxisPlace": {
+      "description": "A place a curved axis passes through, in the part's own axes as fractions of its length.",
+      "type": "object",
+      "properties": {
+        "along": {
+          "description": "Along the rest direction, away from the socket.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "up": {
+          "description": "Toward the part's top; below 0 toward its underside.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "side": {
+          "description": "Toward the part's side at v = 0.25.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "along"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "AxisSpec": {
       "description": "The rest direction before anything is drawn.",
       "type": "object",
@@ -125,6 +174,13 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
+        },
+        "curve": {
+          "description": "Places a smooth axis passes through after the socket point with nothing drawn, in the part's own axes as fractions of its length; the curve through them is scaled to the axis length, so they set its shape and length sets its reach. Empty for a straight or bent axis.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AxisPlace"
+          }
         },
         "bearsWeight": {
           "description": "Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.",
@@ -810,6 +866,18 @@
         },
         "spread": {
           "description": "Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "gap": {
+          "description": "On digits joined to a field, each digit's root sits this multiple of its distance across the part from the middle of the digits' roots: below 1 the roots close together, above it they stand apart.",
           "oneOf": [
             {
               "type": "number"

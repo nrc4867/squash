@@ -32,4 +32,6 @@ data class RecipeEye(
     val gazeUp: Float = 0f,
     @Doc("Whether it is painted again on the other side of the head.")
     val mirrored: Boolean = true,
+    @Doc("Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front.")
+    val flat: Boolean = false,
 )

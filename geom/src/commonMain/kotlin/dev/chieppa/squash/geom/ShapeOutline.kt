@@ -40,10 +40,10 @@ private fun borderOutline(border: ColorShape.Border, grid: PatchGrid, tolerance:
     val points = unwrapped(border.points, grid.closed)
     val path = OutlineBuilder(grid)
     if (border.closing == BorderClosing.ON_ITSELF) {
-        flattenedThrough(points, grid, tolerance, turnsToClose(points, grid)).forEach { path.add(it.u, it.v) }
+        flattenedThrough(points, grid, tolerance, turnsToClose(points, grid), border.corners).forEach { path.add(it.u, it.v) }
         return path.built()
     }
-    flattenedThrough(points, grid, tolerance).forEach { path.add(it.u, it.v) }
+    flattenedThrough(points, grid, tolerance, corners = border.corners).forEach { path.add(it.u, it.v) }
     val past = if (border.closing == BorderClosing.PAST_FIRST_RING) -PAST_THE_RINGS else grid.rings - 1.0 + PAST_THE_RINGS
     path.addGrid(past, grid.gridV(points.last().v))
     path.addGrid(past, grid.gridV(points.first().v))

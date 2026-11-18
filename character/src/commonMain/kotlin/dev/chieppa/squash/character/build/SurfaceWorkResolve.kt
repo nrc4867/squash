@@ -128,8 +128,13 @@ private fun resolveMark(mark: Mark, place: FlightPlaces, source: MarkId = mark.i
 private fun resolveWeight(weight: LineWeight, point: (Anchor) -> ResolvedPoint?): ResolvedLineWeight? =
     keptPoints(weight.points, MIN_WEIGHT_POINTS, point)?.let { ResolvedLineWeight(weight.id, it, weight.radius, weight.amount) }
 
-private fun resolveRegion(region: Region, point: (Anchor) -> ResolvedPoint?): ResolvedRegion? =
-    keptPoints(region.border, MIN_BORDER_POINTS, point)?.let { ResolvedRegion(region.id, it, region.slot, region.ink) }
+private fun resolveRegion(region: Region, point: (Anchor) -> ResolvedPoint?): ResolvedRegion? {
+    val landed = region.border.map(point)
+    val kept = landed.filterNotNull().takeIf { it.size >= MIN_BORDER_POINTS } ?: return null
+    val newIndex = landed.runningFold(0) { at, p -> if (p == null) at else at + 1 }
+    val corners = region.corners.filter { landed[it] != null }.mapTo(HashSet()) { newIndex[it] }
+    return ResolvedRegion(region.id, kept, region.slot, region.ink, corners, region.curved)
+}
 
 private fun resolveStroke(stroke: BrushStroke, point: (Anchor) -> ResolvedPoint?): ResolvedBrushStroke? =
     keptPoints(stroke.points, MIN_STROKE_POINTS, point)?.let { ResolvedBrushStroke(stroke.id, it, stroke.slot, stroke.radius, stroke.softness) }

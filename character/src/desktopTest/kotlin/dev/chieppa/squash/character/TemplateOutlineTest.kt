@@ -50,7 +50,17 @@ private const val TOED_PAW_TOLERANCE = 0.045f
 private const val BENT_TOLERANCE = 0.03f
 
 /** Whether [template]'s axis bends with nothing drawn. */
-private fun bendsUndrawn(template: PartTemplate): Boolean = template.axis.bend?.let { it.resolve(template.defaults) != 0f } ?: false
+private fun bendsUndrawn(template: PartTemplate): Boolean =
+    curvesUndrawn(template) || template.axis.bend?.let { it.resolve(template.defaults) != 0f } ?: false
+
+/** Whether [template]'s undrawn axis is a curve through places, as a curved tail's is. */
+private fun curvesUndrawn(template: PartTemplate): Boolean = template.axis.curve.isNotEmpty()
+
+/**
+ * A curved axis with all three views started: the rings stand square to the curve undrawn and on planes a = constant drawn,
+ * which tilts them across the part's thickness wherever it curves, and a thin part's Front reach is little more than that thickness.
+ */
+private const val CURVED_IN_TURN_TOLERANCE = 0.06f
 
 /** With all three views started, each is held to the others as well, which the head's proportions show most. */
 private const val IN_TURN_TOLERANCE = 0.035f
@@ -182,7 +192,12 @@ class TemplateOutlineTest {
                 if (thumbWidth(template, view)) continue
                 val before = profile(template, undrawn, view)
                 val share = apart(before, profile(template, built, view)) / reach(before)
-                assertTrue(share <= if (hasToes(template)) TOED_IN_TURN_TOLERANCE else IN_TURN_TOLERANCE, "${template.id.value} $view with all three started: $share")
+                val tolerance = when {
+                    hasToes(template) -> TOED_IN_TURN_TOLERANCE
+                    curvesUndrawn(template) -> CURVED_IN_TURN_TOLERANCE
+                    else -> IN_TURN_TOLERANCE
+                }
+                assertTrue(share <= tolerance, "${template.id.value} $view with all three started: $share")
             }
         }
     }

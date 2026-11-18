@@ -30,12 +30,26 @@ data class AxisSpec(
     val bend: Param? = null,
     @Doc("Where along the axis it bends.") @Range(min = 0.0, max = 1.0)
     val bendAt: Float = DEFAULT_BEND_AT,
+    @Doc("Places a smooth axis passes through after the socket point with nothing drawn, in the part's own axes as fractions of its length; the curve through them is scaled to the axis length, so they set its shape and length sets its reach. Empty for a straight or bent axis.")
+    val curve: List<AxisPlace> = emptyList(),
     @Doc("Whether the part stands on the ground, so a lean on one such part shortens the others to keep them all on it.")
     val bearsWeight: Boolean = false,
     @Doc("Where a head's face looks at rest, in body space, when not along the axis: the way its angle versions and gaze read.")
     val faces: Direction? = null,
     /** Where a turned part's up stays, so its drawings keep their meaning. Never in a file. */
     @Transient val up: Direction? = null,
+)
+
+/** A place a curved axis passes through, in the part's own axes as fractions of its length. */
+@Serializable
+@Doc("A place a curved axis passes through, in the part's own axes as fractions of its length.")
+data class AxisPlace(
+    @Doc("Along the rest direction, away from the socket.")
+    val along: Param,
+    @Doc("Toward the part's top; below 0 toward its underside.")
+    val up: Param = Param.of(0f),
+    @Doc("Toward the part's side at v = 0.25.")
+    val side: Param = Param.of(0f),
 )
 
 /** The point of a closed part that sits on its socket, in place of its axis start. */

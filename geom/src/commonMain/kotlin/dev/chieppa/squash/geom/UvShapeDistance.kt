@@ -10,6 +10,12 @@ private const val PAST_RING = 4f
 /** What a whole patch reads as: far inside. */
 private const val FAR = 1e6f
 
+/** How far, in u and v, a curved border's straight edges lie from its curve at most. */
+private const val CURVE_TOLERANCE = 1e-4f
+
+/** A unit of u and of v read as one long, for flattening a curve in u and v alone. */
+private val UNIT_RATES = SurfaceRates(1f, 1f)
+
 /**
  * [shape], a color shape in a patch's own u and v, read as a signed distance at any (u, v): positive inside, negative outside, measured
  * with a stretch of u counting [uScale] times and of v [vScale] times its length, so with each set to how long a unit of it is on the
@@ -107,7 +113,7 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
 
     /** The border as one closed outline in unwrapped v, each segment flagged whether it is the border's own or a closing past the patch. */
     private fun borderOutline(border: ColorShape.Border): List<Pair<SurfaceUv, Boolean>> {
-        val points = unwrapped(border.points)
+        val points = if (border.curved) curve(border) else unwrapped(border.points)
         if (points.isEmpty()) return points
         val first = points.first().first
         val last = points.last().first
@@ -135,6 +141,20 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
             out += SurfaceUv(p.u, v) to true
         }
         return out
+    }
+
+    /**
+     * [border]'s curve as straight edges, its v carried across the seam as [unwrapped] carries it, without the point that would close it: a
+     * closed curve ends just short of its first point, one closing past a ring at its last point.
+     */
+    private fun curve(border: ColorShape.Border): List<Pair<SurfaceUv, Boolean>> {
+        val through = unwrapped(border.points).map { UnwrappedUv(it.first.u.toDouble(), it.first.v.toDouble()) }
+        if (through.size < 3) return unwrapped(border.points)
+        val closes = border.closing == BorderClosing.ON_ITSELF
+        val turn = if (closes && closedV) round(through.last().v + wrapped((through.first().v - through.last().v).toFloat()) - through.first().v) else 0.0
+        val flat = flattenedThrough(through, { _, _ -> UNIT_RATES }, CURVE_TOLERANCE, if (closes) turn else null, border.corners)
+        val kept = if (closes) flat.dropLast(1) else flat
+        return kept.map { SurfaceUv(it.u.toFloat(), it.v.toFloat()) to true }
     }
 
     /** The outline's last point, whose segment back to the first would close it, leads into the closing past a ring instead. */

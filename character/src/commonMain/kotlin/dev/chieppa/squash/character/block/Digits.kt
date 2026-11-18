@@ -89,6 +89,8 @@ data class Digits(
     val thickness: Param = Param.of(1f),
     @Doc("Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.")
     val spread: Param = Param.of(1f),
+    @Doc("On digits joined to a field, each digit's root sits this multiple of its distance across the part from the middle of the digits' roots: below 1 the roots close together, above it they stand apart.")
+    val gap: Param = Param.of(1f),
     @Doc("Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it.")
     val hinge: Hinge = Hinge.X,
     @Doc("Degrees the joints turn within.")
@@ -268,7 +270,7 @@ data class Digits(
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.param("join", join) + ctx.param("knuckles", knuckles) + ctx.param("merge", merge) +
         ctx.atLeast("rings", rings, MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS) + ctx.param("count", count) +
-            ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) + ctx.param("spread", spread) +
+            ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) + ctx.param("spread", spread) + ctx.param("gap", gap) +
             nail?.let { ctx.param("nail.claw", it.claw) + ctx.param("nail.curl", it.curl) }.orEmpty() +
             pad?.let { ctx.param("pad.rise", it.rise) }.orEmpty() +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") }

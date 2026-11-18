@@ -31,7 +31,7 @@ internal fun BuildContext.eyes() = recipe.eyes.forEachIndexed { i, eye ->
     }
     checkSlots("$path.look", eye.look)
     eye.front?.let { checkSlots("$path.front", it) }
-    send(path, SetPaintedEye(eye.id, guard(path) { PaintedEye(eye.id, anchor, eye.look, eye.mirrored, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp) }))
+    send(path, SetPaintedEye(eye.id, guard(path) { PaintedEye(eye.id, anchor, eye.look, eye.mirrored, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.flat) }))
 }
 
 private fun BuildContext.checkSlots(path: String, look: EyeLook) {

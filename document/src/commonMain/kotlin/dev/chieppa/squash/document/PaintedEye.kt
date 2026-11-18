@@ -49,6 +49,9 @@ data class EyeLook(
  * painted again on the other side of the head's plane, its anchor's v read as 1 - v. With a [front] look, a view that sees the head
  * from the front shows the eye [fromFront] of the way from its look to that one (see [shownFront]). Its iris, pupil and highlight look
  * [gazeForward] of the opening's half width toward the head's front and [gazeUp] of its half height up, clipped by the opening.
+ * A [flat] eye faces the way its head faces, turned outward by its look-out, and is laid on the head as a decal projected from there, so
+ * it reads as drawn when seen from its facing however round the head is; otherwise it faces the surface's normal at its middle and
+ * follows the head's curve round from there.
  */
 @Serializable
 data class PaintedEye(
@@ -60,6 +63,7 @@ data class PaintedEye(
     val fromFront: Float = 1f,
     val gazeForward: Float = 0f,
     val gazeUp: Float = 0f,
+    val flat: Boolean = false,
 ) {
     init {
         require(fromFront in 0f..1f) { "From front is between 0 and 1, not $fromFront" }

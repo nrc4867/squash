@@ -16,6 +16,51 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 
 `controls`: `open` 0 closed to 1 open (drives the jaw joint and parts the lips), `width` scales it across, `mouthShape` (`SMILE`, `FROWN`, `O`, `GRIMACE`) bends the lip line, `expressionBlend` 0 at the group's own marks to 1 at the shown expression's. Each role's marks are mark ids on the same part.
 
+## Regions
+
+| question | answer |
+| --- | --- |
+| the shape of a border | with `curved`, a smooth closed curve through its places, so four or five places make a round patch; without it, straight between them on a part joined into the body's one surface, as a head on a neck |
+| a sharp point in a border | `corners`: indices into its places |
+| a two-tone face | a light region and a dark one whose borders pass through the same places along their boundary; they meet along one edge with no gap and no overlap, and turn sharply where the two borders part |
+| which shows where two overlap | the later in the part's `regions` |
+| a region against the base colour | its border alone, at any zoom |
+
+| field | meaning |
+| --- | --- |
+| region `slot` | The palette slot it is painted in. |
+| region `ink` | Whether its border is inked as a line. |
+| region `patch` | The patch its border's u, v lie on: body, or a patch the template names, as muzzle. |
+| region `border` | The border as [u, v] on the part: u along it from its socket end, v round it. |
+| region `face` | On a head: the border as [x, y] on the face seen from straight ahead, x to the character's left (negative for the right), y up, in the head's drawn units from its socket. |
+| region `anchors` | The border as anchors, each naming its part; for a region that runs across parts. |
+| region `corners` | Indices into the border's places that are sharp corners, as a chin's point. |
+| region `curved` | Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; otherwise it runs straight between them there. Set it for a few-place shape. |
+
+## Eyes
+
+| question | answer |
+| --- | --- |
+| where an eye's shapes are drawn | in a plane square to its facing, through its middle, its chart running toward the head's front and top |
+| which way an eye faces | the surface's normal at its middle, turned out by the look's `lookOut`; with `flat`, the way the head faces, turned out likewise |
+| how it lands on the head | each point of the plane is carried along the facing onto the surface, so seen from its facing the eye reads as drawn |
+| when to use `flat` | a large eye on a small, round head, where facing the surface's normal follows the curve and the eye reads bent from the front |
+
+| field | meaning |
+| --- | --- |
+| eye `on` | The head it is painted on. |
+| eye `patch` | The patch u and v lie on. |
+| eye `u` | Where along the head its middle sits. |
+| eye `v` | Where round the head its middle sits. |
+| eye `face` | Its middle as [x, y] on the face seen from straight ahead, in place of u and v. |
+| eye `look` | How it looks: opening, iris, pupil, highlight, lid, lashes, brow, and their palette slots (white, iris, pupil, highlight, ink). |
+| eye `front` | How it looks when the head is seen from the front; the look alone when left out. |
+| eye `fromFront` | How far from its look to the front look a front view goes, 0 to 1. |
+| eye `gazeForward` | Gaze toward the head's front, a share of the opening's half width. |
+| eye `gazeUp` | Gaze up, a share of the opening's half height. |
+| eye `mirrored` | Whether it is painted again on the other side of the head. |
+| eye `flat` | Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front. |
+
 ## Garments
 
 | question | answer |

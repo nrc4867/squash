@@ -44,7 +44,10 @@ private fun uvForm(part: PartId, anchors: List<Anchor>): Pair<String, List<List<
 
 internal fun region(part: PartId, region: Region): RecipeRegion {
     val uv = uvForm(part, region.border)
-    return RecipeRegion(region.id.value, region.slot.value, region.ink, uv?.first ?: BODY_PATCH, border = uv?.second, anchors = if (uv == null) region.border else null)
+    return RecipeRegion(
+        region.id.value, region.slot.value, region.ink, uv?.first ?: BODY_PATCH, border = uv?.second, anchors = if (uv == null) region.border else null,
+        corners = region.corners.sorted(), curved = region.curved,
+    )
 }
 
 internal fun mark(part: PartId, mark: Mark): RecipeMark {

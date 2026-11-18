@@ -50,6 +50,17 @@ class RecipeBuildTest {
     }
 
     @Test
+    fun aRecipesFlatEyesBuildFlatAndWriteBackAsARecipe() {
+        val recipe = RecipeJson.read(File(recipes, "fennec.recipe.json").readText())
+        assertTrue(builder.build(recipe).document.character.paintedEyes.none { it.flat }, "eyes follow the head's curve unless made flat")
+        val flat = recipe.copy(eyes = recipe.eyes.map { it.copy(flat = true) })
+        val document = builder.build(RecipeJson.read(RecipeJson.write(flat))).document
+        assertTrue(document.character.paintedEyes.isNotEmpty() && document.character.paintedEyes.all { it.flat })
+        assertEquals(document, opened(document))
+        assertEquals(document, builder.build(RecipeJson.read(RecipeJson.write(exportRecipe(document).recipe))).document)
+    }
+
+    @Test
     fun aCharacterWrittenAsARecipeBuildsIntoItself() {
         val fennec = built("fennec").document
         val exported = exportRecipe(fennec)

@@ -286,6 +286,7 @@
     <string name="face_colors">Colors</string>
     <string name="face_more">More</string>
     <string name="face_from_front">From front</string>
+    <string name="face_flat">Flat</string>
     <string name="face_gaze_forward">X</string>
     <string name="face_gaze_up">Y</string>
     <string name="face_value">%1$s</string>
