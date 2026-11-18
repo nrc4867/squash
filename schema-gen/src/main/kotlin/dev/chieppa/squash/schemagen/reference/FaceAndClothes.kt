@@ -52,7 +52,7 @@ internal object FaceAndClothes {
             table(
                 listOf("question", "answer"),
                 listOf(
-                    listOf("the shape of a border", "with `curved`, a smooth closed curve through its places, so four or five places make a round patch; without it, straight between them on a part joined into the body's one surface, as a head on a neck"),
+                    listOf("the shape of a border", "a smooth closed curve through its places, so four or five places make a round patch; with `curved: false`, straight between them on a part joined into the body's one surface, as a head on a neck"),
                     listOf("a sharp point in a border", "`corners`: indices into its places"),
                     listOf("a two-tone face", "a light region and a dark one whose borders pass through the same places along their boundary; they meet along one edge with no gap and no overlap, and turn sharply where the two borders part"),
                     listOf("which shows where two overlap", "the later in the part's `regions`"),

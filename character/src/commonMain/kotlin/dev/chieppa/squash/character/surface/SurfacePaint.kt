@@ -90,10 +90,12 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
             val lays = shapes.map { layOf(chart, it, earlier) }
             runAll((sectionLays + lays.filterNotNull()).flatMap { it.pieces } + listOf({ marks = marksOf(surface, held) }))
             val sections = runsLaid.indices.associate { i -> runsLaid[i] to lazy { sectionLays[i].finish(chart.trianglesOf(runsLaid[i])) } }
+            val margin = SectionMargin(chart)
+            val shown = sections.mapValues { (members, raw) -> lazy { margin.widened(raw.value, members, chart.trianglesOf(members)) } }
             runAll(
                 shapes.indices.map { i ->
                     {
-                        val made = lays[i]?.let { layerOf(chart, shapes[i], it, sections, earlier) }
+                        val made = lays[i]?.let { layerOf(chart, shapes[i], it, shown, earlier) }
                         layers[i] = made?.first
                         laid[i] = made?.second
                     }
@@ -180,7 +182,7 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
                 val closedV = chart.surface.field.runs[members.first()].patch.closedV
                 PaintSplits.of(chart, members, triangles, UvShapeDistance(shape.shape, closedV), closedV, eased, section, values)
             }
-            return PaintLayer.of(shape.slot, chart.surface, values, triangles, split = split) to LaidShape(distances, values)
+            return PaintLayer.of(shape.slot, chart.surface, values, triangles, split = split, source = shape.source) to LaidShape(distances, values)
         }
     }
 }

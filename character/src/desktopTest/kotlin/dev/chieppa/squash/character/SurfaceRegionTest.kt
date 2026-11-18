@@ -15,6 +15,9 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/** How far, in cells, a region may run past the join's equal-share curve: the margin it is held past it and a little reading error. */
+private const val SECTION_SLACK_CELLS = 0.1f
+
 /** A region drawn up to a join paints its own part up to the curve where the join shares the surface equally, and no further. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceRegionTest {
@@ -32,7 +35,7 @@ class SurfaceRegionTest {
         val layer = assertNotNull(session.surfacePaint.output.value?.paint).layers.single { it.slot == sock }
         val section = layer.cut.values(SurfaceSection(surface, leftLeg.id).values)
         val cell = surface.mesh.cell
-        assertTrue(section.all { it >= -cell * 0.05f }, "the sock lies on the leg's own section, at least ${section.min()}")
-        assertTrue(section.any { it < cell * 0.05f }, "and reaches the join's curve")
+        assertTrue(section.all { it >= -cell * SECTION_SLACK_CELLS }, "the sock lies on the leg's own section, at least ${section.min()}")
+        assertTrue(section.any { it < cell * SECTION_SLACK_CELLS }, "and reaches the join's curve")
     }
 }

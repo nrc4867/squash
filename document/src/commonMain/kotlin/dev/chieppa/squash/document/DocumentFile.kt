@@ -33,9 +33,12 @@ private const val WARDROBE_KEY = "wardrobe"
 private const val GARMENTS_KEY = "garments"
 private const val FILLET_KEY = "fillet"
 private const val INK_CUFFS_KEY = "inkCuffs"
+private const val BORDER_KEY = "border"
+private const val SLOT_KEY = "slot"
+private const val CURVED_KEY = "curved"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -88,6 +91,22 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
     return drawnEyesRemoved(JsonObject(document + (CHARACTER_KEY to JsonObject(moved))))
+}
+
+/**
+ * Format 17 to 18: a region is curved unless it says otherwise, so a region saved without a curved setting, which ran straight
+ * between its places, keeps that by saying so.
+ */
+private fun regionsGainCurved(document: JsonObject): JsonObject = withRegionsStraight(document) as JsonObject
+
+private fun withRegionsStraight(node: JsonElement): JsonElement = when (node) {
+    is JsonArray -> JsonArray(node.map(::withRegionsStraight))
+    is JsonObject -> {
+        val walked = JsonObject(node.mapValues { (_, value) -> withRegionsStraight(value) })
+        val isRegion = BORDER_KEY in walked && SLOT_KEY in walked && ID_KEY in walked
+        if (isRegion && CURVED_KEY !in walked) JsonObject(walked + (CURVED_KEY to JsonPrimitive(false))) else walked
+    }
+    else -> node
 }
 
 /**

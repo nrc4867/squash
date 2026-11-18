@@ -92,6 +92,18 @@ class SurfaceCommandTest {
     }
 
     @Test
+    fun aRegionIsCurvedUnlessSavedStraight() {
+        assertTrue(region("r").curved)
+        val straight = SetRegion(head.id, RegionId("s"), region("s").copy(curved = false)).apply(placed).document
+        val saved = Json.encodeToString(SquashDocument.serializer(), straight)
+        assertTrue("\"curved\":false" in saved)
+        assertEquals(false, readDocument(saved).surface().regions.single().curved)
+        val inOldFormat = saved.replace("\"curved\":false,", "").replace(",\"curved\":false", "").replace("\"format\":$DOCUMENT_FORMAT", "\"format\":17")
+        assertTrue("curved" !in inOldFormat)
+        assertEquals(false, readDocument(inOldFormat).surface().regions.single().curved, "a region saved before the default flipped stays straight")
+    }
+
+    @Test
     fun aSlotsLabelSurvivesRecoloringAndRemovingAndUndoing() {
         val named = SetPaletteSlot(SlotName("cloud"), SlotColor(0.5f, 0.5f, 0.5f)).apply(placed).document
         val labelled = SetSlotLabel(SlotName("cloud"), "Cloud white").apply(named).document

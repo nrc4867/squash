@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Doc(
     "A painted region. Give its border one way: border ([u, v] on the part), face ([x, y] on a head's face seen from ahead) or anchors. " +
-        "With curved, the border is a smooth closed curve through its places, so a few places make a round shape; corners makes some sharp. " +
+        "The border is a smooth closed curve through its places, so a few places make a round shape; corners makes some sharp, and curved: false runs it straight between them. " +
         "Two regions whose borders pass through the same places meet along one shared edge with no gap and no overlap, sharp where " +
         "the borders part: draw a two-tone face as a light region and a dark one sharing the places of their boundary.",
 )
@@ -37,8 +37,8 @@ data class RecipeRegion(
     val anchors: List<Anchor>? = null,
     @Doc("Indices into the border's places that are sharp corners, as a chin's point.")
     val corners: List<Int> = emptyList(),
-    @Doc("Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; otherwise it runs straight between them there. Set it for a few-place shape.")
-    val curved: Boolean = false,
+    @Doc("Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; false runs it straight between them there.")
+    val curved: Boolean = true,
 )
 
 /** A line or a fur stroke on a part, its places given as a region's border is. */

@@ -20,7 +20,7 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 
 | question | answer |
 | --- | --- |
-| the shape of a border | with `curved`, a smooth closed curve through its places, so four or five places make a round patch; without it, straight between them on a part joined into the body's one surface, as a head on a neck |
+| the shape of a border | a smooth closed curve through its places, so four or five places make a round patch; with `curved: false`, straight between them on a part joined into the body's one surface, as a head on a neck |
 | a sharp point in a border | `corners`: indices into its places |
 | a two-tone face | a light region and a dark one whose borders pass through the same places along their boundary; they meet along one edge with no gap and no overlap, and turn sharply where the two borders part |
 | which shows where two overlap | the later in the part's `regions` |
@@ -35,7 +35,7 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 | region `face` | On a head: the border as [x, y] on the face seen from straight ahead, x to the character's left (negative for the right), y up, in the head's drawn units from its socket. |
 | region `anchors` | The border as anchors, each naming its part; for a region that runs across parts. |
 | region `corners` | Indices into the border's places that are sharp corners, as a chin's point. |
-| region `curved` | Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; otherwise it runs straight between them there. Set it for a few-place shape. |
+| region `curved` | Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; false runs it straight between them there. |
 
 ## Eyes
 
