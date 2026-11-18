@@ -8,6 +8,7 @@ import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How far into the play bow the fennec's front knees fold far enough to keep the front paws where they stood. */
 private const val FOLDING_SHARE = 0.75f
@@ -29,6 +30,7 @@ class BodyCurvePoseTest {
 
     private fun moved(from: Pose, to: Pose): Map<String, Float> = solver.chains.limbs.associate { it.id.value to (solver.endOf(to, it) - solver.endOf(from, it)).length }
 
+    @Tag("integration")
     @Test
     fun theBowHoldsEveryPlantedPawWhereItStood() {
         val bare = solveBodyCurve(solver.rig, standing, bow)

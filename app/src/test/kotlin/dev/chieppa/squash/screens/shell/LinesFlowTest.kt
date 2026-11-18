@@ -43,6 +43,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -53,6 +54,7 @@ private object NoLineFlowFiles : FileChooser {
 }
 
 /** The Lines and Marks drawers and their tools in the app whole, over the saved fennec. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class LinesFlowTest {
     private val work = TestWork()

@@ -11,6 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A drawn outline through the real build. See HLD: data-model, Rules the code keeps. */
 class DrawnPartTest {
@@ -155,6 +156,7 @@ class DrawnPartTest {
         assertTrue(old.indices.any { old[it] != new[it] })
     }
 
+    @Tag("integration")
     @Test
     fun everyTemplateBuildsWatertightFromDrawnViews() {
         val side = outline(0f to 0.25f, 0.5f to 0.3f, 0.9f to 0.2f, 1f to 0f, 0.9f to -0.2f, 0.5f to -0.3f, 0f to -0.25f)

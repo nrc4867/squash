@@ -57,6 +57,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -71,6 +72,7 @@ private object NoDressFiles : FileChooser {
 }
 
 /** The Dress stage in the app whole, over the dressed fennec: W13's strip, inspector and status, W14's band, popover and layers, the Tuck rows. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class DressFlowTest {
 

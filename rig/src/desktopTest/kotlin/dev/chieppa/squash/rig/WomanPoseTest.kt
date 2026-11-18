@@ -16,6 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val FOOT_L = PartId("foot-l")
 private val FOOT_R = PartId("foot-r")
@@ -117,6 +118,7 @@ class WomanPoseTest {
         assertTrue(bent.report.slid.isEmpty(), "both feet come back: ${bent.report.slid}")
     }
 
+    @Tag("integration")
     @Test
     fun theBodyCurveHoldsThePlantedFeetAsABodyDragDoes() {
         val bones = assertNotNull(curveBones(woman))

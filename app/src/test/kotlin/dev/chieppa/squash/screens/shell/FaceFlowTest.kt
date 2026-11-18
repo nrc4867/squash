@@ -51,6 +51,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -61,6 +62,7 @@ private object NoFaceFiles : FileChooser {
 }
 
 /** The Face stage in the app whole, over the saved fennec: its tools, its inspector and the band of expressions and angle versions. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class FaceFlowTest {
     private val work = TestWork()

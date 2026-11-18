@@ -16,12 +16,14 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** The one surface's stack through a drag (see [StackFixture]): coarse while it is open, the unseen skin waiting for its end, recent builds kept. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class DragStackTest {
     private val leg = StackFixture.leg
 
+    @Tag("integration")
     @Test
     fun aDragMeshesEverythingCoarseAndLeavesTheUnseenSkinUntilItsEnd() = runTest {
         val session = stackSession()
@@ -78,6 +80,7 @@ class DragStackTest {
         assertSame(rest, session.characterSurface.output.value?.surface)
     }
 
+    @Tag("integration")
     @Test
     fun undoAndRedoTakeTheBuildsTheyMadeBefore() = runTest {
         val session = stackSession()

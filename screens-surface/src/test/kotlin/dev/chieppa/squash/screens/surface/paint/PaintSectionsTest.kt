@@ -38,10 +38,12 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val PANE = 800
 
 /** What a pick and Fill find on the fennec, through its real graph. */
+@Tag("integration")
 class PaintSectionsTest {
     private val work = TestWork()
     private val folder = TemplateFolder.shipped()

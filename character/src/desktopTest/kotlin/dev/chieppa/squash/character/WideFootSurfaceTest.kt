@@ -8,11 +8,13 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.junit.jupiter.api.Tag
 
 /**
  * A foot widened to its widest takes a coarser cell, which follows its width, while its toes and talons keep their size: a talon's point
  * then crosses cells thinner than they are. The surface stays closed and manifold, at the full cell and at the coarse one.
  */
+@Tag("integration")
 class WideFootSurfaceTest {
     private val library = TemplateLibrary(shipped.parts, shipped.plans)
 

@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.junit.jupiter.api.Tag
 
 /**
  * The template versions whose part, built alone as one surface at the coarse cell, is not closed and manifold. An old file that
@@ -19,6 +20,7 @@ import kotlin.test.assertEquals
 private val ROUGH_VERSIONS: List<String> = emptyList()
 
 /** Every shipped version of a template whose runs are in the field builds a closed, manifold one surface on a character of that part alone. */
+@Tag("integration")
 class EveryVersionSurfaceTest {
     private val library = TemplateLibrary(shipped.parts, shipped.plans)
 

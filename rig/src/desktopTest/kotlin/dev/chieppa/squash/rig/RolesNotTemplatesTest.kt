@@ -27,11 +27,13 @@ import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 /** How near two solves of the same pose must agree, in body units. */
 private const val SAME = 1e-5f
 
 /** The fennec, the woman and the toucan pose by their parts' roles: with every template id renamed, their rigs, handles and solves are the same. */
+@Tag("integration")
 class RolesNotTemplatesTest {
     private val renamed = mapOf(
         "hair-cap" to "kind-hc", "hair" to "kind-ha", "torso-bird" to "kind-p", "head-bird" to "kind-q", "beak-lower" to "kind-r", "beak" to "kind-s", "leg-bird" to "kind-t", "foot-bird" to "kind-u",

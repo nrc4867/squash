@@ -41,10 +41,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val LEG = PartId("front-leg-l")
 private val TWIN = PartId("front-leg-r")
 
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class RigInspectorTest {
     private val work = TestWork()

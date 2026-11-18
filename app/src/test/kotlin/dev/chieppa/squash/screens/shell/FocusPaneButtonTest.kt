@@ -32,6 +32,7 @@ import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.junit.jupiter.api.Tag
 
 private object NoChosenFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -50,6 +51,7 @@ class FocusPaneButtonTest {
         waitForIdle()
     }
 
+    @Tag("integration")
     @Test
     fun inFocusEachSmallPanesButtonMakesItTheLargeOne() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -69,6 +71,7 @@ class FocusPaneButtonTest {
         assertEquals(SheetPane.SIDE, state.focused.value)
     }
 
+    @Tag("integration")
     @Test
     fun fromFullFirstASheetsButtonTurnsToFocusWithItLarge() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)

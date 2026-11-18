@@ -36,8 +36,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** The biped plan rests its arms in A-pose, and a part's sockets keep their place inside it whatever a worn garment draws over it. See HLD: data-model, Placing parts. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class APoseTest {
     private val plan = assertNotNull(shipped.plans.firstOrNull { it.id == BodyPlanId("biped") })

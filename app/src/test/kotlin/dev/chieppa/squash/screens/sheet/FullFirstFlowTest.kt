@@ -41,6 +41,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val RADIUS = 30f
 private const val LOOP_POINTS = 40
@@ -54,6 +55,7 @@ private object NoFiles : FileChooser {
 }
 
 /** Full first with the real tools: Draw outline refused in Full and writing in a sheet, Move in Full, and the switch to Single and back. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class FullFirstFlowTest {
     private val work = TestWork()

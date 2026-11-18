@@ -29,7 +29,7 @@ dependencies {
     testFixturesApi(compose.desktop.currentOs)
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     val templates = rootProject.layout.projectDirectory.dir("templates")

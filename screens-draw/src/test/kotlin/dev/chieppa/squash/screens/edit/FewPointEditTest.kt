@@ -44,6 +44,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How far from the line of symmetry, in screen pixels, a dragged anchor is let go: inside its reach. */
 private const val NEAR_LINE = 3f
@@ -178,6 +179,7 @@ class FewPointEditTest {
         assertEquals(side, bench.outline(View.SIDE), "and the outline Simplify outline made comes back")
     }
 
+    @Tag("integration")
     @Test
     fun altOnTheCurveAddsAPointThatKeepsItsShapeAndDeleteTakesOneOut() = runComposeUiTest {
         val bench = CurveToolBench(drawnLeg(DEFAULT_STROKE_FIT))

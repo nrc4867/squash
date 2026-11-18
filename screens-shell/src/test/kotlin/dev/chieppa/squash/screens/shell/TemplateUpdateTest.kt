@@ -22,10 +22,12 @@ import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.junit.jupiter.api.Tag
 
 private const val EARLESS = 3
 
 /** Update from library in the Template menu, offered only over an older version, and what a version leaves behind highlighted in place. See HLD: data-model, Update from library. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class TemplateUpdateTest {
     private val work = TestWork()

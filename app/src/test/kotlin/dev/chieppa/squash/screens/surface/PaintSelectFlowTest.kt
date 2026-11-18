@@ -55,6 +55,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1000
 private const val HEIGHT = 860
@@ -77,6 +78,7 @@ private const val INTO_PART = 24f
  * The Color stage's strip and panes on the fennec, with Brush armed or Select: a part chosen with Select holds the brush to it, the rest of the
  * character neither taking paint nor the choice, and Select picks without painting.
  */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class PaintSelectFlowTest {
     private val work = TestWork()

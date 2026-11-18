@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val PAW_L = PartId("front-paw-l")
 
@@ -17,6 +18,7 @@ private const val TOES = 3
 private const val CARRIED = 0.01f
 
 /** The dragon's claws, grown from its paws' toes: each claw's point rides its toe's last joint as the paw curls. */
+@Tag("integration")
 class ClawRigTest {
     private val dragon get() = dragonRig
 

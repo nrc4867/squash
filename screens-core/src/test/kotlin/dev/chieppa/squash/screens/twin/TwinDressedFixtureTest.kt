@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val SAVED_FILE = "../examples/$TWIN_DRESSED_RESOURCE"
 private const val UPDATE_PROPERTY = "squash.updateGoldens"
@@ -35,6 +36,7 @@ class TwinDressedFixtureTest {
         assertEquals(twinDressedDocument(), SquashFormat().decode(file.readBytes()))
     }
 
+    @Tag("integration")
     @Test
     fun theOutfitsAreTheReferencesFourByItsNames() {
         assertEquals(listOf("beach", "lawyer", "dress", "goth"), twinDressedDocument().character.wardrobe.outfits.map { it.id.value })
@@ -48,6 +50,7 @@ class TwinDressedFixtureTest {
         assertTrue(assertNotNull(dressed.wardrobe.garments.first { it.id == SKIRT }.branch(TORSO)).from < 0f, "the skirt runs on below the torso's start")
     }
 
+    @Tag("integration")
     @Test
     fun eachOutfitBuildsThePartsItsGarmentsOwnAndNoOthers() {
         val owned = mapOf(

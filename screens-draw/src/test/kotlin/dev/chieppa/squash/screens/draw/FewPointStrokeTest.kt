@@ -27,6 +27,7 @@ import dev.chieppa.squash.screens.sheet.LockedCamera
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** The fewest and most points a limb's outline drawn at the default Fit lands on. */
 private val LIMB_POINTS = 4..8
@@ -38,6 +39,7 @@ private const val WOBBLE_SLACK_PIXELS = 4f
 private const val ELLIPSE_SLACK_PIXELS = 2f
 
 /** Strokes drawn through the real Draw outline tool fit to few curve points, as the Fit setting asks, and the snapping modifiers. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class FewPointStrokeTest {
     private class Drawn(val anchors: Int, val stored: Int, val worstPixels: Float, val meanPixels: Float, val fitPixels: Float?)

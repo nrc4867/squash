@@ -39,6 +39,7 @@ kotlin {
 }
 
 tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
     val templates = rootProject.layout.projectDirectory.dir("templates")
     inputs.dir(templates).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty("squash.templates", templates.asFile.path)

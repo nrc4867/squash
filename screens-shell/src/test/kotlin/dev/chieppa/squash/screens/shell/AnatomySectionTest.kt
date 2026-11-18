@@ -51,6 +51,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val LEG_A = PartId("leg-a")
 private val LEG_B = PartId("leg-b")
@@ -77,6 +78,7 @@ class AnatomySectionTest {
         StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { ShapeInspector(state) { _, _, _, _, _ -> } } }
     }
 
+    @Tag("integration")
     @Test
     fun theGridChoosesAddJointWithItsHingeLimitsStretchAndDelete() = runComposeUiTest {
         setContent(inspector())
@@ -167,6 +169,7 @@ class AnatomySectionTest {
         onNodeWithTag(ShellTags.SAVE_NAME).assertDoesNotExist()
     }
 
+    @Tag("integration")
     @Test
     fun aSavedTemplateIsOfferedAtOnceByLibrarysReplaceAndAdd() = runComposeUiTest {
         val tube = assertNotNull(shipped.template(TemplateId("tube"))).ref

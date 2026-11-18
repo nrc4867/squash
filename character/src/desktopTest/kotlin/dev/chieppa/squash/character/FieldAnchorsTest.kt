@@ -23,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /**
  * Anchors near a join resolved on the field: each lands on the surface, on its own part's side of the join, near where its
@@ -97,6 +98,7 @@ class FieldAnchorsTest {
         assertEquals(0f, surface.field.field.value(root.position), surface.field.cell * 0.01f, "the tuft's root lies on the surface")
     }
 
+    @Tag("integration")
     @Test
     fun aFaceMapOnTheSurfaceLandsWhereARayFromAheadMeetsIt() = runTest {
         val head = PartInstance(PartId("head"), templateRef("head"), SocketRef(torsoPart.id, "neck"))

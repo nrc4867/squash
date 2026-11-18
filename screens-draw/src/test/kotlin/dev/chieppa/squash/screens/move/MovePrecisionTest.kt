@@ -38,6 +38,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val PANE_WIDTH = 600
 private const val PANE_HEIGHT = 400
@@ -47,6 +48,7 @@ private const val PIXELS_PER_UNIT = 400f
 private const val OFF_LINE = 4f
 
 /** The shipped fennec in the Workspace, its torso shown in a locked pane, and its left front leg's socket dragged with Move. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class MovePrecisionTest {
     private val work = TestWork()

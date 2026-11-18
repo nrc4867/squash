@@ -67,5 +67,5 @@ Digits (a part's row of toes or fingers) mesh at a quarter of the body's cell th
 
 - One worktree per round under `.worktrees/`, one agent in it, no sub-agents; land as one squashed commit, never push.
 - One Gradle build at a time; the machine ran out of memory with several.
-- Light timing while iterating, the full table once at the end; module tests while working, `./gradlew check` once at the end.
+- Light timing while iterating, the full table once at the end; the fast tier of the touched modules while working (`:<module>:test`, or `:<module>:desktopTest` in a multiplatform module, `./gradlew checkFast` for all of them), the full tier, `./gradlew check`, once before landing on main.
 - At rest every example must stay identical to main in RGB (`same.py` compares all channels).

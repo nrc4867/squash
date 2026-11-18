@@ -28,6 +28,7 @@ import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import org.junit.jupiter.api.Tag
 
 /** The role chip in Shape's inspector and the guessed role's chip in Parts. */
 @OptIn(ExperimentalTestApi::class)
@@ -75,6 +76,7 @@ class RoleChipTest {
         onNodeWithTag(ShellTags.ROLE_CHIP).assert(tentative(false))
     }
 
+    @Tag("integration")
     @Test
     fun partsShowsADashedChipOnAGuessedPartAlone() = runComposeUiTest {
         setContent { StretchTheme(StretchThemes.Ink) { PartsDrawerContent(state) } }

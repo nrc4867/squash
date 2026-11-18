@@ -28,11 +28,13 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /**
  * A one surface with everything on it (see [StackFixture]). An edit the graph builds again where it reaches gives the same surface, paint,
  * eyes, garments, hidden skin and weights as the whole stack built afresh.
  */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceStackTest {
     private val leg = StackFixture.leg

@@ -33,6 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -51,6 +52,7 @@ private object NoRigFiles : FileChooser {
 }
 
 /** The Rig stage in the app whole, over the saved fennec: the key, its strip, a stroke from a pane, the status bar and the inspector's key. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class RigFlowTest {
     private val work = TestWork()

@@ -24,6 +24,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /**
  * Cells the stack is built at, as shares of the root's least half-extent: the body's own, those either side of it, a coarse one and an
@@ -35,6 +36,7 @@ private val CELL_SHARES = listOf(0.0487f, 0.05f, 0.0731f, 0.1f)
  * A one surface with everything on it (see [StackFixture]), built by kept builders at several cells: an edit built again where it
  * reaches gives the same surface, paint, garments and hidden skin as builders that have built nothing before.
  */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceEditCellsTest {
     @Test

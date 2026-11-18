@@ -18,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Tag
 
 private const val CLOSE = 1e-4f
 
@@ -76,6 +77,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         }
     }
 
+    @Tag("integration")
     @Test
     fun aLeanedPairStaysLevelWithBothSidesAtFullLength() = runTest {
         val session = session()
@@ -85,12 +87,14 @@ class LeaningLegsTest : LeaningLegsBench() {
         assertEquals(1f, character.of(frontRight).lengthFactor)
     }
 
+    @Tag("integration")
     @Test
     fun aLeanEitherWayStaysLevel() = runTest {
         assertLevel(PAW_RESIDUAL, lean(frontLeft))
         assertLevel(PAW_RESIDUAL, lean(frontLeft, -25f))
     }
 
+    @Tag("integration")
     @Test
     fun aLeanAndAnOutwardTogetherStayLevel() = runTest {
         assertLevel(PAW_RESIDUAL, outward(backLeft), lean(backLeft))
@@ -98,6 +102,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         assertLevel(PAW_RESIDUAL, outward(frontLeft), lean(backLeft, -25f))
     }
 
+    @Tag("integration")
     @Test
     fun theLimitsStayLevel() = runTest {
         assertLevel(PAW_RESIDUAL, outward(frontLeft, 60f))
@@ -105,6 +110,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         assertLevel(PAW_RESIDUAL, outward(frontLeft, 60f), lean(frontLeft, 60f))
     }
 
+    @Tag("integration")
     @Test
     fun atTheLimitsLeaningBackALegsRimReachesBelowItsLevelPaws() = runTest {
         assertLevel(RIM_UNDER_PAWS_LEAN_60, lean(frontLeft, -60f))
@@ -122,6 +128,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         assertTrue(character.residual() < PAW_RESIDUAL, "paws off the ground by ${character.residual()}")
     }
 
+    @Tag("integration")
     @Test
     fun drawnLegsOfOneLengthStayLevelWhateverTheirEndsDo() = runTest {
         val flat = outline(0f to 0.08f, 0.45f to 0.06f, 0.45f to -0.06f, 0f to -0.08f)
@@ -138,6 +145,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         }
     }
 
+    @Tag("integration")
     @Test
     fun drawnLegsKeepTheirRatioAndTheirStoredOutlines() = runTest {
         val session = session()

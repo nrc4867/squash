@@ -55,6 +55,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1600
 private const val HEIGHT = 900
@@ -74,6 +75,7 @@ private const val LIFT_STEP = 20f
 private const val LIFT_SLACK = 8f
 
 /** Library's flows F1 to F6 and its keys, in the app whole. See the rethink's spec, boards L1 to L7. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class LibraryFlowTest {
     private val work = TestWork()

@@ -15,7 +15,8 @@ dependencies {
     testImplementation(testFixtures(project(":screens-core")))
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     // The examples' surfaces mesh their digits at a quarter of the body's cell; the suite's sessions hold them past the default heap.

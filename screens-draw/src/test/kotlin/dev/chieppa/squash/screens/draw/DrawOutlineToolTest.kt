@@ -52,6 +52,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val TAG = "pane"
 private const val PANE_WIDTH = 600
@@ -151,6 +152,7 @@ class DrawOutlineToolTest {
         assertEquals(curve.points.first(), curve.points.last())
     }
 
+    @Tag("integration")
     @Test
     fun aClosedPartStaysClosedInSide() = runComposeUiTest {
         val bench = bench("head")

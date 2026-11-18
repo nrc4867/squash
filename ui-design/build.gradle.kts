@@ -33,3 +33,4 @@ tasks.register<GenerateIcons>("generateIcons") { group = "squash"; configure(ver
 val verifyIcons = tasks.register<GenerateIcons>("verifyIcons") { group = "verification"; configure(verify = true) }
 
 tasks.named("check") { dependsOn(verifyIcons) }
+tasks.named("checkFast") { dependsOn(verifyIcons) }

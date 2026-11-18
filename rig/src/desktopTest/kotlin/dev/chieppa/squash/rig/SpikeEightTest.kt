@@ -23,6 +23,7 @@ import kotlin.math.hypot
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private fun curve(length: Float = 1f, vararg strokes: BodyStroke = arrayOf(PLAY_BOW)) = BodyCurve(strokes.toList(), length)
 
@@ -176,6 +177,7 @@ class SpikeEightTest {
         }
     }
 
+    @Tag("integration")
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun theSameCurveAfterAMovedKneeGivesTheSameAngles() = runTest {
@@ -185,6 +187,7 @@ class SpikeEightTest {
         assertTrue(most <= SAME_DEGREES, "after a moved knee a bone's angle moved by $most")
     }
 
+    @Tag("integration")
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun theSameCurveOnATallerTorsoStillLiesOnTheStroke() = runTest {

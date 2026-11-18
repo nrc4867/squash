@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** Places that lie on a grid's surface are this close to one of its points, as a share of its longest cell edge. */
 private const val ON_SURFACE = 0.75f
@@ -36,6 +37,7 @@ private const val MOVED = 0.02f
 /** Body units a place on a part that stays at rest may move, for rounding. */
 private const val STILL = 1e-5f
 
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class PosedSurfaceTest {
     private val leg = PartId("back-leg-l")

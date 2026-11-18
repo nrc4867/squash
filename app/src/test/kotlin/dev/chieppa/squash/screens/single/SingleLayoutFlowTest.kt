@@ -42,6 +42,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val RADIUS = 60f
 private const val LOOP_POINTS = 60
@@ -54,6 +55,7 @@ private object NoFiles : FileChooser {
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class SingleLayoutFlowTest {
     private val work = TestWork()

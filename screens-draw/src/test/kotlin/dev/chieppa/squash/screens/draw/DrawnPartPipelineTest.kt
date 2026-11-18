@@ -25,6 +25,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
+import org.junit.jupiter.api.Tag
 
 private const val PIXEL = 0.005f
 private const val SAMPLES = 300
@@ -32,6 +33,7 @@ private const val STROKE_LENGTH = 3f
 private const val STROKE_HEIGHT = 0.8f
 
 /** A stroke through the real cleanup, the real command and the real build, with nothing in between stubbed. */
+@Tag("integration")
 class DrawnPartPipelineTest {
     private fun stroke(): List<CurvePoint> = List(SAMPLES) { i ->
         val angle = 2.0 * PI * i / SAMPLES

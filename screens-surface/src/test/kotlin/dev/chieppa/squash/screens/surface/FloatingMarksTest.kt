@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val FLOAT_VIEW_PIXELS = 800
 
@@ -34,6 +35,7 @@ private const val MIRROR_HELD = 0.02f
 
 private const val PIXEL_HELD = 0.05f
 
+@Tag("integration")
 class FloatingMarksTest {
     private val work = TestWork()
     private val session by lazy { openSession(fennecDocument(), work) }

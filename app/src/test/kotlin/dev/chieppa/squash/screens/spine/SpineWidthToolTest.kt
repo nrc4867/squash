@@ -40,6 +40,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val PIXEL = 1f / BENCH_SCALE
 private const val SLACK_PIXELS = 4f
@@ -92,6 +93,7 @@ class SpineWidthToolTest {
 
     private fun farEnd(bench: StrokeBench) = assertNotNull(bench.state.spine.preview).shape.line.points.last()
 
+    @Tag("integration")
     @Test
     fun theSpinesFarEndCatchesAGuideAndWritesThere() = withTool(StrokeParts.tail.id) { bench, tool, camera ->
         bench.state.curves.stabilizer = 0f

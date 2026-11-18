@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1000
 private const val HEIGHT = 800
@@ -34,6 +35,7 @@ private const val HEIGHT = 800
  * with it, and the panes may draw at any moment between: every part they draw, posed or at rest, takes its patches and its mesh from
  * one build.
  */
+@Tag("integration")
 class OutfitSwitchDrawsTest {
     private val failures = mutableListOf<Throwable>()
     private val work = TestWork(CoroutineExceptionHandler { _, failure -> failures += failure })

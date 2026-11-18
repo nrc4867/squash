@@ -31,6 +31,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
@@ -59,6 +60,7 @@ private class LockedOnlyTool : PaneTool {
     }
 }
 
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class FullFirstUiTest {
     private val work = TestWork()

@@ -32,6 +32,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val STROKE_POINTS = 40
 private const val STROKE_REACH = 160f
@@ -43,6 +44,7 @@ private object NoSpineDialogs : FileChooser {
 }
 
 /** Spine and width from the key that arms it, in the whole workspace. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class SpineFlowTest {
     private val work = TestWork()

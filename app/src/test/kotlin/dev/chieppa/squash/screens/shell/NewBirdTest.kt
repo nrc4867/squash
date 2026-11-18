@@ -21,6 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private object NoBirdFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -28,6 +29,7 @@ private object NoBirdFiles : FileChooser {
 }
 
 /** New character's Bird row: after Canine quadruped, with a perched bird and Wings, two legs, a beak; creating from it gives a perched torso. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class NewBirdTest {
     private val work = TestWork()

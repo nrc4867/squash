@@ -48,6 +48,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 2880
 private const val HEIGHT = 1800
@@ -73,6 +74,7 @@ private object NoCurveFiles : FileChooser {
 }
 
 /** The Body curve tool in the app whole, over the saved fennec standing on four planted paws: Side, then Top, Length, Clear curve. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class BodyCurveFlowTest {
     private val work = TestWork()

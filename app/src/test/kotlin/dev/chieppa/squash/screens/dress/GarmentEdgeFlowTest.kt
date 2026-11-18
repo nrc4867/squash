@@ -50,6 +50,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -74,6 +75,7 @@ private object NoEdgeFiles : FileChooser {
 }
 
 /** Dress's garment drawing on the bare fennec, through the app whole: New garment, Edge and its fill, Hole, Tuck and Fit. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class GarmentEdgeFlowTest {
     private val work = TestWork()

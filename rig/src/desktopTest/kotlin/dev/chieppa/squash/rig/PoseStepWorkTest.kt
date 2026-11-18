@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Tag
 
 /** Poses sent one after another, as a drag sends one every frame. */
 private const val STEPS = 3
@@ -22,6 +23,7 @@ private const val STEPS = 3
  * What one `SetPose` costs the fennec's graph, as a drag sends one every frame: a paw lifted by its leg, and the spine, tail and
  * neck bent as the body curve bends them. A step reposes the character and rebuilds nothing under the pose.
  */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class PoseStepWorkTest {
     private val leg = PartId("back-leg-l")

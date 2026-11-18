@@ -28,6 +28,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val STROKE_POINTS = 40
 
@@ -35,6 +36,7 @@ private const val STROKE_POINTS = 40
 /** How far the default Fit lets a loop two hundred pixels across stray, and some. */
 private const val LOOSE_FIT_PIXELS = 6f
 
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class OversketchToolTest {
     private fun tool(bench: CurveToolBench) = DrawOutlineTool(bench.state, TEST_STROKE_LOOK, TEST_CURVE_LOOK)

@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 class SheetFrameTest {
     private val templates = shipped.parts
@@ -69,6 +70,7 @@ class SheetFrameTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun everyShippedTemplateMakesAPartWithAnOutlineInEachView() {
         for (template in templates) {

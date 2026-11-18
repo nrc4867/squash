@@ -60,6 +60,7 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
+import org.junit.jupiter.api.Tag
 
 private object NoFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -88,6 +89,7 @@ class ShellFlowTest {
         assertEquals(Screen.WORKSPACE, state.screen.value)
     }
 
+    @Tag("integration")
     @Test
     fun firstLaunchGoesFromNewCharacterToTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -111,6 +113,7 @@ class ShellFlowTest {
         settle(work) { onAllNodesWithText("Settled").fetchSemanticsNodes().isNotEmpty() }
     }
 
+    @Tag("integration")
     @Test
     fun anEmptyNameFallsBackToUntitled() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -120,6 +123,7 @@ class ShellFlowTest {
         assertEquals("Untitled", state.session.value?.document?.value?.character?.name)
     }
 
+    @Tag("integration")
     @Test
     fun aSocketRowTargetsItInLibraryAndAddingSelectsThePart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -144,6 +148,7 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.partRow("paw")).assertExists()
     }
 
+    @Tag("integration")
     @Test
     fun tListsTheOpenSocketsAndEnterAddsWhileEscDropsTheTarget() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -170,6 +175,7 @@ class ShellFlowTest {
         onNodeWithTag(ShellTags.addSocket("tail")).assertDoesNotExist()
     }
 
+    @Tag("integration")
     @Test
     fun undoInTheTopBarTakesBackAPlacedPart() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -204,6 +210,7 @@ class ShellFlowTest {
         assertEquals(null, session.document.value.character.resolved(root)?.params?.get("size"))
     }
 
+    @Tag("integration")
     @Test
     fun aSocketOffersOnlyTheTypesItTakesWithWhatYouDraw() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -220,6 +227,7 @@ class ShellFlowTest {
         assertFalse(state.libraryMode().lit(TemplateId("leg")))
     }
 
+    @Tag("integration")
     @Test
     fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -246,6 +254,7 @@ class ShellFlowTest {
         assertEquals(5f, set(5f))
     }
 
+    @Tag("integration")
     @Test
     fun theMenusRunActions() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -255,6 +264,7 @@ class ShellFlowTest {
         onNodeWithText("Add Torso").assertExists()
     }
 
+    @Tag("integration")
     @Test
     fun homeListsARecentFileAndContinues() = runDesktopComposeUiTest(1600, 900) {
         val file = Files.createTempFile("marsh-hare", ".json")
@@ -271,6 +281,7 @@ class ShellFlowTest {
         assertEquals("Marsh hare", state.session.value?.document?.value?.character?.name)
     }
 
+    @Tag("integration")
     @Test
     fun aPlainJsonCharacterOpensAndSavesAsANewSquashFile() = runDesktopComposeUiTest(1600, 900) {
         val folder = Files.createTempDirectory("plain-json")
@@ -315,6 +326,7 @@ class ShellFlowTest {
         assertEquals(Screen.HOME, state.screen.value)
     }
 
+    @Tag("integration")
     @Test
     fun everyScreenHasTheFourMenusAndCantUndoWithNothingToTakeBack() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -329,6 +341,7 @@ class ShellFlowTest {
         onNodeWithText("Mirror").assertIsNotEnabled()
     }
 
+    @Tag("integration")
     @Test
     fun theStatusBarShowsHomesOwnFactsAfterTheWorkspace() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -344,6 +357,7 @@ class ShellFlowTest {
         onNodeWithContentDescription("Undo").assertDoesNotExist()
     }
 
+    @Tag("integration")
     @Test
     fun theRailsHoldTheDrawersAndEveryStageOpens() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -361,6 +375,7 @@ class ShellFlowTest {
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value, "and comes back holding the tool it was left with")
     }
 
+    @Tag("integration")
     @Test
     fun mirrorDecidesWhereAnEditLandsAndAnOverrideShowsItself() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)

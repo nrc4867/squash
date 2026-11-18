@@ -32,8 +32,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A worn garment's change to a part reaches its build and its place, and taking the garment off gives the part back exactly. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class BodyChangeBuildTest {
     private val library = TemplateLibrary(shipped.parts, shipped.plans)

@@ -20,6 +20,7 @@ import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val WOMAN_HEAD_ID = PartId("head")
 private val WOMAN_CAP_ID = PartId("hair")
@@ -38,6 +39,7 @@ private const val INSIDE = 0.004f
  * The example woman's hair: a cap in her field and a fall and locks of their own meshes. The cap follows the head alone; each part of its
  * own follows its own chain and the head only round its root; and with the head turned hard over a shoulder, no hair lies inside her torso.
  */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class HairRigTest {
     private val document = readDocument(Path.of(System.getProperty("squash.examples"), "woman.json").readText())

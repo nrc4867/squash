@@ -33,7 +33,7 @@ tasks.register<JavaExec>("generateSchemas") {
     args(schemaDir.asFile.path, referenceDir.asFile.path)
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     inputs.dir(schemaDir).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(templatesDir).withPathSensitivity(PathSensitivity.RELATIVE)

@@ -6,6 +6,7 @@ import dev.chieppa.squash.geom.Vec3
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val HAND_L = PartId("hand-l")
 private val HAND_R = PartId("hand-r")
@@ -108,6 +109,7 @@ class DigitRigTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun aWholeCurlClosesEveryFingerTowardThePalmAndLeavesThePalmStill() {
         val hand = checkNotNull(hands.part(HAND_L))
@@ -140,6 +142,7 @@ class DigitRigTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun aBirdFootGripsWithItsHindToe() {
         val foot = checkNotNull(toucan.part(BIRD_FOOT_L))

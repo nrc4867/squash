@@ -27,6 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How far a rebuilt silhouette may lie from the undrawn one, as a share of the part's reach in that view: three pixels across a pane of 300. */
 private const val TOLERANCE = 0.01f
@@ -125,6 +126,7 @@ class TemplateOutlineTest {
         else -> TOLERANCE
     }
 
+    @Tag("integration")
     @Test
     fun theOutlineRebuildsTheUndrawnSilhouetteOnEveryTemplateAndView() {
         val failures = buildList {
@@ -161,6 +163,7 @@ class TemplateOutlineTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun anOpenViewEndsOnTheSocketPlaneAndAClosedOneMeetsItself() {
         for (template in shipped.parts) {
@@ -177,6 +180,7 @@ class TemplateOutlineTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun startingEveryViewInTurnStaysWatertight() {
         for (template in shipped.parts) {

@@ -34,8 +34,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 /** Anchors held fixed through oversketches of a part and of its parent: what they render at follows the one surface. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SurfaceAnchorGoldenTest {
     private val fur = SlotName("fur")

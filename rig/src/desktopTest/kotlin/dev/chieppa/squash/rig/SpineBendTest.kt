@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 
 /** How far [bone]'s pivot moves under [pose], off the line its part rests along, across it and sideways out of the body's middle plane. */
@@ -57,6 +58,7 @@ class SpineBendTest {
         assertEquals(BoneName(HEAD, "neck"), fennec.rig.bone(ear)?.parent)
     }
 
+    @Tag("integration")
     @Test
     fun aCharacterPinnedToTheFirstTorsoStillRigsAndItsSpineTwists() = runTest {
         val first = savedFennec().pinnedTo(TORSO, 1)

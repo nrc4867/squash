@@ -16,7 +16,8 @@ dependencies {
     testFixturesApi(testFixtures(project(":screens-core")))
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     // The Move tests open the shipped fennec, whose surface meshes its digits at a quarter of the body's cell, past the default heap.

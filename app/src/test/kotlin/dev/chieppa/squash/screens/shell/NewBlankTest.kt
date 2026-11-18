@@ -22,6 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 private object NoBlankFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -29,6 +30,7 @@ private object NoBlankFiles : FileChooser {
 }
 
 /** New character's Blank row: after the species plans, read as one tube, and creating from it gives one body part and no sockets. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class NewBlankTest {
     private val work = TestWork()

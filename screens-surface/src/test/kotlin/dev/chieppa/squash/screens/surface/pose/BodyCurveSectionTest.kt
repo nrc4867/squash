@@ -40,11 +40,13 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val SQUASHED = 0.92f
 private const val DIP = 0.08f
 
 /** The Pose inspector with Body curve armed: the curve's section, the paws, and the chain's bends. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class BodyCurveSectionTest {
     private val work = TestWork()

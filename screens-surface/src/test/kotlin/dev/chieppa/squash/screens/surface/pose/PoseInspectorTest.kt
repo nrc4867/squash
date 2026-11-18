@@ -41,6 +41,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val PAW = PartId("front-paw-l")
 private val LEG = PartId("front-leg-l")
@@ -86,6 +87,7 @@ class PoseInspectorTest {
         onNodeWithText("Right hand", useUnmergedTree = true).assertDoesNotExist()
     }
 
+    @Tag("integration")
     @Test
     fun aPickedHandCurlsItsFingersInOneStepAndTheTwinsWithMirror() = runComposeUiTest {
         val state = AppState(shipped, work).also {
@@ -104,6 +106,7 @@ class PoseInspectorTest {
         assertEquals(1f, checkNotNull(rig.curlOf(pose, HAND_R)), 1e-4f, "Mirror curls the twin")
     }
 
+    @Tag("integration")
     @Test
     fun aWomanUprightByMoveNamesHerFeetAndCurlsAPickedHand() = runComposeUiTest {
         val state = AppState(shipped, work).also {
@@ -119,6 +122,7 @@ class PoseInspectorTest {
         onNodeWithTag(PoseInspectorTags.CURL).assertExists()
     }
 
+    @Tag("integration")
     @Test
     fun aPickedFingerJointNamesItsDigitInTheTurnSection() = runComposeUiTest {
         val state = AppState(shipped, work).also {
@@ -146,6 +150,7 @@ class PoseInspectorTest {
         onNodeWithTag(PoseInspectorTags.pin(PartId("wing-r"))).assertDoesNotExist()
     }
 
+    @Tag("integration")
     @Test
     fun dragsOptionsAreAppStateAndWriteNothing() = runComposeUiTest {
         val state = opened()
@@ -161,6 +166,7 @@ class PoseInspectorTest {
         onNodeWithText("Planted", ignoreCase = true, useUnmergedTree = true).assertExists()
     }
 
+    @Tag("integration")
     @Test
     fun aPickedLimbShowsItsSectionThenItsKneesTurn() = runComposeUiTest {
         val state = opened()
@@ -186,6 +192,7 @@ class PoseInspectorTest {
         assertIs<ResetPose>(lastCommand(state))
     }
 
+    @Tag("integration")
     @Test
     fun eachPawHasAPinRow() = runComposeUiTest {
         val state = opened(BuildTool.PIN)

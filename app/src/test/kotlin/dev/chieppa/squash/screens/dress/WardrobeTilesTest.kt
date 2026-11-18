@@ -48,6 +48,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1600
 private const val HEIGHT = 900
@@ -79,6 +80,7 @@ private class PixelArtist : WardrobeArtist {
 }
 
 /** Library's Garments tiles: naming what New makes, renaming, and thumbnails, on a bare new character. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class WardrobeTilesTest {
     private val work = TestWork()

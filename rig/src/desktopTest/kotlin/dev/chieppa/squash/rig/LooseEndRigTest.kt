@@ -29,11 +29,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A turned root bone carries the loose end's tip at least this far, in body units. */
 private const val SWUNG = 0.05f
 
 /** A scarf's loose end hangs on a chain of its own bones from the scarf, posed by hand, outside the body at rest. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class LooseEndRigTest {
     private val torso = PartId("torso")

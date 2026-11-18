@@ -21,6 +21,7 @@ import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A stroke, an oversketch and an edit through the pointer in every view of the parts whose rest axis is tilted from the body's. */
 @OptIn(ExperimentalTestApi::class)
@@ -52,12 +53,15 @@ class TiltedStrokeInPlaceTest {
     private val tailTop = PlaneStroke(View.TOP, 0.25f, 0f, 0.3f, 0.08f)
     private val tailFront = PlaneStroke(View.FRONT, 0f, 0f, 0.08f, 0.06f)
 
+    @Tag("integration")
     @Test
     fun theLeftEarBuildsUnderAStrokeInEveryView() = drawsEveryView(leftEar, earSide, earTop, earFront, frontIsWholeSection = true)
 
+    @Tag("integration")
     @Test
     fun theRightEarBuildsUnderAStrokeInEveryView() = drawsEveryView(rightEar, earSide, earTop, earFront, frontIsWholeSection = true)
 
+    @Tag("integration")
     @Test
     fun theTailBuildsUnderAStrokeInEveryViewItsFrontShapingTheCapWithinThem() =
         drawsEveryView(tail, tailSide, tailTop, tailFront, frontIsWholeSection = false)
@@ -89,6 +93,7 @@ class TiltedStrokeInPlaceTest {
     @Test
     fun aBentStrokeBendsTheTailUnderIt() = oneStrokeLands(tail, PlaneStroke(View.SIDE, 0.25f, 0f, 0.3f, 0.05f, bend = 0.6f))
 
+    @Tag("integration")
     @Test
     fun aBentStrokeBendsTheEarUnderIt() = oneStrokeLands(rightEar, PlaneStroke(View.SIDE, 0.16f, 0f, 0.2f, 0.05f, bend = -0.8f))
 
@@ -144,6 +149,7 @@ class TiltedStrokeInPlaceTest {
     @Test
     fun anOversketchInAnEarsTopLandsUnderIt() = oversketchLands(rightEar, earTop)
 
+    @Tag("integration")
     @Test
     fun anOversketchInATailsSideLandsUnderIt() = oversketchLands(tail, tailSide)
 
@@ -188,6 +194,7 @@ class TiltedStrokeInPlaceTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun editingAnEarsSideMovesTheCurveAndMeshWithThePointer() = editLands(rightEar, earSide)
 
@@ -197,12 +204,14 @@ class TiltedStrokeInPlaceTest {
     @Test
     fun editingATailsSideMovesTheCurveAndMeshWithThePointer() = editLands(tail, tailSide)
 
+    @Tag("integration")
     @Test
     fun editingATailsTopMovesTheCurveAndMeshWithThePointer() = editLands(tail, tailTop)
 
     @Test
     fun editingAnEarsFrontMovesTheCurveWithThePointer() = editLands(rightEar, earFront)
 
+    @Tag("integration")
     @Test
     fun editingATailsFrontMovesTheCurveWithThePointer() = editLands(tail, tailFront)
 }

@@ -16,7 +16,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionPoseTest {
     private val leg = PartId("back-leg-l")

@@ -24,6 +24,7 @@ kotlin {
 }
 
 tasks.withType<Test>().configureEach {
+    maxParallelForks = 2
     // The examples' surfaces mesh their digits at a quarter of the body's cell; the suite's sessions hold them past the default heap.
     maxHeapSize = "1g"
     val examples = rootProject.layout.projectDirectory.dir("examples")

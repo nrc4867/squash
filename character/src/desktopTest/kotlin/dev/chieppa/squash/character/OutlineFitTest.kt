@@ -15,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /**
  * On a hand, foot or paw whose field fits the drawing, the drawn Side and Top are the main control: dragging them out reshapes the whole
@@ -51,6 +52,7 @@ class OutlineFitTest {
         assertEquals(emptyList(), MeshInvariants.check(MeshBuilder.build(patch) { 0 }, emptySet()), "$label ${patch.name}")
     }
 
+    @Tag("integration")
     @Test
     fun draggingTheOutlineLongerAndWiderReshapesEveryFittedFootAndPaw() {
         for (id in listOf("paw", "foot-bird", "foot")) {

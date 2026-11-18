@@ -23,12 +23,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.jupiter.api.Tag
 
 private object NoChooser : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
 }
 
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class StartFromTemplateTest {
     private val work = TestWork()

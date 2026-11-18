@@ -27,6 +27,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How far off the line of symmetry, in screen pixels, a stroke starts in the snapping tests: inside the guides' reach. */
 private const val NEAR_LINE_PIXELS = 4f
@@ -69,6 +70,7 @@ class MirrorSymmetryTest {
         }
     }
 
+    @Tag("integration")
     @Test
     fun withMirrorOnHalfATorsoDrawnFromAboveMakesTheWholeSymmetricOutline() = runComposeUiTest {
         val bench = StrokeBench()

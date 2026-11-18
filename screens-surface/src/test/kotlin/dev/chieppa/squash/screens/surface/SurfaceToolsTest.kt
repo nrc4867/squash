@@ -39,12 +39,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
+import org.junit.jupiter.api.Tag
 
 private const val PIXELS = 800
 private const val PIXEL_CLOSE = 1.5f
 private const val DENSITY = 2f
 
 /** The surface tools' logic over the saved fennec's real graph, through a free camera and a locked one. */
+@Tag("integration")
 class SurfaceToolsTest {
     private val work = TestWork()
     private val folder = TemplateFolder.shipped()

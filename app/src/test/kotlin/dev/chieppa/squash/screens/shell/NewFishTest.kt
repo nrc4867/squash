@@ -21,6 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private object NoFishFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -28,6 +29,7 @@ private object NoFishFiles : FileChooser {
 }
 
 /** New character's Fish row: after Biped, with a fish and Fins, a tail, two eyes; creating from it gives one undrawn tube body with the fish's sockets open. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class NewFishTest {
     private val work = TestWork()

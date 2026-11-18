@@ -41,6 +41,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -59,6 +60,7 @@ private object NoPoseFiles : FileChooser {
 }
 
 /** The Pose stage in the app whole, over the saved fennec: its key and strip, a paw dragged in Full, a pin, the inspector's key, and back to Shape. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class PoseFlowTest {
     private val work = TestWork()

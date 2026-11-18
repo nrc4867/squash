@@ -18,6 +18,7 @@ import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How wide the belt is, in the body's cells. */
 private const val BELT_CELLS = 1f
@@ -26,6 +27,7 @@ private const val BELT_CELLS = 1f
 private const val BELT_U = 0.45f
 
 /** A belt about one of the body's cells wide is meshed finer than the body, so it is worn whole: as wide as drawn and all the way round. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class ThinBeltTest {
     @Test

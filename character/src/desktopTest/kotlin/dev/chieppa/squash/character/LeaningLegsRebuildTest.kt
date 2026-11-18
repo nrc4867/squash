@@ -13,10 +13,12 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Tag
 
 private const val CLOSE = 1e-4f
 
 /** What a lean rebuilds and what it leaves, and that nothing of it stays once it goes. See HLD: data-model, Legs stay level as they lean. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class LeaningLegsRebuildTest : LeaningLegsBench() {
     @Test

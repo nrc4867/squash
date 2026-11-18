@@ -17,6 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val RANDOM_BUILDS = 25
 private val SHIPPED_IDS = listOf(
@@ -65,6 +66,7 @@ class ShippedTemplatesTest {
         shipped.parts.forEach { assertBuildHolds(it, emptyMap()) }
     }
 
+    @Tag("integration")
     @Test
     fun randomParametersInsideTheirRangesBuild() {
         val random = Random(1)

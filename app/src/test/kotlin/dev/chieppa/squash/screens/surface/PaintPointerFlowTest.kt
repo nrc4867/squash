@@ -71,6 +71,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A dab big enough that a press on its anchor lands inside it, as a share of the part's axis. */
 private const val ERASE_DAB_RADIUS = 0.08f
@@ -94,6 +95,7 @@ private const val DRAG_STEP = 8f
 private val shipped = TemplateFolder.shipped()
 
 /** The paint tools and the Color drawer on the fennec, driven with the pointer through the panes as the app composes them. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class PaintPointerFlowTest {
     private val work = TestWork()

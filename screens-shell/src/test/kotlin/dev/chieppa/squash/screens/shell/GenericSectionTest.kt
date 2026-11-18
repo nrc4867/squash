@@ -31,6 +31,7 @@ import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.jupiter.api.Tag
 
 private val FIN = PartId("fin")
 
@@ -103,6 +104,7 @@ class GenericSectionTest {
         assertEquals(40f, param(GenericParams.RINGS), "each change is its own undo step")
     }
 
+    @Tag("integration")
     @Test
     fun aTypedPartShowsNoGenericSection() = runComposeUiTest {
         state.open(fennecDocument())

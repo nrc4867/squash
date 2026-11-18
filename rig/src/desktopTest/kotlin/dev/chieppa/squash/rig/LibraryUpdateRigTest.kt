@@ -17,11 +17,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val WING_L = PartId("wing-l")
 private const val OLDER = 1
 
 /** Stage 5's second exit criterion: the winged fennec's torso updated from library keeps its hand-made wing socket holding the wing, rigged and posed. */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryUpdateRigTest {
     @Test

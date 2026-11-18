@@ -20,11 +20,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /**
  * The posed chain while a drag is open on a posed character (see [StackFixture]): the dress posed without the search for skin pushed
  * through it and the lines outlines only; and the release equal to a fresh build.
  */
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class DragPosedTest {
     private val leg = StackFixture.leg

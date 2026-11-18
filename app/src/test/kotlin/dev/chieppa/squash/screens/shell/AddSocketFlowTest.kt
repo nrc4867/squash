@@ -48,6 +48,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -65,6 +66,7 @@ private object NoSocketFiles : FileChooser {
 }
 
 /** A socket placed by hand on the fennec's torso in Full, a wing pair added on it with T and Enter, and the wing dragged in Pose. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class AddSocketFlowTest {
     private val work = TestWork()

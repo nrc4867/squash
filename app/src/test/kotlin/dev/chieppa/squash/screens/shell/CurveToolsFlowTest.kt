@@ -46,6 +46,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val RADIUS = 60f
 private const val LOOP_POINTS = 60
@@ -74,6 +75,7 @@ class CurveToolsFlowTest {
         checkNotNull(session.value).send(SetOutline(part, View.SIDE, LEG_SIDE))
     }
 
+    @Tag("integration")
     @Test
     fun theDAndEKeysArmTheTools() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -87,6 +89,7 @@ class CurveToolsFlowTest {
         assertEquals(BuildTool.DRAW_OUTLINE, state.tool.value)
     }
 
+    @Tag("integration")
     @Test
     fun theSKeyArmsSmoothAndItsDrawerSetsTheBrush() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -107,6 +110,7 @@ class CurveToolsFlowTest {
         onNodeWithTag(SmoothDrawerTags.SIZE_VALUE).assertTextContains("120 px")
     }
 
+    @Tag("integration")
     @Test
     fun theRealPanesTakeAStrokeAHandleDragAndAStrayStroke() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -208,6 +212,7 @@ class CurveToolsFlowTest {
         assertEquals(before, session.history.steps.value.done.size, "marking a corner changes nothing in the document")
     }
 
+    @Tag("integration")
     @Test
     fun theStatusBarCountsTheSectionsARefitTouchedWhileItStands() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)

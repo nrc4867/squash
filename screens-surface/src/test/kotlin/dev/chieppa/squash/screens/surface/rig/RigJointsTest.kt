@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** A joint that lies this deep inside the body at rest, in body units, is one the surface wraps. */
 private const val WRAPPED_DEPTH = -0.01f
@@ -27,6 +28,7 @@ private const val WRAPPED_DEPTH = -0.01f
 private val RAY = Vec3(1f, 0.0137f, 0.0071f)
 
 /** The Rig stage's joint dots against the body they are drawn over, at rest and in a pose, with the display pose under both. */
+@Tag("integration")
 class RigJointsTest {
     private val work = TestWork()
 

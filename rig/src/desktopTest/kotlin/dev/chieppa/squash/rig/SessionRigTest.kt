@@ -12,7 +12,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
+@Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionRigTest {
     @Test

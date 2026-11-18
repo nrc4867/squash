@@ -30,10 +30,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val MOUTH = MarkGroupId("mouth")
 private const val PIXELS = 400
 
+@Tag("integration")
 class FaceWorkTest {
     private val work = TestWork()
     private val session: CharacterSession by lazy { openSession(fennecDocument(), work) }

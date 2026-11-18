@@ -18,10 +18,13 @@ A desktop tool for making cartoon characters in one style: draw a part once, Squ
 
 Gradle needs JDK 25 as `JAVA_HOME` (`~/.jdks/corretto-25.0.1` on this machine). Stretch is found as the sibling folder `../stretch` or through `stretch.dir` in `~/.gradle/gradle.properties`.
 
-Builds run at low priority on at most two workers (`gradle.properties`). Agents run Gradle through `tools/gradle-locked.sh <tasks>`, never `./gradlew` directly: it holds one machine-wide lock (`~/.squash-gradle.lock`) so builds from the main checkout and every worktree never overlap, and waits while another holds it. While working, test only the modules touched (`tools/gradle-locked.sh :screens-core:test`); run the full `check` once at the end.
+Builds run on up to four workers, the heaviest modules each forking several test JVMs (`gradle.properties`, `maxParallelForks`). Agents run Gradle through `tools/gradle-locked.sh <tasks>`, never `./gradlew` directly: it holds one machine-wide lock (`~/.squash-gradle.lock`) so builds from the main checkout and every worktree never overlap, and waits while another holds it. While working, run the fast tier of the modules touched (`tools/gradle-locked.sh :screens-core:test`, or `:character:desktopTest` in a multiplatform module); run the full tier, `check`, once before landing on main.
 
 ```
-./gradlew check                      # every test tier except smoke
+./gradlew checkFast                  # the fast tier of every module, with the source and generated-file checks
+./gradlew check                      # the full tier: the fast and integration tiers, every tier except smoke
+./gradlew :rig:desktopTest           # one module's fast tier (:app:test in a JVM module)
+./gradlew :rig:integrationTest       # one module's integration tier
 ./gradlew check -Pslow               # also the smoke tier (needs a GPU) and the benchmarks
 ./gradlew :app:run                   # the app
 ./gradlew :app:run -Pdevtools=47811  # the app, with window screenshots at curl 127.0.0.1:47811/capture
@@ -96,7 +99,7 @@ These are Stretch's conventions plus Squash's own. They apply from the first com
 
 **Clean panels.** Icons, labels, numbers and tooltips. No explanatory text in panels, no messages that explain incomplete state; show it in place by highlighting it.
 
-**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (sampled fields and coordinates, generated part meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (each screen of the app composed whole over the packaged templates and a real graph and captured offscreen, the panes rendered with `GpuSnapshot`, tagged slow, before a merge only). Benchmarks that measure wall-clock time are tagged slow too. Tests in `check` open no window and stay light on the CPU: one small character per case where one will do, the same session reused through undo rather than rebuilt, and anything that needs many full builds or a timer tagged slow. No reflection to widen visibility in tests. A session never spends an hour on integration tests. Run only the module being changed while working.
+**Tests catch logic bugs first.** Tiers, lowest that can catch the bug: unit (JUnit 5, `kotlinx-coroutines-test`), command scenarios (`stretch-test`'s `scenario`), golden (sampled fields and coordinates, generated part meshes and schemas against fixtures), UI (`runComposeUiTest`, waits for idle on its own), smoke (each screen of the app composed whole over the packaged templates and a real graph and captured offscreen, the panes rendered with `GpuSnapshot`, tagged slow, before a merge only). Benchmarks that measure wall-clock time are tagged slow too. Tests that build a whole character through the real graph, or take more than about two seconds, are tagged integration (`@Tag("integration")`, on the class when most of its tests are): a module's `test` or `desktopTest` leaves them out, its `integrationTest` runs them, and `check` runs both. Tests in `check` open no window and stay light on the CPU: one small character per case where one will do, the same session reused through undo rather than rebuilt, and anything that needs many full builds or a timer tagged slow. No reflection to widen visibility in tests. A session never spends an hour on integration tests. Run only the module being changed while working.
 
 **Research from papers only.** Methods are implemented from the papers' own descriptions. Research code is not opened, read or copied without asking Nicholas first, and only permissively licensed code (MIT, Apache, BSD) is ever a candidate. A method gets a patent check before it is built; see `docs/hld/pipeline.md`.
 

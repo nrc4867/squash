@@ -12,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** Cells of several sizes on one surface: closed and manifold across each change of size, small members kept apart, and an edit meshed again as meshed whole. */
 class AdaptiveMesherTest {
@@ -66,6 +67,7 @@ class AdaptiveMesherTest {
         assertTrue(facingNeighbour(fine) > 20, "at a quarter of it each digit's side facing the next is meshed")
     }
 
+    @Tag("integration")
     @Test
     fun anEditMeshedAgainMatchesTheSameFieldMeshedWhole() {
         val mesher = AdaptiveMesher(CELL)

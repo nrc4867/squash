@@ -38,6 +38,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private val HEAD = GarmentSlotId("head")
 private val BODY = GarmentSlotId("body")
@@ -158,6 +159,7 @@ class WardrobeThumbnailsTest {
         assertEquals(listOf(CAP, COAT), artist.scenes.last().worn)
     }
 
+    @Tag("integration")
     @Test
     fun anEditDropsTheRenderUnderWay() {
         val gate = CompletableDeferred<Unit>()

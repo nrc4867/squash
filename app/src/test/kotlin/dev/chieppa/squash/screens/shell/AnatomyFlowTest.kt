@@ -40,6 +40,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Tag
 
 private const val WIDTH = 1440
 private const val HEIGHT = 900
@@ -50,6 +51,7 @@ private object NoAnatomyFiles : FileChooser {
 }
 
 /** A Blank character given a joint and a landmark by Move's presses in Full, listed and deleted in Anatomy, and two legs paired. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class AnatomyFlowTest {
     private val work = TestWork()

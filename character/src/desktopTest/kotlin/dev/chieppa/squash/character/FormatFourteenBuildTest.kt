@@ -11,8 +11,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.jupiter.api.Tag
 
 /** A character saved in format 14 opens on one surface and builds it closed and manifold, its painted eyes on its head. */
+@Tag("integration")
 class FormatFourteenBuildTest {
     @Test
     fun aFormatFourteenSaveOpensAndBuildsOneSurface() = runTest {

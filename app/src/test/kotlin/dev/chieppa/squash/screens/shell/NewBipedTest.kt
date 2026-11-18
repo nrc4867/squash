@@ -21,6 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private object NoBipedFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
@@ -28,6 +29,7 @@ private object NoBipedFiles : FileChooser {
 }
 
 /** New character's Biped row: between Bird and Fish, read as two legs, two arms, upright; creating from it gives an upright torso. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class NewBipedTest {
     private val work = TestWork()

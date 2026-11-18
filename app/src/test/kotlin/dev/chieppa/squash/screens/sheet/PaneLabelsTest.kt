@@ -23,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 
 private object LabelsNoFiles : FileChooser {
@@ -31,6 +32,7 @@ private object LabelsNoFiles : FileChooser {
 }
 
 /** A pane's label says which way it looks at the body, whichever view it holds. See HLD: data-model, How a pane looks at a part. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class PaneLabelsTest {
     private val work = TestWork()

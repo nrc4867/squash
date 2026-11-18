@@ -46,6 +46,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
@@ -68,6 +69,7 @@ private class FurSeenFree(private val tool: PaneTool) : PaneTool by tool {
 }
 
 /** Fur stroke and Comb driven with the pointer through the panes as the app composes them, in the Sheet and in Full first's free pane. */
+@Tag("integration")
 @OptIn(ExperimentalTestApi::class)
 class FurPointerFlowTest {
     private val work = TestWork()

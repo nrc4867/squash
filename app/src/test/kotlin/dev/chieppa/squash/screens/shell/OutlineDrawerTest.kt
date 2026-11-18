@@ -35,6 +35,7 @@ import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** Past Stretch's hover wait before a tooltip shows. */
 private const val TOOLTIP_MILLIS = 600L
@@ -92,6 +93,7 @@ class OutlineDrawerTest {
         assertEquals(false, state.curves.options.stroke.closeEnd)
     }
 
+    @Tag("integration")
     @Test
     fun theFitRowRunsFromSmoothToFaithfulAndSetsTheStrokesFit() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -107,6 +109,7 @@ class OutlineDrawerTest {
         assertEquals(state.curves.fit, state.curves.options.stroke.fit)
     }
 
+    @Tag("integration")
     @Test
     fun theStrokeAssistsReadAsTheBoardDrawsThemAndSetTheOptions() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -138,6 +141,7 @@ class OutlineDrawerTest {
         assertEquals(steps, state.session.value?.history?.steps?.value?.done?.size)
     }
 
+    @Tag("integration")
     @Test
     fun theDrawToolsTitleNamesItsModifiers() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)
@@ -149,6 +153,7 @@ class OutlineDrawerTest {
         onNodeWithText("Draw outline · Corner (Alt) · Smooth (Shift) · Line (Ctrl) · Ellipse (Ctrl Shift) · Free of guides (Alt held first)").assertExists()
     }
 
+    @Tag("integration")
     @Test
     fun theStrokeSectionStaysOverOutlineCurvesOnceThePartIsDrawn() = runDesktopComposeUiTest(1600, 900) {
         val state = AppState(shipped, work)

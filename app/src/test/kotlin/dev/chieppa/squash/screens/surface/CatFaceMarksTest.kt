@@ -8,11 +8,13 @@ import dev.chieppa.squash.screens.smoke.CloseUps
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Tag
 
 /** How far from the painted eyes' lids, in body units, the whiskers stay. */
 private const val CLEAR_OF_EYES = 0.03f
 
 /** The cat's whiskers lie on its whisker pads and never run up the bridge of its nose to its painted eyes. */
+@Tag("integration")
 class CatFaceMarksTest {
     @Test
     fun theWhiskersStayClearOfTheEyes() {
