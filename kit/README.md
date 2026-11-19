@@ -42,6 +42,7 @@ It prints `cat.recipe.json` (written beside `cat.ts`), then everything `tools/re
 | `json` | typecheck, run and write the JSON, no build |
 | `probe` | write the JSON, then `tools/recipe.sh probe` with the questions after the file (`part=head`, `uv=head:0.5,0.2`, ...) |
 | `heights` | write the JSON, probe every part, and print the file's exported `heights` planned against built |
+| `sheet <command> <image>` | read a character sheet image, before any build: see [Reading a character sheet](#reading-a-character-sheet) |
 
 Options after the file go to `tools/recipe.sh` unchanged: `render=false`, `outfits=all`, `poses=all`, `close=face,hand,foot,joins`, `set=part:name:value`, `reference=...`. `out=<folder>` puts both the recipe JSON and the build there.
 
@@ -161,6 +162,69 @@ A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v,
 | `palette` | `const colors = palette({ skin: "#d8b48e", ink: [0.1, 0.08, 0.08] })`; `palette: colors.slots`, `color: colors.slot("skin")` fails on a slot not declared. `palette({ lens: "#203040" }, { opacity: { lens: 0.35 } })` makes a part coloured `lens` see-through. |
 | `mix`, `shade` | `shade("#d8b48e", -0.2)` is darker, `mix(a, b, 0.5)` halfway. |
 | `toRgb`, `toHex` | convert between `#rrggbb` and `[r, g, b]`. |
+
+## Reading a character sheet
+
+`tools/recipe.sh kit sheet <command> <image> [options]` reads a PNG or JPEG character sheet before any build: where the views are, how tall each part is in heads and body units, the colours, and radii ready for `tube`. Each command writes JSON and images to `out=<folder>` (default `<image>-sheet` beside the image) and prints every path it writes. Look at the images: they are drawn to be read by eye.
+
+The background is keyed from the sheet's border: its dominant colour, a gentle gradient fitted to it, and a flood fill from the edges, so off-white, graded or lightly textured paper works. Views are the figures standing on it, found as connected blobs, with thin strokes (hatching, ground lines) cut so they do not join two figures. A small piece near a figure joins it (a detached tail, ear or floating flower); a cluster of small pieces (swatches, text, dots) and anything else small is `other`, with its box. A cast shadow under the feet is split off and reported, so each view stands on its own lowest point. Views are numbered in reading order, rows from the top, and each is measured in its own head units, so views at different scales on one sheet are fine.
+
+Options every command takes:
+
+| option | does |
+| --- | --- |
+| `out=<folder>` | where the files go |
+| `view=2`, `view=<name>`, `view=front` | the view to read: its number, its name, or its guessed facing; the first view when left out |
+| `names=front,threeq,back` | names for the views in reading order, used in file names and by `view=` |
+| `box=x,y,w,h` | take this box of the sheet as the one view (for `zoom` and `trace`, the region instead) |
+| `boxes=x,y,w,h;x,y,w,h` | take these boxes as the views, in this order |
+| `ground=#rrggbb`, `groundTolerance=24` | the background colour, and how far (0 to 255 a channel) a pixel may stray from it |
+| `holes=x,y;x,y` | pixels in background a figure closes off, such as the gap a curled tail makes against a leg |
+| `height=1.6`, `heightTo=top` | the figure's height in body units, default 1, from the ground to its crown, so ears, buns and hair tufts above the skull do not stretch it; `heightTo=top` measures to its highest point instead |
+| `landmarks=crotch:251,556;knee:240,660` | landmarks read off the image, in its pixels: they replace what is found |
+
+| command | writes | example |
+| --- | --- | --- |
+| `views` | `views.png` (the whole sheet, each view boxed and numbered with its facing guess, shadows dashed, `other` in grey), `<view>.png` a view (with a margin, other figures painted out), `views.json` (each view's box, pixel height, shadow, and facing guess with its confidence; the `other` boxes) | `tools/recipe.sh kit sheet views C:/refs/fox.png names=front,threeq,back` |
+| `measure` | `measure-<view>.json`, and a summary of every landmark | `tools/recipe.sh kit sheet measure C:/refs/fox.png view=front height=1.6` |
+| `grid` | `grid-<view>.png`: the view with a line every half head from the crown down (labelled `1.5H` and its sheet row `Y413`) and a line a landmark (labelled with its height in body units and its row; green found, orange estimated, blue given), and `measure-<view>.json` | `tools/recipe.sh kit sheet grid C:/refs/fox.png view=side height=1.6` |
+| `zoom` | `zoom-<name>.png` scaled 2 to 4 times with crisp edges (`scale=` fixes it), `zoom-<region>.json` with each box | `tools/recipe.sh kit sheet zoom C:/refs/fox.png view=front region=hands` (`head`, `hands`, `feet`, or `box=410,520,80,60`) |
+| `palette` | `palette-<view>.png` (a tile a colour: swatch, hex, share, and the view with that colour's pixels shown), `palette-<view>.json` | `tools/recipe.sh kit sheet palette C:/refs/fox.png view=front colors=10` |
+| `profiles` | `profiles.json`: the torso, legs and loose arms as radii at stations for `tube` | `tools/recipe.sh kit sheet profiles C:/refs/fox.png front=front side=side stations=7 height=1.6` |
+| `trace` | `trace-<part>.json`, `trace-<part>.png` (the outline over the view) | `tools/recipe.sh kit sheet trace C:/refs/fox.png view=front part=ear-right open=true tolerance=0.004` |
+
+**measure** finds the silhouette, its upright axis (the middle of the head and upper body), its ground (the lowest point once the shadow is split off) and its top, then reads down the axis. One head is the crown to the chin, and `heads` counts them from the ground to the crown. Each row's runs give the width profile, `profile`: the row's outer edges and the body core's, from the axis in body units (image left negative), and how many runs it crosses. Each landmark has its row `y`, its `height` above the ground in body units, `heads` above the ground, `headsDown` from the crown, and a `status`:
+
+| landmark | read as |
+| --- | --- |
+| `top`, `earTip` | the highest point; the mean top of the ears or tufts standing above the crown |
+| `crown` | the top of the skull: where the head first reaches half its widest, raised to where a round head would top out, and never above the first row on the axis; ears, buns and tufts narrower than that, even over the axis, stay above it |
+| `chin`, `neck` | where the head closes toward the neck; the neck's narrowest row |
+| `shoulder` | where the steep widening below the neck settles |
+| `armpit` | the lower row where an arm parts from the torso, either side |
+| `waist`, `hip` | the narrowest torso row between the armpits and the crotch; the widest below it |
+| `crotch` | the top of the gap between the legs near the axis; with no gap, estimated at 0.55 of the way from the ground to the neck |
+| `knee`, `ankle` | the legs' narrowest row above the feet; the knee where the legs' width strays from straight, else halfway up to the hip |
+| `handTip`, `tailTop`, `tailBottom` | the lowest point of the arms standing apart from the body; the tail's extent |
+
+`plan` holds every landmark's height for `bodyPlan`; `widths` the core's half widths at the head, neck, chest, waist, hip, thigh, knee and ankle; `pieces` the ears, arms, tail and other parts outside the core, with their tips. `found` means read from the silhouette, `estimated` placed by proportion or read from legs that touch, `given` taken from `landmarks=`. Read the grid before trusting an estimate.
+
+**profiles** takes the front view (`front=`, default the view guessed front, else the first) and, when there is one, a side view (`side=`, a view of this sheet or another image's path; default a view guessed side). The torso runs from the crotch to the neck (`rest: "up"`: `left` and `right` from the front, `front` and `back` from the side; `facing=left|right` when the side view's feet do not tell which way it faces). Each leg runs from the crotch to the ankle (`rest: "down"`: `outer` and `inner`, and `front` and `back` from the side view). Each arm that stands apart from the body runs from where it leaves the outline to its tip, measured across its own axis. Legs and arms are named by the character's side (`leg-l` is the character's left) from the facing guess. Each part has `length`, `at` (stations from its socket end), `heights`, `confidence` and `notes`; `skipped` lists what could not be read.
+
+| function | one line |
+| --- | --- |
+| `measureSheet` | `const m = measureSheet("C:/refs/fox.png", { view: "front", names: ["front", "side"], height: 1.6 }); bodyPlan({ crotch: m.plan.crotch, neck: m.plan.neck }, { hips: m.widths.hip ?? 0.15 })` |
+| `openSheet`, `readSheet` | `const sheet = openSheet("C:/refs/fox.png", { ground: "#ffffff" }); sheet.views[0].guess.facing` |
+| `pickView` | `pickView(sheet, "side")`, by number, name or guessed facing |
+| `measureView` | `const front = measureView(sheet, "front", { height: 1.6, landmarks: "crotch:251,556" })` is `{ anatomy, measurement }`. |
+| `sheetProfiles` | `const p = sheetProfiles(front, measureView(sheet, "side")); tube({ ...p.torso!, closed: true })` |
+| `sheetPalette` | `sheetPalette(sheet, pickView(sheet, 1), { colors: 8 }).colors[0].hex` |
+| `traceShape` | `traceShape(front.anatomy, front.measurement, { part: "ear-right", open: true }).points`: a few points in body units, x from the axis, y up from the ground |
+| `regionBoxes`, `zoomBox` | `zoomBox(sheet, "head", regionBoxes(front.anatomy, "head", sheet)[0].box).image` |
+| `viewsOverview`, `viewCrop`, `gridImage`, `paletteImage`, `traceImage` | the images the commands write, as a `Raster`; `writePng("C:/out/grid.png", gridImage(sheet, front.anatomy, front.measurement))` writes one |
+| `keyBackground`, `readRaster` | `keyBackground(readRaster("C:/refs/fox.png")).figure`: the figure mask of any PNG or JPEG |
+
+What the silhouette cannot tell is marked rather than guessed away: legs drawn touching, or a tail or far leg filling the gap between them, hide the crotch (estimated, orange on the grid, or the knees where they touch); arms held against the body give no armpit or hand tip; hair as wide as the head reads as skull, so a big hairdo lowers the head count until `landmarks=crown:x,y` sets the skull's top; background a figure encloses with no way out (a curled tail against a leg) stays figure until `holes=` opens it; figures drawn overlapping are one view until `boxes=` splits them; the facing guess reads symmetry and face detail and is unsure on tilted heads and dark hair; thick ink bordering a dark area of the same tone can stay in the palette as a colour.
 
 ## Run helpers
 

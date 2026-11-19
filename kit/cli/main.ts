@@ -5,6 +5,7 @@ import { checkHeights, formatHeightChecks } from "../src/plan/check.ts";
 import { parseArgs, USAGE, type Command, type RunArgs } from "./args.ts";
 import { ensureDependencies } from "./install.ts";
 import { loadCharacter, type Character } from "./load.ts";
+import { runSheet } from "./sheet/run.ts";
 
 /** The exit code for a problem in the character file, as tools/recipe.sh's for a recipe error. */
 const EXIT_PROBLEM = 2;
@@ -32,6 +33,10 @@ function questions(args: RunArgs): string[] {
 }
 
 const commands: Record<Command, (args: RunArgs) => Promise<number>> = {
+  async sheet(args) {
+    ensureDependencies();
+    return runSheet(args.sheet, args.file, args.rest);
+  },
   async check(args) {
     return (await checked(args.file)) ? 0 : EXIT_PROBLEM;
   },

@@ -5,4 +5,5 @@ import { KIT_SPECIFIER, kitIndexPath, kitSourceDir } from "../src/run/paths.ts";
 export const kitEntries: Readonly<Record<string, string>> = {
   [KIT_SPECIFIER]: kitIndexPath,
   [`${KIT_SPECIFIER}/run`]: join(kitSourceDir, "run", "index.ts"),
+  [`${KIT_SPECIFIER}/sheet`]: join(kitSourceDir, "sheet", "index.ts"),
 };
