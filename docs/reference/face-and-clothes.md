@@ -150,6 +150,9 @@ Fields as the schema describes them:
 | garment `inkHem` | Whether its edges are inked. |
 | garment `inkWeight` | The weight of its silhouette and inked edges as a share of the skin's line weight, 0 to 2; thinner than skin when left out, so cloth reads as cloth and not as a second body. |
 | garment `hemRoll` | How far its hems, neck openings and cuffs roll out past the cloth, in body units, 0 to 0.03: a cuff or a rolled hem that reads as cloth with a thickness. Every hem stands a little off the skin whatever this is. |
+| garment `creases` | How strongly it creases on the inner side of each bending joint it covers, with ink, a shade band and a small fold, 0 to 2, times the character's cloth creases. |
+| garment `wrinkles` | How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more. |
+| garment `drape` | How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more. |
 | garment `joins` | Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. |
 | garment `areas` | The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. |
 | garment `covers` | Boxes of cells, one a part: the simple form of cloth, painted into the first area. With areas, a cover on a part they paint only carries its outlines and ease, its range written from the cells. A pair's cover names its left side and covers both. |

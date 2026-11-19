@@ -103,7 +103,7 @@ internal fun CharacterSession.probeState(work: TestWork, camera: CameraView? = n
 }
 
 /** This state with [shown] for its fur. */
-internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, color, work, palette, lines, shown, surface, taper, paint = paint, dress = dress)
+internal fun CharacterState.withFur(shown: FurView) = CharacterState(character, color, work, palette, lines, shown, surface, taper, paint = paint, dress = dress, creases = creases)
 
 /** The fennec through commands, the real graph and scene, flat and two-tone from three sides, left for a person to judge. */
 @Tag("slow")

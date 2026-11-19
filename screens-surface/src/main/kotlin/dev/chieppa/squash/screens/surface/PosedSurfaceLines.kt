@@ -44,12 +44,14 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
         )
     }
 
-    /** The ink along the surface's inked joins and its garments' inked hems and joins, through [view]. */
+    /** The ink along the surface's inked joins, its garments' inked hems and joins, and its creases and wrinkles, through [view]. */
     fun inks(view: SurfaceView, look: CharacterLook, ink: Color): List<RibbonDraw> {
         val surface = shown.surface
         val dress = shown.dress
+        val inkWeights = dress?.garments.orEmpty().associate { it.cover.garment.id to it.cover.garment.inkWeight }
         return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
-            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight) }
+            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight) } +
+            shown.creases?.let { creaseInkDraws(it, inkWeights, view, look.creases, ink, surface.mesh.cell) }.orEmpty()
     }
 
     /** The lines its garments' cloth prints, as they are worn: each garment's inked marks and region borders, cut to its cloth. */

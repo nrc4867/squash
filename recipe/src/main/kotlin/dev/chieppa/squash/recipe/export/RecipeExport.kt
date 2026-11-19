@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.CharacterCreases
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.LineRules
@@ -15,6 +16,7 @@ import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.recipe.model.Recipe
+import dev.chieppa.squash.recipe.model.RecipeCreases
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeColor
 import dev.chieppa.squash.recipe.model.RecipeCover
@@ -61,6 +63,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         },
         wardrobe = wardrobe,
         displayPose = bones(character.displayPose, "display pose", notCarried),
+        creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
     )
     return RecipeExport(recipe, notCarried)
 }
@@ -142,6 +145,9 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
         inkHem = garment.inkHem,
         inkWeight = garment.inkWeight,
         hemRoll = garment.hemRoll,
+        creases = garment.creases,
+        wrinkles = garment.wrinkles,
+        drape = garment.drape,
         joins = if (painted) emptyList() else garment.joins.map { it.value },
         areas = if (painted) garment.areas.map(::areaOf) else emptyList(),
         holes = holesOf(garment),

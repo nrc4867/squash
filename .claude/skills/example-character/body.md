@@ -136,6 +136,7 @@ Hand-made joints (`joint(n, u, { low, high })`) are where the part bends: knee, 
 - `probe part=leg-l,arm-l` prints every joint's body point: the knee at the sheet's knee height, the elbow at the elbow.
 - **Hands and feet on their joints.** A hand sits on the arm's end socket at the wrist; a foot on the leg's end socket at the ankle. The foot's socket sits only a little above its sole (`feet-and-paws.md`), and the ground is under the lowest point, so the plan's `ankle` is that height, not where the sheet's leg meets the foot's top: take it from the first `heights` run (`ankle ... built`) and set the plan to it, or every height above lands low by the difference. A hand that starts mid-forearm means the arm's length or its end socket is off.
 - Limits: a knee bends back, `low: 0, high: 140`; an elbow forward, `low: -145, high: 0` (signs in `frames.md`, Bone axes); a spine joint ±25.
+- Limits also place the creases: a joint that bends much further one way (a knee, an elbow, a shoulder) shows a faint crease on that side at rest once `creases` is on, and every joint creases on the side it closes toward as it bends (`clothing.md`, Creases and wrinkles). Draw no neck, collar, elbow, knee or ankle lines as marks: `creases: { skin: 1 }` draws them, and they deepen with the pose.
 
 ## 7. Rest and display pose
 

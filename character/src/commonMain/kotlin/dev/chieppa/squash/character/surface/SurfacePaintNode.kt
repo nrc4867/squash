@@ -19,9 +19,16 @@ class HeldPaint(val paint: SurfacePaint?, val on: CharacterSurface? = null) {
 
 /**
  * A one surface as a pose shows it, with its [paint] laid on it and its [dress] worn as posed, each null where it has none, and [carry],
- * which moves a point on the surface at rest to where the pose carries it, null while the pose leaves it at rest.
+ * which moves a point on the surface at rest to where the pose carries it, null while the pose leaves it at rest, and its [creases] and
+ * wrinkles, null while the character has none on.
  */
-class PosedSurface(val surface: CharacterSurface, val paint: SurfacePaint?, val dress: SurfaceDress? = null, val carry: ((ResolvedPoint) -> ResolvedPoint)? = null) {
+class PosedSurface(
+    val surface: CharacterSurface,
+    val paint: SurfacePaint?,
+    val dress: SurfaceDress? = null,
+    val carry: ((ResolvedPoint) -> ResolvedPoint)? = null,
+    val creases: PosedCreases? = null,
+) {
     companion object {
         /**
          * [surface] at rest with [paint] and [dress], or null where either was laid on another surface: the graph's nodes settle one

@@ -674,6 +674,17 @@
           "items": {
             "$ref": "#/$defs/RecipeTarget"
           }
+        },
+        "creases": {
+          "description": "Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. Off when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeCreases"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -786,6 +797,34 @@
       "required": [
         "part"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeCreases": {
+      "description": "How strongly the character creases and wrinkles, each 0 (off) to 2, 1 when left out.",
+      "type": "object",
+      "properties": {
+        "skin": {
+          "description": "Joint creases on the body's skin: a short ink line and a shade band on the inner side of each bending joint (elbow, knee, hip, shoulder, neck, wrist, ankle, waist), faint at rest where a sheet draws one and deepening and lengthening with the bend.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "cloth": {
+          "description": "Every garment's creases, wrinkles and drape, times each garment's own creases, wrinkles and drape.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "rest": {
+          "description": "How much of a joint's crease shows at rest, as a share of a full bend's, 0 to 1.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },
@@ -1078,6 +1117,24 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 0.03
+        },
+        "creases": {
+          "description": "How strongly it creases on the inner side of each bending joint it covers, with ink, a shade band and a small fold, 0 to 2, times the character's cloth creases.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "wrinkles": {
+          "description": "How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "drape": {
+          "description": "How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
         },
         "joins": {
           "description": "Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.",

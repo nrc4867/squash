@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.geom.ChartShape
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
+import dev.chieppa.stretch.gpu.webgpu.BlendComponent
+import dev.chieppa.stretch.gpu.webgpu.BlendFactor
 import dev.chieppa.stretch.gpu.webgpu.BlendState
 import dev.chieppa.stretch.gpu.webgpu.BufferBinding
 import dev.chieppa.stretch.gpu.webgpu.BufferUsage
@@ -33,10 +35,18 @@ private const val SIDES_AFTER_VECTORS = 7
 
 /**
  * One color layer over a mesh: a cut's [mesh] in the [tones] its slot shows as, solid or with each vertex's opacity in [alphas], or kept
- * to a [shape] read at each fragment, its edge smoothed over a pixel. A [MeshDraw] draws its layers in order, each over the last.
+ * to a [shape] read at each fragment, its edge smoothed over a pixel. A [crease] layer reads [alphas] as each vertex's crease shade and
+ * multiplies what is under it by its lit tone where that is at least a half. A [MeshDraw] draws its layers in order, each over the last.
  */
 @Immutable
-data class ColorLayerDraw(val mesh: RenderMesh, val tones: Tones, val alphas: FloatArray? = null, val shape: ChartShape? = null, val sides: LayerSides? = null) {
+data class ColorLayerDraw(
+    val mesh: RenderMesh,
+    val tones: Tones,
+    val alphas: FloatArray? = null,
+    val shape: ChartShape? = null,
+    val sides: LayerSides? = null,
+    val crease: Boolean = false,
+) {
     /** The per-vertex buffers this layer reads beside its mesh: its sides' shares, else its shape's chart or its opacities. */
     val extras: List<FloatArray>
         get() = sides?.let { listOfNotNull(it.positiveShares ?: it.negativeShares, it.negativeShares ?: it.positiveShares) }
@@ -49,6 +59,12 @@ data class ColorLayerDraw(val mesh: RenderMesh, val tones: Tones, val alphas: Fl
  */
 @Immutable
 data class LayerSides(val positive: Tones, val positiveShares: FloatArray?, val negative: Tones, val negativeShares: FloatArray?)
+
+/** Multiplies what is there by the new color, keeping its alpha. */
+private val MULTIPLYING = BlendState(
+    color = BlendComponent(BlendFactor.Dst, BlendFactor.Zero),
+    alpha = BlendComponent(BlendFactor.Zero, BlendFactor.One),
+)
 
 /** The vertex buffer of a cut's per-vertex opacities. */
 internal fun alphaBuffer(context: GpuContext, alphas: FloatArray): GpuBuffer {
@@ -120,6 +136,20 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         ),
     )
 
+    private val creased = device.createRenderPipeline(
+        RenderPipelineSpec(
+            shader = shader,
+            vertexEntry = "vs_fading",
+            buffers = listOf(MESH_VERTEX_LAYOUT, ALPHA_VERTEX_LAYOUT),
+            fragmentEntry = "fs_crease",
+            targets = listOf(ColorTarget(context.format, MULTIPLYING)),
+            cullMode = CullMode.Back,
+            depth = DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual),
+            sampleCount = context.sampleCount,
+            label = "crease layer",
+        ),
+    )
+
     private val sided = device.createRenderPipeline(
         RenderPipelineSpec(
             shader = shader,
@@ -142,11 +172,14 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         val shapedGroup: GpuBindGroup get() = shapedLazily.value
         private val sidedLazily = lazy { sided.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) } }
         val sidedGroup: GpuBindGroup get() = sidedLazily.value
+        private val creasedLazily = lazy { creased.bindGroupLayout(0).use { device.createBindGroup(it, listOf(BufferBinding(0, buffer))) } }
+        val creasedGroup: GpuBindGroup get() = creasedLazily.value
 
         fun close() {
             if (fadingLazily.isInitialized()) fadingLazily.value.close()
             if (shapedLazily.isInitialized()) shapedLazily.value.close()
             if (sidedLazily.isInitialized()) sidedLazily.value.close()
+            if (creasedLazily.isInitialized()) creasedLazily.value.close()
             group.close()
             buffer.close()
         }
@@ -159,7 +192,11 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         val held = slotAt(slot)
         write(held.buffer, layer, over, view)
         val alphas = extras.firstOrNull()
-        if (layer.sides != null && extras.size == 2) {
+        if (layer.crease && alphas != null) {
+            pass.setPipeline(creased)
+            pass.setBindGroup(0, held.creasedGroup)
+            pass.setVertexBuffer(1, alphas)
+        } else if (layer.sides != null && extras.size == 2) {
             pass.setPipeline(sided)
             pass.setBindGroup(0, held.sidedGroup)
             pass.setVertexBuffer(1, extras[0])
@@ -233,6 +270,7 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
         slots.forEach { it.close() }
         shaped.close()
         sided.close()
+        creased.close()
         fading.close()
         pipeline.close()
         shader.close()

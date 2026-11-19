@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.HeldDress
 import dev.chieppa.squash.character.surface.HeldPaint
+import dev.chieppa.squash.character.surface.PosedCreases
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfaceGarment
@@ -20,6 +21,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlin.concurrent.Volatile
 
 /**
@@ -43,7 +47,9 @@ private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
  * it with its paint, rerun when the pose changes. Both are nodes of the session's graph, so its `settled` covers them; the session
  * shows [posed] as its posed surface. While no pane draws them, the coarse surface of a drag is neither skinned nor posed: both hold none
  * until the full surface follows the drag's end. While a pane does, the coarse surface is posed without looking for skin the pose
- * pushes through a garment ([PosedHiding.kept]).
+ * pushes through a garment ([PosedHiding.kept]). With the character's creases on, the posed surface carries them too, read on the skin
+ * once ([CreaseRig]) and in each pose ([PoseCreasing]), the garments' folds raised before what they hide is found; a change of the
+ * creases' settings poses again and builds nothing.
  */
 class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flow<Pose>) {
     private val graph = session.graph
@@ -78,8 +84,17 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     @Volatile
     private var lastPosed: HeldPosedSurface? = null
 
+    /** The crease rig read on the last skin creased, which a pose on the same skin keeps. */
+    @Volatile
+    private var lastCreaseRig: CreaseRig? = null
+
+    private fun creaseRigOf(held: HeldSkin): CreaseRig = lastCreaseRig?.takeIf { it.skin === held } ?: CreaseRig.of(held, lastCreaseRig).also { lastCreaseRig = it }
+
+    private val shaped = combine(pose, session.document.map { CreaseSettings.of(it.character) }.distinctUntilChanged()) { shown, creases -> PoseShape(shown, creases) }
+        .distinctUntilChanged()
+
     val posed: Node<*, HeldPosedSurface> = graph.gather(
-        pose,
+        shaped,
         { mapOf(SkinSource.SKIN to skinSource, SkinSource.PAINT to paintSource) },
         cacheSize = KEPT_BUILDS,
     ) { gathered ->
@@ -90,13 +105,16 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val skin = held.skin
         if (surface == null || skin == null) return@gather HeldPosedSurface(null)
         if (!laid.isOn(surface)) return@gather lastPosed ?: HeldPosedSurface(null)
-        val frames = boneFrames(held.rig, gathered.shape)
+        val frames = boneFrames(held.rig, gathered.shape.pose)
+        val settings = gathered.shape.creases
+        val creasing = if (settings.creases.on && !held.coarse) PoseCreasing(creaseRigOf(held), frames, settings) else null
         val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL)
+        val garmentCreasing = held.dress?.garments.orEmpty().map { creasing?.garment(it) }
         val worn = held.dress?.let { dress ->
             val moved = coroutineScope {
                 dress.garments.mapIndexed { i, garment ->
                     async {
-                        val posed = posedSurface(garment.surface, held.garments[i], null, frames)
+                        val posed = posedSurface(garment.surface, held.garments[i], null, frames, shape = garmentCreasing[i]?.let { it::shape })
                         garment.movedTo(hangingPushed(garment, posed.surface, body.surface), posed.carry)
                     }
                 }.awaitAll()
@@ -104,13 +122,27 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
             val hiding = PosedHiding(body.surface, surface, moved, dress)
             if (held.coarse) hiding.kept(body.paint) else hiding.of(body.paint, IN_PARALLEL)
         }
-        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry), held.coarse).also { lastPosed = it }
+        val creases = creasing?.let { poseCreasing ->
+            val byId = held.dress?.garments.orEmpty().zip(garmentCreasing).mapNotNull { (garment, creased) -> creased?.let { garment.cover.garment.id to it } }.toMap()
+            val dressed = worn?.second
+            coroutineScope {
+                val bodyMarks = async { poseCreasing.body(body.surface, dressed?.shown) }
+                val garmentMarks = dressed?.garments.orEmpty().mapNotNull { garment ->
+                    byId[garment.cover.garment.id]?.let { creased -> async { garment.cover.garment.id to creased.marks(garment) } }
+                }
+                PosedCreases(bodyMarks.await(), garmentMarks.awaitAll().toMap())
+            }
+        }
+        HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry, creases), held.coarse).also { lastPosed = it }
     }
 
     init {
         session.sessionSurface.showPosed(posed)
     }
 }
+
+/** What the posed surface is shown in: the [pose], and the [creases] it carries. */
+private data class PoseShape(val pose: Pose, val creases: CreaseSettings)
 
 /** Each garment's weights, kept while its surface and the rig are the same objects, so an edit that leaves a garment whole skins it once. */
 class GarmentSkins {

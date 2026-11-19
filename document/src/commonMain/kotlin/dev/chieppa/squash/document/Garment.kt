@@ -32,7 +32,9 @@ const val GARMENT_PART_PREFIX = "garment/"
  * box painted ([withBoxesPainted]), so every garment's cloth is its painted cells. [tucks] are the Tuck choices made for the small parts
  * inside it. Its [regions] and [marks] are printed on its cloth, in the (u, v) of the body parts under it as a part's own are, and show
  * only where the cloth does. [inkWeight] is the weight of its silhouette and hems as a share of the skin's line weight, and [hemRoll]
- * how far its hems, neck openings and cuffs roll out past the cloth, in body units. See HLD: data-model, Garments.
+ * how far its hems, neck openings and cuffs roll out past the cloth, in body units. [creases], [wrinkles] and [drape] are its strengths of
+ * joint creases, wrinkles where it bunches and folds where it hangs, times the character's cloth strength (HLD: look, Creases and wrinkles).
+ * See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -55,12 +57,16 @@ data class Garment(
     val marks: List<Mark> = emptyList(),
     val inkWeight: Float = CLOTH_INK_WEIGHT,
     val hemRoll: Float = 0f,
+    val creases: Float = DEFAULT_CREASE_STRENGTH,
+    val wrinkles: Float = DEFAULT_CREASE_STRENGTH,
+    val drape: Float = DEFAULT_CREASE_STRENGTH,
 ) {
     init {
         require(fit == null || fit >= 0f) { "Garment ${id.value} has a negative fit" }
         require(partFits.values.all { it >= 0f }) { "Garment ${id.value} has a negative part fit" }
         require(inkWeight in 0f..MOST_CLOTH_INK_WEIGHT) { "Garment ${id.value} has an ink weight outside 0 to $MOST_CLOTH_INK_WEIGHT" }
         require(hemRoll in 0f..MOST_HEM_ROLL) { "Garment ${id.value} has a hem roll outside 0 to $MOST_HEM_ROLL" }
+        require(listOf(creases, wrinkles, drape).all { it in 0f..MOST_CREASE_STRENGTH }) { "Garment ${id.value} has a crease strength outside 0 to $MOST_CREASE_STRENGTH" }
         require(branches.distinctBy { it.part }.size == branches.size) { "Garment ${id.value} covers a part twice" }
         require(areas.distinctBy { it.id }.size == areas.size) { "Garment ${id.value} names an area twice" }
         require(holes.distinctBy { it.part }.size == holes.size) { "Garment ${id.value} has two holes round one part" }
@@ -77,10 +83,19 @@ data class Garment(
 
     fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
 
-    /** This garment without what is printed on its cloth, the colours of its areas or its ink weight: what its cloth's shape and cut read. */
+    /**
+     * This garment without what is printed on its cloth, the colours of its areas, its ink weight or its crease strengths: what its cloth's
+     * shape and cut read.
+     */
     val unprinted: Garment get() =
-        if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null } && inkWeight == CLOTH_INK_WEIGHT) this
-        else copy(regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) }, inkWeight = CLOTH_INK_WEIGHT)
+        if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null } && inkWeight == CLOTH_INK_WEIGHT && creasesAtDefault) this
+        else copy(
+            regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) }, inkWeight = CLOTH_INK_WEIGHT,
+            creases = DEFAULT_CREASE_STRENGTH, wrinkles = DEFAULT_CREASE_STRENGTH, drape = DEFAULT_CREASE_STRENGTH,
+        )
+
+    private val creasesAtDefault: Boolean
+        get() = creases == DEFAULT_CREASE_STRENGTH && wrinkles == DEFAULT_CREASE_STRENGTH && drape == DEFAULT_CREASE_STRENGTH
 
     /**
      * This garment with the box of each branch whose part no area paints painted as cells ([boxCells]) into its first area, made as

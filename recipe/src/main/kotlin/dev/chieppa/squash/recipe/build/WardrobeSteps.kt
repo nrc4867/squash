@@ -12,6 +12,7 @@ import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MOST_CLOTH_INK_WEIGHT
+import dev.chieppa.squash.document.MOST_CREASE_STRENGTH
 import dev.chieppa.squash.document.MOST_HEM_ROLL
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
@@ -53,6 +54,9 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     garment.fit?.let { if (it < 0f) fail("$path.fit", "a fit is how far the cloth stands off the body, 0 or more: here $it") }
     if (garment.inkWeight !in 0f..MOST_CLOTH_INK_WEIGHT) fail("$path.inkWeight", "an ink weight lies from 0 to $MOST_CLOTH_INK_WEIGHT: here ${garment.inkWeight}")
     if (garment.hemRoll !in 0f..MOST_HEM_ROLL) fail("$path.hemRoll", "a hem roll lies from 0 to $MOST_HEM_ROLL: here ${garment.hemRoll}")
+    listOf("creases" to garment.creases, "wrinkles" to garment.wrinkles, "drape" to garment.drape).forEach { (key, value) ->
+        if (value !in 0f..MOST_CREASE_STRENGTH) fail("$path.$key", "a $key strength lies from 0 to $MOST_CREASE_STRENGTH: here $value")
+    }
     val branches = garment.covers.mapIndexed { i, cover ->
         val p = "$path.covers[$i]"
         val part = partOf("$p.part", cover.part)
@@ -102,6 +106,9 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
             marks = marks,
             inkWeight = garment.inkWeight,
             hemRoll = garment.hemRoll,
+            creases = garment.creases,
+            wrinkles = garment.wrinkles,
+            drape = garment.drape,
         )
     }
 }

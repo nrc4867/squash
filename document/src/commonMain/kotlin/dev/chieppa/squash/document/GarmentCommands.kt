@@ -254,7 +254,7 @@ data class RemoveLooseEnd(val garment: GarmentId, val end: LooseEndId) : Documen
 }
 
 /** This document with [garment] changed by [change], undone by setting the garment back whole. */
-private fun SquashDocument.garmentChanged(garment: GarmentId, change: (Garment) -> Garment): Applied<SquashDocument> {
+internal fun SquashDocument.garmentChanged(garment: GarmentId, change: (Garment) -> Garment): Applied<SquashDocument> {
     val held = requireNotNull(character.wardrobe.garment(garment)) { "No garment ${garment.value}" }
     return SetGarment(change(held)).apply(this)
 }

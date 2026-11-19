@@ -214,6 +214,8 @@ export interface Recipe {
   poses?: { [key: string]: BonePose[] };
   /** Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance. */
   targets?: RecipeTarget[];
+  /** Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. Off when left out. */
+  creases?: RecipeCreases | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -249,6 +251,18 @@ export interface RecipeCover {
   ease?: number;
   /** Side and Top outlines along the part's own x where the cloth stands off further, as a skirt's flare. */
   outlines?: { side?: RecipeOutline; top?: RecipeOutline; front?: RecipeOutline };
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** How strongly the character creases and wrinkles, each 0 (off) to 2, 1 when left out. */
+export interface RecipeCreases {
+  /** Joint creases on the body's skin: a short ink line and a shade band on the inner side of each bending joint (elbow, knee, hip, shoulder, neck, wrist, ankle, waist), faint at rest where a sheet draws one and deepening and lengthening with the bend. */
+  skin?: number;
+  /** Every garment's creases, wrinkles and drape, times each garment's own creases, wrinkles and drape. */
+  cloth?: number;
+  /** How much of a joint's crease shows at rest, as a share of a full bend's, 0 to 1. */
+  rest?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -343,6 +357,12 @@ export interface RecipeGarment {
   inkWeight?: number;
   /** How far its hems, neck openings and cuffs roll out past the cloth, in body units, 0 to 0.03: a cuff or a rolled hem that reads as cloth with a thickness. Every hem stands a little off the skin whatever this is. */
   hemRoll?: number;
+  /** How strongly it creases on the inner side of each bending joint it covers, with ink, a shade band and a small fold, 0 to 2, times the character's cloth creases. */
+  creases?: number;
+  /** How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more. */
+  wrinkles?: number;
+  /** How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more. */
+  drape?: number;
   /** Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. */
   joins?: string[];
   /** The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. */

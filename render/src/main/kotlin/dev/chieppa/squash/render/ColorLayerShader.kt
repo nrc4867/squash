@@ -9,7 +9,7 @@ internal const val COLOR_LAYER_FLOATS = 76
  * fastest between its mesh and its cut, and it never falls under a few steps of the depth buffer. So a layer passes against its
  * own mesh at any angle and at any zoom, and fails against anything truly in front of it. A shaped layer is kept at each fragment to an
  * almond and an oval, each turned, in the chart its vertices carry, as [dev.chieppa.squash.geom.ChartShape] reads them, its edge faded
- * over a pixel.
+ * over a pixel. A crease layer multiplies what is under it by its lit color where its per-vertex shade is at least a half.
  */
 internal const val COLOR_LAYER_WGSL = """
 struct Layer {
@@ -89,6 +89,17 @@ fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
 @fragment
 fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
     return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), in.alpha);
+}
+
+// A crease's shade band: where the shade carried per vertex is at least a half, its edge smoothed over a pixel, the color under it
+// multiplied by the layer's lit color, so a band darkens whatever color it lies on the same way.
+@fragment
+fn fs_crease(in: FadingOut) -> @location(0) vec4<f32> {
+    let band = clamp((in.alpha - 0.5) / max(fwidth(in.alpha), 0.0000001) + 0.5, 0.0, 1.0);
+    if (band <= 0.0) {
+        discard;
+    }
+    return vec4<f32>(mix(vec3<f32>(1.0), layer.lit.rgb, band), 1.0);
 }
 
 struct SidedOut {

@@ -50,7 +50,7 @@ internal fun dressPartName(state: AppState, part: PartInstance): String {
 
 /**
  * The picked garment: its slot, which a press changes, and its layer; its fit and the parts fitted apart from it; its painted areas,
- * their edges and its holes; its hem ink, which inks every edge, seams too; and its ink weight and hem roll.
+ * their edges and its holes; its hem ink, which inks every edge, seams too; its ink weight and hem roll; and its creases, wrinkles and drape.
  */
 @Composable
 internal fun GarmentSection(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
@@ -65,6 +65,7 @@ internal fun GarmentSection(state: AppState, session: CharacterSession, characte
             session.send(SetHemInk(garment.id, it))
         }
         ClothInkRows(session, garment)
+        ClothCreaseRows(session, garment)
     }
 }
 

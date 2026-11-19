@@ -18,5 +18,6 @@ fun CharacterSession.shownState(): CharacterState {
         surface = posed?.surface ?: assertNotNull(characterSurface.output.value?.surface),
         paint = posed?.paint ?: surfacePaint.output.value?.paint,
         dress = posed?.dress ?: sessionSurface.dress.output.value?.dress,
+        creases = posed?.creases,
     )
 }

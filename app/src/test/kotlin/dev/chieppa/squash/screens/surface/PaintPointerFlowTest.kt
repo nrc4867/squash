@@ -303,6 +303,14 @@ class PaintPointerFlowTest {
         runOnIdle { state.undo() }
         waitForIdle()
         assertEquals(true, session.document.value.character.shading.farSideDarker, "each is one step")
+
+        onNodeWithTag(PaintTags.SKIN_CREASES).performScrollTo().performMouseInput { click(center) }
+        waitForIdle()
+        assertTrue(session.document.value.character.creases.skin > 0f, "the skin creases slider turns creases on")
+        assertEquals(0f, session.document.value.character.creases.cloth, "and leaves the cloth's alone")
+        runOnIdle { state.undo() }
+        waitForIdle()
+        assertEquals(0f, session.document.value.character.creases.skin, "as one step")
     }
 
     @Test

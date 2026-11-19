@@ -37,7 +37,8 @@ class PaneSurface(val rest: PosedSurface, val posed: PosedSurface?) {
 
 /**
  * The pane surface each settled piece of a one surface makes, one after another: the surface with its paint and dress where both are
- * laid on it, else the last surface that had both, since the graph settles the surface of a build before its paint and dress.
+ * laid on it, else the last surface that had both, since the graph settles the surface of a build before its paint and dress. The posed
+ * surface is kept where the pose moves it or it carries creases.
  */
 class LastPaneSurface {
     private var kept: PaneSurface? = null
@@ -45,9 +46,9 @@ class LastPaneSurface {
     /** What the panes show of [rest] with [paint] and [dress], and [posed], the surface in the shown pose. */
     fun next(rest: CharacterSurface, paint: HeldPaint?, dress: SurfaceDress?, posed: PosedSurface?): PaneSurface {
         val laid = PosedSurface.laid(rest, paint, dress)
-        if (laid != null) return PaneSurface(laid, posed?.takeIf { it.surface !== rest }).also { kept = it }
+        if (laid != null) return PaneSurface(laid, posed?.takeIf { it.surface !== rest || it.creases != null }).also { kept = it }
         val held = kept?.rest ?: PosedSurface(rest, null)
-        return PaneSurface(held, posed?.takeIf { it.surface !== held.surface })
+        return PaneSurface(held, posed?.takeIf { it.surface !== held.surface || it.creases != null })
     }
 }
 
@@ -71,8 +72,8 @@ fun SheetLook.surfaceDraws(
     val shown = held.shown(posedPane)
     val fallback = part.copy(ink = color.palette.colorOf(INK_SLOT) ?: part.ink)
     val section = only?.let { held.section(it, posedPane) }
-    val garments = if (only == null) shown.dress?.let { garmentDraws(it, color.palette, fallback, color.shading, toCamera) }.orEmpty() else emptyList()
-    val body = surfaceDraw(shown.surface, shown.paint, shown.dress?.skin, color.body, color.palette, fallback, color.shading, toCamera, section, toViewer)
+    val garments = if (only == null) shown.dress?.let { garmentDraws(it, color.palette, fallback, color.shading, toCamera, shown.creases) }.orEmpty() else emptyList()
+    val body = surfaceDraw(shown.surface, shown.paint, shown.dress?.skin, color.body, color.palette, fallback, color.shading, toCamera, section, toViewer, shown.creases?.body)
     return (garments + body).map { it.copy(outlinePixels = outline, opacity = opacity, layer = layer) }
 }
 

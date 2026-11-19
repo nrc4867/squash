@@ -3,6 +3,8 @@ package dev.chieppa.squash.recipe.model
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.document.BonePose
+import dev.chieppa.squash.document.DEFAULT_CREASE_STRENGTH
+import dev.chieppa.squash.document.REST_CREASE
 import dev.chieppa.squash.document.JointAngle
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
@@ -49,6 +51,8 @@ data class Recipe(
     val poses: Map<String, List<BonePose>> = emptyMap(),
     @Doc("Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance.")
     val targets: List<RecipeTarget> = emptyList(),
+    @Doc("Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. Off when left out.")
+    val creases: RecipeCreases? = null,
 )
 
 /** One proportion a build is checked against. */
@@ -63,6 +67,18 @@ data class RecipeTarget(
     val value: Float,
     @Doc("How far off it may be before it is flagged: a share of the value for a size (0.15 when left out), a share of the head for a place (0.05 when left out).")
     val tolerance: Float? = null,
+)
+
+/** A character's creases and wrinkles, on once given. */
+@Serializable
+@Doc("How strongly the character creases and wrinkles, each 0 (off) to 2, 1 when left out.")
+data class RecipeCreases(
+    @Doc("Joint creases on the body's skin: a short ink line and a shade band on the inner side of each bending joint (elbow, knee, hip, shoulder, neck, wrist, ankle, waist), faint at rest where a sheet draws one and deepening and lengthening with the bend.") @Range(min = 0.0, max = 2.0)
+    val skin: Float = DEFAULT_CREASE_STRENGTH,
+    @Doc("Every garment's creases, wrinkles and drape, times each garment's own creases, wrinkles and drape.") @Range(min = 0.0, max = 2.0)
+    val cloth: Float = DEFAULT_CREASE_STRENGTH,
+    @Doc("How much of a joint's crease shows at rest, as a share of a full bend's, 0 to 1.") @Range(min = 0.0, max = 1.0)
+    val rest: Float = REST_CREASE,
 )
 
 /** A named colour of the palette. */

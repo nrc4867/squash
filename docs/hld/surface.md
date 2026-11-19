@@ -113,6 +113,7 @@ A garment covers the cloth painted on the body as its areas ([data-model.md](dat
 - **Hem ink is the cloth's.** A garment's hems are only where it shows: a hem an outer garment hides draws no ink. Its silhouette, hems, seams and inked joins are drawn at its `inkWeight` of the skin's line weight, and a piece of hem as short as two cells draws, so a cuff round a thin wrist or ankle is inked.
 - **Hidden skin** (`HiddenSkin`): a body triangle is hidden where its corners lie inside the garment's coverage by more than the hiding margin, so skin seen through an opening still shows. Over a part every garment there paints, the garments together cover the most of their cloth fields. Posed, the test runs again on the posed meshes.
 - **Kept between builds.** A painted part grows over its painted rows' steps, so painting more or less of it within the same steps, at the same cell, keeps the garment's grown surface and only cuts it again. Coverage read on the same mesh by the same reader is taken as it was (`CoverageMemo`), with its values smoothed near zero and the level cut of what shows, so an edit that leaves a garment's cover alone reads none of it again.
+- **Folds in a pose.** With creases on, a garment's posed mesh rises along its normals beside each bending joint's crease and on each wrinkle's crest, before what the pose pushes through it is found, and its shade and ink are read on it as worn (look.md, Creases and wrinkles).
 - Owned parts and loose ends are separate parts.
 
 ## The rig on the surface
@@ -136,7 +137,7 @@ Implicit skinning (Vaillant, Barthe, Guennebaud, Cani, Rohmer, Wyvill, Gourmel, 
 | Surface work | Anchors resolved on the character field; it does not wait on the mesh |
 | Colour | Shapes cut on the surface mesh per block, by coordinates or by surface curves |
 | Lines | The surface, the garments' meshes and the separate parts' meshes |
-| Rig and posed | Weights per surface vertex from shares and coordinates; the posed surface, garments and separate parts |
+| Rig and posed | Weights per surface vertex from shares and coordinates; the posed surface, garments and separate parts, with their creases and wrinkles and the folds they raise on cloth (look.md, Creases and wrinkles) |
 
 A vertex's identity is its cell, so a block an edit did not reach keeps every vertex and every cache kept per block.
 

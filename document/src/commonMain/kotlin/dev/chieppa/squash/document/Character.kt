@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
- * [palette], its [expressions], its [shading], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
+ * [palette], its [expressions], its [shading], its [creases], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
  * the [pose] it stands in, the [displayPose] under it, its [wardrobe] and its [paintedEyes]. The pose is the character's one working pose until shots hold a
  * pose per key. The display pose is saved with the character and shows it as it is meant to be seen, a biped's arms brought down from
  * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is one surface meshed from its parts' joined solids.
@@ -20,6 +20,7 @@ data class Character(
     val palette: Palette = Palette(),
     val expressions: List<ExpressionSet> = emptyList(),
     val shading: CharacterShading = CharacterShading(),
+    val creases: CharacterCreases = CharacterCreases(),
     val lineRules: LineRules = LineRules(),
     val shownExpression: ExpressionId? = null,
     val traces: Map<View, Trace> = emptyMap(),

@@ -77,6 +77,22 @@ With areas, the build reads from the cells what the cloth covers, which parts co
 - Draw the body under clothes thinner than the sheet's clothed silhouette, by about the fit: the garment stands off it to the silhouette.
 - **Boxy clothes** mean the cloth follows a boxy body: shape the torso's profiles (waist, chest, seat; `body.md`), not the garment.
 
+## Creases and wrinkles
+
+Never draw creases, wrinkles or folds as marks or areas: a mark rides the cloth, so it squeezes and fades as the joint bends, and a darker area reads as a patch. Turn them on at the recipe's top level instead; they come from the pose:
+
+```ts
+export default recipe({ /* ... */ creases: { skin: 1, cloth: 1 } });
+
+const sweater = garment({ id: "sweater", slot: "top", color: "knit", fit: 0.03, drape: 1.3, areas });
+const jeans = garment({ id: "jeans", slot: "bottom", color: "denim", fit: 0.01, wrinkles: 1.2, areas });
+```
+
+- `creases.skin` inks and shades the inner side of each bending joint on the body; `creases.cloth` does the same on every garment, with a small fold beside it, and turns on wrinkles and drape. Each is 0 (off) to 2; 1 is the default once `creases` is given, and `rest` (0.3) is how much shows at rest.
+- Per garment, `creases`, `wrinkles` and `drape` (0 to 2, 1 when left out) scale the character's cloth strength. Wrinkles show where a pose bunches the cloth: a seat, a knee, an inner elbow, a waist. Drape is soft folds down a loose top from the chest and gathers above a hem or cuff.
+- **Looser cloth wrinkles and folds more**: the fit sets it, so a tight `fit` (0.003 to 0.01) wrinkles little and a loose one (0.03 or more) folds fully. Give a sweater a loose fit, not a higher `drape`, before anything else.
+- Judge them in a bent pose (`poses`): at rest a joint shows only a faint short line; the band and the longer line come with the bend. Close-ups render in the display pose, so a recipe copy whose `displayPose` is the bend shows the knees and elbows bent close up.
+
 ## Prints on the cloth
 
 A chest symbol, a stripe, a pocket, stitching are the garment's own `regions` and `marks`, written as a part's but with `on` naming the body part under the cloth, in its u and v (or face places on a head). They ride the cloth and show only where it is painted:
@@ -121,7 +137,7 @@ Render a bent pose (sitting, an arm raised) for every outfit: hems and openings 
 - **Collars and lapels.** A collar is only the cuff a hole grows round the neck; nothing folds over. Lapels are rigid owned parts (`accessories.md`) that stand off in side view and do not follow a spine bend.
 - **Hoods** are a lump behind the head, not a hood framing the face.
 - **Open edges are cuts.** An open garment is one sheet: its edge can roll out (`hemRoll`) but has no underside.
-- **Flat shading.** Cloth is shaded flat like skin: no folds, bunching or wrinkle shading; creases are marks drawn on the cloth, and they ride the cloth, so they fade as a joint bends instead of deepening.
+- **Wrinkles are shading, not cloth physics.** Folds rise a little from the posed cloth and drape hangs as a pattern; nothing sags or swings, and a skirt does not fold.
 - **No see-through cloth.** A palette slot's `opacity` on a garment's colour or an area's is not drawn on cloth (the build warns); sheer cloth draws whole.
 - **Armpits in tight sleeves.** A raised or bent arm can push skin through a sleeve at fit 0 near the armpit; give the arm a small `partFits`.
 - **Loose ends are short flat tabs**, and a neck wrap carrying one flares like a cape collar.

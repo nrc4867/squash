@@ -7,6 +7,9 @@ import dev.chieppa.squash.geom.Vec3
 /** How deep a color's default shadow tone shifts in two-tone. See [warmShifted]. */
 private const val SHADOW_DEPTH = 0.24f
 
+/** How deep a crease's or a wrinkle's shade band shifts what it lies on, warm as a shadow is. */
+private const val CREASE_DEPTH = 0.3f
+
 /** How much of a color the far side of a pair keeps. */
 private const val FAR_SIDE_SHARE = 0.82f
 
@@ -74,3 +77,6 @@ fun Color.warmShifted(depth: Float): Color = if (depth == 0f) this else Color(
     blue * (1f - WARM_BLUE_LOSS * depth),
     alpha,
 )
+
+/** What a crease's shade band multiplies the color under it by: white shifted warm by [CREASE_DEPTH], as a shadow tone shifts its color. */
+val CREASE_TONES: Tones = Color.White.warmShifted(CREASE_DEPTH).let { Tones(it, it) }

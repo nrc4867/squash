@@ -9,5 +9,5 @@ import dev.chieppa.squash.screens.surface.CharacterState
 fun CharacterState.keptTo(kept: Set<PartId>): CharacterState {
     val shown = AssembledCharacter(character.parts.filter { it.id in kept }, emptyList())
     val lines = BodyLines(lines.parts.filterKeys { it in kept })
-    return CharacterState(shown, color, work, palette, lines, fur, surface, paint = paint, dress = dress, only = kept)
+    return CharacterState(shown, color, work, palette, lines, fur, surface, paint = paint, dress = dress, only = kept, creases = creases)
 }

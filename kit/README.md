@@ -147,7 +147,7 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `cover` | `cover("torso", { from: torso.u(0.9), to: 0.96 })`, hems snapped to the 64 by 32 chart's cell edges. |
 | `band` | `band("torso", torso.u(plan.h("waist")), 0.04)`, at least two cells wide. |
 | `snapU`, `snapV` | the nearest cell edge. |
-| `garment` | `garment({ id: "tee", slot: "top", color: "shirt", fit: 0.008, covers })`; its name from its id; `hemRoll: 0.006` rolls its hems and cuffs, `inkWeight: 1` inks it as heavily as skin (0.7 when left out). |
+| `garment` | `garment({ id: "tee", slot: "top", color: "shirt", fit: 0.008, covers })`; its name from its id; `hemRoll: 0.006` rolls its hems and cuffs, `inkWeight: 1` inks it as heavily as skin (0.7 when left out); `creases`, `wrinkles` and `drape` (0 to 2, 1 when left out) scale its creases, wrinkles and folds once the recipe's `creases: { skin: 1, cloth: 1 }` turns them on. |
 | `through`, `hide`, `redraw`, `swap` | `changes: { neck: through(), "foot-l": swap("blob", { outlines }) }` |
 | `outfit` | `outfit("casual", { top: "tee" })`; `outfit("bare", {})` has no garments and renders the bare body (list it first to start on it). |
 | `wardrobe` | `wardrobe([tee], [outfit("casual", { top: "tee" })])`, slots read from the garments, the first outfit shown (saved as the character's shown outfit, and the one `measure.txt` marks `(shown)`) unless `wardrobe(garments, outfits, "id")` names another. |

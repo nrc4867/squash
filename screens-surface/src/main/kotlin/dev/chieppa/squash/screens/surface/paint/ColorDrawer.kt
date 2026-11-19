@@ -103,8 +103,9 @@ private fun FillRow(state: AppState) {
     Segmented(FillReach.entries, state.paint.fillReach, { state.paint.fillReach = it }, { if (it == FillReach.UNDER_POINTER) under else whole }, Modifier.testTag(PaintTags.FILL_REACH), fill = true)
 }
 
+/** A row's value as text, muted, in a fixed width at the row's end. */
 @Composable
-private fun Readout(text: String) {
+internal fun Readout(text: String) {
     BasicText(text, Modifier.width(READOUT_WIDTH), style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)), maxLines = 1)
 }
 
@@ -121,5 +122,6 @@ private fun ShadingSection(state: AppState) {
             Readout(stringResource(Res.string.color_far_amount, ((1f - FarSideDarkening().share) * PERCENT).roundToInt()))
             Toggle(shading.farSide.enabled, state::chooseFarSideDarker, far, Modifier.testTag(PaintTags.FAR_PARTS))
         }
+        CreaseRows(state)
     }
 }

@@ -2,6 +2,9 @@ package dev.chieppa.squash.screens.surface
 
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.CreaseLine
+import dev.chieppa.squash.character.surface.PosedCreases
+import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.geom.ContourPoint
 import dev.chieppa.squash.geom.ContourRun
@@ -49,9 +52,23 @@ fun hangingHems(dress: SurfaceDress): List<ContourRun> = dress.garments.filter {
     }
 }
 
+/** How many of the surface's cells a piece of crease or wrinkle ink runs at least to be drawn. */
+private const val CREASE_SHORTEST_CELLS = 2.5f
+
 /**
- * [curves] as ink where they face [view], in [layer], at [scale] of the rule's weight, leaving out a piece shorter than [shortestCells]
- * of [cell]: see [joinDraws].
+ * The ink of [creases]' lines where they face [view]: the body's at the crease ink's weight and each garment's at its own ink weight from
+ * [inkWeights], each line at its own weight along it, so it tapers where its crease fades.
+ */
+fun creaseInkDraws(creases: PosedCreases, inkWeights: Map<GarmentId, Float>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
+    creases.body?.lines.orEmpty().let { weightedCurveDraws(it, view, rule, color, cell, 1f) } +
+        creases.garments.flatMap { (id, marks) -> weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[id] ?: 1f) }
+
+private fun weightedCurveDraws(lines: List<CreaseLine>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, scale: Float): List<RibbonDraw> =
+    lines.flatMap { line -> facedCurveDraws(listOf(line.points), view, rule, color, cell, scale = scale, shortestCells = CREASE_SHORTEST_CELLS, weights = line.weights) }
+
+/**
+ * [curves] as ink where they face [view], in [layer], at [scale] of the rule's weight, each point's times its own in [weights] where given,
+ * leaving out a piece shorter than [shortestCells] of [cell]: see [joinDraws].
  */
 internal fun facedCurveDraws(
     curves: List<List<CurvePoint>>,
@@ -62,6 +79,7 @@ internal fun facedCurveDraws(
     layer: DepthLayer = DepthLayer.SCENE,
     scale: Float = 1f,
     shortestCells: Float = JOIN_SHORTEST_CELLS,
+    weights: FloatArray? = null,
 ): List<RibbonDraw> = curves.flatMap { curve ->
     val facing = curve.map { point -> point.normal dot view.toViewer(point.position).normalized() }
     val closed = curve.size > 2 && curve.first().position == curve.last().position
@@ -70,7 +88,7 @@ internal fun facedCurveDraws(
         val whole = closed && piece.size == curve.size
         val points = piece.map { i ->
             val weight = ((facing[i] - JOIN_LEAST_FACING) / (JOIN_FULL_FACING - JOIN_LEAST_FACING)).coerceIn(0f, 1f)
-            RibbonPoint(curve[i].position, curve[i].normal, weight * scale)
+            RibbonPoint(curve[i].position, curve[i].normal, weight * scale * (weights?.getOrNull(i) ?: 1f))
         }
         StrokeRibbon.along(points, EVEN_WEIGHT, whole)?.let { RibbonDraw(it, rule, color, layer = layer) }
     }

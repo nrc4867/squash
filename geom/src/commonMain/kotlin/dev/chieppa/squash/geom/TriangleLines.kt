@@ -14,6 +14,9 @@ private const val SHORTEST_EDGES = 4f
 /** A place on a curve across a triangle mesh, with the surface's normal there. */
 class CurvePoint(val position: Vec3, val normal: Vec3)
 
+/** A curve across a triangle mesh, its [points] with a value read at each, [carried]. */
+class CarriedCurve(val points: List<CurvePoint>, val carried: FloatArray)
+
 /**
  * A triangle mesh read for its lines: vertices at [positions], three values each, [normals] beside them, and [triangles]; each edge
  * with the triangles either side of it, and each triangle's outward normal. A contour is found along its edges and a zero curve across
@@ -130,6 +133,11 @@ class TriangleLines(
      * proportion to the values at its ends, with the normal eased the same way. A closed curve repeats its first place last.
      */
     fun zeroCurves(values: FloatArray, included: (Int) -> Boolean): List<List<CurvePoint>> = zeroRuns(values, included).map { run -> run.map { crossing(it, values) } }
+
+    /** [zeroCurves], each with [carry], one value a vertex, read where the curve crosses each edge, eased along the edge as its place is. */
+    fun zeroCurvesCarrying(values: FloatArray, carry: FloatArray, included: (Int) -> Boolean): List<CarriedCurve> = zeroRuns(values, included).map { run ->
+        CarriedCurve(run.map { crossing(it, values) }, FloatArray(run.size) { carried(run[it], values, carry) })
+    }
 
     /**
      * The pieces of the zero curve of [values] along [run], a run of the edges it crosses, where [keep] read at its crossings is at least

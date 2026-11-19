@@ -15,9 +15,17 @@ import kotlin.math.floor
  * [surface] and its [paint] posed by [frames] through [skin], linear blend skinning as the parts' own meshes are posed: every vertex of
  * the drawn mesh with its normal and shading normal, the normals its lines read, the paint laid again on the posed mesh, and each ink
  * mark's places carried by the vertex nearest each. The skin's contact quads are left out. A pose that moves no bone leaves them as
- * they rest. Each batch of vertices is posed by [runAll].
+ * they rest. Each batch of vertices is posed by [runAll]. A pose that moves a bone hands the posed drawn vertices and the corners' places to
+ * [shape] before they are made a surface, for it to move them further.
  */
-suspend fun posedSurface(surface: CharacterSurface, skin: SurfaceSkin, paint: SurfacePaint?, frames: BoneFrames, runAll: RunAll = IN_TURN): PosedSurface {
+suspend fun posedSurface(
+    surface: CharacterSurface,
+    skin: SurfaceSkin,
+    paint: SurfacePaint?,
+    frames: BoneFrames,
+    runAll: RunAll = IN_TURN,
+    shape: ((vertices: FloatArray, positions: FloatArray) -> Unit)? = null,
+): PosedSurface {
     val transforms = frames.transforms
     val twists = frames.twists
     if (skin.bones.all { it < 0 || transforms[it].isIdentity }) return PosedSurface(surface, paint)
@@ -45,6 +53,7 @@ suspend fun posedSurface(surface: CharacterSurface, skin: SurfaceSkin, paint: Su
             }
         }
     })
+    shape?.invoke(vertices, positions)
     val parted = skin.contacts.any { it }
     val fan = surface.render.indices
     val drawn = if (!parted) fan else fan.keptQuads(skin.contacts, if (surface.render.vertexCount > corners) QUAD_FAN_INDICES else QUAD_INDICES)

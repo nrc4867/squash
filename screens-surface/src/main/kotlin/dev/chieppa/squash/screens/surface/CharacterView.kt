@@ -13,6 +13,7 @@ import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfacePaint
+import dev.chieppa.squash.character.surface.PosedCreases
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.build.lineWeightStrokes
 import dev.chieppa.squash.document.CameraBin
@@ -57,7 +58,7 @@ data class CharacterLook(
     val fallback: Color,
 )
 
-/** What a view of a character reads from its settled graph. [fur] is what the fur node for this view's camera holds. */
+/** What a view of a character reads from its settled graph. [fur] is what the fur node for this view's camera holds; [creases] are its creases and wrinkles in its pose. */
 class CharacterState(
     val character: AssembledCharacter,
     val color: BodyColor,
@@ -71,6 +72,7 @@ class CharacterState(
     val paint: SurfacePaint? = null,
     val dress: SurfaceDress? = null,
     val only: Set<PartId>? = null,
+    val creases: PosedCreases? = null,
 )
 
 /**
@@ -103,7 +105,7 @@ fun characterView(
     val ribbons = ArrayList<RibbonDraw>()
     val surface = state.surface
     val inSurface = surface.parts
-    val garments = if (state.only == null) state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center) }.orEmpty() else emptyList()
+    val garments = if (state.only == null) state.dress?.let { garmentDraws(it, state.palette, fallback, shading, eye - center, state.creases) }.orEmpty() else emptyList()
     val sections = state.only?.filter { it in surface.parts }?.map { SurfaceSection(surface, it) } ?: listOf(null)
     val filled = parts.mapNotNull { part ->
         val id = requireNotNull(part.id)
@@ -117,9 +119,9 @@ fun characterView(
         val face = faces.draws(id, view)
         ribbons += face.ribbons
         draw.copy(layers = draw.layers + face.layers)
-    } + garments + sections.map { surfaceDraw(surface, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center, it, view::toViewer) }
+    } + garments + sections.map { surfaceDraw(surface, state.paint, state.dress?.skin, state.color, state.palette, fallback, shading, eye - center, it, view::toViewer, state.creases?.body) }
     val lined = state.lines.parts.values.map { lines -> if (lines.part.id in inSurface) lines.withoutRuns() else lines }
-    val oneLines = PosedSurfaceLines(PosedSurface(surface, state.paint, state.dress), lineWeightStrokes(state.character, state.work))
+    val oneLines = PosedSurfaceLines(PosedSurface(surface, state.paint, state.dress, creases = state.creases), lineWeightStrokes(state.character, state.work))
     val radius = state.character.box?.radius ?: 0f
     if (state.only == null) {
         oneLines.contour(lined, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, radius) }

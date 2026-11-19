@@ -424,6 +424,9 @@
     <string name="color_shading_two_tone">Two-tone</string>
     <string name="color_far_parts">Far parts darker</string>
     <string name="color_far_amount">\−%1$d%</string>
+    <string name="color_skin_creases">Skin creases</string>
+    <string name="color_cloth_creases">Cloth creases</string>
+    <string name="color_step_creases">Creases</string>
     <string name="color_ink">Ink</string>
     <string name="color_region_delete">Delete region</string>
     <string name="color_size">Size</string>
@@ -690,6 +693,10 @@
     <string name="dress_ink_hem">Ink hem</string>
     <string name="dress_ink_weight">Ink weight</string>
     <string name="dress_hem_roll">Hem roll</string>
+    <string name="dress_creases">Creases</string>
+    <string name="dress_wrinkles">Wrinkles</string>
+    <string name="dress_drape">Drape</string>
+    <string name="dress_step_creases">%1$s creases</string>
     <string name="dress_step_ink_weight">%1$s ink weight</string>
     <string name="dress_step_hem_roll">%1$s hem roll</string>
     <string name="dress_fit">Fit</string>

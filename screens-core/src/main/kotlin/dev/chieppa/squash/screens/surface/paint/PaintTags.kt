@@ -16,6 +16,8 @@ object PaintTags {
     const val FILL_REACH = "color.fillReach"
     const val SHADING = "color.shading"
     const val FAR_PARTS = "color.farParts"
+    const val SKIN_CREASES = "color.skinCreases"
+    const val CLOTH_CREASES = "color.clothCreases"
 
     fun slot(name: String) = "color.slot.$name"
     fun section(name: String) = "color.section.$name"

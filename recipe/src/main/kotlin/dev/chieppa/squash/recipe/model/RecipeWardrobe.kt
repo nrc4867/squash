@@ -5,6 +5,7 @@ import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.dress.DEFAULT_BRUSH_SIZE
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CLOTH_INK_WEIGHT
+import dev.chieppa.squash.document.DEFAULT_CREASE_STRENGTH
 import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.FIRST_LAYER
 import dev.chieppa.squash.document.GarmentSlot
@@ -57,6 +58,12 @@ data class RecipeGarment(
     val inkWeight: Float = CLOTH_INK_WEIGHT,
     @Doc("How far its hems, neck openings and cuffs roll out past the cloth, in body units, 0 to 0.03: a cuff or a rolled hem that reads as cloth with a thickness. Every hem stands a little off the skin whatever this is.") @Range(min = 0.0, max = 0.03)
     val hemRoll: Float = 0f,
+    @Doc("How strongly it creases on the inner side of each bending joint it covers, with ink, a shade band and a small fold, 0 to 2, times the character's cloth creases.") @Range(min = 0.0, max = 2.0)
+    val creases: Float = DEFAULT_CREASE_STRENGTH,
+    @Doc("How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more.") @Range(min = 0.0, max = 2.0)
+    val wrinkles: Float = DEFAULT_CREASE_STRENGTH,
+    @Doc("How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more.") @Range(min = 0.0, max = 2.0)
+    val drape: Float = DEFAULT_CREASE_STRENGTH,
     @Doc("Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.")
     val joins: List<String> = emptyList(),
     @Doc(
