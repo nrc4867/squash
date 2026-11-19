@@ -10,8 +10,8 @@ private const val MIN_SECTION_SPAN = 1e-4f
  * What drawn views set on a part's slices. u runs linearly over the outline's range along the rest axis, and a slice lies
  * in its plane a = constant, so its ends are the height view's crossings at that a and two rings can never meet. A slice
  * reads only those crossings, so changing a span of an outline moves only the slices over it. Moving the outline's far
- * end rescales u for every slice. The axis is a local spline through the midline at fixed knots, in the plane of
- * [PartAxes.along] and [PartAxes.up]; its tangent sets only a slice's proxy normal frame.
+ * end rescales u for every slice. With [sideways], the width view's midline moves a slice toward the part's side as the height
+ * view's moves it up; without, the width view sets width alone. The axis is a local spline through the midline at fixed knots; its tangent sets only a slice's proxy normal frame.
  */
 class ViewSizing private constructor(
     private val axes: PartAxes,
@@ -23,6 +23,7 @@ class ViewSizing private constructor(
     private val openStart: Boolean,
     private val openEnd: Boolean,
     private val keel: ProfileKeel?,
+    private val sideways: Boolean,
 ) {
     /** The drawn length of the part. */
     val length: Float = (end - start) * scale
@@ -31,12 +32,15 @@ class ViewSizing private constructor(
     val axis: AxisSpline = AxisSpline(
         List(AXIS_KNOTS) { k ->
             val a = stationOf(k.toFloat() / (AXIS_KNOTS - 1))
-            axes.point(a * scale, (height?.midAt(a) ?: 0f) * scale, 0f)
+            axes.point(a * scale, (height?.midAt(a) ?: 0f) * scale, sideOf(a))
         },
         FloatArray(AXIS_KNOTS) { it.toFloat() / (AXIS_KNOTS - 1) },
     )
 
     private fun stationOf(u: Float): Float = start + (end - start) * u
+
+    /** How far toward the part's side, in body units, the width view's midline lies at station [a]: its y runs the other way. */
+    private fun sideOf(a: Float): Float = if (sideways) -(width?.midAt(a) ?: 0f) * scale else 0f
 
     /** The u whose plane lies [a] along the rest axis from the socket plane, in body units: below 0 or past 1 off the drawing. */
     fun uAt(a: Float): Float = (a / scale - start) / (end - start)
@@ -52,16 +56,19 @@ class ViewSizing private constructor(
     /** How far toward the part's up, in body units, the height view's midline lies at [u]; 0 where that view is not drawn. */
     fun upAt(u: Float): Float = (height?.midAt(stationOf(u)) ?: 0f) * scale
 
+    /** How far toward the part's side, in body units, the width view's midline lies at [u]; 0 where that view is not drawn. */
+    fun sideAt(u: Float): Float = sideOf(stationOf(u))
+
     /** The full height the height view gives at [u], or null if that view is not drawn. */
     fun heightAt(u: Float): Float? = height?.let { floored(it.extentAt(stationOf(u)) * scale) }
 
     /** The full width the width view gives at [u], or null if that view is not drawn. */
     fun widthAt(u: Float): Float? = width?.let { floored(it.extentAt(stationOf(u)) * scale) }
 
-    /** The point on the midline in the plane of [u]: halfway between the height view's crossings at that a. */
+    /** The point on the midline in the plane of [u]: halfway between the height view's crossings at that a, and between the width view's. */
     fun centreAt(u: Float): Vec3 {
         val a = stationOf(u)
-        return axes.point(a * scale, (height?.midAt(a) ?: 0f) * scale, 0f)
+        return axes.point(a * scale, (height?.midAt(a) ?: 0f) * scale, sideOf(a))
     }
 
     /**
@@ -100,6 +107,7 @@ class ViewSizing private constructor(
          * Sizing from whichever of [height] and [width] are drawn, or null if neither is or the part would have no
          * length. u follows [height]'s range when drawn, else [width]'s. An open end sits on the socket plane, a = 0.
          * [scale] multiplies the drawing. [profile] reads the height view's up side as a profile, its short features standing out as a ridge.
+         * [sideways] lets the width view's midline move the part's middle toward its side.
          */
         fun of(
             axes: PartAxes,
@@ -108,13 +116,14 @@ class ViewSizing private constructor(
             openStart: Boolean,
             openEnd: Boolean,
             scale: Float,
+            sideways: Boolean = false,
             profile: ((OutlineProfile) -> ProfileKeel?)? = null,
         ): ViewSizing? {
             val ruler = height ?: width ?: return null
             val start = if (openStart) 0f else ruler.start
             val end = if (openEnd) 0f else ruler.end
             if (end <= start) return null
-            return ViewSizing(axes, height, width, start, end, scale, openStart, openEnd, height?.let { profile?.invoke(it) })
+            return ViewSizing(axes, height, width, start, end, scale, openStart, openEnd, height?.let { profile?.invoke(it) }, sideways)
         }
     }
 }

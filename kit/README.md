@@ -80,6 +80,8 @@ A part's outline x runs from its socket end to its drawn length (`templates.md`'
 | `vToward` | `vToward("up", "left")` is 0.75; a pair's left side may say `"outer"` or `"inner"`. |
 | `vBetween` | `vBetween("up", "forward", "left", 0.5)` is 0.875. |
 | `opposite`, `pairDirection` | `opposite("forward")` is `"back"`; `pairDirection("outer")` is `"left"`. |
+| `orient` | `{ ...orient([1, 0, -1], [0, 1, 0]) }` is the `rest`, `lean`, `outward` and `roll` pointing a part forward and out with its up up; it throws past what lean and outward reach (85 degrees off the nearest rest). |
+| `around` | `around([1, 0, -1], [0, 1, 0], 5)` is five directions evenly round a forward-out facing, the first up: petals. |
 
 ## Shapes
 
@@ -109,7 +111,8 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | --- | --- |
 | `tubePart` | `tubePart({ id: "legs", on: "torso", socket: "socket.3", ...pair("leg"), joints }, { rest: "down", length, profiles })`, a generic tube at `FINE` (96 rings, 32 segments). |
 | `FINE`, `SMALL` | `generic` samplings for big and small generic parts. |
-| `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })` |
+| `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })`; `{ sink: 0, outset: 0.016 }` stands a part just off a shirt of fit 0.012. |
+| `ringSocket` | `ringSocket(4, torso.u(plan.h("waist")), 12, { sink: 0, outset: 0.02 })`, twelve sockets round a part: studs round a belt. |
 | `joint` | `joint(1, leg.u(plan.h("knee")), { low: 0, high: 140 })` |
 | `socketName`, `jointName` | `socketName(2)` is `"socket.2"`. |
 | `pair` | `{ ...pair("arm") }` names the sides `arm-l` and `arm-r`. |
@@ -149,13 +152,13 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `prop` | `prop({ id: "heels", on: "feet", socket: 1, garment: "pumps", color: "patent", rest: "down", side, top })` |
 | `roundProp` | `roundProp({ id: "button", on: "torso", socket: 5, garment: "coat", color: "button", radius: 0.012, depth: 0.008 })` |
 
-A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`.
+A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`; on cloth add `outset` a little past the garment's `fit`. `prop` takes `lean`, `outward`, `roll` and `topMiddle` (a lens drawn curved in Top wraps the face).
 
 ## Palette
 
 | helper | one line |
 | --- | --- |
-| `palette` | `const colors = palette({ skin: "#d8b48e", ink: [0.1, 0.08, 0.08] })`; `palette: colors.slots`, `color: colors.slot("skin")` fails on a slot not declared. |
+| `palette` | `const colors = palette({ skin: "#d8b48e", ink: [0.1, 0.08, 0.08] })`; `palette: colors.slots`, `color: colors.slot("skin")` fails on a slot not declared. `palette({ lens: "#203040" }, { opacity: { lens: 0.35 } })` makes a part coloured `lens` see-through. |
 | `mix`, `shade` | `shade("#d8b48e", -0.2)` is darker, `mix(a, b, 0.5)` halfway. |
 | `toRgb`, `toHex` | convert between `#rrggbb` and `[r, g, b]`. |
 

@@ -41,6 +41,7 @@ import dev.chieppa.squash.uidesign.generated.move_mode_add_socket
 import dev.chieppa.squash.uidesign.generated.move_mode_place
 import dev.chieppa.squash.uidesign.generated.move_outward
 import dev.chieppa.squash.uidesign.generated.move_rest
+import dev.chieppa.squash.uidesign.generated.move_roll
 import dev.chieppa.squash.uidesign.generated.move_rest_back
 import dev.chieppa.squash.uidesign.generated.move_rest_down
 import dev.chieppa.squash.uidesign.generated.move_rest_forward
@@ -69,6 +70,9 @@ import kotlin.math.roundToInt
 private val REST_WIDTH = 120.dp
 
 private const val PERCENT = 100f
+
+/** How far the roll slider goes either way, in degrees. */
+private const val HALF_TURN = 180f
 
 /** The least share a row's first size or its falloff may take, and the most for each. */
 private const val ROW_SHARE_MIN = 0.1f
@@ -102,7 +106,7 @@ private val REST_LABELS: Map<RestDirection, StringResource> = mapOf(
 
 /**
  * The Move tool's section of the Shape inspector: its four modes, Place part, Add socket, Add joint and Add landmark. Place part holds
- * the selected part's own angles when it sits on a socket, and a generic part's rest direction; Add socket holds the outward angle
+ * the selected part's own angles when it sits on a socket, outward, lean and roll, and a generic part's rest direction; Add socket holds the outward angle
  * and pair flag the next socket takes, the angle editing the picked hand-made socket instead, and Delete socket for a picked socket
  * that holds nothing; Add joint holds the hinge, limits and stretch, of the picked joint or the next one, and Delete joint.
  */
@@ -122,6 +126,7 @@ internal fun MoveSection(state: AppState, session: CharacterSession, part: PartI
             MoveMode.PLACE_PART -> if (part.socket != null) {
                 AngleControl(session, part.id, PlacementParams.OUTWARD, stringResource(Res.string.move_outward), params, thisSide, hidden)
                 AngleControl(session, part.id, PlacementParams.LEAN, stringResource(Res.string.move_lean), params, thisSide, hidden)
+                AngleControl(session, part.id, PlacementParams.ROLL, stringResource(Res.string.move_roll), params, thisSide, hidden, HALF_TURN)
                 if (template.isGeneric) RestControl(state, part.id, template, params)
             }
             MoveMode.ADD_SOCKET -> SocketControls(state, session)
@@ -206,9 +211,18 @@ private fun RowControls(state: AppState) {
     }
 }
 
-/** One of the Move tool's angles as a slider, from straight at 0. */
+/** One of the Move tool's angles as a slider, from straight at 0, [limit] degrees either way. */
 @Composable
-private fun AngleControl(session: CharacterSession, part: PartId, name: String, label: String, params: Map<String, Float>, thisSide: Boolean, hidden: Map<String, Float>) {
-    val row = ParameterRow(name, params[name] ?: 0f, false, -PlacementParams.MAX_ANGLE, PlacementParams.MAX_ANGLE, null, stringResource(Res.string.move_degrees))
+private fun AngleControl(
+    session: CharacterSession,
+    part: PartId,
+    name: String,
+    label: String,
+    params: Map<String, Float>,
+    thisSide: Boolean,
+    hidden: Map<String, Float>,
+    limit: Float = PlacementParams.MAX_ANGLE,
+) {
+    val row = ParameterRow(name, params[name] ?: 0f, false, -limit, limit, null, stringResource(Res.string.move_degrees))
     key(part, name) { ParameterControl(session, part, row, thisSide, hidden[name], label) }
 }

@@ -35,7 +35,7 @@ class RecipeBuilder(private val templates: TemplateFolder) {
         val empty = SquashDocument(Character(CharacterId(recipe.id), recipe.name, plan.ref))
         val context = BuildContext(recipe, templates, plan, empty)
         with(context) {
-            recipe.palette.forEachIndexed { i, slot -> send("$.palette[$i]", SetPaletteSlot(SlotName(slot.slot), slot.color.slotColor, shadow = slot.shadow?.slotColor, label = slot.label)) }
+            recipe.palette.forEachIndexed { i, slot -> send("$.palette[$i]", SetPaletteSlot(SlotName(slot.slot), slot.color.slotColor, shadow = slot.shadow?.slotColor, label = slot.label, opacity = slot.opacity)) }
             val body = recipe.parts.withIndex().filter { it.value.garment == null }
             val owned = recipe.parts.withIndex().filter { it.value.garment != null }
             val bodyIds = body.map { (i, part) -> placePart(i, part) }

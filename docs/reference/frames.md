@@ -27,6 +27,18 @@ By the direction a part rests in (a template's rest, or a recipe's `rest`), whic
 | down | forward | right | forward | left | back | right |
 | out | up | forward | up | back | down | forward |
 
+### Roll
+
+A recipe's `roll` turns a part's up about its own axis toward its v 0.25 side, after its rest, `lean` and `outward`, so the rows above shift round by a quarter turn of v for each 90 degrees; bones, sockets and the panes follow. `lean` and `outward` each turn the rest axis by their tangent and stay under 90 degrees; a part pointing further round takes another rest. By rest, where Side's +y and Top's +y look at `roll` 90:
+
+| rests | Side's +y | Top's +y |
+| --- | --- | --- |
+| forward | left | up |
+| back | right | up |
+| up | right | forward |
+| down | left | forward |
+| out | back | up |
+
 ## Bone axes
 
 A pose bone `{"part", "joint", "degrees", "lean", "turn", "twist"}` on a part's joint, by the part's rest and the joint's hinge (a template joint's hinge is in templates.md; a recipe joint's is its `hinge`, x when left out). Each cell is where +30 of that angle alone moves the bone's tip, or for `turn` and `twist`, which only roll it, where its Side's +y goes. Negative angles move the other way. The right side of a pair takes the same numbers as a mirror image.

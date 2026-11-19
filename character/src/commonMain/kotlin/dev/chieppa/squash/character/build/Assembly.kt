@@ -214,8 +214,8 @@ private class Assembler(
     private fun socketsOf(part: PlacedPart): List<SocketSpec> = socketsOn(plan, part.template, part.placement, part.surface.patches.map { it.name })
 
     /**
-     * Where the socket plane of a [template] part on [side] sits on [parent]: the socket's point, sunk by the template's depth
-     * times the socket's, then carried back by the template's mount. A right side reads the socket's mirrored v, unless its
+     * Where the socket plane of a [template] part on [side] sits on [parent]: the socket's point, stood off the surface along its normal
+     * by the socket's outset, sunk by the template's depth times the socket's, then carried back by the template's mount. A right side reads the socket's mirrored v, unless its
      * parent is itself mirrored, which already reflects whatever sits on it.
      */
     private fun originOn(parent: PlacedPart, spec: SocketSpec, template: PartTemplate, side: Side?, owned: Boolean = false): Vec3 {
@@ -230,7 +230,8 @@ private class Assembler(
             Outward.NORMAL -> frame.outwardAt(spec.u, v, spec.tilt, spec.patch) ?: along
         }
         val mount = templates.mountOffset(template.ref)
-        return point - into * (templates.socketSink(template.ref) * spec.sink) - (if (mirroredHere) mount.mirrored else mount)
+        val standing = if (spec.outset == 0f) point else point + (frame.normalAt(spec.u, v, spec.patch) ?: into) * spec.outset
+        return standing - into * (templates.socketSink(template.ref) * spec.sink) - (if (mirroredHere) mount.mirrored else mount)
     }
 
     private fun socketV(parent: PlacedPart, spec: SocketSpec, side: Side?): Float =

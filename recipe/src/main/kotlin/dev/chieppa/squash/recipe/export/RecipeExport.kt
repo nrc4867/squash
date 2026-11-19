@@ -43,7 +43,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         name = character.name,
         plan = character.bodyPlan.id.value,
         planVersion = character.bodyPlan.version,
-        palette = character.palette.slots.map { RecipeSlot(it.name.value, RecipeColor.of(it.color), it.shadow?.let(RecipeColor::of), it.label) },
+        palette = character.palette.slots.map { RecipeSlot(it.name.value, RecipeColor.of(it.color), it.shadow?.let(RecipeColor::of), it.label, it.opacity) },
         parts = parts,
         eyes = character.paintedEyes.map { eye ->
             RecipeEye(eye.id, eye.anchor.part.value, eye.anchor.patch, eye.anchor.u, eye.anchor.v, null, eye.look, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.mirrored, eye.flat)
@@ -87,6 +87,8 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         outward = split.outward,
         outlines = outlines(data.outlines),
         rest = split.rest,
+        roll = split.roll,
+        topMiddle = split.topMiddle,
         generic = split.generic,
         sockets = split.sockets,
         joints = split.joints,

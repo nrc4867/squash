@@ -5,18 +5,22 @@ Every part holds its shape as numbers by name: its template's parameters (templa
 | key | holds | recipe field |
 | --- | --- | --- |
 | `size` | scales the part's length and width | `size` |
-| `move.lean` | degrees the part leans toward its own up | `lean` |
-| `move.outward` | degrees it leans out from the body's middle plane, mirrored on the right; 60 at most either way | `outward` |
+| `move.lean` | degrees the part leans toward its own up, 85 at most either way | `lean` |
+| `move.outward` | degrees it leans out from the body's middle plane, mirrored on the right; 85 at most either way | `outward` |
 | `move.rest` | the direction it rests in, in place of its template's | `rest` |
+| `move.roll` | degrees it rolls about its own axis, its up turning toward its v 0.25 side, after rest, lean and outward; any angle | `roll` |
+| `top.middle` | flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone | `topMiddle` |
 | `move.joint.<joint>` | u a template joint is moved to | `jointsAt` |
 | `move.socket.<socket>.u`, `move.socket.<socket>.v` | where a socket this part offers is moved to, both sides | `socketsAt` |
 | `move.socket.<socket>.left.u`, `.right.u`, `.left.v`, `.right.v` | the same for one side alone | `params` |
 | `socket.<n>.u`, `socket.<n>.v` | a hand-made socket's place | `sockets[].u`, `.v` |
 | `socket.<n>.outward` | degrees its outward direction turns from the surface's normal toward the part's end, 90 at most | `sockets[].outward` |
-| `socket.<n>.sink` | how deep a part on it sits, times that part's own sink; 0 on the surface, 1 when unset | `sockets[].sink` |
+| `socket.<n>.sink` | how deep a part on it sits, times that part's own sink, 0 or more; 0 on the surface, 1 when unset | `sockets[].sink` |
+| `socket.<n>.outset` | how far a part on it stands off the surface along its normal before it sinks, in body units; 0 when unset. A part a garment owns stands on the cloth with an outset past the garment's fit and sink 0 | `sockets[].outset` |
 | `socket.<n>.pair` | flag: a mirrored twin across the body's middle | `sockets[].mirrored` |
 | `socket.<n>.count` | a row of this many sockets, up to 16 | `sockets[].count` |
 | `socket.<n>.to` | the row's last socket's u | `sockets[].to` |
+| `socket.<n>.toV` | the row's last socket's v; a whole turn from its v closes the row round the part, its sockets a turn's share apart | `sockets[].toV` |
 | `socket.<n>.size` | the size a part on the row's first socket starts at | `sockets[].size` |
 | `socket.<n>.falloff` | the size on the row's last socket, a share of the first's | `sockets[].falloff` |
 | `joint.<n>.u` | a hand-made joint's u, at least 0.05 from the ends and from other joints | `joints[].u` |

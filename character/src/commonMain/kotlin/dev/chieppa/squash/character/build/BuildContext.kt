@@ -38,7 +38,7 @@ class BuildContext(
     val axes: PartAxes = PartBuilder.axes(template)
 
     private val size: Float = params[SIZE_PARAM] ?: 1f
-    private val drawn = DrawnViews(template, outlines.shortenedBy(lengthFactor), axes, size)
+    private val drawn = DrawnViews(template, outlines.shortenedBy(lengthFactor), axes, size, ViewParams.topMovesMiddle(params))
 
     /** What drawn Side and Top outlines set, if either is drawn. */
     val views: ViewSizing? = drawn.sizing

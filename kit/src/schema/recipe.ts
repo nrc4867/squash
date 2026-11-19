@@ -458,14 +458,18 @@ export interface RecipePart {
   blend?: number | null;
   /** Scales the drawn part: its length and width together. */
   size?: number | null;
-  /** Degrees the part leans toward its own up (move.lean). */
+  /** Degrees the part leans toward its own up (move.lean), less than 90 either way; with outward, a turn of the rest toward a corner. */
   lean?: number | null;
-  /** Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward); an A-pose arm takes 45. */
+  /** Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward), less than 90 either way; an A-pose arm takes 45. */
   outward?: number | null;
   /** Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says. */
   outlines?: { side?: RecipeOutline; top?: RecipeOutline; front?: RecipeOutline };
   /** The direction the part rests in, in place of its template's (move.rest): a generic root resting up is a standing body. */
   rest?: ("forward" | "back" | "up" | "down" | "out") | null;
+  /** Degrees the part rolls about its own axis, turning its up toward its v 0.25 side, after rest, lean and outward (move.roll): a sheet resting out and rolled 90 faces forward. */
+  roll?: number | null;
+  /** Whether Top's midline moves the part's middle sideways along its length, as Side's moves it up and down: a band or lens drawn curved in Top wraps round what it sits on (top.middle). Top sets width alone when left out. */
+  topMiddle?: boolean | null;
   /** A generic part's section, views and sampling (generic.*). */
   generic?: RecipeGeneric | null;
   /** Hand-made sockets on this part, for parts to sit on (socket.<n>.*). */
@@ -547,6 +551,8 @@ export interface RecipeSlot {
   shadow?: (string | [number, number, number]) | null;
   /** What the app calls it; the slot's name when left out. */
   label?: string | null;
+  /** How much of what lies behind a part coloured in it the part hides, 0 to 1: a lens at 0.35 shows the eyes through it. Whole when left out. It holds for a part's base colour, drawn after everything whole. */
+  opacity?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -563,12 +569,16 @@ export interface RecipeSocket {
   outward?: number;
   /** Whether it has a mirrored twin across the body's middle, for a pair to sit on. */
   mirrored?: boolean;
-  /** How deep a part sits in here, as a multiple of that part's own sink: 0 seats it on the surface; once when left out. */
+  /** How deep a part sits in here, as a multiple of that part's own sink, 0 or more: 0 seats it on the surface; once when left out. */
   sink?: number | null;
-  /** Makes it a row of this many sockets (2 to 16), evenly from u to `to` at one v, named socket.<n>.0, socket.<n>.1 and on. */
+  /** How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out. */
+  outset?: number | null;
+  /** Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on. */
   count?: number | null;
-  /** A row's last socket's u. */
+  /** A row's last socket's u; the row's u when left out. */
   to?: number | null;
+  /** A row's last socket's v; the row's v when left out. A whole turn from v (v 0, toV 1) closes the row round the part, its sockets evenly a turn's share apart, as studs round a belt. */
+  toV?: number | null;
   /** The size a part placed on a row's first socket starts at. */
   size?: number | null;
   /** The size a part placed on a row's last socket starts at, as a share of the first's. */

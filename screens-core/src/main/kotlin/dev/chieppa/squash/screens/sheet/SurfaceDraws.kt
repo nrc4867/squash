@@ -45,7 +45,7 @@ fun Palette.shadowOf(slot: SlotName?): Color? = slot?.let(::shadow)?.let { Color
 /**
  * A part's draw with its color from [palette]. Its base shows the slot its work names; with none named, or one the palette does
  * not hold, [fallback]'s base, the look's own part color. A layer whose slot the palette does not hold is not drawn, so what is
- * under it shows. [side] and [toCamera] choose its tones through [rule].
+ * under it shows. [side] and [toCamera] choose its tones through [rule]. It draws at its base slot's opacity.
  */
 fun coloredPartDraw(
     mesh: RenderMesh,
@@ -65,7 +65,7 @@ fun coloredPartDraw(
         palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
     }
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
-    return MeshDraw(mesh, material, model, outlinePixels, layers = layers)
+    return MeshDraw(mesh, material, model, outlinePixels, opacity = color?.baseSlot?.let(palette::opacity) ?: 1f, layers = layers)
 }
 
 /**

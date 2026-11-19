@@ -9,7 +9,8 @@ import java.util.IdentityHashMap
 
 /**
  * Draws a [SceneFrame]: each view in its own part of the surface with its own camera, then the overlay across the whole
- * surface. Keeps the buffers of the meshes in the latest frame. Draws only when the frame changes.
+ * surface. Within a view its whole draws go first and those below full opacity after them, in their order, so what lies behind a
+ * see-through part shows through it. Keeps the buffers of the meshes in the latest frame. Draws only when the frame changes.
  */
 class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private val meshes = MeshPass(context)
@@ -34,11 +35,12 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
             pass.setViewport(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat())
             pass.setScissorRect(area.x, area.y, area.width, area.height)
             for (image in view.behind) images.draw(pass, imageSlot++, image, view)
-            for (draw in view.draws) {
+            val (whole, seenThrough) = view.draws.partition { it.opacity >= 1f }
+            for (draw in whole) {
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
-                if (draw.opacity < 1f) continue
                 for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.extras.map(::uploadedAlphasFor), layer, draw, view)
             }
+            for (draw in seenThrough) meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
             for (layer in view.fur) {
                 layer.ink?.let { ribbons.draw(pass, ribbonSlot++, it, view) }
                 for (fill in layer.fills) meshes.draw(pass, slot++, uploadedFor(fill.mesh), fill, view)

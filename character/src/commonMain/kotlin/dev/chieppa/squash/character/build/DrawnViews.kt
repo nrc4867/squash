@@ -45,8 +45,11 @@ internal fun Map<View, OutlineCurve>.shortenedBy(factor: Float): Map<View, Outli
     }
 }
 
-/** What a part's drawn outlines set, each read as the template's views map says. A view with no usable shape sets nothing. */
-internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCurve>, axes: PartAxes, scale: Float) {
+/**
+ * What a part's drawn outlines set, each read as the template's views map says. A view with no usable shape sets nothing. With
+ * [sideways] the width view's midline moves the part's middle toward its side.
+ */
+internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCurve>, axes: PartAxes, scale: Float, sideways: Boolean = false) {
     val sizing: ViewSizing?
     val front: FrontSection?
 
@@ -64,6 +67,7 @@ internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCur
             openEnd = template.openEnd == End.END,
             scale = scale,
             profile = template.profile?.let { spec -> { profile -> ProfileKeel.of(profile, spec.span, spec.keel) } },
+            sideways = sideways,
         )
         val whole = section(Sets.SECTION)
         val cap = section(Sets.CAP)

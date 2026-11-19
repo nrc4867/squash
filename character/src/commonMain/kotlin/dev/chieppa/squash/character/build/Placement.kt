@@ -10,7 +10,9 @@ import kotlin.math.PI
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameters
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.tan
 
 private const val PREFIX = "move."
@@ -27,11 +29,17 @@ object PlacementParams {
     /** Degrees the part leans toward its own up. */
     const val LEAN = "${PREFIX}lean"
 
-    /** How far either angle may go. */
-    const val MAX_ANGLE = 60f
+    /**
+     * How far either angle may go. Each turns the rest axis by its tangent, so the two add as a turn toward a corner and neither reaches
+     * square across the rest; past this a degree moves the part too far, and a part pointing further round takes another rest.
+     */
+    const val MAX_ANGLE = 85f
 
     /** The place among [RestDirection]'s entries of the direction a part rests in, in place of its template's; see [restIn]. */
     const val REST = "${PREFIX}rest"
+
+    /** Degrees the part rolls about its own axis, turning its up toward its v = 0.25 side; any angle. */
+    const val ROLL = "${PREFIX}roll"
 
     /** Where joint [name] sits along the part. */
     fun joint(name: String) = "$JOINT_PREFIX$name"
@@ -84,13 +92,23 @@ internal fun SocketSpec.placedBy(placement: Map<String, Float>, side: Side?): So
 }
 
 /**
- * This template as a part with [params] builds it: its rest axis turned by the Move tool's angles, keeping the up it had so
- * the part's drawings keep their meaning at any angle, and its joints where they were moved to. An undrawn part's bend
+ * This template as a part with [params] builds it: its rest axis turned by the Move tool's lean and outward, keeping the up it had so
+ * the part's drawings keep their meaning at any angle, then rolled about itself by its roll, and its joints where they were moved to. An undrawn part's bend
  * follows the joint that sat on it. Everything downstream reads the axes from here, so the panes tilt with the part.
  */
 fun PartTemplate.placedBy(params: Map<String, Float>): PartTemplate {
     if (params.keys.none { PlacementParams.isPlacement(it) && !PlacementParams.isSocket(it) }) return this
-    return restingBy(params).turnedBy(params).jointsMovedBy(params)
+    return restingBy(params).turnedBy(params).rolledBy(params).jointsMovedBy(params)
+}
+
+/** This template rolled about its rest axis by the degrees [params] hold, its up turning toward its side. */
+private fun PartTemplate.rolledBy(params: Map<String, Float>): PartTemplate {
+    val roll = params[PlacementParams.ROLL] ?: 0f
+    if (roll == 0f) return this
+    val axes = PartAxes.of(axis.rest.toVec3(), axis.up?.toVec3())
+    val angle = roll * DEGREES_TO_RADIANS
+    val up = axes.up * cos(angle) + axes.side * sin(angle)
+    return copy(axis = axis.copy(up = up.toDirection()))
 }
 
 /** This template resting the way [params] say, its up following the new rest, or as it is when they say nothing. */
@@ -103,7 +121,7 @@ private fun PartTemplate.turnedBy(params: Map<String, Float>): PartTemplate {
     val outward = params[PlacementParams.OUTWARD] ?: 0f
     val lean = params[PlacementParams.LEAN] ?: 0f
     if (outward == 0f && lean == 0f) return this
-    val rest = PartAxes.of(axis.rest.toVec3())
+    val rest = PartAxes.of(axis.rest.toVec3(), axis.up?.toVec3())
     val left = Vec3.Z * -1f
     val away = left - rest.along * (left dot rest.along)
     val outDirection = if (away.length < SAME_U) rest.side else away.normalized()

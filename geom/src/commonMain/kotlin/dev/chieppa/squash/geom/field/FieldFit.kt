@@ -23,7 +23,7 @@ private const val SMOOTHING = 2
 /**
  * A solid fitted to a part's drawn Side and Top. Space is stretched along the axis so the solid's reach is the drawing's, and at each
  * point along it scaled about the section's middle toward the part's up and side, so the section's height and width there are the
- * drawing's and its middle lies on the drawn midline. The ratios are read at stations along the solid as it stands undrawn and eased
+ * drawing's and its middle lies on the drawn midlines: Side's toward its up, and Top's toward its side where Top moves it off the axis. The ratios are read at stations along the solid as it stands undrawn and eased
  * between them, held where the section narrows toward an end. A view not drawn takes the other's ratio, keeping the section's
  * proportions. The solid as it stands undrawn is read from its own silhouettes, in the planes the drawing is made in, so the outline
  * Start from template makes fits it back to itself. Points are in the part's own axes: x along, y up, z side.
@@ -37,6 +37,7 @@ class FieldFit private constructor(
     private val up: FloatArray,
     private val side: FloatArray,
     private val lift: FloatArray,
+    private val shift: FloatArray,
     private val tall: FloatArray,
     private val wide: FloatArray,
 ) {
@@ -52,7 +53,8 @@ class FieldFit private constructor(
         val i = indexOf(x)
         val f = shareOf(x, i)
         val u = lerp(up, i, f)
-        return Vec3(x, u + (p.y - u - lerp(lift, i, f)) / lerp(tall, i, f), lerp(side, i, f) + (p.z - lerp(side, i, f)) / lerp(wide, i, f))
+        val s = lerp(side, i, f)
+        return Vec3(x, u + (p.y - u - lerp(lift, i, f)) / lerp(tall, i, f), s + (p.z - s - lerp(shift, i, f)) / lerp(wide, i, f))
     }
 
     /** Where [p] of the undrawn solid lies once fitted. */
@@ -61,7 +63,7 @@ class FieldFit private constructor(
         val f = shareOf(p.x, i)
         val u = lerp(up, i, f)
         val s = lerp(side, i, f)
-        return Vec3(drawnAlong(p.x), u + lerp(lift, i, f) + (p.y - u) * lerp(tall, i, f), s + (p.z - s) * lerp(wide, i, f))
+        return Vec3(drawnAlong(p.x), u + lerp(lift, i, f) + (p.y - u) * lerp(tall, i, f), s + lerp(shift, i, f) + (p.z - s) * lerp(wide, i, f))
     }
 
     /** What a distance read on the undrawn solid at [p] of the fitted one is multiplied by: the least stretch there, so it stays no further than the true distance. */
@@ -133,9 +135,13 @@ class FieldFit private constructor(
                 val valid = sizable(heights, us.map { drawn.heightAt(it) })
                 smoothed(held(FloatArray(STATIONS) { drawn.upAt(us[it]) - ups[it] }, valid))
             } else FloatArray(STATIONS)
+            val shifts = if (us.any { drawn.sideAt(it) != 0f } && width != null) {
+                val valid = sizable(widths, us.map { drawn.widthAt(it) })
+                smoothed(held(FloatArray(STATIONS) { drawn.sideAt(us[it]) - sides[it] }, valid))
+            } else FloatArray(STATIONS)
             val t = tall ?: wide ?: return null
             val w = wide ?: t
-            return FieldFit(x0, start, stretch, xs, ups, sides, lifts, t, w)
+            return FieldFit(x0, start, stretch, xs, ups, sides, lifts, shifts, t, w)
         }
 
         /** Where a station's ratio says something: its section and the drawing there both well away from an end. */

@@ -61,6 +61,8 @@ data class RecipeSlot(
     val shadow: RecipeColor? = null,
     @Doc("What the app calls it; the slot's name when left out.")
     val label: String? = null,
+    @Doc("How much of what lies behind a part coloured in it the part hides, 0 to 1: a lens at 0.35 shows the eyes through it. Whole when left out. It holds for a part's base colour, drawn after everything whole.")
+    val opacity: Float? = null,
 )
 
 /** A named expression: joints of the face's parts set to angles. */

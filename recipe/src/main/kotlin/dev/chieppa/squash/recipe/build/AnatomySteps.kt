@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.ViewParams
 import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
@@ -18,15 +19,20 @@ private const val FLAG_OFF = 0f
 
 /** The command that places hand-made [socket] on [part]: one socket, or a row of them when it has a count above 1. */
 internal fun BuildContext.socketCommand(path: String, part: PartId, socket: RecipeSocket): AddParameters {
-    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink)
-    val count = socket.count ?: return one
+    socket.sink?.takeIf { it < 0f }?.let { warn("$path.sink", "a sink below 0 is not a stand-off; give outset, in body units, with sink 0") }
+    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset)
+    val count = socket.count
+    if (count == null) {
+        if (socket.toV != null) fail("$path.toV", "toV ends a row; give count too")
+        return one
+    }
     if (count !in 2..HandSockets.MAX_COUNT) fail("$path.count", "a row holds 2 to ${HandSockets.MAX_COUNT} sockets, not $count")
     val row = mapOf(
         HandSockets.count(socket.n) to count.toFloat(),
         HandSockets.to(socket.n) to (socket.to ?: socket.u),
         HandSockets.size(socket.n) to (socket.size ?: 1f),
         HandSockets.falloff(socket.n) to (socket.falloff ?: 1f),
-    )
+    ) + listOfNotNull(socket.toV?.let { HandSockets.toV(socket.n) to it })
     return AddParameters(part, one.values + row)
 }
 
@@ -37,6 +43,8 @@ internal fun BuildContext.socketCommand(path: String, part: PartId, socket: Reci
 internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<String, Float> {
     val values = linkedMapOf<String, Float>()
     part.rest?.let { values[PlacementParams.REST] = it.direction.ordinal.toFloat() }
+    part.roll?.let { values[PlacementParams.ROLL] = it }
+    part.topMiddle?.let { values[ViewParams.TOP_MIDDLE] = if (it) FLAG_ON else FLAG_OFF }
     part.generic?.let { values += genericParams(it) }
     part.joints.forEach { joint ->
         values[HandJoints.u(joint.n)] = joint.u

@@ -33,14 +33,18 @@ data class RecipePart(
     val blend: Float? = null,
     @Doc("Scales the drawn part: its length and width together.")
     val size: Float? = null,
-    @Doc("Degrees the part leans toward its own up (move.lean).")
+    @Doc("Degrees the part leans toward its own up (move.lean), less than 90 either way; with outward, a turn of the rest toward a corner.")
     val lean: Float? = null,
-    @Doc("Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward); an A-pose arm takes 45.")
+    @Doc("Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward), less than 90 either way; an A-pose arm takes 45.")
     val outward: Float? = null,
     @Doc("Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.")
     val outlines: Map<View, RecipeOutline> = emptyMap(),
     @Doc("The direction the part rests in, in place of its template's (move.rest): a generic root resting up is a standing body.")
     val rest: RecipeRest? = null,
+    @Doc("Degrees the part rolls about its own axis, turning its up toward its v 0.25 side, after rest, lean and outward (move.roll): a sheet resting out and rolled 90 faces forward.")
+    val roll: Float? = null,
+    @Doc("Whether Top's midline moves the part's middle sideways along its length, as Side's moves it up and down: a band or lens drawn curved in Top wraps round what it sits on (top.middle). Top sets width alone when left out.")
+    val topMiddle: Boolean? = null,
     @Doc("A generic part's section, views and sampling (generic.*).")
     val generic: RecipeGeneric? = null,
     @Doc("Hand-made sockets on this part, for parts to sit on (socket.<n>.*).")
@@ -95,12 +99,16 @@ data class RecipeSocket(
     val outward: Float = 0f,
     @Doc("Whether it has a mirrored twin across the body's middle, for a pair to sit on.")
     val mirrored: Boolean = false,
-    @Doc("How deep a part sits in here, as a multiple of that part's own sink: 0 seats it on the surface; once when left out.")
+    @Doc("How deep a part sits in here, as a multiple of that part's own sink, 0 or more: 0 seats it on the surface; once when left out.")
     val sink: Float? = null,
-    @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` at one v, named socket.<n>.0, socket.<n>.1 and on.")
+    @Doc("How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out.")
+    val outset: Float? = null,
+    @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on.")
     val count: Int? = null,
-    @Doc("A row's last socket's u.")
+    @Doc("A row's last socket's u; the row's u when left out.")
     val to: Float? = null,
+    @Doc("A row's last socket's v; the row's v when left out. A whole turn from v (v 0, toV 1) closes the row round the part, its sockets evenly a turn's share apart, as studs round a belt.")
+    val toV: Float? = null,
     @Doc("The size a part placed on a row's first socket starts at.")
     val size: Float? = null,
     @Doc("The size a part placed on a row's last socket starts at, as a share of the first's.")

@@ -56,7 +56,7 @@ class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectSh
  * camera at [toCamera]; a part nothing has been placed on, or a character with no color, draws as the look's own. With [posed], the
  * part as a pose shows it, it draws on that part's mesh with its layers laid on its patches, since a layer keeps its place on the patch. A part seen
  * through draws faint in the look's own fill with its outline. A part [color]'s one surface holds draws only its pieces that are not
- * runs, null with none; the surface draws the rest.
+ * runs, null with none; the surface draws the rest. A part of its own whose base slot has an opacity draws at that share of [opacity].
  */
 fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: PlacedPart? = null): MeshDraw? {
     val mesh = posed?.surface?.mesh ?: part.mesh
@@ -72,7 +72,8 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
         val own = color.body.parts[id]?.let { PartColor(it.baseSlot, it.layers.filter { held -> held.cut.patch in shown }) }
         return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
     }
-    return coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
+    val draw = coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts)
+    return draw.copy(opacity = opacity * draw.opacity, layer = layer)
 }
 
 /** The ribbon along each border this surface work inks, closed on itself. */

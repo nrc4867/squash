@@ -329,6 +329,7 @@
     <string name="move_section">Move</string>
     <string name="move_outward">Outward</string>
     <string name="move_lean">Lean</string>
+    <string name="move_roll">Roll</string>
     <string name="move_degrees">°</string>
     <string name="move_step">Move</string>
     <string name="move_mode_place">Place part</string>

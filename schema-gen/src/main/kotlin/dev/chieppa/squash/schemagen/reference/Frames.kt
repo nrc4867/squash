@@ -23,6 +23,10 @@ private const val MOVED_LEAST = 1e-3f
 private val ROUND = listOf(0f, 0.25f, 0.5f, 0.75f)
 private const val MIDDLE_U = 0.5f
 
+/** The roll the frames table shows, and the v its up turns toward. */
+private const val ROLL_TEST = 90f
+private const val ROLL_SIDE = 0.25f
+
 /** The rest directions by the word a recipe's `rest` takes. */
 internal fun restWord(rest: RestDirection): String = when (rest) {
     RestDirection.FORWARD -> "forward"
@@ -78,6 +82,20 @@ internal object Frames {
                     val frame = PartFrame(tube, mapOf(PlacementParams.REST to rest.ordinal.toFloat()))
                     listOf(restWord(rest), bodyWords(frame.axes.up), bodyWords(frame.axes.side * -1f)) +
                         ROUND.map { v -> frame.facing(MIDDLE_U, v)?.let(::bodyWords) ?: "-" }
+                },
+            ),
+        )
+        appendLine()
+        appendLine("### Roll")
+        appendLine()
+        appendLine("A recipe's `roll` turns a part's up about its own axis toward its v ${num(ROLL_SIDE)} side, after its rest, `lean` and `outward`, so the rows above shift round by a quarter turn of v for each 90 degrees; bones, sockets and the panes follow. `lean` and `outward` each turn the rest axis by their tangent and stay under 90 degrees; a part pointing further round takes another rest. By rest, where Side's +y and Top's +y look at `roll` ${num(ROLL_TEST)}:")
+        appendLine()
+        append(
+            table(
+                listOf("rests", "Side's +y", "Top's +y"),
+                RestDirection.entries.map { rest ->
+                    val axes = PartFrame(tube, mapOf(PlacementParams.REST to rest.ordinal.toFloat(), PlacementParams.ROLL to ROLL_TEST)).axes
+                    listOf(restWord(rest), bodyWords(axes.up), bodyWords(axes.side * -1f))
                 },
             ),
         )

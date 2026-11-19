@@ -1,9 +1,14 @@
 import type { RecipeJoint, RecipeSocket } from "../schema/recipe.ts";
 import { roundTo } from "../geom/point.ts";
 
-/** A hand-made socket `socket.<n>` at u and v; mirrored for a pair to sit on; sink 0 seats a child on the surface. */
+/** A hand-made socket `socket.<n>` at u and v; mirrored for a pair to sit on; sink 0 seats a child on the surface, `outset` stands it off. */
 export function socket(n: number, u: number, v: number, options: Omit<RecipeSocket, "n" | "u" | "v"> = {}): RecipeSocket {
   return { n, u: roundTo(u), v: roundTo(v), ...options };
+}
+
+/** A row of `count` sockets `socket.<n>.0` and on, evenly round a part at u from v 0: studs round a belt. */
+export function ringSocket(n: number, u: number, count: number, options: Omit<RecipeSocket, "n" | "u" | "v" | "count" | "toV" | "to"> = {}): RecipeSocket {
+  return { n, u: roundTo(u), v: 0, count, toV: 1, ...options };
 }
 
 /** A hand-made joint `joint.<n>` at u, posed by that name. */

@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.RestDirection
 import dev.chieppa.squash.character.build.RigParams
+import dev.chieppa.squash.character.build.ViewParams
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.View
@@ -40,18 +41,22 @@ internal object PartParameters {
 
     private fun rows(): List<List<String>> = listOf(
         listOf(code(SIZE_PARAM), "scales the part's length and width", "`size`"),
-        listOf(key(PlacementParams.LEAN), "degrees the part leans toward its own up", "`lean`"),
+        listOf(key(PlacementParams.LEAN), "degrees the part leans toward its own up, ${num(PlacementParams.MAX_ANGLE)} at most either way", "`lean`"),
         listOf(key(PlacementParams.OUTWARD), "degrees it leans out from the body's middle plane, mirrored on the right; ${num(PlacementParams.MAX_ANGLE)} at most either way", "`outward`"),
         listOf(key(PlacementParams.REST), "the direction it rests in, in place of its template's", "`rest`"),
+        listOf(key(PlacementParams.ROLL), "degrees it rolls about its own axis, its up turning toward its v 0.25 side, after rest, lean and outward; any angle", "`roll`"),
+        listOf(key(ViewParams.TOP_MIDDLE), "flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone", "`topMiddle`"),
         listOf(code(PlacementParams.joint(JOINT)), "u a template joint is moved to", "`jointsAt`"),
         listOf(code(PlacementParams.socketU(SOCKET)) + ", " + code(PlacementParams.socketV(SOCKET)), "where a socket this part offers is moved to, both sides", "`socketsAt`"),
         listOf(code(PlacementParams.socketU(SOCKET, Side.LEFT)) + ", `.right.u`, `.left.v`, `.right.v`", "the same for one side alone", "`params`"),
         listOf(key(HandSockets.u(N)) + ", " + key(HandSockets.v(N)), "a hand-made socket's place", "`sockets[].u`, `.v`"),
         listOf(key(HandSockets.outward(N)), "degrees its outward direction turns from the surface's normal toward the part's end, ${num(HandSockets.MAX_OUTWARD)} at most", "`sockets[].outward`"),
-        listOf(key(HandSockets.sink(N)), "how deep a part on it sits, times that part's own sink; 0 on the surface, 1 when unset", "`sockets[].sink`"),
+        listOf(key(HandSockets.sink(N)), "how deep a part on it sits, times that part's own sink, 0 or more; 0 on the surface, 1 when unset", "`sockets[].sink`"),
+        listOf(key(HandSockets.outset(N)), "how far a part on it stands off the surface along its normal before it sinks, in body units; 0 when unset. A part a garment owns stands on the cloth with an outset past the garment's fit and sink 0", "`sockets[].outset`"),
         listOf(key(HandSockets.pair(N)), "flag: a mirrored twin across the body's middle", "`sockets[].mirrored`"),
         listOf(key(HandSockets.count(N)), "a row of this many sockets, up to ${HandSockets.MAX_COUNT}", "`sockets[].count`"),
         listOf(key(HandSockets.to(N)), "the row's last socket's u", "`sockets[].to`"),
+        listOf(key(HandSockets.toV(N)), "the row's last socket's v; a whole turn from its v closes the row round the part, its sockets a turn's share apart", "`sockets[].toV`"),
         listOf(key(HandSockets.size(N)), "the size a part on the row's first socket starts at", "`sockets[].size`"),
         listOf(key(HandSockets.falloff(N)), "the size on the row's last socket, a share of the first's", "`sockets[].falloff`"),
         listOf(key(HandJoints.u(N)), "a hand-made joint's u, at least ${num(HandJoints.GAP)} from the ends and from other joints", "`joints[].u`"),

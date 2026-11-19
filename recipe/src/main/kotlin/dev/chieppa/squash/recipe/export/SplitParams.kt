@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.character.build.ViewParams
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.recipe.model.RecipeGeneric
@@ -17,10 +18,11 @@ import dev.chieppa.squash.recipe.model.RecipeSocket
 import kotlin.math.roundToInt
 
 /** The keys a single hand-made socket's parameters use, which a recipe socket stands for. */
-private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink")
+private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset")
 
-/** The keys a row of hand-made sockets adds. */
+/** The keys a row of hand-made sockets adds, and the one it may add besides. */
 private val ROW_FIELDS = setOf("count", "to", "size", "falloff")
+private const val ROW_ROUND = "toV"
 
 private val JOINT_FIELDS = setOf("u", "hinge", "low", "high", "stretch")
 private val JOINT_NEEDS = setOf("u", "hinge", "low", "high")
@@ -44,6 +46,8 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
     val joints: List<RecipeJoint> = if (anatomy) joints(params) else emptyList()
     val landmarks: List<RecipeLandmark> = if (anatomy) landmarks(params) else emptyList()
     val rest: RecipeRest? = if (anatomy) restOf(params) else null
+    val roll: Float? = if (anatomy) params[PlacementParams.ROLL]?.also { lifted += PlacementParams.ROLL } else null
+    val topMiddle: Boolean? = if (anatomy) flagOf(params, ViewParams.TOP_MIDDLE) else null
     val generic: RecipeGeneric? = if (anatomy) genericOf(params) else null
     val jointsAt: Map<String, Float> = if (anatomy) jointsAt(params) else emptyMap()
     val socketsAt: Map<String, List<Float>> = if (anatomy) socketsAt(params) else emptyMap()
@@ -64,15 +68,17 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
         val keys = fields(params, name)
         val count = params[HandSockets.count(id)]
         val row = count != null && ROW_FIELDS.all { it in keys } && count == count.roundToInt().toFloat() && count.roundToInt() in 2..HandSockets.MAX_COUNT
-        val allowed = if (row) SOCKET_FIELDS + ROW_FIELDS else SOCKET_FIELDS
+        val allowed = if (row) SOCKET_FIELDS + ROW_FIELDS + ROW_ROUND else SOCKET_FIELDS
         if (!keys.all { it in allowed } || "u" !in keys || "v" !in keys) return@mapNotNull null
         if (params[HandSockets.pair(id)]?.let { it != 1f } == true) return@mapNotNull null
         lift(name, keys)
         RecipeSocket(
             id, params.getValue(HandSockets.u(id)), params.getValue(HandSockets.v(id)), params[HandSockets.outward(id)] ?: 0f,
             params[HandSockets.pair(id)] == 1f, params[HandSockets.sink(id)],
+            outset = params[HandSockets.outset(id)],
             count = if (row) count.roundToInt() else null,
             to = if (row) params[HandSockets.to(id)] else null,
+            toV = if (row) params[HandSockets.toV(id)] else null,
             size = if (row) params[HandSockets.size(id)] else null,
             falloff = if (row) params[HandSockets.falloff(id)] else null,
         )
@@ -105,6 +111,12 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
         val rest = RecipeRest.entries.firstOrNull { it.direction.ordinal.toFloat() == value } ?: return null
         lifted += PlacementParams.REST
         return rest
+    }
+
+    private fun flagOf(params: Map<String, Float>, name: String): Boolean? {
+        val value = params[name]?.takeIf { it == 0f || it == 1f } ?: return null
+        lifted += name
+        return value == 1f
     }
 
     private fun genericOf(params: Map<String, Float>): RecipeGeneric? {

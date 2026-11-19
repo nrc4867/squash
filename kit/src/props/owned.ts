@@ -9,7 +9,7 @@ export interface PropSpec {
   id: string;
   /** The part it sits on. */
   on: string;
-  /** A hand-made socket number on that part (add it with `socket(n, u, v, { sink: 0 })`), or a socket's name. */
+  /** A hand-made socket number on that part (add it with `socket(n, u, v, { sink: 0 })`, with `outset` to stand on cloth), or a socket's name. */
   socket: number | string;
   /** The garment that owns it, if it is built only while that garment is worn. */
   garment?: string;
@@ -20,9 +20,16 @@ export interface PropSpec {
   top: Shape;
   size?: number;
   generic?: RecipeGeneric;
+  /** Degrees it leans toward its own up and out from the body's middle, under 90 each. */
+  lean?: number;
+  outward?: number;
+  /** Degrees it rolls about its own axis, its up toward its v 0.25 side. */
+  roll?: number;
+  /** Whether Top's midline moves its middle sideways, so a lens or band drawn curved in Top wraps round what it sits on. */
+  topMiddle?: boolean;
 }
 
-/** A prop part drawn as Side and Top shapes: a heel, a lens, a pendant; owned by a garment when `garment` is given. */
+/** A prop part drawn as Side and Top shapes: a heel, a lens, a pendant; owned by a garment when `garment` is given. `orient` gives `rest`, `lean`, `outward` and `roll` for any direction. */
 export function prop(spec: PropSpec): RecipePart {
   const part: RecipePart = {
     id: spec.id,
@@ -37,6 +44,10 @@ export function prop(spec: PropSpec): RecipePart {
   };
   if (spec.garment) part.garment = spec.garment;
   if (spec.size !== undefined) part.size = spec.size;
+  if (spec.lean !== undefined) part.lean = spec.lean;
+  if (spec.outward !== undefined) part.outward = spec.outward;
+  if (spec.roll !== undefined) part.roll = spec.roll;
+  if (spec.topMiddle !== undefined) part.topMiddle = spec.topMiddle;
   return part;
 }
 

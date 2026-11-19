@@ -67,7 +67,7 @@ data class MeshDraw(
 data class FurLayerDraw(val ink: RibbonDraw?, val fills: List<MeshDraw>)
 
 /**
- * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [behind] draws first, then [draws], then [fur] in its order,
+ * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [behind] draws first, then [draws], whole before see-through, then [fur] in its order,
  * furthest part first, [ribbons] after that and [over] last.
  */
 @Immutable
