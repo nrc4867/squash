@@ -280,7 +280,7 @@ Parameters:
 
 | parameter | default | range | meaning |
 | --- | --- | --- | --- |
-| `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
+| `size` | 1 | 0.15 to 2.5 | Scales the part: its drawn length and width together. |
 | `width` | 0.35 | 0.1 to 0.8 | Ear's half width at its base with nothing drawn, a fraction of its length. |
 | `thickness` | 0.55 | 0.2 to 1.2 | How deep the ear is from front to back, a share of its half width: 0.4 to 0.7 gives a full, rounded back that reads from behind. |
 | `cup` | 0.35 | 0 to 0.4 | How deep the hollow dishes into the ear's front, a share of its thickness; 0 is a flat front, 0.3 to 0.4 a deep cup whose inside shows from the front. |

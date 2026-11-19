@@ -107,7 +107,7 @@ export const stitch = printOn("torso", uvMark("hem-stitch", [[0.44, -0.2], [0.44
 
 - A region with `ink` is a filled shape with an inked border; `mirrored` shows it on the other side of the body too (or a pair's other side).
 - A pocket is a region and a thin stitched mark along its edge, never an owned blob on the cloth.
-- A print ends where the cloth does; place it well inside the painted cells.
+- A print ends where the cloth does; place it well inside the painted cells. A place on a part's side that lies under another part, an arm's inner side against the torso, is hidden by it: the line is cut there and shows only on the cloth over the part's own surface.
 
 ## Changes, covers and swaps
 

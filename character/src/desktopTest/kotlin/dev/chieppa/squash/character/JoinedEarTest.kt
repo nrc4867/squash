@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.DETAIL_LEVEL
+import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.character.surface.digitLevels
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
@@ -63,5 +64,24 @@ class JoinedEarTest {
         val session = surfaceSession(head, *ears(2).toTypedArray())
         session.settle()
         assertEquals(setOf(head.id), session.surface().parts)
+    }
+
+    @Test
+    fun aSmallEarJoinedIntoTheHeadBuildsClosedAtTheSmallestSize() = runTest {
+        val session = surfaceSession(head, *ears(3).toTypedArray())
+        for (size in listOf(0.2f, 0.15f)) {
+            session.send(SetParameter(PartId("ear-l"), SIZE_PARAM, size))
+            session.settle()
+            val surface = session.surface()
+            assertEquals(setOf(head.id, PartId("ear-l"), PartId("ear-r")), surface.parts, "size $size")
+            val triangles = surface.mesh.triangles
+            val directed = HashSet<Long>()
+            for (corner in triangles.indices) {
+                val triangle = corner / 3 * 3
+                directed += triangles[corner].toLong() shl Int.SIZE_BITS or triangles[triangle + (corner - triangle + 1) % 3].toLong()
+            }
+            val open = directed.count { edge -> (edge.toInt().toLong() shl Int.SIZE_BITS or (edge ushr Int.SIZE_BITS)) !in directed }
+            assertEquals(0, open, "open edges at ear size $size")
+        }
     }
 }

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.endPointsDown
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.field.JoinedField
@@ -95,13 +96,16 @@ private class NearJoin(val from: Float, val to: Float, val ease: Float)
  * run's cloth ends, within [NEAR_JOIN_ROWS] rows of it, short of the run's end: a foot below a trouser hem just above the ankle. The
  * garment grows over the [NEAR_JOIN_U] of each by the join, as the body blends into it, so near the join it follows the body's blend
  * rather than the covered run alone, and the skin there never stands out through the cloth. The uncovered run's share cuts the cloth
- * there away, as any uncovered part's does. A part coming out through a hole or through an end the cloth reaches is left to them.
+ * there away, as any uncovered part's does. A part coming out through a hole is left to it, and so is one coming out through an end the
+ * cloth reaches that does not point down at rest, which the cloth closes over (a neck at a torso's top); one coming out through a downward
+ * end, a foot below a legging cut at the ankle, is grown over as any other, so the cloth at fit 0 follows the body's blend into it and the
+ * skin never stands out ragged through the hem.
  */
 private fun joinedNear(field: CharacterField, worn: WornCover, kept: List<Int>): Map<Int, NearJoin> {
     val near = HashMap<Int, NearJoin>()
     val covered = kept.toSet()
     val members = field.field.members
-    val leftOut = worn.holes + worn.outThroughEnds
+    val leftOut = worn.holes - worn.outThroughEnds
     for (k in kept) {
         val reach = worn.clothOf(field.runs[k].partId)?.reach ?: continue
         val ease = worn.branchOf(field.runs[k].partId)?.ease ?: continue
@@ -109,6 +113,7 @@ private fun joinedNear(field: CharacterField, worn: WornCover, kept: List<Int>):
             val child = field.runs[c]
             if (c in covered || !child.first || members[c].parent != k || child.partId in leftOut) continue
             val socket = child.part.socketSpec?.u ?: continue
+            if (child.partId in worn.outThroughEnds && !field.runs[k].part.endPointsDown(high = socket >= 0.5f)) continue
             if (!reachesNear(reach, socket)) continue
             near.putIfAbsent(c, NearJoin(0f, NEAR_JOIN_U, ease))
         }

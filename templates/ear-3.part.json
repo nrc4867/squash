@@ -11,7 +11,7 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "lens",
   "params": {
-    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.15, "max": 2.5 },
     "width": { "doc": "Ear's half width at its base with nothing drawn, a fraction of its length.", "default": 0.35, "min": 0.1, "max": 0.8 },
     "thickness": { "doc": "How deep the ear is from front to back, a share of its half width: 0.4 to 0.7 gives a full, rounded back that reads from behind.", "default": 0.55, "min": 0.2, "max": 1.2 },
     "cup":   { "doc": "How deep the hollow dishes into the ear's front, a share of its thickness; 0 is a flat front, 0.3 to 0.4 a deep cup whose inside shows from the front.", "default": 0.35, "min": 0.0, "max": 0.4 },

@@ -193,8 +193,8 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
             .map { it.removePrefix(SOCKET_MOVE).removeSuffix(U_KEY) }
             .filter { name -> SIDE_KEYS.none { name.endsWith(it) } && PlacementParams.socketV(name) in params }
         return names.associateWith { name ->
-            lifted += setOf(PlacementParams.socketU(name), PlacementParams.socketV(name))
-            listOf(params.getValue(PlacementParams.socketU(name)), params.getValue(PlacementParams.socketV(name)))
+            lifted += setOf(PlacementParams.socketU(name), PlacementParams.socketV(name), PlacementParams.socketSink(name))
+            listOfNotNull(params.getValue(PlacementParams.socketU(name)), params.getValue(PlacementParams.socketV(name)), params[PlacementParams.socketSink(name)])
         }
     }
 
