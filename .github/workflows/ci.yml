@@ -1,0 +1,98 @@
+name: CI
+
+# The full check, split so its parts run side by side: the fast tier with the source and generated-file checks, the
+# integration tier, and the recipe kit's own tests. Stretch is checked out beside Squash, where the composite build finds it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  STRETCH_REF: main
+
+jobs:
+  fast:
+    name: Fast tier and source checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: squash
+      - uses: actions/checkout@v4
+        with:
+          repository: nrc4867/stretch
+          ref: ${{ env.STRETCH_REF }}
+          path: stretch
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 25
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: squash/kit/package-lock.json
+      - run: npm ci
+        working-directory: squash/kit
+      - uses: gradle/actions/setup-gradle@v4
+      - run: xvfb-run --auto-servernum ./gradlew checkFast --continue
+        working-directory: squash
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fast-test-reports
+          path: |
+            squash/**/build/reports/tests
+            squash/**/build/test-results
+            squash/**/build/reports/checkTestSources.txt
+
+  integration:
+    name: Integration tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: squash
+      - uses: actions/checkout@v4
+        with:
+          repository: nrc4867/stretch
+          ref: ${{ env.STRETCH_REF }}
+          path: stretch
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - run: xvfb-run --auto-servernum ./gradlew integrationTest --continue
+        working-directory: squash
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: integration-test-reports
+          path: |
+            squash/**/build/reports/tests
+            squash/**/build/test-results
+
+  kit:
+    name: Recipe kit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: kit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: kit/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
