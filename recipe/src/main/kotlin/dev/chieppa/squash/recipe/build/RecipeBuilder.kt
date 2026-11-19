@@ -14,12 +14,13 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.recipe.RecipeException
 import dev.chieppa.squash.recipe.model.RECIPE_FORMAT
 import dev.chieppa.squash.recipe.model.Recipe
+import dev.chieppa.squash.recipe.model.RecipeTarget
 
 /**
  * A built recipe: the character, the commands that made it from the empty character on its plan, what looked doubtful, and the named
  * poses the recipe asks to be rendered in.
  */
-class RecipeBuild(val document: SquashDocument, val commands: List<DocumentCommand>, val warnings: List<String>, val poses: Map<String, Pose>)
+class RecipeBuild(val document: SquashDocument, val commands: List<DocumentCommand>, val warnings: List<String>, val poses: Map<String, Pose>, val targets: List<RecipeTarget> = emptyList())
 
 /**
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
@@ -47,7 +48,7 @@ class RecipeBuilder(private val templates: TemplateFolder) {
             outfits()
             if (recipe.displayPose.isNotEmpty()) send("$.displayPose", SetDisplayPose(pose("$.displayPose", recipe.displayPose)))
             val poses = recipe.poses.mapValues { (name, bones) -> pose("$.poses.$name", bones) }
-            return RecipeBuild(document, commands.toList(), warnings.toList(), poses)
+            return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets)
         }
     }
 }

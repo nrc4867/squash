@@ -8,6 +8,8 @@ import dev.chieppa.squash.recipe.model.RecipeEye
 import dev.chieppa.squash.recipe.model.RecipeGarment
 import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSlot
+import dev.chieppa.squash.recipe.model.RecipeTarget
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
@@ -53,6 +55,15 @@ object RecipeJson {
         } catch (e: IllegalArgumentException) {
             throw RecipeException(locate(kept), e.message ?: e.toString())
         }
+    }
+
+    /** The targets in [text], a JSON list of them as `kit sheet measure` writes; a [RecipeException] when it is not one. */
+    fun readTargets(text: String): List<RecipeTarget> = try {
+        json.decodeFromString(ListSerializer(RecipeTarget.serializer()), text)
+    } catch (e: SerializationException) {
+        throw RecipeException("$", "not a list of targets: ${firstLine(e)}")
+    } catch (e: IllegalArgumentException) {
+        throw RecipeException("$", "not a list of targets: ${e.message}")
     }
 
     /**

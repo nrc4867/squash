@@ -26,6 +26,8 @@ With a single view cropped from the sheet (`kit sheet views` writes `<view>.png`
 
 ## 4. measure.txt
 
+- **Proportions first.** `proportions:` lines give the built head, hand, foot and eye sizes and the eye line as body units and as shares of the head and of the figure; set them against the sheet's readings (`reading-a-reference.md`, Measure the hands, feet and face) through `targets` in the recipe or `targets=<targets-view.json>` on the build. Every `FLAG target` line (off by more than its tolerance, or unmeasurable, with the reason) is fixed before you judge a render by eye: hands, feet and faces built too small are caught here, not in a glance.
+- `part ids`: every part's id and role, for `close=` and `only=`. `garment ... hem heights above the ground`: each hem's height, against the sheet's.
 - `arm volume inside the torso`, `arm depth inside the torso as shown`: 0 at rest and near 0 as shown; more is an arm pressed into the body.
 - `hip socket spread`: how far apart the legs' sockets sit; legs closer than their thighs are wide touch.
 - `smallest gap between digit tips`: fingers or toes fused if near 0.

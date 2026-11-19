@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.FaceMap
 import dev.chieppa.squash.character.build.JointTree
 import dev.chieppa.squash.character.build.PartBuilder
+import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.catalog.template
@@ -119,7 +120,11 @@ class RecipeProbe(private val character: Character, private val built: Assembled
             val at = part.middleAt(joint.u)?.let(::vec) ?: "-"
             lines += "  $id joint ${joint.name}: u ${num(joint.u)}, hinge ${joint.hinge.name.lowercase()}, limits ${joint.limits?.let { "${num(it.min)} to ${num(it.max)}" } ?: "none"}, at $at"
         }
-        socketsOn(plan, part.template, part.placement, part.surface.patches.map { it.name }).forEach { socket ->
+        socketsOn(plan, part.template, part.placement, part.surface.patches.map { it.name }).forEach { template ->
+            val socket = template.copy(
+                u = part.placement[PlacementParams.socketU(template.name, part.side)] ?: part.placement[PlacementParams.socketU(template.name)] ?: template.u,
+                v = part.placement[PlacementParams.socketV(template.name, part.side)] ?: part.placement[PlacementParams.socketV(template.name)] ?: template.v,
+            )
             val v = if (part.side == Side.RIGHT && !part.mirrored) 1f - socket.v else socket.v
             val at = part.pointOn(socket.u, v, socket.patch)
             lines += "  $id socket ${socket.name}: u ${num(socket.u)}, v ${num(socket.v)}, at ${at?.let(::vec) ?: "-"}, faces ${facing(part, socket.u, v, socket.patch)}"

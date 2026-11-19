@@ -2,10 +2,12 @@ package dev.chieppa.squash.screens.look.recipe
 
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.recipe.RecipeException
 import dev.chieppa.squash.recipe.RecipeJson
 import dev.chieppa.squash.recipe.build.RecipeBuild
 import dev.chieppa.squash.recipe.build.RecipeBuilder
+import dev.chieppa.squash.recipe.model.RecipeTarget
 import dev.chieppa.squash.screens.look.LookArgs
 import dev.chieppa.squash.screens.look.measureSession
 import dev.chieppa.squash.screens.look.renderSession
@@ -50,12 +52,19 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         renders.listFiles { f -> f.extension == "png" }?.sortedBy { it.name }?.forEach { println("  ${it.absolutePath}") }
         if (options.measure) {
             val table = File(out, "measure.txt")
-            val measureTime = measureTime { printInto(table) { measureSession(id, open.session, open.work, built.poses, look, timings = false) } }
+            document.character.wardrobe.shown?.let { open.session.send(ShowOutfit(it)) }
+            val measureTime = measureTime { printInto(table) { measureSession(id, open.session, open.work, built.poses, look, timings = false, targets = built.targets + referenceTargets()) } }
             println("measure: ${table.absolutePath} (${measureTime.inWholeMilliseconds} ms)")
         }
         options.reference?.let { reference -> ReferenceCompare(options, errors).compare(open, reference, File(out, "compare")) }
         errors.forEach { System.err.println("render error: $it") }
         return if (errors.isEmpty()) 0 else 1
+    }
+
+    /** The targets the `targets=<file>,<file>` option names, as `kit sheet measure` writes them. */
+    private fun referenceTargets(): List<RecipeTarget> = options.targets.flatMap { file ->
+        if (!file.isFile) throw RecipeException("$", "no targets file at ${file.absolutePath}")
+        RecipeJson.readTargets(file.readText())
     }
 
     override fun close() = sessions.close()

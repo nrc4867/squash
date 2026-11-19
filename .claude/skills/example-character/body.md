@@ -28,7 +28,7 @@ export const heights = heightMarks(plan, {
 });
 ```
 
-Check the plan before drawing a part:
+Check the plan before drawing a part. The head, hands and feet are the proportions a toon figure is most often built too small: measure them off the sheet (`reading-a-reference.md`, Measure the hands, feet and face), declare them next to the plan as `targets: targets({ handLength: "0.38 head", footLength: "0.45 head", footWidth: "0.35 head" })` in the recipe, and fix every `FLAG` in `measure.txt` before judging the body by eye:
 
 - **The head's share.** `(crown - chin) / crown` is one over the head count: 0.33 for 3 heads, 0.14 for 7. If the plan's share differs from the sheet's head count, a landmark is wrong.
 - **Where the joints fall.** Shoulders sit just below the neck's base, a little under the chin on a short-necked creature; hips (the leg's pivot) a little above the crotch, inside the pelvis; knees about halfway from the hip to the ankle unless the sheet shows otherwise; elbows near the waist with the arms down, wrists near the crotch.
@@ -77,7 +77,7 @@ export const torsoPart = tubePart(
 
 ## 3. Every part in front and back
 
-A tube's Side outline takes two profiles across its y and Top the other two (`kit/README.md`, `tube`): for a part resting up or down they are `front` and `back` in Side, `left`/`right` (or `outer`/`inner` on a pair) in Top. **Give both sides of every profile**: the belly and the back, the chest and the shoulder blades, the shin and the calf, the seat. Front and back are set apart, so a round belly or a seat is just a larger front or back radius at its stations; a lone Top side is mirrored. Read the side view's grid for the front and back radii and the front view's for the left and right.
+A tube's Side outline takes two profiles across its y and Top the other two (`kit/README.md`, `tube`): for a part resting up or down they are `front` and `back` in Side, `left`/`right` (or `outer`/`inner` on a pair) in Top; for one resting forward or back (an arm held out, a tail) `up` and `down` in Side and `left`/`right` in Top; for one resting out, `up` and `down` in Side and `front`/`back` in Top. **Give both sides of every profile**: the belly and the back, the chest and the shoulder blades, the shin and the calf, the seat. Front and back are set apart, so a round belly or a seat is just a larger front or back radius at its stations; a lone Top side is mirrored. Read the side view's grid for the front and back radii and the front view's for the left and right.
 
 - A limb narrows and swells: thigh to knee to calf to ankle, shoulder to elbow to forearm to wrist. **A leg of one constant width with no knee** reads as a pipe; give the knee and ankle their narrowing and the calf its swell at the back.
 - Use enough stations to hold the shape: 7 to 11 for a torso or leg, 6 to 9 for an arm or neck. `roundStations` gives stations bunched toward the ends of a round closed part (a head, a belly).

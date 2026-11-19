@@ -18,6 +18,12 @@ const WAIST_FROM_SHOULDER = 0.35;
 const LEGS_TOUCH = 0.9;
 /** The gap between the legs comes within this share of the height of the axis. */
 const GAP_BAND = 0.04;
+/** The waist is a real narrowing only where it is this much narrower than the chest above; wider, clothes (a sweater) hide it. */
+const WAIST_NARROWING = 0.92;
+/** A hidden waist is placed this share of the way from the armpit down to the crotch. */
+const HIDDEN_WAIST_SHARE = 0.4;
+/** The chest's width is the median over this share of the span below the armpit (or shoulder). */
+const CHEST_ROWS = 0.15;
 /** With no widest hip row, the hip joint sits this share of the way from the crotch up to the waist. */
 const HIP_SHARE = 0.3;
 
@@ -88,11 +94,20 @@ export function readBody(figure: Figure, neck: number, headLength: number): Body
   const span = torsoBottom - from;
   const waistFrom = armpit !== undefined ? WAIST_RANGE[0] : WAIST_FROM_SHOULDER;
   const waist = rowWhere(from + waistFrom * span, from + WAIST_RANGE[1] * span, (y) => centralWidth(figure, y) || Infinity);
-  if (waist !== undefined) out.waist = out.crotch.status === "found" ? { y: waist, status: "found" } : { y: waist, status: "estimated", reason: "read between an estimated armpit and crotch" };
   if (waist !== undefined) {
-    const widest = rowWhere(waist, crotch, (y) => centralWidth(figure, y), true);
-    const flat = widest === undefined || centralWidth(figure, widest) <= centralWidth(figure, waist) + 1;
-    out.hip = flat ? { y: Math.round(crotch - HIP_SHARE * (crotch - waist)), status: "estimated", reason: "no widening below the waist: placed by proportion" } : { y: widest, status: "found" };
+    const chest = median(Array.from({ length: Math.max(1, Math.round(CHEST_ROWS * span)) }, (_, i) => centralWidth(figure, from + i)).filter((w) => w > 0));
+    if (chest > 0 && centralWidth(figure, waist) > WAIST_NARROWING * chest) {
+      const hidden = Math.round(from + HIDDEN_WAIST_SHARE * span);
+      out.waist = { y: hidden, status: "estimated", reason: `no narrowing below the chest (the waist row is ${Math.round((100 * centralWidth(figure, waist)) / chest)}% of the chest's width): clothes hide the waist, placed ${HIDDEN_WAIST_SHARE} of the way from the ${armpit !== undefined ? "armpit" : "shoulder"} to the crotch` };
+    } else {
+      out.waist = out.crotch.status === "found" ? { y: waist, status: "found" } : { y: waist, status: "estimated", reason: "read between an estimated armpit and crotch" };
+    }
+  }
+  if (out.waist !== undefined) {
+    const waistRow = out.waist.y;
+    const widest = rowWhere(waistRow, crotch, (y) => centralWidth(figure, y), true);
+    const flat = widest === undefined || centralWidth(figure, widest) <= centralWidth(figure, waistRow) + 1;
+    out.hip = flat ? { y: Math.round(crotch - HIP_SHARE * (crotch - waistRow)), status: "estimated", reason: "no widening below the waist: placed by proportion" } : { y: widest, status: "found" };
   }
   if (foundCrotch && out.hip?.status === "found") {
     const hipWidth = centralWidth(figure, out.hip.y);

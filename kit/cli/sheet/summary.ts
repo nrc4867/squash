@@ -1,4 +1,5 @@
 import type { Measurement } from "../../src/sheet/measure/measurement.ts";
+import type { Reading } from "../../src/sheet/measure/readings.ts";
 
 /** A measurement as a few lines: the view, its head count and each landmark's height, status and row. */
 export function summary(m: Measurement): string {
@@ -10,8 +11,22 @@ export function summary(m: Measurement): string {
     lines.push(`  ${name.padEnd(11)}${l.height.toFixed(4).padStart(8)}  ${l.heads.toFixed(2).padStart(5)}H  ${l.status.padEnd(9)} y ${l.y}${l.x !== undefined ? ` x ${l.x}` : ""}`);
     if (l.reason) lines.push(`              ${l.reason}`);
   }
+  lines.push(...readingLines(Object.values(m.proportions), Object.entries(m.unread)));
+  for (const w of m.warnings) lines.push(`  warning: ${w}`);
   for (const c of m.checks) lines.push(`  check ${c.landmarks.join(" + ")}: ${c.message}`);
   lines.push(`  widths ${Object.entries(m.widths).map(([k, v]) => `${k} ${v}`).join(", ")}`);
   for (const p of m.pieces) lines.push(`  ${p.kind} ${p.side}: tip x ${p.tip.x} y ${p.tip.y} (height ${p.tip.height})`);
   return lines.join("\n");
+}
+
+/** Each reading as a line, with its reason under it when it is not found, then each name that could not be read with why. */
+export function readingLines(readings: readonly Reading[], unread: ReadonlyArray<[string, string]>): string[] {
+  const lines: string[] = [];
+  for (const r of readings) {
+    const share = r.kind === "size" ? `${r.ofHead.toFixed(2)} head, ${r.ofHeight.toFixed(3)} height` : `${r.ofHead.toFixed(2)} down the head`;
+    lines.push(`  ${r.name.padEnd(11)}${r.value.toFixed(4).padStart(8)}  ${share}  ${r.status}${r.side ? ` (${r.side})` : ""}`);
+    if (r.reason) lines.push(`              ${r.reason}`);
+  }
+  for (const [name, why] of unread) lines.push(`  ${name.padEnd(11)} not read: ${why}`);
+  return lines;
 }

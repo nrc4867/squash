@@ -1,4 +1,6 @@
-import { luminance } from "../core/color.ts";
+import { channelDistance, luminance } from "../core/color.ts";
+import { figureOf } from "../measure/figure.ts";
+import { readHead } from "../measure/head.ts";
 import { maskAt, type Mask } from "../core/mask.ts";
 import { clamp } from "../core/solve.ts";
 import type { Box } from "../core/box.ts";
@@ -14,10 +16,14 @@ export interface FacingGuess {
   symmetry: number;
   /** The share of the head band's inside that is dark detail (eyes, mouth, brows): a front shows more than a back. */
   detail: number;
+  /** The share of the head's inside within reach of the colour of the head's top: a back is nearly all hair, a front has a face. */
+  cover: number;
+  /** What the guess rests on and why it may be wrong, when it is a weak call: front and three-quarter are told by silhouette symmetry alone. */
+  reason?: string;
 }
 
 /** Symmetry is read over the top of the figure, head and body, where tails, props and loose arms disturb it least. */
-const SYMMETRY_BANDS = [0.25, 0.55];
+const SYMMETRY_BANDS = [0.2, 0.27, 0.55];
 /** Symmetry at or above this reads as a front or a back, below the lower as a side, between as three-quarter. */
 const SYMMETRIC = 0.86;
 const ASYMMETRIC = 0.72;
@@ -29,10 +35,13 @@ const DARK = 0.4;
 const INSET = 2;
 /** The figure is scaled to about this many rows for the symmetry test. */
 const SAMPLE_ROWS = 160;
-/** A symmetric view with less head detail than this share of the most detailed symmetric view's reads as a back. */
-const BACK_DETAIL_SHARE = 0.5;
-/** A lone symmetric view with less head detail than this reads as a back. */
-const BACK_DETAIL = 0.01;
+/** The colour of the head's top is the median of this band of the head, as shares of its length from the crown. */
+const TOP_BAND: [number, number] = [0.05, 0.2];
+/** Pixels within this many channel levels of the head's top colour are covered by it. */
+const COVER_REACH = 80;
+/** A symmetric view whose head is covered at least this much by one colour reads as a back; at most the lower, as a face. */
+const BACK_COVER = 0.88;
+const FACE_COVER = 0.82;
 /** Axis positions tried, as shares of the box's width either side of its middle. */
 const AXIS_SEARCH = 0.15;
 const AXIS_STEPS = 30;
@@ -75,27 +84,65 @@ export function headDetail(image: Raster, mask: Mask, box: Box): number {
   return dark / Math.max(1, inner);
 }
 
+/** The share of the head's inner pixels within reach of the colour of its top, and the inner pixels' count. */
+export function headCover(image: Raster, mask: Mask, box: Box): number {
+  const head = readHead(figureOf(mask, box));
+  const crown = head.crown.y;
+  const length = Math.max(8, (head.chin?.y ?? crown + 0.2 * box.h) - crown);
+  const inset = Math.max(INSET, Math.round(box.h / 200));
+  const inside = (x: number, y: number) => maskAt(mask, x, y) && maskAt(mask, x - inset, y) && maskAt(mask, x + inset, y) && maskAt(mask, x, y - inset) && maskAt(mask, x, y + inset);
+  const top: number[][] = [[], [], []];
+  for (let y = Math.round(crown + TOP_BAND[0] * length); y < crown + TOP_BAND[1] * length; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      if (!inside(x, y)) continue;
+      const p = pixelAt(image, x, y);
+      for (let c = 0; c < 3; c++) top[c].push(p[c]);
+    }
+  }
+  if (top[0].length === 0) return 0;
+  const middle = top.map((values) => values.sort((a, b) => a - b)[values.length >> 1]) as [number, number, number];
+  let covered = 0;
+  let all = 0;
+  for (let y = Math.round(crown + TOP_BAND[0] * length); y < crown + length; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      if (!inside(x, y)) continue;
+      all++;
+      if (channelDistance(pixelAt(image, x, y), middle) <= COVER_REACH) covered++;
+    }
+  }
+  return covered / Math.max(1, all);
+}
+
 /** The figure's symmetry over its head and upper body. */
 export function upperSymmetry(mask: Mask, box: Box): number {
   const bands = SYMMETRY_BANDS.map((share) => symmetryOf(mask, { ...box, h: Math.max(1, Math.round(box.h * share)) }));
   return bands.reduce((a, b) => a + b, 0) / bands.length;
 }
 
-/** Guesses each view's facing from its symmetry, and front from back by head detail against the other symmetric views. */
+const WEAK_CALL = "front and three-quarter are told apart by silhouette symmetry alone: look at the view to confirm";
+
+/**
+ * Guesses each view's facing: a back from a front by how much of the head is one colour, side, three-quarter and front by the
+ * silhouette's symmetry. A call that rests on symmetry alone, or on a head that is neither clearly a face nor clearly hair, carries a
+ * `reason` and a low confidence.
+ */
 export function guessFacings(image: Raster, views: ReadonlyArray<{ mask: Mask; box: Box }>): FacingGuess[] {
-  const read = views.map((v) => ({ symmetry: upperSymmetry(v.mask, v.box), detail: headDetail(image, v.mask, v.box) }));
-  const symmetric = read.filter((r) => r.symmetry >= SYMMETRIC);
-  const mostDetail = Math.max(0, ...symmetric.map((r) => r.detail));
-  return read.map(({ symmetry, detail }) => {
+  return views.map((v) => {
+    const symmetry = upperSymmetry(v.mask, v.box);
+    const detail = headDetail(image, v.mask, v.box);
+    const cover = headCover(image, v.mask, v.box);
+    const base = { symmetry, detail, cover };
     if (symmetry >= SYMMETRIC) {
-      const back = symmetric.length > 1 ? detail < BACK_DETAIL_SHARE * mostDetail : detail < BACK_DETAIL;
-      const margin = symmetric.length > 1 ? Math.abs(detail - BACK_DETAIL_SHARE * mostDetail) / Math.max(1e-6, mostDetail) : Math.abs(detail - BACK_DETAIL) / BACK_DETAIL;
-      const confidence = clamp(0.4 + 0.3 * Math.min(1, margin) + 2 * (symmetry - SYMMETRIC), 0.2, 0.95);
-      return { facing: back ? "back" : "front", confidence, symmetry, detail };
+      const clear = cover >= BACK_COVER || cover <= FACE_COVER;
+      const back = cover >= BACK_COVER;
+      const margin = Math.min(1, back ? (cover - BACK_COVER) / (1 - BACK_COVER) : (FACE_COVER - cover) / FACE_COVER);
+      const confidence = clamp((clear ? 0.45 : 0.3) + 0.3 * margin + 2 * (symmetry - SYMMETRIC), 0.2, 0.95);
+      if (back) return { facing: "back", confidence, ...base, reason: "the head is one colour: a bald or helmeted front would read the same" };
+      return { facing: "front", confidence, ...base, ...(clear ? { reason: WEAK_CALL } : { reason: `the head is neither clearly a face nor clearly hair (${Math.round(cover * 100)}% one colour); ${WEAK_CALL}` }) };
     }
-    if (symmetry < ASYMMETRIC) return { facing: "side", confidence: clamp(0.5 + 2 * (ASYMMETRIC - symmetry), 0.3, 0.9), symmetry, detail };
+    if (symmetry < ASYMMETRIC) return { facing: "side", confidence: clamp(0.5 + 2 * (ASYMMETRIC - symmetry), 0.3, 0.9), ...base };
     const middle = (SYMMETRIC + ASYMMETRIC) / 2;
     const confidence = clamp(0.6 - (2 * Math.abs(symmetry - middle)) / (SYMMETRIC - ASYMMETRIC) * 0.3, 0.3, 0.6);
-    return { facing: "three-quarter", confidence, symmetry, detail };
+    return { facing: "three-quarter", confidence, ...base, reason: "a lifted arm or a tilted head can pull a front down to this; " + WEAK_CALL };
   });
 }

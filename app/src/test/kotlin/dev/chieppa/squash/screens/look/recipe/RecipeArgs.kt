@@ -50,6 +50,9 @@ class RecipeArgs(args: Array<String>) {
     /** A character sheet to split into one image a view, into [out]. */
     val crop: File? = file("crop")
 
+    /** Files of proportion targets to check the build against besides the recipe's own, JSON lists as `kit sheet measure` writes (`targets-<view>.json`), from `targets=<file>,<file>`. */
+    val targets: List<File> = values["targets"]?.split(',')?.filter { it.isNotEmpty() }?.map { path -> File(path).let { if (it.isAbsolute) it else File(root, path) } } ?: emptyList()
+
     /** A reference image to set the character beside, rendered through the camera `eye`, `target` and `fov` give in its frame. */
     val reference: File? = file("reference")
     val eye: String? = values["eye"]

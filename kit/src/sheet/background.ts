@@ -1,6 +1,7 @@
 import { channelDistance, hexToPixel } from "./core/color.ts";
 import { blankMask, type Mask } from "./core/mask.ts";
 import { clamp, leastSquares, median } from "./core/solve.ts";
+import { rescuePale } from "./pale.ts";
 import { pixelAt, type Pixel, type Raster } from "./raster/image.ts";
 
 /** The pixels round the image's edge that sample the background. */
@@ -30,6 +31,8 @@ export interface Background {
   colorAt(x: number, y: number): Pixel;
   /** 1 where something stands on the background: everything not reached by a flood fill of background from the edges. */
   figure: Mask;
+  /** The pale pixels within the tolerance of the paper that were kept as figure (see `rescuePale`); none when the figure has none. */
+  pale: Mask;
 }
 
 export interface BackgroundOptions {
@@ -39,6 +42,8 @@ export interface BackgroundOptions {
   tolerance?: number;
   /** Pixels inside enclosed background, such as the gap a curled tail closes against a leg: background floods from them too. */
   holes?: ReadonlyArray<[number, number]>;
+  /** Whether pale parts of a figure within the tolerance of the paper (white socks, pale hands) are kept as figure; true when left out. */
+  keepPale?: boolean;
 }
 
 function borderPixels(image: Raster): Array<[number, number]> {
@@ -149,7 +154,9 @@ export function keyBackground(image: Raster, options: BackgroundOptions = {}): B
   const residuals = samples.map(([x, y]) => channelDistance(pixelAt(image, x, y), colorAt(x, y)));
   const noise = median(residuals) * MAD_SCALE;
   const tolerance = options.tolerance ?? clamp(Math.round(NOISE_SPREAD * noise + NOISE_FLOOR), MIN_TOLERANCE, MAX_TOLERANCE);
-  return { ground, tolerance, colorAt, figure: floodFigure(image, colorAt, tolerance, options.holes ?? []) };
+  const flooded = floodFigure(image, colorAt, tolerance, options.holes ?? []);
+  const kept = options.keepPale === false ? { figure: flooded, pale: blankMask(flooded.width, flooded.height) } : rescuePale(image, colorAt, tolerance, noise, flooded);
+  return { ground, tolerance, colorAt, figure: kept.figure, pale: kept.pale };
 }
 
 /**
@@ -160,7 +167,7 @@ export function reopenBackground(image: Raster, background: Background, figure: 
   const { width, height } = figure;
   const out = blankMask(width, height);
   out.data.set(figure.data);
-  const near = (at: number) => channelDistance(pixelAt(image, at % width, Math.floor(at / width)), background.colorAt(at % width, Math.floor(at / width))) <= background.tolerance;
+  const near = (at: number) => !background.pale.data[at] && channelDistance(pixelAt(image, at % width, Math.floor(at / width)), background.colorAt(at % width, Math.floor(at / width))) <= background.tolerance;
   const stack: number[] = [];
   const open = (at: number) => {
     if (out.data[at] && near(at)) {

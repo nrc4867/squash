@@ -18,6 +18,10 @@ test("roll turns the up toward v 0.25: a forward part with its up to the left ro
   assert.equal(orient([1, 0, 0], [0, 0, 1]).roll, -90);
 });
 
+test("a direction at exactly 90 degrees from every rest is refused, saying why", () => {
+  assert.throws(() => orient([0, 0, 1]), /90 degrees from the nearest rest.*character's right/);
+});
+
 test("a left part cannot point straight right", () => {
   assert.throws(() => orient([0, 0, 1]));
 });

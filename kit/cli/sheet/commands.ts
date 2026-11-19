@@ -1,5 +1,6 @@
 import { formatBox } from "../../src/sheet/core/box.ts";
 import { pixelToHex } from "../../src/sheet/core/color.ts";
+import { targetsOf } from "../../src/sheet/measure/measurement.ts";
 import { checkImage } from "../../src/sheet/read/check.ts";
 import { gridImage } from "../../src/sheet/read/grid.ts";
 import { viewCrop, viewsOverview } from "../../src/sheet/read/overview.ts";
@@ -8,12 +9,13 @@ import { sheetProfiles } from "../../src/sheet/read/profiles/index.ts";
 import { paletteImage } from "../../src/sheet/read/swatches.ts";
 import { traceShape, type TracePart } from "../../src/sheet/read/trace.ts";
 import { traceImage } from "../../src/sheet/read/trace-image.ts";
+import { drawReadings, regionReadings } from "../../src/sheet/read/zoom-readings.ts";
 import { regionBoxes, zoomBox, type ZoomRegion } from "../../src/sheet/read/zoom.ts";
 import { measuredFrom, sheetFrom, viewFileName } from "./context.ts";
 import type { SheetOptions } from "./options.ts";
 import { SheetOutput } from "./output.ts";
 import { sideView } from "./side.ts";
-import { summary } from "./summary.ts";
+import { readingLines, summary } from "./summary.ts";
 
 export type SheetCommand = (image: string, options: SheetOptions) => void;
 
@@ -31,7 +33,7 @@ export const sheetCommands: Record<string, SheetCommand> = {
       other: sheet.other,
     });
     for (const v of sheet.views) {
-      console.log(`  ${v.index} ${v.name}: box=${formatBox(v.box)} ${v.pixelHeight}px ${v.guess.facing}? ${Math.round(v.guess.confidence * 100)}%`);
+      console.log(`  ${v.index} ${v.name}: box=${formatBox(v.box)} ${v.pixelHeight}px ${v.guess.facing}? ${Math.round(v.guess.confidence * 100)}%${v.guess.reason ? ` (${v.guess.reason})` : ""}`);
     }
     for (const box of sheet.other) console.log(`  other: box=${formatBox(box)}`);
   },
@@ -39,7 +41,10 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const sheet = sheetFrom(image, options);
     const measured = measuredFrom(sheet, options);
     const out = new SheetOutput(options.outDir(image));
-    out.json(`measure-${viewFileName(measured.anatomy.view)}.json`, measured.measurement);
+    const name = viewFileName(measured.anatomy.view);
+    out.json(`measure-${name}.json`, measured.measurement);
+    const targets = targetsOf(measured.measurement, options.flag("unsure"));
+    if (targets.length > 0) out.json(`targets-${name}.json`, targets);
     console.log(summary(measured.measurement));
   },
   grid(image, options) {
@@ -65,10 +70,14 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const factor = options.number("scale");
     const region = options.box();
     const named = (options.text("region") ?? "head") as ZoomRegion;
-    const boxes = region ? [{ name: "box", box: region }] : regionBoxes(measuredFrom(sheet, options, false).anatomy, named, sheet);
+    const measured = measuredFrom(sheet, options, false);
+    const boxes = region ? [{ name: "box", box: region }] : regionBoxes(measured.anatomy, named, sheet);
     const zooms = boxes.map(({ name, box }) => zoomBox(sheet, name, box, factor));
+    const read = regionReadings(named, measured.measurement.proportions, measured.measurement.unread);
+    if (!region) for (const zoom of zooms) drawReadings(zoom, read.readings);
     for (const zoom of zooms) out.png(`zoom-${zoom.name}.png`, zoom.image);
-    out.json(`zoom-${region ? "box" : named}.json`, zooms.map(({ name, box, factor: f }) => ({ name, box, factor: f })));
+    out.json(`zoom-${region ? "box" : named}.json`, { zooms: zooms.map(({ name, box, factor: f }) => ({ name, box, factor: f })), readings: region ? [] : read.readings, unread: region ? {} : Object.fromEntries(read.unread) });
+    if (!region) for (const line of readingLines(read.readings, read.unread)) console.log(line);
   },
   palette(image, options) {
     const sheet = sheetFrom(image, options);
@@ -94,6 +103,7 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const out = new SheetOutput(options.outDir(image));
     out.json("profiles.json", { front: front.anatomy.view.name, side: side?.anatomy.view.name, ...profiles });
     for (const note of profiles.skipped) console.log(`  skipped ${note}`);
+    for (const note of profiles.warnings) console.log(`  warning: ${note}`);
   },
   trace(image, options) {
     const sheet = sheetFrom(image, options, false);

@@ -49,7 +49,7 @@ function extremeRow(pixels: Int32Array, width: number, lowest: boolean): { x: nu
 }
 
 /** The farthest pixel from the point where a piece touches the body, for a tail. */
-function farthestFrom(pixels: Int32Array, width: number, from: { x: number; y: number }): { x: number; y: number } {
+export function farthestFrom(pixels: Int32Array, width: number, from: { x: number; y: number }): { x: number; y: number } {
   let best = { x: from.x, y: from.y };
   let bestDistance = -1;
   for (const at of pixels) {
@@ -65,7 +65,7 @@ function farthestFrom(pixels: Int32Array, width: number, from: { x: number; y: n
 }
 
 /** The pixel of a piece nearest the core: where it joins the body. */
-function joinPoint(pixels: Int32Array, width: number, core: Mask): { x: number; y: number } {
+export function joinPoint(pixels: Int32Array, width: number, core: Mask): { x: number; y: number } {
   for (const at of pixels) {
     if (core.data[at - 1] || core.data[at + 1] || core.data[at - width] || core.data[at + width]) return { x: at % width, y: Math.floor(at / width) };
   }

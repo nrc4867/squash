@@ -1,4 +1,5 @@
 import { roundTo } from "../../geom/point.ts";
+import type { Raster } from "../raster/image.ts";
 import type { Box } from "../core/box.ts";
 import type { FacingGuess } from "../views/orientation.ts";
 import type { Anatomy } from "./anatomy.ts";
@@ -6,6 +7,8 @@ import type { LandmarkIssue } from "./sanity.ts";
 import { centralRun, runsAt } from "./figure.ts";
 import type { Landmark, PixelMark } from "./landmark.ts";
 import type { PieceKind } from "./pieces.ts";
+import { readProportions } from "./proportions.ts";
+import type { Reading } from "./readings.ts";
 import { runWidth, type Run } from "./rows.ts";
 
 /** One row of the silhouette: its outer edges, and the body core's, as offsets from the axis in body units (image left negative). */
@@ -51,9 +54,15 @@ export interface Measurement {
   plan: Record<string, number>;
   /** The proportions the landmarks break against each other and a standing figure. */
   checks: LandmarkIssue[];
+  /** What the view is, or shows, that makes its readings less reliable, plainly: a turned figure, a crown raised by tufts. */
+  warnings: string[];
   /** Half widths in body units at the landmarks, from the core: head, neck, chest, waist, hip, thigh, knee, ankle. */
   widths: Record<string, number>;
   pieces: MeasuredPiece[];
+  /** Hand, foot and face sizes and places, each as shares of the head and of the figure, with a status; see `Reading`. */
+  proportions: Record<string, Reading>;
+  /** The proportions that could not be read in this view, each with the reason. */
+  unread: Record<string, string>;
   profile: ProfileRow[];
 }
 
@@ -96,7 +105,7 @@ function legHalfWidth(anatomy: Anatomy, y: number | undefined): number | undefin
 export type HeightTo = "crown" | "top";
 
 /** A view's anatomy in body units for a figure `height` tall, from the ground to its crown or to its top. */
-export function measurementOf(anatomy: Anatomy, height: number, heightTo: HeightTo = "crown"): Measurement {
+export function measurementOf(anatomy: Anatomy, height: number, heightTo: HeightTo = "crown", image?: Raster): Measurement {
   const { figure, marks, view } = anatomy;
   const ground = figure.ground;
   const scale = height / Math.max(1, ground - (heightTo === "crown" ? marks.crown.y : figure.top));
@@ -143,6 +152,7 @@ export function measurementOf(anatomy: Anatomy, height: number, heightTo: Height
     box: p.box,
     tip: { x: p.tip.x, y: p.tip.y, height: roundTo((ground - p.tip.y) * scale, BODY_PLACES), across: across(p.tip.x) },
   }));
+  const read = readProportions(anatomy, image, { bodyPerPixel: scale, headPixels, heightPixels: ground - marks.crown.y, crown: marks.crown.y, ground });
   return {
     view: { index: view.index, name: view.name, box: view.box, guess: view.guess },
     height,
@@ -156,8 +166,29 @@ export function measurementOf(anatomy: Anatomy, height: number, heightTo: Height
     landmarks,
     plan,
     checks: anatomy.issues,
+    warnings: anatomy.warnings,
     widths,
     pieces,
+    proportions: read.readings,
+    unread: read.missing,
     profile,
   };
+}
+
+/** A target as a recipe's `targets` take it. */
+export interface SheetTarget {
+  name: string;
+  of: "head" | "height";
+  value: number;
+}
+
+/**
+ * The readings a recipe can hold a build to, as `targets` entries in the recipe's own form: a size as its share of the head, a place
+ * (`eyeLine`) as its depth down the head. Only readings that are `found` or `given` are taken, and with `includeUnsure` the unsure
+ * ones too; an estimated reading is never a reference to hold a build to.
+ */
+export function targetsOf(measurement: Measurement, includeUnsure = false): SheetTarget[] {
+  return Object.values(measurement.proportions)
+    .filter((r) => r.status === "found" || r.status === "given" || (includeUnsure && r.status === "unsure"))
+    .map((r) => ({ name: r.name, of: "head" as const, value: r.ofHead }));
 }

@@ -36,7 +36,7 @@ export interface PersonTruth {
   head: number;
 }
 
-function capsule(image: Raster, x0: number, y0: number, x1: number, y1: number, radius: number, color: Pixel): void {
+export function capsule(image: Raster, x0: number, y0: number, x1: number, y1: number, radius: number, color: Pixel): void {
   const dx = x1 - x0;
   const dy = y1 - y0;
   const length2 = dx * dx + dy * dy;

@@ -47,6 +47,22 @@ data class Recipe(
     val displayPose: List<BonePose> = emptyList(),
     @Doc("Named poses the build renders besides the display pose; not saved in the character.")
     val poses: Map<String, List<BonePose>> = emptyMap(),
+    @Doc("Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance.")
+    val targets: List<RecipeTarget> = emptyList(),
+)
+
+/** One proportion a build is checked against. */
+@Serializable
+@Doc("A proportion the built character should have.")
+data class RecipeTarget(
+    @Doc("What is measured: handLength, handWidth, footLength, footWidth, headHeight, headWidth, eyeLine, eyeWidth, eyeSpacing.")
+    val name: String,
+    @Doc("What the value is a share of: head, the head's height; or height, the figure's height from the ground to the top of the head. For a place (eyeLine) head is its depth down the head from the crown and height its height above the ground.")
+    val of: String,
+    @Doc("The share.") @Range(min = 0.0)
+    val value: Float,
+    @Doc("How far off it may be before it is flagged: a share of the value for a size (0.15 when left out), a share of the head for a place (0.05 when left out).")
+    val tolerance: Float? = null,
 )
 
 /** A named colour of the palette. */

@@ -16,7 +16,8 @@ It prints each view's box, pixel height and facing guess with its confidence, an
 - Two figures drawn overlapping read as one view: give `boxes=x,y,w,h;x,y,w,h`. A detached piece (a floating tail tip) joins the nearest figure; check it joined the right one.
 - A background the figure closes off (a tail curled against a leg, the gap under an arm on the hip) stays figure: open it with `holes=x,y`.
 - An off-white, graded or textured page is keyed from the border; a figure that bleeds into the page needs `ground=#rrggbb` and `groundTolerance=`.
-- The facing guess is unsure on tilted heads and dark hair: trust your eyes over it and name views yourself.
+- White socks, pale hands and cream sleeves within the paper's tolerance are kept as figure; a view still cut off at its feet or a hand needs `groundTolerance=` lower, or `boxes=`.
+- The facing guess carries a `reason`. A back is told by a head that is one colour, so it is dependable; front against three-quarter is not (a turned body with its face to the viewer reads front, a raised arm pulls a front toward three-quarter). Trust your eyes over it and name views yourself.
 
 ## 2. Heights: grid and measure
 
@@ -57,6 +58,19 @@ Read every line against the grid image:
 - **The head count** (`3.04 heads`) is the most important number on the sheet: a cartoon creature is 2 to 4 heads tall, a stylised person 5 to 7.5. Write it into the feature list and check the build against it (`judging.md`).
 - Measure the side view too (`view=side`): it gives the depths the front cannot, and where the knees and the seat really are.
 
+A landmark on a clothing edge (a sweater's ribbed hem for the hip, a cuff or a sock's top for the ankle) is magenta with that reason, and a waist the clothes hide is orange: the body's own is under the cloth, so place it by eye from the garment's hem and the description. Every landmark below the neck of a three-quarter view is magenta with a `warnings` line: read proportions from the front, side and back views and take the three-quarter for the face, hair and pose only. A crown raised by tufts or big hair carries a warning too: set `landmarks=crown:x,y` where the skull tops out when the head count looks wrong.
+
+### Measure the hands, feet and face
+
+`measure` and `zoom` also read the sizes that make a toon figure look right or wrong: `handLength`, `handWidth`, `footLength`, `footWidth`, and the face's `eyeLine`, `eyeWidth`, `eyeSpacing`, `nose`, `mouth`, `chinLength`, each as a share of the head's height and of the figure's height, with the same found, unsure, estimated and reason (`kit/README.md`, Reading a character sheet). Hands, feet and faces built too small or too plain are the commonest miss: read them here before drawing them.
+
+```
+tools/recipe.sh kit sheet measure C:/refs/pip.png names=front,side,back view=front height=1.6
+tools/recipe.sh kit sheet zoom C:/refs/pip.png names=front,side,back view=side region=feet height=1.6
+```
+
+A hand is read in the view that shows it apart from the body (a raised or A-pose arm), a foot's width in the front or back view and its length in the side view, the face in the front view. What a view cannot give is listed with why (`not read: a front view foreshortens the foot`); read it from another view, or give the marks by eye (`landmarks=wrist:x,y;handTip:x,y`, `heel:x,y;toeTip:x,y`) after looking at the `zoom` image, whose drawn lines show where each reading was taken. Check each on the zoom before trusting it: a spread hand reads as wide as its fingers, a pale eye white in pale skin reads as its iris and lid. `measure` writes `targets-<view>.json`: declare the proportions you trust in the file as `targets: targets({ handLength: "0.38 head", footLength: "0.45 head" })` (or pass `targets=<that file>` to the build), and after every build read the `proportions` and `FLAG` lines in `measure.txt` (`judging.md`). Fix every flag before judging by eye.
+
 `plan` in `measure-<view>.json` holds every landmark's height ready for `bodyPlan`; `widths` the half widths at head, neck, chest, waist, hip, thigh, knee and ankle; `pieces` the ears, arms, tail and anything else outside the core with their tips.
 
 ## 3. Colours: palette
@@ -73,7 +87,7 @@ One tile a colour with its hex, its share of the figure and where its pixels are
 tools/recipe.sh kit sheet profiles C:/refs/pip.png names=front,side,back front=front side=side stations=7 landmarks=crotch:243,556
 ```
 
-`profiles.json` gives the torso (resting up: `left`/`right` from the front, `front`/`back` from the side), each leg (resting down: `outer`/`inner`, `front`/`back`) and each loose arm, as radii at stations ready for `tube`, with `confidence` and `notes`. Pass the same `landmarks=` you fixed on the check image: the torso runs crotch to neck, the legs crotch to ankle. Treat them as a first draft:
+`profiles.json` gives the torso (resting up: `left`/`right` from the front, `front`/`back` from the side), each leg (resting down: `outer`/`inner`, `front`/`back`) and each loose arm, as radii at stations ready for `tube`, with `confidence` and `notes`. Pass the same `landmarks=` you fixed on the check image: the torso runs crotch to neck, the legs crotch to ankle. Treat them as a first draft (a `warnings` line says when the front or side view is guessed three-quarter; every radius is then `low` confidence):
 
 - Above the armpits the torso is held to the armpit's width where the arms join it: draw the chest and shoulders yourself from the grid.
 - Clothes are silhouette: a baggy tee or shorts widen the torso and legs. Take the body under them thinner (about the fit of the garment, `clothing.md`) and let the garment stand off it.

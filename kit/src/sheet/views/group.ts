@@ -9,7 +9,7 @@ const CLOSE_MOST = 0.2;
 /** A figure is at least this share of the tallest piece's height and of the largest piece's area. */
 const FIGURE_HEIGHT = 0.25;
 const FIGURE_AREA = 0.03;
-/** Small pieces in a cluster of at least this many are swatches, text or dots. */
+/** Small pieces in a cluster of at least this many are swatches, text or dots, and join a figure only where they all but touch it (CLOSE_REACH). */
 const CLUTTER_COUNT = 3;
 /** Pieces of clutter closer than this share of the sheet's larger side are one item, as letters make a word. */
 const CLUTTER_REACH = 0.02;
@@ -120,7 +120,7 @@ export function groupPieces(pieces: Component[], shade: (piece: Component) => bo
       else figures.push({ pieces: [piece], shadows: [], box: piece.box });
       continue;
     }
-    const near = swarm.has(piece.label) ? undefined : nearestFigure(piece, figures, edges, width, ATTACH_REACH);
+    const near = nearestFigure(piece, figures, edges, width, swarm.has(piece.label) ? CLOSE_REACH : ATTACH_REACH);
     if (near) join(near.figure, piece);
     else clutter.push(piece.box);
   }

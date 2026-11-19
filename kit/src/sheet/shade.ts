@@ -37,7 +37,7 @@ function castShadow(shade: Mask, ring: number): Mask {
 }
 
 /** Whether a pixel reads as the background in shadow: the same hue, uniformly darker. */
-export function isShade(image: Raster, background: Background, x: number, y: number): boolean {
+export function isShade(image: Raster, background: Pick<Background, "colorAt">, x: number, y: number): boolean {
   const p = pixelAt(image, x, y);
   const b = background.colorAt(x, y);
   const ratios = [0, 1, 2].map((c) => p[c] / Math.max(1, b[c]));

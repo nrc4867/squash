@@ -212,6 +212,8 @@ export interface Recipe {
   displayPose?: BonePose[];
   /** Named poses the build renders besides the display pose; not saved in the character. */
   poses?: { [key: string]: BonePose[] };
+  /** Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance. */
+  targets?: RecipeTarget[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -725,6 +727,20 @@ export interface RecipeStroke {
   mirrored?: boolean;
   /** Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are. */
   clean?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A proportion the built character should have. */
+export interface RecipeTarget {
+  /** What is measured: handLength, handWidth, footLength, footWidth, headHeight, headWidth, eyeLine, eyeWidth, eyeSpacing. */
+  name: string;
+  /** What the value is a share of: head, the head's height; or height, the figure's height from the ground to the top of the head. For a place (eyeLine) head is its depth down the head from the crown and height its height above the ground. */
+  of: string;
+  /** The share. */
+  value: number;
+  /** How far off it may be before it is flagged: a share of the value for a size (0.15 when left out), a share of the head for a place (0.05 when left out). */
+  tolerance?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

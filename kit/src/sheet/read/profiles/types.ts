@@ -29,6 +29,8 @@ export interface SheetProfiles {
   legs: Record<string, PartProfile>;
   arms: Record<string, PartProfile>;
   skipped: string[];
+  /** Why every radius here is only as sure as the views they were read from: a three-quarter view read as a front or a side. */
+  warnings: string[];
 }
 
 export interface ProfileOptions {

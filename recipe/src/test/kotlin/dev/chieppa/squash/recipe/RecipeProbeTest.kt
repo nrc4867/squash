@@ -44,4 +44,15 @@ class RecipeProbeTest {
         assertTrue(leg.any { "u runs down" in it && "right side" in leg.first() }, leg.joinToString("\n"))
         assertTrue(leg.any { "joint base:" in it }, leg.joinToString("\n"))
     }
+
+    @Test
+    fun aSocketMovedBySocketsAtIsReportedWhereItWasMoved() = runTest {
+        val moved = recipe.replace("\"sockets\": [", "\"socketsAt\": {\"socket.1\": [0.4, 0.25]}, \"sockets\": [")
+        val built = RecipeBuilder(folder).build(RecipeJson.read(moved)).document
+        val session = CharacterSession(built, TemplateLibrary(folder.parts, folder.plans), backgroundScope, StandardTestDispatcher(testScheduler))
+        runCurrent()
+        val probe = RecipeProbe(built.character, checkNotNull(session.assembly.output.value), folder, null)
+        val body = probe.describe("body")
+        assertTrue(body.any { "socket socket.1: u 0.4," in it }, body.joinToString("\n"))
+    }
 }

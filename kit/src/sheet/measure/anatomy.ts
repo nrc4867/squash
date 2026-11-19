@@ -1,6 +1,8 @@
 import type { Mask } from "../core/mask.ts";
+import type { Raster } from "../raster/image.ts";
 import type { SheetView } from "../views/sheet.ts";
 import { readBody } from "./body.ts";
+import { clothEdges, markOnEdges, type ClothEdge } from "./cloth.ts";
 import { coreMask, outsideCore } from "./core.ts";
 import { figureOf, type Figure } from "./figure.ts";
 import { readHead, type HeadReading } from "./head.ts";
@@ -26,7 +28,14 @@ export interface Anatomy {
   pieces: Piece[];
   /** The proportions the landmarks break, each landmark it names already marked unsure. */
   issues: LandmarkIssue[];
+  /** Rows where the colour across the body changes (hems, waistbands, cuffs), when the image was given. */
+  edges: ClothEdge[];
+  /** What the view is, or shows, that makes its readings less reliable: a turned figure, a crown raised by tufts. */
+  warnings: string[];
 }
+
+/** Landmarks the body below the head sets: in a turned view the silhouette's rows are not slices across the body. */
+const BELOW_THE_HEAD = ["shoulder", "armpit", "waist", "hip", "crotch", "knee", "ankle"] as const;
 
 function meanMark(points: ReadonlyArray<{ x: number; y: number }>): PixelMark | undefined {
   if (points.length === 0) return undefined;
@@ -34,7 +43,7 @@ function meanMark(points: ReadonlyArray<{ x: number; y: number }>): PixelMark | 
 }
 
 /** Reads a view's landmarks and parts; `given` marks, in the image's pixels, replace what is found and steer what follows. */
-export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = {}): Anatomy {
+export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = {}, image?: Raster): Anatomy {
   const figure = figureOf(view.mask, view.box);
   const head = readHead(figure);
   const marks: Record<string, PixelMark> = { top: { y: figure.top, status: "found" }, ground: { y: figure.ground, status: "found" } };
@@ -68,5 +77,20 @@ export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = 
   if (tailBottom) marks.tailBottom = tailBottom;
   for (const [name, mark] of Object.entries(given)) marks[name] = mark;
   const checked = checkLandmarks(marks, headLength);
-  return { view, figure, head, marks: checked.marks, headLength: Math.max(1, marks.chin.y - marks.crown.y), core, legs: legs?.tracks, pieces, issues: checked.issues };
+  const edges = image ? clothEdges(image, core, figure, (marks.neck ?? marks.chin).y) : [];
+  const warnings: string[] = [];
+  let read = markOnEdges(checked.marks, edges, figure);
+  if (view.guess.facing === "three-quarter") {
+    const why = `the view is guessed three-quarter (${Math.round(view.guess.confidence * 100)}%): its rows are not slices across the body, so the body's landmarks and widths are unsure; read proportions from a front or side view`;
+    warnings.push(why);
+    read = Object.fromEntries(
+      Object.entries(read).map(([name, mark]) =>
+        (BELOW_THE_HEAD as readonly string[]).includes(name) && mark.status === "found" ? [name, { ...mark, status: "unsure" as const, reason: "three-quarter view: the silhouette's rows are not slices across the body" }] : [name, mark],
+      ),
+    );
+  }
+  if (head.earTips.length > 0 && head.crown.status === "found" && head.earTips.some((t) => t.y < marks.crown.y - 0.05 * headLength)) {
+    warnings.push(`the outline rises above the skull (hair tufts, ears or buns, ${Math.round(((marks.crown.y - Math.min(...head.earTips.map((t) => t.y))) / headLength) * 100)}% of a head): the crown is read as where a round skull would top out, so the head is only as sure as that`);
+  }
+  return { view, figure, head, marks: read, headLength: Math.max(1, marks.chin.y - marks.crown.y), core, legs: legs?.tracks, pieces, issues: checked.issues, edges, warnings };
 }

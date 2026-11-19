@@ -10,6 +10,8 @@ export * from "./views/orientation.ts";
 export * from "./measure/anatomy.ts";
 export * from "./measure/landmark.ts";
 export * from "./measure/measurement.ts";
+export * from "./measure/readings.ts";
+export * from "./measure/cloth.ts";
 export * from "./measure/pieces.ts";
 export * from "./measure/sanity.ts";
 export * from "./read/overview.ts";

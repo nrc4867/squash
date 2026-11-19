@@ -15,6 +15,8 @@ export interface Orientation {
 
 /** The most lean or outward the build turns a rest by, as Move's sliders hold them. */
 export const MAX_TURN = 85;
+/** A direction this many degrees past MAX_TURN, floating point error, is still on it. */
+const TURN_SLACK = 1e-6;
 
 const RESTS: ReadonlyArray<readonly [Rest, Vec3]> = [
   ["forward", [1, 0, 0]],
@@ -53,7 +55,7 @@ function defaultUp(along: Vec3): Vec3 {
 /**
  * The rest, lean, outward and roll that point a part (its left side, for a pair) along `along` with its up (Side's +y, v 0) toward
  * `up`, squared to `along`; with no `up`, roll 0. The rest is the one nearest `along`; it fails where lean or outward would pass
- * `MAX_TURN`, as for a left part pointing right.
+ * `MAX_TURN` (a turn of exactly `MAX_TURN` is built), as for a left part pointing right.
  */
 export function orient(along: Vec3, up?: Vec3): Orientation {
   const d = unit(along);
@@ -64,8 +66,10 @@ export function orient(along: Vec3, up?: Vec3): Orientation {
   const ahead = dot(d, r);
   const outward = Math.atan2(dot(d, outDirection), ahead) * DEGREES;
   const lean = Math.atan2(dot(d, restUp), ahead) * DEGREES;
-  if (Math.abs(outward) > MAX_TURN || Math.abs(lean) > MAX_TURN) {
-    throw new Error(`[${along.join(", ")}] lies ${Math.round(Math.max(Math.abs(outward), Math.abs(lean)))} degrees from the nearest rest; the build turns a rest ${MAX_TURN} at most`);
+  if (Math.abs(outward) > MAX_TURN + TURN_SLACK || Math.abs(lean) > MAX_TURN + TURN_SLACK) {
+    const turn = Math.round(Math.max(Math.abs(outward), Math.abs(lean)));
+    const across = turn >= 89 ? ": no rest reaches a direction across the body to the character's right for a left part, so build the part on the other side and mirror" : "";
+    throw new Error(`[${along.join(", ")}] lies ${turn} degrees from the nearest rest; the build turns a rest ${MAX_TURN} at most${across}`);
   }
   const turned = unit(add(add(r, times(outDirection, Math.tan(outward / DEGREES))), times(restUp, Math.tan(lean / DEGREES))));
   const builtUp = square(restUp, turned);

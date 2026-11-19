@@ -10,3 +10,5 @@ export * from "./parts/index.ts";
 export * from "./garments/index.ts";
 export * from "./props/index.ts";
 export * from "./palette/index.ts";
+
+export * from "./targets/targets.ts";

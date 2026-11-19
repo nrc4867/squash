@@ -15,7 +15,13 @@ import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.GarmentCover
 import dev.chieppa.squash.character.surface.surfaceCovers
+import dev.chieppa.squash.recipe.model.RecipeTarget
 import dev.chieppa.squash.screens.look.measure.SurfaceChecks
+import dev.chieppa.squash.screens.look.measure.bodyProportions
+import dev.chieppa.squash.screens.look.measure.checkTargets
+import dev.chieppa.squash.screens.look.measure.hemLines
+import dev.chieppa.squash.screens.look.measure.partLines
+import dev.chieppa.squash.screens.look.measure.proportionLines
 import dev.chieppa.squash.screens.look.measure.SurfaceStackTimings
 import dev.chieppa.squash.screens.look.measure.SurfaceEdit
 import dev.chieppa.squash.screens.look.measure.armDepthInside
@@ -68,12 +74,13 @@ fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<S
 }
 
 /** Prints the checks of [session]'s character as [measureDocument] does, over a session already open with its pose node, on [work]. */
-fun measureSession(example: String, session: CharacterSession, work: TestWork, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) {
+fun measureSession(example: String, session: CharacterSession, work: TestWork, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true, targets: List<RecipeTarget> = emptyList()) {
     work.settle(session)
     val head = LookParts(session.document.value.character).head
     val outfits = session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }
     val poses = namedPoses.filterKeys { look.poses == null || it in look.poses }
     wardrobeLines(session.document.value.character).forEach { println("$example wardrobe: $it") }
+    partLines(session.document.value.character).forEach { println("$example $it") }
     for (outfit in outfits) {
         if (outfit != null) session.send(ShowOutfit(outfit))
         val name = "$example ${outfit?.value ?: "as saved"}"
@@ -85,6 +92,12 @@ fun measureSession(example: String, session: CharacterSession, work: TestWork, n
             continue
         }
         report(name, shown, head?.let(shown::part))
+        if (outfit == outfits.first()) {
+            val character = session.document.value.character
+            val proportions = bodyProportions(rest, character, session.characterSurface.output.value?.surface)
+            proportionLines(name, proportions, checkTargets(targets, proportions)).forEach(::println)
+            hemLines(rest, character).forEach { println("$name $it") }
+        }
         clothes(name, session)
         if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { sessionSurface(name, session, work, it, look.profile, timings) }
         if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }

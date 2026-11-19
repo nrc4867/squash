@@ -14,10 +14,11 @@
 #   tools/recipe.sh crop <sheet.png> [out=<folder>] [ground=#rrggbb]   a sheet of views on one background split by its gaps into
 #     view-1.png, view-2.png ... (default folder <sheet>-views beside it)
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false,
-# close=face,hand,foot (the default; also hands, feet, joins, or part ids such as close=foot-l,head), around=false (no back and
+# close=face,hand,foot (the default; also hands, feet, joins, part ids such as close=foot-l,head, or none), around=false (no back and
 # top views), only=<id>,... (draw just those parts; no close-ups, no measure unless measure=true), outfits=<id,...|all>,
 # poses=<name,...|all>, set=part:name:value,..., reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search
-# the camera, print it, then score) [ground=#rrggbb] [scale=<body units a metre>].
+# the camera, print it, then score) [ground=#rrggbb] [scale=<body units a metre>], targets=<file>,<file> (proportion targets from
+# `kit sheet measure`, checked beside the recipe's own in measure.txt).
 # Paths may be relative to where it is run from and may hold spaces. Prints every file it writes. Exits 2 on a recipe error.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -40,7 +41,7 @@ encoded() {
 }
 
 if [ $# -eq 0 ]; then
-  sed -n '2,21p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
 fi
 watch=0
@@ -69,6 +70,11 @@ esac
 for option in "$@"; do
   case "$option" in
     out=*|reference=*) args="$args ${option%%=*}=$(encoded "$(absolute "${option#*=}")")" ;;
+    targets=*)
+      files=""
+      IFS=',' read -ra listed <<< "${option#*=}"
+      for file in "${listed[@]}"; do files="${files:+$files,}$(absolute "$file")"; done
+      args="$args targets=$(encoded "$files")" ;;
     *) args="$args $(encoded "$option")" ;;
   esac
 done

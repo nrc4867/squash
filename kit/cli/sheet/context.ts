@@ -5,7 +5,7 @@ import type { SheetOptions } from "./options.ts";
 import { fileName } from "./output.ts";
 
 /**
- * Reads the sheet as the options say: ground=, groundTolerance=, holes=, names=, boxes= for the views, and box= for one view unless the
+ * Reads the sheet as the options say: ground=, groundTolerance=, holes=, pale=false, names=, boxes= for the views, and box= for one view unless the
  * command takes box= as a region of its own.
  */
 export function sheetFrom(image: string, options: SheetOptions, boxIsView = true): Sheet {
@@ -16,6 +16,7 @@ export function sheetFrom(image: string, options: SheetOptions, boxIsView = true
     box: boxIsView ? options.box() : undefined,
     boxes: options.boxes("boxes"),
     holes: options.points("holes"),
+    keepPale: options.text("pale") === "false" ? false : undefined,
   });
 }
 

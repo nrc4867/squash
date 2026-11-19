@@ -26,5 +26,22 @@ export function sheetProfiles(front: MeasuredView, side?: MeasuredView, options:
   }
   if (Object.keys(arms).length === 0) skipped.push("arms: no arm stands apart from the body in the front view");
   if (!side) skipped.push("depths: no side view given");
-  return { torso: typeof torso === "string" ? undefined : torso, legs: typeof legs === "string" ? {} : legs, arms, skipped };
+  const result = { torso: typeof torso === "string" ? undefined : torso, legs: typeof legs === "string" ? {} : legs, arms, skipped, warnings: [] as string[] };
+  const turned = (view: MeasuredView, role: string, what: string) => {
+    const guess = view.anatomy.view.guess;
+    if (guess.facing === "three-quarter") result.warnings.push(`the ${role} view (${view.anatomy.view.name}) is guessed three-quarter (${Math.round(guess.confidence * 100)}%): ${what} are not true ${what === "widths" ? "widths" : "depths"}, so every radius read from it is low confidence`);
+  };
+  turned(front, "front", "widths");
+  if (side) {
+    turned(side, "side", "depths");
+    if (side.anatomy.view.guess.facing !== "side" && side.anatomy.view.guess.facing !== "three-quarter") result.warnings.push(`the side view (${side.anatomy.view.name}) is guessed ${side.anatomy.view.guess.facing}, not side: its front and back radii are not depths`);
+  }
+  if (result.warnings.length > 0) {
+    const all = [result.torso, ...Object.values(result.legs), ...Object.values(result.arms)].filter((p): p is PartProfile => p !== undefined);
+    for (const part of all) {
+      part.confidence = "low";
+      part.notes.push(...result.warnings);
+    }
+  }
+  return result;
 }

@@ -25,8 +25,8 @@ export interface MeasureSheetOptions extends SheetOptions, MeasureOptions {
 export function measureView(sheet: Sheet, which?: string | number, options: MeasureOptions = {}): MeasuredView {
   const view = pickView(sheet, which);
   const given = typeof options.landmarks === "string" ? parseLandmarks(options.landmarks) : (options.landmarks ?? {});
-  const anatomy = readAnatomy(view, given);
-  return { anatomy, measurement: measurementOf(anatomy, options.height ?? 1, options.heightTo) };
+  const anatomy = readAnatomy(view, given, sheet.image);
+  return { anatomy, measurement: measurementOf(anatomy, options.height ?? 1, options.heightTo, sheet.image) };
 }
 
 /** Reads a sheet, or one box of it, from a file or raster. */

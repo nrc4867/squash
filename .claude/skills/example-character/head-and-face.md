@@ -65,6 +65,10 @@ export const muzzle = faceRegion("muzzle", "cream", oval({ center: [0, 0.1], rx:
 
 A two-tone face is two or more regions drawn in face places: the light mask first, then any darker patch over it, listed in the order they paint, with the same places along their shared border so they meet with no seam (`face-and-clothes.md`, Regions). Draw the mask in face places, not as a template patch region: a `patch: "muzzle"` region and a `face` region on one head meet with a seam.
 
+## Face places
+
+Measure the face off the sheet's front view before drawing it: `kit sheet measure` and `kit sheet zoom ... region=head` print `eyeLine` (its depth down the head from the crown), `eyeWidth`, `eyeSpacing`, `nose`, `mouth` and `chinLength`, as shares of the head's height, with status and reason, and draw them over the zoom; a fringe over the eyes or a turned head leaves them unread, and the nose and mouth are always unsure: confirm each on the zoom. A face that does not seem right is usually the eye line, the eyes' size or spacing, or the mouth's height: declare what you trust (`targets: targets({ eyeLine: "0.57 head", eyeWidth: "0.2 head", eyeSpacing: "0.35 head" })`) and fix every `FLAG` on `eyeLine`, `eyeWidth` and `eyeSpacing` in `measure.txt` (the built eye through its surface) before judging the face by eye.
+
 ## Eyes
 
 Eyes are painted on the head (`faceEye`), never parts: `face-and-clothes.md`, Eyes, gives every look field with its range and meaning, and how long one unit across and down is on each head template.
@@ -84,6 +88,7 @@ export const eyes = faceEye("eyes", {
 ```
 
 - Place it at the eye's middle on the front view, on the character's left; it mirrors to the right.
+- **Look units to body units.** `look.width` is half the opening's width as a share of the head's own coordinate across at the eye, so the eye is `2 * look.width * unit across` wide; `look.height` is the lid's rise as a share of the coordinate down. On a drawn head the unit across is the ring round the head at the eye (a ring of half widths 0.16 and 0.15 is about 0.97 round) and the unit down the head's length (0.4): a 0.09 wide eye takes `width` 0.09 / (2 * 0.97) = 0.046, a lid rising 0.06 `height` 0.06 / 0.4 = 0.15. Then read `eyeWidth` in `measure.txt` (the built width, through the surface) against the sheet's and scale `look.width` and `look.height` by target over built.
 - **Units are not square.** On an undrawn `head-round` a unit across is about 2.2 times a unit down, so a round iris takes `irisRatio` about 2.2 and a round opening a `height` about 1.5 times its `width`; a drawn head scales them with its own shape. Check the face close-up from the front and adjust until round reads round.
 - A dark bead eye (a mouse's, a bear's) is an iris filling the opening: `irisSize` near `width`, the iris and pupil one dark slot, a highlight, `lid` and `brow` as the sheet shows.
 - `flat: true` lays the eye flat across the face: right for a large eye on a small, round, front-facing head, wrong for an eye on the side of a long head, where it stretches.

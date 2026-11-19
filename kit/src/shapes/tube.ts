@@ -79,8 +79,9 @@ function view(spec: TubeSpec, plusDirection: Direction, mirrorMissing: boolean):
 }
 
 /**
- * Side and Top outlines for a part from radius profiles: `front`/`back` (or `up`/`down`) for Side and `left`/`right`
- * (or `outer`/`inner`) for Top, as the part's rest decides. A leg resting down takes front and back in Side.
+ * Side and Top outlines for a part from radius profiles, which names the part's rest decides: resting up or down, Side takes
+ * `front` and `back` and Top `left` and `right` (`outer` and `inner` on a pair); resting forward or back, Side takes `up` and `down`
+ * and Top `left` and `right`; resting out, Side takes `up` and `down` and Top `front` and `back`.
  */
 export function tube(spec: TubeSpec): TubeOutlines {
   const frame = restFrames[spec.rest];
