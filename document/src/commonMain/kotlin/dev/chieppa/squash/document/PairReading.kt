@@ -17,6 +17,9 @@ internal fun Character.anchorReadBy(anchor: Anchor, side: Side?): Anchor {
 /** The other side of the body from [mark], which is [mark] with its anchors across the middle or on their twins and what it floats through turned over. */
 fun Character.mirrorOf(mark: Mark): Mark = mark.mapAnchors(::mirroredAnchor).copy(id = MarkId(mark.id.value + MIRROR_SUFFIX), mirrored = false, flight = mark.flight.map { it.copy(across = -it.across) })
 
+/** The other side of the body from [region], which is [region] with its border across the middle or on its twins. */
+fun Character.mirrorOf(region: Region): Region = region.mapAnchors(::mirroredAnchor).copy(id = RegionId(region.id.value + MIRROR_SUFFIX), mirrored = false)
+
 private const val MIRROR_SUFFIX = "~mirror"
 
 /** [anchor] on the other side of the body: on its part's twin, or across the middle of a part in the middle. */

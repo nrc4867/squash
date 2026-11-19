@@ -60,6 +60,8 @@ import dev.chieppa.squash.uidesign.generated.stage_dress
 import dev.chieppa.squash.uidesign.generated.dress_tool_paint
 import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_line
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_region
 import dev.chieppa.squash.uidesign.generated.dress_new_garment
 import dev.chieppa.squash.uidesign.generated.view_garments_shown
 import dev.chieppa.squash.uidesign.generated.view_garments_ghosted
@@ -114,6 +116,8 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.ERASE_GARMENT to Res.string.edit_tool_erase,
     ShellActions.SMOOTH_GARMENT to Res.string.smooth_tool,
     ShellActions.LOOSE_END to Res.string.dress_tool_loose_end,
+    ShellActions.PRINT_REGION to Res.string.dress_tool_print_region,
+    ShellActions.PRINT_MARK to Res.string.dress_tool_print_line,
     ShellActions.NEW_GARMENT to Res.string.dress_new_garment,
     ShellActions.GARMENTS_SHOWN to Res.string.view_garments_shown,
     ShellActions.GARMENTS_GHOSTED to Res.string.view_garments_ghosted,
@@ -228,6 +232,8 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "paint" -> SquashIcons.PaintCloth
     "hole" -> SquashIcons.Hole
     "loose-end" -> SquashIcons.LooseEnd
+    "print-region" -> SquashIcons.PrintRegion
+    "print-line" -> SquashIcons.PrintLine
     "new-garment" -> SquashIcons.NewGarment
     else -> null
 }

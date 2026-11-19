@@ -61,7 +61,7 @@ data class MarkVersion(val points: List<Anchor>, val width: MarkWidth = MarkWidt
 /**
  * A line on the surface: a polyline of anchors with a width along it. [versions] replace its shape in the camera bins they
  * name, and [points] and [width] hold in every other. A [cameraLocked] mark sits where the light and camera put it. A [mirrored] mark on a part in the
- * middle of the body shows on both sides of the middle. [slot] is its color, the ink's if none. See HLD: look, Marks.
+ * middle of the body shows on both sides of the middle, and on a garment shows on the other side of the body too. [slot] is its color, the ink's if none. See HLD: look, Marks.
  */
 @Serializable
 data class Mark(

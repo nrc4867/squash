@@ -87,6 +87,7 @@ class SurfaceLines(
         surface.contour(parts, view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
         addAll(surface.inks(view, look, ink))
+        addAll(surface.garmentMarkDraws(look, palette, ink, taper))
         work.parts.forEach { (id, held) ->
             addAll(interiorInk(id, held, DepthLayer.SCENE, view))
             if (id !in inSurface) faces?.let { addAll(it.draws(id, view).ribbons) }

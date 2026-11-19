@@ -46,8 +46,20 @@ internal fun region(part: PartId, region: Region): RecipeRegion {
     val uv = uvForm(part, region.border)
     return RecipeRegion(
         region.id.value, region.slot.value, region.ink, uv?.first ?: BODY_PATCH, border = uv?.second, anchors = if (uv == null) region.border else null,
-        corners = region.corners.sorted(), curved = region.curved,
+        corners = region.corners.sorted(), curved = region.curved, mirrored = region.mirrored,
     )
+}
+
+/** [region] printed on a garment's cloth, naming the part its border lies on where it lies on one. */
+internal fun printedRegion(region: Region): RecipeRegion {
+    val part = region.border.first().part
+    return region(part, region).let { if (it.border != null) it.copy(on = part.value) else it }
+}
+
+/** [mark] printed on a garment's cloth, naming the part its places lie on where they lie on one. */
+internal fun printedMark(mark: Mark): RecipeMark {
+    val part = mark.points.first().part
+    return mark(part, mark).let { if (it.points != null) it.copy(on = part.value) else it }
 }
 
 internal fun mark(part: PartId, mark: Mark): RecipeMark {

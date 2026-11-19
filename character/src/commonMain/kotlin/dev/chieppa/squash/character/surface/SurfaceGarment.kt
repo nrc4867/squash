@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.surface
 
+import dev.chieppa.squash.character.build.ResolvedPoint
 import dev.chieppa.squash.geom.CurvePoint
 import dev.chieppa.squash.geom.LevelCut
 import dev.chieppa.squash.geom.RenderMesh
@@ -47,19 +48,23 @@ class SurfaceGarment(
     fun within(shown: LevelCut, values: FloatArray): SurfaceGarment =
         SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hems, lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues)
 
+    /** This garment worn as [cover], which differs from its own only in what its cloth prints and its areas' colours, with nothing painted yet. */
+    fun reprinted(cover: WornCover): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, null, seamValues)
+
     /** This garment with [paint] painted over its color. */
     fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues)
 
     /**
-     * This garment on [moved], its surface moved, its cut laid again and its hems and lines found there again; where the move leaves
+     * This garment on [moved], its surface moved, its cut laid again and its hems and lines found there again, the marks its paint inks
+     * carried by [carry] where the move is a pose; where the move leaves
      * quads out of the drawn mesh, as a pose parting two touching parts does, its cut is made again over what is left.
      */
-    fun movedTo(moved: CharacterSurface): SurfaceGarment {
+    fun movedTo(moved: CharacterSurface, carry: ((ResolvedPoint) -> ResolvedPoint)? = null): SurfaceGarment {
         val kept = touchedTriangles(moved.lines.triangles, coverage)
         val laid = if (moved.render.indices.size == surface.render.indices.size) cut else LevelCut.of(cutValues, moved.render.indices)
         return SurfaceGarment(
             cover, moved, coverage, laid, laid.mesh(moved.render), hemsOf(moved.lines, coverage), TriangleLines(moved.positions, moved.lineNormals, kept, coverage), drawnCoverage, holes, cutValues, ends,
-            paint?.on(moved.render), seamValues,
+            paint?.let { if (carry == null) it.on(moved.render) else it.posed(moved.render, carry) }, seamValues,
         )
     }
 

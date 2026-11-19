@@ -3,13 +3,18 @@
   "format": 1,
   "id": "painted-tee",
   "name": "Painted tee",
-  "x-features": "a stout invented biped with a short tail, in a one-piece crew-neck tee with red ribbing and shorts with a waistband and side splits",
+  "x-features": "a stout invented biped with a short tail, in a one-piece crew-neck tee with red ribbing, a chest stripe and a printed red drop between two blue leaves, and shorts with a waistband, side splits and two stitched back pockets",
   "palette": [
     {"slot": "skin", "color": "#e8b48a"},
     {"slot": "shirt", "color": "#4a7fc1"},
     {"slot": "rib", "color": "#c8323a"},
     {"slot": "khaki", "color": "#c9b27a"},
     {"slot": "band", "color": "#5b4330"},
+    {"slot": "stripe", "color": "#f2efe6"},
+    {"slot": "drop", "color": "#d23a2e"},
+    {"slot": "leaf", "color": "#1d3b84"},
+    {"slot": "pocket", "color": "#b09658"},
+    {"slot": "thread", "color": "#f3e7c4"},
     {"slot": "ink", "color": "#2a1e1a"},
     {"slot": "eye-white", "color": "#fbf8f2"},
     {"slot": "iris", "color": "#3c2a1e"}
@@ -69,6 +74,11 @@
            {"on": "neck", "shape": "band", "u": [0.0, 0.3]},
            {"on": "arm-l", "shape": "band", "u": [0.28, 0.34]}
          ]}
+       ],
+       "regions": [
+         {"id": "stripe", "on": "torso", "slot": "stripe", "curved": false, "mirrored": true, "border": [[0.555, -0.01], [0.555, 0.25], [0.555, 0.51], [0.59, 0.51], [0.59, 0.25], [0.59, -0.01]], "corners": [0, 2, 3, 5]},
+         {"id": "drop", "on": "torso", "slot": "drop", "ink": true, "border": [[0.645, 0.0], [0.6634, 0.024], [0.6975, 0.03], [0.75, 0.0165], [0.795, 0.0], [0.75, -0.0165], [0.6975, -0.03], [0.6634, -0.024]], "corners": [4]},
+         {"id": "leaf", "on": "torso", "slot": "leaf", "ink": true, "mirrored": true, "border": [[0.655, 0.04], [0.6831, 0.0699], [0.7168, 0.0854], [0.7487, 0.0885], [0.77, 0.085], [0.7568, 0.068], [0.7312, 0.0486], [0.6959, 0.0371]], "corners": [0, 4]}
        ]},
       {"id": "shorts", "name": "Shorts", "slot": "bottom", "layer": 1, "color": "khaki", "fit": 0.02,
        "areas": [
@@ -81,10 +91,23 @@
            {"on": "torso", "shape": "band", "u": [0.41, 0.48]}
          ]}
        ],
-       "holes": [{"part": "tail"}]}
+       "holes": [{"part": "tail"}],
+       "regions": [
+         {"id": "pocket", "on": "torso", "slot": "pocket", "curved": false, "mirrored": true, "border": [[0.205, 0.37], [0.34, 0.366], [0.34, 0.459], [0.205, 0.455], [0.19, 0.4125]], "corners": [0, 1, 2, 3, 4]}
+       ],
+       "marks": [
+         {"id": "pocket-stitch", "on": "torso", "slot": "thread", "width": [{"at": 0, "scale": 0.45}, {"at": 1, "scale": 0.45}], "mirrored": true, "points": [[0.328, 0.376], [0.2122, 0.376], [0.202, 0.4125], [0.2122, 0.449], [0.328, 0.449]]}
+       ]}
     ],
     "outfits": [{"id": "casual", "name": "Casual", "picks": {"top": "tee", "bottom": "shorts"}}],
     "shown": "casual"
+  },
+  "poses": {
+    "back": [
+      {"part": "torso", "joint": "base", "twist": 180, "mode": "free"},
+      {"part": "arm-l", "joint": "base", "lean": -30},
+      {"part": "arm-r", "joint": "base", "lean": -30}
+    ]
   },
   "displayPose": [
     {"part": "arm-l", "joint": "base", "lean": -30},

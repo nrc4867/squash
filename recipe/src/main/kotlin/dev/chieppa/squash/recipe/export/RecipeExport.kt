@@ -135,6 +135,8 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
             }
         },
         looseEnds = garment.looseEnds,
+        regions = garment.regions.map(::printedRegion),
+        marks = garment.marks.map(::printedMark),
     )
 }
 

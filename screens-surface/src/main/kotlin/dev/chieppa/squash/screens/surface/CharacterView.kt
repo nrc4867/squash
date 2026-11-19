@@ -123,6 +123,7 @@ fun characterView(
         oneLines.contour(lined, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, radius) }
         lined.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
         ribbons += oneLines.inks(view, look, ink)
+        ribbons += oneLines.garmentMarkDraws(look, state.palette, ink, state.taper)
     } else {
         state.only.filter { it in inSurface }.forEach { ribbons += oneLines.sectionContour(it, view, look, ink, radius) }
     }

@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.sheet
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.character.surface.CharacterSurface
+import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.shell.Stage
@@ -39,6 +40,14 @@ fun AppState.surfaceThrough(sight: SurfaceView): CharacterSurface? {
     val rest = open.characterSurface.output.value?.surface ?: return null
     if (!showsPose(sight)) return rest
     return open.sessionSurface.posed.value?.output?.value?.posed?.surface ?: rest
+}
+
+/** The garments the open character wears as the pane [sight] looks through shows them, posed where [showsPose]; null until they are built. */
+fun AppState.dressThrough(sight: SurfaceView): SurfaceDress? {
+    val open = session.value ?: return null
+    val rest = open.sessionSurface.dress.output.value?.dress
+    if (!showsPose(sight)) return rest
+    return open.sessionSurface.posed.value?.output?.value?.posed?.dress ?: rest
 }
 
 /** Whether a pane draws the one surface's weights or its posed form: the Rig stage's weights, or a [pose] that moves a bone where a pane shows the pose. */

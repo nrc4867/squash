@@ -31,10 +31,12 @@ internal fun BuildContext.paintPart(index: Int, part: RecipePart, id: PartId) {
     part.color?.let { send("$path.color", SetBaseSlot(id, slot("$path.color", it))) }
     part.areas.forEach { (area, slot) -> send("$path.areas.$area", SetAreaFill(id, area, slot("$path.areas.$area", slot))) }
     part.regions.forEachIndexed { i, r ->
+        if (r.on != null) fail("$path.regions[$i].on", "on names the part only in a garment's regions; a part's own regions lie on it")
         val region = region("$path.regions[$i]", id, r)
         send("$path.regions[$i]", SetRegion(id, region.id, region))
     }
     part.marks.forEachIndexed { i, m ->
+        if (m.on != null) fail("$path.marks[$i].on", "on names the part only in a garment's marks; a part's own marks lie on it")
         val mark = mark("$path.marks[$i]", id, m)
         send("$path.marks[$i]", SetMark(id, mark.id, mark))
     }
@@ -54,7 +56,7 @@ internal fun BuildContext.paintPart(index: Int, part: RecipePart, id: PartId) {
     }
 }
 
-private fun BuildContext.mark(path: String, part: PartId, mark: RecipeMark): Mark {
+internal fun BuildContext.mark(path: String, part: PartId, mark: RecipeMark): Mark {
     val points = anchors(path, part, mark.patch, mark.points, mark.face, mark.anchors, "points")
     val slot = mark.slot?.let { slot("$path.slot", it) }
     return guard(path) {

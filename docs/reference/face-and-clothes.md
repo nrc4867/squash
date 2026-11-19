@@ -45,6 +45,8 @@ An expression's `open` (`{"mouth": 1}`) opens a group by id while that expressio
 | region `anchors` | The border as anchors, each naming its part; for a region that runs across parts. |
 | region `corners` | Indices into the border's places that are sharp corners, as a chin's point. |
 | region `curved` | Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; false runs it straight between them there. |
+| region `mirrored` | On a part in the middle of the body (a torso, a head): also shown mirrored on the other side, at 1 - v. In a garment's regions, on a pair's side too: shown on its other side. |
+| region `on` | In a garment's regions only: the body part its border's places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. |
 
 ## Eyes
 
@@ -120,6 +122,9 @@ One unit of a look's lengths in body units, on each head template built undrawn 
 | areas or covers | `areas` paint the cloth as Dress does, stroke by stroke; `covers` are the simple form, a box of cells each, painted into the first area; a garment may have both |
 | what areas write | with `areas`, `holes` or `tucks`, the parts covered and how far, the parts that come out through the cloth (a part on a socket inside the painted region and not painted itself), the tucked parts and the inked seams are read from the cells, as Dress writes them |
 | a second colour | a later area with its own `color`: a collar, cuffs or a waistband; where two areas meet the cloth stays one piece and the seam is inked with the hems |
+| a print on the cloth | a garment's `regions` and `marks`, written as a part's are but naming the body part under the cloth with `on`, in its u and v: a chest symbol as a region with `ink` (a filled shape, its border inked), a pocket as a region and a thin mark along its edge, a stripe as a long thin region; `mirrored` shows it again on the other side of the body |
+| where a print shows | only on painted cloth: a region is cut to the garment's cloth and a mark ends where the cloth does; it rides the cloth's fit and pose and is not drawn while the garment is not worn |
+| a thin or stitched line | a mark with `width` stops below 1 (0.4 is a thin stitch) in its own `slot`; a dashed stitch is a row of short marks |
 | a curved hem or a side split | paint the band, then a stroke with `unpaint` (an ellipse or lasso) over the hem where it should open or curve |
 | which way v faces | it depends on how the part rests; `tools/recipe.sh probe <recipe> part=<id>` prints where v 0, 0.25, 0.5 and 0.75 face |
 | a sleeve or trouser leg | paint the limb from u 0; its root rows meet the torso's cells, so the cloth runs on from the shoulder or hip in one piece |
@@ -150,6 +155,8 @@ Fields as the schema describes them:
 | garment `tucks` | Whether each small part inside the cloth (an ear, tail, horn, spike or fin it holds whole; the toes or claws at a foot's end it reaches) is tucked under smooth cloth or shaped by it. Left out: toes, claws, tails, horns and spikes tucked, the rest shaped. |
 | garment `changes` | What it does to body parts under it, by part (a pair by its left side). With areas, a part the cloth says something of takes what the cells say (through where it comes out, hide where it is tucked); a change here holds on every other part. |
 | garment `looseEnds` | Loose ends it hangs, as a scarf's tails. |
+| garment `regions` | Regions printed on the cloth, as a chest symbol, a pocket or a stripe: filled shapes in a palette slot, the border inked with ink, given as a part's regions are but naming the body part under the cloth with on, in that part's u and v (or face places on a head, or anchors). They ride the cloth's fit and pose and show only where the cloth is painted, over its areas' colours. |
+| garment `marks` | Lines printed on the cloth, as stitching or a pocket's outline: given as a part's marks are but naming the body part under the cloth with on; a line only (kind line), its weight along it from width (stops at 0 to 1 along, each a share of the line's weight: 0.4 a thin stitch), its colour from slot. A line shows only where the cloth is painted and ends where it ends. |
 | area `id` | Unique within the garment, as area-1. |
 | area `name` | Its name in Dress; blank when left out. |
 | area `color` | Its palette slot, as a red collar on a blue tee; the garment's color when left out. |

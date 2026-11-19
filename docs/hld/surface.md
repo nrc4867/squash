@@ -50,6 +50,7 @@ Sockets and landmarks read the parent's own swept surface at (u, v), so placing 
 - **Separate parts** meeting the body draw the overlap crease: the curve on the part where it leaves the body's field.
 - **Hems and openings** are a garment mesh's open edges, which lie on smooth level curves of its coverage; their ink is on by the garment's hem switch.
 - **Region borders** are their cut curves.
+- **Prints on a garment** are lines resolved on the garment's own field and cut to its cloth (data-model.md, A garment prints on its cloth).
 
 ## Shading
 

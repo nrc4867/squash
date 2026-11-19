@@ -53,6 +53,8 @@ object ShellActions {
     val ERASE_GARMENT = ActionId(BuildTool.ERASE_GARMENT.actionId)
     val SMOOTH_GARMENT = ActionId(BuildTool.SMOOTH_GARMENT.actionId)
     val LOOSE_END = ActionId(BuildTool.LOOSE_END.actionId)
+    val PRINT_REGION = ActionId(BuildTool.PRINT_REGION.actionId)
+    val PRINT_MARK = ActionId(BuildTool.PRINT_MARK.actionId)
     val NEW_GARMENT = ActionId("new-garment")
     val GARMENTS_SHOWN = ActionId("garments-shown")
     val GARMENTS_GHOSTED = ActionId("garments-ghosted")
@@ -240,6 +242,8 @@ fun Shell.registerActions() {
     tool(BuildTool.ERASE_GARMENT, "erase", "X")
     tool(BuildTool.SMOOTH_GARMENT, "smooth", "S")
     tool(BuildTool.LOOSE_END, "loose-end", "L")
+    tool(BuildTool.PRINT_REGION, "print-region", "R")
+    tool(BuildTool.PRINT_MARK, "print-line", "K")
     action(ShellActions.NEW_GARMENT, "new-garment", chord("N"), inWorkspace, Stage.DRESS.keyMode) { scope.launch { state.newGarment() } }
 
     tool(BuildTool.DRAG, "drag", "D")

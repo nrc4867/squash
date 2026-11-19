@@ -3,11 +3,13 @@ package dev.chieppa.squash.recipe.build
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ShowOutfit
@@ -62,6 +64,12 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     val color = garment.color?.let { slot("$path.color", it) }
     val partFits = garment.partFits.entries.associate { (name, fit) -> partOf("$path.partFits.$name", name) to fit }
     val (areas, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
+    val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r) } }
+    val marks = garment.marks.mapIndexed { i, m ->
+        val p = "$path.marks[$i]"
+        if (m.kind != MarkKind.LINE) fail("$p.kind", "a mark printed on cloth is a line, not ${m.kind.name.lowercase()}")
+        mark(p, printedOn(p, m.on, m.anchors), m)
+    }
     return guard(path) {
         Garment(
             id = GarmentId(garment.id),
@@ -79,6 +87,8 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
             tucks = tucks,
             areas = areas,
             holes = holes,
+            regions = regions,
+            marks = marks,
         )
     }
 }
@@ -92,4 +102,11 @@ private fun BuildContext.change(path: String, part: PartId, change: RecipeChange
         checkParams("$path.shape", template, shapeParams(change.shape.size, change.shape.lean, change.shape.outward, change.shape.params))
         BodyPartChange.Swap(template.ref, partData("$path.shape", part, change.shape))
     }
+}
+
+/** The body part a print at [path] lies on: the part [on] names, or the part its [anchors] start on. */
+private fun BuildContext.printedOn(path: String, on: String?, anchors: List<Anchor>?): PartId = when {
+    on != null -> partOf("$path.on", on)
+    !anchors.isNullOrEmpty() -> anchors.first().part
+    else -> fail("$path.on", "a print on cloth names the body part it lies on with on, or gives anchors")
 }

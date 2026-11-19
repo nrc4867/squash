@@ -64,7 +64,7 @@ internal fun BuildContext.region(path: String, part: PartId, region: RecipeRegio
     val border = anchors(path, part, region.patch, region.border, region.face, region.anchors, "border")
     val slot = slot("$path.slot", region.slot)
     region.corners.forEachIndexed { i, c -> if (c !in border.indices) fail("$path.corners[$i]", "corner $c is not an index into the border (0 to ${border.lastIndex})") }
-    return guard(path) { Region(RegionId(region.id), border, slot, region.ink, region.corners.toSet(), region.curved) }
+    return guard(path) { Region(RegionId(region.id), border, slot, region.ink, region.corners.toSet(), region.curved, region.mirrored) }
 }
 
 /** Anchors on [part] from exactly one of [uv] on [patch], [face] places on its face, or [given] anchors. */
@@ -85,6 +85,9 @@ internal fun BuildContext.partData(path: String, part: PartId, shape: RecipeShap
     surface = SurfaceWork(
         baseSlot = shape.color?.let { slot("$path.color", it) },
         areaFills = shape.areas.mapValues { (area, slot) -> slot("$path.areas.$area", slot) },
-        regions = shape.regions.mapIndexed { i, r -> region("$path.regions[$i]", part, r) },
+        regions = shape.regions.mapIndexed { i, r ->
+            if (r.on != null) fail("$path.regions[$i].on", "on names the part only in a garment's regions; a shape's regions lie on its part")
+            region("$path.regions[$i]", part, r)
+        },
     ),
 )

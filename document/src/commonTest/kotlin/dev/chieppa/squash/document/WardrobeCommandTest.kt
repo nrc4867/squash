@@ -210,6 +210,48 @@ class WardrobeCommandTest {
     }
 
     @Test
+    fun printsAndAreaColorsAreSetReplacedRemovedAndUndone() {
+        val start = WinterFennec.dressed()
+        val area = GarmentArea(GarmentAreaId("area-1"), "Area 1", mapOf(LEG_L to listOf(0, 2048)))
+        val border = listOf(Anchor(TORSO, BODY_PATCH, 0.5f, 0.1f), Anchor(TORSO, BODY_PATCH, 0.6f, 0.1f), Anchor(TORSO, BODY_PATCH, 0.55f, 0.2f))
+        val region = Region(RegionId("print-1"), border, SlotName("cream"), ink = true, mirrored = true)
+        val mark = Mark(MarkId("line-1"), border.take(2), slot = SlotName("cream"))
+        scenario(start) {
+            run(SetGarmentPaint(SWEATER, listOf(area), emptyList()))
+            run(SetGarmentAreaColor(SWEATER, area.id, SlotName("cream")))
+            run(SetGarmentRegion(SWEATER, region.id, region))
+            run(SetGarmentMark(SWEATER, mark.id, mark))
+            run(SetGarmentRegion(SWEATER, region.id, region.copy(ink = false)))
+            expect {
+                val sweater = checkNotNull(it.wardrobe.garment(SWEATER))
+                assertEquals(SlotName("cream"), sweater.area(area.id)?.color)
+                assertEquals(listOf(region.copy(ink = false)), sweater.regions)
+                assertEquals(listOf(mark), sweater.marks)
+                assertEquals(sweater.copy(regions = emptyList(), marks = emptyList(), areas = listOf(area)), sweater.unprinted)
+            }
+            run(SetGarmentMark(SWEATER, mark.id, null))
+            run(SetGarmentAreaColor(SWEATER, area.id, null))
+            expect {
+                val sweater = checkNotNull(it.wardrobe.garment(SWEATER))
+                assertEquals(emptyList(), sweater.marks)
+                assertNull(sweater.area(area.id)?.color)
+            }
+            repeat(7) { undo() }
+            expect(start)
+        }
+    }
+
+    @Test
+    fun aPrintIsALineOnPartsTheDocumentHolds() {
+        val start = WinterFennec.dressed()
+        val fur = Mark(MarkId("line-1"), listOf(Anchor(TORSO, BODY_PATCH, 0.5f, 0.1f)), kind = MarkKind.FUR)
+        val nowhere = Region(RegionId("print-1"), List(3) { Anchor(PartId("nowhere"), BODY_PATCH, 0.5f, it * 0.1f) }, SlotName("cream"))
+        assertFailsWith<IllegalArgumentException> { SetGarmentMark(SWEATER, fur.id, fur).apply(start) }
+        assertFailsWith<IllegalArgumentException> { SetGarmentRegion(SWEATER, nowhere.id, nowhere).apply(start) }
+        assertFailsWith<IllegalArgumentException> { SetGarmentRegion(SWEATER, nowhere.id, null).apply(start) }
+    }
+
+    @Test
     fun inkFitColorAndLooseEnds() {
         val start = WinterFennec.dressed()
         val end = LooseEnd(LooseEndId("tail"), TORSO)

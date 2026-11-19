@@ -18,6 +18,8 @@ import dev.chieppa.squash.uidesign.generated.dress_from_hem
 import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_paint
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_line
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_region
 import dev.chieppa.squash.uidesign.generated.edit_percent
 import dev.chieppa.squash.uidesign.generated.edit_tool_erase
 import dev.chieppa.squash.uidesign.generated.shell_action_edit_curves
@@ -40,7 +42,7 @@ private val READOUT_WIDTH = 40.dp
 
 /**
  * The Dress inspector: the worn garments' layers, then the armed tool's options, then the picked garment, with its fit, its painted
- * areas, edges and holes, and its hem ink, the small parts tucked inside it, its loose ends and its color. The layers come first because the rest changes with
+ * areas, edges and holes, and its hem ink, the small parts tucked inside it, what its cloth prints, its loose ends and its color. The layers come first because the rest changes with
  * the pick, so picking one leaves its row where it was.
  */
 @Composable
@@ -51,10 +53,11 @@ fun DressInspector(state: AppState, session: CharacterSession) {
     val character = document.character
     val garment = picked?.let(character.wardrobe::garment)
     LayersSection(state, session, character)
-    if (tool.dresses) ToolOptions(state, tool)
+    if (tool.dresses) ToolOptions(state, session, tool)
     if (garment != null) {
         GarmentSection(state, session, character, garment)
         TuckSection(state, session, character, garment)
+        PrintsSection(session, garment)
         LooseEndsSection(state, session, character, garment)
         GarmentColorSection(session, character, garment)
     }
@@ -62,12 +65,14 @@ fun DressInspector(state: AppState, session: CharacterSession) {
 
 /** The armed garment tool's options, or no section for a tool with none. */
 @Composable
-private fun ToolOptions(state: AppState, tool: BuildTool) {
+private fun ToolOptions(state: AppState, session: CharacterSession, tool: BuildTool) {
     val options: (@Composable () -> Unit) = when (tool) {
         BuildTool.PAINT -> { { PaintOptions(state) } }
         BuildTool.EDIT_GARMENT -> { { EditCurvesOptions(state) } }
         BuildTool.HOLE -> { { HoleOptions(state) } }
         BuildTool.LOOSE_END -> { { LooseEndOptions(state) } }
+        BuildTool.PRINT_REGION -> { { PrintOptions(state, session, region = true) } }
+        BuildTool.PRINT_MARK -> { { PrintOptions(state, session, region = false) } }
         else -> return
     }
     DrawerSection(stringResource(toolName(tool))) { options() }
@@ -114,5 +119,7 @@ private fun toolName(tool: BuildTool): StringResource = when (tool) {
     BuildTool.SMOOTH_GARMENT -> Res.string.smooth_tool
     BuildTool.HOLE -> Res.string.dress_tool_hole
     BuildTool.LOOSE_END -> Res.string.dress_tool_loose_end
+    BuildTool.PRINT_REGION -> Res.string.dress_tool_print_region
+    BuildTool.PRINT_MARK -> Res.string.dress_tool_print_line
     else -> Res.string.dress_tool_paint
 }

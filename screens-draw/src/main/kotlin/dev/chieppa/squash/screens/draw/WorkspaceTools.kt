@@ -54,6 +54,8 @@ import dev.chieppa.squash.uidesign.generated.dress_tool_paint
 import dev.chieppa.squash.uidesign.generated.dress_tool_silhouette
 import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_line
+import dev.chieppa.squash.uidesign.generated.dress_tool_print_region
 import dev.chieppa.squash.uidesign.generated.stage_dress
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
@@ -172,6 +174,8 @@ private fun dressSections(tool: BuildTool, state: AppState): List<ToolSection> {
         BuildTool.SMOOTH_GARMENT to SquashIcons.SmoothCurve,
         BuildTool.HOLE to SquashIcons.Hole,
         BuildTool.LOOSE_END to SquashIcons.LooseEnd,
+        BuildTool.PRINT_REGION to SquashIcons.PrintRegion,
+        BuildTool.PRINT_MARK to SquashIcons.PrintLine,
     )
     val labels = mapOf(
         BuildTool.PAINT to paint,
@@ -180,6 +184,8 @@ private fun dressSections(tool: BuildTool, state: AppState): List<ToolSection> {
         BuildTool.SMOOTH_GARMENT to stringResource(Res.string.smooth_tool),
         BuildTool.HOLE to stringResource(Res.string.dress_tool_hole),
         BuildTool.LOOSE_END to stringResource(Res.string.dress_tool_loose_end),
+        BuildTool.PRINT_REGION to stringResource(Res.string.dress_tool_print_region),
+        BuildTool.PRINT_MARK to stringResource(Res.string.dress_tool_print_line),
     )
     val armed = tool.takeIf { it in icons }
     val newGarment = stringResource(Res.string.dress_new_garment)

@@ -146,6 +146,48 @@ data class RenameGarmentArea(val garment: GarmentId, val area: GarmentAreaId, va
     }
 }
 
+/** Colours [garment]'s area [area] from palette slot [color], or from the garment's own while null. */
+@Serializable
+@SerialName("setGarmentAreaColor")
+data class SetGarmentAreaColor(val garment: GarmentId, val area: GarmentAreaId, val color: SlotName?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        require(held.area(area) != null) { "Garment ${garment.value} has no area ${area.value}" }
+        held.copy(areas = held.areas.map { if (it.id == area) it.copy(color = color) else it })
+    }
+}
+
+/** Prints [region] on [garment]'s cloth as its region [id], replacing the one of that id, or takes that region away when [region] is null. */
+@Serializable
+@SerialName("setGarmentRegion")
+data class SetGarmentRegion(val garment: GarmentId, val id: RegionId, val region: Region?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        require(region == null || region.id == id) { "Region ${region?.id?.value} is set as ${id.value}" }
+        region?.border?.forEach { document.requirePart(it.part) }
+        held.copy(regions = replacedOrAdded(held.regions, id, region) { it.id })
+    }
+}
+
+/** Prints [mark] on [garment]'s cloth as its mark [id], replacing the one of that id, or takes that mark away when [mark] is null. */
+@Serializable
+@SerialName("setGarmentMark")
+data class SetGarmentMark(val garment: GarmentId, val id: MarkId, val mark: Mark?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        require(mark == null || mark.id == id) { "Mark ${mark?.id?.value} is set as ${id.value}" }
+        mark?.points?.forEach { document.requirePart(it.part) }
+        held.copy(marks = replacedOrAdded(held.marks, id, mark) { it.id })
+    }
+}
+
+/** [items] with the one of [id] replaced by [item], [item] added after them where none is, or the one of [id] taken away where [item] is null. */
+private fun <T, K> replacedOrAdded(items: List<T>, id: K, item: T?, idOf: (T) -> K): List<T> = when {
+    item == null -> {
+        require(items.any { idOf(it) == id }) { "Nothing to take away as $id" }
+        items.filter { idOf(it) != id }
+    }
+    items.any { idOf(it) == id } -> items.map { if (idOf(it) == id) item else it }
+    else -> items + item
+}
+
 /** Records the Tuck choice for [kind] on [part] in [garment], or takes it away when [tucked] is null. */
 @Serializable
 @SerialName("setTuck")

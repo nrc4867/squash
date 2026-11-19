@@ -77,6 +77,18 @@ data class RecipeGarment(
     val changes: Map<String, RecipeChange> = emptyMap(),
     @Doc("Loose ends it hangs, as a scarf's tails.")
     val looseEnds: List<LooseEnd> = emptyList(),
+    @Doc(
+        "Regions printed on the cloth, as a chest symbol, a pocket or a stripe: filled shapes in a palette slot, the border inked with ink, " +
+            "given as a part's regions are but naming the body part under the cloth with on, in that part's u and v (or face places on a " +
+            "head, or anchors). They ride the cloth's fit and pose and show only where the cloth is painted, over its areas' colours.",
+    )
+    val regions: List<RecipeRegion> = emptyList(),
+    @Doc(
+        "Lines printed on the cloth, as stitching or a pocket's outline: given as a part's marks are but naming the body part under the " +
+            "cloth with on; a line only (kind line), its weight along it from width (stops at 0 to 1 along, each a share of the line's " +
+            "weight: 0.4 a thin stitch), its colour from slot. A line shows only where the cloth is painted and ends where it ends.",
+    )
+    val marks: List<RecipeMark> = emptyList(),
 )
 
 /** One named area of a garment's cloth: the cells its [paint] strokes lay, in its own palette slot [color]. */

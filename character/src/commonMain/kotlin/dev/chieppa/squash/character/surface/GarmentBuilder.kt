@@ -15,7 +15,7 @@ enum class DressStage { MESH, FINISH, CUT, HIDE }
 /**
  * Builds the garments a one surface wears, keeping a mesher per garment and cell between builds, so an edit meshes a garment again only
  * where the edited member reaches, keeping each garment whole while nothing it covers changed, and cutting it again on its kept surface
- * where only a part coming out through it moved. A garment needs only the body's field
+ * where only a part coming out through it moved, and taking it as it is, to be painted again, where only what its cloth prints changed. A garment needs only the body's field
  * and mesh, not its finished surface, and reads its channels from the body's blocks where they hold the same solids. One build at a
  * time; hand out its batches with [Build.next] until it has none; where reads are gathered, the garments' rounds of reads are read
  * together. The meshers read the garments' fields through [reads].
@@ -84,7 +84,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
             val last = kept[nextCover.garment.id to nextCover.piece]
             if (last != null && last.shape == shapeOf(nextCover, nextField)) {
                 if (last.cut == cutOf(nextCover)) {
-                    made[i] = last.garment
+                    made[i] = if (last.garment.cover.cover == nextCover.cover) last.garment else last.garment.reprinted(nextCover).also { kept[nextCover.garment.id to nextCover.piece] = Kept(last.shape, last.cut, it) }
                     return@mapNotNull null
                 }
                 return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.surface)

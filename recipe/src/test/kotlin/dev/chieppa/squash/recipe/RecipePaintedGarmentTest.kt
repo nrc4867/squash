@@ -49,6 +49,22 @@ class RecipePaintedGarmentTest {
     }
 
     @Test
+    fun printsBuildOnTheBodyPartTheyNameAndExportAsTheyWereWritten() {
+        val wardrobe = tee.document.character.wardrobe
+        val shirt = checkNotNull(wardrobe.garment(GarmentId("tee")))
+        assertEquals(listOf("stripe", "drop", "leaf"), shirt.regions.map { it.id.value })
+        assertTrue(shirt.regions.all { region -> region.border.all { it.part == PartId("torso") } })
+        assertEquals(listOf(false, true, true), shirt.regions.map { it.ink })
+        assertEquals(setOf(4), shirt.regions[1].corners, "the drop's point")
+        val shorts = checkNotNull(wardrobe.garment(GarmentId("shorts")))
+        val stitch = shorts.marks.single()
+        assertTrue(stitch.mirrored && stitch.width.stops.all { it.scale < 1f }, "a thin stitch on both pockets")
+        assertEquals(SlotName("thread"), stitch.slot)
+        val exported = exportRecipe(tee.document).recipe.wardrobe!!.garments
+        assertEquals(listOf("torso"), exported.flatMap { g -> g.regions.map { it.on } + g.marks.map { it.on } }.distinct())
+    }
+
+    @Test
     fun aGarmentPaintedInDressExportsAndBuildsIntoItself() {
         val character = tee.document.character
         val body = assembleNow(assemblyParts(character), { character.resolved(it) ?: PartData() }, folder.plans.firstOrNull { it.ref == character.bodyPlan }, TemplateLibrary(folder.parts, folder.plans))

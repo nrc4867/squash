@@ -600,6 +600,18 @@ object SquashIcons {
             stroke("M9.5 10.5l3.5 1")
         }
     }
+    val PrintLine: ImageVector by lazy {
+        icon("print-line") {
+            stroke("M5.5 2.5L2 5l1.5 3L5 7v6.5h6V7l1.5 1L14 5l-3.5-2.5a2.5 2.5 0 0 1-5 0z")
+            stroke("M6.5 8v.5M6.5 10.5v.5M9.5 8v.5M9.5 10.5v.5")
+        }
+    }
+    val PrintRegion: ImageVector by lazy {
+        icon("print-region") {
+            stroke("M5.5 2.5L2 5l1.5 3L5 7v6.5h6V7l1.5 1L14 5l-3.5-2.5a2.5 2.5 0 0 1-5 0z")
+            stroke("M8 7.5c-1 1.2-1.4 1.9-1.4 2.5a1.4 1.4 0 0 0 2.8 0c0-.6-.4-1.3-1.4-2.5z")
+        }
+    }
     val Push: ImageVector by lazy {
         icon("push") {
             stroke("M8 2v7")

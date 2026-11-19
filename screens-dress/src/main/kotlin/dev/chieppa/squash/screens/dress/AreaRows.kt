@@ -21,13 +21,21 @@ import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.RenameGarmentArea
+import dev.chieppa.squash.document.SetGarmentAreaColor
+import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.screens.surface.paint.SlotChoice
+import dev.chieppa.stretch.ui.Button
+import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.squash.document.Together
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.dress.library.RenameField
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.dress_area_color
+import dev.chieppa.squash.uidesign.generated.dress_area_garment_color
 import dev.chieppa.squash.uidesign.generated.dress_area_name
 import dev.chieppa.squash.uidesign.generated.dress_area_painting
 import dev.chieppa.squash.uidesign.generated.dress_area_remove
@@ -55,7 +63,7 @@ private const val NAME_JOIN = ", "
 
 /**
  * A row for each area painted for [garment], picked for Paint by a press and named by a press on it once picked, reading painting while
- * Paint lays strokes in it, else the parts it covers, and its cross taking it away; under each, a row for each of its edges, a press
+ * Paint lays strokes in it, else the parts it covers, its color's swatch, and its cross taking it away; under each, a row for each of its edges, a press
  * picking it for Edit curves, a seam read so; then a row for each hole, with its cuff switch and its cross closing it over; then New area.
  */
 @Composable
@@ -85,6 +93,7 @@ internal fun AreaRows(state: AppState, session: CharacterSession, character: Cha
                 val note = if (picked && tool == BuildTool.PAINT) stringResource(Res.string.dress_area_painting) else partsOf(state, character, area.mask.parts)
                 RowText(note, subtle = true)
             }
+            AreaColor(session, character, held, garment, area.id, area.color, name)
             IconButton(StretchIcons.Close, stringResource(Res.string.dress_area_remove, name), {
                 if (state.dress.area.value == area.id) state.dress.area.value = null
                 state.dress.edge.value = null
@@ -128,6 +137,31 @@ private fun HoleRow(state: AppState, session: CharacterSession, character: Chara
     }
 }
 
+/**
+ * The area [area]'s color as a swatch, its own [color] or the garment's, which opens the palette to pick another, with the garment's
+ * color to go back to; the cloth read for a garment never painted as its areas is saved first, so the area colored is its own.
+ */
+@Composable
+private fun AreaColor(session: CharacterSession, character: Character, body: AssembledCharacter, garment: Garment, area: GarmentAreaId, color: SlotName?, name: String) {
+    val title = stringResource(Res.string.dress_area_color, name)
+    fun send(slot: SlotName?) = sendSaved(session, character, body, garment, SetGarmentAreaColor(garment.id, area, slot))
+    SlotChoice(
+        character.palette,
+        color ?: garment.color,
+        title,
+        DressTags.areaColor(area),
+        { DressTags.areaColor(area) + "." + it.value },
+        { send(it) },
+    ) { close ->
+        if (color != null) {
+            Button(stringResource(Res.string.dress_area_garment_color), {
+                send(null)
+                close()
+            }, Modifier.testTag(DressTags.areaGarmentColor(area)), kind = ButtonKind.Quiet)
+        }
+    }
+}
+
 /** The names of [parts], leaders of pairs, joined. */
 @Composable
 private fun partsOf(state: AppState, character: Character, parts: Set<PartId>): String {
@@ -136,11 +170,11 @@ private fun partsOf(state: AppState, character: Character, parts: Set<PartId>): 
     return names.joinToString(NAME_JOIN)
 }
 
-/** Sends [rename], saving the cloth read for a garment never painted as its areas first, so the area renamed is its own. */
-private fun sendSaved(session: CharacterSession, character: Character, body: AssembledCharacter, garment: Garment, rename: RenameGarmentArea) {
+/** Sends [change] to one of [garment]'s areas, saving the cloth read for a garment never painted as its areas first, so the area changed is its own. */
+private fun sendSaved(session: CharacterSession, character: Character, body: AssembledCharacter, garment: Garment, change: DocumentCommand) {
     if (garment.areas.isEmpty()) {
-        session.send(Together(listOf(shapeCommands(character, body, garment, paintedOf(character, body, garment)), rename)))
+        session.send(Together(listOf(shapeCommands(character, body, garment, paintedOf(character, body, garment)), change)))
     } else {
-        session.send(rename)
+        session.send(change)
     }
 }

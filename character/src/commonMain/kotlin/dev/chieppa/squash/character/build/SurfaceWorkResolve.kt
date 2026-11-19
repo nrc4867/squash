@@ -17,6 +17,7 @@ import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Region
+import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.document.expressionMarks
 import dev.chieppa.squash.document.mirrorOf
@@ -31,12 +32,16 @@ internal const val MIN_STROKE_POINTS = 1
 /** What an expression gives the mark groups a part holds, as that part reads them. */
 data class ExpressionWork(val id: ExpressionId, val name: String, val marks: Map<MarkGroupId, Map<MarkRole, List<Mark>>>)
 
-/** What a part's resolved surface work reads from the document, and the parts it names that exist, the part itself among them. [mirrors] are the other sides of its mirrored marks, by the mark each mirrors. */
+/**
+ * What a part's resolved surface work reads from the document, and the parts it names that exist, the part itself among them. [mirrors] are
+ * the other sides of its mirrored marks, by the mark each mirrors, and [regionMirrors] of its mirrored regions.
+ */
 data class SurfaceWorkInput(
     val surface: SurfaceWork = SurfaceWork(),
     val expressions: List<ExpressionWork> = emptyList(),
     val parts: Set<PartId> = emptySet(),
     val mirrors: Map<MarkId, Mark> = emptyMap(),
+    val regionMirrors: Map<RegionId, Region> = emptyMap(),
 )
 
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
@@ -49,9 +54,12 @@ fun surfaceWorkInput(character: Character, part: PartId): SurfaceWorkInput {
         if (marks.isEmpty()) null else ExpressionWork(set.id, set.name, marks)
     }
     val expressionMarks = expressions.flatMap { set -> set.marks.values.flatMap { roles -> roles.values.flatten() } }
-    val mirrors = if (instance.pair == null && instance.side == null) surface.marks.filter { it.mirrored }.associate { it.id to character.mirrorOf(it) } else emptyMap()
-    val named = (surface.anchors() + expressionMarks.flatMap { it.anchors() } + mirrors.values.flatMap { it.anchors() }).mapTo(linkedSetOf()) { it.part }
-    return SurfaceWorkInput(surface, expressions, setOf(part) + named.filter { character.part(it) != null }, mirrors)
+    val middle = instance.pair == null && instance.side == null
+    val mirrors = if (middle) surface.marks.filter { it.mirrored }.associate { it.id to character.mirrorOf(it) } else emptyMap()
+    val regionMirrors = if (middle) surface.regions.filter { it.mirrored }.associate { it.id to character.mirrorOf(it) } else emptyMap()
+    val named = (surface.anchors() + expressionMarks.flatMap { it.anchors() } + mirrors.values.flatMap { it.anchors() } + regionMirrors.values.flatMap { it.border })
+        .mapTo(linkedSetOf()) { it.part }
+    return SurfaceWorkInput(surface, expressions, setOf(part) + named.filter { character.part(it) != null }, mirrors, regionMirrors)
 }
 
 private fun SurfaceWork.anchors(): List<Anchor> =
@@ -95,7 +103,10 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
         areaFills = surface.areaFills,
         marks = marks,
         groups = surface.groups.map { it.namingOnly(kept) },
-        regions = surface.regions.mapNotNull { checkCancelled(); resolveRegion(it, point) },
+        regions = surface.regions.flatMap { region ->
+            checkCancelled()
+            listOfNotNull(resolveRegion(region, point), input.regionMirrors[region.id]?.let { resolveRegion(it, point) })
+        },
         strokes = surface.paint.strokes.mapNotNull { checkCancelled(); resolveStroke(it, point) },
         expressions = input.expressions.map { set ->
             val groups = set.marks.mapValues { (_, roles) ->

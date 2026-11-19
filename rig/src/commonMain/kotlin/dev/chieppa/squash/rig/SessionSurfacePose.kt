@@ -95,7 +95,10 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val worn = held.dress?.let { dress ->
             val moved = coroutineScope {
                 dress.garments.mapIndexed { i, garment ->
-                    async { garment.movedTo(hangingPushed(garment, posedSurface(garment.surface, held.garments[i], null, frames).surface, body.surface)) }
+                    async {
+                        val posed = posedSurface(garment.surface, held.garments[i], null, frames)
+                        garment.movedTo(hangingPushed(garment, posed.surface, body.surface), posed.carry)
+                    }
                 }.awaitAll()
             }
             val hiding = PosedHiding(body.surface, surface, moved, dress)

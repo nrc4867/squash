@@ -6,9 +6,13 @@ import dev.chieppa.squash.character.build.GarmentView
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.LooseEnd
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.surface.PaintShape
 import kotlinx.coroutines.flow.MutableStateFlow
+
+/** The weight Line prints at first, a share of the line rule's. */
+const val DEFAULT_PRINT_WEIGHT = 1f
 
 /** How much Clean edges smooths at first. */
 const val DEFAULT_CLEAN = 0.6f
@@ -32,6 +36,14 @@ class DressEditState {
     val brushSize = MutableStateFlow(DEFAULT_BRUSH_SIZE)
     val clean = MutableStateFlow(DEFAULT_CLEAN)
     val shape = MutableStateFlow(PaintShape.BRUSH)
+
+    /**
+     * The print tools' options: the palette slot a print takes, the garment's color's where none is picked, whether Region inks its
+     * border, and the weight Line draws at, a share of the line rule's.
+     */
+    val printSlot = MutableStateFlow<SlotName?>(null)
+    val printInk = MutableStateFlow(true)
+    val printWeight = MutableStateFlow(DEFAULT_PRINT_WEIGHT)
 
     /** Whether Edit curves shows every edge's points, not just the picked edge's. */
     val handles = MutableStateFlow(false)

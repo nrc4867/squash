@@ -145,6 +145,7 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `outfit` | `outfit("casual", { top: "tee" })` |
 | `wardrobe` | `wardrobe([tee], [outfit("casual", { top: "tee" })])`, slots read from the garments, shown in the first outfit. |
 | `slots`, `LAYER` | `slots("top", "feet")`; `layer: LAYER.over`. |
+| `printOn`, `printAll` | `regions: [printOn("torso", uvRegion("badge", "red", leaf({ ... }), { ink: true }))]`, a region or mark printed on the cloth over a body part. |
 
 ## Props
 

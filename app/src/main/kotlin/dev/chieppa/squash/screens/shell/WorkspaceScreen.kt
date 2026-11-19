@@ -42,6 +42,8 @@ import dev.chieppa.squash.screens.dress.rememberGarmentHoleTool
 import dev.chieppa.squash.screens.dress.rememberGarmentPaintTool
 import dev.chieppa.squash.screens.dress.rememberGarmentSelectTool
 import dev.chieppa.squash.screens.dress.rememberLooseEndTool
+import dev.chieppa.squash.screens.dress.rememberPrintMarkTool
+import dev.chieppa.squash.screens.dress.rememberPrintRegionTool
 import dev.chieppa.squash.document.SeamBrush
 import dev.chieppa.squash.screens.surface.rig.RigWiggle
 import dev.chieppa.squash.screens.surface.rig.rememberRigShading
@@ -109,6 +111,8 @@ fun WorkspaceScreen(shell: Shell) {
     val edgeErase = rememberEdgeEraseTool(state)
     val edgeSmooth = rememberEdgeSmoothTool(state)
     val looseEnd = rememberLooseEndTool(state)
+    val printRegion = rememberPrintRegionTool(state)
+    val printMark = rememberPrintMarkTool(state)
     val stage by state.stage.collectAsState()
     val armedTool: PaneTool = poseTools.of(armed) ?: when (armed) {
         BuildTool.DRAW_OUTLINE -> draw
@@ -141,6 +145,8 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_GARMENT -> edgeErase
         BuildTool.SMOOTH_GARMENT -> edgeSmooth
         BuildTool.LOOSE_END -> looseEnd
+        BuildTool.PRINT_REGION -> printRegion
+        BuildTool.PRINT_MARK -> printMark
         BuildTool.DRAG, BuildTool.TURN, BuildTool.BODY_CURVE, BuildTool.PIN, BuildTool.LOOK, BuildTool.NONE -> if (stage == Stage.DRESS) garmentSelect else selectPart
     }
     val tool = traceHandles.over(armedTool)

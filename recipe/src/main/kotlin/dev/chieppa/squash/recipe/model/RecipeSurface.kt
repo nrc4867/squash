@@ -39,6 +39,9 @@ data class RecipeRegion(
     val corners: List<Int> = emptyList(),
     @Doc("Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; false runs it straight between them there.")
     val curved: Boolean = true,
+    @Doc("On a part in the middle of the body (a torso, a head): also shown mirrored on the other side, at 1 - v. In a garment's regions, on a pair's side too: shown on its other side.")
+    val mirrored: Boolean = false,    @Doc("In a garment's regions only: the body part its border's places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors.")
+    val on: String? = null,
 )
 
 /** A line or a fur stroke on a part, its places given as a region's border is. */
@@ -62,7 +65,7 @@ data class RecipeMark(
     val ink: Boolean = true,
     @Doc("Its colour; the ink's when left out.")
     val slot: String? = null,
-    @Doc("On a part in the middle of the body: also shown mirrored on the other side.")
+    @Doc("On a part in the middle of the body: also shown mirrored on the other side. In a garment's marks, on a pair's side too: shown on its other side.")
     val mirrored: Boolean = false,
     @Doc("Whether it sits where the light and camera put it rather than on the surface.")
     val cameraLocked: Boolean = false,
@@ -70,6 +73,8 @@ data class RecipeMark(
     val versions: Map<String, MarkVersion> = emptyMap(),
     @Doc("For a floating mark: the places it passes through off the surface after its root, each {along, across, out} in body units from the root: along the way the part's u grows, across the way its v grows, out along the surface's normal.")
     val flight: List<MarkFlight> = emptyList(),
+    @Doc("In a garment's marks only: the body part its places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors.")
+    val on: String? = null,
 )
 
 /** How a part's fur strokes show, and patches of stroke roots. */

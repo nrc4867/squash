@@ -39,6 +39,18 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
         edges = BooleanArray(outline.size) { outline[it].second }
     }
 
+    /**
+     * The line a border's edge runs along, as the distance reads it: its curve through its points when [ColorShape.Border.curved], else
+     * straight between them, with v carried across the seam, closing back to its first point; empty for a shape with no border.
+     */
+    fun edge(): List<SurfaceUv> {
+        if (shape !is ColorShape.Border) return emptyList()
+        val points = (if (shape.curved) curve(shape) else unwrapped(shape.points)).map { it.first }
+        if (points.isEmpty()) return points
+        val first = points.first()
+        return points + SurfaceUv(first.u, first.v + round(points.last().v - first.v))
+    }
+
     /** The signed distance at ([u], [v]). */
     fun at(u: Float, v: Float, uScale: Float, vScale: Float): Float = when (shape) {
         ColorShape.WholePatch -> FAR

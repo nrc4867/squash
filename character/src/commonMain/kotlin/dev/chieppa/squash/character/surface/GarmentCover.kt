@@ -20,11 +20,20 @@ private const val CUFF_FROM = -1f
 
 /**
  * The parts a garment covers and how, as the document says: each branch's part, and the other side of its pair, which
- * the branch covers mirrored, by the branch standing off by the garment's fit there (see [Garment.easeOf]); and each part's [twins].
+ * the branch covers mirrored, by the branch standing off by the garment's fit there (see [Garment.easeOf]); each part's [twins]; and what
+ * the garment [prints] on its cloth, mirrored sides among them.
  */
-data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentBranch>, val twins: Map<PartId, PartId> = emptyMap()) {
+data class GarmentCover(
+    val garment: Garment,
+    val branches: Map<PartId, GarmentBranch>,
+    val twins: Map<PartId, PartId> = emptyMap(),
+    val prints: GarmentPrints = GarmentPrints(),
+) {
     /** Each covered part's painted cloth (see [clothOf]); a part left out is not covered. */
     val cloth: Map<PartId, ClothField> by lazy { clothOf(garment, branches, twins) }
+
+    /** This cover without what its garment prints or the colours of its areas, which neither its cloth's shape nor its cut read. */
+    val unprinted: GarmentCover get() = if (prints.isEmpty && garment.unprinted === garment) this else copy(garment = garment.unprinted, prints = GarmentPrints())
 
     companion object {
         /** What [garment] covers on [character], its branches read on both sides of a pair. */
@@ -37,7 +46,7 @@ data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentB
                 character.twinOf(part)?.let { twin -> branches.putIfAbsent(twin.id, branch) }
             }
             val twins = character.parts.mapNotNull { part -> character.twinOf(part)?.let { part.id to it.id } }.toMap()
-            return GarmentCover(garment, branches, twins)
+            return GarmentCover(garment, branches, twins, GarmentPrints.of(garment, character))
         }
     }
 }
@@ -86,8 +95,8 @@ class WornCover(
     /** The branch over [part], one of the garment's own or a cuff's; null where the garment does not cover it. */
     fun branchOf(part: PartId): GarmentBranch? = branches[part]
 
-    /** What equals for the same branches, cuffs, holes, shells, piece and open ends, the shells by their objects. */
-    val key: List<Any?> = listOf(cover, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree)
+    /** What equals for the same branches, cuffs, holes, shells, piece and open ends, the shells by their objects, whatever its cloth prints. */
+    val key: List<Any?> = listOf(cover.unprinted, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree)
 
     /**
      * What equals for the same garment grown the same way, whatever comes out through it: the garment but what it covers, the branches,
@@ -95,7 +104,7 @@ class WornCover(
      * shells and piece. So painting more or less of a painted part within the same steps keeps the grown surface, and only its cut changes.
      */
     val shapeKey: List<Any?> = listOf(
-        cover.copy(garment = cover.garment.copy(areas = emptyList(), branches = emptyList(), changes = emptyMap(), joins = emptySet(), holes = emptyList()), branches = emptyMap()),
+        cover.unprinted.copy(garment = cover.garment.unprinted.copy(areas = emptyList(), branches = emptyList(), changes = emptyMap(), joins = emptySet(), holes = emptyList()), branches = emptyMap()),
         branches.mapValues { (part, branch) -> cloth[part]?.reach?.let { branch.copy(from = it.from, to = it.to, fromV = 0f, toV = 1f) } ?: branch },
         cuffs,
         shells.mapValues { Same(it.value.surface) },

@@ -7,6 +7,8 @@ export interface RegionOptions {
   ink?: boolean;
   /** False runs the border straight between its places on a part joined into the body's one surface. */
   curved?: boolean;
+  /** Whether it is painted again on the other side of the body: across a middle part, or on a pair's other side on a garment. */
+  mirrored?: boolean;
   /** A template patch its u and v lie on, as `muzzle`; for `uvRegion` only. */
   patch?: string;
 }
@@ -20,6 +22,7 @@ function region(id: string, slot: string, options: RegionOptions, corners: numbe
   if (corners.length > 0) result.corners = corners;
   if (options.ink !== undefined) result.ink = options.ink;
   if (options.curved !== undefined) result.curved = options.curved;
+  if (options.mirrored !== undefined) result.mirrored = options.mirrored;
   return result;
 }
 

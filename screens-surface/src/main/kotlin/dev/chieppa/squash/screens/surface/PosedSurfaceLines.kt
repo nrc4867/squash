@@ -2,6 +2,9 @@ package dev.chieppa.squash.screens.surface
 
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PartLines
+import dev.chieppa.squash.character.build.ResolvedMark
+import dev.chieppa.squash.document.Palette
+import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.surface.SurfaceSection
 import dev.chieppa.squash.character.surface.isFieldRun
@@ -42,6 +45,13 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
         return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
             dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell) }
     }
+
+    /** The lines its garments' cloth prints, as they are worn: each garment's inked marks and region borders, cut to its cloth. */
+    val garmentMarks: List<ResolvedMark> get() = shown.dress?.garments.orEmpty().flatMap { garment -> garment.paint?.marks?.values?.flatten().orEmpty() }
+
+    /** The lines its garments' cloth prints, each in its slot's color from [palette] or [ink], at the marks' weight. */
+    fun garmentMarkDraws(look: CharacterLook, palette: Palette, ink: Color, taper: Float): List<RibbonDraw> =
+        garmentMarks.mapNotNull { it.lineDraw(null, look.marks, it.slot?.let(palette::colorOf) ?: ink, taper, DepthLayer.SCENE) }
 
     /** What the surface's paint inks on [part] as [view] sees it, its face's lines among them. */
     fun marks(part: PartId, view: SurfaceView) = shown.paint?.seenFrom(view::toViewer)?.marks?.get(part).orEmpty()

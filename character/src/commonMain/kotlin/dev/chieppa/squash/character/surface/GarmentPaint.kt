@@ -18,19 +18,33 @@ private const val KEPT_PAINTS = 16
 /**
  * A garment's own color shapes, part by part: each painted area in a palette slot of its own over what it holds of the part's cloth
  * ([areaShapes]), then each branch's regions and brush strokes, anchored in the (u, v) of its part's first run, as the garment's
- * vertices carry them; a branch read on the other side of a pair takes the same shapes there. Its base slot is the garment's color,
- * painted under these, so none is held here.
+ * vertices carry them, then the regions its cloth prints; a branch read on the other side of a pair takes the same shapes there. Its
+ * base slot is the garment's color, painted under these, so none is held here. The ink lines its cloth prints are held by the part
+ * each starts on, to be resolved on the garment's own field.
  */
 fun garmentShapes(garment: SurfaceGarment): Map<PartId, HeldShapes> {
     val out = LinkedHashMap<PartId, HeldShapes>()
-    for (run in garment.surface.field.runs) {
+    val runs = garment.surface.field.runs
+    val prints = garment.cover.cover.prints
+    for (run in runs) {
         if (!run.first || run.partId in out) continue
         val branch = garment.cover.cover.branches[run.partId] ?: continue
-        val shapes = areaShapes(garment.cover, run.partId, run.patch.name) + branchShapes(branch, run.partId, run.patch.name, run.part.surface.axisLength)
+        val patch = run.patch.name
+        val shapes = areaShapes(garment.cover, run.partId, patch) + branchShapes(branch, run.partId, patch, run.part.surface.axisLength) + prints.shapesOn(run.partId, patch)
         if (shapes.isNotEmpty()) out[run.partId] = HeldShapes(null, shapes, emptyMap(), 0)
+    }
+    if (prints.isEmpty) return out
+    val lines = prints.lines { part, patch -> runs.firstOrNull { it.partId == part && it.patch.name == patch }?.patch?.closedV ?: true }
+    for ((part, held) in lines) {
+        if (runs.none { it.partId == part }) continue
+        out[part] = (out[part] ?: HeldShapes(null, emptyList(), emptyMap(), 0)).copy(lines = held)
     }
     return out
 }
+
+/** Whether [anchor] lies on [garment]'s cloth: its part's painted cloth stands over the hem level there. */
+private fun onCloth(garment: SurfaceGarment, anchor: Anchor): Boolean =
+    (garment.cover.clothOf(anchor.part)?.at(anchor.u, anchor.v) ?: 0f) >= CLOTH_HEM_LEVEL
 
 /** Each area of [worn]'s garment in a slot apart from the garment's, over what it holds of [part]'s cloth on its run [patch]. */
 private fun areaShapes(worn: WornCover, part: PartId, patch: String): List<LandedShape> {
@@ -65,12 +79,20 @@ private fun branchShapes(branch: GarmentBranch, part: PartId, patch: String, axi
 class GarmentPaints {
     private var kept: List<Pair<SurfaceGarment, SurfacePaint?>> = emptyList()
 
-    /** [garments], each with its own shapes painted on it (see [garmentShapes]), [runAll] running each one's pieces. */
+    /**
+     * [garments], each with its own shapes painted on it (see [garmentShapes]) and the ink lines its cloth prints resolved on its surface,
+     * cut to where its cloth is, [runAll] running each one's pieces.
+     */
     suspend fun painted(garments: List<SurfaceGarment>, runAll: RunAll): List<SurfaceGarment> {
         val made = garments.map { garment ->
             val paint = kept.firstOrNull { it.first === garment }?.second ?: run {
                 val shapes = garmentShapes(garment)
-                if (shapes.isEmpty()) null else SurfacePaint.of(garment.surface, shapes, runAll).within(garment.shownValues, garment.surface)
+                if (shapes.isEmpty()) {
+                    null
+                } else {
+                    val laid = SurfacePaint.of(garment.surface, shapes, runAll)
+                    SurfacePaint(laid.layers, clothCut(laid.marks) { onCloth(garment, it) }, laid.eyes).within(garment.shownValues, garment.surface)
+                }
             }
             garment to paint
         }

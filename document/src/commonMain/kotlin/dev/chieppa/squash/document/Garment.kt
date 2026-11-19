@@ -21,7 +21,8 @@ const val GARMENT_PART_PREFIX = "garment/"
  * or pair by the pair's leader; with no fit each branch stands off by its own ease. The [areas] painted on the body and its [holes]
  * say which parts it covers and how far, written into its branches, changes and inked joins; a branch whose part no area paints has its
  * box painted ([withBoxesPainted]), so every garment's cloth is its painted cells. [tucks] are the Tuck choices made for the small parts
- * inside it. See HLD: data-model, Garments.
+ * inside it. Its [regions] and [marks] are printed on its cloth, in the (u, v) of the body parts under it as a part's own are, and show
+ * only where the cloth does. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -40,12 +41,17 @@ data class Garment(
     val tucks: List<TuckChoice> = emptyList(),
     val areas: List<GarmentArea> = emptyList(),
     val holes: List<GarmentHole> = emptyList(),
+    val regions: List<Region> = emptyList(),
+    val marks: List<Mark> = emptyList(),
 ) {
     init {
         require(branches.distinctBy { it.part }.size == branches.size) { "Garment ${id.value} covers a part twice" }
         require(areas.distinctBy { it.id }.size == areas.size) { "Garment ${id.value} names an area twice" }
         require(holes.distinctBy { it.part }.size == holes.size) { "Garment ${id.value} has two holes round one part" }
         require(looseEnds.distinctBy { it.id }.size == looseEnds.size) { "Garment ${id.value} names a loose end twice" }
+        require(regions.distinctBy { it.id }.size == regions.size) { "Garment ${id.value} names a region twice" }
+        require(marks.distinctBy { it.id }.size == marks.size) { "Garment ${id.value} names a mark twice" }
+        require(marks.all { it.kind == MarkKind.LINE }) { "Garment ${id.value} holds a mark that is not a line" }
     }
 
     fun branch(part: PartId): GarmentBranch? = branches.firstOrNull { it.part == part }
@@ -54,6 +60,9 @@ data class Garment(
     fun easeOf(branch: GarmentBranch): Float = partFits[branch.part] ?: fit ?: branch.ease
 
     fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
+
+    /** This garment without what is printed on its cloth or the colours of its areas: what its cloth's shape and cut read. */
+    val unprinted: Garment get() = if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null }) this else copy(regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) })
 
     /**
      * This garment with the box of each branch whose part no area paints painted as cells ([boxCells]) into its first area, made as

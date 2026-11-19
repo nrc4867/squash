@@ -351,6 +351,10 @@ export interface RecipeGarment {
   changes?: { [key: string]: RecipeChange };
   /** Loose ends it hangs, as a scarf's tails. */
   looseEnds?: LooseEnd[];
+  /** Regions printed on the cloth, as a chest symbol, a pocket or a stripe: filled shapes in a palette slot, the border inked with ink, given as a part's regions are but naming the body part under the cloth with on, in that part's u and v (or face places on a head, or anchors). They ride the cloth's fit and pose and show only where the cloth is painted, over its areas' colours. */
+  regions?: RecipeRegion[];
+  /** Lines printed on the cloth, as stitching or a pocket's outline: given as a part's marks are but naming the body part under the cloth with on; a line only (kind line), its weight along it from width (stops at 0 to 1 along, each a share of the line's weight: 0.4 a thin stitch), its colour from slot. A line shows only where the cloth is painted and ends where it ends. */
+  marks?: RecipeMark[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -442,7 +446,7 @@ export interface RecipeMark {
   ink?: boolean;
   /** Its colour; the ink's when left out. */
   slot?: string | null;
-  /** On a part in the middle of the body: also shown mirrored on the other side. */
+  /** On a part in the middle of the body: also shown mirrored on the other side. In a garment's marks, on a pair's side too: shown on its other side. */
   mirrored?: boolean;
   /** Whether it sits where the light and camera put it rather than on the surface. */
   cameraLocked?: boolean;
@@ -450,6 +454,8 @@ export interface RecipeMark {
   versions?: { [key: string]: MarkVersion };
   /** For a floating mark: the places it passes through off the surface after its root, each {along, across, out} in body units from the root: along the way the part's u grows, across the way its v grows, out along the surface's normal. */
   flight?: MarkFlight[];
+  /** In a garment's marks only: the body part its places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
+  on?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -565,6 +571,10 @@ export interface RecipeRegion {
   corners?: number[];
   /** Whether the border is the smooth curve through its places on a part joined into the body's one surface, as a head on a neck; false runs it straight between them there. */
   curved?: boolean;
+  /** On a part in the middle of the body (a torso, a head): also shown mirrored on the other side, at 1 - v. In a garment's regions, on a pair's side too: shown on its other side. */
+  mirrored?: boolean;
+  /** In a garment's regions only: the body part its border's places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
+  on?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
