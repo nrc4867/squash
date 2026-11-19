@@ -22,8 +22,8 @@ fun PosedParts.isOf(character: AssembledCharacter): Boolean = rests.all { (id, m
 
 /**
  * This character in [pose], a pose made for it (see [isOf]): each part the pose moves showing its posed mesh, its patches' points and
- * normals read from it, and turned as its root bone turns. A part the pose leaves at rest stays the same object, and with none moved
- * this is the character itself.
+ * normals read from it, and turned as its root bone turns, and a part shown as copies has them placed again on its parent as posed. A
+ * part the pose leaves at rest stays the same object, and with none moved this is the character itself.
  */
 fun AssembledCharacter.posedBy(pose: PosedParts): AssembledCharacter {
     require(pose.isOf(this)) { "A pose shows only the character it was made for" }
@@ -37,7 +37,14 @@ fun AssembledCharacter.posedBy(pose: PosedParts): AssembledCharacter {
             part.showing(part.surface.posed(mesh), pose.turns[part.id] ?: Mat3.IDENTITY)
         }
     }
-    return if (moved) AssembledCharacter(shown, sockets) else this
+    if (!moved) return this
+    val byId = shown.filter { it.id != null }.associateBy { it.id }
+    val placed = shown.map { part ->
+        val copies = part.copies ?: return@map part
+        val parent = part.socket?.parent?.let(byId::get) ?: return@map part
+        if (parent === this.part(parent.id!!)) part else part.withCopies(copies.on(parent))
+    }
+    return AssembledCharacter(placed, sockets)
 }
 
 /** The parts of this character that show something other than they do in [rest]: those a pose moves, or shows more or less of. */

@@ -115,6 +115,8 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })`; `{ sink: 0, outset: 0.016 }` stands a part just off a shirt of fit 0.012. |
 | `digitPatch` | `socket(1, 0.7, 0.25, { patch: digitPatch(2) })` lies on a hand's third finger and rides it, a ring; `digitPatch("thumb")`, `digitPatch(0, "toes")`. Regions and marks take the same `patch`. |
 | `ringSocket` | `ringSocket(4, torso.u(plan.h("waist")), 12, { sink: 0, outset: 0.02 })`, twelve sockets round a part: studs round a belt. |
+| `spreadSocket` | `spreadSocket(3, { u: [0.1, 0.9], v: [0, 1] }, { count: 200, seed: 4, spacing: 0.03, sizeJitter: 0.2, leanJitter: 12 }, { size: 1, falloff: 0.5 })`, one socket showing copies of the one part on it over an area: wool, spines, tufts, scales. The part on it gives `shades: ["wool-2", "wool-3"]` for copies in a few slots. |
+| `pathSocket` | `pathSocket(4, [0.9, 0.7], [0.9, 0.3], { via: [[0.75, 0]], roll: 90, sag: 0.04 })`, copies of the one part on it along a path: beads, studs, buttons; a `ring` part's links hook through each other, every other one turned by `roll: 90`. `between: ["socket.1", "socket.2"]` takes the ends from two sockets. |
 | `joint` | `joint(1, leg.u(plan.h("knee")), { low: 0, high: 140 })` |
 | `socketName`, `jointName` | `socketName(2)` is `"socket.2"`. |
 | `pair` | `{ ...pair("arm") }` names the sides `arm-l` and `arm-r`. |

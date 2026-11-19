@@ -1,5 +1,8 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.block.Loop
+import dev.chieppa.squash.character.copies.PartCopies
+import dev.chieppa.squash.character.copies.copiesOf
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
@@ -62,6 +65,8 @@ class PlacedPart(
     val owner: GarmentId? = null,
     /** The blend of the join at its socket the document holds, or null for its default. */
     val blend: Float? = null,
+    /** The copies of it its socket shows in its place, each an instance of this one build; null for a part shown once. */
+    val copies: PartCopies? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -93,15 +98,26 @@ class PlacedPart(
     /** The inside test of its swept surface as it stands, in body space, or null when it has none; read once per part. */
     internal val inside: ShellInside? by lazy { bodyPatch()?.let { patch -> ShellInside(patch) { origin + surface.shown(it) } } }
 
-    /** Where this part reaches in body space, or null when it built nothing. */
-    val box: BodyBox? get() = surface.box?.moved(origin)
+    /** Every vertex of this part's mesh where it shows, in body space: once at its origin, or where each of its copies shows it. */
+    fun shownPoints(): List<Vec3> {
+        val mesh = copies?.rule?.surface?.mesh ?: surface.mesh
+        val offsets = List(mesh.vertexCount) { mesh.position(it) }
+        return copies?.places?.flatMap { place -> offsets.map(place::placed) } ?: offsets.map { origin + it }
+    }
+
+    /** Where this part reaches in body space, its copies' reach where it shows as copies, or null when it built nothing. */
+    val box: BodyBox? get() = if (copies != null) copies.box else surface.box?.moved(origin)
 
     private fun patchAt(u: Float, patch: String?): Patch? =
         if (patch == null) surface.patches.firstOrNull { it.covers(u) } else surface.patches.firstOrNull { it.name == patch }
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
     fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies)
+
+    /** This part with [copies] in place of the ones it shows. */
+    fun withCopies(copies: PartCopies?): PlacedPart =
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */
@@ -185,7 +201,15 @@ private class Assembler(
         val owned = part.owner != null
         val origin = if (spec != null && parent != null) originOn(parent, spec, template, part.side, owned) else Vec3.ZERO
         val anchor = if (spec != null && parent != null) socketPoint(parent, spec, socketV(parent, spec, part.side), part.side, owned) else null
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner, blend = part.blend)
+        val copies = if (spec?.copies != null && parent != null) {
+            copiesOf(
+                spec.copies, skeletonOf(parent, owned), surface, PartBuilder.axes(template), part.side == Side.RIGHT, part.side == Side.RIGHT && !parent.mirrored,
+                templates.socketSink(template.ref), template.blocks.any { it is Loop }, part.shades,
+            )
+        } else {
+            null
+        }
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner, blend = part.blend, copies = copies)
     }
 
     /**

@@ -121,7 +121,7 @@ private fun garmentPoints(state: CharacterState, character: Character, garment: 
     return points + near.flatMap { it.second }
 }
 
-private fun pointsOf(part: PlacedPart): List<Vec3> = List(part.surface.mesh.vertexCount) { part.origin + part.surface.mesh.position(it) }
+private fun pointsOf(part: PlacedPart): List<Vec3> = part.shownPoints()
 
 private fun lowest(a: Vec3, b: Vec3) = Vec3(minOf(a.x, b.x), minOf(a.y, b.y), minOf(a.z, b.z))
 

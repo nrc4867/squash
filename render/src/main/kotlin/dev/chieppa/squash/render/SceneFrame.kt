@@ -50,6 +50,8 @@ enum class DepthLayer(val scale: Float, val offset: Float) {
  * One mesh to draw in a view, placed by [model]. With an [outlinePixels] above 0 it has an outline that wide. Below an
  * [opacity] of 1 it blends over what a view drew before it, showing only its own nearest surface, so a view draws such
  * meshes after opaque ones and furthest first. [layers] draw over a mesh at full opacity straight after it, each over the last.
+ * With [instances] the mesh draws once for each of them, placed by its model in place of [model], in its material where it has one,
+ * its buffers uploaded once for all of them.
  */
 @Immutable
 data class MeshDraw(
@@ -60,7 +62,16 @@ data class MeshDraw(
     val opacity: Float = 1f,
     val layer: DepthLayer = DepthLayer.SCENE,
     val layers: List<ColorLayerDraw> = emptyList(),
-)
+    val instances: List<MeshInstance> = emptyList(),
+) {
+    /** This draw as each of its instances draws it, or itself with none. */
+    fun each(): List<MeshDraw> =
+        if (instances.isEmpty()) listOf(this) else instances.map { copy(model = it.model, material = it.material ?: material, instances = emptyList()) }
+}
+
+/** One placing of an instanced mesh: where it sits, and the material it shows in place of its draw's, or null for that one. */
+@Immutable
+data class MeshInstance(val model: Mat4, val material: PartMaterial? = null)
 
 /** One part's fur: its [ink] and then its [fills] over it, so strokes that overlap read as one shape with one outline. */
 @Immutable

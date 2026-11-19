@@ -3,6 +3,7 @@ package dev.chieppa.squash.recipe.export
 import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.Garment
@@ -64,6 +65,16 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
     return RecipeExport(recipe, notCarried)
 }
 
+/** The size [part]'s socket starts a part at, a row's share for a socket of a hand-made row, which a recipe's part with no size takes. */
+private fun rowScale(document: SquashDocument, part: PartInstance): Float {
+    val socket = part.socket ?: return 1f
+    val row = HandSockets.rowOf(socket.socket) ?: return 1f
+    val parent = document.character.part(socket.parent) ?: return 1f
+    val params = document.character.resolvedShape(parent).params
+    if (HandSockets.copiesOf(params, row) != null) return 1f
+    return HandSockets.specs(params).firstOrNull { it.name == socket.socket }?.scale ?: 1f
+}
+
 private fun part(document: SquashDocument, part: PartInstance, notCarried: MutableList<String>): RecipePart {
     val character = document.character
     val twin = character.twinOf(part)
@@ -88,7 +99,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         role = part.role.takeIf { !part.roleGuessed },
         garment = part.garment?.value,
         blend = part.blend,
-        size = split.size,
+        size = rowScale(document, part).let { scale -> if (scale == 1f) split.size else split.size?.takeIf { it != scale } ?: if (split.size == null) 1f else null },
         lean = split.lean,
         outward = split.outward,
         outlines = outlines(data.outlines),
@@ -105,6 +116,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         curve = split.curve,
         params = split.others,
         color = surface.baseSlot?.value,
+        shades = surface.shades.map { it.value },
         areas = surface.areaFills.mapValues { it.value.value },
         regions = surface.regions.map { region(part.id, it) },
         marks = surface.marks.map { mark(part.id, it) },

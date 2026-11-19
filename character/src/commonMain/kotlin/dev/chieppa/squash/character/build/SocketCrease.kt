@@ -39,9 +39,10 @@ class CreaseParents {
     internal fun of(parent: PlacedPart): List<PlacedGrid> = held.getOrPut(parent) { parent.sweptPatches().map { PlacedGrid(parent, it) } }
 }
 
-/** Where [placed] comes out of its parent in [character], or null for a part that does not meet one. */
+/** Where [placed] comes out of its parent in [character], or null for a part that does not meet one or shows as copies. */
 fun socketCrease(character: AssembledCharacter, placed: PlacedPart, parents: CreaseParents = CreaseParents()): SocketCrease? {
     val id = placed.id ?: return null
+    if (placed.copies != null) return null
     val parent = placed.socket?.parent?.let(character::part) ?: return null
     val runs = crossingRuns(placed, id, parents.of(parent))
     return if (runs.isEmpty()) null else SocketCrease(id, runs)

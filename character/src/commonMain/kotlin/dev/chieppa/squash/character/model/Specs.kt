@@ -33,6 +33,8 @@ data class SocketSpec(
     val patch: String? = null,
     val spread: Float = 0f,
     val outset: Float = 0f,
+    /** The copies of the one part on it it shows in place of that part, over an area or along a path; null for one part. */
+    val copies: CopySpec? = null,
 )
 
 /** A named surface point on a part, at [u] and [v], that face marks and sets anchor to. */

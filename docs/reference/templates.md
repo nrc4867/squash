@@ -25,6 +25,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `leg-bird` | 1 | - | Bird leg | leg |
 | `paw` | 8 | 1, 2, 3, 4, 5, 6, 7 | Paw | foot |
 | `plate` | 1 | - | Plate | fin |
+| `ring` | 1 | - | Ring | none (guessed from where it sits) |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) |
 | `spike` | 1 | - | Spike | horn |
 | `tail` | 2 | 1 | Tail | tail |
@@ -918,6 +919,31 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.1 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.55 | 0.1 to 1 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
+
+## ring 1
+
+| fact | value |
+| --- | --- |
+| rests | forward [1, 0, 0] |
+| outline x runs 0 to | 0.1 |
+| Side's +y faces | up |
+| Top's +y faces | right |
+| views | side sets height; top sets width; front sets nothing |
+| section | circle |
+| open end | none (closed) |
+| surface | separate |
+| sits on its socket at | u 0, v 0 |
+
+Patches: `body`
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.1 to 4 | Scales the part: its loop and wire together. |
+| `radius` | 0.4 | 0.1 to 2 | The loop's radius across, to the middle of its wire, a fraction of the length. |
+| `stretch` | 1 | 1 to 3 | How long the loop is along its up for its width: 1 a round ring, more a chain link. |
+| `thickness` | 0.08 | 0.02 to 0.4 | The wire's radius, a fraction of the length. |
 
 ## sheet 1
 

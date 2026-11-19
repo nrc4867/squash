@@ -536,6 +536,8 @@ export interface RecipePart {
   params?: { [key: string]: number };
   /** The palette slot the whole part is coloured. */
   color?: string | null;
+  /** Palette slots its copies pick among besides color, where it sits on a socket with spread or path: two or three shades of a fleece. */
+  shades?: string[];
   /** Areas the template names, as a nail or a pad, each filled with a palette slot. */
   areas?: { [key: string]: string };
   /** Painted regions on the part, each in a palette slot: a muzzle, a chest patch, a two-tone face. */
@@ -548,6 +550,24 @@ export interface RecipePart {
   fur?: RecipeFur | null;
   /** Heavier lines along a stretch of the part. */
   lineWeights?: RecipeLineWeight[];
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Copies of the part on a socket repeated along a path on its part, its axis along the surface's normal and its up along the path: beads, studs, a row of buttons, chain links. */
+export interface RecipePath {
+  /** How many copies, evenly from end to end; as many as pitch fits when left out. */
+  count?: number | null;
+  /** The distance between copies, in body units; a ring part's links its inside length when neither count nor pitch is given, so each passes through the next. */
+  pitch?: number | null;
+  /** Places [u, v] on the part the path runs through between its ends. */
+  via?: number[][];
+  /** Two sockets this part offers, by name, the path's ends in place of (u, v) and (to, toV): a hand-made socket.<n> listed here, or one of its template's. */
+  between?: string[] | null;
+  /** Degrees each copy rolls about the path more than the one before it: 90 turns every other chain link. */
+  roll?: number | null;
+  /** How far the path droops at its middle, in body units, as a chain hangs between its two ends; it lies on the part where the droop would take it inside. */
+  sag?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -625,18 +645,42 @@ export interface RecipeSocket {
   sink?: number | null;
   /** How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out. */
   outset?: number | null;
-  /** Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on. */
+  /** Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on, a part on each. Many of one part over an area or along a line take spread or path instead. */
   count?: number | null;
   /** A row's last socket's u; the row's u when left out. */
   to?: number | null;
   /** A row's last socket's v; the row's v when left out. A whole turn from v (v 0, toV 1) closes the row round the part, its sockets evenly a turn's share apart, as studs round a belt. */
   toV?: number | null;
-  /** The size a part placed on a row's first socket starts at. */
+  /** The size a part placed on a row's first socket starts at, when the part gives no size of its own; with spread or path, each copy's size, times the part's own. */
   size?: number | null;
-  /** The size a part placed on a row's last socket starts at, as a share of the first's. */
+  /** The size a part placed on a row's last socket starts at, as a share of the first's; with spread, the share of their size copies fall to at the area's edges. */
   falloff?: number | null;
   /** The digit patch its u and v lie on, so it rides that digit: fingers:2 on a hand, fingers:thumb, toes:0 on a foot or paw. The part's first run reaching u when left out, which on a hand past the palm is fingers:0. */
   patch?: string | null;
+  /** Makes it one socket showing many copies of the one part on it, scattered over the area from u to `to` along the part and v to toV round it: v 0 and toV 1 runs all round it. */
+  spread?: RecipeSpread | null;
+  /** Makes it one socket showing copies of the one part on it repeated along a path from (u, v) through its via places to (to, toV), or between two sockets. */
+  path?: RecipePath | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Copies of the part on a socket scattered over its area, each an instance of the one part: edit the part and every copy changes. */
+export interface RecipeSpread {
+  /** How many copies, 1 to 1000; fewer show where spacing leaves no room for more. */
+  count: number;
+  /** Picks the places and jitter; another seed, another scatter. */
+  seed?: number;
+  /** The least distance between two copies, in body units, so they do not pile up. None when left out. */
+  spacing?: number | null;
+  /** How far each copy's size varies either way, as a share of it: 0.2 is 80% to 120%. */
+  sizeJitter?: number | null;
+  /** The most degrees a copy leans from the surface's normal, each a random way. */
+  leanJitter?: number | null;
+  /** The most degrees a copy turns about itself either way. */
+  turnJitter?: number | null;
+  /** The outer share of the area over which copies' size falls to the socket's falloff, 0.35 when left out. */
+  edge?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

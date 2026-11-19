@@ -39,6 +39,10 @@ object ShellTags {
     const val SOCKET_SIZE = "move.socket.size"
     const val SOCKET_FALLOFF = "move.socket.falloff"
     const val SOCKET_DELETE = "move.socket.delete"
+    const val SOCKET_LAYOUT = "move.socket.layout"
+
+    /** The field of one copy knob, by its name. */
+    fun copyKnob(name: String) = "move.socket.copy.$name"
     const val MOVE_MODE_MORE = "move.mode.more"
     const val MOVE_REST = "move.rest"
     const val JOINT_HINGE = "move.joint.hinge"

@@ -11,6 +11,8 @@ import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.ViewParams
+import dev.chieppa.squash.character.model.CopySpec
+import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
@@ -20,16 +22,60 @@ import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSocket
 
 private const val FLAG_ON = 1f
+
+/** The parameters [socket]'s spread or path stand for, its copies' layout and jitter, failing at [path] where they cannot hold. */
+private fun BuildContext.copyParams(path: String, socket: RecipeSocket, siblings: List<RecipeSocket>, offered: (String) -> SocketSpec?): Map<String, Float?> {
+    val n = socket.n
+    if (socket.spread != null && socket.path != null) fail(path, "a socket spreads copies over an area or repeats them along a path, not both")
+    if (socket.count != null) fail("$path.count", "count makes a row of sockets; a socket with spread or path gives its copies' count there")
+    if (socket.mirrored) fail("$path.mirrored", "a socket showing copies is not mirrored; give each side's area or path")
+    val shared = mapOf(HandSockets.size(n) to socket.size, HandSockets.falloff(n) to socket.falloff)
+    socket.spread?.let { spread ->
+        if (spread.count !in 1..CopySpec.MAX_COPIES) fail("$path.spread.count", "a spread shows 1 to ${CopySpec.MAX_COPIES} copies, not ${spread.count}")
+        return shared + mapOf(
+            HandSockets.spread(n) to spread.count.toFloat(), HandSockets.to(n) to (socket.to ?: socket.u), HandSockets.toV(n) to (socket.toV ?: socket.v),
+            HandSockets.seed(n) to spread.seed.toFloat(), HandSockets.spacing(n) to spread.spacing, HandSockets.sizeJitter(n) to spread.sizeJitter,
+            HandSockets.leanJitter(n) to spread.leanJitter, HandSockets.turnJitter(n) to spread.turnJitter, HandSockets.edge(n) to spread.edge,
+        )
+    }
+    val line = checkNotNull(socket.path)
+    line.count?.let { if (it !in 1..CopySpec.MAX_COPIES) fail("$path.path.count", "a path shows 1 to ${CopySpec.MAX_COPIES} copies, not $it") }
+    if (line.via.size > HandSockets.MAX_VIA) fail("$path.path.via", "a path runs through at most ${HandSockets.MAX_VIA} places, not ${line.via.size}")
+    line.via.forEachIndexed { i, place -> if (place.size != 2) fail("$path.path.via[$i]", "a place is [u, v]") }
+    val ends = line.between?.let { names ->
+        if (names.size != 2) fail("$path.path.between", "a path runs between two sockets, not ${names.size}")
+        names.mapIndexed { i, name ->
+            val own = HandSockets.idOf(name)?.let { id -> siblings.firstOrNull { it.n == id } }
+            own?.let { it.u to it.v } ?: offered(name)?.let { it.u to it.v }
+                ?: fail("$path.path.between[$i]", "no socket \"$name\" on this part; name a socket.<n> it lists or one of its template's")
+        }
+    }
+    val (from, to) = ends?.let { it[0] to it[1] } ?: ((socket.u to socket.v) to ((socket.to ?: socket.u) to (socket.toV ?: socket.v)))
+    return shared + mapOf(
+        HandSockets.u(n) to from.first, HandSockets.v(n) to from.second, HandSockets.to(n) to to.first, HandSockets.toV(n) to to.second,
+        HandSockets.repeat(n) to (line.count ?: 0).toFloat(), HandSockets.pitch(n) to line.pitch, HandSockets.roll(n) to line.roll, HandSockets.sag(n) to line.sag,
+    ) + line.via.flatMapIndexed { k, place -> listOf(HandSockets.viaU(n, k) to place[0], HandSockets.viaV(n, k) to place[1]) }
+}
 private const val FLAG_OFF = 0f
 
 /**
- * The command that places hand-made [socket] on [part]: one socket, or a row of them when it has a count above 1, on the digit its patch
- * names. It warns when the part as [params] shape it builds no such digit.
+ * The command that places hand-made [socket] on [part]: one socket, a row of them when it has a count above 1, or one showing copies of
+ * the part on it over an area or along a path, on the digit its patch names. It warns when the part as [params] shape it builds no such
+ * digit. A path [between] two sockets reads their places from [siblings], the sockets the part declares, or from [offered], the part's
+ * template's own.
  */
-internal fun BuildContext.socketCommand(path: String, part: PartId, socket: RecipeSocket, params: Map<String, Float> = emptyMap()): AddParameters {
+internal fun BuildContext.socketCommand(
+    path: String,
+    part: PartId,
+    socket: RecipeSocket,
+    params: Map<String, Float> = emptyMap(),
+    siblings: List<RecipeSocket> = emptyList(),
+    offered: (String) -> SocketSpec? = { null },
+): AddParameters {
     socket.sink?.takeIf { it < 0f }?.let { warn("$path.sink", "a sink below 0 is not a stand-off; give outset, in body units, with sink 0") }
     val digit = socket.patch?.let { patch -> digitOf("$path.patch", part, patch, params) }
     val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset, digit)
+    if (socket.spread != null || socket.path != null) return AddParameters(part, one.values + copyParams(path, socket, siblings, offered))
     val count = socket.count
     if (count == null) {
         if (socket.toV != null) fail("$path.toV", "toV ends a row; give count too")

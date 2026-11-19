@@ -232,6 +232,9 @@
           "$ref": "#/$defs/Landmark"
         },
         {
+          "$ref": "#/$defs/Loop"
+        },
+        {
           "$ref": "#/$defs/Membrane"
         },
         {
@@ -1604,6 +1607,81 @@
         "name",
         "u",
         "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Loop": {
+      "description": "A closed ring: a round wire swept once round an oval about the axis start, its hole along the rest axis and its length along up, its last ring on its first, so its rings take one span fewer round it. Its parameters and size set it, and drawn outlines leave it as it is. u runs round the loop from its top, v round the wire from its inside. A separate mesh.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "loop"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "radius": {
+          "description": "The loop's radius across, to the middle of its wire, as a fraction of the template's axis length at the part's size.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "stretch": {
+          "description": "How long the loop is along up for its width, 1 for a round ring: a chain link takes more.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "The wire's radius, as a fraction of the template's axis length at the part's size.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "radius",
+        "thickness"
       ],
       "patternProperties": {
         "^x-": {}

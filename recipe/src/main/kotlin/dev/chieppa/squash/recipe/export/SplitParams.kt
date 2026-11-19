@@ -13,6 +13,8 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.recipe.model.RecipeGeneric
 import dev.chieppa.squash.recipe.model.RecipeJoint
 import dev.chieppa.squash.recipe.model.RecipeLandmark
+import dev.chieppa.squash.recipe.model.RecipePath
+import dev.chieppa.squash.recipe.model.RecipeSpread
 import dev.chieppa.squash.recipe.model.RecipeRest
 import dev.chieppa.squash.recipe.model.RecipeSection
 import dev.chieppa.squash.recipe.model.RecipeSocket
@@ -24,6 +26,11 @@ private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset",
 /** The keys a row of hand-made sockets adds, and the one it may add besides. */
 private val ROW_FIELDS = setOf("count", "to", "size", "falloff")
 private const val ROW_ROUND = "toV"
+
+/** The keys a socket showing copies over an area adds, and those along a path. */
+private val SPREAD_FIELDS = setOf("spread", "to", "toV", "size", "falloff", "seed", "spacing", "sizeJitter", "leanJitter", "turnJitter", "edge")
+private val PATH_FIELDS = setOf("repeat", "to", "toV", "size", "falloff", "pitch", "roll", "sag")
+private const val VIA = "via."
 
 private val JOINT_FIELDS = setOf("u", "hinge", "low", "high", "stretch")
 private val JOINT_NEEDS = setOf("u", "hinge", "low", "high")
@@ -68,6 +75,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
     private fun sockets(params: Map<String, Float>): List<RecipeSocket> = HandSockets.ids(params).mapNotNull { id ->
         val name = HandSockets.name(id)
         val keys = fields(params, name)
+        if ("spread" in keys || "repeat" in keys) return@mapNotNull copySocket(params, id, keys)
         val count = params[HandSockets.count(id)]
         val row = count != null && ROW_FIELDS.all { it in keys } && count == count.roundToInt().toFloat() && count.roundToInt() in 2..HandSockets.MAX_COUNT
         val allowed = if (row) SOCKET_FIELDS + ROW_FIELDS + ROW_ROUND else SOCKET_FIELDS
@@ -86,6 +94,41 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
             toV = if (row) params[HandSockets.toV(id)] else null,
             size = if (row) params[HandSockets.size(id)] else null,
             falloff = if (row) params[HandSockets.falloff(id)] else null,
+            patch = patch,
+        )
+    }
+
+    /** Socket [id], one showing copies, as a recipe socket with its spread or path, or null where its [keys] hold more than those name. */
+    private fun copySocket(params: Map<String, Float>, id: Int, keys: Set<String>): RecipeSocket? {
+        val spread = "spread" in keys
+        val via = keys.filter { it.startsWith(VIA) }
+        val places = via.map { it.removePrefix(VIA).substringBefore('.') }.distinct().mapNotNull { it.toIntOrNull() }.sorted()
+        if (spread && via.isNotEmpty()) return null
+        if (places != places.indices.toList() || via.size != places.size * 2) return null
+        if (!(keys - via.toSet()).all { it in SOCKET_FIELDS + if (spread) SPREAD_FIELDS else PATH_FIELDS } || "u" !in keys || "v" !in keys || "pair" in keys) return null
+        val digit = params[HandSockets.digit(id)]
+        val patch = digit?.let { if (it == it.roundToInt().toFloat()) digitPatch(it.roundToInt()) else null }
+        if (digit != null && patch == null) return null
+        val name = HandSockets.name(id)
+        lift(name, keys)
+        val count = params.getValue(if (spread) HandSockets.spread(id) else HandSockets.repeat(id)).roundToInt()
+        return RecipeSocket(
+            id, params.getValue(HandSockets.u(id)), params.getValue(HandSockets.v(id)), params[HandSockets.outward(id)] ?: 0f,
+            false, params[HandSockets.sink(id)],
+            outset = params[HandSockets.outset(id)],
+            to = params[HandSockets.to(id)],
+            toV = params[HandSockets.toV(id)],
+            size = params[HandSockets.size(id)],
+            falloff = params[HandSockets.falloff(id)],
+            spread = if (spread) RecipeSpread(
+                count, (params[HandSockets.seed(id)] ?: 0f).roundToInt(), params[HandSockets.spacing(id)], params[HandSockets.sizeJitter(id)],
+                params[HandSockets.leanJitter(id)], params[HandSockets.turnJitter(id)], params[HandSockets.edge(id)],
+            ) else null,
+            path = if (spread) null else RecipePath(
+                count.takeIf { it > 0 }, params[HandSockets.pitch(id)],
+                places.map { listOf(params.getValue(HandSockets.viaU(id, it)), params.getValue(HandSockets.viaV(id, it))) },
+                roll = params[HandSockets.roll(id)], sag = params[HandSockets.sag(id)],
+            ),
             patch = patch,
         )
     }

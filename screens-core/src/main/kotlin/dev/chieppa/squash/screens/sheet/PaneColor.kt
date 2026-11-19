@@ -25,6 +25,9 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.MeshDraw
+import dev.chieppa.squash.render.MeshInstance
+import dev.chieppa.squash.character.copies.PartCopies
+import dev.chieppa.stretch.gpu.Mat4
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.RibbonPoint
@@ -59,6 +62,8 @@ class PaneColor(val body: BodyColor, val palette: Palette, val shading: ObjectSh
  * runs, null with none; the surface draws the rest. A part of its own whose base slot has an opacity draws at that share of [opacity].
  */
 fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float = 1f, layer: DepthLayer = DepthLayer.SCENE, posed: PlacedPart? = null): MeshDraw? {
+    val copies = (posed ?: part.placedPart).copies
+    if (copies != null) return copiesDraw(part, copies, color, toCamera, outline, opacity, layer)
     val mesh = posed?.surface?.mesh ?: part.mesh
     if (part.seeThrough) return draw(part, ghostOutline, opacity * SEE_THROUGH_OPACITY, layer).copy(mesh = mesh)
     val id = part.id
@@ -73,6 +78,19 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
         return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
     }
     val draw = coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts)
+    return draw.copy(opacity = opacity * draw.opacity, layer = layer)
+}
+
+/** [part], shown as [copies], as a pane draws it: its own mesh at rest once for each copy, colored as [colored] colors a part. */
+private fun SheetLook.copiesDraw(part: SheetPart, copies: PartCopies, color: PaneColor?, toCamera: Vec3, outline: Float, opacity: Float, layer: DepthLayer): MeshDraw {
+    val mesh = copies.rule.surface.mesh
+    val id = part.id
+    if (part.seeThrough || color == null || id == null) {
+        val plain = draw(part, if (part.seeThrough) ghostOutline else outline, if (part.seeThrough) opacity * SEE_THROUGH_OPACITY else opacity, layer)
+        return plain.copy(mesh = mesh, instances = copies.places.map { MeshInstance(copyModel(it)) })
+    }
+    val fallback = this.part.copy(ink = color.palette.colorOf(INK_SLOT) ?: this.part.ink)
+    val draw = coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, Mat4.Identity, outline, copies = copies)
     return draw.copy(opacity = opacity * draw.opacity, layer = layer)
 }
 

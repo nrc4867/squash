@@ -12,7 +12,7 @@ class FramedCamera(val camera: CameraView, val pixelsPerUnit: Float)
 
 /** A camera from [toViewer], the given parts as large as a [width] by [height] view holds them with [margin] of it left free. */
 fun framedCamera(parts: List<PlacedPart>, toViewer: Vec3, width: Int, height: Int, margin: Float): FramedCamera =
-    framedPointsCamera(parts.flatMap { part -> List(part.surface.mesh.vertexCount) { part.origin + part.surface.mesh.position(it) } }, toViewer, width, height, margin)
+    framedPointsCamera(parts.flatMap { it.shownPoints() }, toViewer, width, height, margin)
 
 /** A camera from [toViewer], [points] as large as a [width] by [height] view holds them with [margin] of it left free. */
 fun framedPointsCamera(points: List<Vec3>, toViewer: Vec3, width: Int, height: Int, margin: Float): FramedCamera {

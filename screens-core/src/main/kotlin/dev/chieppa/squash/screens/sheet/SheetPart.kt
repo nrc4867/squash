@@ -66,7 +66,11 @@ class SheetPart(private val placed: PlacedPart, val seeThrough: Boolean = false)
     /** The outline of the part seen from the body's side, as paths of points in body space. */
     fun silhouetteFromBodySide(): List<List<Vec3>> = inBody(placed.surface.silhouettes.bodySide)
 
-    private fun inBody(paths: List<List<Vec3>>) = paths.map { path -> path.map { origin + it } }
+    /** [paths], in the part's own space, in body space: at its origin, or where each of its copies shows it. */
+    private fun inBody(paths: List<List<Vec3>>): List<List<Vec3>> {
+        val copies = placed.copies ?: return paths.map { path -> path.map { origin + it } }
+        return copies.places.flatMap { place -> paths.map { path -> path.map(place::placed) } }
+    }
 
     private val posedCuts = Collections.synchronizedMap(IdentityHashMap<PatchCut, Pair<PartSurface, RenderMesh>>())
 

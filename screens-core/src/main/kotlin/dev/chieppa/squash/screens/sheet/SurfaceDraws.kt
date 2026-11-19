@@ -18,6 +18,9 @@ import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.MeshDraw
+import dev.chieppa.squash.render.MeshInstance
+import dev.chieppa.squash.character.copies.CopyPlace
+import dev.chieppa.squash.character.copies.PartCopies
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.RibbonDraw
@@ -45,7 +48,8 @@ fun Palette.shadowOf(slot: SlotName?): Color? = slot?.let(::shadow)?.let { Color
 /**
  * A part's draw with its color from [palette]. Its base shows the slot its work names; with none named, or one the palette does
  * not hold, [fallback]'s base, the look's own part color. A layer whose slot the palette does not hold is not drawn, so what is
- * under it shows. [side] and [toCamera] choose its tones through [rule]. It draws at its base slot's opacity.
+ * under it shows. [side] and [toCamera] choose its tones through [rule]. It draws at its base slot's opacity. With [copies] it draws
+ * once for each copy, [mesh] being the part's own at rest, each in the slot that copy shows, its own base where it names none.
  */
 fun coloredPartDraw(
     mesh: RenderMesh,
@@ -59,14 +63,29 @@ fun coloredPartDraw(
     outlinePixels: Float,
     rule: ToneRule = DefaultToneRule,
     cutMesh: (PatchCut) -> RenderMesh = { it.mesh },
+    copies: PartCopies? = null,
 ): MeshDraw {
     val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, palette.shadowOf(color?.baseSlot), shading, side, toCamera)
     val layers = color?.layers.orEmpty().mapNotNull { layer ->
         palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
     }
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
-    return MeshDraw(mesh, material, model, outlinePixels, opacity = color?.baseSlot?.let(palette::opacity) ?: 1f, layers = layers)
+    val instances = copies?.places?.map { place ->
+        val shade = place.slot?.let { slot ->
+            palette.colorOf(slot)?.let { rule.tones(it, palette.shadowOf(slot), shading, side, toCamera) }?.let { PartMaterial(it.lit, it.shadow, fallback.ink, shading.mode, shading.toLight) }
+        }
+        MeshInstance(copyModel(place), shade)
+    }.orEmpty()
+    return MeshDraw(mesh, material, model, outlinePixels, opacity = color?.baseSlot?.let(palette::opacity) ?: 1f, layers = layers, instances = instances)
 }
+
+/** The matrix taking a part's own mesh to where [place], one of its copies, shows it. */
+fun copyModel(place: CopyPlace): Mat4 = Mat4.of(
+    place.turn.x.x, place.turn.x.y, place.turn.x.z, 0f,
+    place.turn.y.x, place.turn.y.y, place.turn.y.z, 0f,
+    place.turn.z.x, place.turn.z.y, place.turn.z.z, 0f,
+    place.origin.x, place.origin.y, place.origin.z, 1f,
+)
 
 /**
  * A mark's weight along it: its stops, or with none the line rule's own weight, its ends narrowing over [endTaper] of its length each.

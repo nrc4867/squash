@@ -10,7 +10,7 @@ The character's field is `JoinedField` over its members, in `geom/field`, built 
 - **Cuts stay inside a part.** A part's own cut, such as a paw's flat sole, is a smooth intersection applied to that part's field before the union, so it flattens nothing else.
 - **Each member's field is distance-like**: negative inside, near the true distance close to the surface. It is read only near the surface.
 - **A ring is read round from its middle.** A run's solid takes each ring's radius in each direction round from the middle of the ring's box, or from its section's centre where the section names one (`ClosedSpline.centre`): a point inside from which every direction meets the outline once, so a ring with a hollow dished into one face, an ear's, is read whole and its hollow stays outside the solid.
-- **Which parts are in the field.** A part whose template says `"surface": "field"` (the default), that no garment owns, and each of its swept runs that no block of its template marks `separate`. A part marked `separate` builds as its own mesh. A template's `join` gives its parts' socket blend as a share of the first run's length (`JoinSpec.blend`) and whether the join is inked by default (`JoinSpec.ink`), where the part sets neither.
+- **Which parts are in the field.** A part whose template says `"surface": "field"` (the default), that no garment owns, that its socket does not show as copies (see data-model, Copies of one part), and each of its swept runs that no block of its template marks `separate`. A part marked `separate` builds as its own mesh. A template's `join` gives its parts' socket blend as a share of the first run's length (`JoinSpec.blend`) and whether the join is inked by default (`JoinSpec.ink`), where the part sets neither.
 
 ## The mesher
 

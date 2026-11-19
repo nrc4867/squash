@@ -108,9 +108,11 @@ fun characterView(
     val filled = parts.mapNotNull { part ->
         val id = requireNotNull(part.id)
         if (id in inSurface) return@mapNotNull piecesDraw(part, state.color.parts[id], state.palette, fallback, shading, eye - center)
+        val copies = part.copies
         val draw = coloredPartDraw(
-            part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
-            cutMesh = { cut -> part.surface.grid(cut.patch)?.let(cut::laidOn) ?: cut.mesh },
+            copies?.rule?.surface?.mesh ?: part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
+            cutMesh = { cut -> if (copies != null) cut.mesh else part.surface.grid(cut.patch)?.let(cut::laidOn) ?: cut.mesh },
+            copies = copies,
         )
         val face = faces.draws(id, view)
         ribbons += face.ribbons

@@ -25,6 +25,17 @@ data class SetBaseSlot(val part: PartId, val slot: SlotName?, val thisSide: Bool
     }
 }
 
+/** Sets the palette slots a part's copies pick among besides its base slot; an empty list leaves them all its base. */
+@Serializable
+@SerialName("setShades")
+data class SetShades(val part: PartId, val slots: List<SlotName>, val thisSide: Boolean = false) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val instance = document.requirePart(part)
+        val before = document.writtenData(instance, thisSide).surface
+        return Applied(document.withWrittenSurface(instance, thisSide, before.copy(shades = slots)), SetShades(part, before.shades, thisSide))
+    }
+}
+
 /** Fills the area its template names [area] with a palette slot. */
 @Serializable
 @SerialName("setAreaFill")

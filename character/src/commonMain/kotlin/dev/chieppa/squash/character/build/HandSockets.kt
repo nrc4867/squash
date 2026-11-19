@@ -1,6 +1,10 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.BodyPlan
+import dev.chieppa.squash.character.model.CopyArea
+import dev.chieppa.squash.character.model.CopyLayout
+import dev.chieppa.squash.character.model.CopySpec
+import dev.chieppa.squash.character.model.SurfacePlace
 import dev.chieppa.squash.character.model.Mirror
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
@@ -27,8 +31,10 @@ private fun wrapped(v: Float): Float = if (v in 0f..1f) v else v - floor(v)
  * `.sink`, `.outset` and `.pair`, so pairs, overrides, undo and saving treat them like any other. Socket `<n>` is named `socket.<n>`, takes every
  * template, and with `pair` set has a mirrored twin. With `.count` above 1 it is a row: that many sockets evenly spaced from `.u`
  * to `.to` along it and from `.v` to `.toV` round it, named `socket.<n>.<i>` from 0, a part placed on the first starting at `.size` and on the
- * last at `.falloff` of that; a row whose v runs a whole turn closes round the part, its sockets a turn's share apart. See HLD:
- * data-model, Placing parts.
+ * last at `.falloff` of that; a row whose v runs a whole turn closes round the part, its sockets a turn's share apart. With `.spread` it
+ * is one socket showing that many copies of the part on it over the area from `.u` to `.to` and `.v` to `.toV`, and with `.repeat` copies
+ * along the path from (`.u`, `.v`) through its `.via.<k>` places to (`.to`, `.toV`); see [CopySpec]. See HLD: data-model, Placing parts
+ * and Copies.
  */
 object HandSockets {
     /** How far the outward angle turns from the surface's normal toward either end of the part, in degrees. */
@@ -72,6 +78,48 @@ object HandSockets {
     /** The size a part placed on its row's last socket starts at, as a share of the first's. */
     fun falloff(id: Int) = "${name(id)}.falloff"
 
+    /** How many copies of its part it shows over an area of its part. */
+    fun spread(id: Int) = "${name(id)}.spread"
+
+    /** How many copies of its part it shows along a path on its part; with 0, as many as its pitch fits. */
+    fun repeat(id: Int) = "${name(id)}.repeat"
+
+    /** The seed its copies' places and jitter are picked from. */
+    fun seed(id: Int) = "${name(id)}.seed"
+
+    /** The least distance between two copies over an area, in body units. */
+    fun spacing(id: Int) = "${name(id)}.spacing"
+
+    /** The outer share of an area its copies' size falls off over toward its falloff. */
+    fun edge(id: Int) = "${name(id)}.edge"
+
+    /** How far each copy's size varies either way, as a share of it. */
+    fun sizeJitter(id: Int) = "${name(id)}.sizeJitter"
+
+    /** The most degrees a copy leans from the surface's normal. */
+    fun leanJitter(id: Int) = "${name(id)}.leanJitter"
+
+    /** The most degrees a copy turns about itself either way. */
+    fun turnJitter(id: Int) = "${name(id)}.turnJitter"
+
+    /** The distance between copies along a path, in body units; from the part's size when unset. */
+    fun pitch(id: Int) = "${name(id)}.pitch"
+
+    /** The degrees each copy along a path rolls about the path more than the one before it, every other one turned. */
+    fun roll(id: Int) = "${name(id)}.roll"
+
+    /** How far a path droops at its middle, in body units, as a chain hangs between its two ends. */
+    fun sag(id: Int) = "${name(id)}.sag"
+
+    /** Where along its part place [k] a path runs through sits. */
+    fun viaU(id: Int, k: Int) = "${name(id)}.via.$k.u"
+
+    /** Where round its part place [k] a path runs through sits. */
+    fun viaV(id: Int, k: Int) = "${name(id)}.via.$k.v"
+
+    /** The most places a path runs through between its ends. */
+    const val MAX_VIA = 24
+
     /** The name of socket [index] of row [id]. */
     fun member(id: Int, index: Int) = "${name(id)}.$index"
 
@@ -104,6 +152,7 @@ object HandSockets {
         val sink = params[sink(id)] ?: 1f
         val outset = params[outset(id)] ?: 0f
         val patch = params[digit(id)]?.roundToInt()?.let(digitPatch)
+        copiesOf(params, id)?.let { return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset, copies = it.copy(patch = patch))) }
         val count = (params[count(id)] ?: 1f).roundToInt().coerceIn(1, MAX_COUNT)
         if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset))
         val last = params[to(id)] ?: u
@@ -118,6 +167,68 @@ object HandSockets {
             SocketSpec(member(id, i), u + (last - u) * share, at, Outward.NORMAL, pair, emptyList(), tilt, sink, scale = first * (1f + (falloff - 1f) * share), patch = patch, outset = outset)
         }
     }
+
+    /** The copies socket [id] of [params] shows, or null when it is a plain socket or a row. */
+    fun copiesOf(params: Map<String, Float>, id: Int): CopySpec? {
+        val spread = params[spread(id)]
+        val repeat = params[repeat(id)]
+        if (spread == null && repeat == null) return null
+        val u = params[u(id)] ?: return null
+        val v = params[v(id)] ?: return null
+        val to = params[to(id)] ?: u
+        val toV = params[toV(id)] ?: v
+        val layout = if (spread != null) CopyLayout.AREA else CopyLayout.PATH
+        val via = (0 until MAX_VIA).mapNotNull { k -> params[viaU(id, k)]?.let { vu -> params[viaV(id, k)]?.let { vv -> SurfacePlace(vu, vv) } } }
+        return CopySpec(
+            layout = layout,
+            count = ((spread ?: repeat) ?: 0f).roundToInt().coerceIn(0, CopySpec.MAX_COPIES),
+            area = CopyArea(minOf(u, to), maxOf(u, to), minOf(v, toV), maxOf(v, toV)),
+            path = if (layout == CopyLayout.PATH) listOf(SurfacePlace(u, v)) + via + SurfacePlace(to, toV) else emptyList(),
+            seed = (params[seed(id)] ?: 0f).roundToInt(),
+            spacing = params[spacing(id)] ?: 0f,
+            size = params[size(id)] ?: 1f,
+            falloff = params[falloff(id)] ?: 1f,
+            edge = params[edge(id)] ?: CopySpec.DEFAULT_EDGE,
+            sizeJitter = params[sizeJitter(id)] ?: 0f,
+            leanJitter = params[leanJitter(id)] ?: 0f,
+            turnJitter = params[turnJitter(id)] ?: 0f,
+            tilt = params[outward(id)] ?: 0f,
+            sink = params[sink(id)] ?: 1f,
+            outset = params[outset(id)] ?: 0f,
+            pitch = params[pitch(id)] ?: 0f,
+            roll = params[roll(id)] ?: 0f,
+            sag = params[sag(id)] ?: 0f,
+        )
+    }
+
+    /**
+     * The command that places a socket [id] on [part] showing [count] copies of the part on it scattered over the area from [u] to [to]
+     * along it and [v] to [toV] round it, picked by [seed], none nearer another than [spacing], each varying in size by [sizeJitter] and
+     * leaning and turning by up to [leanJitter] and [turnJitter] degrees: one undo step. It fails as [add] does.
+     */
+    fun addSpread(
+        part: PartId, id: Int, u: Float, to: Float, v: Float, toV: Float, count: Int, seed: Int,
+        spacing: Float = 0f, sizeJitter: Float = 0f, leanJitter: Float = 0f, turnJitter: Float = 0f, outward: Float = 0f,
+    ): AddParameters = AddParameters(
+        part,
+        add(part, id, u, v, outward, false).values + mapOf(
+            spread(id) to count.toFloat(), to(id) to to, toV(id) to toV, seed(id) to seed.toFloat(),
+            spacing(id) to spacing.takeIf { it > 0f }, sizeJitter(id) to sizeJitter.takeIf { it > 0f },
+            leanJitter(id) to leanJitter.takeIf { it > 0f }, turnJitter(id) to turnJitter.takeIf { it > 0f },
+        ),
+    )
+
+    /**
+     * The command that places a socket [id] on [part] showing [count] copies of the part on it along the path from [u], [v] to [to],
+     * [toV], each rolled [roll] degrees more than the one before it, drooping [sag] at its middle: one undo step. It fails as [add] does.
+     */
+    fun addPath(part: PartId, id: Int, u: Float, v: Float, to: Float, toV: Float, count: Int, roll: Float = 0f, sag: Float = 0f): AddParameters =
+        AddParameters(
+            part,
+            add(part, id, u, v, 0f, false).values + mapOf(
+                repeat(id) to count.toFloat(), to(id) to to, toV(id) to toV, roll(id) to roll.takeIf { it != 0f }, sag(id) to sag.takeIf { it > 0f },
+            ),
+        )
 
     /**
      * The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired], a part on
@@ -144,7 +255,13 @@ object HandSockets {
     fun move(part: PartId, id: Int, u: Float, v: Float): SetParameters = SetParameters(part, mapOf(u(id) to u, v(id) to v))
 
     /** The command that clears socket [id] from [part]: one undo step. */
-    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id)).associateWith { null })
+    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, keysOf(id).associateWith { null })
+
+    /** Every parameter socket [id] may hold. */
+    fun keysOf(id: Int): List<String> = listOf(
+        u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id), spread(id), repeat(id),
+        seed(id), spacing(id), edge(id), sizeJitter(id), leanJitter(id), turnJitter(id), pitch(id), roll(id), sag(id),
+    ) + (0 until MAX_VIA).flatMap { listOf(viaU(id, it), viaV(id, it)) }
 }
 
 /**

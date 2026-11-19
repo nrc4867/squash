@@ -65,6 +65,8 @@ data class RecipePart(
     val params: Map<String, Float> = emptyMap(),
     @Doc("The palette slot the whole part is coloured.")
     val color: String? = null,
+    @Doc("Palette slots its copies pick among besides color, where it sits on a socket with spread or path: two or three shades of a fleece.")
+    val shades: List<String> = emptyList(),
     @Doc("Areas the template names, as a nail or a pad, each filled with a palette slot.")
     val areas: Map<String, String> = emptyMap(),
     @Doc("Painted regions on the part, each in a palette slot: a muzzle, a chest patch, a two-tone face.")
@@ -105,16 +107,58 @@ data class RecipeSocket(
     val sink: Float? = null,
     @Doc("How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out.")
     val outset: Float? = null,
-    @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on.")
+    @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on, a part on each. Many of one part over an area or along a line take spread or path instead.")
     val count: Int? = null,
     @Doc("A row's last socket's u; the row's u when left out.")
     val to: Float? = null,
     @Doc("A row's last socket's v; the row's v when left out. A whole turn from v (v 0, toV 1) closes the row round the part, its sockets evenly a turn's share apart, as studs round a belt.")
     val toV: Float? = null,
-    @Doc("The size a part placed on a row's first socket starts at.")
+    @Doc("The size a part placed on a row's first socket starts at, when the part gives no size of its own; with spread or path, each copy's size, times the part's own.")
     val size: Float? = null,
-    @Doc("The size a part placed on a row's last socket starts at, as a share of the first's.")
+    @Doc("The size a part placed on a row's last socket starts at, as a share of the first's; with spread, the share of their size copies fall to at the area's edges.")
     val falloff: Float? = null,
     @Doc("The digit patch its u and v lie on, so it rides that digit: fingers:2 on a hand, fingers:thumb, toes:0 on a foot or paw. The part's first run reaching u when left out, which on a hand past the palm is fingers:0.")
     val patch: String? = null,
+    @Doc("Makes it one socket showing many copies of the one part on it, scattered over the area from u to `to` along the part and v to toV round it: v 0 and toV 1 runs all round it.")
+    val spread: RecipeSpread? = null,
+    @Doc("Makes it one socket showing copies of the one part on it repeated along a path from (u, v) through its via places to (to, toV), or between two sockets.")
+    val path: RecipePath? = null,
+)
+
+/** Copies scattered over an area of a part. */
+@Serializable
+@Doc("Copies of the part on a socket scattered over its area, each an instance of the one part: edit the part and every copy changes.")
+data class RecipeSpread(
+    @Doc("How many copies, 1 to 1000; fewer show where spacing leaves no room for more.")
+    val count: Int,
+    @Doc("Picks the places and jitter; another seed, another scatter.")
+    val seed: Int = 0,
+    @Doc("The least distance between two copies, in body units, so they do not pile up. None when left out.")
+    val spacing: Float? = null,
+    @Doc("How far each copy's size varies either way, as a share of it: 0.2 is 80% to 120%.")
+    val sizeJitter: Float? = null,
+    @Doc("The most degrees a copy leans from the surface's normal, each a random way.")
+    val leanJitter: Float? = null,
+    @Doc("The most degrees a copy turns about itself either way.")
+    val turnJitter: Float? = null,
+    @Doc("The outer share of the area over which copies' size falls to the socket's falloff, 0.35 when left out.")
+    val edge: Float? = null,
+)
+
+/** Copies repeated along a path on a part. */
+@Serializable
+@Doc("Copies of the part on a socket repeated along a path on its part, its axis along the surface's normal and its up along the path: beads, studs, a row of buttons, chain links.")
+data class RecipePath(
+    @Doc("How many copies, evenly from end to end; as many as pitch fits when left out.")
+    val count: Int? = null,
+    @Doc("The distance between copies, in body units; a ring part's links its inside length when neither count nor pitch is given, so each passes through the next.")
+    val pitch: Float? = null,
+    @Doc("Places [u, v] on the part the path runs through between its ends.")
+    val via: List<List<Float>> = emptyList(),
+    @Doc("Two sockets this part offers, by name, the path's ends in place of (u, v) and (to, toV): a hand-made socket.<n> listed here, or one of its template's.")
+    val between: List<String>? = null,
+    @Doc("Degrees each copy rolls about the path more than the one before it: 90 turns every other chain link.")
+    val roll: Float? = null,
+    @Doc("How far the path droops at its middle, in body units, as a chain hangs between its two ends; it lies on the part where the droop would take it inside.")
+    val sag: Float? = null,
 )

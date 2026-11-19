@@ -35,7 +35,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
             pass.setViewport(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat())
             pass.setScissorRect(area.x, area.y, area.width, area.height)
             for (image in view.behind) images.draw(pass, imageSlot++, image, view)
-            val (whole, seenThrough) = view.draws.partition { it.opacity >= 1f }
+            val (whole, seenThrough) = view.draws.flatMap { it.each() }.partition { it.opacity >= 1f }
             for (draw in whole) {
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
                 for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.extras.map(::uploadedAlphasFor), layer, draw, view)

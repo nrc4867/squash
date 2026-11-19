@@ -6,6 +6,9 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.screens.move.CopyKnob
+import dev.chieppa.squash.screens.move.SocketLayout
+import kotlin.math.roundToInt
 
 /** Where a row placed nearer a part's start than its middle ends, and where one placed nearer its end ends. */
 private const val ROW_FAR_END = 0.92f
@@ -27,14 +30,57 @@ fun AppState.addSocket(parent: PlacedPart, u: Float, v: Float, onRight: Boolean,
     val stored = if (paired && onRight && !parent.mirrored) 1f - v else v
     val number = HandSockets.nextId(character.resolvedShape(part).params)
     val count = move.count.value
+    val values = move.copyValues.value
+    fun knob(k: CopyKnob) = values[k] ?: k.default
     opened.send(
-        if (count > 1) {
+        if (move.layout.value == SocketLayout.SPREAD) {
+            HandSockets.addSpread(
+                id, number, knob(CopyKnob.FROM_U), knob(CopyKnob.TO_U), knob(CopyKnob.FROM_V), knob(CopyKnob.TO_V), knob(CopyKnob.SPREAD_COUNT).roundToInt(),
+                knob(CopyKnob.SEED).roundToInt(), knob(CopyKnob.SPACING), knob(CopyKnob.SIZE_JITTER), knob(CopyKnob.LEAN_JITTER), knob(CopyKnob.TURN_JITTER), move.outward.value,
+            )
+        } else if (move.layout.value == SocketLayout.PATH) {
+            HandSockets.addPath(id, number, u, v, if (u < MIDDLE) ROW_FAR_END else ROW_NEAR_END, v, knob(CopyKnob.PATH_COUNT).roundToInt(), knob(CopyKnob.ROLL), knob(CopyKnob.SAG))
+        } else if (count > 1) {
             HandSockets.addRow(id, number, u, if (u < MIDDLE) ROW_FAR_END else ROW_NEAR_END, stored, move.outward.value, paired, count, move.size.value, move.falloff.value, digit)
         } else {
             HandSockets.add(id, number, u, stored, move.outward.value, paired, digit = digit)
         },
     )
     move.picked.value = SocketRef(id, HandSockets.name(number))
+}
+
+/** The layout of the picked hand-made socket, or with none picked, of the socket the next press places. */
+fun AppState.pickedLayout(): SocketLayout {
+    val (params, number) = pickedSocketParams() ?: return move.layout.value
+    return CopyKnob.layoutOf(params, number)
+}
+
+/** What [knob] shows: the picked socket's value where it shows copies, else the next socket's. */
+fun AppState.pickedCopyValue(knob: CopyKnob): Float {
+    val picked = pickedSocketParams()
+    if (picked != null && CopyKnob.layoutOf(picked.first, picked.second) != SocketLayout.SOCKETS) return picked.first[knob.key(picked.second)] ?: knob.default
+    return move.copyValues.value[knob] ?: knob.default
+}
+
+/** Sets [knob] on the picked socket where it shows copies, one undo step, or for the next socket placed. */
+fun AppState.setCopyValue(knob: CopyKnob, value: Float) {
+    val held = knob.held(value)
+    val picked = move.picked.value
+    val params = pickedSocketParams()
+    if (picked != null && params != null && CopyKnob.layoutOf(params.first, params.second) != SocketLayout.SOCKETS) {
+        session.value?.send(SetParameter(picked.parent, knob.key(params.second), held))
+        return
+    }
+    move.copyValues.value = move.copyValues.value + (knob to held)
+}
+
+/** The picked hand-made socket's part's parameters and its number, or null with none picked. */
+private fun AppState.pickedSocketParams(): Pair<Map<String, Float>, Int>? {
+    val picked = move.picked.value ?: return null
+    val number = HandSockets.idOf(picked.socket) ?: return null
+    val character = session.value?.document?.value?.character ?: return null
+    val part = character.part(picked.parent) ?: return null
+    return character.resolvedShape(part).params to number
 }
 
 /** Whether the picked hand-made socket, or any socket of the picked row, holds a part, which keeps it from being deleted. */

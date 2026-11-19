@@ -29,8 +29,15 @@ fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}): M
         id to partGrids(placed)
     }.toMap()
 
-/** [placed]'s patches in body space, or those [kept] keeps, with lines of plain weight, and none along the skin a garment hides. */
+/**
+ * [placed]'s patches in body space, or those [kept] keeps, with lines of plain weight, and none along the skin a garment hides; for a part
+ * shown as copies, its patches where each copy shows them.
+ */
 fun partGrids(placed: PlacedPart, kept: (Patch) -> Boolean = { true }): List<LineGrid> {
+    placed.copies?.let { copies ->
+        val own = copies.rule.surface
+        return copies.places.flatMap { place -> own.patches.filter(kept).map { patch -> LineGrid.of(patch, place.origin) { place.turn * own.shown(it) } } }
+    }
     val hidden = hiddenPoints(placed)
     return placed.surface.patches.mapIndexedNotNull { i, patch ->
         if (!kept(patch)) return@mapIndexedNotNull null

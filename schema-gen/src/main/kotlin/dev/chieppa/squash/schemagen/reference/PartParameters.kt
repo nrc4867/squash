@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.MIN_CURVE_PLACES
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.character.model.CopySpec
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.RestDirection
@@ -60,8 +61,14 @@ internal object PartParameters {
         listOf(key(HandSockets.count(N)), "a row of this many sockets, up to ${HandSockets.MAX_COUNT}", "`sockets[].count`"),
         listOf(key(HandSockets.to(N)), "the row's last socket's u", "`sockets[].to`"),
         listOf(key(HandSockets.toV(N)), "the row's last socket's v; a whole turn from its v closes the row round the part, its sockets a turn's share apart", "`sockets[].toV`"),
-        listOf(key(HandSockets.size(N)), "the size a part on the row's first socket starts at", "`sockets[].size`"),
-        listOf(key(HandSockets.falloff(N)), "the size on the row's last socket, a share of the first's", "`sockets[].falloff`"),
+        listOf(key(HandSockets.size(N)), "the size a part on the row's first socket starts at; with spread or repeat, each copy's size, times the part's own", "`sockets[].size`"),
+        listOf(key(HandSockets.falloff(N)), "the size on the row's last socket, a share of the first's; with spread, the share copies fall to at the area's edges", "`sockets[].falloff`"),
+        listOf(key(HandSockets.spread(N)), "one socket showing this many copies of the part on it over the area from u to to and v to toV, up to ${CopySpec.MAX_COPIES}", "`sockets[].spread.count`"),
+        listOf(key(HandSockets.seed(N)) + ", " + key(HandSockets.spacing(N)) + ", " + key(HandSockets.edge(N)), "the seed a spread's places and jitter are picked by; the least distance between its copies, in body units; the outer share of its area its size falls off over", "`sockets[].spread`"),
+        listOf(key(HandSockets.sizeJitter(N)) + ", " + key(HandSockets.leanJitter(N)) + ", " + key(HandSockets.turnJitter(N)), "how far each copy's size varies either way, as a share; the most degrees it leans from the normal; the most it turns about itself", "`sockets[].spread`"),
+        listOf(key(HandSockets.repeat(N)), "one socket showing this many copies of the part on it along the path from (u, v) through its via places to (to, toV); 0 as many as its pitch fits", "`sockets[].path.count`"),
+        listOf(key(HandSockets.viaU(N, 0)) + ", " + key(HandSockets.viaV(N, 0)), "a place a path runs through, from 0 on, ${HandSockets.MAX_VIA} at most", "`sockets[].path.via`"),
+        listOf(key(HandSockets.pitch(N)) + ", " + key(HandSockets.roll(N)) + ", " + key(HandSockets.sag(N)), "the step between a path's copies, in body units, from the part's size when unset; the degrees each rolls more than the one before; how far the path droops at its middle, in body units", "`sockets[].path`"),
         listOf(key(HandJoints.u(N)), "a hand-made joint's u, at least ${num(HandJoints.GAP)} from the ends and from other joints", "`joints[].u`"),
         listOf(key(HandJoints.hinge(N)), "its hinge, counted below", "`joints[].hinge`"),
         listOf(key(HandJoints.low(N)) + ", " + key(HandJoints.high(N)), "its limits in degrees, ${num(HandJoints.DEFAULT_LIMITS.min)} and ${num(HandJoints.DEFAULT_LIMITS.max)} when unset, ${num(HandJoints.MAX_LIMIT)} at most", "`joints[].low`, `.high`"),

@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
  * What is drawn on a part: as a part resolves it, as a pair shares it, or as a side overrides it. Color layers in this order:
  * [baseSlot] colors the whole part, [areaFills] the areas its template names, by area name, then [regions], then [paint]. A
  * null [grain] is what the template gives, and a null [fur] the default rule. Lists run in draw order. [seams] are the strokes painted
- * on the seam where this part meets its parent, in the order laid down, which the rig replays and nothing draws.
+ * on the seam where this part meets its parent, in the order laid down, which the rig replays and nothing draws. [shades] are the slots
+ * the part's copies pick among besides [baseSlot], where a socket shows it as copies.
  */
 @Serializable
 data class SurfaceWork(
@@ -20,6 +21,7 @@ data class SurfaceWork(
     val lineWeights: List<LineWeight> = emptyList(),
     val fur: FurRule? = null,
     val seams: List<SeamStroke> = emptyList(),
+    val shades: List<SlotName> = emptyList(),
 ) {
     init {
         requireUniqueIds("mark", marks.map { it.id.value })
@@ -45,6 +47,7 @@ data class SurfaceWork(
         lineWeights = lineWeights.overlaidWith(overrides.lineWeights) { it.id },
         fur = overrides.fur ?: fur,
         seams = seams.overlaidWith(overrides.seams) { it.id },
+        shades = overrides.shades.ifEmpty { shades },
     )
 
     internal fun mapAnchors(transform: (Anchor) -> Anchor): SurfaceWork = copy(

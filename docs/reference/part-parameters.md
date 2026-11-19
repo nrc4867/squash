@@ -21,8 +21,14 @@ Every part holds its shape as numbers by name: its template's parameters (templa
 | `socket.<n>.count` | a row of this many sockets, up to 16 | `sockets[].count` |
 | `socket.<n>.to` | the row's last socket's u | `sockets[].to` |
 | `socket.<n>.toV` | the row's last socket's v; a whole turn from its v closes the row round the part, its sockets a turn's share apart | `sockets[].toV` |
-| `socket.<n>.size` | the size a part on the row's first socket starts at | `sockets[].size` |
-| `socket.<n>.falloff` | the size on the row's last socket, a share of the first's | `sockets[].falloff` |
+| `socket.<n>.size` | the size a part on the row's first socket starts at; with spread or repeat, each copy's size, times the part's own | `sockets[].size` |
+| `socket.<n>.falloff` | the size on the row's last socket, a share of the first's; with spread, the share copies fall to at the area's edges | `sockets[].falloff` |
+| `socket.<n>.spread` | one socket showing this many copies of the part on it over the area from u to to and v to toV, up to 1000 | `sockets[].spread.count` |
+| `socket.<n>.seed`, `socket.<n>.spacing`, `socket.<n>.edge` | the seed a spread's places and jitter are picked by; the least distance between its copies, in body units; the outer share of its area its size falls off over | `sockets[].spread` |
+| `socket.<n>.sizeJitter`, `socket.<n>.leanJitter`, `socket.<n>.turnJitter` | how far each copy's size varies either way, as a share; the most degrees it leans from the normal; the most it turns about itself | `sockets[].spread` |
+| `socket.<n>.repeat` | one socket showing this many copies of the part on it along the path from (u, v) through its via places to (to, toV); 0 as many as its pitch fits | `sockets[].path.count` |
+| `socket.<n>.via.0.u`, `socket.<n>.via.0.v` | a place a path runs through, from 0 on, 24 at most | `sockets[].path.via` |
+| `socket.<n>.pitch`, `socket.<n>.roll`, `socket.<n>.sag` | the step between a path's copies, in body units, from the part's size when unset; the degrees each rolls more than the one before; how far the path droops at its middle, in body units | `sockets[].path` |
 | `joint.<n>.u` | a hand-made joint's u, at least 0.05 from the ends and from other joints | `joints[].u` |
 | `joint.<n>.hinge` | its hinge, counted below | `joints[].hinge` |
 | `joint.<n>.low`, `joint.<n>.high` | its limits in degrees, -40 and 40 when unset, 180 at most | `joints[].low`, `.high` |

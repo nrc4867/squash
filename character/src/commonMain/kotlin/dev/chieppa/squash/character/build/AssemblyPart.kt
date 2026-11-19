@@ -5,6 +5,7 @@ import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateRef
 
@@ -23,4 +24,6 @@ data class AssemblyPart(
     val owner: GarmentId? = null,
     /** The blend of the join at its socket, see [dev.chieppa.squash.document.PartInstance.blend]. */
     val blend: Float? = null,
+    /** The palette slots its copies pick among besides its own base, see [dev.chieppa.squash.document.SurfaceWork.shades]. */
+    val shades: List<SlotName> = emptyList(),
 )

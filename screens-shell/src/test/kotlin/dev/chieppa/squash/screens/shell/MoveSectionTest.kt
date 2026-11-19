@@ -21,6 +21,11 @@ import dev.chieppa.squash.screens.deletePickedSocket
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.move.MoveMode
+import dev.chieppa.squash.screens.move.CopyKnob
+import dev.chieppa.squash.screens.move.SocketLayout
+import dev.chieppa.squash.screens.pickedCopyValue
+import dev.chieppa.squash.screens.setCopyValue
+import dev.chieppa.squash.character.model.CopySpec
 import dev.chieppa.squash.screens.pickSocket
 import dev.chieppa.squash.screens.pickedOutward
 import dev.chieppa.squash.screens.setOutward
@@ -112,5 +117,30 @@ class MoveSectionTest {
         assertEquals(picked, state.move.picked.value, "a socket of a row picks the row")
         state.deletePickedSocket()
         assertEquals(emptyList(), torsoParams().keys.filter { HandSockets.isHandSocket(it) }, "the row goes whole")
+    }
+
+    @Test
+    fun spreadShowsItsCopyFieldsAndAPickedSpreadEditsItsOwn() = runComposeUiTest {
+        state.move.mode.value = MoveMode.ADD_SOCKET
+        setContent { StretchTheme(StretchThemes.Ink) { Column { ShapeInspector(state) { _, _, _, _, _ -> } } } }
+        onNodeWithTag(ShellTags.SOCKET_LAYOUT).assertExists()
+        onNodeWithTag(ShellTags.copyKnob(CopyKnob.SEED.name)).assertDoesNotExist()
+        state.move.layout.value = SocketLayout.SPREAD
+        waitForIdle()
+        onNodeWithTag(ShellTags.copyKnob(CopyKnob.SEED.name)).assertExists()
+        onNodeWithTag(ShellTags.copyKnob(CopyKnob.SAG.name)).assertDoesNotExist()
+        onNodeWithTag(ShellTags.SOCKET_COUNT).assertDoesNotExist()
+        state.setCopyValue(CopyKnob.SPREAD_COUNT, 2500f)
+        assertEquals(CopySpec.MAX_COPIES.toFloat(), state.pickedCopyValue(CopyKnob.SPREAD_COUNT), "the next spread's count is held to the most")
+        session.send(HandSockets.addSpread(TORSO, 1, 0f, 1f, 0f, 1f, 40, 2))
+        state.pickSocket(TORSO, HandSockets.name(1))
+        val steps = session.history.steps.value.done.size
+        state.setCopyValue(CopyKnob.SEED, 7f)
+        assertEquals(7f, torsoParams()[HandSockets.seed(1)], "the field edits the picked spread")
+        assertEquals(steps + 1, session.history.steps.value.done.size, "one step")
+        state.move.picked.value = null
+        state.move.layout.value = SocketLayout.PATH
+        waitForIdle()
+        onNodeWithTag(ShellTags.copyKnob(CopyKnob.SAG.name)).assertExists()
     }
 }

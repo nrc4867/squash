@@ -69,7 +69,25 @@ Read the tail's curve off the side view: its root, where it turns, how high the 
 
 ## Horns, spikes, fins, wings
 
-`horn`, `antler`, `spike`, `claw`, `plate`, `fin`, `sheet`, `wing-feathered` and `wing-membrane` are templates (`templates.md`); they sit on a template's sockets or hand-made ones. A row of spines down a back is one socket row: `socket(n, u, v, { count: 6, to: 0.9, size: 1, falloff: 0.5 })`, named `socket.<n>.0` and on, one part on each. `orient` and `around` (`kit/README.md`, Frames) point parts in any direction, as petals round a centre.
+`horn`, `antler`, `spike`, `claw`, `plate`, `fin`, `sheet`, `wing-feathered` and `wing-membrane` are templates (`templates.md`); they sit on a template's sockets or hand-made ones. A short crest of a few spikes down a back is one socket row: `socket(n, u, v, { count: 6, to: 0.9, size: 1, falloff: 0.5 })`, named `socket.<n>.0` and on, one part on each, each starting at its socket's size unless the part gives its own. `orient` and `around` (`kit/README.md`, Frames) point parts in any direction, as petals round a centre.
+
+## Many copies: spines, wool, manes, scales, tufts
+
+Anything made of many of one part is **one part on one spread socket**, never a part per copy: the socket shows the part as copies scattered over an area of the part it is on, each an instance of the one build, so a few hundred stay cheap and editing the part changes them all.
+
+```ts
+import { spreadSocket, type RecipePart } from "squash-kit";
+
+torso.sockets = [spreadSocket(1, { u: [0.12, 1], v: [0.62, 1.38] }, { count: 220, seed: 11, spacing: 0.026, sizeJitter: 0.25, leanJitter: 12, turnJitter: 40 }, { outward: 55, sink: 0.6, falloff: 0.55 })];
+export const spines: RecipePart = { id: "spines", template: "spike", on: "torso", socket: "socket.1", color: "spine", shades: ["spine-light", "spine-dark"], outlines };
+```
+
+- **The area** is u from `u[0]` to `u[1]` and v from `v[0]` to `v[1]`; v may run past 1 to wrap over the seam (0.62 to 1.38 covers a quadruped torso's back and flanks, v 0 on top), and `v: [0, 1]` is all round. Copies fall where the surface is, by area, so a narrow end gets few.
+- **Density**: `count` up to 1000 and `spacing` (body units) so they do not pile up; with a spacing too wide for the count, fewer show. A sheep's fleece is about 150 `blob` lumps at `size` 0.45 with `spacing` 0.055; a hedgehog's back 200 or more spikes at `spacing` 0.025.
+- **How they stand**: along the surface's normal; the socket's `outward` tilts them all toward the part's end (negative toward its start), so spines lie back toward the tail and a mane's clumps sweep back. `leanJitter` and `turnJitter` (degrees) break the regularity; `sizeJitter` varies their size; `size` and `falloff` size them and shrink them toward the area's edges over its outer `edge` share. `sink` and `outset` seat them as any socket's.
+- **Colour**: the part's `color`, and `shades`, a few more palette slots each copy picks among.
+- `seed` picks the scatter; another seed, another scatter with the same look. A mane is a spread of `hair` clumps round the back of the head and a second one down the chest.
+- A part on a spread socket leaves the one surface: field templates (`blob`) build as their own meshes there, each copy inked round.
 
 ## Tufts and locks
 

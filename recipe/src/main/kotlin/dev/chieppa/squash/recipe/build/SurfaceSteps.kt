@@ -19,6 +19,7 @@ import dev.chieppa.squash.document.SetLineWeight
 import dev.chieppa.squash.document.SetMark
 import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.SetRegion
+import dev.chieppa.squash.document.SetShades
 import dev.chieppa.squash.recipe.model.RecipeFur
 import dev.chieppa.squash.recipe.model.RecipeFurPatch
 import dev.chieppa.squash.recipe.model.RecipeMark
@@ -29,6 +30,7 @@ import kotlin.math.floor
 internal fun BuildContext.paintPart(index: Int, part: RecipePart, id: PartId) {
     val path = "$.parts[$index]"
     part.color?.let { send("$path.color", SetBaseSlot(id, slot("$path.color", it))) }
+    if (part.shades.isNotEmpty()) send("$path.shades", SetShades(id, part.shades.mapIndexed { i, it -> slot("$path.shades[$i]", it) }))
     part.areas.forEach { (area, slot) -> send("$path.areas.$area", SetAreaFill(id, area, slot("$path.areas.$area", slot))) }
     part.regions.forEachIndexed { i, r ->
         if (r.on != null) fail("$path.regions[$i].on", "on names the part only in a garment's regions; a part's own regions lie on it")

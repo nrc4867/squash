@@ -14,7 +14,8 @@ data class JointRef(val part: PartId, val joint: String)
 
 /**
  * What the Move tool remembers: its [mode], the [outward] angle and [pair] flag the next socket placed takes, the [count] of sockets
- * it places in a row with the [size] a part on the row's first starts at and its [falloff] to the last, the hand-made socket
+ * it places in a row with the [size] a part on the row's first starts at and its [falloff] to the last, or the [layout] and
+ * [copyValues] of a socket showing copies, the hand-made socket
  * [picked], which Delete socket and the Outward angle field act on, the [hinge], [limits] and [stretch] the next joint takes, and the
  * joint [pickedJoint], which Delete joint and those fields act on, whether a handle is [dragging] and the body [axis] a key holds that
  * drag to. Never saved or undone.
@@ -26,6 +27,10 @@ class MoveEditState {
     val count = MutableStateFlow(1)
     val size = MutableStateFlow(1f)
     val falloff = MutableStateFlow(DEFAULT_FALLOFF)
+
+    /** What the next press places: sockets, or one socket showing copies over an area or along a path, with [copyValues] for its numbers. */
+    val layout = MutableStateFlow(SocketLayout.SOCKETS)
+    val copyValues = MutableStateFlow<Map<CopyKnob, Float>>(emptyMap())
     val picked = MutableStateFlow<SocketRef?>(null)
     val hinge = MutableStateFlow(Hinge.X)
     val limits = MutableStateFlow(HandJoints.DEFAULT_LIMITS)
@@ -51,6 +56,8 @@ class MoveEditState {
         count.value = 1
         size.value = 1f
         falloff.value = DEFAULT_FALLOFF
+        layout.value = SocketLayout.SOCKETS
+        copyValues.value = emptyMap()
         picked.value = null
         hinge.value = Hinge.X
         limits.value = HandJoints.DEFAULT_LIMITS

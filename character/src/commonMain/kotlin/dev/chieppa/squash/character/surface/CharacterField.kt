@@ -41,9 +41,9 @@ class CharacterField(val field: JoinedField, val runs: List<FieldRun>, val cell:
     val parts: Set<PartId> = runs.mapTo(LinkedHashSet()) { it.partId }
 }
 
-/** Whether [part] is in a character's field: a part of the body, not thin or hard, with a swept run. */
+/** Whether [part] is in a character's field: a part of the body, not thin or hard, shown once and not as copies, with a swept run. */
 fun isFieldPart(part: PlacedPart): Boolean =
-    part.id != null && part.covering == null && part.hanging == null && part.owner == null &&
+    part.id != null && part.covering == null && part.hanging == null && part.owner == null && part.copies == null &&
         part.template.surface == SurfaceMethod.FIELD && part.surface.patches.any { isFieldRun(part, it) }
 
 /** Whether [patch] of [part] is a run in the body's field: a swept run that no block of its template builds as its own mesh. */

@@ -23,6 +23,8 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.deletePickedSocket
 import dev.chieppa.squash.screens.move.MoveMode
+import dev.chieppa.squash.screens.move.SocketLayout
+import dev.chieppa.squash.screens.pickedLayout
 import dev.chieppa.squash.screens.pickedOutward
 import dev.chieppa.squash.screens.pickedSocketHolds
 import dev.chieppa.squash.screens.setOutward
@@ -153,6 +155,7 @@ private fun RestControl(state: AppState, part: PartId, template: PartTemplate, p
 internal fun SocketControls(state: AppState, session: CharacterSession) {
     session.document.collectAsState().value
     state.move.outward.collectAsState().value
+    state.move.layout.collectAsState().value
     val picked by state.move.picked.collectAsState()
     val pair by state.move.pair.collectAsState()
     val outward = stringResource(Res.string.move_socket_outward)
@@ -172,7 +175,8 @@ internal fun SocketControls(state: AppState, session: CharacterSession) {
         Spacer(Modifier.weight(1f))
         Toggle(pair, { state.move.pair.value = it }, pairLabel, Modifier.testTag(ShellTags.SOCKET_PAIR))
     }
-    RowControls(state)
+    SocketLayoutControls(state, session)
+    if (state.pickedLayout() == SocketLayout.SOCKETS) RowControls(state)
     val deletable = picked != null && !state.pickedSocketHolds()
     SettingRow("") {
         Button(

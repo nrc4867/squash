@@ -1839,6 +1839,13 @@
             }
           ]
         },
+        "shades": {
+          "description": "Palette slots its copies pick among besides color, where it sits on a socket with spread or path: two or three shades of a fleece.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "areas": {
           "description": "Areas the template names, as a nail or a pad, each filled with a palette slot.",
           "type": "object",
@@ -1893,6 +1900,84 @@
         "id",
         "template"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipePath": {
+      "description": "Copies of the part on a socket repeated along a path on its part, its axis along the surface's normal and its up along the path: beads, studs, a row of buttons, chain links.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "How many copies, evenly from end to end; as many as pitch fits when left out.",
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pitch": {
+          "description": "The distance between copies, in body units; a ring part's links its inside length when neither count nor pitch is given, so each passes through the next.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "via": {
+          "description": "Places [u, v] on the part the path runs through between its ends.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "between": {
+          "description": "Two sockets this part offers, by name, the path's ends in place of (u, v) and (to, toV): a hand-made socket.<n> listed here, or one of its template's.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roll": {
+          "description": "Degrees each copy rolls about the path more than the one before it: 90 turns every other chain link.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sag": {
+          "description": "How far the path droops at its middle, in body units, as a chain hangs between its two ends; it lies on the part where the droop would take it inside.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },
@@ -2220,7 +2305,7 @@
           ]
         },
         "count": {
-          "description": "Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on.",
+          "description": "Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on, a part on each. Many of one part over an area or along a line take spread or path instead.",
           "anyOf": [
             {
               "type": "integer"
@@ -2253,7 +2338,7 @@
           ]
         },
         "size": {
-          "description": "The size a part placed on a row's first socket starts at.",
+          "description": "The size a part placed on a row's first socket starts at, when the part gives no size of its own; with spread or path, each copy's size, times the part's own.",
           "anyOf": [
             {
               "type": "number"
@@ -2264,7 +2349,7 @@
           ]
         },
         "falloff": {
-          "description": "The size a part placed on a row's last socket starts at, as a share of the first's.",
+          "description": "The size a part placed on a row's last socket starts at, as a share of the first's; with spread, the share of their size copies fall to at the area's edges.",
           "anyOf": [
             {
               "type": "number"
@@ -2284,12 +2369,110 @@
               "type": "null"
             }
           ]
+        },
+        "spread": {
+          "description": "Makes it one socket showing many copies of the one part on it, scattered over the area from u to `to` along the part and v to toV round it: v 0 and toV 1 runs all round it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeSpread"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "description": "Makes it one socket showing copies of the one part on it repeated along a path from (u, v) through its via places to (to, toV), or between two sockets.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipePath"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "n",
         "u",
         "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeSpread": {
+      "description": "Copies of the part on a socket scattered over its area, each an instance of the one part: edit the part and every copy changes.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "How many copies, 1 to 1000; fewer show where spacing leaves no room for more.",
+          "type": "integer"
+        },
+        "seed": {
+          "description": "Picks the places and jitter; another seed, another scatter.",
+          "type": "integer"
+        },
+        "spacing": {
+          "description": "The least distance between two copies, in body units, so they do not pile up. None when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sizeJitter": {
+          "description": "How far each copy's size varies either way, as a share of it: 0.2 is 80% to 120%.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "leanJitter": {
+          "description": "The most degrees a copy leans from the surface's normal, each a random way.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "turnJitter": {
+          "description": "The most degrees a copy turns about itself either way.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "edge": {
+          "description": "The outer share of the area over which copies' size falls to the socket's falloff, 0.35 when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "count"
       ],
       "patternProperties": {
         "^x-": {}

@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "ring",
+  "version": 1,
+  "name": "Ring",
+  "axis": { "rest": [1, 0, 0], "length": 0.1 },
+  "openEnd": null,
+  "mount": { "u": 0.0, "v": 0.0 },
+  "topology": { "rings": 32, "segments": 10 },
+  "views": { "side": "height", "top": "width" },
+  "section": "circle",
+  "params": {
+    "size":      { "doc": "Scales the part: its loop and wire together.", "default": 1.0, "min": 0.1, "max": 4.0 },
+    "radius":    { "doc": "The loop's radius across, to the middle of its wire, a fraction of the length.", "default": 0.4, "min": 0.1, "max": 2.0 },
+    "stretch":   { "doc": "How long the loop is along its up for its width: 1 a round ring, more a chain link.", "default": 1.0, "min": 1.0, "max": 3.0 },
+    "thickness": { "doc": "The wire's radius, a fraction of the length.", "default": 0.08, "min": 0.02, "max": 0.4 }
+  },
+  "surface": "separate",
+  "blocks": [
+    { "kind": "loop", "radius": "$radius", "stretch": "$stretch", "thickness": "$thickness" }
+  ]
+}

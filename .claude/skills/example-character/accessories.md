@@ -33,7 +33,19 @@ export const lens = prop({
 });
 ```
 
-- **A row** along a part (buttons down a placket) is one socket with `count` and `to`, named `socket.<n>.0` and on; **a row round a part** (studs round a belt, beads round a wrist) is `ringSocket`, `v` 0 to `toV` 1.
+- **A few in a row** along a part (three buttons down a placket) is one socket with `count` and `to`, named `socket.<n>.0` and on, a part on each; **a few round a part** (studs round a belt) is `ringSocket`, `v` 0 to `toV` 1.
+- **Many along a line** (beads, studs, a long button row, chain links) is one part on one path socket, the part shown as copies along it: `pathSocket(n, [u, v], [to, toV], { count, via: [[u, v]], roll, sag })`, its axis along the surface's normal and its up along the path. `between: ["socket.5", "socket.6"]` runs it between two sockets of the part.
+- **Rings** are the `ring` template, a closed loop with its hole along its rest axis, hanging from its socket by the inside of its top: an earring hoop is a ring on a socket at the lobe resting `out`; a finger ring a ring `orient`ed with its rest along the finger and its up toward the socket's side, sized so its inside meets the finger (`probe uv=` gives the finger's radius).
+- **A chain** is a ring part with `stretch` about 1.6 on a path socket with no count: its links step by their inside length, so each hooks through the next, and `roll: 90` turns every other one. `sag` (body units) droops it between its ends, lying on the body where it would sink in.
+
+```ts
+import { pathSocket, socket } from "squash-kit";
+
+torso.sockets.push(socket(5, 0.98, 0.8), socket(6, 0.98, 0.2), pathSocket(7, [0, 0], [0, 0], { between: ["socket.5", "socket.6"], via: [[0.92, 0]], roll: 90, sag: 0.05 }, { outset: 0.002 }));
+export const chain = { id: "chain", template: "ring", on: "torso", socket: "socket.7", color: "gold", size: 0.32, params: { stretch: 1.6, thickness: 0.1 } };
+```
+
+Links much smaller than about 0.01 body units drown in their ink at full-figure size; judge them close (`close=chain`).
 - **A lens** is a part in a palette slot with `opacity` 0.3 to 0.5 (`colour-and-marks.md`), so the eyes show through; `topMiddle: true` lets a Top drawn curved wrap it round the face. Which way Side's and Top's y face for a part resting `out` is in `frames.md`.
 - `roll` turns a part about its own axis (a sheet resting out and rolled 90 faces forward); `orient(along, up)` gives the `rest`, `lean`, `outward` and `roll` for any direction.
 
