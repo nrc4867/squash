@@ -27,11 +27,11 @@ const val PLACE_ARRAY = 5
  * run's length per u, and v the section's in the point's direction round.
  */
 class SweptSolid internal constructor(
-    private val middles: Array<Vec3>,
-    private val tangents: Array<Vec3>,
-    private val ups: Array<Vec3>,
-    private val tables: Array<RingTable>,
-    private val us: FloatArray,
+    internal val middles: Array<Vec3>,
+    internal val tangents: Array<Vec3>,
+    internal val ups: Array<Vec3>,
+    internal val tables: Array<RingTable>,
+    internal val us: FloatArray,
     override val low: Vec3,
     override val high: Vec3,
 ) : Solid {

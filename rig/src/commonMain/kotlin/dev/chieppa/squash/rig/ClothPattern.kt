@@ -117,7 +117,8 @@ class ClothPattern(
                     gatherPhase[v] = (gatherFolds[part] ?: LEAST_FOLDS) * round + GATHER_WANDER * valueNoise(p, gatherWave * WANDER_WAVES, SEED_GATHER)
                 }
             }
-            val garmentFit = garment.cover.garment.fit ?: garment.cover.branches.values.maxOfOrNull { it.ease } ?: 0f
+            val fit = garment.cover.garment.fit ?: garment.cover.branches.values.maxOfOrNull { it.ease } ?: 0f
+            val garmentFit = maxOf(fit, garment.cover.eases.values.maxOfOrNull { it.most } ?: 0f)
             val looseness = (garmentFit / (LOOSE_CELLS * bodyCell)).coerceIn(LEAST_LOOSE, MOST_LOOSE)
             return ClothPattern(wrinkle, drape, drapePhase, gather, gatherPhase, looseness, cell)
         }

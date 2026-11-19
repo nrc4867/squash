@@ -71,6 +71,28 @@ With areas, the build reads from the cells what the cloth covers, which parts co
 ## Fit and layers
 
 - `fit` is how far the cloth stands off the body in body units, 0 or more (a negative fit is a recipe error): 0 to 0.005 for leggings, a tight tee or socks, about 0.008 to 0.012 for fitted jeans or a tee, 0.02 to 0.03 for a loose tee or a jacket over another layer on a person-sized body, less on a small one. At 0 the cloth matches the body exactly; a default stand-off reads as a shell, so most everyday clothes want a small fit. `partFits` sets one part's (a pair by its left side): **long sleeves bell out** like a cape when the arm is thin under a flat fit, so give the arm a smaller fit than the torso.
+- **A single fit reads as a shell.** Give tops, sleeves and trousers an ease that varies along each part instead, with `eases` by part (a pair by its left side) and the kit's `ease([[u, ease], ...])` or `[u, front, back]` keys; the curve through them is smooth with no steps. Then let tops and trousers hang and gather their ribbing:
+
+```ts
+import { ease, garment } from "squash-kit";
+
+const sweater = garment({
+  id: "sweater", slot: "top", color: "knit", fit: 0.02,
+  eases: {
+    torso: ease([[0.45, 0.03], [0.7, 0.022], [0.86, 0.012], [1, 0.01]]), // loose at the hem, snug across chest and shoulders
+    "arm-l": ease([[0, 0.012], [0.45, 0.02], [0.85, 0.03]]),            // snug at the shoulder, bloused at the forearm
+  },
+  hang: { limit: 0.03 },            // below the chest the cloth falls straight instead of following the waist in
+  drops: { "arm-l": 0.12 },         // a dropped shoulder: the body's cloth runs down the arm to a seam at u 0.12
+  areas: [bodyArea, { id: "rib", color: "rib", gather: 0.005, paint: ribStrokes }], // ribbing pulls cloth in at hem and cuffs
+});
+const jeans = garment({ id: "jeans", slot: "bottom", fit: 0.02, hang: { limit: 0.02 }, eases: { "leg-l": ease([[0, 0.014], [1, 0.03]]) } }); // straight to flared
+```
+
+  - Key u's on the part's own u (`torso.u(plan.h("waist"))`); a torso's u 0 is its foot and 1 its neck. Keys within the cloth are what count; past the first and last the curve is flat.
+  - `hang.limit` caps how far the cloth bridges a dip (about 0.01 to 0.04 on a person); `flare` (0 to 0.5) lets it fall slightly out. Only parts standing upright at rest hang. Skinny jeans or leggings: no hang.
+  - A `drops` seam is inked by itself; never paint a seam line as a mark.
+  - `gather` on an area is the ease its cells pull the cloth in to (0.003 to 0.006 for ribbing); folds above it come from `creases` and `drape`.
 - Every hem stands a hair off the skin by itself, so a hem at fit 0 shows no skin sliver. `hemRoll` (0 to 0.03 body units) rolls the hems, neck opening and cuffs out past the cloth: about 0.004 to 0.008 makes a cuff or a rolled hem read as cloth with a thickness.
 - `inkWeight` is the cloth's silhouette and hem ink as a share of the skin's line weight, 0.7 when left out; 1 inks it like skin, lower reads lighter.
 - `layer` counts out from the skin: under a waistband 1, a waistband 2, over both 3 (`LAYER.under`, `.waistband`, `.over`). A tee worn over shorts is the higher layer and its band overlaps the shorts' top, so no cloth edge stops bare above the crotch.
@@ -141,5 +163,6 @@ Render a bent pose (sitting, an arm raised) for every outfit: hems and openings 
 - **No see-through cloth.** A palette slot's `opacity` on a garment's colour or an area's is not drawn on cloth (the build warns); sheer cloth draws whole.
 - **Armpits in tight sleeves.** A raised or bent arm can push skin through a sleeve at fit 0 near the armpit; give the arm a small `partFits`.
 - **Loose ends are short flat tabs**, and a neck wrap carrying one flares like a cape collar.
+- **Arms posed into a loose top**: at rest grown cloth stops short of an arm beside it, but a pose that lowers the arms from an A-pose swings them into a loose torso's cloth, which does not move aside; `measure.txt` reports it as the arm poking through. Keep the torso's sides near the arms snug (a smaller ease at the keys at arm height, a small `hang.limit`) on a character whose display pose lowers its arms.
 - **Thighs that touch** make trousers read as one tube: keep the legs apart in the body (`body.md`, widths).
 - **Garments on all fours**: cloth hangs and flares only past an end that points down; a cape on a body resting forward trails rather than drapes.

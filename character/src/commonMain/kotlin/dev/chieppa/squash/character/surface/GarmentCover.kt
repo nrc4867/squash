@@ -74,6 +74,7 @@ class WornCover(
     val openEnds: Map<PartId, OpenEnds> = emptyMap(),
     val hangsFree: Set<PartId> = emptySet(),
     val cloth: Map<PartId, ClothField> = cover.cloth,
+    val eases: Map<PartId, ClothEase> = emptyMap(),
 ) {
     val garment: Garment get() = cover.garment
 
@@ -92,6 +93,9 @@ class WornCover(
     /** Whether any branch [hangsOver] what comes out of its part. */
     val hanging: Boolean get() = hangsOver.isNotEmpty()
 
+    /** How far the garment stands off [part] at each place on it; the branch's ease everywhere where it holds none, null where it does not cover it. */
+    fun easeOf(part: PartId): ClothEase? = eases[part] ?: branches[part]?.let { ClothEase.flat(it.ease) }
+
     /** The branch over [part], one of the garment's own or a cuff's; null where the garment does not cover it. */
     fun branchOf(part: PartId): GarmentBranch? = branches[part]
 
@@ -109,13 +113,15 @@ class WornCover(
         cuffs,
         shells.mapValues { Same(it.value.surface) },
         piece,
+        eases,
     )
 
     companion object {
         /** [cover] worn over [body] on the garments [under] it, the innermost first. */
         fun of(cover: GarmentCover, body: AssembledCharacter, under: List<GarmentCover>, shells: ShellCache): WornCover {
             val garment = cover.garment
-            val fitted = cover.branches.mapValues { (part, branch) -> branch.fittedOver(part, cover.cloth[part], under) }
+            val eases = clothEases(cover, body, under)
+            val fitted = cover.branches.mapValues { (part, branch) -> branch.copy(ease = checkNotNull(eases[part]).least) }
             val branches = LinkedHashMap(fitted)
             val cloth = HashMap(cover.cloth)
             val cuffs = HashSet<PartId>()
@@ -154,21 +160,7 @@ class WornCover(
                 }
                 if (reach.allRound && hangsDownPast(ran, covered)) free += part
             }
-            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free, cloth = cloth)
-        }
-
-        /**
-         * This branch over [part], its cloth [held], standing off the garments [under] it: each one's cloth the whole way round the part
-         * over any of the same rows adds its ease.
-         */
-        private fun GarmentBranch.fittedOver(part: PartId, held: ClothField?, under: List<GarmentCover>): GarmentBranch {
-            val rows = held?.reach ?: return this
-            val below = under.sumOf { inner ->
-                val reach = inner.cloth[part]?.reach
-                val overlaps = reach != null && reach.allRound && reach.firstRow <= rows.lastRow && reach.lastRow >= rows.firstRow
-                if (overlaps) checkNotNull(inner.branches[part]).ease.toDouble() else 0.0
-            }.toFloat()
-            return if (below == 0f) this else copy(ease = ease + below)
+            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free, cloth = cloth, eases = eases.filterValues { !it.uniform })
         }
     }
 }

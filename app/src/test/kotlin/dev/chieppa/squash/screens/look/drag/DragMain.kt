@@ -2,6 +2,7 @@ package dev.chieppa.squash.screens.look.drag
 
 import dev.chieppa.squash.document.CharacterCreases
 import dev.chieppa.squash.document.DEFAULT_CREASE_STRENGTH
+import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetCharacterCreases
 import dev.chieppa.squash.document.ShowOutfit
@@ -63,7 +64,7 @@ private fun compareReads(example: String, document: SquashDocument, look: LookAr
 }
 
 /**
- * What the drag command was asked for: `drags=move:<part>,pose:<part>:<joint>`, `switch=true` for the outfit switch, `runs=<n>`,
+ * What the drag command was asked for: `drags=move:<part>,pose:<part>:<joint>,fit:<garment>,ease:<garment>:<part>`, `switch=true` for the outfit switch, `runs=<n>`,
  * `creases=on` to play them with the character's creases and wrinkles on, and `jfr=<folder>` to record each gesture's timed runs; `reads=cpu,gpu` plays each gesture on a session reading its fields on each, in turn.
  */
 class DragArgs(args: Array<String>) {
@@ -82,7 +83,9 @@ class DragArgs(args: Array<String>) {
         when (drag[0]) {
             "move" -> moveDrag(character, checkNotNull(open.session.placed.output.value), open.session.templates.plan(character.bodyPlan), PartId(drag[1]))
             "pose" -> poseDrag(character, PartId(drag[1]), drag[2])
-            else -> error("No drag ${drag[0]}; known: move, pose")
+            "fit" -> fitDrag(character, GarmentId(drag[1]))
+            "ease" -> easeDrag(character, GarmentId(drag[1]), PartId(drag[2]))
+            else -> error("No drag ${drag[0]}; known: move, pose, fit, ease")
         }
     }
 

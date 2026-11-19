@@ -6,14 +6,18 @@ import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.ClothHang
+import dev.chieppa.squash.document.EaseKey
+import dev.chieppa.squash.document.EaseProfile
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
-import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MOST_CLOTH_INK_WEIGHT
 import dev.chieppa.squash.document.MOST_CREASE_STRENGTH
+import dev.chieppa.squash.document.MOST_DROP
 import dev.chieppa.squash.document.MOST_HEM_ROLL
+import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ShowOutfit
@@ -78,7 +82,19 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
         if (fit < 0f) fail("$path.partFits.$name", "a fit is how far the cloth stands off the part, 0 or more: here $fit")
         partOf("$path.partFits.$name", name) to fit
     }
-    val (areas, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
+    val eases = garment.eases.entries.associate { (name, keys) -> partOf("$path.eases.$name", name) to easeProfile("$path.eases.$name", keys) }
+    val drops = garment.drops.entries.associate { (name, drop) ->
+        if (drop !in 0f..MOST_DROP) fail("$path.drops.$name", "a seam drops from 0 to $MOST_DROP along its part: here $drop")
+        partOf("$path.drops.$name", name) to drop
+    }
+    val hang = garment.hang?.let { hang ->
+        if (hang.limit < 0f) fail("$path.hang.limit", "a hang's limit is how far the cloth may stand off, 0 or more: here ${hang.limit}")
+        if (hang.flare !in 0f..ClothHang.MOST_FLARE) fail("$path.hang.flare", "a hang's flare lies from 0 to ${ClothHang.MOST_FLARE}: here ${hang.flare}")
+        ClothHang(hang.limit, hang.flare)
+    }
+    garment.areas.forEachIndexed { i, area -> area.gather?.let { if (it < 0f) fail("$path.areas[$i].gather", "a gather is the ease a band pulls the cloth in to, 0 or more: here $it") } }
+    val (painted, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
+    val areas = painted.mapIndexed { i, area -> area.copy(gather = garment.areas.getOrNull(i)?.gather) }
     val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r).also { printOffDigits(p, it.border) } } }
     val marks = garment.marks.mapIndexed { i, m ->
         val p = "$path.marks[$i]"
@@ -109,8 +125,23 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
             creases = garment.creases,
             wrinkles = garment.wrinkles,
             drape = garment.drape,
+            eases = eases,
+            hang = hang,
+            drops = drops,
         )
     }
+}
+
+/** The ease profile [keys] give at [path], each [u, ease] or [u, front, back], in order along u. */
+private fun BuildContext.easeProfile(path: String, keys: List<List<Float>>): EaseProfile {
+    if (keys.isEmpty()) fail(path, "an ease profile needs at least one key [u, ease]")
+    val read = keys.mapIndexed { i, key ->
+        if (key.size !in 2..3) fail("$path[$i]", "an ease key is [u, ease] or [u, front, back]: here ${key.size} numbers")
+        if (key.drop(1).any { it < 0f }) fail("$path[$i]", "an ease is how far the cloth stands off the part, 0 or more: here $key")
+        EaseKey(key[0], key[1], key.getOrNull(2))
+    }
+    read.zipWithNext().forEachIndexed { i, (a, b) -> if (b.u <= a.u) fail("$path[${i + 1}]", "ease keys run along u in order: ${b.u} follows ${a.u}") }
+    return EaseProfile(read)
 }
 
 private fun BuildContext.change(path: String, part: PartId, change: RecipeChange): BodyPartChange = when (change) {

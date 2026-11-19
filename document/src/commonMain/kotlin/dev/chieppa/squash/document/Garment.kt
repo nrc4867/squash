@@ -17,6 +17,9 @@ const val MOST_CLOTH_INK_WEIGHT = 2f
 /** The most a garment's hem roll stands off past the cloth, in body units. */
 const val MOST_HEM_ROLL = 0.03f
 
+/** The furthest down its part, in u, a garment drops a seam. */
+const val MOST_DROP = 0.5f
+
 /** The first layer, nearest the skin. */
 const val FIRST_LAYER = 1
 
@@ -34,7 +37,9 @@ const val GARMENT_PART_PREFIX = "garment/"
  * only where the cloth does. [inkWeight] is the weight of its silhouette and hems as a share of the skin's line weight, and [hemRoll]
  * how far its hems, neck openings and cuffs roll out past the cloth, in body units. [creases], [wrinkles] and [drape] are its strengths of
  * joint creases, wrinkles where it bunches and folds where it hangs, times the character's cloth strength (HLD: look, Creases and wrinkles).
- * See HLD: data-model, Garments.
+ * [eases] gives a part, by a pair's leader, a stand-off that varies along and round it, over its fit; [hang] lets the cloth over an
+ * upright part fall straight from its widest place rather than follow the body in; [drops] moves the seam where a part's cloth meets the
+ * cloth of the part it grows from down that part, in its u, as a dropped shoulder's. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -60,6 +65,9 @@ data class Garment(
     val creases: Float = DEFAULT_CREASE_STRENGTH,
     val wrinkles: Float = DEFAULT_CREASE_STRENGTH,
     val drape: Float = DEFAULT_CREASE_STRENGTH,
+    val eases: Map<PartId, EaseProfile> = emptyMap(),
+    val hang: ClothHang? = null,
+    val drops: Map<PartId, Float> = emptyMap(),
 ) {
     init {
         require(fit == null || fit >= 0f) { "Garment ${id.value} has a negative fit" }
@@ -74,12 +82,16 @@ data class Garment(
         require(regions.distinctBy { it.id }.size == regions.size) { "Garment ${id.value} names a region twice" }
         require(marks.distinctBy { it.id }.size == marks.size) { "Garment ${id.value} names a mark twice" }
         require(marks.all { it.kind == MarkKind.LINE }) { "Garment ${id.value} holds a mark that is not a line" }
+        require(drops.values.all { it in 0f..MOST_DROP }) { "Garment ${id.value} drops a seam outside 0 to $MOST_DROP" }
     }
 
     fun branch(part: PartId): GarmentBranch? = branches.firstOrNull { it.part == part }
 
-    /** How far [branch] stands off its part: its part's own fit, else the garment's, else the branch's own ease. */
+    /** How far [branch] stands off its part where its ease is the same everywhere: its part's own fit, else the garment's, else the branch's own ease. */
     fun easeOf(branch: GarmentBranch): Float = partFits[branch.part] ?: fit ?: branch.ease
+
+    /** How far [branch] stands off its part along and round it: its part's ease profile, else [easeOf] everywhere. */
+    fun profileOf(branch: GarmentBranch): EaseProfile = eases[branch.part] ?: EaseProfile.flat(easeOf(branch))
 
     fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
 
@@ -151,7 +163,34 @@ data class GarmentBranch(
  * garment's where it has none. Areas of one garment may touch along a seam.
  */
 @Serializable
-data class GarmentArea(val id: GarmentAreaId, val name: String, val cells: Map<PartId, List<Int>> = emptyMap(), val color: SlotName? = null)
+data class GarmentArea(
+    val id: GarmentAreaId,
+    val name: String,
+    val cells: Map<PartId, List<Int>> = emptyMap(),
+    val color: SlotName? = null,
+    val gather: Float? = null,
+) {
+    init {
+        require(gather == null || gather >= 0f) { "Area ${id.value} gathers to a negative ease" }
+    }
+}
+
+/**
+ * How cloth over an upright part hangs below the widest place of it the cloth covers: straight down, or out by [flare] for each unit it
+ * falls, standing off the body by at most [limit] more than its ease where the body narrows under it, in body units.
+ */
+@Serializable
+data class ClothHang(val limit: Float, val flare: Float = 0f) {
+    init {
+        require(limit >= 0f) { "A hang's limit is negative" }
+        require(flare in 0f..MOST_FLARE) { "A hang's flare lies outside 0 to $MOST_FLARE" }
+    }
+
+    companion object {
+        /** The most a hang flares out for each unit it falls. */
+        const val MOST_FLARE = 0.5f
+    }
+}
 
 /** The id of a garment's first area, which the boxes of branches no area paints are painted into. */
 val FIRST_AREA = GarmentAreaId("area-1")

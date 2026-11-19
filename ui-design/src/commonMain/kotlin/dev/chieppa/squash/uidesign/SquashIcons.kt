@@ -146,6 +146,12 @@ object SquashIcons {
             stroke("M9 4l3 3")
         }
     }
+    val EaseBack: ImageVector by lazy {
+        icon("ease-back") {
+            stroke("M4 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
+            stroke("M6 3.5C3.5 3.5 2 5.5 2 8s1.5 4.5 4 4.5 8.5-1.5 8.5-4.5S8.5 3.5 6 3.5z")
+        }
+    }
     val Edge: ImageVector by lazy {
         icon("edge") {
             stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")

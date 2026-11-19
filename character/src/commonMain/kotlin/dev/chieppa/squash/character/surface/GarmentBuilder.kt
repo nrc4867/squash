@@ -28,6 +28,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
     private val shells = ShellCache()
     private val solids = RunSolids()
     private val clips = RunClips()
+    private val grown = GrownRuns()
     private val coverage = CoverageMemo()
 
     /**
@@ -70,6 +71,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
             }
             if (first == null) {
                 clips.settle()
+                grown.settle()
                 coverage.settle()
                 return null
             }
@@ -80,7 +82,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
         /** A piece of work for each garment that is not kept whole, those kept whole taken as they are. */
         private fun begin(): List<Piece> = pieces.indices.mapNotNull { i ->
             val nextCover = pieces[i]
-            val nextField = garmentField(field, nextCover, body, solids, clips) ?: return@mapNotNull null
+            val nextField = garmentField(field, nextCover, body, solids, clips, grown) ?: return@mapNotNull null
             val last = kept[nextCover.garment.id to nextCover.piece]
             if (last != null && last.shape == shapeOf(nextCover, nextField)) {
                 if (last.cut == cutOf(nextCover)) {
