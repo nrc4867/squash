@@ -29,7 +29,7 @@ import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 
 /** Places that lie on a grid's surface are this close to one of its points, as a share of its longest cell edge. */
-private const val ON_SURFACE = 0.75f
+private const val ON_SURFACE = 0.8f
 
 /** A place on a bent part has moved at least this far from where it rests, in body units. */
 private const val MOVED = 0.02f

@@ -4,8 +4,8 @@ A foot or paw ends a leg on the leg's end socket, at the ankle, and the floor ru
 
 | template | use for | toes |
 | --- | --- | --- |
-| `foot` (version 7) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's; a heel under the ankle, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
-| `paw` (version 8) | a digitigrade paw: a fox's, a cat's, a dragon's; a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
+| `foot` (version 8) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's; an ankle with ankle bones, a heel set back behind it, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
+| `paw` (version 9) | a digitigrade paw: a fox's, a cat's, a dragon's; a wrist rising into the leg, a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `ankle`, `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
 | `foot-bird` (version 4) | a bird's foot | four toes |
 
 Both rest forward; both fit their whole solid to drawn Side and Top outlines, but their parameters shape them better: leave them undrawn unless the parameters cannot reach the silhouette.
@@ -16,7 +16,7 @@ Both rest forward; both fit their whole solid to drawn Side and Top outlines, bu
 - The leg ends at the ankle height in the plan, with a socket at u 1 facing down and back (`socket(1, 1, vToward("down", "back"))`); the foot goes there. The foot's socket sits only a little above its sole (0.025 for a `foot` at `size` 0.72, more as it grows), so the plan's `ankle` is that height: read it from the first `kit heights` run and set it (`body.md`, joints). Its heel sits under the ankle, so a foot whose toes point too far forward or back means the ankle is off, not the foot.
 - `probe part=foot-l` prints its box: its lowest y is the ground, 0. A foot floating or sinking means the leg's length or its end socket is wrong (`body.md`, joints).
 - **From the front a foot shows its width, not its length**: a cartoon foot that reads as a wide oval from the front wants `ballWidth` and `heel` up, not only `size`.
-- The leg's last radius should meet the foot's `ankle` (times its size) with no step: thin legs on big feet read as stilts.
+- Set the foot's `ankle` (times its size and length) to the leg's last radius, or the paw's `ankle` a little under it: the foot's ankle bones then swell past the leg, its heel sits back behind it by half that radius, and the template's own join blends the leg into it, so the leg needs no narrowing or swelling of its own at the ankle. Thin legs on big feet still read as stilts.
 
 ```ts
 import { pair, type RecipePart } from "squash-kit";

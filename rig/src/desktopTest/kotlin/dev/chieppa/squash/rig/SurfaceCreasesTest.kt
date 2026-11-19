@@ -23,15 +23,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** How far the sweater runs down the leg, past its knee. */
-private const val PAST_KNEE = 0.9f
+/** How far the sweater runs down the leg, short of its knee (at 0.55), so the knee's crease is bare skin. */
+private const val ABOVE_KNEE = 0.4f
+
+/** How many times longer the knee's ink is once bent than at rest, at least. */
+private const val INK_GROWTH = 2f
 
 /** The knee's bend, in degrees. */
 private const val BENT = 110f
 
 /**
- * Creases on a torso, head and leg under a sweater: off until the character turns them on; at rest a faint ink line and no shade band at
- * the knee; bent, a shade band and longer ink, and a fold raised on the cloth; a garment's strengths pose again without growing its cloth again.
+ * Creases on a torso, head and leg under a sweater that stops above the knee: off until the character turns them on; at rest a faint ink
+ * line and no shade band at the bare knee; bent, a shade band and ink at least [INK_GROWTH] times as long, and a fold raised on the cloth;
+ * a garment's strengths pose again without growing its cloth again.
  */
 @Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +44,7 @@ class SurfaceCreasesTest {
 
     @Test
     fun creasesDeepenWithABendAndAStrengthEditBuildsNothing() = runTest {
-        val session = stackSession(legTo = PAST_KNEE)
+        val session = stackSession(legTo = ABOVE_KNEE)
         val pose = SessionPose(session)
         runCurrent()
         assertNull(posed(pose).creases, "creases are off by default")
@@ -56,7 +60,7 @@ class SurfaceCreasesTest {
         val bent = posed(pose)
         val bentBody = assertNotNull(bent.creases?.body)
         assertTrue(bentBody.shade.max() >= 0.5f, "a band once bent: ${bentBody.shade.max()}")
-        assertTrue(inkLength(bentBody) > inkLength(restBody), "ink lengthens with the bend: ${inkLength(restBody)} then ${inkLength(bentBody)}")
+        assertTrue(inkLength(bentBody) > inkLength(restBody) * INK_GROWTH, "ink lengthens with the bend: ${inkLength(restBody)} then ${inkLength(bentBody)}")
 
         val cloth = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.single().surface
         val folded = garmentPositions(bent)

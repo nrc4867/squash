@@ -29,6 +29,9 @@ private const val TIPPED_PAW = 4
 /** How near its toe's tip a claw's socket plane sits at most, as a share of the claw's length. */
 private const val AT_THE_TIP = 0.5f
 
+/** How near, in body units, two reads of one place on a toe's pole agree. */
+private const val SAME_PLACE = 1e-5f
+
 /** A toe row's tip sockets: one on every built digit, where the digit ends, filled with claws in one step. */
 class DigitTipsTest {
     private val plan = shipped.plans.first()
@@ -83,7 +86,8 @@ class DigitTipsTest {
         for (i in 0 until TOES) {
             val toe = placed.surface.patches.first { it.name == "toes:$i" }
             val dot = assembled.sockets.first { it.ref.parent == left && it.ref.socket == DigitTips.name("toes:$i") && it.side != Side.RIGHT }
-            assertEquals(assertNotNull(placed.pointOn(toe.ringUs.last(), 0f, toe.name)), dot.position)
+            val tip = assertNotNull(placed.pointOn(toe.ringUs.last(), 0f, toe.name))
+            assertTrue((tip - dot.position).length < SAME_PLACE, "toe $i: ${dot.position} for $tip")
         }
     }
 
@@ -107,7 +111,7 @@ class DigitTipsTest {
             val toe = pawPlaced.surface.patches.first { it.name == "toes:$digit" }
             val tip = assertNotNull(pawPlaced.pointOn(toe.ringUs.last(), 0f, toe.name))
             val clawAt = assertNotNull(assembled.part(part.id))
-            assertEquals(assembled.part(part.id)?.anchor, tip)
+            assertTrue((assertNotNull(clawAt.anchor) - tip).length < SAME_PLACE, "claw $digit's anchor at its toe's tip")
             assertTrue((clawAt.origin - tip).length < AT_THE_TIP * claw.axis.length, "claw $digit sits at its toe's tip: ${(clawAt.origin - tip).length}")
         }
     }

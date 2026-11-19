@@ -125,7 +125,7 @@ class PrintFlowTest {
         assertEquals(layers + 2, printed.paint?.layers?.size, "the region and its other side are painted on the cloth")
         val borders = assertNotNull(printed.paint).marks.values.flatten()
         assertEquals(2, borders.size, "each side's border is inked")
-        val line = listOf(state.pixelOf(TORSO, 0.5f, 0.0f), state.pixelOf(TORSO, 0.95f, 0.0f)).map {
+        val line = listOf(state.pixelOf(TORSO, 0.5f, 0.0f), state.pixelOf(TORSO, 0.9f, 0.0f)).map {
             assertNotNull(state.garmentHit(state.garment.id, it, sight)).anchor
         }
         val neck = Anchor(NECK, line.last().patch, 0.6f, 0.0f)

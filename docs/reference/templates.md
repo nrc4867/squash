@@ -12,7 +12,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `claw` | 1 | - | Claw | horn | yes |
 | `ear` | 3 | 1, 2 | Ear | ear | yes |
 | `fin` | 1 | - | Fin | fin | yes |
-| `foot` | 7 | 1, 2, 3, 4, 5, 6 | Foot | foot | no |
+| `foot` | 8 | 1, 2, 3, 4, 5, 6, 7 | Foot | foot | no |
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot | no |
 | `hair` | 1 | - | Hair | hair | yes |
 | `hair-cap` | 1 | - | Hair cap | hair | no |
@@ -23,7 +23,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `horn` | 1 | - | Horn | horn | yes |
 | `leg` | 1 | - | Leg | leg | yes |
 | `leg-bird` | 1 | - | Bird leg | leg | yes |
-| `paw` | 8 | 1, 2, 3, 4, 5, 6, 7 | Paw | foot | no |
+| `paw` | 9 | 1, 2, 3, 4, 5, 6, 7, 8 | Paw | foot | no |
 | `plate` | 1 | - | Plate | fin | yes |
 | `ring` | 1 | - | Ring | none (guessed from where it sits) | no |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) | yes |
@@ -319,7 +319,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.08 | 0.02 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
-## foot 7
+## foot 8
 
 | fact | value |
 | --- | --- |
@@ -331,6 +331,7 @@ Parameters:
 | section | circle |
 | open end | none (closed) |
 | surface | field |
+| join blend | 0.25 of its length, the skull or body rising into it; the part's `blend` overrides it |
 
 Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
 
@@ -364,7 +365,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `nail:2` | toes:2 | [0.781, 0.809] | [0.1, 0.4] | fill | nails |
 | `nail:3` | toes:3 | [0.749, 0.774] | [0.1, 0.4] | fill | nails |
 | `nail:4` | toes:4 | [0.705, 0.727] | [0.1, 0.4] | fill | nails |
-| `sole` | body | [0, 1] | [0.35, 0.65] | fill | - |
+| `sole` | body | [0.14, 1] | [0.37, 0.63] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
 
 Parameters:
@@ -377,7 +378,7 @@ Parameters:
 | `toeThickness` | 1 | 0.5 to 2 | Multiplies every toe's thickness: above 1 wide toes. |
 | `heel` | 0.133 | 0.05 to 0.3 | Heel ball's radius, a fraction of the foot's length. |
 | `ballWidth` | 0.152 | 0.08 to 0.35 | Half width across the ball of the foot, a fraction of the length. |
-| `ankle` | 0.111 | 0.05 to 0.3 | Ankle's radius where the leg meets the foot. |
+| `ankle` | 0.111 | 0.05 to 0.3 | Ankle's radius where the leg meets the foot; the heel sits back and the ankle bones swell out by it. |
 | `toeBox` | 0 (off) | a flag: 1 or 0 | Builds a rounded toe box in place of toes, for a shoe; set toes 0 with it. |
 | `toeTip` | 0.663 | 0.5 to 1 | How far forward the toe box reaches, a fraction of the length. |
 | `toeRound` | 0.074 | 0.02 to 0.15 | Radius of the toe box's front end. |
@@ -838,7 +839,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 8
+## paw 9
 
 | fact | value |
 | --- | --- |
@@ -850,6 +851,7 @@ Parameters:
 | section | circle |
 | open end | none (closed) |
 | surface | field |
+| join blend | 0.25 of its length, the skull or body rising into it; the part's `blend` overrides it |
 
 Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
 
@@ -908,6 +910,7 @@ Parameters:
 | `heel` | 0.11 | 0.06 to 0.35 | Half width of the heel ball at the paw's back. |
 | `width` | 0.2 | 0.08 to 0.4 | Half width of the paw's main pad, a fraction of the length. |
 | `height` | 0.19 | 0.08 to 0.4 | Half height of the paw's main pad, a fraction of the length. |
+| `ankle` | 0.09 | 0.05 to 0.3 | Radius of the wrist rising from the paw's back into the leg, a fraction of the length. |
 
 ## plate 1
 
