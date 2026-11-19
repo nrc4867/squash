@@ -194,7 +194,8 @@
           "description": "Which way a part on this socket sinks into its parent: back along its own axis, or along the surface's normal.",
           "enum": [
             "axis",
-            "normal"
+            "normal",
+            "along"
           ]
         },
         "takes": {

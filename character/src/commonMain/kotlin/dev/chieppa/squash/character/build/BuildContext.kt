@@ -19,6 +19,17 @@ import dev.chieppa.squash.geom.ViewSizing
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.arcLengthAxis
 import dev.chieppa.squash.geom.covers
+import dev.chieppa.squash.geom.turningDegrees
+import kotlin.math.ceil
+
+/** The most a curved run's axis turns from one ring to the next, in degrees, before it takes more rings than its template's. */
+private const val RING_TURN_DEGREES = 6f
+
+/** The rings a curved run adds past what its turn needs, for its ends to close over. */
+private const val CURVED_END_RINGS = 8
+
+/** The most rings a curved run takes. */
+private const val MAX_CURVED_RINGS = 256
 
 /**
  * What a block builds from: its template, resolved parameters, drawn outlines, the part's axis and the blocks switched
@@ -39,8 +50,14 @@ class BuildContext(
 
     private val size: Float = params[SIZE_PARAM] ?: 1f
 
-    /** The part's own curve places, which replace its template's curve. */
-    private val ownCurve = AxisCurveParams.places(params)
+    /** Whether the template sweeps along its axis, so a curve gives its path; see [sweeps]. */
+    val sweeps: Boolean = template.sweeps
+
+    /** The part's own curve places, its spiral's or its own, which replace its template's curve. */
+    private val ownCurve = AxisCurveParams.ownPlaces(params)
+
+    /** Whether the part has a curve of its own that its template ignores, since it does not sweep. */
+    val curveIgnored: Boolean = ownCurve.isNotEmpty() && !sweeps
 
     private val drawn = DrawnViews(template, outlines.shortenedBy(lengthFactor), axes, size, ViewParams.topMovesMiddle(params))
 
@@ -59,7 +76,19 @@ class BuildContext(
     /** How far the axis reaches. */
     val axisLength: Float = views?.length ?: (fullLength * lengthFactor)
 
-    val axis: AxisSpline = views?.axis ?: restAxis()
+    /** Whether the part's axis is a curve through places, its own or its template's, on a template that sweeps. */
+    val curved: Boolean = sweeps && (ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty())
+
+    /**
+     * Whether a drawn part follows its own curve, the drawing giving its width along the length and the curve its path. A template's
+     * curve shapes the part undrawn only: drawn, its drawing's midline is its path, so a silhouette traced from the undrawn part keeps it.
+     */
+    val followsAxis: Boolean = sweeps && ownCurve.isNotEmpty() && views != null
+
+    val axis: AxisSpline = if (followsAxis) curvedAxis() else views?.axis ?: restAxis()
+
+    /** How many rings a run takes: the template's, or more on a curve that turns more than [RING_TURN_DEGREES] a ring would allow. */
+    val rings: Int = if (!curved) template.topology.rings else maxOf(template.topology.rings, minOf(MAX_CURVED_RINGS, ceil(turningDegrees(axis) / RING_TURN_DEGREES).toInt() + CURVED_END_RINGS))
 
     val jointUs: List<Float> = blocksOn.flatMap { it.joints() }.map { it.u }
 
@@ -90,12 +119,9 @@ class BuildContext(
 
     fun length(param: Param): Float = value(param) * fullLength
 
-    /** Whether the part's undrawn axis is a curve through places, its own or its template's. */
-    val curved: Boolean get() = ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty()
-
     /** Straight along the rest direction, bent toward the underside at the template's bend point, or the part's or the template's curve. */
     private fun restAxis(): AxisSpline {
-        if (ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty()) return curvedAxis()
+        if (curved) return curvedAxis()
         val end = axes.point(axisLength, 0f, 0f)
         val bend = template.axis.bend?.let { value(it) } ?: 0f
         if (bend == 0f) return AxisSpline(listOf(Vec3.ZERO, end))

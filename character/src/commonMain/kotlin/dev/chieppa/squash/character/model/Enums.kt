@@ -48,6 +48,9 @@ enum class Hinge {
 enum class Outward {
     @SerialName("axis") AXIS,
     @SerialName("normal") NORMAL,
+
+    /** Along the part where the socket sits, so a child on a tip sinks back into the part's own end and continues it, curved or not. */
+    @SerialName("along") ALONG,
 }
 
 /** The plane a paired socket or landmark mirrors across. */

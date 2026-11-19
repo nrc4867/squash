@@ -123,6 +123,7 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | `sides` | `sides("arm").right` is `"arm-r"`. |
 | `digitCurl` | `digitCurl("hand-l", { count: 3, curl: [-6, -10, -6], thumb: [6, 4, 2] })` poses every joint of a hand's three numbered fingers and its thumb; `row: "toes"` for a foot or paw. |
 | `bothSides` | `displayPose: bothSides("arm", { joint: "base", lean: -28 })` |
+| `curve`, `spiral` (part fields) | `curve: [[0.4, 0], [0.7, 0.25], [0.55, 0.5, 0.1]]` or `spiral: { turns: -1.5, pitch: -0.5, shrink: 0.5 }` on any part whose template sweeps (`templates.md`, curve column): a hook, a tusk, a coiled horn or trunk. |
 
 ## Face
 
@@ -158,7 +159,7 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `prop` | `prop({ id: "heels", on: "feet", socket: 1, garment: "pumps", color: "patent", rest: "down", side, top })` |
 | `roundProp` | `roundProp({ id: "button", on: "torso", socket: 5, garment: "coat", color: "button", radius: 0.012, depth: 0.008 })` |
 
-A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`; on cloth add `outset` a little past the garment's `fit`. `prop` takes `lean`, `outward`, `roll` and `topMiddle` (a lens drawn curved in Top wraps the face).
+A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`; on cloth add `outset` a little past the garment's `fit`. `prop` takes `lean`, `outward`, `roll` and `topMiddle` (a lens drawn curved in Top wraps the face), and on a `tube` prop `curve` or `spiral` (a bow's loop or a ribbon's end: Side and Top give its width along the curve).
 
 ## Palette
 

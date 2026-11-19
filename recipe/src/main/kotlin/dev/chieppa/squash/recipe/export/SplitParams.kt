@@ -1,6 +1,7 @@
 package dev.chieppa.squash.recipe.export
 
 import dev.chieppa.squash.character.build.AxisCurveParams
+import dev.chieppa.squash.recipe.model.RecipeSpiral
 import dev.chieppa.squash.character.build.GenericParams
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
@@ -60,7 +61,8 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
     val jointsAt: Map<String, Float> = if (anatomy) jointsAt(params) else emptyMap()
     val socketsAt: Map<String, List<Float>> = if (anatomy) socketsAt(params) else emptyMap()
     val inkJoin: Boolean? = if (anatomy) inkJoin(params) else null
-    val curve: List<List<Float>> = if (anatomy) curveOf(params) else emptyList()
+    val spiral: RecipeSpiral? = if (anatomy) spiralOf(params) else null
+    val curve: List<List<Float>> = if (anatomy && spiral == null) curveOf(params) else emptyList()
 
     /** The parameters no named field holds. */
     val others: Map<String, Float> = params.filterKeys { it !in lifted }
@@ -194,6 +196,14 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
             lifted += setOf(PlacementParams.socketU(name), PlacementParams.socketV(name))
             listOf(params.getValue(PlacementParams.socketU(name)), params.getValue(PlacementParams.socketV(name)))
         }
+    }
+
+    private fun spiralOf(params: Map<String, Float>): RecipeSpiral? {
+        val spiral = AxisCurveParams.spiral(params) ?: return null
+        val keys = AxisCurveParams.of(spiral).keys
+        if (params.keys.filter(AxisCurveParams::isCurve).any { it !in keys }) return null
+        lifted += keys.filter { it in params }
+        return RecipeSpiral(spiral.turns, spiral.pitch, spiral.shrink)
     }
 
     private fun curveOf(params: Map<String, Float>): List<List<Float>> {

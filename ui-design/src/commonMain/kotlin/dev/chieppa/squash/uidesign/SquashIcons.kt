@@ -4,6 +4,13 @@ package dev.chieppa.squash.uidesign
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object SquashIcons {
+    val AddCurvePlace: ImageVector by lazy {
+        icon("add-curve-place") {
+            stroke("M2.5 12.5C3.5 7.5 6.5 4.5 10.25 4")
+            stroke("M11 4a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+            stroke("M11.25 9.5v4.5M9 11.75h4.5")
+        }
+    }
     val AddKey: ImageVector by lazy {
         icon("add-key") {
             stroke("M8 2.5L13.5 8 8 13.5 2.5 8z")
@@ -629,6 +636,13 @@ object SquashIcons {
     val RegionBorder: ImageVector by lazy {
         icon("region-border") {
             stroke("M3.0 11.0L2.9 10.36L2.85 9.72M3.33 6.95L3.61 6.37L3.94 5.82M6.05 3.96L6.64 3.69L7.25 3.5M10.06 3.51L10.67 3.72L11.25 4.0M13.08 6.09L13.28 6.71L13.4 7.34M12.95 10.11L12.65 10.67L12.28 11.2M10.06 12.93L9.46 13.18L8.85 13.38M6.04 13.49L5.42 13.32L4.83 13.07")
+        }
+    }
+    val RemoveCurvePlace: ImageVector by lazy {
+        icon("remove-curve-place") {
+            stroke("M2.5 12.5C3.5 7.5 6.5 4.5 10.25 4")
+            stroke("M11 4a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0z")
+            stroke("M9 11.75h4.5")
         }
     }
     val RemovePart: ImageVector by lazy {

@@ -57,8 +57,10 @@ data class RecipePart(
     val jointsAt: Map<String, Float> = emptyMap(),
     @Doc("Sockets this part offers moved, by name, to [u, v] for both sides (move.socket.<name>.u and .v).")
     val socketsAt: Map<String, List<Float>> = emptyMap(),
-    @Doc("Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Replaces a template's curve (tail-curve) or curves a straight part; thickness and taper still set its radius along it. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]].")
+    @Doc("Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places, which may turn back on themselves and leave the plane; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Taken by every template that sweeps along its axis (templates.md says which); replaces a template's curve (tail-curve) or curves a straight part. Undrawn, thickness or girth and taper set its radius along it; drawn, its outlines give its width along the length and the curve its path. A bend tighter than the part is thick narrows it there, with a warning. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]].")
     val curve: List<List<Float>> = emptyList(),
+    @Doc("A spiral the axis coils in, in place of curve places (curve.spiral.*).")
+    val spiral: RecipeSpiral? = null,
     @Doc("Whether the join where this part sits on its parent is inked as a line round it (join.ink); inked when left out.")
     val inkJoin: Boolean? = null,
     @Doc("Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name.")

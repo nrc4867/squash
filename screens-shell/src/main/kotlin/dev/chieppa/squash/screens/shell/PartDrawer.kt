@@ -49,7 +49,7 @@ private val READOUT_WIDTH = 52.dp
 /**
  * The Shape inspector: Add part's section alone while Add part is armed, since it adds to the character rather than changing the
  * selected part; otherwise the armed tool's sections, then the selected part's role and template, a generic part's own shape, its
- * parameters and its anatomy.
+ * parameters, its curve and its anatomy.
  */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
@@ -102,6 +102,7 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }
     }
+    key(part.id) { CurveSection(open, part.id, template, base.params, base.outlines, !mirror) }
     AnatomySection(state, open, part)
 }
 

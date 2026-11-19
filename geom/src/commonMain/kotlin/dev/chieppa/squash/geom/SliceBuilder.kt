@@ -55,6 +55,11 @@ data class TubeSpec(
     val focus: RingFocus? = null,
     /** A second section [section] turns into over a stretch of u, or null for one section the whole run. */
     val along: SectionAlong? = null,
+    /**
+     * Whether a drawn run follows [axis], each ring square to it at its u and sized by [views], so the drawing gives the width along the
+     * length and a curved axis the path; otherwise a drawn run's rings stand in the planes along its rest the drawing sets.
+     */
+    val followsAxis: Boolean = false,
 )
 
 /**
@@ -119,14 +124,38 @@ object SliceBuilder {
             "${spec.name}: a section has ${spec.section.controlPoints.size} control points for ${spec.segments} segments"
         }
         val us = ringUs(spec)
-        val slices = spec.views?.let { drawnSlices(spec, it, us) } ?: restSlices(spec, us)
-        return loft(spec.name, slices, spec.segments, spec.views?.let { shadedSlices(spec, it, us, slices) } ?: slices)
+        val views = spec.views
+        if (views != null && spec.followsAxis) return followingSlices(spec, views, us).let { loft(spec.name, it, spec.segments) }
+        val slices = views?.let { drawnSlices(spec, it, us) } ?: restSlices(spec, us)
+        return loft(spec.name, slices, spec.segments, views?.let { shadedSlices(spec, it, us, slices) } ?: slices)
+    }
+
+    /**
+     * The least share of its own size any ring of [spec] keeps where its axis bends tighter than it is wide (1 where none narrows), so a
+     * caller can say where a curve is clipped.
+     */
+    fun bendHold(spec: TubeSpec): Float {
+        val us = ringUs(spec)
+        val views = spec.views
+        val frames = frames(spec.axis, us, spec.up)
+        val extents = if (views != null && spec.followsAxis) {
+            towardBends(frames, us.indices.map { ring -> views.sliceIn(us[ring], sectionAt(spec, us[ring]), 1f, frames[ring]) })
+        } else if (views == null) {
+            restExtents(spec, us).also { extents -> for (i in extents.indices) extents[i] *= maxOf(1f, spec.widthRatio) }
+        } else {
+            return 1f
+        }
+        val held = heldToBends(extents, bendRadii(frames), 1f)
+        return extents.indices.filter { extents[it] > 0f }.minOfOrNull { held[it] / extents[it] }?.coerceAtMost(1f) ?: 1f
     }
 
     /** The ring [spec] stands at [u] before either end closes, with no grid around it. */
     fun ringAt(spec: TubeSpec, u: Float): Slice {
         val section = sectionAt(spec, u)
-        spec.views?.let { return it.slice(u, section, 1f) }
+        spec.views?.let { views ->
+            if (!spec.followsAxis) return views.slice(u, section, 1f)
+            return views.sliceIn(u, section, 1f, frames(spec.axis, ringUs(spec).filter { it < u } + u, spec.up).last())
+        }
         val along = (u - spec.uStart) / (spec.uEnd - spec.uStart)
         val extent = 2f * spec.radius * (1f + (spec.taper - 1f) * along)
         val tangent = spec.axis.tangentAt(u)
@@ -161,6 +190,52 @@ object SliceBuilder {
         return us.mapIndexed { ring, u -> views.slice(u, sectionAt(spec, u), startScale(ring) * endScale(ring)) }
     }
 
+    /**
+     * A drawn run laid along its axis: each ring square to the axis, carried along it without twisting from its first ring's up, sized
+     * by the drawing at its u and closed at its ends as [drawnSlices] closes them, then held within the axis's bend as undrawn rings are.
+     */
+    private fun followingSlices(spec: TubeSpec, views: ViewSizing, us: List<Float>): List<Slice> {
+        val frames = frames(spec.axis, us, spec.up)
+        val scales = drawnScales(spec, us)
+        val sized = us.mapIndexed { ring, u ->
+            val onSocket = (ring == 0 && spec.startClosure == EndClosure.OPEN) || (ring == us.lastIndex && spec.endClosure == EndClosure.OPEN)
+            views.sliceIn(u, sectionAt(spec, u), scales[ring], placed(frames[ring], 0f, spec.socketNormal.takeIf { onSocket }))
+        }
+        val extents = towardBends(frames, sized)
+        val held = heldToBends(extents, bendRadii(frames), 1f)
+        return sized.mapIndexed { ring, slice ->
+            val share = if (extents[ring] > 0f) held[ring] / extents[ring] else 1f
+            if (share >= 1f) slice else Slice(slice.u, slice.frame, slice.height * share, slice.width * share, slice.section, slice.frame.rotation)
+        }
+    }
+
+    /**
+     * How far across each of [slices] reaches toward the inside of the axis's bend there, in full: its height and width taken along the
+     * way the axis turns, so a flat ribbon bending across its thin side keeps its width. A straight stretch takes the larger.
+     */
+    private fun towardBends(frames: List<Frame>, slices: List<Slice>): FloatArray = FloatArray(slices.size) { i ->
+        val turn = frames[minOf(i + 1, frames.size - 1)].tangent - frames[maxOf(i - 1, 0)].tangent
+        val slice = slices[i]
+        if (turn.length < MIN_TURN) return@FloatArray maxOf(slice.height, slice.width)
+        val toward = turn.normalized()
+        val up = (toward dot slice.frame.up) * slice.height
+        val side = (toward dot slice.frame.side) * slice.width
+        sqrt(up * up + side * side)
+    }
+
+    /** How large each ring of a drawn run is at its ends, as [drawnSlices] closes them. */
+    private fun drawnScales(spec: TubeSpec, us: List<Float>): FloatArray {
+        val capRings = defaultCapRings(us.size)
+        fun scale(fromEnd: Int, reachesPartEnd: Boolean, closure: EndClosure) =
+            if (reachesPartEnd) drawnEndScale(fromEnd, closure) else endScale(fromEnd, capRings, closure)
+        return FloatArray(us.size) { ring ->
+            val fromEnd = us.size - 1 - ring
+            val start = spec.startHandover?.let { risingScale(ring, us[ring], spec.uStart, it) } ?: scale(ring, spec.uStart <= 0f, spec.startClosure)
+            val end = spec.endHandover?.let { sinkingScale(fromEnd, ring > 0 && us[ring - 1] >= it) } ?: scale(fromEnd, spec.uEnd >= 1f, spec.endClosure)
+            start * end
+        }
+    }
+
     /** The rings a run's shading reads: the drawing's own wherever another run covers the end, so hiding a stretch inside that run does not turn the shading. */
     private fun shadedSlices(spec: TubeSpec, views: ViewSizing, us: List<Float>, slices: List<Slice>): List<Slice> {
         val start = spec.startHandover
@@ -173,13 +248,7 @@ object SliceBuilder {
 
     private fun restSlices(spec: TubeSpec, us: List<Float>): List<Slice> {
         val frames = frames(spec.axis, us, spec.up)
-        val capRings = spec.roundRings ?: defaultCapRings(us.size)
-        val extents = FloatArray(us.size) { ring ->
-            val along = (us[ring] - spec.uStart) / (spec.uEnd - spec.uStart)
-            val taper = 1f + (spec.taper - 1f) * along
-            val closure = endScale(ring, capRings, spec.startClosure) * endScale(us.size - 1 - ring, capRings, spec.endClosure)
-            2f * spec.radius * taper * closure
-        }
+        val extents = restExtents(spec, us)
         val held = heldToBends(extents, bendRadii(frames), maxOf(1f, spec.widthRatio))
         return us.indices.map { ring ->
             val extent = held[ring]
@@ -187,6 +256,17 @@ object SliceBuilder {
                 (ring == us.lastIndex && spec.endClosure == EndClosure.OPEN)
             val frame = placed(frames[ring], spec.drop, spec.socketNormal.takeIf { onSocket })
             Slice(us[ring], frame, extent, extent * spec.widthRatio, sectionAt(spec, us[ring]), frame.rotation)
+        }
+    }
+
+    /** The full height of each undrawn ring of [spec], tapered and closed at its ends, before the axis's bend holds it. */
+    private fun restExtents(spec: TubeSpec, us: List<Float>): FloatArray {
+        val capRings = spec.roundRings ?: defaultCapRings(us.size)
+        return FloatArray(us.size) { ring ->
+            val along = (us[ring] - spec.uStart) / (spec.uEnd - spec.uStart)
+            val taper = 1f + (spec.taper - 1f) * along
+            val closure = endScale(ring, capRings, spec.startClosure) * endScale(us.size - 1 - ring, capRings, spec.endClosure)
+            2f * spec.radius * taper * closure
         }
     }
 

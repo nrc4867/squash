@@ -77,14 +77,32 @@ class ViewSizing private constructor(
      * off centre in y moves the frame so its ends still land on the crossings.
      */
     fun slice(u: Float, drawnSection: ClosedSpline, closure: Float): Slice {
+        val drawn = drawnAt(u, drawnSection)
+        val frame = Frame(centreAt(u) - axes.up * (drawn.lift * closure / 2f), axes.along, axes.up)
+        return Slice(u, frame, drawn.height * closure, drawn.width * closure, drawn.section, proxyNormalFrame(u, frame.center))
+    }
+
+    /**
+     * The slice at [u] as [slice] sizes it, stood in [frame] in place of the plane of [u]: the drawing's extents along a curved axis,
+     * so the views give the part its width along its length and the axis its path.
+     */
+    fun sliceIn(u: Float, drawnSection: ClosedSpline, closure: Float, frame: Frame): Slice {
+        val drawn = drawnAt(u, drawnSection)
+        val placed = Frame(frame.center - frame.up * (drawn.lift * closure / 2f), frame.tangent, frame.up)
+        return Slice(u, placed, drawn.height * closure, drawn.width * closure, drawn.section, placed.rotation)
+    }
+
+    /** A drawn section at a u, its full extents, and twice how far its middle sits off the frame's centre toward up. */
+    private class Drawn(val section: ClosedSpline, val height: Float, val width: Float, val lift: Float)
+
+    private fun drawnAt(u: Float, drawnSection: ClosedSpline): Drawn {
         val section = keelAt(u, drawnSection)
         val spans = section.spans()
         val tall = heightAt(u)?.let { 2f * it / max(spans.y, MIN_SECTION_SPAN) }
         val wide = widthAt(u)?.let { 2f * it / max(spans.x, MIN_SECTION_SPAN) }
         val fullHeight = requireNotNull(tall ?: wide) { "Sizing with no drawn view" }
-        val lift = if (tall == null) 0f else section.middleY() * fullHeight * closure / 2f
-        val frame = Frame(centreAt(u) - axes.up * lift, axes.along, axes.up)
-        return Slice(u, frame, fullHeight * closure, (wide ?: fullHeight) * closure, section, proxyNormalFrame(u, frame.center))
+        val lift = if (tall == null) 0f else section.middleY() * fullHeight
+        return Drawn(section, fullHeight, wide ?: fullHeight, lift)
     }
 
     /** [section] with the profile's ridge at [u] standing out of its up side, when the height view is read as a profile. */

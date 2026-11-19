@@ -1,4 +1,4 @@
-import type { RecipeGeneric, RecipePart } from "../schema/recipe.ts";
+import type { RecipeGeneric, RecipePart, RecipeSpiral } from "../schema/recipe.ts";
 import type { Rest } from "../frames/rest.ts";
 import { oval } from "../shapes/oval.ts";
 import { outline, type Shape } from "../shapes/shape.ts";
@@ -27,6 +27,10 @@ export interface PropSpec {
   roll?: number;
   /** Whether Top's midline moves its middle sideways, so a lens or band drawn curved in Top wraps round what it sits on. */
   topMiddle?: boolean;
+  /** Places a tube prop's axis curves through, as a part's `curve`: a bow's loop, a ribbon's end. Side and Top then give its width along the curve. */
+  curve?: number[][];
+  /** A spiral a tube prop's axis coils in, as a part's `spiral`. */
+  spiral?: RecipeSpiral;
 }
 
 /** A prop part drawn as Side and Top shapes: a heel, a lens, a pendant; owned by a garment when `garment` is given. `orient` gives `rest`, `lean`, `outward` and `roll` for any direction. */
@@ -48,6 +52,8 @@ export function prop(spec: PropSpec): RecipePart {
   if (spec.outward !== undefined) part.outward = spec.outward;
   if (spec.roll !== undefined) part.roll = spec.roll;
   if (spec.topMiddle !== undefined) part.topMiddle = spec.topMiddle;
+  if (spec.curve !== undefined) part.curve = spec.curve;
+  if (spec.spiral !== undefined) part.spiral = spec.spiral;
   return part;
 }
 

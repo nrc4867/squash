@@ -43,7 +43,7 @@ Versions 1 and 2 are thin separate sheets, kept only for characters that pin the
 
 ## Tails
 
-- **A long, thin tail that curves** (a mouse's, a monkey's, a cat's) is `tail-curve`, with `thickness` (radius at the root, a share of its length) and `taper` (0.1 to 0.15 for a strong taper). Its resting curve runs through the part's own `curve`: 2 to 24 `[along, up]` places (`[along, up, side]` to swing sideways) in the part's own axes as fractions of its length, so an S with a hooked end is one tail. The curve is scaled to the part's length (`size`); up is its Side's +y (`frames.md` gives which way that faces, and which sign of `lean` lowers a tail resting back and up). A hook tighter than the tail is thick narrows the tail a little through the curl and ends in a round tip.
+- **A long, thin tail that curves** (a mouse's, a monkey's, a cat's) is `tail-curve`, with `thickness` (radius at the root, a share of its length) and `taper` (0.1 to 0.15 for a strong taper). Its resting curve runs through the part's own `curve` (Curves and coils, below), so an S with a hooked end is one tail.
 - `tail` stays the default for short or thick tails (a fox's brush, a bear's stub): draw its Side and Top.
 - A tail on a `blank` body sits on a hand-made socket on the torso's back, low: on a torso resting up, `vToward("up", "back")` at the seat's height.
 
@@ -67,9 +67,36 @@ export const tail: RecipePart = {
 
 Read the tail's curve off the side view: its root, where it turns, how high the curl rises, which way the hook closes. Judge it from the side and from above (`-back-top.png`): a tail that swings into a leg wants a `side` component or `outward`.
 
+## Curves and coils
+
+Any part whose template sweeps along its axis takes a curve: `templates.md`'s curve column says which (`tube`, `horn`, `spike`, `antler`, `tail`, `tail-curve`, `hair`, `claw`, `fin`, `ear`, and tube props). Heads, blobs, hands and paws do not; a curve on them is ignored with a warning.
+
+- **`curve`**: 2 to 24 `[along, up]` or `[along, up, side]` places in the part's own axes as fractions of its length, after its socket point. Up is its Side's +y and side its v 0.25 (`frames.md`). The places may turn back on themselves and leave the plane: a hook, an S, a loop.
+- **`spiral`**: `{ turns, pitch, shrink }` in place of places, for a ram's horn or a coiled trunk or tail. It leaves along the rest and coils `turns` times toward up (negative toward the underside) about a line toward the part's side; `pitch` moves the coil that way each turn (a share of its first diameter; 0.3 to 0.6 either way keeps a horn's coil beside the head: judge from above, and flip its sign if the coils run in behind the head), `shrink` is the coil's radius at the tip over its first (0.4 to 0.6 for a horn).
+- **The curve is the part's length**, scaled to it, so a coil of more turns is a smaller coil at the same `size`: a ram's horn of 1.5 turns wants `size` 3 to 4 and a thin `girth` (0.06). `horn` takes `size` up to 4.
+- **Drawn parts keep their own curve**: Side and Top give the width along the length, the part's `curve` or `spiral` the path, so a tapering tusk or a flat ribbon follows its places. A drawn `tail-curve` with no curve of its own follows its drawing's midline.
+- **A warning that the rings narrow** means the curve bends tighter than the part is thick: spread the places, open the coil (less `turns` or more `shrink`), or thin the part. Rings never fold into each other; they narrow there instead.
+
+```ts
+export const ramHorns: RecipePart = {
+  id: "horns", template: "horn", on: "head", socket: "socket.1", pair: { left: "horn-l", right: "horn-r" }, role: "horn", color: "horn",
+  size: 4, outward: 40, lean: 25, params: { girth: 0.06 }, spiral: { turns: -1.5, pitch: -0.5, shrink: 0.5 },
+};
+export const tusks: RecipePart = {
+  id: "tusks", template: "spike", on: "head", socket: "socket.2", pair: { left: "tusk-l", right: "tusk-r" }, role: "horn", color: "tusk",
+  rest: "forward", outward: 20, size: 0.9, params: { girth: 0.16 }, curve: [[0.35, 0.02, 0.02], [0.65, 0.18, 0.06], [0.8, 0.45, 0.05], [0.72, 0.7, 0.02]],
+};
+export const trunk: RecipePart = {
+  id: "trunk", template: "tail-curve", on: "head", socket: "socket.3", role: "tail", color: "hide", rest: "down", size: 1.3,
+  params: { thickness: 0.1, taper: 0.45 }, curve: [[0.3, 0.04], [0.6, 0.1], [0.82, 0.24], [0.9, 0.44], [0.8, 0.58], [0.66, 0.54], [0.64, 0.42]],
+};
+```
+
+Judge a curl from the side and three-quarter and from above: a coil that runs into the head or neck wants more `outward` or `pitch`.
+
 ## Horns, spikes, fins, wings
 
-`horn`, `antler`, `spike`, `claw`, `plate`, `fin`, `sheet`, `wing-feathered` and `wing-membrane` are templates (`templates.md`); they sit on a template's sockets or hand-made ones. A short crest of a few spikes down a back is one socket row: `socket(n, u, v, { count: 6, to: 0.9, size: 1, falloff: 0.5 })`, named `socket.<n>.0` and on, one part on each, each starting at its socket's size unless the part gives its own. `orient` and `around` (`kit/README.md`, Frames) point parts in any direction, as petals round a centre.
+`horn`, `antler`, `spike`, `claw`, `plate`, `fin`, `sheet`, `wing-feathered` and `wing-membrane` are templates (`templates.md`); they sit on a template's sockets or hand-made ones. A short crest of a few spikes down a back is one socket row: `socket(n, u, v, { count: 6, to: 0.9, size: 1, falloff: 0.5 })`, named `socket.<n>.0` and on, one part on each, each starting at its socket's size unless the part gives its own. **Antlers branch** by sitting more antlers on an antler's sockets: `tine` partway up, and `tip`, where the child sinks back into the beam's end along the beam and continues it, so a fork at the tip reads as one piece; aim each branch with `lean` and `outward`, and curve the beam with `curve`. `orient` and `around` (`kit/README.md`, Frames) point parts in any direction, as petals round a centre.
 
 ## Many copies: spines, wool, manes, scales, tufts
 

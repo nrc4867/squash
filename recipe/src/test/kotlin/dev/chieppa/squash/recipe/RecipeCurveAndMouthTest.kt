@@ -9,8 +9,9 @@ import dev.chieppa.squash.recipe.export.exportRecipe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
-/** A part's own curve places and an expression that opens a mouth, built, failed where wrong, and exported back. */
+/** A part's own curve places and spiral, warned where ignored or clipped, and an expression that opens a mouth, built, failed where wrong, and exported back. */
 class RecipeCurveAndMouthTest {
     private val builder = RecipeBuilder(TemplateFolder.shipped())
 
@@ -44,6 +45,38 @@ class RecipeCurveAndMouthTest {
     fun aCurveOfOnePlaceOrABadPlaceFails() {
         assertEquals("$.parts[1].curve", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$body, ${tail("[[0.3, 0.1]]")}"))) }.path)
         assertEquals("$.parts[1].curve[1]", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$body, ${tail("[[0.3, 0.1], [0.5]]")}"))) }.path)
+    }
+
+    private fun horn(extra: String) = """{"id": "horn", "template": "horn", "on": "body", "socket": "socket.1", $extra}"""
+
+    @Test
+    fun aSpiralWritesItsParametersAndExportsBack() {
+        val built = builder.build(RecipeJson.read(recipe("$body, ${horn(""""size": 2, "params": {"girth": 0.06}, "spiral": {"turns": 1.5, "pitch": 0.3, "shrink": 0.5}""")}")))
+        assertEquals(emptyList(), built.warnings)
+        val params = built.document.character.resolved(PartId("horn"))!!.params
+        assertEquals(1.5f, params["curve.spiral.turns"])
+        assertEquals(0.3f, params["curve.spiral.pitch"])
+        val exported = exportRecipe(built.document).recipe.parts.first { it.id == "horn" }
+        assertEquals(1.5f, exported.spiral?.turns)
+        assertEquals(emptyList(), exported.curve)
+        assertEquals(built.document, builder.build(RecipeJson.read(RecipeJson.write(exportRecipe(built.document).recipe))).document)
+    }
+
+    @Test
+    fun aSpiralWithPlacesOrNoTurnsFails() {
+        val both = horn(""""curve": [[0.3, 0.1], [0.6, 0.2]], "spiral": {"turns": 1}""")
+        assertEquals("$.parts[1].spiral", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$body, $both"))) }.path)
+        assertEquals("$.parts[1].spiral.turns", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$body, ${horn(""""spiral": {"turns": 0}""")}"))) }.path)
+    }
+
+    @Test
+    fun aCurveTheTemplateIgnoresOrClipsWarns() {
+        val blob = """{"id": "lump", "template": "blob", "on": "body", "socket": "socket.1", "curve": [[0.3, 0.1], [0.6, 0.2]]}"""
+        val ignored = builder.build(RecipeJson.read(recipe("$body, $blob"))).warnings
+        assertTrue(ignored.any { it.startsWith("$.parts[1].curve:") && "ignored" in it }, ignored.toString())
+        val tight = horn(""""params": {"girth": 0.5}, "spiral": {"turns": 3, "shrink": 0.3}""")
+        val clipped = builder.build(RecipeJson.read(recipe("$body, $tight"))).warnings
+        assertTrue(clipped.any { it.startsWith("$.parts[1].spiral:") && "narrow" in it }, clipped.toString())
     }
 
     @Test

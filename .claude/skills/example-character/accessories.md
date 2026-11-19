@@ -47,6 +47,7 @@ export const chain = { id: "chain", template: "ring", on: "torso", socket: "sock
 
 Links much smaller than about 0.01 body units drown in their ink at full-figure size; judge them close (`close=chain`).
 - **A lens** is a part in a palette slot with `opacity` 0.3 to 0.5 (`colour-and-marks.md`), so the eyes show through; `topMiddle: true` lets a Top drawn curved wrap it round the face. Which way Side's and Top's y face for a part resting `out` is in `frames.md`.
+- **A bow** is a knot (a small `prop` blob) and loops and tails as `tube` props with a `curve`: draw the ribbon thin in Side and wide in Top with square ends, and run the loop's places out, up and back to the knot in `[along, up]`, so it bends across its thin side; a pair on a mirrored socket makes both loops. A warning that the rings narrow means the loop is tighter than the ribbon is wide that way.
 - `roll` turns a part about its own axis (a sheet resting out and rolled 90 faces forward); `orient(along, up)` gives the `rest`, `lean`, `outward` and `roll` for any direction.
 
 ## Judging accessories

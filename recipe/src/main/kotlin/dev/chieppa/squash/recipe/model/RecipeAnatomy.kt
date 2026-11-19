@@ -1,6 +1,7 @@
 package dev.chieppa.squash.recipe.model
 
 import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.build.RestDirection
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.document.View
@@ -35,6 +36,20 @@ data class RecipeLandmark(
     val u: Float,
     @Doc("Where round the part.")
     val v: Float,
+)
+
+/** A spiral a part's axis coils in, held as its `curve.spiral.*` parameters. */
+@Serializable
+@Doc("A spiral the part's axis coils in from its socket point, in place of curve places: a ram's horn, a coiled trunk or tail.")
+data class RecipeSpiral(
+    @Doc("How many times it coils, up to 4: positive curls toward the part's top (Side's +y), negative toward its underside (curve.spiral.turns).")
+    @Range(min = -4.0, max = 4.0)
+    val turns: Float,
+    @Doc("How far the coil moves toward the part's side at v 0.25 each turn, as a share of its first coil's diameter; negative the other way; 0 a flat coil (curve.spiral.pitch).")
+    val pitch: Float = 0f,
+    @Doc("The coil's radius at the tip as a share of its radius at the root: below 1 it tightens toward the tip (curve.spiral.shrink).")
+    @Range(min = 0.05, max = 2.0)
+    val shrink: Float = 1f,
 )
 
 /** What a part of a generic template (tube, blob, sheet) chooses for itself, held as its `generic.*` parameters. */

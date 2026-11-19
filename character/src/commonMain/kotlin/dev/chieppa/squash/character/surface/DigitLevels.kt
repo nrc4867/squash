@@ -21,17 +21,20 @@ private val DETAIL_ROLES = setOf(Role.HEAD, Role.JAW, Role.EAR, Role.HAND, Role.
 /**
  * The level each member of [field] meshes at (see `CellLevels`): [DIGIT_LEVEL] for a digit, a run of a part's row of toes or fingers,
  * [DETAIL_LEVEL] for every other run of a head, jaw, ear, hand or foot, and the body's own cell for every other run, legs, arms, tails, the
- * torso and hair among them, but a tail whose tip is thinner than [THIN_TIP_CELLS] of the body's cells across, at [DETAIL_LEVEL], so its
- * round end and a hook at it are several cells across.
+ * torso and hair among them, but a tail or a horn (an antler, a trunk) whose tip is thinner than [THIN_TIP_CELLS] of the body's cells across,
+ * at [DETAIL_LEVEL], so its round end, a hook at it and a branch on it are several cells across.
  */
 fun digitLevels(field: CharacterField): IntArray = IntArray(field.runs.size) { i ->
     val run = field.runs[i]
     when {
         isDigitRun(run.part, run.patch) -> DIGIT_LEVEL
-        run.part.role in DETAIL_ROLES || (run.part.role == Role.TAIL && thinTip(run, field.cell)) -> DETAIL_LEVEL
+        run.part.role in DETAIL_ROLES || (run.part.role in THIN_TIP_ROLES && thinTip(run, field.cell)) -> DETAIL_LEVEL
         else -> 0
     }
 }
+
+/** The roles a thin tip meshes finer for. */
+private val THIN_TIP_ROLES = setOf(Role.TAIL, Role.HORN)
 
 /** How many body cells across a tail's ring before its end closes must be, at least, to mesh at the body's cell. */
 private const val THIN_TIP_CELLS = 3f

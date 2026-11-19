@@ -71,6 +71,9 @@ data class Tube(
         return if (u >= span.start && u <= span.end) SliceBuilder.ringAt(spec(ctx), u) else null
     }
 
+    /** The least share of their size this run's rings keep where the axis bends tighter than they are wide. */
+    internal fun bendHold(ctx: BuildContext): Float = SliceBuilder.bendHold(spec(ctx))
+
     private fun spec(ctx: BuildContext): TubeSpec {
         val span = span(ctx)
         return TubeSpec(
@@ -78,7 +81,7 @@ data class Tube(
             axis = ctx.axis,
             uStart = span.start,
             uEnd = span.end,
-            rings = ctx.template.topology.rings,
+            rings = ctx.rings,
             roundRings = capRings(ctx),
             segments = ctx.template.topology.segments,
             section = shell?.flat(ctx, ctx.template.topology.segments)
@@ -95,8 +98,9 @@ data class Tube(
             front = ctx.front,
             startHandover = ctx.handover(span.start, u),
             endHandover = ctx.handover(span.end, u),
-            up = ctx.template.axis.up?.toVec3(),
+            up = ctx.template.axis.up?.toVec3() ?: ctx.axes.up.takeIf { ctx.followsAxis },
             along = shell?.along(ctx, ctx.template.topology.segments),
+            followsAxis = ctx.followsAxis,
         )
     }
 
@@ -106,7 +110,7 @@ data class Tube(
      * builder's own few.
      */
     private fun capRings(ctx: BuildContext): Int? {
-        val rings = ctx.template.topology.rings
+        val rings = ctx.rings
         val share = capReach?.let { ctx.value(it) }
             ?: if (ctx.curved) ctx.length(radius) * ctx.value(taper) / ctx.axisLength.coerceAtLeast(1e-6f) else return null
         return ceil(share * (rings - 1)).toInt().coerceIn(MIN_CURVED_CAP_RINGS.takeIf { capReach == null } ?: 1, rings - 1)

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.recipe.build
 
 import dev.chieppa.squash.character.build.AxisCurveParams
+import dev.chieppa.squash.character.build.AxisSpiral
+import dev.chieppa.squash.character.build.MAX_SPIRAL_TURNS
 import dev.chieppa.squash.character.build.GenericParams
 import dev.chieppa.squash.character.build.MAX_CURVE_PLACES
 import dev.chieppa.squash.character.build.MIN_CURVE_PLACES
@@ -104,7 +106,7 @@ private fun BuildContext.digitOf(path: String, part: PartId, patch: String, para
 
 /**
  * The part parameters [part]'s named anatomy fields stand for: its rest, generic choices, joints, landmarks, moved joints and sockets,
- * its join's ink and its curve. A key one of them sets that the part's `params` also set fails at [path].
+ * its join's ink and its curve or spiral. A key one of them sets that the part's `params` also set fails at [path].
  */
 internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<String, Float> {
     val values = linkedMapOf<String, Float>()
@@ -131,6 +133,11 @@ internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<Str
     }
     part.inkJoin?.let { values[JoinParams.INK] = if (it) FLAG_ON else FLAG_OFF }
     if (part.curve.isNotEmpty()) values += curveParams(path, part.curve)
+    part.spiral?.let { spiral ->
+        if (part.curve.isNotEmpty()) fail("$path.spiral", "a part's axis follows its curve places or its spiral, not both")
+        if (spiral.turns == 0f) fail("$path.spiral.turns", "a spiral makes some turns, up to $MAX_SPIRAL_TURNS either way")
+        values += AxisCurveParams.of(AxisSpiral(spiral.turns.coerceIn(-MAX_SPIRAL_TURNS, MAX_SPIRAL_TURNS), spiral.pitch, spiral.shrink))
+    }
     values.keys.firstOrNull { it in part.params }?.let { fail("$path.params.$it", "a named field of this part sets \"$it\" already") }
     return values
 }

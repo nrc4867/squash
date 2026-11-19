@@ -114,6 +114,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         socketsAt = split.socketsAt,
         inkJoin = split.inkJoin,
         curve = split.curve,
+        spiral = split.spiral,
         params = split.others,
         color = surface.baseSlot?.value,
         shades = surface.shades.map { it.value },

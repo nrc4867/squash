@@ -34,6 +34,9 @@ private const val MIDDLE_SAMPLES = 16
 /** How far either side of a place, in u, the surface is read for which way the part runs there. */
 private const val TANGENT_STEP = 0.01f
 
+/** How far back along a part, in u, which way it runs at a place is read from. */
+private const val ALONG_STEP = 0.08f
+
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
 class PlacedPart(
     /** The part in the document, or null for one a socket of the plan would take that nothing has been placed on. */
@@ -78,6 +81,13 @@ class PlacedPart(
     fun middleAt(u: Float, patch: String? = null): Vec3? {
         val around = (0 until MIDDLE_SAMPLES).mapNotNull { pointOn(u, it.toFloat() / MIDDLE_SAMPLES, patch) }
         return if (around.isEmpty()) null else around.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / around.size)
+    }
+
+    /** Which way this part runs as it reaches [u], from the middle of its ring [ALONG_STEP] before, in body space. */
+    fun alongAt(u: Float, patch: String? = null): Vec3? {
+        val here = middleAt(u, patch) ?: return null
+        val before = middleAt((u - ALONG_STEP).coerceAtLeast(0f), patch) ?: return null
+        return (here - before).takeIf { it.length > 0f }?.normalized()
     }
 
     /** The outward normal there, in body space. */
@@ -252,6 +262,7 @@ private class Assembler(
         val into = when (spec.outward) {
             Outward.AXIS -> along
             Outward.NORMAL -> frame.outwardAt(spec.u, v, spec.tilt, spec.patch) ?: along
+            Outward.ALONG -> frame.alongAt(spec.u, spec.patch) ?: along
         }
         val mount = templates.mountOffset(template.ref)
         val standing = if (spec.outset == 0f) point else point + (frame.normalAt(spec.u, v, spec.patch) ?: into) * spec.outset

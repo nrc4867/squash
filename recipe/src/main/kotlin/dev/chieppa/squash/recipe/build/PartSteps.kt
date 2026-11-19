@@ -1,9 +1,12 @@
 package dev.chieppa.squash.recipe.build
 
+import dev.chieppa.squash.character.build.CurveFit
 import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.catalog.guessRole
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.AddParts
+import dev.chieppa.squash.document.OutlineCurve
+import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PairId
 import dev.chieppa.squash.document.PartId
@@ -15,6 +18,7 @@ import dev.chieppa.squash.document.SetSocketBlend
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.recipe.model.RecipePart
+import kotlin.math.roundToInt
 
 /** Places [part], recipe entry [index], on what it sits on and gives it its shape; its surface work comes after every part is placed. */
 internal fun BuildContext.placePart(index: Int, part: RecipePart): PartIds {
@@ -84,5 +88,18 @@ private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate,
     part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s, params, part.sockets) { name -> own.firstOrNull { it.name == name } }) }
     checkParams(path, template, params)
     if (params.isNotEmpty()) send("$path.params", SetParameters(id, params))
-    if (part.outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, curves(path, part.outlines)))
+    val outlines = if (part.outlines.isNotEmpty()) curves(path, part.outlines) else emptyMap()
+    if (outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, outlines))
+    checkCurve(path, template, part, params, outlines)
+}
+
+/** Warns where [part]'s own curve is ignored by its template, or bends tighter than the part is thick so its rings narrow. */
+private fun BuildContext.checkCurve(path: String, template: PartTemplate, part: RecipePart, params: Map<String, Float>, outlines: Map<View, OutlineCurve>) {
+    val fit = CurveFit.of(template, params, outlines) ?: return
+    val at = if (part.spiral != null) "$path.spiral" else "$path.curve"
+    if (fit.ignored) {
+        warn(at, "template ${template.id.value} does not sweep along its axis (it has a skull, a field, digits or a membrane), so its curve is ignored; templates.md says which templates take curve")
+    } else if (fit.clipped) {
+        warn(at, "the curve bends tighter than the part is thick, so its rings narrow to ${(fit.hold * 100f).roundToInt()}% there; spread the places or the coil, or thin the part")
+    }
 }

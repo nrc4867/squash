@@ -528,8 +528,10 @@ export interface RecipePart {
   jointsAt?: { [key: string]: number };
   /** Sockets this part offers moved, by name, to [u, v] for both sides (move.socket.<name>.u and .v). */
   socketsAt?: { [key: string]: number[] };
-  /** Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Replaces a template's curve (tail-curve) or curves a straight part; thickness and taper still set its radius along it. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]]. */
+  /** Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places, which may turn back on themselves and leave the plane; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Taken by every template that sweeps along its axis (templates.md says which); replaces a template's curve (tail-curve) or curves a straight part. Undrawn, thickness or girth and taper set its radius along it; drawn, its outlines give its width along the length and the curve its path. A bend tighter than the part is thick narrows it there, with a warning. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]]. */
   curve?: number[][];
+  /** A spiral the axis coils in, in place of curve places (curve.spiral.*). */
+  spiral?: RecipeSpiral | null;
   /** Whether the join where this part sits on its parent is inked as a line round it (join.ink); inked when left out. */
   inkJoin?: boolean | null;
   /** Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name. */
@@ -661,6 +663,18 @@ export interface RecipeSocket {
   spread?: RecipeSpread | null;
   /** Makes it one socket showing copies of the one part on it repeated along a path from (u, v) through its via places to (to, toV), or between two sockets. */
   path?: RecipePath | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A spiral the part's axis coils in from its socket point, in place of curve places: a ram's horn, a coiled trunk or tail. */
+export interface RecipeSpiral {
+  /** How many times it coils, up to 4: positive curls toward the part's top (Side's +y), negative toward its underside (curve.spiral.turns). */
+  turns: number;
+  /** How far the coil moves toward the part's side at v 0.25 each turn, as a share of its first coil's diameter; negative the other way; 0 a flat coil (curve.spiral.pitch). */
+  pitch?: number;
+  /** The coil's radius at the tip as a share of its radius at the root: below 1 it tightens toward the tip (curve.spiral.shrink). */
+  shrink?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

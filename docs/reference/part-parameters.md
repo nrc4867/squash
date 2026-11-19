@@ -37,7 +37,8 @@ Every part holds its shape as numbers by name: its template's parameters (templa
 | `generic.section` | a generic part's section, counted below | `generic.section` |
 | `generic.view.side`, `generic.view.top`, `generic.view.front` | flags: which views shape a generic part | `generic.views` |
 | `generic.rings`, `generic.segments` | a generic part's rings along and control points round | `generic.rings`, `.segments` |
-| `curve.<n>.along`, `curve.<n>.up`, `curve.<n>.side` | a place the part's axis curves through, from 1 on, in the part's own axes as fractions of its length: along its rest, toward Side's +y, toward v 0.25; 2 to 24 replace its template's curve | `curve` |
+| `curve.<n>.along`, `curve.<n>.up`, `curve.<n>.side` | a place the part's axis curves through, from 1 on, in the part's own axes as fractions of its length: along its rest, toward Side's +y, toward v 0.25; 2 to 24 replace its template's curve, on a template that sweeps (templates.md, curve column) | `curve` |
+| `curve.spiral.turns`, `curve.spiral.pitch`, `curve.spiral.shrink` | a spiral the axis coils in, in place of curve places: turns toward Side's +y (negative toward its underside, up to 4 either way), the coil's move toward v 0.25 a turn as a share of its first diameter, and its radius at the tip as a share of its first | `spiral` |
 | `join.ink` | 0 leaves the join with its parent unlined; 1 or unset inks it | `inkJoin` |
 | `rig.reach.<joint>` | how far the skin blend at a joint reaches, times the rig's guess, 0.2 to 3 | `params` |
 

@@ -2464,7 +2464,8 @@
         "outward": {
           "enum": [
             "axis",
-            "normal"
+            "normal",
+            "along"
           ]
         },
         "pair": {

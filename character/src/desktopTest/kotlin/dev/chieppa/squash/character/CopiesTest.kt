@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.AxisCurveParams
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.TemplateLibrary
@@ -23,6 +24,8 @@ import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.ringMiddle
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -66,6 +69,19 @@ class CopiesTest {
         assertEquals(SPINES, copies.places.map { it.origin }.toSet().size)
         assertTrue(!isFieldPart(part))
         assertEquals(SPINES * copies.rule.surface.patches.size, partGrids(part).size)
+    }
+
+    @Test
+    fun copiesOfACurvedPartAllCarryItsCurve() {
+        val hook = AxisCurveParams.of(listOf(Vec3(0.4f, 0f, 0f), Vec3(0.7f, 0.25f, 0f), Vec3(0.55f, 0.5f, 0.1f)))
+        val (character, _) = built("spike", PartData(params = hook)) { spread(it, 3) }
+        val copies = assertNotNull(character.part(COPIES)?.copies)
+        assertEquals(SPINES, copies.places.size)
+        val patch = copies.rule.surface.patches.first()
+        val spike = assertNotNull(shipped.template(TemplateId("spike")))
+        assertTrue(patch.nu > spike.topology.rings, "the one build the copies share is the curved one, ${patch.nu} rings")
+        val tip = patch.ringMiddle(1f)
+        assertTrue((tip - patch.ringMiddle(0f)).length < spike.axis.length * 0.8f, "its tip hooks back toward its root")
     }
 
     @Test
