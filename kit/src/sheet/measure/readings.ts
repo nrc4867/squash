@@ -1,4 +1,5 @@
 import { roundTo } from "../../geom/point.ts";
+import type { FaceFinding } from "./face/types.ts";
 import type { LandmarkStatus } from "./landmark.ts";
 
 /** A line the reading was taken along, in the sheet's pixels: a hand's length from wrist to tip, a foot's width across. */
@@ -35,6 +36,8 @@ export interface Proportions {
   readings: Record<string, Reading>;
   /** Names that could not be read, each with the reason. */
   missing: Record<string, string>;
+  /** Where the face reader found the face, eyes, nose and mouth, for the face check image. */
+  face?: FaceFinding;
 }
 
 /** The units of a measurement: what a pixel is in body units and how many pixels a head and the figure are. */

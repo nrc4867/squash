@@ -17,6 +17,8 @@ export interface ToonOptions {
   socks?: boolean;
   /** A tuft of hair above the head, this many pixels off its middle. */
   tuft?: number;
+  /** Draws the head instead of the standard one: hair, face and features, on the sheet, about the middle column `cx`. */
+  head?: (image: Raster, cx: number) => void;
   /** Hand ellipse half sizes. */
   hand?: { rx: number; ry: number };
   /** Foot ellipse half sizes. */
@@ -48,8 +50,9 @@ export function toon(options: ToonOptions = {}): { image: Raster; truth: typeof 
   const hand = options.hand ?? { rx: TOON.handRx, ry: TOON.handRy };
   const foot = options.foot ?? { rx: TOON.footRx, ry: TOON.footRy };
   if (options.tuft !== undefined) ellipse(image, cx + options.tuft, TOON.crown - 14, 5, 18, HAIR);
-  ellipse(image, cx, 90, TOON.headRadius, TOON.headRadius, HAIR);
-  if (!options.back) {
+  if (options.head) options.head(image, cx);
+  else ellipse(image, cx, 90, TOON.headRadius, TOON.headRadius, HAIR);
+  if (!options.back && !options.head) {
     ellipse(image, cx, 104, 54, 46, SKIN);
     for (const side of [-1, 1]) {
       ellipse(image, cx + (side * TOON.eyeApart) / 2, TOON.eyeY, TOON.eyeRx, 17, INK);

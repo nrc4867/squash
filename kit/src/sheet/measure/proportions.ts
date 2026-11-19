@@ -11,6 +11,7 @@ export function readProportions(anatomy: Anatomy, image: Raster | undefined, sca
   if (image) parts.push(readFace(image, anatomy, scale));
   const out: Proportions = { readings: {}, missing: {} };
   for (const p of parts) {
+    if (p.face) out.face = p.face;
     Object.assign(out.readings, p.readings);
     Object.assign(out.missing, p.missing);
   }

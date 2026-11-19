@@ -5,7 +5,7 @@ import { STATUS_COLORS } from "./style.ts";
 
 /** The readings a zoom region is about. */
 const REGION_READINGS: Record<ZoomRegion, readonly string[]> = {
-  head: ["eyeLine", "eyeWidth", "eyeSpacing", "nose", "mouth", "chinLength"],
+  head: ["eyeLine", "eyeWidth", "eyeHeight", "eyeSpacing", "nose", "mouth", "chinLength"],
   hands: ["handLength", "handWidth"],
   feet: ["footLength", "footWidth"],
 };

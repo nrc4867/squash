@@ -1,8 +1,10 @@
 import { roundTo } from "../../geom/point.ts";
+import { TARGET_NAMES } from "../../targets/targets.ts";
 import type { Raster } from "../raster/image.ts";
 import type { Box } from "../core/box.ts";
 import type { FacingGuess } from "../views/orientation.ts";
 import type { Anatomy } from "./anatomy.ts";
+import type { FaceFinding } from "./face/types.ts";
 import type { LandmarkIssue } from "./sanity.ts";
 import { centralRun, runsAt } from "./figure.ts";
 import type { Landmark, PixelMark } from "./landmark.ts";
@@ -63,6 +65,8 @@ export interface Measurement {
   proportions: Record<string, Reading>;
   /** The proportions that could not be read in this view, each with the reason. */
   unread: Record<string, string>;
+  /** Where the face reader found the face, eyes, nose and mouth in the sheet's pixels; absent where no face is read. */
+  face?: FaceFinding;
   profile: ProfileRow[];
 }
 
@@ -171,6 +175,7 @@ export function measurementOf(anatomy: Anatomy, height: number, heightTo: Height
     pieces,
     proportions: read.readings,
     unread: read.missing,
+    ...(read.face ? { face: read.face } : {}),
     profile,
   };
 }
@@ -184,11 +189,12 @@ export interface SheetTarget {
 
 /**
  * The readings a recipe can hold a build to, as `targets` entries in the recipe's own form: a size as its share of the head, a place
- * (`eyeLine`) as its depth down the head. Only readings that are `found` or `given` are taken, and with `includeUnsure` the unsure
+ * (`eyeLine`) as its depth down the head. Only the names a build measures are taken (`eyeHeight`, `nose`, `mouth` and `chinLength` are read for the check image and the notes, not held to). Only readings that are `found` or `given` are taken, and with `includeUnsure` the unsure
  * ones too; an estimated reading is never a reference to hold a build to.
  */
 export function targetsOf(measurement: Measurement, includeUnsure = false): SheetTarget[] {
   return Object.values(measurement.proportions)
+    .filter((r) => (TARGET_NAMES as readonly string[]).includes(r.name))
     .filter((r) => r.status === "found" || r.status === "given" || (includeUnsure && r.status === "unsure"))
     .map((r) => ({ name: r.name, of: "head" as const, value: r.ofHead }));
 }

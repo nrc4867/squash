@@ -9,6 +9,7 @@ import { sheetProfiles } from "../../src/sheet/read/profiles/index.ts";
 import { paletteImage } from "../../src/sheet/read/swatches.ts";
 import { traceShape, type TracePart } from "../../src/sheet/read/trace.ts";
 import { traceImage } from "../../src/sheet/read/trace-image.ts";
+import { drawFace } from "../../src/sheet/read/zoom-face.ts";
 import { drawReadings, regionReadings } from "../../src/sheet/read/zoom-readings.ts";
 import { regionBoxes, zoomBox, type ZoomRegion } from "../../src/sheet/read/zoom.ts";
 import { measuredFrom, sheetFrom, viewFileName } from "./context.ts";
@@ -75,6 +76,8 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const zooms = boxes.map(({ name, box }) => zoomBox(sheet, name, box, factor));
     const read = regionReadings(named, measured.measurement.proportions, measured.measurement.unread);
     if (!region) for (const zoom of zooms) drawReadings(zoom, read.readings);
+    const face = measured.measurement.face;
+    if (!region && named === "head" && face) for (const zoom of zooms) drawFace(zoom, face);
     for (const zoom of zooms) out.png(`zoom-${zoom.name}.png`, zoom.image);
     out.json(`zoom-${region ? "box" : named}.json`, { zooms: zooms.map(({ name, box, factor: f }) => ({ name, box, factor: f })), readings: region ? [] : read.readings, unread: region ? {} : Object.fromEntries(read.unread) });
     if (!region) for (const line of readingLines(read.readings, read.unread)) console.log(line);

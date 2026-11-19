@@ -3,7 +3,7 @@ import { blankMask, components } from "../core/mask.ts";
 import { median } from "../core/solve.ts";
 import { pixelAt, type Pixel, type Raster } from "../raster/image.ts";
 import type { Anatomy } from "./anatomy.ts";
-import { skinColor } from "./face.ts";
+import { skinColor } from "./face/skin.ts";
 import type { PixelMark } from "./landmark.ts";
 import { farthestFrom, joinPoint, type Piece } from "./pieces.ts";
 import { joinReasons, sizeReading, type Proportions, type Reading, type ReadingLine, type ReadingScale } from "./readings.ts";
