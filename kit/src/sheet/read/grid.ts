@@ -1,6 +1,6 @@
 import type { Anatomy } from "../measure/anatomy.ts";
 import type { Measurement } from "../measure/measurement.ts";
-import { drawHLine, drawText, drawVLine, textSize } from "../raster/draw.ts";
+import { drawHLine, drawLine, drawText, drawVLine, textSize } from "../raster/draw.ts";
 import { blankRaster, blit, upscale, type Raster } from "../raster/image.ts";
 import type { Sheet } from "../views/sheet.ts";
 import { viewCrop, viewCropBox } from "./overview.ts";
@@ -10,13 +10,13 @@ import { AXIS, HEAD_LINE, INK, PAPER, STATUS_COLORS } from "./style.ts";
 const GRID_MIN_ROWS = 700;
 const LABEL_SCALE = 2;
 const LEFT_MARGIN = 110;
-const RIGHT_MARGIN = 300;
+const RIGHT_MARGIN = 380;
 /** Head lines every this many heads. */
 const HEAD_STEP = 0.5;
 
 /**
  * The view with height lines every half head from the crown down, labelled in heads and with their row on the sheet, and every
- * landmark's line, labelled with its name, height in body units and row, coloured by status: found, estimated, given.
+ * landmark's line, labelled with its name, height in body units and row, coloured by status: found, unsure, estimated, given; the points a landmark was read from are crossed.
  */
 export function gridImage(sheet: Sheet, anatomy: Anatomy, measurement: Measurement): Raster {
   const box = viewCropBox(sheet, anatomy.view);
@@ -46,10 +46,16 @@ export function gridImage(sheet: Sheet, anatomy: Anatomy, measurement: Measureme
     const color = STATUS_COLORS[mark.status];
     drawHLine(out, Math.min(out.height - 1, py), LEFT_MARGIN, right + 8, color);
     if (mark.x !== undefined) drawVLine(out, LEFT_MARGIN + Math.round((mark.x - box.x + 0.5) * factor), py - 6, py + 6, color);
+    for (const point of mark.points ?? []) {
+      const px = LEFT_MARGIN + Math.round((point.x - box.x + 0.5) * factor);
+      const pointY = toY(point.y);
+      drawLine(out, px - 6, pointY - 6, px + 6, pointY + 6, color);
+      drawLine(out, px - 6, pointY + 6, px + 6, pointY - 6, color);
+    }
     let labelY = Math.max(0, py - Math.round(lineHeight / 2));
     while (placed.some((p) => Math.abs(p - labelY) < lineHeight + 2)) labelY += lineHeight + 2;
     placed.push(labelY);
-    drawText(out, `${name} ${mark.height.toFixed(3)} Y${mark.y}`, right + 12, labelY, color, LABEL_SCALE);
+    drawText(out, `${name} ${mark.height.toFixed(3)} Y${mark.y}${mark.status === "found" || mark.status === "given" ? "" : ` ${mark.status}`}`, right + 12, labelY, color, LABEL_SCALE);
   }
   drawText(out, `${measurement.heads.toFixed(2)} HEADS`, 4, out.height - textSize("0", 1).height - 3, INK, 1);
   return out;

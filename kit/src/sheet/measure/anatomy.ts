@@ -6,6 +6,7 @@ import { figureOf, type Figure } from "./figure.ts";
 import { readHead, type HeadReading } from "./head.ts";
 import type { PixelMark } from "./landmark.ts";
 import { readLegs, type LegTracks } from "./legs.ts";
+import { checkLandmarks, type LandmarkIssue } from "./sanity.ts";
 import { classifyPieces, type Piece } from "./pieces.ts";
 
 /** With no neck to close the head, it is taken as this many times the crown-to-widest depth. */
@@ -23,6 +24,8 @@ export interface Anatomy {
   core: Mask;
   legs?: LegTracks;
   pieces: Piece[];
+  /** The proportions the landmarks break, each landmark it names already marked unsure. */
+  issues: LandmarkIssue[];
 }
 
 function meanMark(points: ReadonlyArray<{ x: number; y: number }>): PixelMark | undefined {
@@ -36,7 +39,7 @@ export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = 
   const head = readHead(figure);
   const marks: Record<string, PixelMark> = { top: { y: figure.top, status: "found" }, ground: { y: figure.ground, status: "found" } };
   marks.crown = given.crown ?? head.crown;
-  marks.chin = given.chin ?? head.chin ?? { y: marks.crown.y + ROUND_HEAD * (head.widestRow - head.crown.y), status: "estimated" };
+  marks.chin = given.chin ?? head.chin ?? { y: marks.crown.y + ROUND_HEAD * (head.widestRow - head.crown.y), status: "estimated", reason: "no neck narrows the head: placed at twice the crown to the widest row" };
   const neck = given.neck ?? head.neck;
   if (neck) marks.neck = neck;
   const headLength = Math.max(1, marks.chin.y - marks.crown.y);
@@ -50,8 +53,9 @@ export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = 
     const mark = given[key] ?? legs?.[key];
     if (mark) marks[key] = mark;
   }
-  const core = coreMask(figure, marks.crown.y, marks.armpit?.y, marks.crotch?.y, legs?.tracks);
-  const armsFrom = (marks.armpit ?? marks.shoulder ?? marks.neck ?? marks.chin).y;
+  const partedArmpit = marks.armpit?.status === "estimated" ? undefined : marks.armpit;
+  const core = coreMask(figure, marks.crown.y, partedArmpit?.y, marks.crotch?.y, legs?.tracks);
+  const armsFrom = (partedArmpit ?? marks.shoulder ?? marks.neck ?? marks.chin).y;
   const pieces = classifyPieces(figure, outsideCore(figure, core), core, { crown: marks.crown.y, armsFrom, headLength });
   const earTip = given.earTip ?? meanMark(pieces.some((p) => p.kind === "ear") ? pieces.filter((p) => p.kind === "ear").map((p) => p.tip) : head.earTips);
   if (earTip) marks.earTip = earTip;
@@ -63,5 +67,6 @@ export function readAnatomy(view: SheetView, given: Record<string, PixelMark> = 
   if (tailTop) marks.tailTop = tailTop;
   if (tailBottom) marks.tailBottom = tailBottom;
   for (const [name, mark] of Object.entries(given)) marks[name] = mark;
-  return { view, figure, head, marks, headLength: Math.max(1, marks.chin.y - marks.crown.y), core, legs: legs?.tracks, pieces };
+  const checked = checkLandmarks(marks, headLength);
+  return { view, figure, head, marks: checked.marks, headLength: Math.max(1, marks.chin.y - marks.crown.y), core, legs: legs?.tracks, pieces, issues: checked.issues };
 }

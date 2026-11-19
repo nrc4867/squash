@@ -2,6 +2,7 @@ import { roundTo } from "../../geom/point.ts";
 import type { Box } from "../core/box.ts";
 import type { FacingGuess } from "../views/orientation.ts";
 import type { Anatomy } from "./anatomy.ts";
+import type { LandmarkIssue } from "./sanity.ts";
 import { centralRun, runsAt } from "./figure.ts";
 import type { Landmark, PixelMark } from "./landmark.ts";
 import type { PieceKind } from "./pieces.ts";
@@ -48,6 +49,8 @@ export interface Measurement {
   landmarks: Record<string, Landmark>;
   /** Every landmark's height above the ground in body units, for `bodyPlan`. */
   plan: Record<string, number>;
+  /** The proportions the landmarks break against each other and a standing figure. */
+  checks: LandmarkIssue[];
   /** Half widths in body units at the landmarks, from the core: head, neck, chest, waist, hip, thigh, knee, ankle. */
   widths: Record<string, number>;
   pieces: MeasuredPiece[];
@@ -152,6 +155,7 @@ export function measurementOf(anatomy: Anatomy, height: number, heightTo: Height
     ground,
     landmarks,
     plan,
+    checks: anatomy.issues,
     widths,
     pieces,
     profile,

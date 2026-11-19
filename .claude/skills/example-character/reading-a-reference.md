@@ -2,7 +2,7 @@
 
 A reference is usually one sheet: a few views of the character (front, three-quarter, side, back), any size, anywhere on the page, often at different scales, with labels, a title, colour swatches, ground lines and shadows round them. Sometimes it is separate images, or a description in words. Read it with the kit's sheet tools before writing a part; every number you take from it goes in the file as a named constant with the tool that gave it.
 
-All of them: `tools/recipe.sh kit sheet <command> <image> [options]`, writing JSON and images to `<image>-sheet/` beside the image (or `out=`). Their options, outputs and every landmark's definition are in `kit/README.md`, Reading a character sheet. **Look at every image they write**: they are drawn to be read by eye, and a wrong landmark is only caught by looking.
+All of them: `tools/recipe.sh kit sheet <command> <image> [options]`, writing JSON and images to `<image>-sheet/` beside the image (or `out=`). Their options, outputs and every landmark's definition are in `kit/README.md`, Reading a character sheet. **Look at every image they write**: they are drawn to be read by eye, and a wrong landmark is only caught by looking. The tools are a first draft of the measurements, not ground truth: shoulders, armpits, crotches and knees in particular can sit on the wrong feature.
 
 ## 1. Find the views
 
@@ -26,7 +26,7 @@ tools/recipe.sh kit sheet grid C:/refs/pip.png names=front,side,back view=front 
 
 `height=` is the character's height in body units from the ground to the crown (ears, buns and tufts above the skull do not count; `heightTo=top` counts them). Pick it once and keep it: the whole body is drawn in those units. A person-sized biped is about 1.6 to 1.7, which suits the templates at `size` 1 (`proportions.md`); a small creature can be 1, and its templated hands and feet then take a `size` below 1.
 
-`grid-<view>.png` draws a line every half head from the crown, labelled `1.5H` and its sheet row, and a line a landmark with its height: **green found, orange estimated, blue given.** `measure` prints the same as a table:
+`grid-<view>.png` draws a line every half head from the crown, labelled `1.5H` and its sheet row, and a line a landmark with its height: **green found, magenta unsure, orange estimated, blue given.** `measure` prints the same as a table, with the reason under every landmark that is not found, and the proportion checks it failed:
 
 ```
   view 1 front (front?): 3.04 heads, head 0.3286 of 1, axis x 243, ground y 641
@@ -37,9 +37,22 @@ tools/recipe.sh kit sheet grid C:/refs/pip.png names=front,side,back view=front 
   knee         0.1537   0.47H  estimated y 576
 ```
 
+### Check every landmark before using the numbers
+
+This step is required before any number from `measure` or `profiles` goes into the file.
+
+```
+tools/recipe.sh kit sheet check C:/refs/pip.png names=front,side,back view=front
+```
+
+`check-<view>.png` is one close-up a landmark, side by side, each with its line across it, the outline points it was read from crossed, and its status and reason beneath. Look at each tile and ask whether the line sits on the feature it names: the shoulder where the outline turns from the neck into the arm (not the collar), the armpit where the arm's outline leaves the torso under the sleeve (not the tee's hem), the crotch at the top of the gap between the legs (not the shorts' hem), the knee and ankle on the leg. Fix every wrong one by reading its pixel off the image and passing `landmarks=armpit:190,400;shoulder:170,330` to every later command, then run `check` again until every tile is right. Do not trust the colour alone: a green line can be on the wrong feature, and magenta (unsure) and orange (estimated) say the tool doubts itself, with the reason under the tile (`no gap between an arm and the torso`, `two methods disagree by 0.15 heads`). Arms held against the body, raised arms, a loose shirt or a big head are where it is wrong most.
+
+Record each landmark in the feature list as found (the tool's line was right), fixed (you gave it with `landmarks=`) or estimated (nothing in the image shows it; say how you placed it).
+
 Read every line against the grid image:
 
-- **Found is not always right.** Arms held against the body make the hand tips or the sleeve's edge read as the armpit; shorts' hems read as the crotch; a big hairdo as wide as the head reads as skull. Wherever a line sits on the wrong feature, read the pixel off the image and give it back: `landmarks=crotch:243,556;armpit:190,400`. Given landmarks (blue) replace what was found and steer what follows; re-run until every line sits on its feature.
+- **Found is not always right.** Arms held against the body make the hand tips or the sleeve's edge read as the armpit; shorts' hems read as the crotch; a big hairdo as wide as the head reads as skull. Given landmarks (blue) replace what was found and steer what follows; re-run until every line sits on its feature.
+- **Unsure** (magenta) means read from the outline but doubtful, or failing a proportion check against the other landmarks: confirm it on the check image.
 - **Estimated** (orange) means placed by proportion: legs drawn touching hide the crotch, straight legs hide the knee. Take the knee from the side view, where it shows as the leg's front edge turning, or from the description; else keep the estimate and say so in the feature list.
 - **The head count** (`3.04 heads`) is the most important number on the sheet: a cartoon creature is 2 to 4 heads tall, a stylised person 5 to 7.5. Write it into the feature list and check the build against it (`judging.md`).
 - Measure the side view too (`view=side`): it gives the depths the front cannot, and where the knees and the seat really are.
@@ -60,7 +73,7 @@ One tile a colour with its hex, its share of the figure and where its pixels are
 tools/recipe.sh kit sheet profiles C:/refs/pip.png names=front,side,back front=front side=side stations=7 landmarks=crotch:243,556
 ```
 
-`profiles.json` gives the torso (resting up: `left`/`right` from the front, `front`/`back` from the side), each leg (resting down: `outer`/`inner`, `front`/`back`) and each loose arm, as radii at stations ready for `tube`, with `confidence` and `notes`. Pass the same `landmarks=` you fixed on the grid: the torso runs crotch to neck, the legs crotch to ankle. Treat them as a first draft:
+`profiles.json` gives the torso (resting up: `left`/`right` from the front, `front`/`back` from the side), each leg (resting down: `outer`/`inner`, `front`/`back`) and each loose arm, as radii at stations ready for `tube`, with `confidence` and `notes`. Pass the same `landmarks=` you fixed on the check image: the torso runs crotch to neck, the legs crotch to ankle. Treat them as a first draft:
 
 - Above the armpits the torso is held to the armpit's width where the arms join it: draw the chest and shoulders yourself from the grid.
 - Clothes are silhouette: a baggy tee or shorts widen the torso and legs. Take the body under them thinner (about the fit of the garment, `clothing.md`) and let the garment stand off it.

@@ -102,7 +102,14 @@ export function readLegs(figure: Figure, crotch: number, hip: number, split: num
   const ankle = Math.round(ankles.reduce((a, b) => a + b, 0) / ankles.length);
   const guess = Math.round(ankle - KNEE_SHARE * (ankle - hip));
   const knee = kneeRow(tracks, crotch, ankle, guess);
-  return { tracks, merged: status === "estimated", ankle: { y: ankle, status }, knee: knee !== undefined ? { y: knee, status } : { y: guess, status: "estimated" } };
+  const touching = "legs touch along the axis: split there";
+  const withReason = (y: number): PixelMark => (status === "estimated" ? { y, status, reason: touching } : { y, status });
+  return {
+    tracks,
+    merged: status === "estimated",
+    ankle: withReason(ankle),
+    knee: knee !== undefined ? withReason(knee) : { y: guess, status: "estimated", reason: "no bend in the leg's width: halfway from ankle to hip" },
+  };
 }
 
 /** The row near `guess` where the legs' mean width strays most from the straight line crotch to ankle, if it strays enough. */

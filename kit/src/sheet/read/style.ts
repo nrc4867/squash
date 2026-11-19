@@ -20,6 +20,7 @@ export const VIEW_COLORS: Pixel[] = [
 
 export const STATUS_COLORS: Record<LandmarkStatus, Pixel> = {
   found: [20, 150, 60],
+  unsure: [200, 30, 150],
   estimated: [225, 120, 0],
   given: [40, 90, 230],
 };

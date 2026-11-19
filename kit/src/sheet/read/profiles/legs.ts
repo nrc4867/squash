@@ -30,7 +30,7 @@ export function legProfiles(front: MeasuredView, side: MeasuredView | undefined,
   const heights = steps(plan.crotch, plan.ankle, count);
   const scale = front.measurement.bodyPerPixel;
   const flip = leftOnImageRight(front);
-  const merged = front.anatomy.marks.ankle?.status !== "found";
+  const merged = front.anatomy.marks.ankle?.status === "estimated";
   const out: Record<string, PartProfile> = {};
   for (const imageSide of ["left", "right"] as const) {
     const runs = legRuns(front, heights, imageSide);

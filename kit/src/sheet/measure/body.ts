@@ -1,22 +1,13 @@
-import { centralRun, centralWidth, figureHeight, rowWhere, runsAt, type Figure } from "./figure.ts";
+import { centralWidth, figureHeight, rowWhere, runsAt, type Figure } from "./figure.ts";
 import type { PixelMark } from "./landmark.ts";
 import { median } from "../core/solve.ts";
-import { runWidth, type Run } from "./rows.ts";
+import type { Run } from "./rows.ts";
+import { readArmpit, readShoulder } from "./shoulders.ts";
 
-/** The window, as a share of the figure's height, over which a width's rise is read. */
-const RISE_WINDOW = 0.02;
-/** The shoulder is where the rise below the neck falls under this share of its steepest. */
-const RISE_SETTLED = 0.3;
-/** The search for the shoulders runs this many neck-to-crown heights below the neck. */
-const SHOULDER_SEARCH = 1;
-/** An arm parts from the torso where one edge of the central run moves in by this share of its width from one row to the next. */
-const ARM_PARTS = 0.1;
 /** Legs or feet touching across the gap for at most this share of the height still leave one gap. */
 const CONTACT_SHARE = 0.04;
 /** A gap between the legs is at least this share of the height long. */
 const LEG_GAP_SHARE = 0.08;
-/** The armpits lie within this many heads below the shoulders. */
-const ARMPIT_REACH = 1;
 /** With no gap between the legs, the crotch sits this share of the way from the ground up to the neck, as in most figures. */
 const CROTCH_SHARE = 0.55;
 /** The waist is searched between these shares of the way from the shoulders (or armpits) to the crotch. */
@@ -38,35 +29,6 @@ export interface BodyReading {
   crotch?: PixelMark;
   /** The column the legs part along: the middle of the gap between them, or the axis. */
   legSplit?: number;
-}
-
-function shoulderRow(figure: Figure, neck: number, headLength: number): number | undefined {
-  const window = Math.max(1, Math.round(RISE_WINDOW * figureHeight(figure)));
-  const end = Math.min(figure.ground - window, neck + SHOULDER_SEARCH * headLength);
-  const rise = (y: number) => centralWidth(figure, y + window) - centralWidth(figure, y);
-  const steepest = rowWhere(neck, end, rise, true);
-  if (steepest === undefined || rise(steepest) <= 0) return undefined;
-  const settled = RISE_SETTLED * rise(steepest);
-  for (let y = steepest; y < end; y++) if (rise(y) < settled) return y + window;
-  return steepest + window;
-}
-
-/** The lower of the rows where each side's edge of the torso jumps inward, as an arm parts from it. */
-function armpitRow(figure: Figure, from: number, to: number): number | undefined {
-  const found: number[] = [];
-  for (const side of [-1, 1] as const) {
-    for (let y = from + 1; y < to; y++) {
-      const before = centralRun(figure, y - 1);
-      const now = centralRun(figure, y);
-      if (!before || !now) continue;
-      const inward = side < 0 ? now.l - before.l : before.r - now.r;
-      if (inward > ARM_PARTS * runWidth(before)) {
-        found.push(y);
-        break;
-      }
-    }
-  }
-  return found.length ? Math.max(...found) : undefined;
 }
 
 /** The middle of the gap between two runs that comes within `band` of `axis`, nearest it; undefined when no gap does. */
@@ -110,32 +72,34 @@ function crotchRow(figure: Figure, above: number): { row: number; split: number 
 /** Shoulders, armpits, waist, hip and crotch, read down the axis from the neck. */
 export function readBody(figure: Figure, neck: number, headLength: number): BodyReading {
   const out: BodyReading = {};
-  const shoulder = shoulderRow(figure, neck, headLength);
-  if (shoulder !== undefined) out.shoulder = { y: shoulder, status: "found" };
+  const shoulderMark = readShoulder(figure, neck, headLength);
+  const shoulder = shoulderMark?.y;
+  if (shoulderMark) out.shoulder = shoulderMark;
   const foundCrotch = crotchRow(figure, shoulder ?? neck);
   out.legSplit = foundCrotch?.split ?? figure.axis;
   const crotch = foundCrotch?.row ?? Math.round(figure.ground - CROTCH_SHARE * (figure.ground - neck));
-  out.crotch = { y: crotch, status: foundCrotch !== undefined ? "found" : "estimated" };
+  out.crotch = foundCrotch !== undefined ? { y: crotch, status: "found" } : { y: crotch, status: "estimated", reason: "no gap between the legs: placed by proportion" };
   const torsoTop = shoulder ?? neck;
   const torsoBottom = crotch;
-  const armpit = armpitRow(figure, torsoTop, Math.min(torsoBottom, torsoTop + ARMPIT_REACH * headLength));
-  if (armpit !== undefined) out.armpit = { y: armpit, status: "found" };
+  const armpitMark = shoulder !== undefined ? readArmpit(figure, shoulder, torsoBottom, headLength) : undefined;
+  if (armpitMark) out.armpit = armpitMark;
+  const armpit = armpitMark?.status === "estimated" ? undefined : armpitMark?.y;
   const from = armpit ?? torsoTop;
   const span = torsoBottom - from;
   const waistFrom = armpit !== undefined ? WAIST_RANGE[0] : WAIST_FROM_SHOULDER;
   const waist = rowWhere(from + waistFrom * span, from + WAIST_RANGE[1] * span, (y) => centralWidth(figure, y) || Infinity);
-  if (waist !== undefined) out.waist = { y: waist, status: out.crotch.status };
+  if (waist !== undefined) out.waist = out.crotch.status === "found" ? { y: waist, status: "found" } : { y: waist, status: "estimated", reason: "read between an estimated armpit and crotch" };
   if (waist !== undefined) {
     const widest = rowWhere(waist, crotch, (y) => centralWidth(figure, y), true);
     const flat = widest === undefined || centralWidth(figure, widest) <= centralWidth(figure, waist) + 1;
-    out.hip = flat ? { y: Math.round(crotch - HIP_SHARE * (crotch - waist)), status: "estimated" } : { y: widest, status: "found" };
+    out.hip = flat ? { y: Math.round(crotch - HIP_SHARE * (crotch - waist)), status: "estimated", reason: "no widening below the waist: placed by proportion" } : { y: widest, status: "found" };
   }
   if (foundCrotch && out.hip?.status === "found") {
     const hipWidth = centralWidth(figure, out.hip.y);
     if (centralWidth(figure, crotch - 1) < LEGS_TOUCH * hipWidth) {
       let y = out.hip.y;
       while (y < crotch && centralWidth(figure, y) >= LEGS_TOUCH * hipWidth) y++;
-      out.crotch = { y, status: "estimated" };
+      out.crotch = { y, status: "estimated", reason: "legs touch below the hips: placed where the hips end" };
     }
   }
   return out;

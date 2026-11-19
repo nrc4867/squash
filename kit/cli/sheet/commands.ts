@@ -1,5 +1,6 @@
 import { formatBox } from "../../src/sheet/core/box.ts";
 import { pixelToHex } from "../../src/sheet/core/color.ts";
+import { checkImage } from "../../src/sheet/read/check.ts";
 import { gridImage } from "../../src/sheet/read/grid.ts";
 import { viewCrop, viewsOverview } from "../../src/sheet/read/overview.ts";
 import { sheetPalette } from "../../src/sheet/read/palette.ts";
@@ -48,6 +49,15 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const name = viewFileName(measured.anatomy.view);
     out.png(`grid-${name}.png`, gridImage(sheet, measured.anatomy, measured.measurement));
     out.json(`measure-${name}.json`, measured.measurement);
+  },
+  check(image, options) {
+    const sheet = sheetFrom(image, options);
+    const measured = measuredFrom(sheet, options);
+    const out = new SheetOutput(options.outDir(image));
+    const name = viewFileName(measured.anatomy.view);
+    out.png(`check-${name}.png`, checkImage(sheet, measured.anatomy, measured.measurement));
+    out.json(`measure-${name}.json`, measured.measurement);
+    console.log(summary(measured.measurement));
   },
   zoom(image, options) {
     const sheet = sheetFrom(image, options, false);

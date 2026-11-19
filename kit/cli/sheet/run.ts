@@ -5,6 +5,7 @@ export const SHEET_USAGE = `usage: tools/recipe.sh kit sheet <command> <image> [
   views     split the sheet into views: views.png (every box numbered), <view>.png each, views.json
   measure   one view's silhouette and landmarks in heads and body units: measure-<view>.json
   grid      one view with half-head lines and landmark lines: grid-<view>.png and measure-<view>.json
+  check     one close-up a landmark with its line, status and reason, side by side: check-<view>.png and measure-<view>.json
   zoom      region=head|hands|feet or box=x,y,w,h scaled 2-4 times (scale=): zoom-<name>.png
   palette   one view's colours, ink left out (colors=8): palette-<view>.png and palette-<view>.json
   profiles  torso, leg and arm radii for tube(): front=<view> side=<view|image> stations=7 facing=left|right: profiles.json

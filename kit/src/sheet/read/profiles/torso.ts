@@ -39,11 +39,18 @@ export function torsoProfile(front: MeasuredView, side: MeasuredView | undefined
     notes.push("the crotch is estimated by proportion: no gap between the legs");
     confidence = "medium";
   }
-  if (front.anatomy.marks.armpit === undefined) {
+  if (front.anatomy.marks.armpit === undefined || front.anatomy.marks.armpit.status === "estimated") {
     notes.push("no armpit found: arms against the body widen the upper torso");
     confidence = "low";
   } else {
     notes.push("above the armpits the width is held to the armpits' where the arms join");
+  }
+  for (const name of ["shoulder", "armpit", "neck"] as const) {
+    const mark = front.anatomy.marks[name];
+    if (mark?.status === "unsure") {
+      notes.push(`${name} is unsure: ${mark.reason ?? "check it on the check image"}`);
+      if (confidence === "high") confidence = "medium";
+    }
   }
   const profiles: PartProfile["profiles"] = { left: flip ? imageRight : imageLeft, right: flip ? imageLeft : imageRight };
   if (side) {
