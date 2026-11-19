@@ -13,6 +13,7 @@ import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.ViewParams
+import dev.chieppa.squash.character.lint.MAX_SINK
 import dev.chieppa.squash.character.model.CopySpec
 import dev.chieppa.squash.character.model.SocketSpec
 import dev.chieppa.squash.document.AddParameters
@@ -127,9 +128,14 @@ internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<Str
     }
     part.jointsAt.forEach { (name, u) -> values[PlacementParams.joint(name)] = u }
     part.socketsAt.forEach { (name, place) ->
-        val (u, v) = pair(path, "socketsAt.$name", place, "[u, v]")
+        if (place.size !in 2..3) fail("$path.socketsAt.$name", "a socket's place is [u, v] or [u, v, sink], not $place")
+        val (u, v) = pair(path, "socketsAt.$name", place.take(2), "[u, v]")
         values[PlacementParams.socketU(name)] = u
         values[PlacementParams.socketV(name)] = v
+        place.getOrNull(2)?.let { sink ->
+            if (sink !in 0f..MAX_SINK) fail("$path.socketsAt.$name", "a sink is 0 to $MAX_SINK, not $sink")
+            values[PlacementParams.socketSink(name)] = sink
+        }
     }
     part.inkJoin?.let { values[JoinParams.INK] = if (it) FLAG_ON else FLAG_OFF }
     if (part.curve.isNotEmpty()) values += curveParams(path, part.curve)

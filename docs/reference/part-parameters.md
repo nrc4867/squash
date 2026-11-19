@@ -12,6 +12,7 @@ Every part holds its shape as numbers by name: its template's parameters (templa
 | `top.middle` | flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone | `topMiddle` |
 | `move.joint.<joint>` | u a template joint is moved to | `jointsAt` |
 | `move.socket.<socket>.u`, `move.socket.<socket>.v` | where a socket this part offers is moved to, both sides | `socketsAt` |
+| `move.socket.<socket>.sink` | how deep a part on a socket this part offers sits, times that part's own sink, 0 or more; the socket's own when unset | `socketsAt` third number |
 | `move.socket.<socket>.left.u`, `.right.u`, `.left.v`, `.right.v` | the same for one side alone | `params` |
 | `socket.<n>.u`, `socket.<n>.v` | a hand-made socket's place | `sockets[].u`, `.v` |
 | `socket.<n>.outward` | degrees its outward direction turns from the surface's normal toward the part's end, 90 at most | `sockets[].outward` |

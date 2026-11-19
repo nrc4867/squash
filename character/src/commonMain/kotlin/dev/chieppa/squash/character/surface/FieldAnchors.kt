@@ -17,6 +17,12 @@ private const val CLOSE_SHARE = 1e-3f
 /** The step of the central differences the gradient is read with, as a share of the cell its run meshes at. */
 private const val GRADIENT_SHARE = 0.25f
 
+/** How many cells from its own run's surface, past the blends it joins by, a place resolved on its own run may land. */
+private const val OWN_CELLS = 2f
+
+/** How much of a smooth union's radius it bulges the surface out past the members it joins. */
+private const val BLEND_BULGE = 0.25f
+
 private const val TINY = 1e-12f
 
 /** How much the field must change along a line, per unit of its length, for a point to be moved onto the surface along that line. */
@@ -43,6 +49,23 @@ class FieldAnchors(private val field: CharacterField) {
         val start = run.part.surface.pointAt(anchor.copy(offset = 0f)) ?: return null
         val (position, normal) = onSurface(start.position + run.part.origin, start.normal, cellOf(anchor.part, anchor.patch))
         return ResolvedPoint(anchor, position + normal * anchor.offset, normal)
+    }
+
+    /**
+     * [anchor] as [resolve] places it, but only where it lands on its own run's surface or the blend that joins it: null where the join
+     * hides the place under another part's cloth, as a place on an arm's side next to the torso is, so no line is drawn on that part's
+     * outside instead.
+     */
+    fun resolveOnOwn(anchor: Anchor): ResolvedPoint? {
+        val point = resolve(anchor) ?: return null
+        val run = field.runs.indexOfFirst { it.partId == anchor.part && it.patch.name == anchor.patch }
+        val member = field.field.members[run]
+        val slack = field.field.reaches[run] * BLEND_BULGE + cellOf(anchor.part, anchor.patch) * OWN_CELLS
+        val on = point.position - point.normal * anchor.offset
+        val start = field.runs[run].part.surface.pointAt(anchor.copy(offset = 0f)) ?: return null
+        val buried = field.field.value(start.position + field.runs[run].part.origin) < -(member.ease + slack)
+        val moved = (on - (start.position + field.runs[run].part.origin)).length
+        return point.takeIf { !buried && abs(member.own(on)) <= slack + field.field.reaches[run] && moved <= member.ease + slack * 2f }
     }
 
     /**

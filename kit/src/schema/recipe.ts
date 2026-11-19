@@ -552,7 +552,7 @@ export interface RecipePart {
   landmarks?: RecipeLandmark[];
   /** The template's own joints moved along the part, by name, to a u (move.joint.<name>). */
   jointsAt?: { [key: string]: number };
-  /** Sockets this part offers moved, by name, to [u, v] for both sides (move.socket.<name>.u and .v). */
+  /** Sockets this part offers moved, by name, to [u, v] or [u, v, sink] for both sides (move.socket.<name>.u, .v and .sink): the sink is how deep a part on it sits, times that part's own sink, 0 to 4, and is the socket's own when left out. */
   socketsAt?: { [key: string]: number[] };
   /** Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places, which may turn back on themselves and leave the plane; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Taken by every template that sweeps along its axis (templates.md says which); replaces a template's curve (tail-curve) or curves a straight part. Undrawn, thickness or girth and taper set its radius along it; drawn, its outlines give its width along the length and the curve its path. A bend tighter than the part is thick narrows it there, with a warning. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]]. */
   curve?: number[][];

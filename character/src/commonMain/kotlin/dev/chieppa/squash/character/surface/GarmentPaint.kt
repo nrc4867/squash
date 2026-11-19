@@ -90,7 +90,7 @@ class GarmentPaints {
                 if (shapes.isEmpty()) {
                     null
                 } else {
-                    val laid = SurfacePaint.of(garment.surface, shapes, runAll)
+                    val laid = SurfacePaint.of(garment.surface, shapes, runAll, onOwnRuns = true)
                     SurfacePaint(laid.layers, clothCut(laid.marks) { onCloth(garment, it) }, laid.eyes).within(garment.shownValues, garment.surface)
                 }
             }

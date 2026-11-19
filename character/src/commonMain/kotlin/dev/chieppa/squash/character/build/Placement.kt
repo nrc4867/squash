@@ -50,6 +50,9 @@ object PlacementParams {
     /** On a parent part: where socket [name] sits around it, for [side] alone, or for both with no side. */
     fun socketV(name: String, side: Side? = null) = "$SOCKET_PREFIX$name.${side.key()}v"
 
+    /** On a parent part: how deep, times the part's own sink, a part sits on socket [name], for [side] alone, or for both with no side. */
+    fun socketSink(name: String, side: Side? = null) = "$SOCKET_PREFIX$name.${side.key()}sink"
+
     fun isPlacement(name: String) = name.startsWith(PREFIX)
 
     /** Whether [name] only says where a child sits, so the part's own build never reads it. */
@@ -88,7 +91,8 @@ enum class RestDirection(val direction: Direction) {
 internal fun SocketSpec.placedBy(placement: Map<String, Float>, side: Side?): SocketSpec {
     val u = placement[PlacementParams.socketU(name, side)] ?: placement[PlacementParams.socketU(name)] ?: u
     val v = placement[PlacementParams.socketV(name, side)] ?: placement[PlacementParams.socketV(name)] ?: v
-    return copy(u = u, v = v)
+    val sink = placement[PlacementParams.socketSink(name, side)] ?: placement[PlacementParams.socketSink(name)] ?: sink
+    return copy(u = u, v = v, sink = sink)
 }
 
 /**

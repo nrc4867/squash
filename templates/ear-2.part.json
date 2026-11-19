@@ -11,7 +11,7 @@
   "views": { "side": "height", "top": "width", "front": "section" },
   "section": "lens",
   "params": {
-    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.15, "max": 2.5 },
     "width": { "doc": "Ear's half width at its base with nothing drawn, a fraction of its length.", "default": 0.35, "min": 0.1, "max": 0.8 },
     "cup":   { "doc": "How far the ear's sides curl forward into a cup, a share of its half width; 0 is flat, 0.4 to 0.6 a cupped ear whose inside shows from the front.", "default": 0.0,  "min": 0.0, "max": 0.6 },
     "taper": { "doc": "The ear's half width at its tip with nothing drawn, a share of its width at the base: low for a pointed ear, 0.6 to 0.8 with roundTip for a round one.", "default": 0.4, "min": 0.1, "max": 1.0 },

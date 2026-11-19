@@ -22,6 +22,10 @@ private const val LEAST_LIFT_CELLS = 0.15f
 /** How far inside the cloth, in the body's cells, a vertex lies past every lift. */
 private const val DEEP_CELLS = 4f
 
+/** Where, in the body's cells inside the hem, a roll of [ROLL] is part way down its rounded profile. */
+private const val ROLL_RAMP_FROM = 2.3f
+private const val ROLL_RAMP_TO = 2.7f
+
 /** A hem roll, in body units. */
 private const val ROLL = 0.01f
 
@@ -55,6 +59,19 @@ class HemLiftTest {
         val rolled = garment(session)
         val most = liftsOf(rolled).withIndex().filter { rolled.coverage[it.index] in 0f..cell * 0.5f }.minOf { it.value }
         assertTrue(most >= ROLL, "a hem rolls out by at least the roll, here $most")
+    }
+
+    @Test
+    fun aRollRoundsDownOverSeveralCellsSoItsProfileIsNotAStep() = runTest {
+        val session = stackSession()
+        session.send(SetGarmentFit(sweater, 0f))
+        session.send(SetGarmentHemRoll(sweater, ROLL))
+        val rolled = garment(session)
+        val cell = rolled.grown.mesh.cell
+        val lifts = liftsOf(rolled)
+        val ramp = lifts.indices.filter { rolled.coverage[it] in cell * ROLL_RAMP_FROM..cell * ROLL_RAMP_TO }
+        assertTrue(ramp.isNotEmpty())
+        assertTrue(ramp.all { lifts[it] > 0f && lifts[it] < ROLL * 1.01f }, "the roll is still lifting, below its full height, ${ROLL_RAMP_FROM} to ${ROLL_RAMP_TO} cells in")
     }
 
     private fun TestScope.garment(session: CharacterSession): SurfaceGarment {

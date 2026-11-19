@@ -57,4 +57,26 @@ class RecipeAnatomyTest {
         }
         assertEquals("$.parts[0].params.move.rest", e.path)
     }
+
+    private val head = """{"id": "head", "template": "head-round", "role": "head", "socketsAt": {"ear": [0.8, 0.75, 0.5]}}"""
+    private val ear = """{"id": "ears", "template": "ear", "version": 3, "on": "head", "socket": "ear", "pair": {}}"""
+
+    @Test
+    fun aTemplatesOwnSocketTakesASinkThroughSocketsAtAndExportsItBack() {
+        val built = builder.build(RecipeJson.read(recipe("$head, $ear"))).document
+        val params = built.character.resolved(PartId("head"))!!.params
+        assertEquals(0.5f, params["move.socket.ear.sink"])
+        assertEquals(0.8f, params["move.socket.ear.u"])
+        val exported = exportRecipe(built).recipe
+        assertEquals(listOf(0.8f, 0.75f, 0.5f), exported.parts.first { it.id == "head" }.socketsAt.getValue("ear"))
+        assertEquals(built, builder.build(RecipeJson.read(RecipeJson.write(exported))).document)
+    }
+
+    @Test
+    fun aSocketsAtSinkOutOfRangeOrAPlaceOfTheWrongLengthStopsAtItsPath() {
+        val deep = head.replace("0.5]", "9]")
+        assertEquals("$.parts[0].socketsAt.ear", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$deep, $ear"))) }.path)
+        val long = head.replace("0.5]", "0.5, 1]")
+        assertEquals("$.parts[0].socketsAt.ear", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("$long, $ear"))) }.path)
+    }
 }

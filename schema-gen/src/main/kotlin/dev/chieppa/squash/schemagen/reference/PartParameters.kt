@@ -53,6 +53,7 @@ internal object PartParameters {
         listOf(key(ViewParams.TOP_MIDDLE), "flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone", "`topMiddle`"),
         listOf(code(PlacementParams.joint(JOINT)), "u a template joint is moved to", "`jointsAt`"),
         listOf(code(PlacementParams.socketU(SOCKET)) + ", " + code(PlacementParams.socketV(SOCKET)), "where a socket this part offers is moved to, both sides", "`socketsAt`"),
+        listOf(code(PlacementParams.socketSink(SOCKET)), "how deep a part on a socket this part offers sits, times that part's own sink, 0 or more; the socket's own when unset", "`socketsAt` third number"),
         listOf(code(PlacementParams.socketU(SOCKET, Side.LEFT)) + ", `.right.u`, `.left.v`, `.right.v`", "the same for one side alone", "`params`"),
         listOf(key(HandSockets.u(N)) + ", " + key(HandSockets.v(N)), "a hand-made socket's place", "`sockets[].u`, `.v`"),
         listOf(key(HandSockets.outward(N)), "degrees its outward direction turns from the surface's normal toward the part's end, ${num(HandSockets.MAX_OUTWARD)} at most", "`sockets[].outward`"),

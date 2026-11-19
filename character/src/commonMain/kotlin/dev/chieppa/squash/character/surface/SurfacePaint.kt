@@ -63,13 +63,15 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
          * signed distance in body units and kept to the run's own section, so it ends where a neighbour takes the surface over. Each holder's
          * ink lines on the surface are resolved again on the field. Each shape's layer is one piece of [runAll]'s work, and the ink lines
          * another. With [memo], a shape's values at a vertex the surface's mesh keeps from the mesh the memo last painted are taken from
-         * there rather than read again.
+         * there rather than read again. With [onOwnRuns], an ink place that lands off its own run's surface, hidden under another part
+         * there, is left out (see [FieldAnchors.resolveOnOwn]).
          */
         suspend fun of(
             surface: CharacterSurface,
             held: Map<PartId, HeldShapes>,
             runAll: RunAll = IN_TURN,
             memo: PaintMemo? = null,
+            onOwnRuns: Boolean = false,
         ): SurfacePaint {
             val chart = surface.chart
             val runs = surface.field.runs
@@ -88,7 +90,7 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
             val runsLaid = shapes.map { chart.members(it.part, it.patch) }.filter { it.isNotEmpty() }.distinct()
             val sectionLays = runsLaid.map { members -> sectionOf(chart, members, earlier) }
             val lays = shapes.map { layOf(chart, it, earlier) }
-            runAll((sectionLays + lays.filterNotNull()).flatMap { it.pieces } + listOf({ marks = marksOf(surface, held) }))
+            runAll((sectionLays + lays.filterNotNull()).flatMap { it.pieces } + listOf({ marks = marksOf(surface, held, onOwnRuns) }))
             val sections = runsLaid.indices.associate { i -> runsLaid[i] to lazy { sectionLays[i].finish(chart.trianglesOf(runsLaid[i])) } }
             val margin = SectionMargin(chart)
             val shown = sections.mapValues { (members, raw) -> lazy { margin.widened(raw.value, members, chart.trianglesOf(members)) } }
@@ -105,13 +107,28 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
             return SurfacePaint(layers.filterNotNull(), marks)
         }
 
-        /** Each holder's ink lines on [surface], resolved again on its field. */
-        private fun marksOf(surface: CharacterSurface, held: Map<PartId, HeldShapes>): Map<PartId, List<ResolvedMark>> {
+        /** Each holder's ink lines on [surface], resolved again on its field; a line broken where [onOwnRuns] leaves places out is as many lines. */
+        private fun marksOf(surface: CharacterSurface, held: Map<PartId, HeldShapes>, onOwnRuns: Boolean): Map<PartId, List<ResolvedMark>> {
             val anchors = FieldAnchors(surface.field)
             return held.filterKeys { it in surface.parts }.mapValues { (_, shapes) ->
-                shapes.lines.mapNotNull { mark ->
-                    val points = if (mark.kind == MarkKind.FLOATING) floatingFrom(mark.points, anchors) else mark.points.mapNotNull { anchors.resolve(it.anchor) }
-                    if (points == null || points.size < 2) null else mark.copy(points = points, versions = emptyMap())
+                shapes.lines.flatMap { mark ->
+                    if (mark.kind == MarkKind.FLOATING) {
+                        val points = floatingFrom(mark.points, anchors)
+                        return@flatMap if (points == null || points.size < 2) emptyList() else listOf(mark.copy(points = points, versions = emptyMap()))
+                    }
+                    val runs = ArrayList<List<ResolvedPoint>>()
+                    var run = ArrayList<ResolvedPoint>()
+                    for (place in mark.points) {
+                        val point = if (onOwnRuns) anchors.resolveOnOwn(place.anchor) else anchors.resolve(place.anchor)
+                        if (point != null) {
+                            run += point
+                        } else if (onOwnRuns) {
+                            if (run.size >= 2) runs += run
+                            run = ArrayList()
+                        }
+                    }
+                    if (run.size >= 2) runs += run
+                    runs.map { mark.copy(points = it, versions = emptyMap()) }
                 }
             }
         }

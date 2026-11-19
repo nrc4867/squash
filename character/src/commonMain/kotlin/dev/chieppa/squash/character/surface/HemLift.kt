@@ -9,11 +9,14 @@ internal const val HEM_LIFT_CELLS = 0.15f
 /** How far past the skin a garment's hem keeps showing, in the body's cells, over which its least lift fades out. */
 private const val LIFT_FADE_CELLS = 1f
 
-/** How wide a hem's roll is, in the roll's own height, beyond the garment's cell. */
+/** How wide a hem's roll is, in the roll's own height, beyond [ROLL_CELLS] of the garment's cell. */
 private const val ROLL_WIDTH_HEIGHTS = 2.5f
 
+/** How many of the garment's cells a hem's roll spans at least beyond its height's share, so its profile is sampled by several vertices. */
+private const val ROLL_CELLS = 2f
+
 /** How much of a hem's roll's width stands at its full height before it rounds down to the cloth. */
-private const val ROLL_FLAT_SHARE = 0.35f
+private const val ROLL_FLAT_SHARE = 0.2f
 
 /**
  * How far each vertex of a garment's grown [surface] is lifted off along its normal near the garment's hems, from its [coverage], the
@@ -27,7 +30,7 @@ internal fun hemLifts(surface: CharacterSurface, cover: WornCover, coverage: Flo
     val roll = cover.garment.hemRoll
     val eases = Array(surface.field.runs.size) { r -> surface.field.runs[r].takeIf { it.first }?.let { cover.branchOf(it.partId)?.ease } }
     if (roll <= 0f && eases.all { it == null || it >= least }) return null
-    val rollWidth = roll * ROLL_WIDTH_HEIGHTS + mesh.cell
+    val rollWidth = roll * ROLL_WIDTH_HEIGHTS + mesh.cell * ROLL_CELLS
     val lifts = FloatArray(mesh.vertexCount)
     var any = false
     for (v in 0 until mesh.vertexCount) {
