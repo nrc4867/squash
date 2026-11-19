@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.dress
+package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.shape.SurfaceMask
@@ -7,6 +7,9 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.PartId
+
+/** A new brush's size, in body units: how far from where a stroke passes a cell's middle may lie and be painted. */
+const val DEFAULT_BRUSH_SIZE = 0.12f
 
 /** How many rounds of smoothing Clean edges at its fullest gives a stroke's edge. */
 const val MOST_CLEAN_ROUNDS = 4

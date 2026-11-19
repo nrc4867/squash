@@ -17,7 +17,7 @@ import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.TestWork
-import dev.chieppa.squash.screens.dress.bodyChart
+import dev.chieppa.squash.character.dress.bodyChart
 import dev.chieppa.squash.screens.smoke.PROBE_GROUND
 import dev.chieppa.squash.screens.smoke.PROBE_LOOK
 import dev.chieppa.squash.screens.smoke.probeAzimuth

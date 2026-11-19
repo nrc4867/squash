@@ -15,6 +15,14 @@ enum class BorderClosing {
     PAST_LAST_RING,
 }
 
+/**
+ * A signed distance in body units at a place (u, v) of a patch: positive inside, negative outside, a stretch of u [uScale] and of v
+ * [vScale] long there. Implementations compare equal when they read the same everywhere, so a shape holding one is kept between builds.
+ */
+fun interface UvLevel {
+    fun at(u: Float, v: Float, uScale: Float, vScale: Float): Float
+}
+
 /** A shape in a patch's u and v space, which is what a color section is. */
 sealed interface ColorShape {
     /** Whether the shape's edges depend on how finely it is flattened. */
@@ -57,6 +65,14 @@ sealed interface ColorShape {
     /** A template's area: the rectangle from [uStart] to [uEnd] and [vStart] to [vEnd]. A v span of 1 goes all the way round. */
     data class Rectangle(val uStart: Float, val uEnd: Float, val vStart: Float, val vEnd: Float) : ColorShape {
         override val isCurved: Boolean get() = false
+    }
+
+    /**
+     * Where [level] reads above zero, read as a signed distance at each place of a surface rather than cut from a patch's grid: a
+     * shape a field gives, as a garment area's own share of its cloth. Cut from a patch's grid, it holds nothing.
+     */
+    data class Level(val level: UvLevel) : ColorShape {
+        override val isCurved: Boolean get() = true
     }
 
     /** All of the patch. */

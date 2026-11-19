@@ -9,8 +9,8 @@ import dev.chieppa.squash.character.shape.cellMiddle
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.screens.dress.bodyChart
-import dev.chieppa.squash.screens.dress.placeOnBody
+import dev.chieppa.squash.character.dress.bodyChart
+import dev.chieppa.squash.character.dress.placeOnBody
 import dev.chieppa.squash.screens.dress.roundStroke
 import dev.chieppa.squash.screens.fennec.BACK_LEG_L
 import dev.chieppa.squash.screens.fennec.BACK_PAW_L

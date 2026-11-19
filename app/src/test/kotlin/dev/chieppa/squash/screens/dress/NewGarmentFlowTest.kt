@@ -1,5 +1,7 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.shownTucks
+import dev.chieppa.squash.character.dress.tuckCommand
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi

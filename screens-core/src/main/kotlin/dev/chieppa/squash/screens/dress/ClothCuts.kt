@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.PaintedGarment
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.painted
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.shape.SurfaceMask
 import dev.chieppa.squash.character.surface.holds

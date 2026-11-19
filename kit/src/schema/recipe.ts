@@ -178,6 +178,20 @@ export interface Recipe {
   [note: `x-${string}`]: unknown;
 }
 
+/** One named area of a garment's cloth, as a row of Dress's areas: the cells its strokes paint, in its own colour. */
+export interface RecipeArea {
+  /** Unique within the garment, as area-1. */
+  id: string;
+  /** Its name in Dress; blank when left out. */
+  name?: string;
+  /** Its palette slot, as a red collar on a blue tee; the garment's color when left out. */
+  color?: string | null;
+  /** The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area. */
+  paint?: RecipeStroke[];
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 export type RecipeChange = Hide | Redraw | Swap | Through;
 
 /** The garment over one part: the cells of the part's chart its box holds. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening. */
@@ -267,7 +281,7 @@ export interface RecipeFurPatch {
   [note: `x-${string}`]: unknown;
 }
 
-/** A garment: a shell over the parts it covers, standing off them by its fit, and what it does to the parts under it. */
+/** A garment: cloth painted on the body as named areas of cells, as Dress paints it, or given as covers (a box of cells each), standing off the body by its fit. With areas, the parts it covers, the parts that come out through it, the small parts tucked inside it and the inked seams are all read from the painted cells, as Dress writes them. */
 export interface RecipeGarment {
   id: string;
   name: string;
@@ -283,11 +297,17 @@ export interface RecipeGarment {
   partFits?: { [key: string]: number };
   /** Whether its edges are inked. */
   inkHem?: boolean;
-  /** Covered parts whose join with the next covered part is inked. */
+  /** Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. */
   joins?: string[];
-  /** The parts it covers, one cover each; a pair's cover names its left side and covers both. */
+  /** The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. */
+  areas?: RecipeArea[];
+  /** Boxes of cells, one a part: the simple form of cloth, painted into the first area. With areas, a cover on a part they paint only carries its outlines and ease, its range written from the cells. A pair's cover names its left side and covers both. */
   covers?: RecipeCover[];
-  /** What it does to body parts under it, by part (a pair by its left side). */
+  /** Holes round a part's root: the part and every part beyond it come out through the cloth bare, or ringed by a cuff band. */
+  holes?: RecipeHole[];
+  /** Whether each small part inside the cloth (an ear, tail, horn, spike or fin it holds whole; the toes or claws at a foot's end it reaches) is tucked under smooth cloth or shaped by it. Left out: toes, claws, tails, horns and spikes tucked, the rest shaped. */
+  tucks?: RecipeTuck[];
+  /** What it does to body parts under it, by part (a pair by its left side). With areas, a part the cloth says something of takes what the cells say (through where it comes out, hide where it is tucked); a change here holds on every other part. */
   changes?: { [key: string]: RecipeChange };
   /** Loose ends it hangs, as a scarf's tails. */
   looseEnds?: LooseEnd[];
@@ -305,6 +325,16 @@ export interface RecipeGeneric {
   rings?: number | null;
   /** Control points round each ring, up to 32. */
   segments?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A hole round a part's root, as Dress's Hole: the part and every part beyond it come out bare, the cloth's cells on them left out. */
+export interface RecipeHole {
+  /** The part that comes out (a pair by its left side, both sides). */
+  part: string;
+  /** Whether a cuff band of the garment's cloth rings the part's root, as a sleeve's or a turtleneck's. */
+  cuff?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -543,6 +573,44 @@ export interface RecipeSocket {
   size?: number | null;
   /** The size a part placed on a row's last socket starts at, as a share of the first's. */
   falloff?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v. */
+export interface RecipeStroke {
+  /** The part painted on (a pair by either side: both sides take it, mirrored). */
+  on: string;
+  /** brush, line, band, box, ellipse or lasso. */
+  shape?: "brush" | "line" | "band" | "box" | "ellipse" | "lasso";
+  /** Takes the cells from every area instead of painting them, as Alt in Dress. */
+  unpaint?: boolean;
+  /** band, box, ellipse: [from, to] along the part, 0 at its root to 1 at its far end. */
+  u?: number[] | null;
+  /** box, ellipse: [from, to] round the part; from may lie below 0 to cross v 0. The whole way round when left out. */
+  v?: number[] | null;
+  /** brush, line, lasso: the places as [u, v] on the part. */
+  points?: number[][] | null;
+  /** brush, line, lasso on a head: the places as [x, y] on its face seen from straight ahead, as a region's face. */
+  face?: number[][] | null;
+  /** brush, line: how far from the path a cell's middle may lie and be painted, in body units, as Dress's Size. */
+  size?: number;
+  /** On a part in the body's middle (a torso, a head): also painted mirrored across the middle, at -v, as Dress's Mirror. */
+  mirrored?: boolean;
+  /** Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are. */
+  clean?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A Tuck choice: a small part inside the cloth tucked under smooth cloth (hidden) or shaped (the cloth follows it). */
+export interface RecipeTuck {
+  /** The part (a pair by its left side): the small part itself, or the foot or hand whose toes or claws it means. */
+  part: string;
+  /** toes, claws, fingers, ears, tail, horns, spikes or fins. */
+  kind: "toes" | "claws" | "fingers" | "ears" | "tail" | "horns" | "spikes" | "fins";
+  /** Tucked under smooth cloth (true) or shaped (false). */
+  tucked: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

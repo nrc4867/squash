@@ -1,5 +1,9 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.paintCommand
+import dev.chieppa.squash.character.dress.PaintStyle
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.middlePartsOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue

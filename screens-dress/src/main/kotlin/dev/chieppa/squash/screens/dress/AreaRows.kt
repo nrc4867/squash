@@ -1,5 +1,10 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.leaderOf
+import dev.chieppa.squash.character.dress.newAreaCommand
+import dev.chieppa.squash.character.dress.removeAreaCommand
+import dev.chieppa.squash.character.dress.paintedOf
+import dev.chieppa.squash.character.dress.shapeCommands
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.leaderOf
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable

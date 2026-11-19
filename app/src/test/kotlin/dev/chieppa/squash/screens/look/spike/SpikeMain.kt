@@ -10,11 +10,11 @@ import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.dress.NewGarmentNames
-import dev.chieppa.squash.screens.dress.PaintStyle
-import dev.chieppa.squash.screens.dress.newAreaCommand
+import dev.chieppa.squash.character.dress.PaintStyle
+import dev.chieppa.squash.character.dress.newAreaCommand
 import dev.chieppa.squash.screens.dress.newGarmentCommand
 import dev.chieppa.squash.screens.dress.newGarmentIn
-import dev.chieppa.squash.screens.dress.paintCommand
+import dev.chieppa.squash.character.dress.paintCommand
 import dev.chieppa.squash.screens.fennec.fennecDocument
 import dev.chieppa.squash.screens.look.exampleDocument
 import dev.chieppa.squash.screens.smoke.CloseUps

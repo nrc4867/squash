@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.build.LandedShape
+import dev.chieppa.squash.character.build.RANK_AREA
 import dev.chieppa.squash.character.build.RANK_REGION
 import dev.chieppa.squash.character.build.RANK_STROKE
 import dev.chieppa.squash.character.build.ShapeSource
@@ -15,19 +16,31 @@ import dev.chieppa.squash.geom.SurfaceUv
 private const val KEPT_PAINTS = 16
 
 /**
- * A garment's own color shapes, part by part: each branch's regions and brush strokes, anchored in the (u, v) of its part's first run,
- * as the garment's vertices carry them; a branch read on the other side of a pair takes the same shapes there. Its base slot is the
- * garment's color, painted under these, so none is held here.
+ * A garment's own color shapes, part by part: each painted area in a palette slot of its own over what it holds of the part's cloth
+ * ([areaShapes]), then each branch's regions and brush strokes, anchored in the (u, v) of its part's first run, as the garment's
+ * vertices carry them; a branch read on the other side of a pair takes the same shapes there. Its base slot is the garment's color,
+ * painted under these, so none is held here.
  */
 fun garmentShapes(garment: SurfaceGarment): Map<PartId, HeldShapes> {
     val out = LinkedHashMap<PartId, HeldShapes>()
     for (run in garment.surface.field.runs) {
         if (!run.first || run.partId in out) continue
         val branch = garment.cover.cover.branches[run.partId] ?: continue
-        val shapes = branchShapes(branch, run.partId, run.patch.name, run.part.surface.axisLength)
+        val shapes = areaShapes(garment.cover, run.partId, run.patch.name) + branchShapes(branch, run.partId, run.patch.name, run.part.surface.axisLength)
         if (shapes.isNotEmpty()) out[run.partId] = HeldShapes(null, shapes, emptyMap(), 0)
     }
     return out
+}
+
+/** Each area of [worn]'s garment in a slot apart from the garment's, over what it holds of [part]'s cloth on its run [patch]. */
+private fun areaShapes(worn: WornCover, part: PartId, patch: String): List<LandedShape> {
+    val cloth = worn.clothOf(part) ?: return emptyList()
+    val garment = worn.garment
+    return garment.areas.withIndex().mapNotNull { (i, area) ->
+        val slot = area.color?.takeIf { it != garment.color } ?: return@mapNotNull null
+        if (i >= cloth.areaCount || !cloth.paints(i)) return@mapNotNull null
+        LandedShape(RANK_AREA, slot, part, patch, ColorShape.Level(AreaShare(cloth, i)))
+    }
 }
 
 /** [branch]'s regions and strokes as shapes on [part]'s run [patch], read wherever their anchors name the branch's part. */

@@ -65,6 +65,13 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 
 | question | answer |
 | --- | --- |
+| what cloth is | cells of each part's chart, 64 rows along the part (u) by 32 columns round it (v), a cell 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the painted cells' edges, and paint under two cells wide drops out |
+| areas or covers | `areas` paint the cloth as Dress does, stroke by stroke; `covers` are the simple form, a box of cells each, painted into the first area; a garment may have both |
+| what areas write | with `areas`, `holes` or `tucks`, the parts covered and how far, the parts that come out through the cloth (a part on a socket inside the painted region and not painted itself), the tucked parts and the inked seams are read from the cells, as Dress writes them |
+| a second colour | a later area with its own `color`: a collar, cuffs or a waistband; where two areas meet the cloth stays one piece and the seam is inked with the hems |
+| a curved hem or a side split | paint the band, then a stroke with `unpaint` (an ellipse or lasso) over the hem where it should open or curve |
+| which way v faces | it depends on how the part rests; `tools/recipe.sh probe <recipe> part=<id>` prints where v 0, 0.25, 0.5 and 0.75 face |
+| a sleeve or trouser leg | paint the limb from u 0; its root rows meet the torso's cells, so the cloth runs on from the shoulder or hip in one piece |
 | what a cover covers | the cells of its part's 64 by 32 chart whose middles lie in its box, at least two rows and two columns; the hem follows those cells' edge, so a box edge moves by up to half a cell |
 | a cover past its part's end | `from` below 0 or `to` past 1 runs the cloth on past that end, where the cells reach it |
 | how far a cover stands off its part | the garment's `partFits` for that part, else its `fit`, else the cover's `ease` |
@@ -85,10 +92,33 @@ Fields as the schema describes them:
 | garment `fit` | How far it stands off the body, in body units; each cover's own ease when left out. |
 | garment `partFits` | A fit for one covered part (a pair by its left side), over the garment's. |
 | garment `inkHem` | Whether its edges are inked. |
-| garment `joins` | Covered parts whose join with the next covered part is inked. |
-| garment `covers` | The parts it covers, one cover each; a pair's cover names its left side and covers both. |
-| garment `changes` | What it does to body parts under it, by part (a pair by its left side). |
+| garment `joins` | Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. |
+| garment `areas` | The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. |
+| garment `covers` | Boxes of cells, one a part: the simple form of cloth, painted into the first area. With areas, a cover on a part they paint only carries its outlines and ease, its range written from the cells. A pair's cover names its left side and covers both. |
+| garment `holes` | Holes round a part's root: the part and every part beyond it come out through the cloth bare, or ringed by a cuff band. |
+| garment `tucks` | Whether each small part inside the cloth (an ear, tail, horn, spike or fin it holds whole; the toes or claws at a foot's end it reaches) is tucked under smooth cloth or shaped by it. Left out: toes, claws, tails, horns and spikes tucked, the rest shaped. |
+| garment `changes` | What it does to body parts under it, by part (a pair by its left side). With areas, a part the cloth says something of takes what the cells say (through where it comes out, hide where it is tucked); a change here holds on every other part. |
 | garment `looseEnds` | Loose ends it hangs, as a scarf's tails. |
+| area `id` | Unique within the garment, as area-1. |
+| area `name` | Its name in Dress; blank when left out. |
+| area `color` | Its palette slot, as a red collar on a blue tee; the garment's color when left out. |
+| area `paint` | The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area. |
+| stroke | One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v. |
+| stroke `on` | The part painted on (a pair by either side: both sides take it, mirrored). |
+| stroke `shape` | brush, line, band, box, ellipse or lasso. |
+| stroke `unpaint` | Takes the cells from every area instead of painting them, as Alt in Dress. |
+| stroke `u` | band, box, ellipse: [from, to] along the part, 0 at its root to 1 at its far end. |
+| stroke `v` | box, ellipse: [from, to] round the part; from may lie below 0 to cross v 0. The whole way round when left out. |
+| stroke `points` | brush, line, lasso: the places as [u, v] on the part. |
+| stroke `face` | brush, line, lasso on a head: the places as [x, y] on its face seen from straight ahead, as a region's face. |
+| stroke `size` | brush, line: how far from the path a cell's middle may lie and be painted, in body units, as Dress's Size. |
+| stroke `mirrored` | On a part in the body's middle (a torso, a head): also painted mirrored across the middle, at -v, as Dress's Mirror. |
+| stroke `clean` | Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are. |
+| hole `part` | The part that comes out (a pair by its left side, both sides). |
+| hole `cuff` | Whether a cuff band of the garment's cloth rings the part's root, as a sleeve's or a turtleneck's. |
+| tuck `part` | The part (a pair by its left side): the small part itself, or the foot or hand whose toes or claws it means. |
+| tuck `kind` | toes, claws, fingers, ears, tail, horns, spikes or fins. |
+| tuck `tucked` | Tucked under smooth cloth (true) or shaped (false). |
 | cover `from` | Where along the part it starts. |
 | cover `to` | Where along the part it ends. |
 | cover `fromV` | Where round the part it starts; below 0 to cross v 0. |

@@ -18,7 +18,12 @@ import dev.chieppa.squash.recipe.model.RecipeGarment
 internal fun BuildContext.garments() {
     val wardrobe = recipe.wardrobe ?: return
     wardrobe.slots.forEachIndexed { i, slot -> send("$.wardrobe.slots[$i]", AddGarmentSlot(slot)) }
-    wardrobe.garments.forEachIndexed { i, garment -> send("$.wardrobe.garments[$i]", AddGarment(garment("$.wardrobe.garments[$i]", garment))) }
+    val bare = BareBody(this)
+    wardrobe.garments.forEachIndexed { i, garment ->
+        val path = "$.wardrobe.garments[$i]"
+        send(path, AddGarment(garment(path, garment, bare)))
+        if (paints(garment)) writeClothShape(path, GarmentId(garment.id), bare)
+    }
 }
 
 /** The outfits and the one shown, once every garment's own parts are placed. */
@@ -35,7 +40,7 @@ internal fun BuildContext.outfits() {
     wardrobe.shown?.let { send("$.wardrobe.shown", ShowOutfit(OutfitId(it))) }
 }
 
-private fun BuildContext.garment(path: String, garment: RecipeGarment): Garment {
+private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: BareBody): Garment {
     val slot = garment.slot?.let { id ->
         if (recipe.wardrobe?.slots?.none { it.id.value == id } != false) fail("$path.slot", "no wardrobe slot \"$id\"")
         GarmentSlotId(id)
@@ -56,6 +61,7 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment): Garment 
     val joins = garment.joins.mapIndexed { i, name -> partOf("$path.joins[$i]", name) }.toSet()
     val color = garment.color?.let { slot("$path.color", it) }
     val partFits = garment.partFits.entries.associate { (name, fit) -> partOf("$path.partFits.$name", name) to fit }
+    val (areas, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
     return guard(path) {
         Garment(
             id = GarmentId(garment.id),
@@ -70,6 +76,9 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment): Garment 
             looseEnds = garment.looseEnds,
             fit = garment.fit,
             partFits = partFits,
+            tucks = tucks,
+            areas = areas,
+            holes = holes,
         )
     }
 }

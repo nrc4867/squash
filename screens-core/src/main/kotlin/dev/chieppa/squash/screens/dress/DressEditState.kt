@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.dress
 
 import dev.chieppa.squash.character.build.GarmentLook
+import dev.chieppa.squash.character.dress.DEFAULT_BRUSH_SIZE
 import dev.chieppa.squash.character.build.GarmentView
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentId
@@ -9,8 +10,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.screens.surface.PaintShape
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** A new brush's size, in body units, and how much Clean edges smooths at first. */
-const val DEFAULT_BRUSH_SIZE = 0.12f
+/** How much Clean edges smooths at first. */
 const val DEFAULT_CLEAN = 0.6f
 
 /**

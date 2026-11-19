@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.dress
+package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.shape.BodyChart
@@ -19,6 +19,7 @@ import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentHole
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SlotName
 
 /** How far along a part, in u, the cuff band round a hole at its root reaches. */
 const val CUFF_BAND_U = 0.12f
@@ -26,12 +27,15 @@ const val CUFF_BAND_U = 0.12f
 /** What new area ids start with, before their number. */
 const val NEW_AREA = "area-"
 
-/** One painted area of a garment as a [mask] on a body's chart, by its [id] and [name], blank while it has no name of its own. */
-class PaintedArea(val id: GarmentAreaId, val name: String, val mask: SurfaceMask) {
+/**
+ * One painted area of a garment as a [mask] on a body's chart, by its [id] and [name], blank while it has no name of its own, in its own
+ * palette slot [color] or the garment's.
+ */
+class PaintedArea(val id: GarmentAreaId, val name: String, val mask: SurfaceMask, val color: SlotName? = null) {
     /** This area as the garment saves it. */
-    fun saved(): GarmentArea = GarmentArea(id, name, mask.runs())
+    fun saved(): GarmentArea = GarmentArea(id, name, mask.runs(), color)
 
-    fun with(mask: SurfaceMask): PaintedArea = PaintedArea(id, name, mask)
+    fun with(mask: SurfaceMask): PaintedArea = PaintedArea(id, name, mask, color)
 }
 
 /** One edge of a garment's cloth: an [edge] of the area at [area] in the garment's areas. */
@@ -140,7 +144,7 @@ private object PaintMemo {
         val last = held
         if (last != null && now != null && now.first == garment && now.second === body && now.third == character.parts) return last
         val chart = bodyChart(character, body)
-        val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells)) }
+        val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells), it.color) }
         return PaintedGarment(chart, areas, garment.holes).also {
             key = Triple(garment, body, character.parts)
             held = it

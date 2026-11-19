@@ -45,6 +45,7 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
         is ColorShape.Rectangle -> rectangle(shape, u, v, uScale, vScale)
         is ColorShape.Border -> border(u, v, uScale, vScale)
         is ColorShape.Brush -> shape.radius - nearest(u, v, uScale, vScale, closed = false)
+        is ColorShape.Level -> shape.level.at(u, v, uScale, vScale)
     }
 
     private fun rectangle(r: ColorShape.Rectangle, u: Float, v: Float, uScale: Float, vScale: Float): Float {

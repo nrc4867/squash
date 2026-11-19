@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.dress
+package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.CHART_COLUMNS

@@ -15,7 +15,6 @@ Where an author writing a recipe still has to read code, or guess and render, to
 - **Region layering.** A template patch region (`patch: "muzzle"`) and a `face` region on the same head show two shades of one slot with a seam; how regions on different patches meet is not said.
 - **Fur sizes.** `fur.spacing`, `fur.length`, patch rows and columns have no guidance for a small character.
 - **A leg without a paw.** Whether a quadruped's leg should always carry a `paw` is not said; without one it ends in a flat stump.
-- **Painted garments.** Dress paints a garment's cloth as named areas of cells on each part's chart, with holes round a part's root and seams where areas touch, and writes its covers, changes and inked joins from them. A recipe holds covers and changes only, whose boxes are painted as cells as it builds, so a garment painted past its covers' boxes exports as its written covers and loses its areas and holes. Recipe `areas` (a brush, band or shape stroke on a part, as Paint's options take them) and `holes` on a garment would carry it.
 - **`example-limits.md`** is long and mostly about bipeds; an index by plan would help a quadruped author skip it.
 
 ## Log

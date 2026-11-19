@@ -21,9 +21,6 @@ data class PartUnder(val part: PartInstance, val covered: Boolean, val through: 
 /** Where two or more worn garments cover or change one [part]: the [outer] one wins over the [under] ones. */
 data class LayerClash(val part: PartInstance, val outer: GarmentId, val under: List<GarmentId>)
 
-/** [part], or the leader of its pair. */
-fun Character.leaderOf(part: PartInstance): PartInstance = if (part.isLeader) part else twinOf(part) ?: part
-
 /** Whether [garment] covers [part] or the other side of its pair with a branch. */
 fun Character.covers(garment: Garment, part: PartInstance): GarmentBranch? =
     garment.branch(part.id) ?: twinOf(part)?.let { garment.branch(it.id) }

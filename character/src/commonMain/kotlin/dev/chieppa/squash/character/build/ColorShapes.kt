@@ -34,7 +34,7 @@ sealed interface ShapeSource {
 
 /** The order color layers in; a later rank overdraws an earlier one. See HLD: look. */
 private const val RANK_PATCH_SLOT = 0
-private const val RANK_AREA = 1
+internal const val RANK_AREA = 1
 internal const val RANK_REGION = 2
 internal const val RANK_STROKE = 3
 

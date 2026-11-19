@@ -12,7 +12,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.dress.holeCount
-import dev.chieppa.squash.screens.dress.paintedOf
+import dev.chieppa.squash.character.dress.paintedOf
 import dev.chieppa.squash.screens.dress.partsUnder
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.dress_no_slot

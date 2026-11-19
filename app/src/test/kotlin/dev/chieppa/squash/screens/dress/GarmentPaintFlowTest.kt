@@ -1,5 +1,14 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.growCommand
+import dev.chieppa.squash.character.dress.CUFF_BAND_U
+import dev.chieppa.squash.character.dress.PaintedGarment
+import dev.chieppa.squash.character.dress.bodyChart
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.paintedOf
+import dev.chieppa.squash.character.dress.placeOnBody
+import dev.chieppa.squash.character.dress.shownTucks
+import dev.chieppa.squash.character.dress.tuckCommand
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag

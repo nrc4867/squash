@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/recipe.schema.json",
+  "format": 1,
+  "id": "painted-tee",
+  "name": "Painted tee",
+  "x-features": "a stout invented biped with a short tail, in a one-piece crew-neck tee with red ribbing and shorts with a waistband and side splits",
+  "palette": [
+    {"slot": "skin", "color": "#e8b48a"},
+    {"slot": "shirt", "color": "#4a7fc1"},
+    {"slot": "rib", "color": "#c8323a"},
+    {"slot": "khaki", "color": "#c9b27a"},
+    {"slot": "band", "color": "#5b4330"},
+    {"slot": "ink", "color": "#2a1e1a"},
+    {"slot": "eye-white", "color": "#fbf8f2"},
+    {"slot": "iris", "color": "#3c2a1e"}
+  ],
+  "parts": [
+    {"id": "torso", "template": "tube", "role": "body", "rest": "up", "color": "skin",
+     "generic": {"rings": 96, "segments": 32},
+     "sockets": [
+       {"n": 1, "u": 1.0, "v": 0.0},
+       {"n": 2, "u": 0.86, "v": 0.75, "mirrored": true},
+       {"n": 3, "u": 0.06, "v": 0.75, "mirrored": true},
+       {"n": 4, "u": 0.16, "v": 0.5, "sink": 0.6}
+     ],
+     "outlines": {
+       "side": {"closed": true, "through": [[0.0, 0.02], [0.06, 0.13], [0.2, 0.155], [0.36, 0.135], [0.5, 0.14], [0.585, 0.105], [0.62, 0.0], [0.585, -0.1], [0.46, -0.115], [0.3, -0.12], [0.15, -0.15], [0.05, -0.12]]},
+       "top": {"closed": true, "through": [[0.0, 0.0], [0.05, 0.17], [0.2, 0.2], [0.36, 0.175], [0.5, 0.19], [0.575, 0.165], [0.62, 0.0], [0.575, -0.165], [0.5, -0.19], [0.36, -0.175], [0.2, -0.2], [0.05, -0.17]]}
+     }},
+    {"id": "neck", "template": "tube", "on": "torso", "socket": "socket.1", "role": "neck", "rest": "up", "inkJoin": false, "color": "skin",
+     "sockets": [{"n": 1, "u": 1.0, "v": 0.0, "sink": 0.0}],
+     "outlines": {
+       "side": {"through": [[0.0, 0.085], [0.05, 0.07], [0.1, 0.066], [0.12, 0.0], [0.1, -0.066], [0.05, -0.07], [0.0, -0.085]]},
+       "top": {"through": [[0.0, 0.09], [0.05, 0.074], [0.1, 0.07], [0.12, 0.0], [0.1, -0.07], [0.05, -0.074], [0.0, -0.09]]}
+     }},
+    {"id": "head", "template": "head-round", "on": "neck", "socket": "socket.1", "role": "head", "size": 0.8, "color": "skin"},
+    {"id": "arms", "template": "tube", "on": "torso", "socket": "socket.2", "pair": {"left": "arm-l", "right": "arm-r"}, "role": "arm", "rest": "down", "outward": 45, "inkJoin": false, "color": "skin",
+     "generic": {"rings": 64, "segments": 24},
+     "sockets": [{"n": 1, "u": 1.0, "v": 0.5}],
+     "joints": [{"n": 1, "u": 0.05, "low": -170, "high": 60}, {"n": 2, "u": 0.5, "low": -145, "high": 0}],
+     "outlines": {
+       "side": {"through": [[0.0, 0.06], [0.15, 0.055], [0.3, 0.05], [0.45, 0.044], [0.55, 0.034], [0.58, 0.0], [0.55, -0.034], [0.45, -0.045], [0.3, -0.05], [0.15, -0.056], [0.0, -0.062]]},
+       "top": {"through": [[0.0, 0.058], [0.15, 0.054], [0.3, 0.049], [0.45, 0.044], [0.55, 0.036], [0.58, 0.0], [0.55, -0.036], [0.45, -0.044], [0.3, -0.049], [0.15, -0.054], [0.0, -0.058]]}
+     }},
+    {"id": "hands", "template": "hand", "on": "arms", "socket": "socket.1", "pair": {"left": "hand-l", "right": "hand-r"}, "role": "hand", "outward": 45, "inkJoin": false, "color": "skin"},
+    {"id": "legs", "template": "tube", "on": "torso", "socket": "socket.3", "pair": {"left": "leg-l", "right": "leg-r"}, "role": "leg", "rest": "down", "outward": 2, "inkJoin": false, "color": "skin",
+     "generic": {"rings": 64, "segments": 24},
+     "sockets": [{"n": 1, "u": 1.0, "v": 0.5}],
+     "joints": [{"n": 1, "u": 0.5, "low": 0, "high": 140}],
+     "outlines": {
+       "side": {"through": [[0.0, 0.09], [0.15, 0.095], [0.32, 0.08], [0.5, 0.062], [0.68, 0.055], [0.8, 0.044], [0.84, 0.0], [0.8, -0.046], [0.68, -0.058], [0.5, -0.066], [0.32, -0.088], [0.15, -0.1], [0.0, -0.095]]},
+       "top": {"through": [[0.0, 0.095], [0.15, 0.1], [0.32, 0.085], [0.5, 0.064], [0.68, 0.058], [0.8, 0.046], [0.84, 0.0], [0.8, -0.046], [0.68, -0.058], [0.5, -0.064], [0.32, -0.085], [0.15, -0.1], [0.0, -0.095]]}
+     }},
+    {"id": "feet", "template": "foot", "on": "legs", "socket": "socket.1", "pair": {"left": "foot-l", "right": "foot-r"}, "role": "foot", "size": 1.1, "inkJoin": false, "color": "skin"},
+    {"id": "tail", "template": "tail", "on": "torso", "socket": "socket.4", "role": "tail", "size": 0.5, "color": "skin"}
+  ],
+  "eyes": [{"id": "eyes", "on": "head", "face": [0.07, 0.24], "look": {"white": "eye-white", "iris": "iris", "pupil": "ink", "highlight": "eye-white", "ink": "ink"}}],
+  "wardrobe": {
+    "slots": [{"id": "top", "name": "Top"}, {"id": "bottom", "name": "Bottom"}],
+    "garments": [
+      {"id": "tee", "name": "Crew tee", "slot": "top", "layer": 2, "color": "shirt", "fit": 0.015,
+       "areas": [
+         {"id": "body", "name": "Body", "paint": [
+           {"on": "torso", "shape": "band", "u": [0.45, 1.0]},
+           {"on": "arm-l", "shape": "band", "u": [0.0, 0.34]}
+         ]},
+         {"id": "rib", "name": "Ribbing", "color": "rib", "paint": [
+           {"on": "torso", "shape": "band", "u": [0.94, 1.0]},
+           {"on": "neck", "shape": "band", "u": [0.0, 0.3]},
+           {"on": "arm-l", "shape": "band", "u": [0.28, 0.34]}
+         ]}
+       ]},
+      {"id": "shorts", "name": "Shorts", "slot": "bottom", "layer": 1, "color": "khaki", "fit": 0.02,
+       "areas": [
+         {"id": "body", "name": "Body", "paint": [
+           {"on": "torso", "shape": "band", "u": [0.0, 0.48]},
+           {"on": "leg-l", "shape": "band", "u": [0.0, 0.3]},
+           {"on": "leg-l", "shape": "ellipse", "unpaint": true, "u": [0.2, 0.4], "v": [0.18, 0.32]}
+         ]},
+         {"id": "waistband", "name": "Waistband", "color": "band", "paint": [
+           {"on": "torso", "shape": "band", "u": [0.41, 0.48]}
+         ]}
+       ],
+       "holes": [{"part": "tail"}]}
+    ],
+    "outfits": [{"id": "casual", "name": "Casual", "picks": {"top": "tee", "bottom": "shorts"}}],
+    "shown": "casual"
+  },
+  "displayPose": [
+    {"part": "arm-l", "joint": "base", "lean": -30},
+    {"part": "arm-r", "joint": "base", "lean": -30}
+  ]
+}

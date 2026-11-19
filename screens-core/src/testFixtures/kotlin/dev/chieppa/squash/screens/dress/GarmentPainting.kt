@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.bodyChart
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.placeOnBody
 import androidx.compose.ui.geometry.Offset
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.document.CHART_COLUMNS

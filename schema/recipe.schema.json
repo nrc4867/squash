@@ -595,6 +595,45 @@
       },
       "additionalProperties": false
     },
+    "RecipeArea": {
+      "description": "One named area of a garment's cloth, as a row of Dress's areas: the cells its strokes paint, in its own colour.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Unique within the garment, as area-1.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name in Dress; blank when left out.",
+          "type": "string"
+        },
+        "color": {
+          "description": "Its palette slot, as a red collar on a blue tee; the garment's color when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "paint": {
+          "description": "The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeStroke"
+          }
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "RecipeChange": {
       "oneOf": [
         {
@@ -866,7 +905,7 @@
       "additionalProperties": false
     },
     "RecipeGarment": {
-      "description": "A garment: a shell over the parts it covers, standing off them by its fit, and what it does to the parts under it.",
+      "description": "A garment: cloth painted on the body as named areas of cells, as Dress paints it, or given as covers (a box of cells each), standing off the body by its fit. With areas, the parts it covers, the parts that come out through it, the small parts tucked inside it and the inked seams are all read from the painted cells, as Dress writes them.",
       "type": "object",
       "properties": {
         "id": {
@@ -927,21 +966,42 @@
           "type": "boolean"
         },
         "joins": {
-          "description": "Covered parts whose join with the next covered part is inked.",
+          "description": "Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
+        "areas": {
+          "description": "The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeArea"
+          }
+        },
         "covers": {
-          "description": "The parts it covers, one cover each; a pair's cover names its left side and covers both.",
+          "description": "Boxes of cells, one a part: the simple form of cloth, painted into the first area. With areas, a cover on a part they paint only carries its outlines and ease, its range written from the cells. A pair's cover names its left side and covers both.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/RecipeCover"
           }
         },
+        "holes": {
+          "description": "Holes round a part's root: the part and every part beyond it come out through the cloth bare, or ringed by a cuff band.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeHole"
+          }
+        },
+        "tucks": {
+          "description": "Whether each small part inside the cloth (an ear, tail, horn, spike or fin it holds whole; the toes or claws at a foot's end it reaches) is tucked under smooth cloth or shaped by it. Left out: toes, claws, tails, horns and spikes tucked, the rest shaped.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeTuck"
+          }
+        },
         "changes": {
-          "description": "What it does to body parts under it, by part (a pair by its left side).",
+          "description": "What it does to body parts under it, by part (a pair by its left side). With areas, a part the cloth says something of takes what the cells say (through where it comes out, hide where it is tucked); a change here holds on every other part.",
           "type": "object",
           "propertyNames": {
             "type": "string"
@@ -1028,6 +1088,27 @@
           ]
         }
       },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeHole": {
+      "description": "A hole round a part's root, as Dress's Hole: the part and every part beyond it come out bare, the cloth's cells on them left out.",
+      "type": "object",
+      "properties": {
+        "part": {
+          "description": "The part that comes out (a pair by its left side, both sides).",
+          "type": "string"
+        },
+        "cuff": {
+          "description": "Whether a cuff band of the garment's cloth rings the part's root, as a sleeve's or a turtleneck's.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "part"
+      ],
       "patternProperties": {
         "^x-": {}
       },
@@ -1999,6 +2080,148 @@
         "n",
         "u",
         "v"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeStroke": {
+      "description": "One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v.",
+      "type": "object",
+      "properties": {
+        "on": {
+          "description": "The part painted on (a pair by either side: both sides take it, mirrored).",
+          "type": "string"
+        },
+        "shape": {
+          "description": "brush, line, band, box, ellipse or lasso.",
+          "enum": [
+            "brush",
+            "line",
+            "band",
+            "box",
+            "ellipse",
+            "lasso"
+          ]
+        },
+        "unpaint": {
+          "description": "Takes the cells from every area instead of painting them, as Alt in Dress.",
+          "type": "boolean"
+        },
+        "u": {
+          "description": "band, box, ellipse: [from, to] along the part, 0 at its root to 1 at its far end.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "v": {
+          "description": "box, ellipse: [from, to] round the part; from may lie below 0 to cross v 0. The whole way round when left out.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "points": {
+          "description": "brush, line, lasso: the places as [u, v] on the part.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "description": "brush, line, lasso on a head: the places as [x, y] on its face seen from straight ahead, as a region's face.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size": {
+          "description": "brush, line: how far from the path a cell's middle may lie and be painted, in body units, as Dress's Size.",
+          "type": "number"
+        },
+        "mirrored": {
+          "description": "On a part in the body's middle (a torso, a head): also painted mirrored across the middle, at -v, as Dress's Mirror.",
+          "type": "boolean"
+        },
+        "clean": {
+          "description": "Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "on"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeTuck": {
+      "description": "A Tuck choice: a small part inside the cloth tucked under smooth cloth (hidden) or shaped (the cloth follows it).",
+      "type": "object",
+      "properties": {
+        "part": {
+          "description": "The part (a pair by its left side): the small part itself, or the foot or hand whose toes or claws it means.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "toes, claws, fingers, ears, tail, horns, spikes or fins.",
+          "enum": [
+            "toes",
+            "claws",
+            "fingers",
+            "ears",
+            "tail",
+            "horns",
+            "spikes",
+            "fins"
+          ]
+        },
+        "tucked": {
+          "description": "Tucked under smooth cloth (true) or shaped (false).",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "part",
+        "kind",
+        "tucked"
       ],
       "patternProperties": {
         "^x-": {}

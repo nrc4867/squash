@@ -1,12 +1,14 @@
 package dev.chieppa.squash.recipe.model
 
 import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.character.dress.DEFAULT_BRUSH_SIZE
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.FIRST_LAYER
 import dev.chieppa.squash.document.GarmentSlot
 import dev.chieppa.squash.document.LooseEnd
 import dev.chieppa.squash.document.Outfit
+import dev.chieppa.squash.document.TuckKind
 import dev.chieppa.squash.document.View
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,9 +26,16 @@ data class RecipeWardrobe(
     val shown: String? = null,
 )
 
-/** One garment: a shell over the parts it [covers], standing off them by its [fit], and what it does to the parts under it. */
+/**
+ * One garment: cloth over the parts its [areas] paint or its [covers] box, standing off them by its [fit], with [holes] round the parts
+ * that come out through it, and what it does to the parts under it.
+ */
 @Serializable
-@Doc("A garment: a shell over the parts it covers, standing off them by its fit, and what it does to the parts under it.")
+@Doc(
+    "A garment: cloth painted on the body as named areas of cells, as Dress paints it, or given as covers (a box of cells each), standing " +
+        "off the body by its fit. With areas, the parts it covers, the parts that come out through it, the small parts tucked inside it and " +
+        "the inked seams are all read from the painted cells, as Dress writes them.",
+)
 data class RecipeGarment(
     val id: String,
     val name: String,
@@ -42,14 +51,116 @@ data class RecipeGarment(
     val partFits: Map<String, Float> = emptyMap(),
     @Doc("Whether its edges are inked.")
     val inkHem: Boolean = true,
-    @Doc("Covered parts whose join with the next covered part is inked.")
+    @Doc("Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.")
     val joins: List<String> = emptyList(),
-    @Doc("The parts it covers, one cover each; a pair's cover names its left side and covers both.")
+    @Doc(
+        "The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never " +
+            "share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover.",
+    )
+    val areas: List<RecipeArea> = emptyList(),
+    @Doc(
+        "Boxes of cells, one a part: the simple form of cloth, painted into the first area. With areas, a cover on a part they paint only " +
+            "carries its outlines and ease, its range written from the cells. A pair's cover names its left side and covers both.",
+    )
     val covers: List<RecipeCover> = emptyList(),
-    @Doc("What it does to body parts under it, by part (a pair by its left side).")
+    @Doc("Holes round a part's root: the part and every part beyond it come out through the cloth bare, or ringed by a cuff band.")
+    val holes: List<RecipeHole> = emptyList(),
+    @Doc(
+        "Whether each small part inside the cloth (an ear, tail, horn, spike or fin it holds whole; the toes or claws at a foot's end it " +
+            "reaches) is tucked under smooth cloth or shaped by it. Left out: toes, claws, tails, horns and spikes tucked, the rest shaped.",
+    )
+    val tucks: List<RecipeTuck> = emptyList(),
+    @Doc(
+        "What it does to body parts under it, by part (a pair by its left side). With areas, a part the cloth says something of takes what " +
+            "the cells say (through where it comes out, hide where it is tucked); a change here holds on every other part.",
+    )
     val changes: Map<String, RecipeChange> = emptyMap(),
     @Doc("Loose ends it hangs, as a scarf's tails.")
     val looseEnds: List<LooseEnd> = emptyList(),
+)
+
+/** One named area of a garment's cloth: the cells its [paint] strokes lay, in its own palette slot [color]. */
+@Serializable
+@Doc("One named area of a garment's cloth, as a row of Dress's areas: the cells its strokes paint, in its own colour.")
+data class RecipeArea(
+    @Doc("Unique within the garment, as area-1.")
+    val id: String,
+    @Doc("Its name in Dress; blank when left out.")
+    val name: String = "",
+    @Doc("Its palette slot, as a red collar on a blue tee; the garment's color when left out.")
+    val color: String? = null,
+    @Doc("The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.")
+    val paint: List<RecipeStroke> = emptyList(),
+)
+
+/** The shape a stroke lays on a part's chart. */
+@Serializable
+enum class RecipeStrokeShape {
+    @SerialName("brush") BRUSH,
+    @SerialName("line") LINE,
+    @SerialName("band") BAND,
+    @SerialName("box") BOX,
+    @SerialName("ellipse") ELLIPSE,
+    @SerialName("lasso") LASSO,
+}
+
+/**
+ * One Paint stroke on the part [on]'s chart of 64 rows along it (u) by 32 columns round it (v): the cells whose middles its [shape]
+ * holds. A brush or line reaches the parts beyond its part too, never the parts it sits on.
+ */
+@Serializable
+@Doc(
+    "One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose " +
+        "middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area " +
+        "under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u " +
+        "and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line " +
+        "reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way " +
+        "round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon " +
+        "through points (or face), straight between them in u and v.",
+)
+data class RecipeStroke(
+    @Doc("The part painted on (a pair by either side: both sides take it, mirrored).")
+    val on: String,
+    @Doc("brush, line, band, box, ellipse or lasso.")
+    val shape: RecipeStrokeShape = RecipeStrokeShape.BRUSH,
+    @Doc("Takes the cells from every area instead of painting them, as Alt in Dress.")
+    val unpaint: Boolean = false,
+    @Doc("band, box, ellipse: [from, to] along the part, 0 at its root to 1 at its far end.")
+    val u: List<Float>? = null,
+    @Doc("box, ellipse: [from, to] round the part; from may lie below 0 to cross v 0. The whole way round when left out.")
+    val v: List<Float>? = null,
+    @Doc("brush, line, lasso: the places as [u, v] on the part.")
+    val points: List<List<Float>>? = null,
+    @Doc("brush, line, lasso on a head: the places as [x, y] on its face seen from straight ahead, as a region's face.")
+    val face: List<List<Float>>? = null,
+    @Doc("brush, line: how far from the path a cell's middle may lie and be painted, in body units, as Dress's Size.")
+    val size: Float = DEFAULT_BRUSH_SIZE,
+    @Doc("On a part in the body's middle (a torso, a head): also painted mirrored across the middle, at -v, as Dress's Mirror.")
+    val mirrored: Boolean = false,
+    @Doc("Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are.")
+    val clean: Float = 0f,
+)
+
+/** A hole of a garment round the root of [part], with a cuff band when [cuff]. */
+@Serializable
+@Doc("A hole round a part's root, as Dress's Hole: the part and every part beyond it come out bare, the cloth's cells on them left out.")
+data class RecipeHole(
+    @Doc("The part that comes out (a pair by its left side, both sides).")
+    val part: String,
+    @Doc("Whether a cuff band of the garment's cloth rings the part's root, as a sleeve's or a turtleneck's.")
+    val cuff: Boolean = false,
+)
+
+/** The Tuck choice for [kind] on [part]. */
+@Serializable
+@Doc("A Tuck choice: a small part inside the cloth tucked under smooth cloth (hidden) or shaped (the cloth follows it).")
+data class RecipeTuck(
+    @Doc("The part (a pair by its left side): the small part itself, or the foot or hand whose toes or claws it means.")
+    val part: String,
+    @Doc("toes, claws, fingers, ears, tail, horns, spikes or fins.")
+    val kind: TuckKind,
+    @Doc("Tucked under smooth cloth (true) or shaped (false).")
+    val tucked: Boolean,
 )
 
 /** The garment over one part: the cells of its chart from [from] to [to] along it and [fromV] to [toV] round it, standing off by [ease]. */

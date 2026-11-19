@@ -40,12 +40,12 @@ import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
 import dev.chieppa.squash.screens.dress.EdgeEditTool
 import dev.chieppa.squash.screens.dress.NewGarmentNames
-import dev.chieppa.squash.screens.dress.PaintStyle
+import dev.chieppa.squash.character.dress.PaintStyle
 import dev.chieppa.squash.screens.dress.bandStroke
 import dev.chieppa.squash.screens.dress.newGarmentCommand
 import dev.chieppa.squash.screens.dress.newGarmentIn
-import dev.chieppa.squash.screens.dress.paintCommand
-import dev.chieppa.squash.screens.dress.paintedOf
+import dev.chieppa.squash.character.dress.paintCommand
+import dev.chieppa.squash.character.dress.paintedOf
 import dev.chieppa.squash.screens.dress.rememberEdgeEditTool
 import dev.chieppa.squash.screens.move.MoveTool
 import dev.chieppa.squash.screens.move.rememberMoveTool

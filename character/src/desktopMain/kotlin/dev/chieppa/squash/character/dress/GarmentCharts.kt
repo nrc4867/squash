@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.dress
+package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.catalog.isLeader
@@ -7,12 +7,16 @@ import dev.chieppa.squash.character.shape.ChartPlaces
 import dev.chieppa.squash.character.build.pointAt
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.document.PartId
 
 /** The leading side of each pair's other side in [character], by part. */
 fun leadersOf(character: Character): Map<PartId, PartId> =
     character.parts.filterNot { it.isLeader }.mapNotNull { part -> character.twinOf(part)?.let { part.id to it.id } }.toMap()
+
+/** [part], or the leader of its pair. */
+fun Character.leaderOf(part: PartInstance): PartInstance = if (part.isLeader) part else twinOf(part) ?: part
 
 /** [body]'s own parts as a chart, the other sides of pairs read as their leaders; the last one asked for is kept for the same body. */
 fun bodyChart(character: Character, body: AssembledCharacter): BodyChart = ChartMemo.chart(character, body)

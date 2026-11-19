@@ -1,4 +1,4 @@
-package dev.chieppa.squash.screens.dress
+package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.surface.holds

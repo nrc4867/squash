@@ -1,10 +1,10 @@
 package dev.chieppa.squash.screens.look.spike
 
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.screens.dress.PaintStyle
+import dev.chieppa.squash.character.dress.PaintStyle
 import dev.chieppa.squash.screens.dress.brushPlaces
-import dev.chieppa.squash.screens.dress.chartPlaces
-import dev.chieppa.squash.screens.dress.paintCommand
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.paintCommand
 import dev.chieppa.squash.screens.look.drag.DragSession
 import dev.chieppa.squash.screens.look.exampleDocument
 import dev.chieppa.squash.screens.smoke.CloseUps

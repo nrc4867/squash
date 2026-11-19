@@ -1,5 +1,8 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.PaintedGarment
+import dev.chieppa.squash.character.dress.paintedOf
+import dev.chieppa.squash.character.dress.placeOnBody
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope

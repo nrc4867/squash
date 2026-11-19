@@ -105,10 +105,11 @@ data class GarmentBranch(
 
 /**
  * One painted area of a garment, named [name]: the cells of each part's chart painted, by part, a pair's leader holding both sides, as
- * runs of cells row by row, the first run not painted (HLD: data-model, Garments). Areas of one garment may touch along a seam.
+ * runs of cells row by row, the first run not painted (HLD: data-model, Garments), shown in its own palette slot [color], or the
+ * garment's where it has none. Areas of one garment may touch along a seam.
  */
 @Serializable
-data class GarmentArea(val id: GarmentAreaId, val name: String, val cells: Map<PartId, List<Int>> = emptyMap())
+data class GarmentArea(val id: GarmentAreaId, val name: String, val cells: Map<PartId, List<Int>> = emptyMap(), val color: SlotName? = null)
 
 /** The id of a garment's first area, which the boxes of branches no area paints are painted into. */
 val FIRST_AREA = GarmentAreaId("area-1")

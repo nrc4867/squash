@@ -34,6 +34,7 @@ internal fun ColorShape.outlines(grid: PatchGrid, tolerance: Float): List<Outlin
     is ColorShape.Border -> listOf(borderOutline(this, grid, tolerance))
     is ColorShape.Rectangle -> listOf(rectangleOutline(this, grid))
     ColorShape.WholePatch -> wholePatchOutlines(grid)
+    is ColorShape.Level -> emptyList()
 }
 
 private fun borderOutline(border: ColorShape.Border, grid: PatchGrid, tolerance: Float): OutlinePath {

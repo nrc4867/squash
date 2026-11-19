@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.look.spike
 
+import dev.chieppa.squash.character.dress.paintedOf
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CHART_COLUMNS
 import dev.chieppa.squash.document.CHART_ROWS
@@ -96,7 +97,7 @@ fun fidelity(session: CharacterSession, garment: Garment, label: String) {
     val handles = worn.hems.sumOf { curve -> simplified(curve.map { it.position }, tolerance) }
     val seamCurves = worn.inkedJoins
     val body = checkNotNull(session.assembly.output.value)
-    val painted = dev.chieppa.squash.screens.dress.paintedOf(character, body, garment)
+    val painted = paintedOf(character, body, garment)
     println("spike-edges: $label paint's edges=${painted.edges.size} edge points=${painted.edges.sumOf { it.edge.curve.points.size }}")
     println("spike-hem: $label hems=${worn.hems.size} hem points=$hemPoints handles at half a cell=$handles seams=${seamCurves.size} seam handles=${seamCurves.sumOf { c -> simplified(c.map { it.position }, tolerance) }}")
     fun at(q: Double) = if (strays.isEmpty()) 0f else strays[((strays.size - 1) * q).toInt()]

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.freshNumbered
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
@@ -35,10 +36,6 @@ const val NEW_GARMENT = "garment-"
 const val NEW_SLOT = "slot-"
 const val NEW_OUTFIT = "outfit-"
 const val NEW_LOOSE_END = "end-"
-
-/** The first id from [prefix] and a number that [taken] does not hold, with its number. */
-fun freshNumbered(prefix: String, taken: Set<String>): Pair<String, Int> =
-    generateSequence(1) { it + 1 }.map { "$prefix$it" to it }.first { it.first !in taken }
 
 /**
  * The command that hangs a new loose end of [bones] bones from [garment]'s branch over [part] at [v] round it, from its hem when

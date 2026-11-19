@@ -5,11 +5,15 @@ import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MouthShape
 import dev.chieppa.squash.document.mouthGroup
+import dev.chieppa.squash.recipe.model.RecipeArea
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeCover
 import dev.chieppa.squash.recipe.model.RecipeEye
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeHole
 import dev.chieppa.squash.recipe.model.RecipeRegion
+import dev.chieppa.squash.recipe.model.RecipeStroke
+import dev.chieppa.squash.recipe.model.RecipeTuck
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 
@@ -85,6 +89,13 @@ internal object FaceAndClothes {
             table(
                 listOf("question", "answer"),
                 listOf(
+                    listOf("what cloth is", "cells of each part's chart, 64 rows along the part (u) by 32 columns round it (v), a cell 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the painted cells' edges, and paint under two cells wide drops out"),
+                    listOf("areas or covers", "`areas` paint the cloth as Dress does, stroke by stroke; `covers` are the simple form, a box of cells each, painted into the first area; a garment may have both"),
+                    listOf("what areas write", "with `areas`, `holes` or `tucks`, the parts covered and how far, the parts that come out through the cloth (a part on a socket inside the painted region and not painted itself), the tucked parts and the inked seams are read from the cells, as Dress writes them"),
+                    listOf("a second colour", "a later area with its own `color`: a collar, cuffs or a waistband; where two areas meet the cloth stays one piece and the seam is inked with the hems"),
+                    listOf("a curved hem or a side split", "paint the band, then a stroke with `unpaint` (an ellipse or lasso) over the hem where it should open or curve"),
+                    listOf("which way v faces", "it depends on how the part rests; `tools/recipe.sh probe <recipe> part=<id>` prints where v 0, 0.25, 0.5 and 0.75 face"),
+                    listOf("a sleeve or trouser leg", "paint the limb from u 0; its root rows meet the torso's cells, so the cloth runs on from the shoulder or hip in one piece"),
                     listOf("what a cover covers", "the cells of its part's 64 by 32 chart whose middles lie in its box, at least two rows and two columns; the hem follows those cells' edge, so a box edge moves by up to half a cell"),
                     listOf("a cover past its part's end", "`from` below 0 or `to` past 1 runs the cloth on past that end, where the cells reach it"),
                     listOf("how far a cover stands off its part", "the garment's `partFits` for that part, else its `fit`, else the cover's `ease`"),
@@ -100,7 +111,9 @@ internal object FaceAndClothes {
         appendLine()
         appendLine("Fields as the schema describes them:")
         appendLine()
-        val rows = docs("garment", RecipeGarment.serializer().descriptor) + docs("cover", RecipeCover.serializer().descriptor) +
+        val rows = docs("garment", RecipeGarment.serializer().descriptor) + docs("area", RecipeArea.serializer().descriptor) +
+            listOf(listOf("stroke", docOf(RecipeStroke.serializer().descriptor.annotations))) + docs("stroke", RecipeStroke.serializer().descriptor) + docs("hole", RecipeHole.serializer().descriptor) +
+            docs("tuck", RecipeTuck.serializer().descriptor) + docs("cover", RecipeCover.serializer().descriptor) +
             listOf(
                 listOf("change `hide`", docOf(RecipeChange.Hide.serializer().descriptor.annotations)),
                 listOf("change `through`", docOf(RecipeChange.Through.serializer().descriptor.annotations)),

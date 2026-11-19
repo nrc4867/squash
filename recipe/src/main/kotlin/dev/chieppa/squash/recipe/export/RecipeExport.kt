@@ -105,17 +105,9 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
     )
 }
 
-/** Whether [garment]'s painted cells are what its covers' boxes paint, in one area with no name, so its covers carry them. */
-private fun paintsItsBoxes(garment: Garment): Boolean {
-    if (garment.areas.size > 1 || garment.areas.any { it.name.isNotEmpty() }) return false
-    val boxes = garment.copy(areas = emptyList()).withBoxesPainted()
-    return boxes.areas.map { it.cells } == garment.areas.map { it.cells }
-}
-
 private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGarment {
     val where = "garment ${garment.id.value}"
-    if (!paintsItsBoxes(garment) || garment.holes.isNotEmpty()) notCarried += "$where: its painted areas and holes past what its covers' boxes paint (its covers and changes are carried)"
-    if (garment.tucks.isNotEmpty()) notCarried += "$where: its Tuck choices"
+    val painted = !paintsItsBoxes(garment)
     garment.branches.filter { it.surface != SurfaceWork() }.forEach { notCarried += "$where: surface work on its cover of ${it.part.value}" }
     return RecipeGarment(
         id = garment.id.value,
@@ -126,7 +118,10 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
         fit = garment.fit,
         partFits = garment.partFits.mapKeys { it.key.value },
         inkHem = garment.inkHem,
-        joins = garment.joins.map { it.value },
+        joins = if (painted) emptyList() else garment.joins.map { it.value },
+        areas = if (painted) garment.areas.map(::areaOf) else emptyList(),
+        holes = holesOf(garment),
+        tucks = tucksOf(garment),
         covers = garment.branches.map { RecipeCover(it.part.value, it.from, it.to, it.fromV, it.toV, it.ease, outlines(it.outlines)) },
         changes = garment.changes.entries.associate { (part, change) ->
             part.value to when (change) {
