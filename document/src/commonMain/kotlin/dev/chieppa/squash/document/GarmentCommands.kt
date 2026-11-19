@@ -22,14 +22,17 @@ data class RenameGarment(val garment: GarmentId, val name: String) : DocumentCom
     override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(name = name) }
 }
 
-/** Has [garment] cover [branch]'s part with it, or replaces the branch it has there. */
+/**
+ * Has [garment] cover [branch]'s part with it, or replaces the branch it has there; where no area of the garment paints the part, the
+ * branch's box is painted as its cells (see [Garment.withBoxesPainted]).
+ */
 @Serializable
 @SerialName("coverPart")
 data class CoverPart(val garment: GarmentId, val branch: GarmentBranch) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
         document.requirePart(branch.part)
         val kept = held.branches.map { if (it.part == branch.part) branch else it }
-        held.copy(branches = if (held.branch(branch.part) == null) held.branches + branch else kept)
+        held.copy(branches = if (held.branch(branch.part) == null) held.branches + branch else kept).withBoxesPainted()
     }
 }
 
@@ -43,7 +46,10 @@ data class UncoverPart(val garment: GarmentId, val part: PartId) : DocumentComma
     }
 }
 
-/** Sets how far along [part] [garment]'s branch runs, [from] and [to] in u; past 1 it continues past the part's end. */
+/**
+ * Sets how far along [part] [garment]'s branch runs, [from] and [to] in u, the bounds of its painted cells; past 1 it continues past the
+ * part's end where the cells reach it. Its cells, which say what it covers, stay as painted.
+ */
 @Serializable
 @SerialName("setBranchRange")
 data class SetBranchRange(val garment: GarmentId, val part: PartId, val from: Float, val to: Float) : DocumentCommand {
@@ -51,7 +57,7 @@ data class SetBranchRange(val garment: GarmentId, val part: PartId, val from: Fl
         document.garmentChanged(garment) { it.withBranch(part) { branch -> branch.copy(from = from, to = to) } }
 }
 
-/** Sets how far round [part] [garment]'s branch runs, [fromV] to [toV]; a span of 1 or more goes the whole way round. */
+/** Sets how far round [part] [garment]'s branch runs, [fromV] to [toV], the bounds of its painted cells; a span of 1 or more goes the whole way round. */
 @Serializable
 @SerialName("setBranchAround")
 data class SetBranchAround(val garment: GarmentId, val part: PartId, val fromV: Float, val toV: Float) : DocumentCommand {
@@ -122,11 +128,22 @@ data class SetPartFit(val garment: GarmentId, val part: PartId, val fit: Float?)
     }
 }
 
-/** Sets the edges drawn for [garment] and the places pressed to fill between them. */
+/** Sets the areas painted for [garment] and its holes. */
 @Serializable
-@SerialName("setGarmentEdges")
-data class SetGarmentEdges(val garment: GarmentId, val edges: List<GarmentEdge>, val fill: List<Anchor>) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(edges = edges, fill = fill) }
+@SerialName("setGarmentPaint")
+data class SetGarmentPaint(val garment: GarmentId, val areas: List<GarmentArea>, val holes: List<GarmentHole>) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> =
+        document.garmentChanged(garment) { it.copy(areas = areas, holes = holes) }
+}
+
+/** Names [garment]'s area [area] [name]. */
+@Serializable
+@SerialName("renameGarmentArea")
+data class RenameGarmentArea(val garment: GarmentId, val area: GarmentAreaId, val name: String) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        require(held.area(area) != null) { "Garment ${garment.value} has no area ${area.value}" }
+        held.copy(areas = held.areas.map { if (it.id == area) it.copy(name = name) else it })
+    }
 }
 
 /** Records the Tuck choice for [kind] on [part] in [garment], or takes it away when [tucked] is null. */

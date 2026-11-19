@@ -36,9 +36,11 @@ private const val INK_CUFFS_KEY = "inkCuffs"
 private const val BORDER_KEY = "border"
 private const val SLOT_KEY = "slot"
 private const val CURVED_KEY = "curved"
+private const val EDGES_KEY = "edges"
+private const val FILL_KEY = "fill"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved, 18 to ::boxesPainted)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -91,6 +93,22 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
     return drawnEyesRemoved(JsonObject(document + (CHARACTER_KEY to JsonObject(moved))))
+}
+
+/**
+ * Format 18 to 19: a garment's cloth is its painted cells alone, so each branch whose part no area paints has its box painted as cells
+ * ([Garment.withBoxesPainted]), and a garment drops the edges and fill saved in place of areas, which its branches were written from.
+ */
+private fun boxesPainted(document: JsonObject): JsonObject {
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    val wardrobe = character[WARDROBE_KEY] as? JsonObject ?: return document
+    val garments = wardrobe[GARMENTS_KEY] as? JsonArray ?: return document
+    val painted = garments.map { saved ->
+        val garment = Json.decodeFromJsonElement(Garment.serializer(), JsonObject(saved.jsonObject - EDGES_KEY - FILL_KEY))
+        Json.encodeToJsonElement(Garment.serializer(), garment.withBoxesPainted())
+    }
+    val kept = JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(painted)))
+    return JsonObject(document + (CHARACTER_KEY to JsonObject(character + (WARDROBE_KEY to kept))))
 }
 
 /**

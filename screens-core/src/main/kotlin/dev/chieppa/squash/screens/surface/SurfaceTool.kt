@@ -38,6 +38,9 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     protected fun mirrorsOn(character: dev.chieppa.squash.document.Character, part: dev.chieppa.squash.document.PartId): Boolean =
         state.mirror.value && character.part(part)?.let { it.pair == null && it.side == null } == true
 
+    /** Whether the tool answers [down]: a tool press (see [isToolPress]) unless it takes others too. */
+    protected open fun AwaitPointerEventScope.takesPress(down: PointerInputChange): Boolean = isToolPress(down)
+
     /** Takes a press on [hit] at [pixel], following it until it lets go. Returns once the gesture is over. */
     protected abstract suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView)
 
@@ -63,7 +66,7 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
     private fun gestures(key: Any, sight: SurfaceView): Modifier = Modifier.pointerInput(this, key) {
         awaitEachGesture {
             val down = awaitFirstDown()
-            if (!isToolPress(down)) return@awaitEachGesture
+            if (!takesPress(down)) return@awaitEachGesture
             if (pressedOverlay(down, sight)) return@awaitEachGesture
             val hit = hitAt(down.position, sight)
             if (hit != null) {
@@ -96,10 +99,17 @@ abstract class SurfaceTool(protected val state: AppState) : PaneTool {
      * Follows [down], which pressed [hit], until it lets go, handing [taken] each place the drag reaches a spacing on, with those either side of a
      * crossing, so what it lays down meets the crossing. A place off the surface is passed over. True when the pointer let go in the pane.
      */
-    protected suspend fun AwaitPointerEventScope.followSurface(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView, onMove: (PointerInputChange) -> Unit = {}, taken: (SurfaceHit) -> Unit): Boolean {
+    protected suspend fun AwaitPointerEventScope.followSurface(
+        hit: SurfaceHit,
+        down: PointerInputChange,
+        sight: SurfaceView,
+        onMove: (PointerInputChange) -> Unit = {},
+        secondary: Boolean = false,
+        taken: (SurfaceHit) -> Unit,
+    ): Boolean {
         var last = down.position
         var lastHit = hit
-        return followToRelease(down.id, onMove) { pixel ->
+        return followToRelease(down.id, onMove, secondary) { pixel ->
             if ((pixel - last).getDistance() < ANCHOR_SPACING) return@followToRelease
             val next = hitAt(pixel, sight) ?: return@followToRelease
             crossingBetween(lastHit, last, next, pixel, sight).forEach(taken)

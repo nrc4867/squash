@@ -18,9 +18,10 @@ const val GARMENT_PART_PREFIX = "garment/"
  * One garment of a character's wardrobe: the [slot] it fills, its [layer] counted out from the skin, the [branches] it is built
  * from, one per covered part, which [joins] are inked, whether its edges are ([inkHem]), its [color], what it does to the body parts
  * under it ([changes], by part) and its [looseEnds]. [fit] is how far it stands off the body, with [partFits] overriding it on a part
- * or pair by the pair's leader; with no fit each branch stands off by its own ease. The [edges] drawn on the body and the [fill]
- * pressed between them say which parts it covers and how far, written into its branches and changes; [tucks] are the Tuck choices
- * made for the small parts inside it. See HLD: data-model, Garments.
+ * or pair by the pair's leader; with no fit each branch stands off by its own ease. The [areas] painted on the body and its [holes]
+ * say which parts it covers and how far, written into its branches, changes and inked joins; a branch whose part no area paints has its
+ * box painted ([withBoxesPainted]), so every garment's cloth is its painted cells. [tucks] are the Tuck choices made for the small parts
+ * inside it. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -36,12 +37,14 @@ data class Garment(
     val looseEnds: List<LooseEnd> = emptyList(),
     val fit: Float? = null,
     val partFits: Map<PartId, Float> = emptyMap(),
-    val edges: List<GarmentEdge> = emptyList(),
-    val fill: List<Anchor> = emptyList(),
     val tucks: List<TuckChoice> = emptyList(),
+    val areas: List<GarmentArea> = emptyList(),
+    val holes: List<GarmentHole> = emptyList(),
 ) {
     init {
         require(branches.distinctBy { it.part }.size == branches.size) { "Garment ${id.value} covers a part twice" }
+        require(areas.distinctBy { it.id }.size == areas.size) { "Garment ${id.value} names an area twice" }
+        require(holes.distinctBy { it.part }.size == holes.size) { "Garment ${id.value} has two holes round one part" }
         require(looseEnds.distinctBy { it.id }.size == looseEnds.size) { "Garment ${id.value} names a loose end twice" }
     }
 
@@ -50,8 +53,20 @@ data class Garment(
     /** How far [branch] stands off its part: its part's own fit, else the garment's, else the branch's own ease. */
     fun easeOf(branch: GarmentBranch): Float = partFits[branch.part] ?: fit ?: branch.ease
 
-    /** Whether its branches and changes are written from its drawn [edges]. */
-    val drawn: Boolean get() = edges.isNotEmpty()
+    fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
+
+    /**
+     * This garment with the box of each branch whose part no area paints painted as cells ([boxCells]) into its first area, made as
+     * [FIRST_AREA] where it has none. The branches are left as they are: each box lies within half a cell of its cells' edges.
+     */
+    fun withBoxesPainted(): Garment {
+        val unpainted = branches.filter { branch -> areas.none { branch.part in it.cells } }
+        if (unpainted.isEmpty()) return this
+        val cells = unpainted.associate { it.part to boxCells(it) }
+        val first = areas.firstOrNull() ?: GarmentArea(FIRST_AREA, "")
+        val painted = first.copy(cells = first.cells + cells.mapValues { runsOfCells(it.value) })
+        return copy(areas = listOf(painted) + areas.drop(1))
+    }
 
     /** This garment with [part]'s branch changed by [change]. */
     internal fun withBranch(part: PartId, change: (GarmentBranch) -> GarmentBranch): Garment {
@@ -87,6 +102,20 @@ data class GarmentBranch(
     /** Whether it goes the whole way round its part. */
     val allRound: Boolean get() = toV - fromV >= 1f
 }
+
+/**
+ * One painted area of a garment, named [name]: the cells of each part's chart painted, by part, a pair's leader holding both sides, as
+ * runs of cells row by row, the first run not painted (HLD: data-model, Garments). Areas of one garment may touch along a seam.
+ */
+@Serializable
+data class GarmentArea(val id: GarmentAreaId, val name: String, val cells: Map<PartId, List<Int>> = emptyMap())
+
+/** The id of a garment's first area, which the boxes of branches no area paints are painted into. */
+val FIRST_AREA = GarmentAreaId("area-1")
+
+/** A hole of a garment round the root of [part], a pair's leader, which comes out through it bare, or in a cuff band with [cuff]. */
+@Serializable
+data class GarmentHole(val part: PartId, val cuff: Boolean = false)
 
 /** The part id a branch of [garment] over [part] is built, rigged and anchored as. */
 fun branchPartId(garment: GarmentId, part: PartId): PartId = PartId("$GARMENT_PART_PREFIX${garment.value}/${part.value}")

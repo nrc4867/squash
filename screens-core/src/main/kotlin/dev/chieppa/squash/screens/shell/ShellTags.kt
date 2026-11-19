@@ -23,6 +23,7 @@ object ShellTags {
     const val FACE_BAND = "face.band"
     const val DRESS_BAND = "dress.band"
     const val NEW_GARMENT = "dress.newGarment"
+    const val SILHOUETTE = "dress.silhouette"
     const val LIBRARY = "library"
     const val LIBRARY_SEARCH = "library.search"
     const val LIBRARY_CLEAR = "library.clear"

@@ -165,7 +165,29 @@ class DocumentFormatTest {
         val fifteen = """{"format": 15, "character": {"id": "vest", "name": "Vest", "bodyPlan": {"id": "canine-quadruped", "version": 1}, "wardrobe": {"garments": [{"id": "vest", "name": "Vest", "inkHem": false, "inkCuffs": false}]}}}"""
         val garment = readDocument(fifteen).character.wardrobe.garments.single()
         assertEquals(false, garment.inkHem)
-        assertEquals(emptyList(), garment.edges)
+        assertEquals(emptyList(), garment.areas, "a garment covering nothing paints nothing")
+    }
+
+    @Test
+    fun aFormatEighteenGarmentsBoxesArePaintedAsCells() {
+        val box = """{"part": "torso", "from": 0.4, "to": 0.97, "fromV": -0.22, "toV": 0.22}"""
+        val skirt = """{"part": "leg-l", "from": -0.3, "to": 0.5}"""
+        val edge = """{"curve": {"points": [{"part": "torso", "patch": "body", "u": 0.5, "v": 0}], "closed": false}}"""
+        val eighteen = """{"format": 18, "character": {"id": "vest", "name": "Vest", "bodyPlan": {"id": "canine-quadruped", "version": 1}, "wardrobe": {"garments": [""" +
+            """{"id": "vest", "name": "Vest", "branches": [$box, $skirt], "edges": [$edge], "fill": []}]}}}"""
+        val garment = readDocument(eighteen).character.wardrobe.garments.single()
+        val area = garment.areas.single()
+        assertEquals(FIRST_AREA, area.id)
+        val torso = cellsOfRuns(area.cells.getValue(PartId("torso")))
+        val rows = (0 until CHART_ROWS).filter { row -> (0 until CHART_COLUMNS).any { torso[row * CHART_COLUMNS + it] } }
+        val columns = (0 until CHART_COLUMNS).filter { column -> (0 until CHART_ROWS).any { torso[it * CHART_COLUMNS + column] } }
+        assertEquals((26..61).toList(), rows, "the rows whose middles lie in 0.4 to 0.97")
+        assertEquals((0..6).toList() + (25..31).toList(), columns, "the columns whose middles lie within 0.22 of v 0")
+        assertEquals(0.4f, garment.branch(PartId("torso"))?.from, "the branch stays as saved")
+        val leg = checkNotNull(garment.branch(PartId("leg-l")))
+        assertEquals(-0.3f, leg.from, "a range past the part's root is kept")
+        assertEquals(true, cellsOfRuns(area.cells.getValue(PartId("leg-l")))[0], "and its cells reach the root")
+        assertEquals(readDocument(Json.encodeToString(SquashDocument.serializer(), readDocument(eighteen))), readDocument(eighteen))
     }
 
     @Test

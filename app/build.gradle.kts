@@ -74,7 +74,7 @@ compose.desktop {
 // ./gradlew :app:compare -Pcompare="example=woman-twin-dressed reference=<folder>" sets look's shots beside reference renders.
 // ./gradlew :app:drag -Pdrag="example=fennec-dressed outfits=winter drags=move:front-leg-l" times scripted drags through the app's graph.
 // ./gradlew :app:recipe -Precipe="recipe=<file>" builds a recipe into a character and renders and measures it; tools/recipe.sh runs it.
-listOf("look" to "LookMainKt", "recipe" to "recipe.RecipeMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt", "drag" to "drag.DragMainKt", "tris" to "TrisMainKt").forEach { (name, main) ->
+listOf("look" to "LookMainKt", "recipe" to "recipe.RecipeMainKt", "measure" to "MeasureMainKt", "compare" to "compare.CompareMainKt", "drag" to "drag.DragMainKt", "tris" to "TrisMainKt", "spike" to "spike.SpikeMainKt").forEach { (name, main) ->
     tasks.register<JavaExec>(name) {
         group = "verification"
         classpath = sourceSets["test"].runtimeClasspath

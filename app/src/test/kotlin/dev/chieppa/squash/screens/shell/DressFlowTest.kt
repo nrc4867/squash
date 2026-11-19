@@ -99,18 +99,20 @@ class DressFlowTest {
         val state = dressedOpen()
         val session = assertNotNull(state.session.value)
         assertEquals(Stage.DRESS, state.stage.value)
-        assertEquals(BuildTool.EDGE, state.tool.value, "Dress opens on Edge")
-        for (tool in listOf(BuildTool.EDGE, BuildTool.HOLE, BuildTool.EDIT_GARMENT, BuildTool.ERASE_GARMENT, BuildTool.SMOOTH_GARMENT, BuildTool.LOOSE_END)) {
+        assertEquals(BuildTool.PAINT, state.tool.value, "Dress opens on Paint")
+        for (tool in listOf(BuildTool.PAINT, BuildTool.HOLE, BuildTool.EDIT_GARMENT, BuildTool.ERASE_GARMENT, BuildTool.SMOOTH_GARMENT, BuildTool.LOOSE_END)) {
             onNodeWithTag(ShellTags.tool(tool)).assertExists()
         }
         onNodeWithTag(ShellTags.NEW_GARMENT).assertExists()
+        onNodeWithTag(ShellTags.SILHOUETTE).assertExists()
+        onNodeWithTag(ShellTags.MIRROR).assertExists()
         assertEquals(GarmentLook.SHOWN, state.dress.lookInDress.value)
         assertEquals(SCARF, state.dress.garment.value, "the outermost worn garment is picked")
         state.dress.garment.value = SWEATER
         waitForIdle()
         onNodeWithTag(DressTags.FIT).assertExists()
-        onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Dress · Edge", substring = true)
-        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("Sweater · Body · 0 edges · 0 holes", substring = true)
+        onNodeWithTag(ShellTags.STATUS_STAGE).onChildren().onFirst().assertTextContains("Dress · Paint", substring = true)
+        onNodeWithTag(ShellTags.STATUS_END).onChildren().onFirst().assertTextContains("Sweater · Body · 1 area", substring = true)
         val steps = session.history.steps.value.done.size
         onNodeWithTag(DressTags.INK_HEM).performScrollTo().performClick()
         waitForIdle()
@@ -172,7 +174,8 @@ class DressFlowTest {
         onNode(hasText("Shaped") and hasAnyAncestor(hasTestTag(DressTags.tuckChoice(BACK_PAW_L, TuckKind.TOES))), useUnmergedTree = true).performScrollTo().performClick()
         settle(work, state)
         assertIs<Together>(session.history.steps.value.done.last())
-        assertNull(session.document.value.character.wardrobe.garment(BOOTS)?.changes?.get(BACK_PAW_L), "shaped toes leave the paw as drawn")
+        val shaped = session.document.value.character.wardrobe.garment(BOOTS)?.changes?.get(BACK_PAW_L)
+        assertNull((shaped as? BodyPartChange.Redraw)?.data?.params?.get("toes"), "shaped toes build as drawn, their claws tucked until chosen: $shaped")
         state.undo()
         assertIs<BodyPartChange.Redraw>(session.document.value.character.wardrobe.garment(BOOTS)?.changes?.get(BACK_PAW_L))
     }

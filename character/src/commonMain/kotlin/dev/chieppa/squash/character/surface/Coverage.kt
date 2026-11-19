@@ -1,18 +1,11 @@
 package dev.chieppa.squash.character.surface
 
-import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.GarmentBranch
-import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.surface.HELD
 import dev.chieppa.squash.geom.surface.SurfaceMesh
-import kotlin.math.abs
-import kotlin.math.round
-
-/** How far inside a range, in u, a point past the end of a part the range reaches counts as lying. */
-private const val WHOLE_END = 1f
 
 /** How far out along a run past an open end, in the garment's ease, a part coming out through the end is looked for over a point. */
 private const val OVER_EASES = 8f
@@ -25,14 +18,15 @@ private const val HEM_INSET_CELLS = 1.5f
 
 /**
  * How far inside [worn]'s coverage a vertex of a garment's or a body's mesh meshed from [field] lies, in body units, held within
- * [reach]: for each run it holds a share of, the distance into its branch's u range, and its v range for a branch part of the way round,
- * measured along the run, a range ending at an end of its part covering that end whole, unless a part the garment does not cover comes
- * out through that end, where the range ends a little short of the end's ring and of the plane across the run there within the
- * garment's ease of a part coming out through an end, [ends], their members as placed, so the garment grown over the run's closed end
- * stays open round the part coming out and closes over the rest of the end, and a range
- * reaching past it, onto a shell hanging free, ending a little short of where it says, on the shell's wall; a run of a part the garment does not cover,
- * or a part's later run, which its branch does not read, counts as [reach] outside. The share-weighted sum of those is one smooth function, zero along the hem, the neck opening and the cuffs. Where a part comes out through a hole of the garment, [holes],
- * its members as placed, the coverage is at most how far the vertex lies outside them, less [clear]. Safe to read from many threads at once.
+ * [reach]: for each run it holds a share of, the distance into its part's painted cloth ([WornCover.clothOf], read by
+ * [ClothField.inside]), cloth reaching an end of its part covering that end whole, unless a part the garment does not cover comes out
+ * through that end, where the cloth ends a little short of the end's ring and of the plane across the run there within the garment's
+ * ease of a part coming out through an end, [ends], their members as placed, so the garment grown over the run's closed end stays open
+ * round the part coming out and closes over the rest of the end; and cloth whose branch runs past an end it reaches, onto a shell
+ * hanging free, ending a little short of where the branch says, on the shell's wall. A run of a part the garment does not cover, or a
+ * part's later run, which its cloth does not read, counts as [reach] outside. The share-weighted sum of those is one smooth function,
+ * zero along the hem, the neck opening and the cuffs. Where a part comes out through a hole of the garment, [holes], its members as
+ * placed, the coverage is at most how far the vertex lies outside them, less [clear]. Safe to read from many threads at once.
  */
 class Coverage(
     private val field: CharacterField,
@@ -43,6 +37,7 @@ class Coverage(
     private val ends: List<JoinedMember> = emptyList(),
 ) {
     private val branches = Array(field.runs.size) { field.runs[it].takeIf { run -> run.first }?.let { run -> worn.branchOf(run.partId) } }
+    private val cloths = Array(field.runs.size) { field.runs[it].takeIf { run -> run.first }?.let { run -> worn.clothOf(run.partId) } }
     private val scales = Array(field.runs.size) { if (branches[it] != null) RunScales(field.runs[it].patch) else null }
     private val open = Array(field.runs.size) { if (branches[it] != null) worn.openEnds[field.runs[it].partId] else null }
     private val hemInset = reach / COVERAGE_CELLS * HEM_INSET_CELLS
@@ -58,23 +53,8 @@ class Coverage(
             if (member < 0) continue
             val share = mesh.heldShares[v * HELD + k]
             val branch = branches[member]
-            val inside = if (branch == null) {
-                -reach
-            } else {
-                val u = mesh.heldU[v * HELD + k]
-                val scale = checkNotNull(scales[member])
-                val stretch = scale.along(u)
-                val ends = open[member]
-                val below = if (branch.from == 0f && ends?.low != true) WHOLE_END * stretch else (u - branch.from) * stretch - if (branch.from < 0f || ends?.low == true) hemInset else 0f
-                val above = if (branch.to == 1f && ends?.high != true) WHOLE_END * stretch else (branch.to - u) * stretch - if (branch.to > 1f || ends?.high == true) hemInset else 0f
-                val at = Vec3(mesh.positions[v * 3], mesh.positions[v * 3 + 1], mesh.positions[v * 3 + 2])
-                val local = field.field.members[member].local(at)
-                val run = field.field.members[member]
-                val beforeLow = lowEnds[member]?.let { endInside(it, local, run, branch.ease, at) } ?: below
-                val beforeHigh = highEnds[member]?.let { endInside(it, local, run, branch.ease, at) } ?: above
-                val along = minOf(below, above, beforeLow, beforeHigh)
-                if (branch.allRound) along else minOf(along, aroundInside(mesh.heldV[v * HELD + k], branch) * scale.around(u))
-            }
+            val cloth = cloths[member]
+            val inside = if (branch == null || cloth == null) -reach else clothInside(mesh, v, k, member, branch, cloth)
             sum += share * inside.coerceIn(-reach, reach)
             total += share
         }
@@ -84,6 +64,29 @@ class Coverage(
         var outside = reach
         for (hole in holes) if (hole.boxDistance(at) < reach + clear) outside = minOf(outside, hole.own(at) - clear)
         return minOf(covered, outside.coerceIn(-reach, reach))
+    }
+
+    /**
+     * How far inside [cloth], over [member]'s run, vertex [v] of [mesh] lies by its [k]th held run: inside the painted cloth, short of
+     * each open end, and where [branch] runs past an end its cloth reaches and nothing comes out, short of where it says, on the shell's
+     * wall.
+     */
+    private fun clothInside(mesh: SurfaceMesh, v: Int, k: Int, member: Int, branch: GarmentBranch, cloth: ClothField): Float {
+        val u = mesh.heldU[v * HELD + k]
+        val scale = checkNotNull(scales[member])
+        val stretch = scale.along(u)
+        var inside = cloth.inside(u, mesh.heldV[v * HELD + k], stretch, scale.around(u))
+        val low = lowEnds[member]
+        val high = highEnds[member]
+        if (low == null && branch.from < 0f && cloth.reach.reachesLow) inside = minOf(inside, (u - branch.from) * stretch - hemInset)
+        if (high == null && branch.to > 1f && cloth.reach.reachesHigh) inside = minOf(inside, (branch.to - u) * stretch - hemInset)
+        if (low == null && high == null) return inside
+        val at = Vec3(mesh.positions[v * 3], mesh.positions[v * 3 + 1], mesh.positions[v * 3 + 2])
+        val run = field.field.members[member]
+        val local = run.local(at)
+        low?.let { inside = minOf(inside, endInside(it, local, run, branch.ease, at)) }
+        high?.let { inside = minOf(inside, endInside(it, local, run, branch.ease, at)) }
+        return inside
     }
 
     /**
@@ -135,23 +138,6 @@ class Coverage(
     fun fill(mesh: SurfaceMesh, out: FloatArray, from: Int, to: Int) {
         for (v in from until to) out[v] = at(mesh, v)
     }
-}
-
-/** Whether [anchor], on [surface], its part's, lies in this cover's range on its part's first run, whose (u, v) a branch reads. */
-fun GarmentCover.coversAnchor(anchor: Anchor, surface: PartSurface): Boolean {
-    val branch = branches[anchor.part] ?: return false
-    if (surface.patches.getOrNull(firstRunIndex(surface.patches))?.name != anchor.patch) return false
-    if (anchor.u < branch.from || anchor.u > branch.to) return false
-    return branch.allRound || aroundInside(anchor.v, branch) >= 0f
-}
-
-/** How far [v] lies inside [branch]'s range round, wrapping once. */
-private fun aroundInside(v: Float, branch: GarmentBranch): Float {
-    val middle = (branch.fromV + branch.toV) / 2f
-    val half = (branch.toV - branch.fromV) / 2f
-    var off = v - middle
-    off -= round(off)
-    return half - abs(off)
 }
 
 /** Where an end ring of a run lies, in its part's space, and the way out of the run through it. */

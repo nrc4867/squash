@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character.shape
 
+import dev.chieppa.squash.document.CHART_ROWS
+import dev.chieppa.squash.document.CHART_COLUMNS
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.surface.firstRunIndex
@@ -10,12 +12,6 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.floor
-
-/** How many rows of cells a part's chart holds along it, in u. */
-const val CHART_ROWS = 64
-
-/** How many columns of cells a part's chart holds round it, in v. */
-const val CHART_COLUMNS = 32
 
 /**
  * One part of a body as a grid of [CHART_ROWS] by [CHART_COLUMNS] cells over the (u, v) of its first run, named [patch]: the [parent]
@@ -40,6 +36,34 @@ class BodyChart(val parts: List<ChartPart>, private val leaders: Map<PartId, Par
 
     /** The chart part [anchor] lies on, read on the leading side of a pair, or null where it names no part's first run. */
     fun partOf(anchor: Anchor): ChartPart? = part(anchor.part)?.takeIf { it.patch == anchor.patch }
+
+    /** The leading side [id] is read as: itself, or the pair's leader. */
+    fun leaderOf(id: PartId): PartId = leaders[id] ?: id
+
+    /** The other sides of pairs, each by the leader it is read as. */
+    val twins: Map<PartId, PartId> get() = leaders
+
+    /** The cell of its part [anchor] lies in, or null where it names no part's first run. */
+    fun cellOf(anchor: Anchor): Pair<PartId, Int>? = partOf(anchor)?.let { it.id to cellAt(anchor.u, anchor.v) }
+
+    /** The cells beside [cell] of [part]: along and round it, and from its root row to the cell of its parent it sits on, and back. */
+    fun neighbours(part: PartId, cell: Int): List<Pair<PartId, Int>> {
+        val row = cell / CHART_COLUMNS
+        val column = cell % CHART_COLUMNS
+        val out = ArrayList<Pair<PartId, Int>>(6)
+        if (row > 0) out += part to cell - CHART_COLUMNS
+        if (row < CHART_ROWS - 1) out += part to cell + CHART_COLUMNS
+        out += part to row * CHART_COLUMNS + (column + 1) % CHART_COLUMNS
+        out += part to row * CHART_COLUMNS + (column + CHART_COLUMNS - 1) % CHART_COLUMNS
+        val chartPart = part(part)
+        val parent = chartPart?.parent
+        if (row == 0 && parent != null) out += parent to socketCell(chartPart)
+        for (child in childrenOf(part)) if (socketCell(child) == cell) for (c in 0 until CHART_COLUMNS) out += child.id to c
+        return out
+    }
+
+    /** The cell of its parent [part]'s root ring sits on. */
+    fun socketCell(part: ChartPart): Int = cellAt(part.socketU, part.socketV)
 
     companion object {
         /**
@@ -113,8 +137,15 @@ class BodyChart(val parts: List<ChartPart>, private val leaders: Map<PartId, Par
     }
 }
 
+/** The cell at [u] and [v], row by row. */
+fun cellAt(u: Float, v: Float): Int = rowAt(u) * CHART_COLUMNS + columnAt(v)
+
+/** The middle of [cell] as a place on [part], named [patch]. */
+fun cellMiddle(part: PartId, patch: String, cell: Int): Anchor =
+    Anchor(part, patch, (cell / CHART_COLUMNS + 0.5f) / CHART_ROWS, (cell % CHART_COLUMNS + 0.5f) / CHART_COLUMNS)
+
 /** The row of the cell at [u]. */
-internal fun rowAt(u: Float): Int = (u * CHART_ROWS).toInt().coerceIn(0, CHART_ROWS - 1)
+fun rowAt(u: Float): Int = (u * CHART_ROWS).toInt().coerceIn(0, CHART_ROWS - 1)
 
 /** The column of the cell at [v], read round. */
-internal fun columnAt(v: Float): Int = ((v - floor(v)) * CHART_COLUMNS).toInt().coerceIn(0, CHART_COLUMNS - 1)
+fun columnAt(v: Float): Int = ((v - floor(v)) * CHART_COLUMNS).toInt().coerceIn(0, CHART_COLUMNS - 1)

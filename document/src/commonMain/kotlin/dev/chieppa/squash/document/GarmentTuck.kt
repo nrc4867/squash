@@ -3,12 +3,6 @@ package dev.chieppa.squash.document
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * An edge of a garment drawn on the body: a hem along [curve], or with [hole] an opening, whose smaller side is never cloth.
- */
-@Serializable
-data class GarmentEdge(val curve: SurfaceCurve, val hole: Boolean = false)
-
 /** A small part, or a part's digits, a garment can cover: smooth cloth over it when tucked, cloth following it when shaped. */
 @Serializable
 enum class TuckKind {

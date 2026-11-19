@@ -23,6 +23,9 @@ private const val CUFF_FROM = -1f
  * the branch covers mirrored, by the branch standing off by the garment's fit there (see [Garment.easeOf]); and each part's [twins].
  */
 data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentBranch>, val twins: Map<PartId, PartId> = emptyMap()) {
+    /** Each covered part's painted cloth (see [clothOf]); a part left out is not covered. */
+    val cloth: Map<PartId, ClothField> by lazy { clothOf(garment, branches, twins) }
+
     companion object {
         /** What [garment] covers on [character], its branches read on both sides of a pair. */
         fun of(garment: Garment, character: Character): GarmentCover {
@@ -43,11 +46,14 @@ data class GarmentCover(val garment: Garment, val branches: Map<PartId, GarmentB
  * A garment as it is worn over a placed body: [branches] over the parts it covers, each standing off the garments [under] it, and over
  * each part that comes out through it with a cuff, a cuff branch from inside the garment to past where the part comes out by the cuff's
  * size, the parts in [cuffs]; [holes], the parts that come out through its wall with none, which open the garment where they lie inside
- * it; [openEnds], for each part, the ends of it (low, high) a branch reaches through which a part the garment does not cover comes out;
+ * it; [openEnds], for each part, the ends of it (low, high) its cloth reaches through which a part the garment does not cover comes out;
  * and [shells], each branch the garment draws standing off its ease or running past its part's end ([drawsShell]), as its shell the whole
- * way round its part, which coverage cuts to a branch part of the way round; [hangsFree], the parts whose branch runs past an end of
- * the part that points down at rest, as a skirt below an upright torso does, not along a body lying level; [piece], the part at the root
- * of this piece where the garment is worn in pieces that meet nowhere (see [pieces]), else null.
+ * way round its part over the rows its cloth runs ([alongOf]), which coverage cuts to the cloth; [hangsFree], the parts whose cloth runs
+ * past an end of the part that points down at rest, as a skirt below an upright torso does, not along a body lying level; [piece], the
+ * part at the root of this piece where the garment is worn in pieces that meet nowhere (see [pieces]), else null; [cloth], the painted
+ * cloth over each part it covers, a cuff's being its band, which is all coverage reads of what it covers; a branch's range is read only
+ * where it runs past its part's end. The parts that come out, with a cuff or none, and those that hang inside are read over the region
+ * each part's cells paint ([clothBranch]).
  */
 class WornCover(
     val cover: GarmentCover,
@@ -58,8 +64,12 @@ class WornCover(
     val piece: PartId? = null,
     val openEnds: Map<PartId, OpenEnds> = emptyMap(),
     val hangsFree: Set<PartId> = emptySet(),
+    val cloth: Map<PartId, ClothField> = cover.cloth,
 ) {
     val garment: Garment get() = cover.garment
+
+    /** The painted cloth over [part] as a smooth field, or null where the garment does not cover it. */
+    fun clothOf(part: PartId): ClothField? = cloth[part]
 
     /** The parts that come out through the ends of its branches' parts that it reaches. */
     val outThroughEnds: Set<PartId> get() = openEnds.values.flatMapTo(HashSet()) { it.parts }
@@ -68,7 +78,7 @@ class WornCover(
      * The parts whose branch hangs over what comes out of them, pushed clear of it in each pose: a branch that [hangsFree], or one part
      * of the way round with a shell of its own, as a cape over a back or a bun open over it.
      */
-    val hangsOver: Set<PartId> get() = hangsFree + shells.keys.filter { branches[it]?.allRound == false }
+    val hangsOver: Set<PartId> get() = hangsFree + shells.keys.filter { cloth[it]?.reach?.allRound == false }
 
     /** Whether any branch [hangsOver] what comes out of its part. */
     val hanging: Boolean get() = hangsOver.isNotEmpty()
@@ -79,15 +89,26 @@ class WornCover(
     /** What equals for the same branches, cuffs, holes, shells, piece and open ends, the shells by their objects. */
     val key: List<Any?> = listOf(cover, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree)
 
-    /** What equals for the same garment grown the same way, whatever comes out through it: the branches, cuffs, shells and piece. */
-    val shapeKey: List<Any?> = listOf(cover, branches, cuffs, shells.mapValues { Same(it.value.surface) }, piece)
+    /**
+     * What equals for the same garment grown the same way, whatever comes out through it: the garment but what it covers, the branches,
+     * a painted part's over the stepped range its cloth's [ClothReach] grows over, the whole way round (see [garmentField]), the cuffs,
+     * shells and piece. So painting more or less of a painted part within the same steps keeps the grown surface, and only its cut changes.
+     */
+    val shapeKey: List<Any?> = listOf(
+        cover.copy(garment = cover.garment.copy(areas = emptyList(), branches = emptyList(), changes = emptyMap(), joins = emptySet(), holes = emptyList()), branches = emptyMap()),
+        branches.mapValues { (part, branch) -> cloth[part]?.reach?.let { branch.copy(from = it.from, to = it.to, fromV = 0f, toV = 1f) } ?: branch },
+        cuffs,
+        shells.mapValues { Same(it.value.surface) },
+        piece,
+    )
 
     companion object {
         /** [cover] worn over [body] on the garments [under] it, the innermost first. */
         fun of(cover: GarmentCover, body: AssembledCharacter, under: List<GarmentCover>, shells: ShellCache): WornCover {
             val garment = cover.garment
-            val fitted = cover.branches.mapValues { (part, branch) -> branch.fittedOver(part, under) }
+            val fitted = cover.branches.mapValues { (part, branch) -> branch.fittedOver(part, cover.cloth[part], under) }
             val branches = LinkedHashMap(fitted)
+            val cloth = HashMap(cover.cloth)
             val cuffs = HashSet<PartId>()
             val holes = HashSet<PartId>()
             val built = HashMap<PartId, PlacedPart>()
@@ -95,35 +116,48 @@ class WornCover(
             val free = HashSet<PartId>()
             for ((part, branch) in fitted) {
                 val covered = body.part(part) ?: continue
+                val reach = cover.cloth[part]?.reach ?: continue
+                val worn = clothBranch(branch, reach)
+                val along = worn.from..worn.to
                 val comes = body.parts.any { child ->
                     val spec = child.socketSpec
-                    child.socket?.parent == part && child.id !in cover.branches && child.owner == null && spec != null && spec.u in branch.from..branch.to
+                    child.socket?.parent == part && child.id !in cover.branches && child.owner == null && spec != null && spec.u in along
                 }
                 if (comes) {
-                    val placed = shells.over(garment, branch, covered) ?: continue
+                    val placed = shells.over(garment, worn, covered) ?: continue
                     val holed = throughHoles(garment, placed, body, cover.twins) {}
                     val cuffed = holed.cuffs.mapNotNull { it.covering }
                     for (cuff in cuffed) {
                         cuffs += cuff.part
-                        branches.putIfAbsent(cuff.part, GarmentBranch(cuff.part, CUFF_FROM, cuff.to, branch.ease))
+                        if (cuff.part in branches) continue
+                        val band = GarmentBranch(cuff.part, CUFF_FROM, cuff.to, branch.ease)
+                        branches[cuff.part] = band
+                        cloth[cuff.part] = cuffCloth(band)
                     }
                     holes += holed.through.filter { through -> cuffed.none { it.part == through } }
                 }
-                val ends = outThroughEnd(body, part, branch, cover)
+                val ends = outThroughEnd(body, part, reach, cover)
                 if (ends.isNotEmpty()) open[part] = ends
-                if (branch.drawsShell) {
-                    val whole = branch.copy(from = branch.from - SHELL_PAST, to = branch.to + SHELL_PAST, fromV = 0f, toV = 1f)
+                val ran = branch.copy(from = worn.from, to = worn.to)
+                if (ran.drawsShell) {
+                    val whole = ran.copy(from = ran.from - SHELL_PAST, to = ran.to + SHELL_PAST, fromV = 0f, toV = 1f)
                     shells.over(garment, whole, covered)?.let { built[part] = it }
                 }
-                if (branch.allRound && hangsDownPast(branch, covered)) free += part
+                if (reach.allRound && hangsDownPast(ran, covered)) free += part
             }
-            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free)
+            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free, cloth = cloth)
         }
 
-        /** This branch over [part] standing off the garments [under] it: each one's branch the whole way round the part over any of its span adds its ease. */
-        private fun GarmentBranch.fittedOver(part: PartId, under: List<GarmentCover>): GarmentBranch {
+        /**
+         * This branch over [part], its cloth [held], standing off the garments [under] it: each one's cloth the whole way round the part
+         * over any of the same rows adds its ease.
+         */
+        private fun GarmentBranch.fittedOver(part: PartId, held: ClothField?, under: List<GarmentCover>): GarmentBranch {
+            val rows = held?.reach ?: return this
             val below = under.sumOf { inner ->
-                inner.branches[part]?.takeIf { it.allRound && it.from < to && it.to > from }?.ease?.toDouble() ?: 0.0
+                val reach = inner.cloth[part]?.reach
+                val overlaps = reach != null && reach.allRound && reach.firstRow <= rows.lastRow && reach.lastRow >= rows.firstRow
+                if (overlaps) checkNotNull(inner.branches[part]).ease.toDouble() else 0.0
             }.toFloat()
             return if (below == 0f) this else copy(ease = ease + below)
         }
@@ -162,17 +196,17 @@ internal class Same(private val of: Any) {
     override fun hashCode(): Int = of.hashCode()
 }
 
-/** Which ends of [part]'s run, low and high, [branch] reaches and a part [cover] does not cover comes out through, and those [parts]. */
+/** Which ends of [part]'s run, low and high, its cloth reaches and a part [cover] does not cover comes out through, and those [parts]. */
 data class OpenEnds(val low: Boolean, val high: Boolean, val parts: Set<PartId> = emptySet())
 
-/** The ends of [part]'s run that [branch] reaches with a part on a socket there that [cover] does not cover; empty with none. */
-private fun outThroughEnd(body: AssembledCharacter, part: PartId, branch: GarmentBranch, cover: GarmentCover): OpenEnds {
+/** The ends of [part]'s run that its cloth, [reach], reaches with a part on a socket there that [cover] does not cover; empty with none. */
+private fun outThroughEnd(body: AssembledCharacter, part: PartId, reach: ClothReach, cover: GarmentCover): OpenEnds {
     val sockets = body.parts.mapNotNull { child ->
         val spec = child.socketSpec ?: return@mapNotNull null
         (child.id to spec.u).takeIf { child.socket?.parent == part && child.id !in cover.branches && child.owner == null && spec.patch == null }
     }
-    val low = sockets.filter { branch.from <= 0f && it.second <= END_SOCKET }
-    val high = sockets.filter { branch.to >= 1f && it.second >= 1f - END_SOCKET }
+    val low = sockets.filter { reach.reachesLow && it.second <= END_SOCKET }
+    val high = sockets.filter { reach.reachesHigh && it.second >= 1f - END_SOCKET }
     return OpenEnds(low.isNotEmpty(), high.isNotEmpty(), (low + high).mapNotNullTo(HashSet()) { it.first })
 }
 

@@ -232,7 +232,7 @@ class LibraryFlowTest {
         assertEquals(FEET_SLOT, added.garment.slot)
         assertEquals(added.garment.id, wardrobe.outfit(WINTER)?.picks?.get(FEET_SLOT), "worn in the boots' place")
         assertEquals(added.garment.id, state.dress.garment.value)
-        assertEquals(BuildTool.EDGE, state.tool.value)
+        assertEquals(BuildTool.PAINT, state.tool.value)
         assertEquals(Renaming.OfGarment(added.garment.id, new = true), state.library.renaming.value)
         onNodeWithTag(DressTags.GARMENT_NAME).performTextReplacement("Socks")
         onNodeWithTag(DressTags.GARMENT_NAME).performKeyInput { pressKey(Key.Enter) }

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.surface
 
+import dev.chieppa.squash.geom.LevelCut
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.surface.HELD
 import dev.chieppa.squash.geom.surface.SurfaceMesh
@@ -7,29 +8,36 @@ import dev.chieppa.squash.geom.surface.SurfaceMesh
 /**
  * Coverage read at the vertices of the meshes it was last read on, by what read it, so the next read on a mesh takes the value at every
  * vertex that mesh shares with the one before it (see [SurfaceMesh.change]), or at every vertex of the same mesh, and reads only the rest.
- * Each read is begun by [read] and becomes the one kept for its slot once [settle] is called; a build calls [begin] first. One build at a time; [read] is called from
- * one thread, its pieces from any.
+ * A read of the same mesh by the same reader is [Pending.unchanged] and needs no work, and what was made from it last time, its values
+ * smoothed ([smoothedOf]) and the level cut of what they show ([cutOf]), is taken as it was. Everything kept since [begin] becomes the
+ * one kept for its slot once [settle] is called; a build calls [begin] first. One build at a time, from one thread; only the pieces of
+ * work [read] gives run on any.
  */
 class CoverageMemo {
-    private val kept = HashMap<Any, Read>()
-    private val made = HashMap<Any, Read>()
+    private val reads = SlotMemo<Read>()
+    private val smoothed = SlotMemo<FloatArray>()
+    private val cuts = SlotMemo<KeptCut>()
 
     /**
      * Pieces of work filling a fresh array of [reader]'s coverage at each vertex of [mesh], [chunk] vertices a piece, which [values] gives
      * once they have run; [slot] names which surface and cover it is, [key] what the reader reads but the parts coming out through its
      * holes and ends, and [parts] those parts. Where the parts differ from the last read's, a vertex takes its value only where neither
-     * reader reads them there.
+     * reader reads them there. Where nothing differs, it gives the last read's values and no work.
      */
     fun read(slot: Any, key: Any, parts: Any, reader: Coverage, field: CharacterField, mesh: SurfaceMesh, chunk: Int): Pending {
-        val out = FloatArray(mesh.vertexCount)
-        val before = kept[slot]?.takeIf { it.key == key }
-        made[slot] = Read(key, parts, reader, mesh, out, field.runs)
-        val partsMoved = before != null && before.parts != parts
+        val before = reads.last(slot)?.takeIf { it.key == key }
         val sameRun = BooleanArray(field.runs.size) { m ->
             val old = before?.runs?.getOrNull(m)
             val now = field.runs[m]
             old != null && old.patch === now.patch && old.partId == now.partId && old.first == now.first
         }
+        val partsMoved = before != null && before.parts != parts
+        if (before != null && !partsMoved && before.mesh === mesh && before.runs.size == field.runs.size && sameRun.all { it }) {
+            reads.keep(slot, Read(key, parts, reader, mesh, before.values, field.runs))
+            return Pending(before.values, emptyList(), unchanged = true)
+        }
+        val out = FloatArray(mesh.vertexCount)
+        reads.keep(slot, Read(key, parts, reader, mesh, out, field.runs))
         val previousOf = when {
             before == null -> null
             before.mesh === mesh -> IntArray(mesh.vertexCount) { it }
@@ -50,21 +58,54 @@ class CoverageMemo {
         return Pending(out, tasks)
     }
 
-    /** Forgets the reads begun since the last [settle], which a build stopped part way leaves unfinished. */
+    /**
+     * The values [read], begun for [slot], were smoothed to last time, its first [count]; null unless [read] is unchanged and they were
+     * kept. What it gives is kept again.
+     */
+    fun smoothedOf(slot: Any, read: Pending, count: Int): FloatArray? {
+        if (!read.unchanged) return null
+        val last = smoothed.last(slot)?.takeIf { it.size == count } ?: return null
+        smoothed.keep(slot, last)
+        return last
+    }
+
+    /** Keeps [values] as what [slot]'s read was smoothed to; not to be changed after. */
+    fun keepSmoothed(slot: Any, values: FloatArray) {
+        smoothed.keep(slot, values)
+    }
+
+    /** The level cut kept for [slot] where it was cut from the same [indices] at the same [values]; null otherwise. What it gives is kept again. */
+    fun cutOf(slot: Any, indices: IntArray, values: FloatArray): LevelCut? {
+        val last = cuts.last(slot)?.takeIf { it.indices === indices && it.values.contentEquals(values) } ?: return null
+        cuts.keep(slot, last)
+        return last.cut
+    }
+
+    /** Keeps [cut], cut from [indices] at [values], for [slot]; [values] is not to be changed after. */
+    fun keepCut(slot: Any, indices: IntArray, values: FloatArray, cut: LevelCut) {
+        cuts.keep(slot, KeptCut(indices, values, cut))
+    }
+
+    /** Forgets what was kept since the last [settle], which a build stopped part way leaves unfinished. */
     fun begin() {
-        made.clear()
+        reads.begin()
+        smoothed.begin()
+        cuts.begin()
     }
 
-    /** Keeps the reads begun since the last call in place of those before them in the same slots. */
+    /** Keeps what was kept since the last call in place of what was there before in the same slots. */
     fun settle() {
-        kept.putAll(made)
-        made.clear()
+        reads.settle()
+        smoothed.settle()
+        cuts.settle()
     }
 
-    /** A read begun: its [tasks], and the [values] they fill. */
-    class Pending(val values: FloatArray, val tasks: List<() -> Unit>)
+    /** A read begun: its [tasks], and the [values] they fill; [unchanged] where they are the last read's, with no tasks. */
+    class Pending(val values: FloatArray, val tasks: List<() -> Unit>, val unchanged: Boolean = false)
 
     private class Read(val key: Any, val parts: Any, val reader: Coverage, val mesh: SurfaceMesh, val values: FloatArray, val runs: List<FieldRun>)
+
+    private class KeptCut(val indices: IntArray, val values: FloatArray, val cut: LevelCut)
 
     /** Whether every run vertex [v] of [mesh] holds is the run it was. */
     private fun heldSame(mesh: SurfaceMesh, v: Int, sameRun: BooleanArray): Boolean {

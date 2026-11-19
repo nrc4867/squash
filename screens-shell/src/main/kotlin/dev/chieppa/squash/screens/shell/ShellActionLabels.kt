@@ -57,7 +57,7 @@ import dev.chieppa.squash.uidesign.generated.rig_tool_smooth
 import dev.chieppa.squash.uidesign.generated.stage_shape
 import dev.chieppa.squash.uidesign.generated.stage_pose
 import dev.chieppa.squash.uidesign.generated.stage_dress
-import dev.chieppa.squash.uidesign.generated.dress_tool_edge
+import dev.chieppa.squash.uidesign.generated.dress_tool_paint
 import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
 import dev.chieppa.squash.uidesign.generated.dress_new_garment
@@ -108,14 +108,13 @@ private val texts: Map<ActionId, StringResource> = mapOf(
     ShellActions.STAGE_RIG to Res.string.shell_drawer_rig,
     ShellActions.STAGE_DRESS to Res.string.stage_dress,
     ShellActions.STAGE_POSE to Res.string.stage_pose,
-    ShellActions.EDGE to Res.string.dress_tool_edge,
+    ShellActions.PAINT to Res.string.dress_tool_paint,
     ShellActions.HOLE to Res.string.dress_tool_hole,
     ShellActions.EDIT_GARMENT to Res.string.shell_action_edit_curves,
     ShellActions.ERASE_GARMENT to Res.string.edit_tool_erase,
     ShellActions.SMOOTH_GARMENT to Res.string.smooth_tool,
     ShellActions.LOOSE_END to Res.string.dress_tool_loose_end,
     ShellActions.NEW_GARMENT to Res.string.dress_new_garment,
-    ShellActions.DRESS_HALF_OUTLINE to Res.string.draw_half_outline,
     ShellActions.GARMENTS_SHOWN to Res.string.view_garments_shown,
     ShellActions.GARMENTS_GHOSTED to Res.string.view_garments_ghosted,
     ShellActions.GARMENTS_HIDDEN to Res.string.view_garments_hidden,
@@ -226,7 +225,7 @@ fun actionIcon(key: String): ImageVector? = when (key) {
     "body-curve" -> SquashIcons.BodyCurve
     "pin" -> SquashIcons.Pin
     "look" -> SquashIcons.Look
-    "edge" -> SquashIcons.Edge
+    "paint" -> SquashIcons.PaintCloth
     "hole" -> SquashIcons.Hole
     "loose-end" -> SquashIcons.LooseEnd
     "new-garment" -> SquashIcons.NewGarment

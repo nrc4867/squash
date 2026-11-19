@@ -18,6 +18,15 @@ private const val HIDING_CHUNK = 2048
 /** What names a hiding read's slot in its memo. */
 private const val HIDING_SLOT = "hiding"
 
+/** What names a hiding cut's slot in its memo. */
+private const val CUT_SLOT = "cut"
+
+/** The memo slot of surface [s]'s read under its hider [k]. */
+private fun readSlot(s: Int, k: Int): Any = listOf(HIDING_SLOT, s, k)
+
+/** The memo slot of surface [s]'s cut. */
+private fun cutSlot(s: Int): Any = listOf(HIDING_SLOT, CUT_SLOT, s)
+
 /**
  * The work that finds what of [body] and of each of [garments], innermost first, the garments over it hide, in batches handed out by
  * [next] until it gives null, then read from [skin] and [worn]. The body is cut along the curve where it lies [HIDING_CELLS] cells and
@@ -54,8 +63,11 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
     /** Each surface's coverage under each of its hiders as read, before it is smoothed. */
     private var raw: List<List<CoverageMemo.Pending>> = emptyList()
 
-    /** Each coverage being smoothed near its zero, with its smoothing. */
-    private var smoothing: List<Pair<FloatArray, NearZeroSmoothing>>? = null
+    /** Each coverage being smoothed near its zero, with its smoothing and the memo slot its read was begun in. */
+    private var smoothing: List<Smoothing>? = null
+
+    /** Whether each surface's cut is made afresh, so kept in the memo once made, rather than taken from it. */
+    private var cutFresh = BooleanArray(0)
 
     /** What of the body shows: null where nothing is worn. */
     val skin: LevelCut? get() = cuts.firstOrNull()
@@ -69,9 +81,13 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
     fun next(): List<() -> Unit>? {
         if (garments.isEmpty()) return null
         smoothing?.let { running ->
-            val tasks = running.mapNotNull { it.second.next() }
+            val tasks = running.mapNotNull { it.smoothed.next() }
             if (tasks.isNotEmpty()) return tasks.flatten()
-            running.forEach { (fan, smoothed) -> smoothed.result.copyInto(fan) }
+            for (it in running) {
+                it.smoothed.result.copyInto(it.fan)
+                memo.keepSmoothed(it.slot, it.smoothed.result.copyOf(it.count))
+            }
+            memo.settle()
             smoothing = null
             return surfaces.indices.flatMap { s ->
                 hiders[s].indices.flatMap { k -> chunked(surfaces[s].render.vertexCount - surfaces[s].mesh.vertexCount, HIDING_CHUNK) { from, to -> fanned(surfaces[s], fans[s][k], fans[s][k], from, to) } }
@@ -86,7 +102,7 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
                         val reach = mesh.cell * COVERAGE_CELLS
                         val reader = Coverage(surfaces[s].field, hider.cover, reach, hider.holes, hider.clear, hider.ends)
                         val key = CoverageMemo.keyOf(hider.cover, reach, hider.clear)
-                        memo.read(listOf(HIDING_SLOT, s, k), key, CoverageMemo.partsOf(hider.holes, hider.ends), reader, surfaces[s].field, mesh, HIDING_CHUNK)
+                        memo.read(readSlot(s, k), key, CoverageMemo.partsOf(hider.holes, hider.ends), reader, surfaces[s].field, mesh, HIDING_CHUNK)
                     }
                 }
                 raw = reads
@@ -97,8 +113,15 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
                 raw.forEachIndexed { s, reads -> reads.forEachIndexed { k, read -> read.values.copyInto(fans[s][k]) } }
                 smoothing = surfaces.indices.flatMap { s ->
                     val mesh = surfaces[s].mesh
-                    hiders[s].indices.map { k ->
-                        fans[s][k] to NearZeroSmoothing(fans[s][k], mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS)
+                    hiders[s].indices.mapNotNull { k ->
+                        val slot = readSlot(s, k)
+                        val kept = memo.smoothedOf(slot, raw[s][k], mesh.vertexCount)
+                        if (kept != null) {
+                            kept.copyInto(fans[s][k])
+                            return@mapNotNull null
+                        }
+                        val smoothed = NearZeroSmoothing(fans[s][k], mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS)
+                        Smoothing(fans[s][k], smoothed, slot, mesh.vertexCount)
                     }
                 }
                 next()
@@ -107,7 +130,22 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
             4 -> {
                 val made = arrayOfNulls<LevelCut>(surfaces.size)
                 cuts = made.asList()
-                surfaces.indices.filter { over[it].isNotEmpty() }.map { s -> { made[s] = LevelCut.of(shown[s], surfaces[s].render.indices) } }
+                cutFresh = BooleanArray(surfaces.size)
+                surfaces.indices.filter { over[it].isNotEmpty() }.mapNotNull { s ->
+                    val kept = memo.cutOf(cutSlot(s), surfaces[s].render.indices, shown[s])
+                    if (kept != null) {
+                        made[s] = kept
+                        return@mapNotNull null
+                    }
+                    cutFresh[s] = true
+                    val cut: () -> Unit = { made[s] = LevelCut.of(shown[s], surfaces[s].render.indices) }
+                    cut
+                }
+            }
+            5 -> {
+                for (s in surfaces.indices) if (cutFresh[s]) memo.keepCut(cutSlot(s), surfaces[s].render.indices, shown[s].copyOf(), checkNotNull(cuts[s]))
+                memo.settle()
+                null
             }
             else -> null
         }
@@ -126,6 +164,9 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
             for (i in out.indices) out[i] = minOf(out[i], margin - fan[i])
         }
     }
+
+    /** Coverage [fan] being [smoothed], read in memo slot [slot] at a mesh of [count] vertices. */
+    private class Smoothing(val fan: FloatArray, val smoothed: NearZeroSmoothing, val slot: Any, val count: Int)
 
     /**
      * A cover that hides what lies inside it, with the parts that come out through its [holes] and the skin [clear] of them that stays

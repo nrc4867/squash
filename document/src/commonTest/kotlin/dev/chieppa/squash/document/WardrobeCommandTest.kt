@@ -166,22 +166,45 @@ class WardrobeCommandTest {
     }
 
     @Test
-    fun edgesFillAndTucksAreSetAndUndone() {
+    fun aBranchOverAPartNoAreaPaintsHasItsBoxPaintedAndAPaintedOneIsLeft() {
         val start = WinterFennec.dressed()
-        val ring = SurfaceCurve(listOf(Anchor(LEG_L, u = 0.5f, v = 0f), Anchor(LEG_L, u = 0.5f, v = 0.5f)), closed = true)
+        val leg = cellsOfRuns(checkNotNull(start.character.wardrobe.garment(SWEATER)).areas.single().cells.getValue(LEG_L))
+        assertEquals((0 until CHART_CELLS).map { it / CHART_COLUMNS < 51 }, leg.toList(), "the sleeve to 0.8 holds the rows whose middles lie under it")
         scenario(start) {
-            run(SetGarmentEdges(SWEATER, listOf(GarmentEdge(ring)), listOf(Anchor(TORSO, u = 0.5f, v = 0.25f))))
+            run(CoverPart(SWEATER, GarmentBranch(LEG_L, 0.5f, 0.6f)))
+            expect { assertEquals(start.character.wardrobe.garment(SWEATER)?.areas, it.wardrobe.garment(SWEATER)?.areas, "a painted part keeps its cells") }
+            run(CoverPart(HAT, GarmentBranch(TORSO, 0.9f, 1.3f)))
+            expect {
+                val hat = checkNotNull(it.wardrobe.garment(HAT))
+                val torso = cellsOfRuns(hat.areas.single().cells.getValue(TORSO))
+                assertEquals((0 until CHART_CELLS).map { cell -> cell / CHART_COLUMNS >= 58 }, torso.toList(), "a box past the end paints to the end")
+                assertEquals(1.3f, hat.branch(TORSO)?.to, "and runs on past it")
+                assertEquals(0.9f, hat.branch(TORSO)?.from, "its range stays as given")
+            }
+            repeat(2) { undo() }
+            expect(start)
+        }
+    }
+
+    @Test
+    fun paintedAreasHolesAndTucksAreSetAndUndone() {
+        val start = WinterFennec.dressed()
+        val area = GarmentArea(GarmentAreaId("area-1"), "Area 1", mapOf(LEG_L to listOf(0, 2048)))
+        val hole = GarmentHole(TORSO, cuff = true)
+        scenario(start) {
+            run(SetGarmentPaint(SWEATER, listOf(area), listOf(hole)))
+            run(RenameGarmentArea(SWEATER, area.id, "Sleeve"))
             run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, false))
             run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, true))
             expect {
                 val sweater = checkNotNull(it.wardrobe.garment(SWEATER))
-                assertEquals(listOf(GarmentEdge(ring)), sweater.edges)
-                assertTrue(sweater.drawn)
+                assertEquals(listOf(area.copy(name = "Sleeve")), sweater.areas)
+                assertEquals(listOf(hole), sweater.holes)
                 assertEquals(listOf(TuckChoice(LEG_L, TuckKind.TOES, true)), sweater.tucks)
             }
             run(SetTuck(SWEATER, LEG_L, TuckKind.TOES, null))
             expect { assertEquals(emptyList(), it.wardrobe.garment(SWEATER)?.tucks) }
-            repeat(4) { undo() }
+            repeat(5) { undo() }
             expect(start)
         }
     }

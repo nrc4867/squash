@@ -38,6 +38,15 @@ import dev.chieppa.squash.screens.fennec.FRONT_LEG_L
 import dev.chieppa.squash.screens.fennec.HEAD
 import dev.chieppa.squash.screens.fennec.TORSO
 import dev.chieppa.squash.screens.fennec.fennecDressedDocument
+import dev.chieppa.squash.screens.dress.EdgeEditTool
+import dev.chieppa.squash.screens.dress.NewGarmentNames
+import dev.chieppa.squash.screens.dress.PaintStyle
+import dev.chieppa.squash.screens.dress.bandStroke
+import dev.chieppa.squash.screens.dress.newGarmentCommand
+import dev.chieppa.squash.screens.dress.newGarmentIn
+import dev.chieppa.squash.screens.dress.paintCommand
+import dev.chieppa.squash.screens.dress.paintedOf
+import dev.chieppa.squash.screens.dress.rememberEdgeEditTool
 import dev.chieppa.squash.screens.move.MoveTool
 import dev.chieppa.squash.screens.move.rememberMoveTool
 import dev.chieppa.squash.screens.rig.rigNow
@@ -109,6 +118,7 @@ class DressedFennecSmokeTest {
         var color: PaneColor? = null
         var tools: PoseTools? = null
         var move: MoveTool? = null
+        var edit: EdgeEditTool? = null
         var rest: SurfaceRibbons? = null
         var posed: SurfaceRibbons? = null
     }
@@ -133,6 +143,7 @@ class DressedFennecSmokeTest {
             val color = rememberPaneColor(state)
             val tools = rememberPoseTools(state)
             val move = rememberMoveTool(state)
+            val edit = rememberEdgeEditTool(state)
             val rest = rememberSurfaceLines(state)
             val posed = rememberSurfaceLines(state, posed = true)
             SideEffect {
@@ -141,6 +152,7 @@ class DressedFennecSmokeTest {
                 bench.color = color
                 bench.tools = tools
                 bench.move = move
+                bench.edit = edit
                 bench.rest = rest
                 bench.posed = posed
             }
@@ -256,5 +268,41 @@ class DressedFennecSmokeTest {
         bench.state.dress.garment.value = CAP
         bench.state.selectedPart.value = HEAD
         keepSheet(bench, assertNotNull(bench.move), posed = false, "dress-w17", window = true)
+    }
+
+    @Test
+    fun dressShowsTheSweatersHemsWithHandlesAndThePaintOpeningsCutAsW16() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        key(Key.Six)
+        key(Key.E)
+        val state = bench.state
+        state.dress.garment.value = SWEATER
+        val session = assertNotNull(state.session.value)
+        val character = session.document.value.character
+        val body = assertNotNull(session.assembly.output.value)
+        val painted = paintedOf(character, body, assertNotNull(character.wardrobe.garment(SWEATER)))
+        state.dress.edge.value = painted.edges.indexOfFirst { it.edge.part == TORSO }.takeIf { it >= 0 }
+        state.dress.handles.value = true
+        keepSheet(bench, assertNotNull(bench.edit), posed = false, "dress-w16-hems", window = true)
+    }
+
+    @Test
+    fun dressMarksThePaintTheOpeningsCutOnAVestPaintedOverTheWholeTorso() = runDesktopComposeUiTest(DRESSED_WIDTH, DRESSED_HEIGHT) {
+        val bench = opened()
+        key(Key.Six)
+        key(Key.E)
+        val state = bench.state
+        val session = assertNotNull(state.session.value)
+        val bare = session.document.value.character
+        val vest = newGarmentIn(bare.wardrobe) { "Vest" }
+        session.send(bare.newGarmentCommand(vest, null, NewGarmentNames("Vest", "Vest")))
+        settle(work) { session.graph.settled.value }
+        state.dress.garment.value = vest.id
+        val character = session.document.value.character
+        val body = assertNotNull(session.assembly.output.value)
+        val garment = assertNotNull(character.wardrobe.garment(vest.id))
+        session.send(character.paintCommand(body, garment, null, bandStroke(character, body, TORSO, 0f, 1f), PaintStyle()))
+        settle(work) { session.graph.settled.value }
+        keepSheet(bench, assertNotNull(bench.edit), posed = false, "dress-cut-cells", window = true)
     }
 }

@@ -59,7 +59,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Interfaces | `screens-sheet` | The panes, the layouts and Single |
 | Interfaces | `screens-draw` | Draw outline, Edit curves, Oversketch, Erase, Smooth, Spine and width, Move, the tool strip and their drawers |
 | Interfaces | `screens-surface` | Surface work: strokes, regions, paint, fur, marks and expressions; the Rig stage's view, seam stroke tools and inspector |
-| Interfaces | `screens-dress` | The Dress stage: its inspector (layers, garment with its fit, edges and hem ink, tuck, loose ends, color), Library's Garments half (outfits, garments by slot and their menus), the Edge and Hole tools that draw a garment on the body, and the press tools that pick a garment and hang a loose end |
+| Interfaces | `screens-dress` | The Dress stage: its inspector (layers, the armed tool's options, garment with its fit, areas, edges, holes and hem ink, tuck, loose ends, color), Library's Garments half (outfits, garments by slot and their menus), the Paint tool that paints a garment's areas on the body in a brush or a shape, Edit curves, Erase and Smooth on their edges, Hole, and the press tools that pick a garment and hang a loose end |
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |

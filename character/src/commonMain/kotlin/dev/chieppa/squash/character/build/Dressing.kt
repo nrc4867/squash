@@ -13,6 +13,8 @@ import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.character.model.SurfaceMethod
+import dev.chieppa.squash.character.surface.clothBranch
+import dev.chieppa.squash.character.surface.clothOf
 import kotlinx.coroutines.flow.Flow
 
 /** What dressing the character reads from the document: the garments worn, innermost first, and each paired part's twin. */
@@ -56,24 +58,27 @@ fun AssembledCharacter.dressedIn(dressing: Dressing): AssembledCharacter = if (d
 /**
  * This character with the loose ends of the garments [dressing] wears, each hung from its branch fitted over the layers under it, and
  * each separate part that comes out through a branch with a cuff hidden from its root to the cuff's far edge, as the cuff hides it, and
- * each part a branch covers whole hidden, so the pieces it draws beside the one surface, such as a paw's pads, stay inside the garment.
+ * each part a garment's cells paint whole hidden, so the pieces it draws beside the one surface, such as a paw's pads, stay inside the
+ * garment; what comes out with a cuff is read over the region the cells paint, as the surface reads it.
  */
 private fun AssembledCharacter.withLooseEnds(dressing: Dressing): AssembledCharacter {
+    val cloths = dressing.worn.map { garment -> clothOf(garment, garment.branches.flatMap { b -> listOfNotNull(b.part, dressing.twins[b.part]).map { it to b } }.toMap(), dressing.twins) }
     val cuffed = dressing.worn.flatMapIndexed { layer, garment ->
         val under = dressing.worn.take(layer)
         garment.branches.flatMap { branch -> listOfNotNull(branch.part, dressing.twins[branch.part]).map { it to branch } }.flatMap { (id, branch) ->
             val covered = part(id)
             val separate = parts.any { it.socket?.parent == id && it.owner == null && it.template.surface == SurfaceMethod.SEPARATE }
-            if (covered == null || !separate) return@flatMap emptyList()
-            val placed = branchOver(garment, branch.copy(ease = garment.easeOf(branch)).fittedOver(under, dressing.twins), covered) ?: return@flatMap emptyList()
+            val reach = cloths[layer][id]?.reach
+            if (covered == null || !separate || reach == null) return@flatMap emptyList()
+            val worn = clothBranch(branch.copy(ease = garment.easeOf(branch)).fittedOver(under, dressing.twins), reach)
+            val placed = branchOver(garment, worn, covered) ?: return@flatMap emptyList()
             throughHoles(garment, placed, this, dressing.twins) {}.cuffs.mapNotNull { it.covering }
                 .filter { cuff -> part(cuff.part)?.template?.surface == SurfaceMethod.SEPARATE }
                 .map { cuff -> Hider.Over(cuff.part, -1f, cuff.to, 0f, 1f) }
         }
     }
-    val whole = dressing.worn.flatMap { garment ->
-        garment.branches.filter { it.allRound && it.from <= 0f && it.to >= 1f }.flatMap { branch -> listOfNotNull(branch.part, dressing.twins[branch.part]) }
-    }.distinct().map { Hider.Over(it, -1f, 2f, 0f, 1f) }
+    val whole = cloths.flatMap { cloth -> cloth.filterValues { it.paintsAll }.keys }
+        .distinct().map { Hider.Over(it, -1f, 2f, 0f, 1f) }
     val hiders = cuffed + whole
     val rooted = if (hiders.isEmpty()) parts else parts.map { it.hiddenBy(hiders) }
     val ends = dressing.worn.flatMapIndexed { layer, garment ->

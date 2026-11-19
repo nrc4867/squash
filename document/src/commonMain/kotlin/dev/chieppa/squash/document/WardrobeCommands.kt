@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 @SerialName("setWardrobe")
 data class SetWardrobe(val wardrobe: Wardrobe) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> =
-        Applied(document.copy(character = document.character.copy(wardrobe = wardrobe)), SetWardrobe(document.character.wardrobe))
+        Applied(document.copy(character = document.character.copy(wardrobe = wardrobe.copy(garments = wardrobe.garments.map { it.withBoxesPainted() }))), SetWardrobe(document.character.wardrobe))
 }
 
 /** Adds [garment] to the wardrobe, at [index] or last. It is worn by no outfit until one picks it. */
@@ -19,7 +19,7 @@ data class AddGarment(val garment: Garment, val index: Int? = null) : DocumentCo
     override fun apply(document: SquashDocument): Applied<SquashDocument> = document.wardrobeChanged { wardrobe ->
         require(wardrobe.garment(garment.id) == null) { "Garment ${garment.id.value} already exists" }
         val at = index ?: wardrobe.garments.size
-        wardrobe.copy(garments = wardrobe.garments.take(at) + garment + wardrobe.garments.drop(at))
+        wardrobe.copy(garments = wardrobe.garments.take(at) + garment.withBoxesPainted() + wardrobe.garments.drop(at))
     }
 }
 

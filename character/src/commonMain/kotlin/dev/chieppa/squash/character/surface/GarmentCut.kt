@@ -72,7 +72,8 @@ class GarmentCut(
             5 -> {
                 val lines = TriangleLines(surface.positions, surface.lineNormals, kept, checkNotNull(edges), coverage)
                 val made = checkNotNull(cut)
-                done = SurfaceGarment(cover, surface, coverage, made, made.mesh(surface.render), hems, lines, fan, holes, ends = ends)
+                val seams = ClothSeams(surface.field, cover).values(mesh)
+                done = SurfaceGarment(cover, surface, coverage, made, made.mesh(surface.render), hems, lines, fan, holes, ends = ends, seamValues = seams)
                 null
             }
             else -> null

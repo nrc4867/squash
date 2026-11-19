@@ -38,8 +38,8 @@ class WornShellTest {
     private val upright by lazy { body("biped", "torso-upright") }
 
     private fun worn(body: AssembledCharacter, branch: GarmentBranch): WornCover {
-        val garment = Garment(GarmentId("cape"), "Cape", GarmentSlotId("outer"), branches = listOf(branch))
-        return WornCover.of(GarmentCover(garment, mapOf(branch.part to branch)), body, emptyList(), ShellCache())
+        val garment = Garment(GarmentId("cape"), "Cape", GarmentSlotId("outer"), branches = listOf(branch)).withBoxesPainted()
+        return WornCover.of(GarmentCover(garment, garment.branches.associateBy { it.part }), body, emptyList(), ShellCache())
     }
 
     /** A rectangle from [from] to [to] along x and [half] either side of y = 0, as joined straight cubics. */

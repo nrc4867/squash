@@ -4,14 +4,20 @@ import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
 
 /**
- * The garments [worn] together as one cover: over each part, the widest stretch their branches the whole way round it cover between
- * them, the ranges that meet or overlap joined, at the most ease of any; null for fewer than two garments. What lies deep inside it is
- * covered however the stretch is shared between the garments, as a leg under a sleeve that a boot's shaft overlaps.
+ * The garments [worn] together as one cover: over each part, the widest stretch their cloth the whole way round it covers between them
+ * ([alongOf]), the stretches that meet or overlap joined, at the most ease of any, its cloth theirs together, the most of their fields
+ * (see [ClothField.union]); null for fewer than two garments. What lies deep inside it is covered however the stretch is shared between
+ * the garments, as a leg under a sleeve that a boot's shaft overlaps.
  */
 fun coverUnion(worn: List<WornCover>): WornCover? {
     if (worn.size < 2) return null
     val byPart = LinkedHashMap<PartId, MutableList<GarmentBranch>>()
-    for (cover in worn) for ((part, branch) in cover.branches) if (branch.allRound) byPart.getOrPut(part, ::ArrayList) += branch
+    for (cover in worn) for ((part, branch) in cover.branches) {
+        val reach = cover.clothOf(part)?.reach ?: continue
+        if (!reach.allRound) continue
+        val along = alongOf(reach, branch)
+        byPart.getOrPut(part, ::ArrayList) += branch.copy(from = along.start, to = along.endInclusive, fromV = 0f, toV = 1f)
+    }
     val merged = LinkedHashMap<PartId, GarmentBranch>()
     for ((part, branches) in byPart) {
         val sorted = branches.sortedBy { it.from }
@@ -43,5 +49,6 @@ fun coverUnion(worn: List<WornCover>): WornCover? {
         val high = reaching.all { it.openEnds[part]?.high == true }
         OpenEnds(low, high, if (low || high) reaching.flatMapTo(HashSet()) { it.openEnds[part]?.parts.orEmpty() } else emptySet())
     }
-    return WornCover(worn.first().cover, merged, emptySet(), emptySet(), emptyMap(), openEnds = open)
+    val cloth = merged.keys.mapNotNull { part -> ClothField.union(worn.mapNotNull { it.clothOf(part) })?.let { part to it } }.toMap()
+    return WornCover(worn.first().cover, merged, emptySet(), emptySet(), emptyMap(), openEnds = open, cloth = cloth)
 }

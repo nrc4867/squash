@@ -49,8 +49,8 @@ internal fun dressPartName(state: AppState, part: PartInstance): String {
 }
 
 /**
- * The picked garment: its slot, which a press changes, and its layer; its fit and the parts fitted apart from it; a row for each edge
- * drawn for it; and its hem ink, which inks every edge.
+ * The picked garment: its slot, which a press changes, and its layer; its fit and the parts fitted apart from it; its painted areas,
+ * their edges and its holes; and its hem ink, which inks every edge, seams too.
  */
 @Composable
 internal fun GarmentSection(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
@@ -60,7 +60,7 @@ internal fun GarmentSection(state: AppState, session: CharacterSession, characte
             Chip(stringResource(Res.string.dress_layer_number, garment.layer), Modifier.testTag(DressTags.LAYER_CHIP), description = stringResource(Res.string.dress_layer))
         }
         FitRows(state, session, character, garment)
-        EdgeRows(state, session, character, garment)
+        AreaRows(state, session, character, garment)
         SwitchRow(stringResource(Res.string.dress_ink_hem), garment.inkHem, Modifier.testTag(DressTags.INK_HEM)) {
             session.send(SetHemInk(garment.id, it))
         }

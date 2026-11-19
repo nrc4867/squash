@@ -38,8 +38,8 @@ import dev.chieppa.squash.screens.surface.FaceBand
 import dev.chieppa.squash.screens.dress.rememberEdgeEditTool
 import dev.chieppa.squash.screens.dress.rememberEdgeEraseTool
 import dev.chieppa.squash.screens.dress.rememberEdgeSmoothTool
-import dev.chieppa.squash.screens.dress.rememberEdgeTool
-import dev.chieppa.squash.screens.dress.rememberHoleTool
+import dev.chieppa.squash.screens.dress.rememberGarmentHoleTool
+import dev.chieppa.squash.screens.dress.rememberGarmentPaintTool
 import dev.chieppa.squash.screens.dress.rememberGarmentSelectTool
 import dev.chieppa.squash.screens.dress.rememberLooseEndTool
 import dev.chieppa.squash.document.SeamBrush
@@ -103,8 +103,8 @@ fun WorkspaceScreen(shell: Shell) {
     val smoothWeight = rememberSeamStrokeTool(state, SeamBrush.SMOOTH)
     val poseTools = rememberPoseTools(state)
     val garmentSelect = rememberGarmentSelectTool(state)
-    val edge = rememberEdgeTool(state)
-    val hole = rememberHoleTool(state)
+    val paintCloth = rememberGarmentPaintTool(state)
+    val hole = rememberGarmentHoleTool(state)
     val edgeEdit = rememberEdgeEditTool(state)
     val edgeErase = rememberEdgeEraseTool(state)
     val edgeSmooth = rememberEdgeSmoothTool(state)
@@ -135,7 +135,7 @@ fun WorkspaceScreen(shell: Shell) {
         BuildTool.ERASE_WEIGHT -> eraseWeight
         BuildTool.SMOOTH_WEIGHT -> smoothWeight
         BuildTool.ADD_PART -> addPart
-        BuildTool.EDGE -> edge
+        BuildTool.PAINT -> paintCloth
         BuildTool.HOLE -> hole
         BuildTool.EDIT_GARMENT -> edgeEdit
         BuildTool.ERASE_GARMENT -> edgeErase

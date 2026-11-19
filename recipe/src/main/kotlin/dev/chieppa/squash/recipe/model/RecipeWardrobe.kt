@@ -52,9 +52,9 @@ data class RecipeGarment(
     val looseEnds: List<LooseEnd> = emptyList(),
 )
 
-/** The garment over one part: from [from] to [to] along it and [fromV] to [toV] round it, standing off by [ease]. */
+/** The garment over one part: the cells of its chart from [from] to [to] along it and [fromV] to [toV] round it, standing off by [ease]. */
 @Serializable
-@Doc("The garment over one part. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening.")
+@Doc("The garment over one part: the cells of the part's chart its box holds. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening.")
 data class RecipeCover(
     val part: String,
     @Doc("Where along the part it starts.") val from: Float = 0f,

@@ -1,17 +1,26 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.LooseEndId
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.TuckKind
+import dev.chieppa.squash.screens.surface.PaintShape
 
 /** Test tags for the Dress stage's inspector and Library's Garments half. */
 object DressTags {
     const val TOOL = "dress.tool"
-    const val SMOOTH = "dress.tool.smooth"
-    const val STABILIZER = "dress.tool.stabilizer"
+    const val PAINT_MODE = "dress.tool.paintMode"
+    const val SIZE = "dress.tool.size"
+    const val CLEAN = "dress.tool.clean"
+    const val SHRINK = "dress.tool.shrink"
+    const val GROW = "dress.tool.grow"
+    const val HANDLES = "dress.tool.handles"
+    const val STRAIGHTEN = "dress.tool.straighten"
+    const val CUFF_ON_SECOND = "dress.tool.cuffOnSecond"
+    const val NEW_AREA = "dress.garment.newArea"
     const val GARMENT = "dress.garment"
     const val SLOT_CHIP = "dress.garment.slot"
     const val LAYER_CHIP = "dress.garment.layer"
@@ -43,8 +52,13 @@ object DressTags {
 
     fun partFit(part: PartId) = "dress.garment.fit.${part.value}"
     fun removeFit(part: PartId) = "dress.garment.fit.remove.${part.value}"
+    fun shape(shape: PaintShape) = "dress.tool.shape.${shape.name}"
+    fun area(area: GarmentAreaId) = "dress.garment.area.${area.value}"
+    fun removeArea(area: GarmentAreaId) = "dress.garment.area.remove.${area.value}"
     fun edge(index: Int) = "dress.garment.edge.$index"
-    fun removeEdge(index: Int) = "dress.garment.edge.remove.$index"
+    fun hole(part: PartId) = "dress.garment.hole.${part.value}"
+    fun holeCuff(part: PartId) = "dress.garment.hole.cuff.${part.value}"
+    fun closeHole(part: PartId) = "dress.garment.hole.close.${part.value}"
     fun tuck(part: PartId, kind: TuckKind) = "dress.tuck.${part.value}.${kind.name}"
     fun tuckChoice(part: PartId, kind: TuckKind) = "dress.tuck.choice.${part.value}.${kind.name}"
     fun layer(garment: GarmentId) = "dress.layers.row.${garment.value}"

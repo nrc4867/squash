@@ -7,7 +7,7 @@ enum class Stage(val first: BuildTool) {
     LINES(BuildTool.LINE_WIDTH),
     FACE(BuildTool.DRAW_MARK),
     RIG(BuildTool.PAINT_WEIGHT),
-    DRESS(BuildTool.EDGE),
+    DRESS(BuildTool.PAINT),
     POSE(BuildTool.DRAG),
 }
 

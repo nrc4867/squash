@@ -89,3 +89,8 @@ value class OutfitId(val value: String)
 @Serializable
 @JvmInline
 value class LooseEndId(val value: String)
+
+/** The id of one painted area of a garment. */
+@Serializable
+@JvmInline
+value class GarmentAreaId(val value: String)

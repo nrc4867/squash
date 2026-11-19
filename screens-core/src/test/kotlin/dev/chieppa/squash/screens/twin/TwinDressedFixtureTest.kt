@@ -1,7 +1,10 @@
 package dev.chieppa.squash.screens.twin
 
 import dev.chieppa.squash.character.build.assemblyParts
+import dev.chieppa.squash.document.CHART_COLUMNS
+import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.OutfitId
+import dev.chieppa.squash.document.cellsOfRuns
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.worn
 import dev.chieppa.squash.document.wornPart
@@ -48,6 +51,15 @@ class TwinDressedFixtureTest {
         val dressed = wearing(DRESS)
         assertNull(dressed.wornPart(assertNotNull(dressed.part(TORSO))).changedBy, "the torso under the skirt is her own")
         assertTrue(assertNotNull(dressed.wardrobe.garments.first { it.id == SKIRT }.branch(TORSO)).from < 0f, "the skirt runs on below the torso's start")
+    }
+
+    @Test
+    fun theFlatsCounterStandsAColumnHigherRoundTheHeelThanAlongTheSides() {
+        val flats = assertNotNull(wearing(DRESS).wardrobe.garment(FLATS))
+        val cells = cellsOfRuns(assertNotNull(flats.areas.single().cells[FOOT_L]))
+        fun columns(row: Int) = (0 until CHART_COLUMNS).count { cells[row * CHART_COLUMNS + it] }
+        assertEquals(columns(CHART_ROWS / 2) + 2, columns(0), "the heel's rows reach a column further each side")
+        assertEquals(columns(CHART_ROWS / 2), columns(CHART_ROWS - 1), "the sides run level to the toe")
     }
 
     @Tag("integration")

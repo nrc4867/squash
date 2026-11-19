@@ -1,7 +1,7 @@
 package dev.chieppa.squash.screens.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.character.shape.ChartBox
+import dev.chieppa.squash.document.ChartBox
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.DocumentCommand
@@ -75,11 +75,11 @@ fun tucksOf(character: Character, body: AssembledCharacter, garment: Garment): L
 }
 
 /**
- * The Tuck rows [garment] shows over [body]: the small things inside it as its edges draw it, or as its branches hold them for one
- * drawn otherwise, and with a part [selected], only those on it, on parts beyond it, or on the part it hangs from.
+ * The Tuck rows [garment] shows over [body]: the small things inside it as its painted cloth holds them, or as its branches hold them
+ * for one never painted, and with a part [selected], only those on it, on parts beyond it, or on the part it hangs from.
  */
 fun shownTucks(character: Character, body: AssembledCharacter, garment: Garment, selected: PartId?): List<TuckItem> {
-    val items = if (garment.drawn) tucksOf(character, body, garment, GarmentShape.of(character, body, garment.edges, garment.fill).boxes) else tucksOf(character, body, garment)
+    val items = if (garment.areas.isNotEmpty()) tucksOf(character, body, garment, paintedOf(character, body, garment).boxes) else tucksOf(character, body, garment)
     val lead = selected?.let(character::part)?.let(character::leaderOf) ?: return items
     return items.filter { item -> item.part == lead.socket?.parent || character.isWithin(item.part, lead.id) }
 }
@@ -121,12 +121,12 @@ private fun itemsOf(character: Character, body: AssembledCharacter, reach: Map<P
 
 /**
  * The command that makes [item] of [garment] [tucked] or shaped, one step: the garment's choice, then its shape written again from its
- * edges, or for a garment with none, its change to the part set directly.
+ * painted cloth, or for a garment never painted, its change to the part set directly.
  */
 fun tuckCommand(character: Character, body: AssembledCharacter, garment: Garment, item: TuckItem, tucked: Boolean): DocumentCommand {
     val choice = SetTuck(garment.id, item.part, item.kind, tucked)
     val chosen = garment.copy(tucks = garment.tucks.filterNot { it.part == item.part && it.kind == item.kind } + TuckChoice(item.part, item.kind, tucked))
-    if (garment.drawn) return Together(listOf(choice, shapeCommands(character, body, chosen, garment.edges, garment.fill)))
+    if (garment.areas.isNotEmpty()) return Together(listOf(choice, shapeCommands(character, body, chosen, paintedOf(character, body, garment))))
     val held = garment.changes[item.part]
     val next: BodyPartChange? = if (!item.kind.digits) {
         BodyPartChange.Hide.takeIf { tucked }

@@ -2,16 +2,18 @@ package dev.chieppa.squash.screens.dress
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
-import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.shape.repainted
+import dev.chieppa.squash.character.shape.withoutEdge
 import dev.chieppa.squash.document.Anchor
-import dev.chieppa.squash.document.Character
-import dev.chieppa.squash.document.Garment
-import dev.chieppa.squash.document.GarmentEdge
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.document.SurfaceCurve
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.draw.followToRelease
@@ -36,76 +38,86 @@ private const val SMOOTH_PULL = 0.5f
 
 /**
  * A Dress tool working on the picked garment's edges on the body's surface, from a locked pane or a free one alike, with the edges
- * showing as Edge shows them.
+ * showing as Paint shows them.
  */
 abstract class EdgeWorkTool(state: AppState, internal var look: SheetLook) : SurfaceTool(state) {
     override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = buildOverlay { edges(state, look, camera) }
 
     override fun fullOverlay(view: FullView): ViewportOverlay = buildOverlay { edges(state, look, view) }
 
-    /** Follows the drag from [down] as one step, handing [step] each pointer place with the garment's edges as they stand. */
-    protected suspend fun AwaitPointerEventScope.gesture(down: PointerInputChange, sight: SurfaceView, step: (Offset, Session) -> Unit) {
+    /**
+     * Follows the drag from [down] as one step, handing [step] each pointer place with the garment's cloth as the drag has left it so far,
+     * which [step] answers with the cloth after it, or null for no change.
+     */
+    protected suspend fun AwaitPointerEventScope.gesture(down: PointerInputChange, sight: SurfaceView, step: (Offset, PaintedGarment) -> PaintedGarment?) {
+        val picked = state.pickedGarment() ?: return
         val session = state.session.value ?: return
-        val character = session.document.value.character
-        val garment = state.dress.garment.value?.let(character.wardrobe::garment) ?: return
-        val body = session.assembly.output.value ?: return
         val transaction: History<SquashDocument>.Transaction = session.history.begin()
-        var edges = garment.edges
+        var now = picked.painted
+        var changed = false
         var released = false
         val apply = { pixel: Offset ->
-            step(pixel, Session(character, body, garment, edges, sight) { next ->
-                edges = next
-                transaction.update(shapeCommands(character, body, garment, next, garment.fill))
-            })
+            step(pixel, now)?.let { next ->
+                now = next
+                changed = true
+                transaction.update(shapeCommands(picked.character, picked.body, picked.garment, next))
+            }
         }
         try {
             apply(down.position)
             released = followToRelease(down.id, {}) { pixel -> apply(pixel) }
         } finally {
-            if (released && edges != garment.edges) transaction.commit() else transaction.cancel()
+            if (released && changed) transaction.commit() else transaction.cancel()
         }
     }
 
-    /** What a step of a gesture works on: the garment's [edges] so far, and [write], which gives it new ones. */
-    protected class Session(
-        val character: Character,
-        val body: AssembledCharacter,
-        val garment: Garment,
-        val edges: List<GarmentEdge>,
-        val sight: SurfaceView,
-        val write: (List<GarmentEdge>) -> Unit,
-    )
+    /** The indices of [painted]'s edges showing within [reach] of [pixel]. */
+    protected fun edgesNear(painted: PaintedGarment, pixel: Offset, sight: SurfaceView, reach: Float): List<Int> {
+        val picked = state.pickedGarment() ?: return emptyList()
+        return painted.edges.indices.filter { i ->
+            shownCurves(picked.character, painted.edges[i].edge.curve).any { shown ->
+                pixelsOf(picked.body, shown.curve, sight).any { it != null && (it - pixel).getDistance() <= reach }
+            }
+        }
+    }
 }
 
-/** Edit curves on edges: a press on any point of the picked garment's edges drags it along the surface and picks that edge. */
+/**
+ * Edit curves on edges: a press on a handle of the picked garment's hems drags it along the surface, bending the hem through it and
+ * repainting the cells either side of where it moved, and picks that edge; the hem shows as dragged till it lets go.
+ */
 @Stable
 class EdgeEditTool(state: AppState, look: SheetLook) : EdgeWorkTool(state, look) {
+    private var dragged by mutableStateOf<SurfaceCurve?>(null)
+
+    override fun overlay(view: View, camera: LockedCamera): ViewportOverlay = buildOverlay { edges(state, look, camera, dragged) }
+
+    override fun fullOverlay(view: FullView): ViewportOverlay = buildOverlay { edges(state, look, view, dragged) }
+
     override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean =
-        dragEdgePoint(state, down, sight, pickedOnly = false)
+        dragEdgePoint(state, down, sight, pickedOnly = false) { dragged = it }
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) = Unit
 }
 
-/** Erase on edges: a press or drag over an edge of the picked garment takes the whole edge away, one step per drag. */
+/** Erase on edges: a press or drag over an edge of the picked garment takes it away, its far side joining its area, one step per drag. */
 @Stable
 class EdgeEraseTool(state: AppState, look: SheetLook) : EdgeWorkTool(state, look) {
     override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean {
-        val session = state.session.value ?: return false
-        val character = session.document.value.character
-        val garment = state.dress.garment.value?.let(character.wardrobe::garment) ?: return false
-        val body = session.assembly.output.value ?: return false
-        nearestPoint(character, body, garment, down.position, sight, ERASE_REACH) ?: return false
+        val picked = state.pickedGarment() ?: return false
+        if (edgesNear(picked.painted, down.position, sight, ERASE_REACH).isEmpty()) return false
         down.consume()
         state.dress.edge.value = null
-        gesture(down, sight) { pixel, at ->
-            val gone = at.edges.indices.filter { i ->
-                shownCurves(at.character, at.edges[i].curve).any { shown ->
-                    pixelsOf(at.body, shown.curve, at.sight).any { it != null && (it - pixel).getDistance() <= ERASE_REACH }
-                }
-            }
-            if (gone.isNotEmpty()) at.write(at.edges.filterIndexed { i, _ -> i !in gone })
-        }
+        gesture(down, sight) { pixel, now -> erasedNear(now, pixel, sight) }
         return true
+    }
+
+    private fun erasedNear(now: PaintedGarment, pixel: Offset, sight: SurfaceView): PaintedGarment? {
+        val gone = edgesNear(now, pixel, sight, ERASE_REACH).firstOrNull() ?: return null
+        val on = now.edges[gone]
+        val curves = now.edges.filter { it.area == on.area }.map { it.edge.curve }
+        val mask = withoutEdge(now.areas[on.area].mask, on.edge.curve, curves)
+        return now.with(areas = now.areas.mapIndexed { i, area -> if (i == on.area) area.with(mask) else area.with(area.mask - mask) })
     }
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) = Unit
@@ -113,28 +125,35 @@ class EdgeEraseTool(state: AppState, look: SheetLook) : EdgeWorkTool(state, look
 
 /**
  * Smooth on edges: a drag near the picked garment's edges eases each point within reach toward the middle of its neighbours on the
- * same part, one step per drag.
+ * same part, the area drawn again along it, one step per drag.
  */
 @Stable
 class EdgeSmoothTool(state: AppState, look: SheetLook) : EdgeWorkTool(state, look) {
     override suspend fun AwaitPointerEventScope.pressedOverlay(down: PointerInputChange, sight: SurfaceView): Boolean {
-        val session = state.session.value ?: return false
-        val character = session.document.value.character
-        val garment = state.dress.garment.value?.let(character.wardrobe::garment) ?: return false
-        val body = session.assembly.output.value ?: return false
-        nearestPoint(character, body, garment, down.position, sight, SMOOTH_REACH) ?: return false
+        val picked = state.pickedGarment() ?: return false
+        if (edgesNear(picked.painted, down.position, sight, SMOOTH_REACH).isEmpty()) return false
         down.consume()
-        gesture(down, sight) { pixel, at ->
-            val next = at.edges.map { edge ->
-                val shown = shownCurves(at.character, edge.curve)
-                val near = edge.curve.points.indices.filter { j ->
-                    shown.any { pixelsOf(at.body, it.curve, at.sight)[j]?.let { p -> (p - pixel).getDistance() <= SMOOTH_REACH } == true }
-                }
-                if (near.isEmpty()) edge else edge.copy(curve = edge.curve.copy(points = smoothed(edge.curve.points, near.toSet(), edge.curve.closed)))
-            }
-            if (next != at.edges) at.write(next)
-        }
+        gesture(down, sight) { pixel, now -> smoothedNear(now, pixel, sight) }
         return true
+    }
+
+    private fun smoothedNear(now: PaintedGarment, pixel: Offset, sight: SurfaceView): PaintedGarment? {
+        val picked = state.pickedGarment() ?: return null
+        var next = now
+        var any = false
+        for (area in now.areas.indices) {
+            val curves = now.edges.filter { it.area == area }.map { on ->
+                val curve = on.edge.curve
+                val near = curve.points.indices.filter { j ->
+                    shownCurves(picked.character, curve).any { shown -> pixelsOf(picked.body, shown.curve, sight)[j]?.let { (it - pixel).getDistance() <= SMOOTH_REACH } == true }
+                }
+                if (near.isEmpty()) curve else curve.copy(points = smoothed(curve.points, near.toSet(), curve.closed)).also { any = true }
+            }
+            if (curves.isEmpty()) continue
+            val mask = repainted(next.areas[area].mask, now.edges.filter { it.area == area }.map { it.edge.curve }, curves)
+            next = next.with(areas = next.areas.mapIndexed { i, each -> if (i == area) each.with(mask) else each.with(each.mask - mask) })
+        }
+        return next.takeIf { any }
     }
 
     override suspend fun AwaitPointerEventScope.pressed(hit: SurfaceHit, down: PointerInputChange, sight: SurfaceView) = Unit

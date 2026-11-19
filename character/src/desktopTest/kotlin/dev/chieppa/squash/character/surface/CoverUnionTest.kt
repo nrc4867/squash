@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.surface
 
+import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
@@ -14,8 +15,8 @@ class CoverUnionTest {
     private val torso = PartId("torso")
 
     private fun worn(id: String, vararg branches: GarmentBranch, open: Map<PartId, OpenEnds> = emptyMap()): WornCover {
-        val garment = Garment(GarmentId(id), id, GarmentSlotId("slot"))
-        val map = branches.associateBy { it.part }
+        val garment = Garment(GarmentId(id), id, GarmentSlotId("slot"), branches = branches.toList()).withBoxesPainted()
+        val map = garment.branches.associateBy { it.part }
         return WornCover(GarmentCover(garment, map), map, emptySet(), emptySet(), emptyMap(), openEnds = open)
     }
 
@@ -25,7 +26,7 @@ class CoverUnionTest {
         val boot = worn("boots", GarmentBranch(leg, 0.72f, 1f, 0.05f))
         val union = checkNotNull(coverUnion(listOf(sleeve, boot)))
         assertEquals(GarmentBranch(leg, 0f, 1f, 0.05f), union.branchOf(leg))
-        assertEquals(GarmentBranch(torso, 0.4f, 0.97f, 0.03f), union.branchOf(torso))
+        assertEquals(GarmentBranch(torso, 26f / CHART_ROWS, 62f / CHART_ROWS, 0.03f), union.branchOf(torso), "the rows its cells take")
     }
 
     @Test

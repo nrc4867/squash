@@ -4,15 +4,21 @@ import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.RestDirection
 import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.CHART_CELLS
+import dev.chieppa.squash.document.CHART_COLUMNS
 import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.FIRST_AREA
+import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.OutlineCurve
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetBaseSlot
+import dev.chieppa.squash.document.SetGarmentPaint
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SocketRef
+import dev.chieppa.squash.document.runsOfCells
 import dev.chieppa.squash.screens.fennec.loop
 import dev.chieppa.squash.screens.fennec.p
 import dev.chieppa.squash.screens.woman.FEET_SLOT
@@ -75,8 +81,26 @@ private const val HEEL_SEGMENTS = 10
 /** The flat: a softer point, on the ground, its opening a little longer. */
 private val FLAT_FOOT = shoeFoot(tip = 0.7f, round = 0.0622f)
 private const val FLAT_EASE = 0.003f
-private const val FLAT_FROM_V = 0.33f
-private const val FLAT_TO_V = 0.67f
+
+/**
+ * The flat's cells on the foot's chart: its sides from column [FLAT_FIRST_COLUMN] to [FLAT_LAST_COLUMN] round the sole the whole way
+ * along, and a column higher each side round the heel up to row [FLAT_HEEL_ROWS], behind the ankle, so the counter stands as high as the
+ * sides' hem and runs level across the back of the heel.
+ */
+private const val FLAT_FIRST_COLUMN = 11
+private const val FLAT_LAST_COLUMN = 20
+private const val FLAT_HEEL_ROWS = 14
+
+private fun flatCells(): List<Int> = runsOfCells(BooleanArray(CHART_CELLS) { cell ->
+    val row = cell / CHART_COLUMNS
+    val column = cell % CHART_COLUMNS
+    column in FLAT_FIRST_COLUMN..FLAT_LAST_COLUMN || (row < FLAT_HEEL_ROWS && column in FLAT_FIRST_COLUMN - 1..FLAT_LAST_COLUMN + 1)
+})
+
+/** Round the foot, the bounds of the flat's cells, half a cell onto the walls beside them, as Dress records them. */
+private const val FLAT_FROM_V = (FLAT_FIRST_COLUMN - 1.5f) / CHART_COLUMNS
+private const val FLAT_TO_V = (FLAT_LAST_COLUMN + 2.5f) / CHART_COLUMNS
+
 private val FLAT_VAMP_FROM = footU(0.085f)
 
 /** The boot: a round toe box, closed over the whole foot, a shaft up the leg to mid-calf over the jeans and a platform sole. */
@@ -149,6 +173,7 @@ fun twinShoes(): List<DocumentCommand> = listOf(cloth(PATENT, 0x1E1B20), cloth(T
     } +
     twinGarment(PUMP_VAMPS, "Pump vamps", STRAPS_SLOT, PATENT, listOf(GarmentBranch(FOOT_L, PUMP_VAMP_FROM, 1f, ease = PUMP_EASE)), layer = OVER_LAYER) +
     twinGarment(FLATS, "Flats", FEET_SLOT, TAN, listOf(GarmentBranch(FOOT_L, fromV = FLAT_FROM_V, toV = FLAT_TO_V, ease = FLAT_EASE)), changes = mapOf(FOOT_L to FLAT_FOOT)) +
+    SetGarmentPaint(FLATS, listOf(GarmentArea(FIRST_AREA, "", mapOf(FOOT_L to flatCells()))), emptyList()) +
     twinGarment(FLAT_VAMPS, "Flat vamps", STRAPS_SLOT, TAN, listOf(GarmentBranch(FOOT_L, FLAT_VAMP_FROM, 1f, ease = FLAT_EASE)), layer = OVER_LAYER) +
     twinGarment(
         BOOTS, "Boots", FEET_SLOT, BOOT_LEATHER,

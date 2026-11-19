@@ -85,6 +85,8 @@ internal object FaceAndClothes {
             table(
                 listOf("question", "answer"),
                 listOf(
+                    listOf("what a cover covers", "the cells of its part's 64 by 32 chart whose middles lie in its box, at least two rows and two columns; the hem follows those cells' edge, so a box edge moves by up to half a cell"),
+                    listOf("a cover past its part's end", "`from` below 0 or `to` past 1 runs the cloth on past that end, where the cells reach it"),
                     listOf("how far a cover stands off its part", "the garment's `partFits` for that part, else its `fit`, else the cover's `ease`"),
                     listOf("where cloth stands off further", "a cover's Side and Top `outlines`, along the part's own x, add to that"),
                     listOf("what a `redraw` lays over the part", "outlines by view and parameters by key replace the part's; regions and marks replace by id, others kept; `color` replaces the base slot; `areas` by name"),

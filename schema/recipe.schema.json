@@ -612,7 +612,7 @@
       ]
     },
     "RecipeCover": {
-      "description": "The garment over one part. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening.",
+      "description": "The garment over one part: the cells of the part's chart its box holds. u runs along the part, past 1 to run on past its end or below 0 before its start; v round it, a span under 1 leaving an opening.",
       "type": "object",
       "properties": {
         "part": {

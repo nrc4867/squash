@@ -45,7 +45,7 @@ fun AppState.showOutfit(outfit: OutfitId?) {
     if (open.document.value.character.wardrobe.shown != outfit) open.send(ShowOutfit(outfit))
 }
 
-/** Makes a garment in [slot], worn at once in a color of its own, picks it, opens its name for typing and arms Edge. */
+/** Makes a garment in [slot], worn at once in a color of its own, picks it, opens its name for typing and arms Paint. */
 suspend fun AppState.newGarmentIn(slot: GarmentSlotId) {
     val garment = newGarment(slot) ?: return
     library.garmentCursor.value = garment

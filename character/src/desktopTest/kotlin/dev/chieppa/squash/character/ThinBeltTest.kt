@@ -2,7 +2,10 @@ package dev.chieppa.squash.character
 
 import dev.chieppa.squash.character.surface.RunScales
 import dev.chieppa.squash.document.BODY_PATCH
+import dev.chieppa.squash.document.CHART_COLUMNS
+import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.Garment
+import dev.chieppa.squash.document.boxCells
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlot
@@ -26,7 +29,10 @@ private const val BELT_CELLS = 1f
 /** Where along the torso the belt starts, in u. */
 private const val BELT_U = 0.45f
 
-/** A belt about one of the body's cells wide is meshed finer than the body, so it is worn whole: as wide as drawn and all the way round. */
+/**
+ * A belt about one of the body's cells wide is meshed finer than the body, so it is worn whole: as wide as the chart's rows its box
+ * paints, at least two, and all the way round.
+ */
 @Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class ThinBeltTest {
@@ -45,7 +51,8 @@ class ThinBeltTest {
         session.settle()
         val worn = assertNotNull(session.sessionSurface.dress.output.value?.dress?.garments?.singleOrNull(), "the belt is worn")
         assertTrue(worn.surface.mesh.cell < body.mesh.cell, "the belt meshes finer than the body")
-        val drawn = width * scales.around(BELT_U + du / 2f)
+        val rows = boxCells(belt.branches.single()).count { it } / CHART_COLUMNS
+        val drawn = rows.toFloat() / CHART_ROWS * scales.along(BELT_U) * scales.around(BELT_U + du / 2f)
         val area = areaOf(worn.drawn)
         assertTrue(area > drawn * 0.7f && area < drawn * 1.6f, "the belt covers $area, drawn as $drawn")
     }

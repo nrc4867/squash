@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
@@ -28,13 +29,14 @@ private const val BAND_CELLS = 4f
  * where the shell would lie under the skin; a part that is not in the body's field but wears a cuff of the garment, as an ear does,
  * has its run swept by [solids] and joined to the garment's run over its socket parent nearest its socket, by a blend at least
  * [CUFF_BLEND_EASES] of its ease, so a cuff over a thin part flows into the garment. Null when it covers no run.
- * Each run it covers only part of is kept by [clips] to round what it covers. Its runs keep their parts' own (u, v), so each of its
+ * Each run it covers only part of is kept by [clips] to round what it covers, its cloth's [ClothReach]: the painted rows rounded out to
+ * steps, so a small stroke keeps the same solid. Its runs keep their parts' own (u, v), so each of its
  * vertices knows where on the body it grows from. It meshes at the cell of the finest run it covers, no finer than [DETAIL_LEVEL] (see
  * [digitLevels]), so a shoe or a hood is as fine as the foot or the head under it, halved again up to [DIGIT_LEVEL] times from the body's
  * cell while its narrowest band, along a part or round it, spans fewer than [BAND_CELLS] cells, so a belt or a strap keeps its width.
  */
 fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacter, solids: RunSolids, clips: RunClips): CharacterField? {
-    val kept = field.runs.indices.filter { field.runs[it].first && worn.branchOf(field.runs[it].partId) != null }
+    val kept = field.runs.indices.filter { field.runs[it].first && worn.branchOf(field.runs[it].partId) != null && worn.clothOf(field.runs[it].partId) != null }
     val renumbered = HashMap<Int, Int>().also { map -> kept.forEachIndexed { i, run -> map[run] = i } }
     val runs = ArrayList<FieldRun>()
     val members = ArrayList<JoinedMember>()
@@ -44,7 +46,8 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         val member = field.field.members[run]
         val parent = renumbered[member.parent] ?: -1
         val branch = checkNotNull(worn.branchOf(at.partId))
-        val solid = clips.of(member.solid, at.patch, branch.from, branch.to, field.cell)
+        val reach = checkNotNull(worn.clothOf(at.partId)).reach
+        val solid = clips.of(member.solid, at.patch, reach.from, reach.to, field.cell)
         runs += at
         val ease = member.ease + branch.ease
         members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease)
@@ -61,7 +64,8 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         val index = firstRunIndex(placed.surface.patches)
         if (index < 0) continue
         val patch = placed.surface.patches[index]
-        val solid = clips.of(solids.of(patch), patch, checkNotNull(worn.branchOf(cuffed)).from, checkNotNull(worn.branchOf(cuffed)).to, field.cell)
+        val band = worn.clothOf(cuffed)?.reach ?: continue
+        val solid = clips.of(solids.of(patch), patch, band.from, band.to, field.cell)
         val parentId = placed.socket?.parent
         val parent = runs.indices.filter { runs[it].partId == parentId }
             .minByOrNull { members[it].own(placed.origin) } ?: -1
@@ -76,20 +80,18 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
 
 /**
  * The cell [worn] meshes at over [field]'s runs [kept]: that of the finest of them, no finer than [DETAIL_LEVEL], halved further while
- * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells.
+ * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells'.
  */
 private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>): Float {
     val levels = digitLevels(field)
     var narrowest = Float.MAX_VALUE
     for (run in kept) {
         val at = field.runs[run]
-        val branch = checkNotNull(worn.branchOf(at.partId))
-        val partial = branch.from > 0f || branch.to < 1f
-        if (!partial && branch.allRound) continue
+        val band = bandOf(at.partId, worn)
+        if (!band.partial && band.allRound) continue
         val scales = RunScales(at.patch)
-        val middle = ((branch.from + branch.to) / 2f).coerceIn(0f, 1f)
-        if (partial) narrowest = minOf(narrowest, (branch.to - branch.from) * scales.along(middle))
-        if (!branch.allRound) narrowest = minOf(narrowest, (branch.toV - branch.fromV) * scales.around(middle))
+        if (band.partial) narrowest = minOf(narrowest, band.along * scales.along(band.middle))
+        if (!band.allRound) narrowest = minOf(narrowest, band.around * scales.around(band.middle))
     }
     var level = kept.maxOfOrNull { minOf(levels[it], DETAIL_LEVEL) } ?: 0
     var cell = field.cell / (1 shl level)
@@ -98,6 +100,16 @@ private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>): F
         level++
     }
     return cell
+}
+
+/** How far a garment covers one part: along it in u about [middle], [along] where [partial], and round it [around] where not [allRound]. */
+private class Band(val partial: Boolean, val along: Float, val middle: Float, val allRound: Boolean, val around: Float)
+
+/** The band [worn] covers of [part]: its painted cells' reach. */
+private fun bandOf(part: PartId, worn: WornCover): Band {
+    val reach = checkNotNull(worn.clothOf(part)).reach
+    val middle = (reach.firstRow + reach.lastRow + 1f) / 2f / CHART_ROWS
+    return Band(reach.partial, reach.along, middle, reach.allRound, reach.around)
 }
 
 /** The members of [body]'s parts in [parts], each placed as it is: those of [field]'s runs, and each other part's first swept run. */

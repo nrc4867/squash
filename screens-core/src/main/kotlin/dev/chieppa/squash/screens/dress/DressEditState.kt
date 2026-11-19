@@ -2,10 +2,16 @@ package dev.chieppa.squash.screens.dress
 
 import dev.chieppa.squash.character.build.GarmentLook
 import dev.chieppa.squash.character.build.GarmentView
+import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.LooseEnd
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.screens.surface.PaintShape
 import kotlinx.coroutines.flow.MutableStateFlow
+
+/** A new brush's size, in body units, and how much Clean edges smooths at first. */
+const val DEFAULT_BRUSH_SIZE = 0.12f
+const val DEFAULT_CLEAN = 0.6f
 
 /**
  * What the Dress stage remembers: the garment picked, the garments left out of view, how the garments
@@ -15,8 +21,23 @@ class DressEditState {
     /** The garment the inspector and the garment tools work on. */
     val garment = MutableStateFlow<GarmentId?>(null)
 
-    /** The picked garment's edge picked in the inspector, by its place in the garment's edges, whose points the edge tools show. */
+    /** The picked garment's edge picked in the inspector or by Edit curves, by its place in the garment's edges, whose points show. */
     val edge = MutableStateFlow<Int?>(null)
+
+    /** The picked garment's area Paint lays strokes in, or null for its first. */
+    val area = MutableStateFlow<GarmentAreaId?>(null)
+
+    /** Paint's options: unpainting rather than painting, the brush's size in body units, Clean edges, the shape a drag lays. */
+    val unpaint = MutableStateFlow(false)
+    val brushSize = MutableStateFlow(DEFAULT_BRUSH_SIZE)
+    val clean = MutableStateFlow(DEFAULT_CLEAN)
+    val shape = MutableStateFlow(PaintShape.BRUSH)
+
+    /** Whether Edit curves shows every edge's points, not just the picked edge's. */
+    val handles = MutableStateFlow(false)
+
+    /** Whether a second Hole press on a part adds a cuff band. */
+    val cuffOnSecondPress = MutableStateFlow(true)
 
     /** The part whose Redraw by the picked garment the outline tools draw on, or null for the garment's branches. */
     val redrawing = MutableStateFlow<dev.chieppa.squash.document.PartId?>(null)
@@ -57,6 +78,7 @@ class DressEditState {
     fun clear() {
         garment.value = null
         edge.value = null
+        area.value = null
         redrawing.value = null
         hidden.value = emptySet()
     }

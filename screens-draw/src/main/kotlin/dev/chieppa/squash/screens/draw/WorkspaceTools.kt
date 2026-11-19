@@ -50,7 +50,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import dev.chieppa.squash.screens.dress.newGarment
 import dev.chieppa.squash.uidesign.generated.dress_new_garment
-import dev.chieppa.squash.uidesign.generated.dress_tool_edge
+import dev.chieppa.squash.uidesign.generated.dress_tool_paint
+import dev.chieppa.squash.uidesign.generated.dress_tool_silhouette
 import dev.chieppa.squash.uidesign.generated.dress_tool_hole
 import dev.chieppa.squash.uidesign.generated.dress_tool_loose_end
 import dev.chieppa.squash.uidesign.generated.stage_dress
@@ -63,9 +64,8 @@ private const val SYMMETRY_TOOLS = 2
 /**
  * The tools of the stage on screen for the strip above the panes, in sections that collapse where the strip runs short. Shape holds Draw outline, which is
  * Oversketch once the part is drawn, Spine and width, Edit curves, Erase, Smooth and Move, then Mirror and Half outline, then Add part. Color holds
- * the paint tools and Lines holds [lines], Rig [rigs] and Pose [poses], each with Mirror; Face holds [faces]. Dress holds Draw garment, Edit curves,
- * Erase, Smooth, Cover and Loose end, then Mirror, always on since a branch on a pair covers both sides, and Half outline, then New garment. Every
- * stage that [holdsSelect] starts with Select.
+ * the paint tools and Lines holds [lines], Rig [rigs] and Pose [poses], each with Mirror; Face holds [faces]. Dress holds Paint, Silhouette, shown
+ * but not yet armed, Edit curves, Erase, Smooth, Hole and Loose end, then Mirror, then New garment. Every stage that [holdsSelect] starts with Select.
  */
 @Composable
 fun WorkspaceTools(state: AppState, lines: ToolSection? = null, faces: ToolSection? = null, rigs: ToolSection? = null, poses: ToolSection? = null) {
@@ -163,33 +163,36 @@ private fun PaintTools(tool: BuildTool, state: AppState) {
 
 @Composable
 private fun dressSections(tool: BuildTool, state: AppState): List<ToolSection> {
+    val paint = stringResource(Res.string.dress_tool_paint)
+    val silhouette = stringResource(Res.string.dress_tool_silhouette)
     val icons = mapOf(
-        BuildTool.EDGE to SquashIcons.Edge,
-        BuildTool.HOLE to SquashIcons.Hole,
+        BuildTool.PAINT to SquashIcons.PaintCloth,
         BuildTool.EDIT_GARMENT to SquashIcons.EditCurves,
         BuildTool.ERASE_GARMENT to SquashIcons.Erase,
         BuildTool.SMOOTH_GARMENT to SquashIcons.SmoothCurve,
+        BuildTool.HOLE to SquashIcons.Hole,
         BuildTool.LOOSE_END to SquashIcons.LooseEnd,
     )
     val labels = mapOf(
-        BuildTool.EDGE to stringResource(Res.string.dress_tool_edge),
-        BuildTool.HOLE to stringResource(Res.string.dress_tool_hole),
+        BuildTool.PAINT to paint,
         BuildTool.EDIT_GARMENT to stringResource(Res.string.shell_action_edit_curves),
         BuildTool.ERASE_GARMENT to stringResource(Res.string.edit_tool_erase),
         BuildTool.SMOOTH_GARMENT to stringResource(Res.string.smooth_tool),
+        BuildTool.HOLE to stringResource(Res.string.dress_tool_hole),
         BuildTool.LOOSE_END to stringResource(Res.string.dress_tool_loose_end),
     )
     val armed = tool.takeIf { it in icons }
     val newGarment = stringResource(Res.string.dress_new_garment)
     val scope = rememberCoroutineScope()
     return listOf(
-        ToolSection(ShellTags.section("dress"), stringResource(Res.string.stage_dress), icons[armed] ?: SquashIcons.Edge, icons.size, armed) {
-            icons.forEach { (each, icon) -> StripTool(each, icon, labels.getValue(each), tool, state::armTool) }
+        ToolSection(ShellTags.section("dress"), stringResource(Res.string.stage_dress), icons[armed] ?: SquashIcons.PaintCloth, icons.size + 1, armed) {
+            StripTool(BuildTool.PAINT, SquashIcons.PaintCloth, paint, tool, state::armTool)
+            Tooltip(silhouette, null) {
+                ToolButton(SquashIcons.Silhouette, silhouette, false, {}, Modifier.testTag(ShellTags.SILHOUETTE), size = TOOL_SIZE, enabled = false)
+            }
+            icons.keys.drop(1).forEach { each -> StripTool(each, icons.getValue(each), labels.getValue(each), tool, state::armTool) }
         },
-        ToolSection(ShellTags.section("symmetry"), stringResource(Res.string.shell_tools_symmetry), SquashIcons.Mirror, SYMMETRY_TOOLS) {
-            HeldMirrorButton()
-            HalfOutlineButton(state, ActionKeys.DRESS_HALF_OUTLINE)
-        },
+        ToolSection(ShellTags.section("mirror"), stringResource(Res.string.edit_tool_mirror), SquashIcons.Mirror, 1) { MirrorButton(state) },
         ToolSection(ShellTags.section("new-garment"), newGarment, SquashIcons.NewGarment, 1) {
             Tooltip(newGarment, LocalActionKeys.current(ActionKeys.NEW_GARMENT)) {
                 ToolButton(
@@ -206,20 +209,11 @@ private fun dressSections(tool: BuildTool, state: AppState): List<ToolSection> {
     )
 }
 
-/** Mirror in Dress: lit and still, since a garment's branch on a pair covers both sides. */
-@Composable
-private fun HeldMirrorButton() {
-    val label = stringResource(Res.string.edit_tool_mirror)
-    Tooltip(label, LocalActionKeys.current(ActionKeys.MIRROR)) {
-        ToolButton(SquashIcons.Mirror, label, true, {}, Modifier.testTag(ShellTags.MIRROR), size = TOOL_SIZE, enabled = false)
-    }
-}
-
 /** Half outline: on, a stroke draws one edge and its mirror image across the part's centre line. */
 @Composable
-private fun HalfOutlineButton(state: AppState, key: String = ActionKeys.HALF_OUTLINE) {
+private fun HalfOutlineButton(state: AppState) {
     val label = stringResource(Res.string.draw_half_outline)
-    Tooltip(label, LocalActionKeys.current(key)) {
+    Tooltip(label, LocalActionKeys.current(ActionKeys.HALF_OUTLINE)) {
         ToolButton(
             SquashIcons.HalfOutline,
             label,

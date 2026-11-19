@@ -28,6 +28,7 @@ class SurfaceGarment(
     private val cutValues: FloatArray = drawnCoverage,
     val ends: List<JoinedMember> = emptyList(),
     val paint: SurfacePaint? = null,
+    val seamValues: List<FloatArray> = emptyList(),
 ) {
     /**
      * The curves where each join its garment inks shares its surface equally, a covered part's run and the run it grows from, over what
@@ -35,7 +36,8 @@ class SurfaceGarment(
      */
     val inkedJoins: List<List<CurvePoint>> by lazy {
         val inked = cover.garment.joins
-        if (inked.isEmpty()) emptyList() else joinCurves(surface.field, surface.mesh, surface.lines, { cover.branchOf(it.partId)?.part in inked }) { coverage[it] >= 0f }
+        val joins = if (inked.isEmpty()) emptyList() else joinCurves(surface.field, surface.mesh, surface.lines, { cover.branchOf(it.partId)?.part in inked }) { coverage[it] >= 0f }
+        joins + if (cover.garment.inkHem) seamsOf(surface, coverage, seamValues) else emptyList()
     }
 
     /** Where it is drawn, one value a vertex of its surface's drawn mesh: its [cut] is where this is at least zero. */
@@ -43,10 +45,10 @@ class SurfaceGarment(
 
     /** This garment drawn only where [shown], cut where [values] are at least zero, keeps it, a cut of its surface's drawn mesh. */
     fun within(shown: LevelCut, values: FloatArray): SurfaceGarment =
-        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hems, lines, drawnCoverage, holes, values, ends, paint?.within(values, surface))
+        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hems, lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues)
 
     /** This garment with [paint] painted over its color. */
-    fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint)
+    fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues)
 
     /**
      * This garment on [moved], its surface moved, its cut laid again and its hems and lines found there again; where the move leaves
@@ -57,7 +59,7 @@ class SurfaceGarment(
         val laid = if (moved.render.indices.size == surface.render.indices.size) cut else LevelCut.of(cutValues, moved.render.indices)
         return SurfaceGarment(
             cover, moved, coverage, laid, laid.mesh(moved.render), hemsOf(moved.lines, coverage), TriangleLines(moved.positions, moved.lineNormals, kept, coverage), drawnCoverage, holes, cutValues, ends,
-            paint?.on(moved.render),
+            paint?.on(moved.render), seamValues,
         )
     }
 

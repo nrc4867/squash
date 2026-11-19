@@ -95,7 +95,7 @@ inline fun newOutfitIn(wardrobe: Wardrobe, name: (Int) -> String): Outfit {
 
 /**
  * Makes a new garment, worn at once in its own color (see [newGarmentCommand]), in [slot] or the picked garment's, picks it and arms
- * Edge; its id, or null with no character open.
+ * Paint; its id, or null with no character open.
  */
 suspend fun AppState.newGarment(slot: GarmentSlotId? = null): GarmentId? {
     val open = session.value ?: return null
@@ -105,7 +105,9 @@ suspend fun AppState.newGarment(slot: GarmentSlotId? = null): GarmentId? {
     val into = slot ?: dress.garment.value?.let(character.wardrobe::garment)?.slot
     open.send(character.newGarmentCommand(garment, into, names))
     dress.garment.value = garment.id
-    tool.value = BuildTool.EDGE
+    dress.area.value = null
+    dress.edge.value = null
+    tool.value = BuildTool.PAINT
     return garment.id
 }
 

@@ -9,7 +9,6 @@ val LocalActionKeys = staticCompositionLocalOf<(String) -> List<String>> { { emp
 object ActionKeys {
     const val MIRROR = "mirror"
     const val HALF_OUTLINE = "half-outline"
-    const val DRESS_HALF_OUTLINE = "dress-half-outline"
     const val NEW_GARMENT = "new-garment"
     const val FIT_PANE = "fit-pane"
     const val PARTS = "drawer-parts"
