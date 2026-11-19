@@ -39,6 +39,15 @@ class LookArgs(args: Array<String>) {
      */
     val close: Set<String> = values["close"]?.split(',')?.toSet() ?: setOf(FACE, HAND, FOOT)
 
+    /** The entries of [close] that name no close-up, which are part ids, each framed close per outfit. */
+    val closeParts: List<String> = close.filter { it !in CLOSE_WORDS }
+
+    /** With `around=true`, each outfit's back and top views as well, beside each other in `<outfit>-back-top`. */
+    val around: Boolean = values["around"] == "true"
+
+    /** With `show=<part>,...`, the views draw and frame only those parts, and no close-up is rendered. */
+    val show: Set<String>? = values["show"]?.split(',')?.filter { it.isNotEmpty() }?.toSet()
+
     /** With `thumbs=true`, each example's Library outfit and garment thumbnails, timed, instead of the usual views. */
     val thumbs: Boolean = values["thumbs"] == "true"
 
@@ -101,5 +110,8 @@ class LookArgs(args: Array<String>) {
         const val DRAG = "drag"
         const val RELEASE = "release"
         const val ANCHORS = "anchors"
+
+        /** Every word `close=` takes; anything else it holds is a part id. */
+        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS)
     }
 }

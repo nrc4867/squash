@@ -7,18 +7,16 @@ import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.smoke.PROBE_LOOK
 import dev.chieppa.squash.screens.smoke.assertNotBlank
 import dev.chieppa.squash.screens.smoke.keepImage
-import dev.chieppa.squash.screens.smoke.renderSnapshot
+import dev.chieppa.squash.screens.smoke.FrameSnapshots
 import dev.chieppa.squash.screens.smoke.shownState
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.FACE_BINS
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.headAngle
-import dev.chieppa.stretch.gpu.GpuOptions
 import java.io.File
 
 /** The reference renders' flat background, so a shot and its reference pair up on the same ground. */
@@ -45,7 +43,7 @@ class ShotViews(private val work: TestWork, private val errors: MutableList<Stri
             val head = state.character.part(id)
             if (head == null) FACE_BINS.binFor(90f) else FACE_BINS.binFor(headAngle(head, toViewer))
         }
-        val image = renderSnapshot(SceneFrame(REFERENCE_GROUND, listOf(view)), shot.width, shot.height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        val image = FrameSnapshots.render(SceneFrame(REFERENCE_GROUND, listOf(view)), shot.width, shot.height, errors)
         keepImage(image.pixels, image.width, name, images)
         runCatching { assertNotBlank(image.pixels, name) }.onFailure { errors += "$name: ${it.message}" }
     }

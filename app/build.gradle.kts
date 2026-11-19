@@ -85,3 +85,31 @@ listOf("look" to "LookMainKt", "recipe" to "recipe.RecipeMainKt", "measure" to "
         args(listOf("root=${rootProject.layout.projectDirectory.asFile.path}") + (providers.gradleProperty(name).orNull?.split(' ') ?: emptyList()))
     }
 }
+
+// ./gradlew :app:recipeLauncher writes, under app/build/recipe-launcher, the java to run and an argument file that starts the recipe command
+// with its classpath, so tools/recipe.sh watch keeps one JVM running outside Gradle and its build lock.
+tasks.register("recipeLauncher") {
+    val classpath = sourceSets["test"].runtimeClasspath
+    val java = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt())) }.map { it.executablePath.asFile.path }
+    val templates = rootProject.layout.projectDirectory.dir("templates").asFile.path
+    val root = rootProject.layout.projectDirectory.asFile.path
+    val folder = layout.buildDirectory.dir("recipe-launcher")
+    inputs.files(classpath)
+    inputs.property("java", java)
+    outputs.dir(folder)
+    doLast {
+        val out = folder.get().asFile.apply { mkdirs() }
+        fun quoted(text: String) = "\"" + text.replace(File.separatorChar, '/') + "\""
+        out.resolve("java.txt").writeText(java.get() + "\n")
+        out.resolve("args.txt").writeText(
+            listOf(
+                "--enable-native-access=ALL-UNNAMED",
+                quoted("-Dsquash.templates=$templates"),
+                "-cp",
+                quoted(classpath.files.joinToString(File.pathSeparator) { it.path }),
+                "dev.chieppa.squash.screens.look.recipe.RecipeMainKt",
+                quoted("root=$root"),
+            ).joinToString("\n") + "\n",
+        )
+    }
+}

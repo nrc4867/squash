@@ -1,7 +1,5 @@
 package dev.chieppa.squash.screens.smoke
 
-import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -14,13 +12,11 @@ import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_FRONT
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
-import dev.chieppa.stretch.gpu.GpuOptions
 import java.io.File
 import kotlin.test.assertNotNull
 
@@ -58,17 +54,14 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
     fun keep(session: CharacterSession, part: PartId, name: String) {
         val whole = session.posedState()
         val parent = session.document.value.character.part(part)?.socket?.parent
-        val kept = setOfNotNull(part, parent)
-        val shown = AssembledCharacter(whole.character.parts.filter { it.id in kept }, emptyList())
-        val lines = BodyLines(whole.lines.parts.filterKeys { it in kept })
-        val state = CharacterState(shown, whole.color, whole.work, whole.palette, lines, whole.fur, whole.surface, paint = whole.paint, dress = whole.dress, only = kept)
-        val framed = listOf(assertNotNull(shown.part(part)))
+        val state = whole.keptTo(setOfNotNull(part, parent))
+        val framed = listOf(assertNotNull(state.character.part(part)))
         val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)
             val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
             characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
         }
-        val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, errors)
         keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }
@@ -82,7 +75,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
             val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
             characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
         }
-        val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, errors)
         keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }

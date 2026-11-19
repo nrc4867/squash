@@ -32,7 +32,7 @@ tools/recipe.sh recipes/<name>.recipe.json
 From any folder; paths may be relative. It holds the machine-wide build lock (it waits if another build runs). It prints every file it writes:
 
 - `build/recipes/<id>/<id>.json` — the character file; open it in the app with `./gradlew :app:run -Popen=<file>`.
-- `build/recipes/<id>/renders/` — `<outfit>.png` (front, three-quarter, side in the display pose), `<outfit>-rest.png` when the display pose differs from rest, `<outfit>-pose-<name>.png` per named pose, `<outfit>-face.png`, `<outfit>-foot.png`, `hand.png`. A character with no outfits is `as-saved`.
+- `build/recipes/<id>/renders/` — `<outfit>.png` (front, three-quarter, side in the display pose), `<outfit>-back-top.png` (back, and from above with the front up), `<outfit>-rest.png` when the display pose differs from rest, `<outfit>-pose-<name>.png` per named pose, `<outfit>-face.png`, `<outfit>-foot.png` (the first foot on a leg), `hand.png` (the first hand or paw on an arm), and `<outfit>-<part>.png` for each part id in `close=`. A character with no outfits is `as-saved`.
 - `build/recipes/<id>/measure.txt` — the numbers (below).
 
 About 12 to 20 s a run, most of it Gradle starting. A recipe error stops the run before anything renders and says where, as a JSON path:
@@ -47,14 +47,19 @@ Options, as `key=value` after the recipe:
 
 | Option | Does |
 | --- | --- |
+| `tools/recipe.sh watch <recipe> [options]` | build, then build again each time the recipe file is saved, in one warm process, printing the same file list each time (about 5 s a rebuild after the first); Ctrl-C stops. Use it for the change-one-thing loop |
 | `render=false` | the character file only, a few seconds |
 | `measure=false` | skip the measurements |
-| `close=face,hand,foot` | close-ups (the default); `hands` and `feet` render the bare hand or paw at rest, curled, open (and spread) from six sides; `joins` the neck, shoulder and hip |
+| `close=face,hand,foot` | close-ups (the default); also part ids (`close=foot-l,hand-l,head`), each framed close per outfit as `<outfit>-<id>.png`; a hand is whatever ends an arm (a paw on an arm too), a foot whatever ends a leg; `hands` and `feet` render the bare hand or paw at rest, curled, open (and spread) from six sides; `joins` the neck, shoulder and hip |
+| `only=head,ear-l` | draw and frame just those parts in every view, for a quick look at one part; no close-ups, no measurements unless `measure=true` |
+| `around=false` | leave out the back and top views |
 | `outfits=a,b` or `all` | which outfits (default: the one the recipe shows) |
 | `poses=a,b` or `all` | which named poses (default all) |
 | `set=part:name:value,...` | try a parameter without editing the recipe |
 | `out=<folder>` | where to write |
 | `reference=<png> eye=x,y,z target=x,y,z fov=30` | also render through that camera at the image's size and compare (below) |
+| `reference=<png> fit=true` | search the camera that best matches the reference's silhouette (round, up, distance, target, field of view; from `eye`, `target`, `fov` when given), print it as `fit: eye=... target=... fov=...`, then compare through it |
+| `tools/recipe.sh crop <sheet.png> [out=<folder>] [ground=#rrggbb]` | split a sheet of several views on one background into `view-1.png`, `view-2.png` ... by the background's gaps, in reading order, each with a margin; use one as a `reference=` |
 
 `tools/recipe.sh export <character.json> [out=<recipe.json>]` writes any character file as a recipe: start from an example this way. It prints `not carried:` for anything a recipe cannot hold.
 
@@ -90,10 +95,12 @@ Read every PNG the run printed, with the feature list beside you. For each featu
 - `terminator ... blotches` — shading blotches; aim for none.
 - `one surface ... open edges` — should be 0.
 - `owned part vertices under cloth`, `owned parts' drift from rigid` — for props a garment carries.
+- `wardrobe:` lines — the slots, each garment with its slot, layer, fit, covered parts (u and v spans), changes, holes and owned parts, and each outfit's picks: check them against the clothes on the feature list.
+- `poke-through <inner> through <outer>` per outfit — the body (`body`) or an inner garment drawn outside a garment over it: how many vertices, how far the deepest lies out in body units, and on which parts. `poke-through none` is the aim; raise the outer garment's `fit` (or that part's) past the deepest, or lower the inner one's.
 
 ### Matching a reference image
 
-With `reference=<png> eye=x,y,z target=x,y,z fov=<deg>` the run renders the character through that camera (reference frame: metres, +Y up, the character facing +Z with its left at +X, y = 0 on the soles; `scale=<body units per metre>` for a character drawn at another size) and writes `compare/pair.png` (reference left), `compare/overlay.png` (blue reference only, red Squash only, grey both) and the silhouette IoU. The reference's background is keyed by its top-left pixel, or `ground=#rrggbb`. Judge shape and dressing, not tone: light and shading are Squash's own.
+With `reference=<png> eye=x,y,z target=x,y,z fov=<deg>`, or `reference=<png> fit=true` to have the camera found for you (it prints the fitted camera, which later runs can pass as given), the run renders the character through that camera (reference frame: metres, +Y up, the character facing +Z with its left at +X, y = 0 on the soles; `scale=<body units per metre>` for a character drawn at another size) and writes `compare/pair.png` (reference left), `compare/overlay.png` (blue reference only, red Squash only, grey both) and the silhouette IoU. The reference's background is keyed by its top-left pixel, or `ground=#rrggbb`; crop a sheet of views to one view first (`tools/recipe.sh crop`). With a fitted camera the IoU is about the model's shape, not the camera: a low one is a proportion or silhouette to fix. Judge shape and dressing, not tone: light and shading are Squash's own.
 
 ## The recipe
 

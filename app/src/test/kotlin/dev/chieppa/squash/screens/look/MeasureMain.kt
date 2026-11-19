@@ -26,7 +26,10 @@ import dev.chieppa.squash.screens.look.measure.faceShade
 import dev.chieppa.squash.screens.look.measure.hipSpread
 import dev.chieppa.squash.screens.look.measure.partBoxes
 import dev.chieppa.squash.screens.look.measure.profile
+import dev.chieppa.squash.screens.look.measure.pokeThrough
 import dev.chieppa.squash.screens.look.measure.propDrift
+import dev.chieppa.squash.screens.look.measure.wardrobeLines
+import dev.chieppa.squash.screens.smoke.shownState
 import dev.chieppa.squash.screens.look.measure.seen
 import dev.chieppa.squash.screens.look.measure.shownCorners
 import dev.chieppa.squash.screens.look.measure.skullShown
@@ -61,10 +64,16 @@ fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<S
     val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
     SessionPose(session)
     look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+    measureSession(example, session, work, namedPoses, look, timings)
+}
+
+/** Prints the checks of [session]'s character as [measureDocument] does, over a session already open with its pose node, on [work]. */
+fun measureSession(example: String, session: CharacterSession, work: TestWork, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) {
     work.settle(session)
     val head = LookParts(session.document.value.character).head
     val outfits = session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }
     val poses = namedPoses.filterKeys { look.poses == null || it in look.poses }
+    wardrobeLines(session.document.value.character).forEach { println("$example wardrobe: $it") }
     for (outfit in outfits) {
         if (outfit != null) session.send(ShowOutfit(outfit))
         val name = "$example ${outfit?.value ?: "as saved"}"
@@ -76,6 +85,7 @@ fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<S
             continue
         }
         report(name, shown, head?.let(shown::part))
+        clothes(name, session)
         if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { sessionSurface(name, session, work, it, look.profile, timings) }
         if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }
         if (outfit != outfits.first()) continue
@@ -132,6 +142,18 @@ private fun surfaceEdits(session: CharacterSession): List<SurfaceEdit> {
             val rest = character.resolved(instance).params[parameter] ?: checkNotNull(session.builtTemplate(instance).defaults[parameter])
             SurfaceEdit(id, instance.id, parameter, rest)
         }
+    }
+}
+
+/** Per garment pair, the drawn surface of a lower layer showing through a garment over it, as the outfit is shown; nothing with no garment worn. */
+private fun clothes(name: String, session: CharacterSession) {
+    val state = session.shownState()
+    val dress = state.dress?.takeIf { it.garments.isNotEmpty() } ?: return
+    val found = pokeThrough(dress, state.surface)
+    if (found.isEmpty()) return println("$name: poke-through none")
+    for (poke in found) {
+        val parts = poke.parts.entries.sortedByDescending { it.value }.joinToString { (part, count) -> "$part $count" }
+        println("$name: poke-through ${poke.inner} through ${poke.outer}: ${poke.vertices} vertices, deepest %.4f, on $parts".format(poke.deepest))
     }
 }
 

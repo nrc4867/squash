@@ -8,14 +8,12 @@ import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
-import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.FACE_BINS
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.squash.screens.surface.headAngle
-import dev.chieppa.stretch.gpu.GpuOptions
 import java.io.File
 import kotlin.test.assertNotNull
 
@@ -33,16 +31,25 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
     }
 
     /**
-     * The character from each of [azimuths] in degrees round from its front, framed on [framed] parts or on all of it, [tile] by [height]
-     * pixels a view, two-tone with lines and each head's face in the version its angle shows, kept as the image [name].
+     * The character from each of [azimuths] in degrees round from its front, or from each direction of [toViewers], framed on [framed] parts
+     * or on all of it, [tile] by [height] pixels a view, two-tone with lines and each head's face in the version its angle shows, kept as the
+     * image [name]. With [only], just those parts are drawn and framed.
      */
-    fun keep(session: CharacterSession, name: String, framed: Set<PartId>? = null, azimuths: List<Float> = AROUND, tile: Int = 600, height: Int = 900) {
-        val state = session.posedState()
+    fun keep(
+        session: CharacterSession,
+        name: String,
+        framed: Set<PartId>? = null,
+        azimuths: List<Float> = AROUND,
+        tile: Int = 600,
+        height: Int = 900,
+        toViewers: List<Vec3> = azimuths.map(::probeAzimuth),
+        only: Set<PartId>? = null,
+    ) {
+        val state = session.posedState().let { if (only == null) it else it.keptTo(only) }
         val parts = state.character.parts.filter { it.id != null }
         val framing = parts.filter { framed == null || it.id in framed }
         val margin = if (framed == null) WHOLE_MARGIN else CLOSE_MARGIN
-        val views = azimuths.mapIndexed { i, degrees ->
-            val toViewer: Vec3 = probeAzimuth(degrees)
+        val views = toViewers.mapIndexed { i, toViewer ->
             val rect = PixelRect(i * tile, 0, tile, height)
             val camera = framedCamera(framing, toViewer, tile, height, margin)
             characterView(rect, camera.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), camera.pixelsPerUnit) { id ->
@@ -50,7 +57,7 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
                 if (head == null) FACE_BINS.binFor(90f) else FACE_BINS.binFor(headAngle(head, toViewer))
             }
         }
-        val image = renderSnapshot(SceneFrame(PROBE_GROUND, views), tile * azimuths.size, height, GpuOptions(onError = { errors += it })) { ViewsScene(it) }
+        val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), tile * toViewers.size, height, errors)
         keepImage(image.pixels, image.width, name, images)
         assertNotBlank(image.pixels, name)
     }

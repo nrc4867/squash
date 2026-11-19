@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Builds a character recipe and judges it, headless, under the machine-wide build lock:
 #   tools/recipe.sh <recipe.json> [key=value ...]   the character file, renders, measurements, and with reference= a compare
+#   tools/recipe.sh watch <recipe.json> [key=value ...]   the same, then again each time the recipe file is saved, in one warm JVM
+#     outside Gradle and its lock, until Ctrl-C; a save with the same text builds nothing
 #   tools/recipe.sh probe <recipe.json> [question ...]   frame facts at rest, in body space (x forward, y up, z right), no renders:
 #     part=<id>[,<id>] or part=all (the default)   extent, axis and v directions, joints and sockets with body points
 #     uv=<part>:<u>,<v>[,<patch>]   the body point there        point=<x>,<y>,<z>   the part, u and v nearest that point
@@ -8,9 +10,13 @@
 #   tools/recipe.sh export <character.json> [out=<recipe.json>]   a character file written as a recipe
 #   tools/recipe.sh kit [check|json|probe|heights] <character.ts> [option ...]   a TypeScript character file anywhere on disk, checked,
 #     run and written as <name>.recipe.json beside it (or in out=), then built with these options (kit/README.md)
-# Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false, close=face,hand,foot
-# (also hands, feet, joins), outfits=<id,...|all>, poses=<name,...|all>, set=part:name:value,...,
-# reference=<png> eye=x,y,z target=x,y,z fov=<degrees> [ground=#rrggbb] [scale=<body units a metre>].
+#   tools/recipe.sh crop <sheet.png> [out=<folder>] [ground=#rrggbb]   a sheet of views on one background split by its gaps into
+#     view-1.png, view-2.png ... (default folder <sheet>-views beside it)
+# Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false,
+# close=face,hand,foot (the default; also hands, feet, joins, or part ids such as close=foot-l,head), around=false (no back and
+# top views), only=<id>,... (draw just those parts; no close-ups, no measure unless measure=true), outfits=<id,...|all>,
+# poses=<name,...|all>, set=part:name:value,..., reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search
+# the camera, print it, then score) [ground=#rrggbb] [scale=<body units a metre>].
 # Paths may be relative to where it is run from and may hold spaces. Prints every file it writes. Exits 2 on a recipe error.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,8 +39,14 @@ encoded() {
 }
 
 if [ $# -eq 0 ]; then
-  sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
+fi
+watch=0
+if [ "$1" = watch ]; then
+  watch=1
+  shift
+  [ $# -ge 1 ] || { echo "tools/recipe.sh watch needs a recipe" >&2; exit 2; }
 fi
 case "$1" in
   kit)
@@ -43,7 +55,7 @@ case "$1" in
     if command -v cygpath >/dev/null 2>&1; then bash_path="$(cygpath -w "$BASH")"; fi
     SQUASH_BASH="$bash_path" exec node "$root/kit/run.ts" "$@"
     ;;
-  export|probe)
+  export|probe|crop)
     [ $# -ge 2 ] || { echo "tools/recipe.sh $1 needs a file" >&2; exit 2; }
     args="$1=$(encoded "$(absolute "$2")")"
     shift 2
@@ -59,6 +71,14 @@ for option in "$@"; do
     *) args="$args $(encoded "$option")" ;;
   esac
 done
+if [ "$watch" = 1 ]; then
+  cd "$root"
+  bash tools/gradle-locked.sh -q --console=plain :app:recipeLauncher
+  launcher="$root/app/build/recipe-launcher"
+  java="$(cat "$launcher/java.txt")"
+  # shellcheck disable=SC2086
+  exec "$java" "@$(absolute "$launcher/args.txt")" $args watch=true
+fi
 status="$(mktemp)"
 trap 'rm -f "$status"' EXIT
 args="$args status=$(encoded "$(absolute "$status")")"

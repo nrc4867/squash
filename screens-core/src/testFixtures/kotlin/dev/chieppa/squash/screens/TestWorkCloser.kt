@@ -15,9 +15,9 @@ class TestWorkCloser : AfterEachCallback {
 
         internal fun opened(work: TestWork) = synchronized(open) { open += work }
 
-        /** Closes and forgets every [TestWork] still open. */
-        fun closeAll() {
-            val closing = synchronized(open) { open.toList().also { open.clear() } }
+        /** Closes and forgets every [TestWork] still open but those in [kept]. */
+        fun closeAll(kept: Set<TestWork> = emptySet()) {
+            val closing = synchronized(open) { open.filter { it !in kept }.also { open.removeAll(it.toSet()) } }
             closing.forEach(TestWork::close)
         }
     }
