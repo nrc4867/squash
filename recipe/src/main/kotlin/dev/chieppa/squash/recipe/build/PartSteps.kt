@@ -83,7 +83,7 @@ internal fun BuildContext.offeredSockets(part: PartId): List<String> {
  */
 private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate, part: RecipePart, scale: Float) {
     val size = part.size ?: scale.takeIf { it != 1f }
-    val params = shapeParams(size, part.lean, part.outward, anatomyParams(path, part) + part.params)
+    val params = presetParams(path, template, part.preset) + shapeParams(size, part.lean, part.outward, anatomyParams(path, part) + part.params)
     val own = plan.socketsOn(template)
     part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s, params, part.sockets) { name -> own.firstOrNull { it.name == name } }) }
     checkParams(path, template, params)
@@ -91,6 +91,13 @@ private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate,
     val outlines = if (part.outlines.isNotEmpty()) curves(path, part.outlines) else emptyMap()
     if (outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, outlines))
     checkCurve(path, template, part, params, outlines)
+}
+
+/** The values of [template]'s preset [name], none without one. */
+private fun BuildContext.presetParams(path: String, template: PartTemplate, name: String?): Map<String, Float> {
+    if (name == null) return emptyMap()
+    return template.presets[name]
+        ?: fail("$path.preset", "template ${template.id.value} has no preset \"$name\"; it has ${template.presets.keys.joinToString().ifEmpty { "none" }}")
 }
 
 /** Warns where [part]'s own curve is ignored by its template, or bends tighter than the part is thick so its rings narrow. */

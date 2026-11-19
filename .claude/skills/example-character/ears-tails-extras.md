@@ -113,12 +113,12 @@ export const spines: RecipePart = { id: "spines", template: "spike", on: "torso"
 - **Density**: `count` up to 1000 and `spacing` (body units) so they do not pile up; with a spacing too wide for the count, fewer show. A sheep's fleece is about 150 `blob` lumps at `size` 0.45 with `spacing` 0.055; a hedgehog's back 200 or more spikes at `spacing` 0.025.
 - **How they stand**: along the surface's normal; the socket's `outward` tilts them all toward the part's end (negative toward its start), so spines lie back toward the tail and a mane's clumps sweep back. `leanJitter` and `turnJitter` (degrees) break the regularity; `sizeJitter` varies their size; `size` and `falloff` size them and shrink them toward the area's edges over its outer `edge` share. `sink` and `outset` seat them as any socket's.
 - **Colour**: the part's `color`, and `shades`, a few more palette slots each copy picks among.
-- `seed` picks the scatter; another seed, another scatter with the same look. A mane is a spread of `hair` clumps round the back of the head and a second one down the chest.
+- `seed` picks the scatter; another seed, another scatter with the same look. A mane is a spread of `hair-clump`s round the back of the head and a second one down the chest.
 - A part on a spread socket leaves the one surface: field templates (`blob`) build as their own meshes there, each copy inked round.
 
 ## Tufts and locks
 
-`tuft` draws pointed tips for a cheek ruff or a crest; `furLock` a curling lock of fur or hair (`kit/README.md`, Shapes). **Tufts that read as horns** stand too stiff and too far out: make them short and wide at the root, lean them along the surface, and colour them as the fur they grow from.
+`hairTuft` is a soft tuft blended into the fur it grows from: a crown tuft, cheek fluff, a lynx ear tip (`kit/README.md`, Hair). A mane that reads as one mass is rings of `hair-clump`s on hand-made sockets round the back of the head and the chest, each blended into the head with the `fluff` preset; a spread of clumps is faster to place but its copies are separate meshes. `tuft` draws pointed tips for a cheek ruff or a crest; `furLock` a curling lock for the older `hair` template (`kit/README.md`, Shapes). **Tufts that read as horns** stand too stiff and too far out: make them short and wide at the root, lean them along the surface, and colour them as the fur they grow from.
 
 ## Fur
 
@@ -127,4 +127,4 @@ export const spines: RecipePart = { id: "spines", template: "spike", on: "torso"
 ## Limits
 
 - **Fur sizes have no guide** for a small character: start from the fennec's spacing and length and halve them, then judge the close-ups.
-- **Hair and manes** read as a helmet from the side (`head-and-face.md`, Limits).
+- **Manes do not collide**: clumps pass through each other; `droop` and `outward` lay them back (`head-and-face.md`, Limits).

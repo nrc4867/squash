@@ -71,7 +71,7 @@ An eye is painted on the head's surface (`PaintedEye`, `SurfaceEyes`), a paramet
 
 ## Thin and hard parts
 
-Some parts are thinner than any useful cell, or need edges the field rounds off: ears up to version 2, membrane wings, fins, loose ends and hair's locks and clumps (thin); claws, nails, horns, a beak, teeth and parts a garment owns (hard). A template marks such a part, or a block of it, `"surface": "separate"`. A separate part is a mesh of its own built by its blocks (a lofted run, `membrane`, `pad`), placed at its socket, read on the parent's own swept surface and sunk into the body by the socket's sink, so its root lies inside the body's field and the body hides it. Its ink is the overlap crease. Its rig is its own bones, with the parent's bone fading in toward the root. A pad with a thickness, such as nose leather, is a small mesh laid on the surface.
+Some parts are thinner than any useful cell, or need edges the field rounds off: ears up to version 2, membrane wings, fins, loose ends and the older `hair` template's locks (thin); claws, nails, horns, a beak, teeth and parts a garment owns (hard). A template marks such a part, or a block of it, `"surface": "separate"`. A separate part is a mesh of its own built by its blocks (a lofted run, `membrane`, `pad`), placed at its socket, read on the parent's own swept surface and sunk into the body by the socket's sink, so its root lies inside the body's field and the body hides it. Its ink is the overlap crease. Its rig is its own bones, with the parent's bone fading in toward the root. A pad with a thickness, such as nose leather, is a small mesh laid on the surface.
 
 ## Ears in the field
 
@@ -96,7 +96,7 @@ A creature needs no join rule, only parts with solids, blends at its sockets and
 
 - **Paws and feet** (`paw`, `foot`): the foot from version 8 and the paw from version 9 rise into the leg (an ankle capsule with ankle bones swelling across it, a wrist), sit their heel back by the ankle's radius and blend into the leg by their template's `join`, so the leg meets an ankle and a heel, not a step. The palm and each toe are members of the part, the toes joined to the palm by `merge`, so a mitten is a large merge and separate toes a small one. Claws are hard parts on the toes' tips. Beans and the main pad are areas in the part's own coordinates, one chart over palm and toes. The sole's flat cut applies to the part's own field.
 - **Hands** (`hand`): fingers are members joined to the palm by the web's blend; nails are hard parts or painted areas on the fingertips.
-- **Hair**: `hair-cap` is a run in the field riding the head's bone; `hair` parts (a fall, locks) are separate meshes pushed out of the body in each pose.
+- **Hair**: `hair-volume`, `hair-clump` and `hair-tuft` are runs in the field, one mass blended into the head (parts.md, Hair); a clump shown as copies is its own mesh. The older `hair-cap` is a run in the field riding the head's bone; `hair` parts (a fall, locks) are separate meshes pushed out of the body in each pose.
 - The dragon's wings, the koi's fins and tail fin and the toucan's wings and tail are thin; the toucan's beak and every horn and claw are hard.
 
 ## Garments on the surface

@@ -77,9 +77,12 @@ internal object AreaCopies {
         val ahead = parent.pointOn((pick.u + STEP).coerceAtMost(1f), v, rule.spec.patch)
         val behind = parent.pointOn((pick.u - STEP).coerceAtLeast(0f), v, rule.spec.patch)
         val runs = if (ahead != null && behind != null) ahead - behind else Vec3.Y
-        val leanAxis = squareTo(out, runs).turnedAbout(out, pick.leanAround)
-        val along = out.turnedAbout(leanAxis, pick.lean * DEGREES_TO_RADIANS)
-        val up = squareTo(along, runs).turnedAbout(along, pick.turn * DEGREES_TO_RADIANS)
+        val droop = rule.spec.droop * DEGREES_TO_RADIANS
+        val stands = if (droop == 0f) out else drooped(out, runs, droop)
+        val leanAxis = squareTo(stands, runs).turnedAbout(stands, pick.leanAround)
+        val along = stands.turnedAbout(leanAxis, pick.lean * DEGREES_TO_RADIANS)
+        val facing = if (droop == 0f) runs else normal
+        val up = squareTo(along, facing).turnedAbout(along, pick.turn * DEGREES_TO_RADIANS)
         val turn = (frameOf(along, up, rule.mirrored) * rule.definition.transposed).scaled(pick.scale)
         val origin = at + normal.normalized() * rule.spec.outset - along * (rule.depth * rule.spec.sink * pick.scale)
         CopyPlace(origin, turn, shadeSlot(rule.shades, pick.shade))

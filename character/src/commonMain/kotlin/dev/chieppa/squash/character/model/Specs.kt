@@ -56,6 +56,8 @@ data class AreaSpec(
     val color: String? = null,
     /** Whether it is the oval inside its u and v rather than the whole rectangle. */
     val round: Boolean = false,
+    /** Closed loops of places (u, v) it fills in place of its rectangle, v running past 0 and 1 as they cross the seam; null for none. */
+    val loops: List<List<Pair<Float, Float>>>? = null,
 ) {
     /** Where its v span ends, running on past 1 when it crosses the seam. */
     val vEnd: Float get() = if (v.end < v.start) v.end + 1f else v.end

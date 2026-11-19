@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.character.build.viewPoint
 import dev.chieppa.squash.character.block.Digits
 import dev.chieppa.squash.character.block.ToeRow
+import dev.chieppa.squash.character.block.Volume
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.Sets
 import dev.chieppa.squash.document.CurvePoint
@@ -57,6 +58,15 @@ private const val TOED_PAW_TOLERANCE = 0.045f
 private const val BENT_TOLERANCE = 0.03f
 
 /** Whether [template]'s axis bends with nothing drawn. */
+/**
+ * A hair volume's rings hang curtains under a round top, so a drawn Side, one profile from back to front, reads the curtains' ends and
+ * the middle's shorter hang as one edge.
+ */
+private const val VOLUME_TOLERANCE = 0.015f
+
+/** Whether [template] is a hair volume. */
+private fun isVolume(template: PartTemplate): Boolean = template.blocks.any { it is Volume }
+
 private fun bendsUndrawn(template: PartTemplate): Boolean =
     curvesUndrawn(template) || template.axis.bend?.let { it.resolve(template.defaults) != 0f } ?: false
 
@@ -130,6 +140,7 @@ class TemplateOutlineTest {
         view == View.FRONT -> FRONT_TOLERANCE
         hasToes(template) -> TOED_PAW_TOLERANCE
         bendsUndrawn(template) -> BENT_TOLERANCE
+        isVolume(template) -> VOLUME_TOLERANCE
         else -> TOLERANCE
     }
 

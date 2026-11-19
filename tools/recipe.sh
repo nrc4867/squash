@@ -84,7 +84,7 @@ launcher_stale() {
   [ -f "$launcher/args.txt" ] || return 0
   local sources=("$root")
   [ -d "$root/../stretch" ] && sources+=("$root/../stretch")
-  find "${sources[@]}" \( -name build -o -name .gradle -o -name .git -o -name .worktrees -o -name node_modules -o -name .kotlin       -o -name .idea -o -name kit -o -name docs -o -name examples -o -name recipes -o -name templates \) -prune     -o -type f \( -name '*.kt' -o -name '*.kts' -o -name '*.java' -o -name '*.properties' -o -name '*.toml' -o -path '*/src/*/resources/*' \)     -newer "$launcher/args.txt" -print -quit | grep -q .
+  find "${sources[@]}" \( \( -name build ! -path '*/src/*' \) -o -name .gradle -o -name .git -o -name .worktrees -o -name node_modules -o -name .kotlin       -o -name .idea -o -name kit -o -name docs -o -name examples -o -name recipes -o -name templates \) -prune     -o -type f \( -name '*.kt' -o -name '*.kts' -o -name '*.java' -o -name '*.properties' -o -name '*.toml' -o -path '*/src/*/resources/*' \)     -newer "$launcher/args.txt" -print -quit | grep -q .
 }
 # The engine is compiled through Gradle, under its lock, only when a source changed since the last launcher; every build then
 # runs in its own JVM straight from the compiled classes, outside Gradle and its lock.

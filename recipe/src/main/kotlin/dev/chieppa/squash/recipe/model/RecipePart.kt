@@ -63,6 +63,8 @@ data class RecipePart(
     val spiral: RecipeSpiral? = null,
     @Doc("Whether the join where this part sits on its parent is inked as a line round it (join.ink); inked when left out.")
     val inkJoin: Boolean? = null,
+    @Doc("A preset of its template's (templates.md lists them): its parameter values, which params and the fields above override, as a bob for a hair volume.")
+    val preset: String? = null,
     @Doc("Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name.")
     val params: Map<String, Float> = emptyMap(),
     @Doc("The palette slot the whole part is coloured.")
@@ -145,6 +147,8 @@ data class RecipeSpread(
     val turnJitter: Float? = null,
     @Doc("The outer share of the area over which copies' size falls to the socket's falloff, 0.35 when left out.")
     val edge: Float? = null,
+    @Doc("Degrees each copy tilts from the surface's normal toward the body's down along the surface, its up turned to the normal, so hair clumps lie down over a head; 60 to 80 for a fall of hair, none when left out.")
+    val droop: Float? = null,
 )
 
 /** Copies repeated along a path on a part. */

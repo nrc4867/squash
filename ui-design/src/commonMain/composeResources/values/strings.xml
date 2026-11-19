@@ -110,6 +110,7 @@
     <string name="shell_part_tool_knows">Tool knows</string>
     <string name="shell_part_areas">Areas</string>
     <string name="shell_part_template">%1$s template</string>
+    <string name="shell_part_preset">Style</string>
     <string name="shell_part_fit_surface">Surface</string>
     <string name="shell_part_this_side">This side %1$s</string>
     <string name="shell_part_pair">Pair</string>
@@ -360,6 +361,7 @@
     <string name="move_copy_size_jitter">Size jitter</string>
     <string name="move_copy_lean_jitter">Lean jitter</string>
     <string name="move_copy_turn_jitter">Turn jitter</string>
+    <string name="move_copy_droop">Droop</string>
     <string name="move_copy_pitch">Pitch</string>
     <string name="move_copy_roll">Roll each</string>
     <string name="move_copy_sag">Sag</string>

@@ -16,6 +16,9 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot | no |
 | `hair` | 1 | - | Hair | hair | yes |
 | `hair-cap` | 1 | - | Hair cap | hair | no |
+| `hair-clump` | 1 | - | Hair clump | hair | yes |
+| `hair-tuft` | 1 | - | Hair tuft | hair | yes |
+| `hair-volume` | 1 | - | Hair volume | hair | no |
 | `hand` | 7 | 1, 2, 3, 4, 5, 6 | Hand | hand | no |
 | `head` | 2 | 1 | Head | head | no |
 | `head-bird` | 1 | - | Bird head | head | no |
@@ -516,6 +519,196 @@ Parameters:
 | parameter | default | range | meaning |
 | --- | --- | --- | --- |
 | `size` | 1 | 0.2 to 2.5 | Scales the part: its drawn length and width together. |
+
+## hair-clump 1
+
+| fact | value |
+| --- | --- |
+| rests | down [0, -1, 0] |
+| outline x runs 0 to | 0.2 |
+| Side's +y faces | forward |
+| Top's +y faces | right |
+| views | side sets height; top sets nothing; front sets nothing |
+| section | circle |
+| open end | start |
+| surface | field |
+| join blend | 0.3 of its length, the skull or body rising into it; the part's `blend` overrides it |
+| join line | off unless the part sets `inkJoin` |
+| curve | takes `curve` and `spiral`: the path its axis follows, drawn outlines giving its width along it |
+
+Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
+
+| joint | u | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `root` | 0 | x | [-40, 40] | back |
+| `sway` | 0.4 | x | [-30, 30] | back |
+| `tip` | 0.75 | x | [-30, 30] | back |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `tip` | body | [0.7, 1] | [0, 1] | fill | - |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.2 to 4 | Scales the part: its length, width and thickness together. |
+| `width` | 0.3 | 0.05 to 1.2 | Full width at the root with nothing drawn, a fraction of the length. |
+| `thickness` | 0.09 | 0.02 to 0.8 | Full thickness at the root, a fraction of the length: a little for a flat lock, near the width for a round one. |
+| `taper` | 0.4 | 0.05 to 1.2 | Width toward the tip, a share of the root's: low for a spike, near 1 for a lock that stays wide. |
+| `swell` | 0.15 | 0 to 0.8 | How much it swells toward its first third, a share of its width. |
+| `tipRound` | 0 | 0 to 1 | The tip's roundness: 0 pointed, 1 round, between a soft point. |
+| `tipReach` | 0.35 | 0.05 to 1 | How far the tip closes back along it, a share of its length. |
+| `points` | 1 | one of 1, 2, 3, 4, 5 | How many lobes the tip ends in; above 1 the tip keeps its width and is cut back between them by notch. |
+| `notch` | 0.1 | 0 to 0.3 | How far back between two lobes the tip is cut, a share of the length. |
+| `twist` | 0 | -360 to 360 | Degrees it turns about itself from root to tip. |
+| `wave` | 0 | 0 to 1 | How far it waves sideways, a share of its width, growing toward the tip. |
+| `waves` | 1.5 | 0.5 to 5 | How many waves along it. |
+| `flare` | 0.35 | 0 to 1.5 | How much wider its root flares into what it sits on, a share of its width. |
+| `cup` | 0 | -0.6 to 0.6 | How far its sides curl toward its top, so it curves round what it lies on. |
+| `strands` | 2 | one of 0, 1, 2, 3, 4 | How many strand lines are inked along its top face. |
+| `rootSoft` | 0.3 | 0 to 0.8 | The share of its length from the root over which its outline and strands fade in, so its root reads soft. |
+| `tipShade` | 0.3 | 0.02 to 1 | The share of its length from the tip its tip area covers. |
+
+Presets, a part's `preset` (its own `params` override them):
+
+| preset | sets |
+| --- | --- |
+| `lock` | `width` 0.3, `thickness` 0.09, `taper` 0.4, `swell` 0.15, `tipRound` 0, `points` 1, `wave` 0 |
+| `spike` | `width` 0.24, `thickness` 0.1, `taper` 0.15, `swell` 0.05, `tipRound` 0, `points` 1, `wave` 0 |
+| `soft` | `width` 0.34, `thickness` 0.12, `taper` 0.55, `swell` 0.2, `tipRound` 0.6, `points` 1, `wave` 0 |
+| `fluff` | `width` 0.42, `thickness` 0.14, `taper` 0.8, `swell` 0.15, `tipRound` 0.8, `points` 3, `notch` 0.12, `wave` 0 |
+| `wavy` | `width` 0.3, `thickness` 0.09, `taper` 0.45, `swell` 0.15, `tipRound` 0.2, `points` 1, `wave` 0.3, `waves` 1.5 |
+| `strand` | `width` 0.12, `thickness` 0.06, `taper` 0.25, `swell` 0.05, `tipRound` 0, `points` 1, `wave` 0 |
+
+## hair-tuft 1
+
+| fact | value |
+| --- | --- |
+| rests | up [0, 1, 0] |
+| outline x runs 0 to | 0.12 |
+| Side's +y faces | forward |
+| Top's +y faces | left |
+| views | side sets height; top sets nothing; front sets nothing |
+| section | circle |
+| open end | start |
+| surface | field |
+| join blend | 0.35 of its length, the skull or body rising into it; the part's `blend` overrides it |
+| join line | off unless the part sets `inkJoin` |
+| curve | takes `curve` and `spiral`: the path its axis follows, drawn outlines giving its width along it |
+
+Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
+
+| joint | u | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `root` | 0 | x | [-30, 30] | back |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `tip` | body | [0.7, 1] | [0, 1] | fill | - |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.2 to 4 | Scales the part: its length, width and thickness together. |
+| `width` | 0.55 | 0.1 to 1.5 | Full width at the root, a fraction of the length. |
+| `thickness` | 0.35 | 0.05 to 1.2 | Full thickness at the root, a fraction of the length. |
+| `taper` | 0.35 | 0.05 to 1.2 | Width toward the tip, a share of the root's. |
+| `tipRound` | 0.4 | 0 to 1 | The tip's roundness: 0 pointed, 1 round. |
+| `curlMid` | 0.06 | -0.4 to 0.4 | How far its middle bends toward its top, a fraction of its length. |
+| `curl` | 0.25 | -0.6 to 0.6 | How far its tip bends toward its top, a fraction of its length: a tuft curling over. |
+| `twist` | 0 | -180 to 180 | Degrees it turns about itself from root to tip. |
+| `tipShade` | 0.3 | 0.02 to 1 | The share of its length from the tip its tip area covers. |
+
+Presets, a part's `preset` (its own `params` override them):
+
+| preset | sets |
+| --- | --- |
+| `crown` | `width` 0.55, `thickness` 0.35, `taper` 0.35, `tipRound` 0.4, `curlMid` 0.06, `curl` 0.25 |
+| `cheek` | `width` 0.7, `thickness` 0.3, `taper` 0.3, `tipRound` 0.2, `curlMid` -0.05, `curl` -0.12 |
+| `point` | `width` 0.3, `thickness` 0.2, `taper` 0.08, `tipRound` 0, `curlMid` 0, `curl` 0.05 |
+
+## hair-volume 1
+
+| fact | value |
+| --- | --- |
+| rests | forward [1, 0, 0] |
+| outline x runs 0 to | 0.3 |
+| Side's +y faces | up |
+| Top's +y faces | right |
+| views | side sets height; top sets nothing; front sets nothing |
+| section | circle |
+| open end | none (closed) |
+| surface | field |
+| join blend | 0.1 of its length, the skull or body rising into it; the part's `blend` overrides it |
+| join line | off unless the part sets `inkJoin` |
+
+Sockets:
+
+| socket | u | v | faces | pair | sink | takes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `crown` | 0.45 | 0 | up | - | 1 | any |
+| `fringe` | 0.9 | 0 | up | - | 0.6 | any |
+| `tail` | 0.1 | 0.08 | up, left | - | 1 | any |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `hem` | body | [0, 1] | [0.25, 0.75] | fill | - |
+| `parting` | body | [0.45, 1] | [0.028, 0.052] | fill | - |
+| `shine` | body | [0, 1] | [0, 1] | fill | - |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.2 to 3 | Scales the part: its length, height and width together. Its length runs from the back of the head to the front. |
+| `crown` | 0.53 | 0.1 to 1.2 | How far its top rises above its socket, a fraction of the length. |
+| `width` | 0.48 | 0.2 to 1.2 | Its half width, a fraction of the length. |
+| `back` | 0.45 | -0.3 to 3 | How far it hangs below its socket at the back, a fraction of the length: about 0.5 to the nape on a round head. |
+| `sides` | 0.1 | -0.3 to 3 | How far its sides hang below its socket from the middle to the front, a fraction of the length: 0 to the ears, about 0.4 to the jaw. |
+| `fringe` | -0.05 | -0.5 to 1.5 | How far its middle hangs below its socket at the front, a fraction of the length: negative stops it above the socket's height, over the brow. |
+| `rise` | 0.3 | -0.5 to 1 | How far its rings' middles rise toward the front, a fraction of the length, so its front closes on the forehead. |
+| `flip` | 0 | 0 to 1 | How far its hem flares out, a share of its half width. |
+| `fullness` | 2.6 | 1.5 to 6 | How full it stays toward its front and back: 2 rounds it as an ellipse, higher squares it. |
+| `parting` | 0.04 | -0.2 to 0.2 | Where round its top its parting lies: 0 the middle, toward 0.25 its v 0.25 side, negative the other side. |
+| `partDepth` | 0 | 0 to 0.3 | How deep the parting dents its top, a share of its crown. |
+| `hemShade` | 0.12 | 0.01 to 1 | How far up from each ring's lowest point its hem area reaches, a fraction of the length. |
+| `partShade` | 0.012 | 0.002 to 0.1 | How wide its parting area is, a share of a turn. |
+| `shineAt` | 0.55 | -0.9 to 0.95 | The height of its band of shine on the sphere through its rings, -1 underneath to 1 at the crown. |
+| `shineWidth` | 0.12 | 0 to 0.8 | How wide its band of shine is, on the same sphere. |
+| `shineJag` | 0.06 | 0 to 0.4 | How deep the band's lower edge is cut into points. |
+| `shineTeeth` | 7 | 0 to 24 | How many points the band's lower edge is cut into round the crown; 0 for a smooth edge. |
+| `locks` | 0 | 0 to 60 | How many locks its hem parts into round the head, seen from above; 0 for a whole hem. |
+| `lockDepth` | 0.08 | 0 to 0.6 | How far up between two locks its hem is cut, a fraction of the length. |
+| `lockJag` | 0.5 | 0 to 1 | How much shorter some locks are than others, a share of the cut: a ragged, layered hem. |
+| `lockSkew` | 0 | -1 to 1 | How far each lock's point leans toward one neighbour, -1 to 1. |
+| `lockRound` | 0.2 | 0 to 1 | How round the locks' points are: 0 pointed, 1 round. |
+| `lockSeed` | 1 | 0 to 99 | Which locks are the shorter ones. |
+| `lockFlare` | 0 | -0.3 to 0.6 | How far each lock's point splays out sideways, a share of the half width. |
+| `sweep` | 0 | -1 to 1 | How far the fringe sweeps aside: longer toward the side v 0.25 faces when positive, toward the other when negative. |
+| `strands` | 10 | 0 to 40 | How many strand lines are inked flowing down over it from its crown. |
+
+Presets, a part's `preset` (its own `params` override them):
+
+| preset | sets |
+| --- | --- |
+| `short` | `crown` 0.53, `width` 0.47, `back` 0.36, `sides` 0.06, `fringe` 0, `rise` 0.3, `flip` 0, `fullness` 2.6, `locks` 22, `lockDepth` 0.22, `lockJag` 0.6, `lockRound` 0, `lockFlare` 0.12 |
+| `bob` | `crown` 0.56, `width` 0.52, `back` 0.6, `sides` 0.5, `fringe` 0.05, `rise` 0.3, `flip` 0.2, `fullness` 3, `locks` 16, `lockDepth` 0.32, `lockJag` 0.45, `lockRound` 0.1, `lockFlare` 0.06 |
+| `long` | `crown` 0.55, `width` 0.5, `back` 1.6, `sides` 1.3, `fringe` -0.02, `rise` 0.3, `flip` 0.08, `fullness` 3.2, `locks` 16, `lockDepth` 0.35, `lockJag` 0.5, `lockRound` 0.2, `lockFlare` 0.04 |
+| `ponytail` | `crown` 0.5, `width` 0.46, `back` 0.2, `sides` -0.02, `fringe` 0, `rise` 0.32, `flip` 0, `fullness` 2.4, `locks` 0, `lockDepth` 0 |
 
 ## hand 7
 

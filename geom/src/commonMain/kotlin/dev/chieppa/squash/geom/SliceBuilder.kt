@@ -275,7 +275,7 @@ object SliceBuilder {
      * ring's share of its own extent the hold leaves is taken as the least over its neighbours [HOLD_SPREAD] rings either way and then
      * averaged over the same, so a tight curl narrows the run smoothly there and nowhere else.
      */
-    private fun heldToBends(extents: FloatArray, bends: FloatArray, reach: Float): FloatArray {
+    internal fun heldToBends(extents: FloatArray, bends: FloatArray, reach: Float): FloatArray {
         val n = extents.size
         val shares = FloatArray(n) { i -> if (extents[i] <= 0f) 1f else minOf(1f, 2f * BEND_HOLD * bends[i] / reach / extents[i]) }
         if (shares.all { it >= 1f }) return extents
@@ -291,7 +291,7 @@ object SliceBuilder {
      * neighbouring rings' planes meet that far from the axis on the inside of the bend, so a ring reaching past it folds into its
      * neighbour; a straight stretch is unbounded.
      */
-    private fun bendRadii(frames: List<Frame>): FloatArray = FloatArray(frames.size) { i ->
+    internal fun bendRadii(frames: List<Frame>): FloatArray = FloatArray(frames.size) { i ->
         val before = frames[maxOf(i - 1, 0)]
         val after = frames[minOf(i + 1, frames.size - 1)]
         val turn = kotlin.math.acos((before.tangent dot after.tangent).coerceIn(-1f, 1f))
@@ -299,7 +299,7 @@ object SliceBuilder {
         if (turn < MIN_TURN || span <= 0f) Float.MAX_VALUE else span / turn
     }
 
-    private fun placed(frame: Frame, drop: Float, facing: Vec3?): Frame {
+    internal fun placed(frame: Frame, drop: Float, facing: Vec3?): Frame {
         val center = frame.center - frame.up * drop
         if (facing == null) return Frame(center, frame.tangent, frame.up)
         return Frame(center, facing, (frame.up - facing * (frame.up dot facing)).normalized())
@@ -349,7 +349,7 @@ object SliceBuilder {
      * Evenly spaced u values, or more of them over the spec's focus, with the nearest ring moved onto each joint, so a joint always lands on a ring. A flat end's
      * pole shares its u with the ring it closes, and the other rings space evenly between.
      */
-    private fun ringUs(spec: TubeSpec): List<Float> {
+    internal fun ringUs(spec: TubeSpec): List<Float> {
         val n = spec.rings
         val first = if (spec.startClosure == EndClosure.FLAT) 1 else 0
         val last = if (spec.endClosure == EndClosure.FLAT) n - 2 else n - 1
@@ -368,7 +368,7 @@ object SliceBuilder {
         return us.toList()
     }
 
-    private fun frames(axis: AxisSpline, us: List<Float>, up: Vec3?): List<Frame> {
+    internal fun frames(axis: AxisSpline, us: List<Float>, up: Vec3?): List<Frame> {
         var current = up ?: PartAxes.of(axis.tangentAt(us.first())).up
         return us.map { u ->
             val tangent = axis.tangentAt(u)
@@ -377,7 +377,7 @@ object SliceBuilder {
         }
     }
 
-    private fun defaultCapRings(rings: Int): Int = max(MIN_CAP_RINGS, rings / CAP_RING_DIVISOR)
+    internal fun defaultCapRings(rings: Int): Int = max(MIN_CAP_RINGS, rings / CAP_RING_DIVISOR)
 
     /** The scale of the ring [fromEnd] rings from an end the drawing shapes: only a closed end's last ring closes. */
     private fun drawnEndScale(fromEnd: Int, closure: EndClosure): Float =

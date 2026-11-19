@@ -1,0 +1,43 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hair-tuft",
+  "version": 1,
+  "name": "Hair tuft",
+  "role": "hair",
+  "axis": {
+    "rest": [0, 1, 0], "length": 0.12,
+    "curve": [
+      { "along": 0.5, "up": "$curlMid" },
+      { "along": 0.85, "up": "$curl" }
+    ]
+  },
+  "openEnd": "start",
+  "topology": { "rings": 48, "segments": 16 },
+  "views": { "side": "height" },
+  "section": "circle",
+  "params": {
+    "size":      { "doc": "Scales the part: its length, width and thickness together.", "default": 1.0, "min": 0.2, "max": 4.0 },
+    "width":     { "doc": "Full width at the root, a fraction of the length.", "default": 0.55, "min": 0.1, "max": 1.5 },
+    "thickness": { "doc": "Full thickness at the root, a fraction of the length.", "default": 0.35, "min": 0.05, "max": 1.2 },
+    "taper":     { "doc": "Width toward the tip, a share of the root's.", "default": 0.35, "min": 0.05, "max": 1.2 },
+    "tipRound":  { "doc": "The tip's roundness: 0 pointed, 1 round.", "default": 0.4, "min": 0.0, "max": 1.0 },
+    "curlMid":   { "doc": "How far its middle bends toward its top, a fraction of its length.", "default": 0.06, "min": -0.4, "max": 0.4 },
+    "curl":      { "doc": "How far its tip bends toward its top, a fraction of its length: a tuft curling over.", "default": 0.25, "min": -0.6, "max": 0.6 },
+    "twist":     { "doc": "Degrees it turns about itself from root to tip.", "default": 0.0, "min": -180.0, "max": 180.0 },
+    "tipShade":  { "doc": "The share of its length from the tip its tip area covers.", "default": 0.3, "min": 0.02, "max": 1.0 }
+  },
+  "presets": {
+    "crown": { "width": 0.55, "thickness": 0.35, "taper": 0.35, "tipRound": 0.4, "curlMid": 0.06, "curl": 0.25 },
+    "cheek": { "width": 0.7, "thickness": 0.3, "taper": 0.3, "tipRound": 0.2, "curlMid": -0.05, "curl": -0.12 },
+    "point": { "width": 0.3, "thickness": 0.2, "taper": 0.08, "tipRound": 0.0, "curlMid": 0.0, "curl": 0.05 }
+  },
+  "join": { "blend": 0.35, "ink": false },
+  "blocks": [
+    { "kind": "tube", "u": [0.0, 1.0], "radius": "$width", "taper": "$taper",
+      "clump": { "width": "$width", "thickness": "$thickness", "taper": "$taper", "tipRound": "$tipRound", "twist": "$twist", "flare": 0.0,
+                 "swell": 0.1, "tipReach": 0.45, "tipShade": "$tipShade" } },
+    { "kind": "cap", "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "root", "u": 0.0, "hinge": "x", "limits": [-30, 30] }
+  ]
+}

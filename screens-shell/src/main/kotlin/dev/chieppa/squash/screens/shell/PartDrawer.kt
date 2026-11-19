@@ -99,6 +99,7 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
             RoleRow(state, open, character, part)
             TemplateRow(state, part.id)
             key(part.id) { SocketBlendRow(open, part, template) }
+            key(part.id) { PresetRow(open, part.id, template, base.params, !mirror) }
             rows.forEach { row -> key(part.id, row.name) { ParameterControl(open, part.id, row, !mirror, hidden[row.name]) } }
         }
     }

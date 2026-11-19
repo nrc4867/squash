@@ -28,9 +28,15 @@ class LineGrid private constructor(
     private val reach: Float,
     private val hidden: BooleanArray? = null,
 ) {
-    /** This grid with a line weight of [weightAt] at each point. */
+    /** This grid with its line weight at each point times [weightAt] there. */
     fun weighted(weightAt: (Vec3) -> Float): LineGrid =
-        LineGrid(patch, positions, faceNormals, FloatArray(positions.size) { weightAt(positions[it]) }, center, reach, hidden)
+        LineGrid(patch, positions, faceNormals, FloatArray(positions.size) { weights[it] * weightAt(positions[it]) }, center, reach, hidden)
+
+    /** This grid with its line weight at each point times [scale] of that point, one value a grid point. */
+    fun scaled(scale: FloatArray): LineGrid {
+        require(scale.size == positions.size) { "${scale.size} scales for ${positions.size} points" }
+        return LineGrid(patch, positions, faceNormals, FloatArray(positions.size) { weights[it] * scale[it] }, center, reach, hidden)
+    }
 
     /** This grid with no contour along an edge both of whose points [hidden] marks, as where a garment hides the skin. */
     fun hiding(hidden: BooleanArray): LineGrid {

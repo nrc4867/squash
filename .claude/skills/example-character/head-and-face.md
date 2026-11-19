@@ -122,7 +122,25 @@ export const mouth: MarkGroup = {
 
 ## Hair
 
-Hair is a `hair-cap` on a hand-made socket on the crown and `hair` clumps and locks on sockets round it (`templates.md`, `docs/hld/parts.md`). A head's hand-made sockets read v 0 at the face, 0.5 at the back, 0.75 at the left. Give the hair's blob a narrow `blend` at the hairline: a wide one takes a share of the face and eases its paint (lips, blush) away. Strands are ink marks on the hair.
+Hair is one mass: a `hair-volume` over the skull and `hair-clump` locks blended into it, all in the one surface, so it shades and inks as one and only its ends part into locks (`kit/README.md`, Hair; `docs/hld/parts.md`, Hair). A head's hand-made sockets read v 0 at the face, 0.5 at the back, 0.75 at the left.
+
+- **Volume.** `hairVolume({ on: "head", socket, depth, height, preset })` takes a socket at the back of the skull and runs forward to the forehead. Its `preset` (`short`, `bob`, `long`, `ponytail`) gives its shape; `params` tune it: `back` and `sides` how far it hangs, `fringe` where its middle stops over the brow and `sweep` which side it falls longer, `flip` a flared hem, `parting` and `partDepth` the parting.
+- **Locks at the hem.** The volume's hem parts into `locks` locks cut `lockDepth` deep; `lockJag` makes it ragged, `lockSkew` leans the points, `lockFlare` splays them. Deeper cuts read better than many shallow ones: 0.25 to 0.35 for a bob, 0.2 to 0.3 for short hair.
+- **Size relationship.** Hair parts do not scale with the head's `size`: give `depth` and `height` as the head is built (the drawn depth and height times its size). The volume's length is `depth` plus twice `thickness`; with `height` its crown sits `thickness` over the skull's top. Clump lengths are body units: a fringe lock about half the head's height, a lock over the sides or back about a third.
+- **Clumps.** `hairClump` is one curved, tapering lock that blends into the volume where it roots; root it high on the volume and let it hang past the hem, so the mass splits into it toward the tip. Presets `lock`, `spike`, `soft`, `fluff`, `wavy`, `strand`; `params` set `width`, `thickness` (0.2 to 0.4 keeps it a body in the field), `taper`, `tipRound`, `twist`, `wave`, `cup`. A `curve` bends it out over what it hangs over.
+- **Layouts.** `fringe` hangs clumps over the brow swept to one side (`sweep` negative toward the character's right): give the volume a higher `fringe` so they hang below it. `crown` roots clumps round the crown, low `rise` for a swirl, high for a cowlick. `fall` spreads one clump as copies, each its own mesh: for fur and manes, not hair meant to merge.
+- **Colour.** `hem` fills a band along the lowest edge, following the locks; `parting` a strip along the parting; `shine` a band round the head that runs over every clump and tuft in the mass. A clump's `tip` fills its tip.
+- **Ink.** The silhouette and the folds where locks part are inked by the surface; the volume's `strands` draws long lines flowing down from the crown.
+- **Tufts.** `hairTuft` is a soft tuft blended into what it grows from: a cat's crown tuft, cheek fluff, an ear tip (presets `crown`, `cheek`, `point`).
+
+```ts
+const hair = hairVolume({ on: "head", socket: 11, depth: 0.3, height: 0.42, preset: "bob", color: "hair", hem: "hair-dark", shine: "hair-light", params: { sweep: -0.5, lockDepth: 0.32 } });
+const front = fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 2, lengths: [0.19, 0.15], from: 0.1, to: 0.02, sweep: -0.5, preset: "soft", color: "hair", tip: "hair-dark", params: { thickness: 0.14 } });
+const side = hairClump({ id: "lock-1", on: "hair", socket: 3, length: 0.14, preset: "soft", color: "hair", tip: "hair-dark", rest: "down", curve: [[0.5, 0.06], [0.95, 0.16]] });
+// head.sockets gets hair.headSocket; the volume gets the fringe's sockets and one for each lock; the clumps join the recipe's parts.
+```
+
+**Hair that reads as a helmet** has a whole hem: deepen `lockDepth`, add `lockJag`, and hang a few clumps past the hem over the sides and back. **Clumps that do not show** lie inside the volume: root them higher, give them a `curve` out, or raise the volume's hem where they hang. **A fringe that covers the eyes** is too long: shorten it or raise the volume's `fringe`.
 
 ## Hand-made sockets on the head
 
@@ -135,4 +153,6 @@ Horns, antennae, a bow and hair locks sit on hand-made sockets of the head: `pro
 - **One ridge width.** The profile's nose, lips and chin stand out by one share of the head's half width.
 - **No eye sockets.** Eyes are paint on the surface; a deep-set eye or a brow ridge over it is drawn in the profile and with a brow mark.
 - **The face reach is a box.** The probe prints a box; the face is narrower near the chin and crown.
-- **Hair reads as a helmet from the side**: the cap is one blob hugging the skull, locks are tubes over it, strands are only ink. There is no parting, clump or curl of its own.
+- **Hair does not move with the head's size.** Give the volume the head's built depth and height.
+- **Hair does not collide.** Clumps pass through the face and each other; place and curve them so they hang over the volume.
+- **Each clump in the field costs a drag a little**: a head with twenty clumps drags slower than a bare one.

@@ -133,6 +133,8 @@ data class PartTemplate(
     val surface: SurfaceMethod = SurfaceMethod.FIELD,
     @Doc("How a part in the field joins the part its socket is on when the part sets neither its blend nor its join ink.")
     val join: JoinSpec = JoinSpec(),
+    @Doc("Named starting looks: each a set of parameter values a part of this template takes in one step, as a bob or a short crop of hair.")
+    val presets: Map<String, Map<String, Float>> = emptyMap(),
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)

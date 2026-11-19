@@ -12,8 +12,17 @@ import dev.chieppa.squash.geom.lineWeightAt
 /** A run of points with the weight of the line at each. */
 class WeightedRun(val points: List<ResolvedPoint>, val weights: List<Float>)
 
-/** What [part] holds for lines: [grids], one per patch, each knowing its line weights, its [crease] with its parent and its marks' weights. */
-class PartLines(val part: PlacedPart, val grids: List<LineGrid>, val crease: List<WeightedRun>, val markWeights: Map<MarkId, List<Float>>)
+/**
+ * What [part] holds for lines: [grids], one per patch, each knowing its line weights, its [crease] with its parent, its marks' weights,
+ * and the [strands] inked along it as hair, which it keeps in the one surface too (see HLD: parts, Hair).
+ */
+class PartLines(
+    val part: PlacedPart,
+    val grids: List<LineGrid>,
+    val crease: List<WeightedRun>,
+    val markWeights: Map<MarkId, List<Float>>,
+    val strands: List<WeightedRun> = emptyList(),
+)
 
 /**
  * The character as its lines read it, with nothing about a camera in it: what a view takes its contours from and a tool picks on.
@@ -34,14 +43,16 @@ fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}): M
  * shown as copies, its patches where each copy shows them.
  */
 fun partGrids(placed: PlacedPart, kept: (Patch) -> Boolean = { true }): List<LineGrid> {
+    val soft = clumpInkOf(placed)?.rootSoft ?: 0f
+    fun faded(grid: LineGrid): LineGrid = if (soft > 0f) grid.scaled(rootFade(grid.patch, soft)) else grid
     placed.copies?.let { copies ->
         val own = copies.rule.surface
-        return copies.places.flatMap { place -> own.patches.filter(kept).map { patch -> LineGrid.of(patch, place.origin) { place.turn * own.shown(it) } } }
+        return copies.places.flatMap { place -> own.patches.filter(kept).map { patch -> faded(LineGrid.of(patch, place.origin) { place.turn * own.shown(it) }) } }
     }
     val hidden = hiddenPoints(placed)
     return placed.surface.patches.mapIndexedNotNull { i, patch ->
         if (!kept(patch)) return@mapIndexedNotNull null
-        val grid = LineGrid.of(patch, placed.origin, placed.surface::shown)
+        val grid = faded(LineGrid.of(patch, placed.origin, placed.surface::shown))
         hidden?.get(i)?.let(grid::hiding) ?: grid
     }
 }
@@ -130,7 +141,7 @@ fun posedLines(
         checkCancelled()
         id to when {
             kept == null -> weighing.partLines(placed, partGrids(placed), socketCrease(body, placed, parents))
-            workMoved(id) -> PartLines(placed, kept.grids, kept.crease, weighing.markWeights(id))
+            workMoved(id) -> PartLines(placed, kept.grids, kept.crease, weighing.markWeights(id), kept.strands)
             else -> kept
         }
     }.toMap()
@@ -196,7 +207,8 @@ private class LineWeighing(character: AssembledCharacter, private val work: Body
         val own = strokes[id]
         val weighed = grids.map { grid -> if (own == null) grid else grid.weighted { lineWeightAt(it, own) } }
         val runs = shownRuns(placed, crease?.runs.orEmpty()).map { WeightedRun(it, weigh(it)) }
-        return PartLines(placed, weighed, runs, markWeights(id))
+        val strands = clumpInkOf(placed)?.let { strandRuns(placed, it) }.orEmpty()
+        return PartLines(placed, weighed, runs, markWeights(id), strands)
     }
 
     fun markWeights(part: PartId): Map<MarkId, List<Float>> = work.parts[part]?.marks.orEmpty().associate { it.id to weigh(it.points) }

@@ -24,7 +24,7 @@ private val SECTION_READINGS = setOf(Sets.CAP, Sets.SECTION)
 object TemplateLint {
     fun lint(template: PartTemplate): List<Finding> =
         format(template) + params(template) + axis(template) + section(template) + views(template) + openEnd(template) + mount(template) +
-            blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template) + generic(template)
+            blocks(template) + joints(template) + names(template) + patchNames(template) + grain(template) + generic(template) + presets(template)
 
     /**
      * A generic part's choices keep the template's limits: its topology inside them, enough of the fewest rings for its joints, a
@@ -43,6 +43,19 @@ object TemplateLint {
             if (template.sectionProfile() == null) add(Finding("$.section", "a generic template starts from a named section"))
             template.views.forEach { (view, sets) ->
                 if (GenericParams.READINGS[view] != sets) add(Finding("$.views.${view.name.lowercase()}", "a generic part's ${view.name.lowercase()} sets ${GenericParams.READINGS[view]?.name?.lowercase()}"))
+            }
+        }
+    }
+
+    /** Each preset sets only the template's own parameters, inside their limits. */
+    private fun presets(template: PartTemplate): List<Finding> = template.presets.flatMap { (preset, values) ->
+        values.mapNotNull { (name, value) ->
+            val path = "$.presets.$preset.$name"
+            val spec = template.params[name] ?: return@mapNotNull Finding(path, "the template has no parameter \"$name\"")
+            when {
+                spec.min != null && value < spec.min -> Finding(path, "$value is below the minimum")
+                spec.max != null && value > spec.max -> Finding(path, "$value is above the maximum")
+                else -> null
             }
         }
     }

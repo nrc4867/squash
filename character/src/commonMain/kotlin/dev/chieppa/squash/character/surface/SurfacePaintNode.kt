@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.build.ResolvedPoint
+import dev.chieppa.squash.character.build.ShineSource
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.graph.Graph
@@ -52,11 +53,15 @@ private sealed interface PaintSource {
 /** Where a paint source comes from: the surface, or the holder [part]. */
 private data class PaintKey(val part: PartId?)
 
-/** What the one surface's paint reads besides the surface: the [parts] whose color shapes it lays, and the [eyes] painted on its heads. */
-data class PaintInput(val parts: List<PartId>, val eyes: List<PaintedEye>)
+/**
+ * What the one surface's paint reads besides the surface: the [parts] whose color shapes it lays, the [eyes] painted on its heads, and the
+ * hair volumes whose band of [shines] runs over the hair in the field.
+ */
+data class PaintInput(val parts: List<PartId>, val eyes: List<PaintedEye>, val shines: List<ShineSource> = emptyList())
 
 /**
- * The paint of every holder among [input]'s parts, their color shapes from [shapes], on [surface]'s one surface, then its painted eyes.
+ * The paint of every holder among [input]'s parts, their color shapes from [shapes], on [surface]'s one surface, then the hair's bands
+ * of shine (see [hairShineLayer]), then its painted eyes.
  * See [SurfacePaint.of] and [SurfaceEyes]. Its shapes and its eyes are laid in parallel on the graph's dispatcher.
  */
 fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput>, shapes: (PartId) -> Node<*, HeldShapes>): Node<*, HeldPaint> {
@@ -78,7 +83,8 @@ fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput
         coroutineScope {
             val eyes = async { SurfaceEyes.of(held, gathered.shape.eyes, IN_PARALLEL) }
             val paint = SurfacePaint.of(held, shapes, IN_PARALLEL, memo)
-            HeldPaint(paint + eyes.await(), held)
+            val shine = SurfacePaint(gathered.shape.shines.mapNotNull { hairShineLayer(held, it) })
+            HeldPaint(paint + shine + eyes.await(), held)
         }
     }
 }

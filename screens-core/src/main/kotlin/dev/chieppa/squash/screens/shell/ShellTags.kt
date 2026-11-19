@@ -100,6 +100,9 @@ object ShellTags {
     fun section(name: String) = "tools.section.$name"
     fun sideRow(name: String) = "parts.side.$name"
     fun parameter(name: String) = "part.parameter.$name"
+
+    /** A template preset's chip in the Shape inspector. */
+    fun preset(name: String) = "part.preset.$name"
     fun genericView(view: String) = "part.generic.view.$view"
     fun anatomyRow(name: String) = "part.anatomy.row.$name"
     fun anatomyDelete(name: String) = "part.anatomy.delete.$name"

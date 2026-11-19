@@ -38,7 +38,7 @@ private fun BuildContext.copyParams(path: String, socket: RecipeSocket, siblings
         return shared + mapOf(
             HandSockets.spread(n) to spread.count.toFloat(), HandSockets.to(n) to (socket.to ?: socket.u), HandSockets.toV(n) to (socket.toV ?: socket.v),
             HandSockets.seed(n) to spread.seed.toFloat(), HandSockets.spacing(n) to spread.spacing, HandSockets.sizeJitter(n) to spread.sizeJitter,
-            HandSockets.leanJitter(n) to spread.leanJitter, HandSockets.turnJitter(n) to spread.turnJitter, HandSockets.edge(n) to spread.edge,
+            HandSockets.leanJitter(n) to spread.leanJitter, HandSockets.turnJitter(n) to spread.turnJitter, HandSockets.edge(n) to spread.edge, HandSockets.droop(n) to spread.droop,
         )
     }
     val line = checkNotNull(socket.path)
