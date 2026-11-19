@@ -1,0 +1,652 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "foot",
+  "version": 7,
+  "name": "Foot",
+  "role": "foot",
+  "axis": {
+    "rest": [
+      1,
+      0,
+      0
+    ],
+    "length": 0.27
+  },
+  "openEnd": null,
+  "topology": {
+    "rings": 44,
+    "segments": 32
+  },
+  "views": {
+    "side": "height",
+    "top": "width",
+    "front": "cap"
+  },
+  "section": "circle",
+  "params": {
+    "size": {
+      "doc": "Scales the part: its drawn length and width together.",
+      "default": 1.0,
+      "min": 0.4,
+      "max": 2.5
+    },
+    "toes": {
+      "doc": "Toes built: 0 for a bare sole (a shoe), else 1 to 5, each count laid out across the ball of its own.",
+      "default": 5,
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "toeLength": {
+      "doc": "Multiplies every toe's length: below 1 short toes.",
+      "default": 1.0,
+      "min": 0.4,
+      "max": 2.0
+    },
+    "toeThickness": {
+      "doc": "Multiplies every toe's thickness: above 1 wide toes.",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0
+    },
+    "heel": {
+      "doc": "Heel ball's radius, a fraction of the foot's length.",
+      "default": 0.1333,
+      "min": 0.05,
+      "max": 0.3
+    },
+    "ballWidth": {
+      "doc": "Half width across the ball of the foot, a fraction of the length.",
+      "default": 0.1519,
+      "min": 0.08,
+      "max": 0.35
+    },
+    "ankle": {
+      "doc": "Ankle's radius where the leg meets the foot.",
+      "default": 0.1111,
+      "min": 0.05,
+      "max": 0.3
+    },
+    "toeBox": {
+      "doc": "Builds a rounded toe box in place of toes, for a shoe; set toes 0 with it.",
+      "default": false
+    },
+    "toeTip": {
+      "doc": "How far forward the toe box reaches, a fraction of the length.",
+      "default": 0.663,
+      "min": 0.5,
+      "max": 1.0
+    },
+    "toeRound": {
+      "doc": "Radius of the toe box's front end.",
+      "default": 0.0741,
+      "min": 0.02,
+      "max": 0.15
+    },
+    "pitch": {
+      "doc": "Degrees the forefoot turns up from the ball; negative points it down.",
+      "default": 0,
+      "min": -40,
+      "max": 40,
+      "unit": "deg"
+    },
+    "web": {
+      "doc": "Radius of the smooth join between the toes and the foot.",
+      "default": 0.04,
+      "min": 0.0,
+      "max": 0.12
+    },
+    "spread": {
+      "doc": "Multiplies the fan angle of the toes and the gap between their roots: below 1 closer, above 1 wider.",
+      "default": 1.0,
+      "min": 0.3,
+      "max": 1.8
+    },
+    "merge": {
+      "doc": "How much neighbouring toes fuse: small stands them apart, 1 or more joins them to the tips.",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 2.0
+    },
+    "claw": {
+      "doc": "How far each toe's nail stands past its tip as a claw; 0 for flat nails.",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 2.0
+    },
+    "clawCurl": {
+      "doc": "How much each claw curls down (positive) or up (negative).",
+      "default": 0.35,
+      "min": -1.0,
+      "max": 1.0
+    },
+    "pads": {
+      "doc": "Builds a pad under each toe tip in the slot pad.",
+      "default": false
+    },
+    "beans": {
+      "doc": "How far each toe pad rises from its toe.",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.8
+    }
+  },
+  "blocks": [
+    {
+      "kind": "field",
+      "fit": true,
+      "u": [
+        0.0,
+        1.0
+      ],
+      "from": -0.21,
+      "parts": [
+        {
+          "name": "heel",
+          "shape": "ellipsoid",
+          "at": [
+            -0.0667,
+            -0.1222,
+            0.0074
+          ],
+          "radii": [
+            "$heel",
+            "$heel",
+            0.1148
+          ]
+        },
+        {
+          "name": "arch",
+          "shape": "ellipsoid",
+          "at": [
+            0.1815,
+            -0.1296,
+            -0.0037
+          ],
+          "radii": [
+            0.2593,
+            0.1111,
+            0.1333
+          ],
+          "blend": 0.1111
+        },
+        {
+          "name": "ball",
+          "shape": "ellipsoid",
+          "at": [
+            0.4222,
+            -0.1667,
+            -0.0148
+          ],
+          "radii": [
+            0.1259,
+            0.0815,
+            "$ballWidth"
+          ],
+          "blend": 0.0926
+        },
+        {
+          "name": "ankle",
+          "shape": "capsule",
+          "at": [
+            0.0074,
+            -0.0889,
+            0.0
+          ],
+          "to": [
+            0.0074,
+            0.1444,
+            0.0
+          ],
+          "radius": "$ankle",
+          "blend": 0.1111
+        },
+        {
+          "name": "toeBox",
+          "if": "$toeBox",
+          "shape": "capsule",
+          "at": [
+            0.4222,
+            -0.1741,
+            -0.0148
+          ],
+          "to": [
+            "$toeTip",
+            -0.1815,
+            -0.0296
+          ],
+          "radius": 0.1111,
+          "toRadius": "$toeRound",
+          "blend": 0.1111
+        }
+      ],
+      "floor": {
+        "at": -0.2556,
+        "blend": 0.0222
+      },
+      "bend": {
+        "at": [
+          0.4667,
+          -0.1815,
+          0.0
+        ],
+        "degrees": "$pitch",
+        "from": -0.1,
+        "to": 0.0296
+      }
+    },
+    {
+      "kind": "digits",
+      "name": "toes",
+      "surface": "field",
+      "from": -0.21,
+      "count": "$toes",
+      "rings": 16,
+      "segments": 16,
+      "taper": 0.92,
+      "reach": "$toeLength",
+      "thickness": "$toeThickness",
+      "spread": "$spread",
+      "gap": "$spread",
+      "hinge": "x",
+      "limits": [
+        -30,
+        40
+      ],
+      "digits": [
+        {
+          "root": [
+            0.53,
+            -0.18,
+            0.0
+          ],
+          "toward": [
+            0.9962,
+            -0.0797,
+            0.0348
+          ],
+          "length": 0.2,
+          "radius": 0.085,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            1
+          ]
+        },
+        {
+          "root": [
+            0.53,
+            -0.185,
+            -0.075
+          ],
+          "toward": [
+            0.9871,
+            -0.0797,
+            -0.1387
+          ],
+          "length": 0.2,
+          "radius": 0.06,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            2
+          ]
+        },
+        {
+          "root": [
+            0.52,
+            -0.185,
+            0.075
+          ],
+          "toward": [
+            0.975,
+            -0.0797,
+            0.2072
+          ],
+          "length": 0.19,
+          "radius": 0.058,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            2
+          ]
+        },
+        {
+          "root": [
+            0.53,
+            -0.185,
+            -0.115
+          ],
+          "toward": [
+            0.9628,
+            -0.0797,
+            -0.258
+          ],
+          "length": 0.19,
+          "radius": 0.048,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            3
+          ]
+        },
+        {
+          "root": [
+            0.55,
+            -0.19,
+            0.0
+          ],
+          "toward": [
+            0.9967,
+            -0.0797,
+            0.0174
+          ],
+          "length": 0.2,
+          "radius": 0.05,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            3
+          ]
+        },
+        {
+          "root": [
+            0.52,
+            -0.195,
+            0.115
+          ],
+          "toward": [
+            0.9533,
+            -0.0797,
+            0.2914
+          ],
+          "length": 0.18,
+          "radius": 0.046,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            3
+          ]
+        },
+        {
+          "root": [
+            0.53,
+            -0.188,
+            -0.09
+          ],
+          "toward": [
+            0.9962,
+            -0.0797,
+            0.0348
+          ],
+          "length": 0.17,
+          "radius": 0.047,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            4
+          ]
+        },
+        {
+          "root": [
+            0.53,
+            -0.2,
+            -0.005
+          ],
+          "toward": [
+            0.9894,
+            -0.0797,
+            0.1215
+          ],
+          "length": 0.14,
+          "radius": 0.039,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            4
+          ]
+        },
+        {
+          "root": [
+            0.51,
+            -0.205,
+            0.07
+          ],
+          "toward": [
+            0.975,
+            -0.0797,
+            0.2072
+          ],
+          "length": 0.13,
+          "radius": 0.036,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            4
+          ]
+        },
+        {
+          "root": [
+            0.48,
+            -0.21,
+            0.13
+          ],
+          "toward": [
+            0.948,
+            -0.0797,
+            0.308
+          ],
+          "length": 0.115,
+          "radius": 0.033,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            4
+          ]
+        },
+        {
+          "root": [
+            0.5225,
+            -0.1882,
+            -0.0917
+          ],
+          "toward": [
+            0.9956,
+            -0.0797,
+            0.0498
+          ],
+          "length": 0.1537,
+          "radius": 0.0463,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            5
+          ]
+        },
+        {
+          "root": [
+            0.5225,
+            -0.2005,
+            -0.0181
+          ],
+          "toward": [
+            0.9936,
+            -0.0797,
+            0.0797
+          ],
+          "length": 0.1115,
+          "radius": 0.0326,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            5
+          ]
+        },
+        {
+          "root": [
+            0.5042,
+            -0.2045,
+            0.0393
+          ],
+          "toward": [
+            0.9871,
+            -0.0797,
+            0.1391
+          ],
+          "length": 0.1024,
+          "radius": 0.0307,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            5
+          ]
+        },
+        {
+          "root": [
+            0.4785,
+            -0.2085,
+            0.0897
+          ],
+          "toward": [
+            0.9769,
+            -0.0797,
+            0.198
+          ],
+          "length": 0.0932,
+          "radius": 0.0289,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            5
+          ]
+        },
+        {
+          "root": [
+            0.442,
+            -0.2125,
+            0.1326
+          ],
+          "toward": [
+            0.958,
+            -0.0797,
+            0.2755
+          ],
+          "length": 0.0835,
+          "radius": 0.0263,
+          "joints": [
+            0,
+            0.5
+          ],
+          "roll": -90,
+          "counts": [
+            5
+          ]
+        }
+      ],
+      "join": "$web",
+      "merge": "$merge",
+      "nail": {
+        "at": 0.8,
+        "length": 0.28,
+        "width": 0.3,
+        "color": "nails",
+        "claw": "$claw",
+        "curl": "$clawCurl"
+      },
+      "pad": {
+        "name": "pad",
+        "if": "$pads",
+        "at": 0.5,
+        "length": 0.4,
+        "width": 0.3,
+        "color": "pad",
+        "rise": "$beans"
+      }
+    },
+    {
+      "kind": "joint",
+      "name": "ankle",
+      "u": 0.21,
+      "hinge": "x",
+      "limits": [
+        -40,
+        40
+      ]
+    },
+    {
+      "kind": "area",
+      "name": "sole",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0.35,
+        0.65
+      ],
+      "tag": "fill"
+    },
+    {
+      "kind": "area",
+      "name": "toes",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "toes"
+    }
+  ]
+}

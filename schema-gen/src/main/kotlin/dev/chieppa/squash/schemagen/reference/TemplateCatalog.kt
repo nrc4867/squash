@@ -1,6 +1,7 @@
 package dev.chieppa.squash.schemagen.reference
 
 import dev.chieppa.squash.recipe.probe.bodyWords
+import dev.chieppa.squash.character.block.Digits
 import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.ParamSpec
 import dev.chieppa.squash.character.model.PartTemplate
@@ -55,12 +56,13 @@ internal object TemplateCatalog {
             appendLine()
             append(table(listOf("joint", "u", "hinge", "limits", "+degrees moves the tip"), joints.map { jointRow(it, frame) }))
         }
+        template.blocks.filterIsInstance<Digits>().forEach { row -> append(digitJoints(template, row, frame)) }
         val patches = template.blocks.flatMap { it.patchNames() }
         if (patches.isNotEmpty()) {
             appendLine()
             appendLine("Patches: " + patches.joinToString { code(if (it.repeats) "${it.name}:<i>" else it.name) })
         }
-        val areas = template.blocks.flatMap { it.areas() }
+        val areas = template.blocks.flatMap { it.areas(template.defaults) }
         if (areas.isNotEmpty()) {
             appendLine()
             appendLine("Paintable areas, filled with `\"areas\": {\"<area>\": \"<slot>\"}`:")
@@ -124,6 +126,40 @@ internal object TemplateCatalog {
         code(joint.name), num(joint.u), joint.hinge.name.lowercase(), joint.limits?.let { nums(it.min, it.max) } ?: "none",
         tipMove(frame.axes.along, hingeDirection(joint.hinge, frame.axes, mirrored = false), BoneAngles(TEST_DEGREES, 0f, 0f)),
     )
+
+    /**
+     * The joints of [row]'s digits at the template's defaults, digit by digit, the move for positive degrees read along each digit's own
+     * direction, with the counts and flags that change which digits it builds.
+     */
+    private fun digitJoints(template: PartTemplate, row: Digits, frame: PartFrame): String = buildString {
+        val values = template.defaults
+        val built = row.builtSegments(values)
+        val chains = row.digitChains(built.map { it.first }.toSet()).associateBy { it.patch }
+        if (chains.isEmpty()) return@buildString
+        val counted = built.count { it.second.name == null }
+        val named = built.mapNotNull { it.second.name }
+        appendLine()
+        appendLine(
+            "Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds " +
+                (if (counted == 1) "one counted digit" else "$counted counted digits") + ", numbered from 0" +
+                (if (named.isEmpty()) "" else " (${named.joinToString { code(it) }} named apart, outside the numbers)") +
+                (row.count?.let { "; parameter ${code(it.refName ?: it.raw)} sets how many" + if (row.countsNamed) ", the named digits that are on among them" else "" } ?: "") +
+                ". Each patch is a digit sockets, regions and marks can name:",
+        )
+        appendLine()
+        val rows = built.flatMap { (patch, digit) ->
+            val chain = chains[patch] ?: return@flatMap emptyList()
+            val d = digit.direction()
+            val along = (frame.axes.along * d.x + frame.axes.up * d.y + frame.axes.side * d.z).normalized()
+            chain.joints.map { joint ->
+                listOf(
+                    code(joint.name), code(patch), joint.hinge.name.lowercase(), joint.limits?.let { nums(it.min, it.max) } ?: "none",
+                    tipMove(along, hingeDirection(joint.hinge, frame.axes, mirrored = false), BoneAngles(TEST_DEGREES, 0f, 0f)),
+                )
+            }
+        }
+        append(table(listOf("joint", "patch", "hinge", "limits", "+degrees moves the tip"), rows))
+    }
 
     private fun paramRow(name: String, spec: ParamSpec): List<String> {
         val default = if (spec.default.isFlag) (if (spec.default.value != 0f) "1 (on)" else "0 (off)") else num(spec.default.value)

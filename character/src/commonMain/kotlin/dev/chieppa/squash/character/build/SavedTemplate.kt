@@ -34,8 +34,8 @@ fun savedTemplateId(name: String): TemplateId? =
 fun savedTemplate(unplaced: PartTemplate, params: Map<String, Float>, role: Role?, id: TemplateId, name: String): PartTemplate {
     val built = unplaced.placedBy(params).shapedBy(params).withHandAnatomy(params, ::fixedName)
     val values = unplaced.defaults + params
-    val blocks = built.blocks + HandSockets.specs(params).map { socket ->
-        Socket(fixedName(socket.name), u = socket.u, v = socket.v, pair = socket.pair, tilt = socket.tilt)
+    val blocks = built.blocks + HandSockets.specs(params) { DigitPatches.patchOf(unplaced, it) }.map { socket ->
+        Socket(fixedName(socket.name), u = socket.u, v = socket.v, pair = socket.pair, tilt = socket.tilt, patch = socket.patch)
     }
     return built.copy(
         schemaPath = null,

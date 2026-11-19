@@ -29,8 +29,10 @@ data class Socket(
     val tilt: Float = 0f,
     @Doc("Multiplies how deep a child sits inside this part here.") @Range(min = 0.0, max = 4.0)
     val sink: Float = 1f,
+    @Doc("The patch its u and v lie on, a digit's as fingers:2; the part's first run reaching u when left out.")
+    val patch: String? = null,
 ) : Block {
-    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes, tilt, sink))
+    override fun sockets() = listOf(SocketSpec(name, u, v, outward, pair, takes, tilt, sink, patch = patch))
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.unit("v", v) + ctx.paired("v", v, pair) + ctx.onTheSurface("u", u, condition) + ctx.sink("sink", sink)

@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.MAX_CURVE_PLACES
 import dev.chieppa.squash.character.build.MIN_CURVE_PLACES
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
+import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.JoinParams
 import dev.chieppa.squash.character.build.PlacementParams
@@ -21,10 +22,14 @@ import dev.chieppa.squash.recipe.model.RecipeSocket
 private const val FLAG_ON = 1f
 private const val FLAG_OFF = 0f
 
-/** The command that places hand-made [socket] on [part]: one socket, or a row of them when it has a count above 1. */
-internal fun BuildContext.socketCommand(path: String, part: PartId, socket: RecipeSocket): AddParameters {
+/**
+ * The command that places hand-made [socket] on [part]: one socket, or a row of them when it has a count above 1, on the digit its patch
+ * names. It warns when the part as [params] shape it builds no such digit.
+ */
+internal fun BuildContext.socketCommand(path: String, part: PartId, socket: RecipeSocket, params: Map<String, Float> = emptyMap()): AddParameters {
     socket.sink?.takeIf { it < 0f }?.let { warn("$path.sink", "a sink below 0 is not a stand-off; give outset, in body units, with sink 0") }
-    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset)
+    val digit = socket.patch?.let { patch -> digitOf("$path.patch", part, patch, params) }
+    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset, digit)
     val count = socket.count
     if (count == null) {
         if (socket.toV != null) fail("$path.toV", "toV ends a row; give count too")
@@ -38,6 +43,17 @@ internal fun BuildContext.socketCommand(path: String, part: PartId, socket: Reci
         HandSockets.falloff(socket.n) to (socket.falloff ?: 1f),
     ) + listOfNotNull(socket.toV?.let { HandSockets.toV(socket.n) to it })
     return AddParameters(part, one.values + row)
+}
+
+/** The number [patch], a digit patch of [part]'s template, goes by, failing at [path] when it is none; warns when [params] build no such digit. */
+private fun BuildContext.digitOf(path: String, part: PartId, patch: String, params: Map<String, Float>): Int {
+    val template = templateOf(part)
+    val digit = DigitPatches.digitOf(template, patch)
+    val built = DigitPatches.builtPatches(template, document.character.part(part)?.let { document.character.resolvedShape(it).params }.orEmpty() + params)
+    val digits = built.filter { DigitPatches.digitOf(template, it) != null }.sorted()
+    if (digit == null) fail(path, "${template.id.value} has no digit \"$patch\"; its digits are ${digits.joinToString().ifEmpty { "none" }}")
+    if (patch !in built) warn(path, "${template.id.value} as shaped builds no \"$patch\"; it builds ${digits.joinToString().ifEmpty { "no digits" }}, so the socket shows nowhere")
+    return digit
 }
 
 /**

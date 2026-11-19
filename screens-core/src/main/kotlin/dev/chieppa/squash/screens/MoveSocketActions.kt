@@ -16,9 +16,9 @@ private const val MIDDLE = 0.5f
  * Places a hand-made socket on [parent] at [u] and [v] with the Move tool's outward angle and pair flag, as one undo step, and picks
  * it; with the tool's count above 1, a row of that many from [u] toward the part's further end, at the tool's size and falloff. A
  * paired socket on a part in the middle of the body stores v as the left side reads it, so a press on the right lands there.
- * See HLD: data-model, Hand-made sockets.
+ * A press on a digit, [digit] as `DigitPatches` numbers it, places the socket on that digit's patch. See HLD: data-model, Hand-made sockets.
  */
-fun AppState.addSocket(parent: PlacedPart, u: Float, v: Float, onRight: Boolean) {
+fun AppState.addSocket(parent: PlacedPart, u: Float, v: Float, onRight: Boolean, digit: Int? = null) {
     val opened = session.value ?: return
     val id = parent.id ?: return
     val character = opened.document.value.character
@@ -29,9 +29,9 @@ fun AppState.addSocket(parent: PlacedPart, u: Float, v: Float, onRight: Boolean)
     val count = move.count.value
     opened.send(
         if (count > 1) {
-            HandSockets.addRow(id, number, u, if (u < MIDDLE) ROW_FAR_END else ROW_NEAR_END, stored, move.outward.value, paired, count, move.size.value, move.falloff.value)
+            HandSockets.addRow(id, number, u, if (u < MIDDLE) ROW_FAR_END else ROW_NEAR_END, stored, move.outward.value, paired, count, move.size.value, move.falloff.value, digit)
         } else {
-            HandSockets.add(id, number, u, stored, move.outward.value, paired)
+            HandSockets.add(id, number, u, stored, move.outward.value, paired, digit = digit)
         },
     )
     move.picked.value = SocketRef(id, HandSockets.name(number))

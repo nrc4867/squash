@@ -41,6 +41,19 @@ class ParameterRowsTest {
     }
 
     @Test
+    fun theNewestHandAndFootShowTheirDigitCountsAndSpread() {
+        val hand = parameterRows(assertNotNull(shipped.template(TemplateId("hand")))).associateBy { it.name }
+        assertEquals(listOf(2f, 3f, 4f, 5f), hand.getValue("digits").values)
+        assertEquals(listOf(2f..5f), hand.getValue("digits").spans)
+        assertTrue(hand.getValue("thumb").isFlag)
+        assertEquals(1f, hand.getValue("spread").value)
+        listOf("foot", "paw").forEach { id ->
+            val toes = parameterRows(assertNotNull(shipped.template(TemplateId(id)))).first { it.name == "toes" }
+            assertEquals(listOf(0f..5f), toes.spans, id)
+        }
+    }
+
+    @Test
     fun aParameterWithValuesTakesOnlyThose() {
         val toes = rows.getValue("toes")
         assertEquals(0f..5f, toes.range)

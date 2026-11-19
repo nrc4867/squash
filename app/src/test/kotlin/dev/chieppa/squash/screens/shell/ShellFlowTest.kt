@@ -227,6 +227,7 @@ class ShellFlowTest {
         assertFalse(state.libraryMode().lit(TemplateId("leg")))
     }
 
+    /** On paw 7, whose toe counts leave 1 and 2 out. */
     @Tag("integration")
     @Test
     fun aSliderOverValuesSkipsWhatTheyLeaveOut() = runDesktopComposeUiTest(1600, 900) {
@@ -234,11 +235,13 @@ class ShellFlowTest {
         createCharacter(state)
         val session = assertNotNull(state.session.value)
         val plan = shipped.plans.first()
-        fun place(socketName: String) = openSockets(session.document.value, plan, shipped).first { it.name == socketName }.let { socket ->
-            placeOnSocket(socket, assertNotNull(shipped.template(socket.takes.first())), session.document.value).also { session.send(AddParts(it)) }
+        fun place(socketName: String, version: Int? = null) = openSockets(session.document.value, plan, shipped).first { it.name == socketName }.let { socket ->
+            val id = socket.takes.first()
+            val template = version?.let { v -> shipped.parts.single { it.id == id && it.version == v } } ?: shipped.template(id)
+            placeOnSocket(socket, assertNotNull(template), session.document.value).also { session.send(AddParts(it)) }
         }
         place("front-leg")
-        val paw = place("paw").first()
+        val paw = place("paw", version = 7).first()
         state.selectedPart.value = paw.id
         state.tool.value = BuildTool.NONE
         waitForIdle()

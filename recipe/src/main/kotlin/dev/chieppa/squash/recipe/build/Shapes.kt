@@ -1,6 +1,8 @@
 package dev.chieppa.squash.recipe.build
 
+import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.character.build.PlacementParams
+import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.Anchor
@@ -71,11 +73,19 @@ internal fun BuildContext.region(path: String, part: PartId, region: RecipeRegio
 internal fun BuildContext.anchors(path: String, part: PartId, patch: String, uv: List<List<Float>>?, face: List<List<Float>>?, given: List<Anchor>?, uvName: String): List<Anchor> {
     val forms = listOfNotNull(uv?.let { uvName }, face?.let { "face" }, given?.let { "anchors" })
     if (forms.size != 1) fail(path, "give its places one way, as $uvName, face or anchors, not ${forms.joinToString(" and ").ifEmpty { "none" }}")
+    if (uv != null && patch != BODY_PATCH) checkPatch("$path.patch", part, patch)
     return when {
         uv != null -> uv.mapIndexed { i, p -> pair(path, "$uvName[$i]", p, "[u, v]").let { (u, v) -> Anchor(part, patch, u, v) } }
         face != null -> face.mapIndexed { i, p -> faceAnchor("$path.face[$i]", part, pair(path, "face[$i]", p, "[x, y]")) }
         else -> requireNotNull(given).also { anchors -> anchors.forEachIndexed { i, a -> partOf("$path.anchors[$i].part", a.part.value) } }
     }
+}
+
+/** Warns at [path] when [part], as shaped so far, builds no patch [patch], so what lies on it shows nowhere. */
+internal fun BuildContext.checkPatch(path: String, part: PartId, patch: String) {
+    val instance = document.character.part(part) ?: return
+    val built = DigitPatches.builtPatches(templateOf(part), document.character.resolvedShape(instance).params)
+    if (patch !in built) warn(path, "${part.value} builds no patch \"$patch\", so this shows nowhere; it builds ${built.sorted().joinToString()}")
 }
 
 /** [shape] as part data laid over [part]: its outlines, parameters, colour and regions. */

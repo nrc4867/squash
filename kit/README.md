@@ -113,11 +113,13 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | `tubePart` | `tubePart({ id: "legs", on: "torso", socket: "socket.3", ...pair("leg"), joints }, { rest: "down", length, profiles })`, a generic tube at `FINE` (96 rings, 32 segments). |
 | `FINE`, `SMALL` | `generic` samplings for big and small generic parts. |
 | `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })`; `{ sink: 0, outset: 0.016 }` stands a part just off a shirt of fit 0.012. |
+| `digitPatch` | `socket(1, 0.7, 0.25, { patch: digitPatch(2) })` lies on a hand's third finger and rides it, a ring; `digitPatch("thumb")`, `digitPatch(0, "toes")`. Regions and marks take the same `patch`. |
 | `ringSocket` | `ringSocket(4, torso.u(plan.h("waist")), 12, { sink: 0, outset: 0.02 })`, twelve sockets round a part: studs round a belt. |
 | `joint` | `joint(1, leg.u(plan.h("knee")), { low: 0, high: 140 })` |
 | `socketName`, `jointName` | `socketName(2)` is `"socket.2"`. |
 | `pair` | `{ ...pair("arm") }` names the sides `arm-l` and `arm-r`. |
 | `sides` | `sides("arm").right` is `"arm-r"`. |
+| `digitCurl` | `digitCurl("hand-l", { count: 3, curl: [-6, -10, -6], thumb: [6, 4, 2] })` poses every joint of a hand's three numbered fingers and its thumb; `row: "toes"` for a foot or paw. |
 | `bothSides` | `displayPose: bothSides("arm", { joint: "base", lean: -28 })` |
 
 ## Face

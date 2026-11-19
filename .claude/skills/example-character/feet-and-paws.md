@@ -4,8 +4,8 @@ A foot or paw ends a leg on the leg's end socket, at the ankle, and the floor ru
 
 | template | use for | toes |
 | --- | --- | --- |
-| `foot` (version 6) | a plantigrade foot: a person's, a mouse's, a bear's; a heel under the ankle, a sole, toes flat underneath | `toes` 0 or 5; `spread`, `merge` |
-| `paw` (version 7) | a digitigrade paw: a fox's, a cat's, a dragon's; a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0, 3, 4 or 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
+| `foot` (version 7) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's; a heel under the ankle, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
+| `paw` (version 8) | a digitigrade paw: a fox's, a cat's, a dragon's; a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
 | `foot-bird` (version 4) | a bird's foot | four toes |
 
 Both rest forward; both fit their whole solid to drawn Side and Top outlines, but their parameters shape them better: leave them undrawn unless the parameters cannot reach the silhouette.
@@ -37,8 +37,9 @@ export const feet: RecipePart = {
 
 ## Shape
 
-- A round cartoon foot with no toes: `foot` with `toes` 0, a wide `ballWidth` and a full `heel`. A foot with toes: `toes` 5, `merge` low for toes standing apart, about 1 to join them to the tips; `spread` below 1 brings them closer.
-- A paw: `toes` 3 to 5, `merge` 0.15 to 0.3 for toes standing clear (a fox's), about 1 for a mitten (a house cat's); `claw` for how far claws stand past the toes, `clawCurl`, `claws: 0` to retract; `pads` for the main pad and beans, `beans` to raise them. Pads and claws show in the palette slots `pad` and `claw` when the palette names them.
+- A round cartoon foot with no toes: `foot` with `toes` 0, a wide `ballWidth` and a full `heel`. A foot with toes: `toes` 1 to 5, each count laid out across the ball of its own (5 a person's, fewer symmetric and wider); `merge` low for toes standing apart, about 1 to join them to the tips; `spread` below 1 brings them closer.
+- An anthro's human-like foot with three wide, short toes, pads and claws: `foot` with `toes: 3, toeLength: 0.75, toeThickness: 1.25, merge: 0.15, claw: 0.5, pads: 1, beans: 0.25`, and a palette slot `pad`. Its claws are its nails, in the slot `nails`, or fill `areas: { "nail:0": "claw", ... }`.
+- A paw: `toes` 1 to 5 (2 a cloven foot, 3 or 4 a cat's or a dog's), `merge` 0.15 to 0.3 for toes standing clear (a fox's), about 1 for a mitten (a house cat's); `claw` for how far claws stand past the toes, `clawCurl`, `claws: 0` to retract; `pads` for the main pad and beans, `beans` to raise them. Pads and claws show in the palette slots `pad` and `claw` when the palette names them.
 - Colour: `areas` fill `sole`, `toes` on a foot, `pad`, `sock`, `top`, `toes` on a paw.
 - A quadruped's every leg carries a paw: a leg with nothing on its end socket ends in a flat stump.
 
@@ -46,8 +47,13 @@ export const feet: RecipePart = {
 
 `close=feet` renders the bare foot or paw at rest, curled, open and spread from six sides; `close=foot-l` frames it as shown per outfit. From the front the feet stand apart under the hips; from the side the heel is under the ankle; from behind the heels read; toes part (`smallest gap between digit tips` in `measure.txt`).
 
+## On one toe
+
+Sockets, regions and marks name a toe's patch, `toes:0` on from the inner toe (`templates.md` lists them), to lie on that toe and ride it: `socket(1, 0.9, 0.25, { patch: digitPatch(0, "toes") })` on the feet. A patch the part does not build warns at build, as does a garment's print on a toe.
+
 ## Limits
 
+- **Cloth stops at the toes' roots**: a sock or shoe covers the foot and the toes poke through or stay bare, and prints on a toe show nowhere. A closed shoe sets `toes: 0` with a `redraw`.
 - **Specks between merged toes.** A `paw` whose base slot differs from the part it sits on can show a speck or two of the parent's colour where three toes meet. Give the paw a slot of its own rather than relying on the leg's.
 - **Claws are field points.** A paw's claws are grown in its own surface and painted; they cannot be separate hard parts or carry sockets.
 - **No toes on paddles.** A paddle foot or flipper is a drawn `blob` or `sheet` with no digits.

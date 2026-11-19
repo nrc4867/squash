@@ -19,7 +19,7 @@ import dev.chieppa.squash.recipe.model.RecipeSocket
 import kotlin.math.roundToInt
 
 /** The keys a single hand-made socket's parameters use, which a recipe socket stands for. */
-private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset")
+private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset", "digit")
 
 /** The keys a row of hand-made sockets adds, and the one it may add besides. */
 private val ROW_FIELDS = setOf("count", "to", "size", "falloff")
@@ -37,7 +37,7 @@ private val SIDE_KEYS = listOf(".left", ".right")
  * A part's parameters split into the recipe's named fields, each lifted only where the recipe field builds the same parameters again,
  * and the rest by name. With [anatomy] false only size, lean and outward are lifted, as a garment's shape holds the rest by name.
  */
-internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) {
+internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, private val digitPatch: (Int) -> String? = { null }) {
     val size: Float? = params[SIZE_PARAM]
     val lean: Float? = params[PlacementParams.LEAN]
     val outward: Float? = params[PlacementParams.OUTWARD]
@@ -73,6 +73,9 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
         val allowed = if (row) SOCKET_FIELDS + ROW_FIELDS + ROW_ROUND else SOCKET_FIELDS
         if (!keys.all { it in allowed } || "u" !in keys || "v" !in keys) return@mapNotNull null
         if (params[HandSockets.pair(id)]?.let { it != 1f } == true) return@mapNotNull null
+        val digit = params[HandSockets.digit(id)]
+        val patch = digit?.let { if (it == it.roundToInt().toFloat()) digitPatch(it.roundToInt()) else null }
+        if (digit != null && patch == null) return@mapNotNull null
         lift(name, keys)
         RecipeSocket(
             id, params.getValue(HandSockets.u(id)), params.getValue(HandSockets.v(id)), params[HandSockets.outward(id)] ?: 0f,
@@ -83,6 +86,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
             toV = if (row) params[HandSockets.toV(id)] else null,
             size = if (row) params[HandSockets.size(id)] else null,
             falloff = if (row) params[HandSockets.falloff(id)] else null,
+            patch = patch,
         )
     }
 

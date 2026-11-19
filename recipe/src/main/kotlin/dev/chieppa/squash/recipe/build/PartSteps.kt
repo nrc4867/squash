@@ -68,8 +68,8 @@ internal fun BuildContext.offeredSockets(part: PartId): List<String> {
 
 /** Sends [part]'s hand-made sockets, parameters and outlines to its left side, which a pair shares. */
 private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate, part: RecipePart) {
-    part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s)) }
     val params = shapeParams(part.size, part.lean, part.outward, anatomyParams(path, part) + part.params)
+    part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s, params)) }
     checkParams(path, template, params)
     if (params.isNotEmpty()) send("$path.params", SetParameters(id, params))
     if (part.outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, curves(path, part.outlines)))

@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.move
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
@@ -30,8 +31,11 @@ private const val THIN_STROKE = 1f
 private const val TWIN_DASH = 3f
 private const val CIRCLE_STEPS = 32
 
-/** Where a press of Add socket would place a socket: on [part] at [u] and [v], the press on the body's right when [onRight]. */
-class SocketPlace(val part: PlacedPart, val u: Float, val v: Float, val onRight: Boolean)
+/**
+ * Where a press of Add socket would place a socket: on [part] at [u] and [v], the press on the body's right when [onRight], on the digit
+ * [digit] numbers as [DigitPatches] does, whose patch is [patch], when the press lands on one.
+ */
+class SocketPlace(val part: PlacedPart, val u: Float, val v: Float, val onRight: Boolean, val digit: Int? = null, val patch: String? = null)
 
 /**
  * The place on the surface of a part of [character] showing at [pixel] that a socket would take, or null where none shows; found on
@@ -40,6 +44,11 @@ class SocketPlace(val part: PlacedPart, val u: Float, val v: Float, val onRight:
 fun socketPlaceAt(character: AssembledCharacter, pixel: Offset, sight: SurfaceView, handles: HandleView, surface: CharacterSurface): SocketPlace? {
     val hit = surfaceHit(character, pixel, sight, surface) ?: return null
     val part = character.part(hit.part) ?: return null
+    val digit = DigitPatches.digitOf(part.template, hit.patch)
+    if (digit != null) {
+        val on = part.pointOn(hit.u, hit.v, hit.patch) ?: return null
+        return SocketPlace(part, hit.u, hit.v, on.z > 0f, digit, hit.patch)
+    }
     val place = if (hit.patch == BODY_PATCH) SurfacePlace(hit.u, hit.v) else surfaceUnder(part, pixel, handles) ?: return null
     val at = part.pointOn(place.u, place.v) ?: return null
     return SocketPlace(part, place.u, place.v, at.z > 0f)
@@ -60,8 +69,8 @@ class SocketMark(val position: Vec3, val outward: Vec3)
  */
 fun socketMarks(place: SocketPlace, outward: Float, paired: Boolean, twin: PlacedPart?): Pair<SocketMark, SocketMark?>? {
     fun mark(on: PlacedPart, v: Float): SocketMark? {
-        val at = on.pointOn(place.u, v) ?: return null
-        return SocketMark(at, on.outwardAt(place.u, v, outward) ?: return null)
+        val at = on.pointOn(place.u, v, place.patch) ?: return null
+        return SocketMark(at, on.outwardAt(place.u, v, outward, place.patch) ?: return null)
     }
     val own = mark(place.part, place.v) ?: return null
     if (!paired) return own to null

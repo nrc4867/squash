@@ -51,6 +51,9 @@ object HandSockets {
     /** How far a part on it stands off the surface along its normal, in body units, before it sinks; 0 when unset. */
     fun outset(id: Int) = "${name(id)}.outset"
 
+    /** The digit it sits on, as [DigitPatches] numbers them, so its u and v lie on that digit's patch; the part's first run reaching u when unset. */
+    fun digit(id: Int) = "${name(id)}.digit"
+
     /** Set when it has a mirrored twin across the body's middle. */
     fun pair(id: Int) = "${name(id)}.pair"
 
@@ -92,16 +95,17 @@ object HandSockets {
     /** The id the next socket placed on a part with [params] takes. */
     fun nextId(params: Map<String, Float>): Int = (ids(params).maxOrNull() ?: 0) + 1
 
-    /** The hand-made sockets [params] hold. */
-    fun specs(params: Map<String, Float>): List<SocketSpec> = ids(params).flatMap { id ->
+    /** The hand-made sockets [params] hold, a socket on a digit on the patch [digitPatch] names for its number. */
+    fun specs(params: Map<String, Float>, digitPatch: (Int) -> String? = { null }): List<SocketSpec> = ids(params).flatMap { id ->
         val u = params[u(id)] ?: return@flatMap emptyList()
         val v = params[v(id)] ?: return@flatMap emptyList()
         val pair = if ((params[pair(id)] ?: 0f) != 0f) Mirror.X else null
         val tilt = params[outward(id)] ?: 0f
         val sink = params[sink(id)] ?: 1f
         val outset = params[outset(id)] ?: 0f
+        val patch = params[digit(id)]?.roundToInt()?.let(digitPatch)
         val count = (params[count(id)] ?: 1f).roundToInt().coerceIn(1, MAX_COUNT)
-        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, outset = outset))
+        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset))
         val last = params[to(id)] ?: u
         val lastV = params[toV(id)] ?: v
         val closed = abs(lastV - v) >= 1f - CLOSED_TURN
@@ -111,33 +115,36 @@ object HandSockets {
             val share = i.toFloat() / (count - 1)
             val round = if (closed) sign(lastV - v) * i.toFloat() / count else (lastV - v) * share
             val at = wrapped(v + round)
-            SocketSpec(member(id, i), u + (last - u) * share, at, Outward.NORMAL, pair, emptyList(), tilt, sink, scale = first * (1f + (falloff - 1f) * share), outset = outset)
+            SocketSpec(member(id, i), u + (last - u) * share, at, Outward.NORMAL, pair, emptyList(), tilt, sink, scale = first * (1f + (falloff - 1f) * share), patch = patch, outset = outset)
         }
     }
 
     /**
      * The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired], a part on
-     * it stood [outset] off the surface and sunk [sink] times its own depth, or once with null: one undo step. It fails on a part that already holds socket [id]; [move]
-     * moves one.
+     * it stood [outset] off the surface and sunk [sink] times its own depth, or once with null, on [digit] when given: one undo step. It fails
+     * on a part that already holds socket [id]; [move] moves one.
      */
-    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null, outset: Float? = null): AddParameters =
-        AddParameters(part, mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink, outset(id) to outset))
+    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null, outset: Float? = null, digit: Int? = null): AddParameters =
+        AddParameters(
+            part,
+            mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink, outset(id) to outset, digit(id) to digit?.toFloat()),
+        )
 
     /**
      * The command that places a row of [count] sockets on [part] from [u] to [to] at [v], [outward] degrees from the normal, mirrored when
      * [paired], parts on it starting at [size] on the first and [falloff] of that on the last: one undo step. It fails as [add] does.
      */
-    fun addRow(part: PartId, id: Int, u: Float, to: Float, v: Float, outward: Float, paired: Boolean, count: Int, size: Float, falloff: Float): AddParameters =
+    fun addRow(part: PartId, id: Int, u: Float, to: Float, v: Float, outward: Float, paired: Boolean, count: Int, size: Float, falloff: Float, digit: Int? = null): AddParameters =
         AddParameters(
             part,
-            add(part, id, u, v, outward, paired).values + mapOf(count(id) to count.toFloat(), to(id) to to, size(id) to size, falloff(id) to falloff),
+            add(part, id, u, v, outward, paired, digit = digit).values + mapOf(count(id) to count.toFloat(), to(id) to to, size(id) to size, falloff(id) to falloff),
         )
 
     /** The command that moves socket [id] of [part] to [u] and [v]. */
     fun move(part: PartId, id: Int, u: Float, v: Float): SetParameters = SetParameters(part, mapOf(u(id) to u, v(id) to v))
 
     /** The command that clears socket [id] from [part]: one undo step. */
-    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id)).associateWith { null })
+    fun delete(part: PartId, id: Int): SetParameters = SetParameters(part, listOf(u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id)).associateWith { null })
 }
 
 /**
@@ -145,5 +152,5 @@ object HandSockets {
  * digits' tips, for the digits among [built], the patches its build made, or without them for the digits [params] would build.
  */
 fun socketsOn(plan: BodyPlan?, template: PartTemplate, params: Map<String, Float>, built: Collection<String>? = null): List<SocketSpec> =
-    (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }) + HandSockets.specs(params) +
+    (plan?.socketsOn(template) ?: template.blocks.flatMap { it.sockets() }) + HandSockets.specs(params) { DigitPatches.patchOf(template, it) } +
         (built?.let { PartBuilder.tipSockets(template, it) } ?: PartBuilder.tipSockets(template, params))

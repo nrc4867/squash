@@ -115,4 +115,6 @@ data class RecipeSocket(
     val size: Float? = null,
     @Doc("The size a part placed on a row's last socket starts at, as a share of the first's.")
     val falloff: Float? = null,
+    @Doc("The digit patch its u and v lie on, so it rides that digit: fingers:2 on a hand, fingers:thumb, toes:0 on a foot or paw. The part's first run reaching u when left out, which on a hand past the palm is fingers:0.")
+    val patch: String? = null,
 )

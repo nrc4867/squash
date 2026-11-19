@@ -1,5 +1,8 @@
 package dev.chieppa.squash.recipe.export
 
+import dev.chieppa.squash.character.build.DigitPatches
+import dev.chieppa.squash.character.catalog.template
+import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.Garment
@@ -21,6 +24,9 @@ import dev.chieppa.squash.recipe.model.RecipePair
 import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSlot
 import dev.chieppa.squash.recipe.model.RecipeWardrobe
+
+/** The shipped templates, which name the digit a socket placed on one sits on. */
+private val shipped by lazy { TemplateFolder.shipped() }
 
 /** A recipe written from a character, and what of the character it could not hold, one line each. */
 class RecipeExport(val recipe: Recipe, val notCarried: List<String>)
@@ -62,7 +68,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
     val character = document.character
     val twin = character.twinOf(part)
     val data = character.editBase(part, thisSide = false)
-    val split = SplitParams(data.params)
+    val split = SplitParams(data.params) { digit -> shipped.template(part.template)?.let { DigitPatches.patchOf(it, digit) } }
     val surface = data.surface
     listOfNotNull(part, twin).filter { character.overridesOf(it) != PartData() }.forEach { notCarried += "${it.id.value}: values its side holds over its pair's" }
     if (twin != null && twin.blend != part.blend) notCarried += "${twin.id.value}: a blend apart from ${part.id.value}'s"

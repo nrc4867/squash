@@ -12,18 +12,18 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `claw` | 1 | - | Claw | horn |
 | `ear` | 3 | 1, 2 | Ear | ear |
 | `fin` | 1 | - | Fin | fin |
-| `foot` | 6 | 1, 2, 3, 4, 5 | Foot | foot |
+| `foot` | 7 | 1, 2, 3, 4, 5, 6 | Foot | foot |
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot |
 | `hair` | 1 | - | Hair | hair |
 | `hair-cap` | 1 | - | Hair cap | hair |
-| `hand` | 6 | 1, 2, 3, 4, 5 | Hand | hand |
+| `hand` | 7 | 1, 2, 3, 4, 5, 6 | Hand | hand |
 | `head` | 2 | 1 | Head | head |
 | `head-bird` | 1 | - | Bird head | head |
 | `head-round` | 2 | 1 | Round head | head |
 | `horn` | 1 | - | Horn | horn |
 | `leg` | 1 | - | Leg | leg |
 | `leg-bird` | 1 | - | Bird leg | leg |
-| `paw` | 7 | 1, 2, 3, 4, 5, 6 | Paw | foot |
+| `paw` | 8 | 1, 2, 3, 4, 5, 6, 7 | Paw | foot |
 | `plate` | 1 | - | Plate | fin |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) |
 | `spike` | 1 | - | Spike | horn |
@@ -311,7 +311,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.08 | 0.02 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
-## foot 6
+## foot 7
 
 | fact | value |
 | --- | --- |
@@ -330,12 +330,32 @@ Joints, which poses name; the move is for positive `degrees` on the left side at
 | --- | --- | --- | --- | --- |
 | `ankle` | 0.21 | x | [-40, 40] | down |
 
+Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds 5 counted digits, numbered from 0; parameter `toes` sets how many. Each patch is a digit sockets, regions and marks can name:
+
+| joint | patch | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `toes:0.1` | `toes:0` | x | [-30, 40] | down, back |
+| `toes:0.2` | `toes:0` | x | [-30, 40] | down, back |
+| `toes:1.1` | `toes:1` | x | [-30, 40] | down, back |
+| `toes:1.2` | `toes:1` | x | [-30, 40] | down, back |
+| `toes:2.1` | `toes:2` | x | [-30, 40] | down, back |
+| `toes:2.2` | `toes:2` | x | [-30, 40] | down, back |
+| `toes:3.1` | `toes:3` | x | [-30, 40] | down, back |
+| `toes:3.2` | `toes:3` | x | [-30, 40] | down, back |
+| `toes:4.1` | `toes:4` | x | [-30, 40] | down, back |
+| `toes:4.2` | `toes:4` | x | [-30, 40] | down, back |
+
 Patches: `body`, `toes:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
+| `nail:0` | toes:0 | [0.833, 0.876] | [0.1, 0.4] | fill | nails |
+| `nail:1` | toes:1 | [0.806, 0.837] | [0.1, 0.4] | fill | nails |
+| `nail:2` | toes:2 | [0.781, 0.809] | [0.1, 0.4] | fill | nails |
+| `nail:3` | toes:3 | [0.749, 0.774] | [0.1, 0.4] | fill | nails |
+| `nail:4` | toes:4 | [0.705, 0.727] | [0.1, 0.4] | fill | nails |
 | `sole` | body | [0, 1] | [0.35, 0.65] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
 
@@ -344,7 +364,9 @@ Parameters:
 | parameter | default | range | meaning |
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
-| `toes` | 5 | one of 0, 5 | Toes built: 0 for a bare sole (a shoe), 5 for a foot with toes. |
+| `toes` | 5 | one of 0, 1, 2, 3, 4, 5 | Toes built: 0 for a bare sole (a shoe), else 1 to 5, each count laid out across the ball of its own. |
+| `toeLength` | 1 | 0.4 to 2 | Multiplies every toe's length: below 1 short toes. |
+| `toeThickness` | 1 | 0.5 to 2 | Multiplies every toe's thickness: above 1 wide toes. |
 | `heel` | 0.133 | 0.05 to 0.3 | Heel ball's radius, a fraction of the foot's length. |
 | `ballWidth` | 0.152 | 0.08 to 0.35 | Half width across the ball of the foot, a fraction of the length. |
 | `ankle` | 0.111 | 0.05 to 0.3 | Ankle's radius where the leg meets the foot. |
@@ -355,6 +377,10 @@ Parameters:
 | `web` | 0.04 | 0 to 0.12 | Radius of the smooth join between the toes and the foot. |
 | `spread` | 1 | 0.3 to 1.8 | Multiplies the fan angle of the toes and the gap between their roots: below 1 closer, above 1 wider. |
 | `merge` | 0.35 | 0 to 2 | How much neighbouring toes fuse: small stands them apart, 1 or more joins them to the tips. |
+| `claw` | 0 | 0 to 2 | How far each toe's nail stands past its tip as a claw; 0 for flat nails. |
+| `clawCurl` | 0.35 | -1 to 1 | How much each claw curls down (positive) or up (negative). |
+| `pads` | 0 (off) | a flag: 1 or 0 | Builds a pad under each toe tip in the slot pad. |
+| `beans` | 0 | 0 to 0.8 | How far each toe pad rises from its toe. |
 
 ## foot-bird 4
 
@@ -375,13 +401,35 @@ Joints, which poses name; the move is for positive `degrees` on the left side at
 | --- | --- | --- | --- | --- |
 | `ankle` | 0 | x | [-40, 40] | down |
 
+Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds 3 counted digits, numbered from 0 (`back` named apart, outside the numbers); parameter `toes` sets how many. Each patch is a digit sockets, regions and marks can name:
+
+| joint | patch | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `toes:0.1` | `toes:0` | x | [-15, 80] | down |
+| `toes:0.2` | `toes:0` | x | [-15, 80] | down |
+| `toes:0.3` | `toes:0` | x | [-15, 80] | down |
+| `toes:1.1` | `toes:1` | x | [-15, 80] | down |
+| `toes:1.2` | `toes:1` | x | [-15, 80] | down |
+| `toes:1.3` | `toes:1` | x | [-15, 80] | down |
+| `toes:2.1` | `toes:2` | x | [-15, 80] | down |
+| `toes:2.2` | `toes:2` | x | [-15, 80] | down |
+| `toes:2.3` | `toes:2` | x | [-15, 80] | down |
+| `toes:back.1` | `toes:back` | x | [-15, 80] | up |
+| `toes:back.2` | `toes:back` | x | [-15, 80] | up |
+
 Patches: `body`, `toes:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
-| `claw:back` | toes:back | [0.438, 0.492] | [0.1, 0.4] | fill | claw |
+| `claw:0` | toes:0 | [0.66, 0.876] | [0.1, 0.4] | fill | claw |
+| `claw:1` | toes:1 | [0.835, 1.142] | [0.1, 0.4] | fill | claw |
+| `claw:2` | toes:2 | [0.66, 0.876] | [0.1, 0.4] | fill | claw |
+| `claw:back` | toes:back | [0.438, 0.601] | [0.1, 0.4] | fill | claw |
+| `pad:0` | toes:0 | [0.425, 0.56] | [0.6, 0.9] | fill | pad |
+| `pad:1` | toes:1 | [0.502, 0.694] | [0.6, 0.9] | fill | pad |
+| `pad:2` | toes:2 | [0.425, 0.56] | [0.6, 0.9] | fill | pad |
 | `pad:back` | toes:back | [0.262, 0.363] | [0.6, 0.9] | fill | pad |
 | `top` | body | [0, 0.4] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
@@ -459,7 +507,7 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.2 to 2.5 | Scales the part: its drawn length and width together. |
 
-## hand 6
+## hand 7
 
 | fact | value |
 | --- | --- |
@@ -478,17 +526,37 @@ Joints, which poses name; the move is for positive `degrees` on the left side at
 | --- | --- | --- | --- | --- |
 | `wrist` | 0.23 | x | [-60, 60] | back |
 
+Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds 4 counted digits, numbered from 0 (`thumb` named apart, outside the numbers); parameter `digits` sets how many, the named digits that are on among them. Each patch is a digit sockets, regions and marks can name:
+
+| joint | patch | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `fingers:0.1` | `fingers:0` | y | [-100, 20] | left |
+| `fingers:0.2` | `fingers:0` | y | [-100, 20] | left |
+| `fingers:0.3` | `fingers:0` | y | [-100, 20] | left |
+| `fingers:1.1` | `fingers:1` | y | [-100, 20] | left |
+| `fingers:1.2` | `fingers:1` | y | [-100, 20] | left |
+| `fingers:1.3` | `fingers:1` | y | [-100, 20] | left |
+| `fingers:2.1` | `fingers:2` | y | [-100, 20] | left |
+| `fingers:2.2` | `fingers:2` | y | [-100, 20] | left |
+| `fingers:2.3` | `fingers:2` | y | [-100, 20] | left |
+| `fingers:3.1` | `fingers:3` | y | [-100, 20] | left |
+| `fingers:3.2` | `fingers:3` | y | [-100, 20] | left |
+| `fingers:3.3` | `fingers:3` | y | [-100, 20] | left |
+| `fingers:thumb.1` | `fingers:thumb` | x | [-20, 35] | back |
+| `fingers:thumb.2` | `fingers:thumb` | x | [-20, 35] | back |
+| `fingers:thumb.3` | `fingers:thumb` | x | [-20, 35] | back |
+
 Patches: `body`, `fingers:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
-| `nail:0` | fingers:0 | [0.849, 0.907] | [0.1, 0.4] | fill | nails |
-| `nail:1` | fingers:1 | [0.891, 0.955] | [0.1, 0.4] | fill | nails |
-| `nail:2` | fingers:2 | [0.857, 0.916] | [0.1, 0.4] | fill | nails |
-| `nail:3` | fingers:3 | [0.776, 0.822] | [0.1, 0.4] | fill | nails |
-| `nail:4` | fingers:4 | [0.57, 0.626] | [0.1, 0.4] | fill | nails |
+| `nail:0` | fingers:0 | [0.845, 0.902] | [0.1, 0.4] | fill | nails |
+| `nail:1` | fingers:1 | [0.892, 0.956] | [0.1, 0.4] | fill | nails |
+| `nail:2` | fingers:2 | [0.863, 0.923] | [0.1, 0.4] | fill | nails |
+| `nail:3` | fingers:3 | [0.782, 0.829] | [0.1, 0.4] | fill | nails |
+| `nail:thumb` | fingers:thumb | [0.57, 0.626] | [0.1, 0.4] | fill | nails |
 | `back` | body | [0, 0.7] | [0, 0.5] | fill | - |
 | `fingers` | fingers | [0, 1] | [0, 1] | fill | - |
 
@@ -497,8 +565,10 @@ Parameters:
 | parameter | default | range | meaning |
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
+| `digits` | 5 | one of 2, 3, 4, 5 | Digits built, the thumb among them: 5 a person's hand, 4 a cartoon's three fingers and a thumb, down to 2. |
+| `thumb` | 1 (on) | a flag: 1 or 0 | Builds a thumb as one of the digits; off, every digit is a finger. |
 | `palmLength` | 0.227 | 0.1 to 0.4 | Palm's half length, a fraction of the hand's length. |
-| `palmWidth` | 0.186 | 0.08 to 0.35 | Palm's half width across the knuckles. |
+| `palmWidth` | 0.16 | 0.08 to 0.35 | Palm's half width across the knuckles. |
 | `palmThickness` | 0.071 | 0.03 to 0.2 | Palm's half thickness, back to front. |
 | `wrist` | 0.109 | 0.04 to 0.25 | Wrist's radius where the arm meets the hand. |
 | `fingerLength` | 1 | 0.5 to 1.6 | Multiplies every finger's length. |
@@ -506,6 +576,8 @@ Parameters:
 | `cup` | 0.02 | -0.05 to 0.15 | How far the palm's edges curl toward the palm side into a cup; negative arches it back. |
 | `web` | 0.025 | 0 to 0.12 | Radius of the smooth join between the fingers and the palm. |
 | `knuckles` | 0.85 | 0 to 1.5 | Knuckle ball at each finger's root, a share of the finger's radius; 0 for none. |
+| `spread` | 1 | 0 to 3 | Multiplies the fingers' fan angle across the palm: below 1 closer, above 1 spread wide. |
+| `merge` | 0.1 | 0 to 2 | How much neighbouring fingers fuse: small stands them apart to their roots, 1 or more joins them to the tips as a mitten. |
 
 ## head 2
 
@@ -754,7 +826,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 7
+## paw 8
 
 | fact | value |
 | --- | --- |
@@ -773,12 +845,33 @@ Joints, which poses name; the move is for positive `degrees` on the left side at
 | --- | --- | --- | --- | --- |
 | `wrist` | 0 | x | [-45, 45] | down |
 
+Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds 4 counted digits, numbered from 0; parameter `toes` sets how many. Each patch is a digit sockets, regions and marks can name:
+
+| joint | patch | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `toes:0.1` | `toes:0` | x | [-20, 60] | down, back |
+| `toes:0.2` | `toes:0` | x | [-20, 60] | down, back |
+| `toes:1.1` | `toes:1` | x | [-20, 60] | down, back |
+| `toes:1.2` | `toes:1` | x | [-20, 60] | down, back |
+| `toes:2.1` | `toes:2` | x | [-20, 60] | down, back |
+| `toes:2.2` | `toes:2` | x | [-20, 60] | down, back |
+| `toes:3.1` | `toes:3` | x | [-20, 60] | down, back |
+| `toes:3.2` | `toes:3` | x | [-20, 60] | down, back |
+
 Patches: `body`, `toes:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
+| `claw:0` | toes:0 | [0.682, 0.763] | [0.1, 0.4] | fill | claw |
+| `claw:1` | toes:1 | [0.79, 0.891] | [0.1, 0.4] | fill | claw |
+| `claw:2` | toes:2 | [0.79, 0.891] | [0.1, 0.4] | fill | claw |
+| `claw:3` | toes:3 | [0.682, 0.763] | [0.1, 0.4] | fill | claw |
+| `bean:0` | toes:0 | [0.613, 0.661] | [0.63, 0.87] | fill | pad |
+| `bean:1` | toes:1 | [0.703, 0.763] | [0.63, 0.87] | fill | pad |
+| `bean:2` | toes:2 | [0.703, 0.763] | [0.63, 0.87] | fill | pad |
+| `bean:3` | toes:3 | [0.613, 0.661] | [0.63, 0.87] | fill | pad |
 | `pad` | body | [0.16, 0.44] | [0.38, 0.62] | fill | pad |
 | `sock` | body | [0, 0.5] | [0, 1] | fill | - |
 | `top` | body | [0, 0.66] | [0.75, 0.25] | fill | - |
@@ -789,7 +882,7 @@ Parameters:
 | parameter | default | range | meaning |
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
-| `toes` | 4 | one of 0, 3, 4, 5 | Toes built: 0 for none (a mitten or a boot), else 3 to 5. |
+| `toes` | 4 | one of 0, 1, 2, 3, 4, 5 | Toes built: 0 for none (a mitten or a boot), else 1 to 5, each count laid out across the paw of its own. |
 | `toeLength` | 1 | 0.4 to 2 | Multiplies every toe's length. |
 | `toeThickness` | 1 | 0.5 to 1.8 | Multiplies every toe's thickness. |
 | `spread` | 1 | 0.3 to 1.8 | Multiplies the fan angle of the toes and the gap between their roots: below 1 closer, above 1 wider. |

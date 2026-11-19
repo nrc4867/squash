@@ -794,6 +794,10 @@
             }
           ]
         },
+        "countsNamed": {
+          "description": "Whether the count includes the named digits that are on, so a hand of four digits with its thumb on builds three counted fingers and the thumb.",
+          "type": "boolean"
+        },
         "rings": {
           "description": "Rings along each digit.",
           "type": "integer",
@@ -865,7 +869,7 @@
           ]
         },
         "spread": {
-          "description": "Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.",
+          "description": "Every digit pointing forward has its angle from the part's axis, in the plane of the axis and the line its roots run across, multiplied by this: below 1 the digits close together, above it they fan out.",
           "oneOf": [
             {
               "type": "number"
@@ -877,7 +881,7 @@
           ]
         },
         "gap": {
-          "description": "On digits joined to a field, each digit's root sits this multiple of its distance across the part from the middle of the digits' roots: below 1 the roots close together, above it they stand apart.",
+          "description": "On digits joined to a field, each digit's root sits this multiple of its distance across the row from the middle of the counted digits' roots: below 1 the roots close together, above it they stand apart.",
           "oneOf": [
             {
               "type": "number"
@@ -889,7 +893,7 @@
           ]
         },
         "hinge": {
-          "description": "Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it.",
+          "description": "Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it. The digits' roots run across the row along it: side for x, up for y.",
           "enum": [
             "x",
             "y",
@@ -2414,6 +2418,17 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 4.0
+        },
+        "patch": {
+          "description": "The patch its u and v lie on, a digit's as fingers:2; the part's first run reaching u when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

@@ -106,7 +106,7 @@ class AddPartTool(private val state: AppState, var look: SheetLook, var curves: 
                 }
                 val place = placeAt(down.position, sight, handles) ?: return@awaitEachGesture
                 down.consume()
-                state.addSocket(place.part, place.u, place.v, place.onRight)
+                state.addSocket(place.part, place.u, place.v, place.onRight, place.digit)
                 state.offerPickedSocket()
             }
         }

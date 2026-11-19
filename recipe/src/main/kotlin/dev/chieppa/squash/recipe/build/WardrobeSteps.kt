@@ -1,5 +1,6 @@
 package dev.chieppa.squash.recipe.build
 
+import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
@@ -64,11 +65,11 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     val color = garment.color?.let { slot("$path.color", it) }
     val partFits = garment.partFits.entries.associate { (name, fit) -> partOf("$path.partFits.$name", name) to fit }
     val (areas, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
-    val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r) } }
+    val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r).also { printOffDigits(p, it.border) } } }
     val marks = garment.marks.mapIndexed { i, m ->
         val p = "$path.marks[$i]"
         if (m.kind != MarkKind.LINE) fail("$p.kind", "a mark printed on cloth is a line, not ${m.kind.name.lowercase()}")
-        mark(p, printedOn(p, m.on, m.anchors), m)
+        mark(p, printedOn(p, m.on, m.anchors), m).also { printOffDigits(p, it.points) }
     }
     return guard(path) {
         Garment(
@@ -101,6 +102,13 @@ private fun BuildContext.change(path: String, part: PartId, change: RecipeChange
         val template = template("$path.template", change.template, change.version)
         checkParams("$path.shape", template, shapeParams(change.shape.size, change.shape.lean, change.shape.outward, change.shape.params))
         BodyPartChange.Swap(template.ref, partData("$path.shape", part, change.shape))
+    }
+}
+
+/** Warns at [path] of a print placed on a digit's patch: cloth stops where a part's digits leave it, so a print there shows nowhere. */
+private fun BuildContext.printOffDigits(path: String, anchors: List<Anchor>) {
+    anchors.map { it.part to it.patch }.distinct().filter { (part, patch) -> DigitPatches.digitOf(templateOf(part), patch) != null }.forEach { (part, patch) ->
+        warn("$path.patch", "cloth stops where ${part.value}'s digits leave it, so a print on \"$patch\" shows nowhere")
     }
 }
 

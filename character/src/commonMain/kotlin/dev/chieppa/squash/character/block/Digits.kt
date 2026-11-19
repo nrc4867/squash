@@ -38,6 +38,10 @@ import kotlin.math.sin
 
 private const val DEFAULT_ROW_NAME = "digits"
 private const val COORDINATES = 3
+
+/** The places of a digit root's up and side among its along, up and side coordinates. */
+internal const val UP_COORDINATE = 1
+internal const val SIDE_COORDINATE = 2
 private const val MIN_RINGS = 8
 private const val MIN_SEGMENTS = 3
 
@@ -71,6 +75,8 @@ data class Digits(
     val digits: List<DigitSegment>,
     @Doc("How many of the digits, from the first, the part builds.")
     val count: Param? = null,
+    @Doc("Whether the count includes the named digits that are on, so a hand of four digits with its thumb on builds three counted fingers and the thumb.")
+    val countsNamed: Boolean = false,
     @Doc("Rings along each digit.")
     @Range(min = 8.0)
     val rings: Int,
@@ -87,11 +93,11 @@ data class Digits(
     val reach: Param = Param.of(1f),
     @Doc("Every digit's thickness is multiplied by this.")
     val thickness: Param = Param.of(1f),
-    @Doc("Every digit pointing forward has its angle from the part's axis, seen from above, multiplied by this: below 1 the digits close together, above it they fan out.")
+    @Doc("Every digit pointing forward has its angle from the part's axis, in the plane of the axis and the line its roots run across, multiplied by this: below 1 the digits close together, above it they fan out.")
     val spread: Param = Param.of(1f),
-    @Doc("On digits joined to a field, each digit's root sits this multiple of its distance across the part from the middle of the digits' roots: below 1 the roots close together, above it they stand apart.")
+    @Doc("On digits joined to a field, each digit's root sits this multiple of its distance across the row from the middle of the counted digits' roots: below 1 the roots close together, above it they stand apart.")
     val gap: Param = Param.of(1f),
-    @Doc("Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it.")
+    @Doc("Which of the part's axes the joints turn about, unless a digit names its own: x across, y about its up, z along it. The digits' roots run across the row along it: side for x, up for y.")
     val hinge: Hinge = Hinge.X,
     @Doc("Degrees the joints turn within.")
     val limits: Limits? = null,
@@ -114,6 +120,9 @@ data class Digits(
 
     override fun surfaceMethod() = surface
 
+    /** Which coordinate of a digit's root, along, up or side, runs across the row: the one its joints turn about. */
+    internal val across: Int get() = if (hinge == Hinge.Y) UP_COORDINATE else SIDE_COORDINATE
+
     override fun countedPatches(values: Map<String, Float>): Set<String> {
         if (condition?.let { values[it.name] == 0f } == true) return emptySet()
         val built = builtOf(count?.resolve(values)?.roundToInt() ?: digits.size, values)
@@ -134,8 +143,17 @@ data class Digits(
     }
 
     /** The places in [digits] of every digit a row of [count] builds with [values]: the counted ones, then each named one whose flag is on. */
-    private fun builtOf(count: Int, values: Map<String, Float>): List<Int> =
-        countedOf(count) + digits.indices.filter { digits[it].name != null && digits[it].isOn(values) }
+    private fun builtOf(count: Int, values: Map<String, Float>): List<Int> {
+        val named = digits.indices.filter { digits[it].name != null && digits[it].isOn(values) }
+        return countedOf(if (countsNamed) count - named.size else count) + named
+    }
+
+    /** The digits the row builds with [values] by their patches, in the order it builds them: the counted digits, then each named one that is on. */
+    fun builtSegments(values: Map<String, Float>): List<Pair<String, DigitSegment>> {
+        if (condition?.let { values[it.name] == 0f } == true) return emptyList()
+        val built = builtOf(count?.or(values)?.roundToInt() ?: digits.size, values)
+        return built.indices.map { patchOf(it, built[it]) to digits[built[it]] }
+    }
 
     /** The places in [digits] of the digits [ctx]'s build makes. */
     internal fun builtDigits(ctx: BuildContext): List<Int> = builtOf(count?.let { ctx.value(it).roundToInt() } ?: digits.size, ctx.values)
@@ -228,7 +246,7 @@ data class Digits(
         val span = span(i)
         val length = digit.length * ctx.solidLength * ctx.value(reach)
         val radius = digit.radius * ctx.solidLength * ctx.value(thickness)
-        val direction = digit.direction(ctx.value(spread))
+        val direction = digit.direction(ctx.value(spread), across)
         val root = point(ctx, digit.root.map { Param.of(it) })
         val toward = ctx.axes.point(direction.x, direction.y, direction.z)
         val rootAt = ctx.axes.point(root.x, root.y, root.z)
@@ -309,13 +327,19 @@ data class DigitSegment(
 ) {
     fun direction(): Vec3 = Vec3(toward[0], toward[1], toward[2]).normalized()
 
-    /** Its direction with its angle from the part's axis, seen from above, multiplied by [spread]; a digit pointing back keeps its own. */
-    fun direction(spread: Float): Vec3 {
+    /**
+     * Its direction with its angle from the part's axis, in the plane of the axis and coordinate [across] (up or side), multiplied by
+     * [spread]; a digit pointing back keeps its own.
+     */
+    fun direction(spread: Float, across: Int = SIDE_COORDINATE): Vec3 {
         val d = direction()
         if (spread == 1f || d.x <= 0f) return d
-        val flat = sqrt(d.x * d.x + d.z * d.z)
-        val angle = atan2(d.z, d.x) * spread
-        return Vec3(flat * cos(angle), d.y, flat * sin(angle)).normalized()
+        val lateral = if (across == UP_COORDINATE) d.y else d.z
+        val flat = sqrt(d.x * d.x + lateral * lateral)
+        val angle = atan2(lateral, d.x) * spread
+        val x = flat * cos(angle)
+        val turned = flat * sin(angle)
+        return (if (across == UP_COORDINATE) Vec3(x, turned, d.z) else Vec3(x, d.y, turned)).normalized()
     }
 
     /** Whether it points back along the part from its root, a hind toe. */

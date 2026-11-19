@@ -95,7 +95,7 @@ class MoveTool(private val state: AppState, var look: SheetLook, var curves: Cur
                     val part = place.part.id ?: return@awaitEachGesture
                     down.consume()
                     when (mode) {
-                        MoveMode.ADD_SOCKET -> state.addSocket(place.part, place.u, place.v, place.onRight)
+                        MoveMode.ADD_SOCKET -> state.addSocket(place.part, place.u, place.v, place.onRight, place.digit)
                         MoveMode.ADD_JOINT -> state.addJoint(part, place.u)
                         else -> state.addLandmark(part, place.u, place.v)
                     }

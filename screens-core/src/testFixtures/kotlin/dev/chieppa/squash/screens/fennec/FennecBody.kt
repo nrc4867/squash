@@ -31,10 +31,10 @@ val FRONT_PAW_R = PartId("front-paw-r")
 val BACK_PAW_L = PartId("back-paw-l")
 val BACK_PAW_R = PartId("back-paw-r")
 
-/** The newest shipped version of [id], which a part placed now takes. */
 /** Templates the examples on this helper keep at the version they were drawn on, by id. */
-private val DRAWN_ON = mapOf("ear" to 1)
+private val DRAWN_ON = mapOf("ear" to 1, "hand" to 6, "foot" to 6, "paw" to 7)
 
+/** The version of [id] the examples were drawn on, else the newest shipped, which a part placed now takes. */
 internal fun ref(id: String): TemplateRef =
     DRAWN_ON[id]?.let { TemplateRef(TemplateId(id), it) } ?: requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
 
