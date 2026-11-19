@@ -7,6 +7,15 @@ import kotlin.math.sqrt
 private const val CAP_RING_DIVISOR = 6
 private const val MIN_CAP_RINGS = 2
 
+/** The share of the axis's bend radius an undrawn ring reaches at most, so the rings of a tight curl never fold into each other. */
+private const val BEND_HOLD = 0.85f
+
+/** How many rings either way a ring's hold to the bend is spread over. */
+private const val HOLD_SPREAD = 3
+
+/** A turn between neighbouring rings below which the axis counts as straight there, in radians. */
+private const val MIN_TURN = 1e-4f
+
 /** How large a ring is, as a share of the drawing, at the deep end of the stretch of a run that lies inside another. */
 private const val COVERED_SCALE = 0.8f
 
@@ -44,7 +53,30 @@ data class TubeSpec(
     val up: Vec3? = null,
     /** A stretch of u holding more than its share of the rings, or null for rings spaced evenly. */
     val focus: RingFocus? = null,
+    /** A second section [section] turns into over a stretch of u, or null for one section the whole run. */
+    val along: SectionAlong? = null,
 )
+
+/**
+ * A section [other] that a run's own section turns into, control point by control point, over the stretch of u from [from] to [to]:
+ * eased in over [ease] of the run from [from] and out over the same before [to], [other] whole between.
+ */
+data class SectionAlong(val other: ClosedSpline, val from: Float, val to: Float, val ease: Float) {
+    /** How far toward [other] the section at [u] lies, 0 to 1. */
+    fun weight(u: Float): Float {
+        if (u <= from || u >= to) return 0f
+        val inner = minOf(ease, (to - from) / 2f).coerceAtLeast(1e-4f)
+        return smooth(((u - from) / inner).coerceAtMost(1f)) * smooth(((to - u) / inner).coerceAtMost(1f))
+    }
+
+    /** The section at [u] over [base]. */
+    fun at(u: Float, base: ClosedSpline): ClosedSpline {
+        val w = weight(u)
+        return if (w <= 0f) base else base.lerp(other, w)
+    }
+
+    private fun smooth(t: Float) = t * t * (3f - 2f * t)
+}
 
 /** The stretch of u from [from] to [to] holding [share] of a run's ring spacings, the rest spaced evenly outside it. */
 data class RingFocus(val from: Float, val to: Float, val share: Float) {
@@ -103,7 +135,10 @@ object SliceBuilder {
         return Slice(u, frame, extent, extent * spec.widthRatio, section, frame.rotation)
     }
 
-    private fun sectionAt(spec: TubeSpec, u: Float) = spec.front?.at(u, spec.section) ?: spec.section
+    private fun sectionAt(spec: TubeSpec, u: Float): ClosedSpline {
+        val own = spec.along?.at(u, spec.section) ?: spec.section
+        return spec.front?.at(u, own) ?: own
+    }
 
     /**
      * A drawing closes the ends of the part itself, so only their last ring closes. Where one run hands over to another, the
@@ -139,16 +174,49 @@ object SliceBuilder {
     private fun restSlices(spec: TubeSpec, us: List<Float>): List<Slice> {
         val frames = frames(spec.axis, us, spec.up)
         val capRings = spec.roundRings ?: defaultCapRings(us.size)
-        return us.indices.map { ring ->
+        val extents = FloatArray(us.size) { ring ->
             val along = (us[ring] - spec.uStart) / (spec.uEnd - spec.uStart)
             val taper = 1f + (spec.taper - 1f) * along
             val closure = endScale(ring, capRings, spec.startClosure) * endScale(us.size - 1 - ring, capRings, spec.endClosure)
-            val extent = 2f * spec.radius * taper * closure
+            2f * spec.radius * taper * closure
+        }
+        val held = heldToBends(extents, bendRadii(frames), maxOf(1f, spec.widthRatio))
+        return us.indices.map { ring ->
+            val extent = held[ring]
             val onSocket = (ring == 0 && spec.startClosure == EndClosure.OPEN) ||
                 (ring == us.lastIndex && spec.endClosure == EndClosure.OPEN)
             val frame = placed(frames[ring], spec.drop, spec.socketNormal.takeIf { onSocket })
             Slice(us[ring], frame, extent, extent * spec.widthRatio, sectionAt(spec, us[ring]), frame.rotation)
         }
+    }
+
+    /**
+     * [extents] held within [BEND_HOLD] of the axis's bend radius at each ring, [reach] the widest of a ring's sides to its height: each
+     * ring's share of its own extent the hold leaves is taken as the least over its neighbours [HOLD_SPREAD] rings either way and then
+     * averaged over the same, so a tight curl narrows the run smoothly there and nowhere else.
+     */
+    private fun heldToBends(extents: FloatArray, bends: FloatArray, reach: Float): FloatArray {
+        val n = extents.size
+        val shares = FloatArray(n) { i -> if (extents[i] <= 0f) 1f else minOf(1f, 2f * BEND_HOLD * bends[i] / reach / extents[i]) }
+        if (shares.all { it >= 1f }) return extents
+        val least = FloatArray(n) { i -> (maxOf(0, i - HOLD_SPREAD)..minOf(n - 1, i + HOLD_SPREAD)).minOf { shares[it] } }
+        return FloatArray(n) { i ->
+            val window = maxOf(0, i - HOLD_SPREAD)..minOf(n - 1, i + HOLD_SPREAD)
+            extents[i] * minOf(window.sumOf { least[it].toDouble() }.toFloat() / (window.last - window.first + 1), 1f)
+        }
+    }
+
+    /**
+     * How tightly the axis bends at each ring: the radius of the circle through its turn from the ring before to the ring after. Two
+     * neighbouring rings' planes meet that far from the axis on the inside of the bend, so a ring reaching past it folds into its
+     * neighbour; a straight stretch is unbounded.
+     */
+    private fun bendRadii(frames: List<Frame>): FloatArray = FloatArray(frames.size) { i ->
+        val before = frames[maxOf(i - 1, 0)]
+        val after = frames[minOf(i + 1, frames.size - 1)]
+        val turn = kotlin.math.acos((before.tangent dot after.tangent).coerceIn(-1f, 1f))
+        val span = (after.center - before.center).length
+        if (turn < MIN_TURN || span <= 0f) Float.MAX_VALUE else span / turn
     }
 
     private fun placed(frame: Frame, drop: Float, facing: Vec3?): Frame {

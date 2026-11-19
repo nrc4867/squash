@@ -90,6 +90,9 @@ class BuildContext(
 
     fun length(param: Param): Float = value(param) * fullLength
 
+    /** Whether the part's undrawn axis is a curve through places, its own or its template's. */
+    val curved: Boolean get() = ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty()
+
     /** Straight along the rest direction, bent toward the underside at the template's bend point, or the part's or the template's curve. */
     private fun restAxis(): AxisSpline {
         if (ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty()) return curvedAxis()

@@ -101,7 +101,7 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | `polygon`, `regularPolygon`, `rectangle` | `regularPolygon(5, 0.04)`; every place a corner. |
 | `roundCorners` | `roundCorners(rectangle([0, 0], [0.1, 0.05]), 0.01)` |
 | `teardrop` | `teardrop({ length: 0.06, width: 0.02 })`, round at x 0, pointed at the far end. |
-| `leaf` | `leaf({ length: 0.3, width: 0.16, base: 0.17 })`, an open ear or fin Top with its tip a corner. |
+| `leaf` | `leaf({ length: 0.3, width: 0.16, base: 0.17 })`, an open ear or fin Top with its tip a corner; as an `ear` (version 3) Top it sets the ear's width, and its `thickness`, `cup` and `rim` give the joined ear its back, hollow and rim. |
 | `tuft` | `tuft({ spikes: 3, length: 0.08, width: 0.04 })`, an open outline of pointed tips. |
 | `furLock` | `const lock = furLock({ length: 0.2, width: 0.03, curl: 0.05 }); outlines: { side: outline(lock.side), top: outline(lock.top) }` |
 | geometry | `Point`, `translate`, `scale`, `rotate`, `flipX`, `flipY`, `lerp`, `steps`, `roundTo`, `roundPoints`. |

@@ -71,7 +71,7 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
             .minByOrNull { members[it].own(placed.origin) } ?: -1
         val ease = checkNotNull(worn.branchOf(cuffed)).ease
         runs += FieldRun(placed, index, patch, true)
-        val blend = if (parent < 0) 0f else maxOf(socketBlend(placed, solid), ease * CUFF_BLEND_EASES)
+        val blend = if (parent < 0) 0f else maxOf(socketBlend(placed, solid, patch), ease * CUFF_BLEND_EASES)
         members += JoinedMember(solid, placed.origin, placed.mirrored, blend, parent, nextPart++, ease)
     }
     if (runs.isEmpty()) return null

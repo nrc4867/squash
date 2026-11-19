@@ -85,7 +85,7 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
             val parentRuns = runs.indices.filter { runs[it].partId == parentId }
             val anchor = part.origin
             val parentRun = parentRuns.minByOrNull { k -> JoinedMember(made[k], runs[k].part.origin, runs[k].part.mirrored, 0f).own(anchor) } ?: -1
-            parentRun to if (parentRun < 0) 0f else socketBlend(part, solid)
+            parentRun to if (parentRun < 0) 0f else socketBlend(part, solid, run.patch)
         } else {
             val share = part.template.defaults[MERGE_PARAM]?.let { it * SOCKET_BLEND_SHARE } ?: RUN_BLEND_SHARE
             firstOf.getValue(run.partId) to leastExtent(solid) * share
@@ -97,8 +97,18 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
     return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)
 }
 
-/** The blend [part]'s first run, swept as [solid], joins its socket parent by. */
-internal fun socketBlend(part: PlacedPart, solid: Solid): Float = part.blend ?: leastExtent(solid) * SOCKET_BLEND_SHARE
+/**
+ * The blend [part]'s first run, [patch] swept as [solid], joins its socket parent by: the part's own, else its template's share of the
+ * run's length, else a share of the least extent of the run's box.
+ */
+internal fun socketBlend(part: PlacedPart, solid: Solid, patch: Patch): Float =
+    part.blend ?: part.template.join.blend?.let { it * runLength(patch) } ?: (leastExtent(solid) * SOCKET_BLEND_SHARE)
+
+/** How long [patch]'s run is along the middles of its rings. */
+private fun runLength(patch: Patch): Float {
+    val slices = patch.slices ?: return 0f
+    return slices.zipWithNext { a, b -> (b.frame.center - a.frame.center).length }.sum()
+}
 
 private fun leastExtent(solid: Solid): Float {
     val size = solid.high - solid.low
@@ -121,9 +131,15 @@ class RunSolids {
     }
 }
 
-/** The solid [patch]'s rings sweep, read from its points in its slices' planes at its rings' u and its columns' v. */
+/**
+ * The solid [patch]'s rings sweep, read from its points in its slices' planes at its rings' u and its columns' v, each ring read round
+ * from its section's centre where the section names one.
+ */
 private fun sweptOf(patch: Patch): Solid {
     val slices = requireNotNull(patch.slices)
+    val middles = slices.map { slice ->
+        slice.section.centre?.let { c -> slice.frame.center + slice.frame.side * (c.x * slice.width / 2f) + slice.frame.up * (c.y * slice.height / 2f) }
+    }
     val vs = FloatArray(patch.nv) { it.toFloat() / patch.segments }
     return requireNotNull(
         SweptSolid.ofRings(
@@ -132,6 +148,7 @@ private fun sweptOf(patch: Patch): Solid {
             slices.map { it.frame.tangent },
             slices.map { it.frame.up },
             patch.ringUs,
+            middles.takeIf { all -> all.any { it != null } },
         ),
     )
 }

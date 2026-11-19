@@ -106,4 +106,4 @@ internal fun eased(curve: List<CurvePoint>): List<CurvePoint> {
     return if (closed) points + points.first() else points
 }
 
-private fun inked(run: FieldRun): Boolean = (run.part.placement[JoinParams.INK] ?: 1f) > INK_OFF
+private fun inked(run: FieldRun): Boolean = run.part.placement[JoinParams.INK]?.let { it > INK_OFF } ?: run.part.template.join.ink

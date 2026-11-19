@@ -109,6 +109,8 @@ internal object TemplateCatalog {
         ) + listOfNotNull(
             template.mount?.let { "sits on its socket at" to "u ${num(it.u)}, v ${num(it.v)}" },
             template.axis.faces?.let { "face looks" to bodyWords(it.toVec3()) },
+            template.join.blend?.let { "join blend" to "${num(it)} of its length, the skull or body rising into it; the part's `blend` overrides it" },
+            template.join.ink.takeIf { !it }?.let { "join line" to "off unless the part sets `inkJoin`" },
             template.generic?.let { "generic" to "rings ${it.rings.min} to ${it.rings.max}, segments ${it.segments.min} to ${it.segments.max}" },
         )
     }

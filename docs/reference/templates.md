@@ -10,7 +10,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `beak-lower` | 1 | - | Lower beak | jaw |
 | `blob` | 1 | - | Blob | none (guessed from where it sits) |
 | `claw` | 1 | - | Claw | horn |
-| `ear` | 2 | 1 | Ear | ear |
+| `ear` | 3 | 1, 2 | Ear | ear |
 | `fin` | 1 | - | Fin | fin |
 | `foot` | 6 | 1, 2, 3, 4, 5 | Foot | foot |
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot |
@@ -236,7 +236,7 @@ Parameters:
 | `girth` | 0.22 | 0.08 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `curve` | -0.08 | -0.3 to 0 | How far the claw hooks toward its underside at its middle, a fraction of its length; more negative hooks more. |
 
-## ear 2
+## ear 3
 
 | fact | value |
 | --- | --- |
@@ -247,7 +247,9 @@ Parameters:
 | views | side sets height; top sets width; front sets section |
 | section | lens |
 | open end | start |
-| surface | separate |
+| surface | field |
+| join blend | 0.3 of its length, the skull or body rising into it; the part's `blend` overrides it |
+| join line | off unless the part sets `inkJoin` |
 
 Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
 
@@ -263,7 +265,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
-| `inner` | body | [0.1, 0.9] | [0.82, 0.18] | inner | inner-ear |
+| `inner` | body | [0.08, 0.9] | [0.85, 0.15] | inner | inner-ear |
 | `back` | body | [0.1, 0.9] | [0.32, 0.68] | fill | - |
 | `tip` | body | [0.8, 1] | [0, 1] | fill | - |
 
@@ -273,11 +275,12 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `width` | 0.35 | 0.1 to 0.8 | Ear's half width at its base with nothing drawn, a fraction of its length. |
-| `cup` | 0 | 0 to 0.6 | How far the ear's sides curl forward into a cup, a share of its half width; 0 is flat, 0.4 to 0.6 a cupped ear whose inside shows from the front. |
+| `thickness` | 0.55 | 0.2 to 1.2 | How deep the ear is from front to back, a share of its half width: 0.4 to 0.7 gives a full, rounded back that reads from behind. |
+| `cup` | 0.35 | 0 to 0.4 | How deep the hollow dishes into the ear's front, a share of its thickness; 0 is a flat front, 0.3 to 0.4 a deep cup whose inside shows from the front. |
+| `rim` | 0.2 | 0.08 to 0.45 | How wide the rim round the hollow is, a share of the ear's half width. |
 | `taper` | 0.4 | 0.1 to 1 | The ear's half width at its tip with nothing drawn, a share of its width at the base: low for a pointed ear, 0.6 to 0.8 with roundTip for a round one. |
 | `roundTip` | 0 (off) | a flag: 1 or 0 | Closes the tip with a round cap in place of a point. |
 | `tipReach` | 0.16 | 0.05 to 0.6 | How far the tip, round or pointed, closes back along the ear with nothing drawn, a share of its length: about width times taper makes a round tip a semicircle. |
-| `rim` | 0 | 0 to 0.3 | How much the ear's edges thicken into a rounded rim, a share of its half width; 0 is a thin edge, 0.1 to 0.2 a rim that reads round a cupped ear. |
 
 ## fin 1
 

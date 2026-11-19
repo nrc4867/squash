@@ -91,6 +91,15 @@ data class ProfileSpec(
     val keel: Float,
 )
 
+/** How a template's parts join their parents by default. */
+@Serializable
+data class JoinSpec(
+    @Doc("The blend of the smooth union where the part meets its parent, a fraction of the part's length along its first run; null takes a quarter of the least extent of that run's box.") @Range(min = 0.0, max = 1.0)
+    val blend: Float? = null,
+    @Doc("Whether the join is inked as a line round the part.")
+    val ink: Boolean = true,
+)
+
 /** The recipe for a part type. See HLD: data-model, Part template file format. */
 @Serializable
 @Doc("A part template: axis, open end, sampling, blocks, parameters and which view sets what.")
@@ -122,6 +131,8 @@ data class PartTemplate(
     val generic: GenericSpec? = null,
     @Doc("Whether the part is in the character's field, or thin or hard and built as its own mesh sitting on the body.")
     val surface: SurfaceMethod = SurfaceMethod.FIELD,
+    @Doc("How a part in the field joins the part its socket is on when the part sets neither its blend nor its join ink.")
+    val join: JoinSpec = JoinSpec(),
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)

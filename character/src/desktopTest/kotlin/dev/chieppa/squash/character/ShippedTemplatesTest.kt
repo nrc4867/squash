@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Tag
 private const val RANDOM_BUILDS = 25
 
 /** Templates, as "<id> <version>", that draw their random parameters from a random of their own, so the shared draws of the others stay as they are. */
-private val OWN_DRAWS = setOf("ear 2")
+private val OWN_DRAWS = setOf("ear 2", "ear 3")
 private val SHIPPED_IDS = listOf(
     "antler", "arm", "beak", "beak-lower", "blob", "claw", "ear", "fin", "foot", "foot-bird", "hair", "hair-cap", "hand", "head", "head-bird", "head-round", "horn", "leg", "leg-bird", "paw", "plate", "sheet", "spike", "tail",
     "tail-curve", "tail-feathers", "torso", "torso-bird", "torso-upright", "tube", "wing-feathered", "wing-membrane",
@@ -40,7 +40,7 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1, 2), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4, 5, 6),
+                "antler" to listOf(1), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1, 2, 3), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4, 5, 6),
                 "foot-bird" to listOf(1, 2, 3, 4), "hair" to listOf(1), "hair-cap" to listOf(1), "hand" to listOf(1, 2, 3, 4, 5, 6), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "leg" to listOf(1),
                 "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4, 5, 6, 7), "plate" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-curve" to listOf(1), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1), "wing-membrane" to listOf(1),

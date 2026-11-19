@@ -308,7 +308,7 @@ class SweptSolid internal constructor(
 
     companion object {
         /** The solid a patch's rings sweep out, read from its points themselves (see [sweptOfRings]); null for fewer than two rings. */
-        fun ofRings(points: List<List<Vec3>>, vs: FloatArray, tangents: List<Vec3>, ups: List<Vec3>, us: FloatArray): SweptSolid? =
-            sweptOfRings(points, vs, tangents, ups, us)
+        fun ofRings(points: List<List<Vec3>>, vs: FloatArray, tangents: List<Vec3>, ups: List<Vec3>, us: FloatArray, middles: List<Vec3?>? = null): SweptSolid? =
+            sweptOfRings(points, vs, tangents, ups, us, middles)
     }
 }

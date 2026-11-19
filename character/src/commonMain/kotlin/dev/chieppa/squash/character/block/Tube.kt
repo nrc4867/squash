@@ -19,6 +19,9 @@ import kotlinx.serialization.SerialName
 import kotlin.math.ceil
 import kotlinx.serialization.Serializable
 
+/** The fewest rings a curved run's round tip closes over. */
+private const val MIN_CURVED_CAP_RINGS = 2
+
 @Serializable
 @SerialName("tube")
 @Doc("A run of slices; the views resize them.")
@@ -46,6 +49,8 @@ data class Tube(
     val fills: String? = null,
     @Doc("Cut open at v = 0, so the run is a sheet: two faces meeting at an edge where v = 0 and v = 1 lie together.")
     val openV: Boolean = false,
+    @Doc("A thick section with a hollow in its front in place of the template's section, its cup and its rim.")
+    val shell: TubeShell? = null,
 ) : Block {
     override fun run() = u
 
@@ -74,9 +79,10 @@ data class Tube(
             uStart = span.start,
             uEnd = span.end,
             rings = ctx.template.topology.rings,
-            roundRings = capReach?.let { reach -> ceil(ctx.value(reach) * (ctx.template.topology.rings - 1)).toInt().coerceIn(1, ctx.template.topology.rings - 1) },
+            roundRings = capRings(ctx),
             segments = ctx.template.topology.segments,
-            section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).rimmed(ctx.value(rim)).cupped(ctx.value(cup)),
+            section = shell?.flat(ctx, ctx.template.topology.segments)
+                ?: (section ?: ctx.template.section).spline(ctx.template.topology.segments).rimmed(ctx.value(rim)).cupped(ctx.value(cup)),
             radius = ctx.length(radius),
             taper = ctx.value(taper),
             widthRatio = ctx.value(width),
@@ -90,12 +96,26 @@ data class Tube(
             startHandover = ctx.handover(span.start, u),
             endHandover = ctx.handover(span.end, u),
             up = ctx.template.axis.up?.toVec3(),
+            along = shell?.along(ctx, ctx.template.topology.segments),
         )
+    }
+
+    /**
+     * How many rings a closed end takes to close when nothing is drawn: [capReach]'s share of them, else on a curved axis as many as
+     * reach the run's half width at its tip, so a curl ends in a round tip as long as it is wide and keeps its curl to there; else the
+     * builder's own few.
+     */
+    private fun capRings(ctx: BuildContext): Int? {
+        val rings = ctx.template.topology.rings
+        val share = capReach?.let { ctx.value(it) }
+            ?: if (ctx.curved) ctx.length(radius) * ctx.value(taper) / ctx.axisLength.coerceAtLeast(1e-6f) else return null
+        return ceil(share * (rings - 1)).toInt().coerceIn(MIN_CURVED_CAP_RINGS.takeIf { capReach == null } ?: 1, rings - 1)
     }
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.param("width", width) + ctx.section("section", section) +
-            ctx.param("cup", cup) + ctx.param("rim", rim) + (capReach?.let { ctx.param("capReach", it) } ?: emptyList()) + ctx.param("drop", drop) + lintFills(ctx)
+            ctx.param("cup", cup) + ctx.param("rim", rim) + (capReach?.let { ctx.param("capReach", it) } ?: emptyList()) + ctx.param("drop", drop) + lintFills(ctx) +
+            (shell?.lint(ctx) ?: emptyList())
 
     private fun lintFills(ctx: LintContext): List<Finding> {
         val name = fills ?: return emptyList()

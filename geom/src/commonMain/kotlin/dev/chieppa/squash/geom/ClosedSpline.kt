@@ -19,9 +19,10 @@ private const val MIN_SPAN = 1e-3f
 
 /**
  * A closed uniform cubic B-spline in a slice's plane: x toward the slice's side, y toward its up. v runs 0 to 1 around
- * it, starting at control point 0.
+ * it, starting at control point 0. [centre], when given, is a point inside it from which every direction round meets the outline
+ * once, for a section whose middle does not see all of it, such as one with a hollow; null where the middle of its box does.
  */
-data class ClosedSpline(val controlPoints: List<Vec2>) {
+data class ClosedSpline(val controlPoints: List<Vec2>, val centre: Vec2? = null) {
     init {
         require(controlPoints.size >= MIN_CONTROL_POINTS) { "A closed spline needs at least $MIN_CONTROL_POINTS control points" }
     }
@@ -52,7 +53,7 @@ data class ClosedSpline(val controlPoints: List<Vec2>) {
         val maxY = points.maxOf { it.y }
         val centre = Vec2((minX + maxX) / 2f, (minY + maxY) / 2f)
         val scale = 2f / max(maxX - minX, maxY - minY)
-        return ClosedSpline(controlPoints.map { (it - centre) * scale })
+        return ClosedSpline(controlPoints.map { (it - centre) * scale }, this.centre?.let { (it - centre) * scale })
     }
 
     /** The spans in x and y of this spline's samples at its own control-point count. */
@@ -70,7 +71,8 @@ data class ClosedSpline(val controlPoints: List<Vec2>) {
     /** This spline moved toward [other], control point by control point. */
     fun lerp(other: ClosedSpline, t: Float): ClosedSpline {
         require(other.controlPoints.size == controlPoints.size) { "Blending splines of different sizes" }
-        return ClosedSpline(controlPoints.indices.map { controlPoints[it] + (other.controlPoints[it] - controlPoints[it]) * t })
+        val mixedCentre = if (centre != null && other.centre != null) centre + (other.centre - centre) * t else null
+        return ClosedSpline(controlPoints.indices.map { controlPoints[it] + (other.controlPoints[it] - controlPoints[it]) * t }, mixedCentre)
     }
 
     /** This spline with its sides curled toward its up by [amount], refitted to the unit span. */

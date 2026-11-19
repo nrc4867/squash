@@ -1449,6 +1449,32 @@
       },
       "additionalProperties": false
     },
+    "JoinSpec": {
+      "type": "object",
+      "properties": {
+        "blend": {
+          "description": "The blend of the smooth union where the part meets its parent, a fraction of the part's length along its first run; null takes a quarter of the least extent of that run's box.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ink": {
+          "description": "Whether the join is inked as a line round the part.",
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Joint": {
       "description": "A bone boundary; bones are the spans between joints in u order.",
       "type": "object",
@@ -2144,6 +2170,10 @@
             "separate"
           ]
         },
+        "join": {
+          "description": "How a part in the field joins the part its socket is on when the part sets neither its blend nor its join ink.",
+          "$ref": "#/$defs/JoinSpec"
+        },
         "blocks": {
           "type": "array",
           "items": {
@@ -2830,12 +2860,85 @@
         "openV": {
           "description": "Cut open at v = 0, so the run is a sheet: two faces meeting at an edge where v = 0 and v = 1 lie together.",
           "type": "boolean"
+        },
+        "shell": {
+          "description": "A thick section with a hollow in its front in place of the template's section, its cup and its rim.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TubeShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "kind",
         "u",
         "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "TubeShell": {
+      "description": "A thick section with a hollow dished into its front: a full round back, a rim along each side and a hollow between the rims.",
+      "type": "object",
+      "properties": {
+        "thickness": {
+          "description": "How deep the section is from front to back, a fraction of its half width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "hollow": {
+          "description": "How deep the hollow dishes into the front, a fraction of the thickness, up to 0.4.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "rim": {
+          "description": "How wide the rim along each side is, a fraction of the half width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "u": {
+          "description": "The stretch of u the hollow runs over, deepening from its start and shallowing toward its end.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        }
+      },
+      "required": [
+        "thickness",
+        "hollow",
+        "rim"
       ],
       "patternProperties": {
         "^x-": {}

@@ -39,6 +39,12 @@ private const val TOLERANCE = 0.01f
 private const val FRONT_TOLERANCE = 0.03f
 
 /**
+ * A curved part's Front outline is its whole curl seen end on, which then shapes its cap's section, so the curl's narrowing where it
+ * bends tighter than it is thick reads twice.
+ */
+private const val CURVED_FRONT_TOLERANCE = 0.045f
+
+/**
  * A drawn paw with toes cannot show its undrawn Side and Top. Its tube closes where its toes begin, which leaves a waist the
  * outline does not set, and drawn toes share the width side by side where undrawn ones fan out to the corners.
  */
@@ -120,6 +126,7 @@ class TemplateOutlineTest {
 
     private fun toleranceFor(template: PartTemplate, view: View): Float? = when {
         thumbWidth(template, view) -> null
+        view == View.FRONT && curvesUndrawn(template) -> CURVED_FRONT_TOLERANCE
         view == View.FRONT -> FRONT_TOLERANCE
         hasToes(template) -> TOED_PAW_TOLERANCE
         bendsUndrawn(template) -> BENT_TOLERANCE
