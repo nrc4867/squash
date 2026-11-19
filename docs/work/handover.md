@@ -38,7 +38,7 @@ Look:
 - The woman after a release shows lines across the forehead: not reproduced in `look` renders of an arm's Move drag (each of its moves, the release, at rest, undo and redo, on CPU and GPU reads); not the same as the cat's nose-bridge lines, which were a whisker mark.
 - The cat's painted eyes sit near the nose from the side: the eye's anchor lies on the skull's front where the muzzle joins it; moved back it leaves the front view.
 - The cat's garments: an open edge is a cut with no rolled rim, so the bun's halves read as one shell cut open; a drawn range running past its drawing leaves a speck; a garment's marks are not drawn; a cape's flanks ride the spine and are not re-hung toward world down when a pose tilts the body.
-- Paw specks where three runs meet on the cat (example-limits entry 15).
+- Paw specks where three runs meet on the cat (the example-character skill's `feet-and-paws.md`, Limits).
 - The lizard has paddle feet with no toes or claws; the koi's tail fin shows two small ink marks near its root; in the lizard's and the dragon's foot close-ups the view from above sits inside the leg and shows its end through it.
 - The dragon's claws are field points of `paw` 5, not separate hard parts, which would need a tip socket on it; the roar's open jaw does not show in the renders.
 - Hair: the cap is the drawn crown in the field, not grown from the head; the fall has no weight, so it turns with the head rather than hanging; the push reads the parts' own posed meshes, so it is clear of the field within their meshes' error (0.004 in the test). The clumps part a little at the hem. The dressed woman's middle fall clump hangs in front of her face in every outfit, from the front, three-quarter and side; the bare woman's hangs down her back.
