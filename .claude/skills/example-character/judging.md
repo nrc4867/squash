@@ -36,7 +36,7 @@ With a single view cropped from the sheet (`kit sheet views` writes `<view>.png`
 - `join lines`: how much join ink is drawn; 0 on a body with `inkJoin: false` everywhere.
 - `owned part vertices under cloth`, `owned parts' drift from rigid`: props a garment carries.
 - `wardrobe:` lines: every garment's slot, layer, fit, covered parts with u and v spans, changes, holes and owned parts, and each outfit's picks. Check them against the clothes on the feature list.
-- `poke-through <inner> through <outer>` per outfit: `poke-through none` is the aim (`clothing.md`).
+- `poke-through <inner> through <outer>` per outfit, and per outfit in each named pose: `poke-through none` is the aim (`clothing.md`).
 
 ## 5. Walk the feature list
 

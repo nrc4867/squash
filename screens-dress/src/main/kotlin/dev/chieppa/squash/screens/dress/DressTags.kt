@@ -30,6 +30,8 @@ object DressTags {
     const val FIT = "dress.garment.fit"
     const val FIT_PART = "dress.garment.fitPart"
     const val INK_HEM = "dress.garment.inkHem"
+    const val INK_WEIGHT = "dress.garment.inkWeight"
+    const val HEM_ROLL = "dress.garment.hemRoll"
     const val COLOR = "dress.color"
     const val LAYERS = "dress.layers"
     const val OUTFITS = "library.outfits"

@@ -44,7 +44,8 @@ private val VIEWS = listOf("front" to 0f, "three-quarter" to 40f, "side" to 90f)
 
 /**
  * Prints the stage's checks for examples, as numbers, through the real graph and rig with no GPU and no test runner: per outfit as
- * shown, in the display pose, with the arm volume at rest too, and in each named pose in the first of them, with `parts=true` every
+ * shown, in the display pose, with the arm volume at rest too, the arm volume in each named pose in the first of them and each
+ * outfit's poke-through in each named pose, with `parts=true` every
  * part's origin and box as shown, heights from the ground. Run as `./gradlew :app:measure -Pmeasure="example=woman-dressed outfits=all poses=all"`.
  */
 fun main(args: Array<String>) {
@@ -87,14 +88,20 @@ fun measureSession(example: String, session: CharacterSession, work: TestWork, n
         clothes(name, session)
         if (outfit == outfits.first()) session.characterSurface.output.value?.surface?.let { sessionSurface(name, session, work, it, look.profile, timings) }
         if (look.parts) partBoxes(shown).forEach { println("$name: part ${it.part} origin ${it.origin.format()} box ${it.low.format()} to ${it.high.format()}") }
-        if (outfit != outfits.first()) continue
+        val held = session.document.value.character.pose
         for ((pose, set) in poses) {
             session.send(SetPose(set))
             val body = posed(session, work)
-            println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
-            propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
+            if (outfit == outfits.first()) {
+                println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
+                propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
+            }
+            clothes("$name, $pose", session)
         }
-        if (poses.isNotEmpty()) session.send(SetPose(Pose()))
+        if (poses.isNotEmpty()) {
+            session.send(SetPose(held))
+            work.settle(session)
+        }
     }
 }
 
@@ -144,7 +151,7 @@ private fun surfaceEdits(session: CharacterSession): List<SurfaceEdit> {
     }
 }
 
-/** Per garment pair, the drawn surface of a lower layer showing through a garment over it, as the outfit is shown; nothing with no garment worn. */
+/** Per garment pair, the drawn surface of a lower layer showing through a garment over it, as the outfit is shown in the pose shown; nothing with no garment worn. */
 private fun clothes(name: String, session: CharacterSession) {
     val state = session.shownState()
     val dress = state.dress?.takeIf { it.garments.isNotEmpty() } ?: return

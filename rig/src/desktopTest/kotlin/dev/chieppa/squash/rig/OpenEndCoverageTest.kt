@@ -1,6 +1,8 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.surface.Coverage
+import dev.chieppa.squash.document.GarmentId
+import dev.chieppa.squash.document.SetGarmentFit
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.Solid
@@ -8,6 +10,7 @@ import dev.chieppa.squash.geom.surface.HELD
 import dev.chieppa.squash.geom.surface.SurfaceMesh
 import dev.chieppa.squash.rig.StackFixture.stackSession
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,6 +29,9 @@ private const val BALL_EASES = 2f
 /** How many rings in from the leg's end its way out is read from. */
 private const val AXIS_RINGS = 3
 
+/** The sweater's fit, loose enough for a part over the end to stand clear of the point under it. */
+private const val SWEATER_FIT = 0.03f
+
 /**
  * A sweater down the whole leg, whose end a paw comes out through: the garment grown over the leg's closed end covers nothing past the
  * ring at that end, so the paw comes out through an opening rather than a lid; past the end, it covers a point only under a part
@@ -36,6 +42,8 @@ class OpenEndCoverageTest {
     @Test
     fun aGarmentReachingAnEndAPartComesOutThroughCoversNothingPastThatEndsRing() = runTest {
         val session = stackSession(legTo = 1f, withPaw = true)
+        session.send(SetGarmentFit(GarmentId("sweater"), SWEATER_FIT))
+        runCurrent()
         val surface = assertNotNull(session.characterSurface.output.value?.surface)
         val garment = assertNotNull(session.sessionSurface.dress.output.value?.dress).garments.first { StackFixture.leg.id in it.cover.branches }
         assertEquals(true, garment.cover.openEnds[StackFixture.leg.id]?.high, "the paw comes out through the leg's end")

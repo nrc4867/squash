@@ -14,7 +14,8 @@ import dev.chieppa.squash.geom.field.JoinedMember
  * [drawnCoverage] is its coverage over the drawn mesh, middles too. Where an outer garment hides it, its cut keeps only what shows. The parts
  * coming out through its holes are [holes], and those coming out through the ends it reaches [ends], their members placed at rest.
  * Its own shapes are painted over its color as [paint], laid on its surface's drawn mesh and kept to what is drawn, null with none.
- * Its hem, neck opening and cuffs are those curves: smooth level curves of its coordinates, not rows of any grid.
+ * Its hem, neck opening and cuffs are those curves: smooth level curves of its coordinates, not rows of any grid. [surface] is the
+ * grown surface lifted along its hems ([hemLifts]); [grown] is the surface as grown, which a cut made again starts from.
  */
 class SurfaceGarment(
     val cover: WornCover,
@@ -30,6 +31,7 @@ class SurfaceGarment(
     val ends: List<JoinedMember> = emptyList(),
     val paint: SurfacePaint? = null,
     val seamValues: List<FloatArray> = emptyList(),
+    val grown: CharacterSurface = surface,
 ) {
     /**
      * The curves where each join its garment inks shares its surface equally, a covered part's run and the run it grows from, over what
@@ -44,15 +46,18 @@ class SurfaceGarment(
     /** Where it is drawn, one value a vertex of its surface's drawn mesh: its [cut] is where this is at least zero. */
     val shownValues: FloatArray get() = cutValues
 
-    /** This garment drawn only where [shown], cut where [values] are at least zero, keeps it, a cut of its surface's drawn mesh. */
+    /**
+     * This garment drawn only where [shown], cut where [values] are at least zero, keeps it, a cut of its surface's drawn mesh, its hems
+     * only where it shows.
+     */
     fun within(shown: LevelCut, values: FloatArray): SurfaceGarment =
-        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hems, lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues)
+        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hemsOf(surface.lines, coverage, values), lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues, grown)
 
     /** This garment worn as [cover], which differs from its own only in what its cloth prints and its areas' colours, with nothing painted yet. */
-    fun reprinted(cover: WornCover): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, null, seamValues)
+    fun reprinted(cover: WornCover): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, null, seamValues, grown)
 
     /** This garment with [paint] painted over its color. */
-    fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues)
+    fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues, grown)
 
     /**
      * This garment on [moved], its surface moved, its cut laid again and its hems and lines found there again, the marks its paint inks
@@ -63,8 +68,8 @@ class SurfaceGarment(
         val kept = touchedTriangles(moved.lines.triangles, coverage)
         val laid = if (moved.render.indices.size == surface.render.indices.size) cut else LevelCut.of(cutValues, moved.render.indices)
         return SurfaceGarment(
-            cover, moved, coverage, laid, laid.mesh(moved.render), hemsOf(moved.lines, coverage), TriangleLines(moved.positions, moved.lineNormals, kept, coverage), drawnCoverage, holes, cutValues, ends,
-            paint?.let { if (carry == null) it.on(moved.render) else it.posed(moved.render, carry) }, seamValues,
+            cover, moved, coverage, laid, laid.mesh(moved.render), hemsOf(moved.lines, coverage, cutValues), TriangleLines(moved.positions, moved.lineNormals, kept, coverage), drawnCoverage, holes, cutValues, ends,
+            paint?.let { if (carry == null) it.on(moved.render) else it.posed(moved.render, carry) }, seamValues, grown,
         )
     }
 

@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.surface
 
+import dev.chieppa.squash.character.build.endPointsDown
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
@@ -20,7 +21,7 @@ private const val HEM_INSET_CELLS = 1.5f
  * How far inside [worn]'s coverage a vertex of a garment's or a body's mesh meshed from [field] lies, in body units, held within
  * [reach]: for each run it holds a share of, the distance into its part's painted cloth ([WornCover.clothOf], read by
  * [ClothField.inside]), cloth reaching an end of its part covering that end whole, unless a part the garment does not cover comes out
- * through that end, where the cloth ends a little short of the end's ring and of the plane across the run there within the garment's
+ * through that end, where the cloth ends at the plane across the run at the end's ring, a garment's ease past it at an end not pointing down, and within the garment's
  * ease of a part coming out through an end, [ends], their members as placed, so the garment grown over the run's closed end stays open
  * round the part coming out and closes over the rest of the end; and cloth whose branch runs past an end it reaches, onto a shell
  * hanging free, ending a little short of where the branch says, on the shell's wall. A run of a part the garment does not cover, or a
@@ -41,8 +42,8 @@ class Coverage(
     private val scales = Array(field.runs.size) { if (branches[it] != null) RunScales(field.runs[it].patch) else null }
     private val open = Array(field.runs.size) { if (branches[it] != null) worn.openEnds[field.runs[it].partId] else null }
     private val hemInset = reach / COVERAGE_CELLS * HEM_INSET_CELLS
-    private val lowEnds = Array(field.runs.size) { if (open[it]?.low == true) RunEnd.of(field.runs[it].patch, high = false) else null }
-    private val highEnds = Array(field.runs.size) { if (open[it]?.high == true) RunEnd.of(field.runs[it].patch, high = true) else null }
+    private val lowEnds = Array(field.runs.size) { if (open[it]?.low == true) RunEnd.of(field.runs[it].patch, high = false, closes = !field.runs[it].part.endPointsDown(high = false)) else null }
+    private val highEnds = Array(field.runs.size) { if (open[it]?.high == true) RunEnd.of(field.runs[it].patch, high = true, closes = !field.runs[it].part.endPointsDown(high = true)) else null }
 
     /** The coverage at vertex [v] of [mesh]. */
     fun at(mesh: SurfaceMesh, v: Int): Float {
@@ -91,13 +92,15 @@ class Coverage(
 
     /**
      * How far inside the coverage body point [at], [local] in [run]'s part's space, lies by [end] of the run: short of the plane across the
-     * end, or under a part coming out through an end that overhangs it, as a head sitting on the run's end does, and clear of that part.
+     * end, moved out by the [ease] at an end that does not point down at rest, so cloth grown over the cap of an end such as a torso's
+     * top covers it whole and only the parts coming out open it, or under a
+     * part coming out through an end that overhangs it, as a head sitting on the run's end does, and clear of that part.
      * So the garment ends at the plane round a part that rises from the end, as a neck does, and tucks under one that sits over it. A
      * part overhangs a point by how much nearer it the way out from the point comes than the point lies, less [APPROACH_EASES] of the
      * ease, read every half ease out to [OVER_EASES]; a part rising straight up beside the point comes no nearer.
      */
     private fun endInside(end: RunEnd, local: Vec3, run: JoinedMember, ease: Float, at: Vec3): Float {
-        val plane = -end.past(local) - hemInset
+        val plane = end.over(ease) - end.past(local) - hemInset
         if (ends.isEmpty() || plane >= reach || ease <= 0f) return plane
         val out = if (run.mirrored) end.out.mirrored else end.out
         var under = -reach
@@ -129,7 +132,7 @@ class Coverage(
             val branch = branches[member] ?: continue
             if (branch.ease <= 0f) continue
             val local = field.field.members[member].local(at)
-            for (end in listOfNotNull(lowEnds[member], highEnds[member])) if (-end.past(local) - hemInset < reach) return true
+            for (end in listOfNotNull(lowEnds[member], highEnds[member])) if (end.over(branch.ease) - end.past(local) - hemInset < reach) return true
         }
         return false
     }
@@ -140,23 +143,29 @@ class Coverage(
     }
 }
 
-/** Where an end ring of a run lies, in its part's space, and the way out of the run through it. */
-private class RunEnd(private val center: Vec3, val out: Vec3) {
+/**
+ * Where an end ring of a run lies, in its part's space, and the way out of the run through it; whether cloth reaching it [closes] over
+ * its cap, as over a torso's shoulders round a neck, rather than ending at the ring, as a sleeve does over a hand hanging below it.
+ */
+private class RunEnd(private val center: Vec3, val out: Vec3, private val closes: Boolean) {
     /** How far [local], a point in the part's space, lies past the end's ring, out along the run. */
     fun past(local: Vec3): Float = (local - center) dot out
+
+    /** How far past the ring cloth standing off by [ease] reaches: the ease where it closes over the cap, else nothing. */
+    fun over(ease: Float): Float = if (closes) ease else 0f
 
     companion object {
         /** How many rings in from an end the run's way out of it is read from. */
         private const val AXIS_RINGS = 3
 
-        fun of(patch: Patch, high: Boolean): RunEnd? {
+        fun of(patch: Patch, high: Boolean, closes: Boolean): RunEnd? {
             if (patch.nu < 2) return null
             val end = if (high) patch.nu - 1 else 0
             val inner = if (high) maxOf(0, end - AXIS_RINGS) else minOf(patch.nu - 1, AXIS_RINGS)
             val center = ringMiddle(patch, end)
             val out = center - ringMiddle(patch, inner)
             if (out.length <= 0f) return null
-            return RunEnd(center, out.normalized())
+            return RunEnd(center, out.normalized(), closes)
         }
 
         private fun ringMiddle(patch: Patch, ring: Int): Vec3 {

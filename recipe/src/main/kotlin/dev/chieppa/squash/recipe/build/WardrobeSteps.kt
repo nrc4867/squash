@@ -11,6 +11,8 @@ import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
 import dev.chieppa.squash.document.MarkKind
+import dev.chieppa.squash.document.MOST_CLOTH_INK_WEIGHT
+import dev.chieppa.squash.document.MOST_HEM_ROLL
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ShowOutfit
@@ -48,11 +50,15 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
         if (recipe.wardrobe?.slots?.none { it.id.value == id } != false) fail("$path.slot", "no wardrobe slot \"$id\"")
         GarmentSlotId(id)
     }
+    garment.fit?.let { if (it < 0f) fail("$path.fit", "a fit is how far the cloth stands off the body, 0 or more: here $it") }
+    if (garment.inkWeight !in 0f..MOST_CLOTH_INK_WEIGHT) fail("$path.inkWeight", "an ink weight lies from 0 to $MOST_CLOTH_INK_WEIGHT: here ${garment.inkWeight}")
+    if (garment.hemRoll !in 0f..MOST_HEM_ROLL) fail("$path.hemRoll", "a hem roll lies from 0 to $MOST_HEM_ROLL: here ${garment.hemRoll}")
     val branches = garment.covers.mapIndexed { i, cover ->
         val p = "$path.covers[$i]"
         val part = partOf("$p.part", cover.part)
         if (cover.from >= cover.to) fail(p, "a cover's from lies below its to: here ${cover.from} to ${cover.to}")
         if (cover.fromV >= cover.toV) fail(p, "a cover's fromV lies below its toV: here ${cover.fromV} to ${cover.toV}")
+        if (cover.ease < 0f) fail("$p.ease", "an ease is how far the cloth stands off the part, 0 or more: here ${cover.ease}")
         val outlines = curves(p, cover.outlines)
         guard(p) { GarmentBranch(part, cover.from, cover.to, cover.ease, outlines, fromV = cover.fromV, toV = cover.toV) }
     }
@@ -63,7 +69,11 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     }
     val joins = garment.joins.mapIndexed { i, name -> partOf("$path.joins[$i]", name) }.toSet()
     val color = garment.color?.let { slot("$path.color", it) }
-    val partFits = garment.partFits.entries.associate { (name, fit) -> partOf("$path.partFits.$name", name) to fit }
+    seeThroughCloth(path, garment)
+    val partFits = garment.partFits.entries.associate { (name, fit) ->
+        if (fit < 0f) fail("$path.partFits.$name", "a fit is how far the cloth stands off the part, 0 or more: here $fit")
+        partOf("$path.partFits.$name", name) to fit
+    }
     val (areas, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
     val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r).also { printOffDigits(p, it.border) } } }
     val marks = garment.marks.mapIndexed { i, m ->
@@ -90,6 +100,8 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
             holes = holes,
             regions = regions,
             marks = marks,
+            inkWeight = garment.inkWeight,
+            hemRoll = garment.hemRoll,
         )
     }
 }
@@ -109,6 +121,15 @@ private fun BuildContext.change(path: String, part: PartId, change: RecipeChange
 private fun BuildContext.printOffDigits(path: String, anchors: List<Anchor>) {
     anchors.map { it.part to it.patch }.distinct().filter { (part, patch) -> DigitPatches.digitOf(templateOf(part), patch) != null }.forEach { (part, patch) ->
         warn("$path.patch", "cloth stops where ${part.value}'s digits leave it, so a print on \"$patch\" shows nowhere")
+    }
+}
+
+/** Warns where [garment]'s cloth, at [path], is coloured in a palette slot with an opacity, which cloth draws whole. */
+private fun BuildContext.seeThroughCloth(path: String, garment: RecipeGarment) {
+    val seeThrough = recipe.palette.filter { it.opacity != null && it.opacity < 1f }.map { it.slot }.toSet()
+    if (garment.color in seeThrough) warn("$path.color", "cloth draws whole: slot \"${garment.color}\" has an opacity, which only a part of its own outside the one surface draws at")
+    garment.areas.forEachIndexed { i, area ->
+        if (area.color in seeThrough) warn("$path.areas[$i].color", "cloth draws whole: slot \"${area.color}\" has an opacity, which only a part of its own outside the one surface draws at")
     }
 }
 

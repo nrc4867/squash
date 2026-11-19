@@ -331,12 +331,16 @@ export interface RecipeGarment {
   layer?: number;
   /** Its palette slot. */
   color?: string | null;
-  /** How far it stands off the body, in body units; each cover's own ease when left out. */
+  /** How far it stands off the body, in body units, 0 or more: about 0.005 skin-tight, 0.01 fitted, 0.02 to 0.03 loose on a person-sized body; each cover's own ease when left out. */
   fit?: number | null;
   /** A fit for one covered part (a pair by its left side), over the garment's. */
   partFits?: { [key: string]: number };
   /** Whether its edges are inked. */
   inkHem?: boolean;
+  /** The weight of its silhouette and inked edges as a share of the skin's line weight, 0 to 2; thinner than skin when left out, so cloth reads as cloth and not as a second body. */
+  inkWeight?: number;
+  /** How far its hems, neck openings and cuffs roll out past the cloth, in body units, 0 to 0.03: a cuff or a rolled hem that reads as cloth with a thickness. Every hem stands a little off the skin whatever this is. */
+  hemRoll?: number;
   /** Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. */
   joins?: string[];
   /** The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. */

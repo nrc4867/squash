@@ -145,7 +145,7 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `cover` | `cover("torso", { from: torso.u(0.9), to: 0.96 })`, hems snapped to the 64 by 32 chart's cell edges. |
 | `band` | `band("torso", torso.u(plan.h("waist")), 0.04)`, at least two cells wide. |
 | `snapU`, `snapV` | the nearest cell edge. |
-| `garment` | `garment({ id: "tee", slot: "top", color: "shirt", fit: 0.012, covers })`; its name from its id. |
+| `garment` | `garment({ id: "tee", slot: "top", color: "shirt", fit: 0.008, covers })`; its name from its id; `hemRoll: 0.006` rolls its hems and cuffs, `inkWeight: 1` inks it as heavily as skin (0.7 when left out). |
 | `through`, `hide`, `redraw`, `swap` | `changes: { neck: through(), "foot-l": swap("blob", { outlines }) }` |
 | `outfit` | `outfit("casual", { top: "tee" })` |
 | `wardrobe` | `wardrobe([tee], [outfit("casual", { top: "tee" })])`, slots read from the garments, shown in the first outfit. |

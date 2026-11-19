@@ -37,21 +37,24 @@ private const val BAND_CELLS = 4f
  */
 fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacter, solids: RunSolids, clips: RunClips): CharacterField? {
     val kept = field.runs.indices.filter { field.runs[it].first && worn.branchOf(field.runs[it].partId) != null && worn.clothOf(field.runs[it].partId) != null }
-    val renumbered = HashMap<Int, Int>().also { map -> kept.forEachIndexed { i, run -> map[run] = i } }
+    val near = joinedNear(field, worn, kept)
+    val grown = (kept + near.keys).sorted()
+    val renumbered = HashMap<Int, Int>().also { map -> grown.forEachIndexed { i, run -> map[run] = i } }
     val runs = ArrayList<FieldRun>()
     val members = ArrayList<JoinedMember>()
     val shells = ArrayList<Pair<FieldRun, JoinedMember>>()
-    for (run in kept) {
+    for (run in grown) {
         val at = field.runs[run]
         val member = field.field.members[run]
         val parent = renumbered[member.parent] ?: -1
-        val branch = checkNotNull(worn.branchOf(at.partId))
-        val reach = checkNotNull(worn.clothOf(at.partId)).reach
-        val solid = clips.of(member.solid, at.patch, reach.from, reach.to, field.cell)
+        val branch = worn.branchOf(at.partId)
+        val neighbour = near[run]
+        val solid = if (neighbour != null) clips.of(member.solid, at.patch, neighbour.from, neighbour.to, field.cell)
+        else checkNotNull(worn.clothOf(at.partId)).reach.let { clips.of(member.solid, at.patch, it.from, it.to, field.cell) }
         runs += at
-        val ease = member.ease + branch.ease
+        val ease = member.ease + (neighbour?.ease ?: checkNotNull(branch).ease)
         members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease)
-        worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
+        if (neighbour == null) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
     }
     for ((at, shell) in shells) {
         runs += at
@@ -76,6 +79,47 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
     }
     if (runs.isEmpty()) return null
     return CharacterField(JoinedField(members), runs, bandCell(field, worn, kept))
+}
+
+/** How far along an uncovered part joined to a covered one, in its u, the garment grows over it from the join. */
+private const val NEAR_JOIN_U = 0.25f
+
+/** How many chart rows from a join a covered part's cloth reaches for the garment to grow over the uncovered part joined there. */
+private const val NEAR_JOIN_ROWS = 4
+
+/** An uncovered run a garment grows over, from [from] to [to] along it, standing off it by [ease], the ease of the covered run it sits on. */
+private class NearJoin(val from: Float, val to: Float, val ease: Float)
+
+/**
+ * The first runs of [field] that [worn] does not cover, each a part on a socket of one of its covered runs [kept] past where the covered
+ * run's cloth ends, within [NEAR_JOIN_ROWS] rows of it, short of the run's end: a foot below a trouser hem just above the ankle. The
+ * garment grows over the [NEAR_JOIN_U] of each by the join, as the body blends into it, so near the join it follows the body's blend
+ * rather than the covered run alone, and the skin there never stands out through the cloth. The uncovered run's share cuts the cloth
+ * there away, as any uncovered part's does. A part coming out through a hole or through an end the cloth reaches is left to them.
+ */
+private fun joinedNear(field: CharacterField, worn: WornCover, kept: List<Int>): Map<Int, NearJoin> {
+    val near = HashMap<Int, NearJoin>()
+    val covered = kept.toSet()
+    val members = field.field.members
+    val leftOut = worn.holes + worn.outThroughEnds
+    for (k in kept) {
+        val reach = worn.clothOf(field.runs[k].partId)?.reach ?: continue
+        val ease = worn.branchOf(field.runs[k].partId)?.ease ?: continue
+        for (c in field.runs.indices) {
+            val child = field.runs[c]
+            if (c in covered || !child.first || members[c].parent != k || child.partId in leftOut) continue
+            val socket = child.part.socketSpec?.u ?: continue
+            if (!reachesNear(reach, socket)) continue
+            near.putIfAbsent(c, NearJoin(0f, NEAR_JOIN_U, ease))
+        }
+    }
+    return near
+}
+
+/** Whether cloth [reach] ends short of [u], a socket's place on its part past its last row, by at most [NEAR_JOIN_ROWS] rows. */
+private fun reachesNear(reach: ClothReach, u: Float): Boolean {
+    val past = u * CHART_ROWS - (reach.lastRow + 1)
+    return past >= 0f && past <= NEAR_JOIN_ROWS
 }
 
 /**

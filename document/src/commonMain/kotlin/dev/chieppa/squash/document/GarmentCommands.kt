@@ -107,6 +107,22 @@ data class SetHemInk(val garment: GarmentId, val inked: Boolean) : DocumentComma
     override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(inkHem = inked) }
 }
 
+/** Sets the weight of [garment]'s silhouette and hems, [weight], as a share of the skin's line weight. */
+@Serializable
+@SerialName("setGarmentInkWeight")
+data class SetGarmentInkWeight(val garment: GarmentId, val weight: Float) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> =
+        document.garmentChanged(garment) { it.copy(inkWeight = weight.coerceIn(0f, MOST_CLOTH_INK_WEIGHT)) }
+}
+
+/** Sets how far [garment]'s hems, neck openings and cuffs roll out past its cloth, [roll] in body units. */
+@Serializable
+@SerialName("setGarmentHemRoll")
+data class SetGarmentHemRoll(val garment: GarmentId, val roll: Float) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> =
+        document.garmentChanged(garment) { it.copy(hemRoll = roll.coerceIn(0f, MOST_HEM_ROLL)) }
+}
+
 /** Sets how far [garment] stands off the body. */
 @Serializable
 @SerialName("setGarmentFit")

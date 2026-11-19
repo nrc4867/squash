@@ -688,6 +688,10 @@
     <string name="dress_layer">Layer</string>
     <string name="dress_layer_number">Layer %1$d</string>
     <string name="dress_ink_hem">Ink hem</string>
+    <string name="dress_ink_weight">Ink weight</string>
+    <string name="dress_hem_roll">Hem roll</string>
+    <string name="dress_step_ink_weight">%1$s ink weight</string>
+    <string name="dress_step_hem_roll">%1$s hem roll</string>
     <string name="dress_fit">Fit</string>
     <string name="dress_fit_snug">Snug</string>
     <string name="dress_fit_loose">Loose</string>

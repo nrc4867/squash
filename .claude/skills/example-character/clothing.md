@@ -70,7 +70,9 @@ With areas, the build reads from the cells what the cloth covers, which parts co
 
 ## Fit and layers
 
-- `fit` is how far the cloth stands off the body in body units: 0.01 to 0.02 for a tee or shorts on a person-sized body, less on a small one. `partFits` sets one part's (a pair by its left side): **long sleeves bell out** like a cape when the arm is thin under a flat fit, so give the arm a smaller fit than the torso.
+- `fit` is how far the cloth stands off the body in body units, 0 or more (a negative fit is a recipe error): 0 to 0.005 for leggings, a tight tee or socks, about 0.008 to 0.012 for fitted jeans or a tee, 0.02 to 0.03 for a loose tee or a jacket over another layer on a person-sized body, less on a small one. At 0 the cloth matches the body exactly; a default stand-off reads as a shell, so most everyday clothes want a small fit. `partFits` sets one part's (a pair by its left side): **long sleeves bell out** like a cape when the arm is thin under a flat fit, so give the arm a smaller fit than the torso.
+- Every hem stands a hair off the skin by itself, so a hem at fit 0 shows no skin sliver. `hemRoll` (0 to 0.03 body units) rolls the hems, neck opening and cuffs out past the cloth: about 0.004 to 0.008 makes a cuff or a rolled hem read as cloth with a thickness.
+- `inkWeight` is the cloth's silhouette and hem ink as a share of the skin's line weight, 0.7 when left out; 1 inks it like skin, lower reads lighter.
 - `layer` counts out from the skin: under a waistband 1, a waistband 2, over both 3 (`LAYER.under`, `.waistband`, `.over`). A tee worn over shorts is the higher layer and its band overlaps the shorts' top, so no cloth edge stops bare above the crotch.
 - Draw the body under clothes thinner than the sheet's clothed silhouette, by about the fit: the garment stands off it to the silhouette.
 - **Boxy clothes** mean the cloth follows a boxy body: shape the torso's profiles (waist, chest, seat; `body.md`), not the garment.
@@ -109,7 +111,7 @@ export const stitch = printOn("torso", uvMark("hem-stitch", [[0.44, -0.2], [0.44
 Build `outfits=all poses=all`. In each outfit's renders check the hems, openings and seams from front, three-quarter, side and back. In `measure.txt`:
 
 - the `wardrobe:` lines list each garment with its slot, layer, fit, covered parts (u and v spans), changes, holes and owned parts, and each outfit's picks: check them against the feature list;
-- `poke-through <inner> through <outer>` per outfit: the body or an inner garment drawn outside a garment over it, with how many vertices, how deep and on which parts. `poke-through none` is the aim; raise the outer garment's `fit` (or that part's `partFits`) past the deepest, or lower the inner one's.
+- `poke-through <inner> through <outer>` per outfit, and per outfit and named pose (`<outfit>, <pose>: poke-through ...`): the body or an inner garment drawn outside a garment over it, with how many vertices, how deep and on which parts. `poke-through none` is the aim; raise the outer garment's `fit` (or that part's `partFits`) past the deepest, or lower the inner one's.
 
 Render a bent pose (sitting, an arm raised) for every outfit: hems and openings that hold at rest can open in a pose.
 
@@ -118,9 +120,10 @@ Render a bent pose (sitting, an arm raised) for every outfit: hems and openings 
 - **No loose cloth.** A skirt hangs and flares but has no sway; a dress as one piece from hem to neck is held at its far ring and its waist can stand off the body. A lighter band of shade can show at a skirt's waist where its drawn outline starts.
 - **Collars and lapels.** A collar is only the cuff a hole grows round the neck; nothing folds over. Lapels are rigid owned parts (`accessories.md`) that stand off in side view and do not follow a spine bend.
 - **Hoods** are a lump behind the head, not a hood framing the face.
-- **Hem specks in bent poses.** Where cloth ends on a bent limb (trouser hems at a bent knee, a strap at the ankle, a belt under a jacket) skin and ink specks can show.
-- **Crease ink at the crotch** where cloth stops above the legs' join: a U of ink at the pelvis. End tops over the bottoms' waistband.
-- **Open edges are cuts.** An open garment is one sheet: its edge has no rolled rim or thickness.
+- **Open edges are cuts.** An open garment is one sheet: its edge can roll out (`hemRoll`) but has no underside.
+- **Flat shading.** Cloth is shaded flat like skin: no folds, bunching or wrinkle shading; creases are marks drawn on the cloth, and they ride the cloth, so they fade as a joint bends instead of deepening.
+- **No see-through cloth.** A palette slot's `opacity` on a garment's colour or an area's is not drawn on cloth (the build warns); sheer cloth draws whole.
+- **Armpits in tight sleeves.** A raised or bent arm can push skin through a sleeve at fit 0 near the armpit; give the arm a small `partFits`.
 - **Loose ends are short flat tabs**, and a neck wrap carrying one flares like a cape collar.
 - **Thighs that touch** make trousers read as one tube: keep the legs apart in the body (`body.md`, widths).
 - **Garments on all fours**: cloth hangs and flares only past an end that points down; a cape on a body resting forward trails rather than drapes.

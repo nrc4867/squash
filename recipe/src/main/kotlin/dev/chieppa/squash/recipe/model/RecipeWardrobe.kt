@@ -1,8 +1,10 @@
 package dev.chieppa.squash.recipe.model
 
 import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.dress.DEFAULT_BRUSH_SIZE
 import dev.chieppa.squash.document.BodyPartChange
+import dev.chieppa.squash.document.CLOTH_INK_WEIGHT
 import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.FIRST_LAYER
 import dev.chieppa.squash.document.GarmentSlot
@@ -45,12 +47,16 @@ data class RecipeGarment(
     val layer: Int = FIRST_LAYER,
     @Doc("Its palette slot.")
     val color: String? = null,
-    @Doc("How far it stands off the body, in body units; each cover's own ease when left out.")
+    @Doc("How far it stands off the body, in body units, 0 or more: about 0.005 skin-tight, 0.01 fitted, 0.02 to 0.03 loose on a person-sized body; each cover's own ease when left out.") @Range(min = 0.0)
     val fit: Float? = null,
     @Doc("A fit for one covered part (a pair by its left side), over the garment's.")
     val partFits: Map<String, Float> = emptyMap(),
     @Doc("Whether its edges are inked.")
     val inkHem: Boolean = true,
+    @Doc("The weight of its silhouette and inked edges as a share of the skin's line weight, 0 to 2; thinner than skin when left out, so cloth reads as cloth and not as a second body.") @Range(min = 0.0, max = 2.0)
+    val inkWeight: Float = CLOTH_INK_WEIGHT,
+    @Doc("How far its hems, neck openings and cuffs roll out past the cloth, in body units, 0 to 0.03: a cuff or a rolled hem that reads as cloth with a thickness. Every hem stands a little off the skin whatever this is.") @Range(min = 0.0, max = 0.03)
+    val hemRoll: Float = 0f,
     @Doc("Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.")
     val joins: List<String> = emptyList(),
     @Doc(

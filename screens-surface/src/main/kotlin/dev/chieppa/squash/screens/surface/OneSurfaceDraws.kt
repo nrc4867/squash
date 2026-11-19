@@ -24,9 +24,12 @@ private const val JOIN_FULL_FACING = 0.35f
 /** How many of the surface's cells a piece of join line runs at least to be drawn. */
 private const val JOIN_SHORTEST_CELLS = 6f
 
-/** The ink along each hem, neck opening and cuff of [dress]'s garments whose hem ink is on, where it faces [view]. */
+/** How many of the surface's cells a piece of hem runs at least to be drawn: short enough for a cuff round a thin wrist or ankle. */
+private const val HEM_SHORTEST_CELLS = 2f
+
+/** The ink along each hem, neck opening and cuff of [dress]'s garments whose hem ink is on, where it faces [view], at each one's ink weight. */
 fun hemDraws(dress: SurfaceDress, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
-    dress.garments.filter { it.cover.garment.inkHem }.flatMap { facedCurveDraws(it.hems, view, rule, color, cell) }
+    dress.garments.filter { it.cover.garment.inkHem }.flatMap { facedCurveDraws(it.hems, view, rule, color, cell, scale = it.cover.garment.inkWeight, shortestCells = HEM_SHORTEST_CELLS) }
 
 /**
  * The ink along each inked join of [surface] where its surface faces [view]: each curve is cut where the surface turns from the viewer
@@ -37,25 +40,37 @@ fun joinDraws(surface: CharacterSurface, view: SurfaceView, rule: LineRule, colo
     facedCurveDraws(surface.joins, view, rule, color, surface.mesh.cell)
 
 /**
- * The hems of [dress]'s garments hanging free, as the cloth's outline: an open edge of cloth hanging free outlines it from either side,
- * and where the cloth turns, its own contour lies past the hem, cut away with what the garment does not cover.
+ * The hems of [dress]'s garments hanging free, as the cloth's outline at its ink weight: an open edge of cloth hanging free outlines it
+ * from either side, and where the cloth turns, its own contour lies past the hem, cut away with what the garment does not cover.
  */
 fun hangingHems(dress: SurfaceDress): List<ContourRun> = dress.garments.filter { it.cover.hanging }.flatMap { garment ->
     garment.hems.filter { it.size > 1 }.map { curve ->
-        ContourRun(curve.map { ContourPoint(it.position, 1f) }, curve.size > 2 && curve.first().position == curve.last().position)
+        ContourRun(curve.map { ContourPoint(it.position, garment.cover.garment.inkWeight) }, curve.size > 2 && curve.first().position == curve.last().position)
     }
 }
 
-/** [curves] as ink where they face [view], in [layer]: see [joinDraws]. */
-internal fun facedCurveDraws(curves: List<List<CurvePoint>>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, layer: DepthLayer = DepthLayer.SCENE): List<RibbonDraw> = curves.flatMap { curve ->
+/**
+ * [curves] as ink where they face [view], in [layer], at [scale] of the rule's weight, leaving out a piece shorter than [shortestCells]
+ * of [cell]: see [joinDraws].
+ */
+internal fun facedCurveDraws(
+    curves: List<List<CurvePoint>>,
+    view: SurfaceView,
+    rule: LineRule,
+    color: Color,
+    cell: Float,
+    layer: DepthLayer = DepthLayer.SCENE,
+    scale: Float = 1f,
+    shortestCells: Float = JOIN_SHORTEST_CELLS,
+): List<RibbonDraw> = curves.flatMap { curve ->
     val facing = curve.map { point -> point.normal dot view.toViewer(point.position).normalized() }
     val closed = curve.size > 2 && curve.first().position == curve.last().position
-    val shortest = JOIN_SHORTEST_CELLS * cell
+    val shortest = shortestCells * cell
     facedPieces(facing, closed).filter { piece -> length(piece.map { curve[it].position }) >= shortest }.mapNotNull { piece ->
         val whole = closed && piece.size == curve.size
         val points = piece.map { i ->
             val weight = ((facing[i] - JOIN_LEAST_FACING) / (JOIN_FULL_FACING - JOIN_LEAST_FACING)).coerceIn(0f, 1f)
-            RibbonPoint(curve[i].position, curve[i].normal, weight)
+            RibbonPoint(curve[i].position, curve[i].normal, weight * scale)
         }
         StrokeRibbon.along(points, EVEN_WEIGHT, whole)?.let { RibbonDraw(it, rule, color, layer = layer) }
     }

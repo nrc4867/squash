@@ -140,6 +140,8 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
         fit = garment.fit,
         partFits = garment.partFits.mapKeys { it.key.value },
         inkHem = garment.inkHem,
+        inkWeight = garment.inkWeight,
+        hemRoll = garment.hemRoll,
         joins = if (painted) emptyList() else garment.joins.map { it.value },
         areas = if (painted) garment.areas.map(::areaOf) else emptyList(),
         holes = holesOf(garment),

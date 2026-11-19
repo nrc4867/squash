@@ -87,7 +87,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
                     made[i] = if (last.garment.cover.cover == nextCover.cover) last.garment else last.garment.reprinted(nextCover).also { kept[nextCover.garment.id to nextCover.piece] = Kept(last.shape, last.cut, it) }
                     return@mapNotNull null
                 }
-                return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.surface)
+                return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.grown)
             }
             val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell, reads) }
             Piece(i, nextCover, nextField, mesher.begin(nextField.field, mesh.channels), null)
@@ -115,7 +115,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
                 }
                 val surface = making?.surface ?: checkNotNull(recut)
                 stage = DressStage.CUT
-                val cut = cutting ?: GarmentCut(cover, surface, membersOf(cover.holes, field, body, solids), membersOf(cover.outThroughEnds, field, body, solids), coverage, cover.garment.id to cover.piece).also { cutting = it }
+                val cut = cutting ?: GarmentCut(cover, surface, membersOf(cover.holes, field, body, solids), membersOf(cover.outThroughEnds, field, body, solids), coverage, cover.garment.id to cover.piece, mesh.cell).also { cutting = it }
                 cut.next()?.let { return it }
                 val garment = cut.garment
                 kept[garment.cover.garment.id to garment.cover.piece] = Kept(shapeOf(garment.cover, grown), cutOf(garment.cover), garment)

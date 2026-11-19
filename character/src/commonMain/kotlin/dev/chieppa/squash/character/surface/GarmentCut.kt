@@ -20,16 +20,20 @@ private const val CUT_CHUNK = 2048
  * The work that cuts [cover]'s garment from its grown [surface], opened where a part in [holes] comes through and round a part in [ends]
  * coming out through an end it reaches, in batches whose pieces are independent of one another, handed out by
  * [next] until it gives null, then read from [garment]: its coverage at every vertex, spread over the drawn mesh, the cut, the
- * triangles with a corner it covers with their edges, over which its contours run kept to its coverage, and its hems. Its coverage is smoothed near its zero first, see [smoothedNearZero].
+ * triangles with a corner it covers with their edges, over which its contours run kept to its coverage, and its hems. Its coverage is smoothed near its zero first, see [smoothedNearZero],
+ * and the surface is lifted along its hems by the least stand-off and roll [hemLifts] gives, measured against the body's [bodyCell].
  */
 class GarmentCut(
     private val cover: WornCover,
-    private val surface: CharacterSurface,
+    private val grown: CharacterSurface,
     private val holes: List<JoinedMember> = emptyList(),
     private val ends: List<JoinedMember> = emptyList(),
     private val memo: CoverageMemo = CoverageMemo(),
     private val slot: Any = Unit,
+    private val bodyCell: Float = grown.mesh.cell,
 ) {
+    /** The surface it is cut from: the grown one, lifted along its hems once its coverage is read ([hemLifts]). */
+    private var surface = grown
     private val mesh = surface.mesh
     private val coverage = FloatArray(mesh.vertexCount)
     private val fan = FloatArray(surface.render.vertexCount)
@@ -61,6 +65,7 @@ class GarmentCut(
                     return it
                 }
                 running.result.copyInto(coverage)
+                hemLifts(grown, cover, coverage, bodyCell)?.let { surface = lifted(grown, it) }
                 kept = touchedTriangles(mesh.triangles, coverage)
                 val triangleEdges = TriangleEdges(surface.positions, mesh.vertexCount, kept).also { edges = it }
                 coverage.copyInto(fan)
@@ -73,7 +78,7 @@ class GarmentCut(
                 val lines = TriangleLines(surface.positions, surface.lineNormals, kept, checkNotNull(edges), coverage)
                 val made = checkNotNull(cut)
                 val seams = ClothSeams(surface.field, cover).values(mesh)
-                done = SurfaceGarment(cover, surface, coverage, made, made.mesh(surface.render), hems, lines, fan, holes, ends = ends, seamValues = seams)
+                done = SurfaceGarment(cover, surface, coverage, made, made.mesh(surface.render), hems, lines, fan, holes, ends = ends, seamValues = seams, grown = grown)
                 null
             }
             else -> null
@@ -117,5 +122,11 @@ internal fun touchedTriangles(triangles: IntArray, coverage: FloatArray): IntArr
     return out.toArray()
 }
 
-/** Where [coverage] is zero on [lines]' mesh, eased. */
-internal fun hemsOf(lines: TriangleLines, coverage: FloatArray): List<List<CurvePoint>> = lines.zeroCurves(coverage) { true }.map(::eased)
+/**
+ * Where [coverage] is zero on [lines]' mesh, eased, over the triangles with a corner [shown] keeps, at least zero there, so a hem a garment
+ * over it hides is no hem; every triangle with no [shown].
+ */
+internal fun hemsOf(lines: TriangleLines, coverage: FloatArray, shown: FloatArray? = null): List<List<CurvePoint>> {
+    val t = lines.triangles
+    return lines.zeroCurves(coverage) { tri -> shown == null || (0 until 3).any { shown[t[tri * 3 + it]] >= 0f } }.map(::eased)
+}

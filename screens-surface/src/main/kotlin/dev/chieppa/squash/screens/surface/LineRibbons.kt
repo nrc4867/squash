@@ -45,7 +45,8 @@ class LineLayers(val behind: DepthLayer, val over: DepthLayer) {
 
 /**
  * One ribbon along where [parts], and the one-surface meshes [surfaces] a character has, turn edge on through [view], weighed by what lies on
- * their surfaces, the one surfaces' by [weightAt] in space, and along the open [edges] that outline a surface, or null with none on show.
+ * their surfaces, the one surfaces' by [weightAt] in space times each one's share in [scales] (1 where it has none), and along the open
+ * [edges] that outline a surface, or null with none on show.
  */
 fun contourRibbon(
     parts: Collection<PartLines>,
@@ -53,11 +54,14 @@ fun contourRibbon(
     surfaces: List<TriangleLines> = emptyList(),
     weightAt: ((Vec3) -> Float)? = null,
     edges: List<ContourRun> = emptyList(),
+    scales: List<Float> = emptyList(),
 ): StrokeRibbon? {
     val ribbons = parts.flatMap { part -> part.grids.flatMap { grid -> gridRibbons(grid.contours(view::toViewer), view) } }
-    val own = surfaces.flatMap { lines ->
+    val own = surfaces.flatMapIndexed { i, lines ->
         val runs = lines.smoothContours(view::toViewer)
-        gridRibbons(if (weightAt == null) runs else runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, weightAt(it.position)) }, run.closed, run.piece) }, view)
+        val scale = scales.getOrElse(i) { 1f }
+        if (weightAt == null && scale == 1f) return@flatMapIndexed gridRibbons(runs, view)
+        gridRibbons(runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, (weightAt?.invoke(it.position) ?: it.weight) * scale) }, run.closed, run.piece) }, view)
     }
     return StrokeRibbon.joined(ribbons + own + gridRibbons(edges, view))
 }

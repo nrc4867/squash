@@ -4,10 +4,10 @@ import dev.chieppa.squash.geom.LevelCut
 import dev.chieppa.squash.geom.field.JoinedMember
 
 /** How far inside a garment's coverage, in the surface's cells, skin or an inner layer lies before the garment hides it. */
-private const val HIDING_CELLS = 1.5f
+internal const val HIDING_CELLS = 1.5f
 
 /** How far past the hiding cells, in its garment's ease, skin under a garment stays shown, as far as it is seen past the garment's edge. */
-private const val SEEN_UNDER_EASES = 2f
+internal const val SEEN_UNDER_EASES = 2f
 
 /** How far, in its garment's ease, skin round a part coming out through a hole stays shown, as it is seen through the hole. */
 private const val HOLE_CLEAR_EASES = 2f

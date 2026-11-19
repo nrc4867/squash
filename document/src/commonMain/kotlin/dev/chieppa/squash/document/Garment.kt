@@ -3,10 +3,19 @@ package dev.chieppa.squash.document
 import kotlinx.serialization.Serializable
 
 /** How far a branch stands off its part's surface where nothing drawn takes it further, in body units. */
-const val DEFAULT_EASE = 0.03f
+const val DEFAULT_EASE = 0.012f
 
 /** How far a garment stands off the body where nothing drawn takes it further, snug, in body units: a new garment's fit. */
-const val SNUG_FIT = 0.015f
+const val SNUG_FIT = 0.006f
+
+/** A garment's ink weight where it sets none: its silhouette and hems as a share of the skin's line weight, thinner than skin. */
+const val CLOTH_INK_WEIGHT = 0.7f
+
+/** The most a garment's ink weight is, as a share of the skin's line weight. */
+const val MOST_CLOTH_INK_WEIGHT = 2f
+
+/** The most a garment's hem roll stands off past the cloth, in body units. */
+const val MOST_HEM_ROLL = 0.03f
 
 /** The first layer, nearest the skin. */
 const val FIRST_LAYER = 1
@@ -22,7 +31,8 @@ const val GARMENT_PART_PREFIX = "garment/"
  * say which parts it covers and how far, written into its branches, changes and inked joins; a branch whose part no area paints has its
  * box painted ([withBoxesPainted]), so every garment's cloth is its painted cells. [tucks] are the Tuck choices made for the small parts
  * inside it. Its [regions] and [marks] are printed on its cloth, in the (u, v) of the body parts under it as a part's own are, and show
- * only where the cloth does. See HLD: data-model, Garments.
+ * only where the cloth does. [inkWeight] is the weight of its silhouette and hems as a share of the skin's line weight, and [hemRoll]
+ * how far its hems, neck openings and cuffs roll out past the cloth, in body units. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -43,8 +53,14 @@ data class Garment(
     val holes: List<GarmentHole> = emptyList(),
     val regions: List<Region> = emptyList(),
     val marks: List<Mark> = emptyList(),
+    val inkWeight: Float = CLOTH_INK_WEIGHT,
+    val hemRoll: Float = 0f,
 ) {
     init {
+        require(fit == null || fit >= 0f) { "Garment ${id.value} has a negative fit" }
+        require(partFits.values.all { it >= 0f }) { "Garment ${id.value} has a negative part fit" }
+        require(inkWeight in 0f..MOST_CLOTH_INK_WEIGHT) { "Garment ${id.value} has an ink weight outside 0 to $MOST_CLOTH_INK_WEIGHT" }
+        require(hemRoll in 0f..MOST_HEM_ROLL) { "Garment ${id.value} has a hem roll outside 0 to $MOST_HEM_ROLL" }
         require(branches.distinctBy { it.part }.size == branches.size) { "Garment ${id.value} covers a part twice" }
         require(areas.distinctBy { it.id }.size == areas.size) { "Garment ${id.value} names an area twice" }
         require(holes.distinctBy { it.part }.size == holes.size) { "Garment ${id.value} has two holes round one part" }
@@ -61,8 +77,10 @@ data class Garment(
 
     fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
 
-    /** This garment without what is printed on its cloth or the colours of its areas: what its cloth's shape and cut read. */
-    val unprinted: Garment get() = if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null }) this else copy(regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) })
+    /** This garment without what is printed on its cloth, the colours of its areas or its ink weight: what its cloth's shape and cut read. */
+    val unprinted: Garment get() =
+        if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null } && inkWeight == CLOTH_INK_WEIGHT) this
+        else copy(regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) }, inkWeight = CLOTH_INK_WEIGHT)
 
     /**
      * This garment with the box of each branch whose part no area paints painted as cells ([boxCells]) into its first area, made as

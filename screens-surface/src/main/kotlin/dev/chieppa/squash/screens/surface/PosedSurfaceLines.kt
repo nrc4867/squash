@@ -16,6 +16,7 @@ import dev.chieppa.squash.geom.WeightStroke
 import dev.chieppa.squash.geom.lineWeightAt
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.RibbonDraw
+import dev.chieppa.squash.render.StrokeRibbon
 import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /** How many parts' sections a [PosedSurfaceLines] keeps the lines of. */
@@ -33,17 +34,22 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
 
     /**
      * The contour of [lined], each part's lines with the surface's runs left out, and of the surface and its garments, through [view],
-     * with the hems of the garments hanging free (see [hangingHems]).
+     * with the hems of the garments hanging free (see [hangingHems]), each garment's at its ink weight.
      */
-    fun contour(lined: Collection<PartLines>, view: SurfaceView) =
-        contourRibbon(lined, view, listOf(shown.surface.lines) + shown.dress?.garments.orEmpty().map { it.lines }, weightAt, shown.dress?.let(::hangingHems).orEmpty())
+    fun contour(lined: Collection<PartLines>, view: SurfaceView): StrokeRibbon? {
+        val garments = shown.dress?.garments.orEmpty()
+        return contourRibbon(
+            lined, view, listOf(shown.surface.lines) + garments.map { it.lines }, weightAt, shown.dress?.let(::hangingHems).orEmpty(),
+            scales = listOf(1f) + garments.map { it.cover.garment.inkWeight },
+        )
+    }
 
     /** The ink along the surface's inked joins and its garments' inked hems and joins, through [view]. */
     fun inks(view: SurfaceView, look: CharacterLook, ink: Color): List<RibbonDraw> {
         val surface = shown.surface
         val dress = shown.dress
         return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
-            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell) }
+            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight) }
     }
 
     /** The lines its garments' cloth prints, as they are worn: each garment's inked marks and region borders, cut to its cloth. */
