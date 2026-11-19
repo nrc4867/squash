@@ -38,6 +38,7 @@ Builds run on up to four workers, the heaviest modules each forking several test
 tools/recipe.sh recipes/fennec.recipe.json   # build a recipe headless: the character file, renders, measurements under build/recipes/<id> (needs a GPU)
 tools/recipe.sh probe recipes/fennec.recipe.json part=head uv=head:0.5,0.2 point=0.9,0.5,-0.1 face=head:0.1,0.1  # frame facts of a built recipe at rest, no renders
 tools/recipe.sh export examples/fennec.json out=<file>  # write a character file as a recipe
+tools/recipe.sh kit <anywhere>/cat.ts   # a TypeScript character file on the kit (kit/README.md): typechecked, run, written as cat.recipe.json beside it, built
 ./gradlew :app:look -Plook="example=woman-dressed outfits=all poses=all close=face,hand,foot"  # render examples to PNGs under app/build/look (needs a GPU)
 ./gradlew :app:measure -Pmeasure="example=woman-dressed"  # print an example's quality checks as numbers
 ./gradlew :app:look -Plook="example=fennec-dressed thumbs=true"  # render and time an example's Library outfit and garment thumbnails, under app/build/look/<example>/thumbs

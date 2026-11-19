@@ -40,5 +40,7 @@ object Reference {
         )
         appendLine()
         appendLine("For a built recipe, `tools/recipe.sh probe <recipe> ...` prints the same frame facts for its own parts: u and v at a body point or a face place, the body point at a u and v, and each part's extent, joints and sockets.")
+        appendLine()
+        appendLine("To write a recipe as a TypeScript character file, with typed helpers for a height plan, tube limbs, shapes, face marks, garments, props and palettes, see `kit/README.md`.")
     }
 }

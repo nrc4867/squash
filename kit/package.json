@@ -1,0 +1,26 @@
+{
+  "name": "squash-kit",
+  "private": true,
+  "type": "module",
+  "description": "Helpers for writing Squash character recipes in TypeScript, and the runner that checks, runs and builds a character file.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "gen": "node tools/gen-types.ts",
+    "gen:check": "node tools/gen-types.ts --check",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "typescript": "6.0.2",
+    "@types/node": "24.19.1"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./run": "./src/run/index.ts"
+  }
+}

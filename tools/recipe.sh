@@ -6,6 +6,8 @@
 #     uv=<part>:<u>,<v>[,<patch>]   the body point there        point=<x>,<y>,<z>   the part, u and v nearest that point
 #     face=<head>:<x>,<y>   the u and v at that place on the head's face (x to its left, y up)
 #   tools/recipe.sh export <character.json> [out=<recipe.json>]   a character file written as a recipe
+#   tools/recipe.sh kit [check|json|probe|heights] <character.ts> [option ...]   a TypeScript character file anywhere on disk, checked,
+#     run and written as <name>.recipe.json beside it (or in out=), then built with these options (kit/README.md)
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false, close=face,hand,foot
 # (also hands, feet, joins), outfits=<id,...|all>, poses=<name,...|all>, set=part:name:value,...,
 # reference=<png> eye=x,y,z target=x,y,z fov=<degrees> [ground=#rrggbb] [scale=<body units a metre>].
@@ -31,10 +33,16 @@ encoded() {
 }
 
 if [ $# -eq 0 ]; then
-  sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
 fi
 case "$1" in
+  kit)
+    shift
+    bash_path="$BASH"
+    if command -v cygpath >/dev/null 2>&1; then bash_path="$(cygpath -w "$BASH")"; fi
+    SQUASH_BASH="$bash_path" exec node "$root/kit/run.ts" "$@"
+    ;;
   export|probe)
     [ $# -ge 2 ] || { echo "tools/recipe.sh $1 needs a file" >&2; exit 2; }
     args="$1=$(encoded "$(absolute "$2")")"

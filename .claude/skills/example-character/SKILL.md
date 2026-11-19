@@ -99,6 +99,8 @@ With `reference=<png> eye=x,y,z target=x,y,z fov=<deg>` the run renders the char
 
 The schema is `schema/recipe.schema.json`; put `"$schema": "../schema/recipe.schema.json"` at the top for checking in an editor. Every field has a description there. `recipes/fennec.recipe.json` (templated quadruped, fur, face marks) and `recipes/woman-dressed.recipe.json` (template-free biped, hand-made sockets and joints, outfits) are the worked examples.
 
+To write the recipe as code instead, one TypeScript file anywhere on disk built with `tools/recipe.sh kit <file.ts>`, see `kit/README.md`.
+
 ```json
 {
   "format": 1, "id": "fennec", "name": "Fennec", "plan": "canine-quadruped",
