@@ -23,6 +23,7 @@ import dev.chieppa.squash.recipe.model.RecipeCover
 import dev.chieppa.squash.recipe.model.RecipeExpression
 import dev.chieppa.squash.recipe.model.RecipeEye
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeHang
 import dev.chieppa.squash.recipe.model.RecipePair
 import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSlot
@@ -148,6 +149,9 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
         creases = garment.creases,
         wrinkles = garment.wrinkles,
         drape = garment.drape,
+        eases = garment.eases.entries.associate { (part, profile) -> part.value to profile.keys.map { key -> listOfNotNull(key.u, key.ease, key.back) } },
+        hang = garment.hang?.let { RecipeHang(it.limit, it.flare) },
+        drops = garment.drops.mapKeys { it.key.value },
         joins = if (painted) emptyList() else garment.joins.map { it.value },
         areas = if (painted) garment.areas.map(::areaOf) else emptyList(),
         holes = holesOf(garment),

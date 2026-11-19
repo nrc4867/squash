@@ -16,14 +16,14 @@ class RunClips {
     private var kept: Map<List<Any>, Solid> = emptyMap()
     private var used = HashMap<List<Any>, Solid>()
 
-    /** [solid], swept from [patch], kept to its rings between [from] and [to] in u; itself where those are every ring. */
-    fun of(solid: Solid, patch: Patch, from: Float, to: Float, cell: Float): Solid {
+    /** [solid], swept from [patch], kept to its rings between [from] and [to] in u, [past] further out; itself where those are every ring. */
+    fun of(solid: Solid, patch: Patch, from: Float, to: Float, cell: Float, past: Float = 0f): Solid {
         val us = patch.ringUs
         val first = (us.indexOfLast { it <= from }).coerceAtLeast(0).let { (it - 1).coerceAtLeast(0) }
         val last = us.indexOfFirst { it >= to }.let { if (it < 0) patch.nu - 1 else (it + 1).coerceAtMost(patch.nu - 1) }
         if (first == 0 && last == patch.nu - 1) return solid
-        val key = listOf(Same(solid), first, last, cell)
-        return used.getOrPut(key) { kept[key] ?: clipped(solid, patch, first, last, cell * CLIP_CELLS) }
+        val key = listOf(Same(solid), first, last, cell, past)
+        return used.getOrPut(key) { kept[key] ?: clipped(solid, patch, first, last, cell * CLIP_CELLS + past) }
     }
 
     /** Keeps only what the last build used. */

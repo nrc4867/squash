@@ -228,6 +228,8 @@ export interface RecipeArea {
   name?: string;
   /** Its palette slot, as a red collar on a blue tee; the garment's color when left out. */
   color?: string | null;
+  /** A ribbed band, as a cuff or a sweater's hem: the ease, in body units, the area pulls its cloth in to, eased in over two rows either side; the cloth stands off as the rest does when left out. */
+  gather?: number | null;
   /** The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area. */
   paint?: RecipeStroke[];
   /** A note the build reads past. */
@@ -363,6 +365,12 @@ export interface RecipeGarment {
   wrinkles?: number;
   /** How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more. */
   drape?: number;
+  /** How far it stands off a covered part along and round it, by part (a pair by its left side), over fit and partFits: keys in order along u, each [u, ease] or [u, front, back] in body units, read as one smooth curve with no steps and flat past the first and last key; the sides take the mean of front and back. A tee tight across the chest and looser at the hem, a sleeve snug at the shoulder and bloused at the forearm, jeans fitted at the hip and flared at the ankle. */
+  eases?: { [key: string]: number[][] };
+  /** How the cloth hangs over each upright part it covers (a torso, a leg): from its highest covered place down, straight or flaring out, rather than following the body in; left out, it follows the body. */
+  hang?: RecipeHang | null;
+  /** Dropped seams, by part (a sleeve by its left side): how far down the part, in its u, 0 to 0.5, the seam sits where its cloth meets the cloth of the part it grows from; above it the cloth stands off as that part's does, with a pinched, inked seam, as a dropped shoulder. */
+  drops?: { [key: string]: number };
   /** Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead. */
   joins?: string[];
   /** The cloth as named areas painted on the body, in order: each area's strokes take cells from the areas before it, so areas never share a cell. Where two areas meet the cloth is one piece with an inked seam (with inkHem). A part an area paints needs no cover. */
@@ -395,6 +403,16 @@ export interface RecipeGeneric {
   rings?: number | null;
   /** Control points round each ring, up to 32. */
   segments?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** How cloth hangs below the highest place it covers on an upright part, rather than following the body in where it narrows. */
+export interface RecipeHang {
+  /** How far past its ease the cloth may stand off the body where it hangs over a narrowing, in body units: about 0.01 to 0.04 on a person-sized body. */
+  limit: number;
+  /** How far out it falls for each unit it falls down, 0 to 0.5: 0 straight down, 0.1 a slight flare. */
+  flare?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

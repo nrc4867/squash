@@ -5,7 +5,9 @@ import dev.chieppa.squash.character.catalog.displayName
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
+import dev.chieppa.squash.document.AddWornGarment
 import dev.chieppa.squash.document.CoverPart
+import dev.chieppa.squash.document.DuplicateOutfit
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PickGarment
@@ -14,32 +16,36 @@ import dev.chieppa.squash.document.RemoveGarmentSlot
 import dev.chieppa.squash.document.RemoveLooseEnd
 import dev.chieppa.squash.document.RemoveOutfit
 import dev.chieppa.squash.document.RenameGarment
+import dev.chieppa.squash.document.RenameGarmentArea
 import dev.chieppa.squash.document.RenameGarmentSlot
 import dev.chieppa.squash.document.RenameOutfit
+import dev.chieppa.squash.document.SetAreaGather
 import dev.chieppa.squash.document.SetBodyPartChange
 import dev.chieppa.squash.document.SetBranchAround
 import dev.chieppa.squash.document.SetBranchEase
 import dev.chieppa.squash.document.SetBranchOutline
 import dev.chieppa.squash.document.SetBranchRange
 import dev.chieppa.squash.document.SetBranchSurface
-import dev.chieppa.squash.document.SetHemInk
+import dev.chieppa.squash.document.SetGarment
+import dev.chieppa.squash.document.SetGarmentAreaColor
+import dev.chieppa.squash.document.SetGarmentColor
+import dev.chieppa.squash.document.SetGarmentCrease
+import dev.chieppa.squash.document.SetGarmentDrop
+import dev.chieppa.squash.document.SetGarmentFit
+import dev.chieppa.squash.document.SetGarmentHang
 import dev.chieppa.squash.document.SetGarmentHemRoll
 import dev.chieppa.squash.document.SetGarmentInkWeight
-import dev.chieppa.squash.document.SetGarmentCrease
-import dev.chieppa.squash.document.SetGarmentFit
-import dev.chieppa.squash.document.SetPartFit
-import dev.chieppa.squash.document.SetGarmentPaint
-import dev.chieppa.squash.document.RenameGarmentArea
 import dev.chieppa.squash.document.SetGarmentMark
+import dev.chieppa.squash.document.SetGarmentPaint
 import dev.chieppa.squash.document.SetGarmentRegion
-import dev.chieppa.squash.document.SetGarmentAreaColor
-import dev.chieppa.squash.document.SetTuck
-import dev.chieppa.squash.document.SetGarment
-import dev.chieppa.squash.document.SetGarmentColor
 import dev.chieppa.squash.document.SetGarmentSlot
+import dev.chieppa.squash.document.SetHemInk
 import dev.chieppa.squash.document.SetJoinInk
 import dev.chieppa.squash.document.SetLayers
 import dev.chieppa.squash.document.SetLooseEnd
+import dev.chieppa.squash.document.SetPartEase
+import dev.chieppa.squash.document.SetPartFit
+import dev.chieppa.squash.document.SetTuck
 import dev.chieppa.squash.document.SetWardrobe
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.SquashDocument
@@ -49,48 +55,50 @@ import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.dress_step_add_garment
 import dev.chieppa.squash.uidesign.generated.dress_step_add_outfit
 import dev.chieppa.squash.uidesign.generated.dress_step_add_slot
+import dev.chieppa.squash.uidesign.generated.dress_step_area_color
+import dev.chieppa.squash.uidesign.generated.dress_step_area_name
 import dev.chieppa.squash.uidesign.generated.dress_step_around
 import dev.chieppa.squash.uidesign.generated.dress_step_bare
 import dev.chieppa.squash.uidesign.generated.dress_step_change
 import dev.chieppa.squash.uidesign.generated.dress_step_color
 import dev.chieppa.squash.uidesign.generated.dress_step_cover
+import dev.chieppa.squash.uidesign.generated.dress_step_creases
+import dev.chieppa.squash.uidesign.generated.dress_step_drop
 import dev.chieppa.squash.uidesign.generated.dress_step_ease
 import dev.chieppa.squash.uidesign.generated.dress_step_edge_ink
+import dev.chieppa.squash.uidesign.generated.dress_step_fit
+import dev.chieppa.squash.uidesign.generated.dress_step_garment
+import dev.chieppa.squash.uidesign.generated.dress_step_gather
+import dev.chieppa.squash.uidesign.generated.dress_step_hang
 import dev.chieppa.squash.uidesign.generated.dress_step_hem_roll
 import dev.chieppa.squash.uidesign.generated.dress_step_ink_weight
-import dev.chieppa.squash.uidesign.generated.dress_step_creases
-import dev.chieppa.squash.uidesign.generated.dress_step_fit
-import dev.chieppa.squash.uidesign.generated.dress_step_part_fit
-import dev.chieppa.squash.uidesign.generated.dress_step_paint
-import dev.chieppa.squash.uidesign.generated.dress_step_area_name
-import dev.chieppa.squash.uidesign.generated.dress_step_tuck
-import dev.chieppa.squash.uidesign.generated.dress_step_garment
 import dev.chieppa.squash.uidesign.generated.dress_step_join_ink
 import dev.chieppa.squash.uidesign.generated.dress_step_layers
 import dev.chieppa.squash.uidesign.generated.dress_step_loose_end
-import dev.chieppa.squash.uidesign.generated.dress_step_remove_print
-import dev.chieppa.squash.uidesign.generated.dress_step_print
-import dev.chieppa.squash.uidesign.generated.dress_step_area_color
 import dev.chieppa.squash.uidesign.generated.dress_step_outline
+import dev.chieppa.squash.uidesign.generated.dress_step_paint
+import dev.chieppa.squash.uidesign.generated.dress_step_part_ease
+import dev.chieppa.squash.uidesign.generated.dress_step_part_fit
 import dev.chieppa.squash.uidesign.generated.dress_step_pick
+import dev.chieppa.squash.uidesign.generated.dress_step_print
 import dev.chieppa.squash.uidesign.generated.dress_step_range
-import dev.chieppa.squash.uidesign.generated.history_remove_garment
 import dev.chieppa.squash.uidesign.generated.dress_step_remove_loose_end
-import dev.chieppa.squash.uidesign.generated.history_remove_outfit
+import dev.chieppa.squash.uidesign.generated.dress_step_remove_print
 import dev.chieppa.squash.uidesign.generated.dress_step_remove_slot
-import dev.chieppa.squash.uidesign.generated.history_rename_garment
-import dev.chieppa.squash.uidesign.generated.history_new_worn_garment
-import dev.chieppa.squash.uidesign.generated.history_duplicate_outfit
-import dev.chieppa.squash.document.AddWornGarment
-import dev.chieppa.squash.document.DuplicateOutfit
-import dev.chieppa.squash.uidesign.generated.history_rename_outfit
 import dev.chieppa.squash.uidesign.generated.dress_step_rename_slot
 import dev.chieppa.squash.uidesign.generated.dress_step_show
 import dev.chieppa.squash.uidesign.generated.dress_step_slot
 import dev.chieppa.squash.uidesign.generated.dress_step_surface
+import dev.chieppa.squash.uidesign.generated.dress_step_tuck
 import dev.chieppa.squash.uidesign.generated.dress_step_uncover
 import dev.chieppa.squash.uidesign.generated.dress_step_unpick
 import dev.chieppa.squash.uidesign.generated.dress_step_wardrobe
+import dev.chieppa.squash.uidesign.generated.history_duplicate_outfit
+import dev.chieppa.squash.uidesign.generated.history_new_worn_garment
+import dev.chieppa.squash.uidesign.generated.history_remove_garment
+import dev.chieppa.squash.uidesign.generated.history_remove_outfit
+import dev.chieppa.squash.uidesign.generated.history_rename_garment
+import dev.chieppa.squash.uidesign.generated.history_rename_outfit
 import dev.chieppa.stretch.core.Command
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -130,6 +138,10 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
             is SetGarmentCrease -> text(Res.string.dress_step_creases, name(command.garment))
             is SetGarmentFit -> text(Res.string.dress_step_fit, name(command.garment))
             is SetPartFit -> text(Res.string.dress_step_part_fit, name(command.garment), name(command.part))
+            is SetPartEase -> text(Res.string.dress_step_part_ease, name(command.garment), name(command.part))
+            is SetGarmentHang -> text(Res.string.dress_step_hang, name(command.garment))
+            is SetGarmentDrop -> text(Res.string.dress_step_drop, name(command.garment), name(command.part))
+            is SetAreaGather -> text(Res.string.dress_step_gather, name(command.garment))
             is SetGarmentPaint -> text(Res.string.dress_step_paint, name(command.garment))
             is RenameGarmentArea -> text(Res.string.dress_step_area_name, command.name)
             is SetTuck -> text(Res.string.dress_step_tuck, name(command.garment), name(command.part))

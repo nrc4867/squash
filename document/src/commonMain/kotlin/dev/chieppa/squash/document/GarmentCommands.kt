@@ -144,6 +144,44 @@ data class SetPartFit(val garment: GarmentId, val part: PartId, val fit: Float?)
     }
 }
 
+/** Sets how far [garment] stands off [part], or the pair it leads, along and round it, over its fit; null takes the profile away. */
+@Serializable
+@SerialName("setPartEase")
+data class SetPartEase(val garment: GarmentId, val part: PartId, val profile: EaseProfile?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        document.requirePart(part)
+        held.copy(eases = if (profile == null) held.eases - part else held.eases + (part to profile))
+    }
+}
+
+/** Sets how [garment]'s cloth hangs below the widest place of each upright part it covers; null lets it follow the body. */
+@Serializable
+@SerialName("setGarmentHang")
+data class SetGarmentHang(val garment: GarmentId, val hang: ClothHang?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { it.copy(hang = hang) }
+}
+
+/** Drops the seam where [garment]'s cloth over [part], or the pair it leads, meets the cloth it grows from to [drop] along it; null or 0 keeps it at the join. */
+@Serializable
+@SerialName("setGarmentDrop")
+data class SetGarmentDrop(val garment: GarmentId, val part: PartId, val drop: Float?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        document.requirePart(part)
+        val at = drop?.coerceIn(0f, MOST_DROP)
+        held.copy(drops = if (at == null || at == 0f) held.drops - part else held.drops + (part to at))
+    }
+}
+
+/** Sets the ease [garment]'s area [area] gathers its cloth in to, as a ribbed band; null lets the cloth stand off as the rest does. */
+@Serializable
+@SerialName("setAreaGather")
+data class SetAreaGather(val garment: GarmentId, val area: GarmentAreaId, val gather: Float?) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
+        require(held.area(area) != null) { "Garment ${garment.value} has no area ${area.value}" }
+        held.copy(areas = held.areas.map { if (it.id == area) it.copy(gather = gather?.coerceAtLeast(0f)) else it })
+    }
+}
+
 /** Sets the areas painted for [garment] and its holes. */
 @Serializable
 @SerialName("setGarmentPaint")

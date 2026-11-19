@@ -7,9 +7,15 @@ import dev.chieppa.squash.character.build.socketsOn
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.DEFAULT_EASE
 import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.EaseKey
+import dev.chieppa.squash.document.EaseProfile
+import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.SetGarmentFit
+import dev.chieppa.squash.document.SetPartEase
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.screens.shell.Stage
@@ -52,5 +58,33 @@ fun poseDrag(character: Character, part: PartId, joint: String): DragScript {
     val own = character.pose.bones.filterNot { it.part == part && it.joint == joint }
     return DragScript("pose ${part.value} $joint", Stage.POSE) { run ->
         List(DRAG_FRAMES) { i -> SetPose(character.pose.copy(bones = own + BonePose(part, joint, BONE_STEP * (i + 1 + DRIFT * run)))) }
+    }
+}
+
+/** How much a garment's fit or ease grows each frame of a Fit or Ease drag, in body units. */
+private const val EASE_STEP = 0.0005f
+
+/** A Fit slider drag on [garment], its fit [EASE_STEP] looser each frame, as Dress's Fit row sends it. */
+fun fitDrag(character: Character, garment: GarmentId): DragScript {
+    val held = requireNotNull(character.wardrobe.garment(garment)) { "No garment ${garment.value}" }
+    val start = held.fit ?: DEFAULT_EASE
+    return DragScript("fit ${garment.value}", Stage.DRESS) { run ->
+        List(DRAG_FRAMES) { i -> SetGarmentFit(garment, start + EASE_STEP * (i + 1 + DRIFT * run)) }
+    }
+}
+
+/**
+ * An Ease slider drag on [garment]'s profile along [part], its last key [EASE_STEP] looser each frame, as Dress's key row sends it; a
+ * profile at the part's fit where it has none.
+ */
+fun easeDrag(character: Character, garment: GarmentId, part: PartId): DragScript {
+    val held = requireNotNull(character.wardrobe.garment(garment)) { "No garment ${garment.value}" }
+    val profile = held.eases[part] ?: EaseProfile(listOf(EaseKey(0f, held.fit ?: DEFAULT_EASE), EaseKey(1f, held.fit ?: DEFAULT_EASE)))
+    val last = profile.keys.last()
+    return DragScript("ease ${garment.value} ${part.value}", Stage.DRESS) { run ->
+        List(DRAG_FRAMES) { i ->
+            val key = last.copy(ease = last.ease + EASE_STEP * (i + 1 + DRIFT * run))
+            SetPartEase(garment, part, EaseProfile(profile.keys.dropLast(1) + key))
+        }
     }
 }

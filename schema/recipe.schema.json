@@ -720,6 +720,18 @@
             }
           ]
         },
+        "gather": {
+          "description": "A ribbed band, as a cuff or a sweater's hem: the ease, in body units, the area pulls its cloth in to, eased in over two rows either side; the cloth stands off as the rest does when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "paint": {
           "description": "The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.",
           "type": "array",
@@ -1136,6 +1148,43 @@
           "minimum": 0.0,
           "maximum": 2.0
         },
+        "eases": {
+          "description": "How far it stands off a covered part along and round it, by part (a pair by its left side), over fit and partFits: keys in order along u, each [u, ease] or [u, front, back] in body units, read as one smooth curve with no steps and flat past the first and last key; the sides take the mean of front and back. A tee tight across the chest and looser at the hem, a sleeve snug at the shoulder and bloused at the forearm, jeans fitted at the hip and flared at the ankle.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "hang": {
+          "description": "How the cloth hangs over each upright part it covers (a torso, a leg): from its highest covered place down, straight or flaring out, rather than following the body in; left out, it follows the body.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeHang"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "drops": {
+          "description": "Dropped seams, by part (a sleeve by its left side): how far down the part, in its u, 0 to 0.5, the seam sits where its cloth meets the cloth of the part it grows from; above it the cloth stands off as that part's does, with a pinched, inked seam, as a dropped shoulder.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
         "joins": {
           "description": "Covered parts whose join with the next covered part is inked. With areas, written from where two areas meet at a part's root instead.",
           "type": "array",
@@ -1273,6 +1322,30 @@
           ]
         }
       },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeHang": {
+      "description": "How cloth hangs below the highest place it covers on an upright part, rather than following the body in where it narrows.",
+      "type": "object",
+      "properties": {
+        "limit": {
+          "description": "How far past its ease the cloth may stand off the body where it hangs over a narrowing, in body units: about 0.01 to 0.04 on a person-sized body.",
+          "type": "number",
+          "minimum": 0.0
+        },
+        "flare": {
+          "description": "How far out it falls for each unit it falls down, 0 to 0.5: 0 straight down, 0.1 a slight flare.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.5
+        }
+      },
+      "required": [
+        "limit"
+      ],
       "patternProperties": {
         "^x-": {}
       },

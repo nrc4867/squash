@@ -7,6 +7,9 @@ import dev.chieppa.squash.geom.surface.SurfaceMesh
 /** How much of two areas' cloth together a seam's place holds at least, so a seam is not read where neither area is painted. */
 private const val SEAM_PRESENCE = 0.35f
 
+/** How much of a vertex its run holds at least for a seam dropped down that run to be read there. */
+private const val DROP_SHARE = 0.5f
+
 /**
  * Where the areas of [worn]'s garment meet, read on a garment surface meshed from [field]: for each area but the last, one value a
  * vertex, how much more of that area's cloth than of any later area's lies there, share-weighted over the runs it holds; zero along the
@@ -15,8 +18,31 @@ private const val SEAM_PRESENCE = 0.35f
 class ClothSeams(private val field: CharacterField, private val worn: WornCover) {
     private val areas = worn.garment.areas.size
 
-    /** The seam values at every vertex of [mesh], one array an area but the last; empty for a garment of one area. */
-    fun values(mesh: SurfaceMesh): List<FloatArray> {
+    /** The seam values at every vertex of [mesh], one array an area but the last, then one for each seam the garment drops. */
+    fun values(mesh: SurfaceMesh): List<FloatArray> = areaValues(mesh) + dropValues(mesh)
+
+    /**
+     * For each run whose cloth drops its seam, one value a vertex: how far past the seam along the run it lies, over the runs it holds that
+     * are that run; zero along the seam, NaN where the vertex lies mostly on other runs.
+     */
+    private fun dropValues(mesh: SurfaceMesh): List<FloatArray> {
+        val drops = field.runs.indices.mapNotNull { r -> field.runs[r].takeIf { it.first }?.let { worn.eases[it.partId]?.drop }?.let { r to it.u } }
+        return drops.map { (run, u) ->
+            FloatArray(mesh.vertexCount) { v ->
+                var sum = 0f
+                var total = 0f
+                for (h in 0 until HELD) {
+                    if (mesh.held[v * HELD + h] != run) continue
+                    val share = mesh.heldShares[v * HELD + h]
+                    sum += share * (mesh.heldU[v * HELD + h] - u)
+                    total += share
+                }
+                if (total < DROP_SHARE) Float.NaN else sum / total
+            }
+        }
+    }
+
+    private fun areaValues(mesh: SurfaceMesh): List<FloatArray> {
         if (areas < 2) return emptyList()
         val cloths = Array(field.runs.size) { r -> field.runs[r].takeIf { it.first }?.let { worn.clothOf(it.partId) }?.takeIf { it.areaCount == areas } }
         return (0 until areas - 1).map { k ->
