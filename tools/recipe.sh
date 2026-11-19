@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds a character recipe and judges it, headless, under the machine-wide build lock:
+# Builds a character recipe and judges it, headless, in its own JVM; Gradle compiles the engine first, under its lock, only when
+# a source changed:
 #   tools/recipe.sh <recipe.json> [key=value ...]   the character file, renders, measurements, and with reference= a compare
 #   tools/recipe.sh watch <recipe.json> [key=value ...]   the same, then again each time the recipe file is saved, in one warm JVM
 #     outside Gradle and its lock, until Ctrl-C; a save with the same text builds nothing
@@ -39,7 +40,7 @@ encoded() {
 }
 
 if [ $# -eq 0 ]; then
-  sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,21p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
 fi
 watch=0
@@ -71,18 +72,30 @@ for option in "$@"; do
     *) args="$args $(encoded "$option")" ;;
   esac
 done
-if [ "$watch" = 1 ]; then
-  cd "$root"
+launcher="$root/app/build/recipe-launcher"
+# True when the launcher is missing or older than any source, build script or Stretch source the engine is compiled from.
+launcher_stale() {
+  [ -f "$launcher/args.txt" ] || return 0
+  local sources=("$root")
+  [ -d "$root/../stretch" ] && sources+=("$root/../stretch")
+  find "${sources[@]}" \( -name build -o -name .gradle -o -name .git -o -name .worktrees -o -name node_modules -o -name .kotlin       -o -name .idea -o -name kit -o -name docs -o -name examples -o -name recipes -o -name templates \) -prune     -o -type f \( -name '*.kt' -o -name '*.kts' -o -name '*.java' -o -name '*.properties' -o -name '*.toml' -o -path '*/src/*/resources/*' \)     -newer "$launcher/args.txt" -print -quit | grep -q .
+}
+# The engine is compiled through Gradle, under its lock, only when a source changed since the last launcher; every build then
+# runs in its own JVM straight from the compiled classes, outside Gradle and its lock.
+cd "$root"
+if launcher_stale; then
   bash tools/gradle-locked.sh -q --console=plain :app:recipeLauncher
-  launcher="$root/app/build/recipe-launcher"
-  java="$(cat "$launcher/java.txt")"
+  touch "$launcher/args.txt"
+fi
+java="$(cat "$launcher/java.txt")"
+if [ "$watch" = 1 ]; then
   # shellcheck disable=SC2086
   exec "$java" "@$(absolute "$launcher/args.txt")" $args watch=true
 fi
 status="$(mktemp)"
 trap 'rm -f "$status"' EXIT
 args="$args status=$(encoded "$(absolute "$status")")"
-cd "$root"
-bash tools/gradle-locked.sh --max-workers=2 --priority=low -q --console=plain :app:recipe "-Precipe=$args"
+# shellcheck disable=SC2086
+"$java" "@$(absolute "$launcher/args.txt")" $args || true
 code="$(cat "$status" 2>/dev/null || true)"
 exit "${code:-1}"

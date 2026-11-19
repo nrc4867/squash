@@ -2,8 +2,8 @@
 # Runs ./gradlew with the given arguments while holding one of two machine-wide Squash build locks, taken in the
 # order builds asked for them.
 #   heavy: everything else (check, test tiers, look, drag): one at a time across the main checkout and every worktree.
-#   light: a recipe build (:app:recipe, :app:recipeLauncher): one at a time, beside at most one heavy build, so a
-#          character build never waits behind a full check. It still waits while a heavy build runs in its own checkout.
+#   light: the recipe engine's compile (:app:recipe, :app:recipeLauncher): one at a time, beside at most one heavy build,
+#          so a character build never waits behind a full check. It still waits while a heavy build runs in its own checkout.
 # A waiting build holds a ticket in the lock's queue and takes the lock only when its ticket is the oldest one whose
 # process is alive; a lock or ticket whose process is gone is cleared.
 # Usage, from the main checkout or any worktree:  tools/gradle-locked.sh check
