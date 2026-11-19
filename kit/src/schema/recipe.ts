@@ -25,32 +25,61 @@ export interface BonePose {
   [note: `x-${string}`]: unknown;
 }
 
+/** How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template. */
 export interface EyeLook {
+  /** Half the opening's width, from its middle to each corner, in units across. */
   width?: number;
+  /** How far the upper lid rises above the opening's middle, in units down. */
   height?: number;
+  /** How far the lower lid reaches below the middle, a share of height: 0 a flat lower edge, 1 as deep as the top. */
   lowerLid?: number;
+  /** How much the opening narrows toward its back corner and widens toward its front, a share of its height: 0 an even almond. */
   frontNarrowing?: number;
+  /** Degrees the whole eye turns in its plane about its middle, its front end up. */
   tilt?: number;
+  /** Degrees the opening alone turns about its middle, its front end up, before tilt; the iris stays level. */
   openingTilt?: number;
+  /** Degrees the eye's facing turns outward, away from the body's middle plane. */
   lookOut?: number;
+  /** Half the iris's width, in units across. */
   irisSize?: number;
+  /** The iris's half height as a share of irisSize, read in units down: its height is irisSize times irisRatio units down. A round iris on an undrawn head-round takes about 2.2, on a head resting forward about 0.4. */
   irisRatio?: number;
+  /** How far the iris's middle sits toward the front corner from the opening's middle, in units across. */
   irisForward?: number;
+  /** How far the iris's middle sits up from the opening's middle, in units down. */
   irisUp?: number;
+  /** The pupil's size, a share of the iris's. */
   pupilSize?: number;
+  /** Whether the pupil is an upright slit, a fifth of the iris's width, in place of a round one. */
   slit?: boolean;
+  /** The highlight's size, a share of the iris's. */
   highlightSize?: number;
+  /** How far the highlight's middle sits toward the front from the iris's middle, a share of irisSize. */
   highlightForward?: number;
+  /** How far the highlight's middle sits up from the iris's middle, a share of the iris's half height. */
   highlightUp?: number;
+  /** Whether a lid line is inked round the opening. */
   lid?: boolean;
-  lashes?: boolean;
+  /** How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there. */
+  lashes?: number;
+  /** Whether a brow is inked over the opening. */
   brow?: boolean;
+  /** How far the brow rises above its place over the opening, in units down (about 2 heights above the middle). */
   browRaise?: number;
+  /** Degrees the brow turns about its middle, its front end up. */
   browTilt?: number;
+  /** The brow's thickness, a multiple of the line weight, thinning toward its ends above 1: 1 an ink line, 3 a thick brow. */
+  browWidth?: number;
+  /** The white's palette slot; none fills no white. */
   white?: string | null;
+  /** The iris's palette slot. */
   iris?: string | null;
+  /** The pupil's palette slot. */
   pupil?: string | null;
+  /** The highlight's palette slot. */
   highlight?: string | null;
+  /** The lines' palette slot; the ink's when left out. */
   ink?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
@@ -100,18 +129,27 @@ export interface LooseEnd {
   [note: `x-${string}`]: unknown;
 }
 
+/** A mouth's controls. */
 export interface MarkControls {
+  /** How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it. */
   open?: number;
+  /** 0 shows the group's own marks, 1 the shown expression's. */
   expressionBlend?: number;
+  /** Scales the mouth across. */
   width?: number;
+  /** Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE. */
   mouthShape?: ("SMILE" | "FROWN" | "O" | "GRIMACE") | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
 
+/** A place a floating mark passes through, in body units from its root, in the surface's own directions there. */
 export interface MarkFlight {
+  /** Along the surface the way the part's u grows: on a part resting up, toward its far end; negative back toward its socket. */
   along: number;
+  /** Across the surface the way the part's v grows, square to along; on a mirrored copy, the other way. */
   across: number;
+  /** Out of the surface along its normal at the root; negative sinks into the part. */
   out: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
@@ -166,7 +204,7 @@ export interface Recipe {
   parts?: RecipePart[];
   /** Painted eyes on a head. */
   eyes?: RecipeEye[];
-  /** Named expressions: joint angles of the face's parts, as ears back or a dropped jaw. */
+  /** Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up. */
   expressions?: RecipeExpression[];
   /** Clothes: slots, garments and outfits. */
   wardrobe?: RecipeWardrobe | null;
@@ -219,6 +257,8 @@ export interface RecipeExpression {
   name: string;
   /** Joint angles, each naming its part and joint; a mirrored part names each side's id. */
   joints?: JointAngle[];
+  /** How far it opens mouth groups, by group id, 0 closed to 1 open, in place of each group's own controls.open: parts the lips on any head, with or without a jaw. */
+  open?: { [key: string]: number };
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -408,7 +448,7 @@ export interface RecipeMark {
   cameraLocked?: boolean;
   /** Its shape in named camera bins (front, three-quarter, side), replacing its places there. */
   versions?: { [key: string]: MarkVersion };
-  /** For a floating mark: the places it passes through off the surface, in body units from its root. */
+  /** For a floating mark: the places it passes through off the surface after its root, each {along, across, out} in body units from the root: along the way the part's u grows, across the way its v grows, out along the surface's normal. */
   flight?: MarkFlight[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
@@ -482,6 +522,8 @@ export interface RecipePart {
   jointsAt?: { [key: string]: number };
   /** Sockets this part offers moved, by name, to [u, v] for both sides (move.socket.<name>.u and .v). */
   socketsAt?: { [key: string]: number[] };
+  /** Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Replaces a template's curve (tail-curve) or curves a straight part; thickness and taper still set its radius along it. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]]. */
+  curve?: number[][];
   /** Whether the join where this part sits on its parent is inked as a line round it (join.ink); inked when left out. */
   inkJoin?: boolean | null;
   /** Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name. */

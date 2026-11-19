@@ -1,5 +1,6 @@
 package dev.chieppa.squash.document
 
+import dev.chieppa.squash.annotations.Doc
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -22,7 +23,15 @@ enum class MarkKind(val minPoints: Int) {
 
 /** A place a floating mark passes through, in body units from its root: [along] the surface as u grows, [across] it as v grows, and [out] of it. */
 @Serializable
-data class MarkFlight(val along: Float, val across: Float, val out: Float)
+@Doc("A place a floating mark passes through, in body units from its root, in the surface's own directions there.")
+data class MarkFlight(
+    @Doc("Along the surface the way the part's u grows: on a part resting up, toward its far end; negative back toward its socket.")
+    val along: Float,
+    @Doc("Across the surface the way the part's v grows, square to along; on a mirrored copy, the other way.")
+    val across: Float,
+    @Doc("Out of the surface along its normal at the root; negative sinks into the part.")
+    val out: Float,
+)
 
 /** A share of the line rule's weight at a place along a mark, 0 to 1 from its start. */
 @Serializable

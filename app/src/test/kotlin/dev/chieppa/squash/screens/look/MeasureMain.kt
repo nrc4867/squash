@@ -1,7 +1,6 @@
 package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.document.PartId
-import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.geom.Vec3
@@ -63,7 +62,7 @@ private fun measure(example: String, look: LookArgs) = measureDocument(example, 
 fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) = TestWork().use { work ->
     val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
     SessionPose(session)
-    look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+    look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
     measureSession(example, session, work, namedPoses, look, timings)
 }
 

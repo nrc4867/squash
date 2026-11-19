@@ -38,6 +38,10 @@ class BuildContext(
     val axes: PartAxes = PartBuilder.axes(template)
 
     private val size: Float = params[SIZE_PARAM] ?: 1f
+
+    /** The part's own curve places, which replace its template's curve. */
+    private val ownCurve = AxisCurveParams.places(params)
+
     private val drawn = DrawnViews(template, outlines.shortenedBy(lengthFactor), axes, size, ViewParams.topMovesMiddle(params))
 
     /** What drawn Side and Top outlines set, if either is drawn. */
@@ -86,9 +90,9 @@ class BuildContext(
 
     fun length(param: Param): Float = value(param) * fullLength
 
-    /** Straight along the rest direction, bent toward the underside at the template's bend point, or the template's curve. */
+    /** Straight along the rest direction, bent toward the underside at the template's bend point, or the part's or the template's curve. */
     private fun restAxis(): AxisSpline {
-        if (template.axis.curve.isNotEmpty()) return curvedAxis()
+        if (ownCurve.isNotEmpty() || template.axis.curve.isNotEmpty()) return curvedAxis()
         val end = axes.point(axisLength, 0f, 0f)
         val bend = template.axis.bend?.let { value(it) } ?: 0f
         if (bend == 0f) return AxisSpline(listOf(Vec3.ZERO, end))
@@ -99,9 +103,10 @@ class BuildContext(
         )
     }
 
-    /** The smooth curve from the socket point through the template's places, its u by length along it. */
+    /** The smooth curve from the socket point through the part's own places, or the template's, its u by length along it. */
     private fun curvedAxis(): AxisSpline {
-        val places = listOf(Vec3.ZERO) + template.axis.curve.map { axes.point(value(it.along), value(it.up), value(it.side)) }
+        val own = ownCurve.map { axes.point(it.x, it.y, it.z) }
+        val places = listOf(Vec3.ZERO) + own.ifEmpty { template.axis.curve.map { axes.point(value(it.along), value(it.up), value(it.side)) } }
         return arcLengthAxis(places, axisLength)
     }
 

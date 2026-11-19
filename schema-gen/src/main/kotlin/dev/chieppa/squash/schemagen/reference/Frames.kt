@@ -3,6 +3,7 @@ package dev.chieppa.squash.schemagen.reference
 import dev.chieppa.squash.recipe.probe.bodyWords
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.RestDirection
+import dev.chieppa.squash.character.model.Direction
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.PartId
@@ -18,6 +19,9 @@ internal const val TEST_DEGREES = 30f
 
 /** A tip moving less than this has only rolled about its own length. */
 private const val MOVED_LEAST = 1e-3f
+
+/** A rest between back and up, as a curved tail's. */
+private val BACK_AND_UP = Direction(-1f, 0.5f, 0f)
 
 /** Where round a part the frame table reads, and where along it. */
 private val ROUND = listOf(0f, 0.25f, 0.5f, 0.75f)
@@ -84,6 +88,13 @@ internal object Frames {
                         ROUND.map { v -> frame.facing(MIDDLE_U, v)?.let(::bodyWords) ?: "-" }
                 },
             ),
+        )
+        appendLine()
+        val between = PartFrame(tube.copy(axis = tube.axis.copy(rest = BACK_AND_UP)), emptyMap())
+        appendLine(
+            "A part resting between these (a template whose rest mixes two, as a tail resting back and up) has a frame between theirs: on a tail resting back and up its Side's +y faces " +
+                "${bodyWords(between.axes.up)}. `lean` turns a part toward its Side's +y, so positive `lean` raises such a tail toward " +
+                "${bodyWords(between.axes.up)} and negative `lean` lowers it. `tools/recipe.sh probe <recipe> part=<id>` prints any part's Side's +y.",
         )
         appendLine()
         appendLine("### Roll")

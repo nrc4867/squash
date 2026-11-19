@@ -1,5 +1,7 @@
 package dev.chieppa.squash.document
 
+import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.annotations.Range
 import kotlinx.serialization.Serializable
 
 /** One role of a group: whether its marks are inked, the slot that fills them if any, and the marks by id on the same part. */
@@ -20,10 +22,15 @@ enum class MouthShape { SMILE, FROWN, O, GRIMACE }
  * across, and [mouthShape] bends its lip line. See HLD: look, Mouth.
  */
 @Serializable
+@Doc("A mouth's controls.")
 data class MarkControls(
+    @Doc("How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it.") @Range(min = 0.0, max = 1.0)
     val open: Float = 1f,
+    @Doc("0 shows the group's own marks, 1 the shown expression's.") @Range(min = 0.0, max = 1.0)
     val expressionBlend: Float = 1f,
+    @Doc("Scales the mouth across.") @Range(min = 0.2, max = 3.0)
     val width: Float = 1f,
+    @Doc("Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE.")
     val mouthShape: MouthShape? = null,
 )
 

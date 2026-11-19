@@ -18,8 +18,14 @@ private const val SLIT_WIDTH = 0.2f
 /** A slit pupil's height, as a share of the iris's. */
 private const val SLIT_HEIGHT = 0.95f
 
-/** The lash flick's points, as multiples of the opening's width forward and its height up from its middle. */
-private val LASH_LINE = listOf(-0.95f to 0.1f, -1.25f to 0.35f, -1.45f to 0.75f)
+/** The lash flick's points, as multiples of the opening's width forward and its height up from its back corner's place on the rim. */
+private val LASH_LINE = listOf(0.05f to 0.1f, -0.25f to 0.35f, -0.45f to 0.75f)
+
+/** Where along the upper lid each further lash rises, as the rim's angle from the back corner over the top, in radians. */
+private val LASH_ANGLES = listOf(0.0, 0.5, 0.95)
+
+/** Each further lash's length, a share of the first's. */
+private val LASH_LENGTHS = listOf(1f, 0.85f, 0.7f)
 
 /** The brow's points, as multiples of the opening's width forward and its height up from its middle. */
 private val BROW_LINE = listOf(-1.0f to 1.5f, -0.1f to 2.05f, 0.8f to 2.1f)
@@ -69,8 +75,8 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
     /** The fills' ovals' turn, the eye's tilt, in degrees. */
     val fillTurn: Float get() = look.tilt
 
-    /** The lash flick at the opening's back corner. */
-    val lashes: List<SurfaceUv>? = if (look.lashes) lashLine() else null
+    /** The lash flicks along the upper lid, the first at the opening's back corner and each further one forward along the lid from there. */
+    val lashes: List<List<SurfaceUv>> = (0 until look.lashes.coerceIn(0, LASH_ANGLES.size)).map(::lashLine)
 
     /** The brow over the opening. */
     val brow: List<SurfaceUv>? = if (look.brow) browLine() else null
@@ -82,10 +88,15 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
         },
     )
 
-    /** The lash flick's places, set at the opening's back corner as its own tilt turns it, then turned with the eye. */
-    private fun lashLine(): List<SurfaceUv> {
-        val corner = turned(-look.width, 0f, look.openingTilt)
-        return LASH_LINE.map { (u, v) -> turned(corner.u + look.width * (u + 1f), corner.v + look.height * v, look.tilt) }
+    /**
+     * Lash [index]'s places, rising from its place on the upper lid as the opening's own tilt turns it, swept back as the first is and
+     * shortened by its share, then turned with the eye.
+     */
+    private fun lashLine(index: Int): List<SurfaceUv> {
+        val rimPlace = almond.rim(LASH_ANGLES[index])
+        val root = turned(rimPlace.u, rimPlace.v, look.openingTilt)
+        val length = LASH_LENGTHS[index]
+        return LASH_LINE.map { (u, v) -> turned(root.u + look.width * u * length, root.v + look.height * v * length, look.tilt) }
     }
 
     /** The brow's places, raised by the look's brow raise and turned by its brow tilt about its middle place, then turned with the eye. */

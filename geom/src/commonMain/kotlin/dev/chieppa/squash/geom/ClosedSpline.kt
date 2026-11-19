@@ -5,6 +5,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
+import kotlin.math.sign
 import kotlin.math.sin
 
 private const val TWO_PI = (2.0 * PI).toFloat()
@@ -73,6 +74,13 @@ data class ClosedSpline(val controlPoints: List<Vec2>) {
     }
 
     /** This spline with its sides curled toward its up by [amount], refitted to the unit span. */
+    /**
+     * This section with its sides thickened toward their edges by [amount] of its half span, nothing at its middle and growing as the
+     * fourth power of how far out a point lies, so a flat section keeps a thin middle and gains a rounded rim. Zero is this section.
+     */
+    fun rimmed(amount: Float): ClosedSpline =
+        if (amount == 0f) this else ClosedSpline(controlPoints.map { p -> Vec2(p.x, p.y + amount * sign(p.y) * p.x * p.x * p.x * p.x) }).fittedToUnit()
+
     fun cupped(amount: Float): ClosedSpline =
         if (amount == 0f) this else ClosedSpline(controlPoints.map { Vec2(it.x, it.y + amount * it.x * it.x) }).fittedToUnit()
 

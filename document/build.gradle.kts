@@ -9,6 +9,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":annotations"))
             api("dev.chieppa.stretch:stretch-core")
             api(libs.kotlinx.serialization.json)
         }

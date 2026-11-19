@@ -26,6 +26,16 @@ import kotlin.math.tan
 /** The lid line's weight from its back corner over the top and under the bottom: thickest over the top. */
 private val LID_WIDTH = MarkWidth(listOf(WidthStop(0f, 0.5f), WidthStop(0.25f, 1.25f), WidthStop(0.5f, 0.5f), WidthStop(0.75f, 0.35f), WidthStop(1f, 0.5f)))
 
+/** How thick a brow's ends are, a share of its middle's thickness, once it is thicker than a line. */
+private const val BROW_END_SHARE = 0.45f
+
+/** A brow [thickness] times the line weight: an ink line at 1, and above that full in the middle and thinning toward its ends. */
+private fun browWidth(thickness: Float): MarkWidth {
+    if (thickness == 1f) return MarkWidth()
+    val ends = if (thickness > 1f) maxOf(1f, thickness * BROW_END_SHARE) else thickness
+    return MarkWidth(listOf(WidthStop(0f, ends), WidthStop(0.5f, thickness), WidthStop(1f, ends)))
+}
+
 /** How far along the head's u and v the eye's chart is read either side of its middle to find which way they run. */
 private const val CHART_STEP = 0.01f
 
@@ -168,7 +178,8 @@ object SurfaceEyes {
             }
             return ResolvedMark(MarkId("$id-$side-$name"), points, width, ink = true, cameraLocked = false, versions = emptyMap(), slot = look.ink)
         }
-        val marks = listOfNotNull(mark("lid", shapes.lid, LID_WIDTH), mark("lashes", shapes.lashes, MarkWidth()), mark("brow", shapes.brow, MarkWidth(), alongFacing = false))
+        val lashes = shapes.lashes.mapIndexed { i, lash -> mark(if (i == 0) "lashes" else "lashes-$i", lash, MarkWidth()) }
+        val marks = listOfNotNull(mark("lid", shapes.lid, LID_WIDTH)) + lashes.filterNotNull() + listOfNotNull(mark("brow", shapes.brow, browWidth(look.browWidth), alongFacing = false))
         return SurfacePaint(layers, mapOf(anchor.part to marks))
     }
 

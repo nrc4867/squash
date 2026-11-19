@@ -1,6 +1,9 @@
 package dev.chieppa.squash.recipe.build
 
+import dev.chieppa.squash.character.build.AxisCurveParams
 import dev.chieppa.squash.character.build.GenericParams
+import dev.chieppa.squash.character.build.MAX_CURVE_PLACES
+import dev.chieppa.squash.character.build.MIN_CURVE_PLACES
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
@@ -10,6 +13,7 @@ import dev.chieppa.squash.character.build.ViewParams
 import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.View
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.recipe.model.RecipeGeneric
 import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSocket
@@ -38,7 +42,7 @@ internal fun BuildContext.socketCommand(path: String, part: PartId, socket: Reci
 
 /**
  * The part parameters [part]'s named anatomy fields stand for: its rest, generic choices, joints, landmarks, moved joints and sockets,
- * and its join's ink. A key one of them sets that the part's `params` also set fails at [path].
+ * its join's ink and its curve. A key one of them sets that the part's `params` also set fails at [path].
  */
 internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<String, Float> {
     val values = linkedMapOf<String, Float>()
@@ -64,8 +68,19 @@ internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<Str
         values[PlacementParams.socketV(name)] = v
     }
     part.inkJoin?.let { values[JoinParams.INK] = if (it) FLAG_ON else FLAG_OFF }
+    if (part.curve.isNotEmpty()) values += curveParams(path, part.curve)
     values.keys.firstOrNull { it in part.params }?.let { fail("$path.params.$it", "a named field of this part sets \"$it\" already") }
     return values
+}
+
+/** The curve places [curve] stands for, failing at [path] on a place that is not two or three numbers or a count out of range. */
+private fun BuildContext.curveParams(path: String, curve: List<List<Float>>): Map<String, Float> {
+    if (curve.size !in MIN_CURVE_PLACES..MAX_CURVE_PLACES) fail("$path.curve", "a curve holds $MIN_CURVE_PLACES to $MAX_CURVE_PLACES places, not ${curve.size}")
+    val places = curve.mapIndexed { i, place ->
+        if (place.size !in 2..3) fail("$path.curve[$i]", "a place is [along, up] or [along, up, side], not $place")
+        Vec3(place[0], place[1], place.getOrElse(2) { 0f })
+    }
+    return AxisCurveParams.of(places)
 }
 
 private fun genericParams(generic: RecipeGeneric): Map<String, Float> = buildMap {

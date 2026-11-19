@@ -37,11 +37,19 @@ data class FacePose(val joints: List<JointAngle> = emptyList()) {
     }
 }
 
-/** A named expression: the marks it gives each group, by role, and its [pose]. See HLD: look, Surface work rules. */
+/**
+ * A named expression: the marks it gives each group, by role, its [pose], and how far it [open]s each mouth group it names, in place of
+ * that group's own open. See HLD: look, Surface work rules.
+ */
 @Serializable
 data class ExpressionSet(
     val id: ExpressionId,
     val name: String,
     val marks: Map<MarkGroupId, RoleMarks> = emptyMap(),
     val pose: FacePose = FacePose(),
-)
+    val open: Map<MarkGroupId, Float> = emptyMap(),
+) {
+    init {
+        require(open.values.all { it in 0f..1f }) { "An expression opens a mouth 0 to 1, not ${open.values}" }
+    }
+}

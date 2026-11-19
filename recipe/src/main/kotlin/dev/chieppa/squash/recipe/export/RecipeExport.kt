@@ -50,7 +50,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         },
         expressions = character.expressions.map { expression ->
             if (expression.marks.isNotEmpty()) notCarried += "expression ${expression.id.value}: its marks"
-            RecipeExpression(expression.id.value, expression.name, expression.pose.joints)
+            RecipeExpression(expression.id.value, expression.name, expression.pose.joints, expression.open.mapKeys { it.key.value })
         },
         wardrobe = wardrobe,
         displayPose = bones(character.displayPose, "display pose", notCarried),
@@ -96,6 +96,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         jointsAt = split.jointsAt,
         socketsAt = split.socketsAt,
         inkJoin = split.inkJoin,
+        curve = split.curve,
         params = split.others,
         color = surface.baseSlot?.value,
         areas = surface.areaFills.mapValues { it.value.value },

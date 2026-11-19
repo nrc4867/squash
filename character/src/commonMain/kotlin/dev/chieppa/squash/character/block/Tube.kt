@@ -16,6 +16,7 @@ import dev.chieppa.squash.geom.Slice
 import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.TubeSpec
 import kotlinx.serialization.SerialName
+import kotlin.math.ceil
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -35,6 +36,10 @@ data class Tube(
     val section: SectionSpec? = null,
     @Doc("How far the section's sides curl toward v = 0, as a fraction of its half span.")
     val cup: Param = Param.of(0f),
+    @Doc("How much the section's sides thicken toward their edges, as a fraction of its half span: a flat section's rounded rim.")
+    val rim: Param = Param.of(0f),
+    @Doc("How far a closed end, round or pointed, reaches along the run when nothing is drawn, a fraction of its length: a round end reaching the run's half width there is a semicircular tip. A few rings when left out.")
+    val capReach: Param? = null,
     @Doc("How far the run sits toward the underside when nothing is drawn, as a fraction of the axis length.")
     val drop: Param = Param.of(0f),
     @Doc("A toe row whose end this run reaches when the row has no toes.")
@@ -69,8 +74,9 @@ data class Tube(
             uStart = span.start,
             uEnd = span.end,
             rings = ctx.template.topology.rings,
+            roundRings = capReach?.let { reach -> ceil(ctx.value(reach) * (ctx.template.topology.rings - 1)).toInt().coerceIn(1, ctx.template.topology.rings - 1) },
             segments = ctx.template.topology.segments,
-            section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).cupped(ctx.value(cup)),
+            section = (section ?: ctx.template.section).spline(ctx.template.topology.segments).rimmed(ctx.value(rim)).cupped(ctx.value(cup)),
             radius = ctx.length(radius),
             taper = ctx.value(taper),
             widthRatio = ctx.value(width),
@@ -89,7 +95,7 @@ data class Tube(
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("radius", radius) + ctx.param("taper", taper) + ctx.param("width", width) + ctx.section("section", section) +
-            ctx.param("cup", cup) + ctx.param("drop", drop) + lintFills(ctx)
+            ctx.param("cup", cup) + ctx.param("rim", rim) + (capReach?.let { ctx.param("capReach", it) } ?: emptyList()) + ctx.param("drop", drop) + lintFills(ctx)
 
     private fun lintFills(ctx: LintContext): List<Finding> {
         val name = fills ?: return emptyList()

@@ -32,7 +32,11 @@ val BACK_PAW_L = PartId("back-paw-l")
 val BACK_PAW_R = PartId("back-paw-r")
 
 /** The newest shipped version of [id], which a part placed now takes. */
-internal fun ref(id: String): TemplateRef = requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
+/** Templates the examples on this helper keep at the version they were drawn on, by id. */
+private val DRAWN_ON = mapOf("ear" to 1)
+
+internal fun ref(id: String): TemplateRef =
+    DRAWN_ON[id]?.let { TemplateRef(TemplateId(id), it) } ?: requireNotNull(shippedTemplates.template(TemplateId(id))) { "No template $id" }.ref
 
 private val shippedTemplates by lazy { TemplateFolder.shipped() }
 

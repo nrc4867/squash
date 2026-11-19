@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.ExpressionSet
+import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
@@ -17,6 +18,9 @@ const val JAW_JOINT = "jaw"
 
 /** The expression [Character.shownExpression] names, or null when it names none the character holds. */
 val Character.shownSet: ExpressionSet? get() = shownExpression?.let { id -> expressions.firstOrNull { it.id == id } }
+
+/** How far [group] shows open: the shown expression's open for it where that names it, else its own control. */
+fun Character.shownOpen(group: MarkGroup): Float = shownSet?.open?.get(group.id) ?: group.controls.open
 
 /** A hinge letter as a direction of [axes]: x across the part, so a jaw or an ear pitches, y about its up, z about its own length. */
 private fun Hinge.direction(axes: PartAxes) = when (this) {
@@ -36,7 +40,7 @@ fun shownJoints(character: Character, part: PartId, template: PartTemplate): Map
     val held = joints.filter { it.part == part }.associateTo(LinkedHashMap()) { it.joint to it.degrees }
     val holder = mouthHolder(character, instance, template) ?: return held
     if (holder.id != part) joints.firstOrNull { it.part == holder.id && it.joint == JAW_JOINT }?.let { held.getOrPut(JAW_JOINT) { it.degrees } }
-    val open = character.resolved(holder).surface.groups.firstOrNull { it.isMouth }?.controls?.open ?: 0f
+    val open = character.resolved(holder).surface.groups.firstOrNull { it.isMouth }?.let { character.shownOpen(it) } ?: 0f
     if (open > 0f) {
         val jaw = template.blocks.flatMap { it.joints() }.firstOrNull { it.name == JAW_JOINT }
         if (jaw != null) held[JAW_JOINT] = (held[JAW_JOINT] ?: 0f) + open * (jaw.limits?.max ?: 0f)

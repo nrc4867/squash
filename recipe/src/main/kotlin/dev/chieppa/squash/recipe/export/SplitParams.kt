@@ -1,5 +1,6 @@
 package dev.chieppa.squash.recipe.export
 
+import dev.chieppa.squash.character.build.AxisCurveParams
 import dev.chieppa.squash.character.build.GenericParams
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
@@ -52,6 +53,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
     val jointsAt: Map<String, Float> = if (anatomy) jointsAt(params) else emptyMap()
     val socketsAt: Map<String, List<Float>> = if (anatomy) socketsAt(params) else emptyMap()
     val inkJoin: Boolean? = if (anatomy) inkJoin(params) else null
+    val curve: List<List<Float>> = if (anatomy) curveOf(params) else emptyList()
 
     /** The parameters no named field holds. */
     val others: Map<String, Float> = params.filterKeys { it !in lifted }
@@ -145,6 +147,14 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true) 
             lifted += setOf(PlacementParams.socketU(name), PlacementParams.socketV(name))
             listOf(params.getValue(PlacementParams.socketU(name)), params.getValue(PlacementParams.socketV(name)))
         }
+    }
+
+    private fun curveOf(params: Map<String, Float>): List<List<Float>> {
+        val places = AxisCurveParams.places(params)
+        val keys = AxisCurveParams.of(places).keys
+        if (places.isEmpty() || params.keys.filter(AxisCurveParams::isCurve).any { it !in keys }) return emptyList()
+        lifted += keys
+        return places.map { if (it.z == 0f) listOf(it.x, it.y) else listOf(it.x, it.y, it.z) }
     }
 
     private fun inkJoin(params: Map<String, Float>): Boolean? {

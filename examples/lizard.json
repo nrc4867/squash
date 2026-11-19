@@ -2213,7 +2213,7 @@
                     "irisUp": 0.0,
                     "pupilSize": 0.4,
                     "highlightSize": 0.25,
-                    "lashes": false,
+                    "lashes": 0,
                     "brow": false,
                     "white": "eye",
                     "iris": "eye",

@@ -68,7 +68,7 @@ data class RecipeMark(
     val cameraLocked: Boolean = false,
     @Doc("Its shape in named camera bins (front, three-quarter, side), replacing its places there.")
     val versions: Map<String, MarkVersion> = emptyMap(),
-    @Doc("For a floating mark: the places it passes through off the surface, in body units from its root.")
+    @Doc("For a floating mark: the places it passes through off the surface after its root, each {along, across, out} in body units from the root: along the way the part's u grows, across the way its v grows, out along the surface's normal.")
     val flight: List<MarkFlight> = emptyList(),
 )
 

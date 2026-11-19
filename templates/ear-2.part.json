@@ -1,0 +1,34 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "ear",
+  "version": 2,
+  "name": "Ear",
+  "role": "ear",
+  "axis": { "rest": [0, 0.96, -0.28], "length": 0.3 },
+  "openEnd": "start",
+  "topology": { "rings": 40, "segments": 24 },
+  "views": { "side": "height", "top": "width", "front": "section" },
+  "section": "lens",
+  "params": {
+    "size":  { "doc": "Scales the part: its drawn length and width together.", "default": 1.0,  "min": 0.4, "max": 2.5 },
+    "width": { "doc": "Ear's half width at its base with nothing drawn, a fraction of its length.", "default": 0.35, "min": 0.1, "max": 0.8 },
+    "cup":   { "doc": "How far the ear's sides curl forward into a cup, a share of its half width; 0 is flat, 0.4 to 0.6 a cupped ear whose inside shows from the front.", "default": 0.0,  "min": 0.0, "max": 0.6 },
+    "taper": { "doc": "The ear's half width at its tip with nothing drawn, a share of its width at the base: low for a pointed ear, 0.6 to 0.8 with roundTip for a round one.", "default": 0.4, "min": 0.1, "max": 1.0 },
+    "roundTip": { "doc": "Closes the tip with a round cap in place of a point.", "default": false },
+    "tipReach": { "doc": "How far the tip, round or pointed, closes back along the ear with nothing drawn, a share of its length: about width times taper makes a round tip a semicircle.", "default": 0.16, "min": 0.05, "max": 0.6 },
+    "rim":   { "doc": "How much the ear's edges thicken into a rounded rim, a share of its half width; 0 is a thin edge, 0.1 to 0.2 a rim that reads round a cupped ear.", "default": 0.0, "min": 0.0, "max": 0.3 }
+  },
+  "surface": "separate",
+  "blocks": [
+    { "kind": "tube",  "u": [0.0, 1.0], "radius": "$width", "taper": "$taper", "cup": "$cup", "rim": "$rim", "capReach": "$tipReach" },
+    { "kind": "cap",   "end": "end", "shape": "round", "if": "$roundTip" },
+    { "kind": "cap",   "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "base", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint", "name": "fold", "u": 0.6, "hinge": "x", "limits": [0, 150] },
+    { "kind": "joint", "name": "tip", "u": 1.0, "hinge": "x", "limits": [-20, 20] },
+    { "kind": "area",  "name": "inner", "u": [0.1, 0.9], "v": [0.82, 0.18], "tag": "inner", "color": "inner-ear" },
+    { "kind": "area",  "name": "back", "u": [0.1, 0.9], "v": [0.32, 0.68], "tag": "fill" },
+    { "kind": "area",  "name": "tip", "u": [0.8, 1.0], "v": [0, 1], "tag": "fill" }
+  ]
+}

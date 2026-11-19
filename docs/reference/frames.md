@@ -27,6 +27,8 @@ By the direction a part rests in (a template's rest, or a recipe's `rest`), whic
 | down | forward | right | forward | left | back | right |
 | out | up | forward | up | back | down | forward |
 
+A part resting between these (a template whose rest mixes two, as a tail resting back and up) has a frame between theirs: on a tail resting back and up its Side's +y faces up, forward. `lean` turns a part toward its Side's +y, so positive `lean` raises such a tail toward up, forward and negative `lean` lowers it. `tools/recipe.sh probe <recipe> part=<id>` prints any part's Side's +y.
+
 ### Roll
 
 A recipe's `roll` turns a part's up about its own axis toward its v 0.25 side, after its rest, `lean` and `outward`, so the rows above shift round by a quarter turn of v for each 90 degrees; bones, sockets and the panes follow. `lean` and `outward` each turn the rest axis by their tangent and stay under 90 degrees; a part pointing further round takes another rest. By rest, where Side's +y and Top's +y look at `roll` 90:

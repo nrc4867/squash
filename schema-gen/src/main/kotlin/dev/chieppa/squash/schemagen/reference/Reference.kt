@@ -15,9 +15,10 @@ object Reference {
             "README.md" to index(),
             "templates.md" to TemplateCatalog.render(folder.parts),
             "plans.md" to PlanCatalog.render(folder.plans, folder.parts),
+            "proportions.md" to Proportions.render(folder.parts, folder.plans),
             "part-parameters.md" to PartParameters.render(),
             "frames.md" to Frames.render(tube),
-            "face-and-clothes.md" to FaceAndClothes.render(),
+            "face-and-clothes.md" to FaceAndClothes.render(folder.parts),
         ).mapValues { (_, text) -> text.trimEnd() + "\n" }
     }
 
@@ -32,9 +33,10 @@ object Reference {
                 listOf(
                     listOf("templates.md", "each template's rest, outline length, what each view sets, sockets, joints with hinge and limits, areas, patches and parameters with meanings"),
                     listOf("plans.md", "each plan's root, sockets, slots and palette"),
-                    listOf("part-parameters.md", "dotted part parameters (`move.*`, `socket.<n>.*`, `joint.<n>.*`, `generic.*`, `join.ink`, `rig.reach.*`) and the recipe fields that write them"),
+                    listOf("proportions.md", "each plan built undrawn: every part's box and height above the ground at `size` 1, to set a first build's proportions against"),
+                    listOf("part-parameters.md", "dotted part parameters (`move.*`, `socket.<n>.*`, `joint.<n>.*`, `curve.<n>.*`, `generic.*`, `join.ink`, `rig.reach.*`) and the recipe fields that write them"),
                     listOf("frames.md", "body space, which way u, v and each view's y run for a part resting each way, and which way `degrees`, `lean`, `turn` and `twist` move a bone"),
-                    listOf("face-and-clothes.md", "mouth group roles and controls; region borders, corners and two-tone faces; how a painted eye faces and lands on its head, wrapped or flat; how garment fit, covers, redraws and swaps combine"),
+                    listOf("face-and-clothes.md", "mouth group roles and controls and how a mouth opens; region borders, corners and two-tone faces; how a painted eye faces and lands on its head, wrapped or flat, and every eye look field with its range and units; how garment fit, covers, redraws and swaps combine"),
                 ),
             ),
         )

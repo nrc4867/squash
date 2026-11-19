@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.ExpressionId
 import dev.chieppa.squash.document.ExpressionSet
 import dev.chieppa.squash.document.EyeLook
 import dev.chieppa.squash.document.FacePose
+import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetExpression
@@ -44,5 +45,11 @@ internal fun BuildContext.expressions() = recipe.expressions.forEachIndexed { i,
     val path = "$.expressions[$i]"
     val joints = expression.joints.mapIndexed { j, joint -> joint.copy(part = partOf("$path.joints[$j].part", joint.part.value)) }
     val id = ExpressionId(expression.id)
-    send(path, SetExpression(id, ExpressionSet(id, expression.name, pose = guard("$path.joints") { FacePose(joints) })))
+    val groups = document.character.parts.flatMap { part -> document.character.resolved(part).surface.groups.map { it.id } }.toSet()
+    val open = expression.open.mapKeys { (group, amount) ->
+        if (MarkGroupId(group) !in groups) fail("$path.open.$group", "no mark group \"$group\"; groups: ${groups.joinToString { it.value }.ifEmpty { "none" }}")
+        if (amount !in 0f..1f) fail("$path.open.$group", "open runs 0 to 1, not $amount")
+        MarkGroupId(group)
+    }
+    send(path, SetExpression(id, ExpressionSet(id, expression.name, pose = guard("$path.joints") { FacePose(joints) }, open = open)))
 }

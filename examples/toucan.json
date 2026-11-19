@@ -2086,7 +2086,7 @@
                     "irisForward": 0.0,
                     "irisUp": 0.0,
                     "pupilSize": 0.45,
-                    "lashes": false,
+                    "lashes": 0,
                     "brow": false,
                     "white": "iris",
                     "iris": "iris",

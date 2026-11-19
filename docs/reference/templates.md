@@ -10,7 +10,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `beak-lower` | 1 | - | Lower beak | jaw |
 | `blob` | 1 | - | Blob | none (guessed from where it sits) |
 | `claw` | 1 | - | Claw | horn |
-| `ear` | 1 | - | Ear | ear |
+| `ear` | 2 | 1 | Ear | ear |
 | `fin` | 1 | - | Fin | fin |
 | `foot` | 6 | 1, 2, 3, 4, 5 | Foot | foot |
 | `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot |
@@ -236,7 +236,7 @@ Parameters:
 | `girth` | 0.22 | 0.08 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `curve` | -0.08 | -0.3 to 0 | How far the claw hooks toward its underside at its middle, a fraction of its length; more negative hooks more. |
 
-## ear 1
+## ear 2
 
 | fact | value |
 | --- | --- |
@@ -273,7 +273,11 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `width` | 0.35 | 0.1 to 0.8 | Ear's half width at its base with nothing drawn, a fraction of its length. |
-| `cup` | 0 | 0 to 0.6 | How far the ear's sides curl forward into a cup, a share of its half width; 0 is flat. |
+| `cup` | 0 | 0 to 0.6 | How far the ear's sides curl forward into a cup, a share of its half width; 0 is flat, 0.4 to 0.6 a cupped ear whose inside shows from the front. |
+| `taper` | 0.4 | 0.1 to 1 | The ear's half width at its tip with nothing drawn, a share of its width at the base: low for a pointed ear, 0.6 to 0.8 with roundTip for a round one. |
+| `roundTip` | 0 (off) | a flag: 1 or 0 | Closes the tip with a round cap in place of a point. |
+| `tipReach` | 0.16 | 0.05 to 0.6 | How far the tip, round or pointed, closes back along the ear with nothing drawn, a share of its length: about width times taper makes a round tip a semicircle. |
+| `rim` | 0 | 0 to 0.3 | How much the ear's edges thicken into a rounded rim, a share of its half width; 0 is a thin edge, 0.1 to 0.2 a rim that reads round a cupped ear. |
 
 ## fin 1
 
@@ -958,7 +962,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its length along the curve and its thickness together. |
 | `thickness` | 0.07 | 0.02 to 0.4 | Radius at the root with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `taper` | 0.35 | 0.05 to 1 | Radius at the tip as a fraction of the radius at the root. |
-| `place1Along` | 0.3 | -1 to 1.5 | The curve's first place after the root, along the rest direction, as a fraction of the length. |
+| `place1Along` | 0.3 | -1 to 1.5 | The curve's first place after the root, along the rest direction, as a fraction of the length. A part's own curve places (a recipe's curve, any number) replace all three. |
 | `place1Up` | -0.1 | -1 to 1 | The curve's first place after the root, toward the top, as a fraction of the length. |
 | `place2Along` | 0.6 | -1 to 1.5 | The curve's second place, along the rest direction. |
 | `place2Up` | -0.04 | -1 to 1 | The curve's second place, toward the top. |

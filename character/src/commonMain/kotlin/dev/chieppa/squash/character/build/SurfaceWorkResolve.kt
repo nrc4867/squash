@@ -42,7 +42,8 @@ data class SurfaceWorkInput(
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
 fun surfaceWorkInput(character: Character, part: PartId): SurfaceWorkInput {
     val instance = character.part(part) ?: return SurfaceWorkInput()
-    val surface = character.wornPart(instance).data.surface.shown
+    val worn = character.wornPart(instance).data.surface.shown
+    val surface = worn.copy(groups = worn.groups.map { group -> character.shownOpen(group).let { if (it == group.controls.open) group else group.copy(controls = group.controls.copy(open = it)) } })
     val expressions = character.expressions.mapNotNull { set ->
         val marks = surface.groups.associate { it.id to character.expressionMarks(set, instance, it.id) }.filterValues { it.isNotEmpty() }
         if (marks.isEmpty()) null else ExpressionWork(set.id, set.name, marks)

@@ -21,7 +21,7 @@
     "size":        { "doc": "Scales the part: its length along the curve and its thickness together.", "default": 1.0, "min": 0.4, "max": 2.5 },
     "thickness":   { "doc": "Radius at the root with nothing drawn, a fraction of the length; drawn outlines set the shape instead.", "default": 0.07, "min": 0.02, "max": 0.4 },
     "taper":       { "doc": "Radius at the tip as a fraction of the radius at the root.", "default": 0.35, "min": 0.05, "max": 1.0 },
-    "place1Along": { "doc": "The curve's first place after the root, along the rest direction, as a fraction of the length.", "default": 0.3, "min": -1.0, "max": 1.5 },
+    "place1Along": { "doc": "The curve's first place after the root, along the rest direction, as a fraction of the length. A part's own curve places (a recipe's curve, any number) replace all three.", "default": 0.3, "min": -1.0, "max": 1.5 },
     "place1Up":    { "doc": "The curve's first place after the root, toward the top, as a fraction of the length.", "default": -0.1, "min": -1.0, "max": 1.0 },
     "place2Along": { "doc": "The curve's second place, along the rest direction.", "default": 0.6, "min": -1.0, "max": 1.5 },
     "place2Up":    { "doc": "The curve's second place, toward the top.", "default": -0.04, "min": -1.0, "max": 1.0 },

@@ -1511,7 +1511,7 @@
                     "irisForward": 0.0,
                     "irisUp": 0.0,
                     "pupilSize": 0.6,
-                    "lashes": false,
+                    "lashes": 0,
                     "brow": false,
                     "white": "eye",
                     "iris": "pupil",

@@ -3,12 +3,12 @@ package dev.chieppa.squash.screens.look
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
-import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.SetTemplate
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.document.ShowExpression
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.rig.SessionPose
@@ -84,7 +84,7 @@ fun renderSession(
 ) {
     val document = session.document.value
     look.templates.forEach { (part, ref) -> session.send(SetTemplate(PartId(part), TemplateRef(TemplateId(ref.substringBefore(':')), ref.substringAfter(':').toInt()))) }
-    look.settings.forEach { (part, name, value) -> session.send(SetParameter(PartId(part), name, value)) }
+    look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
     work.settle(session)
     look.outlineDrags.forEach { it.apply(session, work) }
     if (look.paintTest) paintTestOf(session, document.character.id.value)
@@ -121,7 +121,15 @@ fun renderSession(
             views.keep(session, "$name-rest", only = only)
             session.send(SetDisplayPose(display))
         }
-        if (FACE in close) parts.head?.let { views.keep(session, "$name-face", parts.faceFramed(it), FACE_AZIMUTHS, FACE_TILE, FACE_TILE) }
+        if (FACE in close) parts.head?.let { head ->
+            views.keep(session, "$name-face", parts.faceFramed(head), FACE_AZIMUTHS, FACE_TILE, FACE_TILE)
+            val shown = session.document.value.character.shownExpression
+            for (expression in session.document.value.character.expressions.filter { it.id != shown }) {
+                session.send(ShowExpression(expression.id))
+                views.keep(session, "$name-face-${expression.id.value}", parts.faceFramed(head), FACE_AZIMUTHS, FACE_TILE, FACE_TILE)
+            }
+            session.send(ShowExpression(shown))
+        }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
         closeParts.forEach { closeUps.keepAround(session, it, "$name-${it.value}") }
         if (JOINS in close) {

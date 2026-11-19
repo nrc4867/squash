@@ -35,7 +35,7 @@ private sealed interface ColorKey {
 
 /**
  * What a part's color shapes are before they are cut: its [baseSlot], its [shapes] in layer order, the [surfaces] they land on and the
- * [step] they flatten at; and the ink [lines] it draws over them: its marks in no group and its lip lines, fur aside.
+ * [step] they flatten at; and the ink [lines] it draws over them: its marks in no group, its lip lines and its open mouths' lower lips, fur aside.
  */
 data class HeldShapes(
     val baseSlot: SlotName?,
@@ -82,7 +82,8 @@ fun Graph.partShapesNode(
         val surfaces = sources.entries.mapNotNull { (key, source) ->
             if (key is ColorKey.Surface) key.part to (source as ColorSource.Surface).surface else null
         }.toMap()
-        HeldShapes(resolved.baseSlot, colorShapes(part, resolved, shape, surfaces), surfaces, step, inkLines(resolved))
+        val mouths = openMouths(part, resolved, surfaces)
+        HeldShapes(resolved.baseSlot, colorShapes(part, resolved, shape, surfaces) + mouths.shapes, surfaces, step, inkLines(resolved) + mouths.lines)
     }
 }
 

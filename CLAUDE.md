@@ -75,7 +75,7 @@ Each module is a Gradle subproject under `dev.chieppa.squash.<module>`. A module
 | Core | `document` | The document types (character, part instances, outlines, anchors, surface work, palette, expressions, pose) and every command that changes them, on `stretch-core`'s undo and registry |
 | Core | `graph` | The derived-data graph: nodes, cancellation, caching, `Settled` |
 | Core | `geom` | Vectors, curves and their morphing and clipping, slices to solids, the joined field and its mesher, slices to meshes for separate parts, mesh invariants. No dependencies but the standard library |
-| Core | `annotations` | `@Range` and `@Doc` only. Depended on by `character`, `recipe` and `schema-gen`, nothing else |
+| Core | `annotations` | `@Range` and `@Doc` only. Depended on by `document`, `character`, `recipe` and `schema-gen`, nothing else |
 | Tooling | `schema-gen` | JVM only: the `generateSchemas` task, walking kotlinx.serialization descriptors, and the recipe reference under `docs/reference/` |
 
 Dependency direction is enforced by Gradle, not by convention: a module declares only the modules below it. Within Domain, `rig` and `recipe` sit above `character` and use it, and `anim` will sit above `rig`. The `screens-*` modules reach `ui-design`, `render`, `character` and Stretch through `screens-core` and never depend on each other. The shell takes the workspace and the tools' drawer sections as a `BuildContent` that `app` supplies.

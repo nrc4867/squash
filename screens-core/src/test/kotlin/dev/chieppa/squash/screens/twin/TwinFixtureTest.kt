@@ -54,7 +54,7 @@ class TwinFixtureTest {
         val head = character.resolved(assertNotNull(character.part(HEAD))).surface
         val eye = character.paintedEyes.single()
         assertEquals(HEAD, eye.anchor.part)
-        assertTrue(eye.mirrored && eye.look.lashes && eye.look.brow, "both eyes, with lashes and a brow")
+        assertTrue(eye.mirrored && eye.look.lashes > 0 && eye.look.brow, "both eyes, with lashes and a brow")
         assertEquals(1, head.groups.count { it.isMouth })
     }
 

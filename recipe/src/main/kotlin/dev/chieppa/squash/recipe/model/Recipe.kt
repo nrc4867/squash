@@ -39,7 +39,7 @@ data class Recipe(
     val parts: List<RecipePart> = emptyList(),
     @Doc("Painted eyes on a head.")
     val eyes: List<RecipeEye> = emptyList(),
-    @Doc("Named expressions: joint angles of the face's parts, as ears back or a dropped jaw.")
+    @Doc("Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up.")
     val expressions: List<RecipeExpression> = emptyList(),
     @Doc("Clothes: slots, garments and outfits.")
     val wardrobe: RecipeWardrobe? = null,
@@ -65,7 +65,7 @@ data class RecipeSlot(
     val opacity: Float? = null,
 )
 
-/** A named expression: joints of the face's parts set to angles. */
+/** A named expression: joints of the face's parts set to angles, and how far it opens mouths. */
 @Serializable
 @Doc("A named expression.")
 data class RecipeExpression(
@@ -73,4 +73,6 @@ data class RecipeExpression(
     val name: String,
     @Doc("Joint angles, each naming its part and joint; a mirrored part names each side's id.")
     val joints: List<JointAngle> = emptyList(),
+    @Doc("How far it opens mouth groups, by group id, 0 closed to 1 open, in place of each group's own controls.open: parts the lips on any head, with or without a jaw.")
+    val open: Map<String, Float> = emptyMap(),
 )

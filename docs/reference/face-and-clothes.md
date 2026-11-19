@@ -8,13 +8,22 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 
 | draw | role | holds |
 | --- | --- | --- |
-| 1 | `inner` | the shape between the lips, filled with its `fill` slot, shown as the mouth opens |
-| 2 | `tongue` | marks clipped to the inner shape |
-| 3 | `teeth` | marks clipped to the inner shape |
+| 1 | `inner` | the opening between the lips, filled with its `fill` slot while the mouth is open: its first mark, a closed shape drawn below the lip line, is the fully open mouth, closed toward the lip line as `open` falls; with no mark, a lower lip drops from the lip line by `open`, from nothing at the corners to 0.45 of the lip line's width at its middle |
+| 2 | `tongue` | closed marks filled with its `fill` slot, carried down with the lower lip and kept between the lips; inked when the role's `ink` is |
+| 3 | `teeth` | closed marks filled with its `fill` slot, sharp at every place (a fang is three places), kept where drawn between the lips; inked when the role's `ink` is |
 | 4 | `lipLine` | the line of the closed mouth, drawn on the muzzle and wrapping round it; a group with one is a mouth |
 | 5 | `corners` | short marks at the mouth's ends |
 
-`controls`: `open` 0 closed to 1 open (drives the jaw joint and parts the lips), `width` scales it across, `mouthShape` (`SMILE`, `FROWN`, `O`, `GRIMACE`) bends the lip line, `expressionBlend` 0 at the group's own marks to 1 at the shown expression's. Each role's marks are mark ids on the same part.
+Each role's marks are mark ids on the same part. The opening, tongue and teeth show only while `open` is above 0, on any head: the lips part on the surface, and a head whose template has a `jaw` joint also drops it. The lower lip is inked as the lip line is.
+
+| control | meaning |
+| --- | --- |
+| `open` | How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it. |
+| `expressionBlend` | 0 shows the group's own marks, 1 the shown expression's. |
+| `width` | Scales the mouth across. |
+| `mouthShape` | Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE. |
+
+An expression's `open` (`{"mouth": 1}`) opens a group by id while that expression shows, in place of its `controls.open`; `tools/recipe.sh` renders each expression's face close-up as `<outfit>-face-<expression>.png`, and `set=head:mouth.open:1` (or `set=head:open:1` for a part's one mouth) tries a control without editing the recipe.
 
 ## Regions
 
@@ -60,6 +69,48 @@ A part's `groups` entry `{"id", "name", "roles": [{"role", "marks", "fill", "ink
 | eye `gazeUp` | Gaze up, a share of the opening's half height. |
 | eye `mirrored` | Whether it is painted again on the other side of the head. |
 | eye `flat` | Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front. |
+
+### Eye look
+
+How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template.
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `width` | 0.075 | 0.005 to 0.4 | Half the opening's width, from its middle to each corner, in units across. |
+| `height` | 0.052 | 0.005 to 0.4 | How far the upper lid rises above the opening's middle, in units down. |
+| `lowerLid` | 0.72 | 0 to 2 | How far the lower lid reaches below the middle, a share of height: 0 a flat lower edge, 1 as deep as the top. |
+| `frontNarrowing` | 0.18 | -0.9 to 0.9 | How much the opening narrows toward its back corner and widens toward its front, a share of its height: 0 an even almond. |
+| `tilt` | 0.0 | -90 to 90 | Degrees the whole eye turns in its plane about its middle, its front end up. |
+| `openingTilt` | 0.0 | -90 to 90 | Degrees the opening alone turns about its middle, its front end up, before tilt; the iris stays level. |
+| `lookOut` | 0.0 | -60 to 60 | Degrees the eye's facing turns outward, away from the body's middle plane. |
+| `irisSize` | 0.05 | 0 to 0.4 | Half the iris's width, in units across. |
+| `irisRatio` | 0.88 | 0.05 to 6 | The iris's half height as a share of irisSize, read in units down: its height is irisSize times irisRatio units down. A round iris on an undrawn head-round takes about 2.2, on a head resting forward about 0.4. |
+| `irisForward` | 0.018 | -0.3 to 0.3 | How far the iris's middle sits toward the front corner from the opening's middle, in units across. |
+| `irisUp` | 0.006 | -0.3 to 0.3 | How far the iris's middle sits up from the opening's middle, in units down. |
+| `pupilSize` | 0.58 | 0 to 1 | The pupil's size, a share of the iris's. |
+| `slit` | false | - | Whether the pupil is an upright slit, a fifth of the iris's width, in place of a round one. |
+| `highlightSize` | 0.3 | 0 to 1 | The highlight's size, a share of the iris's. |
+| `highlightForward` | 0.25 | -1 to 1 | How far the highlight's middle sits toward the front from the iris's middle, a share of irisSize. |
+| `highlightUp` | 0.35 | -1 to 1 | How far the highlight's middle sits up from the iris's middle, a share of the iris's half height. |
+| `lid` | true | - | Whether a lid line is inked round the opening. |
+| `lashes` | 1 | 0 to 3 | How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there. |
+| `brow` | true | - | Whether a brow is inked over the opening. |
+| `browRaise` | 0.0 | -0.2 to 0.4 | How far the brow rises above its place over the opening, in units down (about 2 heights above the middle). |
+| `browTilt` | 0.0 | -90 to 90 | Degrees the brow turns about its middle, its front end up. |
+| `browWidth` | 1.0 | 0.25 to 5 | The brow's thickness, a multiple of the line weight, thinning toward its ends above 1: 1 an ink line, 3 a thick brow. |
+| `white` | none | - | The white's palette slot; none fills no white. |
+| `iris` | none | - | The iris's palette slot. |
+| `pupil` | none | - | The pupil's palette slot. |
+| `highlight` | none | - | The highlight's palette slot. |
+| `ink` | none | - | The lines' palette slot; the ink's when left out. |
+
+One unit of a look's lengths in body units, on each head template built undrawn at size 1, at its eye landmark; a drawn head scales them with its own size and shape. A round iris takes the irisRatio in the last column:
+
+| head | chart | unit across | unit down | round iris's irisRatio |
+| --- | --- | --- | --- | --- |
+| `head` | resting forward: across is u, down is v | 0.59 | 1.265 | 0.466 |
+| `head-bird` | resting forward: across is u, down is v | 0.306 | 0.861 | 0.355 |
+| `head-round` | upright: across is v, down is u | 1.18 | 0.529 | 2.23 |
 
 ## Garments
 

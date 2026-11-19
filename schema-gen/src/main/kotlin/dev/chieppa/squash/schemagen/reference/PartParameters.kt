@@ -1,6 +1,9 @@
 package dev.chieppa.squash.schemagen.reference
 
+import dev.chieppa.squash.character.build.AxisCurveParams
 import dev.chieppa.squash.character.build.GenericParams
+import dev.chieppa.squash.character.build.MAX_CURVE_PLACES
+import dev.chieppa.squash.character.build.MIN_CURVE_PLACES
 import dev.chieppa.squash.character.build.HandJoints
 import dev.chieppa.squash.character.build.HandLandmarks
 import dev.chieppa.squash.character.build.HandSockets
@@ -67,6 +70,7 @@ internal object PartParameters {
         listOf(key(GenericParams.SECTION), "a generic part's section, counted below", "`generic.section`"),
         listOf(View.entries.joinToString(", ") { key(GenericParams.view(it)) }, "flags: which views shape a generic part", "`generic.views`"),
         listOf(key(GenericParams.RINGS) + ", " + key(GenericParams.SEGMENTS), "a generic part's rings along and control points round", "`generic.rings`, `.segments`"),
+        listOf(key(AxisCurveParams.along(N)) + ", " + key(AxisCurveParams.up(N)) + ", " + key(AxisCurveParams.side(N)), "a place the part's axis curves through, from 1 on, in the part's own axes as fractions of its length: along its rest, toward Side's +y, toward v 0.25; ${MIN_CURVE_PLACES} to ${MAX_CURVE_PLACES} replace its template's curve", "`curve`"),
         listOf(key(JoinParams.INK), "0 leaves the join with its parent unlined; 1 or unset inks it", "`inkJoin`"),
         listOf(code(RigParams.reach(JOINT)), "how far the skin blend at a joint reaches, times the rig's guess, ${num(RigParams.MIN_REACH)} to ${num(RigParams.MAX_REACH)}", "`params`"),
     )

@@ -49,7 +49,7 @@ class FlatEyeTest {
     private val landmark = assertNotNull(eyeLandmark(headTemplate))
 
     /** A wide eye, so the round head turns away under it, with only its lid drawn. */
-    private val look = EyeLook(width = 0.08f, height = 0.05f, lashes = false, brow = false)
+    private val look = EyeLook(width = 0.08f, height = 0.05f, lashes = 0, brow = false)
 
     /** The place at the eye landmark's u, round the head where its normal turns [ROUND_FROM_FRONT] from the head's facing. */
     private fun placeOn(surface: CharacterSurface): Anchor {

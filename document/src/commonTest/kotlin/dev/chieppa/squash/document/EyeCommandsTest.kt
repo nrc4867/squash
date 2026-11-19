@@ -16,7 +16,7 @@ private const val CLOSE = 1e-5f
 class EyeCommandsTest {
     private val tube = TemplateRef(TemplateId("tube"), 1)
     private val head = PartInstance(PartId("head"), tube)
-    private val front = EyeLook(width = 0.06f, height = 0.09f, tilt = 20f, highlightSize = 0.4f, lashes = false)
+    private val front = EyeLook(width = 0.06f, height = 0.09f, tilt = 20f, highlightSize = 0.4f, lashes = 0)
     private val eye = PaintedEye("eyes", Anchor(head.id, BODY_PATCH, 0.6f, 0.2f), EyeLook(width = 0.08f, height = 0.04f), front = front)
     private val start = SetPaintedEye(eye.id, eye).apply(
         AddParts(listOf(head)).apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("blank"), 1)))).document,

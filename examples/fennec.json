@@ -19718,7 +19718,7 @@
                     "irisForward": 0.01,
                     "irisUp": -0.012,
                     "highlightSize": 0.32,
-                    "lashes": false,
+                    "lashes": 0,
                     "white": "cream",
                     "iris": "iris",
                     "pupil": "ink",

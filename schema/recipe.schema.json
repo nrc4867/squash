@@ -76,72 +76,137 @@
       "additionalProperties": false
     },
     "EyeLook": {
+      "description": "How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template.",
       "type": "object",
       "properties": {
         "width": {
-          "type": "number"
+          "description": "Half the opening's width, from its middle to each corner, in units across.",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.4
         },
         "height": {
-          "type": "number"
+          "description": "How far the upper lid rises above the opening's middle, in units down.",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.4
         },
         "lowerLid": {
-          "type": "number"
+          "description": "How far the lower lid reaches below the middle, a share of height: 0 a flat lower edge, 1 as deep as the top.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
         },
         "frontNarrowing": {
-          "type": "number"
+          "description": "How much the opening narrows toward its back corner and widens toward its front, a share of its height: 0 an even almond.",
+          "type": "number",
+          "minimum": -0.9,
+          "maximum": 0.9
         },
         "tilt": {
-          "type": "number"
+          "description": "Degrees the whole eye turns in its plane about its middle, its front end up.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
         },
         "openingTilt": {
-          "type": "number"
+          "description": "Degrees the opening alone turns about its middle, its front end up, before tilt; the iris stays level.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
         },
         "lookOut": {
-          "type": "number"
+          "description": "Degrees the eye's facing turns outward, away from the body's middle plane.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 60.0
         },
         "irisSize": {
-          "type": "number"
+          "description": "Half the iris's width, in units across.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.4
         },
         "irisRatio": {
-          "type": "number"
+          "description": "The iris's half height as a share of irisSize, read in units down: its height is irisSize times irisRatio units down. A round iris on an undrawn head-round takes about 2.2, on a head resting forward about 0.4.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 6.0
         },
         "irisForward": {
-          "type": "number"
+          "description": "How far the iris's middle sits toward the front corner from the opening's middle, in units across.",
+          "type": "number",
+          "minimum": -0.3,
+          "maximum": 0.3
         },
         "irisUp": {
-          "type": "number"
+          "description": "How far the iris's middle sits up from the opening's middle, in units down.",
+          "type": "number",
+          "minimum": -0.3,
+          "maximum": 0.3
         },
         "pupilSize": {
-          "type": "number"
+          "description": "The pupil's size, a share of the iris's.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         },
         "slit": {
+          "description": "Whether the pupil is an upright slit, a fifth of the iris's width, in place of a round one.",
           "type": "boolean"
         },
         "highlightSize": {
-          "type": "number"
+          "description": "The highlight's size, a share of the iris's.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         },
         "highlightForward": {
-          "type": "number"
+          "description": "How far the highlight's middle sits toward the front from the iris's middle, a share of irisSize.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
         },
         "highlightUp": {
-          "type": "number"
+          "description": "How far the highlight's middle sits up from the iris's middle, a share of the iris's half height.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
         },
         "lid": {
+          "description": "Whether a lid line is inked round the opening.",
           "type": "boolean"
         },
         "lashes": {
-          "type": "boolean"
+          "description": "How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there.",
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 3.0
         },
         "brow": {
+          "description": "Whether a brow is inked over the opening.",
           "type": "boolean"
         },
         "browRaise": {
-          "type": "number"
+          "description": "How far the brow rises above its place over the opening, in units down (about 2 heights above the middle).",
+          "type": "number",
+          "minimum": -0.2,
+          "maximum": 0.4
         },
         "browTilt": {
-          "type": "number"
+          "description": "Degrees the brow turns about its middle, its front end up.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "browWidth": {
+          "description": "The brow's thickness, a multiple of the line weight, thinning toward its ends above 1: 1 an ink line, 3 a thick brow.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 5.0
         },
         "white": {
+          "description": "The white's palette slot; none fills no white.",
           "anyOf": [
             {
               "type": "string"
@@ -152,6 +217,7 @@
           ]
         },
         "iris": {
+          "description": "The iris's palette slot.",
           "anyOf": [
             {
               "type": "string"
@@ -162,6 +228,7 @@
           ]
         },
         "pupil": {
+          "description": "The pupil's palette slot.",
           "anyOf": [
             {
               "type": "string"
@@ -172,6 +239,7 @@
           ]
         },
         "highlight": {
+          "description": "The highlight's palette slot.",
           "anyOf": [
             {
               "type": "string"
@@ -182,6 +250,7 @@
           ]
         },
         "ink": {
+          "description": "The lines' palette slot; the ink's when left out.",
           "anyOf": [
             {
               "type": "string"
@@ -333,18 +402,29 @@
       "additionalProperties": false
     },
     "MarkControls": {
+      "description": "A mouth's controls.",
       "type": "object",
       "properties": {
         "open": {
-          "type": "number"
+          "description": "How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         },
         "expressionBlend": {
-          "type": "number"
+          "description": "0 shows the group's own marks, 1 the shown expression's.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         },
         "width": {
-          "type": "number"
+          "description": "Scales the mouth across.",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3.0
         },
         "mouthShape": {
+          "description": "Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE.",
           "anyOf": [
             {
               "enum": [
@@ -366,15 +446,19 @@
       "additionalProperties": false
     },
     "MarkFlight": {
+      "description": "A place a floating mark passes through, in body units from its root, in the surface's own directions there.",
       "type": "object",
       "properties": {
         "along": {
+          "description": "Along the surface the way the part's u grows: on a part resting up, toward its far end; negative back toward its socket.",
           "type": "number"
         },
         "across": {
+          "description": "Across the surface the way the part's v grows, square to along; on a mirrored copy, the other way.",
           "type": "number"
         },
         "out": {
+          "description": "Out of the surface along its normal at the root; negative sinks into the part.",
           "type": "number"
         }
       },
@@ -547,7 +631,7 @@
           }
         },
         "expressions": {
-          "description": "Named expressions: joint angles of the face's parts, as ears back or a dropped jaw.",
+          "description": "Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/RecipeExpression"
@@ -715,6 +799,16 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/JointAngle"
+          }
+        },
+        "open": {
+          "description": "How far it opens mouth groups, by group id, 0 closed to 1 open, in place of each group's own controls.open: parts the lips on any head, with or without a jaw.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
           }
         }
       },
@@ -1331,7 +1425,7 @@
           }
         },
         "flight": {
-          "description": "For a floating mark: the places it passes through off the surface, in body units from its root.",
+          "description": "For a floating mark: the places it passes through off the surface after its root, each {along, across, out} in body units from the root: along the way the part's u grows, across the way its v grows, out along the surface's normal.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/MarkFlight"
@@ -1672,6 +1766,16 @@
             "type": "string"
           },
           "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "curve": {
+          "description": "Places the part's axis curves through after its socket point, as [along, up] or [along, up, side] in the part's own axes as fractions of its length (curve.<n>.*): along its rest direction, toward its top (Side's +y), toward its side at v 0.25. 2 to 24 places; the smooth curve through them is scaled to the part's length, so they set its shape and size its reach. Replaces a template's curve (tail-curve) or curves a straight part; thickness and taper still set its radius along it. An S with a hooked end: [[0.25, -0.12], [0.5, 0.08], [0.72, -0.05], [0.88, 0.1], [0.86, 0.22], [0.76, 0.24]].",
+          "type": "array",
+          "items": {
             "type": "array",
             "items": {
               "type": "number"

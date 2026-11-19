@@ -225,7 +225,7 @@ class DocumentFormatTest {
         assertEquals(SlotName("cream"), eye.look.white)
         assertEquals(SlotName("ink"), eye.look.pupil)
         assertEquals(null, eye.look.iris)
-        assertTrue(eye.look.lid && !eye.look.lashes && !eye.look.brow, "it draws what the drawn eye drew")
+        assertTrue(eye.look.lid && eye.look.lashes == 0 && !eye.look.brow, "it draws what the drawn eye drew")
         assertEquals(emptyMap(), character.expressions.single().marks, "an expression drops the eyes' marks")
     }
 

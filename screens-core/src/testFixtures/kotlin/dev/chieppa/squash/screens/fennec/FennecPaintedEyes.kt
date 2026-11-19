@@ -36,7 +36,7 @@ val FENNEC_FRONT_EYE = FENNEC_EYE.copy(
     irisForward = 0.01f,
     irisUp = -0.012f,
     highlightSize = 0.32f,
-    lashes = false,
+    lashes = 0,
 )
 
 /** The dark-brown iris the fennec's eyes show. */

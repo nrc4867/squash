@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.EyeLook
+import dev.chieppa.squash.document.MOST_LASHES
 import dev.chieppa.squash.document.MOST_GAZE
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.PartId
@@ -157,7 +158,9 @@ private fun MoreSection(state: AppState, session: CharacterSession, eye: Painted
             }
             LineToggle(Res.string.face_flat, PaintedEyeTags.FLAT, eye.flat) { on -> session.send(SetPaintedEye(eye.id, eye.copy(flat = on))) }
             LineToggle(Res.string.face_role_brow, PaintedEyeTags.line("brow"), look.brow) { on -> styled { it.copy(brow = on) } }
-            LineToggle(Res.string.face_role_lashes, PaintedEyeTags.line("lashes"), look.lashes) { on -> styled { it.copy(lashes = on) } }
+            SettingRow(stringResource(Res.string.face_role_lashes)) {
+                Segmented((0..MOST_LASHES).toList(), look.lashes, { count -> styled { it.copy(lashes = count) } }, { it.toString() }, Modifier.weight(1f).testTag(PaintedEyeTags.line("lashes")), fill = true)
+            }
             LineToggle(Res.string.face_role_lid, PaintedEyeTags.line("lid"), look.lid) { on -> styled { it.copy(lid = on) } }
         }
     }

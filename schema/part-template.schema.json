@@ -2773,6 +2773,37 @@
             }
           ]
         },
+        "rim": {
+          "description": "How much the section's sides thicken toward their edges, as a fraction of its half span: a flat section's rounded rim.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            }
+          ]
+        },
+        "capReach": {
+          "description": "How far a closed end, round or pointed, reaches along the run when nothing is drawn, a fraction of its length: a round end reaching the run's half width there is a semicircular tip. A few rings when left out.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "drop": {
           "description": "How far the run sits toward the underside when nothing is drawn, as a fraction of the axis length.",
           "oneOf": [
