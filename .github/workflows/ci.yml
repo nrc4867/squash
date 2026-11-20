@@ -101,6 +101,50 @@ jobs:
             squash/**/build/reports/tests
             squash/**/build/test-results
 
+  # The integration tier in shards that run side by side. The named shards each take the modules listed in their gradle-args; the
+  # last shard, "rest", runs every other module's integrationTest by excluding the named ones, so a module added later falls into
+  # it and no test goes unrun. When a module is added to a named shard, add its exclusion to "rest" below. The app's tests are split
+  # by package, the two app shards being complements (--tests a pattern, -PintegrationExclude the same pattern).
+  probe-temp:
+    name: Probe ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: char-rig
+            gradle-args: :character:integrationTest :rig:integrationTest
+          - name: app-char-rig
+            gradle-args: :app:integrationTest :character:integrationTest :rig:integrationTest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: squash
+      - uses: actions/checkout@v7
+        with:
+          repository: nrc4867/stretch
+          ref: ${{ env.STRETCH_REF }}
+          path: stretch
+      - uses: actions/setup-java@v6
+        with:
+          distribution: corretto
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v5
+      - run: xvfb-run --auto-servernum ./gradlew ${{ matrix.gradle-args }} --continue --no-build-cache
+        working-directory: squash
+      - name: Test counts and times
+        if: always()
+        run: VERBOSE=1 tools/ci-test-summary.sh integrationTest
+        working-directory: squash
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: probe-reports-${{ strategy.job-index }}
+          path: |
+            squash/**/build/reports/tests
+            squash/**/build/test-results
+
   # The check the main ruleset requires: green only when every shard is.
   integration:
     name: Integration tier

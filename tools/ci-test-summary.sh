@@ -10,6 +10,7 @@ while IFS= read -r dir; do
   count=0
   seconds=0
   for xml in "$dir"/*.xml; do
+    [ -z "${VERBOSE:-}" ] || echo "  $(basename "$xml") $(grep -m1 -o ' tests="[0-9]*"' "$xml")"
     head="$(grep -m1 '<testsuite ' "$xml")"
     n="$(sed -E 's/.* tests="([0-9]+)".*/\1/' <<<"$head")"
     t="$(sed -E 's/.* time="([0-9.]+)".*/\1/' <<<"$head")"
