@@ -149,6 +149,10 @@ data class RecipeSpread(
     val edge: Float? = null,
     @Doc("Degrees each copy tilts from the surface's normal toward the body's down along the surface, its up turned to the normal, so hair clumps lie down over a head; 60 to 80 for a fall of hair, none when left out.")
     val droop: Float? = null,
+    @Doc("Lays the copies in this many rows evenly along the area, count of them evenly round each, in place of a scatter: plates, scales, shingles. With outward near 90 each lies back along the part toward its end, over the root of the next row.")
+    val rows: Int? = null,
+    @Doc("How far round every other row is shifted, as a share of the gap between two copies in a row, where the copies lie in rows; 0.5 when left out, as bricks lie.")
+    val stagger: Float? = null,
 )
 
 /** Copies repeated along a path on a part. */

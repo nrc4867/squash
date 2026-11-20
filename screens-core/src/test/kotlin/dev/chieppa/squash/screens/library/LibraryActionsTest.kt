@@ -43,7 +43,7 @@ class LibraryActionsTest {
     fun groupsComeInBodyOrderWithTheTargetsGroupFirst() {
         val shelves = libraryShelves(shipped.newest, "")
         assertEquals(LibraryGroup.entries.filter { group -> shelves.any { it.group == group } }, shelves.map { it.group })
-        assertEquals(listOf("Paw", "Foot", "Bird foot", "Hand").toSet(), shelves.first { it.group == LibraryGroup.HANDS_FEET }.templates.map { it.name }.toSet())
+        assertEquals(listOf("Paw", "Foot", "Bird foot", "Hand", "Hoof").toSet(), shelves.first { it.group == LibraryGroup.HANDS_FEET }.templates.map { it.name }.toSet())
         val tail = libraryShelves(shipped.newest, "", first = { it.id == TemplateId("tail") })
         assertEquals(LibraryGroup.TAIL, tail.first().group)
     }

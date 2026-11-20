@@ -19,7 +19,8 @@ const val DIGIT_LEVEL = 2
 private val DETAIL_ROLES = setOf(Role.HEAD, Role.JAW, Role.EAR, Role.HAND, Role.FOOT)
 
 /**
- * The level each member of [field] meshes at (see `CellLevels`): [DIGIT_LEVEL] for a digit, a run of a part's row of toes or fingers,
+ * The level each member of [field] meshes at (see `CellLevels`): [DIGIT_LEVEL] for a digit, a run of a part's row of toes or fingers, or
+ * a pocket's lining, whose rim and hollow are smaller than the part it is cut into,
  * [DETAIL_LEVEL] for every other run of a head, jaw, ear, hand or foot, and the body's own cell for every other run, legs, arms, tails, the
  * torso and hair among them, but a tail or a horn (an antler, a trunk) whose tip is thinner than [THIN_TIP_CELLS] of the body's cells across,
  * at [DETAIL_LEVEL], so its round end, a hook at it and a branch on it are several cells across.
@@ -27,7 +28,7 @@ private val DETAIL_ROLES = setOf(Role.HEAD, Role.JAW, Role.EAR, Role.HAND, Role.
 fun digitLevels(field: CharacterField): IntArray = IntArray(field.runs.size) { i ->
     val run = field.runs[i]
     when {
-        isDigitRun(run.part, run.patch) -> DIGIT_LEVEL
+        isDigitRun(run.part, run.patch) || (run.first && pocketOf(run.part) != null) -> DIGIT_LEVEL
         run.part.role in DETAIL_ROLES || (run.part.role in THIN_TIP_ROLES && thinTip(run, field.cell)) -> DETAIL_LEVEL
         else -> 0
     }

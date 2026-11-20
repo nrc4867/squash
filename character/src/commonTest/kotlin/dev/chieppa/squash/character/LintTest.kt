@@ -1,15 +1,18 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.block.Area
 import dev.chieppa.squash.character.block.Block
 import dev.chieppa.squash.character.block.Cap
 import dev.chieppa.squash.character.block.Joint
 import dev.chieppa.squash.character.block.Landmark
 import dev.chieppa.squash.character.block.Pad
+import dev.chieppa.squash.character.block.Pocket
 import dev.chieppa.squash.character.block.Socket
 import dev.chieppa.squash.character.block.ToeRow
 import dev.chieppa.squash.character.block.Tube
 import dev.chieppa.squash.character.lint.BodyPlanLint
 import dev.chieppa.squash.character.lint.TemplateLint
+import dev.chieppa.squash.character.model.AreaTag
 import dev.chieppa.squash.character.model.AxisSpec
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.Direction
@@ -91,6 +94,19 @@ class LintTest {
     fun ringsMustBeEnoughForTheJoints() {
         val blocks = listOf(tube, joint("a", 0f), joint("b", 0.5f), joint("c", 1f))
         assertEquals(listOf("$.topology.rings"), paths(template(blocks, rings = 5)))
+    }
+
+    @Test
+    fun anAreaMayLieOnSeveralPatchesOnceOnEach() {
+        val sock = Area("sock", u = Span(0f, 1f), v = Span(0f, 1f), tag = AreaTag.FILL)
+        assertEquals(emptyList(), paths(template(listOf(tube, sock, sock.copy(patch = "toes")))))
+        assertEquals(listOf("$.blocks"), paths(template(listOf(tube, sock, sock.copy(u = Span(0f, 0.5f))))))
+    }
+
+    @Test
+    fun aPocketsRimAndWallStayInRange() {
+        assertEquals(emptyList(), paths(template(listOf(tube, Pocket()))))
+        assertEquals(listOf("$.blocks[1].rim"), paths(template(listOf(tube, Pocket(rim = 1.5f)))))
     }
 
     @Test

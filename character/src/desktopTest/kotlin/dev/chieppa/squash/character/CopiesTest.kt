@@ -72,6 +72,25 @@ class CopiesTest {
     }
 
     @Test
+    fun aSpreadInRowsLaysItsCountRoundEachOfItsRowsEveryOtherShifted() {
+        val (character, _) = built("scute") { root ->
+            val spread = HandSockets.addSpread(root, 1, 0.3f, 0.7f, 0f, 1f, 6, 0, outward = 80f)
+            spread.copy(values = spread.values + mapOf(HandSockets.rows(1) to 4f, HandSockets.stagger(1) to 0.5f))
+        }
+        val copies = assertNotNull(character.part(COPIES)?.copies)
+        assertEquals(24, copies.places.size)
+        val rows = copies.rule.picks.groupBy { it.u }
+        assertEquals(4, rows.size)
+        assertEquals(0.3f, rows.keys.min(), 1e-6f)
+        assertEquals(0.7f, rows.keys.max(), 1e-6f)
+        rows.values.forEach { row -> assertEquals(6, row.size) }
+        val first = rows.entries.minBy { it.key }.value.map { it.v }.sorted()
+        val second = rows.entries.sortedBy { it.key }[1].value.map { it.v }.sorted()
+        assertEquals(1f / 6f, first[1] - first[0], 1e-5f)
+        assertEquals(1f / 12f, second[0] - first[0], 1e-5f)
+    }
+
+    @Test
     fun copiesOfACurvedPartAllCarryItsCurve() {
         val hook = AxisCurveParams.of(listOf(Vec3(0.4f, 0f, 0f), Vec3(0.7f, 0.25f, 0f), Vec3(0.55f, 0.5f, 0.1f)))
         val (character, _) = built("spike", PartData(params = hook)) { spread(it, 3) }

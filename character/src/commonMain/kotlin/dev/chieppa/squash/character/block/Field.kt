@@ -102,7 +102,7 @@ data class Field(
         val on = parts.filter { part -> part.condition?.let { ctx.value(Param("$" + it.name)) != 0f } ?: true }
         return BlendedField(
             on.map { it.blended(ctx) },
-            floor?.let { Floor(solid(ctx, it.at), solid(ctx, it.blend)) },
+            floor?.let { Floor(solid(ctx, it.at), solid(ctx, it.blend), it.across) },
             bend?.let { bend ->
                 val at = point(ctx, bend.at)
                 Bend(at, ctx.value(bend.degrees) * DEGREES_TO_RADIANS, at.x + solid(ctx, bend.from), at.x + solid(ctx, bend.to))

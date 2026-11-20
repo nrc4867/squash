@@ -23,12 +23,15 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `head` | 2 | 1 | Head | head | no |
 | `head-bird` | 1 | - | Bird head | head | no |
 | `head-round` | 2 | 1 | Round head | head | no |
+| `hoof` | 1 | - | Hoof | foot | no |
 | `horn` | 1 | - | Horn | horn | yes |
 | `leg` | 1 | - | Leg | leg | yes |
 | `leg-bird` | 1 | - | Bird leg | leg | yes |
 | `paw` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9 | Paw | foot | no |
 | `plate` | 1 | - | Plate | fin | yes |
+| `pocket` | 1 | - | Pocket | other | yes |
 | `ring` | 1 | - | Ring | none (guessed from where it sits) | no |
+| `scute` | 1 | - | Scute | other | yes |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) | yes |
 | `spike` | 1 | - | Spike | horn | yes |
 | `tail` | 2 | 1 | Tail | tail | yes |
@@ -936,6 +939,52 @@ Parameters:
 | --- | --- | --- | --- |
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 
+## hoof 1
+
+| fact | value |
+| --- | --- |
+| rests | down [0, -1, 0] |
+| outline x runs 0 to | 0.2 |
+| Side's +y faces | forward |
+| Top's +y faces | right |
+| views | side sets height; top sets width; front sets cap |
+| section | circle |
+| open end | none (closed) |
+| surface | field |
+| join blend | 0.06 of its length, the skull or body rising into it; the part's `blend` overrides it |
+
+Joints, which poses name; the move is for positive `degrees` on the left side at rest, the right side mirrors it:
+
+| joint | u | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+| `fetlock` | 0 | x | [-45, 45] | back |
+
+Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the digit's root: the row builds one counted digit, numbered from 0; parameter `toes` sets how many. Each patch is a digit sockets, regions and marks can name:
+
+| joint | patch | hinge | limits | +degrees moves the tip |
+| --- | --- | --- | --- | --- |
+
+Patches: `body`, `hooves:<i>`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `hoof` | body | [0, 1] | [0, 1] | fill | claw |
+| `hoof` | hooves | [0, 1] | [0, 1] | fill | claw |
+| `sole` | hooves | [0.9, 1] | [0, 1] | fill | pad |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
+| `toes` | 1 | one of 1, 2 | 1 for a single hoof (a horse), 2 for a cloven hoof, two toes side by side (a cow, a goat, a deer). |
+| `cleft` | 1 | 0.5 to 2 | How far apart a cloven hoof's two toes stand, as a multiple of their gap. |
+| `flare` | 1.45 | 1 to 2 | How much wider each hoof is at the sole than at the coronet. |
+| `height` | 1 | 0.6 to 1.6 | How tall the hoof wall stands from the sole to the coronet, as a multiple. |
+| `dewclaws` | 0 (off) | a flag: 1 or 0 | Builds two small dewclaws at the back of the pastern, above the hoof. |
+
 ## horn 1
 
 | fact | value |
@@ -1090,6 +1139,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
+| `sock` | body | [0, 1] | [0, 1] | fill | - |
+| `sock` | toes | [0, 1] | [0, 1] | fill | - |
 | `claw:0` | toes:0 | [0.682, 0.763] | [0.1, 0.4] | fill | claw |
 | `claw:1` | toes:1 | [0.79, 0.891] | [0.1, 0.4] | fill | claw |
 | `claw:2` | toes:2 | [0.79, 0.891] | [0.1, 0.4] | fill | claw |
@@ -1099,7 +1150,6 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `bean:2` | toes:2 | [0.703, 0.763] | [0.63, 0.87] | fill | pad |
 | `bean:3` | toes:3 | [0.613, 0.661] | [0.63, 0.87] | fill | pad |
 | `pad` | body | [0.16, 0.44] | [0.38, 0.62] | fill | pad |
-| `sock` | body | [0, 0.5] | [0, 1] | fill | - |
 | `top` | body | [0, 0.66] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
 | `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
@@ -1152,6 +1202,37 @@ Parameters:
 | `size` | 1 | 0.1 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.55 | 0.1 to 1 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
+## pocket 1
+
+| fact | value |
+| --- | --- |
+| rests | down [0, -1, 0] |
+| outline x runs 0 to | 0.12 |
+| Side's +y faces | forward |
+| Top's +y faces | right |
+| views | side sets height; top sets width; front sets nothing |
+| section | circle |
+| open end | start |
+| surface | field |
+| curve | takes `curve` and `spiral`: the path its axis follows, drawn outlines giving its width along it |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `inside` | body | [0.12, 1] | [0, 1] | fill | nose |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.1 to 3 | Scales the part: its depth and mouth together. |
+| `open` | 0.3 | 0.05 to 1 | Radius of the mouth, a fraction of the depth: small for a slit or a nostril, large for a wide pouch. |
+| `inside` | 1.3 | 0.5 to 3 | How much wider the hollow is at its bottom than at its mouth. |
+| `width` | 1 | 0.2 to 4 | The mouth's width across as a share of its height: below 1 a slit standing up, above 1 one lying across. |
+
 ## ring 1
 
 | fact | value |
@@ -1176,6 +1257,37 @@ Parameters:
 | `radius` | 0.4 | 0.1 to 2 | The loop's radius across, to the middle of its wire, a fraction of the length. |
 | `stretch` | 1 | 1 to 3 | How long the loop is along its up for its width: 1 a round ring, more a chain link. |
 | `thickness` | 0.08 | 0.02 to 0.4 | The wire's radius, a fraction of the length. |
+
+## scute 1
+
+| fact | value |
+| --- | --- |
+| rests | up [0, 1, 0] |
+| outline x runs 0 to | 0.12 |
+| Side's +y faces | forward |
+| Top's +y faces | left |
+| views | side sets height; top sets width; front sets nothing |
+| section | lens |
+| open end | start |
+| surface | field |
+| curve | takes `curve` and `spiral`: the path its axis follows, drawn outlines giving its width along it |
+
+Patches: `body`
+
+Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
+
+| area | patch | u | v | tag | shown in slot |
+| --- | --- | --- | --- | --- | --- |
+| `edge` | body | [0.72, 1] | [0, 1] | fill | - |
+
+Parameters:
+
+| parameter | default | range | meaning |
+| --- | --- | --- | --- |
+| `size` | 1 | 0.1 to 2.5 | Scales the part: its drawn length and width together. |
+| `girth` | 0.14 | 0.04 to 0.6 | Thickness with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
+| `width` | 4.5 | 1 to 8 | How much wider than thick the plate is, with nothing drawn. |
+| `taper` | 1 | 0.3 to 1.6 | The plate's width at its free edge as a share of its width at its root. |
 
 ## sheet 1
 

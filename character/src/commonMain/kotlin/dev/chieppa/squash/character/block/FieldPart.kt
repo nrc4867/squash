@@ -76,7 +76,12 @@ data class FieldPart(
 /** A flat floor a [Field] is cut at. */
 @Serializable
 @Doc("A flat floor the field is cut at, up from the axis as a fraction of the axis length, joined by a smooth intersection.")
-data class FieldFloor(val at: Param, val blend: Param = Param.of(0f))
+data class FieldFloor(
+    val at: Param,
+    val blend: Param = Param.of(0f),
+    @Doc("Cuts across the axis at `at` along it instead, keeping what lies short of it: the sole of a part that points down, a hoof.")
+    val across: Boolean = false,
+)
 
 /** A turn of a [Field]'s forward part about the part's side axis. */
 @Serializable

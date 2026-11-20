@@ -51,6 +51,14 @@ export const belly = uvRegion("belly", "cream", oval({ center: [0.45, 0], rx: 0.
 
 - Borders are smooth curves through their places: four or five places make a round patch; `curved: false` runs straight between them. Sharp corners come from the shape a kit helper is given: `polygon(points)` makes every place a corner (a triangular nose), `shape(points, [2])` only the ones named; a plain list of points has none.
 - On a part in the body's middle (torso, head), v 0 faces forward on a part resting up, so a belly patch round v 0 crosses it: places with v below 0 wrap; `mirrored: true` shows it again at 1 - v. Ask the probe which way v faces before placing one (`probe part=torso`, or `uv=torso:0.45,0`).
+- **All the way round a part** (a stripe round a leg or a tail, a band, a collar of colour): `uvRing(id, slot, from, to)`, each edge a u, a list of u values evenly round, or a function of v, is one band with no seam where its ends meet. Two half regions leave a gap.
+
+```ts
+import { uvRing } from "squash-kit";
+
+export const stripe = uvRing("stripe-1", "stripe", (v) => 0.3 + 0.02 * Math.sin(2 * Math.PI * v), (v) => 0.36 + 0.02 * Math.sin(2 * Math.PI * v), { points: 24 });
+```
+
 - Regions that meet share the places along their border, so they meet with no seam; a later region in the list paints over an earlier one.
 - A region on a part joined into the one surface (a belly running onto the neck) ends where that part's share ends: run it across parts with `anchors`, or give each part its own region meeting at the join.
 

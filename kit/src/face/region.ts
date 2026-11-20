@@ -42,3 +42,43 @@ export function uvRegion(id: string, slot: string, drawn: Shape | Point[], optio
   if (options.patch) result.patch = options.patch;
   return result;
 }
+
+/** One edge of a ring region: a u all the way round, u values evenly round from the seam, or u as a function of v, read from 0 to just short of 1. */
+export type RingEdge = number | readonly number[] | ((v: number) => number);
+
+export interface RingOptions extends RegionOptions {
+  /** The v where the ring's two ends meet; 0 when left out. */
+  seam?: number;
+  /** Places taken round an edge given as a function or a single u; 16 when left out. */
+  points?: number;
+}
+
+function edgeAt(edge: RingEdge, points: number): number[] {
+  if (typeof edge === "number") return Array.from({ length: points + 1 }, () => edge);
+  if (typeof edge === "function") return Array.from({ length: points + 1 }, (_, i) => edge((i % points) / points));
+  if (edge.length < 2) throw new Error("a ring edge given as a list needs at least two u values");
+  return [...edge, edge[0]];
+}
+
+/**
+ * A region all the way round a part, between edge `from` and edge `to` (each a u, a list of u values evenly round, or a function of v
+ * from 0 to 1 round from the seam): one band with no edge where its ends meet, as a stripe round a leg or a tail.
+ */
+export function uvRing(id: string, slot: string, from: RingEdge, to: RingEdge, options: RingOptions = {}): RecipeRegion {
+  const seam = options.seam ?? 0;
+  const count = options.points ?? 16;
+  const out = edgeAt(from, count);
+  const back = edgeAt(to, count).reverse();
+  const v = (i: number, n: number) => {
+    const around = seam + i / n;
+    return around > 1 ? around - 1 : around;
+  };
+  const points: Point[] = [
+    ...out.map((u, i): Point => [u, i === out.length - 1 ? seam + 1 : v(i, out.length - 1)]),
+    ...back.map((u, i): Point => [u, i === 0 ? seam + 1 : v(back.length - 1 - i, back.length - 1)]),
+  ].map(([u, w]): Point => [u, w > 1 + 1e-9 ? w - 1 : w]);
+  const corners = [0, out.length - 1, out.length, out.length + back.length - 1];
+  const result: RecipeRegion = { ...region(id, slot, options, corners), border: roundPoints(points) };
+  if (options.patch) result.patch = options.patch;
+  return result;
+}

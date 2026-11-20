@@ -29,7 +29,7 @@ private val ROW_FIELDS = setOf("count", "to", "size", "falloff")
 private const val ROW_ROUND = "toV"
 
 /** The keys a socket showing copies over an area adds, and those along a path. */
-private val SPREAD_FIELDS = setOf("spread", "to", "toV", "size", "falloff", "seed", "spacing", "sizeJitter", "leanJitter", "turnJitter", "edge", "droop")
+private val SPREAD_FIELDS = setOf("spread", "to", "toV", "size", "falloff", "seed", "spacing", "sizeJitter", "leanJitter", "turnJitter", "edge", "droop", "rows", "stagger")
 private val PATH_FIELDS = setOf("repeat", "to", "toV", "size", "falloff", "pitch", "roll", "sag")
 private const val VIA = "via."
 
@@ -125,6 +125,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
             spread = if (spread) RecipeSpread(
                 count, (params[HandSockets.seed(id)] ?: 0f).roundToInt(), params[HandSockets.spacing(id)], params[HandSockets.sizeJitter(id)],
                 params[HandSockets.leanJitter(id)], params[HandSockets.turnJitter(id)], params[HandSockets.edge(id)], params[HandSockets.droop(id)],
+                params[HandSockets.rows(id)]?.roundToInt(), params[HandSockets.stagger(id)],
             ) else null,
             path = if (spread) null else RecipePath(
                 count.takeIf { it > 0 }, params[HandSockets.pitch(id)],

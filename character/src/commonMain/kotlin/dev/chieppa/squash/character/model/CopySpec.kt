@@ -16,7 +16,9 @@ data class SurfacePlace(val u: Float, val v: Float)
  * [spacing], in body units. Along a path each copy rolls [roll] degrees more than the one before it, every other one turned, and with
  * [sag] the path droops that far at its middle, in body units, as a chain hangs between two anchors, lying on the part where it meets it.
  * A copy sinks [sink] times the part's own depth into the surface, or stands [outset] off it. With [patch] the area or path lies on that
- * patch of the part, a digit, and not on its first run. See HLD: data-model, Copies.
+ * patch of the part, a digit, and not on its first run. Over an area with [rows], the copies lie in that many rows evenly across it
+ * along the part, [count] evenly round each, every other row shifted round by [stagger] of the gap between two, and the seed picks only
+ * their jitter: plates and scales overlapping as shingles where [tilt] lays them back toward the part's end. See HLD: data-model, Copies.
  */
 data class CopySpec(
     val layout: CopyLayout,
@@ -39,6 +41,8 @@ data class CopySpec(
     val roll: Float = 0f,
     val sag: Float = 0f,
     val patch: String? = null,
+    val rows: Int = 0,
+    val stagger: Float = DEFAULT_STAGGER,
 ) {
     companion object {
         /** The most copies one socket shows. */
@@ -46,6 +50,9 @@ data class CopySpec(
 
         /** The outer share of an area its copies' size falls off over when no edge is given. */
         const val DEFAULT_EDGE = 0.35f
+
+        /** How far every other row of copies in rows is shifted round when no stagger is given: half the gap, as bricks lie. */
+        const val DEFAULT_STAGGER = 0.5f
     }
 }
 

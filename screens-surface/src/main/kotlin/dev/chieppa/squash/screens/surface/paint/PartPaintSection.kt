@@ -163,8 +163,8 @@ private fun DeleteButton(label: String, tag: String, onClick: () -> Unit) {
 
 private class NamedSection(val name: String, val templateSlot: SlotName?)
 
-/** The selected part's template's colored blocks and areas, by the name a fill holds each under. */
+/** The selected part's template's colored blocks and areas, by the name a fill holds each under, an area on several patches once. */
 private fun partSections(session: CharacterSession, part: PartInstance): List<NamedSection> {
     val input = partColorInput(session.document.value.character, part.id, session.templates)
-    return input.patchSlots.map { NamedSection(it.patch, SlotName(it.slot)) } + input.areas.map { area -> NamedSection(area.name, area.color?.let(::SlotName)) }
+    return input.patchSlots.map { NamedSection(it.patch, SlotName(it.slot)) } + input.areas.distinctBy { it.name }.map { area -> NamedSection(area.name, area.color?.let(::SlotName)) }
 }

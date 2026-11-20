@@ -9,8 +9,14 @@ import kotlin.math.sin
 /** A primitive joined to what is listed before it by a smooth union of radius [blend]; the first's blend is not read. */
 data class Blended(val primitive: Primitive, val blend: Float = 0f)
 
-/** A flat floor at height [y] in the part's own axes: the solid is cut there by a smooth intersection of radius [blend]. */
-data class Floor(val y: Float, val blend: Float)
+/**
+ * A flat floor at height [y] in the part's own axes: the solid is cut there by a smooth intersection of radius [blend]. [across] cuts
+ * across the axis instead, keeping what lies short of [y] along it: the sole of a part that points down.
+ */
+data class Floor(val y: Float, val blend: Float, val across: Boolean = false) {
+    /** How far [q] lies past the floor, positive where it is cut away. */
+    fun past(q: Vec3): Float = if (across) q.x - y else y - q.y
+}
 
 /**
  * A turn of everything past [at] along x about the z axis through [at], by [radians] at full weight, eased in from [from] to
@@ -69,7 +75,7 @@ class BlendedField(
             field = smoothMin(field, value, row.joins?.getOrNull(nearest) ?: row.blend)
         }
         val cut = floor ?: return field
-        return smoothMax(field, (cut.y - q.y) * shrink, cut.blend)
+        return smoothMax(field, cut.past(q) * shrink, cut.blend)
     }
 
     /** This field with [fit] in place of its own, its digits read where they stand. */

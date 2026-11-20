@@ -108,6 +108,12 @@ object HandSockets {
     /** The distance between copies along a path, in body units; from the part's size when unset. */
     fun pitch(id: Int) = "${name(id)}.pitch"
 
+    /** The rows a spread lays its copies in, evenly across its area, its count in each: plates, scales, shingles. */
+    fun rows(id: Int) = "${name(id)}.rows"
+
+    /** How far round, as a share of the gap between two copies in a row, every other row of a spread in rows is shifted. */
+    fun stagger(id: Int) = "${name(id)}.stagger"
+
     /** The degrees each copy along a path rolls about the path more than the one before it, every other one turned. */
     fun roll(id: Int) = "${name(id)}.roll"
 
@@ -181,10 +187,12 @@ object HandSockets {
         val to = params[to(id)] ?: u
         val toV = params[toV(id)] ?: v
         val layout = if (spread != null) CopyLayout.AREA else CopyLayout.PATH
+        val rows = if (spread != null) (params[rows(id)] ?: 0f).roundToInt().coerceAtLeast(0) else 0
+        val count = ((spread ?: repeat) ?: 0f).roundToInt().coerceIn(0, if (rows > 0) CopySpec.MAX_COPIES / rows else CopySpec.MAX_COPIES)
         val via = (0 until MAX_VIA).mapNotNull { k -> params[viaU(id, k)]?.let { vu -> params[viaV(id, k)]?.let { vv -> SurfacePlace(vu, vv) } } }
         return CopySpec(
             layout = layout,
-            count = ((spread ?: repeat) ?: 0f).roundToInt().coerceIn(0, CopySpec.MAX_COPIES),
+            count = count,
             area = CopyArea(minOf(u, to), maxOf(u, to), minOf(v, toV), maxOf(v, toV)),
             path = if (layout == CopyLayout.PATH) listOf(SurfacePlace(u, v)) + via + SurfacePlace(to, toV) else emptyList(),
             seed = (params[seed(id)] ?: 0f).roundToInt(),
@@ -202,6 +210,8 @@ object HandSockets {
             pitch = params[pitch(id)] ?: 0f,
             roll = params[roll(id)] ?: 0f,
             sag = params[sag(id)] ?: 0f,
+            rows = rows,
+            stagger = params[stagger(id)] ?: CopySpec.DEFAULT_STAGGER,
         )
     }
 
