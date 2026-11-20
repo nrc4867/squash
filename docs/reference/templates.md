@@ -944,7 +944,7 @@ Parameters:
 | fact | value |
 | --- | --- |
 | rests | down [0, -1, 0] |
-| outline x runs 0 to | 0.2 |
+| outline x runs 0 to | 0.12 |
 | Side's +y faces | forward |
 | Top's +y faces | right |
 | views | side sets height; top sets width; front sets cap |
@@ -970,9 +970,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
-| `hoof` | body | [0, 1] | [0, 1] | fill | claw |
-| `hoof` | hooves | [0, 1] | [0, 1] | fill | claw |
-| `sole` | hooves | [0.9, 1] | [0, 1] | fill | pad |
+| `hoof` | hooves | [0.2, 1] | [0, 1] | fill | claw |
+| `sole` | hooves | [0.42, 1] | [0, 1] | fill | pad |
 
 Parameters:
 
@@ -981,7 +980,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `toes` | 1 | one of 1, 2 | 1 for a single hoof (a horse), 2 for a cloven hoof, two toes side by side (a cow, a goat, a deer). |
 | `cleft` | 1 | 0.5 to 2 | How far apart a cloven hoof's two toes stand, as a multiple of their gap. |
-| `flare` | 1.45 | 1 to 2 | How much wider each hoof is at the sole than at the coronet. |
+| `flare` | 1.25 | 1 to 1.6 | How much wider each hoof is at the sole than at the coronet. |
 | `height` | 1 | 0.6 to 1.6 | How tall the hoof wall stands from the sole to the coronet, as a multiple. |
 | `dewclaws` | 0 (off) | a flag: 1 or 0 | Builds two small dewclaws at the back of the pastern, above the hoof. |
 

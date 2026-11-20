@@ -1200,6 +1200,18 @@
         "across": {
           "description": "Cuts across the axis at `at` along it instead, keeping what lies short of it: the sole of a part that points down, a hoof.",
           "type": "boolean"
+        },
+        "hollow": {
+          "description": "With `across`, how deep each run reaching the floor is dished into its sole, as a share of the sole's half width: a hoof's sole inside its wall. 0 leaves the sole flat.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "rim": {
+          "description": "How wide the wall left round a dished sole is, as a share of the sole's half width.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.9
         }
       },
       "required": [

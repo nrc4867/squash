@@ -11,7 +11,7 @@
       -1,
       0
     ],
-    "length": 0.2
+    "length": 0.12
   },
   "openEnd": null,
   "topology": {
@@ -50,9 +50,9 @@
     },
     "flare": {
       "doc": "How much wider each hoof is at the sole than at the coronet.",
-      "default": 1.45,
+      "default": 1.25,
       "min": 1.0,
-      "max": 2.0
+      "max": 1.6
     },
     "height": {
       "doc": "How tall the hoof wall stands from the sole to the coronet, as a multiple.",
@@ -79,21 +79,23 @@
           "name": "crown",
           "shape": "ellipsoid",
           "at": [
-            0.17,
+            0.1,
             0.0,
             0.0
           ],
           "radii": [
-            0.15,
-            0.12,
-            0.13
+            0.13,
+            0.14,
+            0.14
           ]
         }
       ],
       "floor": {
-        "at": 0.7,
+        "at": 0.44,
         "blend": 0.015,
-        "across": true
+        "across": true,
+        "hollow": 0.4,
+        "rim": 0.3
       }
     },
     {
@@ -116,33 +118,33 @@
       "digits": [
         {
           "root": [
-            0.18,
+            0.13,
             0.0,
             0.0
           ],
           "toward": [
-            0.9806,
-            0.1961,
+            0.9348,
+            0.3552,
             0.0
           ],
-          "length": 0.56,
-          "radius": 0.145,
+          "length": 0.42,
+          "radius": 0.155,
           "counts": [
             1
           ]
         },
         {
           "root": [
-            0.18,
+            0.13,
             0.0,
             -0.085
           ],
           "toward": [
-            0.9806,
-            0.1961,
-            0.0
+            0.9083,
+            0.3452,
+            -0.2362
           ],
-          "length": 0.56,
+          "length": 0.42,
           "radius": 0.08,
           "counts": [
             2
@@ -150,16 +152,16 @@
         },
         {
           "root": [
-            0.18,
+            0.13,
             0.0,
             0.085
           ],
           "toward": [
-            0.9806,
-            0.1961,
-            0.0
+            0.9083,
+            0.3452,
+            0.2362
           ],
-          "length": 0.56,
+          "length": 0.42,
           "radius": 0.08,
           "counts": [
             2
@@ -169,33 +171,33 @@
           "name": "dew-l",
           "if": "$dewclaws",
           "root": [
-            0.12,
-            -0.1,
-            -0.06
+            0.06,
+            -0.12,
+            -0.07
           ],
           "toward": [
-            0.8026,
-            -0.5618,
-            -0.2006
+            0.5051,
+            -0.8081,
+            -0.303
           ],
-          "length": 0.14,
-          "radius": 0.04
+          "length": 0.1,
+          "radius": 0.035
         },
         {
           "name": "dew-r",
           "if": "$dewclaws",
           "root": [
-            0.12,
-            -0.1,
-            0.06
+            0.06,
+            -0.12,
+            0.07
           ],
           "toward": [
-            0.8026,
-            -0.5618,
-            0.2006
+            0.5051,
+            -0.8081,
+            0.303
           ],
-          "length": 0.14,
-          "radius": 0.04
+          "length": 0.1,
+          "radius": 0.035
         }
       ]
     },
@@ -213,21 +215,7 @@
       "kind": "area",
       "name": "hoof",
       "u": [
-        0.0,
-        1.0
-      ],
-      "v": [
-        0,
-        1
-      ],
-      "tag": "fill",
-      "color": "claw"
-    },
-    {
-      "kind": "area",
-      "name": "hoof",
-      "u": [
-        0.0,
+        0.2,
         1.0
       ],
       "v": [
@@ -242,7 +230,7 @@
       "kind": "area",
       "name": "sole",
       "u": [
-        0.9,
+        0.42,
         1.0
       ],
       "v": [

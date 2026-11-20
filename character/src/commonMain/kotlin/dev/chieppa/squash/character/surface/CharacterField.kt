@@ -130,7 +130,7 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
             val parentMember = JoinedMember(made[parent], runs[parent].part.origin, runs[parent].part.mirrored, 0f)
             JoinedMember(made[i], part.origin, part.mirrored, blend, parent, member.part, angles = solids.angles(member, parentMember))
         }
-    }.let { withPockets(runs, it, solids) }
+    }.let { withPockets(runs, it, solids) }.let { withSoles(runs, it, solids) }
     val firsts = runs.indices.filter { runs[it].first }
     val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
     return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)

@@ -130,5 +130,15 @@ data class Field(
 
     override fun lint(ctx: LintContext): List<Finding> =
         ctx.unit("u", u) + ctx.param("cup", cup) + (if (parts.isEmpty()) ctx.finding("parts", "a field needs a solid") else emptyList()) +
-            parts.flatMapIndexed { i, part -> part.lint(ctx, "parts[$i]") }
+            parts.flatMapIndexed { i, part -> part.lint(ctx, "parts[$i]") } + lintFloor(ctx)
+
+    private fun lintFloor(ctx: LintContext): List<Finding> {
+        val floor = floor ?: return emptyList()
+        return when {
+            floor.hollow !in 0f..1f -> ctx.finding("floor.hollow", "${floor.hollow} is outside 0 to 1")
+            floor.rim !in 0.05f..0.9f -> ctx.finding("floor.rim", "${floor.rim} is outside 0.05 to 0.9")
+            floor.hollow > 0f && !floor.across -> ctx.finding("floor.hollow", "only a floor across the axis dishes its soles")
+            else -> emptyList()
+        }
+    }
 }
