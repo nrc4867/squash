@@ -82,7 +82,7 @@ jobs:
           distribution: corretto
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
-      - run: xvfb-run --auto-servernum ./gradlew ${{ matrix.gradle-args }} --continue
+      - run: xvfb-run --auto-servernum ./gradlew ${{ matrix.gradle-args }} --continue --no-build-cache
         working-directory: squash
       - name: Test counts and times
         if: always()
@@ -142,7 +142,7 @@ jobs:
           distribution: corretto
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
-      - run: xvfb-run --auto-servernum ./gradlew integrationTest --continue
+      - run: xvfb-run --auto-servernum ./gradlew integrationTest --continue --no-build-cache
         working-directory: squash
       - run: tools/ci-test-summary.sh integrationTest
         working-directory: squash
