@@ -41,6 +41,9 @@ class RunScales(patch: Patch) {
     /** How long a unit of v is at [u]: the ring's girth there. */
     fun around(u: Float): Float = at(girths, u)
 
+    /** The mean girth of the run's rings. */
+    val meanGirth: Float get() = girths.average().toFloat()
+
     private fun at(values: FloatArray, u: Float): Float {
         val n = us.size
         if (u <= us[0]) return values[0]

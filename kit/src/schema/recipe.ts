@@ -278,6 +278,10 @@ export interface RecipeArea {
   gather?: number | null;
   /** Cloth turned back over the garment at its hem, as a rolled cuff, a rolled jeans hem or a turtleneck's fold-over: how far, in body units, the area stands out over the cloth beside it, its far edge inked and its color the cloth's back face; lies flat when left out. */
   fold?: number | null;
+  /** Sheer cloth, as stockings, tights or a chiffon layer: how much of the skin under it the cloth hides where it faces the viewer, 0 to 1, times its slot's own opacity; it hides more as it turns away, so it darkens toward the silhouette. The skin's colour, shading and ink show through, tinted by the cloth. Whole when left out. */
+  opacity?: number | null;
+  /** A net of thin threads whose holes show the skin, as fishnets or a lace-style mesh, finer than a cell; plain cloth when left out. */
+  net?: RecipeNet | null;
   /** The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area. */
   paint?: RecipeStroke[];
   /** A note the build reads past. */
@@ -585,6 +589,20 @@ export interface RecipeMembraneEdge {
   to?: number[] | null;
   /** The run of the part it lies on, such as a digit (fingers:2); the part's first run reaching each u when left out. */
   patch?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A net of threads laid on the body under the cloth, stretching with it in every pose; too fine to draw, it reads as an even tone. */
+export interface RecipeNet {
+  /** How the two sets of threads cross: diamond, both slanting from the part's length by angle, one each way, as fishnets; square, one along the part turned by angle and one square to it. */
+  pattern?: "diamond" | "square";
+  /** The spacing between threads, in body units: about 0.02 to 0.04 for fishnets on a person-sized body. */
+  hole?: number;
+  /** How wide a thread is, in body units, under the hole. */
+  thread?: number;
+  /** In degrees, 0 to 90: a diamond net's threads' slant from the part's length, 45 for square diamonds, less for taller ones; a square net's turn from along and round. */
+  angle?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

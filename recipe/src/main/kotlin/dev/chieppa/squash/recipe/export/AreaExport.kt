@@ -8,21 +8,25 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.cellsOfRuns
 import dev.chieppa.squash.recipe.model.RecipeArea
 import dev.chieppa.squash.recipe.model.RecipeHole
+import dev.chieppa.squash.recipe.model.RecipeNet
 import dev.chieppa.squash.recipe.model.RecipeStroke
 import dev.chieppa.squash.recipe.model.RecipeStrokeShape
 import dev.chieppa.squash.recipe.model.RecipeTuck
 
-/** Whether [garment]'s cloth is what its covers' boxes paint, in one area with no name or colour of its own, holed and tucked nowhere. */
+/** Whether [garment]'s cloth is what its covers' boxes paint, in one area with no name, colour or see-through of its own, holed and tucked nowhere. */
 internal fun paintsItsBoxes(garment: Garment): Boolean {
     if (garment.holes.isNotEmpty() || garment.tucks.isNotEmpty()) return false
-    if (garment.areas.size > 1 || garment.areas.any { it.name.isNotEmpty() || it.color != null }) return false
+    if (garment.areas.size > 1 || garment.areas.any { it.name.isNotEmpty() || it.color != null || it.opacity != null || it.net != null }) return false
     val boxes = garment.copy(areas = emptyList()).withBoxesPainted()
     return boxes.areas.map { it.cells } == garment.areas.map { it.cells }
 }
 
 /** [area] as a recipe area painting exactly its cells: a box a run of columns, rows with the same runs taken together. */
 internal fun areaOf(area: GarmentArea): RecipeArea =
-    RecipeArea(area.id.value, area.name, area.color?.value, area.gather, area.fold, area.cells.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) })
+    RecipeArea(
+        area.id.value, area.name, area.color?.value, area.gather, area.fold, area.opacity, area.net?.let { RecipeNet(it.pattern, it.hole, it.thread, it.angle) },
+        area.cells.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) },
+    )
 
 internal fun holesOf(garment: Garment): List<RecipeHole> = garment.holes.map { RecipeHole(it.part.value, it.cuff) }
 

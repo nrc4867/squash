@@ -172,26 +172,6 @@ data class SetGarmentDrop(val garment: GarmentId, val part: PartId, val drop: Fl
     }
 }
 
-/** Sets the ease [garment]'s area [area] gathers its cloth in to, as a ribbed band; null lets the cloth stand off as the rest does. */
-@Serializable
-@SerialName("setAreaGather")
-data class SetAreaGather(val garment: GarmentId, val area: GarmentAreaId, val gather: Float?) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
-        require(held.area(area) != null) { "Garment ${garment.value} has no area ${area.value}" }
-        held.copy(areas = held.areas.map { if (it.id == area) it.copy(gather = gather?.coerceAtLeast(0f)) else it })
-    }
-}
-
-/** Sets how thick [garment]'s area [area] folds back over the cloth beside it, as a rolled cuff; null lies it flat. */
-@Serializable
-@SerialName("setAreaFold")
-data class SetAreaFold(val garment: GarmentId, val area: GarmentAreaId, val fold: Float?) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> = document.garmentChanged(garment) { held ->
-        require(held.area(area) != null) { "Garment ${garment.value} has no area ${area.value}" }
-        held.copy(areas = held.areas.map { if (it.id == area) it.copy(fold = fold?.coerceIn(0f, MOST_FOLD)) else it })
-    }
-}
-
 /** Sets the areas painted for [garment] and its holes. */
 @Serializable
 @SerialName("setGarmentPaint")

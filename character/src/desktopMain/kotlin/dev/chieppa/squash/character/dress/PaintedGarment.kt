@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.shape.MaskEdge
 import dev.chieppa.squash.character.shape.SurfaceMask
 import dev.chieppa.squash.character.shape.edgesOf
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.ClothNet
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentAreaId
@@ -29,13 +30,23 @@ const val NEW_AREA = "area-"
 
 /**
  * One painted area of a garment as a [mask] on a body's chart, by its [id] and [name], blank while it has no name of its own, in its own
- * palette slot [color] or the garment's, gathering its cloth in to [gather] where it sets one and folded back by [fold] where it sets one.
+ * palette slot [color] or the garment's, gathering its cloth in to [gather] where it sets one, folded back by [fold] where it sets one,
+ * sheer at [opacity] and knitted as [net] where it sets them.
  */
-class PaintedArea(val id: GarmentAreaId, val name: String, val mask: SurfaceMask, val color: SlotName? = null, val gather: Float? = null, val fold: Float? = null) {
+class PaintedArea(
+    val id: GarmentAreaId,
+    val name: String,
+    val mask: SurfaceMask,
+    val color: SlotName? = null,
+    val gather: Float? = null,
+    val fold: Float? = null,
+    val opacity: Float? = null,
+    val net: ClothNet? = null,
+) {
     /** This area as the garment saves it. */
-    fun saved(): GarmentArea = GarmentArea(id, name, mask.runs(), color, gather, fold)
+    fun saved(): GarmentArea = GarmentArea(id, name, mask.runs(), color, gather, fold, opacity, net)
 
-    fun with(mask: SurfaceMask): PaintedArea = PaintedArea(id, name, mask, color, gather, fold)
+    fun with(mask: SurfaceMask): PaintedArea = PaintedArea(id, name, mask, color, gather, fold, opacity, net)
 }
 
 /** One edge of a garment's cloth: an [edge] of the area at [area] in the garment's areas. */
@@ -144,7 +155,7 @@ private object PaintMemo {
         val last = held
         if (last != null && now != null && now.first == garment && now.second === body && now.third == character.parts) return last
         val chart = bodyChart(character, body)
-        val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells), it.color, it.gather, it.fold) }
+        val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells), it.color, it.gather, it.fold, it.opacity, it.net) }
         return PaintedGarment(chart, areas, garment.holes).also {
             key = Triple(garment, body, character.parts)
             held = it

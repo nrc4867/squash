@@ -740,6 +740,17 @@
     <string name="dress_fold_of">Fold %1$s</string>
     <string name="dress_fold_area">Fold an area</string>
     <string name="dress_fold_remove">Remove %1$s fold</string>
+    <string name="dress_sheer_of">Sheer %1$s</string>
+    <string name="dress_sheer_area">Sheer an area</string>
+    <string name="dress_sheer_remove">Remove %1$s sheer</string>
+    <string name="dress_net_of">Net %1$s</string>
+    <string name="dress_net_area">Net an area</string>
+    <string name="dress_net_remove">Remove %1$s net</string>
+    <string name="dress_net_diamond">Diamond</string>
+    <string name="dress_net_square">Square</string>
+    <string name="dress_net_hole">Hole</string>
+    <string name="dress_net_thread">Thread</string>
+    <string name="dress_net_angle">Angle</string>
     <string name="dress_edge_on">Edge · %1$s</string>
     <string name="dress_hole_on">Hole · %1$s</string>
     <string name="dress_area_name">Area %1$d</string>
@@ -821,6 +832,8 @@
     <string name="dress_step_drop">%1$s seam on %2$s</string>
     <string name="dress_step_gather">%1$s gather</string>
     <string name="dress_step_fold">%1$s fold</string>
+    <string name="dress_step_sheer">%1$s sheer</string>
+    <string name="dress_step_net">%1$s net</string>
     <string name="dress_step_paint">%1$s paint</string>
     <string name="dress_step_area_name">Rename %1$s</string>
     <string name="dress_step_tuck">%1$s tuck on %2$s</string>

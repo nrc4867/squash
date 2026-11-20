@@ -911,6 +911,30 @@
             }
           ]
         },
+        "opacity": {
+          "description": "Sheer cloth, as stockings, tights or a chiffon layer: how much of the skin under it the cloth hides where it faces the viewer, 0 to 1, times its slot's own opacity; it hides more as it turns away, so it darkens toward the silhouette. The skin's colour, shading and ink show through, tinted by the cloth. Whole when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "net": {
+          "description": "A net of thin threads whose holes show the skin, as fishnets or a lace-style mesh, finer than a cell; plain cloth when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeNet"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "paint": {
           "description": "The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.",
           "type": "array",
@@ -1910,6 +1934,40 @@
         "part",
         "from"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeNet": {
+      "description": "A net of threads laid on the body under the cloth, stretching with it in every pose; too fine to draw, it reads as an even tone.",
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "description": "How the two sets of threads cross: diamond, both slanting from the part's length by angle, one each way, as fishnets; square, one along the part turned by angle and one square to it.",
+          "enum": [
+            "diamond",
+            "square"
+          ]
+        },
+        "hole": {
+          "description": "The spacing between threads, in body units: about 0.02 to 0.04 for fishnets on a person-sized body.",
+          "type": "number",
+          "minimum": 0.004,
+          "maximum": 0.2
+        },
+        "thread": {
+          "description": "How wide a thread is, in body units, under the hole.",
+          "type": "number",
+          "minimum": 5.0E-4
+        },
+        "angle": {
+          "description": "In degrees, 0 to 90: a diamond net's threads' slant from the part's length, 45 for square diamonds, less for taller ones; a square net's turn from along and round.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 90.0
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },

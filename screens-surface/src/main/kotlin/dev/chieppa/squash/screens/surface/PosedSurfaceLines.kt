@@ -16,8 +16,10 @@ import dev.chieppa.squash.geom.WeightStroke
 import dev.chieppa.squash.geom.lineWeightAt
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.RibbonDraw
+import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.StrokeRibbon
 import dev.chieppa.squash.render.foldLineColor
+import dev.chieppa.squash.render.overSeeThroughCloth
 import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /** How many parts' sections a [PosedSurfaceLines] keeps the lines of. */
@@ -36,38 +38,50 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
 
     private val weightAt: ((Vec3) -> Float)? = if (strokes.isEmpty()) null else { point -> lineWeightAt(point, strokes) }
 
+    private val garments = shown.dress?.garments.orEmpty()
+    private val seeThrough = garments.filter { it.seeThrough != null }
+    private val whole = garments.filter { it.seeThrough == null }
+
     /**
      * The contour of [lined], each part's lines with the surface's runs left out, and of the surface and its garments, through [view],
-     * with the hems of the garments hanging free (see [hangingHems]), each garment's at its ink weight.
+     * with the hems of the garments hanging free (see [hangingHems]), each garment's at its ink weight; see-through garments' are left
+     * out, for [clothContour].
      */
-    fun contour(lined: Collection<PartLines>, view: SurfaceView): StrokeRibbon? {
-        val garments = shown.dress?.garments.orEmpty()
-        return contourRibbon(
-            lined, view, listOf(shown.surface.lines) + garments.map { it.lines }, weightAt, shown.dress?.let(::hangingHems).orEmpty(),
-            scales = listOf(1f) + garments.map { it.cover.garment.inkWeight },
-        )
-    }
+    fun contour(lined: Collection<PartLines>, view: SurfaceView): StrokeRibbon? = contourRibbon(
+        lined, view, listOf(shown.surface.lines) + whole.map { it.lines }, weightAt, hangingHems(whole),
+        scales = listOf(1f) + whole.map { it.cover.garment.inkWeight },
+    )
+
+    /** The contour of the see-through garments through [view], with their hems hanging free, each at its ink weight. */
+    fun clothContour(view: SurfaceView): StrokeRibbon? =
+        if (seeThrough.isEmpty()) null else contourRibbon(emptyList(), view, seeThrough.map { it.lines }, weightAt, hangingHems(seeThrough), seeThrough.map { it.cover.garment.inkWeight })
+
+    /** The contour of [lined] and the surface ([contour]) at [rule]'s two weights, then the see-through garments' over their cloth. */
+    fun figureContour(lined: Collection<PartLines>, view: SurfaceView, rule: LineRule, ink: Color, figureRadius: Float): List<RibbonDraw> =
+        contour(lined, view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius) }.orEmpty() +
+            clothContour(view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius).map(RibbonDraw::overSeeThroughCloth) }.orEmpty()
 
     /**
      * The ink along the surface's inked joins, its garments' inked hems and joins, and its creases and wrinkles, through [view]; each
-     * garment's creases in its cloth's fold line color from [palette].
+     * garment's creases in its cloth's fold line color from [palette], a see-through garment's over its cloth.
      */
     fun inks(view: SurfaceView, look: CharacterLook, ink: Color, palette: Palette): List<RibbonDraw> {
         val surface = shown.surface
-        val dress = shown.dress
-        val inkWeights = dress?.garments.orEmpty().associate { it.cover.garment.id to it.cover.garment.inkWeight }
-        val foldColors = dress?.garments.orEmpty().associate { garment -> garment.cover.garment.id to (palette.colorOf(garment.cover.garment.color)?.foldLineColor ?: ink) }
-        return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
-            dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight) } +
-            shown.creases?.let { creaseInkDraws(it, inkWeights, foldColors, view, look.creases, ink, surface.mesh.cell) }.orEmpty()
+        val inkWeights = garments.associate { it.cover.garment.id to it.cover.garment.inkWeight }
+        val foldColors = garments.associate { garment -> garment.cover.garment.id to (palette.colorOf(garment.cover.garment.color)?.foldLineColor ?: ink) }
+        val clothIds = seeThrough.mapTo(HashSet()) { it.cover.garment.id }
+        return joinDraws(surface, view, look.creases, ink) + hemDraws(garments, view, look.creases, ink, surface.mesh.cell) +
+            garments.flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight).onCloth(it) } +
+            shown.creases?.let { creaseInkDraws(it, inkWeights, foldColors, view, look.creases, ink, surface.mesh.cell, clothIds) }.orEmpty()
     }
 
     /** The lines its garments' cloth prints, as they are worn: each garment's inked marks and region borders, cut to its cloth. */
-    val garmentMarks: List<ResolvedMark> get() = shown.dress?.garments.orEmpty().flatMap { garment -> garment.paint?.marks?.values?.flatten().orEmpty() }
+    val garmentMarks: List<ResolvedMark> get() = garments.flatMap { garment -> garment.paint?.marks?.values?.flatten().orEmpty() }
 
-    /** The lines its garments' cloth prints, each in its slot's color from [palette] or [ink], at the marks' weight. */
-    fun garmentMarkDraws(look: CharacterLook, palette: Palette, ink: Color, taper: Float): List<RibbonDraw> =
-        garmentMarks.mapNotNull { it.lineDraw(null, look.marks, it.slot?.let(palette::colorOf) ?: ink, taper, DepthLayer.SCENE) }
+    /** The lines its garments' cloth prints, each in its slot's color from [palette] or [ink], at the marks' weight, a see-through garment's over its cloth. */
+    fun garmentMarkDraws(look: CharacterLook, palette: Palette, ink: Color, taper: Float): List<RibbonDraw> = garments.flatMap { garment ->
+        garment.paint?.marks?.values?.flatten().orEmpty().mapNotNull { it.lineDraw(null, look.marks, it.slot?.let(palette::colorOf) ?: ink, taper, DepthLayer.SCENE) }.onCloth(garment)
+    }
 
     /** What the surface's paint inks on [part] as [view] sees it, its face's lines among them. */
     fun marks(part: PartId, view: SurfaceView) = shown.paint?.seenFrom(view::toViewer)?.marks?.get(part).orEmpty()

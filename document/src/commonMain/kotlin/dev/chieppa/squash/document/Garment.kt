@@ -99,13 +99,13 @@ data class Garment(
     fun area(id: GarmentAreaId): GarmentArea? = areas.firstOrNull { it.id == id }
 
     /**
-     * This garment without what is printed on its cloth, the colours of its areas, its ink weight or its crease strengths: what its cloth's
+     * This garment without what is printed on its cloth, the colours and see-through of its areas, its ink weight or its crease strengths: what its cloth's
      * shape and cut read.
      */
     val unprinted: Garment get() =
-        if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null } && inkWeight == CLOTH_INK_WEIGHT && creasesAtDefault) this
+        if (regions.isEmpty() && marks.isEmpty() && areas.none { it.color != null || it.opacity != null || it.net != null } && inkWeight == CLOTH_INK_WEIGHT && creasesAtDefault) this
         else copy(
-            regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null) }, inkWeight = CLOTH_INK_WEIGHT,
+            regions = emptyList(), marks = emptyList(), areas = areas.map { it.copy(color = null, opacity = null, net = null) }, inkWeight = CLOTH_INK_WEIGHT,
             creases = DEFAULT_CREASE_STRENGTH, wrinkles = DEFAULT_CREASE_STRENGTH, drape = DEFAULT_CREASE_STRENGTH,
         )
 
@@ -165,7 +165,9 @@ data class GarmentBranch(
  * runs of cells row by row, the first run not painted (HLD: data-model, Garments), shown in its own palette slot [color], or the
  * garment's where it has none. Areas of one garment may touch along a seam. [gather] pulls its cloth in to that ease, as ribbing;
  * [fold] makes it cloth turned back over the garment at its hem, as a rolled cuff or a turtleneck's fold-over: it stands out by that
- * thickness over the cloth beside it, its far edge inked, and [color] is the cloth's back face.
+ * thickness over the cloth beside it, its far edge inked, and [color] is the cloth's back face. [opacity], 0 to 1, makes it sheer:
+ * how much of the skin under it the cloth hides where it faces the viewer, times its slot's own opacity, hiding more as it turns away;
+ * [net] makes it a net of threads whose holes show the skin (HLD: look, See-through cloth).
  */
 @Serializable
 data class GarmentArea(
@@ -175,11 +177,17 @@ data class GarmentArea(
     val color: SlotName? = null,
     val gather: Float? = null,
     val fold: Float? = null,
+    val opacity: Float? = null,
+    val net: ClothNet? = null,
 ) {
     init {
         require(gather == null || gather >= 0f) { "Area ${id.value} gathers to a negative ease" }
         require(fold == null || fold in 0f..MOST_FOLD) { "Area ${id.value} folds outside 0 to $MOST_FOLD" }
+        require(opacity == null || opacity in 0f..1f) { "Area ${id.value} has an opacity outside 0 to 1" }
     }
+
+    /** Whether its cloth shows what lies under it: sheer or a net. */
+    val seeThrough: Boolean get() = (opacity != null && opacity < 1f) || net != null
 }
 
 /**
