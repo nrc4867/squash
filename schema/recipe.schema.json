@@ -3318,7 +3318,7 @@
           "maximum": 1.0
         },
         "color": {
-          "description": "The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone.",
+          "description": "The palette slot of the scalp along it; when left out, a scalp tone: the head's colour darkened toward the hair's.",
           "anyOf": [
             {
               "type": "string"

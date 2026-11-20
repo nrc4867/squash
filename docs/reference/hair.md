@@ -152,7 +152,7 @@ Which way each lock root grows: a background fall down the head, a whorl spirall
 | `flow.part.at` | 0.0 | -1 to 1 | How far across the top it runs, -1 to 1 of the most a part sits off the middle (about the outer corner of the eye): positive toward the character's right. |
 | `flow.part.length` | 1.0 | 0.2 to 1.5 | How far back from the hairline it runs: 1 reaches the crown. |
 | `flow.part.clean` | 0.8 | 0 to 1 | How clean the split is, 0 a soft, wandering split to 1 a sharp, straight line. |
-| `flow.part.color` | none | - | The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone. |
+| `flow.part.color` | none | - | The palette slot of the scalp along it; when left out, a scalp tone: the head's colour darkened toward the hair's. |
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |

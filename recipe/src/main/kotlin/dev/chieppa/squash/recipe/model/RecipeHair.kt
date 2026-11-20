@@ -79,7 +79,7 @@ data class RecipeParting(
     val length: Float = 1f,
     @Doc("How clean the split is, 0 a soft, wandering split to 1 a sharp, straight line.") @Range(min = 0.0, max = 1.0)
     val clean: Float = 0.8f,
-    @Doc("The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone.")
+    @Doc("The palette slot of the scalp along it; when left out, a scalp tone: the head's colour darkened toward the hair's.")
     val color: String? = null,
 )
 

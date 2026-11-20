@@ -51,8 +51,8 @@ data class Whorl(
 /**
  * A line hair splits along, lying away from it to each side: [kind] none, centre or side; [at] how far across the top it runs, -1 to 1 of
  * the most a part sits off the middle, positive toward the character's right; [length] how far back from the hairline it runs, 1 to the
- * crown; [clean] how sharp the split is. Roots keep off it, so the scalp shows along it as a thin line in [color], the head's own colour
- * when left out.
+ * crown; [clean] how sharp the split is. Roots keep off it, so the scalp shows along it as a thin line in [color], when left out a scalp
+ * tone, the head's colour darkened toward the hair's.
  */
 @Serializable
 @Doc("A parting: a line where hair splits and lies away to each side, the scalp showing along it as a thin line.")
@@ -65,7 +65,7 @@ data class Parting(
     val length: Float = 1f,
     @Doc("How clean the split is, 0 a soft, wandering split to 1 a sharp, straight line.") @Range(min = 0.0, max = 1.0)
     val clean: Float = 0.8f,
-    @Doc("The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone.")
+    @Doc("The palette slot of the scalp along it; when left out, a scalp tone: the head's colour darkened toward the hair's.")
     val color: SlotName? = null,
 ) {
     init {

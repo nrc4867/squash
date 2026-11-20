@@ -17,6 +17,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Parting
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.ScalpFlow
+import dev.chieppa.squash.document.blendedSlot
 import dev.chieppa.squash.document.scalpFlowOn
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.lockGroupPartId
@@ -247,20 +248,30 @@ val HAIR_SLOT = SlotName("hair")
  * hair slot, else its head's.
  */
 fun lockColors(character: Character): Map<PartId, PartColor> = character.lockGroups.flatMap { group ->
-    val slot = group.color
-        ?: group.mass?.let(character::part)?.let { character.resolved(it).surface.baseSlot }
-        ?: HAIR_SLOT.takeIf { slot -> character.palette.slots.any { it.name == slot } }
-        ?: character.part(group.on)?.let { character.resolved(it).surface.baseSlot }
     listOfNotNull(
-        lockGroupPartId(group.id) to PartColor(slot, emptyList()),
+        lockGroupPartId(group.id) to PartColor(groupSlot(character, group), emptyList()),
         group.band?.let { lockBandPartId(group.id) to PartColor(it, emptyList()) },
     )
 }.toMap() + partingColors(character)
 
-/** The colour of the strip of scalp along each parting over a head with locks: the parting's own slot, else the head's base slot. */
-private fun partingColors(character: Character): Map<PartId, PartColor> = character.lockGroups.map { it.on }.distinct().mapNotNull { head ->
+/** How far a parting's scalp tone carries the head's colour toward its hair's: a skin darkened toward the hair, as scalp shows through it. */
+private const val SCALP_TOWARD_HAIR = 0.4f
+
+/** [group]'s slot: its own, else its mass's base slot, else the palette's hair slot, else its head's base slot. */
+private fun groupSlot(character: Character, group: LockGroup): SlotName? = group.color
+    ?: group.mass?.let(character::part)?.let { character.resolved(it).surface.baseSlot }
+    ?: HAIR_SLOT.takeIf { slot -> character.palette.slots.any { it.name == slot } }
+    ?: character.part(group.on)?.let { character.resolved(it).surface.baseSlot }
+
+/**
+ * The colour of the strip of scalp along each parting over a head with locks: the parting's own slot, else the head's base colour carried
+ * toward its first group's hair colour, a scalp tone.
+ */
+private fun partingColors(character: Character): Map<PartId, PartColor> = character.lockGroups.groupBy { it.on }.mapNotNull { (head, groups) ->
     val parting = character.scalpFlowOn(head).parting
     if (!parting.shown) return@mapNotNull null
-    val slot = parting.color ?: character.part(head)?.let { character.resolved(it).surface.baseSlot }
+    val skin = character.part(head)?.let { character.resolved(it).surface.baseSlot }
+    val hair = groupSlot(character, groups.first())
+    val slot = parting.color ?: if (skin != null && hair != null && skin != hair) blendedSlot(skin, hair, SCALP_TOWARD_HAIR) else skin
     partingPartId(head) to PartColor(slot, emptyList())
 }.toMap()

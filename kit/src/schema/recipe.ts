@@ -900,7 +900,7 @@ export interface RecipeParting {
   length?: number;
   /** How clean the split is, 0 a soft, wandering split to 1 a sharp, straight line. */
   clean?: number;
-  /** The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone. */
+  /** The palette slot of the scalp along it; when left out, a scalp tone: the head's colour darkened toward the hair's. */
   color?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;

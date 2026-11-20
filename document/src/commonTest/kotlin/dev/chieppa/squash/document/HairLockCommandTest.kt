@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 /** Lock groups, single locks set by hand and collision shapes: each set, replaced, removed and undone as one serializable step. */
@@ -126,6 +127,26 @@ class HairLockCommandTest {
         assertFailsWith<IllegalArgumentException> { ScalpFlow(head.id, cowlicks = List(MOST_COWLICKS + 1) { Cowlick() }) }
         val text = Json.encodeToString(SquashDocument.serializer(), set)
         assertEquals(set, readDocument(text))
+    }
+
+    @Test
+    fun aBlendedSlotReadsAsItsSlotsMixed() {
+        val skin = SlotName("skin")
+        val hair = SlotName("hair")
+        val palette = Palette(listOf(PaletteSlot(skin, SlotColor(1f, 0.8f, 0.6f), shadow = SlotColor(0.8f, 0.6f, 0.4f)), PaletteSlot(hair, SlotColor(0.4f, 0.2f, 0f), shadow = SlotColor(0.2f, 0f, 0f))))
+        val scalp = blendedSlot(skin, hair, 0.5f)
+        fun assertNear(expected: SlotColor, actual: SlotColor?) {
+            val got = assertNotNull(actual)
+            assertEquals(expected.red, got.red, 1e-5f)
+            assertEquals(expected.green, got.green, 1e-5f)
+            assertEquals(expected.blue, got.blue, 1e-5f)
+        }
+        assertNear(SlotColor(0.7f, 0.5f, 0.3f), palette.color(scalp))
+        assertNear(SlotColor(0.5f, 0.3f, 0.2f), palette.shadow(scalp))
+        assertEquals(1f, palette.opacity(scalp))
+        assertNull(palette.color(SlotName("nothing")))
+        assertEquals(palette.color(skin), palette.color(blendedSlot(skin, SlotName("nothing"), 0.5f)), "a blend with a missing slot takes the one there")
+        assertFailsWith<IllegalArgumentException> { blendedSlot(skin, hair, 2f) }
     }
 
     @Test
