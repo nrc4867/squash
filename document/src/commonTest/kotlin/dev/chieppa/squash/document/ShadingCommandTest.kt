@@ -40,6 +40,30 @@ class ShadingCommandTest {
     }
 
     @Test
+    fun aCharacterIsLitFromTheViewWithItsFarSideAFifthDarker() {
+        assertEquals(ShadingLight.VIEW, empty.character.shading.light)
+        assertEquals(FAR_SIDE_DEPTH, empty.character.shading.farSide)
+    }
+
+    @Test
+    fun aDeeperFarSideAndABodyLightAreSetUndoneAndSerializable() {
+        val chosen = CharacterShading(ShadingMode.TWO_TONE, farSide = 0.4f, light = ShadingLight.BODY)
+        val command = SetCharacterShading(chosen)
+        assertRoundTrips(command)
+        assertEquals(chosen, command.apply(empty).document.character.shading)
+        scenario(empty) {
+            run(command)
+            undo()
+            expect(empty)
+        }
+    }
+
+    @Test
+    fun aFarSideDeeperThanTheMostIsRefused() {
+        assertFailsWith<IllegalArgumentException> { CharacterShading(farSide = MOST_FAR_SIDE_DEPTH + 0.1f) }
+    }
+
+    @Test
     fun aSlotsShadowIsSetClearedUndoneAndSerializable() {
         val command = SetSlotShadow(cream, tan)
         assertRoundTrips(command)

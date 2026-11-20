@@ -120,7 +120,7 @@ const jeans = garment({ id: "jeans", slot: "bottom", fit: 0.02, hang: { limit: 0
 
 ## Creases and wrinkles
 
-Never draw creases, wrinkles or folds as marks or areas: a mark rides the cloth, so it squeezes and fades as the joint bends, and a darker area reads as a patch. Turn them on at the recipe's top level instead; they come from the pose:
+Never draw creases, wrinkles or folds as marks or areas: a mark rides the cloth, so it squeezes and fades as the joint bends, and a darker area reads as a patch. They are on by default and come from the pose; tune them at the recipe's top level and on each garment:
 
 ```ts
 export default recipe({ /* ... */ creases: { skin: 1, cloth: 1 } });
@@ -129,9 +129,10 @@ const sweater = garment({ id: "sweater", slot: "top", color: "knit", fit: 0.03, 
 const jeans = garment({ id: "jeans", slot: "bottom", color: "denim", fit: 0.01, wrinkles: 1.2, areas });
 ```
 
-- `creases.skin` inks and shades the inner side of each bending joint on the body; `creases.cloth` does the same on every garment, with a small fold beside it, and turns on wrinkles and drape. Each is 0 (off) to 2; 1 is the default once `creases` is given, and `rest` (0.3) is how much shows at rest.
+- `creases.skin` inks and shades the inner side of each bending joint on the body; `creases.cloth` does the same on every garment, with a small fold beside it, and turns on wrinkles and drape. Each is 0 (off) to 2, 1 when left out, and `rest` (0.3) is how much shows at rest.
 - Per garment, `creases`, `wrinkles` and `drape` (0 to 2, 1 when left out) scale the character's cloth strength. Wrinkles show where a pose bunches the cloth: a seat, a knee, an inner elbow, a waist. Drape is soft folds down a loose top from the chest and gathers above a hem or cuff.
-- **Looser cloth wrinkles and folds more**: the fit sets it, so a tight `fit` (0.003 to 0.01) wrinkles little and a loose one (0.03 or more) folds fully. Give a sweater a loose fit, not a higher `drape`, before anything else.
+- **Looser cloth hangs in folds**: the fit sets it, so a loose `fit` (0.03 or more) hangs in a few long folds from the chest and gathers above its hem and cuffs, and a tight one (0.003 to 0.01) has none. Give a sweater a loose fit, not a higher `drape`, before anything else. Tight cloth still folds where a pose bunches it and at its joints: jeans fold at the knee, the seat and above the cuffs, a sleeve at the inner elbow; raise `wrinkles` (1.3 to 1.6) where the sheet's jeans fold more.
+- Each fold is a soft, light shaded sliver beside its line, inked only where it is strongest, and several hanging folds of different lengths; no specks are drawn. On dark cloth such as denim the ridge beside each fold catches a soft highlight, so folds read without a lighter colour. Cloth shows its joint folds a little at rest (a sleeve's inner elbow, the back of a knee, under the seat), more than skin, which stays subtle.
 - Judge them in a bent pose (`poses`): at rest a joint shows only a faint short line; the band and the longer line come with the bend. Close-ups render in the display pose, so a recipe copy whose `displayPose` is the bend shows the knees and elbows bent close up.
 
 ## Prints on the cloth

@@ -95,7 +95,7 @@ fun furDraws(fur: ShownFur, ink: Color, layer: DepthLayer = DepthLayer.SCENE, pa
 /** What fur over [slot] fills with: its palette color and shadow as a part's surface takes them, on [side], with the camera at [toCamera]. A wedge's mesh carries its root's normal, so two-tone reads the surface there. */
 fun furMaterial(palette: Palette, slot: SlotName?, fallback: Color, ink: Color, shading: ObjectShading, side: BodySide?, toCamera: Vec3): PartMaterial {
     val tones = DefaultToneRule.tones(palette.colorOf(slot) ?: fallback, palette.shadowOf(slot), shading, side, toCamera)
-    return PartMaterial(tones.lit, tones.shadow, ink, shading.mode, shading.toLight)
+    return PartMaterial(tones.lit, tones.shadow, ink, shading.mode, shading.lightFor(toCamera))
 }
 
 private fun PartFurView.edgeRibbons(): List<StrokeRibbon> = wedges.flatMap { wedge ->

@@ -216,8 +216,10 @@ export interface Recipe {
   poses?: { [key: string]: BonePose[] };
   /** Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance. */
   targets?: RecipeTarget[];
-  /** Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. Off when left out. */
+  /** Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off. */
   creases?: RecipeCreases | null;
+  /** How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out. */
+  shading?: RecipeShading | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -365,7 +367,7 @@ export interface RecipeGarment {
   hemRoll?: number;
   /** How strongly it creases on the inner side of each bending joint it covers, with ink, a shade band and a small fold, 0 to 2, times the character's cloth creases. */
   creases?: number;
-  /** How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more. */
+  /** How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; tight cloth wrinkles a little less than loose. */
   wrinkles?: number;
   /** How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more. */
   drape?: number;
@@ -684,6 +686,20 @@ export interface RecipeRegion {
   mirrored?: boolean;
   /** In a garment's regions only: the body part its border's places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
   on?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** How the character is shaded. */
+export interface RecipeShading {
+  /** flat, one colour a part; or twoTone, a lit and a shadow colour with a hard edge. Renders are always two-tone. */
+  mode?: "flat" | "twoTone";
+  /** Whether the side of a pair away from the camera darkens. */
+  farSideDarker?: boolean;
+  /** How much darker the far side is, as a share of its colour, 0 to 0.5: raise it where the sheet sets far legs and the far ear clearly darker. */
+  farSide?: number;
+  /** view: the light turns with the camera, from in front of the viewer, above and to their left, so a back view is lit as the front is; body: fixed in front of the character, so a back view falls in shade. */
+  light?: "view" | "body";
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

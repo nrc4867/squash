@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
-/** A recipe's creases and its garments' crease strengths: off when left out, on at their defaults once given, checked and exported. */
+/** A recipe's creases and its garments' crease strengths: on at their defaults when left out or given empty, set, checked and exported. */
 class RecipeCreasesTest {
     private val builder = RecipeBuilder(TemplateFolder.shipped())
 
@@ -25,8 +25,8 @@ class RecipeCreasesTest {
     private fun error(text: String): RecipeException = assertFailsWith<RecipeException> { builder.build(RecipeJson.read(text)) }
 
     @Test
-    fun creasesAreOffWhenLeftOutAndOnAtTheirDefaultsOnceGiven() {
-        assertEquals(CharacterCreases(), builder.build(RecipeJson.read(recipe())).document.character.creases)
+    fun creasesAreOnAtTheirDefaultsWhenLeftOutOrGivenEmpty() {
+        assertEquals(CharacterCreases(DEFAULT_CREASE_STRENGTH, DEFAULT_CREASE_STRENGTH, REST_CREASE), builder.build(RecipeJson.read(recipe())).document.character.creases)
         val on = builder.build(RecipeJson.read(recipe(""", "creases": {}"""))).document.character.creases
         assertEquals(CharacterCreases(DEFAULT_CREASE_STRENGTH, DEFAULT_CREASE_STRENGTH, REST_CREASE), on)
         val set = builder.build(RecipeJson.read(recipe(""", "creases": {"skin": 1.5, "cloth": 0, "rest": 0.1}"""))).document.character.creases

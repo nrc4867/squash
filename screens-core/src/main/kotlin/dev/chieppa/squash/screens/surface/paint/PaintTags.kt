@@ -16,6 +16,8 @@ object PaintTags {
     const val FILL_REACH = "color.fillReach"
     const val SHADING = "color.shading"
     const val FAR_PARTS = "color.farParts"
+    const val FAR_DEPTH = "color.farDepth"
+    const val VIEW_LIGHT = "color.viewLight"
     const val SKIN_CREASES = "color.skinCreases"
     const val CLOTH_CREASES = "color.clothCreases"
 

@@ -19,6 +19,10 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.CREASE_TONES
+import dev.chieppa.squash.render.FOLD_TONES
+import dev.chieppa.squash.render.HIGHLIGHT_OPACITY
+import dev.chieppa.squash.render.highlightOf
+import dev.chieppa.squash.render.isDarkCloth
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.LayerSides
 import dev.chieppa.squash.render.DefaultToneRule
@@ -65,15 +69,25 @@ fun surfaceDraw(
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
     val creased = creases?.takeIf { section == null }?.let { creaseLayer(mesh, shownCut?.values(it.shade) ?: it.shade) }
     val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) } + listOfNotNull(creased)
-    return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = layers)
+    return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)), layers = layers)
 }
 
-/** A crease's shade band over [mesh], [shade] one value a vertex. */
-private fun creaseLayer(mesh: RenderMesh, shade: FloatArray) = ColorLayerDraw(mesh, CREASE_TONES, shade, crease = true)
+/** A crease's shade band over [mesh], [shade] one value a vertex, in [tones]. */
+private fun creaseLayer(mesh: RenderMesh, shade: FloatArray, tones: Tones = CREASE_TONES) = ColorLayerDraw(mesh, tones, shade, crease = true)
+
+/**
+ * A garment's crease layers over its drawn [mesh] from [marks], each value read through [values]: its joint creases' band, its folds'
+ * lighter band, and on dark cloth in [base] tones the soft highlight its folds' ridges catch.
+ */
+private fun clothCreaseLayers(mesh: RenderMesh, marks: CreaseMarks, base: Tones, values: (FloatArray) -> FloatArray): List<ColorLayerDraw> = listOfNotNull(
+    marks.lights?.takeIf { base.lit.isDarkCloth }?.let { lights -> ColorLayerDraw(mesh, highlightOf(base), values(FloatArray(lights.size) { lights[it] * HIGHLIGHT_OPACITY })) },
+    creaseLayer(mesh, values(marks.shade)),
+    marks.folds?.let { creaseLayer(mesh, values(it), FOLD_TONES) },
+)
 
 /**
  * Each garment of [dress] as a fill in its color slot, then its own paint's layers, shaded and darkened on a far side as the surface is,
- * then its shade from [creases].
+ * then its creases' and folds' bands from [creases], and on dark cloth its folds' highlights.
  */
 fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, creases: PosedCreases? = null): List<MeshDraw> = dress.garments.map { garment ->
     val slot = garment.cover.garment.color
@@ -82,8 +96,8 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
     val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
     val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
     val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
-    val creased = creases?.garments?.get(garment.cover.garment.id)?.let { creaseLayer(garment.drawn, garment.cut.values(it.shade)) }
-    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = listOfNotNull(sides) + painted + listOfNotNull(creased))
+    val creased = creases?.garments?.get(garment.cover.garment.id)?.let { clothCreaseLayers(garment.drawn, it, base, garment.cut::values) }.orEmpty()
+    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)), layers = listOfNotNull(sides) + painted + creased)
 }
 
 /** One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat. */

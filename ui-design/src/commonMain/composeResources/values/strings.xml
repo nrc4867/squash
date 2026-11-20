@@ -436,6 +436,7 @@
     <string name="color_shading_two_tone">Two-tone</string>
     <string name="color_far_parts">Far parts darker</string>
     <string name="color_far_amount">\−%1$d%</string>
+    <string name="color_view_light">Light from the view</string>
     <string name="color_skin_creases">Skin creases</string>
     <string name="color_cloth_creases">Cloth creases</string>
     <string name="color_step_creases">Creases</string>

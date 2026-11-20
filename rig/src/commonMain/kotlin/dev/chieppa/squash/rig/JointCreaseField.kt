@@ -1,6 +1,7 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.geom.RenderMesh
+import dev.chieppa.squash.geom.field.smoothstep
 import kotlin.math.abs
 import kotlin.math.exp
 
@@ -15,6 +16,10 @@ private const val REACH_OWN = 0.04f
 private const val RIDGE_AT = 1.3f
 private const val RIDGE_WIDTH = 0.55f
 
+/** Where loose cloth stops taking a joint's shade band, as shares of the joint's radius from its axis: it folds there instead. */
+private const val CLOTH_SHADE_NEAR = 1.25f
+private const val CLOTH_SHADE_FAR = 1.9f
+
 /**
  * Which vertices of one surface's drawn mesh each of [joints] can crease: those within [REACH_RADII] of its radius of its pivot at rest
  * that its bones weigh at least [REACH_INFLUENCE] together and its own bone at least [REACH_OWN], so its bend moves them, in [vertices],
@@ -22,8 +27,8 @@ private const val RIDGE_WIDTH = 0.55f
  */
 class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
     companion object {
-        /** The reach of [joints] over the drawn mesh [rest], weighed by [skin]. */
-        fun of(joints: List<CreaseJoint>, rest: RenderMesh, skin: SurfaceSkin): CreaseReach {
+        /** The reach of [joints] over the drawn mesh [rest], weighed by [skin], of its vertices only those [creasable] keeps, or all with none. */
+        fun of(joints: List<CreaseJoint>, rest: RenderMesh, skin: SurfaceSkin, creasable: BooleanArray? = null): CreaseReach {
             val count = minOf(rest.vertexCount, skin.vertexCount)
             val stride = RenderMesh.FLOATS_PER_VERTEX
             return CreaseReach(joints, joints.map { joint ->
@@ -32,6 +37,7 @@ class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
                 val reach = joint.radius * REACH_RADII
                 val within = ArrayList<Int>()
                 for (v in 0 until count) {
+                    if (creasable != null && !creasable.getOrElse(v) { true }) continue
                     if ((rest.vertices.vec(v * stride) - joint.pivot).length > reach) continue
                     if (influence(skin, v, bones) >= REACH_INFLUENCE && influence(skin, v, own) >= REACH_OWN) within += v
                 }
@@ -44,7 +50,8 @@ class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
 /**
  * One surface's joint creases in a pose, a value each vertex of its drawn mesh: the crease [shade], the strength its ink has round the
  * limb, [ink], and over its middle stretch alone, [middle], how far along the limb from that crease's middle in its widths, [along], the [owner], the index into [posed] of the crease
- * strongest there or -1, and [fold], how high cloth rises either side of the crease for a fold as high as the joint's radius.
+ * strongest there or -1, [fold], how high cloth rises either side of the crease for a fold as high as the joint's radius, and [ridge], that fold's height as a
+ * share of its most, 0 to the crease's amount.
  */
 class JointCreaseField(
     val shade: FloatArray,
@@ -53,20 +60,23 @@ class JointCreaseField(
     val along: FloatArray,
     val owner: IntArray,
     val fold: FloatArray,
+    val ridge: FloatArray,
     val posed: List<PosedCreaseJoint>,
 ) {
     companion object {
         /**
          * The creases of [reach]'s joints as [posed] has them, null where one creases nowhere, on the drawn [vertices] of a mesh with
-         * [count] of them.
+         * [count] of them, each shade times [shadeShare]. On [cloth] the shade fades out from [CLOTH_SHADE_NEAR] to [CLOTH_SHADE_FAR] of
+         * a joint's radius from its axis, so cloth standing well off a joint folds there instead of taking a band.
          */
-        fun of(reach: CreaseReach, posed: List<PosedCreaseJoint?>, vertices: FloatArray, count: Int): JointCreaseField {
+        fun of(reach: CreaseReach, posed: List<PosedCreaseJoint?>, vertices: FloatArray, count: Int, shadeShare: Float = 1f, cloth: Boolean = false): JointCreaseField {
             val shade = FloatArray(count)
             val ink = FloatArray(count)
             val middle = FloatArray(count)
             val along = FloatArray(count)
             val owner = IntArray(count) { -1 }
             val fold = FloatArray(count)
+            val ridges = FloatArray(count)
             val kept = ArrayList<PosedCreaseJoint>()
             val stride = RenderMesh.FLOATS_PER_VERTEX
             for ((j, joint) in posed.withIndex()) {
@@ -80,7 +90,8 @@ class JointCreaseField(
                     val around = joint.around(facing)
                     if (around <= 0f) continue
                     val t = joint.along(p)
-                    val s = around * exp(-t * t)
+                    val near = if (cloth) 1f - smoothstep(CLOTH_SHADE_NEAR, CLOTH_SHADE_FAR, joint.axisShare(p)) else 1f
+                    val s = around * exp(-t * t) * shadeShare * near
                     if (s > shade[v]) shade[v] = s
                     if (around * exp(-t * t * 0.25f) > ink[v] * exp(-along[v] * along[v] * 0.25f)) {
                         ink[v] = around
@@ -89,10 +100,12 @@ class JointCreaseField(
                         owner[v] = index
                     }
                     val ridge = (abs(t) - RIDGE_AT) / RIDGE_WIDTH
-                    fold[v] = maxOf(fold[v], around * exp(-ridge * ridge) * joint.joint.radius)
+                    val crest = around * exp(-ridge * ridge)
+                    fold[v] = maxOf(fold[v], crest * joint.joint.radius)
+                    ridges[v] = maxOf(ridges[v], crest)
                 }
             }
-            return JointCreaseField(shade, ink, middle, along, owner, fold, kept)
+            return JointCreaseField(shade, ink, middle, along, owner, fold, ridges, kept)
         }
     }
 }

@@ -66,6 +66,12 @@ class PosedCreaseJoint(
     /** The same for its middle stretch alone, where a deep crease's shorter lines either side run. */
     fun middle(facing: Float): Float = amount * smoothstep(coreCosine, middleCosine, facing)
 
+    /** How far [p] lies from the joint's axis, in its radii. */
+    fun axisShare(p: Vec3): Float {
+        val rel = p - at
+        return (rel - plane * (rel dot plane)).length / joint.radius
+    }
+
     /** How far [p] lies along the limb from the crease's middle, in widths: the crease's ink runs where this is 0. */
     fun along(p: Vec3): Float = ((p - at) dot plane) / width
 

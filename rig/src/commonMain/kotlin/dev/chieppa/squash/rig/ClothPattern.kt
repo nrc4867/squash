@@ -15,13 +15,13 @@ import kotlin.math.roundToInt
 
 /** How many of a garment's cells one wrinkle, one hanging fold and one gather above a hem take, peak to peak. */
 private const val WRINKLE_CELLS = 5f
-private const val DRAPE_CELLS = 10f
-private const val GATHER_CELLS = 5f
+private const val DRAPE_CELLS = 11f
+private const val GATHER_CELLS = 8f
 
-/** How far a wrinkle, a fold and a gather wander off their even spacing, in radians of their wave at the noise's most. */
-private const val WRINKLE_WANDER = 2.4f
-private const val DRAPE_WANDER = 1.6f
-private const val GATHER_WANDER = 1.2f
+/** How far a wrinkle, a fold and a gather wander off their even spacing, in radians of their wave at the noise's most: little, so each runs long and unbroken. */
+private const val WRINKLE_WANDER = 0.8f
+private const val DRAPE_WANDER = 0.9f
+private const val GATHER_WANDER = 0.4f
 
 /** How much fit, in the body's cells, makes a garment fully loose, and the least and most looseness. */
 private const val LOOSE_CELLS = 2.5f
@@ -32,10 +32,17 @@ private const val MOST_LOOSE = 1.5f
 private const val DRAPE_TOP_FROM = 0.55f
 private const val DRAPE_TOP_TO = 0.85f
 
-/** How far above a hem gathers reach, in gathers, and where they start above it, past the hem's own band. */
-private const val GATHER_REACH = 1.4f
+/** Where above a hem, along its part, gathers start and are full, past the hem's own band, and how far past that they fade, in gathers. */
+private const val GATHER_REACH = 2.2f
 private const val GATHER_FROM = 0.25f
 private const val GATHER_FULL = 0.7f
+
+/** How far inside the cloth from its nearest edge, in cells, hanging folds and gathers start and are full, clear of a hem's band. */
+private const val EDGE_FROM_CELLS = 0.5f
+private const val EDGE_TO_CELLS = 2.5f
+
+/** How near its edge, in cells, a vertex below which the edge lies counts toward where a part's hem lies. */
+private const val HEM_CELLS = 1.5f
 
 /** The least number of hanging folds or gathers round a part. */
 private const val LEAST_FOLDS = 3
@@ -51,17 +58,20 @@ private const val SEED_GATHER = 53
 
 /** The noise's own spacing for each pattern, in that pattern's waves. */
 private const val WANDER_WAVES = 1.5f
-private const val GAP_WAVES = 4f
+private const val GAP_WAVES = 2.5f
 
-/** Where the noise leaves a gap between hanging folds, eased in over this stretch of it, so most folds run long. */
-private const val GAP_FROM = -0.55f
-private const val GAP_TO = -0.1f
+/**
+ * How strong a hanging fold is along its length by slow noise, from nothing at the low end of this stretch to full at its top: each fold
+ * swells and narrows and ends at its own height, so a top hangs in several folds of different lengths and not in even stripes.
+ */
+private const val GAP_FROM = -0.5f
+private const val GAP_TO = 0.5f
 
 /**
  * What a garment's cloth does where it bunches and hangs, read once at rest, a value each vertex of its drawn mesh: the [wrinkle] wave's
  * phase along the limb, so its crests run across it, and the hanging folds down a loose top and the gathers above a hem as an envelope
- * and a phase round the part each ([drape], [drapePhase], [gather], [gatherPhase]); with its [looseness], from its fit, and its mesh's
- * [cell]. Each phase wanders by smooth noise in space, so no two waves repeat. See HLD: look, Creases and wrinkles.
+ * and a phase round the part each ([drape], [drapePhase], [gather], [gatherPhase]), a top's gathers running on from its hanging folds;
+ * with its [looseness], from its fit, and its mesh's [cell]. Each phase wanders by smooth noise in space, so no two waves repeat. See HLD: look, Creases and wrinkles.
  */
 class ClothPattern(
     val wrinkle: FloatArray,
@@ -96,6 +106,7 @@ class ClothPattern(
             val drapeFolds = foldsRound(frames, owners, positions, drapeWave)
             val gatherFolds = foldsRound(frames, owners, positions, gatherWave)
             val below = hemBelow(garment, frames, owners, positions, count)
+            val hems = hemsAlong(frames, owners, positions, below, distances, cell)
             val drape = FloatArray(count)
             val drapePhase = FloatArray(count)
             val gather = FloatArray(count)
@@ -108,13 +119,20 @@ class ClothPattern(
                 val round = frame.angleRound(p)
                 if (roles[part] in DRAPED) {
                     val height = frame.heightShare(p)
-                    drape[v] = (1f - smoothstep(DRAPE_TOP_FROM, DRAPE_TOP_TO, height)) * smoothstep(0.2f * drapeWave, drapeWave, distance) *
+                    drape[v] = (1f - smoothstep(DRAPE_TOP_FROM, DRAPE_TOP_TO, height)) * smoothstep(EDGE_FROM_CELLS * cell, EDGE_TO_CELLS * cell, distance) *
                         smoothstep(GAP_FROM, GAP_TO, valueNoise(p, drapeWave * GAP_WAVES, SEED_DRAPE_GAPS))
                     drapePhase[v] = (drapeFolds[part] ?: LEAST_FOLDS) * round + DRAPE_WANDER * valueNoise(p, drapeWave * WANDER_WAVES, SEED_DRAPE)
                 }
-                if (below[v] && distance > 0f) {
-                    gather[v] = exp(-distance / (GATHER_REACH * gatherWave)) * smoothstep(GATHER_FROM * gatherWave, GATHER_FULL * gatherWave, distance)
-                    gatherPhase[v] = (gatherFolds[part] ?: LEAST_FOLDS) * round + GATHER_WANDER * valueNoise(p, gatherWave * WANDER_WAVES, SEED_GATHER)
+                val hem = hems[part]
+                if (hem != null && distance > 0f) {
+                    val above = abs(frame.along(p) - hem)
+                    gather[v] = exp(-maxOf(0f, above - GATHER_FULL * gatherWave) / (GATHER_REACH * gatherWave)) * smoothstep(GATHER_FROM * gatherWave, GATHER_FULL * gatherWave, above) *
+                        smoothstep(EDGE_FROM_CELLS * cell, EDGE_TO_CELLS * cell, distance)
+                    gatherPhase[v] = if (roles[part] in DRAPED) {
+                        drapePhase[v]
+                    } else {
+                        (gatherFolds[part] ?: LEAST_FOLDS) * round + GATHER_WANDER * valueNoise(p, gatherWave * WANDER_WAVES, SEED_GATHER)
+                    }
                 }
             }
             val fit = garment.cover.garment.fit ?: garment.cover.branches.values.maxOfOrNull { it.ease } ?: 0f
@@ -202,6 +220,19 @@ private fun hemBelow(garment: SurfaceGarment, frames: PartFrames, owners: Array<
 }
 
 /**
+ * Where along each part's axis its hem lies, for each part the cloth hems on: the middle of where the vertices beside an edge that lies
+ * below them, within [HEM_CELLS] of it, lie along the part.
+ */
+private fun hemsAlong(frames: PartFrames, owners: Array<PartId?>, positions: Array<Vec3>, below: BooleanArray, distances: FloatArray, cell: Float): Map<PartId, Float> =
+    positions.indices.filter { below[it] && distances.getOrElse(it) { Float.MAX_VALUE } < HEM_CELLS * cell }
+        .groupBy { owners[it] }
+        .mapNotNull { (part, vertices) ->
+            val frame = part?.let(frames::of) ?: return@mapNotNull null
+            val along = vertices.map { frame.along(positions[it]) }.sorted()
+            part to along[along.size / 2]
+        }.toMap()
+
+/**
  * Each part's own frame at rest: the pivot and direction of its first bone, its length along its bones, and which way its cloth hangs
  * down from, [PartFrame.up].
  */
@@ -235,6 +266,9 @@ private class PartFrame(val origin: Vec3, val direction: Vec3, val length: Float
         val rel = p - origin
         return (rel - direction * (rel dot direction)).length
     }
+
+    /** How far along the part's axis [p] lies from its first pivot. */
+    fun along(p: Vec3): Float = (p - origin) dot direction
 
     /** How far up the part [p] lies, as a share of its length from its first pivot. */
     fun heightShare(p: Vec3): Float = if (length > 0f) ((p - origin) dot direction) / length else 0f

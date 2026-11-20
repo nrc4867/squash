@@ -14,9 +14,39 @@ enum class ShadingMode {
     TWO_TONE,
 }
 
-/** A character's shading choice, which is the object's own within what a scene allows. [farSideDarker] darkens the side of a pair away from the camera. */
+/** Where a character's light comes from. */
 @Serializable
-data class CharacterShading(val mode: ShadingMode = ShadingMode.FLAT, val farSideDarker: Boolean = true)
+enum class ShadingLight {
+    /** From in front of the viewer, above and to their left, whichever way the character is seen: a back view is lit as a front one. */
+    @SerialName("view")
+    VIEW,
+
+    /** From in front of the character, above and to its left, fixed to the body: a back view falls in shade. */
+    @SerialName("body")
+    BODY,
+}
+
+/** How much darker a far side is where nothing else sets it, as a share of its color. */
+const val FAR_SIDE_DEPTH = 0.18f
+
+/** The most a far side darkens. */
+const val MOST_FAR_SIDE_DEPTH = 0.5f
+
+/**
+ * A character's shading choice, which is the object's own within what a scene allows. [farSideDarker] darkens the side of a pair away
+ * from the camera by [farSide], a share of its color, 0 to [MOST_FAR_SIDE_DEPTH]; [light] is where the light comes from.
+ */
+@Serializable
+data class CharacterShading(
+    val mode: ShadingMode = ShadingMode.FLAT,
+    val farSideDarker: Boolean = true,
+    val farSide: Float = FAR_SIDE_DEPTH,
+    val light: ShadingLight = ShadingLight.VIEW,
+) {
+    init {
+        require(farSide in 0f..MOST_FAR_SIDE_DEPTH) { "A far side's depth lies from 0 to $MOST_FAR_SIDE_DEPTH" }
+    }
+}
 
 /** Chooses how the character is shaded. */
 @Serializable
