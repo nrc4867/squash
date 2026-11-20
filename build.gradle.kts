@@ -20,6 +20,9 @@ val includeSlowTests = providers.gradleProperty("slow").isPresent
 val integrationTag = "integration"
 val slowTag = "slow"
 val integrationTaskName = "integrationTest"
+// -PintegrationExclude=<pattern> leaves the tests matching it (a --tests pattern) out of every integrationTest run: the complement of
+// --tests <pattern>, so CI can split one heavy module's integration tests between two jobs with every test in exactly one.
+val integrationExclude = providers.gradleProperty("integrationExclude").orNull
 
 subprojects {
     // checkFast is check without the integration tier: every fast test task, the test source check and generated-file checks.
@@ -38,6 +41,7 @@ subprojects {
                 classpath = fast.classpath
                 javaLauncher.set(fast.javaLauncher)
                 shouldRunAfter(fast)
+                if (integrationExclude != null) filter.excludeTestsMatching(integrationExclude)
             }
             tasks.named("check") { dependsOn(integration) }
             checkFast { dependsOn(fast) }

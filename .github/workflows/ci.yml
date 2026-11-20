@@ -51,10 +51,28 @@ jobs:
             squash/**/build/test-results
             squash/**/build/reports/checkTestSources.txt
 
-  integration:
-    name: Integration tier
+  # The integration tier in shards that run side by side. The named shards each take the modules listed in their gradle-args; the
+  # last shard, "rest", runs every other module's integrationTest by excluding the named ones, so a module added later falls into
+  # it and no test goes unrun. When a module is added to a named shard, add its exclusion to "rest" below. The app's tests are split
+  # by package, the two app shards being complements (--tests a pattern, -PintegrationExclude the same pattern).
+  integration-shard:
+    name: Integration shard (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: app shell package
+            gradle-args: :app:integrationTest --tests 'dev.chieppa.squash.screens.shell.*'
+          - name: app other packages
+            gradle-args: :app:integrationTest -PintegrationExclude='dev.chieppa.squash.screens.shell.*'
+          - name: surface and draw
+            gradle-args: :screens-surface:integrationTest :screens-draw:integrationTest
+          - name: shell and sheet
+            gradle-args: :screens-shell:integrationTest :screens-sheet:integrationTest
+          - name: rest
+            gradle-args: integrationTest -x :app:integrationTest -x :screens-surface:integrationTest -x :screens-draw:integrationTest -x :screens-shell:integrationTest -x :screens-sheet:integrationTest
     steps:
       - uses: actions/checkout@v7
         with:
@@ -69,15 +87,29 @@ jobs:
           distribution: corretto
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
-      - run: xvfb-run --auto-servernum ./gradlew integrationTest --continue
+      - run: xvfb-run --auto-servernum ./gradlew ${{ matrix.gradle-args }} --continue
+        working-directory: squash
+      - name: Test counts and times
+        if: always()
+        run: tools/ci-test-summary.sh integrationTest
         working-directory: squash
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: integration-test-reports
+          name: integration-test-reports-${{ strategy.job-index }}
           path: |
             squash/**/build/reports/tests
             squash/**/build/test-results
+
+  # The check the main ruleset requires: green only when every shard is.
+  integration:
+    name: Integration tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: integration-shard
+    if: always()
+    steps:
+      - run: test "${{ needs.integration-shard.result }}" = success
 
   kit:
     name: Recipe kit
