@@ -279,7 +279,7 @@ class SurfaceMesher(val cell: Float, private val reads: FieldReads = CpuFieldRea
             val near = grid.halfDiagonal + grid.cell
             next.members.forEachIndexed { i, member ->
                 val j = before[member.key]
-                val same = j != null && last.members[j].blend == member.blend && parentKey(last, j) == parentKey(next, i)
+                val same = j != null && last.members[j].blend == member.blend && last.members[j].angles === member.angles && parentKey(last, j) == parentKey(next, i)
                 if (!same) {
                     val reach = maxOf(next.reaches[i], j?.let { last.reaches[it] } ?: 0f)
                     addBox(member, reach + margin, keys, keptOnly = true)

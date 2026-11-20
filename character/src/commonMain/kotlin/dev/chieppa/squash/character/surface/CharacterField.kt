@@ -6,9 +6,12 @@ import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.field.JoinAngles
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
+import dev.chieppa.squash.geom.field.RootedRings
+import dev.chieppa.squash.geom.field.rootReach
 import dev.chieppa.squash.geom.field.MemberKey
 import dev.chieppa.squash.geom.field.Solid
 import dev.chieppa.squash.geom.field.SweptSolid
@@ -93,28 +96,61 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
         val first = firstRunIndex(part.surface.patches)
         part.surface.patches.withIndex().filter { isFieldRun(part, it.value) }.map { (k, patch) -> FieldRun(part, k, patch, k == first) }
     }
-    val made = runs.map { solids.of(it.patch) }
+    val plain = runs.map { solids.of(it.patch) }
+    fun bare(k: Int) = JoinedMember(plain[k], runs[k].part.origin, runs[k].part.mirrored, 0f)
     val firstOf = HashMap<PartId, Int>()
     runs.forEachIndexed { i, run -> if (run.first) firstOf[run.partId] = i }
     val partIndex = parts.withIndex().associate { (i, p) -> requireNotNull(p.id) to i }
+    val parentOf = IntArray(runs.size) { i ->
+        val run = runs[i]
+        if (run.first) {
+            val parentId = run.part.socket?.parent
+            runs.indices.filter { runs[it].partId == parentId }.minByOrNull { k -> bare(k).own(run.part.origin) } ?: -1
+        } else {
+            firstOf.getValue(run.partId)
+        }
+    }
+    val made = runs.mapIndexed { i, run ->
+        val parent = parentOf[i]
+        val reach = if (run.first && parent >= 0) onClosedEndReach(run, runs[parent].part, bare(parent)) else 0f
+        if (reach > 0f) solids.of(run.patch, reach) else plain[i]
+    }
     val members = runs.mapIndexed { i, run ->
         val part = run.part
-        val solid = made[i]
-        val (parent, blend) = if (run.first) {
-            val parentId = part.socket?.parent
-            val parentRuns = runs.indices.filter { runs[it].partId == parentId }
-            val anchor = part.origin
-            val parentRun = parentRuns.minByOrNull { k -> JoinedMember(made[k], runs[k].part.origin, runs[k].part.mirrored, 0f).own(anchor) } ?: -1
-            parentRun to if (parentRun < 0) 0f else roomyBlend(part, solid, run.patch, JoinedMember(made[parentRun], runs[parentRun].part.origin, runs[parentRun].part.mirrored, 0f), solids)
-        } else {
-            val share = part.template.defaults[MERGE_PARAM]?.let { it * SOCKET_BLEND_SHARE } ?: RUN_BLEND_SHARE
-            firstOf.getValue(run.partId) to leastExtent(solid) * share
+        val parent = parentOf[i]
+        val blend = when {
+            parent < 0 -> 0f
+            run.first -> roomyBlend(part, plain[i], run.patch, bare(parent), solids)
+            else -> leastExtent(plain[i]) * (part.template.defaults[MERGE_PARAM]?.let { it * SOCKET_BLEND_SHARE } ?: RUN_BLEND_SHARE)
         }
-        JoinedMember(solid, part.origin, part.mirrored, blend, parent, partIndex.getValue(run.partId))
+        val member = JoinedMember(made[i], part.origin, part.mirrored, blend, parent, partIndex.getValue(run.partId))
+        if (!run.first || parent < 0 || blend <= 0f || part.template.join.blend != null) {
+            member
+        } else {
+            val parentMember = JoinedMember(made[parent], runs[parent].part.origin, runs[parent].part.mirrored, 0f)
+            JoinedMember(made[i], part.origin, part.mirrored, blend, parent, member.part, angles = solids.angles(member, parentMember))
+        }
     }
     val firsts = runs.indices.filter { runs[it].first }
     val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
     return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)
+}
+
+/**
+ * How far [run], a part's first run that starts open, carries on past its root into [parent], the part it sits on, when it sits on
+ * [parent]'s closed end: the longest of [ROOT_REACHES] of its root radius at which its root ring, moved back that far along the run, lies
+ * wholly inside [parentRun]. A neck wider than the closed top it stands on so comes up out of the torso and blends into its shoulders,
+ * with no flat root standing out over the top's edge. 0 elsewhere.
+ */
+internal fun onClosedEndReach(run: FieldRun, parent: PlacedPart, parentRun: JoinedMember): Float {
+    val part = run.part
+    val spec = part.socketSpec ?: return 0f
+    val patch = run.patch
+    val radius = openRootRadius(patch)
+    if (radius <= 0f || parent.poleAt(spec.u, spec.patch) == null) return 0f
+    val back = part.surface.shown(requireNotNull(patch.slices)[0].frame.tangent.normalized()) * -1f
+    val ring = List(patch.nv) { k -> part.origin + part.surface.shown(patch.point(patch.index(0, k))) }
+    return rootReach(ring, back, radius) { parentRun.own(it) }
 }
 
 /**
@@ -181,6 +217,8 @@ private fun leastExtent(solid: Solid): Float {
 class RunSolids {
     private var kept: List<Pair<Patch, Solid>> = emptyList()
     private var gaps: List<Pair<GapKey, Float?>> = emptyList()
+    private var angles: List<Pair<AnglesKey, JoinAngles?>> = emptyList()
+    private var rooted: List<Pair<Pair<Patch, Float>, Solid>> = emptyList()
 
     /** The gap [read] gives between [patch], placed at [origin], and the parent [parent] reads as, kept while all three are the same. */
     internal fun gap(patch: Patch, origin: Vec3, parent: MemberKey, read: () -> Float?): Float? {
@@ -196,10 +234,32 @@ class RunSolids {
         override fun hashCode(): Int = origin.hashCode() * 31 + parent.hashCode()
     }
 
+    /**
+     * The shares of its blend [child]'s smooth union with [parent] takes by the angle they meet at ([JoinAngles]), kept while both read
+     * the same and the blend is the same.
+     */
+    internal fun angles(child: JoinedMember, parent: JoinedMember): JoinAngles? {
+        val key = AnglesKey(child.key, parent.key, child.blend)
+        angles.firstOrNull { it.first == key }?.let { return it.second }
+        val made = JoinAngles.of(child, parent, child.blend)
+        angles = (angles + (key to made)).takeLast(KEPT)
+        return made
+    }
+
+    private data class AnglesKey(val child: MemberKey, val parent: MemberKey, val blend: Float)
+
     fun of(patch: Patch): Solid {
         kept.firstOrNull { it.first === patch }?.let { return it.second }
         val solid = sweptOf(patch)
         kept = (kept + (patch to solid)).takeLast(KEPT)
+        return solid
+    }
+
+    /** The solid [patch]'s rings sweep with its root carried on [reach] back along the run (see [sweptOf]), kept while both are the same. */
+    fun of(patch: Patch, reach: Float): Solid {
+        rooted.firstOrNull { it.first.first === patch && it.first.second == reach }?.let { return it.second }
+        val solid = sweptOf(patch, reach)
+        rooted = (rooted + ((patch to reach) to solid)).takeLast(KEPT)
         return solid
     }
 
@@ -210,22 +270,22 @@ class RunSolids {
 
 /**
  * The solid [patch]'s rings sweep, read from its points in its slices' planes at its rings' u and its columns' v, each ring read round
- * from its section's centre where the section names one.
+ * from its section's centre where the section names one. With [reach], its first ring is laid again that far back along the run, at the
+ * u the run carries on to there, so the run's root goes on into its parent unchanged instead of ending flat.
  */
-private fun sweptOf(patch: Patch): Solid {
+private fun sweptOf(patch: Patch, reach: Float = 0f): Solid {
     val slices = requireNotNull(patch.slices)
     val middles = slices.map { slice ->
         slice.section.centre?.let { c -> slice.frame.center + slice.frame.side * (c.x * slice.width / 2f) + slice.frame.up * (c.y * slice.height / 2f) }
     }
     val vs = FloatArray(patch.nv) { it.toFloat() / patch.segments }
-    return requireNotNull(
-        SweptSolid.ofRings(
-            List(patch.nu) { ring -> List(patch.nv) { patch.point(patch.index(ring, it)) } },
-            vs,
-            slices.map { it.frame.tangent },
-            slices.map { it.frame.up },
-            patch.ringUs,
-            middles.takeIf { all -> all.any { it != null } },
-        ),
+    val rings = RootedRings(
+        List(patch.nu) { ring -> List(patch.nv) { patch.point(patch.index(ring, it)) } },
+        slices.map { it.frame.tangent },
+        slices.map { it.frame.up },
+        patch.ringUs,
+        middles,
+        reach,
     )
+    return requireNotNull(SweptSolid.ofRings(rings.points, vs, rings.tangents, rings.ups, rings.us, rings.middles?.takeIf { all -> all.any { it != null } }))
 }

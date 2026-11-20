@@ -65,7 +65,7 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
             clips.of(grownRun ?: member.solid, at.patch, reach.from, reach.to, field.cell, past)
         }
         runs += at
-        members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease)
+        members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease, member.angles)
         if (neighbour == null) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
     }
     for ((at, shell) in shells) {

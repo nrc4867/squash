@@ -57,7 +57,7 @@ internal class VertexPlacement(private val grid: BlockGrid) {
                 )
                 val firsts = IntArray(around.size) { askAt(ask, block, read, around[it]) }
                 ask.answeredHere()
-                val values = FloatArray(around.size) { joinedFrom(ask, firsts[it], block, read, owns) }
+                val values = FloatArray(around.size) { joinedFrom(ask, firsts[it], block, read, around[it], owns) }
                 val sampled = Vec3(values[0] - values[1], values[2] - values[3], values[4] - values[5])
                 if (sampled.length > TINY) at = alongLine(ask, block, read, at, sampled.normalized(), owns, off, here = true)
             }
@@ -126,7 +126,7 @@ internal class VertexPlacement(private val grid: BlockGrid) {
     private suspend fun joined(ask: FieldAsk, block: SurfaceBlock, read: BooleanArray, p: Vec3, owns: Probe, here: Boolean): Float {
         val first = askAt(ask, block, read, p)
         if (here) ask.answeredHere() else ask.answered()
-        return joinedFrom(ask, first, block, read, owns)
+        return joinedFrom(ask, first, block, read, p, owns)
     }
 
     /** Asks for the place at [p] of each member [block] holds that [read] says, in slot order; the index of the first answer. */
@@ -139,8 +139,8 @@ internal class VertexPlacement(private val grid: BlockGrid) {
         return first
     }
 
-    /** The joined field from the answers [askAt] asked from [first] on, the members' own fields and places left in [owns]. */
-    private fun joinedFrom(ask: FieldAsk, first: Int, block: SurfaceBlock, read: BooleanArray, owns: Probe): Float {
+    /** The joined field at [p] from the answers [askAt] asked from [first] on, the members' own fields and places left in [owns]. */
+    private fun joinedFrom(ask: FieldAsk, first: Int, block: SurfaceBlock, read: BooleanArray, p: Vec3, owns: Probe): Float {
         var at = first
         for (s in read.indices) {
             val m = block.members[s]
@@ -156,7 +156,11 @@ internal class VertexPlacement(private val grid: BlockGrid) {
         var joined = Float.MAX_VALUE
         for (s in read.indices) {
             val parent = block.parentSlots[s]
-            val term = if (parent >= 0 && block.blends[s] > 0f) smoothMin(owns.owns[parent], owns.owns[s], block.blends[s]) else owns.owns[s]
+            val term = if (parent >= 0 && block.blends[s] > 0f) {
+                smoothMin(owns.owns[parent], owns.owns[s], block.blends[s] * (block.angles[s]?.at(p) ?: 1f))
+            } else {
+                owns.owns[s]
+            }
             if (term < joined) joined = term
         }
         return joined

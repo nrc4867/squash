@@ -7,7 +7,8 @@ import kotlin.math.sqrt
  * One run's solid placed in body space: [solid] in its part's own space, which a body point reaches by taking off [origin] and, when
  * [mirrored], reflecting it across the body's plane. It joins member [parent], the run it grows from, by a smooth union of radius
  * [blend], 0 for a plain union, and every other member by a plain union; -1 for none. [part] numbers the part it is a run of. A member
- * [ease]d is its solid grown by that much all round, as a garment grows the body.
+ * [ease]d is its solid grown by that much all round, as a garment grows the body. With [angles], its smooth union takes at each point the
+ * share of its blend those give, by the angle between its own gradient and its parent's there (see [JoinAngles]).
  */
 class JoinedMember(
     val solid: Solid,
@@ -17,7 +18,11 @@ class JoinedMember(
     val parent: Int = -1,
     val part: Int = 0,
     val ease: Float = 0f,
+    val angles: JoinAngles? = null,
 ) {
+    /** The blend the member joins its parent by at body point [p]: its [blend] times the share [angles] gives there. */
+    fun blendAt(p: Vec3): Float = angles?.let { blend * it.at(p) } ?: blend
+
     /** [p], a body point, in the part's own space. */
     fun local(p: Vec3): Vec3 {
         val q = p - origin
@@ -51,7 +56,7 @@ class JoinedMember(
     val key: MemberKey = MemberKey(solid, origin, mirrored, ease)
 
     /** This member grown by [by] more all round, joined as it is. */
-    fun eased(by: Float, parent: Int = this.parent): JoinedMember = JoinedMember(solid, origin, mirrored, blend, parent, part, ease + by)
+    fun eased(by: Float, parent: Int = this.parent): JoinedMember = JoinedMember(solid, origin, mirrored, blend, parent, part, ease + by, angles)
 
     /** How far body point [p] lies outside the member's box; 0 inside it. */
     fun boxDistance(p: Vec3): Float {
@@ -82,22 +87,25 @@ class JoinedField(val members: List<JoinedMember>) {
         members.forEach { member -> if (member.parent >= 0) reach[member.parent] = maxOf(reach[member.parent], member.blend) }
     }
 
-    /** The term member [i] adds at a point whose members' own fields are [owns], NaN for one not read there, which counts as far. */
-    fun term(i: Int, owns: FloatArray): Float {
+    /**
+     * The term member [i] adds at body point [p], whose members' own fields are [owns], NaN for one not read there, which counts as far;
+     * with no [p], the term its whole blend gives, which the shares read.
+     */
+    fun term(i: Int, owns: FloatArray, p: Vec3? = null): Float {
         val d = owns[i]
         if (d.isNaN()) return Float.MAX_VALUE
         val member = members[i]
         val parent = member.parent
         if (parent < 0 || member.blend <= 0f) return d
-        val p = owns[parent]
-        return if (p.isNaN()) d else smoothMin(p, d, member.blend)
+        val own = owns[parent]
+        return if (own.isNaN()) d else smoothMin(own, d, if (p == null) member.blend else member.blendAt(p))
     }
 
-    /** The joined field at a point whose members' own fields are [owns], NaN for those not read there. */
-    fun union(owns: FloatArray): Float {
+    /** The joined field at body point [p], whose members' own fields are [owns], NaN for those not read there. */
+    fun union(owns: FloatArray, p: Vec3): Float {
         var joined = Float.MAX_VALUE
         for (i in members.indices) {
-            val t = term(i, owns)
+            val t = term(i, owns, p)
             if (t < joined) joined = t
         }
         return joined
@@ -139,7 +147,7 @@ class JoinedField(val members: List<JoinedMember>) {
         if (count == 0) return Float.MAX_VALUE
         val owns = FloatArray(count) { Float.NaN }
         read(p, owns)
-        return union(owns)
+        return union(owns, p)
     }
 
     /** Reads into [owns] the own field at [p] of each member near enough to change the join there; the rest stay NaN. */
