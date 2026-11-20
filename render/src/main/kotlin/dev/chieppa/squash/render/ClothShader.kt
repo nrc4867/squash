@@ -132,7 +132,7 @@ fn fs_cloth(in: ClothOut) -> @location(0) vec4<f32> {
     let knit = select(crossed, mean, spans_runs);
     let coverage = mix(1.0, knit, clamp(in.look.y, 0.0, 1.0));
     let film = clamp(in.look.x * coverage, 0.0, 1.0);
-    let facing = max(abs(dot(normalize(in.normal), away())), LEAST_FACING);
+    let facing = max(abs(dot(normalize(in.proxy), away())), LEAST_FACING);
     let alpha = 1.0 - pow(max(1.0 - film, 0.0), 1.0 / pow(facing, THICKENING));
     let color = tone(in.proxy, cloth.to_light_and_two_tone, in.lit, in.shadow, away());
     return vec4<f32>(color, alpha * cloth.lift_opacity_and_layer.y);

@@ -1,6 +1,9 @@
 import type { RecipeArea, RecipeGarment, RecipeNet } from "../schema/recipe.ts";
 import { garment, LAYER } from "./wardrobe.ts";
 
+/** How many times a sheer leg's opacity its reinforced toe has when no `toeOpacity` is given, at most whole. */
+const REINFORCED = 2.4;
+
 /** The fewest rows of u a band keeps on a part's chart: two cells. */
 const BAND_ROWS = 2 / 64;
 
@@ -23,7 +26,7 @@ export interface StockingsSpec extends Partial<Omit<RecipeGarment, "areas">> {
 }
 
 /** The stocking-only fields of a spec, which are not garment fields. */
-const STOCKING_FIELDS = ["color", "top", "band", "bandColor", "toe", "toeColor", "leg", "foot", "opacity", "net"] as const;
+const STOCKING_FIELDS = ["color", "top", "band", "bandColor", "toe", "toeColor", "leg", "foot", "opacity", "toeOpacity", "net"] as const;
 
 /** The garment fields of a stockings spec, passed through to the garment. */
 function garmentFields(spec: StockingsSpec): Partial<RecipeGarment> {
@@ -32,8 +35,8 @@ function garmentFields(spec: StockingsSpec): Partial<RecipeGarment> {
   return rest as Partial<RecipeGarment>;
 }
 
-/** The areas of stockings: the leg and foot as `body`, a band at the top and a toe, each whole and opaque. */
-function stockingAreas(spec: StockingsSpec, body: Omit<RecipeArea, "id" | "paint">): RecipeArea[] {
+/** The areas of stockings: the leg and foot as `body`, a whole band at the top, and a toe as `toeLook`, whole when left out. */
+function stockingAreas(spec: StockingsSpec, body: Omit<RecipeArea, "id" | "paint">, toeLook: Omit<RecipeArea, "id" | "paint"> = {}): RecipeArea[] {
   const { top, band = 0.05, bandColor, toe, toeColor, leg = "leg-l", foot = "foot-l" } = spec;
   const areas: RecipeArea[] = [{
     id: "leg",
@@ -50,7 +53,7 @@ function stockingAreas(spec: StockingsSpec, body: Omit<RecipeArea, "id" | "paint
     areas.push(area);
   }
   if (toe !== undefined) {
-    const area: RecipeArea = { id: "toe", name: "Toe", paint: [{ on: foot, shape: "band", u: [1 - Math.max(toe, BAND_ROWS), 1] }] };
+    const area: RecipeArea = { id: "toe", name: "Toe", ...toeLook, paint: [{ on: foot, shape: "band", u: [1 - Math.max(toe, BAND_ROWS), 1] }] };
     const color = toeColor ?? bandColor;
     if (color) area.color = color;
     areas.push(area);
@@ -62,16 +65,19 @@ function stockingAreas(spec: StockingsSpec, body: Omit<RecipeArea, "id" | "paint
 export interface SheerStockingsSpec extends StockingsSpec {
   /** How much of the skin the leg hides where it faces the viewer, 0 to 1: about 0.2 for sheer, 0.5 for opaque-looking tights. */
   opacity?: number;
+  /** How much of the skin the reinforced toe hides, 0 to 1; 2.4 times the leg's, at most 1, when left out. */
+  toeOpacity?: number;
 }
 
 /**
  * Sheer stockings over a leg pair from `top` down and the whole foot: the skin shows through the leg, tinted by the stockings' colour and
- * darker toward the silhouette, under an opaque band at the top and, with `toe`, an opaque reinforced toe. Fit, ink and any garment field
+ * darker toward the silhouette, under an opaque band at the top and, with `toe`, a denser reinforced toe. Fit, ink and any garment field
  * pass through.
  */
 export function sheerStockings(spec: SheerStockingsSpec): RecipeGarment {
-  const { color, opacity = 0.25 } = spec;
-  return garment({ id: "stockings", slot: "legs", layer: LAYER.under, fit: 0.004, inkWeight: 0.5, ...garmentFields(spec), color, areas: stockingAreas(spec, { opacity }) });
+  const { color, opacity = 0.25, toeOpacity = Math.min(1, opacity * REINFORCED) } = spec;
+  const areas = stockingAreas(spec, { opacity }, toeOpacity < 1 ? { opacity: toeOpacity } : {});
+  return garment({ id: "stockings", slot: "legs", layer: LAYER.under, fit: 0.004, inkWeight: 0.5, ...garmentFields(spec), color, areas });
 }
 
 /** What fishnet stockings are: stockings whose leg and foot are a net. */
