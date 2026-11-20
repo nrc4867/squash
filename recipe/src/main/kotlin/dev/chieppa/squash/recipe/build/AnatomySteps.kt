@@ -35,10 +35,17 @@ private fun BuildContext.copyParams(path: String, socket: RecipeSocket, siblings
     val shared = mapOf(HandSockets.size(n) to socket.size, HandSockets.falloff(n) to socket.falloff)
     socket.spread?.let { spread ->
         if (spread.count !in 1..CopySpec.MAX_COPIES) fail("$path.spread.count", "a spread shows 1 to ${CopySpec.MAX_COPIES} copies, not ${spread.count}")
+        spread.rows?.let { rows ->
+            if (rows < 1) fail("$path.spread.rows", "a spread in rows has at least one row, not $rows")
+            if (rows * spread.count > CopySpec.MAX_COPIES) {
+                fail("$path.spread.rows", "$rows rows of ${spread.count} make ${rows * spread.count} copies; a socket shows at most ${CopySpec.MAX_COPIES}")
+            }
+        }
         return shared + mapOf(
             HandSockets.spread(n) to spread.count.toFloat(), HandSockets.to(n) to (socket.to ?: socket.u), HandSockets.toV(n) to (socket.toV ?: socket.v),
             HandSockets.seed(n) to spread.seed.toFloat(), HandSockets.spacing(n) to spread.spacing, HandSockets.sizeJitter(n) to spread.sizeJitter,
             HandSockets.leanJitter(n) to spread.leanJitter, HandSockets.turnJitter(n) to spread.turnJitter, HandSockets.edge(n) to spread.edge, HandSockets.droop(n) to spread.droop,
+            HandSockets.rows(n) to spread.rows?.toFloat(), HandSockets.stagger(n) to spread.stagger,
         )
     }
     val line = checkNotNull(socket.path)

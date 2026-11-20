@@ -34,7 +34,7 @@ class SweptSolid internal constructor(
     internal val us: FloatArray,
     override val low: Vec3,
     override val high: Vec3,
-) : Solid {
+) : PlacingSolid {
     private val count = middles.size
     private val reaches = FloatArray(count) { tables[it].radii.max() }
     private val mx = FloatArray(count) { middles[it].x }
@@ -67,7 +67,7 @@ class SweptSolid internal constructor(
     override fun distance(p: Vec3): Float = read(p, null)
 
     /** Writes the field at [p], and its u and v on the run, into [out] at [PLACE_FIELD], [PLACE_U] and [PLACE_V]. */
-    fun place(p: Vec3, out: FloatArray) {
+    override fun place(p: Vec3, out: FloatArray) {
         out[PLACE_FIELD] = read(p, out)
     }
 

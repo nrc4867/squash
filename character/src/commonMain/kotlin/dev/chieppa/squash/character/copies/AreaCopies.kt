@@ -29,6 +29,7 @@ internal object AreaCopies {
     private const val TURN = (2.0 * PI).toFloat()
 
     fun pick(spec: CopySpec, parent: PlacedPart, flipV: Boolean, shades: Int): List<AreaPick> {
+        if (spec.rows > 0) return inRows(spec, parent, flipV, shades)
         val area = spec.area
         val spanU = area.toU - area.fromU
         val spanV = if (area.aroundWhole) 1f else area.toV - area.fromV
@@ -67,6 +68,38 @@ internal object AreaCopies {
             kept += AreaPick(u, v, lean, leanAround, turn, spec.size * edgeShare(spec, u, v) * size, shade)
         }
         return kept
+    }
+
+    /**
+     * Copies in [CopySpec.rows] rows evenly along the area, each row [CopySpec.count] evenly round it, every other row shifted round by the
+     * spec's stagger of the gap; the seed picks each one's jitter alone. A row round the whole part closes on itself.
+     */
+    private fun inRows(spec: CopySpec, parent: PlacedPart, flipV: Boolean, shades: Int): List<AreaPick> {
+        val area = spec.area
+        if (spec.count <= 0) return emptyList()
+        val spanV = if (area.aroundWhole) 1f else area.toV - area.fromV
+        val random = CopyRandom(spec.seed)
+        val picks = ArrayList<AreaPick>(spec.rows * spec.count)
+        for (row in 0 until spec.rows) {
+            val u = if (spec.rows == 1) (area.fromU + area.toU) / 2f else area.fromU + (area.toU - area.fromU) * row / (spec.rows - 1)
+            val shift = if (row % 2 == 1) spec.stagger else 0f
+            for (column in 0 until spec.count) {
+                val across = when {
+                    area.aroundWhole -> (column + shift) / spec.count
+                    spec.count == 1 -> 0.5f
+                    else -> ((column + shift) / (spec.count - 1)).coerceAtMost(1f)
+                }
+                val v = area.fromV + spanV * across
+                val lean = spec.leanJitter * sqrt(random.next())
+                val leanAround = random.next() * TURN
+                val turn = spec.turnJitter * random.either()
+                val size = 1f + spec.sizeJitter * random.either()
+                val shade = floor(random.next() * (shades + 1)).toInt().coerceAtMost(shades)
+                point(parent, u, v, flipV, spec.patch) ?: continue
+                picks += AreaPick(u, v, lean, leanAround, turn, spec.size * edgeShare(spec, u, v) * size, shade)
+            }
+        }
+        return picks
     }
 
     fun place(rule: CopyRule, parent: PlacedPart): List<CopyPlace> = rule.picks.mapNotNull { pick ->

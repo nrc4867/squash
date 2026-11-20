@@ -130,7 +130,7 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
             val parentMember = JoinedMember(made[parent], runs[parent].part.origin, runs[parent].part.mirrored, 0f)
             JoinedMember(made[i], part.origin, part.mirrored, blend, parent, member.part, angles = solids.angles(member, parentMember))
         }
-    }
+    }.let { withPockets(runs, it, solids) }.let { withSoles(runs, it, solids) }
     val firsts = runs.indices.filter { runs[it].first }
     val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
     return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)
@@ -248,6 +248,26 @@ class RunSolids {
 
     private data class AnglesKey(val child: MemberKey, val parent: MemberKey, val blend: Float)
 
+    private var hollows: List<Pair<Patch, SweptSolid>> = emptyList()
+    private var made: List<Pair<List<Any>, Solid>> = emptyList()
+
+    /** The hollow [patch]'s rings sweep with its mouth run on [reach] out past its first ring, kept while the run is the same object. */
+    fun hollowOf(patch: Patch, reach: Float): SweptSolid {
+        hollows.firstOrNull { it.first === patch }?.let { return it.second }
+        val solid = mouthed(patch, reach)
+        hollows = (hollows + (patch to solid)).takeLast(KEPT)
+        return solid
+    }
+
+    /** What [make] makes, kept while [key], compared item by item, is the same, so a member made from unchanged solids reads as before. */
+    internal fun <T : Solid> kept(key: List<Any>, make: () -> T): T {
+        @Suppress("UNCHECKED_CAST")
+        made.firstOrNull { it.first == key }?.let { return it.second as T }
+        val solid = make()
+        made = (made + (key to solid)).takeLast(KEPT)
+        return solid
+    }
+
     fun of(patch: Patch): Solid {
         kept.firstOrNull { it.first === patch }?.let { return it.second }
         val solid = sweptOf(patch)
@@ -288,4 +308,23 @@ private fun sweptOf(patch: Patch, reach: Float = 0f): Solid {
         reach,
     )
     return requireNotNull(SweptSolid.ofRings(rings.points, vs, rings.tangents, rings.ups, rings.us, rings.middles?.takeIf { all -> all.any { it != null } }))
+}
+
+/** [patch]'s solid with a ring before its first, its first moved [reach] back along the run, so the run opens out past where it starts. */
+private fun mouthed(patch: Patch, reach: Float): SweptSolid {
+    val slices = requireNotNull(patch.slices)
+    val back = slices.first().frame.tangent * -reach
+    val rings = List(patch.nu) { ring -> List(patch.nv) { patch.point(patch.index(ring, it)) } }
+    val us = patch.ringUs
+    val perU = (slices.zipWithNext { a, b -> (b.frame.center - a.frame.center).length }.sum() / (us.last() - us.first())).takeIf { it > 0f } ?: 1f
+    val vs = FloatArray(patch.nv) { it.toFloat() / patch.segments }
+    return requireNotNull(
+        SweptSolid.ofRings(
+            listOf(rings.first().map { it + back }) + rings,
+            vs,
+            listOf(slices.first().frame.tangent) + slices.map { it.frame.tangent },
+            listOf(slices.first().frame.up) + slices.map { it.frame.up },
+            floatArrayOf(us.first() - reach / perU) + us,
+        ),
+    )
 }

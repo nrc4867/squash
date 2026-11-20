@@ -160,6 +160,7 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | --- | --- |
 | `faceRegion` | `faceRegion("mask", "cream", oval({ center: [0, 0.12], rx: 0.08, ry: 0.06 }))` |
 | `uvRegion` | `uvRegion("blaze", "cream", [[0.6, 0.9], [0.9, 0.95], [0.9, 0.05], [0.6, 0.1]], { patch: "body" })` |
+| `uvRing` | `uvRing("stripe", "dark", 0.3, (v) => 0.36 + 0.02 * Math.sin(2 * Math.PI * v))`: a region all the way round a part between two edges, each a u, u values evenly round or a function of v, with no seam where its ends meet |
 | `faceMark`, `uvMark` | `faceMark("brow", arc({ center: [0.05, 0.2], rx: 0.03, from: 30, to: 150 }), { slot: "brow", mirrored: true })` |
 | `smile` | `faceMark("mouth-line", smile({ center: [0, 0.05], width: 0.04, depth: 0.01 }))`; negative depth frowns. |
 | `taper` | `width: taper(0.3)` thins a line's ends. |

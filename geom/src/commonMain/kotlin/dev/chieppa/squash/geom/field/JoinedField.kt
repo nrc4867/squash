@@ -36,10 +36,10 @@ class JoinedMember(
     /** The member's own field at body point [p]. */
     fun own(p: Vec3): Float = solid.distance(local(p)) - ease
 
-    /** Writes the member's own field at body point [p] and where on its run it lies into [out], see [SweptSolid.place]. */
+    /** Writes the member's own field at body point [p] and where on its run it lies into [out], see [PlacingSolid.place]. */
     fun place(p: Vec3, out: FloatArray) {
         val clipped = solid as? ClippedSolid
-        val swept = (clipped?.solid ?: solid) as? SweptSolid
+        val swept = (clipped?.solid ?: solid) as? PlacingSolid
         if (swept == null) {
             out[PLACE_FIELD] = own(p)
             out[PLACE_U] = 0f

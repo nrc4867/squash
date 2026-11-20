@@ -10,6 +10,9 @@ private const val PAST_RING = 4f
 /** What a whole patch reads as: far inside. */
 private const val FAR = 1e6f
 
+/** How near, in v, a band's ends lie to once round apart, and its seam stretches to its least or greatest v. */
+private const val SEAM_TOLERANCE = 1e-3f
+
 /** How far, in u and v, a curved border's straight edges lie from its curve at most. */
 private const val CURVE_TOLERANCE = 1e-4f
 
@@ -20,7 +23,8 @@ private val UNIT_RATES = SurfaceRates(1f, 1f)
  * [shape], a color shape in a patch's own u and v, read as a signed distance at any (u, v): positive inside, negative outside, measured
  * with a stretch of u counting [uScale] times and of v [vScale] times its length, so with each set to how long a unit of it is on the
  * surface there the distance is in body units. v wraps once round when [closedV]. A border is filled by its winding, a border that goes
- * once round the patch holds the side toward the last ring, and one closing past an end ring holds what lies toward that ring.
+ * once round the patch holds the side toward the last ring, one that runs once round along one edge and back along another is a band
+ * round the patch with no edge where its ends meet, and one closing past an end ring holds what lies toward that ring.
  */
 class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolean) {
     /** The border's points with v carried on across the seam, and whether each segment counts as an edge of the shape. */
@@ -134,7 +138,7 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
             BorderClosing.ON_ITSELF -> {
                 val turns = if (closedV) round(last.v + wrapped(first.v - last.v) - first.v) else 0f
                 if (turns == 0f) {
-                    points
+                    if (closedV) withoutSeam(points) else points
                 } else {
                     val far = 1f + PAST_RING
                     points + (SurfaceUv(first.u, first.v + turns) to false) + (SurfaceUv(far, first.v + turns) to false) + (SurfaceUv(far, first.v) to false)
@@ -142,6 +146,21 @@ class UvShapeDistance(private val shape: ColorShape, private val closedV: Boolea
             }
             BorderClosing.PAST_FIRST_RING -> points.markLast() + (SurfaceUv(-PAST_RING, last.v) to false) + (SurfaceUv(-PAST_RING, first.v) to false)
             BorderClosing.PAST_LAST_RING -> points.markLast() + (SurfaceUv(1f + PAST_RING, last.v) to false) + (SurfaceUv(1f + PAST_RING, first.v) to false)
+        }
+    }
+
+    /**
+     * [outline], a closed outline in unwrapped v; where it spans exactly once round, a band going all the way round a closed patch, its
+     * stretches along its least and its greatest v are the one seam seen from either side, so they are no edge of the shape.
+     */
+    private fun withoutSeam(outline: List<Pair<SurfaceUv, Boolean>>): List<Pair<SurfaceUv, Boolean>> {
+        val low = outline.minOf { it.first.v }
+        val high = outline.maxOf { it.first.v }
+        if (abs(high - low - 1f) > SEAM_TOLERANCE) return outline
+        fun onSeam(v: Float) = abs(v - low) <= SEAM_TOLERANCE || abs(v - high) <= SEAM_TOLERANCE
+        return outline.mapIndexed { i, (point, edge) ->
+            val next = outline[(i + 1) % outline.size].first
+            point to (edge && !(onSeam(point.v) && onSeam(next.v) && abs(point.v - next.v) <= SEAM_TOLERANCE))
         }
     }
 

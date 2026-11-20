@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.block
 
 import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.build.BuildContext
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
@@ -76,7 +77,22 @@ data class FieldPart(
 /** A flat floor a [Field] is cut at. */
 @Serializable
 @Doc("A flat floor the field is cut at, up from the axis as a fraction of the axis length, joined by a smooth intersection.")
-data class FieldFloor(val at: Param, val blend: Param = Param.of(0f))
+data class FieldFloor(
+    val at: Param,
+    val blend: Param = Param.of(0f),
+    @Doc("Cuts across the axis at `at` along it instead, keeping what lies short of it: the sole of a part that points down, a hoof.")
+    val across: Boolean = false,
+    @Doc("With `across`, how deep each run reaching the floor is dished into its sole, as a share of the sole's half width: a hoof's sole inside its wall. 0 leaves the sole flat.")
+    @Range(min = 0.0, max = 1.0)
+    val hollow: Float = 0f,
+    @Doc("How wide the wall left round a dished sole is, as a share of the sole's half width.")
+    @Range(min = 0.05, max = 0.9)
+    val rim: Float = DEFAULT_SOLE_RIM,
+) {
+    companion object {
+        const val DEFAULT_SOLE_RIM = 0.3f
+    }
+}
 
 /** A turn of a [Field]'s forward part about the part's side axis. */
 @Serializable

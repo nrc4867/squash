@@ -241,6 +241,9 @@
           "$ref": "#/$defs/Pad"
         },
         {
+          "$ref": "#/$defs/Pocket"
+        },
+        {
           "$ref": "#/$defs/Skull"
         },
         {
@@ -1193,6 +1196,22 @@
               "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
+        },
+        "across": {
+          "description": "Cuts across the axis at `at` along it instead, keeping what lies short of it: the sole of a part that points down, a hoof.",
+          "type": "boolean"
+        },
+        "hollow": {
+          "description": "With `across`, how deep each run reaching the floor is dished into its sole, as a share of the sole's half width: a hoof's sole inside its wall. 0 leaves the sole flat.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "rim": {
+          "description": "How wide the wall left round a dished sole is, as a share of the sole's half width.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.9
         }
       },
       "required": [
@@ -2291,6 +2310,55 @@
         "topology",
         "views",
         "blocks"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Pocket": {
+      "description": "Makes the part a recess into the part it sits on: its first run is the hollow, from its mouth at the socket into the part along its rest, cut into the parent's runs with a wall round it that a lining fills again, a rolled rim round the mouth, and the run's own areas painted on the hollow's inside. Rest the part pointing into the part it sits on.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "pocket"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rim": {
+          "description": "Radius of the rolled rim round the mouth, as a share of the mouth's radius; 0 for a plain edge.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "wall": {
+          "description": "How thick the lining round the hollow is, as a share of the mouth's radius, at least the rim's width.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 2.0
+        }
+      },
+      "required": [
+        "kind"
       ],
       "patternProperties": {
         "^x-": {}

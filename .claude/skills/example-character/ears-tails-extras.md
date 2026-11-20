@@ -114,6 +114,13 @@ export const spines: RecipePart = { id: "spines", template: "spike", on: "torso"
 - **How they stand**: along the surface's normal; the socket's `outward` tilts them all toward the part's end (negative toward its start), so spines lie back toward the tail and a mane's clumps sweep back. `leanJitter` and `turnJitter` (degrees) break the regularity; `sizeJitter` varies their size; `size` and `falloff` size them and shrink them toward the area's edges over its outer `edge` share. `sink` and `outset` seat them as any socket's.
 - **Colour**: the part's `color`, and `shades`, a few more palette slots each copy picks among.
 - `seed` picks the scatter; another seed, another scatter with the same look. A mane is a spread of `hair-clump`s round the back of the head and a second one down the chest.
+- **Plates and scales in rows** (armadillo bands, pangolin scales, shingles): give the spread `rows` and the `scute` template; `count` is then the copies in each row, evenly round, `stagger` shifts every other row (0 for bands, 0.5 for scales), and `outward` near 80 lays each back toward the part's end over the root of the next row. Fill the scute's `edge` area with a lighter slot for its lit edge.
+
+```ts
+torso.sockets = [spreadSocket(1, { u: [0.3, 0.72], v: [0.68, 1.32] }, { count: 8, rows: 7, stagger: 0 }, { outward: 80 })];
+export const bands: RecipePart = { id: "bands", template: "scute", on: "torso", socket: "socket.1", color: "plate", size: 0.8, params: { width: 6 }, areas: { edge: "plate-light" } };
+```
+
 - A part on a spread socket leaves the one surface: field templates (`blob`) build as their own meshes there, each copy inked round.
 
 ## Webs and membranes
@@ -129,6 +136,15 @@ membranes: [{
   second: [{ part: "torso", from: [0.22, 0.27], to: [0.19, 0.4] }, { part: "back-leg-l", from: [0.12, 0.0], to: [0.95, 0.0] }],
   edge: 0.3, billow: 0.12, color: "skin",
 }],
+```
+
+## Pockets: pouches, nostrils, ear canals
+
+A recess into a part is the `pocket` template on a socket of that part, rested pointing into it: a hollow with a rolled rim and its `inside` area painted (the `nose` slot until filled). `open` is the mouth's radius against the depth, `inside` how much wider the bottom is, `width` the mouth's width against its height (2 for a pouch's slit lying across); `size` sets the depth. Keep the mouth well inside the part's width: a hollow wider than the part cuts through it. Give it the parent's `color` so the rim reads as skin.
+
+```ts
+torso.sockets = [{ n: 1, u: 0.42, v: 0.5 }];
+export const pouch: RecipePart = { id: "pouch", template: "pocket", on: "torso", socket: "socket.1", color: "fur", rest: "up", params: { open: 0.4, inside: 1.3, width: 1.4 }, areas: { inside: "pouch" } };
 ```
 
 ## Tufts and locks

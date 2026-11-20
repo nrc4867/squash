@@ -157,12 +157,12 @@ object TemplateLint {
         return outOfOrder + enough
     }
 
-    /** References are by name, so a name means one thing within its kind. */
+    /** References are by name, so a name means one thing within its kind; an area may lie on several patches, once on each, as one fill. */
     private fun names(template: PartTemplate): List<Finding> {
         val groups = listOf(
             "joint" to template.blocks.flatMap { it.joints() }.map { it.name },
             "socket" to template.blocks.flatMap { it.sockets() }.map { it.name },
-            "area" to template.blocks.flatMap { it.areas(template.defaults) }.map { it.name },
+            "area" to template.blocks.flatMap { it.areas(template.defaults) }.map { "${it.name}' on '${it.patch}" },
         )
         return groups.flatMap { (kind, names) ->
             names.groupBy { it }.filter { it.value.size > 1 }.keys.map { Finding("$.blocks", "two ${kind}s named '$it'") }

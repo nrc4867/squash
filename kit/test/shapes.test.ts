@@ -12,6 +12,7 @@ import {
   roundStations,
   tube,
   tuft,
+  uvRing,
   type Point,
 } from "squash-kit";
 
@@ -83,4 +84,10 @@ test("covers land on chart cell edges, and a band keeps two rows", () => {
   assert.deepEqual(cover("torso", { from: 0.101, to: 0.96 }), { part: "torso", from: 0.09375, to: 0.953125 });
   const belt = band("torso", 0.5, 0.001);
   assert.ok(belt.to! - belt.from! >= 2 / 64 - 1e-9);
+});
+
+test("a ring region runs out once round along one edge and back along the other, cornered where its ends meet", () => {
+  const ring = uvRing("stripe", "dark", 0.3, (v) => 0.4 + 0.1 * v, { points: 4 });
+  assert.deepEqual(ring.border, [[0.3, 0], [0.3, 0.25], [0.3, 0.5], [0.3, 0.75], [0.3, 1], [0.4, 1], [0.475, 0.75], [0.45, 0.5], [0.425, 0.25], [0.4, 0]]);
+  assert.deepEqual(ring.corners, [0, 4, 5, 9]);
 });

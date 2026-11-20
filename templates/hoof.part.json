@@ -1,0 +1,549 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hoof",
+  "version": 1,
+  "name": "Hoof",
+  "role": "foot",
+  "axis": {
+    "rest": [
+      0,
+      -1,
+      0
+    ],
+    "length": 0.12
+  },
+  "openEnd": null,
+  "topology": {
+    "rings": 36,
+    "segments": 32
+  },
+  "views": {
+    "side": "height",
+    "top": "width",
+    "front": "cap"
+  },
+  "section": "circle",
+  "join": {
+    "blend": 0.035
+  },
+  "params": {
+    "size": {
+      "doc": "Scales the part: its drawn length and width together.",
+      "default": 1.0,
+      "min": 0.4,
+      "max": 2.5
+    },
+    "toes": {
+      "doc": "1 for a single hoof (a horse), 2 for a cloven hoof, two toes side by side (a cow, a goat, a deer).",
+      "default": 1,
+      "values": [
+        1,
+        2
+      ]
+    },
+    "cleft": {
+      "doc": "How far apart a cloven hoof's two toes stand, as a multiple of their gap.",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0
+    },
+    "splay": {
+      "doc": "How far a cloven hoof's toes turn apart toward the ground, as a multiple: below 1 they stand together, above it they part a little more.",
+      "default": 1.0,
+      "min": 0.3,
+      "max": 2.0
+    },
+    "flare": {
+      "doc": "How much wider each hoof is at the sole than at the coronet.",
+      "default": 1.25,
+      "min": 1.0,
+      "max": 1.6
+    },
+    "height": {
+      "doc": "How tall the hoof wall stands from the sole to the coronet, as a multiple.",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6
+    },
+    "width": {
+      "doc": "How broad each toe is, as a multiple of its thickness.",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.5
+    },
+    "point": {
+      "doc": "How much narrower each toe is across than front to back, as a share: 0 for round toes, more for pointed ones.",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.6
+    },
+    "dewclaws": {
+      "doc": "Builds two small dewclaws high at the back of the pastern: cattle, goats, sheep.",
+      "default": false
+    },
+    "dewLow": {
+      "doc": "Builds two larger dewclaws set lower at the back, standing out: a deer's.",
+      "default": false
+    },
+    "dewLarge": {
+      "doc": "Builds two large dewclaws low at the back, reaching nearly to the ground: a pig's.",
+      "default": false
+    },
+    "heels": {
+      "doc": "Builds two heel bulbs at the back of a single hoof, above the sole.",
+      "default": false
+    },
+    "frog": {
+      "doc": "Paints a frog on the sole: a wedge from the heels pointing forward to its middle, in the claw slot.",
+      "default": false
+    }
+  },
+  "presets": {
+    "horse": {
+      "toes": 1,
+      "width": 1.1,
+      "flare": 1.5,
+      "height": 1.0,
+      "point": 0.0,
+      "heels": 1,
+      "frog": 1
+    },
+    "cattle": {
+      "toes": 2,
+      "width": 1.05,
+      "flare": 1.2,
+      "height": 0.9,
+      "point": 0.05,
+      "cleft": 1.05,
+      "splay": 0.7,
+      "dewclaws": 1
+    },
+    "goat": {
+      "toes": 2,
+      "width": 0.9,
+      "flare": 1.15,
+      "height": 1.0,
+      "point": 0.3,
+      "cleft": 0.9,
+      "splay": 1.2,
+      "dewclaws": 1
+    },
+    "deer": {
+      "toes": 2,
+      "width": 0.8,
+      "flare": 1.1,
+      "height": 1.15,
+      "point": 0.45,
+      "cleft": 0.8,
+      "splay": 1.0,
+      "dewLow": 1
+    },
+    "pig": {
+      "toes": 2,
+      "width": 1.0,
+      "flare": 1.1,
+      "height": 0.9,
+      "point": 0.05,
+      "cleft": 1.0,
+      "splay": 1.2,
+      "dewLarge": 1
+    }
+  },
+  "blocks": [
+    {
+      "kind": "field",
+      "fit": true,
+      "u": [
+        0.0,
+        1.0
+      ],
+      "from": 0.0,
+      "parts": [
+        {
+          "name": "crown",
+          "shape": "ellipsoid",
+          "at": [
+            0.04,
+            0,
+            0
+          ],
+          "radii": [
+            0.09,
+            0.085,
+            0.085
+          ]
+        },
+        {
+          "name": "heel-l",
+          "if": "$heels",
+          "shape": "ellipsoid",
+          "at": [
+            0.23,
+            -0.1,
+            -0.06
+          ],
+          "radii": [
+            0.06,
+            0.05,
+            0.055
+          ],
+          "blend": 0.04
+        },
+        {
+          "name": "heel-r",
+          "if": "$heels",
+          "shape": "ellipsoid",
+          "at": [
+            0.23,
+            -0.1,
+            0.06
+          ],
+          "radii": [
+            0.06,
+            0.05,
+            0.055
+          ],
+          "blend": 0.04
+        }
+      ],
+      "floor": {
+        "at": 0.3,
+        "blend": 0.015,
+        "across": true,
+        "hollow": 0.35,
+        "rim": 0.45
+      }
+    },
+    {
+      "kind": "digits",
+      "name": "hooves",
+      "from": 0.0,
+      "count": "$toes",
+      "rings": 16,
+      "segments": 20,
+      "taper": "$flare",
+      "reach": "$height",
+      "gap": "$cleft",
+      "hinge": "x",
+      "limits": [
+        -10,
+        10
+      ],
+      "join": 0.03,
+      "merge": 0.04,
+      "digits": [
+        {
+          "root": [
+            0.03,
+            0.0,
+            0.0
+          ],
+          "toward": [
+            0.9409,
+            0.3387,
+            0.0
+          ],
+          "length": 0.4,
+          "radius": 0.12,
+          "counts": [
+            1
+          ]
+        },
+        {
+          "root": [
+            0.03,
+            0.0,
+            -0.05
+          ],
+          "toward": [
+            0.9328,
+            0.3358,
+            -0.1306
+          ],
+          "length": 0.4,
+          "radius": 0.062,
+          "counts": [
+            2
+          ]
+        },
+        {
+          "root": [
+            0.03,
+            0.0,
+            0.05
+          ],
+          "toward": [
+            0.9328,
+            0.3358,
+            0.1306
+          ],
+          "length": 0.4,
+          "radius": 0.062,
+          "counts": [
+            2
+          ]
+        },
+        {
+          "name": "dew-l",
+          "if": "$dewclaws",
+          "root": [
+            0.06,
+            -0.065,
+            -0.035
+          ],
+          "toward": [
+            0.8213,
+            -0.5646,
+            -0.0821
+          ],
+          "length": 0.07,
+          "radius": 0.026
+        },
+        {
+          "name": "dew-r",
+          "if": "$dewclaws",
+          "root": [
+            0.06,
+            -0.065,
+            0.035
+          ],
+          "toward": [
+            0.8213,
+            -0.5646,
+            0.0821
+          ],
+          "length": 0.07,
+          "radius": 0.026
+        },
+        {
+          "name": "dew-low-l",
+          "if": "$dewLow",
+          "root": [
+            0.07,
+            -0.06,
+            -0.035
+          ],
+          "toward": [
+            0.9735,
+            -0.2231,
+            -0.0507
+          ],
+          "length": 0.11,
+          "radius": 0.03
+        },
+        {
+          "name": "dew-low-r",
+          "if": "$dewLow",
+          "root": [
+            0.07,
+            -0.06,
+            0.035
+          ],
+          "toward": [
+            0.9735,
+            -0.2231,
+            0.0507
+          ],
+          "length": 0.11,
+          "radius": 0.03
+        },
+        {
+          "name": "dew-large-l",
+          "if": "$dewLarge",
+          "root": [
+            0.08,
+            -0.065,
+            -0.05
+          ],
+          "toward": [
+            0.9457,
+            -0.3084,
+            -0.1028
+          ],
+          "length": 0.2,
+          "radius": 0.045
+        },
+        {
+          "name": "dew-large-r",
+          "if": "$dewLarge",
+          "root": [
+            0.08,
+            -0.065,
+            0.05
+          ],
+          "toward": [
+            0.9457,
+            -0.3084,
+            0.1028
+          ],
+          "length": 0.2,
+          "radius": 0.045
+        }
+      ],
+      "spread": "$splay",
+      "thickness": "$width",
+      "flat": "$point"
+    },
+    {
+      "kind": "joint",
+      "name": "fetlock",
+      "u": 0.0,
+      "hinge": "x",
+      "limits": [
+        -45,
+        45
+      ]
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.06,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.06,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "sole",
+      "u": [
+        0.3,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves",
+      "color": "pad"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-l",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-r",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-low-l",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-low-r",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-large-l",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "hoof",
+      "u": [
+        0.0,
+        1.0
+      ],
+      "v": [
+        0,
+        1
+      ],
+      "tag": "fill",
+      "patch": "hooves:dew-large-r",
+      "color": "claw"
+    },
+    {
+      "kind": "area",
+      "name": "frog",
+      "if": "$frog",
+      "u": [
+        0.3,
+        1.0
+      ],
+      "v": [
+        0.4,
+        0.6
+      ],
+      "tag": "fill",
+      "patch": "hooves",
+      "color": "claw"
+    }
+  ]
+}
