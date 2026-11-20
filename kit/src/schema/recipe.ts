@@ -116,6 +116,46 @@ export interface JointAngle {
   [note: `x-${string}`]: unknown;
 }
 
+/** How a key moves one thing on a head, in the head's own directions as seen with the camera on the head's left; Squash mirrors it for the camera on the right. */
+export interface KeyMove {
+  /** What it moves by name on each head: muzzle (the head's muzzle run, or the part on its muzzle socket such as a beak), ears (the parts on its ear sockets) or nose (its nose piece or the part on its nose socket). Give this or part. */
+  feature?: ("muzzle" | "ears" | "nose" | "head") | null;
+  /** The part it moves, with everything on it. Give this or feature. */
+  part?: string | null;
+  /** One run or piece of the part by name, such as muzzle or nose, in place of the whole part. */
+  run?: string | null;
+  /** How far it moves along the head's facing, a share of the head's length. */
+  forward?: number;
+  /** How far it moves up the head, a share of the head's length. */
+  up?: number;
+  /** How far it moves toward the head's left, which is toward the camera in a keyed view, a share of the head's length. */
+  left?: number;
+  /** Degrees it turns about the head's up through its root, its front toward the head's left. */
+  yaw?: number;
+  /** Degrees it turns about the head's left through its root, its front up. */
+  pitch?: number;
+  /** Degrees it turns about the head's facing through its root, its top toward the head's left. */
+  roll?: number;
+  /** Degrees it turns about its own length through its root, its front toward the head's left: an ear opening toward the camera. */
+  twist?: number;
+  /** How much larger it is, about its root. */
+  scale?: number;
+  /** How much wider it is across the head, from left to right, about its root. */
+  width?: number;
+  /** How much taller it is along the head's up, about its root. */
+  height?: number;
+  /** How much deeper it is along the head's facing, about its root. */
+  depth?: number;
+  /** One of the part's areas by name, such as chin or cheeks: the move then shapes only that area, eased out past its edge, on the one surface. */
+  area?: string | null;
+  /** How far its surface swells out along its normals, a share of the head's length; negative sinks it. */
+  push?: number;
+  /** How far the half of its surface on the camera's side swells out along its normals, a share of the head's length: the near cheek filling out. */
+  nearPush?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 export interface LooseEnd {
   id: string;
   branch: string;
@@ -220,6 +260,8 @@ export interface Recipe {
   creases?: RecipeCreases | null;
   /** How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out. */
   shading?: RecipeShading | null;
+  /** Head cheats that follow the camera: the face style, how far the face follows the camera, and keys per view moving the muzzle, ears, nose, any part or the head's shape. Every head's defaults when left out. */
+  viewKeys?: ViewKeys | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -900,6 +942,34 @@ export interface Through {
   /** How far the cuff reaches past the hole, a share of the part's length. */
   cuffSize?: number;
   inkCuff?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A head cheat at one view: what it moves there. */
+export interface ViewKey {
+  /** The view: front, three-quarter, side, three-quarter-back or back, by where the camera sits round the head's own facing. */
+  view: "front" | "three-quarter" | "side" | "three-quarter-back" | "back";
+  /** The camera's side of the head this key holds for: left or right. Left out, the key is for the left and Squash mirrors it for the right; the front and back take none. */
+  side?: ("left" | "right") | null;
+  /** What it moves. */
+  moves?: KeyMove[];
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Head cheats that follow the camera: what each view moves on the head, blended between neighbouring views as the camera turns round the head's own facing. */
+export interface ViewKeys {
+  /** Whether every head's default keys apply: its muzzle leans toward the camera and its ears turn toward profile. On when left out. */
+  auto?: boolean;
+  /** Keys per view, each move replacing the default for the same thing at that view. */
+  keys?: ViewKey[];
+  /** How the face meets a turning camera: turning (the face slides part way round toward the camera and the head's shape changes from view to view) or fixed (the head keeps one shape from the front round to the side and the face stays turned to the viewer). The head template's when left out. */
+  face?: ("turning" | "fixed") | null;
+  /** How far the face's features (eyes, brows, nose, mouth, muzzle, cheek marks) slide round the head toward the camera, from 0 (fixed on the head) to 1 (centred on the viewer up to the side view). Past the side view they slide back and hide behind the head. The face style's when left out. */
+  faceFollow?: number | null;
+  /** Whether the face slides as one piece and keeps its features' size, rather than gathering toward the far side as it turns. The face style's when left out. */
+  keepFace?: boolean | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

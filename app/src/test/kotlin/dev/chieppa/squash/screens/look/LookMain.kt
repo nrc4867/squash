@@ -22,6 +22,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.DRAG
 import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
+import dev.chieppa.squash.screens.look.LookArgs.Companion.ORBIT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.RELEASE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.SURFACE
 import dev.chieppa.squash.screens.smoke.CloseUps
@@ -139,6 +140,7 @@ fun renderSession(
             }
             session.send(ShowExpression(shown))
         }
+        if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, name, it, parts.faceFramed(it)) }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
         closeParts.forEach { closeUps.keepAround(session, it, "$name-${it.value}") }
         if (JOINS in close) {

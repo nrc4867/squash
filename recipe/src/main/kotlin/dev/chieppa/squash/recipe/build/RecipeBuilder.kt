@@ -15,6 +15,8 @@ import dev.chieppa.squash.document.MOST_CREASE_STRENGTH
 import dev.chieppa.squash.document.SetCharacterCreases
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPaletteSlot
+import dev.chieppa.squash.document.SetViewKeys
+import dev.chieppa.squash.document.ViewKeys
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.recipe.RecipeException
@@ -34,7 +36,7 @@ class RecipeBuild(val document: SquashDocument, val commands: List<DocumentComma
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
  * every body part, placed and shaped in the recipe's order; their colour and surface work; the wardrobe's slots and garments; the
  * parts garments own, placed, shaped and painted; the painted eyes; the membranes; the expressions; the outfits and the one shown; the display pose;
- * the creases; the shading.
+ * the creases; the shading; the view keys.
  * Anything wrong fails as a [RecipeException] at the recipe path that caused it. See HLD: architecture, Recipes.
  */
 class RecipeBuilder(private val templates: TemplateFolder) {
@@ -59,6 +61,7 @@ class RecipeBuilder(private val templates: TemplateFolder) {
             if (recipe.displayPose.isNotEmpty()) send("$.displayPose", SetDisplayPose(pose("$.displayPose", recipe.displayPose)))
             recipe.creases?.let { creases(it) }
             recipe.shading?.let { shading(it) }
+            recipe.viewKeys?.let { viewKeys(it) }
             val poses = recipe.poses.mapValues { (name, bones) -> pose("$.poses.$name", bones) }
             return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets)
         }
@@ -77,6 +80,14 @@ private fun BuildContext.pose(path: String, bones: List<BonePose>): Pose {
 private fun BuildContext.shading(shading: RecipeShading) {
     if (shading.farSide !in 0f..MOST_FAR_SIDE_DEPTH) fail("$.shading.farSide", "a far side's depth lies from 0 to $MOST_FAR_SIDE_DEPTH: here ${shading.farSide}")
     send("$.shading", SetCharacterShading(CharacterShading(shading.mode, shading.farSideDarker, shading.farSide, shading.light)))
+}
+
+/** Sends [keys] as the character's view keys, each part a move names read as the recipe names it, at its path. */
+private fun BuildContext.viewKeys(keys: ViewKeys) {
+    val named = keys.keys.mapIndexed { k, key ->
+        key.copy(moves = key.moves.mapIndexed { m, move -> move.part?.let { move.copy(part = partOf("$.viewKeys.keys[$k].moves[$m].part", it.value)) } ?: move })
+    }
+    send("$.viewKeys", SetViewKeys(keys.copy(keys = named)))
 }
 
 /** Sends [creases] as the character's, each strength checked at its path. */

@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.ShadingLight
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.document.REST_CREASE
 import dev.chieppa.squash.document.JointAngle
+import dev.chieppa.squash.document.ViewKeys
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -60,6 +61,8 @@ data class Recipe(
     val creases: RecipeCreases? = null,
     @Doc("How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out.")
     val shading: RecipeShading? = null,
+    @Doc("Head cheats that follow the camera: the face style, how far the face follows the camera, and keys per view moving the muzzle, ears, nose, any part or the head's shape. Every head's defaults when left out.")
+    val viewKeys: ViewKeys? = null,
 )
 
 /** One proportion a build is checked against. */

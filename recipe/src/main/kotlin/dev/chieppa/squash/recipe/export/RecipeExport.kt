@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CharacterCreases
+import dev.chieppa.squash.document.ViewKeys
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.LineRules
@@ -76,6 +77,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         displayPose = bones(character.displayPose, "display pose", notCarried),
         creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
         shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light) },
+        viewKeys = character.viewKeys.takeIf { it != ViewKeys() },
     )
     return RecipeExport(recipe, notCarried)
 }

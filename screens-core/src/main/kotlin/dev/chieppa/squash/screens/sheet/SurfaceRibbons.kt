@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.sheet
 
+import dev.chieppa.squash.character.viewkeys.KeyedView
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.RibbonDraw
@@ -14,4 +15,7 @@ interface SurfaceRibbons {
 
     /** What [part]'s face fills over it through [view]. */
     fun faceLayers(part: PartId, view: SurfaceView): List<ColorLayerDraw> = emptyList()
+
+    /** The character with its head cheats as [view] sees it, whose parts and one surface a pane draws with these lines, or null where none apply. */
+    fun keyedFor(view: SurfaceView): KeyedView? = null
 }

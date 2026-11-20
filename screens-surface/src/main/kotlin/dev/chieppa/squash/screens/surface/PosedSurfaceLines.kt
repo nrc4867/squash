@@ -31,6 +31,9 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
     /** The parts the surface holds. */
     val parts: Set<PartId> get() = shown.surface.parts
 
+    /** These lines read on [other], the same surface moved, with the same line weights. */
+    fun on(other: PosedSurface): PosedSurfaceLines = PosedSurfaceLines(other, strokes)
+
     private val weightAt: ((Vec3) -> Float)? = if (strokes.isEmpty()) null else { point -> lineWeightAt(point, strokes) }
 
     /**
