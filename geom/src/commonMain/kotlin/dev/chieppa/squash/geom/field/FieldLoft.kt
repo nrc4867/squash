@@ -114,6 +114,16 @@ object FieldLoft {
         return patch.withProxyNormals(normals)
     }
 
+    /**
+     * The section of [field] in the plane [x] along, as [segments] points (side, up) round it, each the outermost crossing of a ray from
+     * the middle of its box; null where the plane misses the solid.
+     */
+    fun sectionAt(field: BlendedField, x: Float, segments: Int): List<Vec2>? {
+        val middle = middleAt(field, x) ?: return null
+        val hits = hitsAt(field, x, middle, segments, firstCrossing = false)
+        return recentred(field, x, hits, segments, firstCrossing = false) ?: hits
+    }
+
     /** Where along the axis the field's solid starts and ends. */
     fun reach(field: BlendedField): Pair<Float, Float> {
         val deepest = deepestAlong(field)

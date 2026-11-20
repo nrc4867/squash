@@ -48,15 +48,16 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
         return shownState()
     }
 
-    /** [part] alone and the part it hangs from, from six sides, one tile each, kept as the image [name]. */
+    /** [part] alone and the part it hangs from, from six sides, one tile each, the camera clear of both, kept as the image [name]. */
     fun keep(session: CharacterSession, part: PartId, name: String) {
         val whole = session.posedState()
         val parent = session.document.value.character.part(part)?.socket?.parent
         val state = whole.keptTo(setOfNotNull(part, parent))
         val framed = listOf(assertNotNull(state.character.part(part)))
+        val shown = state.character.parts
         val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)
-            val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
+            val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN, clearOf = shown)
             characterView(rect, close.camera, state, PROBE_LOOK, probeShading(session), close.pixelsPerUnit) { BIN_FRONT }
         }
         val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, errors)

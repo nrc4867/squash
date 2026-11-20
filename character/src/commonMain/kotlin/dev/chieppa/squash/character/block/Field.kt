@@ -11,12 +11,15 @@ import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.field.BlendedField
+import dev.chieppa.squash.geom.field.Blended
+import dev.chieppa.squash.geom.field.DrawnSolid
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.Bend
 import dev.chieppa.squash.geom.field.Cup
 import dev.chieppa.squash.geom.field.DrawnRing
 import dev.chieppa.squash.geom.field.FieldLoft
 import dev.chieppa.squash.geom.ViewSizing
+import dev.chieppa.squash.geom.OutlineProfile
 import dev.chieppa.squash.geom.field.Floor
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,6 +28,12 @@ private const val DEGREES_TO_RADIANS = (kotlin.math.PI / 180.0).toFloat()
 
 /** How far out, in half widths, the cup keeps growing; [BlendedField]'s own. */
 private const val CUP_REACH = 1.5f
+
+/** The smooth intersection a drawn Side's lowest point cuts the kept solids at, as a share of the axis length. */
+private const val SOLE_BLEND = 0.01f
+
+/** Points round the template's section a drawn solid reads it at. */
+private const val DRAWN_SECTION_POINTS = 96
 
 /**
  * A run built from a smooth union of ellipsoids and capsules: planar rings across the axis, each the star-shaped section of the
@@ -50,6 +59,8 @@ data class Field(
     val cup: Param = Param.of(0f),
     @Doc("Whether drawn Side and Top outlines fit the whole solid, digits and all: its reach along the axis, and its height, width and midline at each point along it, take the drawing's, the template's numbers shaping what lies within.")
     val fit: Boolean = false,
+    @Doc("With fit, whether the drawn outlines are the solid itself: Side and Top its silhouettes and Front its section, the template's section where Front is not drawn, joined to the solids marked kept; the template's solids then only place the digits, joints, areas and sockets on it, and a row of digits standing apart cuts it back at their roots.")
+    val drawn: Boolean = false,
 ) : Block {
     override fun run() = u
 
@@ -59,6 +70,7 @@ data class Field(
         val length = ctx.solidLength
         JoinedDigits.of(ctx)?.let { joined -> return listOf(joinedRun(ctx, joined)) }
         val views = ctx.views
+        drawnField(ctx)?.let { solid -> return listOf(drawnRun(ctx, views!!, solid)) }
         if (fit && views != null) return listOf(fittedRun(ctx, views))
         val field = field(ctx)
         val drawn: (Float) -> DrawnRing? = if (views == null) { _ -> null } else { u ->
@@ -82,6 +94,43 @@ data class Field(
             name ?: BODY_PATCH, fitted, ctx.axes, ctx.template.topology.rings, ctx.template.topology.segments,
             uOf = { a -> toNatural(a) / length - from }, checkCancelled = ctx.checkCancelled,
         )
+    }
+
+    /** The run over the drawn solid, its u read where each ring's plane comes from on the field as it stands undrawn. */
+    private fun drawnRun(ctx: BuildContext, views: ViewSizing, solid: BlendedField): Patch {
+        val length = ctx.solidLength
+        val fit = UndrawnSilhouettes.of(ctx).fitTo(views)
+        return FieldLoft.loft(
+            name ?: BODY_PATCH, solid, ctx.axes, ctx.template.topology.rings, ctx.template.topology.segments,
+            uOf = { a -> (fit?.naturalAlong(a) ?: a) / length - from }, checkCancelled = ctx.checkCancelled,
+        )
+    }
+
+    /**
+     * The solid the drawing makes where this field takes it as its own ([fit] and [drawn], with Side or Top drawn, the view not drawn
+     * taking the template's own silhouette as the drawn one stretches it, and each section the template's own there where Front is not
+     * drawn), joined to the parts
+     * that are [FieldPart.kept], on a field with a floor cut flat at Side's lowest point so nothing kept reaches below the drawn sole, and cupped as the template
+     * cups it; null where the drawing does not make it.
+     */
+    fun drawnField(ctx: BuildContext): BlendedField? {
+        if (!fit || !drawn) return null
+        val views = ctx.views ?: return null
+        val drawnHeight = ctx.drawnHeight
+        val drawnWidth = ctx.drawnWidth
+        if (drawnHeight == null && drawnWidth == null) return null
+        val silhouettes = UndrawnSilhouettes.of(ctx)
+        val fit = silhouettes.fitTo(views)
+        val height = drawnHeight ?: fit?.let { silhouettes.carriedHeight(it, ctx.drawingScale) }
+        val width = drawnWidth ?: fit?.let { silhouettes.carriedWidth(it, ctx.drawingScale) }
+        val section = ctx.drawnFront ?: ctx.template.section.spline(ctx.template.topology.segments).sample(DRAWN_SECTION_POINTS)
+        val natural = field(ctx)
+        val sectionsAlong = if (ctx.drawnFront != null) null else { x: Float -> FieldLoft.sectionAt(natural, fit?.naturalAlong(x) ?: x, DRAWN_SECTION_POINTS) }
+        val solid = DrawnSolid(height, width, ctx.drawingScale, section, sectionsAlong)
+        val kept = parts.filter { part -> part.kept && (part.condition?.let { ctx.value(Param("$" + it.name)) != 0f } ?: true) }
+        val sole = height?.takeIf { floor != null }?.let { profile -> Floor(profile.run().minOf { it.y } * ctx.drawingScale, ctx.solidLength * SOLE_BLEND) }
+        val cup = cupOf(ctx)?.let { natural -> height?.let { drawnCup(natural, it, ctx.drawingScale) } ?: natural }
+        return BlendedField(listOf(Blended(solid)) + kept.map { it.blended(ctx) }, floor = sole, cup = cup)
     }
 
     /**
@@ -119,6 +168,13 @@ data class Field(
         val middle = solid(ctx, first.at[1])
         val halfWidth = first.radii?.let { solid(ctx, it[1]) } ?: first.radius?.let { solid(ctx, it) } ?: return null
         return Cup(depth, middle, halfWidth)
+    }
+
+    /** [natural]'s depth across the drawn solid: about the middle and over the half width of Side at its widest, times [scale]. */
+    private fun drawnCup(natural: Cup, side: OutlineProfile, scale: Float): Cup {
+        val run = side.run()
+        val widest = run.map { it.x }.distinct().maxBy { side.extentAt(it) }
+        return Cup(natural.depth, side.midAt(widest) * scale, side.extentAt(widest) * scale / 2f)
     }
 
     /** Where [p], a point on the uncupped solid, lies once the field is cupped, as a digit's root rides the palm. */

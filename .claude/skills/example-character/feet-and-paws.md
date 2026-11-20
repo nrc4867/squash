@@ -1,22 +1,35 @@
 # Feet and paws
 
-A foot or paw ends a leg on the leg's end socket, at the ankle, and the floor rule stands it on the ground: whatever ends a leg that bears weight is what the character stands on. `templates.md` lists each template's parameters and areas; `docs/hld/parts.md`, Paws and Feet, how they are built.
+The sheet is the truth. A foot or paw is drawn from it: trace its silhouettes, paste them as the part's outlines, build, and judge it side by side with the sheet's crops. The template supplies the bones, the toes, the sole and pad areas and sensible defaults; its parameters shape the toes and areas, never the silhouette. `templates.md` lists each template's parameters and areas; `docs/hld/parts.md`, Paws and Feet, how they are built.
 
 | template | use for | toes |
 | --- | --- | --- |
-| `foot` (version 8) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's; an ankle with ankle bones, a heel set back behind it, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
-| `paw` (version 9) | a digitigrade paw: a fox's, a cat's, a dragon's; a wrist rising into the leg, a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `ankle`, `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
+| `foot` (version 10) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's, a sock or a shoe-like toon foot; a heel set back behind the ankle, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
+| `paw` (version 12) | a digitigrade paw: a fox's, a cat's, a dragon's; a wrist rising into the leg, a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
 | `foot-bird` (version 4) | a bird's foot | four toes |
 
-Both rest forward; both fit their whole solid to drawn Side and Top outlines, but their parameters shape them better: leave them undrawn unless the parameters cannot reach the silhouette.
+Both rest forward and stand on the floor rule: whatever ends a leg that bears weight is what the character stands on.
 
-## Size and place
+## 1. Read the sheet
 
-- Measure the feet: `kit sheet measure` and `kit sheet zoom ... region=feet` print `footWidth` (from a front or back view) and `footLength` (from a side view; a three-quarter view is foreshortened and unsure) as body units and as shares of the head and of the height, with status and reason, and draw the lines they were read along; socks and shoes read as the foot, so read the ankle and sole by eye on the zoom. A foot too small is the commonest miss: declare the readings you trust as targets (`targets: targets({ footLength: "0.45 head", footWidth: "0.35 head" })`) and fix every `FLAG` on `footLength` and `footWidth` in `measure.txt` before judging the foot by eye. Read the foot's length heel to toe, and its width. At `size` 1 a `foot` is about 0.24 long and a `paw` about 0.28 (`proportions.md`): `size` is the sheet's length over that. (`foot` sizes in metres: 1.18 gives a person's 0.28 m.)
-- The leg ends at the ankle height in the plan, with a socket at u 1 facing down and back (`socket(1, 1, vToward("down", "back"))`); the foot goes there. The foot's socket sits only a little above its sole (0.025 for a `foot` at `size` 0.72, more as it grows), so the plan's `ankle` is that height: read it from the first `kit heights` run and set it (`body.md`, joints). Its heel sits under the ankle, so a foot whose toes point too far forward or back means the ankle is off, not the foot.
-- `probe part=foot-l` prints its box: its lowest y is the ground, 0. A foot floating or sinking means the leg's length or its end socket is wrong (`body.md`, joints).
-- **From the front a foot shows its width, not its length**: a cartoon foot that reads as a wide oval from the front wants `ballWidth` and `heel` up, not only `size`.
-- Set the foot's `ankle` (times its size and length) to the leg's last radius, or the paw's `ankle` a little under it: the foot's ankle bones then swell past the leg, its heel sits back behind it by half that radius, and the template's own join blends the leg into it, so the leg needs no narrowing or swelling of its own at the ankle. Thin legs on big feet still read as stilts.
+- **Measure**: `tools/recipe.sh kit sheet measure <sheet> views=front,side,back` reads `footWidth` per foot from the front and back views (touching feet are split at the gap or notch between them) and `footLength` from a side view, checks them across views and prints a table. A reading marked unsure says why: a width more than 0.6 of the length, two views that disagree, a three-quarter view's foreshortening. Socks and shoes read as the foot. Declare the readings you trust as targets (`targets: targets({ footLength: "0.45 head", footWidth: "0.3 head" })`); `measure.txt` then flags any build that misses them.
+- **Zoom** each view's feet (`kit sheet zoom ... region=feet`) and write down what the toe end is: one smooth cap (a sock, a toon shoe, a mitten paw), separate toes, how many, claws, pads.
+
+## 2. Trace
+
+```
+tools/recipe.sh kit sheet trace <sheet> names=front,side,back view=side part=foot-left as=side
+tools/recipe.sh kit sheet trace <sheet> names=front,side,back view=front part=foot-right as=front
+tools/recipe.sh kit sheet trace <sheet> names=front,side,back view=front box=x,y,w,h part=foot-left as=top
+```
+
+Each prints an outline in the foot's own frame to paste into the part's `outlines`, its length, width and height, and which sheet side it traced (the recipe's left part takes it; a right foot is mirrored). Look at `trace-<part>-<as>.png` before pasting: the ankle is the blue cross, and anything of the leg or trouser above it must be cut away (`ankle=x,y` moves it). Where the sheet has no true side view (a three-quarter only) or no view from above, draw that outline from the measured length and width with a few places, keeping the traced view's shape: the heel round behind the ankle, the sole flat at the ankle's height below the socket, the instep falling to the toe end; from above, narrower at the heel than across the ball.
+
+- **Side** (`side`): x forward from the ankle (heel negative), y up from the ankle (the sole at minus the plan's `ankle` height).
+- **Top** (`top`): x forward, y toward the character's right; the foot's inner edge is +y on the left foot.
+- **Front** (`front`): the section in -1 to 1, x to the character's left, y up; it sets the foot's whole section along its length.
+
+## 3. Draw
 
 ```ts
 import { pair, type RecipePart } from "squash-kit";
@@ -28,14 +41,22 @@ export const feet: RecipePart = {
   socket: "socket.1",
   ...pair("foot"),
   role: "foot",
-  size: 0.42,
+  size: 1,
   inkJoin: false,
-  color: "fur",
-  params: { toes: 0, heel: 0.16, ballWidth: 0.2 },
+  color: "skin",
+  params: { toes: 0 },
+  outlines: {
+    side: { through: [[-0.05, -0.01], [-0.04, 0.012], [-0.012, 0.024], [0.04, 0.012], [0.1, -0.002], [0.15, -0.012], [0.17, -0.026], [0.16, -0.04], [0.1, -0.042], [0, -0.042], [-0.04, -0.036]], closed: true },
+    top: { through: [[-0.05, 0], [-0.035, 0.04], [0.03, 0.05], [0.11, 0.06], [0.155, 0.05], [0.17, 0], [0.155, -0.055], [0.11, -0.068], [0.03, -0.052], [-0.035, -0.04]], closed: true },
+  },
 };
 ```
 
-## Shape
+- **Size 1.** Outlines are drawing units times `size`; at `size` 1 they are body units, as the trace prints them.
+- **The drawing is the solid.** Side and Top are its silhouettes exactly and Front its section (a sole's flat-bottomed one where Front is not drawn), so the foot is as wide from the front as drawn and never narrower than the ankle unless drawn so.
+- **The toe end**: `toes: 0` makes it one smooth cap, a sock's or a toon shoe's. With toes, the drawing is cut back at the toes' roots and the toes stand from it; draw the outline round the toes' tips, then set `toeLength`, `toeThickness`, `spread` and `merge` for how they part (`merge` about 1 for lobes joined to the tips). One toe's own shape: `"toes.0.length": 1.1`, `"toes.4.width": 0.8`, `"toes.0.spread": -5` (degrees further out in the fan), counted from the inner toe.
+- **The ankle** is the leg's own end: the foot reads the leg's end radius (`limb`) and runs the leg straight into it, so never set it, and never flare or narrow the leg's last stations to meet the foot. The leg ends at the plan's `ankle` height with a socket at u 1 facing down and back (`socket(1, 1, vToward("down", "back"))`); `probe part=foot-l` prints its box, its lowest y the ground.
+- **Undrawn**, the parameters shape a foot as before (`heel`, `ballWidth`, `toeBox` for a shoe), good for a quick stand-in; a character made from a sheet draws its feet.
 
 - A round cartoon foot with no toes: `foot` with `toes` 0, a wide `ballWidth` and a full `heel`. A foot with toes: `toes` 1 to 5, each count laid out across the ball of its own (5 a person's, fewer symmetric and wider); `merge` low for toes standing apart, about 1 to join them to the tips; `spread` below 1 brings them closer.
 - An anthro's human-like foot with three wide, short toes, pads and claws: `foot` with `toes: 3, toeLength: 0.75, toeThickness: 1.25, merge: 0.15, claw: 0.5, pads: 1, beans: 0.25`, and a palette slot `pad`. Its claws are its nails, in the slot `nails`, or fill `areas: { "nail:0": "claw", ... }`.
@@ -44,9 +65,21 @@ export const feet: RecipePart = {
 - Colour: `areas` fill `sole`, `toes` on a foot, `pad`, `sock`, `top`, `toes` on a paw. A paw's `sock` is the whole paw, toes too, under its pads, beans and claws; white socks are `areas: { sock: "white" }` on the paw and on the leg, whose `sock` is its lowest quarter.
 - A quadruped's every leg carries a paw: a leg with nothing on its end socket ends in a flat stump.
 
-## Judging feet
+## 4. Judge side by side
 
-`close=feet` renders the bare foot or paw at rest, curled, open and spread from six sides; `close=foot-l` frames it as shown per outfit. From the front the feet stand apart under the hips; from the side the heel is under the ankle; from behind the heels read; toes part (`smallest gap between digit tips` in `measure.txt`).
+Render `close=feet` (the bare foot at rest, curled, open and spread from six sides: front, three-quarter, side, back, below) and put each beside the sheet's crop of the same view at the same scale. Check, in this order:
+
+1. From the front, the foot's width against the ankle and the leg: no bottle neck, no waist above the foot, no collar where they meet.
+2. From the side, the heel behind the ankle, the sole flat on the ground, the toe end's height and roundness.
+3. From below, the sole's outline is the drawn Top: a heel, an arch, the ball.
+4. The toe end's outline is smooth: no ragged edge and no specks. A nail or pad area shows only when the palette names its slot (`nails`, `claw`, `pad`).
+5. `footLength` and `footWidth` in `measure.txt` against the targets.
+
+Wrong silhouette: fix the outline, not a parameter. Wrong toes: fix the toe parameters.
+
+## Paws
+
+A paw takes the same steps: trace its Side and Top (front and side views of the hind feet), paste, `size: 1`. Its toes are its own: `toes` 1 to 5 (2 a cloven foot, 3 or 4 a cat's or a dog's), `merge` 0.15 to 0.3 for toes standing clear, about 1 for a mitten, `claw` and `clawCurl` for claws past the tips, `claws: 0` to retract, `pads` and `beans` for the main pad and the beans, in the slots `pad` and `claw` when the palette names them. A quadruped's every leg carries a paw: a leg with nothing on its end socket ends in a flat stump. The same holds for creature feet: a drawn outline round the toes, toes from the parameters.
 
 ## On one toe
 
@@ -56,7 +89,6 @@ Sockets, regions and marks name a toe's patch, `toes:0` on from the inner toe (`
 
 ## Limits
 
-- **Cloth stops at the toes' roots**: a sock or shoe covers the foot and the toes poke through or stay bare, and prints on a toe show nowhere. A closed shoe sets `toes: 0` with a `redraw`.
-- **Specks between merged toes.** A `paw` whose base slot differs from the part it sits on can show a speck or two of the parent's colour where three toes meet. Give the paw a slot of its own rather than relying on the leg's.
+- **Cloth stops at the toes' roots**: a sock or shoe covers the foot and the toes poke through or stay bare, and prints on a toe show nowhere. A closed shoe or a sock is `toes: 0` with its outline drawn.
 - **Claws are field points.** A paw's claws are grown in its own surface and painted; they cannot be separate hard parts or carry sockets.
 - **No toes on paddles.** A paddle foot or flipper is a drawn `blob` or `sheet` with no digits.

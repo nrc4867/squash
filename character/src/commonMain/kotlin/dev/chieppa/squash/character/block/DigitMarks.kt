@@ -24,7 +24,7 @@ data class DigitNail(
     val length: Float,
     @Doc("How far round the digit it reaches, as a share of a turn.")
     val width: Float,
-    @Doc("The palette slot it shows until it is filled.")
+    @Doc("The palette slot it shows until it is filled, while the palette names it.")
     val color: String,
     @Doc("How far a claw stands out past the tip, as a share of the digit's length, up to 2; 0 for a nail.")
     val claw: Param = Param.of(0f),
@@ -52,7 +52,7 @@ data class DigitPad(
     val length: Float,
     @Doc("How far round the digit it reaches, as a share of a turn.")
     val width: Float,
-    @Doc("The palette slot it shows until it is filled.")
+    @Doc("The palette slot it shows until it is filled, while the palette names it.")
     val color: String,
     @Doc("On digits joined to a field, the radius of the ball raised under it, as a share of the digit's radius; 0 paints it only.")
     val rise: Param = Param.of(0f),

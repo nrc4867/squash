@@ -500,7 +500,7 @@
           "type": "number"
         },
         "color": {
-          "description": "The palette slot it shows until it is filled.",
+          "description": "The palette slot it shows until it is filled, while the palette names it.",
           "type": "string"
         },
         "claw": {
@@ -572,7 +572,7 @@
           "type": "number"
         },
         "color": {
-          "description": "The palette slot it shows until it is filled.",
+          "description": "The palette slot it shows until it is filled, while the palette names it.",
           "type": "string"
         },
         "rise": {
@@ -1096,6 +1096,10 @@
         "fit": {
           "description": "Whether drawn Side and Top outlines fit the whole solid, digits and all: its reach along the axis, and its height, width and midline at each point along it, take the drawing's, the template's numbers shaping what lies within.",
           "type": "boolean"
+        },
+        "drawn": {
+          "description": "With fit, whether the drawn outlines are the solid itself: Side and Top its silhouettes and Front its section, the template's section where Front is not drawn, joined to the solids marked kept; the template's solids then only place the digits, joints, areas and sockets on it, and a row of digits standing apart cuts it back at their roots.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -1386,6 +1390,10 @@
               "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
+        },
+        "kept": {
+          "description": "Whether it stays when the drawn outlines are the field's solid, joined to it unscaled: the ankle or wrist a limb runs into.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -2228,7 +2236,8 @@
                 "circle",
                 "egg",
                 "keel",
-                "lens"
+                "lens",
+                "sole"
               ]
             },
             {
@@ -2743,7 +2752,8 @@
                     "circle",
                     "egg",
                     "keel",
-                    "lens"
+                    "lens",
+                    "sole"
                   ]
                 },
                 {
@@ -2951,7 +2961,8 @@
                     "circle",
                     "egg",
                     "keel",
-                    "lens"
+                    "lens",
+                    "sole"
                   ]
                 },
                 {

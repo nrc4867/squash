@@ -47,6 +47,8 @@ data class FieldPart(
     val narrows: Param = Param.of(0f),
     @Doc("Over how far either side of the centre the narrowing eases in.")
     val over: Param = Param.of(0f),
+    @Doc("Whether it stays when the drawn outlines are the field's solid, joined to it unscaled: the ankle or wrist a limb runs into.")
+    val kept: Boolean = false,
 ) {
     fun blended(ctx: BuildContext): Blended {
         val primitive = when (shape) {

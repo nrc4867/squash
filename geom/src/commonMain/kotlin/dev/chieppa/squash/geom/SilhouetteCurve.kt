@@ -48,13 +48,20 @@ fun silhouetteCurve(patches: List<PatchMesh>, onPlane: (Vec3) -> Vec2, ends: Str
 }
 
 /**
- * This path with every point within [reach] of [low] or [high] in x moved onto it. A flat end then lies exactly in its
- * plane, so a profile reads the whole of it there rather than the one point that happens to reach furthest.
+ * How many pixels past an end a curve's point may lie and still be moved onto it: further out it is a round end's control point,
+ * which pulls the curve out to that end.
+ */
+private const val BEYOND_END_PIXELS = 4f
+
+/**
+ * This path with every point within [reach] of [low] or [high] in x, inside it or up to [BEYOND_END_PIXELS] of it past it, moved
+ * onto it. A flat end then lies exactly in its plane, so a profile reads the whole of it there rather than the one point that
+ * happens to reach furthest, and a round end keeps the control points that carry it out to its reach.
  */
 private fun BezierPath.flushedTo(low: Float, high: Float, reach: Float): BezierPath {
     fun flush(p: Vec2) = when {
-        p.x - low <= reach -> Vec2(low, p.y)
-        high - p.x <= reach -> Vec2(high, p.y)
+        p.x - low in -reach * BEYOND_END_PIXELS..reach -> Vec2(low, p.y)
+        high - p.x in -reach * BEYOND_END_PIXELS..reach -> Vec2(high, p.y)
         else -> p
     }
     return BezierPath(segments.map { CubicBezier(flush(it.p0), flush(it.p1), flush(it.p2), flush(it.p3)) })

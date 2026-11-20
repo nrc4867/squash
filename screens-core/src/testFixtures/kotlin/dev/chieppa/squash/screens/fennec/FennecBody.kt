@@ -32,7 +32,7 @@ val BACK_PAW_L = PartId("back-paw-l")
 val BACK_PAW_R = PartId("back-paw-r")
 
 /** Templates the examples on this helper keep at the version they were drawn on, by id. */
-private val DRAWN_ON = mapOf("ear" to 1, "hand" to 6, "foot" to 8, "paw" to 9)
+private val DRAWN_ON = mapOf("ear" to 1, "hand" to 9, "foot" to 10, "paw" to 12)
 
 /** The version of [id] the examples were drawn on, else the newest shipped, which a part placed now takes. */
 internal fun ref(id: String): TemplateRef =

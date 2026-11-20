@@ -1,5 +1,6 @@
 import { formatBox } from "../../src/sheet/core/box.ts";
 import { pixelToHex } from "../../src/sheet/core/color.ts";
+import { readAcross } from "../../src/sheet/measure/across.ts";
 import { targetsOf } from "../../src/sheet/measure/measurement.ts";
 import { checkImage } from "../../src/sheet/read/check.ts";
 import { gridImage } from "../../src/sheet/read/grid.ts";
@@ -16,7 +17,7 @@ import { measuredFrom, sheetFrom, viewFileName } from "./context.ts";
 import type { SheetOptions } from "./options.ts";
 import { SheetOutput } from "./output.ts";
 import { sideView } from "./side.ts";
-import { readingLines, summary } from "./summary.ts";
+import { acrossLines, readingLines, summary, traceLines } from "./summary.ts";
 
 export type SheetCommand = (image: string, options: SheetOptions) => void;
 
@@ -40,13 +41,23 @@ export const sheetCommands: Record<string, SheetCommand> = {
   },
   measure(image, options) {
     const sheet = sheetFrom(image, options);
-    const measured = measuredFrom(sheet, options);
     const out = new SheetOutput(options.outDir(image));
-    const name = viewFileName(measured.anatomy.view);
-    out.json(`measure-${name}.json`, measured.measurement);
-    const targets = targetsOf(measured.measurement, options.flag("unsure"));
-    if (targets.length > 0) out.json(`targets-${name}.json`, targets);
-    console.log(summary(measured.measurement));
+    const which = options.list("views");
+    const views = which?.length === 1 && which[0] === "all" ? sheet.views.map((v) => v.index) : which;
+    const measuredViews = views ? views.map((v) => measuredFrom(sheet, options.with("view", String(v)))) : [measuredFrom(sheet, options)];
+    for (const measured of measuredViews) {
+      const name = viewFileName(measured.anatomy.view);
+      out.json(`measure-${name}.json`, measured.measurement);
+      const targets = targetsOf(measured.measurement, options.flag("unsure"));
+      if (targets.length > 0) out.json(`targets-${name}.json`, targets);
+      console.log(summary(measured.measurement));
+    }
+    if (measuredViews.length > 1) {
+      const across = readAcross(measuredViews.map((m) => m.measurement));
+      out.json("measure-across.json", across);
+      console.log("  across views:");
+      for (const line of acrossLines(Object.values(across))) console.log(line);
+    }
   },
   grid(image, options) {
     const sheet = sheetFrom(image, options);
@@ -112,14 +123,25 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const sheet = sheetFrom(image, options, false);
     const measured = measuredFrom(sheet, options, false);
     const part = (options.text("part") ?? "head") as TracePart;
+    const as = options.text("as");
+    if (as !== undefined && as !== "side" && as !== "top" && as !== "front") throw new Error(`as=${as}: side, top or front`);
+    const facing = options.text("facing");
     const trace = traceShape(measured.anatomy, measured.measurement, {
       part,
       box: options.box(),
       tolerance: options.number("tolerance"),
       open: options.flag("open"),
+      as,
+      ankle: options.points("ankle")?.[0],
+      wrist: options.points("wrist")?.[0],
+      tip: options.points("tip")?.[0],
+      facing: facing === "left" || facing === "right" ? facing : undefined,
+      image: sheet.image,
     });
     const out = new SheetOutput(options.outDir(image));
-    out.json(`trace-${trace.part}.json`, trace);
-    out.png(`trace-${trace.part}.png`, traceImage(sheet, measured.anatomy.view, trace));
+    const name = trace.outline && trace.part !== "box" ? `${trace.part}-${trace.outline.pane}` : trace.part;
+    out.json(`trace-${name}.json`, trace);
+    out.png(`trace-${name}.png`, traceImage(sheet, measured.anatomy.view, trace));
+    for (const line of traceLines(trace)) console.log(line);
   },
 };
