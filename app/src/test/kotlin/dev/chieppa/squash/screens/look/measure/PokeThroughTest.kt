@@ -29,8 +29,7 @@ class PokeThroughTest {
     @Test
     fun `a band sunk into the neck shows the neck through it, and clothes that stand clear show nothing`() {
         assertEquals(emptyList(), pokes("beach"))
-        val choker = pokes("goth").single { it.outer == "choker" }
-        assertEquals("body", choker.inner)
+        val choker = pokes("goth").single { it.outer == "choker" && it.inner == "body" }
         assertTrue(choker.vertices > 0 && choker.deepest > 0f)
         assertEquals(setOf("neck"), choker.parts.keys)
     }

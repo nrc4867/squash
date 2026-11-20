@@ -544,7 +544,7 @@ export interface RecipePart {
   role?: ("body" | "spine" | "neck" | "head" | "jaw" | "ear" | "arm" | "hand" | "leg" | "foot" | "tail" | "wing" | "fin" | "horn" | "hair" | "other") | null;
   /** The garment that owns this part: it is built only while that garment is worn, as a heel, lens or buckle is. */
   garment?: string | null;
-  /** How far the smooth join with the part it sits on reaches, in body units; a quarter of its least extent when left out. */
+  /** How far the smooth join with the part it sits on reaches, in body units. Left out, a part that starts open (a limb, a neck, a tail) rounds in by 1.4 times its root radius, held back where it runs close beside the part it sits on; any other takes its template's join or a quarter of its least extent. */
   blend?: number | null;
   /** Scales the drawn part: its length and width together. */
   size?: number | null;

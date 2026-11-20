@@ -112,7 +112,8 @@ private class StanceMeasure(
         val rings = LegRings(template, shape)
         val u = far?.u ?: 1f
         val v = far?.v ?: UNDERSIDE_V
-        val point = rings.positionAt(u, v) ?: return null
+        val pole = poleOf(u) { at, around -> rings.positionAt(at, around) }
+        val point = pole?.point ?: rings.positionAt(u, v) ?: return null
         val childSink = if (far?.outward == Outward.NORMAL) sinkOfChild(part, far) else 0f
         val child = point - (rings.normalAt(u, v) ?: return null) * childSink
         val plane = axisSinkOf(part)?.let { PartBuilder.axes(template).along * (templates.socketSink(part.template) * it) } ?: Vec3.ZERO

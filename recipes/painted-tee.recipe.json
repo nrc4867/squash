@@ -56,7 +56,7 @@
        "side": {"through": [[0.0, 0.09], [0.15, 0.095], [0.32, 0.08], [0.5, 0.062], [0.68, 0.055], [0.8, 0.044], [0.84, 0.0], [0.8, -0.046], [0.68, -0.058], [0.5, -0.066], [0.32, -0.088], [0.15, -0.1], [0.0, -0.095]]},
        "top": {"through": [[0.0, 0.095], [0.15, 0.1], [0.32, 0.085], [0.5, 0.064], [0.68, 0.058], [0.8, 0.046], [0.84, 0.0], [0.8, -0.046], [0.68, -0.058], [0.5, -0.064], [0.32, -0.085], [0.15, -0.1], [0.0, -0.095]]}
      }},
-    {"id": "feet", "template": "foot", "version": 6, "on": "legs", "socket": "socket.1", "pair": {"left": "foot-l", "right": "foot-r"}, "role": "foot", "size": 1.1, "inkJoin": false, "color": "skin"},
+    {"id": "feet", "template": "foot", "version": 8, "on": "legs", "socket": "socket.1", "pair": {"left": "foot-l", "right": "foot-r"}, "role": "foot", "size": 1.1, "inkJoin": false, "color": "skin"},
     {"id": "tail", "template": "tail", "on": "torso", "socket": "socket.4", "role": "tail", "size": 0.5, "color": "skin"}
   ],
   "eyes": [{"id": "eyes", "on": "head", "face": [0.07, 0.24], "look": {"white": "eye-white", "iris": "iris", "pupil": "ink", "highlight": "eye-white", "ink": "ink"}}],

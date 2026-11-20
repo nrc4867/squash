@@ -7,12 +7,32 @@ import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.field.JoinedField
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
+import dev.chieppa.squash.geom.field.MemberKey
 import dev.chieppa.squash.geom.field.Solid
 import dev.chieppa.squash.geom.field.SweptSolid
 
 /** A part's socket blend, when the document holds none, as a share of the least extent of its first run's box. */
 private const val SOCKET_BLEND_SHARE = 0.25f
+
+/**
+ * A part's socket blend, when the document and template hold none and its first run starts open (a limb, a neck, a tail), as a
+ * multiple of that run's root radius, so the join rounds over as wide as the part is thick and a neck flows into the shoulders.
+ */
+const val ROOT_BLEND_SHARE = 1.4f
+
+/** How many times the narrowest gap between a run and its parent, past its root, a default rounded blend may reach. */
+private const val GAP_BLENDS = 1.5f
+
+/** Every how many rings along a run the gap to the parent is read. */
+private const val GAP_RING_STEP = 2
+
+/** Every how many points round a ring the gap to the parent is read. */
+private const val GAP_SEGMENT_STEP = 4
+
+/** How large a run's first ring must be, as a share of its widest, for the run to start open rather than closed at a pole. */
+private const val OPEN_ROOT_SHARE = 0.5f
 
 /** The blend one run of a part joins its first run by, when the template names no merge, as a share of the least extent of its box. */
 private const val RUN_BLEND_SHARE = 0.125f
@@ -85,7 +105,7 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
             val parentRuns = runs.indices.filter { runs[it].partId == parentId }
             val anchor = part.origin
             val parentRun = parentRuns.minByOrNull { k -> JoinedMember(made[k], runs[k].part.origin, runs[k].part.mirrored, 0f).own(anchor) } ?: -1
-            parentRun to if (parentRun < 0) 0f else socketBlend(part, solid, run.patch)
+            parentRun to if (parentRun < 0) 0f else roomyBlend(part, solid, run.patch, JoinedMember(made[parentRun], runs[parentRun].part.origin, runs[parentRun].part.mirrored, 0f), solids)
         } else {
             val share = part.template.defaults[MERGE_PARAM]?.let { it * SOCKET_BLEND_SHARE } ?: RUN_BLEND_SHARE
             firstOf.getValue(run.partId) to leastExtent(solid) * share
@@ -99,10 +119,52 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
 
 /**
  * The blend [part]'s first run, [patch] swept as [solid], joins its socket parent by: the part's own, else its template's share of the
- * run's length, else a share of the least extent of the run's box.
+ * run's length, else the larger of a share of the least extent of the run's box and a multiple of the radius it starts open at.
  */
 internal fun socketBlend(part: PlacedPart, solid: Solid, patch: Patch): Float =
-    part.blend ?: part.template.join.blend?.let { it * runLength(patch) } ?: (leastExtent(solid) * SOCKET_BLEND_SHARE)
+    part.blend ?: part.template.join.blend?.let { it * runLength(patch) }
+        ?: maxOf(leastExtent(solid) * SOCKET_BLEND_SHARE, openRootRadius(patch) * ROOT_BLEND_SHARE)
+
+/**
+ * The mean radius of [patch]'s first ring where the run starts open there, at least [OPEN_ROOT_SHARE] of its widest ring; 0 where it starts
+ * closed, as a head or a foot does round a pole.
+ */
+internal fun openRootRadius(patch: Patch): Float {
+    val slices = patch.slices ?: return 0f
+    val radii = slices.map { (it.width + it.height) / 4f }
+    val root = radii.firstOrNull() ?: return 0f
+    return if (root >= radii.max() * OPEN_ROOT_SHARE) root else 0f
+}
+
+/**
+ * [part]'s socket blend as [socketBlend] gives it, but a default that rounds by the root radius held to [GAP_BLENDS] times the narrowest
+ * gap between the run, past its root and the blend's own reach, and [parent], the run it joins: a smooth union fuses two surfaces less
+ * than half its blend apart, so an arm hanging close beside the hips is not webbed to them.
+ */
+internal fun roomyBlend(part: PlacedPart, solid: Solid, patch: Patch, parent: JoinedMember, solids: RunSolids = RunSolids()): Float {
+    val blend = socketBlend(part, solid, patch)
+    if (part.blend != null || part.template.join.blend != null) return blend
+    val least = leastExtent(solid) * SOCKET_BLEND_SHARE
+    if (blend <= least) return blend
+    val gap = solids.gap(patch, part.origin, parent.key) { gapPastRoot(part, patch, parent, blend + openRootRadius(patch)) } ?: return blend
+    return blend.coerceAtMost(maxOf(least, gap * GAP_BLENDS))
+}
+
+/** The nearest [parent]'s field comes to [patch]'s rings further than [past] along the run from its root, or null with none so far. */
+private fun gapPastRoot(part: PlacedPart, patch: Patch, parent: JoinedMember, past: Float): Float? {
+    val slices = patch.slices ?: return null
+    var along = 0f
+    var gap: Float? = null
+    for (ring in 0 until patch.nu) {
+        if (ring > 0) along += (slices[ring].frame.center - slices[ring - 1].frame.center).length
+        if (along < past || ring % GAP_RING_STEP != 0) continue
+        for (k in 0 until patch.nv step GAP_SEGMENT_STEP) {
+            val d = parent.own(part.origin + part.surface.shown(patch.point(patch.index(ring, k))))
+            gap = minOf(gap ?: d, d)
+        }
+    }
+    return gap?.coerceAtLeast(0f)
+}
 
 /** How long [patch]'s run is along the middles of its rings. */
 private fun runLength(patch: Patch): Float {
@@ -118,6 +180,21 @@ private fun leastExtent(solid: Solid): Float {
 /** The solid each run sweeps out, kept while the run is the same object, so an unchanged part keeps its members. */
 class RunSolids {
     private var kept: List<Pair<Patch, Solid>> = emptyList()
+    private var gaps: List<Pair<GapKey, Float?>> = emptyList()
+
+    /** The gap [read] gives between [patch], placed at [origin], and the parent [parent] reads as, kept while all three are the same. */
+    internal fun gap(patch: Patch, origin: Vec3, parent: MemberKey, read: () -> Float?): Float? {
+        val key = GapKey(patch, origin, parent)
+        gaps.firstOrNull { it.first == key }?.let { return it.second }
+        val gap = read()
+        gaps = (gaps + (key to gap)).takeLast(KEPT)
+        return gap
+    }
+
+    private class GapKey(val patch: Patch, val origin: Vec3, val parent: MemberKey) {
+        override fun equals(other: Any?): Boolean = other is GapKey && patch === other.patch && origin == other.origin && parent == other.parent
+        override fun hashCode(): Int = origin.hashCode() * 31 + parent.hashCode()
+    }
 
     fun of(patch: Patch): Solid {
         kept.firstOrNull { it.first === patch }?.let { return it.second }

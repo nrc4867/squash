@@ -37,6 +37,31 @@ private const val TANGENT_STEP = 0.01f
 /** How far back along a part, in u, which way it runs at a place is read from. */
 private const val ALONG_STEP = 0.08f
 
+/** A ring whose points lie within this share of the ring [ALONG_STEP] in from it of their middle is a pole: a closed end. */
+private const val POLE_SHARE = 0.05f
+
+/** A place on a part's surface and which way it faces out. */
+class SurfacePlace(val point: Vec3, val out: Vec3)
+
+/**
+ * The pole at [u] of a surface whose points [pointAt] gives by u and v, as [PlacedPart.poleAt] reads it: where the axis through the
+ * middles of the rings [ALONG_STEP] and twice that in from it leaves the surface, facing out along it; null where the ring is no pole.
+ */
+internal fun poleOf(u: Float, pointAt: (Float, Float) -> Vec3?): SurfacePlace? {
+    fun ring(at: Float) = (0 until MIDDLE_SAMPLES).mapNotNull { pointAt(at, it.toFloat() / MIDDLE_SAMPLES) }
+    fun middle(points: List<Vec3>) = points.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / points.size)
+    val inward = if (u < 0.5f) 1f else -1f
+    val end = ring(u).ifEmpty { return null }
+    val pole = middle(end)
+    val nearRing = ring((u + inward * ALONG_STEP).coerceIn(0f, 1f)).ifEmpty { return null }
+    val farRing = ring((u + inward * 2f * ALONG_STEP).coerceIn(0f, 1f)).ifEmpty { return null }
+    val nearMiddle = middle(nearRing)
+    val nearRadius = nearRing.maxOf { (it - nearMiddle).length }
+    if (nearRadius == 0f || end.any { (it - pole).length > nearRadius * POLE_SHARE }) return null
+    val out = (nearMiddle - middle(farRing)).takeIf { it.length > 0f }?.normalized() ?: return null
+    return SurfacePlace(nearMiddle + out * ((pole - nearMiddle) dot out), out)
+}
+
 /** A part on the character: [origin] is where its socket plane's centre sits, in body space. */
 class PlacedPart(
     /** The part in the document, or null for one a socket of the plan would take that nothing has been placed on. */
@@ -89,6 +114,12 @@ class PlacedPart(
         val before = middleAt((u - ALONG_STEP).coerceAtLeast(0f), patch) ?: return null
         return (here - before).takeIf { it.length > 0f }?.normalized()
     }
+
+    /**
+     * Where a socket at [u] sits when the ring there is a pole, a closed end: on the run's axis where it leaves the surface, the middle
+     * of the end however the outline's furthest point leans, facing out along the axis; null where the ring at [u] is not a pole.
+     */
+    fun poleAt(u: Float, patch: String? = null): SurfacePlace? = poleOf(u) { at, v -> pointOn(at, v, patch) }
 
     /** The outward normal there, in body space. */
     fun normalAt(u: Float, v: Float, patch: String? = null): Vec3? = patchAt(u, patch)?.let { surface.shown(it.surfaceAt(u, v).normal) }
@@ -237,7 +268,7 @@ private class Assembler(
      */
     private fun socketPoint(parent: PlacedPart, spec: SocketSpec, v: Float, side: Side?, owned: Boolean = false): Vec3? {
         val frame = skeletonOf(parent, owned)
-        val point = frame.pointOn(spec.u, v, spec.patch) ?: return null
+        val point = frame.poleAt(spec.u, spec.patch)?.point ?: frame.pointOn(spec.u, v, spec.patch) ?: return null
         if (frame === parent) return point
         val worn = parent.id?.let(wornSockets::get)?.let { held -> socketsOf(parent).firstOrNull { it.name == spec.name }?.placedBy(held, side) } ?: spec
         val from = frame.middleAt(spec.u, spec.patch) ?: return point

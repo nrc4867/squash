@@ -1796,7 +1796,7 @@
           ]
         },
         "blend": {
-          "description": "How far the smooth join with the part it sits on reaches, in body units; a quarter of its least extent when left out.",
+          "description": "How far the smooth join with the part it sits on reaches, in body units. Left out, a part that starts open (a limb, a neck, a tail) rounds in by 1.4 times its root radius, held back where it runs close beside the part it sits on; any other takes its template's join or a quarter of its least extent.",
           "anyOf": [
             {
               "type": "number"

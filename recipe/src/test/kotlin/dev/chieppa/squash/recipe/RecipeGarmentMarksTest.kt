@@ -17,8 +17,11 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** How far, in body units, a printed ink line's place may lie from the body place it is anchored to: the cloth's ease and a few cells. */
-private const val NEAR = 0.05f
+/**
+ * How far, in body units, a printed ink line's place may lie from the part place it is anchored to: the cloth's ease, a few
+ * cells, and the swell of an arm's join blend, which fills the torso out beside the arm root where the chest lines sit.
+ */
+private const val NEAR = 0.08f
 
 /** Ink lines printed on a long-sleeved top lie on the cloth over the body place they name, on the arms and on the torso beside their roots. */
 @Tag("integration")
@@ -36,12 +39,16 @@ class RecipeGarmentMarksTest {
         val marks = assertNotNull(garment.paint).marks.values.flatten()
         assertTrue(marks.isNotEmpty())
         var worst = 0f
+        var where = ""
         for (mark in marks) for (point in mark.points) {
             val body = assertNotNull(placeOnBody(body, point.anchor.copy(offset = 0f)))
             val d = point.position - body
             val away = sqrt(d.x * d.x + d.y * d.y + d.z * d.z)
-            if (away > worst) worst = away
+            if (away > worst) {
+                worst = away
+                where = "${point.anchor}"
+            }
         }
-        assertTrue(worst <= NEAR, "a line place lies $worst from its body place")
+        assertTrue(worst <= NEAR, "a line place lies $worst from its body place at $where")
     }
 }

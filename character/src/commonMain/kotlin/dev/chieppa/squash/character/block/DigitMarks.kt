@@ -61,4 +61,4 @@ data class DigitPad(
 }
 
 /** This number with [values], or 0 where it names a parameter [values] lacks, as when only the names of areas are wanted. */
-internal fun Param.or(values: Map<String, Float>): Float = refName?.let { values[it] ?: 0f } ?: resolve(values)
+internal fun Param.or(values: Map<String, Float>): Float = refName?.let { (values[it] ?: 0f) * factor } ?: resolve(values)

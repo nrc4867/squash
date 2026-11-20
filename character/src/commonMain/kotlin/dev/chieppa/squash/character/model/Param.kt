@@ -15,20 +15,33 @@ import kotlin.jvm.JvmInline
 
 private const val PARAM_PREFIX = "$"
 
-/** The JSON Schema pattern of a parameter reference. */
-const val PARAM_PATTERN = "^\\$[a-z][a-zA-Z0-9]*$"
+/** What sets a reference's factor apart from its name: `"$ankle*1.2"`. */
+private const val FACTOR_MARK = "*"
+
+/** The JSON Schema pattern of a parameter reference: a name, optionally times a number. */
+const val PARAM_PATTERN = "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+
+/** The JSON Schema pattern of a reference to a boolean parameter: a name alone. */
+const val PARAM_REF_PATTERN = "^\\$[a-z][a-zA-Z0-9]*$"
 
 private val paramRegex = Regex(PARAM_PATTERN)
+private val paramRefRegex = Regex(PARAM_REF_PATTERN)
 
-/** A number in a template file, or a `"$name"` reference to one of the template's parameters. */
+/**
+ * A number in a template file, or a `"$name"` reference to one of the template's parameters, optionally times a number, `"$name*0.5"`, so
+ * one solid can sit or size by another's parameter.
+ */
 @Serializable(with = ParamSerializer::class)
 @JvmInline
 value class Param(val raw: String) {
-    val refName: String? get() = if (raw.startsWith(PARAM_PREFIX)) raw.removePrefix(PARAM_PREFIX) else null
+    val refName: String? get() = if (raw.startsWith(PARAM_PREFIX)) raw.removePrefix(PARAM_PREFIX).substringBefore(FACTOR_MARK) else null
+
+    /** What the parameter's value is multiplied by: 1 for a plain reference or a number. */
+    val factor: Float get() = if (raw.startsWith(PARAM_PREFIX) && FACTOR_MARK in raw) raw.substringAfter(FACTOR_MARK).toFloat() else 1f
 
     fun resolve(values: Map<String, Float>): Float {
         val name = refName ?: return raw.toFloat()
-        return requireNotNull(values[name]) { "No parameter $name" }
+        return requireNotNull(values[name]) { "No parameter $name" } * factor
     }
 
     companion object {
@@ -74,7 +87,7 @@ object ParamRefSerializer : KSerializer<ParamRef> {
 
     override fun deserialize(decoder: Decoder): ParamRef {
         val text = decoder.decodeString()
-        if (!paramRegex.matches(text)) throw SerializationException("'$text' is not a \$parameter reference")
+        if (!paramRefRegex.matches(text)) throw SerializationException("'$text' is not a \$parameter reference")
         return ParamRef(text)
     }
 

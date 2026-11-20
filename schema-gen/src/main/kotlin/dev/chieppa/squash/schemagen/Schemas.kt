@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.DIRECTION_SERIAL_NAME
 import dev.chieppa.squash.character.model.LIMITS_SERIAL_NAME
 import dev.chieppa.squash.character.model.PARAM_PATTERN
+import dev.chieppa.squash.character.model.PARAM_REF_PATTERN
 import dev.chieppa.squash.character.model.ParamDefaultSerializer
 import dev.chieppa.squash.character.model.ParamRefSerializer
 import dev.chieppa.squash.character.model.ParamSerializer
@@ -39,6 +40,11 @@ object Schemas {
         put("pattern", PARAM_PATTERN)
     }
 
+    private val flagReference = buildJsonObject {
+        put("type", "string")
+        put("pattern", PARAM_REF_PATTERN)
+    }
+
     private fun anyOfTypes(vararg schemas: JsonObject) = buildJsonObject { put("oneOf", JsonArray(schemas.toList())) }
 
     private fun numbers(size: Int, min: Double? = null, max: Double? = null) = buildJsonObject {
@@ -58,7 +64,7 @@ object Schemas {
     /** The types with their own serializers, which a descriptor cannot describe. */
     private val fragments: Map<String, JsonObject> = mapOf(
         ParamSerializer.SERIAL_NAME to anyOfTypes(buildJsonObject { put("type", "number") }, parameterReference),
-        ParamRefSerializer.SERIAL_NAME to parameterReference,
+        ParamRefSerializer.SERIAL_NAME to flagReference,
         ParamDefaultSerializer.SERIAL_NAME to anyOfTypes(
             buildJsonObject { put("type", "number") },
             buildJsonObject { put("type", "boolean") },

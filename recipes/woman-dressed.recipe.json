@@ -314,7 +314,7 @@
     {
       "id": "feet",
       "template": "foot",
-      "version": 5,
+      "version": 8,
       "on": "legs",
       "socket": "socket.1",
       "pair": {"left": "foot-l", "right": "foot-r"},
