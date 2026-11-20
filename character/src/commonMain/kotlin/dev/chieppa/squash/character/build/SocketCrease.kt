@@ -23,12 +23,17 @@ private const val NEAREST_POINTS = 4
 
 private const val DISTANCE_FLOOR = 1e-4f
 
-/** Every placed part's crease with its parent, leaving out the parts that do not meet theirs. [checkCancelled] runs before each part. */
-fun socketCreases(character: AssembledCharacter, checkCancelled: () -> Unit = {}): List<SocketCrease> {
+/**
+ * Where each part of [character] comes out of its parent, a part and parent [memo] holds from before taken as they were. [checkCancelled]
+ * runs before each part.
+ */
+fun socketCreases(character: AssembledCharacter, checkCancelled: () -> Unit = {}, memo: PlacedMemo<Pair<PlacedPart, PlacedPart?>, SocketCrease?>.Run? = null): List<SocketCrease> {
     val parents = CreaseParents()
     return character.parts.mapNotNull { placed ->
         checkCancelled()
-        socketCrease(character, placed, parents)
+        if (memo == null) return@mapNotNull socketCrease(character, placed, parents)
+        val parent = placed.socket?.parent?.let(character::part)
+        memo.of(placed to parent) { socketCrease(character, placed, parents) }
     }
 }
 

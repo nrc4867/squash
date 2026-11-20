@@ -143,6 +143,16 @@ const side = hairClump({ id: "lock-1", on: "hair", socket: 3, length: 0.14, pres
 
 **Hair that reads as a helmet** has a whole hem or no layers: deepen `lockDepth`, add `lockJag` and `layers`, hang a few clumps past the hem over the sides and back, and avoid a wide `flip` on short hair. **Dark patches at the hem or tips** are a dark `hem` or `tip` fill: leave them unset. **Clumps that do not show** lie inside the volume: root them higher, give them a `curve` out, or raise the volume's hem where they hang. **A fringe that covers the eyes** is too long: shorten it or raise the volume's `fringe`.
 
+### Lock hair
+
+Lock hair is the way to a silhouette that breaks: each lock a separate swept part in groups over an inner mass (`kit/README.md`, Lock hair; `docs/hld/parts.md`, Hair locks). Use it for any hair whose outline has points, flicks, parted fringes or curls.
+
+- **Mass first.** `lockMass({ on, socket, depth, height })` hides the scalp; its socket goes on the head's sockets. Build bare and read the head from the back and the top: any skin showing between locks is the mass too narrow (`params.width`) or its back too short (`params.back`).
+- **Then a preset.** `bob`, `shortSpiky`, `longStraight`, `ponytail` (with a `band` slot), `sideSwept` or `curly` on the head with `mass` and `color`. It sizes itself to the head; give `reach` only to match a sheet exactly.
+- **Change groups by id.** A group's `count`, `length`, `spread`, `around`, `height`, `rise`, `fall`, `sweep`, `curl`, `tip` and `section` change one whole group; `lengthJitter` and `seed` its raggedness. A fringe parts over the eyes by itself; shorten its `length` if it hides them. `locks` pulls single locks out by index.
+- **Curls** need room: a lock rolls into a loop about its length after the curl starts over 6.3 times its turns across, so a curl tighter than its width folds into itself. Keep `width` and `thickness` under a third of `length` times `curl` turns.
+- **Judge** the head from the front, three-quarter, side, back and top (`close=head`): the outline should break where the cut has points, no scalp shows between locks, and the back has its own layout.
+
 ## Hand-made sockets on the head
 
 Horns, antennae, a bow and hair locks sit on hand-made sockets of the head: `probe part=head` prints which way v faces, and `face=head:x,y` turns a front-view place into its u and v.

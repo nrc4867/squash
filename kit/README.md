@@ -152,6 +152,25 @@ head.sockets = [hair.headSocket];
 const parts = [head, { ...hair.part, sockets: [...front.sockets, socket(20, 0.4, 0.3, { sink: 0.5 })] }, ...front.parts, lock];
 ```
 
+### Lock hair
+
+Lock hair is built from separate swept locks in groups over an inner mass, never in the one surface: its outline breaks where the cut has points or flicks (`docs/hld/parts.md`, Hair locks). It is a recipe's `hair` list, one entry a head.
+
+| helper | one line |
+| --- | --- |
+| `lockMass` | `const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" })`: `mass.part`, a smooth `hair-volume` with no locks or strands that only hides the scalp, and `mass.headSocket`, the head's socket for it. |
+| `shortSpiky`, `bob`, `longStraight`, `ponytail`, `sideSwept`, `curly` | `bob({ on: "head", mass: "hair-mass", color: "hair" })`: one `hair` entry of that preset, sized to the head as built (`reach` gives it by hand). `ponytail` takes `band`, the tie's slot. |
+| `lockHair` | `lockHair("bob", { on: "head", groups: [{ id: "fringe", count: 9, tip: "forked" }, { id: "strays", kind: "strays", count: 3 }] })`: a preset (or `null`) with groups changing the preset's by id (`back`, `left`, `right`, `crown`, `fringe`, `strays`, `tail`), adding new ones with a `kind`, or leaving one out with `removed: true`. A group's `locks` set single locks by index: any field, a `guide` of its own, `hidden`. |
+
+```ts
+const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" });
+head.sockets = [...(head.sockets ?? []), mass.headSocket];
+const hair = [bob({ on: "head", mass: mass.part.id, color: "hair", groups: [{ id: "fringe", count: 7, sweep: -0.3 }] })];
+// mass.part joins the recipe's parts; hair is the recipe's hair.
+```
+
+Each group's `physics` (stiffness, damping, weight, gravity, wind, angleLimit, neighbours) and each lock's chain of 3 to 6 bones are kept for a solver; `colliders: false` leaves out the body's collision shapes.
+
 ## Face
 
 Face places are the head seen from straight ahead: x to the character's left, y up, in the head's drawn units from its socket. `tools/recipe.sh kit probe <file> part=head` prints a head's reach.

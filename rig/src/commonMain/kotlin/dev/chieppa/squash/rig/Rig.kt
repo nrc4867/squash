@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.document.lockGroupOf
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 
@@ -41,9 +42,9 @@ class RigSeam(val child: PartId, val parent: PartId, val carrier: Int, val first
 
 /**
  * The character's rig, derived from its assembly: every bone, parents before children, and every part of the document with
- * its weights. A planned part, which the document does not hold, is not rigged. See HLD: data-model, Rig.
+ * its weights, and each hair lock's chain ready for a solver. A planned part, which the document does not hold, is not rigged. See HLD: data-model, Rig.
  */
-class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSeam> = emptyList()) {
+class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSeam> = emptyList(), val chains: List<RigChain> = emptyList()) {
     private val byName = bones.withIndex().associate { (i, bone) -> bone.name to i }
 
     /** Where [name] sits in [bones], or null when the rig has no such bone. */
@@ -77,7 +78,7 @@ class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSe
  * runs between parts and throws to stop a stale run.
  */
 fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, checkCancelled: () -> Unit = {}, reach: JointReach = JointReach.GUESSED): Rig {
-    val parts = character.parts.filter { it.id != null && it.covering == null && it.hanging == null && it.spanning == null }.map(::RiggedPart)
+    val parts = character.parts.filter { it.id != null && it.covering == null && it.hanging == null && it.spanning == null && it.locks == null }.map(::RiggedPart)
     val bones = boneTree(parts)
     val index = bones.withIndex().associate { (i, bone) -> bone.name to i }
     val byId = parts.associateBy { it.id }
@@ -95,8 +96,21 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
     }
     val hung = looseEndRigs(character, rigged, bones)
     val spanned = membraneRigs(character, parts, index, reach)
-    return Rig(bones + hung.flatMap { it.bones }, rigged + hung.map { it.part } + spanned, seamsOf(parts, byId, index, reach))
+    return Rig(bones + hung.flatMap { it.bones }, rigged + hung.map { it.part } + spanned, seamsOf(parts, byId, index, reach)).withLocks(character)
 }
+
+/**
+ * This rig with the lock groups [character] holds, each lock's chain hanging from this rig's head bones: [character] is the character this
+ * rig was made from with its lock groups, or that character itself. Itself when [character] holds none, and with none it held before.
+ */
+fun Rig.withLocks(character: AssembledCharacter): Rig {
+    val body = if (chains.isEmpty() && parts.none { it.id.isLocks() }) this else Rig(bones.filterNot { it.name.part.isLocks() }, parts.filterNot { it.id.isLocks() }, seams)
+    if (character.parts.none { it.locks != null }) return body
+    val locks = lockRigs(character, body.parts, body.bones)
+    return Rig(body.bones + locks.bones, body.parts + locks.parts, body.seams, locks.chains)
+}
+
+private fun PartId.isLocks(): Boolean = lockGroupOf(this) != null
 
 private fun seamsOf(parts: List<RiggedPart>, byId: Map<PartId, RiggedPart>, index: Map<BoneName, Int>, reach: JointReach): List<RigSeam> = parts.mapNotNull { part ->
     val parent = part.placed.socket?.parent?.let(byId::get) ?: return@mapNotNull null

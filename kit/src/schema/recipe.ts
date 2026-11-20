@@ -156,6 +156,69 @@ export interface KeyMove {
   [note: `x-${string}`]: unknown;
 }
 
+/** One lock of a group set by hand, by its index: each value given replaces the group's for that lock alone. */
+export interface LockOverride {
+  /** The lock, by its place in the group from 0. */
+  index: number;
+  /** Its length, in body units. */
+  length?: number | null;
+  /** Its width at the root, in body units. */
+  width?: number | null;
+  /** Its thickness at the root, in body units. */
+  thickness?: number | null;
+  /** How many turns it curls, toward its underside; negative the other way. */
+  curl?: number | null;
+  /** How far it waves sideways, a share of its width. */
+  wave?: number | null;
+  /** How far it turns about itself over its length, in degrees. */
+  twist?: number | null;
+  /** Degrees it rises off the head at its root: 0 lies flat, 90 stands straight out. */
+  rise?: number | null;
+  /** How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right. */
+  sweep?: number | null;
+  section?: ("ribbon" | "clump") | null;
+  tip?: ("pointed" | "round" | "forked" | "flicked") | null;
+  /** Its guide curve: a few points from its root, in place of the curve its group grows it along. */
+  guide?: LockPoint[] | null;
+  /** How many bones its chain holds, 3 to 6; by its length when left out. */
+  bones?: number | null;
+  /** How it moves, in place of its group's. */
+  physics?: LockPhysics | null;
+  /** Whether it is left out. */
+  hidden?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** How a lock moves once physics drives it. Nothing moves yet; these are kept with the character for a solver. */
+export interface LockPhysics {
+  /** How firmly it keeps its rest shape, 0 limp to 1 rigid. */
+  stiffness?: number;
+  /** How quickly its swing dies, 0 never to 1 at once. */
+  damping?: number;
+  /** How heavy it is, 1 a lock of its size. */
+  weight?: number;
+  /** How much gravity pulls it, 1 fully. */
+  gravity?: number;
+  /** How much wind moves it, 1 fully. */
+  wind?: number;
+  /** How far each bone may turn from its rest, in degrees. */
+  angleLimit?: number;
+  /** How firmly it is tied to the locks either side of it in its group, 0 untied to 1 moving as one. */
+  neighbours?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A point of a lock's guide curve: [x, y, z] from its root, in body units, x forward, y up, z the character's right. */
+export interface LockPoint {
+  x: number;
+  y: number;
+  z: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 export interface LooseEnd {
   id: string;
   branch: string;
@@ -246,6 +309,8 @@ export interface Recipe {
   eyes?: RecipeEye[];
   /** Thin sheets of skin spanned between parts, such as a patagium or a wing membrane. */
   membranes?: RecipeMembrane[];
+  /** Hair made of locks, one entry a head: a preset hairstyle, its groups changed or added to, over an inner mass. */
+  hair?: RecipeHair[];
   /** Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up. */
   expressions?: RecipeExpression[];
   /** Clothes: slots, garments and outfits. */
@@ -459,6 +524,28 @@ export interface RecipeGeneric {
   [note: `x-${string}`]: unknown;
 }
 
+/** Hair made of locks on a head: each lock a separate swept part, in groups (a fringe, the sides, the back, the crown, strays) over an inner mass. A preset gives a whole hairstyle; groups add to it or change its groups by id. */
+export interface RecipeHair {
+  /** The head the locks grow on, by part id. */
+  on: string;
+  /** The inner mass the roots sit on, a hair-volume part on the head, by id; it hides the scalp and lies inside the locks. The head itself when left out. */
+  mass?: string | null;
+  /** A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept or curly (round curled locks). */
+  preset?: ("shortSpiky" | "bob" | "longStraight" | "ponytail" | "sideSwept" | "curly") | null;
+  /** How far the head reaches from its middle, in body units, which a preset's sizes are shares of; read off the built head when left out. */
+  reach?: number | null;
+  /** The locks' palette slot; the mass's base colour, else the head's, when left out. */
+  color?: string | null;
+  /** The palette slot of a ponytail's band; the locks' colour when left out. */
+  band?: string | null;
+  /** Groups of locks: a group whose id a preset gives changes only the fields it sets; any other id adds a group. */
+  groups?: RecipeLockGroup[];
+  /** Whether the body's collision shapes (a sphere in the head, a capsule along the neck, a sphere at each shoulder) are set up from the built body, for a solver to keep hair out of. */
+  colliders?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** How cloth hangs below the highest place it covers on an upright part, rather than following the body in where it narrows. */
 export interface RecipeHang {
   /** How far past its ease the cloth may stand off the body where it hangs over a narrowing, in body units: about 0.01 to 0.04 on a person-sized body. */
@@ -519,6 +606,68 @@ export interface RecipeLineWeight {
   amount: number;
   /** The patch points lie on. */
   patch?: string;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A group of locks. Every field but id is optional: a preset's group of the same id keeps what this leaves out; a new group needs its kind. */
+export interface RecipeLockGroup {
+  /** The group's id; a preset's groups are back, left, right, crown, fringe, strays and tail. */
+  id: string;
+  /** Where it roots: fringe, left, right, back, crown or strays. */
+  kind?: ("fringe" | "left" | "right" | "back" | "crown" | "strays") | null;
+  /** How many locks. */
+  count?: number | null;
+  /** How far round the head its roots reach, a share of its kind's own reach. */
+  spread?: number | null;
+  /** Degrees its roots turn round the head, positive toward the character's right. */
+  around?: number | null;
+  /** How far up the head its roots move, -1 to 1. */
+  height?: number | null;
+  /** Each lock's length, in body units. */
+  length?: number | null;
+  /** How far lengths vary either way, a share of the length. */
+  lengthJitter?: number | null;
+  /** Each lock's width at its root, in body units. */
+  width?: number | null;
+  /** Each lock's thickness at its root, in body units. */
+  thickness?: number | null;
+  /** What share of its root width a lock keeps toward its tip. */
+  taper?: number | null;
+  /** ribbon, a flattened lock cupped round the head, or clump, a rounded one. */
+  section?: ("ribbon" | "clump") | null;
+  /** pointed, round, forked (2 or 3 points) or flicked (turning out at its end). */
+  tip?: ("pointed" | "round" | "forked" | "flicked") | null;
+  /** How many points a forked tip ends in. */
+  tipPoints?: number | null;
+  /** Degrees each lock rises off the head at its root: 0 lies flat, 90 stands straight out. */
+  rise?: number | null;
+  /** How far the locks sweep sideways as they grow, -1 to 1: positive toward the character's right. */
+  sweep?: number | null;
+  /** How far the locks fall toward the ground along their length, 0 none to 1 hanging. */
+  fall?: number | null;
+  /** How many turns each lock curls toward its underside; negative the other way. */
+  curl?: number | null;
+  /** How far each lock waves sideways, a share of its width. */
+  wave?: number | null;
+  /** How far each lock turns about itself over its length, in degrees. */
+  twist?: number | null;
+  /** Which picks the jitter: another seed, another layout with the same look. */
+  seed?: number | null;
+  /** Its layer: locks of a higher layer lie over those of a lower one. */
+  layer?: number | null;
+  /** How far its roots gather toward one point, 0 spread to 1 all at one tie. */
+  tie?: number | null;
+  /** The palette slot of a band round the tie. */
+  band?: string | null;
+  /** Its palette slot, over the hair's. */
+  color?: string | null;
+  /** How its locks move once physics drives them: stiffness, damping, weight, gravity, wind, angleLimit, neighbours. */
+  physics?: LockPhysics | null;
+  /** Single locks set by hand, by index: any field given replaces the group's for that lock, guide gives it a curve of its own, hidden leaves it out. */
+  locks?: LockOverride[] | null;
+  /** Leaves out a preset's group of this id. */
+  removed?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

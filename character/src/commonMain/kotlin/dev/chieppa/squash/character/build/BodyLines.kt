@@ -30,12 +30,15 @@ class PartLines(
  */
 class BodyLines(val parts: Map<PartId, PartLines>)
 
-/** Each placed part's patches in body space, with lines of plain weight. [checkCancelled] runs before each part. */
-fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}): Map<PartId, List<LineGrid>> =
+/**
+ * Each placed part's patches in body space, with lines of plain weight, a part [memo] holds from before taken as it was. [checkCancelled]
+ * runs before each part.
+ */
+fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}, memo: PlacedMemo<PlacedPart, List<LineGrid>>.Run? = null): Map<PartId, List<LineGrid>> =
     character.parts.mapNotNull { placed ->
         val id = placed.id ?: return@mapNotNull null
         checkCancelled()
-        id to partGrids(placed)
+        id to (memo?.of(placed) { partGrids(placed) } ?: partGrids(placed))
     }.toMap()
 
 /**

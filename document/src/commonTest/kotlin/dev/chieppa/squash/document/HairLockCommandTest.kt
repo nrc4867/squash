@@ -1,0 +1,110 @@
+package dev.chieppa.squash.document
+
+import dev.chieppa.stretch.test.scenario
+import kotlinx.serialization.json.Json
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+
+/** Lock groups, single locks set by hand and collision shapes: each set, replaced, removed and undone as one serializable step. */
+class HairLockCommandTest {
+    private val head = PartInstance(PartId("head"), TemplateRef(TemplateId("head-round"), 2))
+    private val empty = AddPart(head).apply(SquashDocument(Character(CharacterId("toy"), "Toy", BodyPlanRef(BodyPlanId("blank"), 1)))).document
+    private val fringeId = LockGroupId("fringe")
+    private val fringe = LockGroup(fringeId, LockGroupKind.FRINGE, head.id, count = 9, length = 0.1f, tip = LockTip.FORKED, tipPoints = 3)
+
+    private fun assertRoundTrips(command: DocumentCommand) {
+        val text = Json.encodeToString(DocumentCommand.serializer(), command)
+        assertEquals(command, Json.decodeFromString(DocumentCommand.serializer(), text))
+    }
+
+    @Test
+    fun aGroupIsAddedReplacedRemovedAndEachUndone() {
+        val add = SetLockGroup(fringeId, fringe)
+        assertRoundTrips(add)
+        val added = add.apply(empty).document
+        assertEquals(listOf(fringe), added.character.lockGroups)
+        val longer = fringe.copy(length = 0.2f)
+        scenario(added) {
+            run(SetLockGroup(fringeId, longer))
+            expect(added.copy(character = added.character.copy(lockGroups = listOf(longer))))
+            undo()
+            expect(added)
+            run(SetLockGroup(fringeId, null))
+            expect(empty)
+            undo()
+            expect(added)
+        }
+    }
+
+    @Test
+    fun aRemovedGroupComesBackInItsPlace() {
+        val back = LockGroup(LockGroupId("back"), LockGroupKind.BACK, head.id)
+        val both = SetLockGroup(back.id, back).apply(SetLockGroup(fringeId, fringe).apply(empty).document).document
+        val removed = SetLockGroup(fringeId, null).apply(both)
+        assertEquals(listOf(back), removed.document.character.lockGroups)
+        assertEquals(both, removed.undo.apply(removed.document).document)
+    }
+
+    @Test
+    fun aGroupOnAPartTheCharacterLacksIsRefused() {
+        assertFailsWith<IllegalArgumentException> { SetLockGroup(fringeId, fringe.copy(on = PartId("nobody"))).apply(empty) }
+        assertFailsWith<IllegalArgumentException> { SetLockGroup(fringeId, fringe.copy(mass = PartId("nobody"))).apply(empty) }
+    }
+
+    @Test
+    fun valuesOutOfRangeAreRefused() {
+        assertFailsWith<IllegalArgumentException> { fringe.copy(count = 0) }
+        assertFailsWith<IllegalArgumentException> { fringe.copy(curl = 4f) }
+        assertFailsWith<IllegalArgumentException> { fringe.copy(tipPoints = 4) }
+        assertFailsWith<IllegalArgumentException> { LockOverride(0, bones = 7) }
+        assertFailsWith<IllegalArgumentException> { LockPhysics(stiffness = 2f) }
+        assertFailsWith<IllegalArgumentException> { Collider("head", head.id, ColliderShape.SPHERE, LockPoint(0f, 0f, 0f), LockPoint(0f, 1f, 0f), 0.1f) }
+    }
+
+    @Test
+    fun oneLockIsPulledOutByIndexAndReturnedToItsGroup() {
+        val withGroup = SetLockGroup(fringeId, fringe).apply(empty).document
+        val own = LockOverride(3, length = 0.3f, curl = 1f, guide = listOf(LockPoint(0.01f, -0.05f, 0f), LockPoint(0.03f, -0.1f, 0f)), physics = LockPhysics(stiffness = 0.1f))
+        val command = SetLockOverride(fringeId, 3, own)
+        assertRoundTrips(command)
+        val applied = command.apply(withGroup)
+        assertEquals(own, applied.document.character.lockGroup(fringeId)?.overrideOf(3))
+        assertNull(applied.document.character.lockGroup(fringeId)?.overrideOf(2))
+        assertEquals(withGroup, applied.undo.apply(applied.document).document)
+        assertFailsWith<IllegalArgumentException> { SetLockOverride(fringeId, 9, LockOverride(9)).apply(withGroup) }
+    }
+
+    @Test
+    fun collisionShapesAreSetAndUndone() {
+        val shapes = listOf(
+            Collider("head", head.id, ColliderShape.SPHERE, LockPoint(0f, 1f, 0f), radius = 0.12f),
+            Collider("neck", head.id, ColliderShape.CAPSULE, LockPoint(0f, 0.8f, 0f), LockPoint(0f, 0.9f, 0f), 0.05f),
+        )
+        val command = SetColliders(shapes)
+        assertRoundTrips(command)
+        scenario(empty) {
+            run(command)
+            expect(empty.copy(character = empty.character.copy(colliders = shapes)))
+            undo()
+            expect(empty)
+        }
+    }
+
+    @Test
+    fun aCharacterWithLocksAndCollidersSavesAndReadsBack() {
+        val saved = SetColliders(listOf(Collider("head", head.id, ColliderShape.SPHERE, LockPoint(0f, 1f, 0f), radius = 0.1f)))
+            .apply(SetLockGroup(fringeId, fringe.withOverride(1, LockOverride(1, hidden = true))).apply(empty).document).document
+        val text = Json.encodeToString(SquashDocument.serializer(), saved)
+        assertEquals(saved, readDocument(text))
+    }
+
+    @Test
+    fun aGroupShowsAsAPartOfItsOwn() {
+        val withGroup = SetLockGroup(fringeId, fringe).apply(empty).document
+        assertEquals(fringeId, lockGroupOf(lockGroupPartId(fringeId)))
+        assertEquals(fringe, withGroup.character.lockGroupShownAs(lockGroupPartId(fringeId)))
+        assertNull(lockGroupOf(head.id))
+    }
+}

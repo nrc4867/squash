@@ -73,7 +73,7 @@ class ChartPlaces private constructor(val chart: BodyChart, private val sides: L
         fun of(chart: BodyChart, body: AssembledCharacter): ChartPlaces {
             val sides = body.parts.mapNotNull { placed ->
                 val id = placed.id ?: return@mapNotNull null
-                if (placed.covering != null || placed.hanging != null || placed.spanning != null) return@mapNotNull null
+                if (placed.covering != null || placed.hanging != null || placed.spanning != null || placed.locks != null) return@mapNotNull null
                 val part = chart.part(id) ?: return@mapNotNull null
                 val xyz = FloatArray(CHART_CELLS * 3) { Float.NaN }
                 var any = false

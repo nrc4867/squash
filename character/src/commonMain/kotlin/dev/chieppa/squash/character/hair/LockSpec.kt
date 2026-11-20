@@ -1,0 +1,116 @@
+package dev.chieppa.squash.character.hair
+
+import dev.chieppa.squash.document.LockGroup
+import dev.chieppa.squash.document.LockGroupKind
+import dev.chieppa.squash.document.LockPhysics
+import dev.chieppa.squash.document.LockSection
+import dev.chieppa.squash.document.LockTip
+import dev.chieppa.squash.geom.Vec3
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.random.Random
+
+/** How deep a lock's root sinks under the scalp, as a share of its thickness. */
+private const val ROOT_SINK = 1.2f
+
+/** How far a lock lies off the scalp past its root, as a share of its thickness, before its layer and row lift it further. */
+private const val BASE_CLEARANCE = 0.5f
+
+/** How far each layer and each row above another lifts a lock off the scalp, as a share of its thickness. */
+private const val LAYER_LIFT = 1.4f
+private const val ROW_LIFT = 0.9f
+
+/** How far every other lock of a row stands off its neighbours, as a share of its thickness, so no two lie in one surface. */
+private const val STAGGER = 0.45f
+
+/**
+ * One lock of a group as it is built: its [index], where it roots ([root], facing [out], growing along [growth]), its sizes and shape with
+ * its override over the group's, how far it lies off the scalp past its root ([clearance]) and how deep its root sinks ([sink]), its own
+ * [guide] where it has one, its chain's [bones] and its [physics]. Two locks alike build alike, so a build keeps those it made before.
+ */
+data class LockSpec(
+    val index: Int,
+    val root: Vec3,
+    val out: Vec3,
+    val growth: Vec3,
+    val length: Float,
+    val width: Float,
+    val thickness: Float,
+    val taper: Float,
+    val section: LockSection,
+    val tip: LockTip,
+    val tipPoints: Int,
+    val rise: Float,
+    val sweep: Float,
+    val fall: Float,
+    val curl: Float,
+    val wave: Float,
+    val twist: Float,
+    val clearance: Float,
+    val sink: Float,
+    val guide: List<Vec3>?,
+    val bones: Int,
+    val physics: LockPhysics,
+)
+
+/** The locks [group] shows on [scalp], growing as [growth] says: every lock but those its overrides hide, each with its override over it. */
+fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): List<LockSpec> {
+    val roots = rootsOf(group)
+    val rows = (roots.maxOfOrNull { it.row } ?: 0) + 1
+    val random = Random(group.seed * 7919 + 17)
+    val jitters = List(roots.size) { (random.nextFloat() * 2f - 1f) * group.lengthJitter }
+    return roots.mapIndexedNotNull { index, root ->
+        val override = group.overrideOf(index)
+        if (override?.hidden == true) return@mapIndexedNotNull null
+        val place = scalp.placeAt(root.azimuth, root.elevation)
+        val length = override?.length ?: (group.length * (1f + jitters[index]) * parted(group, root)).coerceAtLeast(group.length * 0.2f)
+        val thickness = override?.thickness ?: group.thickness
+        val lift = BASE_CLEARANCE + group.layer * LAYER_LIFT + (rows - 1 - root.row) * ROW_LIFT + (index % 2) * STAGGER
+        LockSpec(
+            index = index,
+            root = place.point,
+            out = place.out,
+            growth = growth.at(place, group),
+            length = length,
+            width = override?.width ?: group.width,
+            thickness = thickness,
+            taper = group.taper,
+            section = override?.section ?: group.section,
+            tip = override?.tip ?: group.tip,
+            tipPoints = group.tipPoints,
+            rise = override?.rise ?: group.rise,
+            sweep = override?.sweep ?: group.sweep,
+            fall = group.fall,
+            curl = override?.curl ?: group.curl,
+            wave = override?.wave ?: group.wave,
+            twist = override?.twist ?: group.twist,
+            clearance = thickness * lift,
+            sink = thickness * ROOT_SINK,
+            guide = override?.guide?.map { Vec3(it.x, it.y, it.z) },
+            bones = override?.bones ?: bonesFor(length, scalp),
+            physics = override?.physics ?: group.physics,
+        )
+    }
+}
+
+/** How many bones a lock [length] long holds: 3 for one shorter than half the head's reach, one more for each half reach past that, at most 6. */
+fun bonesFor(length: Float, scalp: Scalp): Int {
+    val reach = scalp.reachAt(0f, 45f).coerceAtLeast(1e-3f)
+    return (3 + ((length / reach) - 0.5f).coerceAtLeast(0f).times(2f).roundToInt()).coerceIn(3, 6)
+}
+
+/** How much shorter a fringe lock over an eye is than one in the middle or at the sides, so the fringe parts to show the eyes. */
+private const val FRINGE_PART = 0.4f
+
+/** A fringe lock's share of its group's length by where across the front it roots: whole in the middle and at the ends, least over each eye. */
+private fun parted(group: LockGroup, root: LockRoot): Float {
+    if (group.kind != LockGroupKind.FRINGE) return 1f
+    val (centre, _) = centreOf(group)
+    val across = ((root.azimuth - centre) / FRINGE_HALF_REACH).coerceIn(-1f, 1f)
+    return 1f - FRINGE_PART * sin(PI.toFloat() * abs(across))
+}
+
+/** How far round the head from the front the outer locks of a fringe of spread 1 root, in degrees. */
+private const val FRINGE_HALF_REACH = 48f

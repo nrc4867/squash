@@ -38,10 +38,11 @@ private val HEADER_INSET = 12.dp
 /** The room the three angle versions' tiles take. */
 private val VERSIONS_WIDTH = 300.dp
 
-/** The Face inspector: Eyes or Mouth, the painted eyes' controls, and the mouth's controls and layers. */
+/** The Face inspector: Eyes or Mouth, the painted eyes' controls, and the mouth's controls and layers; then the head's hair. */
 @Composable
 fun FaceInspector(state: AppState, session: CharacterSession) {
     FaceSection(state, session)
+    HairSection(session)
 }
 
 /**
