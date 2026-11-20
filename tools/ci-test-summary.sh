@@ -6,6 +6,7 @@ task="${1:?test task name}"
 total=0
 while IFS= read -r dir; do
   module="${dir%%/build/*}"
+  compgen -G "$dir/*.xml" >/dev/null || continue
   count=0
   seconds=0
   for xml in "$dir"/*.xml; do
