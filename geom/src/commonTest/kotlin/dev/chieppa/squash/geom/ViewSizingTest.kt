@@ -111,6 +111,17 @@ class ViewSizingTest {
     }
 
     @Test
+    fun aMissingViewKeepsTheRunsUndrawnWidthRatio() {
+        val drawnHeight = sizing(strip(leg)).slice(0.5f, round, 1f, widthRatio = 4f)
+        assertEquals(0.4f, drawnHeight.height, 1e-3f)
+        assertEquals(drawnHeight.height * 4f, drawnHeight.width, 1e-5f)
+        val onlyWidth = assertNotNull(ViewSizing.of(axes, null, OutlineProfile.of(strip(leg)), openStart = true, openEnd = false, scale = 1f))
+        val drawnWidth = onlyWidth.slice(0.5f, round, 1f, widthRatio = 4f)
+        assertEquals(0.4f, drawnWidth.width, 1e-3f)
+        assertEquals(drawnWidth.width / 4f, drawnWidth.height, 1e-5f)
+    }
+
+    @Test
     fun changingASpanChangesOnlyTheSlicesNearIt() {
         val before = sizing(strip(leg))
         val bumped = listOf(0f to 0.2f, 0.25f to 0.2f, 0.45f to 0.2f, 0.5f to 0.35f, 0.55f to 0.2f, 0.75f to 0.2f, 1f to 0.1f)

@@ -139,7 +139,7 @@ object SliceBuilder {
         val views = spec.views
         val frames = frames(spec.axis, us, spec.up)
         val extents = if (views != null && spec.followsAxis) {
-            towardBends(frames, us.indices.map { ring -> views.sliceIn(us[ring], sectionAt(spec, us[ring]), 1f, frames[ring]) })
+            towardBends(frames, us.indices.map { ring -> views.sliceIn(us[ring], sectionAt(spec, us[ring]), 1f, frames[ring], spec.widthRatio) })
         } else if (views == null) {
             restExtents(spec, us).also { extents -> for (i in extents.indices) extents[i] *= maxOf(1f, spec.widthRatio) }
         } else {
@@ -153,8 +153,8 @@ object SliceBuilder {
     fun ringAt(spec: TubeSpec, u: Float): Slice {
         val section = sectionAt(spec, u)
         spec.views?.let { views ->
-            if (!spec.followsAxis) return views.slice(u, section, 1f)
-            return views.sliceIn(u, section, 1f, frames(spec.axis, ringUs(spec).filter { it < u } + u, spec.up).last())
+            if (!spec.followsAxis) return views.slice(u, section, 1f, spec.widthRatio)
+            return views.sliceIn(u, section, 1f, frames(spec.axis, ringUs(spec).filter { it < u } + u, spec.up).last(), spec.widthRatio)
         }
         val along = (u - spec.uStart) / (spec.uEnd - spec.uStart)
         val extent = 2f * spec.radius * (1f + (spec.taper - 1f) * along)
@@ -187,7 +187,7 @@ object SliceBuilder {
             val fromEnd = us.size - 1 - ring
             if (handover != null) sinkingScale(fromEnd, ring > 0 && us[ring - 1] >= handover) else scale(fromEnd, spec.uEnd >= 1f, spec.endClosure)
         }
-        return us.mapIndexed { ring, u -> views.slice(u, sectionAt(spec, u), startScale(ring) * endScale(ring)) }
+        return us.mapIndexed { ring, u -> views.slice(u, sectionAt(spec, u), startScale(ring) * endScale(ring), spec.widthRatio) }
     }
 
     /**
@@ -199,7 +199,7 @@ object SliceBuilder {
         val scales = drawnScales(spec, us)
         val sized = us.mapIndexed { ring, u ->
             val onSocket = (ring == 0 && spec.startClosure == EndClosure.OPEN) || (ring == us.lastIndex && spec.endClosure == EndClosure.OPEN)
-            views.sliceIn(u, sectionAt(spec, u), scales[ring], placed(frames[ring], 0f, spec.socketNormal.takeIf { onSocket }))
+            views.sliceIn(u, sectionAt(spec, u), scales[ring], placed(frames[ring], 0f, spec.socketNormal.takeIf { onSocket }), spec.widthRatio)
         }
         val extents = towardBends(frames, sized)
         val held = heldToBends(extents, bendRadii(frames), 1f)
@@ -242,7 +242,7 @@ object SliceBuilder {
         val end = spec.endHandover
         if (start == null && end == null) return slices
         return us.mapIndexed { ring, u ->
-            if ((start != null && u < start) || (end != null && u >= end)) views.slice(u, sectionAt(spec, u), 1f) else slices[ring]
+            if ((start != null && u < start) || (end != null && u >= end)) views.slice(u, sectionAt(spec, u), 1f, spec.widthRatio) else slices[ring]
         }
     }
 

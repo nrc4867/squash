@@ -38,6 +38,12 @@ private const val PROJECTIONS = 4
 private const val POLE_SHARE = 1e-3f
 
 /**
+ * A ring whose nearest two neighbouring points lie closer than this share of its mean spacing is crowded: its axis runs so near the
+ * surface on one side that the rays there all meet it in one small patch.
+ */
+private const val CROWDED = 0.05f
+
+/**
  * A digit's run over a field it is joined to: planar rings across the digit's own axis at given shares along it, each the part of the
  * field's section that is the digit's. From the axis a ray at each fixed v angle (v = 0 toward the part's up, 0.25 toward its side, both
  * turned by the digit's roll) goes out to where it first leaves the solid; one that first reaches a wall, where another digit's axis lies
@@ -87,7 +93,7 @@ object DigitLoft {
                 last -> null
                 shares[ring] < buriedBefore -> List(segments) { j -> RayHit(centre + frame.ray(2.0 * PI * j / segments) * (digit.radius * BURIED_RING), true) }
                 field.value(centre) >= 0f -> null
-                else -> rays.ring(centre, frame, segments)
+                else -> rays.evenRing(centre, frame, segments)
             }
             val flat = found?.map { frame.flat(it.point - centre) }
             val box = flat?.let { spanOf(it) }
@@ -113,6 +119,7 @@ object DigitLoft {
         }
         val lofted = SliceBuilder.loft(name, slices, segments)
         val step = digit.radius * GRADIENT_SHARE
+        buryCoincident(points, buried, slid, shares.size, segments, digit.radius * POLE_SHARE)
         buryFolds(points, buried, slid, shares.size, segments, field, step)
         val normals = FloatArray(points.size * Patch.COMPONENTS)
         points.forEachIndexed { i, local ->
@@ -127,6 +134,21 @@ object DigitLoft {
             name, lofted.nu, lofted.nv, lofted.closedV, lofted.slices, lofted.points, proxyNormals = normals, openEnds = true,
             buried = buried.takeIf { flags -> flags.any { it } },
         )
+    }
+
+    /**
+     * Buries every slid point lying within [gap] of an unburied neighbour on its ring, where two slides along one wall met the surface at one
+     * place: a face on the two would have no area.
+     */
+    private fun buryCoincident(points: List<Vec3>, buried: BooleanArray, slid: BooleanArray, rings: Int, segments: Int, gap: Float) {
+        for (ring in 0 until rings) for (j in 0 until segments) {
+            val at = ring * segments + j
+            if (!slid[at] || buried[at]) continue
+            val before = ring * segments + (j - 1 + segments) % segments
+            val after = ring * segments + (j + 1) % segments
+            fun meets(other: Int) = !buried[other] && (points[at] - points[other]).length < gap
+            if (meets(before) || meets(after)) buried[at] = true
+        }
     }
 
     /**
@@ -238,6 +260,29 @@ private class Rays(
         class Surface(val point: Vec3) : Out
         class Wall(val point: Vec3, val normal: Vec3) : Out
         class Reach(val point: Vec3) : Out
+    }
+
+    /**
+     * The ring cast from [centre], or, where that ring is crowded, the ring cast again from the middle of its box inside the solid when
+     * that one spreads its points more evenly and buries no more of them.
+     */
+    fun evenRing(centre: Vec3, frame: RingFrame, segments: Int): List<RayHit> {
+        val hits = ring(centre, frame, segments)
+        val crowding = crowding(hits)
+        if (crowding >= CROWDED) return hits
+        val (middle, _) = spanOf(hits.map { frame.flat(it.point - centre) })
+        val from = centre + frame.side * middle.x + frame.up * middle.y
+        if (field.value(from) >= 0f) return hits
+        val again = ring(from, frame, segments)
+        val buriesNoMore = again.count { it.buried } <= hits.count { it.buried }
+        return if (buriesNoMore && crowding(again) > crowding) again else hits
+    }
+
+    /** The least gap between neighbouring points of [hits] as a share of their mean gap: 1 for points evenly spaced, near 0 where some crowd. */
+    private fun crowding(hits: List<RayHit>): Float {
+        val gaps = hits.indices.map { j -> (hits[(j + 1) % hits.size].point - hits[j].point).length }
+        val mean = gaps.average().toFloat()
+        return if (mean > 0f) gaps.min() / mean else 1f
     }
 
     fun ring(centre: Vec3, frame: RingFrame, segments: Int): List<RayHit> {

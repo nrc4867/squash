@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.MeshInvariants
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.PatchMesh
 import dev.chieppa.squash.geom.Vec3
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +36,26 @@ class DrawnPartTest {
         val mesh = PartBuilder.mesh(id, template, patches)
         for (patch in mesh.patches) {
             assertEquals(emptyList(), MeshInvariants.check(patch, PartBuilder.openRings(template, patch.patch)), id)
-            if (PartBuilder.openRings(template, patch.patch).isEmpty()) assertTrue(MeshInvariants.signedVolume(patch) > 0f, patch.patch.name)
+            if (PartBuilder.openRings(template, patch.patch).isEmpty()) assertTrue(volumeAboutItsOpenings(patch) > 0f, "$id ${patch.patch.name}")
+        }
+    }
+
+    /**
+     * Six times the signed volume of [mesh]'s triangles, measured from the middle of the edges they leave open: a run open where
+     * another run of its part takes over is closed there by a cone from that point, which adds nothing, so its sign still says which
+     * way it faces.
+     */
+    private fun volumeAboutItsOpenings(mesh: PatchMesh): Float {
+        val patch = mesh.patch
+        val edges = HashSet<Pair<Int, Int>>()
+        for (t in 0 until mesh.triangleCount) for (k in 0 until 3) edges += mesh.indices[t * 3 + k] to mesh.indices[t * 3 + (k + 1) % 3]
+        val open = edges.filter { (from, to) -> (to to from) !in edges }.flatMap { listOf(it.first, it.second) }
+        val about = if (open.isEmpty()) Vec3(0f, 0f, 0f) else open.fold(Vec3(0f, 0f, 0f)) { sum, i -> sum + patch.point(i) } * (1f / open.size)
+        return (0 until mesh.triangleCount).fold(0f) { sum, t ->
+            val a = patch.point(mesh.indices[t * 3]) - about
+            val b = patch.point(mesh.indices[t * 3 + 1]) - about
+            val c = patch.point(mesh.indices[t * 3 + 2]) - about
+            sum + (a dot (b cross c))
         }
     }
 
