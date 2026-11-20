@@ -6,6 +6,7 @@ import type { Anatomy } from "./anatomy.ts";
 import { skinColor } from "./face/skin.ts";
 import type { PixelMark } from "./landmark.ts";
 import { farthestFrom, joinPoint, type Piece } from "./pieces.ts";
+import { HAND_WIDTH_OF_LENGTH } from "./sizeChecks.ts";
 import { joinReasons, sizeReading, type Proportions, type Reading, type ReadingLine, type ReadingScale } from "./readings.ts";
 
 /** The wrist is the narrowest row of the arm in this stretch of its length, from the joint, and at least this many heads short of its tip. */
@@ -19,13 +20,28 @@ const SIDES_AGREE = 0.25;
 /** A bin of an arm's length is this many pixels. */
 const BIN = 2;
 
-interface OneHand {
+/** One hand as read off its arm piece, in the sheet's pixels. */
+export interface OneHand {
   side: "image-left" | "image-right";
   length: number;
   width: number;
   status: "found" | "unsure";
   reason?: string;
   lines: { length: ReadingLine; width: ReadingLine };
+  /** Where the hand meets the arm, and its far end. */
+  wrist: { x: number; y: number };
+  tip: { x: number; y: number };
+  /** The arm piece the hand is read from. */
+  piece: Piece;
+  /** The hand's own pixels, where its skin tells it from the sleeve. */
+  pixels?: Int32Array;
+}
+
+/** A hand wider than `HAND_WIDTH_OF_LENGTH` of its length is unsure, with why. */
+function shapeChecked(hand: OneHand): OneHand {
+  if (hand.width <= HAND_WIDTH_OF_LENGTH * hand.length) return hand;
+  const why = `the hand is ${(hand.width / hand.length).toFixed(2)} of its length wide, more than ${HAND_WIDTH_OF_LENGTH}: it may be read with the other hand or the body, or seen end-on`;
+  return { ...hand, status: "unsure", reason: joinReasons(hand.reason, why) };
 }
 
 /** One arm piece's hand: the wrist is its narrowest row beyond 0.4 of its length from the body, the hand runs from there to its tip. */
@@ -74,7 +90,7 @@ function handOf(piece: Piece, anatomy: Anatomy, image?: Raster, skin?: Pixel): O
   if (widening < HAND_WIDENING) reasons.push(`no wrist narrowing: the hand is ${widening.toFixed(2)} times the wrist's width (a sleeve, glove or mitten covers the wrist, or the arm is bent)`);
   const heads = length / anatomy.headLength;
   if (heads < HAND_HEADS[0] || heads > HAND_HEADS[1]) reasons.push(`the hand is ${heads.toFixed(2)} heads long, expected ${HAND_HEADS[0]} to ${HAND_HEADS[1]}`);
-  return { side, length, width: handWidth, status: reasons.length ? "unsure" : "found", ...(reasons.length ? { reason: reasons.join("; ") } : {}), lines };
+  return shapeChecked({ side, length, width: handWidth, status: reasons.length ? "unsure" : "found", ...(reasons.length ? { reason: reasons.join("; ") } : {}), lines, wrist: lines.length.from, tip, piece });
 }
 
 /** Pixels this near the skin's colour, in the largest channel, are skin. */
@@ -106,10 +122,12 @@ function skinHandOf(piece: Piece, anatomy: Anatomy, image: Raster, skin: Pixel):
   const tip = farthestFrom(piece.pixels, width, join);
   if (skinPixels > BARE_ARM * piece.pixels.length && Math.hypot(tip.x - join.x, tip.y - join.y) > BARE_ARM_HEADS * anatomy.headLength) return undefined;
   const pieces = components(mask).pieces.filter((p) => p.area >= HAND_MIN_AREA * anatomy.headLength * anatomy.headLength);
-  const hand = pieces.find((p) => p.box.x - 2 <= tip.x && tip.x <= p.box.x + p.box.w + 2 && p.box.y - 2 <= tip.y && tip.y <= p.box.y + p.box.h + 2);
-  if (!hand) return undefined;
-  const xs = Array.from(hand.pixels, (at) => at % width);
-  const ys = Array.from(hand.pixels, (at) => Math.floor(at / width));
+  const found = pieces.find((p) => p.box.x - 2 <= tip.x && tip.x <= p.box.x + p.box.w + 2 && p.box.y - 2 <= tip.y && tip.y <= p.box.y + p.box.h + 2);
+  if (!found) return undefined;
+  const own = ownSide(found.pixels, width, anatomy.figure.axis, piece.side);
+  const handPixels = own.length > 0 ? own : found.pixels;
+  const xs = Array.from(handPixels, (at) => at % width);
+  const ys = Array.from(handPixels, (at) => Math.floor(at / width));
   const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
   const my = ys.reduce((a, b) => a + b, 0) / ys.length;
   let sxx = 0;
@@ -133,14 +151,28 @@ function skinHandOf(piece: Piece, anatomy: Anatomy, image: Raster, skin: Pixel):
   const point = (t: number, s: number) => ({ x: Math.round(mx + t * ax - s * ay), y: Math.round(my + t * ay + s * ax) });
   const heads = length / anatomy.headLength;
   const reason = heads < HAND_HEADS[0] || heads > HAND_HEADS[1] ? `the skin-coloured part is ${heads.toFixed(2)} heads long, expected ${HAND_HEADS[0]} to ${HAND_HEADS[1]}` : undefined;
-  return {
+  const ends = [point(along.low, 0), point(along.high, 0)];
+  const nearJoin = (p: { x: number; y: number }) => Math.hypot(p.x - join.x, p.y - join.y);
+  const [wrist, end] = nearJoin(ends[0]) <= nearJoin(ends[1]) ? ends : [ends[1], ends[0]];
+  const touching = own.length > 0 && own.length < found.pixels.length ? "the hand's skin runs across the figure's middle (the hands touch, or the hand lies on the body): cut at the axis" : undefined;
+  const reasons = joinReasons(reason, touching);
+  return shapeChecked({
     side: piece.side < 0 ? "image-left" : "image-right",
     length,
     width: across.high - across.low + 1,
-    status: reason ? "unsure" : "found",
-    ...(reason ? { reason } : {}),
-    lines: { length: { from: point(along.low, 0), to: point(along.high, 0) }, width: { from: point(0, across.low), to: point(0, across.high) } },
-  };
+    status: reasons ? "unsure" : "found",
+    ...(reasons ? { reason: reasons } : {}),
+    lines: { length: { from: wrist, to: end }, width: { from: point(0, across.low), to: point(0, across.high) } },
+    wrist,
+    tip: end,
+    piece,
+    pixels: handPixels,
+  });
+}
+
+/** The pixels on one side of the axis: a hand's own, where its skin runs on into the other hand's or across the body. */
+function ownSide(pixels: Int32Array, width: number, axis: number, side: -1 | 1): Int32Array {
+  return pixels.filter((at) => (side < 0 ? at % width < axis : at % width > axis));
 }
 
 /** The given wrist and hand tip, when both are placed with columns: a hand's length by the author's own marks. */
@@ -151,9 +183,8 @@ function givenHand(marks: Record<string, PixelMark>): { length: number; line: Re
   return { length: Math.hypot(tip.x - wrist.x, tip.y - wrist.y), line: { from: { x: wrist.x, y: wrist.y }, to: { x: tip.x, y: tip.y } } };
 }
 
-/** Both hands' length and width: each as the two sides' mean, unsure where the sides differ or the wrist is not told from the hand. */
-export function readHands(anatomy: Anatomy, scale: ReadingScale, image?: Raster): Proportions {
-  const out: Proportions = { readings: {}, missing: {} };
+/** The pieces that read as arms or loose hands, and each one's hand or why it was skipped. */
+export function handsOf(anatomy: Anatomy, image?: Raster): { arms: Piece[]; hands: Array<OneHand | { skipped: string }> } {
   const skin = image ? skinColor(image, anatomy) : undefined;
   const skinShare = (p: Piece) => {
     if (!image || !skin) return 0;
@@ -166,7 +197,13 @@ export function readHands(anatomy: Anatomy, scale: ReadingScale, image?: Raster)
   const shoulder = (anatomy.marks.shoulder ?? anatomy.marks.neck ?? anatomy.marks.chin).y;
   const armLike = (p: Piece) => p.kind === "other" && p.box.y >= shoulder && p.box.y <= hip && p.box.y + p.box.h > hip;
   const arms = anatomy.pieces.filter((p) => p.kind === "arm" || armLike(p) || handLike(p));
-  const hands = arms.map((p) => handOf(p, anatomy, image, skin));
+  return { arms, hands: arms.map((p) => handOf(p, anatomy, image, skin)) };
+}
+
+/** Both hands' length and width: each as the two sides' mean, unsure where the sides differ or the wrist is not told from the hand. */
+export function readHands(anatomy: Anatomy, scale: ReadingScale, image?: Raster): Proportions {
+  const out: Proportions = { readings: {}, missing: {} };
+  const { arms, hands } = handsOf(anatomy, image);
   const read = hands.filter((h): h is OneHand => "length" in h);
   const given = givenHand(anatomy.marks);
   if (read.length === 0 && !given) {

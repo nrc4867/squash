@@ -1,5 +1,6 @@
 package dev.chieppa.squash.geom.field
 
+import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.cos
 import kotlin.math.max
@@ -8,6 +9,33 @@ import kotlin.math.sin
 
 /** A primitive joined to what is listed before it by a smooth union of radius [blend]; the first's blend is not read. */
 data class Blended(val primitive: Primitive, val blend: Float = 0f)
+
+/**
+ * A cut across the axis: the parts are kept behind it, joined by a smooth intersection of radius [blend]; digits reach past it. It
+ * runs through [line], points of (across, along) where across is the part's up ([upAcross]) or side coordinate, straight between
+ * them and held at its end points' along beyond them, so it follows a row of roots that curves back toward its ends. The parts are also
+ * kept out of each of [clear], the room a digit standing out of the row, a thumb, takes, so it stands from them alone.
+ */
+data class EndCut(val line: List<Vec2>, val blend: Float, val upAcross: Boolean = false, val clear: List<Primitive> = emptyList()) {
+    init {
+        require(line.isNotEmpty()) { "A cut needs a point" }
+    }
+
+    private val sorted = line.sortedBy { it.x }
+
+    /** How far past the cut [p] lies along the axis. */
+    fun past(p: Vec3): Float = p.x - along(if (upAcross) p.y else p.z)
+
+    private fun along(across: Float): Float {
+        if (across <= sorted.first().x) return sorted.first().y
+        for (i in 1 until sorted.size) {
+            val a = sorted[i - 1]
+            val b = sorted[i]
+            if (across <= b.x) return if (b.x - a.x < 1e-9f) max(a.y, b.y) else a.y + (b.y - a.y) * (across - a.x) / (b.x - a.x)
+        }
+        return sorted.last().y
+    }
+}
 
 /**
  * A flat floor at height [y] in the part's own axes: the solid is cut there by a smooth intersection of radius [blend]. [across] cuts
@@ -46,7 +74,7 @@ class FieldDigits(val parts: List<Blended>, val blend: Float, val joins: FloatAr
 
 /**
  * A solid as one distance-like field in a part's own axes: [parts] joined in order by smooth unions, cupped by [cup], with [digits]
- * joined to them, cut by [floor], with space bent by [bend] before it is read. With [fit], the parts, cup, bend and floor are fitted to a
+ * joined to them, cut by [floor], the parts cut back across the axis by [end], with space bent by [bend] before it is read. With [fit], the parts, cup, bend and floor are fitted to a
  * drawing and the digits, placed for the fitted solid already, are read where they stand. Negative inside.
  */
 class BlendedField(
@@ -56,6 +84,7 @@ class BlendedField(
     val digits: FieldDigits? = null,
     val cup: Cup? = null,
     val fit: FieldFit? = null,
+    val end: EndCut? = null,
 ) {
     init {
         require(parts.isNotEmpty()) { "A field needs a primitive" }
@@ -70,6 +99,10 @@ class BlendedField(
         var field = parts[0].primitive.distance(c)
         for (i in 1 until parts.size) field = smoothMin(field, parts[i].primitive.distance(c), parts[i].blend)
         field *= shrink
+        end?.let { cut ->
+            field = smoothMax(field, cut.past(q), cut.blend)
+            for (room in cut.clear) field = smoothMax(field, -room.distance(q), cut.blend)
+        }
         digits?.let { row ->
             val (value, nearest) = digitsValue(if (fit == null) q else p, row, field)
             field = smoothMin(field, value, row.joins?.getOrNull(nearest) ?: row.blend)
@@ -79,10 +112,13 @@ class BlendedField(
     }
 
     /** This field with [fit] in place of its own, its digits read where they stand. */
-    fun fitted(fit: FieldFit?): BlendedField = BlendedField(parts, floor, bend, digits, cup, fit)
+    fun fitted(fit: FieldFit?): BlendedField = BlendedField(parts, floor, bend, digits, cup, fit, end)
+
+    /** This field with its parts cut back at [cut]. */
+    fun cut(cut: EndCut?): BlendedField = BlendedField(parts, floor, bend, digits, cup, fit, cut)
 
     /** This field with no digits joined to it. */
-    fun withoutDigits(): BlendedField = if (digits == null) this else BlendedField(parts, floor, bend, null, cup, fit)
+    fun withoutDigits(): BlendedField = if (digits == null) this else BlendedField(parts, floor, bend, null, cup, fit, end)
 
     /** The digits' own field at [q] and which solid lies nearest, skipping a capsule that cannot come within reach of it or [palm]. */
     private fun digitsValue(q: Vec3, digits: FieldDigits, palm: Float): Pair<Float, Int> {

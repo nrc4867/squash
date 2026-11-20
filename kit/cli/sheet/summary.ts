@@ -1,5 +1,7 @@
 import type { Measurement } from "../../src/sheet/measure/measurement.ts";
+import type { AcrossReading } from "../../src/sheet/measure/across.ts";
 import type { Reading } from "../../src/sheet/measure/readings.ts";
+import type { Trace } from "../../src/sheet/read/trace.ts";
 
 /** A measurement as a few lines: the view, its head count and each landmark's height, status and row. */
 export function summary(m: Measurement): string {
@@ -28,5 +30,31 @@ export function readingLines(readings: readonly Reading[], unread: ReadonlyArray
     if (r.reason) lines.push(`              ${r.reason}`);
   }
   for (const [name, why] of unread) lines.push(`  ${name.padEnd(11)} not read: ${why}`);
+  return lines;
+}
+
+/** Each size read across views as a line, its views' own shares of the head beside it and its reason under it. */
+export function acrossLines(readings: readonly AcrossReading[]): string[] {
+  const lines: string[] = [];
+  for (const r of readings) {
+    const views = r.views.map((v) => `${v.view} ${v.ofHead.toFixed(2)}${v.status === "found" ? "" : ` ${v.status}`}`).join(", ");
+    lines.push(`  ${r.name.padEnd(11)}${r.value.toFixed(4).padStart(8)}  ${r.ofHead.toFixed(2)} head  ${r.status}  (${views})`);
+    if (r.reason) lines.push(`              ${r.reason}`);
+  }
+  return lines;
+}
+
+/** A trace as lines: its points and tolerance, and for a foot or hand in its own frame the size, the notes and the line to paste. */
+export function traceLines(trace: Trace): string[] {
+  const lines = [`  ${trace.part}: ${trace.points.length} points, tolerance ${trace.tolerance}, ${trace.closed ? "closed" : "open"}`];
+  const outline = trace.outline;
+  if (!outline) {
+    lines.push(`  points (x from the axis, y up from the ground): ${trace.points.map(([x, y]) => `[${x}, ${y}]`).join(", ")}`);
+    return lines;
+  }
+  if (trace.socket) lines.push(`  socket at x ${trace.socket[0].toFixed(1)} y ${trace.socket[1].toFixed(1)} (pixels)`);
+  lines.push(`  ${outline.pane} size: ${Object.entries(outline.size).map(([k, v]) => `${k} ${v}`).join(", ")} (body units)`);
+  for (const note of outline.notes) lines.push(`  ${note}`);
+  lines.push(`  ${outline.line}`);
   return lines;
 }

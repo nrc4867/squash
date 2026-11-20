@@ -8,10 +8,13 @@ import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Rides
+import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.BlendedField
+import dev.chieppa.squash.geom.field.Capsule
 import dev.chieppa.squash.geom.field.DigitAxis
 import dev.chieppa.squash.geom.field.DigitClaims
+import dev.chieppa.squash.geom.field.EndCut
 import dev.chieppa.squash.geom.field.FieldDigits
 import dev.chieppa.squash.geom.field.FieldFit
 import dev.chieppa.squash.geom.field.FieldLoft
@@ -168,15 +171,52 @@ internal class JoinedDigits private constructor(
             }
             val views = ctx.views
             val fit = if (own.fit && views != null) UndrawnSilhouettes.of(ctx).fitTo(views) else null
-            val axes = if (fit == null) natural else natural.map(fit::axis)
-            val palm = own.field(ctx).fitted(fit)
+            val fitted = if (fit == null) natural else natural.map(fit::axis)
+            val axes = fitted.mapIndexed { k, axis -> DigitOverrides.apply(axis, row.patchOf(k, built[k]), ctx.values, across, fittedMiddle(fitted, built, row, across)) }
+            val drawnPalm = own.drawnField(ctx)
+            val palm = drawnPalm?.cut(cutAtRoots(axes, built, row)) ?: own.field(ctx).fitted(fit)
+            val warp = if (drawnPalm != null) null else fit
             val seams = FloatArray(axes.size) { emerges(palm, axes[it]) - SEAM * axes[it].radius / axes[it].length }
             val solids = DigitSolids.of(ctx, row, built, axes, seams)
             val join = ctx.value(requireNotNull(row.join)) * length
-            val field = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.whole, join, solids.wholeJoins), palm.cup, fit)
-            val rootsField = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.roots, join, solids.rootJoins), palm.cup, fit)
+            val field = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.whole, join, solids.wholeJoins), palm.cup, warp, palm.end)
+            val rootsField = BlendedField(palm.parts, palm.floor, palm.bend, FieldDigits(solids.roots, join, solids.rootJoins), palm.cup, warp, palm.end)
             return JoinedDigits(ctx, own, row, built, field, rootsField, axes, DigitClaims(axes, seams, CLAIM), built.map { row.span(it) }, fit)
         }
+
+        /** The middle across the row of the counted digits' roots, once fitted. */
+        private fun fittedMiddle(axes: List<DigitAxis>, built: List<Int>, row: Digits, across: Int): Float {
+            val counted = axes.indices.filter { row.digits[built[it]].name == null }.ifEmpty { axes.indices.toList() }
+            return counted.map { if (across == UP_COORDINATE) axes[it].root.y else axes[it].root.z }.average().toFloat()
+        }
+
+        /**
+         * Where a drawn solid is cut back so the counted digits stand from it: through each forward digit's root, [CUT_RADII] of their
+         * mean radius past it, along the row the roots run across, rounded over that radius; and kept clear of each named digit, a thumb,
+         * [CLEAR_RADII] of its radius round its axis from [CLEAR_FROM] of the way along it, so a drawing round the thumb leaves it
+         * standing apart. Null when no digit points forward.
+         */
+        private fun cutAtRoots(axes: List<DigitAxis>, built: List<Int>, row: Digits): EndCut? {
+            val forward = axes.indices.filter { row.digits[built[it]].name == null && axes[it].direction.x > 0f }
+            if (forward.isEmpty()) return null
+            val radius = forward.map { axes[it].radius }.average().toFloat()
+            val up = row.across == UP_COORDINATE
+            val line = forward.map { val root = axes[it].root; Vec2(if (up) root.y else root.z, root.x + radius * CUT_RADII) }
+            val apart = axes.indices.filter { row.digits[built[it]].name != null }.map { k ->
+                val axis = axes[k]
+                Capsule(axis.at(CLEAR_FROM), axis.at(1f + axis.beyond / axis.length), axis.radius * CLEAR_RADII)
+            }
+            return EndCut(line, radius, up, apart)
+        }
+
+        /** How far past each forward digit's root, in their radii, a drawn solid is cut back. */
+        private const val CUT_RADII = 0.5f
+
+        /** How far along a named digit, as a share of its length, the drawn solid starts to keep clear of it. */
+        private const val CLEAR_FROM = 0.2f
+
+        /** How far from a named digit's axis, in its radii, the drawn solid keeps clear of it. */
+        private const val CLEAR_RADII = 1.8f
 
         /** How many of a digit's tip rings more a claw takes. */
         private const val CLAW_RINGS = 4

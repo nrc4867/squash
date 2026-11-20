@@ -4,6 +4,8 @@ import { runsAt } from "./figure.ts";
 import type { PixelMark } from "./landmark.ts";
 import { joinReasons, sizeReading, type Proportions, type ReadingLine, type ReadingScale } from "./readings.ts";
 import { runWidth, type Run } from "./rows.ts";
+import { ankleRow, splitFeet, type FootPixels, type FootSplitHow } from "./footSplit.ts";
+import { FOOT_WIDTH_OF_LENGTH } from "./sizeChecks.ts";
 
 /** A foot is read over the rows from this share of the way from the ankle to the ground, down to the ground. */
 const FOOT_FROM = 0.35;
@@ -13,19 +15,15 @@ const SIDES_AGREE = 0.3;
 const FOOT_HEADS: [number, number] = [0.15, 1.2];
 const WIDTH_HEADS: [number, number] = [0.08, 0.7];
 
-/** The widest run of the figure on the rows, each leg's own: the foot of that leg as the silhouette shows it on the ground. */
-function footWidths(anatomy: Anatomy, from: number): Array<{ width: number; row: number; run: Run } | undefined> {
-  const { legs } = anatomy;
-  if (!legs) return [];
-  return [legs.left, legs.right].map((track) => {
-    let best: { width: number; row: number; run: Run } | undefined;
-    for (let y = from; y < anatomy.figure.ground; y++) {
-      const run = track[y - legs.from];
-      if (!run) continue;
-      if (!best || runWidth(run) > best.width) best = { width: runWidth(run), row: y, run };
-    }
-    return best;
+/** Each foot's widest row from row `from` down, the feet split where they touch (`splitFeet`). */
+function footWidths(anatomy: Anatomy, ankle: number, from: number): { widths: Array<{ side: FootPixels["side"]; width: number; row: number; run: Run }>; how: FootSplitHow; divider?: number } {
+  const split = splitFeet(anatomy, ankle);
+  const widths = split.feet.flatMap((foot) => {
+    let best: { side: FootPixels["side"]; width: number; row: number; run: Run } | undefined;
+    for (const [y, run] of foot.rows) if (y >= from && (!best || runWidth(run) > best.width)) best = { side: foot.side, width: runWidth(run), row: y, run };
+    return best ? [best] : [];
   });
+  return { widths, how: split.how, ...(split.divider !== undefined ? { divider: split.divider } : {}) };
 }
 
 /** The longest run on the figure's lowest rows: a foot from heel to toe in a side view, the two feet's span when they overlap. */
@@ -46,39 +44,44 @@ function given(marks: Record<string, PixelMark>): { length: number; line: Readin
 }
 
 /**
- * Both feet's width, from the legs' rows below the ankle (read in a front or back view, where the feet face the viewer or away), and
+ * Both feet's width, each foot's own widest row below the ankle, the feet split where they touch (read in a front or back view, where
+ * the feet face the viewer or away; unsure past a given length's share, `FOOT_WIDTH_OF_LENGTH`), and
  * a foot's length, read in a side view as the longest stretch of the figure on the rows near the ground and unsure in a three-quarter
  * view, where the foot is foreshortened. A front or back view cannot tell a foot's length: it is left out with the reason.
  */
 export function readFeet(anatomy: Anatomy, scale: ReadingScale): Proportions {
   const out: Proportions = { readings: {}, missing: {} };
   const facing = anatomy.view.guess.facing;
-  const ankle = anatomy.marks.ankle?.y ?? Math.round(scale.ground - 0.08 * scale.heightPixels);
+  const ankle = ankleRow(anatomy);
   const from = Math.round(ankle + FOOT_FROM * (scale.ground - ankle));
   const reasonAnkle = anatomy.marks.ankle && anatomy.marks.ankle.status !== "found" ? `the ankle row is ${anatomy.marks.ankle.status}, so where the foot starts is too` : undefined;
-  const widths = footWidths(anatomy, from);
-  const read = widths.filter((w): w is NonNullable<typeof w> => w !== undefined);
   const givenLength = given(anatomy.marks);
   if (facing === "front" || facing === "back") {
+    const { widths: read, how, divider } = footWidths(anatomy, ankle, from);
     if (read.length > 0) {
       const values = read.map((w) => w.width);
       let status: "found" | "unsure" = reasonAnkle ? "unsure" : "found";
       const reasons: Array<string | undefined> = [reasonAnkle];
+      if (how === "notch") reasons.push(`the feet touch: split at the notch between them, column ${divider}`);
+      if (how === "legs") {
+        status = "unsure";
+        reasons.push(`the feet join with no notch between them: split under the gap between the legs, column ${divider}`);
+      }
       if (read.length === 2 && Math.abs(values[0] - values[1]) > SIDES_AGREE * Math.max(...values)) {
         status = "unsure";
         reasons.push(`the two feet differ by ${Math.round((100 * Math.abs(values[0] - values[1])) / Math.max(...values))}% (one is turned or hidden): the mean is shown`);
       }
-      if (anatomy.legs && widths.some((w) => w === undefined)) {
+      if (read.length === 1) {
         status = "unsure";
-        reasons.push("only one foot is read: the other is hidden or touches it");
+        reasons.push("only one foot is read: the feet stand together with nothing to split them at, or one is hidden");
       }
       if (values.some((v) => v / anatomy.headLength < WIDTH_HEADS[0] || v / anatomy.headLength > WIDTH_HEADS[1])) {
         status = "unsure";
-        reasons.push(`a foot is ${(median(values) / anatomy.headLength).toFixed(2)} heads wide, expected ${WIDTH_HEADS[0]} to ${WIDTH_HEADS[1]}: socks or shoes, or the legs merge`);
+        reasons.push(`a foot is ${(median(values) / anatomy.headLength).toFixed(2)} heads wide, expected ${WIDTH_HEADS[0]} to ${WIDTH_HEADS[1]}: socks or shoes, or the feet merge`);
       }
-      if (anatomy.legs && anatomy.marks.crotch?.status === "estimated" && /touch/.test(anatomy.marks.crotch.reason ?? "")) {
+      if (givenLength && median(values) > FOOT_WIDTH_OF_LENGTH * givenLength.length) {
         status = "unsure";
-        reasons.push("the legs touch, so where one foot ends and the other begins is a guess");
+        reasons.push(`a foot is ${(median(values) / givenLength.length).toFixed(2)} of its given length wide, more than ${FOOT_WIDTH_OF_LENGTH}: the width may span both feet or a turned foot`);
       }
       out.readings.footWidth = sizeReading(
         "footWidth",
@@ -87,10 +90,10 @@ export function readFeet(anatomy: Anatomy, scale: ReadingScale): Proportions {
         status,
         read.map((w) => ({ from: { x: w.run.l, y: w.row }, to: { x: w.run.r + 1, y: w.row } })),
         joinReasons(...reasons),
-        read.length === 2 ? "both" : undefined,
+        read.length === 2 ? "both" : read[0].side,
       );
     } else {
-      out.missing.footWidth = "no leg is read below the crotch in this view";
+      out.missing.footWidth = "no foot is read standing on the ground in this view";
     }
     if (givenLength) out.readings.footLength = sizeReading("footLength", givenLength.length, scale, "given", [givenLength.line]);
     else out.missing.footLength = `a ${facing} view foreshortens the foot (the toes point ${facing === "front" ? "at the viewer" : "away"}): read it from a side view, or give landmarks=heel:x,y;toeTip:x,y`;

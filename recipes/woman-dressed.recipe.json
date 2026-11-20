@@ -300,7 +300,7 @@
     {
       "id": "hands",
       "template": "hand",
-      "version": 6,
+      "version": 9,
       "on": "arms",
       "socket": "socket.1",
       "pair": {"left": "hand-l", "right": "hand-r"},
@@ -314,7 +314,7 @@
     {
       "id": "feet",
       "template": "foot",
-      "version": 8,
+      "version": 10,
       "on": "legs",
       "socket": "socket.1",
       "pair": {"left": "foot-l", "right": "foot-r"},

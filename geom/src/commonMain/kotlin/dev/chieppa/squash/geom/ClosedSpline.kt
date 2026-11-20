@@ -117,7 +117,14 @@ enum class SectionProfile(private val pointAtAngle: (Float) -> Vec2) {
     }),
 
     /** Flat, pointed at both sides. */
-    LENS({ angle -> Vec2(sin(angle), cos(angle) * LENS_FLATNESS * (1f + abs(cos(angle)))) });
+    LENS({ angle -> Vec2(sin(angle), cos(angle) * LENS_FLATNESS * (1f + abs(cos(angle)))) }),
+
+    /** Round on top, flat underneath with rounded edges: a sole's. */
+    SOLE({ angle ->
+        val c = cos(angle)
+        val s = sin(angle)
+        if (c >= 0f) Vec2(s, c) else Vec2(kotlin.math.sign(s) * kotlin.math.sqrt(abs(s)), -kotlin.math.sqrt(abs(c)))
+    });
 
     /** This profile as a spline with exactly [controlPoints] control points, fitted to the unit span. */
     fun spline(controlPoints: Int): ClosedSpline =

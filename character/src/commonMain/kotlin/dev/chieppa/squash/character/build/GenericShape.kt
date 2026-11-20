@@ -24,7 +24,7 @@ object GenericParams {
     const val SEGMENTS = "${PREFIX}segments"
 
     /** The section profiles a generic part chooses between, in the order the inspector shows them. */
-    val PROFILES: List<SectionProfile> = SectionProfile.entries
+    val PROFILES: List<SectionProfile> = listOf(SectionProfile.CIRCLE, SectionProfile.EGG, SectionProfile.KEEL, SectionProfile.LENS)
 
     /** What each view sets on a generic part while it is on. */
     val READINGS: Map<View, Sets> = mapOf(View.SIDE to Sets.HEIGHT, View.TOP to Sets.WIDTH, View.FRONT to Sets.SECTION)

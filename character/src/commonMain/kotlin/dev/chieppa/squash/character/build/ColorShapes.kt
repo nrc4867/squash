@@ -52,14 +52,20 @@ data class PartColorInput(
     val socketEnds: Map<PartId, SocketEnd> = emptyMap(),
 )
 
-/** What [part] reads in [character], through its template in [templates]; empty when no such part is there. */
+/**
+ * What [part] reads in [character], through its template in [templates]; empty when no such part is there. A template area whose slot
+ * the palette does not name shows nothing until a fill names one.
+ */
 fun partColorInput(character: Character, part: PartId, templates: TemplateLibrary): PartColorInput {
     val instance = character.part(part) ?: return PartColorInput()
     val worn = character.wornPart(instance)
     val template = templates.find(worn.template) ?: return PartColorInput(surfaceWorkInput(character, part).parts)
     val params = worn.data.params
     val named = surfaceWorkInput(character, part).parts
-    return PartColorInput(named, PartBuilder.areas(template, params), PartBuilder.patchSlots(template, params), socketEnds(character, named, templates))
+    val areas = PartBuilder.areas(template, params).map { area ->
+        if (area.color == null || character.palette.color(SlotName(area.color)) != null) area else area.copy(color = null)
+    }
+    return PartColorInput(named, areas, PartBuilder.patchSlots(template, params), socketEnds(character, named, templates))
 }
 
 private fun socketEnds(character: Character, parts: Set<PartId>, templates: TemplateLibrary): Map<PartId, SocketEnd> = parts.mapNotNull { id ->

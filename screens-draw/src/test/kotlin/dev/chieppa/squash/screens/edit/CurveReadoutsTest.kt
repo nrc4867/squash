@@ -83,7 +83,8 @@ class CurveReadoutsTest {
     fun aFrontSectionRebuildsThePartAndAFrontCapOnlyTheClosedEnds() {
         val leg = LEG_SIDE
         val moved = leg.moved(4, CurvePoint(0.7f, 0.9f))
-        assertEquals(RefitReach.CLOSED_ENDS, refitReach(View.FRONT, leg, moved, template("paw")))
+        assertEquals(RefitReach.CLOSED_ENDS, refitReach(View.FRONT, leg, moved, template("foot-bird")))
+        assertEquals(RefitReach.WHOLE_PART, refitReach(View.FRONT, leg, moved, template("paw")), "a drawn paw's Front is its whole section")
         assertEquals(RefitReach.WHOLE_PART, refitReach(View.FRONT, leg, moved, template("torso")))
     }
 

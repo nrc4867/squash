@@ -23,12 +23,14 @@ private val DETAIL_ROLES = setOf(Role.HEAD, Role.JAW, Role.EAR, Role.HAND, Role.
  * a pocket's lining, whose rim and hollow are smaller than the part it is cut into,
  * [DETAIL_LEVEL] for every other run of a head, jaw, ear, hand or foot, and the body's own cell for every other run, legs, arms, tails, the
  * torso and hair among them, but a tail or a horn (an antler, a trunk) whose tip is thinner than [THIN_TIP_CELLS] of the body's cells across,
- * at [DETAIL_LEVEL], so its round end, a hook at it and a branch on it are several cells across.
+ * at [DETAIL_LEVEL], so its round end, a hook at it and a branch on it are several cells across; and a hand's or a foot's own run whose far
+ * end is that thin at [DETAIL_LEVEL]'s cell, at [DIGIT_LEVEL], so a slim drawn toe cap keeps a smooth outline.
  */
 fun digitLevels(field: CharacterField): IntArray = IntArray(field.runs.size) { i ->
     val run = field.runs[i]
     when {
         isDigitRun(run.part, run.patch) || (run.first && pocketOf(run.part) != null) -> DIGIT_LEVEL
+        run.part.role in END_ROLES && thinEnd(run, field.cell / (1 shl DETAIL_LEVEL)) -> DIGIT_LEVEL
         run.part.role in DETAIL_ROLES || (run.part.role in THIN_TIP_ROLES && thinTip(run, field.cell)) -> DETAIL_LEVEL
         else -> 0
     }
@@ -48,6 +50,23 @@ private fun thinTip(run: FieldRun, cell: Float): Boolean {
     val slices = run.patch.slices ?: return false
     val tip = slices.minByOrNull { kotlin.math.abs(it.u - TIP_U) } ?: return false
     return minOf(tip.height, tip.width) < THIN_TIP_CELLS * cell
+}
+
+/** The roles whose own run meshes at [DIGIT_LEVEL] where its far end is thin: a toe cap or a mitten drawn to a slim end. */
+private val END_ROLES = setOf(Role.HAND, Role.FOOT)
+
+/** The share of a run's rings, from its far end, whose thickness says whether that end is thin. */
+private const val END_RING_SHARE = 0.2f
+
+/**
+ * Whether [run]'s far end is thinner than [THIN_TIP_CELLS] of [cell] across at its thickest among its last [END_RING_SHARE] of rings,
+ * so a drawn toe end narrower than a few cells of its own level meshes finer and keeps a smooth outline.
+ */
+private fun thinEnd(run: FieldRun, cell: Float): Boolean {
+    val slices = run.patch.slices ?: return false
+    val from = (slices.size * (1f - END_RING_SHARE)).toInt()
+    val thickest = slices.drop(from).maxOfOrNull { minOf(it.height, it.width) } ?: return false
+    return thickest < THIN_TIP_CELLS * cell
 }
 
 /** Whether [patch] of [part] is one digit of a row of toes or fingers its template builds. */

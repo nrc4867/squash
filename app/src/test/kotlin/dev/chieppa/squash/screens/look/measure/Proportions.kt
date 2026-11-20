@@ -78,6 +78,17 @@ internal fun handExtent(points: List<Vec3>): Pair<Float, Float> {
     return extentAlong(points, axes[0]) to maxOf(extentAlong(points, axes[1]), extentAlong(points, axes[2]))
 }
 
+/**
+ * [points] of a hand from its socket on, along its principal axis: the wrist the arm runs into reaches back inside the arm, and a hand
+ * is read from the wrist to the fingertip.
+ */
+internal fun pastSocket(points: List<Vec3>, socket: Vec3): List<Vec3> {
+    val axis = principalAxes(points)[0]
+    val middle = points.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / points.size)
+    val out = if (((middle - socket) dot axis) >= 0f) axis else axis * -1f
+    return points.filter { ((it - socket) dot out) >= 0f }.ifEmpty { points }
+}
+
 /** A foot's length and width on the ground: its footprint's extents along its principal axis and across it. */
 internal fun footExtent(points: List<Vec3>): Pair<Float, Float> {
     val mx = points.sumOf { it.x.toDouble() } / points.size
@@ -122,7 +133,7 @@ fun bodyProportions(body: AssembledCharacter, character: Character, surface: Cha
     size("headWidth", headBox.high.z - headBox.low.z)
     val hand = uses.hand?.let(body::part)
     if (hand != null) {
-        val (length, width) = handExtent(hand.points())
+        val (length, width) = handExtent(pastSocket(hand.points(), hand.origin))
         size("handLength", length)
         size("handWidth", width)
     } else {

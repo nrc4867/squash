@@ -53,16 +53,28 @@ internal class DrawnViews(template: PartTemplate, outlines: Map<View, OutlineCur
     val sizing: ViewSizing?
     val front: FrontSection?
 
+    /** The drawn view that sets height, read along its x, in drawing units; null where it is not drawn. */
+    val heightProfile: OutlineProfile?
+
+    /** The drawn view that sets width, read along its x, in drawing units; null where it is not drawn. */
+    val widthProfile: OutlineProfile?
+
+    /** The drawn Front outline, flattened, where the template reads it as the whole section or a cap; null where it is not drawn. */
+    val frontOutline: List<Vec2>?
+
     init {
         fun view(sets: Sets): OutlineCurve? = template.views.entries.firstOrNull { it.value == sets }?.let { outlines[it.key] }
         fun profile(sets: Sets) = view(sets)?.let { OutlineProfile.of(it.toPath().flatten()) }
         fun section(sets: Sets) =
             view(sets)?.let { ClosedSpline.fromOutline(it.toPath().flatten(), template.topology.segments) }
 
+        heightProfile = profile(Sets.HEIGHT)
+        widthProfile = profile(Sets.WIDTH)
+        frontOutline = (view(Sets.SECTION) ?: view(Sets.CAP))?.toPath()?.flatten()?.let { line -> List(line.xs.size) { Vec2(line.xs[it], line.ys[it]) } }?.takeIf { it.size >= 3 }
         sizing = ViewSizing.of(
             axes,
-            height = profile(Sets.HEIGHT),
-            width = profile(Sets.WIDTH),
+            height = heightProfile,
+            width = widthProfile,
             openStart = template.openEnd == End.START,
             openEnd = template.openEnd == End.END,
             scale = scale,

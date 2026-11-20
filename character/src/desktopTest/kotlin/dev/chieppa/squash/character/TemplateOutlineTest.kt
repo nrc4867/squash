@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.templateOutline
 import dev.chieppa.squash.character.build.toPath
 import dev.chieppa.squash.character.build.viewPoint
 import dev.chieppa.squash.character.block.Digits
+import dev.chieppa.squash.character.block.Field
 import dev.chieppa.squash.character.block.ToeRow
 import dev.chieppa.squash.character.block.Volume
 import dev.chieppa.squash.character.model.PartTemplate
@@ -95,6 +96,14 @@ private fun hasToes(template: PartTemplate): Boolean = PartBuilder.build(templat
 private fun thumbWidth(template: PartTemplate, view: View): Boolean =
     template.views[view] != Sets.HEIGHT &&
         template.blocks.any { (it is ToeRow && it.digits.isNotEmpty()) || (it is Digits && it.digits.any { digit -> digit.hinge != null }) }
+
+/**
+ * Whether [view] of [template] is Front on a part whose drawing is its solid: there Front is every section's shape, scaled to Side and
+ * Top along the part, so where the undrawn sections change shape along it, as an ankle standing over a foot does, the undrawn Front is
+ * not one a drawing makes again.
+ */
+private fun drawnSection(template: PartTemplate, view: View): Boolean =
+    template.views[view] == Sets.SECTION && template.blocks.any { it is Field && it.fit && it.drawn }
 
 /** Start from template through the real build: the outline it makes rebuilds the silhouette it was made from. */
 class TemplateOutlineTest {
@@ -211,7 +220,7 @@ class TemplateOutlineTest {
             val undrawn = PartBuilder.build(template)
             val built = PartBuilder.build(template, outlines = data.outlines)
             for (view in read) {
-                if (thumbWidth(template, view)) continue
+                if (thumbWidth(template, view) || drawnSection(template, view)) continue
                 val before = profile(template, undrawn, view)
                 val share = apart(before, profile(template, built, view)) / reach(before)
                 val tolerance = when {

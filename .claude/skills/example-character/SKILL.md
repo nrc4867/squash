@@ -28,7 +28,7 @@ You write the file, run it, read every render, change one thing, run again. Pref
 2. **Plan the heights** (`body.md`). A `bodyPlan` of landmark heights: crown, chin, neck, shoulder, chest, waist, hip, crotch, knee, ankle. Check the head's share of the height against the sheet's head count before any part.
 3. **Lay out the body** (`body.md`). Torso, a real neck, arms, legs as tubes from the plan, drawn from front and back profiles; A-pose rest; the joints where the sheet puts them. Build bare, read front, three-quarter, side, back and top.
 4. **Head and face** (`head-and-face.md`). Head shape and size first, then the colour masks, then eyes, nose, mouth, brows.
-5. **Hands, feet and paws** (`hands.md`, `feet-and-paws.md`). Templates on the limbs' ends, sized to the sheet, on their joints.
+5. **Hands, feet and paws** (`hands.md`, `feet-and-paws.md`). Traced from the sheet and drawn as outlines on the limbs' ends, the templates giving their digits and areas; judged side by side with the sheet's crops.
 6. **Ears, tails and extras** (`ears-tails-extras.md`). Cupped ears, tails, hair, horns, fins, wings, fur.
 7. **Colour and marks** (`colour-and-marks.md`). Palette from the sheet, regions, marks, fur.
 8. **Clothes** (`clothing.md`), then **accessories** (`accessories.md`). One garment a run; check `measure.txt`'s wardrobe and poke-through lines.

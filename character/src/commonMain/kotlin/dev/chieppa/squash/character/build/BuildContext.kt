@@ -16,6 +16,8 @@ import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Slice
 import dev.chieppa.squash.geom.ViewSizing
+import dev.chieppa.squash.geom.OutlineProfile
+import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.arcLengthAxis
 import dev.chieppa.squash.geom.covers
@@ -66,6 +68,18 @@ class BuildContext(
 
     /** The section a drawn Front outline sets, if it is drawn. */
     val front: FrontSection? = drawn.front
+
+    /** The drawn view that sets height, read along its x in drawing units, if it is drawn. */
+    val drawnHeight: OutlineProfile? get() = drawn.heightProfile
+
+    /** The drawn view that sets width, read along its x in drawing units, if it is drawn. */
+    val drawnWidth: OutlineProfile? get() = drawn.widthProfile
+
+    /** The drawn Front outline as points across (side, up), if it is drawn. */
+    val drawnFront: List<Vec2>? get() = drawn.frontOutline
+
+    /** What drawing units are multiplied by to give body units. */
+    val drawingScale: Float get() = size
 
     /** The axis length before the length factor: lengths in a template are fractions of this. */
     private val fullLength: Float = views?.let { it.length / lengthFactor } ?: (size * template.axis.length)

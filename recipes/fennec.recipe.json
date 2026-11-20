@@ -319,7 +319,7 @@
     {
       "id": "front-paws",
       "template": "paw",
-      "version": 9,
+      "version": 12,
       "on": "front-legs",
       "socket": "paw",
       "pair": {
@@ -335,7 +335,7 @@
     {
       "id": "back-paws",
       "template": "paw",
-      "version": 9,
+      "version": 12,
       "on": "back-legs",
       "socket": "paw",
       "pair": {
