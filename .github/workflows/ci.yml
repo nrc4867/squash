@@ -53,7 +53,8 @@ jobs:
 
   # The integration tier in shards that run side by side. The named shards each take the modules listed in their gradle-args; the
   # last shard, "rest", runs every other module's integrationTest by excluding the named ones, so a module added later falls into
-  # it and no test goes unrun. When a module is added to a named shard, add its exclusion to "rest" below.
+  # it and no test goes unrun. When a module is added to a named shard, add its exclusion to "rest" below. The app's tests are split
+  # by package, the two app shards being complements (--tests a pattern, -PintegrationExclude the same pattern).
   integration-shard:
     name: Integration shard (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -62,8 +63,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: app
-            gradle-args: :app:integrationTest
+          - name: app shell package
+            gradle-args: :app:integrationTest --tests 'dev.chieppa.squash.screens.shell.*'
+          - name: app other packages
+            gradle-args: :app:integrationTest -PintegrationExclude='dev.chieppa.squash.screens.shell.*'
           - name: surface and draw
             gradle-args: :screens-surface:integrationTest :screens-draw:integrationTest
           - name: shell and sheet
