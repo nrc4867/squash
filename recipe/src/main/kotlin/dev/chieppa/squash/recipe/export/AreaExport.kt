@@ -22,7 +22,7 @@ internal fun paintsItsBoxes(garment: Garment): Boolean {
 
 /** [area] as a recipe area painting exactly its cells: a box a run of columns, rows with the same runs taken together. */
 internal fun areaOf(area: GarmentArea): RecipeArea =
-    RecipeArea(area.id.value, area.name, area.color?.value, area.gather, area.cells.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) })
+    RecipeArea(area.id.value, area.name, area.color?.value, area.gather, area.fold, area.cells.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) })
 
 internal fun holesOf(garment: Garment): List<RecipeHole> = garment.holes.map { RecipeHole(it.part.value, it.cuff) }
 

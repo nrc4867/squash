@@ -209,6 +209,13 @@ object SquashIcons {
             stroke("M9.5 2.5h4v4")
         }
     }
+    val Fold: ImageVector by lazy {
+        icon("fold") {
+            stroke("M4 2.5v8")
+            stroke("M12 2.5v8")
+            stroke("M3 10.5h10v3H3z")
+        }
+    }
     val FrameAll: ImageVector by lazy {
         icon("frame-all") {
             stroke("M2.5 6V3.5a1 1 0 0 1 1-1H6")
@@ -391,6 +398,18 @@ object SquashIcons {
         icon("object") {
             stroke("M5.5 2.5h5L13 8H3z")
             stroke("M8 8v5.5M5 13.5h6")
+        }
+    }
+    val OpeningRound: ImageVector by lazy {
+        icon("opening-round") {
+            stroke("M2 4.5h3.5a2.5 2.5 0 0 0 5 0H14")
+            stroke("M2 4.5v9h12v-9")
+        }
+    }
+    val OpeningV: ImageVector by lazy {
+        icon("opening-v") {
+            stroke("M2 4.5h3.5L8 9.5l2.5-5H14")
+            stroke("M2 4.5v9h12v-9")
         }
     }
     val OutlineCurves: ImageVector by lazy {

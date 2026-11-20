@@ -49,13 +49,13 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
         for (v in 0 until count) members[filled[bucketOf[v]]++] = v
     }
 
-    /** The nearest vertex to vertex [at] of [points], three values each, no further than [reach]; null where none is. */
-    fun within(points: FloatArray, at: Int, reach: Float): Int? {
+    /** The nearest vertex [accept] takes to vertex [at] of [points], three values each, no further than [reach]; null where none is. */
+    fun within(points: FloatArray, at: Int, reach: Float, accept: ((Int) -> Boolean)? = null): Int? {
         val x = points[at * 3]
         val y = points[at * 3 + 1]
         val z = points[at * 3 + 2]
         if (outsideBox(x, y, z, reach)) return null
-        val v = nearest(x, y, z)
+        val v = nearest(x, y, z, accept)
         if (v < 0) return null
         val dx = positions[v * 3] - x
         val dy = positions[v * 3 + 1] - y
@@ -73,8 +73,8 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
 
     fun of(p: Vec3): Int? = nearest(p.x, p.y, p.z).takeIf { it >= 0 }
 
-    /** The nearest vertex in the first ring of buckets round the point's that holds any, or -1 within [MOST_RINGS] rings. */
-    private fun nearest(px: Float, py: Float, pz: Float): Int {
+    /** The nearest vertex [accept] takes, all where null, in the first ring of buckets round the point's that holds any, or -1 within [MOST_RINGS] rings. */
+    private fun nearest(px: Float, py: Float, pz: Float, accept: ((Int) -> Boolean)? = null): Int {
         val x = index(px)
         val y = index(py)
         val z = index(pz)
@@ -86,6 +86,7 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
                 if (b < 0) continue
                 for (k in starts[b] until starts[b + 1]) {
                     val v = members[k]
+                    if (accept != null && !accept(v)) continue
                     val ex = positions[v * 3] - px
                     val ey = positions[v * 3 + 1] - py
                     val ez = positions[v * 3 + 2] - pz

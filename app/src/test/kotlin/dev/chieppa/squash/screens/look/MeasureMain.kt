@@ -171,7 +171,10 @@ private fun clothes(name: String, session: CharacterSession) {
     val found = pokeThrough(dress, state.surface)
     if (found.isEmpty()) return println("$name: poke-through none")
     for (poke in found) {
-        val parts = poke.parts.entries.sortedByDescending { it.value }.joinToString { (part, count) -> "$part $count" }
+        val parts = poke.parts.entries.sortedByDescending { it.value }.joinToString { (part, count) ->
+            val span = poke.along[part]
+            if (span == null) "$part $count" else "$part $count at u %.2f-%.2f".format(span.start, span.endInclusive)
+        }
         println("$name: poke-through ${poke.inner} through ${poke.outer}: ${poke.vertices} vertices, deepest %.4f, on $parts".format(poke.deepest))
     }
 }

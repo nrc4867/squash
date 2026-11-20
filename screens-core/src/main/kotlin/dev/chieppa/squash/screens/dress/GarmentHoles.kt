@@ -1,6 +1,12 @@
 package dev.chieppa.squash.screens.dress
 
+import dev.chieppa.squash.character.dress.PaintStyle
+import dev.chieppa.squash.character.dress.chartPlaces
+import dev.chieppa.squash.character.dress.painted
 import dev.chieppa.squash.character.dress.paintedOf
+import dev.chieppa.squash.character.shape.OpeningCut
+import dev.chieppa.squash.character.shape.newOpening
+import dev.chieppa.squash.character.shape.opening
 import dev.chieppa.squash.character.dress.shapeCommands
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.document.CHART_CELLS
@@ -54,4 +60,16 @@ fun Character.closeHoleCommand(body: AssembledCharacter, garment: Garment, part:
     val into = if (socket >= 0) socket else 0
     val whole = SurfaceMask.build(held.chart) { p, cell -> p == chartPart.id && cell < CHART_CELLS }
     return shapeCommands(this, body, garment, held.with(areas = held.areas.mapIndexed { i, area -> if (i == into) area.with(area.mask + whole) else area }, holes = holes))
+}
+
+/**
+ * The command that cuts an opening in [cut] round where [part] comes out of [garment]'s cloth, sized by the part's root ring, taking its
+ * cells from every area (Openings: a round crew neckline or a V); the hole stays as it is. Null where no cell of the cloth lies in it.
+ */
+fun Character.openingCommand(body: AssembledCharacter, garment: Garment, part: PartId, cut: OpeningCut): DocumentCommand? {
+    val held = paintedOf(this, body, garment)
+    val places = chartPlaces(this, body)
+    val mask = places.opening(part, places.newOpening(part, cut))
+    if (held.areas.none { area -> mask.parts.any { area.mask.within(mask).count(it) > 0 } }) return null
+    return shapeCommands(this, body, garment, painted(held, null, mask, PaintStyle(erase = true)))
 }

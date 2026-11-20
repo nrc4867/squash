@@ -1,6 +1,7 @@
 package dev.chieppa.squash.recipe.build
 
 import dev.chieppa.squash.character.build.DigitPatches
+import dev.chieppa.squash.document.MOST_FOLD
 import dev.chieppa.squash.document.AddGarment
 import dev.chieppa.squash.document.AddGarmentSlot
 import dev.chieppa.squash.document.AddOutfit
@@ -94,7 +95,8 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     }
     garment.areas.forEachIndexed { i, area -> area.gather?.let { if (it < 0f) fail("$path.areas[$i].gather", "a gather is the ease a band pulls the cloth in to, 0 or more: here $it") } }
     val (painted, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
-    val areas = painted.mapIndexed { i, area -> area.copy(gather = garment.areas.getOrNull(i)?.gather) }
+    garment.areas.forEachIndexed { i, area -> area.fold?.let { if (it !in 0f..MOST_FOLD) fail("$path.areas[$i].fold", "a fold stands out 0 to $MOST_FOLD over the cloth beside it: here $it") } }
+    val areas = painted.mapIndexed { i, area -> garment.areas.getOrNull(i).let { area.copy(gather = it?.gather, fold = it?.fold) } }
     val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r).also { printOffDigits(p, it.border) } } }
     val marks = garment.marks.mapIndexed { i, m ->
         val p = "$path.marks[$i]"

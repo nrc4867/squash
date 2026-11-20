@@ -5,13 +5,17 @@ import dev.chieppa.squash.character.dress.placeOnBody
 import dev.chieppa.squash.character.shape.BodyChart
 import dev.chieppa.squash.character.shape.ChartPart
 import dev.chieppa.squash.character.shape.ChartPlaces
+import dev.chieppa.squash.character.shape.Opening
+import dev.chieppa.squash.character.shape.OpeningCut
 import dev.chieppa.squash.character.shape.SurfaceMask
+import dev.chieppa.squash.character.shape.opening
 import dev.chieppa.squash.character.shape.cellMiddle
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.CHART_COLUMNS
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.recipe.model.RecipeOpeningCut
 import dev.chieppa.squash.recipe.model.RecipeStroke
 import dev.chieppa.squash.recipe.model.RecipeStrokeShape
 import kotlin.math.abs
@@ -31,7 +35,7 @@ private const val LASSO_PLACES = 3
 /**
  * The cells of [chart] [stroke] lays, read at [path]: a band, box, ellipse or lasso holds the cells of its part whose middles lie in it in
  * u and v; a brush or line the cells of its part, and of the parts beyond it, whose middles at rest lie within its size of its path on
- * the body as [painted] places them.
+ * the body as [painted] places them; an opening the cells round where its part comes out ([opening]).
  */
 internal fun BuildContext.strokeCells(path: String, stroke: RecipeStroke, chart: BodyChart, painted: BodyPlaces): SurfaceMask {
     val part = partOf("$path.on", stroke.on)
@@ -63,6 +67,13 @@ internal fun BuildContext.strokeCells(path: String, stroke: RecipeStroke, chart:
             val places = unwrapped(uvPlaces(path, part, chartPart, stroke))
             if (places.size < LASSO_PLACES) fail(path, "a lasso passes through at least $LASSO_PLACES places, not ${places.size}")
             chartCells(chart, chartPart) { u, v -> (-1..1).any { turn -> inside(places, u, v + turn) } }
+        }
+        RecipeStrokeShape.OPENING -> {
+            if (chartPart.parent == null) fail("$path.on", "${part.value} comes out of no part, so no opening rings it")
+            if (stroke.reach < 0f) fail("$path.reach", "an opening reaches 0 or more past its ring, not ${stroke.reach}")
+            if (stroke.depth < 0f) fail("$path.depth", "an opening drops 0 or more down its front, not ${stroke.depth}")
+            val cut = if (stroke.cut == RecipeOpeningCut.V) OpeningCut.V else OpeningCut.ROUND
+            painted.places.opening(part, Opening(cut, stroke.reach, stroke.depth))
         }
         RecipeStrokeShape.BRUSH, RecipeStrokeShape.LINE -> {
             if (stroke.size <= 0f) fail("$path.size", "a brush's size is above 0, not ${stroke.size}")

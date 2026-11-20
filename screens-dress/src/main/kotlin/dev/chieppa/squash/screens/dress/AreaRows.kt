@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.shape.OpeningCut
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Garment
@@ -45,6 +46,8 @@ import dev.chieppa.squash.uidesign.generated.dress_hole_close
 import dev.chieppa.squash.uidesign.generated.dress_hole_cuff
 import dev.chieppa.squash.uidesign.generated.dress_hole_on
 import dev.chieppa.squash.uidesign.generated.dress_new_area
+import dev.chieppa.squash.uidesign.generated.dress_opening_round
+import dev.chieppa.squash.uidesign.generated.dress_opening_v
 import dev.chieppa.squash.uidesign.generated.dress_seam
 import dev.chieppa.stretch.frame.ListRow
 import dev.chieppa.stretch.frame.RowText
@@ -64,7 +67,8 @@ private const val NAME_JOIN = ", "
 /**
  * A row for each area painted for [garment], picked for Paint by a press and named by a press on it once picked, reading painting while
  * Paint lays strokes in it, else the parts it covers, its color's swatch, and its cross taking it away; under each, a row for each of its edges, a press
- * picking it for Edit curves, a seam read so; then a row for each hole, with its cuff switch and its cross closing it over; then New area.
+ * picking it for Edit curves, a seam read so; then a row for each hole, with Round and V, which cut a neckline's opening round it, its
+ * cuff switch and its cross closing it over; then New area.
  */
 @Composable
 internal fun AreaRows(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
@@ -130,6 +134,12 @@ private fun HoleRow(state: AppState, session: CharacterSession, character: Chara
         Icon(SquashIcons.Hole, Stretch.colors.inkMuted, size = ICON)
         RowText(label, Modifier.weight(1f))
         if (cuff) RowText(stringResource(Res.string.dress_cuff), subtle = true)
+        IconButton(SquashIcons.OpeningRound, stringResource(Res.string.dress_opening_round, label), {
+            character.openingCommand(body, garment, part, OpeningCut.ROUND)?.let(session::send)
+        }, Modifier.testTag(DressTags.opening(part, "round")))
+        IconButton(SquashIcons.OpeningV, stringResource(Res.string.dress_opening_v, label), {
+            character.openingCommand(body, garment, part, OpeningCut.V)?.let(session::send)
+        }, Modifier.testTag(DressTags.opening(part, "v")))
         Toggle(cuff, { on -> character.holeCuffCommand(body, garment, part, on)?.let(session::send) }, stringResource(Res.string.dress_hole_cuff, label), Modifier.testTag(DressTags.holeCuff(part)))
         IconButton(StretchIcons.Close, stringResource(Res.string.dress_hole_close, label), {
             character.closeHoleCommand(body, garment, part)?.let(session::send)

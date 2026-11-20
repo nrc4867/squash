@@ -59,6 +59,7 @@ class EaseProfileTest {
         assertFailsWith<IllegalArgumentException> { EaseKey(0f, -0.01f) }
         assertFailsWith<IllegalArgumentException> { ClothHang(-0.01f) }
         assertFailsWith<IllegalArgumentException> { Garment(SWEATER, "Sweater", drops = mapOf(LEG_L to 0.8f)) }
+        assertFailsWith<IllegalArgumentException> { GarmentArea(GarmentAreaId("cuff"), "", fold = -0.01f) }
     }
 
     @Test
@@ -69,7 +70,7 @@ class EaseProfileTest {
     }
 
     @Test
-    fun easeHangDropAndGatherAreSetByCommandsThatUndo() {
+    fun easeHangDropGatherAndFoldAreSetByCommandsThatUndo() {
         val start = WinterFennec.dressed()
         val area = checkNotNull(start.character.wardrobe.garment(SWEATER)).areas.first().id
         scenario(start) {
@@ -77,16 +78,18 @@ class EaseProfileTest {
             run(SetGarmentHang(SWEATER, ClothHang(0.02f, 0.1f)))
             run(SetGarmentDrop(SWEATER, LEG_L, 0.2f))
             run(SetAreaGather(SWEATER, area, 0.004f))
+            run(SetAreaFold(SWEATER, area, 0.5f))
             expect {
                 val sweater = checkNotNull(it.character.wardrobe.garment(SWEATER))
                 assertEquals(sleeve, sweater.eases[TORSO])
                 assertEquals(ClothHang(0.02f, 0.1f), sweater.hang)
                 assertEquals(0.2f, sweater.drops[LEG_L])
                 assertEquals(0.004f, sweater.area(area)?.gather)
+                assertEquals(MOST_FOLD, sweater.area(area)?.fold, "a fold is held to its most")
             }
             run(SetGarmentDrop(SWEATER, LEG_L, 0f))
             expect { assertNull(checkNotNull(it.character.wardrobe.garment(SWEATER)).drops[LEG_L]) }
-            repeat(5) { undo() }
+            repeat(6) { undo() }
             expect(start)
         }
     }

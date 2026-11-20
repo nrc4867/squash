@@ -720,6 +720,9 @@
     <string name="dress_gather_of">Gather %1$s</string>
     <string name="dress_gather_area">Gather an area</string>
     <string name="dress_gather_remove">Remove %1$s gather</string>
+    <string name="dress_fold_of">Fold %1$s</string>
+    <string name="dress_fold_area">Fold an area</string>
+    <string name="dress_fold_remove">Remove %1$s fold</string>
     <string name="dress_edge_on">Edge · %1$s</string>
     <string name="dress_hole_on">Hole · %1$s</string>
     <string name="dress_area_name">Area %1$d</string>
@@ -729,6 +732,8 @@
     <string name="dress_seam">seam</string>
     <string name="dress_cuff">cuff</string>
     <string name="dress_hole_cuff">Cuff on %1$s</string>
+    <string name="dress_opening_round">Round opening round %1$s</string>
+    <string name="dress_opening_v">V opening round %1$s</string>
     <string name="dress_hole_close">Close %1$s</string>
     <string name="dress_tuck">Tuck</string>
     <string name="dress_tucked">Tucked</string>
@@ -798,6 +803,7 @@
     <string name="dress_step_hang">%1$s hang</string>
     <string name="dress_step_drop">%1$s seam on %2$s</string>
     <string name="dress_step_gather">%1$s gather</string>
+    <string name="dress_step_fold">%1$s fold</string>
     <string name="dress_step_paint">%1$s paint</string>
     <string name="dress_step_area_name">Rename %1$s</string>
     <string name="dress_step_tuck">%1$s tuck on %2$s</string>

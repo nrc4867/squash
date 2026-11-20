@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.document.CHART_CELLS
 import dev.chieppa.squash.document.CHART_COLUMNS
+import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.ClothHang
 import dev.chieppa.squash.document.EaseKey
 import dev.chieppa.squash.document.EaseProfile
@@ -58,6 +59,19 @@ class ClothEaseTest {
         assertEquals(0.004f, ease.at(0.97f, 0.3f, 0f), 1e-4f)
         assertEquals(EaseProfile(listOf(EaseKey(0f, 0.01f), EaseKey(1f, 0.03f))).at(0.6f), ease.at(0.6f, 0.3f, 0f), 1e-5f)
         assertEquals(0.004f, ease.least)
+        assertTrue(!ease.uniform)
+    }
+
+    @Test
+    fun aFoldedBandStandsOutByItsThicknessAsAStep() {
+        val cells = BooleanArray(CHART_CELLS) { it / CHART_COLUMNS >= 56 }
+        val band = checkNotNull(ClothField.of(listOf(cells)))
+        val ease = ClothEase(EaseProfile.flat(0.01f), folds = listOf(Fold(band, -1, 0.006f)))
+        assertEquals(0.016f, ease.at(0.95f, 0.3f, 0f), 1e-4f)
+        assertEquals(0.01f, ease.at(0.8f, 0.3f, 0f), 1e-5f)
+        val edge = 56f / CHART_ROWS
+        assertTrue(ease.at(edge + 1f / CHART_ROWS, 0.3f, 0f) - ease.at(edge - 1f / CHART_ROWS, 0.3f, 0f) > 0.005f, "the fold rises within a row either side of its edge")
+        assertEquals(0.016f, ease.most, 1e-6f)
         assertTrue(!ease.uniform)
     }
 

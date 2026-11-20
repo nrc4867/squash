@@ -24,7 +24,7 @@ internal fun clothEases(cover: GarmentCover, body: AssembledCharacter, under: Li
 
 /**
  * [cover]'s own ease over [part], its [branch] naming a pair's leader: the garment's profile there, the seam it drops there eased from the
- * stand-off of the cloth over the part [part] grows from, at its socket, and the bands of its areas that gather over the part.
+ * stand-off of the cloth over the part [part] grows from, at its socket, the bands of its areas that gather over the part and those that fold back over it.
  */
 private fun ownEase(cover: GarmentCover, part: PartId, branch: GarmentBranch, body: AssembledCharacter): ClothEase {
     val garment = cover.garment
@@ -34,6 +34,11 @@ private fun ownEase(cover: GarmentCover, part: PartId, branch: GarmentBranch, bo
         if (branch.part !in area.cells) return@mapIndexedNotNull null
         Gather(cloth, if (cloth.areaCount == 0) -1 else i, ease)
     }
+    val folds = if (cloth == null) emptyList() else garment.areas.mapIndexedNotNull { i, area ->
+        val thickness = area.fold?.takeIf { it > 0f } ?: return@mapIndexedNotNull null
+        if (branch.part !in area.cells) return@mapIndexedNotNull null
+        Fold(cloth, if (cloth.areaCount == 0) -1 else i, thickness)
+    }
     val drop = garment.drops[branch.part]?.takeIf { it > 0f }?.let { u ->
         val placed = body.part(part)
         val above = placed?.socket?.parent?.let { cover.branches[it] }
@@ -41,5 +46,5 @@ private fun ownEase(cover: GarmentCover, part: PartId, branch: GarmentBranch, bo
             ?: garment.profileOf(branch).at(0f, SIDE)
         Drop(u, above)
     }
-    return ClothEase(garment.profileOf(branch), gathers, drop)
+    return ClothEase(garment.profileOf(branch), gathers, drop, folds = folds)
 }

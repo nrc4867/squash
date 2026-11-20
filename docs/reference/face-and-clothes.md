@@ -169,10 +169,11 @@ Fields as the schema describes them:
 | area `name` | Its name in Dress; blank when left out. |
 | area `color` | Its palette slot, as a red collar on a blue tee; the garment's color when left out. |
 | area `gather` | A ribbed band, as a cuff or a sweater's hem: the ease, in body units, the area pulls its cloth in to, eased in over two rows either side; the cloth stands off as the rest does when left out. |
+| area `fold` | Cloth turned back over the garment at its hem, as a rolled cuff, a rolled jeans hem or a turtleneck's fold-over: how far, in body units, the area stands out over the cloth beside it, its far edge inked and its color the cloth's back face; lies flat when left out. |
 | area `paint` | The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area. |
-| stroke | One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v. |
+| stroke | One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v. opening: the cells round where the part on comes out (a neck, an arm, an ear) within reach past its root ring, on every part but those beyond it, its front dropping depth below the ring in its cut: unpaint one for a crew or V neckline, paint a wider one and unpaint a narrower for a collar band round it. |
 | stroke `on` | The part painted on (a pair by either side: both sides take it, mirrored). |
-| stroke `shape` | brush, line, band, box, ellipse or lasso. |
+| stroke `shape` | brush, line, band, box, ellipse, lasso or opening. |
 | stroke `unpaint` | Takes the cells from every area instead of painting them, as Alt in Dress. |
 | stroke `u` | band, box, ellipse: [from, to] along the part, 0 at its root to 1 at its far end. |
 | stroke `v` | box, ellipse: [from, to] round the part; from may lie below 0 to cross v 0. The whole way round when left out. |
@@ -181,6 +182,9 @@ Fields as the schema describes them:
 | stroke `size` | brush, line: how far from the path a cell's middle may lie and be painted, in body units, as Dress's Size. |
 | stroke `mirrored` | On a part in the body's middle (a torso, a head): also painted mirrored across the middle, at -v, as Dress's Mirror. |
 | stroke `clean` | Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are. |
+| stroke `cut` | opening: round, a crew or scoop neck's curve, or v, two straight sides to a point. |
+| stroke `reach` | opening: how far past the root ring of the part on it reaches all round, in body units. |
+| stroke `depth` | opening: how far its front drops below the ring at its middle, in body units; 0 is a plain ring. |
 | hole `part` | The part that comes out (a pair by its left side, both sides). |
 | hole `cuff` | Whether a cuff band of the garment's cloth rings the part's root, as a sleeve's or a turtleneck's. |
 | tuck `part` | The part (a pair by its left side): the small part itself, or the foot or hand whose toes or claws it means. |

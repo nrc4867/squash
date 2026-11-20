@@ -20,6 +20,9 @@ const val MOST_HEM_ROLL = 0.03f
 /** The furthest down its part, in u, a garment drops a seam. */
 const val MOST_DROP = 0.5f
 
+/** The thickest an area's fold stands out over the cloth under it, in body units. */
+const val MOST_FOLD = 0.03f
+
 /** The first layer, nearest the skin. */
 const val FIRST_LAYER = 1
 
@@ -160,7 +163,9 @@ data class GarmentBranch(
 /**
  * One painted area of a garment, named [name]: the cells of each part's chart painted, by part, a pair's leader holding both sides, as
  * runs of cells row by row, the first run not painted (HLD: data-model, Garments), shown in its own palette slot [color], or the
- * garment's where it has none. Areas of one garment may touch along a seam.
+ * garment's where it has none. Areas of one garment may touch along a seam. [gather] pulls its cloth in to that ease, as ribbing;
+ * [fold] makes it cloth turned back over the garment at its hem, as a rolled cuff or a turtleneck's fold-over: it stands out by that
+ * thickness over the cloth beside it, its far edge inked, and [color] is the cloth's back face.
  */
 @Serializable
 data class GarmentArea(
@@ -169,9 +174,11 @@ data class GarmentArea(
     val cells: Map<PartId, List<Int>> = emptyMap(),
     val color: SlotName? = null,
     val gather: Float? = null,
+    val fold: Float? = null,
 ) {
     init {
         require(gather == null || gather >= 0f) { "Area ${id.value} gathers to a negative ease" }
+        require(fold == null || fold in 0f..MOST_FOLD) { "Area ${id.value} folds outside 0 to $MOST_FOLD" }
     }
 }
 

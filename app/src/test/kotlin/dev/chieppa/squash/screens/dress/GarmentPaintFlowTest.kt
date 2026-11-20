@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.shape.OpeningCut
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.CHART_COLUMNS
@@ -284,6 +285,21 @@ class GarmentPaintFlowTest {
         hole.pressedAt(onNeck)
         work.settle(state.open)
         assertEquals(listOf(GarmentHole(NECK)), state.garment.holes, "with Cuff on second press off, no cuff")
+    }
+
+    @Test
+    fun roundAndVOpeningsCutTheNecklineAndAVReachesFurtherDown() {
+        val state = opened(savedWoman(), "Tee")
+        state.lay(state.band(WOMAN_TORSO, TEE_HEM_U, 1f))
+        val whole = state.painted.areas.single().mask.count(WOMAN_TORSO)
+        state.send(state.character.openingCommand(state.body, state.garment, NECK, OpeningCut.ROUND))
+        val round = whole - state.painted.areas.single().mask.count(WOMAN_TORSO)
+        assertTrue(round > 0, "a round opening takes the torso's cells round the neck")
+        assertNull(state.character.openingCommand(state.body, state.garment, NECK, OpeningCut.ROUND), "the same opening again takes nothing")
+        state.send(state.character.openingCommand(state.body, state.garment, NECK, OpeningCut.V))
+        val vee = whole - state.painted.areas.single().mask.count(WOMAN_TORSO)
+        assertTrue(vee > round, "a V reaches further down the front: $vee cells against $round")
+        assertTrue(state.garment.holes.isEmpty(), "the holes stay as they are")
     }
 
     @Test
