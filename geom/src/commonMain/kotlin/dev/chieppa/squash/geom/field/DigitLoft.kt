@@ -57,7 +57,8 @@ object DigitLoft {
      * The patch [name] of digit [index] of [digits] over [field], in the part's own axes and placed by [axes], a ring at each of [shares]
      * along it with the u of [us], [segments] round, out to [reach] of the digit's radii from its axis, turned [roll] radians about it.
      * Rings before [buriedBefore], a share, are buried whole, small rings round the axis. With [begins], another digit walls this one's rays in only past its own
-     * share there, where its run shows the surface. [checkCancelled] runs between rings.
+     * share there, where its run shows the surface. With [sole], a digit whose axis leaves the solid through a floor across the part's
+     * axis ends in rings level with that floor and a flat sole on it ([DigitSole]). [checkCancelled] runs between rings.
      */
     fun loft(
         name: String,
@@ -72,6 +73,7 @@ object DigitLoft {
         roll: Float = 0f,
         buriedBefore: Float = Float.NEGATIVE_INFINITY,
         begins: FloatArray? = null,
+        sole: SoleRings? = null,
         checkCancelled: () -> Unit = {},
     ): Patch {
         require(shares.size == us.size && shares.size >= 2) { "A digit's run needs a u a ring" }
@@ -79,48 +81,56 @@ object DigitLoft {
         val frame = RingFrame.of(digit.direction, roll)
         val rays = Rays(field, digits, index, digit.radius * reach, begins)
         val tangentWorld = axes.point(digit.direction.x, digit.direction.y, digit.direction.z)
-        val upWorld = axes.point(frame.up.x, frame.up.y, frame.up.z)
-        val slices = ArrayList<Slice>(shares.size)
-        val points = ArrayList<Vec3>(shares.size * segments)
-        val buried = BooleanArray(shares.size * segments)
-        val slid = BooleanArray(shares.size * segments)
-        var section: ClosedSpline? = null
+        val cast = ArrayList<LoftRing>(shares.size)
         for (ring in shares.indices) {
             checkCancelled()
             val last = ring == shares.size - 1
             val centre = if (last) tip(field, digit, shares[ring - 1]) else digit.at(shares[ring])
+            val buriedWhole = shares[ring] < buriedBefore
             val found = when {
                 last -> null
-                shares[ring] < buriedBefore -> List(segments) { j -> RayHit(centre + frame.ray(2.0 * PI * j / segments) * (digit.radius * BURIED_RING), true) }
+                buriedWhole -> List(segments) { j -> RayHit(centre + frame.ray(2.0 * PI * j / segments) * (digit.radius * BURIED_RING), true) }
                 field.value(centre) >= 0f -> null
                 else -> rays.evenRing(centre, frame, segments)
             }
-            val flat = found?.map { frame.flat(it.point - centre) }
+            cast += LoftRing(centre, frame, found, us[ring], buriedWhole)
+        }
+        val rings = sole?.let { DigitSole.flattened(cast, field, digit, it) { centre, flat -> rays.evenRing(centre, flat, segments) } } ?: cast
+        val slices = ArrayList<Slice>(rings.size)
+        val points = ArrayList<Vec3>(rings.size * segments)
+        val buried = BooleanArray(rings.size * segments)
+        val slid = BooleanArray(rings.size * segments)
+        var section: ClosedSpline? = null
+        rings.forEachIndexed { ring, at ->
+            val ringTangent = axes.point(at.frame.tangent.x, at.frame.tangent.y, at.frame.tangent.z)
+            val ringUp = axes.point(at.frame.up.x, at.frame.up.y, at.frame.up.z)
+            val found = at.found
+            val flat = found?.map { at.frame.flat(it.point - at.centre) }
             val box = flat?.let { spanOf(it) }
             if (found == null || box == null || maxOf(box.second.x, box.second.y) < digit.radius * POLE_SHARE) {
-                val world = axes.point(centre.x, centre.y, centre.z)
-                slices += Slice(us[ring], Frame(world, tangentWorld, upWorld), 0f, 0f, section ?: circle(segments), Frame(world, tangentWorld, upWorld).rotation)
-                repeat(segments) { points += centre }
-                if (shares[ring] < buriedBefore) for (j in 0 until segments) buried[ring * segments + j] = true
-                continue
+                val world = axes.point(at.centre.x, at.centre.y, at.centre.z)
+                slices += Slice(at.u, Frame(world, ringTangent, ringUp), 0f, 0f, section ?: circle(segments), Frame(world, ringTangent, ringUp).rotation)
+                repeat(segments) { points += at.centre }
+                if (at.buriedWhole) for (j in 0 until segments) buried[ring * segments + j] = true
+                return@forEachIndexed
             }
             val (middle, found2) = box
             val spans = Vec2(maxOf(found2.x, digit.radius * POLE_SHARE), maxOf(found2.y, digit.radius * POLE_SHARE))
             val spline = FieldLoft.through(flat.map { Vec2((it.x - middle.x) / (spans.x / 2f), (it.y - middle.y) / (spans.y / 2f)) })
             section = spline
-            val middle3 = centre + frame.side * middle.x + frame.up * middle.y
+            val middle3 = at.centre + at.frame.side * middle.x + at.frame.up * middle.y
             val world = axes.point(middle3.x, middle3.y, middle3.z)
-            slices += Slice(us[ring], Frame(world, tangentWorld, upWorld), spans.y, spans.x, spline, Frame(world, tangentWorld, upWorld).rotation)
+            slices += Slice(at.u, Frame(world, ringTangent, ringUp), spans.y, spans.x, spline, Frame(world, ringTangent, ringUp).rotation)
             found.forEachIndexed { j, hit ->
                 points += hit.point
-                buried[ring * segments + j] = hit.buried || shares[ring] < buriedBefore
+                buried[ring * segments + j] = hit.buried || at.buriedWhole
                 slid[ring * segments + j] = hit.slid
             }
         }
         val lofted = SliceBuilder.loft(name, slices, segments)
         val step = digit.radius * GRADIENT_SHARE
-        buryCoincident(points, buried, slid, shares.size, segments, digit.radius * POLE_SHARE)
-        buryFolds(points, buried, slid, shares.size, segments, field, step)
+        buryCoincident(points, buried, slid, rings.size, segments, digit.radius * POLE_SHARE)
+        buryFolds(points, buried, slid, rings.size, segments, field, step)
         val normals = FloatArray(points.size * Patch.COMPONENTS)
         points.forEachIndexed { i, local ->
             val g = field.gradient(local, step)
@@ -179,7 +189,7 @@ object DigitLoft {
     private const val FOLD_AREA = 1e-12f
 
     /** The digit's tip: where the solid ends along its axis, looked for from the ring at share [from]. */
-    private fun tip(field: BlendedField, digit: DigitAxis, from: Float): Vec3 {
+    internal fun tip(field: BlendedField, digit: DigitAxis, from: Float): Vec3 {
         val step = digit.radius / 8f
         var inside = digit.at(from)
         var outside = inside

@@ -37,11 +37,19 @@ class Hollow(val hollow: Solid, val wall: Float) {
 }
 
 /**
- * [solid], read in its part's own space, with [hollows] cut into it: the larger of its field and each hollow's cut, so nothing of it lies
- * within a hollow or its wall. [origin] and [mirrored] take a point of the part's own space into body space, where the hollows lie. It
- * places a point as [solid] does.
+ * [solid], read in its part's own space, with [hollows] cut into it: the larger of its field and each hollow's cut, rounded over [blend]
+ * where above 0, so nothing of it lies within a hollow or its wall. [origin] and [mirrored] take a point of the part's own space into body
+ * space, where the hollows lie. It places a point as [solid] does, a point the cut shapes from where [placedFrom] takes it when given, so
+ * a dish in a sole reads the sole's own place.
  */
-class CarvedSolid(val solid: Solid, val hollows: List<Hollow>, val origin: Vec3, val mirrored: Boolean) : PlacingSolid {
+class CarvedSolid(
+    val solid: Solid,
+    val hollows: List<Hollow>,
+    val origin: Vec3,
+    val mirrored: Boolean,
+    val blend: Float = 0f,
+    val placedFrom: ((Vec3) -> Vec3)? = null,
+) : PlacingSolid {
     override val low: Vec3 get() = solid.low
     override val high: Vec3 get() = solid.high
 
@@ -54,18 +62,22 @@ class CarvedSolid(val solid: Solid, val hollows: List<Hollow>, val origin: Vec3,
         return most
     }
 
-    override fun distance(p: Vec3): Float = maxOf(solid.distance(p), cut(p))
+    private fun carved(own: Float, cut: Float): Float = if (blend > 0f) smoothMax(own, cut, blend) else maxOf(own, cut)
+
+    override fun distance(p: Vec3): Float = carved(solid.distance(p), cut(p))
 
     override fun place(p: Vec3, out: FloatArray) {
+        val cut = cut(p)
+        val own = solid.distance(p)
+        val from = placedFrom?.takeIf { cut > own }?.invoke(p) ?: p
         val placing = solid as? PlacingSolid
         if (placing != null) {
-            placing.place(p, out)
+            placing.place(from, out)
         } else {
-            out[PLACE_FIELD] = solid.distance(p)
             out[PLACE_U] = 0f
             out[PLACE_V] = 0f
         }
-        out[PLACE_FIELD] = maxOf(out[PLACE_FIELD], cut(p))
+        out[PLACE_FIELD] = carved(own, cut)
     }
 }
 

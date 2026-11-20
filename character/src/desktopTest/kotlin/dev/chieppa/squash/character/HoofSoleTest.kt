@@ -44,7 +44,7 @@ class HoofSoleTest {
     private val field: CharacterField by lazy { assertNotNull(fieldOf(built, RunSolids())) }
 
     @Test
-    fun eachToeHasItsOwnHollowInsideItsWall() {
+    fun eachToeStandsOnAFlatSoleWithItsOwnHollowInsideItsWall() {
         val part = assertNotNull(built.part(hoof.id))
         val along = PartBuilder.axes(part.template).along
         val toes = field.runs.indices.filter { field.runs[it].partId == hoof.id && field.runs[it].patch.name.startsWith("hooves:") }
@@ -54,7 +54,9 @@ class HoofSoleTest {
             val patch = field.runs[i].patch
             val rings = List(patch.nu) { ring -> List(patch.nv) { patch.point(patch.index(ring, it)) } }.filter { ring -> ring.any { (it - ring.first()).length > 1e-5f } }
             val level = rings.flatten().maxOf { it dot along }
-            val sole = rings.last().map { it - along * ((it dot along) - level) }
+            val onFloor = rings.filter { ring -> ring.minOf { it dot along } > level - 1e-3f }
+            assertTrue(onFloor.size >= 2, "the toe ends in rings level with the floor")
+            val sole = onFloor.maxBy { ring -> ring.maxOf { (it - ring.first()).length } }.map { it - along * ((it dot along) - level) }
             val middle = sole.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / sole.size)
             val width = sole.maxOf { (it - middle).length }
             val inHollow = middle - along * (width * 0.05f)

@@ -24,6 +24,7 @@ import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.SweepSpec
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.DigitLoft
+import dev.chieppa.squash.geom.field.SoleRings
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
@@ -231,7 +232,8 @@ data class Digits(
         val patch = DigitLoft.loft(
             joined.patchName(k), joined.field, ctx.axes, joined.axes, k, shares, us, segments, JoinedDigits.REACH_RADII,
             roll = digit.roll * DEGREES_TO_RADIANS, buriedBefore = joined.buriedBefore(k),
-            begins = FloatArray(joined.axes.size) { joined.buriedBefore(it) }, checkCancelled = ctx.checkCancelled,
+            begins = FloatArray(joined.axes.size) { joined.buriedBefore(it) }, sole = SoleRings(joined::fieldU).takeIf { joined.field.floor?.across == true },
+            checkCancelled = ctx.checkCancelled,
         )
         patch.withBuried(patch.buried, joined.rides(patch, ctx.axes, joined::fieldU))
     }

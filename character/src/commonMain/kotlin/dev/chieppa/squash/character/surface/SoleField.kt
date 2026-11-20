@@ -15,6 +15,9 @@ import dev.chieppa.squash.geom.field.TurnedEllipsoid
 /** How near the floor, as a share of a run's reach along the part's axis, a run's furthest point lies for the run to stand on it. */
 private const val ON_FLOOR = 0.02f
 
+/** How far the dish's edge rounds into the rim, as a share of the rim's width. */
+private const val ROUNDING = 0.3f
+
 /** A ring no wider than this share of the run's reach is collapsed, a pole or a ring past the run's end. */
 private const val COLLAPSED = 1e-3f
 
@@ -24,8 +27,9 @@ private fun dishedFloor(part: PlacedPart): FieldFloor? =
 
 /**
  * [members] with each run that stands on a dished floor of its part ([FieldFloor.hollow]) dished into its sole: an ellipsoid as wide as
- * the run's last full ring laid flat on the floor, less the rim, and the hollow's share of its half width deep, cut out of every run of
- * the part it reaches ([Hollow], [CarvedSolid]), so each toe of a cloven hoof has its own hollow inside its wall. Each carving is kept in
+ * the run's widest ring on the floor laid flat on it, less the rim, and the hollow's share of its half width deep, cut out of every run of
+ * the part it reaches ([Hollow], [CarvedSolid]), its edge rounded into the rim, so each toe of a cloven hoof has its own hollow inside its
+ * wall. The hollow reads the place of the sole straight above it, so it paints as the sole does and its shading shows it. Each carving is kept in
  * [solids] while what it is made from is the same.
  */
 internal fun withSoles(runs: List<FieldRun>, members: List<JoinedMember>, solids: RunSolids): List<JoinedMember> {
@@ -47,8 +51,9 @@ internal fun withSoles(runs: List<FieldRun>, members: List<JoinedMember>, solids
             val member = out[j]
             val reached = dishes.filter { overlaps(member, it.low, it.high) }
             if (reached.isEmpty()) continue
-            val carved = solids.kept(listOf(Same(member.solid), member.origin, member.mirrored) + reached.map { Same(it.solid) }) {
-                CarvedSolid(member.solid, reached.map { Hollow(it, 0f) }, member.origin, member.mirrored)
+            val rounding = reached.minOf { (it.solid as TurnedEllipsoid).radii.let { r -> minOf(r.y, r.z) } } * floor.rim * ROUNDING
+            val carved = solids.kept(listOf(Same(member.solid), member.origin, member.mirrored, level, rounding) + reached.map { Same(it.solid) }) {
+                CarvedSolid(member.solid, reached.map { Hollow(it, 0f) }, member.origin, member.mirrored, rounding) { q -> q + along * (level - (q dot along)) }
             }
             out[j] = JoinedMember(carved, member.origin, member.mirrored, member.blend, member.parent, member.part, member.ease, member.angles)
         }
@@ -71,9 +76,10 @@ private fun reachOf(patch: Patch, along: Vec3): Pair<Float, Float>? {
     return most to most - points.minOf { it dot along }
 }
 
-/** The dish in [patch]'s sole on the floor at [level] along [along]: its last full ring laid on the floor, less [floor]'s rim. */
+/** The dish in [patch]'s sole on the floor at [level] along [along]: its widest full ring lying on the floor laid flat on it, less [floor]'s rim. */
 private fun dishOf(patch: Patch, along: Vec3, level: Float, span: Float, floor: FieldFloor): TurnedEllipsoid? {
-    val last = fullRings(patch, along).lastOrNull() ?: return null
+    val onFloor = fullRings(patch, along).filter { ring -> ring.minOf { it dot along } >= level - span * ON_FLOOR }
+    val last = onFloor.maxByOrNull { ring -> ring.maxOf { (it - ring.first()).length } } ?: return null
     val flat = last.map { it - along * ((it dot along) - level) }
     val mean = flat.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / flat.size)
     val across = (flat.maxBy { (it - mean).length } - mean).let { it - along * (it dot along) }
