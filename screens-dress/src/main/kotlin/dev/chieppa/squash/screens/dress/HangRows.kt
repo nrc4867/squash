@@ -7,19 +7,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.ClothHang
 import dev.chieppa.squash.document.Garment
+import dev.chieppa.squash.document.GarmentArea
+import dev.chieppa.squash.document.MOST_FOLD
 import dev.chieppa.squash.document.MOST_DROP
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.SetAreaFold
 import dev.chieppa.squash.document.SetAreaGather
 import dev.chieppa.squash.document.SetGarmentDrop
 import dev.chieppa.squash.document.SetGarmentHang
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.SliderGesture
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.dress_fold_area
+import dev.chieppa.squash.uidesign.generated.dress_fold_of
+import dev.chieppa.squash.uidesign.generated.dress_fold_remove
 import dev.chieppa.squash.uidesign.generated.dress_drop_of
 import dev.chieppa.squash.uidesign.generated.dress_drop_part
 import dev.chieppa.squash.uidesign.generated.dress_drop_remove
@@ -52,6 +60,9 @@ private const val NEW_DROP = 0.15f
 /** A new gather's ease, snug, in body units. */
 private const val NEW_GATHER = 0.004f
 
+/** A new fold's thickness, in body units: a rolled cuff's. */
+private const val NEW_FOLD = 0.006f
+
 private const val PERCENT = 100f
 
 /** Thousandths of a body unit, as a hang or gather reads out. */
@@ -60,7 +71,7 @@ private const val THOUSANDTHS = 1000f
 /**
  * Hang: how far the cloth may stand off below the highest place it covers on an upright part, 0 to follow the body, with Flare once it
  * hangs; a row for each dropped seam, its place along its part, with its cross, and Drop a seam; and a row for each area that gathers the
- * cloth in, its ease, with its cross, and Gather an area.
+ * cloth in, its ease, with its cross, and Gather an area; and a row for each area folded back over the cloth, and Fold an area.
  */
 @Composable
 internal fun HangRows(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
@@ -100,17 +111,39 @@ internal fun HangRows(state: AppState, session: CharacterSession, character: Cha
         }
     }
     val ungathered = garment.areas.filter { it.gather == null }
-    if (ungathered.isNotEmpty()) {
-        var open by remember { mutableStateOf(false) }
-        Box {
-            Button(stringResource(Res.string.dress_gather_area), { open = true }, Modifier.testTag(DressTags.GATHER_AREA), kind = ButtonKind.Quiet, icon = StretchIcons.Plus)
-            Menu(open, { open = false }) {
-                for (area in ungathered) {
-                    MenuItem(area.name.ifBlank { area.id.value }, {
-                        open = false
-                        session.send(SetAreaGather(garment.id, area.id, NEW_GATHER))
-                    })
-                }
+    if (ungathered.isNotEmpty()) AreaMenu(stringResource(Res.string.dress_gather_area), StretchIcons.Plus, DressTags.GATHER_AREA, ungathered) { session.send(SetAreaGather(garment.id, it.id, NEW_GATHER)) }
+    FoldRows(session, garment, gesture)
+}
+
+/** A row for each area folded back over the cloth, its thickness, with its cross, and Fold an area. */
+@Composable
+private fun FoldRows(session: CharacterSession, garment: Garment, gesture: SliderGesture) {
+    for (area in garment.areas) {
+        val fold = area.fold ?: continue
+        val name = area.name.ifBlank { area.id.value }
+        val label = stringResource(Res.string.dress_fold_of, name)
+        SettingRow(label) {
+            Slider(fold, { gesture.change(SetAreaFold(garment.id, area.id, it)) }, label, Modifier.weight(1f).testTag(DressTags.fold(area.id)), 0f..MOST_FOLD, gesture::done)
+            Readout((fold * THOUSANDTHS).roundToInt().toString())
+            IconButton(StretchIcons.Close, stringResource(Res.string.dress_fold_remove, name), { session.send(SetAreaFold(garment.id, area.id, null)) }, Modifier.testTag(DressTags.removeFold(area.id)))
+        }
+    }
+    val flat = garment.areas.filter { it.fold == null }
+    if (flat.isNotEmpty()) AreaMenu(stringResource(Res.string.dress_fold_area), SquashIcons.Fold, DressTags.FOLD_AREA, flat) { session.send(SetAreaFold(garment.id, it.id, NEW_FOLD)) }
+}
+
+/** A quiet [label] button with [icon] opening a menu of [areas], [pick] sent for the one pressed. */
+@Composable
+private fun AreaMenu(label: String, icon: ImageVector, tag: String, areas: List<GarmentArea>, pick: (GarmentArea) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Button(label, { open = true }, Modifier.testTag(tag), kind = ButtonKind.Quiet, icon = icon)
+        Menu(open, { open = false }) {
+            for (area in areas) {
+                MenuItem(area.name.ifBlank { area.id.value }, {
+                    open = false
+                    pick(area)
+                })
             }
         }
     }

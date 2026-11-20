@@ -7,6 +7,9 @@ import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfaceGarment
 import dev.chieppa.squash.character.surface.SurfacePaint
+import dev.chieppa.squash.document.GARMENT_PART_PREFIX
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.isBranchPart
 import dev.chieppa.squash.geom.LevelCut
 
 /** How far inside a garment's posed surface, in cells, skin under its coverage still counts as having come out through it. */
@@ -22,7 +25,8 @@ private const val POKE_CHUNK = 2048
  * The body and each garment as [dress] wears them on a posed [body] and posed [garments], with what the pose carries out through a
  * garment over it hidden too: a vertex inside the coverage of a garment over it at rest that the pose leaves outside that garment's
  * surface, or less than [POKE_SLACK_CELLS] cells inside it, is cut away along the curve where it comes out, and the body's paint with
- * it. [rest] is the body at rest, whose drawn mesh the paint's layers were cut on; posed, a pose may leave out quads where parts touch.
+ * it. The garment's surface is read where it is cloth and drawn, over the same body part the vertex lies on, so an arm posed against a torso is read against its
+ * sleeve, never against the cloth over the torso beside it. [rest] is the body at rest, whose drawn mesh the paint's layers were cut on; posed, a pose may leave out quads where parts touch.
  * What coverage hides follows the pose by itself, since coverage reads coordinates; this finds what a pose pushes through the cloth.
  */
 class PosedHiding(private val body: CharacterSurface, private val rest: CharacterSurface, private val garments: List<SurfaceGarment>, private val dress: SurfaceDress) {
@@ -35,9 +39,10 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
         if (garments.isEmpty() || dress.under.size != garments.size + 1) return paint to SurfaceDress(garments, recut(body, restShown), restShown, dress.under, body)
         val surfaces = listOf(body) + garments.map { it.surface }
         val near = garments.map { garment -> NearestVertex(garment.surface.positions, garment.surface.mesh.cell) }
+        val parts = (listOf(body) + garments.map { it.surface }).map(::bodyPartsOf)
         val shown = surfaces.mapIndexed { s, surface ->
             val base = if (s == 0) restShown else garments[s - 1].shownValues
-            pushedThrough(surface, base, dress.under[s], (s until garments.size).toList(), near, runAll)
+            pushedThrough(surface, base, dress.under[s], (s until garments.size).toList(), near, parts, s, runAll)
         }
         val skin = recut(body, shown[0] ?: restShown)
         val worn = garments.mapIndexed { i, garment -> shown[i + 1]?.let { garment.within(LevelCut.of(it, garment.surface.render.indices), it) } ?: garment }
@@ -60,7 +65,9 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
      * [base] lowered where [surface]'s vertices that lie inside the coverage of the garments [outer] over it, as [under] says, have come
      * out through one of them; null where none has.
      */
-    private suspend fun pushedThrough(surface: CharacterSurface, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>, runAll: RunAll): FloatArray? {
+    private suspend fun pushedThrough(
+        surface: CharacterSurface, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>, parts: List<Array<String?>>, s: Int, runAll: RunAll,
+    ): FloatArray? {
         if (outer.isEmpty()) return null
         val cell = surface.mesh.cell
         val corners = surface.mesh.vertexCount
@@ -71,10 +78,11 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
             for (v in from until until) {
                 if (under[v] <= 0f || base[v] < 0f) continue
                 var least = Float.MAX_VALUE
+                val part = parts[s][v]
                 for (g in outer) {
                     val garment = garments[g]
-                    val q = near[g].within(positions, v, cell * POKE_REACH_CELLS) ?: continue
-                    if (garment.coverage[q] < 0f) continue
+                    val over = parts[g + 1]
+                    val q = near[g].within(positions, v, cell * POKE_REACH_CELLS) { garment.coverage[it] >= 0f && garment.shownValues[it] >= 0f && (part == null || over[it] == part) } ?: continue
                     val gp = garment.surface.positions
                     val gn = garment.surface.lineNormals
                     val inside = (gp[q * 3] - positions[v * 3]) * gn[q * 3] + (gp[q * 3 + 1] - positions[v * 3 + 1]) * gn[q * 3 + 1] + (gp[q * 3 + 2] - positions[v * 3 + 2]) * gn[q * 3 + 2]
@@ -96,4 +104,17 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
         }
         return made
     }
+}
+
+/** The body part each vertex of [surface] lies on, read from the run it is held by most: a garment's branch or cuff by the part under it. */
+private fun bodyPartsOf(surface: CharacterSurface): Array<String?> {
+    val runs = surface.field.runs.map { run -> bodyPartOf(run.partId) }
+    val winners = surface.mesh.winners
+    return Array(surface.mesh.vertexCount) { v -> winners[v].takeIf { it >= 0 }?.let { runs[it] } }
+}
+
+/** The body part [part] lies over: itself, or for a garment's branch or cuff, the part it covers. */
+private fun bodyPartOf(part: PartId): String {
+    if (!isBranchPart(part)) return part.value
+    return part.value.removePrefix(GARMENT_PART_PREFIX).split('/').getOrElse(1) { part.value }
 }

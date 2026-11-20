@@ -3,6 +3,7 @@ package dev.chieppa.squash.recipe.model
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.dress.DEFAULT_BRUSH_SIZE
+import dev.chieppa.squash.character.shape.DEFAULT_OPENING_REACH
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CLOTH_INK_WEIGHT
 import dev.chieppa.squash.document.DEFAULT_CREASE_STRENGTH
@@ -127,6 +128,8 @@ data class RecipeArea(
     val color: String? = null,
     @Doc("A ribbed band, as a cuff or a sweater's hem: the ease, in body units, the area pulls its cloth in to, eased in over two rows either side; the cloth stands off as the rest does when left out.") @Range(min = 0.0)
     val gather: Float? = null,
+    @Doc("Cloth turned back over the garment at its hem, as a rolled cuff, a rolled jeans hem or a turtleneck's fold-over: how far, in body units, the area stands out over the cloth beside it, its far edge inked and its color the cloth's back face; lies flat when left out.") @Range(min = 0.0, max = 0.03)
+    val fold: Float? = null,
     @Doc("The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.")
     val paint: List<RecipeStroke> = emptyList(),
 )
@@ -150,6 +153,14 @@ enum class RecipeStrokeShape {
     @SerialName("box") BOX,
     @SerialName("ellipse") ELLIPSE,
     @SerialName("lasso") LASSO,
+    @SerialName("opening") OPENING,
+}
+
+/** How an opening's front drops below its ring. */
+@Serializable
+enum class RecipeOpeningCut {
+    @SerialName("round") ROUND,
+    @SerialName("v") V,
 }
 
 /**
@@ -164,12 +175,14 @@ enum class RecipeStrokeShape {
         "and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line " +
         "reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way " +
         "round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon " +
-        "through points (or face), straight between them in u and v.",
+        "through points (or face), straight between them in u and v. opening: the cells round where the part on comes out (a neck, an " +
+        "arm, an ear) within reach past its root ring, on every part but those beyond it, its front dropping depth below the ring in its " +
+        "cut: unpaint one for a crew or V neckline, paint a wider one and unpaint a narrower for a collar band round it.",
 )
 data class RecipeStroke(
     @Doc("The part painted on (a pair by either side: both sides take it, mirrored).")
     val on: String,
-    @Doc("brush, line, band, box, ellipse or lasso.")
+    @Doc("brush, line, band, box, ellipse, lasso or opening.")
     val shape: RecipeStrokeShape = RecipeStrokeShape.BRUSH,
     @Doc("Takes the cells from every area instead of painting them, as Alt in Dress.")
     val unpaint: Boolean = false,
@@ -187,6 +200,12 @@ data class RecipeStroke(
     val mirrored: Boolean = false,
     @Doc("Clean edges, 0 to 1: up to four rounds of smoothing the area's edge within two cells of the stroke, each cell taking what most of it and its neighbours are.")
     val clean: Float = 0f,
+    @Doc("opening: round, a crew or scoop neck's curve, or v, two straight sides to a point.")
+    val cut: RecipeOpeningCut = RecipeOpeningCut.ROUND,
+    @Doc("opening: how far past the root ring of the part on it reaches all round, in body units.") @Range(min = 0.0)
+    val reach: Float = DEFAULT_OPENING_REACH,
+    @Doc("opening: how far its front drops below the ring at its middle, in body units; 0 is a plain ring.") @Range(min = 0.0)
+    val depth: Float = 0f,
 )
 
 /** A hole of a garment round the root of [part], with a cuff band when [cuff]. */

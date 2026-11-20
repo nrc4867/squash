@@ -60,6 +60,25 @@ export const clothes = wardrobe([tee, shorts], [outfit("casual", { top: "tee", b
 - **Areas are colours.** Each area has its own `color` (left out: the garment's). A later area's strokes take cells from the earlier ones; where two meet the cloth stays one piece with an inked seam. A collar, cuffs, a waistband, a yoke, a two-tone raglan are areas of one garment, never separate garments.
 - **Curved hems and splits**: paint the band, then an `unpaint` ellipse or lasso over the hem where it should curve or open: a shirt tail, a side split, a round or V neck, a jacket's front opening that widens toward the neck. Put the unpaint stroke last in the area it cuts; an area holding only unpaint strokes warns that it holds no cells. A round neckline on a torso resting up: `{ on: "torso", shape: "ellipse", unpaint: true, u: [0.78, 1.02], v: [-0.12, 0.12] }`.
 
+## Necklines, collars and cuffs
+
+Paint openings with an `opening` stroke rather than an ellipse or lasso: it holds the cells round where a part comes out, read on the body, so it follows the shoulders and needs no v. The kit writes them:
+
+```ts
+import { crewNeck, crewSweater, cuffedJeans, foldedBand, openingBand, turtleneck, vNeck } from "squash-kit";
+
+const sweater = crewSweater({ color: "knit", rib: "rib", hem: torso.u(plan.h("hip")), neckline: { cut: "round", reach: 0.02, depth: 0.03 }, collar: 0.02 });
+const jeans = cuffedJeans({ color: "denim", cuffColor: "denim-light", waist: torso.u(plan.h("hip")), hem: leg.u(0.08), cuff: 0.07, fold: 0.007 });
+const tee = garment({ id: "tee", color: "tee", areas: [{ id: "body", paint: [{ on: "torso", shape: "band", u: [0.4, 1] }, vNeck("neck", { depth: 0.1 })] }] });
+const turtle = garment({ id: "turtle", color: "knit", areas: [bodyArea, ...turtleneck({ top: 0.75, color: "rib" })] });
+```
+
+- `reach` is how far past the neck's root ring the opening reaches, round the whole neck; `depth` how far the front drops below it at the middle, round (`cut: "round"`, a crew or scoop) or straight to a point (`cut: "v"`). Paint the neck in the top's body area too: the opening opens it from where it leaves its flare into the shoulders, so a flared neck keeps its flare as cloth and the neckline follows the shoulder slope instead of a flat shelf. A reach of one to two hundredths reads as a crew neck on a person.
+- A collar band is `openingBand(neck, shape, width)` in an area after the body's, with `gather` for ribbing: it paints the wider opening and unpaints the opening, so the band follows a V or a scoop.
+- **Folds.** An area with `fold` (0 to 0.03 body units) is cloth turned back over the garment at its hem: it stands out by that thickness over the cloth beside it, its far edge inked as a seam, in its own colour, the cloth's back face. A rolled cuff or jeans hem is a folded band at the hem (`foldedBand`); a turtleneck is the neck painted from its root with its top band folded (`turtleneck`). Give the garment a small `hemRoll` (0.003 to 0.006) so the fold's edge rounds over.
+- A simple shirt collar: a folded `openingBand` round a V, with a little more `depth` and `width` than a crew's; its points come from the V.
+- Openings work round any part that comes out: `opening("ear-l", { reach: 0.01 })` unpaints a hat round each ear, `opening("tail")` the seat round a tail.
+
 ## What comes out, what tucks
 
 With areas, the build reads from the cells what the cloth covers, which parts come out through it, which small parts it tucks and which seams it inks:
@@ -156,13 +175,13 @@ Render a bent pose (sitting, an arm raised) for every outfit: hems and openings 
 ## Limits
 
 - **No loose cloth.** A skirt hangs and flares but has no sway; a dress as one piece from hem to neck is held at its far ring and its waist can stand off the body. A lighter band of shade can show at a skirt's waist where its drawn outline starts.
-- **Collars and lapels.** A collar is only the cuff a hole grows round the neck; nothing folds over. Lapels are rigid owned parts (`accessories.md`) that stand off in side view and do not follow a spine bend.
+- **Collars and lapels.** A collar is a band of cells, folded over or flat, lying on the body; it does not stand up off the neck or flare out as a wing. Lapels that stand off are rigid owned parts (`accessories.md`) that do not follow a spine bend.
 - **Hoods** are a lump behind the head, not a hood framing the face.
-- **Open edges are cuts.** An open garment is one sheet: its edge can roll out (`hemRoll`) but has no underside.
+- **Open edges are cuts.** An open garment is one sheet: its edge can roll out (`hemRoll`) and a band can fold back over it (`fold`), but seen from below a hem has no underside.
 - **Wrinkles are shading, not cloth physics.** Folds rise a little from the posed cloth and drape hangs as a pattern; nothing sags or swings, and a skirt does not fold.
 - **No see-through cloth.** A palette slot's `opacity` on a garment's colour or an area's is not drawn on cloth (the build warns); sheer cloth draws whole.
 - **Armpits in tight sleeves.** A raised or bent arm can push skin through a sleeve at fit 0 near the armpit; give the arm a small `partFits`.
 - **Loose ends are short flat tabs**, and a neck wrap carrying one flares like a cape collar.
-- **Arms posed into a loose top**: at rest grown cloth stops short of an arm beside it, but a pose that lowers the arms from an A-pose swings them into a loose torso's cloth, which does not move aside; `measure.txt` reports it as the arm poking through. Keep the torso's sides near the arms snug (a smaller ease at the keys at arm height, a small `hang.limit`) on a character whose display pose lowers its arms.
+- **Arms posed into a loose top**: at rest grown cloth stops short of an arm beside it, but a pose that lowers the arms from an A-pose swings them toward a loose torso's cloth, which does not move aside; skin a pose carries out of a sleeve is hidden, but a sleeve pressed into the torso's cloth sinks into it. Keep the torso's sides near the arms snug (a smaller ease at the keys at arm height, a small `hang.limit`) on a character whose display pose lowers its arms.
 - **Thighs that touch** make trousers read as one tube: keep the legs apart in the body (`body.md`, widths).
 - **Garments on all fours**: cloth hangs and flares only past an end that points down; a cape on a body resting forward trails rather than drapes.

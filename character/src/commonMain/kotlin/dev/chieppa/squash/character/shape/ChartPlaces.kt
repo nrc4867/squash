@@ -51,7 +51,8 @@ class ChartPlaces private constructor(val chart: BodyChart, private val sides: L
     /** The cells whose middle [project] puts on screen where [inside] holds, through the whole body, front and back alike. */
     fun inside(project: (Vec3) -> Vec2?, inside: (Vec2) -> Boolean): SurfaceMask = reached { x, y, z -> project(Vec3(x, y, z))?.let(inside) == true }
 
-    private fun reached(test: (Float, Float, Float) -> Boolean): SurfaceMask {
+    /** The cells of the part (a pair's leader) whose middle lies where [test] holds, on either side of a pair. */
+    fun where(test: (dev.chieppa.squash.document.PartId, Vec3) -> Boolean): SurfaceMask {
         val held = HashMap<dev.chieppa.squash.document.PartId, BooleanArray>()
         for (side in sides) {
             val cells = held.getOrPut(side.part) { BooleanArray(CHART_CELLS) }
@@ -59,11 +60,13 @@ class ChartPlaces private constructor(val chart: BodyChart, private val sides: L
                 if (cells[cell]) continue
                 val x = side.xyz[cell * 3]
                 if (x.isNaN()) continue
-                if (test(x, side.xyz[cell * 3 + 1], side.xyz[cell * 3 + 2])) cells[cell] = true
+                if (test(side.part, Vec3(x, side.xyz[cell * 3 + 1], side.xyz[cell * 3 + 2]))) cells[cell] = true
             }
         }
         return SurfaceMask.build(chart) { part, cell -> held[part]?.get(cell) == true }
     }
+
+    private fun reached(test: (Float, Float, Float) -> Boolean): SurfaceMask = where { _, p -> test(p.x, p.y, p.z) }
 
     companion object {
         /** The places of [chart]'s cells on [body], each side of a pair placed apart. */
