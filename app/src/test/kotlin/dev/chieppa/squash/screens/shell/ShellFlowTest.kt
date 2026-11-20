@@ -56,7 +56,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.squash.screens.shell.Stage
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText

@@ -55,7 +55,7 @@ class CharacterKeyLookup(private val character: AssembledCharacter) : KeyLookup 
         val parentTwin = twinOf(socket.parent)
         return byId.values.firstOrNull { other ->
             other.side != null && other.side != side && other.template.id == placed.template.id &&
-                other.socket?.socket == socket.socket && (other.socket?.parent == socket.parent || other.socket?.parent == parentTwin)
+                other.socket?.socket == socket.socket && (other.socket.parent == socket.parent || other.socket.parent == parentTwin)
         }?.id
     }
 

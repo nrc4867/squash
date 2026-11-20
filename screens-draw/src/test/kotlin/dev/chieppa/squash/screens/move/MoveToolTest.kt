@@ -3,7 +3,7 @@ package dev.chieppa.squash.screens.move
 import dev.chieppa.squash.screens.restSurface
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.Side

@@ -18,7 +18,7 @@ import dev.chieppa.squash.screens.fennec.CAP
 import dev.chieppa.squash.screens.fennec.FEET_SLOT
 import dev.chieppa.squash.screens.fennec.SCARF
 import dev.chieppa.squash.screens.fennec.SWEATER
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Pose

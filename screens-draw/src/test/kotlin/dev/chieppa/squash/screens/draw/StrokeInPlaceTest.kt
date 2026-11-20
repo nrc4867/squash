@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.character.model.SIZE_PARAM
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.Side
@@ -59,7 +59,7 @@ class StrokeInPlaceTest {
             val path = ellipse(socket + Offset(-40f, 110f), 60f, 150f)
             stroke(path)
             settled()
-            assertNotNull(session.document.value.character.resolved(leftLeg)?.outlines?.get(View.SIDE))
+            assertNotNull(session.document.value.character.resolved(leftLeg).outlines[View.SIDE])
 
             val drawn = part(leftLeg.id)
             assertEquals(leg.origin, drawn.origin, "the stroke's plane held still")
@@ -81,7 +81,7 @@ class StrokeInPlaceTest {
             show(camera)
             stroke(ellipse(socket + Offset(0f, 60f), 50f, 150f))
             settled()
-            val outline = assertNotNull(session.document.value.character.resolved(leftLeg)?.outlines?.get(View.SIDE))
+            val outline = assertNotNull(session.document.value.character.resolved(leftLeg).outlines[View.SIDE])
             assertTrue(outline.points.all { it.x >= -1e-3f }, "all of it runs down the leg from the plane")
             val onPlane = listOf(outline.points.first(), outline.points.last())
             assertTrue(onPlane.all { abs(it.x) < 1e-3f }, "both ends on the plane: $onPlane")

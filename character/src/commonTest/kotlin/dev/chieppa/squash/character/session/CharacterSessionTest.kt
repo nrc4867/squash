@@ -9,7 +9,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import kotlin.test.Test
 import kotlin.test.assertSame
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 
 class CharacterSessionTest {
@@ -17,7 +17,7 @@ class CharacterSessionTest {
 
     @Test
     fun aPartKeepsOneNode() = runTest {
-        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val dispatcher = StandardTestDispatcher(testScheduler)
         val session = CharacterSession(document, TemplateLibrary(emptyList()), backgroundScope, dispatcher)
         assertSame(session.patches(PartId("a")), session.patches(PartId("a")))
         assertSame(session.mesh(PartId("a")), session.mesh(PartId("a")))

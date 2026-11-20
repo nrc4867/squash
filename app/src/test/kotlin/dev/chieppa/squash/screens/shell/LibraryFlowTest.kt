@@ -46,7 +46,7 @@ import dev.chieppa.squash.screens.library.Renaming
 import dev.chieppa.squash.screens.openSocketsNow
 import dev.chieppa.squash.screens.settle
 import dev.chieppa.stretch.document.FileChooser
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.stretch.frame.DragAndDropHost
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test

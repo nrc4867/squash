@@ -177,7 +177,7 @@ Logic bugs come first, so almost every test is a plain JVM unit test that runs i
 | Unit | Commands, undo, graph nodes, slice building, rig math | JUnit 5, `kotlinx-coroutines-test` with virtual time | Constantly, only the module being changed |
 | Command scenarios | A sequence of commands against a document, then assertions on state | `stretch-test`'s `scenario`, no UI | Constantly |
 | Golden | Generated meshes, rigs and schemas against saved fixtures | JUnit 5 | When a generator changes |
-| UI | A screen's structure and wiring, found by semantics tags; flows across screens are in `app`'s tests | `runComposeUiTest`, waits for idle on its own | Per UI module, seconds |
+| UI | A screen's structure and wiring, found by semantics tags; flows across screens are in `app`'s tests | `runComposeUiTest` from `androidx.compose.ui.test.v2`, its composition queued on a `StandardTestDispatcher` that `waitForIdle` runs | Per UI module, seconds |
 | Smoke | `SquashApp` over the packaged templates and a real graph: each screen captured to an offscreen image, and the workspace's frame rendered by the real scene through `stretch-gpu`'s `GpuSnapshot`. The window around `SquashApp` and the surface's readback into it are not covered | Needs a GPU; JUnit tag `slow`, in `app`'s tests, run by `check -Pslow` | Before a merge only |
 | Benchmarks | Wall-clock cost of hot paths, printed, such as the sheet's highlight at stroke rate | JUnit tag `slow`, run by `check -Pslow` | When the path changes |
 
