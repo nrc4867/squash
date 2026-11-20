@@ -2,7 +2,7 @@ package dev.chieppa.squash.screens.edit
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.sections

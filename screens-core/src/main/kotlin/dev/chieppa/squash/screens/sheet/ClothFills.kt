@@ -36,7 +36,7 @@ fun clothDraw(garment: SurfaceGarment, cloth: SeeThroughCloth, palette: Palette,
         channels.setColor(SHADOW, v, tones.shadow)
     }
     val held = listOf(cloth.opacity, cloth.net, cloth.thread, cloth.part, cloth.along, cloth.roundCos, cloth.roundSin, cloth.trust, cloth.countA, cloth.countB, cloth.slopeA, cloth.slopeB)
-    held.forEachIndexed { i, values -> values?.copyInto(channels[LOOK + i]) }
+    held.forEachIndexed { i, values -> values.copyInto(channels[LOOK + i]) }
     val drawn = channels.map(garment.cut::values)
     val drawnCount = drawn.first().size
     val attributes = FloatArray(drawnCount * CLOTH_FLOATS)

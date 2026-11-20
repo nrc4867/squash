@@ -67,7 +67,7 @@ class RecipeProbe(private val character: Character, private val built: Assembled
                 val u = uLow + uStep * i
                 val v = vLow + vStep * j
                 val at = part.origin + part.surface.shown(patch.positionAt(u, v))
-                if (best == null || (at - point).length < (best!!.point - point).length) best = ProbePlace(checkNotNull(part.id), patch.name, u, wrap(v), at)
+                if (best == null || (at - point).length < (best.point - point).length) best = ProbePlace(checkNotNull(part.id), patch.name, u, wrap(v), at)
             }
             val found = best ?: return null
             uLow = (found.u - uStep * 2).coerceAtLeast(us.first())

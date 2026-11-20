@@ -7,7 +7,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.openSockets
 import dev.chieppa.squash.character.catalog.placeOnSocket

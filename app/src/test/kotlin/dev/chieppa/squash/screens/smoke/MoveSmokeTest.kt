@@ -2,7 +2,7 @@ package dev.chieppa.squash.screens.smoke
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.character.build.moveSocket
 import dev.chieppa.squash.character.catalog.newCharacter

@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BodyCurve
 import dev.chieppa.squash.document.BodyStroke

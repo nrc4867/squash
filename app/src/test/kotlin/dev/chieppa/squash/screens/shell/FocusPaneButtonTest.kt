@@ -19,7 +19,7 @@ import dev.chieppa.squash.screens.sheet.sheetPaneTag
 import java.io.File
 import javax.imageio.ImageIO
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.squash.geom.BodyView
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.SquashApp

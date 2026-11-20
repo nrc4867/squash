@@ -159,7 +159,7 @@ class LeaningLegsTest : LeaningLegsBench() {
         fun share(leg: PartInstance, paw: PartInstance, length: Float) =
             (character.reachOf(leg, paw) - square.reachOf(leg, paw) + length) / length
         assertEquals(share(frontLeft, paws[0], 0.4f), share(backLeft, paws[2], 0.6f), 1e-3f, "each reaches the same share of its length")
-        assertEquals(long, session.document.value.character.resolved(backLeft)?.outlines?.get(View.SIDE), "the document keeps what was drawn")
+        assertEquals(long, session.document.value.character.resolved(backLeft).outlines[View.SIDE], "the document keeps what was drawn")
     }
 
     @Test
