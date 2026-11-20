@@ -7,6 +7,7 @@ export * from "./probe/index.ts";
 export * from "./shapes/index.ts";
 export * from "./face/index.ts";
 export * from "./parts/index.ts";
+export * from "./hair/index.ts";
 export * from "./garments/index.ts";
 export * from "./props/index.ts";
 export * from "./palette/index.ts";

@@ -1992,6 +1992,17 @@
             }
           ]
         },
+        "preset": {
+          "description": "A preset of its template's (templates.md lists them): its parameter values, which params and the fields above override, as a bob for a hair volume.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "params": {
           "description": "Template parameters by name, as toes, merge or claw, and any dotted part parameter the fields above do not name.",
           "type": "object",
@@ -2664,6 +2675,17 @@
         },
         "edge": {
           "description": "The outer share of the area over which copies' size falls to the socket's falloff, 0.35 when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "droop": {
+          "description": "Degrees each copy tilts from the surface's normal toward the body's down along the surface, its up turned to the normal, so hair clumps lie down over a head; 60 to 80 for a fall of hair, none when left out.",
           "anyOf": [
             {
               "type": "number"

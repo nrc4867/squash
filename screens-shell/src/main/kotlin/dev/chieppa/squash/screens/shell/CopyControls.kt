@@ -30,6 +30,7 @@ import dev.chieppa.squash.uidesign.generated.move_copy_spread_count
 import dev.chieppa.squash.uidesign.generated.move_copy_to_u
 import dev.chieppa.squash.uidesign.generated.move_copy_to_v
 import dev.chieppa.squash.uidesign.generated.move_copy_turn_jitter
+import dev.chieppa.squash.uidesign.generated.move_copy_droop
 import dev.chieppa.squash.uidesign.generated.move_degrees
 import dev.chieppa.squash.uidesign.generated.move_socket_layout_path
 import dev.chieppa.squash.uidesign.generated.move_socket_layout_path_tip
@@ -76,6 +77,7 @@ private val KNOB_LABELS: Map<CopyKnob, StringResource> = mapOf(
     CopyKnob.SIZE_JITTER to Res.string.move_copy_size_jitter,
     CopyKnob.LEAN_JITTER to Res.string.move_copy_lean_jitter,
     CopyKnob.TURN_JITTER to Res.string.move_copy_turn_jitter,
+    CopyKnob.DROOP to Res.string.move_copy_droop,
     CopyKnob.PITCH to Res.string.move_copy_pitch,
     CopyKnob.ROLL to Res.string.move_copy_roll,
     CopyKnob.SAG to Res.string.move_copy_sag,

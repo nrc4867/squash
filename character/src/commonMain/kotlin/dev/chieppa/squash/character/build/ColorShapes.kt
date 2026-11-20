@@ -95,13 +95,17 @@ private fun patchSlotShapes(holder: PartId, work: ResolvedSurfaceWork, input: Pa
 /** An area shows its template's slot until a fill names it, and with neither shows nothing. */
 private fun areaShapes(holder: PartId, work: ResolvedSurfaceWork, input: PartColorInput, patches: List<Patch>) = input.areas.flatMap { area ->
     val slot = work.areaFills[area.name] ?: area.color?.let(::SlotName) ?: return@flatMap emptyList()
-    patches.filter { it.isNamed(area.patch) }.map {
-        LandedShape(RANK_AREA, slot, holder, it.name, areaShape(area), ShapeSource.Area(holder, area.name))
+    patches.filter { it.isNamed(area.patch) }.flatMap { patch ->
+        areaShapes(area).map { LandedShape(RANK_AREA, slot, holder, patch.name, it, ShapeSource.Area(holder, area.name)) }
     }
 }
 
 /** The points round an oval area's border. */
 private const val OVAL_POINTS = 24
+
+/** [area]'s shapes on its patch: its level, else its loops, else its rectangle or the oval inside it. */
+private fun areaShapes(area: AreaSpec): List<ColorShape> =
+    area.level?.let { listOf(ColorShape.Level(it)) } ?: area.loops?.map { loop -> ColorShape.Border(loop.map { (u, v) -> SurfaceUv(u, v) }) } ?: listOf(areaShape(area))
 
 /** [area]'s shape on its patch: its rectangle, or the oval inside it. */
 private fun areaShape(area: AreaSpec): ColorShape {

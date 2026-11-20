@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.session
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.HeldShapes
+import dev.chieppa.squash.character.build.ShineSource
 import dev.chieppa.squash.character.surface.HeldDress
 import dev.chieppa.squash.character.surface.HeldPaint
 import dev.chieppa.squash.character.surface.surfaceCovers
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /**
@@ -43,6 +45,7 @@ class SessionSurface(
     placed: Node<*, AssembledCharacter>,
     shapes: (PartId) -> Node<*, HeldShapes>,
     reads: FieldReads = CpuFieldReads,
+    shines: Flow<List<ShineSource>> = flowOf(emptyList()),
 ) {
     /** Whether a gesture is open on the history: a drag in progress. */
     private val gesture: Flow<Boolean> = combine(history.document, history.steps) { _, _ -> history.inGesture }.distinctUntilChanged()
@@ -61,7 +64,7 @@ class SessionSurface(
 
     val paint: Node<*, HeldPaint> = graph.surfacePaintNode(
         surface,
-        history.document.map { doc -> PaintInput(doc.character.parts.map { it.id }, doc.character.paintedEyes) }.distinctUntilChanged(),
+        combine(history.document, shines) { doc, shine -> PaintInput(doc.character.parts.map { it.id }, doc.character.paintedEyes, shine) }.distinctUntilChanged(),
         shapes,
     )
 

@@ -28,6 +28,8 @@ import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.build.assemblyNode
 import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.build.bodyColorNode
+import dev.chieppa.squash.character.build.shineSources
+import dev.chieppa.squash.character.build.shinedColorNode
 import dev.chieppa.squash.character.build.bodyLinesNode
 import dev.chieppa.squash.character.build.bodyFurNode
 import dev.chieppa.squash.character.build.bodySurfaceWorkNode
@@ -137,8 +139,11 @@ class CharacterSession(
         combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
     )
 
+    /** The hair volumes whose band of shine shows on the hair, on its own meshes and on the one surface. */
+    private val shines = document.map { shineSources(it.character, templates) }.distinctUntilChanged()
+
     /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
-    val sessionSurface = SessionSurface(graph, history, placed, ::heldShapes, reads)
+    val sessionSurface = SessionSurface(graph, history, placed, ::heldShapes, reads, shines)
 
     /** The character's body as one surface; null for a character with no part in the field. */
     val characterSurface: Node<*, HeldSurface> get() = sessionSurface.surface
@@ -170,9 +175,13 @@ class CharacterSession(
      * [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending. See HLD: look, Color is vector.
      */
     val bodyColor: Node<*, BodyColor> = graph.dressedColorNode(
-        graph.bodyColorNode(
-            document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
-            ::heldColor,
+        graph.shinedColorNode(
+            graph.bodyColorNode(
+                document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
+                ::heldColor,
+            ),
+            assembly,
+            shines,
         ),
         document.map { garmentColors(it.character) }.distinctUntilChanged(),
     )

@@ -16,8 +16,11 @@ class LandedCut(val rank: Int, val part: PartId, val slot: SlotName, val cut: Pa
 /** What one part's surface work draws: its [baseSlot], and its shapes wherever they land, in layer order. */
 class HeldColor(val baseSlot: SlotName?, val cuts: List<LandedCut>)
 
-/** What is drawn on one part: its [baseSlot], and over it [layers] in the order they overdraw, each in the part's surface space. */
-class PartColor(val baseSlot: SlotName?, val layers: List<SlottedCut<SlotName>>)
+/**
+ * What is drawn on one part: its [baseSlot], and over it [layers] in the order they overdraw, each in the part's surface space; for a
+ * part shown as copies whose copies differ, [copies], each copy's layers in place of [layers], one list a copy in the order of its places.
+ */
+class PartColor(val baseSlot: SlotName?, val layers: List<SlottedCut<SlotName>>, val copies: List<List<SlottedCut<SlotName>>>? = null)
 
 /** Every part's color. A palette slot stays a name here, so a palette color changes nothing in it. */
 class BodyColor(val parts: Map<PartId, PartColor>)

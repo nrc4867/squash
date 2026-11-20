@@ -251,6 +251,9 @@
         },
         {
           "$ref": "#/$defs/Tube"
+        },
+        {
+          "$ref": "#/$defs/Volume"
         }
       ]
     },
@@ -2256,6 +2259,22 @@
           "description": "How a part in the field joins the part its socket is on when the part sets neither its blend nor its join ink.",
           "$ref": "#/$defs/JoinSpec"
         },
+        "presets": {
+          "description": "Named starting looks: each a set of parameter values a part of this template takes in one step, as a bob or a short crop of hair.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
         "blocks": {
           "type": "array",
           "items": {
@@ -2965,12 +2984,229 @@
               "type": "null"
             }
           ]
+        },
+        "clump": {
+          "description": "A clump of hair's shape in place of radius and taper when nothing is drawn.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TubeClump"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "kind",
         "u",
         "radius"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "TubeClump": {
+      "description": "A clump of hair's shape when nothing is drawn: width, thickness, taper, tip, twist and wave, a flared root and strand lines.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "description": "Full width at the root, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "Full thickness at the root, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "taper": {
+          "description": "Width toward the tip, a share of the root's.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "swell": {
+          "description": "How much it swells toward its first third, a share of its width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "tipRound": {
+          "description": "The tip's roundness: 0 pointed, 1 round.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "tipReach": {
+          "description": "How far the tip closes back along it, a share of its length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "points": {
+          "description": "How many lobes the tip ends in, 1 to 5; above 1 the tip keeps its width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "notch": {
+          "description": "How far back between two lobes the tip is cut, a share of its length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "twist": {
+          "description": "Degrees it turns about itself from root to tip.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "wave": {
+          "description": "How far it waves sideways, a share of its width, growing toward the tip.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "waves": {
+          "description": "How many waves along it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "flare": {
+          "description": "How much wider its root flares into what it sits on, a share of its width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "cup": {
+          "description": "How far its sides curl toward its top, a share of its half width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "strands": {
+          "description": "How many strand lines are inked along it, on each broad face, 0 to 4.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "rootSoft": {
+          "description": "The share of its length from the root over which its outline and strands fade in, so its root reads soft.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "tipShade": {
+          "description": "The share of its length from the tip that its tip area covers.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "width",
+        "thickness"
       ],
       "patternProperties": {
         "^x-": {}
@@ -3033,6 +3269,394 @@
         "thickness",
         "hollow",
         "rim"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Volume": {
+      "description": "A hair volume over the skull: one closed run, shaped by its parameters when nothing is drawn, with hem, parting and shine areas.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "volume"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "u": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        },
+        "crown": {
+          "description": "How far its top rises above its axis, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "width": {
+          "description": "Its half width, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "back": {
+          "description": "How far it hangs below its axis at the back, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "sides": {
+          "description": "How far it hangs below its axis at the sides, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "fringe": {
+          "description": "How far it hangs below its axis at the front, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "rise": {
+          "description": "How far its rings' middles rise toward the front, a fraction of the length, so its front closes on the forehead.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "flip": {
+          "description": "How far its hem flares out, a share of its half width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "fullness": {
+          "description": "How full it stays toward its front and back: 2 rounds it as an ellipse, higher squares it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "parting": {
+          "description": "Where round its top its parting lies: 0 the middle, toward 0.25 the side v 0.25 faces, negative the other side.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "partDepth": {
+          "description": "How deep the parting dents its top, a share of its crown.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "hemShade": {
+          "description": "How far up from each ring's lowest point its hem area reaches, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "partShade": {
+          "description": "How wide its parting area is, a share of a turn.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "shineAt": {
+          "description": "The height of its band of shine on the sphere through its rings, -1 underneath to 1 at the crown.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "shineWidth": {
+          "description": "How wide its band of shine is, on the same sphere.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "shineJag": {
+          "description": "How deep the band's lower edge is cut into points.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "shineTeeth": {
+          "description": "How many points the band's lower edge is cut into round the crown.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "locks": {
+          "description": "How many locks its hem parts into round the head, seen from above; 0 for a whole hem.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockDepth": {
+          "description": "How far up between two locks the hem is cut, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockJag": {
+          "description": "How much shorter some locks are than others, a share of the cut: a ragged hem.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockSkew": {
+          "description": "How far each lock's point leans toward one neighbour, -1 to 1.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockRound": {
+          "description": "How round the locks' points are: 0 pointed, 1 round.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockSeed": {
+          "description": "Which locks are the shorter ones.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockFlare": {
+          "description": "How far each lock's point splays out sideways, a share of the half width.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "sweep": {
+          "description": "How far the fringe sweeps aside: longer toward the side v 0.25 faces when positive, toward the other when negative.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "strands": {
+          "description": "How many strand lines are inked flowing down over it from its crown and gathering into its locks.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "layers": {
+          "description": "How many layers of locks lie over its hem, each a ragged edge inked higher up, its points over the notches under it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "layerGap": {
+          "description": "How far apart its layers' edges lie, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockLines": {
+          "description": "How far up from each notch between two locks a line is inked, where one lock lies over the next, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "crown",
+        "width",
+        "back",
+        "sides",
+        "fringe"
       ],
       "patternProperties": {
         "^x-": {}

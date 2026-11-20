@@ -116,8 +116,8 @@ fun contourDraws(contour: StrokeRibbon, rule: LineRule, color: Color, layers: Li
     )
 }
 
-/** The ink where [part] leaves its parent, at the weight on the surface there. */
-fun creaseDraws(part: PartLines, rule: LineRule, color: Color, layer: DepthLayer): List<RibbonDraw> = part.crease.mapNotNull { run ->
+/** The ink where [part] leaves its parent, and its strands as hair, at the weight on the surface there. */
+fun creaseDraws(part: PartLines, rule: LineRule, color: Color, layer: DepthLayer): List<RibbonDraw> = (part.crease + part.strands).mapNotNull { run ->
     weightedRibbon(run)?.let { RibbonDraw(it, rule, color, layer = layer) }
 }
 

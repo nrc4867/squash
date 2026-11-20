@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.model
 
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.geom.UvLevel
 
 /** A bone boundary at [u]; bones are the spans between joints in u order. */
 data class JointSpec(
@@ -56,6 +57,10 @@ data class AreaSpec(
     val color: String? = null,
     /** Whether it is the oval inside its u and v rather than the whole rectangle. */
     val round: Boolean = false,
+    /** Closed loops of places (u, v) it fills in place of its rectangle, v running past 0 and 1 as they cross the seam; null for none. */
+    val loops: List<List<Pair<Float, Float>>>? = null,
+    /** Where it lies as a level read at each place of the one surface, in place of its rectangle and loops; null for none. */
+    val level: UvLevel? = null,
 ) {
     /** Where its v span ends, running on past 1 when it crosses the seam. */
     val vEnd: Float get() = if (v.end < v.start) v.end + 1f else v.end

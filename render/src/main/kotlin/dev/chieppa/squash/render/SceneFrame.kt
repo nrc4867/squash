@@ -66,12 +66,12 @@ data class MeshDraw(
 ) {
     /** This draw as each of its instances draws it, or itself with none. */
     fun each(): List<MeshDraw> =
-        if (instances.isEmpty()) listOf(this) else instances.map { copy(model = it.model, material = it.material ?: material, instances = emptyList()) }
+        if (instances.isEmpty()) listOf(this) else instances.map { copy(model = it.model, material = it.material ?: material, layers = it.layers ?: layers, instances = emptyList()) }
 }
 
-/** One placing of an instanced mesh: where it sits, and the material it shows in place of its draw's, or null for that one. */
+/** One placing of an instanced mesh: where it sits, and the material and color layers it shows in place of its draw's, or null for those. */
 @Immutable
-data class MeshInstance(val model: Mat4, val material: PartMaterial? = null)
+data class MeshInstance(val model: Mat4, val material: PartMaterial? = null, val layers: List<ColorLayerDraw>? = null)
 
 /** One part's fur: its [ink] and then its [fills] over it, so strokes that overlap read as one shape with one outline. */
 @Immutable

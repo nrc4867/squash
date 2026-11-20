@@ -87,5 +87,5 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
         contourRibbon(emptyList(), view, listOf(sectionOf(part).first), weightAt)?.let { contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius) }.orEmpty()
 }
 
-/** These lines of a part of the one surface: only its patches that are not runs, and no crease, since the surface's own joins ink it. */
-internal fun PartLines.withoutRuns(): PartLines = PartLines(part, grids.filterNot { isFieldRun(part, it.patch) }, emptyList(), markWeights)
+/** These lines of a part of the one surface: only its patches that are not runs, and no crease, since the surface's own joins ink it; its strands stay. */
+internal fun PartLines.withoutRuns(): PartLines = PartLines(part, grids.filterNot { isFieldRun(part, it.patch) }, emptyList(), markWeights, strands)

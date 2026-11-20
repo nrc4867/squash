@@ -33,6 +33,7 @@ enum class CopyKnob(
     SIZE_JITTER(HandSockets::sizeJitter, 0.2f, 0f, 0.9f, setOf(SocketLayout.SPREAD), percent = true),
     LEAN_JITTER(HandSockets::leanJitter, 10f, 0f, 60f, setOf(SocketLayout.SPREAD), degrees = true),
     TURN_JITTER(HandSockets::turnJitter, 180f, 0f, 180f, setOf(SocketLayout.SPREAD), degrees = true),
+    DROOP(HandSockets::droop, 0f, -90f, 90f, setOf(SocketLayout.SPREAD), degrees = true),
     PITCH(HandSockets::pitch, 0f, 0f, 0.5f, setOf(SocketLayout.PATH)),
     ROLL(HandSockets::roll, 0f, -180f, 180f, setOf(SocketLayout.PATH), degrees = true),
     SAG(HandSockets::sag, 0f, 0f, 0.5f, setOf(SocketLayout.PATH)),

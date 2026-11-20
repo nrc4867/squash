@@ -1,0 +1,52 @@
+{
+  "$schema": "../schema/part-template.schema.json",
+  "format": 1,
+  "id": "hair-clump",
+  "version": 1,
+  "name": "Hair clump",
+  "role": "hair",
+  "axis": { "rest": [0, -1, 0], "length": 0.2 },
+  "openEnd": "start",
+  "topology": { "rings": 32, "segments": 16 },
+  "views": { "side": "height" },
+  "section": "circle",
+  "params": {
+    "size":      { "doc": "Scales the part: its length, width and thickness together.", "default": 1.0, "min": 0.2, "max": 4.0 },
+    "width":     { "doc": "Full width at the root with nothing drawn, a fraction of the length.", "default": 0.3, "min": 0.05, "max": 1.2 },
+    "thickness": { "doc": "Full thickness at the root, a fraction of the length: a little for a flat lock, near the width for a round one.", "default": 0.09, "min": 0.02, "max": 0.8 },
+    "taper":     { "doc": "Width toward the tip, a share of the root's: low for a spike, near 1 for a lock that stays wide.", "default": 0.4, "min": 0.05, "max": 1.2 },
+    "swell":     { "doc": "How much it swells toward its first third, a share of its width.", "default": 0.15, "min": 0.0, "max": 0.8 },
+    "tipRound":  { "doc": "The tip's roundness: 0 pointed, 1 round, between a soft point.", "default": 0.0, "min": 0.0, "max": 1.0 },
+    "tipReach":  { "doc": "How far the tip closes back along it, a share of its length.", "default": 0.35, "min": 0.05, "max": 1.0 },
+    "points":    { "doc": "How many lobes the tip ends in; above 1 the tip keeps its width and is cut back between them by notch.", "default": 1, "values": [1, 2, 3, 4, 5] },
+    "notch":     { "doc": "How far back between two lobes the tip is cut, a share of the length.", "default": 0.1, "min": 0.0, "max": 0.3 },
+    "twist":     { "doc": "Degrees it turns about itself from root to tip.", "default": 0.0, "min": -360.0, "max": 360.0 },
+    "wave":      { "doc": "How far it waves sideways, a share of its width, growing toward the tip.", "default": 0.0, "min": 0.0, "max": 1.0 },
+    "waves":     { "doc": "How many waves along it.", "default": 1.5, "min": 0.5, "max": 5.0 },
+    "flare":     { "doc": "How much wider its root flares into what it sits on, a share of its width.", "default": 0.35, "min": 0.0, "max": 1.5 },
+    "cup":       { "doc": "How far its sides curl toward its top, so it curves round what it lies on.", "default": 0.0, "min": -0.6, "max": 0.6 },
+    "strands":   { "doc": "How many strand lines are inked along its top face.", "default": 2, "values": [0, 1, 2, 3, 4] },
+    "rootSoft":  { "doc": "The share of its length from the root over which its outline and strands fade in, so its root reads soft.", "default": 0.3, "min": 0.0, "max": 0.8 },
+    "tipShade":  { "doc": "The share of its length from the tip its tip area covers.", "default": 0.3, "min": 0.02, "max": 1.0 }
+  },
+  "presets": {
+    "lock":   { "width": 0.3, "thickness": 0.09, "taper": 0.4, "swell": 0.15, "tipRound": 0.0, "points": 1, "wave": 0.0 },
+    "spike":  { "width": 0.24, "thickness": 0.1, "taper": 0.15, "swell": 0.05, "tipRound": 0.0, "points": 1, "wave": 0.0 },
+    "soft":   { "width": 0.34, "thickness": 0.12, "taper": 0.55, "swell": 0.2, "tipRound": 0.6, "points": 1, "wave": 0.0 },
+    "fluff":  { "width": 0.42, "thickness": 0.14, "taper": 0.8, "swell": 0.15, "tipRound": 0.8, "points": 3, "notch": 0.12, "wave": 0.0 },
+    "wavy":   { "width": 0.3, "thickness": 0.09, "taper": 0.45, "swell": 0.15, "tipRound": 0.2, "points": 1, "wave": 0.3, "waves": 1.5 },
+    "strand": { "width": 0.12, "thickness": 0.06, "taper": 0.25, "swell": 0.05, "tipRound": 0.0, "points": 1, "wave": 0.0 },
+    "fine":   { "width": 0.22, "thickness": 0.14, "taper": 0.12, "swell": 0.08, "tipRound": 0.0, "points": 1, "wave": 0.0, "flare": 0.6, "rootSoft": 0.35 }
+  },
+  "join": { "blend": 0.3, "ink": false },
+  "blocks": [
+    { "kind": "tube", "u": [0.0, 1.0], "radius": "$width", "taper": "$taper",
+      "clump": { "width": "$width", "thickness": "$thickness", "taper": "$taper", "swell": "$swell", "tipRound": "$tipRound", "tipReach": "$tipReach",
+                 "points": "$points", "notch": "$notch", "twist": "$twist", "wave": "$wave", "waves": "$waves", "flare": "$flare", "cup": "$cup",
+                 "strands": "$strands", "rootSoft": "$rootSoft", "tipShade": "$tipShade" } },
+    { "kind": "cap", "end": "end", "shape": "pointed" },
+    { "kind": "joint", "name": "root", "u": 0.0, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint", "name": "sway", "u": 0.4, "hinge": "x", "limits": [-30, 30] },
+    { "kind": "joint", "name": "tip", "u": 0.75, "hinge": "x", "limits": [-30, 30] }
+  ]
+}

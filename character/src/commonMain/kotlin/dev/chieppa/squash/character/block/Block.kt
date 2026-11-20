@@ -72,6 +72,12 @@ sealed interface Block {
     /** The shape this block closes [end] with, if it closes it. */
     fun capShape(end: End): CapShape? = null
 
+    /** How the clump of hair this block builds inks at [values], or null where it builds none. */
+    fun clumpInk(values: Map<String, Float>): ClumpInk? = null
+
+    /** The hair volume and its band of shine this block builds at [values], [length] its axis long, or null where it builds none. */
+    fun hairShine(values: Map<String, Float>, length: Float): HairShine? = null
+
     /** Whether the run this block builds is a sheet: open in v, its two faces meeting at an edge. */
     fun isSheet(): Boolean = false
 }

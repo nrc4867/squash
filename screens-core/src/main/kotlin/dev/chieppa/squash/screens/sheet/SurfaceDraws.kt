@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.geom.SlottedCut
 import dev.chieppa.squash.geom.PatchCut
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
@@ -66,15 +67,17 @@ fun coloredPartDraw(
     copies: PartCopies? = null,
 ): MeshDraw {
     val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, palette.shadowOf(color?.baseSlot), shading, side, toCamera)
-    val layers = color?.layers.orEmpty().mapNotNull { layer ->
+    fun drawn(cuts: List<SlottedCut<SlotName>>) = cuts.mapNotNull { layer ->
         palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
     }
+    val layers = drawn(color?.layers.orEmpty())
+    val copyLayers = color?.copies?.map(::drawn)
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
-    val instances = copies?.places?.map { place ->
+    val instances = copies?.places?.mapIndexed { i, place ->
         val shade = place.slot?.let { slot ->
             palette.colorOf(slot)?.let { rule.tones(it, palette.shadowOf(slot), shading, side, toCamera) }?.let { PartMaterial(it.lit, it.shadow, fallback.ink, shading.mode, shading.toLight) }
         }
-        MeshInstance(copyModel(place), shade)
+        MeshInstance(copyModel(place), shade, copyLayers?.getOrNull(i))
     }.orEmpty()
     return MeshDraw(mesh, material, model, outlinePixels, opacity = color?.baseSlot?.let(palette::opacity) ?: 1f, layers = layers, instances = instances)
 }

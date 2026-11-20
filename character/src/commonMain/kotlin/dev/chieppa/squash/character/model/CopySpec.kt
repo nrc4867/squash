@@ -11,7 +11,8 @@ data class SurfacePlace(val u: Float, val v: Float)
  * with a [pitch] as many as fit, over [area] or along [path] on the socket's part. [seed] picks the same places and jitter every time.
  * Each copy starts at [size] times the part's own size, falling to [falloff] of that toward an area's edges over its outer [edge]
  * share, then varies by [sizeJitter] either way; it leans [leanJitter] degrees at most from the surface's normal, tilted [tilt] degrees
- * toward the part's end, and turns [turnJitter] degrees at most either way about itself. Over an area no two copies stand nearer than
+ * toward the part's end, then [droop] degrees toward the body's down along the surface with its up turned to the surface's normal, as
+ * hair lying over the head, and turns [turnJitter] degrees at most either way about itself. Over an area no two copies stand nearer than
  * [spacing], in body units. Along a path each copy rolls [roll] degrees more than the one before it, every other one turned, and with
  * [sag] the path droops that far at its middle, in body units, as a chain hangs between two anchors, lying on the part where it meets it.
  * A copy sinks [sink] times the part's own depth into the surface, or stands [outset] off it. With [patch] the area or path lies on that
@@ -30,6 +31,7 @@ data class CopySpec(
     val sizeJitter: Float = 0f,
     val leanJitter: Float = 0f,
     val turnJitter: Float = 0f,
+    val droop: Float = 0f,
     val tilt: Float = 0f,
     val sink: Float = 1f,
     val outset: Float = 0f,

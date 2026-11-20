@@ -99,6 +99,9 @@ object HandSockets {
     /** The most degrees a copy leans from the surface's normal. */
     fun leanJitter(id: Int) = "${name(id)}.leanJitter"
 
+    /** The degrees each copy tilts from the surface's normal toward the body's down along the surface, so hair lies down over what it grows from. */
+    fun droop(id: Int) = "${name(id)}.droop"
+
     /** The most degrees a copy turns about itself either way. */
     fun turnJitter(id: Int) = "${name(id)}.turnJitter"
 
@@ -192,6 +195,7 @@ object HandSockets {
             sizeJitter = params[sizeJitter(id)] ?: 0f,
             leanJitter = params[leanJitter(id)] ?: 0f,
             turnJitter = params[turnJitter(id)] ?: 0f,
+            droop = params[droop(id)] ?: 0f,
             tilt = params[outward(id)] ?: 0f,
             sink = params[sink(id)] ?: 1f,
             outset = params[outset(id)] ?: 0f,
@@ -208,13 +212,13 @@ object HandSockets {
      */
     fun addSpread(
         part: PartId, id: Int, u: Float, to: Float, v: Float, toV: Float, count: Int, seed: Int,
-        spacing: Float = 0f, sizeJitter: Float = 0f, leanJitter: Float = 0f, turnJitter: Float = 0f, outward: Float = 0f,
+        spacing: Float = 0f, sizeJitter: Float = 0f, leanJitter: Float = 0f, turnJitter: Float = 0f, outward: Float = 0f, droop: Float = 0f,
     ): AddParameters = AddParameters(
         part,
         add(part, id, u, v, outward, false).values + mapOf(
             spread(id) to count.toFloat(), to(id) to to, toV(id) to toV, seed(id) to seed.toFloat(),
             spacing(id) to spacing.takeIf { it > 0f }, sizeJitter(id) to sizeJitter.takeIf { it > 0f },
-            leanJitter(id) to leanJitter.takeIf { it > 0f }, turnJitter(id) to turnJitter.takeIf { it > 0f },
+            leanJitter(id) to leanJitter.takeIf { it > 0f }, turnJitter(id) to turnJitter.takeIf { it > 0f }, droop(id) to droop.takeIf { it != 0f },
         ),
     )
 
@@ -260,7 +264,7 @@ object HandSockets {
     /** Every parameter socket [id] may hold. */
     fun keysOf(id: Int): List<String> = listOf(
         u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id), spread(id), repeat(id),
-        seed(id), spacing(id), edge(id), sizeJitter(id), leanJitter(id), turnJitter(id), pitch(id), roll(id), sag(id),
+        seed(id), spacing(id), edge(id), sizeJitter(id), leanJitter(id), turnJitter(id), droop(id), pitch(id), roll(id), sag(id),
     ) + (0 until MAX_VIA).flatMap { listOf(viaU(id, it), viaV(id, it)) }
 }
 

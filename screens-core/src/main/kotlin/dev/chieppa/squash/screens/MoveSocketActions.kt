@@ -36,7 +36,7 @@ fun AppState.addSocket(parent: PlacedPart, u: Float, v: Float, onRight: Boolean,
         if (move.layout.value == SocketLayout.SPREAD) {
             HandSockets.addSpread(
                 id, number, knob(CopyKnob.FROM_U), knob(CopyKnob.TO_U), knob(CopyKnob.FROM_V), knob(CopyKnob.TO_V), knob(CopyKnob.SPREAD_COUNT).roundToInt(),
-                knob(CopyKnob.SEED).roundToInt(), knob(CopyKnob.SPACING), knob(CopyKnob.SIZE_JITTER), knob(CopyKnob.LEAN_JITTER), knob(CopyKnob.TURN_JITTER), move.outward.value,
+                knob(CopyKnob.SEED).roundToInt(), knob(CopyKnob.SPACING), knob(CopyKnob.SIZE_JITTER), knob(CopyKnob.LEAN_JITTER), knob(CopyKnob.TURN_JITTER), move.outward.value, knob(CopyKnob.DROOP),
             )
         } else if (move.layout.value == SocketLayout.PATH) {
             HandSockets.addPath(id, number, u, v, if (u < MIDDLE) ROW_FAR_END else ROW_NEAR_END, v, knob(CopyKnob.PATH_COUNT).roundToInt(), knob(CopyKnob.ROLL), knob(CopyKnob.SAG))

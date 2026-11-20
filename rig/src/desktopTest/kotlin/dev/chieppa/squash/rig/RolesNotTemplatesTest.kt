@@ -46,7 +46,7 @@ class RolesNotTemplatesTest {
         val folder = renamedFolder()
         val document = readDocument(rename(Json.parseToJsonElement(Path.of(System.getProperty("squash.examples"), "fennec.json").readText()), Spot.DOCUMENT).toString())
         val notOnTheFennec = setOf("wing-feathered", "tube", "blob", "sheet", "torso-upright", "head-round", "arm", "hand", "foot") +
-            setOf("fin", "torso-bird", "head-bird", "beak-lower", "beak", "leg-bird", "foot-bird", "tail-feathers", "tail-curve", "wing-membrane", "spike", "plate", "horn", "antler", "claw", "hair", "hair-cap", "ring")
+            setOf("fin", "torso-bird", "head-bird", "beak-lower", "beak", "leg-bird", "foot-bird", "tail-feathers", "tail-curve", "wing-membrane", "spike", "plate", "horn", "antler", "claw", "hair", "hair-cap", "hair-clump", "hair-tuft", "hair-volume", "ring")
         assertEquals((renamed - notOnTheFennec).values.toSet(), document.character.parts.map { it.template.id.value }.toSet())
         val rig = rigOf(document, TemplateLibrary(folder.parts, folder.plans))
         val shipped = fennec.rig

@@ -51,3 +51,17 @@ internal fun smooth(t: Float): Float {
     val x = t.coerceIn(0f, 1f)
     return x * x * (3f - 2f * x)
 }
+
+/** How near square to the surface the body's down must lie for it to say which way along the surface is down. */
+private const val FLAT_DOWN = 1e-3f
+
+/**
+ * [out], a surface's outward direction, tilted [radians] toward the body's down along the surface there, or toward the way [runs] where
+ * down meets the surface square.
+ */
+internal fun drooped(out: Vec3, runs: Vec3, radians: Float): Vec3 {
+    val down = Vec3(0f, -1f, 0f)
+    val along = down - out * (down dot out)
+    val toward = if (along.length > FLAT_DOWN) along.normalized() else squareTo(out, runs)
+    return (out * kotlin.math.cos(radians) + toward * kotlin.math.sin(radians)).normalized()
+}

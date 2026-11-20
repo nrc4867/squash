@@ -93,6 +93,12 @@ internal object TemplateCatalog {
             appendLine()
             append(table(listOf("parameter", "default", "range", "meaning"), template.params.map { (name, spec) -> paramRow(name, spec) }))
         }
+        if (template.presets.isNotEmpty()) {
+            appendLine()
+            appendLine("Presets, a part's `preset` (its own `params` override them):")
+            appendLine()
+            append(table(listOf("preset", "sets"), template.presets.map { (name, values) -> listOf(code(name), values.entries.joinToString { (key, value) -> "${code(key)} ${num(value)}" }) }))
+        }
     }
 
     private fun facts(template: PartTemplate, frame: PartFrame): List<Pair<String, String>> {
