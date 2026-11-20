@@ -44,21 +44,6 @@ class RunScales(patch: Patch) {
     /** The mean girth of the run's rings. */
     val meanGirth: Float get() = girths.average().toFloat()
 
-    /** How far along the run's rings' middles [u] lies from u 0, in body units, running on straight past its first and last ring. */
-    fun lengthTo(u: Float): Float {
-        val n = us.size
-        if (u <= us[0]) return (u - us[0]) * alongs[0] + startLength
-        var total = startLength
-        for (ring in 0 until n - 1) {
-            val to = us[ring + 1]
-            if (u <= to) return total + (u - us[ring]) * alongs[ring]
-            total += (to - us[ring]) * alongs[ring]
-        }
-        return total + (u - us[n - 1]) * alongs[n - 1]
-    }
-
-    private val startLength: Float get() = us[0] * alongs[0]
-
     private fun at(values: FloatArray, u: Float): Float {
         val n = us.size
         if (u <= us[0]) return values[0]

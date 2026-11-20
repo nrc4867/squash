@@ -683,10 +683,21 @@
           }
         },
         "creases": {
-          "description": "Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. Off when left out.",
+          "description": "Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off.",
           "anyOf": [
             {
               "$ref": "#/$defs/RecipeCreases"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shading": {
+          "description": "How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeShading"
             },
             {
               "type": "null"
@@ -1181,13 +1192,13 @@
           "maximum": 2.0
         },
         "wrinkles": {
-          "description": "How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; a looser fit wrinkles more.",
+          "description": "How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; tight cloth wrinkles a little less than loose.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 2.0
         },
         "drape": {
-          "description": "How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more.",
+          "description": "How strongly it gathers in short folds just above its hems and cuffs, 0 to 2, times the character's cloth creases.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 2.0
@@ -2452,6 +2463,40 @@
         "id",
         "slot"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeShading": {
+      "description": "How the character is shaded.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "description": "flat, one colour a part; or twoTone, a lit and a shadow colour with a hard edge. Renders are always two-tone.",
+          "enum": [
+            "flat",
+            "twoTone"
+          ]
+        },
+        "farSideDarker": {
+          "description": "Whether the side of a pair away from the camera darkens.",
+          "type": "boolean"
+        },
+        "farSide": {
+          "description": "How much darker the far side is, as a share of its colour, 0 to 0.5: raise it where the sheet sets far legs and the far ear clearly darker.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.5
+        },
+        "light": {
+          "description": "view: the light turns with the camera, from in front of the viewer, above and to their left, so a back view is lit as the front is; body: fixed in front of the character, so a back view falls in shade.",
+          "enum": [
+            "view",
+            "body"
+          ]
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },

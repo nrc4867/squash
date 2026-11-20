@@ -4,6 +4,8 @@ import dev.chieppa.squash.document.ClothNet
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.NetPattern
 import dev.chieppa.squash.document.Palette
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.surface.HELD
 import kotlin.math.PI
 import kotlin.math.abs
@@ -21,18 +23,17 @@ private const val SQUARE_TURN = 90f
 /** A set of threads slanting less than this from round its part, as a cosine, crosses the part's v seam at least once. */
 private const val LEAST_ROUND_SHARE = 0.05f
 
-/** Over what share of a vertex held by a run the run's chart goes from untrusted to trusted. */
-private const val HELD_UNTRUSTED = 0.05f
-private const val HELD_TRUSTED = 0.3f
-
 /** Over what rate, threads crossed for each spacing walked across the surface, a net spread or squeezed by its run goes untrusted. */
 private const val STRETCHED_FROM = 0.45f
 private const val STRETCHED_TO = 0.65f
 private const val SQUEEZED_FROM = 1.6f
 private const val SQUEEZED_TO = 2.3f
 
-/** How much a run's share of a vertex counts toward laying the net on it, beside how well its coordinates hold the net there. */
-private const val SHARE_TIE = 0.25f
+/** How far a run must hold the net at a vertex to be laid on it before a run that holds it better but lies further from the root. */
+private const val SURE = 0.8f
+
+/** The most sockets a part's depth is counted through. */
+private const val MOST_DEPTH = 32
 
 /** Over what share of the net's spacing the threads squeezed together round a narrowing run go from untrusted to trusted, as near a pole. */
 private const val SQUEEZED_UNTRUSTED = 0.35f
@@ -57,11 +58,12 @@ fun seeThroughOf(garment: Garment, palette: Palette): List<AreaSeeThrough?> {
 /**
  * A see-through garment's cloth at each vertex of its surface's drawn mesh, as the renderer reads it (HLD: look, See-through cloth): the
  * [area] holding it most, -1 where none does; its [opacity] facing the viewer, 1 where whole; [net], 1 where it is knitted as a net and 0
- * where plain, read on the run of the body that holds it most; and the net's threads laid on the body under it, on whichever run
- * holding the vertex holds the net best, its coordinates trusted most and then the run holding it most, [part] that run's index:
- * [along] is its distance along the run from u 0 in the net's hole spacing, [roundCos] and [roundSin] where round the run it lies, as
- * the angle 2 pi v. Each set of threads crosses the run at a fixed slant, so the net's value along a set is v times its count
- * round ([countA], [countB]), a whole number so the threads meet themselves across the v seam, less [along] times the sine of its slant
+ * where plain, read on the run of the body that holds it most; and the net's threads laid on the body under it, by the axis of a run
+ * holding the vertex or of its part's parent ([RunAxis]), the one that holds the net best there, a parent's first so a leg's net runs on
+ * over the ankle, [part] that run's index: [along] is its distance along the run's axis in the net's hole spacing, [roundCos] and
+ * [roundSin] where round the axis it lies, as the angle 2 pi times its turn round it, a share of a whole turn as v is.
+ * Each set of threads crosses the run at a fixed slant, so the net's value along a set is the turn times its count round ([countA],
+ * [countB]), a whole number so the threads meet themselves all the way round, less [along] times the sine of its slant
  * ([slopeA], [slopeB]): the threads lie at its whole numbers, [thread] wide as a share of the spacing. [trust], 0 to 1, is how well the
  * run's coordinates hold the net there: low where the run holds little of the surface, as in a join's blend, and where it narrows to a
  * pole and squeezes its threads together; the renderer shows the net's mean tone where it is low. [hole] is the net's spacing.
@@ -105,7 +107,7 @@ class SeeThroughCloth(
 
         fun read(): SeeThroughCloth {
             for (v in 0 until corners) corner(v)
-            if (firstNet != null) spacings()
+            if (firstNet != null) choose()
             middles()
             return out
         }
@@ -135,60 +137,78 @@ class SeeThroughCloth(
             }
             out.slopeA[v] = sin(slantA * DEGREES)
             out.slopeB[v] = sin(slantB * DEGREES)
-            var best = -1f
-            for (k in 0 until HELD) {
-                val held = mesh.held[v * HELD + k]
-                if (held < 0) continue
-                val at = mesh.heldU[v * HELD + k]
-                val scales = surface.chart.scales(held)
-                val countA = countRound(scales.meanGirth, slantA, net.hole)
-                val countB = countRound(scales.meanGirth, slantB, net.hole)
-                val squeezed = minOf(spacingShare(scales.around(at), slantA, countA, net.hole), spacingShare(scales.around(at), slantB, countB, net.hole))
-                val share = mesh.heldShares[v * HELD + k]
-                val trust = smoothstep(SQUEEZED_UNTRUSTED, SQUEEZED_TRUSTED, squeezed) * smoothstep(HELD_UNTRUSTED, HELD_TRUSTED, share)
-                val score = trust + share * SHARE_TIE
-                if (score <= best) continue
-                best = score
-                val turn = mesh.heldV[v * HELD + k]
-                out.part[v] = held.toFloat()
-                out.roundCos[v] = cos(2f * PI.toFloat() * turn)
-                out.roundSin[v] = sin(2f * PI.toFloat() * turn)
-                out.along[v] = scales.lengthTo(at) / net.hole
-                out.countA[v] = countA
-                out.countB[v] = countB
-                out.trust[v] = trust
-            }
+            val chosen = candidates(v).map { run -> Laid(run, axisOf(run).place(position(v)), slantA, slantB, net) }
+            laid[v] = chosen
+        }
+
+        /** A vertex's net laid on [run]: where it lies by the run's axis, the sets' counts round the run, and how far the run's girth holds them. */
+        private inner class Laid(val run: Int, val place: AxisPlace, slantA: Float, slantB: Float, val net: ClothNet) {
+            private val scales = surface.chart.scales(run)
+            val slopeA = sin(slantA * DEGREES)
+            val slopeB = sin(slantB * DEGREES)
+            val countA = countRound(scales.meanGirth, slantA, net.hole)
+            val countB = countRound(scales.meanGirth, slantB, net.hole)
+            val squeezed = smoothstep(SQUEEZED_UNTRUSTED, SQUEEZED_TRUSTED, minOf(spacingShare(scales.around(place.u), slantA, countA, net.hole), spacingShare(scales.around(place.u), slantB, countB, net.hole)))
+            var trust = 0f
+        }
+
+        private val laid = arrayOfNulls<List<Laid>>(corners)
+        private val axes = HashMap<Int, RunAxis>()
+        private val firstRuns: Map<PartId, Int> = runs.indices.filter { runs[it].first }.associateBy { runs[it].partId }
+
+        private fun axisOf(run: Int): RunAxis = axes.getOrPut(run) { RunAxis(runs[run]) }
+
+        private fun position(v: Int) = Vec3(mesh.positions[v * 3], mesh.positions[v * 3 + 1], mesh.positions[v * 3 + 2])
+
+        /** The runs a vertex's net may be laid on: those holding it, then the run of each one's parent part, each once. */
+        private fun candidates(v: Int): List<Int> {
+            val held = (0 until HELD).map { mesh.held[v * HELD + it] }.filter { it >= 0 }
+            val parents = held.mapNotNull { runs[it].part.socket?.parent?.let(firstRuns::get) }
+            return (held + parents).distinct()
         }
 
         /**
-         * Each vertex's trust held down further where the net's threads, laid on its run, lie far from their spacing apart on the surface
-         * at rest, as where a run's coordinates stretch over a join's blend, read along the mesh's sides to its neighbours on the same run,
-         * then eased once over its neighbours so the fade has no speckle.
+         * For each vertex, how far each run it may be laid on holds the net there: the run's girth not squeezing the threads, and the
+         * threads lying near their spacing apart on the surface at rest, read along the mesh's sides to the neighbours laid on the same run;
+         * then the net laid on the run trusted most, a parent's before a run of its own that holds it as well, and the trust eased once over
+         * the vertex's neighbours so the fade has no speckle.
          */
-        private fun spacings() {
+        private fun choose() {
             val links = surface.chart.links
             val starts = surface.chart.linkStart
             val positions = mesh.positions
-            val held = FloatArray(corners) { v -> out.trust[v] }
             for (v in 0 until corners) {
-                var mostA = 0f
-                var mostB = 0f
-                for (j in starts[v] until starts[v + 1]) {
-                    val n = links[j]
-                    if (out.part[n] != out.part[v]) continue
-                    val dx = positions[n * 3] - positions[v * 3]
-                    val dy = positions[n * 3 + 1] - positions[v * 3 + 1]
-                    val dz = positions[n * 3 + 2] - positions[v * 3 + 2]
-                    val length = sqrt(dx * dx + dy * dy + dz * dz)
-                    if (length <= 0f) continue
-                    var turn = (atan2(out.roundSin[n], out.roundCos[n]) - atan2(out.roundSin[v], out.roundCos[v])) / (2f * PI.toFloat())
-                    turn -= round(turn)
-                    val along = out.along[n] - out.along[v]
-                    mostA = maxOf(mostA, abs(turn * out.countA[v] - along * out.slopeA[v]) / length)
-                    mostB = maxOf(mostB, abs(turn * out.countB[v] - along * out.slopeB[v]) / length)
+                val here = laid[v] ?: continue
+                for (each in here) {
+                    var mostA = 0f
+                    var mostB = 0f
+                    for (j in starts[v] until starts[v + 1]) {
+                        val n = links[j]
+                        val there = laid[n]?.firstOrNull { it.run == each.run } ?: continue
+                        val dx = positions[n * 3] - positions[v * 3]
+                        val dy = positions[n * 3 + 1] - positions[v * 3 + 1]
+                        val dz = positions[n * 3 + 2] - positions[v * 3 + 2]
+                        val length = sqrt(dx * dx + dy * dy + dz * dz)
+                        if (length <= 0f) continue
+                        var turn = there.place.turn - each.place.turn
+                        turn -= round(turn)
+                        val along = (there.place.along - each.place.along) / each.net.hole
+                        mostA = maxOf(mostA, abs(turn * each.countA - along * each.slopeA) / length)
+                        mostB = maxOf(mostB, abs(turn * each.countB - along * each.slopeB) / length)
+                    }
+                    each.trust = each.squeezed * minOf(spacingHeld(mostA * each.net.hole), spacingHeld(mostB * each.net.hole))
                 }
-                held[v] *= minOf(spacingHeld(mostA * out.hole[v]), spacingHeld(mostB * out.hole[v]))
+                val parentFirst = here.sortedWith(compareByDescending<Laid> { it.trust >= SURE }.thenByDescending { if (it.trust >= SURE) depth(it.run) else 0 }.thenByDescending { it.trust })
+                val pick = parentFirst.first()
+                out.part[v] = pick.run.toFloat()
+                out.roundCos[v] = cos(2f * PI.toFloat() * pick.place.turn)
+                out.roundSin[v] = sin(2f * PI.toFloat() * pick.place.turn)
+                out.along[v] = pick.place.along / pick.net.hole
+                out.countA[v] = pick.countA
+                out.countB[v] = pick.countB
+                out.trust[v] = pick.trust
             }
+            val held = out.trust.copyOf(corners)
             for (v in 0 until corners) {
                 var sum = held[v]
                 var n = 1
@@ -198,6 +218,17 @@ class SeeThroughCloth(
                 }
                 out.trust[v] = sum / n
             }
+        }
+
+        /** How near the root a run's part lies: higher for a part fewer sockets from it, so a parent's net runs on before its child's. */
+        private fun depth(run: Int): Int {
+            var steps = 0
+            var part = runs[run].part.socket?.parent
+            while (part != null && steps < MOST_DEPTH) {
+                steps++
+                part = firstRuns[part]?.let { runs[it].part.socket?.parent }
+            }
+            return -steps
         }
 
         /** The run holding vertex [v] most, or null where none does. */

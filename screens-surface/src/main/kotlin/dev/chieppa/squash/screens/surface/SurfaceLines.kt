@@ -86,7 +86,7 @@ class SurfaceLines(
         val parts = lines.parts.values.map { if (it.part.id in inSurface) it.withoutRuns() else it }
         addAll(surface.figureContour(parts, view, look.lines, ink, figureRadius))
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
-        addAll(surface.inks(view, look, ink))
+        addAll(surface.inks(view, look, ink, palette))
         addAll(surface.garmentMarkDraws(look, palette, ink, taper))
         work.parts.forEach { (id, held) ->
             addAll(interiorInk(id, held, DepthLayer.SCENE, view))

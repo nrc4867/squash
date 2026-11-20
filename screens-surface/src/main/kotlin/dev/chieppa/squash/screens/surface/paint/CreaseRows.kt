@@ -24,7 +24,7 @@ private const val PERCENT = 100f
 
 /**
  * Skin creases: how strongly the body creases at its bending joints; and Cloth creases: how strongly every garment creases, wrinkles and
- * hangs in folds, times its own strengths in Dress. Each 0, off, to twice its default, one undo step a drag.
+ * gathers above its hems, times its own strengths in Dress. Each 0, off, to twice its default, one undo step a drag.
  */
 @Composable
 internal fun CreaseRows(state: AppState) {

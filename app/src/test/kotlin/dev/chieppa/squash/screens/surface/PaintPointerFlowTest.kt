@@ -32,6 +32,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.BrushStroke
 import dev.chieppa.squash.document.BrushStrokeId
+import dev.chieppa.squash.document.CharacterCreases
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetBrushStroke
 import dev.chieppa.squash.document.SetPaletteSlot
@@ -79,6 +80,10 @@ private const val PANES_WIDTH = 1000
 private const val PANES_HEIGHT = 800
 private const val DRAWER_WIDTH = 300
 private const val MANY_SLOTS = 30
+
+/** Where a click on a slider lands, as shares of its width and height: a quarter along, below a crease strength's default. */
+private const val QUARTER = 0.25f
+private const val HALF = 0.5f
 
 /** The pixels between looks up the free pane for a part. */
 private const val SCAN_STEP = 6
@@ -304,13 +309,15 @@ class PaintPointerFlowTest {
         waitForIdle()
         assertEquals(true, session.document.value.character.shading.farSideDarker, "each is one step")
 
-        onNodeWithTag(PaintTags.SKIN_CREASES).performScrollTo().performMouseInput { click(center) }
+        val creases = session.document.value.character.creases
+        assertEquals(CharacterCreases(), creases, "creases are on by default")
+        onNodeWithTag(PaintTags.SKIN_CREASES).performScrollTo().performMouseInput { click(percentOffset(QUARTER, HALF)) }
         waitForIdle()
-        assertTrue(session.document.value.character.creases.skin > 0f, "the skin creases slider turns creases on")
-        assertEquals(0f, session.document.value.character.creases.cloth, "and leaves the cloth's alone")
+        assertTrue(session.document.value.character.creases.skin < creases.skin, "the skin creases slider weakens the skin's creases")
+        assertEquals(creases.cloth, session.document.value.character.creases.cloth, "and leaves the cloth's alone")
         runOnIdle { state.undo() }
         waitForIdle()
-        assertEquals(0f, session.document.value.character.creases.skin, "as one step")
+        assertEquals(creases.skin, session.document.value.character.creases.skin, "as one step")
     }
 
     @Test

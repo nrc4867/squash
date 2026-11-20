@@ -24,8 +24,8 @@ import kotlin.math.roundToInt
 private const val PERCENT = 100f
 
 /**
- * Creases, Wrinkles and Drape: how strongly the garment creases at the joints it covers, wrinkles where a pose bunches it and hangs in
- * folds, each 0 to twice its default, times the character's cloth creases.
+ * Creases, Wrinkles and Drape: how strongly the garment creases at the joints it covers, wrinkles where a pose bunches it and gathers
+ * in short folds above its hems, each 0 to twice its default, times the character's cloth creases.
  */
 @Composable
 internal fun ClothCreaseRows(session: CharacterSession, garment: Garment) {

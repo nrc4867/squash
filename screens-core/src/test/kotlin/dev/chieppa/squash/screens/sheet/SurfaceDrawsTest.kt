@@ -8,6 +8,8 @@ import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.CharacterShading
+import dev.chieppa.squash.document.ShadingLight
+import dev.chieppa.squash.render.LightFrame
 import dev.chieppa.squash.document.SetSlotShadow
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.document.SquashDocument
@@ -92,6 +94,10 @@ class SurfaceDrawsTest {
         assertEquals(false, shading.farSide.enabled)
         assertEquals(Shading.FLAT, CharacterShading().objectShading().mode)
         assertEquals(true, CharacterShading().objectShading().farSide.enabled)
+        val deeper = CharacterShading(farSide = 0.4f, light = ShadingLight.BODY).objectShading()
+        assertEquals(0.6f, deeper.farSide.share, 1e-6f)
+        assertEquals(LightFrame.BODY, deeper.light)
+        assertEquals(LightFrame.VIEW, CharacterShading().objectShading().light)
     }
 
     @Test

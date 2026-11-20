@@ -65,12 +65,14 @@ fun hangingHems(garments: List<SurfaceGarment>): List<ContourRun> = garments.fil
 private const val CREASE_SHORTEST_CELLS = 2.5f
 
 /**
- * The ink of [creases]' lines where they face [view]: the body's at the crease ink's weight and each garment's at its own ink weight from
- * [inkWeights], each line at its own weight along it, so it tapers where its crease fades; a [seeThrough] garment's over its cloth.
+ * The ink of [creases]' lines where they face [view]: the body's in [color] at the crease ink's weight and each garment's in its own
+ * color from [colors], [color] where it has none, at its own ink weight from [inkWeights], each line at its own weight along it, so it
+ * tapers where its crease fades; a [seeThrough] garment's over its cloth.
  */
 fun creaseInkDraws(
     creases: PosedCreases,
     inkWeights: Map<GarmentId, Float>,
+    colors: Map<GarmentId, Color>,
     view: SurfaceView,
     rule: LineRule,
     color: Color,
@@ -78,8 +80,9 @@ fun creaseInkDraws(
     seeThrough: Set<GarmentId> = emptySet(),
 ): List<RibbonDraw> =
     creases.body?.lines.orEmpty().let { weightedCurveDraws(it, view, rule, color, cell, 1f) } +
-        creases.garments.flatMap { (id, marks) ->
-            weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[id] ?: 1f).let { if (id in seeThrough) it.map(RibbonDraw::overSeeThroughCloth) else it }
+        creases.garments.flatMap { (piece, marks) ->
+            weightedCurveDraws(marks.lines, view, rule, colors[piece.garment] ?: color, cell, inkWeights[piece.garment] ?: 1f)
+                .let { if (piece.garment in seeThrough) it.map(RibbonDraw::overSeeThroughCloth) else it }
         }
 
 private fun weightedCurveDraws(lines: List<CreaseLine>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, scale: Float): List<RibbonDraw> =

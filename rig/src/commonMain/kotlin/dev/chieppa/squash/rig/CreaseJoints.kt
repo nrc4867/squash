@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.acos
@@ -43,14 +44,18 @@ private const val RADIUS_BAND_CELLS = 1.5f
 /** The least weight a vertex gives a joint's bones together to count toward its radius. */
 private const val RADIUS_INFLUENCE = 0.5f
 
-/** The front of the body, which a neck creases toward at rest. */
+/** The front of the body, which a neck creases toward at rest; a seat creases at rest away from it. */
 private val FRONT = Vec3.X
+
+/** How far down a leg must point, and its parent part up, as the cosine off straight down or up, for its base to crease at the seat at rest. */
+private const val UPRIGHT = 0.6f
 
 /**
  * A joint that creases: its [bone] in the rig, the bone whose turn carries its parent side, [parent], and the nearest bone with a span
  * before it, [carrier]; its [pivot], its bone's rest [direction], and the rest direction a bend is measured against, [reference]: its
  * parent's where the joint rests bent, as an ankle does, else its own. [radius] is how thick the body is across it, [inner] the side it
- * closes on at rest, square to its rest plane, null where it rests with no side, and [strength] its role's crease strength.
+ * closes on at rest, square to its rest plane, null where it rests with no side, [strength] its role's crease strength, and [cell] the
+ * body's mesh cell there, so its crease is never narrower than the mesh can draw.
  */
 class CreaseJoint(
     val bone: Int,
@@ -62,17 +67,18 @@ class CreaseJoint(
     val radius: Float,
     val inner: Vec3?,
     val strength: Float,
+    val cell: Float = 0f,
 ) {
     /** The normal of the plane through the pivot that splits the joint's rest angle evenly. */
     val restPlane: Vec3 get() = (reference + direction).unitOr(direction)
 }
 
 /**
- * The joints of [rig] that crease, read on the body's rest corners at [positions] weighed by [skin], meshed at [cell]: every joint of a
- * part whose role creases ([CREASE_ROLE_STRENGTH]) with a bone of its own past it, a hand's, a foot's and a head's only where they sit
- * on their parent part, and no digit's or jaw's. See HLD: look, Creases and wrinkles.
+ * The joints of [rig] that crease, read on the body's rest corners at [positions] weighed by [skin], meshed at [cell], of them only those
+ * [creasable] keeps, or all with none: every joint of a part whose role creases ([CREASE_ROLE_STRENGTH]) with a bone of its own past it,
+ * a hand's, a foot's and a head's only where they sit on their parent part, and no digit's or jaw's. See HLD: look, Creases and wrinkles.
  */
-fun creaseJoints(rig: Rig, positions: FloatArray, skin: SurfaceSkin, cell: Float): List<CreaseJoint> {
+fun creaseJoints(rig: Rig, positions: FloatArray, skin: SurfaceSkin, cell: Float, creasable: BooleanArray? = null): List<CreaseJoint> {
     val roles = rig.parts.associate { it.id to it.role }
     return rig.bones.indices.mapNotNull { i ->
         val bone = rig.bones[i]
@@ -88,15 +94,29 @@ fun creaseJoints(rig: Rig, positions: FloatArray, skin: SurfaceSkin, cell: Float
         val restBend = parentDirection?.let { degreesBetween(it, direction) } ?: 0f
         val reference = if (parentDirection != null && restBend < MOST_REST_BEND) parentDirection else direction
         val plane = (reference + direction).unitOr(direction)
-        val radius = radiusAt(positions, skin, intArrayOf(i, parent, carrier), bone.pivot, plane, cell * RADIUS_BAND_CELLS, bone.length + rig.bones[carrier].length)
+        val radius = radiusAt(positions, skin, intArrayOf(i, parent, carrier), bone.pivot, plane, cell * RADIUS_BAND_CELLS, bone.length + rig.bones[carrier].length, creasable)
             ?: return@mapNotNull null
         if (bone.length < radius * SHORTEST_SPAN) return@mapNotNull null
         val inner = when {
             role in BENT_AT_REST && restBend in LEAST_REST_BEND..MOST_REST_BEND -> square(direction - reference, plane)
+            isSeat(rig, role, i, parent, direction, roles) -> square(FRONT * -1f, plane)
             else -> oneWayInner(bone, direction, plane) ?: if (role == Role.NECK) square(FRONT, plane) else null
         }
-        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength)
+        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength, cell)
     }
+}
+
+/**
+ * Whether bone [i] is the base of a leg hanging straight down from an upright body or spine, a standing figure's hip: it creases at rest
+ * behind, under the seat.
+ */
+private fun isSeat(rig: Rig, role: Role, i: Int, parent: Int, direction: Vec3, roles: Map<PartId, Role?>): Boolean {
+    if (role != Role.LEG || rig.bones[parent].name.part == rig.bones[i].name.part) return false
+    if (direction.y > -UPRIGHT) return false
+    val parentPart = rig.bones[parent].name.part
+    if (roles[parentPart] != Role.BODY && roles[parentPart] != Role.SPINE) return false
+    val up = rig.bones[carrierOf(rig, parent)].direction
+    return up.length > 0f && up.normalized().y >= UPRIGHT
 }
 
 /** The jaw's joint name, which hinges a mouth and never creases. */
@@ -134,12 +154,13 @@ internal fun degreesBetween(a: Vec3, b: Vec3): Float = acos((a dot b).coerceIn(-
 
 /**
  * How thick the body is across a joint: the middle distance from the line through [pivot] along [plane] of the corners within [band]
- * of the plane that [bones] together weigh at least [RADIUS_INFLUENCE], short of [reach]; null with none.
+ * of the plane that [bones] together weigh at least [RADIUS_INFLUENCE] and [creasable] keeps, short of [reach]; null with none.
  */
-private fun radiusAt(positions: FloatArray, skin: SurfaceSkin, bones: IntArray, pivot: Vec3, plane: Vec3, band: Float, reach: Float): Float? {
+private fun radiusAt(positions: FloatArray, skin: SurfaceSkin, bones: IntArray, pivot: Vec3, plane: Vec3, band: Float, reach: Float, creasable: BooleanArray?): Float? {
     val distances = ArrayList<Float>()
     val count = minOf(positions.size / 3, skin.vertexCount)
     for (v in 0 until count) {
+        if (creasable != null && !creasable.getOrElse(v) { true }) continue
         if (influence(skin, v, bones) < RADIUS_INFLUENCE) continue
         val rel = positions.vec(v * 3) - pivot
         val along = rel dot plane

@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 /** The most any crease or wrinkle strength is: twice its default. */
 const val MOST_CREASE_STRENGTH = 2f
 
-/** A crease strength switched on with nothing chosen: a garment's own creases, wrinkles and drape, and a character's once turned on. */
+/** A crease strength with nothing chosen: a garment's own creases, wrinkles and drape, and a character's skin and cloth. */
 const val DEFAULT_CREASE_STRENGTH = 1f
 
 /** How much of a joint's crease shows with the joint at rest, as a share of a full bend's: a faint short line where a sheet draws one. */
@@ -15,12 +15,13 @@ const val REST_CREASE = 0.3f
 
 /**
  * A character's creases and wrinkles: [skin], how strongly a bending joint creases the body's surface on its inner side, ink and shade;
- * [cloth], how strongly every garment creases at those joints, wrinkles where it bunches and hangs in folds, times each garment's own
- * strengths; and [rest], how much of a joint's crease shows at rest, as a share of a full bend's. 0 is off for either. See HLD: look,
+ * [cloth], how strongly every garment creases at those joints, wrinkles where it bunches and gathers above its hems, times each garment's own
+ * strengths; and [rest], how much of a joint's crease shows at rest, as a share of a full bend's. Both strengths are on at
+ * [DEFAULT_CREASE_STRENGTH] by default; 0 is off for either. See HLD: look,
  * Creases and wrinkles.
  */
 @Serializable
-data class CharacterCreases(val skin: Float = 0f, val cloth: Float = 0f, val rest: Float = REST_CREASE) {
+data class CharacterCreases(val skin: Float = DEFAULT_CREASE_STRENGTH, val cloth: Float = DEFAULT_CREASE_STRENGTH, val rest: Float = REST_CREASE) {
     init {
         require(skin in 0f..MOST_CREASE_STRENGTH) { "A skin crease strength lies from 0 to $MOST_CREASE_STRENGTH" }
         require(cloth in 0f..MOST_CREASE_STRENGTH) { "A cloth crease strength lies from 0 to $MOST_CREASE_STRENGTH" }

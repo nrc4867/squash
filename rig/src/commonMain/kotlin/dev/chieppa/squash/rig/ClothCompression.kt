@@ -7,11 +7,11 @@ private const val WRINKLE_FROM = 0.06f
 private const val WRINKLE_FULL = 0.25f
 
 /** How many times the bunching is smoothed over each corner's neighbours, so wrinkles gather in patches and not in specks. */
-private const val SMOOTHING_PASSES = 3
+private const val SMOOTHING_PASSES = 6
 
 /** How many indices a quad takes as two triangles, and where its four corners lie in order among them. */
-private const val QUAD_INDICES = 6
-private val QUAD_CORNERS = intArrayOf(0, 1, 4, 5)
+internal const val QUAD_INDICES = 6
+internal val QUAD_CORNERS = intArrayOf(0, 1, 4, 5)
 
 /** The mean of [values] over quad [q]'s four corners in [triangles], the mesh's quads first, two triangles each. */
 internal fun quadMean(values: FloatArray, triangles: IntArray, q: Int): Float {

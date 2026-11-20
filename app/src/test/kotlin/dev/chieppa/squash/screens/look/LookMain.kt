@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.look
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.SetCharacterCreases
 import dev.chieppa.squash.document.SetDisplayPose
 import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.SetTemplate
@@ -32,6 +33,10 @@ import dev.chieppa.squash.screens.look.shots.shotList
 import java.io.File
 import kotlin.system.exitProcess
 import kotlin.time.measureTime
+
+/** How tall each whole-character view is against its width, as parts of each. */
+private const val VIEW_HEIGHT_PARTS = 3
+private const val VIEW_WIDTH_PARTS = 2
 
 /** The face close-up's sides and size: front, three-quarter and side, square tiles. */
 private val FACE_AZIMUTHS = listOf(0f, 40f, 90f)
@@ -69,7 +74,8 @@ fun renderDocument(document: SquashDocument, namedPoses: Map<String, Pose>, look
 
 /**
  * Renders [session]'s character into [folder] as [look] asks: per outfit, the whole character in its display pose (with `around=true`
- * its back and top views too), at rest when that differs and in each of [namedPoses], and the close-ups, by word or by part id; with
+ * its back and top views too, in each named pose as well), at rest when that differs and in each of [namedPoses], and the close-ups, by word or by part id, a part's
+ * in each named pose too; with
  * `show=` only those parts and no close-ups; or the shots or explicit camera [look] names instead. [sessionPose] is the session's pose
  * node; its work runs on [work].
  */
@@ -83,6 +89,7 @@ fun renderSession(
     folder: File,
 ) {
     val document = session.document.value
+    look.creases?.let { (skin, cloth) -> session.send(SetCharacterCreases(document.character.creases.copy(skin = skin, cloth = cloth))) }
     look.templates.forEach { (part, ref) -> session.send(SetTemplate(PartId(part), TemplateRef(TemplateId(ref.substringBefore(':')), ref.substringAfter(':').toInt()))) }
     look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
     work.settle(session)
@@ -113,12 +120,14 @@ fun renderSession(
             session.send(SetPose(Pose()))
             continue
         }
-        views.keep(session, name, only = only)
-        if (look.around) views.keep(session, "$name$BACK_TOP_SUFFIX", toViewers = BACK_AND_TOP, only = only)
+        val tile = look.tile
+        val height = tile * VIEW_HEIGHT_PARTS / VIEW_WIDTH_PARTS
+        views.keep(session, name, only = only, tile = tile, height = height)
+        if (look.around) views.keep(session, "$name$BACK_TOP_SUFFIX", toViewers = BACK_AND_TOP, only = only, tile = tile, height = height)
         val display = session.document.value.character.displayPose
         if (!display.isRest) {
             session.send(SetDisplayPose(Pose()))
-            views.keep(session, "$name-rest", only = only)
+            views.keep(session, "$name-rest", only = only, tile = tile, height = height)
             session.send(SetDisplayPose(display))
         }
         if (FACE in close) parts.head?.let { head ->
@@ -143,7 +152,9 @@ fun renderSession(
         if (DRAG in close) session.document.value.character.parts.firstOrNull { it.socket == null }?.let { SurfaceCloseUps(work, errors, folder).keepDrag(session, name, it.id) }
         for ((pose, set) in poses) {
             session.send(SetPose(set))
-            views.keep(session, "$name-pose-$pose", only = only)
+            views.keep(session, "$name-pose-$pose", only = only, tile = tile, height = height)
+            if (look.around) views.keep(session, "$name-pose-$pose$BACK_TOP_SUFFIX", toViewers = BACK_AND_TOP, only = only, tile = tile, height = height)
+            closeParts.forEach { closeUps.keepAround(session, it, "$name-pose-$pose-${it.value}") }
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
     }

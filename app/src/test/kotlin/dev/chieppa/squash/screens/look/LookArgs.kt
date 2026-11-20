@@ -46,6 +46,9 @@ class LookArgs(args: Array<String>) {
     /** With `around=true`, each outfit's back and top views as well, beside each other in `<outfit>-back-top`. */
     val around: Boolean = values["around"] == "true"
 
+    /** How wide each whole-character view is, in pixels, from `tile=`, its height half as much again: larger to see marks close. */
+    val tile: Int = values["tile"]?.toInt() ?: VIEW_TILE
+
     /** With `show=<part>,...`, the views draw and frame only those parts, and no close-up is rendered. */
     val show: Set<String>? = values["show"]?.split(',')?.filter { it.isNotEmpty() }?.toSet()
 
@@ -75,6 +78,12 @@ class LookArgs(args: Array<String>) {
 
     /** Outlines to start from template and drag after the parameters are set, from `outline=part:along:across,...` (see [OutlineDrag]). */
     val outlineDrags: List<OutlineDrag> = values["outline"]?.split(',')?.map(OutlineDrag::parse).orEmpty()
+
+    /** The character's skin and cloth crease strengths to render with, from `creases=skin,cloth`, or null to keep its own. */
+    val creases: Pair<Float, Float>? = values["creases"]?.split(',')?.let { strengths ->
+        require(strengths.size == 2) { "creases takes skin,cloth, not ${values["creases"]}" }
+        strengths[0].toFloat() to strengths[1].toFloat()
+    }
 
     /** With `paint=test`, test regions painted over the example before it renders (see [paintTest]). */
     val paintTest: Boolean = values["paint"] == "test"
@@ -111,6 +120,9 @@ class LookArgs(args: Array<String>) {
         const val DRAG = "drag"
         const val RELEASE = "release"
         const val ANCHORS = "anchors"
+
+        /** How wide each whole-character view is by default, in pixels. */
+        const val VIEW_TILE = 600
 
         /** `close=none` asks for no close-up. */
         const val NONE = "none"

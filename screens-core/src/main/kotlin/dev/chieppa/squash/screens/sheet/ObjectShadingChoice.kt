@@ -6,8 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.SetCharacterShading
+import dev.chieppa.squash.document.ShadingLight
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.render.FarSideDarkening
+import dev.chieppa.squash.render.LightFrame
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.screens.AppState
@@ -18,7 +20,11 @@ fun CharacterShading.objectShading() = ObjectShading(
         ShadingMode.FLAT -> Shading.FLAT
         ShadingMode.TWO_TONE -> Shading.TWO_TONE
     },
-    farSide = FarSideDarkening(enabled = farSideDarker),
+    farSide = FarSideDarkening(enabled = farSideDarker, share = 1f - farSide),
+    light = when (light) {
+        ShadingLight.VIEW -> LightFrame.VIEW
+        ShadingLight.BODY -> LightFrame.BODY
+    },
 )
 
 /** How the open character is shaded, flat with none open. */
@@ -48,4 +54,12 @@ fun AppState.chooseShading(mode: Shading) {
 fun AppState.chooseFarSideDarker(on: Boolean) {
     val open = session.value ?: return
     open.send(SetCharacterShading(open.document.value.character.shading.copy(farSideDarker = on)))
+}
+
+/** Lights the open character from the view, or from a light fixed to its body, as one undo step that saves with it. */
+fun AppState.chooseViewLight(on: Boolean) {
+    val open = session.value ?: return
+    val light = if (on) ShadingLight.VIEW else ShadingLight.BODY
+    val now = open.document.value.character.shading
+    if (now.light != light) open.send(SetCharacterShading(now.copy(light = light)))
 }

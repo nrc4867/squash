@@ -5,7 +5,7 @@ import dev.chieppa.squash.geom.field.smoothstep
 import kotlin.math.cos
 
 /** The bend, in degrees, at which a crease is at its deepest. */
-private const val DEEPEST_BEND = 100f
+private const val DEEPEST_BEND = 70f
 
 /** The bend, in degrees, over which a joint's own closing side takes over from its rest side. */
 private const val SIDE_FROM = 4f
@@ -13,19 +13,30 @@ private const val SIDE_TO = 20f
 
 /** How wide a crease's shade runs along the limb, as a share of the joint's radius, at rest and added at its deepest. */
 private const val WIDTH_AT_REST = 0.2f
-private const val WIDTH_DEEPENED = 0.14f
+private const val WIDTH_DEEPENED = 0.2f
+
+/** The least width of a crease's shade along the limb, in the body's mesh cells, at rest and added at its deepest: a thin joint's crease still spans enough cells to draw. */
+private const val LEAST_CELLS_AT_REST = 1.5f
+private const val LEAST_CELLS_DEEPENED = 1f
 
 /** How far round the limb a crease reaches either side of its inner side, in degrees, at rest and added at its deepest. */
 private const val SPAN_AT_REST = 28f
-private const val SPAN_DEEPENED = 62f
+private const val SPAN_DEEPENED = 50f
+
+/**
+ * How far further round the limb a crease on cloth reaches at its deepest, and the share of that over which it is full, so a bent knee's
+ * or elbow's folds wrap onto the limb's sides and show there, not only on its inner side.
+ */
+private const val CLOTH_SPAN_DEEPENED = 75f
+private const val CLOTH_CORE_SHARE = 0.75f
 
 /** Where round the limb a crease is at full strength, and where its middle stretch is, as shares of its reach. */
 private const val CORE_SHARE = 0.35f
-private const val MIDDLE_SHARE = 0.1f
+private const val MIDDLE_SHARE = 0.7f
 
 /** How far from a joint's axis, as shares of its radius, a vertex is too near the axis, or too far off, to lie on its crease. */
 private const val NEAREST_AXIS = 0.25f
-private const val FURTHEST_AXIS = 2.1f
+private const val FURTHEST_AXIS = 2.8f
 
 /** How many widths along the limb a crease reaches before it is nothing. */
 private const val WIDTHS_REACHED = 3f
@@ -66,15 +77,21 @@ class PosedCreaseJoint(
     /** The same for its middle stretch alone, where a deep crease's shorter lines either side run. */
     fun middle(facing: Float): Float = amount * smoothstep(coreCosine, middleCosine, facing)
 
+    /** How far [p] lies from the joint's axis, in its radii. */
+    fun axisShare(p: Vec3): Float {
+        val rel = p - at
+        return (rel - plane * (rel dot plane)).length / joint.radius
+    }
+
     /** How far [p] lies along the limb from the crease's middle, in widths: the crease's ink runs where this is 0. */
     fun along(p: Vec3): Float = ((p - at) dot plane) / width
 
     companion object {
         /**
          * [joint] as [frames] pose it, scaled by [strength], with [rest] of a full crease showing on its rest side while it rests; null
-         * where it creases nowhere: no rest side and no bend, or no strength.
+         * where it creases nowhere: no rest side and no bend, or no strength. On [cloth] a deep crease wraps further round the limb.
          */
-        fun of(joint: CreaseJoint, frames: BoneFrames, strength: Float, rest: Float): PosedCreaseJoint? {
+        fun of(joint: CreaseJoint, frames: BoneFrames, strength: Float, rest: Float, cloth: Boolean = false): PosedCreaseJoint? {
             val scaled = strength * joint.strength
             if (scaled <= 0f) return null
             val parentTurn = frames.turns[joint.parent]
@@ -98,10 +115,10 @@ class PosedCreaseJoint(
             val amount = scaled * maxOf(restAmount, depth)
             if (amount <= 0f) return null
             val pivot = frames.transforms[joint.bone](joint.pivot)
-            val reach = (SPAN_AT_REST + SPAN_DEEPENED * depth) * DEGREES_TO_RADIANS
+            val reach = (SPAN_AT_REST + (if (cloth) CLOTH_SPAN_DEEPENED else SPAN_DEEPENED) * depth) * DEGREES_TO_RADIANS
             return PosedCreaseJoint(
-                joint, pivot, plane, inner, amount, joint.radius * (WIDTH_AT_REST + WIDTH_DEEPENED * depth), depth,
-                cos(reach), cos(reach * CORE_SHARE), cos(reach * MIDDLE_SHARE),
+                joint, pivot, plane, inner, amount, maxOf(joint.radius * (WIDTH_AT_REST + WIDTH_DEEPENED * depth), joint.cell * (LEAST_CELLS_AT_REST + LEAST_CELLS_DEEPENED * depth)), depth,
+                cos(reach), cos(reach * (if (cloth) CLOTH_CORE_SHARE else CORE_SHARE)), cos(reach * MIDDLE_SHARE),
             )
         }
 

@@ -73,8 +73,7 @@ suspend fun posedSurface(
 /** How many vertices a piece of the posing takes. */
 private const val POSE_CHUNK = 4096
 
-/** How many indices a quad holds as two triangles, and as the four of its fan. */
-private const val QUAD_INDICES = 6
+/** How many indices a quad holds as the four triangles of its fan. */
 private const val QUAD_FAN_INDICES = 12
 
 /** These indices, [width] a quad, without the quads [left] marks; the triangles standing alone after the quads kept as they are. */

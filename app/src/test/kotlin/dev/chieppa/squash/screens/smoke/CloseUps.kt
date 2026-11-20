@@ -8,10 +8,8 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
-import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_FRONT
 import dev.chieppa.squash.screens.surface.CharacterState
@@ -59,7 +57,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
         val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)
             val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
-            characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
+            characterView(rect, close.camera, state, PROBE_LOOK, probeShading(session), close.pixelsPerUnit) { BIN_FRONT }
         }
         val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, errors)
         keepImage(image.pixels, image.width, name, images)
@@ -73,7 +71,7 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
         val views = CLOSE_VIEWS.mapIndexed { i, toViewer ->
             val rect = PixelRect(i % COLUMNS * TILE, i / COLUMNS * TILE, TILE, TILE)
             val close = framedCamera(framed, toViewer, TILE, TILE, CLOSE_MARGIN)
-            characterView(rect, close.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), close.pixelsPerUnit) { BIN_FRONT }
+            characterView(rect, close.camera, state, PROBE_LOOK, probeShading(session), close.pixelsPerUnit) { BIN_FRONT }
         }
         val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), TILE * COLUMNS, TILE * ROWS, errors)
         keepImage(image.pixels, image.width, name, images)

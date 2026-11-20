@@ -33,7 +33,7 @@ private const val INK_GROWTH = 2f
 private const val BENT = 110f
 
 /**
- * Creases on a torso, head and leg under a sweater that stops above the knee: off until the character turns them on; at rest a faint ink
+ * Creases on a torso, head and leg under a sweater that stops above the knee: on by default and off at 0; at rest a faint ink
  * line and no shade band at the bare knee; bent, a shade band and ink at least [INK_GROWTH] times as long, and a fold raised on the cloth;
  * a garment's strengths pose again without growing its cloth again.
  */
@@ -47,14 +47,16 @@ class SurfaceCreasesTest {
         val session = stackSession(legTo = ABOVE_KNEE)
         val pose = SessionPose(session)
         runCurrent()
-        assertNull(posed(pose).creases, "creases are off by default")
+        assertNotNull(posed(pose).creases, "creases are on by default")
+        session.send(SetCharacterCreases(CharacterCreases(skin = 0f, cloth = 0f)))
+        assertNull(posed(pose).creases, "and off at 0")
 
         session.send(SetCharacterCreases(CharacterCreases(skin = 1f, cloth = 1f)))
         val rest = assertNotNull(posed(pose).creases)
         val restBody = assertNotNull(rest.body)
         assertTrue(restBody.lines.isNotEmpty(), "a faint line at rest")
         assertTrue(restBody.shade.max() < 0.5f, "no band at rest: ${restBody.shade.max()}")
-        assertNotNull(rest.garments[sweater])
+        assertTrue(rest.garments.keys.any { it.garment == sweater }, "the sweater creases")
 
         session.send(SetPose(Pose(listOf(BonePose(leg.id, "knee", BENT)))))
         val bent = posed(pose)

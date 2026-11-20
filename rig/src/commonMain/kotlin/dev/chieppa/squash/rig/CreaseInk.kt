@@ -39,14 +39,15 @@ internal fun crestInk(lines: TriangleLines, phase: FloatArray, weights: FloatArr
 }
 
 /**
- * The ink of joint creases over the corners of [lines], from [field]: each crease's middle line, and at a deep bend a shorter line either
- * side of it over the crease's middle stretch, where all three corners of a triangle lie on the same crease and [shown] keeps them.
+ * The ink of joint creases over the corners of [lines], from [field], [weight] times its weight: each crease's middle line, and once its
+ * strength passes [sidesFrom] a shorter line either side of it over the crease's middle stretch, where all three corners of a triangle
+ * lie on the same crease and [shown] keeps them.
  */
-internal fun jointInk(lines: TriangleLines, field: JointCreaseField, shown: (Int) -> Boolean): List<CreaseLine> {
+internal fun jointInk(lines: TriangleLines, field: JointCreaseField, sidesFrom: Float, weight: Float, shown: (Int) -> Boolean): List<CreaseLine> {
     val triangles = lines.triangles
     val owner = field.owner
-    val main = FloatArray(field.ink.size) { inkWeight(field.ink[it], MAIN_FROM, MAIN_RANGE) }
-    val sides = FloatArray(field.ink.size) { inkWeight(field.middle[it], SIDE_FROM, SIDE_RANGE) * SIDE_SHARE }
+    val main = FloatArray(field.ink.size) { inkWeight(field.ink[it], MAIN_FROM, MAIN_RANGE) * weight }
+    val sides = FloatArray(field.ink.size) { inkWeight(field.middle[it], sidesFrom, SIDE_RANGE) * SIDE_SHARE * weight }
     fun one(t: Int, weights: FloatArray): Boolean {
         val a = triangles[t * 3]
         val b = triangles[t * 3 + 1]
@@ -70,8 +71,7 @@ private fun inkWeight(strength: Float, from: Float, range: Float): Float = ((str
 private const val MAIN_FROM = 0.05f
 private const val MAIN_RANGE = 0.6f
 
-/** How the shorter lines either side of a deep crease weigh by its strength, where they lie in its widths, and how heavy they are at most. */
-private const val SIDE_FROM = 0.6f
+/** How the shorter lines either side of a crease rise to full weight past where they start, where they lie in its widths, and how heavy they are at most. */
 private const val SIDE_RANGE = 0.35f
-private const val SIDE_AT = 1.15f
-private const val SIDE_SHARE = 0.6f
+private const val SIDE_AT = 1.4f
+private const val SIDE_SHARE = 0.75f
