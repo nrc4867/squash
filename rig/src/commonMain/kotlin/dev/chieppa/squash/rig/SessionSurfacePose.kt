@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.HeldDress
 import dev.chieppa.squash.character.surface.HeldPaint
 import dev.chieppa.squash.character.surface.PosedCreases
+import dev.chieppa.squash.character.surface.garmentPiece
 import dev.chieppa.squash.character.surface.PosedSurface
 import dev.chieppa.squash.character.surface.SurfaceDress
 import dev.chieppa.squash.character.surface.SurfaceGarment
@@ -123,12 +124,12 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
             if (held.coarse) hiding.kept(body.paint) else hiding.of(body.paint, IN_PARALLEL)
         }
         val creases = creasing?.let { poseCreasing ->
-            val byId = held.dress?.garments.orEmpty().zip(garmentCreasing).mapNotNull { (garment, creased) -> creased?.let { garment.cover.garment.id to it } }.toMap()
+            val byPiece = held.dress?.garments.orEmpty().zip(garmentCreasing).mapNotNull { (garment, creased) -> creased?.let { garment.cover.garmentPiece to it } }.toMap()
             val dressed = worn?.second
             coroutineScope {
                 val bodyMarks = async { poseCreasing.body(body.surface, dressed?.shown) }
                 val garmentMarks = dressed?.garments.orEmpty().mapNotNull { garment ->
-                    byId[garment.cover.garment.id]?.let { creased -> async { garment.cover.garment.id to creased.marks(garment) } }
+                    byPiece[garment.cover.garmentPiece]?.let { creased -> async { garment.cover.garmentPiece to creased.marks(garment) } }
                 }
                 PosedCreases(bodyMarks.await(), garmentMarks.awaitAll().toMap())
             }

@@ -17,6 +17,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.recipe.model.Recipe
 import dev.chieppa.squash.recipe.model.RecipeCreases
+import dev.chieppa.squash.recipe.model.RecipeShading
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeColor
 import dev.chieppa.squash.recipe.model.RecipeCover
@@ -74,6 +75,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         wardrobe = wardrobe,
         displayPose = bones(character.displayPose, "display pose", notCarried),
         creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
+        shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light) },
     )
     return RecipeExport(recipe, notCarried)
 }
@@ -191,7 +193,6 @@ private fun bones(pose: Pose, name: String, notCarried: MutableList<String>) = p
 private fun leftOut(document: SquashDocument, notCarried: MutableList<String>) {
     val character = document.character
     if (!character.pose.isRest) notCarried += "the working pose"
-    if (character.shading != CharacterShading()) notCarried += "the character's shading choice"
     if (character.lineRules != LineRules()) notCarried += "the character's line rules"
     if (character.traces.isNotEmpty() || document.references.images.isNotEmpty()) notCarried += "reference and trace images"
     if (character.shownExpression != null) notCarried += "the shown expression"

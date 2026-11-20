@@ -55,8 +55,8 @@ class PosedCreaseJointTest {
         assertTrue((deep.inner dot closing) > 0.99f, "the crease lies inside the bend: ${deep.inner}")
         assertEquals(deep.amount, deep.around(deep.facing(inside)), 1e-5f)
         assertEquals(0f, deep.around(deep.facing(outside)))
-        fun offInner(joint: PosedCreaseJoint) = joint.at + (joint.inner * cos(60f * DEGREES) + (joint.plane cross joint.inner) * sin(60f * DEGREES)) * RADIUS
-        assertTrue(deep.around(deep.facing(offInner(deep))) > 0f, "a deep crease reaches 60 degrees round")
+        fun offInner(joint: PosedCreaseJoint) = joint.at + (joint.inner * cos(70f * DEGREES) + (joint.plane cross joint.inner) * sin(70f * DEGREES)) * RADIUS
+        assertTrue(deep.around(deep.facing(offInner(deep))) > 0f, "a deep crease reaches 70 degrees round")
         assertEquals(0f, half.around(half.facing(offInner(half))), "a shallower one does not")
     }
 

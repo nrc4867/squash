@@ -72,10 +72,10 @@ fun coloredPartDraw(
     }
     val layers = drawn(color?.layers.orEmpty())
     val copyLayers = color?.copies?.map(::drawn)
-    val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
+    val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera))
     val instances = copies?.places?.mapIndexed { i, place ->
         val shade = place.slot?.let { slot ->
-            palette.colorOf(slot)?.let { rule.tones(it, palette.shadowOf(slot), shading, side, toCamera) }?.let { PartMaterial(it.lit, it.shadow, fallback.ink, shading.mode, shading.toLight) }
+            palette.colorOf(slot)?.let { rule.tones(it, palette.shadowOf(slot), shading, side, toCamera) }?.let { PartMaterial(it.lit, it.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)) }
         }
         MeshInstance(copyModel(place), shade, copyLayers?.getOrNull(i))
     }.orEmpty()

@@ -21,18 +21,14 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
-import dev.chieppa.squash.render.FarSideDarkening
 import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.edit.FillReach
-import dev.chieppa.squash.screens.sheet.chooseFarSideDarker
 import dev.chieppa.squash.screens.sheet.chooseShading
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.sheet.rememberObjectShading
 import dev.chieppa.squash.screens.shell.BuildTool
 import dev.chieppa.squash.uidesign.generated.Res
-import dev.chieppa.squash.uidesign.generated.color_far_amount
-import dev.chieppa.squash.uidesign.generated.color_far_parts
 import dev.chieppa.squash.uidesign.generated.color_fill_under
 import dev.chieppa.squash.uidesign.generated.color_fill_whole
 import dev.chieppa.squash.uidesign.generated.color_section_paint
@@ -114,14 +110,9 @@ private fun ShadingSection(state: AppState) {
     val shading = rememberObjectShading(state)
     val flat = stringResource(Res.string.color_shading_flat)
     val twoTone = stringResource(Res.string.color_shading_two_tone)
-    val far = stringResource(Res.string.color_far_parts)
     DrawerSection(stringResource(Res.string.color_section_shading), divider = false) {
         Segmented(Shading.entries, shading.mode, state::chooseShading, { if (it == Shading.FLAT) flat else twoTone }, Modifier.testTag(PaintTags.SHADING), fill = true)
-        SettingRow(far) {
-            Spacer(Modifier.weight(1f))
-            Readout(stringResource(Res.string.color_far_amount, ((1f - FarSideDarkening().share) * PERCENT).roundToInt()))
-            Toggle(shading.farSide.enabled, state::chooseFarSideDarker, far, Modifier.testTag(PaintTags.FAR_PARTS))
-        }
+        LightRows(state, shading)
         CreaseRows(state)
     }
 }

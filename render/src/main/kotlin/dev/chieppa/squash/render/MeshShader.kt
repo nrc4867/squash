@@ -42,7 +42,7 @@ fn vs_fill(@location(0) position: vec3<f32>, @location(2) proxy: vec3<f32>) -> F
 
 @fragment
 fn fs_fill(in: FillOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(tone(in.proxy, draw.to_light_and_two_tone, draw.base.rgb, draw.shade.rgb), draw.depth_scale_offset_and_opacity.z);
+    return vec4<f32>(tone(in.proxy, draw.to_light_and_two_tone, draw.base.rgb, draw.shade.rgb, away_from(draw.view_projection)), draw.depth_scale_offset_and_opacity.z);
 }
 
 @vertex

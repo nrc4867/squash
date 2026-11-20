@@ -27,7 +27,8 @@ export const colors = palette(
 - `ink` is the line colour; give it the sheet's line colour.
 - `shade(c, -0.15)` and `mix(a, b, t)` derive trims and shadows from a base colour, so a palette stays one family.
 - A slot's `opacity` (0.3 to 0.5) makes a part coloured in it see-through: a lens shows the eyes behind it (`accessories.md`).
-- Squash shades every colour two-tone by its own light (`docs/hld/look.md`): give the lit colour the sheet shows, not its shadow; a slot's `shadow` sets its own shadow tone where the warm default is wrong.
+- Squash shades every colour two-tone by its own light (`docs/hld/look.md`): give the lit colour the sheet shows, not its shadow. With no `shadow` a saturated colour shades warm and a white, grey or pale one cool, so white socks and shirts stay white in shade; a slot's `shadow` sets its own shadow tone where the default is wrong.
+- The light turns with the view, so a back view is lit as the front is. Where the sheet's far legs and far ear are clearly darker, raise the far side's depth: `shading: { farSide: 0.3 }` (0 to 0.5, 0.18 when left out); `shading: { light: "body" }` fixes the light in front of the character instead.
 
 ## Base colours and areas
 

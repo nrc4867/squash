@@ -36,7 +36,7 @@ private const val SIDES_AFTER_VECTORS = 7
 /**
  * One color layer over a mesh: a cut's [mesh] in the [tones] its slot shows as, solid or with each vertex's opacity in [alphas], or kept
  * to a [shape] read at each fragment, its edge smoothed over a pixel. A [crease] layer reads [alphas] as each vertex's crease shade and
- * multiplies what is under it by its lit tone where that is at least a half. A [MeshDraw] draws its layers in order, each over the last.
+ * multiplies what is under it by its tone, lit or in shadow, where that is at least a half. A [MeshDraw] draws its layers in order, each over the last.
  */
 @Immutable
 data class ColorLayerDraw(

@@ -14,6 +14,7 @@ import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
 import dev.chieppa.squash.render.Shading
+import dev.chieppa.squash.screens.sheet.objectShading
 import dev.chieppa.squash.render.ViewsScene
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.fennec.BIN_FRONT
@@ -62,6 +63,9 @@ private val PROBE_BINS = AngleBins(listOf(BIN_FRONT, BIN_THREE_QUARTER, BIN_SIDE
 
 internal val PROBE_GROUND = Color(0xFFF2EEE6)
 private val NO_SLOT = Color(0xFFB0B0B0)
+/** How [session]'s character is shaded in a render: two-tone, with its own far sides and light. */
+internal fun probeShading(session: CharacterSession): ObjectShading = session.document.value.character.shading.objectShading().copy(mode = Shading.TWO_TONE)
+
 internal val PROBE_LOOK = CharacterLook(
     lines = LineRule(interiorPixels = 2.5f, silhouettePixels = 6f),
     marks = LineRule(interiorPixels = 2.5f, silhouettePixels = 3.5f),

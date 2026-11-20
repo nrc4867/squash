@@ -4,10 +4,8 @@ import dev.chieppa.squash.character.build.FurView
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
-import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PixelRect
 import dev.chieppa.squash.render.SceneFrame
-import dev.chieppa.squash.render.Shading
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.surface.CharacterState
 import dev.chieppa.squash.screens.surface.FACE_BINS
@@ -52,7 +50,7 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
         val views = toViewers.mapIndexed { i, toViewer ->
             val rect = PixelRect(i * tile, 0, tile, height)
             val camera = framedCamera(framing, toViewer, tile, height, margin)
-            characterView(rect, camera.camera, state, PROBE_LOOK, ObjectShading(Shading.TWO_TONE), camera.pixelsPerUnit) { id ->
+            characterView(rect, camera.camera, state, PROBE_LOOK, probeShading(session), camera.pixelsPerUnit) { id ->
                 val head = state.character.part(id)
                 if (head == null) FACE_BINS.binFor(90f) else FACE_BINS.binFor(headAngle(head, toViewer))
             }

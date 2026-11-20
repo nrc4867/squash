@@ -25,15 +25,16 @@ class CreasesCommandTest {
     }
 
     @Test
-    fun aCharacterStartsWithCreasesOffAndWritesNothingForThem() {
-        assertFalse(empty.character.creases.on)
+    fun aCharacterStartsWithCreasesOnAndWritesNothingForThem() {
+        assertTrue(empty.character.creases.on)
+        assertEquals(CharacterCreases(DEFAULT_CREASE_STRENGTH, DEFAULT_CREASE_STRENGTH, REST_CREASE), empty.character.creases)
         val text = Json.encodeToString(SquashDocument.serializer(), empty)
         assertFalse("creases" in text || "wrinkles" in text || "drape" in text, text)
     }
 
     @Test
     fun theCharactersCreasesAreSetUndoneAndSerializable() {
-        val command = SetCharacterCreases(CharacterCreases(skin = 1f, cloth = 0.5f))
+        val command = SetCharacterCreases(CharacterCreases(skin = 0f, cloth = 0.5f))
         assertRoundTrips(command)
         scenario(empty) {
             run(command)

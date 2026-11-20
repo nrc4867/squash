@@ -39,7 +39,7 @@ const val GARMENT_PART_PREFIX = "garment/"
  * inside it. Its [regions] and [marks] are printed on its cloth, in the (u, v) of the body parts under it as a part's own are, and show
  * only where the cloth does. [inkWeight] is the weight of its silhouette and hems as a share of the skin's line weight, and [hemRoll]
  * how far its hems, neck openings and cuffs roll out past the cloth, in body units. [creases], [wrinkles] and [drape] are its strengths of
- * joint creases, wrinkles where it bunches and folds where it hangs, times the character's cloth strength (HLD: look, Creases and wrinkles).
+ * joint creases, wrinkles where it bunches and short folds gathered above its hems, times the character's cloth strength (HLD: look, Creases and wrinkles).
  * [eases] gives a part, by a pair's leader, a stand-off that varies along and round it, over its fit; [hang] lets the cloth over an
  * upright part fall straight from its widest place rather than follow the body in; [drops] moves the seam where a part's cloth meets the
  * cloth of the part it grows from down that part, in its u, as a dropped shoulder's. See HLD: data-model, Garments.

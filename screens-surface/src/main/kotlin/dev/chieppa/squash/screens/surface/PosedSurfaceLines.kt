@@ -17,6 +17,7 @@ import dev.chieppa.squash.geom.lineWeightAt
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.StrokeRibbon
+import dev.chieppa.squash.render.foldLineColor
 import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /** How many parts' sections a [PosedSurfaceLines] keeps the lines of. */
@@ -44,14 +45,18 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
         )
     }
 
-    /** The ink along the surface's inked joins, its garments' inked hems and joins, and its creases and wrinkles, through [view]. */
-    fun inks(view: SurfaceView, look: CharacterLook, ink: Color): List<RibbonDraw> {
+    /**
+     * The ink along the surface's inked joins, its garments' inked hems and joins, and its creases and wrinkles, through [view]; each
+     * garment's creases in its cloth's fold line color from [palette].
+     */
+    fun inks(view: SurfaceView, look: CharacterLook, ink: Color, palette: Palette): List<RibbonDraw> {
         val surface = shown.surface
         val dress = shown.dress
         val inkWeights = dress?.garments.orEmpty().associate { it.cover.garment.id to it.cover.garment.inkWeight }
+        val foldColors = dress?.garments.orEmpty().associate { garment -> garment.cover.garment.id to (palette.colorOf(garment.cover.garment.color)?.foldLineColor ?: ink) }
         return joinDraws(surface, view, look.creases, ink) + dress?.let { hemDraws(it, view, look.creases, ink, surface.mesh.cell) }.orEmpty() +
             dress?.garments.orEmpty().flatMap { facedCurveDraws(it.inkedJoins, view, look.creases, ink, surface.mesh.cell, scale = it.cover.garment.inkWeight) } +
-            shown.creases?.let { creaseInkDraws(it, inkWeights, view, look.creases, ink, surface.mesh.cell) }.orEmpty()
+            shown.creases?.let { creaseInkDraws(it, inkWeights, foldColors, view, look.creases, ink, surface.mesh.cell) }.orEmpty()
     }
 
     /** The lines its garments' cloth prints, as they are worn: each garment's inked marks and region borders, cut to its cloth. */
