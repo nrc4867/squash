@@ -134,16 +134,21 @@ private const val FOLD_DEPTH = 0.16f
 /** What a cloth fold's band multiplies [color] under it by, as [creaseTones] but lighter. */
 fun foldTones(color: Color): Tones = Tones(color.shadeFactor(FOLD_DEPTH), color.shadeFactor(FOLD_DEPTH * IN_SHADOW_SHARE))
 
-/** The luminance under which cloth is dark enough for its creases' folds to show a highlight, how far toward white a highlight lies, and its most opacity. */
-private const val DARK_CLOTH = 0.4f
+/** The luminance under which cloth is dark enough that a darker line barely shows on it, and how far toward white its fold lines lie. */
+private const val DARK_CLOTH = 0.2f
 private const val HIGHLIGHT_LIFT = 0.35f
-const val HIGHLIGHT_OPACITY = 0.45f
 
-/** Whether [this] color is dark enough that shade alone barely shows on it, so its folds' ridges catch a highlight. */
+/** How much of its color cloth's fold lines keep, each channel alike so its hue holds: darker than its crease bands, lighter than the ink. */
+private const val FOLD_LINE_SHARE = 0.45f
+
+/** Whether [this] color is dark enough that a darker line barely shows on it, so its folds are drawn as highlights. */
 val Color.isDarkCloth: Boolean get() = 0.2126f * red + 0.7152f * green + 0.0722f * blue < DARK_CLOTH
 
-/** The highlight a fold's ridge shows on cloth in [tones]: each tone lifted toward white. */
-fun highlightOf(tones: Tones): Tones = Tones(tones.lit.lifted(), tones.shadow.lifted())
+/**
+ * The color cloth of [this] color draws its creases' and folds' lines in: its own hue much darker, so a fold reads lighter than the ink,
+ * or on dark cloth a thin highlight, its tone lifted toward white.
+ */
+val Color.foldLineColor: Color get() = if (isDarkCloth) lifted() else Color(red * FOLD_LINE_SHARE, green * FOLD_LINE_SHARE, blue * FOLD_LINE_SHARE, alpha)
 
 private fun Color.lifted(): Color = Color(red + (1f - red) * HIGHLIGHT_LIFT, green + (1f - green) * HIGHLIGHT_LIFT, blue + (1f - blue) * HIGHLIGHT_LIFT, alpha)
 

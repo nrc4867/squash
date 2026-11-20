@@ -49,7 +49,7 @@ class CreaseShadeTest {
         val frames = BoneFrames(listOf(Affine.IDENTITY, Affine(turn, Vec3.ZERO)), listOf(Mat3.IDENTITY, turn))
         val posed = PosedCreaseJoint.of(elbow, frames, 1f, 0.3f)!!
         val close = posed.at + posed.inner * RADIUS
-        val off = posed.at + posed.inner * (RADIUS * 2f)
+        val off = posed.at + posed.inner * (RADIUS * 2.7f)
         val vertices = FloatArray(2 * RenderMesh.FLOATS_PER_VERTEX).also {
             it.put(0, close)
             it.put(RenderMesh.FLOATS_PER_VERTEX, off)
@@ -58,7 +58,7 @@ class CreaseShadeTest {
         val cloth = JointCreaseField.of(reach, listOf(posed), vertices, 2, cloth = true)
         val skin = JointCreaseField.of(reach, listOf(posed), vertices, 2)
         assertTrue(cloth.shade[0] > BAND_FROM, "cloth close round the joint takes its band: ${cloth.shade[0]}")
-        assertEquals(0f, cloth.shade[1], "cloth two radii off takes none")
+        assertEquals(0f, cloth.shade[1], "cloth 2.7 radii off takes none")
         assertTrue(skin.shade[1] > 0f, "the same place on skin would")
     }
 }

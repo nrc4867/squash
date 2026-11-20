@@ -21,9 +21,6 @@ import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.creaseTones
 import dev.chieppa.squash.render.foldTones
-import dev.chieppa.squash.render.HIGHLIGHT_OPACITY
-import dev.chieppa.squash.render.highlightOf
-import dev.chieppa.squash.render.isDarkCloth
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.LayerSides
 import dev.chieppa.squash.render.DefaultToneRule
@@ -81,14 +78,13 @@ private fun creaseLayer(mesh: RenderMesh, shade: FloatArray, tones: Tones) = Col
  * band, its folds' lighter band, both its own tone a little darker, and on dark cloth in [base] tones the highlight its creases' folds catch.
  */
 private fun clothCreaseLayers(mesh: RenderMesh, marks: CreaseMarks, lit: Color, base: Tones, values: (FloatArray) -> FloatArray): List<ColorLayerDraw> = listOfNotNull(
-    marks.lights?.takeIf { base.lit.isDarkCloth }?.let { lights -> ColorLayerDraw(mesh, highlightOf(base), values(FloatArray(lights.size) { lights[it] * HIGHLIGHT_OPACITY })) },
     creaseLayer(mesh, values(marks.shade), creaseTones(lit)),
     marks.folds?.let { creaseLayer(mesh, values(it), foldTones(lit)) },
 )
 
 /**
  * Each garment of [dress] as a fill in its color slot, then its own paint's layers, shaded and darkened on a far side as the surface is,
- * then its creases' and folds' bands from [creases], and on dark cloth its folds' highlights.
+ * then its creases' and folds' bands from [creases].
  */
 fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, creases: PosedCreases? = null): List<MeshDraw> = dress.garments.map { garment ->
     val slot = garment.cover.garment.color

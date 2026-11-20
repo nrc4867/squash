@@ -33,22 +33,17 @@ private const val FOLD_WIDTH = 0.8f
 private const val TIGHT_WRINKLES = 0.85f
 
 /** How strong a joint's shade band is on skin and on cloth, so a band shows only at the crease's core: on skin only at a deep bend. */
-private const val SKIN_SHADE = 0.7f
-private const val CLOTH_SHADE = 0.8f
+private const val SKIN_SHADE = 0.85f
+private const val CLOTH_SHADE = 1f
 
-/** How strong skin's ink is against cloth's, so skin creases stay subtle. */
+/** How heavy skin's and cloth's crease ink is, against the crease rule's weight: skin subtle, cloth's folds reading at a whole figure's size. */
 private const val SKIN_INK = 0.7f
+private const val CLOTH_INK = 2f
 
 /** The strength past which a crease draws a shorter line either side of it: on cloth much sooner, as the folds beside it. */
 private const val SKIN_SIDES_FROM = 0.6f
 private const val CLOTH_SIDES_FROM = 0.3f
 
-/**
- * Where on a joint crease's fold either side, by its height as a share of its most, its highlight starts and is full: a thin line along
- * the crest of a well bent joint's fold alone.
- */
-private const val RIDGE_LIGHT_FROM = 0.6f
-private const val RIDGE_LIGHT_FULL = 0.9f
 
 /** The fewest vertices an island of band keeps, so no band shows as a speck. */
 private const val LEAST_BAND = 8
@@ -106,8 +101,8 @@ class CreaseRig(val skin: HeldSkin, val joints: List<CreaseJoint>, val body: Cre
 class PoseCreasing(private val rig: CreaseRig, private val frames: BoneFrames, private val settings: CreaseSettings) {
     private val creases = settings.creases
 
-    private fun posedJoints(strength: Float, rest: Float): List<PosedCreaseJoint?> =
-        rig.joints.map { PosedCreaseJoint.of(it, frames, strength, rest) }
+    private fun posedJoints(strength: Float, rest: Float, cloth: Boolean = false): List<PosedCreaseJoint?> =
+        rig.joints.map { PosedCreaseJoint.of(it, frames, strength, rest, cloth) }
 
     /**
      * The body's creases on [posed], the body as posed, subtler than cloth's, its ink kept to where [shown] is at least zero, or everywhere
@@ -127,7 +122,7 @@ class PoseCreasing(private val rig: CreaseRig, private val frames: BoneFrames, p
         if (creases.cloth <= 0f) return null
         val rest = rig.garments[garment.surface] ?: return null
         val own = settings.garments[garment.cover.garment.id] ?: return null
-        val joints = posedJoints(creases.cloth * own.creases, creases.rest)
+        val joints = posedJoints(creases.cloth * own.creases, creases.rest, cloth = true)
         return GarmentCreasing(garment.surface, rest, joints, own * creases.cloth)
     }
 }
@@ -178,8 +173,8 @@ class GarmentCreasing internal constructor(
     /**
      * The garment's shade and ink as [worn], its ink kept to what of it shows: its joint creases as [shape] read them on the posed cloth
      * before its folds rose, which move it too little to move them, or read on [worn] where the pose left the cloth at rest; each wrinkle
-     * and gather a sliver of a lighter band beside its ink, inked only where strongest; a thin highlight along the crest of a joint
-     * crease's folds either side; no island of either band smaller than [LEAST_BAND] vertices.
+     * and gather a sliver of a lighter band beside its ink, inked only where strongest; no island of either band smaller than
+     * [LEAST_BAND] vertices.
      */
     fun marks(worn: SurfaceGarment): CreaseMarks {
         val surface = worn.surface
@@ -193,15 +188,12 @@ class GarmentCreasing internal constructor(
         val folds = FloatArray(count) { v ->
             maxOf(foldShade(pattern.wrinkle, wrinkle, v), foldShade(pattern.gatherPhase, gather, v))
         }
-        val lights = FloatArray(count) { v ->
-            smoothstep(RIDGE_LIGHT_FROM, RIDGE_LIGHT_FULL, field.ridge[v])
-        }
         val lines = surface.lines
-        val ink = jointInk(lines, field, CLOTH_SIDES_FROM, 1f, shown) +
+        val ink = jointInk(lines, field, CLOTH_SIDES_FROM, CLOTH_INK, shown) +
             crestInk(lines, pattern.wrinkle, foldInk(wrinkle), shown) +
             crestInk(lines, pattern.gatherPhase, foldInk(gather), shown)
         val indices = surface.render.indices
-        return CreaseMarks(withoutSpecks(field.shade, indices, LEAST_BAND), ink, withoutSpecks(folds, indices, LEAST_BAND), lights)
+        return CreaseMarks(withoutSpecks(field.shade, indices, LEAST_BAND), ink, withoutSpecks(folds, indices, LEAST_BAND))
     }
 }
 

@@ -73,5 +73,5 @@ private const val MAIN_RANGE = 0.6f
 
 /** How the shorter lines either side of a crease rise to full weight past where they start, where they lie in its widths, and how heavy they are at most. */
 private const val SIDE_RANGE = 0.35f
-private const val SIDE_AT = 1.15f
-private const val SIDE_SHARE = 0.6f
+private const val SIDE_AT = 1.4f
+private const val SIDE_SHARE = 0.75f

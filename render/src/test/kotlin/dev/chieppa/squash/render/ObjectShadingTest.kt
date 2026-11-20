@@ -35,11 +35,13 @@ class ObjectShadingTest {
     @Test
     fun aFoldIsLighterThanACreaseAndOnlyDarkClothCatchesAHighlight() {
         assertTrue(foldTones(Color.White).lit.red > creaseTones(Color.White).lit.red && foldTones(Color.White).lit.red < 1f, "a fold's band is lighter than a crease's")
-        val denim = Color(0.25f, 0.31f, 0.44f)
+        val denim = Color(0.12f, 0.12f, 0.16f)
         assertTrue(denim.isDarkCloth)
         assertTrue(!Color(0.4f, 0.6f, 0.42f).isDarkCloth && !Color.White.isDarkCloth, "mid and pale cloth show their folds by shade alone")
-        val lifted = highlightOf(Tones(denim, denim))
-        assertTrue(lifted.lit.red > denim.red && lifted.lit.blue > denim.blue, "a highlight lifts toward white: ${lifted.lit}")
+        val highlight = denim.foldLineColor
+        assertTrue(highlight.red > denim.red && highlight.blue > denim.blue, "dark cloth's fold lines are highlights: $highlight")
+        val red = Color(0.62f, 0.2f, 0.18f)
+        assertTrue(red.foldLineColor.red < red.red && red.foldLineColor.red > 0.1f, "other cloth's are its own tone darker, not ink: ${red.foldLineColor}")
     }
 
     @Test

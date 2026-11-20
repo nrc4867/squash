@@ -16,9 +16,12 @@ private const val REACH_OWN = 0.04f
 private const val RIDGE_AT = 1.3f
 private const val RIDGE_WIDTH = 0.55f
 
+/** How much narrower a crease's shade falls off along the limb than its ink's reach, so its band is a slim wedge about the ink. */
+private const val BAND_NARROWING = 1.8f
+
 /** Where loose cloth stops taking a joint's shade band, as shares of the joint's radius from its axis: it folds there instead. */
-private const val CLOTH_SHADE_NEAR = 1.25f
-private const val CLOTH_SHADE_FAR = 1.9f
+private const val CLOTH_SHADE_NEAR = 1.8f
+private const val CLOTH_SHADE_FAR = 2.6f
 
 /**
  * Which vertices of one surface's drawn mesh each of [joints] can crease: those within [REACH_RADII] of its radius of its pivot at rest
@@ -91,7 +94,7 @@ class JointCreaseField(
                     if (around <= 0f) continue
                     val t = joint.along(p)
                     val near = if (cloth) 1f - smoothstep(CLOTH_SHADE_NEAR, CLOTH_SHADE_FAR, joint.axisShare(p)) else 1f
-                    val s = around * exp(-t * t) * shadeShare * near
+                    val s = around * exp(-BAND_NARROWING * t * t) * shadeShare * near
                     if (s > shade[v]) shade[v] = s
                     if (around * exp(-t * t * 0.25f) > ink[v] * exp(-along[v] * along[v] * 0.25f)) {
                         ink[v] = around

@@ -73,7 +73,7 @@ fn vs_layer(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @l
 
 @fragment
 fn fs_layer(in: LayerOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), 1.0);
+    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection)), 1.0);
 }
 
 @vertex
@@ -88,7 +88,7 @@ fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
 
 @fragment
 fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), in.alpha);
+    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection)), in.alpha);
 }
 
 // A crease's shade band: where the shade carried per vertex is at least a half, its edge smoothed over a pixel, the color under it
@@ -97,10 +97,11 @@ fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
 @fragment
 fn fs_crease(in: FadingOut) -> @location(0) vec4<f32> {
     let band = clamp((in.alpha - 0.5) / max(fwidth(in.alpha), 0.0000001) + 0.5, 0.0, 1.0);
+    let toned = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
     if (band <= 0.0) {
         discard;
     }
-    return vec4<f32>(mix(vec3<f32>(1.0), tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), band), 1.0);
+    return vec4<f32>(mix(vec3<f32>(1.0), toned, band), 1.0);
 }
 
 struct SidedOut {
@@ -122,9 +123,9 @@ fn vs_sided(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @l
 // The layer's tone with its far sides' tones over it by each side's share, as fading layers of those tones drawn over it in turn would show.
 @fragment
 fn fs_sided(in: SidedOut) -> @location(0) vec4<f32> {
-    var color = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb);
-    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.positive_lit_and_on.rgb, layer.positive_shadow.rgb), clamp(in.sides.x, 0.0, 1.0));
-    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.negative_lit_and_on.rgb, layer.negative_shadow.rgb), clamp(in.sides.y, 0.0, 1.0));
+    var color = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
+    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.positive_lit_and_on.rgb, layer.positive_shadow.rgb, away_from(layer.view_projection)), clamp(in.sides.x, 0.0, 1.0));
+    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.negative_lit_and_on.rgb, layer.negative_shadow.rgb, away_from(layer.view_projection)), clamp(in.sides.y, 0.0, 1.0));
     return vec4<f32>(color, 1.0);
 }
 
@@ -170,9 +171,10 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
         level = max(level, oval_level(vec2<f32>(in.chart.x * oc + in.chart.y * os, -in.chart.x * os + in.chart.y * oc)));
     }
     let alpha = clamp(0.5 - level / max(fwidth(level), 0.0000001), 0.0, 1.0);
+    let toned = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
     if (alpha <= 0.0) {
         discard;
     }
-    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb), alpha);
+    return vec4<f32>(toned, alpha);
 }
 """ + TONE_WGSL

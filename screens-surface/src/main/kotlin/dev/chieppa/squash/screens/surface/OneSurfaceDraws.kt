@@ -56,12 +56,13 @@ fun hangingHems(dress: SurfaceDress): List<ContourRun> = dress.garments.filter {
 private const val CREASE_SHORTEST_CELLS = 2.5f
 
 /**
- * The ink of [creases]' lines where they face [view]: the body's at the crease ink's weight and each garment's at its own ink weight from
- * [inkWeights], each line at its own weight along it, so it tapers where its crease fades.
+ * The ink of [creases]' lines where they face [view]: the body's in [color] at the crease ink's weight and each garment's in its own
+ * color from [colors], [color] where it has none, at its own ink weight from [inkWeights], each line at its own weight along it, so it
+ * tapers where its crease fades.
  */
-fun creaseInkDraws(creases: PosedCreases, inkWeights: Map<GarmentId, Float>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
+fun creaseInkDraws(creases: PosedCreases, inkWeights: Map<GarmentId, Float>, colors: Map<GarmentId, Color>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
     creases.body?.lines.orEmpty().let { weightedCurveDraws(it, view, rule, color, cell, 1f) } +
-        creases.garments.flatMap { (piece, marks) -> weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[piece.garment] ?: 1f) }
+        creases.garments.flatMap { (piece, marks) -> weightedCurveDraws(marks.lines, view, rule, colors[piece.garment] ?: color, cell, inkWeights[piece.garment] ?: 1f) }
 
 private fun weightedCurveDraws(lines: List<CreaseLine>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, scale: Float): List<RibbonDraw> =
     lines.flatMap { line -> facedCurveDraws(listOf(line.points), view, rule, color, cell, scale = scale, shortestCells = CREASE_SHORTEST_CELLS, weights = line.weights) }
