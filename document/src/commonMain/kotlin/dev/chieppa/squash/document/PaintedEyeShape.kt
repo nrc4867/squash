@@ -47,6 +47,26 @@ fun EyeLook.toward(to: EyeLook, t: Float): EyeLook {
         highlightUp = mix(highlightUp, to.highlightUp),
         browRaise = mix(browRaise, to.browRaise),
         browTilt = mix(browTilt, to.browTilt),
+        topFlatness = mix(topFlatness, to.topFlatness),
+        outerCorner = mix(outerCorner, to.outerCorner),
+        lidMass = near.lidMass.copy(
+            weight = mix(lidMass.weight, to.lidMass.weight),
+            inner = mix(lidMass.inner, to.lidMass.inner),
+            flick = mix(lidMass.flick, to.lidMass.flick),
+            flickLift = mix(lidMass.flickLift, to.lidMass.flickLift),
+            lower = mix(lidMass.lower, to.lidMass.lower),
+            lowerExtent = mix(lidMass.lowerExtent, to.lidMass.lowerExtent),
+        ),
+        lashClumps = near.lashClumps.copy(length = mix(lashClumps.length, to.lashClumps.length), spread = mix(lashClumps.spread, to.lashClumps.spread)),
+        irisShade = near.irisShade.copy(
+            upper = mix(irisShade.upper, to.irisShade.upper),
+            darken = mix(irisShade.darken, to.irisShade.darken),
+            soft = mix(irisShade.soft, to.irisShade.soft),
+            lower = mix(irisShade.lower, to.irisShade.lower),
+            lighten = mix(irisShade.lighten, to.irisShade.lighten),
+            rim = mix(irisShade.rim, to.irisShade.rim),
+        ),
+        lidShadow = near.lidShadow.copy(depth = mix(lidShadow.depth, to.lidShadow.depth), share = mix(lidShadow.share, to.lidShadow.share)),
     )
 }
 

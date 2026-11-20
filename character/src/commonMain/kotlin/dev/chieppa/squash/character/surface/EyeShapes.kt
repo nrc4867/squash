@@ -37,15 +37,18 @@ private val BROW_LINE = listOf(-1.0f to 1.5f, -0.1f to 2.05f, 0.8f to 2.1f)
  */
 class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Float = 0f) {
     /** The opening as an almond before its tilts, and its fills' ovals before the eye's tilt, as a renderer reads them at each fragment. */
-    val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing)
+    val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing, look.topFlatness, look.outerCorner)
 
     private val rim = List(OVAL_POINTS) { i -> almond.rim(2.0 * PI * i / OVAL_POINTS).let { turned(it.u, it.v, turn) } }
 
-    /** The opening: an almond, rounder over the top than under, narrowed toward its back corner. */
+    /** The opening: an almond, rounder over the top than under, narrowed toward its back corner, its top flattened and back corner sharpened as the look says. */
     val opening: ColorShape = ColorShape.Border(rim)
 
-    /** The lid line round the opening, from its back corner over the top and under the bottom, its first place repeated last. */
-    val lid: List<SurfaceUv>? = if (look.lid) rim + rim.first() else null
+    /**
+     * The lid line round the opening, from its back corner over the top and under the bottom, its first place repeated last; none where
+     * a lid mass is drawn in its place.
+     */
+    val lid: List<SurfaceUv>? = if (look.lid && !look.lidMass.isOn) rim + rim.first() else null
 
     private val irisMiddle = SurfaceUv(look.irisForward + gazeForward * look.width, look.irisUp + gazeUp * look.height)
     private val irisHigh = look.irisSize * look.irisRatio
@@ -68,6 +71,9 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
     val iris: ColorShape = oval(irisOval)
     val pupil: ColorShape = oval(pupilOval)
     val highlight: ColorShape = oval(highlightOval)
+
+    /** The lid mass, lash clumps, iris tones and lid shadow, each shaped about the opening and the iris. */
+    val detail = EyeDetailShapes(look, irisOval)
 
     /** The opening's turn, its own tilt and the eye's, in degrees. */
     val turn: Float get() = look.tilt + look.openingTilt

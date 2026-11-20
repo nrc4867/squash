@@ -3,6 +3,8 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.ShapeSource
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.ChartAlmond
+import dev.chieppa.squash.geom.ChartCut
+import dev.chieppa.squash.geom.ChartLid
 import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ChartShape
 import dev.chieppa.squash.geom.LevelCut
@@ -10,20 +12,30 @@ import dev.chieppa.squash.geom.RenderMesh
 
 /**
  * A fill drawn to a shape read at each fragment: each vertex of the surface's drawn mesh at ([u], [v]) in the shape's chart, the fill kept
- * inside [opening], turned [turn] degrees, and, where given, [oval], turned [ovalTurn] degrees; its layer's mesh reaches [grow] past
- * where its values cut it, so the drawn shape's whole edge lies on it.
+ * inside [opening], turned [turn] degrees, and, where given, [oval], turned [ovalTurn] degrees, and kept by [cut]; with a [lid], the lid's
+ * mass about the opening in place of its inside. Its layer's mesh reaches [grow] past where its values cut it, so the drawn shape's whole
+ * edge lies on it.
  */
-class LayerFill(val u: FloatArray, val v: FloatArray, val opening: ChartAlmond, val oval: ChartOval?, val turn: Float, val ovalTurn: Float, val grow: Float)
+class LayerFill(
+    val u: FloatArray,
+    val v: FloatArray,
+    val opening: ChartAlmond,
+    val oval: ChartOval?,
+    val turn: Float,
+    val ovalTurn: Float,
+    val grow: Float,
+    val cut: ChartCut? = null,
+    val lid: ChartLid? = null,
+)
 
 /**
  * One color layer on the one surface: [slot] over [cut], laid as [mesh] on the surface it was cut from, with each of its vertices' share
  * of paired parts on either side of the body's plane, [positive] and [negative], null where it holds none. A [flat] layer shows its
- * slot's color unshaded, as an eye's fills do. It keeps the [values] it was cut at over its [candidates] triangles, which are triangles of
- * [indices], the drawn mesh's index array it was cut on: a posed surface may leave out quads, so its own indices number its triangles
- * differently. A layer with a
- * [fill] is drawn to its [shape], read at each fragment over a cut grown past its values. A layer with a [split] is cut over the triangles
- * it splits finer where its border may cross them, at the values it holds at their extra vertices. A layer cut from a shape of the
- * document keeps that shape's [source].
+ * slot's color unshaded, as an eye's fills do, taken toward another colour by its [tint] where it has one. It keeps the [values] it was
+ * cut at over its [candidates] triangles, which are triangles of [indices], the drawn mesh's index array it was cut on: a posed surface
+ * may leave out quads, so its own indices number its triangles differently. A layer with a [fill] is drawn to its [shape], read at each
+ * fragment over a cut grown past its values. A layer with a [split] is cut over the triangles it splits finer where its border may cross
+ * them, at the values it holds at their extra vertices. A layer cut from a shape of the document keeps that shape's [source].
  */
 class PaintLayer(
     val slot: SlotName?,
@@ -39,9 +51,10 @@ class PaintLayer(
     val indices: IntArray = IntArray(0),
     val split: PaintSplits? = null,
     val source: ShapeSource? = null,
+    val tint: LayerTint? = null,
 ) {
     /** This layer laid on [render], the same surface moved. */
-    fun on(render: RenderMesh): PaintLayer = PaintLayer(slot, cut, cut.mesh(render), positive, negative, flat, values, candidates, fill, shape, indices, split, source)
+    fun on(render: RenderMesh): PaintLayer = PaintLayer(slot, cut, cut.mesh(render), positive, negative, flat, values, candidates, fill, shape, indices, split, source, tint)
 
     /** This layer where [kept] is at least zero too, one value a vertex of [surface]'s drawn mesh, cut over the triangles of the mesh it was first cut on and laid on [render]; null where none is. */
     fun within(kept: FloatArray, surface: CharacterSurface, render: RenderMesh): PaintLayer? {
@@ -49,7 +62,7 @@ class PaintLayer(
             val extended = s.splits.extended(kept)
             PaintSplits(s.splits, FloatArray(s.values.size) { minOf(s.values[it], extended[it]) })
         }
-        return of(slot, surface, indices, FloatArray(values.size) { minOf(values[it], kept[it]) }, candidates, flat, fill, keptSplit, source)?.on(render)
+        return of(slot, surface, indices, FloatArray(values.size) { minOf(values[it], kept[it]) }, candidates, flat, fill, keptSplit, source, tint)?.on(render)
     }
 
     companion object {
@@ -66,22 +79,34 @@ class PaintLayer(
             fill: LayerFill? = null,
             split: PaintSplits? = null,
             source: ShapeSource? = null,
-        ): PaintLayer? = of(slot, surface, surface.render.indices, values, candidates, flat, fill, split, source)
+            tint: LayerTint? = null,
+        ): PaintLayer? = of(slot, surface, surface.render.indices, values, candidates, flat, fill, split, source, tint)
 
         /** As [of], with [candidates] triangles of [indices], the index array of the drawn mesh they were found on, which [surface] may not share. */
-        private fun of(slot: SlotName?, surface: CharacterSurface, indices: IntArray, values: FloatArray, candidates: IntArray, flat: Boolean, fill: LayerFill?, split: PaintSplits?, source: ShapeSource?): PaintLayer? {
+        private fun of(
+            slot: SlotName?,
+            surface: CharacterSurface,
+            indices: IntArray,
+            values: FloatArray,
+            candidates: IntArray,
+            flat: Boolean,
+            fill: LayerFill?,
+            split: PaintSplits?,
+            source: ShapeSource?,
+            tint: LayerTint?,
+        ): PaintLayer? {
             if (fill != null) {
                 val cut = LevelCut.of(FloatArray(values.size) { values[it] + fill.grow }, indices, candidates)
                 if (cut.isEmpty) return null
                 val u = cut.values(fill.u)
                 val v = cut.values(fill.v)
                 val chart = FloatArray(u.size * 2) { if (it % 2 == 0) u[it / 2] else v[it / 2] }
-                val shape = ChartShape(chart, fill.opening, fill.oval, fill.turn, fill.ovalTurn)
-                return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat, values, candidates, fill, shape, indices, source = source)
+                val shape = ChartShape(chart, fill.opening, fill.oval, fill.turn, fill.ovalTurn, fill.cut, fill.lid)
+                return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat, values, candidates, fill, shape, indices, source = source, tint = tint)
             }
             val cut = if (split != null) LevelCut.of(split.values, indices, candidates, split.splits) else LevelCut.of(values, indices, candidates)
             if (cut.isEmpty) return null
-            if (flat) return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat = true, values = values, candidates = candidates, indices = indices, split = split, source = source)
+            if (flat) return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat = true, values = values, candidates = candidates, indices = indices, split = split, source = source, tint = tint)
             return PaintLayer(slot, cut, cut.mesh(surface.render), sides(cut, surface.positiveZ), sides(cut, surface.negativeZ), values = values, candidates = candidates, indices = indices, split = split, source = source)
         }
 

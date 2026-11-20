@@ -121,6 +121,203 @@
       },
       "additionalProperties": false
     },
+    "EyeIrisShade": {
+      "description": "The iris shaded in cel tones: a darker top melting into the pupil, a lighter crescent along its bottom and a darker rim; each off at 0.",
+      "type": "object",
+      "properties": {
+        "upper": {
+          "description": "How far down the darker top reaches, a share of the iris's height; its lower edge follows the iris's top. 0 none.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "upperSlot": {
+          "description": "The darker top's palette slot; left out, the iris's colour taken darken of the way to the pupil's.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "darken": {
+          "description": "How far the darker top's colour goes from the iris's toward the pupil's, when it names no slot.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "soft": {
+          "description": "How soft the darker top's lower edge is, a share of the iris's half height: 0 a hard cel edge.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lower": {
+          "description": "How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height. 0 none.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lowerSlot": {
+          "description": "The crescent's palette slot; left out, the iris's colour taken lighten of the way to the white's.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lighten": {
+          "description": "How far the crescent's colour goes from the iris's toward the white's, when it names no slot.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "rim": {
+          "description": "The width of a darker ring round the iris's edge, a share of its half width. 0 none.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.5
+        },
+        "rimSlot": {
+          "description": "The ring's palette slot; the darker top's colour when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLashClumps": {
+      "description": "Lashes as thick wedges growing out of the upper lid near the back corner, in the lid mass's slot, beside the lash flicks.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "How many wedges: 0 none.",
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 5.0
+        },
+        "length": {
+          "description": "The outermost wedge's length, a share of the opening's height; each further one is a little shorter.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "spread": {
+          "description": "How much of the upper lid their roots spread over, from the back corner.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 1.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLidMass": {
+      "description": "The lid drawn as a tapered mass of ink in place of the even lid line; off while weight is 0. Lengths are shares of the opening.",
+      "type": "object",
+      "properties": {
+        "weight": {
+          "description": "The upper lid's thickness at its heaviest, from its middle to its back corner, a share of the opening's height; 0 draws no mass and keeps the lid line.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "inner": {
+          "description": "The upper lid's thickness at its front corner, a share of its heaviest.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "flick": {
+          "description": "How far the mass runs on past the back corner, tapering to a point, a share of the opening's half width.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.5
+        },
+        "flickLift": {
+          "description": "How far the flick's tip rises above the back corner, a share of the opening's height; below 0 it droops.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 2.0
+        },
+        "lower": {
+          "description": "The lower lid's thickness at the back corner, a share of the upper's heaviest: 0 leaves the lower lid open, 1 as heavy as the upper.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lowerExtent": {
+          "description": "How much of the lower lid is drawn, from the back corner inward, thinning to nothing at its end: 1 the whole lower lid.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "slot": {
+          "description": "The mass's palette slot; the look's ink when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLidShadow": {
+      "description": "A shadow band on the white under the upper lid, following its curve; off while depth is 0.",
+      "type": "object",
+      "properties": {
+        "depth": {
+          "description": "How deep the band reaches under the upper lid, a share of the opening's height.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "slot": {
+          "description": "The band's palette slot; left out, the white's colour taken share of the way to the skin's shadow tone.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "share": {
+          "description": "How far the band's colour goes from the white's toward the skin's shadow tone, when it names no slot.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "EyeLook": {
       "description": "How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template.",
       "type": "object",
@@ -148,6 +345,18 @@
           "type": "number",
           "minimum": -0.9,
           "maximum": 0.9
+        },
+        "topFlatness": {
+          "description": "How flat the upper lid runs, closing steeply at the corners: 0 the lower lid's round curve, 1 nearly straight, so with frontNarrowing or openingTilt it runs slanted.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "outerCorner": {
+          "description": "How sharp the back corner is where the lids meet: 0 round, 1 a point.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         },
         "tilt": {
           "description": "Degrees the whole eye turns in its plane about its middle, its front end up.",
@@ -305,6 +514,22 @@
               "type": "null"
             }
           ]
+        },
+        "lidMass": {
+          "description": "The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line.",
+          "$ref": "#/$defs/EyeLidMass"
+        },
+        "lashClumps": {
+          "description": "Lashes as thick wedges growing out of the upper lid near the back corner.",
+          "$ref": "#/$defs/EyeLashClumps"
+        },
+        "irisShade": {
+          "description": "The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim.",
+          "$ref": "#/$defs/EyeIrisShade"
+        },
+        "lidShadow": {
+          "description": "A shadow band on the white under the upper lid.",
+          "$ref": "#/$defs/EyeLidShadow"
         }
       },
       "patternProperties": {

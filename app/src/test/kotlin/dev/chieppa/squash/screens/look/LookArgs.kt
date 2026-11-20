@@ -35,7 +35,8 @@ class LookArgs(args: Array<String>) {
     /**
      * The close-ups asked for, among face, hand, foot, hands, the bare hand at rest, curled into a fist and open, feet, the bare foot or
      * paw at rest, curled, open and spread, joins, where the head, a forelimb and a hind limb meet the body, surface, the joins' spots, the
-     * outline close up and the mesh, drag, a torso drag's end, and release, a Move drag of a forelimb's socket during and after it.
+     * outline close up and the mesh, drag, a torso drag's end, release, a Move drag of a forelimb's socket during and after it, and eyes,
+     * both painted eyes framed close from the front, three-quarter and side.
      * `none` asks for no close-up at all.
      */
     val close: Set<String> = values["close"]?.split(',')?.filter { it != NONE }?.toSet() ?: setOf(FACE, HAND, FOOT)
@@ -121,6 +122,7 @@ class LookArgs(args: Array<String>) {
         const val RELEASE = "release"
         const val ANCHORS = "anchors"
         const val ORBIT = "orbit"
+        const val EYES = "eyes"
 
         /** How wide each whole-character view is by default, in pixels. */
         const val VIEW_TILE = 600
@@ -129,6 +131,6 @@ class LookArgs(args: Array<String>) {
         const val NONE = "none"
 
         /** Every word `close=` takes; anything else it holds is a part id. */
-        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT)
+        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES)
     }
 }

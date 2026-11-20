@@ -21,6 +21,7 @@ import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.creaseTones
 import dev.chieppa.squash.render.foldTones
+import dev.chieppa.squash.render.shadeShifted
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.LayerSides
 import dev.chieppa.squash.render.DefaultToneRule
@@ -66,7 +67,8 @@ fun surfaceDraw(
     val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
     val creased = creases?.takeIf { section == null }?.let { creaseLayer(mesh, shownCut?.values(it.shade) ?: it.shade, creaseTones(lit)) }
-    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) } + listOfNotNull(creased)
+    val skinShadow = own ?: lit.shadeShifted(shading.shadowDepth)
+    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, skinShadow) } + listOfNotNull(creased)
     return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)), layers = layers)
 }
 
@@ -92,7 +94,8 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
     val lit = palette.colorOf(slot) ?: fallback.base
     val own = palette.shadowOf(slot)
     val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
-    val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
+    val skinShadow = own ?: lit.shadeShifted(shading.shadowDepth)
+    val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, skinShadow) }
     val creased = creases?.garments?.get(garment.cover.garmentPiece)?.let { clothCreaseLayers(garment.drawn, it, lit, base, garment.cut::values) }.orEmpty()
     val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera))
     val seeThrough = garment.seeThrough
@@ -101,10 +104,16 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
     MeshDraw(garment.drawn, material, layers = listOfNotNull(sides) + painted + creased)
 }
 
-/** One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat. */
-private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3): List<ColorLayerDraw> {
+/**
+ * One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat, taken by its tint, which
+ * reads [skinShadow] as the skin's shadow tone.
+ */
+private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, skinShadow: Color): List<ColorLayerDraw> {
     val layerLit = palette.colorOf(layer.slot) ?: fallback.base
-    if (layer.flat) return listOf(ColorLayerDraw(layer.mesh, Tones(layerLit, layerLit), shape = layer.shape))
+    if (layer.flat) {
+        val shown = tinted(layerLit, layer.tint, palette, fallback.ink, skinShadow)
+        return listOf(ColorLayerDraw(layer.mesh, Tones(shown, shown), shape = layer.shape))
+    }
     val layerOwn = palette.shadowOf(layer.slot)
     val tones = DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera)
     return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)))

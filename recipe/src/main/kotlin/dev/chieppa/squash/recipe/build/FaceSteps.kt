@@ -36,8 +36,18 @@ internal fun BuildContext.eyes() = recipe.eyes.forEachIndexed { i, eye ->
 }
 
 private fun BuildContext.checkSlots(path: String, look: EyeLook) {
-    listOf("white" to look.white, "iris" to look.iris, "pupil" to look.pupil, "highlight" to look.highlight, "ink" to look.ink)
-        .forEach { (field, slot: SlotName?) -> slot?.let { slot("$path.$field", it.value) } }
+    listOf(
+        "white" to look.white,
+        "iris" to look.iris,
+        "pupil" to look.pupil,
+        "highlight" to look.highlight,
+        "ink" to look.ink,
+        "lidMass.slot" to look.lidMass.slot,
+        "irisShade.upperSlot" to look.irisShade.upperSlot,
+        "irisShade.lowerSlot" to look.irisShade.lowerSlot,
+        "irisShade.rimSlot" to look.irisShade.rimSlot,
+        "lidShadow.slot" to look.lidShadow.slot,
+    ).forEach { (field, slot: SlotName?) -> slot?.let { slot("$path.$field", it.value) } }
 }
 
 /** The named expressions. */
