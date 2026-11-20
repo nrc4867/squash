@@ -37,7 +37,7 @@ typealias WornOver = Map<PartId, List<GarmentBranch>>
 fun AssembledCharacter.withHairPushed(worn: WornOver = emptyMap()): AssembledCharacter {
     val replaced = HashMap<PlacedPart, PlacedPart>()
     for (part in parts) {
-        if (part.role != Role.HAIR || part.id == null || isFieldPart(part)) continue
+        if (part.role != Role.HAIR || part.id == null || part.locks != null || isFieldPart(part)) continue
         val pushed = part.pushedOutOf(this, worn)
         if (pushed !== part) replaced[part] = pushed
     }

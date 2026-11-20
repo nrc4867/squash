@@ -239,6 +239,14 @@ object SquashIcons {
             stroke("M8 3.5v9M3.5 8h9")
         }
     }
+    val HairLocks: ImageVector by lazy {
+        icon("hair-locks") {
+            stroke("M2.75 9.25q0-6.5 5.25-6.5t5.25 6.5")
+            stroke("M4.75 4.75q-1 4.5 0 9")
+            stroke("M8 2.75q-1.25 5.5 0 10.5")
+            stroke("M11.25 4.75q1 4.5 0 9")
+        }
+    }
     val HalfOutline: ImageVector by lazy {
         icon("half-outline") {
             stroke("M8 1.5v13")
@@ -322,6 +330,13 @@ object SquashIcons {
         icon("lines") {
             stroke("M2 12c3-7 6-7 12-8")
             stroke("M2 14c4-4 7-5 12-5")
+        }
+    }
+    val LockGroup: ImageVector by lazy {
+        icon("lock-group") {
+            stroke("M3.25 2.75q2.5 5-1 10.5")
+            stroke("M7.25 2.75q2.5 5-1 10.5")
+            stroke("M11.25 2.75q2.5 5-1 10.5")
         }
     }
     val LockVersion: ImageVector by lazy {

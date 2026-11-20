@@ -57,6 +57,10 @@ import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.dressedNode
 import dev.chieppa.squash.character.build.membraneColors
 import dev.chieppa.squash.character.build.membranesNode
+import dev.chieppa.squash.character.hair.LockBuilds
+import dev.chieppa.squash.character.hair.LOCK_TEMPLATE
+import dev.chieppa.squash.character.hair.lockColors
+import dev.chieppa.squash.character.hair.lockGroupsNode
 import dev.chieppa.squash.document.shownMembranes
 import dev.chieppa.squash.character.surface.HeldSurface
 import dev.chieppa.squash.character.surface.fieldWorkNode
@@ -70,6 +74,7 @@ import kotlinx.coroutines.flow.combine
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.geom.ColorDetail
 import dev.chieppa.squash.geom.PartAxes
@@ -139,12 +144,22 @@ class CharacterSession(
         ::skeleton,
     )
 
-    val assembly: Node<*, AssembledCharacter> = graph.membranesNode(
+    /** The lock groups as built, kept from one build to the next so an edit builds only the locks and groups it changed. */
+    val lockBuilds = LockBuilds(templates.latest(TemplateId(LOCK_TEMPLATE)))
+
+    /** [assembly] without its lock groups: what an edit of the hair leaves as it was, so what derives from it alone does not run again. */
+    val bodyAssembly: Node<*, AssembledCharacter> = graph.membranesNode(
         graph.dressedNode(
             placed,
             combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
         ),
         document.map { it.character.shownMembranes }.distinctUntilChanged(),
+    )
+
+    val assembly: Node<*, AssembledCharacter> = graph.lockGroupsNode(
+        bodyAssembly,
+        document.map { it.character.lockGroups }.distinctUntilChanged(),
+        lockBuilds,
     )
 
     /** The hair volumes whose band of shine shows on the hair, on its own meshes and on the one surface. */
@@ -191,7 +206,7 @@ class CharacterSession(
             assembly,
             shines,
         ),
-        document.map { garmentColors(it.character) + membraneColors(it.character) }.distinctUntilChanged(),
+        document.map { garmentColors(it.character) + membraneColors(it.character) + lockColors(it.character) }.distinctUntilChanged(),
     )
 
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */

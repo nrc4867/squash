@@ -251,3 +251,4 @@ export function crown(spec: CrownSpec): ClumpSet {
   }
   return { sockets, parts };
 }
+export * from "./locks.ts";

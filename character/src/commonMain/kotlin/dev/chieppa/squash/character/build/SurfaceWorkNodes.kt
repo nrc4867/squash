@@ -79,8 +79,14 @@ private enum class LinesKey { PLACED, GRIDS, CREASES, WORK }
  */
 fun Graph.bodyLinesNode(assembly: Node<*, AssembledCharacter>, work: Node<*, BodySurfaceWork>): Node<*, BodyLines> {
     val placed = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Placed(it) }
-    val grids = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Grids(lineGrids(it, cancellationCheck())) }
-    val creases = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) { LinesSource.Creases(socketCreases(it, cancellationCheck())) }
+    val gridMemo = PlacedMemo<PlacedPart, List<LineGrid>>()
+    val creaseMemo = PlacedMemo<Pair<PlacedPart, PlacedPart?>, SocketCrease?>()
+    val grids = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) {
+        gridMemo.run().let { run -> LinesSource.Grids(lineGrids(it, cancellationCheck(), run).also { run.finish() }) }
+    }
+    val creases = follow<AssembledCharacter, LinesSource>(assembly, stage = BuildStages.SURFACE_WORK) {
+        creaseMemo.run().let { run -> LinesSource.Creases(socketCreases(it, cancellationCheck(), run).also { run.finish() }) }
+    }
     val held = follow<BodySurfaceWork, LinesSource>(work, stage = BuildStages.SURFACE_WORK) { LinesSource.Work(it) }
     return gather(
         MutableStateFlow(Unit),

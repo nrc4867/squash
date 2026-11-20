@@ -69,6 +69,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
                 membrane.sink, membrane.color?.value, membrane.mirrored,
             )
         },
+        hair = exportedHair(character),
         expressions = character.expressions.map { expression ->
             if (expression.marks.isNotEmpty()) notCarried += "expression ${expression.id.value}: its marks"
             RecipeExpression(expression.id.value, expression.name, expression.pose.joints, expression.open.mapKeys { it.key.value })
