@@ -163,6 +163,35 @@ Which way each lock root grows: a background fall down the head, a whorl spirall
 | `flow.cowlicks[].turn` | 0.5 | -1 to 1 | 0 flips the hair back against the flow; 1 swirls it clockwise round the point seen from outside, -1 the other way. |
 | `flow.cowlicks[].lift` | 20.0 | 0 to 60 | Degrees the locks over it lift off the head, most at its middle. |
 
+## Outline
+
+`outline` draws the hair's silhouette as the sheet does, one closed curve a view, and fits the hair to it: the inner mass's `crown` and `width` sized to the region the front outline covers, each tip of an outline taken by the lock whose tip lands nearest it from a root facing that view, that lock's root moved, its length, rise, sweep, fall, lie and width searched so its tip lands on the outline's tip and its sides follow the outline to the valleys either side, a tip pointing out from the head below the scalp's middle ending in a flick, and every other lock shortened, or laid down, where it would stray outside the outline. The fitted values are the locks' overrides below and the mass's parameters; a fit owns them, so values given for them by hand are replaced. Tied groups and locks with guides of their own are left as they are. The build prints, and writes under its `hair-fit.txt`, how far each outline lies from the hair as built, mean and worst in the head's drawn units, and warns of tips no lock reached. `kit sheet hair` traces an outline from a sheet's view (kit/README.md).
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `outline.fit` | true | - | Whether the build fits the hair to the outline: the outer locks' roots, lengths, rise, sweep, fall and widths so their tips land on its tips and their edges follow it, the inner mass's crown and width to the region it covers, and every other lock kept inside it. The fitted values are the locks' overrides and the mass's parameters. |
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `outline.views[].view` | front | - | front, three-quarter (the camera 45 degrees round toward the character's left), side (the camera on the character's left) or back. |
+| `outline.views[].points` | [] | - | The closed curve round the region the hair covers as the view sees it, each [x, y]: x to the view's right and y up, in the head's drawn units from its origin, the frame face places use seen from the view's camera. 3 to 600 points. |
+| `outline.views[].tips` | none | - | The points of its spikes and flicks, by index into points; found from the curve's shape when left out (a turn of 50 degrees or more out of the region within 2% of its length round). |
+| `outline.views[].valleys` | none | - | The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region). |
+
+The lock overrides a fit sets, which a group's `locks` can also give by hand:
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `locks[].length` | none | 0.005 to 3 | Its length, in body units. |
+| `locks[].width` | none | 0.002 to 0.5 | Its width at the root, in body units. |
+| `locks[].rise` | none | -30 to 90 | Degrees its outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle. |
+| `locks[].sweep` | none | -1 to 1 | How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right. |
+| `locks[].fall` | none | 0 to 1 | How far it falls toward the ground along its length, 0 none to 1 hanging. |
+| `locks[].lie` | none | 0.05 to 0.95 | How much of its length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a spike; 0.55 when left out. |
+| `locks[].around` | none | -45 to 45 | Degrees its root moves round the head from where its group lays it, positive toward the character's right. |
+| `locks[].up` | none | -45 to 45 | Degrees its root moves up the head from where its group lays it. |
+| `locks[].tip` | none | - | - |
+
 ## Inner mass
 
 `fitMass` fits a `hair-volume` cap to the head as built, as the app's preset menu does: its size and crown from the head's box, its top following the skull's dome. Its `params` replace the fitted values; most heads need none. The fitted values, with each parameter's range from the template:

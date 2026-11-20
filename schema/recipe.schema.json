@@ -660,6 +660,58 @@
             }
           ]
         },
+        "fall": {
+          "description": "How far it falls toward the ground along its length, 0 none to 1 hanging.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lie": {
+          "description": "How much of its length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a spike; 0.55 when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.95
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "around": {
+          "description": "Degrees its root moves round the head from where its group lays it, positive toward the character's right.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -45.0,
+              "maximum": 45.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "up": {
+          "description": "Degrees its root moves up the head from where its group lays it.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -45.0,
+              "maximum": 45.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "section": {
           "anyOf": [
             {
@@ -1955,10 +2007,45 @@
               "type": "null"
             }
           ]
+        },
+        "outline": {
+          "description": "The hair's drawn outline per view, which with fit the outer locks are fitted to: kit sheet hair traces one from a sheet.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeHairOutline"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "on"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeHairOutline": {
+      "description": "The hair's drawn outline: a closed curve per view round the region the hair covers, its tips and valleys, and whether the hair is fitted to it.",
+      "type": "object",
+      "properties": {
+        "views": {
+          "description": "One outline a view, the front among them; side, three-quarter and back are optional.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeOutlineView"
+          }
+        },
+        "fit": {
+          "description": "Whether the build fits the hair to the outline: the outer locks' roots, lengths, rise, sweep, fall and widths so their tips land on its tips and their edges follow it, the inner mass's crown and width to the region it covers, and every other lock kept inside it. The fitted values are the locks' overrides and the mass's parameters.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "views"
       ],
       "patternProperties": {
         "^x-": {}
@@ -2875,6 +2962,67 @@
           ]
         }
       },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeOutlineView": {
+      "description": "The hair's outline in one view.",
+      "type": "object",
+      "properties": {
+        "view": {
+          "description": "front, three-quarter (the camera 45 degrees round toward the character's left), side (the camera on the character's left) or back.",
+          "enum": [
+            "front",
+            "three-quarter",
+            "side",
+            "back"
+          ]
+        },
+        "points": {
+          "description": "The closed curve round the region the hair covers as the view sees it, each [x, y]: x to the view's right and y up, in the head's drawn units from its origin, the frame face places use seen from the view's camera. 3 to 600 points.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "tips": {
+          "description": "The points of its spikes and flicks, by index into points; found from the curve's shape when left out (a turn of 50 degrees or more out of the region within 2% of its length round).",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "valleys": {
+          "description": "The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region).",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "view",
+        "points"
+      ],
       "patternProperties": {
         "^x-": {}
       },

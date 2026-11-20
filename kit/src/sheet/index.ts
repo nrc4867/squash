@@ -30,4 +30,6 @@ export * from "./read/profiles/index.ts";
 export * from "./read/trace.ts";
 export * from "./read/partFrame.ts";
 export * from "./read/trace-image.ts";
+export * from "./read/hair.ts";
+export * from "./read/hair-image.ts";
 export * from "./raster/index.ts";

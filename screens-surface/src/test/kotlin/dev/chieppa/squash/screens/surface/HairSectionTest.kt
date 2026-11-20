@@ -57,7 +57,7 @@ class HairSectionTest {
     @Test
     fun aPresetGivesTheHeadItsGroupsInOneStepAndAGroupIsRemovedInOne() = runComposeUiTest {
         withHead()
-        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { HairSection(session) } } }
+        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { HairSection(state, session) } } }
         onNodeWithTag(HairTags.PRESET).performScrollTo().performClick()
         waitForIdle()
         val before = steps()
@@ -87,7 +87,7 @@ class HairSectionTest {
     @Test
     fun theFlowSetsTheHeadsPartingAndCowlicksEachInOneStep() = runComposeUiTest {
         withHead()
-        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { HairSection(session) } } }
+        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { HairSection(state, session) } } }
         onNodeWithTag(HairTags.PRESET).performScrollTo().performClick()
         waitForIdle()
         onNodeWithTag(HairTags.preset(HairPreset.LONG_STRAIGHT)).performClick()
