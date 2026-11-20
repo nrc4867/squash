@@ -26,10 +26,10 @@ private const val HELD_UNTRUSTED = 0.05f
 private const val HELD_TRUSTED = 0.3f
 
 /** Over what rate, threads crossed for each spacing walked across the surface, a net spread or squeezed by its run goes untrusted. */
-private const val STRETCHED_FROM = 0.3f
-private const val STRETCHED_TO = 0.5f
-private const val SQUEEZED_FROM = 2.5f
-private const val SQUEEZED_TO = 4f
+private const val STRETCHED_FROM = 0.45f
+private const val STRETCHED_TO = 0.65f
+private const val SQUEEZED_FROM = 1.6f
+private const val SQUEEZED_TO = 2.3f
 
 /** How much a run's share of a vertex counts toward laying the net on it, beside how well its coordinates hold the net there. */
 private const val SHARE_TIE = 0.25f
