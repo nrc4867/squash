@@ -970,16 +970,16 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
 | area | patch | u | v | tag | shown in slot |
 | --- | --- | --- | --- | --- | --- |
-| `hoof` | body | [0.13, 1] | [0, 1] | fill | claw |
-| `hoof` | hooves | [0.13, 1] | [0, 1] | fill | claw |
-| `sole` | hooves | [0.44, 1] | [0, 1] | fill | pad |
+| `hoof` | body | [0.06, 1] | [0, 1] | fill | claw |
+| `hoof` | hooves | [0.06, 1] | [0, 1] | fill | claw |
+| `sole` | hooves | [0.3, 1] | [0, 1] | fill | pad |
 | `hoof` | hooves:dew-l | [0, 1] | [0, 1] | fill | claw |
 | `hoof` | hooves:dew-r | [0, 1] | [0, 1] | fill | claw |
 | `hoof` | hooves:dew-low-l | [0, 1] | [0, 1] | fill | claw |
 | `hoof` | hooves:dew-low-r | [0, 1] | [0, 1] | fill | claw |
 | `hoof` | hooves:dew-large-l | [0, 1] | [0, 1] | fill | claw |
 | `hoof` | hooves:dew-large-r | [0, 1] | [0, 1] | fill | claw |
-| `frog` | hooves | [0.44, 1] | [0.4, 0.6] | fill | claw |
+| `frog` | hooves | [0.3, 1] | [0.4, 0.6] | fill | claw |
 
 Parameters:
 
@@ -988,7 +988,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `toes` | 1 | one of 1, 2 | 1 for a single hoof (a horse), 2 for a cloven hoof, two toes side by side (a cow, a goat, a deer). |
 | `cleft` | 1 | 0.5 to 2 | How far apart a cloven hoof's two toes stand, as a multiple of their gap. |
-| `splay` | 1 | 0.3 to 2 | How far a cloven hoof's toes turn apart toward the ground, as a multiple: below 1 they stand together, above it they splay. |
+| `splay` | 1 | 0.3 to 2 | How far a cloven hoof's toes turn apart toward the ground, as a multiple: below 1 they stand together, above it they part a little more. |
 | `flare` | 1.25 | 1 to 1.6 | How much wider each hoof is at the sole than at the coronet. |
 | `height` | 1 | 0.6 to 1.6 | How tall the hoof wall stands from the sole to the coronet, as a multiple. |
 | `width` | 1 | 0.6 to 1.5 | How broad each toe is, as a multiple of its thickness. |
@@ -1003,11 +1003,11 @@ Presets, a part's `preset` (its own `params` override them):
 
 | preset | sets |
 | --- | --- |
-| `horse` | `toes` 1, `width` 1.15, `flare` 1.25, `height` 0.9, `point` 0, `heels` 1, `frog` 1 |
-| `cattle` | `toes` 2, `width` 1.2, `flare` 1.2, `height` 0.85, `point` 0.1, `cleft` 0.85, `splay` 0.6, `dewclaws` 1 |
-| `goat` | `toes` 2, `width` 0.9, `flare` 1.2, `height` 1, `point` 0.35, `cleft` 1.1, `splay` 1.4, `dewclaws` 1 |
-| `deer` | `toes` 2, `width` 0.75, `flare` 1.15, `height` 1.2, `point` 0.5, `cleft` 1, `splay` 1, `dewLow` 1 |
-| `pig` | `toes` 2, `width` 1.05, `flare` 1.1, `height` 0.7, `point` 0.1, `cleft` 1.25, `splay` 1.1, `dewLarge` 1 |
+| `horse` | `toes` 1, `width` 1.1, `flare` 1.5, `height` 1, `point` 0, `heels` 1, `frog` 1 |
+| `cattle` | `toes` 2, `width` 1.05, `flare` 1.2, `height` 0.9, `point` 0.05, `cleft` 1.05, `splay` 0.7, `dewclaws` 1 |
+| `goat` | `toes` 2, `width` 0.9, `flare` 1.15, `height` 1, `point` 0.3, `cleft` 0.9, `splay` 1.2, `dewclaws` 1 |
+| `deer` | `toes` 2, `width` 0.8, `flare` 1.1, `height` 1.15, `point` 0.45, `cleft` 0.8, `splay` 1, `dewLow` 1 |
+| `pig` | `toes` 2, `width` 1, `flare` 1.1, `height` 0.9, `point` 0.05, `cleft` 1, `splay` 1.2, `dewLarge` 1 |
 
 ## horn 1
 

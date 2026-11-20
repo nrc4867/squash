@@ -49,7 +49,7 @@
       "max": 2.0
     },
     "splay": {
-      "doc": "How far a cloven hoof's toes turn apart toward the ground, as a multiple: below 1 they stand together, above it they splay.",
+      "doc": "How far a cloven hoof's toes turn apart toward the ground, as a multiple: below 1 they stand together, above it they part a little more.",
       "default": 1.0,
       "min": 0.3,
       "max": 2.0
@@ -102,51 +102,51 @@
   "presets": {
     "horse": {
       "toes": 1,
-      "width": 1.15,
-      "flare": 1.25,
-      "height": 0.9,
+      "width": 1.1,
+      "flare": 1.5,
+      "height": 1.0,
       "point": 0.0,
       "heels": 1,
       "frog": 1
     },
     "cattle": {
       "toes": 2,
-      "width": 1.2,
+      "width": 1.05,
       "flare": 1.2,
-      "height": 0.85,
-      "point": 0.1,
-      "cleft": 0.85,
-      "splay": 0.6,
+      "height": 0.9,
+      "point": 0.05,
+      "cleft": 1.05,
+      "splay": 0.7,
       "dewclaws": 1
     },
     "goat": {
       "toes": 2,
       "width": 0.9,
-      "flare": 1.2,
+      "flare": 1.15,
       "height": 1.0,
-      "point": 0.35,
-      "cleft": 1.1,
-      "splay": 1.4,
+      "point": 0.3,
+      "cleft": 0.9,
+      "splay": 1.2,
       "dewclaws": 1
     },
     "deer": {
       "toes": 2,
-      "width": 0.75,
-      "flare": 1.15,
-      "height": 1.2,
-      "point": 0.5,
-      "cleft": 1.0,
+      "width": 0.8,
+      "flare": 1.1,
+      "height": 1.15,
+      "point": 0.45,
+      "cleft": 0.8,
       "splay": 1.0,
       "dewLow": 1
     },
     "pig": {
       "toes": 2,
-      "width": 1.05,
+      "width": 1.0,
       "flare": 1.1,
-      "height": 0.7,
-      "point": 0.1,
-      "cleft": 1.25,
-      "splay": 1.1,
+      "height": 0.9,
+      "point": 0.05,
+      "cleft": 1.0,
+      "splay": 1.2,
       "dewLarge": 1
     }
   },
@@ -164,14 +164,14 @@
           "name": "crown",
           "shape": "ellipsoid",
           "at": [
-            0.1,
-            0.0,
-            0.0
+            0.04,
+            0,
+            0
           ],
           "radii": [
-            0.12,
-            0.1,
-            0.1
+            0.09,
+            0.085,
+            0.085
           ]
         },
         {
@@ -179,14 +179,14 @@
           "if": "$heels",
           "shape": "ellipsoid",
           "at": [
-            0.36,
-            -0.12,
+            0.23,
+            -0.1,
             -0.06
           ],
           "radii": [
-            0.08,
             0.06,
-            0.06
+            0.05,
+            0.055
           ],
           "blend": 0.04
         },
@@ -195,20 +195,20 @@
           "if": "$heels",
           "shape": "ellipsoid",
           "at": [
-            0.36,
-            -0.12,
+            0.23,
+            -0.1,
             0.06
           ],
           "radii": [
-            0.08,
             0.06,
-            0.06
+            0.05,
+            0.055
           ],
           "blend": 0.04
         }
       ],
       "floor": {
-        "at": 0.44,
+        "at": 0.3,
         "blend": 0.015,
         "across": true,
         "hollow": 0.35,
@@ -230,56 +230,56 @@
         -10,
         10
       ],
-      "join": 0.05,
-      "merge": 0.08,
+      "join": 0.03,
+      "merge": 0.04,
       "digits": [
         {
           "root": [
-            0.13,
+            0.03,
             0.0,
             0.0
           ],
           "toward": [
-            0.9348,
-            0.3552,
+            0.9409,
+            0.3387,
             0.0
           ],
-          "length": 0.42,
-          "radius": 0.155,
+          "length": 0.4,
+          "radius": 0.12,
           "counts": [
             1
           ]
         },
         {
           "root": [
-            0.13,
+            0.03,
             0.0,
-            -0.085
+            -0.05
           ],
           "toward": [
-            0.9083,
-            0.3452,
-            -0.2362
+            0.9328,
+            0.3358,
+            -0.1306
           ],
-          "length": 0.42,
-          "radius": 0.08,
+          "length": 0.4,
+          "radius": 0.062,
           "counts": [
             2
           ]
         },
         {
           "root": [
-            0.13,
+            0.03,
             0.0,
-            0.085
+            0.05
           ],
           "toward": [
-            0.9083,
-            0.3452,
-            0.2362
+            0.9328,
+            0.3358,
+            0.1306
           ],
-          "length": 0.42,
-          "radius": 0.08,
+          "length": 0.4,
+          "radius": 0.062,
           "counts": [
             2
           ]
@@ -289,96 +289,96 @@
           "if": "$dewclaws",
           "root": [
             0.06,
-            -0.07,
-            -0.07
+            -0.065,
+            -0.035
           ],
           "toward": [
-            0.5051,
-            -0.8081,
-            -0.303
+            0.8213,
+            -0.5646,
+            -0.0821
           ],
-          "length": 0.08,
-          "radius": 0.03
+          "length": 0.07,
+          "radius": 0.026
         },
         {
           "name": "dew-r",
           "if": "$dewclaws",
           "root": [
             0.06,
-            -0.07,
-            0.07
+            -0.065,
+            0.035
           ],
           "toward": [
-            0.5051,
-            -0.8081,
-            0.303
+            0.8213,
+            -0.5646,
+            0.0821
           ],
-          "length": 0.08,
-          "radius": 0.03
+          "length": 0.07,
+          "radius": 0.026
         },
         {
           "name": "dew-low-l",
           "if": "$dewLow",
           "root": [
-            0.18,
+            0.07,
             -0.06,
-            -0.07
+            -0.035
           ],
           "toward": [
-            0.5628,
-            -0.7675,
-            -0.307
+            0.9735,
+            -0.2231,
+            -0.0507
           ],
-          "length": 0.13,
-          "radius": 0.04
+          "length": 0.11,
+          "radius": 0.03
         },
         {
           "name": "dew-low-r",
           "if": "$dewLow",
           "root": [
-            0.18,
+            0.07,
             -0.06,
-            0.07
+            0.035
           ],
           "toward": [
-            0.5628,
-            -0.7675,
-            0.307
+            0.9735,
+            -0.2231,
+            0.0507
           ],
-          "length": 0.13,
-          "radius": 0.04
+          "length": 0.11,
+          "radius": 0.03
         },
         {
           "name": "dew-large-l",
           "if": "$dewLarge",
           "root": [
-            0.2,
-            -0.06,
-            -0.09
+            0.08,
+            -0.065,
+            -0.05
           ],
           "toward": [
-            0.8081,
-            -0.5051,
-            -0.303
+            0.9457,
+            -0.3084,
+            -0.1028
           ],
           "length": 0.2,
-          "radius": 0.055
+          "radius": 0.045
         },
         {
           "name": "dew-large-r",
           "if": "$dewLarge",
           "root": [
-            0.2,
-            -0.06,
-            0.09
+            0.08,
+            -0.065,
+            0.05
           ],
           "toward": [
-            0.8081,
-            -0.5051,
-            0.303
+            0.9457,
+            -0.3084,
+            0.1028
           ],
           "length": 0.2,
-          "radius": 0.055
+          "radius": 0.045
         }
       ],
       "spread": "$splay",
@@ -399,7 +399,7 @@
       "kind": "area",
       "name": "hoof",
       "u": [
-        0.13,
+        0.06,
         1.0
       ],
       "v": [
@@ -413,7 +413,7 @@
       "kind": "area",
       "name": "hoof",
       "u": [
-        0.13,
+        0.06,
         1.0
       ],
       "v": [
@@ -428,7 +428,7 @@
       "kind": "area",
       "name": "sole",
       "u": [
-        0.44,
+        0.3,
         1.0
       ],
       "v": [
@@ -534,7 +534,7 @@
       "name": "frog",
       "if": "$frog",
       "u": [
-        0.44,
+        0.3,
         1.0
       ],
       "v": [
