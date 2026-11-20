@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Tag
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,8 +20,13 @@ import kotlin.test.assertTrue
 
 /**
  * A garment with a sheer area, a net area and a whole band, built through the real graph: it hides no skin, and its see-through cloth
- * holds each area's opacity and net at the vertices it covers, the net's counts round whole numbers.
+ * holds each area's opacity and net at the vertices it covers, the net's counts round whole numbers and its place running on across
+ * the mesh with no step.
  */
+/** The most a drawn triangle's side may cross of the net's place: along the body in hole spacings, and round it in radians. */
+private const val MOST_STEP_ALONG = 2f
+private const val MOST_STEP_ROUND = 1f
+
 @Tag("integration")
 @OptIn(ExperimentalCoroutinesApi::class)
 class SeeThroughClothBuildTest {
@@ -56,5 +62,16 @@ class SeeThroughClothBuildTest {
         }
         val trusted = net.count { cloth.trust[it] > 0.5f }
         assertTrue(trusted > net.size / 2, "the net is laid well over most of a plain run: $trusted of ${net.size}")
+        val indices = dress.garments.single().surface.render.indices
+        val inNet = net.toSet()
+        for (tri in 0 until indices.size / 3) {
+            val corners = (0 until 3).map { indices[tri * 3 + it] }
+            if (!corners.all { it in inNet }) continue
+            for ((a, b) in listOf(corners[0] to corners[1], corners[1] to corners[2], corners[2] to corners[0])) {
+                assertTrue(abs(cloth.along[a] - cloth.along[b]) < MOST_STEP_ALONG, "the net's place runs on along the body with no step")
+                val turned = abs(atan2(cloth.roundSin[a] * cloth.roundCos[b] - cloth.roundCos[a] * cloth.roundSin[b], cloth.roundCos[a] * cloth.roundCos[b] + cloth.roundSin[a] * cloth.roundSin[b]))
+                assertTrue(turned < MOST_STEP_ROUND, "the net's place runs on round the body with no step")
+            }
+        }
     }
 }

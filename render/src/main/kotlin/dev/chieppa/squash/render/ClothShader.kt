@@ -44,8 +44,8 @@ const LEAST_FACING: f32 = 0.04;
 // band toward the silhouette, as sheer cloth is drawn.
 const THICKENING: f32 = 2.0;
 // Over what share of a spacing a pixel's span fades the threads to their mean.
-const FADE_FROM: f32 = 0.15;
-const FADE_TO: f32 = 0.35;
+const FADE_FROM: f32 = 0.1;
+const FADE_TO: f32 = 0.25;
 // Over what trust in the net's place its threads come in from its mean tone.
 const TRUST_FROM: f32 = 0.5;
 const TRUST_TO: f32 = 0.85;
