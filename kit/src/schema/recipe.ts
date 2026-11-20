@@ -204,6 +204,8 @@ export interface Recipe {
   parts?: RecipePart[];
   /** Painted eyes on a head. */
   eyes?: RecipeEye[];
+  /** Thin sheets of skin spanned between parts, such as a patagium or a wing membrane. */
+  membranes?: RecipeMembrane[];
   /** Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up. */
   expressions?: RecipeExpression[];
   /** Clothes: slots, garments and outfits. */
@@ -502,6 +504,43 @@ export interface RecipeMark {
   flight?: MarkFlight[];
   /** In a garment's marks only: the body part its places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
   on?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A thin sheet of skin spanned between parts: a patagium from wrist to ankle, a wing from arm and finger to flank. It rides the bones of the parts it is anchored to and inks only its free edge. Webs between the digits of one hand or foot are its template's webbing parameters instead. */
+export interface RecipeMembrane {
+  id: string;
+  /** The first rail: edges in order from the membrane's root to where its free edge meets this side. */
+  first: RecipeMembraneEdge[];
+  /** The second rail, the same way. The free edge runs between the two rails' ends. */
+  second: RecipeMembraneEdge[];
+  /** How far the free edge curves in between the rails' ends, a share of their reach: 0 straight. */
+  edge?: number;
+  /** How far its middle billows off the plane between its rails, a share of the gap between them: toward the ground where it lies level, out from the body where it hangs beside it; negative the other way. */
+  billow?: number;
+  /** How thick it is half way between its rails, a share of how deep its rails sit in their parts. */
+  thickness?: number;
+  /** How deep into its parts its rails sit: 0 on their surface, 1 on their middle. */
+  sink?: number;
+  /** Its palette slot; the base colour of the part its first rail starts on when left out. */
+  color?: string | null;
+  /** Whether it is built again on the other side: each part of a pair named by its left id is read as its right twin there, and v is mirrored on a part in the middle. */
+  mirrored?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A stretch of a part's surface a membrane is anchored along, from [u, v] to [u, v]; a socket point where the two are the same. */
+export interface RecipeMembraneEdge {
+  /** The part, by id; a pair by its left side's id. */
+  part: string;
+  /** [u, v] where the edge starts: u along the part from its socket end, v round it (0 top, 0.25 left, 0.5 underside, 0.75 right). */
+  from: number[];
+  /** [u, v] where the edge ends; the same as from for a point. */
+  to?: number[] | null;
+  /** The run of the part it lies on, such as a digit (fingers:2); the part's first run reaching each u when left out. */
+  patch?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

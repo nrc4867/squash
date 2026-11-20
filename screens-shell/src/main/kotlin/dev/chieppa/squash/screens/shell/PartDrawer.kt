@@ -49,7 +49,7 @@ private val READOUT_WIDTH = 52.dp
 /**
  * The Shape inspector: Add part's section alone while Add part is armed, since it adds to the character rather than changing the
  * selected part; otherwise the armed tool's sections, then the selected part's role and template, a generic part's own shape, its
- * parameters, its curve and its anatomy.
+ * parameters, its curve, its anatomy and the membranes it is a rail of; a selected membrane shows its own settings instead.
  */
 @Composable
 fun ShapeInspector(state: AppState, toolSections: ToolSections) {
@@ -72,6 +72,8 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
     val part = selected?.let { document?.character?.part(it) }
     val data = part?.let { document?.character?.resolved(it) }
     val template = part?.let { state.templates.template(it.template) }
+    val chosen = selected
+    if (open != null && document != null && chosen != null && isMembranePart(chosen) && MembraneDetails(state, open, document.character, chosen)) return
     if (open == null || part == null || data == null || template == null) {
         EmptyState(SquashIcons.Parts, stringResource(Res.string.shell_part_none), Modifier.testTag(ShellTags.PART_EMPTY))
         return
@@ -105,6 +107,7 @@ private fun SelectedPartDetails(state: AppState, toolSections: ToolSections) {
     }
     key(part.id) { CurveSection(open, part.id, template, base.params, base.outlines, !mirror) }
     AnatomySection(state, open, part)
+    MembranesOfPart(state, open, character, part)
 }
 
 /**

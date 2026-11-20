@@ -1692,7 +1692,7 @@
       "additionalProperties": false
     },
     "Membrane": {
-      "description": "A web spanned between neighbouring digits of a toe row listed before it, or a digit and the part's own run, one patch a pair, named for the membrane and the pair's first digit.",
+      "description": "A web spanned between neighbouring digits of a toe row or a digits row listed before it, or a digit and the part's own run, one patch a pair, named for the membrane and the pair's first digit; thin, its own mesh, riding the bones of the digits either side.",
       "type": "object",
       "properties": {
         "kind": {
@@ -1720,7 +1720,7 @@
           ]
         },
         "on": {
-          "description": "The toe row whose digits it spans. The row is listed before the membrane.",
+          "description": "The toe row or digits row whose digits it spans. The row is listed before the membrane.",
           "type": "string"
         },
         "reach": {
@@ -1770,7 +1770,7 @@
           "minimum": 6.0
         },
         "between": {
-          "description": "The pairs of digits it spans; each digit with the next when left out, leaving out a digit turned back.",
+          "description": "The pairs of digits it spans; each digit with the next across the row when left out, leaving out a digit turned back and, on a digits row, a named digit.",
           "anyOf": [
             {
               "type": "array",

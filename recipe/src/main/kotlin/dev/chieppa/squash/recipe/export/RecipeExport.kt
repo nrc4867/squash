@@ -22,6 +22,9 @@ import dev.chieppa.squash.recipe.model.RecipeColor
 import dev.chieppa.squash.recipe.model.RecipeCover
 import dev.chieppa.squash.recipe.model.RecipeExpression
 import dev.chieppa.squash.recipe.model.RecipeEye
+import dev.chieppa.squash.recipe.model.RecipeMembrane
+import dev.chieppa.squash.recipe.model.RecipeMembraneEdge
+import dev.chieppa.squash.document.MembraneEdge
 import dev.chieppa.squash.recipe.model.RecipeGarment
 import dev.chieppa.squash.recipe.model.RecipeHang
 import dev.chieppa.squash.recipe.model.RecipePair
@@ -58,6 +61,12 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         eyes = character.paintedEyes.map { eye ->
             RecipeEye(eye.id, eye.anchor.part.value, eye.anchor.patch, eye.anchor.u, eye.anchor.v, null, eye.look, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.mirrored, eye.flat)
         },
+        membranes = character.membranes.map { membrane ->
+            RecipeMembrane(
+                membrane.id.value, membrane.first.map(::edge), membrane.second.map(::edge), membrane.edge, membrane.billow, membrane.thickness,
+                membrane.sink, membrane.color?.value, membrane.mirrored,
+            )
+        },
         expressions = character.expressions.map { expression ->
             if (expression.marks.isNotEmpty()) notCarried += "expression ${expression.id.value}: its marks"
             RecipeExpression(expression.id.value, expression.name, expression.pose.joints, expression.open.mapKeys { it.key.value })
@@ -70,6 +79,10 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
 }
 
 /** The size [part]'s socket starts a part at, a row's share for a socket of a hand-made row, which a recipe's part with no size takes. */
+private fun edge(edge: MembraneEdge) = RecipeMembraneEdge(
+    edge.part.value, listOf(edge.fromU, edge.fromV), listOf(edge.toU, edge.toV).takeIf { edge.toU != edge.fromU || edge.toV != edge.fromV }, edge.patch,
+)
+
 private fun rowScale(document: SquashDocument, part: PartInstance): Float {
     val socket = part.socket ?: return 1f
     val row = HandSockets.rowOf(socket.socket) ?: return 1f

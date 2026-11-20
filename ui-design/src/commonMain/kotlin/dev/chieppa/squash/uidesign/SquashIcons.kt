@@ -350,6 +350,14 @@ object SquashIcons {
             stroke("M3 10c2.5 3.2 7.5 3.2 10 0")
         }
     }
+    val Membrane: ImageVector by lazy {
+        icon("membrane") {
+            stroke("M2.75 2.25l1.5 11.5")
+            stroke("M13.25 2.25l-1.5 11.5")
+            stroke("M2.75 2.25h10.5")
+            stroke("M4.25 13.75q1.875-3 3.75 0q1.875-3 3.75 0")
+        }
+    }
     val Mirror: ImageVector by lazy {
         icon("mirror") {
             stroke("M8 1.5v13")

@@ -78,7 +78,7 @@ class BodyChart(val parts: List<ChartPart>, private val leaders: Map<PartId, Par
             absentPatch: String = BODY_PATCH,
             includes: (PlacedPart) -> Boolean = { true },
         ): BodyChart {
-            val kept = body.parts.filter { it.id != null && it.covering == null && it.hanging == null && includes(it) && it.id !in leaders }
+            val kept = body.parts.filter { it.id != null && it.covering == null && it.hanging == null && it.spanning == null && includes(it) && it.id !in leaders }
             val parts = kept.mapNotNull { placed ->
                 val patch = placed.surface.patches.getOrNull(firstRunIndex(placed.surface.patches)) ?: return@mapNotNull null
                 val spec = placed.socketSpec

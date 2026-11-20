@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens
 
+import dev.chieppa.squash.document.membraneShownAs
 import dev.chieppa.squash.screens.sheet.PaneNavigation
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
@@ -229,7 +230,7 @@ class AppState(
         // Undo can remove the selected part or the parent of the socket Library targets, so both follow the document.
         sessionScope.launch(Dispatchers.Unconfined) {
             opened.document.collect { current ->
-                if (selectedPart.value?.let(current.character::part) == null) {
+                if (selectedPart.value?.let { current.character.part(it) != null || current.character.membraneShownAs(it) != null } != true) {
                     selectedPart.value = current.character.parts.firstOrNull()?.id
                     partChosen.value = false
                 }

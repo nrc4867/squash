@@ -29,7 +29,7 @@ class RecipeBuild(val document: SquashDocument, val commands: List<DocumentComma
 /**
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
  * every body part, placed and shaped in the recipe's order; their colour and surface work; the wardrobe's slots and garments; the
- * parts garments own, placed, shaped and painted; the painted eyes; the expressions; the outfits and the one shown; the display pose;
+ * parts garments own, placed, shaped and painted; the painted eyes; the membranes; the expressions; the outfits and the one shown; the display pose;
  * the creases.
  * Anything wrong fails as a [RecipeException] at the recipe path that caused it. See HLD: architecture, Recipes.
  */
@@ -49,6 +49,7 @@ class RecipeBuilder(private val templates: TemplateFolder) {
             garments()
             owned.forEach { (i, part) -> paintPart(i, part, placePart(i, part).left) }
             eyes()
+            membranes()
             expressions()
             outfits()
             if (recipe.displayPose.isNotEmpty()) send("$.displayPose", SetDisplayPose(pose("$.displayPose", recipe.displayPose)))

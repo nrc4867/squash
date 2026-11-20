@@ -103,7 +103,7 @@ private fun PlacedPart.bodyAround(body: AssembledCharacter, low: FloatArray, hig
     val normals = ArrayList<Vec3>()
     for (other in body.parts) {
         val id = other.id ?: continue
-        if (other === this || other.role == Role.HAIR || other.hanging != null || other.owner != null) continue
+        if (other === this || other.role == Role.HAIR || other.hanging != null || other.spanning != null || other.owner != null) continue
         if (other.covering?.let { body.part(it.part)?.role == Role.HAIR } == true) continue
         if (id == on || (on != null && other.socket?.parent == on)) continue
         val mesh = other.surface.mesh

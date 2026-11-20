@@ -41,6 +41,8 @@ data class Recipe(
     val parts: List<RecipePart> = emptyList(),
     @Doc("Painted eyes on a head.")
     val eyes: List<RecipeEye> = emptyList(),
+    @Doc("Thin sheets of skin spanned between parts, such as a patagium or a wing membrane.")
+    val membranes: List<RecipeMembrane> = emptyList(),
     @Doc("Named expressions: joint angles of the face's parts, as ears back or a dropped jaw, and how far each opens a mouth. The build renders each one's face close-up.")
     val expressions: List<RecipeExpression> = emptyList(),
     @Doc("Clothes: slots, garments and outfits.")
