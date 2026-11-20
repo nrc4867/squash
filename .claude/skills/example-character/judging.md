@@ -36,6 +36,8 @@ With a single view cropped from the sheet (`kit sheet views` writes `<view>.png`
 - `terminator ... blotches`: shading blotches; aim for none.
 - `one surface ... open edges`: 0 is the aim; a few on small templated parts do not show, but read the close-ups of whatever changed since the count was 0.
 - `join lines`: how much join ink is drawn; 0 on a body with `inkJoin: false` everywhere.
+- `socket blends`: the blend each part joins its parent by, in body units: a neck, limb or tail about 1.4 times its root radius unless it hangs close beside its parent; a part's own `blend` shows here as given.
+- `end tapers`: each limb that narrows into what it carries, its radius and the ankle's or wrist's: a big drop means the foot or hand is much thinner than the limb's end, which reads as a stilt from the side.
 - `owned part vertices under cloth`, `owned parts' drift from rigid`: props a garment carries.
 - `wardrobe:` lines: every garment's slot, layer, fit, covered parts with u and v spans, changes, holes and owned parts, and each outfit's picks. Check them against the clothes on the feature list.
 - `poke-through <inner> through <outer>` per outfit, and per outfit in each named pose: `poke-through none` is the aim (`clothing.md`).

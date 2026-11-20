@@ -56,7 +56,7 @@ class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val 
 }
 
 /** A character's field: its runs' solids joined in [field], [runs] saying which part and run each member is, and the [cell] it meshes at. */
-class CharacterField(val field: JoinedField, val runs: List<FieldRun>, val cell: Float) {
+class CharacterField(val field: JoinedField, val runs: List<FieldRun>, val cell: Float, val tapers: List<EndTaper?> = List(runs.size) { null }) {
     /** The parts in the field. */
     val parts: Set<PartId> = runs.mapTo(LinkedHashSet()) { it.partId }
 }
@@ -93,19 +93,25 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
         val first = firstRunIndex(part.surface.patches)
         part.surface.patches.withIndex().filter { isFieldRun(part, it.value) }.map { (k, patch) -> FieldRun(part, k, patch, k == first) }
     }
-    val made = runs.map { solids.of(it.patch) }
+    val swept = runs.map { solids.of(it.patch) }
     val firstOf = HashMap<PartId, Int>()
     runs.forEachIndexed { i, run -> if (run.first) firstOf[run.partId] = i }
     val partIndex = parts.withIndex().associate { (i, p) -> requireNotNull(p.id) to i }
+    val parents = runs.indices.map { i ->
+        val run = runs[i]
+        if (!run.first) return@map -1
+        val parentId = run.part.socket?.parent
+        val anchor = run.part.origin
+        runs.indices.filter { runs[it].partId == parentId }.minByOrNull { k -> placed(swept[k], runs[k]).own(anchor) } ?: -1
+    }
+    val tapers = endTapers(runs, swept, parents, solids)
+    val made = runs.indices.map { i -> tapers[i]?.let { solids.tapered(runs[i].patch, it) } ?: swept[i] }
     val members = runs.mapIndexed { i, run ->
         val part = run.part
         val solid = made[i]
         val (parent, blend) = if (run.first) {
-            val parentId = part.socket?.parent
-            val parentRuns = runs.indices.filter { runs[it].partId == parentId }
-            val anchor = part.origin
-            val parentRun = parentRuns.minByOrNull { k -> JoinedMember(made[k], runs[k].part.origin, runs[k].part.mirrored, 0f).own(anchor) } ?: -1
-            parentRun to if (parentRun < 0) 0f else roomyBlend(part, solid, run.patch, JoinedMember(made[parentRun], runs[parentRun].part.origin, runs[parentRun].part.mirrored, 0f), solids)
+            val parentRun = parents[i]
+            parentRun to if (parentRun < 0) 0f else roomyBlend(part, swept[i], run.patch, placed(made[parentRun], runs[parentRun]), solids)
         } else {
             val share = part.template.defaults[MERGE_PARAM]?.let { it * SOCKET_BLEND_SHARE } ?: RUN_BLEND_SHARE
             firstOf.getValue(run.partId) to leastExtent(solid) * share
@@ -114,7 +120,26 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
     }
     val firsts = runs.indices.filter { runs[it].first }
     val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
-    return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare)
+    return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare, tapers)
+}
+
+/** [solid], run [run]'s, placed as its part is, joined to nothing. */
+private fun placed(solid: Solid, run: FieldRun): JoinedMember = JoinedMember(solid, run.part.origin, run.part.mirrored, 0f)
+
+/**
+ * For each run, the taper its end takes into the part that ends it (see [endTaper]): a part closed at its root, as a foot, a hand or a paw
+ * is, on a socket near the run's end; null for a run nothing ends. Of two such parts the first in the character's order holds.
+ */
+private fun endTapers(runs: List<FieldRun>, swept: List<Solid>, parents: List<Int>, solids: RunSolids): List<EndTaper?> {
+    val tapers = arrayOfNulls<EndTaper>(runs.size)
+    runs.indices.forEach { c ->
+        val k = parents[c]
+        if (k < 0 || tapers[k] != null || openRootRadius(runs[c].patch) > 0f) return@forEach
+        val parent = placed(swept[k], runs[k])
+        val child = placed(swept[c], runs[c])
+        tapers[k] = solids.taper(runs[k].patch, parent.key, child.key) { endTaper(runs[k].patch, parent, child, runs[c].part.origin) }
+    }
+    return tapers.toList()
 }
 
 /**
@@ -196,6 +221,31 @@ class RunSolids {
         override fun hashCode(): Int = origin.hashCode() * 31 + parent.hashCode()
     }
 
+    private var tapers: List<Pair<TaperKey, EndTaper?>> = emptyList()
+    private var taperedKept: List<Triple<Patch, EndTaper, Solid>> = emptyList()
+
+    /** The taper [read] gives [patch], placed as [parent] reads, into the part [child] reads as, kept while all three are the same. */
+    internal fun taper(patch: Patch, parent: MemberKey, child: MemberKey, read: () -> EndTaper?): EndTaper? {
+        val key = TaperKey(patch, parent, child)
+        tapers.firstOrNull { it.first == key }?.let { return it.second }
+        val taper = read()
+        tapers = (tapers + (key to taper)).takeLast(KEPT)
+        return taper
+    }
+
+    /** The solid [patch] sweeps with its rings scaled about its axis by [taper]. */
+    internal fun tapered(patch: Patch, taper: EndTaper): Solid {
+        taperedKept.firstOrNull { it.first === patch && it.second === taper }?.let { return it.third }
+        val solid = sweptOf(patch, taper)
+        taperedKept = (taperedKept + Triple(patch, taper, solid)).takeLast(KEPT)
+        return solid
+    }
+
+    private class TaperKey(val patch: Patch, val parent: MemberKey, val child: MemberKey) {
+        override fun equals(other: Any?): Boolean = other is TaperKey && patch === other.patch && parent == other.parent && child == other.child
+        override fun hashCode(): Int = parent.hashCode() * 31 + child.hashCode()
+    }
+
     fun of(patch: Patch): Solid {
         kept.firstOrNull { it.first === patch }?.let { return it.second }
         val solid = sweptOf(patch)
@@ -210,17 +260,23 @@ class RunSolids {
 
 /**
  * The solid [patch]'s rings sweep, read from its points in its slices' planes at its rings' u and its columns' v, each ring read round
- * from its section's centre where the section names one.
+ * from its section's centre where the section names one; with [taper], each ring first scaled about the run's axis as [EndTaper.scale] says.
  */
-private fun sweptOf(patch: Patch): Solid {
+private fun sweptOf(patch: Patch, taper: EndTaper? = null): Solid {
     val slices = requireNotNull(patch.slices)
-    val middles = slices.map { slice ->
-        slice.section.centre?.let { c -> slice.frame.center + slice.frame.side * (c.x * slice.width / 2f) + slice.frame.up * (c.y * slice.height / 2f) }
+    val scales = taper?.let { scalesOf(patch, it) }
+    val middles = slices.mapIndexed { ring, slice ->
+        val scale = scales?.get(ring) ?: 1f
+        slice.section.centre?.let { c -> slice.frame.center + (slice.frame.side * (c.x * slice.width / 2f) + slice.frame.up * (c.y * slice.height / 2f)) * scale }
     }
     val vs = FloatArray(patch.nv) { it.toFloat() / patch.segments }
     return requireNotNull(
         SweptSolid.ofRings(
-            List(patch.nu) { ring -> List(patch.nv) { patch.point(patch.index(ring, it)) } },
+            List(patch.nu) { ring ->
+                val centre = slices[ring].frame.center
+                val scale = scales?.get(ring) ?: 1f
+                List(patch.nv) { centre + (patch.point(patch.index(ring, it)) - centre) * scale }
+            },
             vs,
             slices.map { it.frame.tangent },
             slices.map { it.frame.up },
@@ -228,4 +284,16 @@ private fun sweptOf(patch: Patch): Solid {
             middles.takeIf { all -> all.any { it != null } },
         ),
     )
+}
+
+/** Each ring's scale about its axis under [taper], by how far back along the run it lies from the socket ring. */
+private fun scalesOf(patch: Patch, taper: EndTaper): FloatArray {
+    val slices = requireNotNull(patch.slices)
+    val scales = FloatArray(patch.nu) { 1f }
+    var back = 0f
+    for (k in patch.nu - 1 downTo 0) {
+        if (k < taper.ring) back += (slices[k + 1].frame.center - slices[k].frame.center).length
+        scales[k] = taper.scale(k, back)
+    }
+    return scales
 }

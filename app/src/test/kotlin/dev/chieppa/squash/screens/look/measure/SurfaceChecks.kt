@@ -37,6 +37,10 @@ class SurfaceChecks(private val session: CharacterSession, private val work: Tes
             println("$name: one surface outline $view length %.2f in ${runs.size} pieces".format(runs.sumOf { run -> length(run.points.map { it.position }) }))
         }
         println("$name: join lines ${surface.joins.size}, length %.3f".format(surface.joins.sumOf { line -> length(line.map { it.position }) }))
+        val blends = surface.field.runs.indices.filter { surface.field.runs[it].first && surface.field.field.members[it].parent >= 0 }
+        val tapers = surface.field.runs.indices.mapNotNull { i -> surface.field.tapers[i]?.takeIf { it.narrows }?.let { surface.field.runs[i].partId.value to it } }
+        println("$name: end tapers, run radius to the section ending it ${tapers.joinToString(prefix = "{", postfix = "}") { (id, t) -> "$id=%.4f to %.4f".format(t.radius, t.section) }}")
+        println("$name: socket blends ${blends.joinToString(prefix = "{", postfix = "}") { "${surface.field.runs[it].partId.value}=%.4f".format(surface.field.field.members[it].blend) }}")
     }
 
     /** Median times of a whole build and of each of [edits], 2% larger and back, at the full cell, and with [coarse] also at the coarse one. */
