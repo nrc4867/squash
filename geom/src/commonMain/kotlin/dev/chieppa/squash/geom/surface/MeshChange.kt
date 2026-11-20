@@ -30,7 +30,7 @@ internal fun matchTasks(
 ): List<() -> Unit> {
     val same = BooleanArray(field.members.size) { m ->
         m < lastField.members.size && lastField.members[m].key == field.members[m].key && lastField.members[m].blend == field.members[m].blend &&
-            lastField.members[m].parent == field.members[m].parent
+            lastField.members[m].parent == field.members[m].parent && lastField.members[m].angles === field.members[m].angles
     }
     return (keys.indices step MATCH_CHUNK).map { from ->
         {

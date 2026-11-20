@@ -56,6 +56,12 @@ class RoundJoinsTest {
     }
 
     @Test
+    fun aLimbBlendsByTheAngleItMeetsItsParentAtAndATemplateJoinDoesNot() {
+        assertNotNull(field.field.members[first(leg)].angles, "a leg's join blends by angle")
+        assertNull(field.field.members[first(paw)].angles, "a paw keeps its template's join")
+    }
+
+    @Test
     fun aPawBlendsIntoTheLegByItsTemplatesShare() {
         val run = first(paw)
         val slices = assertNotNull(field.runs[run].patch.slices)

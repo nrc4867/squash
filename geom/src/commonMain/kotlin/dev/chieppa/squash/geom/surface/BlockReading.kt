@@ -5,7 +5,6 @@ import dev.chieppa.squash.geom.field.FieldAsk
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.MemberKey
 import dev.chieppa.squash.geom.field.smoothMin
-import kotlin.math.abs
 
 /**
  * How much faster than a true distance a member's field may change, for the tests that read a block by its middle: the fields are only
@@ -91,7 +90,7 @@ internal object BlockReading {
             for (m in near) if (owns[m] - margin <= least + margin + field.reaches[m]) relevant += m
         }
         if (relevant.isEmpty()) return null
-        if (!forced && abs(joinedAtMiddle(field, relevant, owns)) > margin + grid.cell) return null
+        if (!forced && clear(joinedAtMiddle(field, relevant, owns, whole = true), joinedAtMiddle(field, relevant, owns, whole = false), margin + grid.cell)) return null
         val block = SurfaceBlock(key, grid.bx(key), grid.by(key), grid.bz(key))
         val centred = (0 until count).filter { !owns[it].isNaN() }
         block.centreKeys = Array(centred.size) { field.members[centred[it]].key }
@@ -111,7 +110,7 @@ internal object BlockReading {
         block.middles = middles
         block.relevance = if (exact) LongArray(relevant.size) { EVERY_SUB } else SubBlocks.relevance(grid, middles, leastAt, block.parentSlots, block.blends)
         block.shareRelevance = SubBlocks.shareRelevance(grid, middles, leastAt, block.parentSlots, block.reaches)
-        val far = if (exact) 0L else SubBlocks.far(grid, middles, block.parentSlots, block.blends)
+        val far = if (exact) 0L else SubBlocks.far(grid, middles, block.parentSlots, block.blends, BooleanArray(relevant.size) { block.angles[it] != null })
         block.exact = LongArray(relevant.size)
         val reading = arrayOfNulls<IntArray>(relevant.size)
         val froms = arrayOfNulls<FloatArray>(relevant.size)
@@ -149,12 +148,17 @@ internal object BlockReading {
         return block
     }
 
-    private fun joinedAtMiddle(field: JoinedField, relevant: List<Int>, owns: FloatArray): Float {
+    /**
+     * The joined field at the block's middle by its members' whole blends ([whole]), the least it can be, or with each member that meets
+     * its parent by angle ([JoinedMember.angles]) joined by none, the most it can be.
+     */
+    private fun joinedAtMiddle(field: JoinedField, relevant: List<Int>, owns: FloatArray, whole: Boolean): Float {
         var joined = Float.MAX_VALUE
         for (m in relevant) {
             val member = field.members[m]
             val parent = member.parent
-            val term = if (parent >= 0 && member.blend > 0f && parent in relevant) smoothMin(owns[parent], owns[m], member.blend) else owns[m]
+            val blend = if (whole || member.angles == null) member.blend else 0f
+            val term = if (parent >= 0 && blend > 0f && parent in relevant) smoothMin(owns[parent], owns[m], blend) else owns[m]
             if (term < joined) joined = term
         }
         return joined

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.geom.surface
 
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.field.JoinAngles
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.MemberKey
 import dev.chieppa.squash.geom.field.smoothMin
@@ -44,6 +45,9 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
     /** Each of [keys]' parent among them, or -1, and the blend it joins its parent by. */
     var parentSlots: IntArray = IntArray(0)
     var blends: FloatArray = FloatArray(0)
+
+    /** Each of [keys]' share of its blend by the angle at which it meets its parent, null where it takes the whole blend everywhere. */
+    var angles: Array<JoinAngles?> = emptyArray()
 
     /** Each of [keys]' widest blend, its own or a child's. */
     var reaches: FloatArray = FloatArray(0)
@@ -110,6 +114,7 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
         b.members = members
         b.parentSlots = parentSlots
         b.blends = blends
+        b.angles = angles
         b.reaches = reaches
         b.corners = corners
         b.coarser = coarser
@@ -136,19 +141,32 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
         coordinates = coordinates.copy()
     }
 
-    /** The joined field at grid point [corner] of the block from its kept channels. */
-    fun joinedAt(corner: Int): Float {
+    /** The joined field at grid point [corner] of the block on [grid] from its kept channels. */
+    fun joinedAt(corner: Int, grid: BlockGrid): Float {
         var joined = Float.MAX_VALUE
+        var at: Vec3? = null
         for (s in keys.indices) {
             val d = channels[s][corner]
             val parent = parentSlots[s]
-            val term = if (parent >= 0 && blends[s] > 0f) smoothMin(channels[parent][corner], d, blends[s]) else d
+            val term = if (parent >= 0 && blends[s] > 0f) {
+                val share = angles[s]?.let { angle ->
+                    val p = at ?: cornerPoint(corner, grid).also { at = it }
+                    angle.at(p)
+                } ?: 1f
+                smoothMin(channels[parent][corner], d, blends[s] * share)
+            } else {
+                d
+            }
             if (term < joined) joined = term
         }
         return joined
     }
 
-    /** Sets [members], [parentSlots] and [blends] for [field], whose members are found by key in [index]. */
+    /** Grid point [corner] of the block on [grid], in body space. */
+    private fun cornerPoint(corner: Int, grid: BlockGrid): Vec3 =
+        grid.point(i0 + corner % SIDE, j0 + (corner / SIDE) % SIDE, k0 + corner / (SIDE * SIDE))
+
+    /** Sets [members], [parentSlots], [blends] and [angles] for [field], whose members are found by key in [index]. */
     fun bind(field: JoinedField, index: Map<MemberKey, Int>) {
         members = IntArray(keys.size) { index[keys[it]] ?: -1 }
         parentSlots = IntArray(keys.size) { s ->
@@ -157,6 +175,7 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
             if (parent < 0) -1 else members.indexOf(parent)
         }
         blends = FloatArray(keys.size) { s -> members[s].let { if (it >= 0) field.members[it].blend else 0f } }
+        angles = Array(keys.size) { s -> members[s].let { if (it >= 0) field.members[it].angles else null } }
         reaches = FloatArray(keys.size) { s -> members[s].let { if (it >= 0) field.reaches[it] else 0f } }
     }
 
@@ -165,7 +184,7 @@ internal class SurfaceBlock(val key: Long, val bx: Int, val by: Int, val bz: Int
      * each cell outside the [excluded] octants and starts a vertex for each at the mean of its crossings.
      */
     fun findCells(grid: BlockGrid) {
-        for (c in 0 until BLOCK_CORNERS) corners[c] = joinedAt(c)
+        for (c in 0 until BLOCK_CORNERS) corners[c] = joinedAt(c, grid)
         if (coarser != 0) CoarserFaces.blend(corners, coarser)
         val values = FloatArray(CellTables.CORNERS)
         val sheetsOf = IntArray(BLOCK_CELLS)

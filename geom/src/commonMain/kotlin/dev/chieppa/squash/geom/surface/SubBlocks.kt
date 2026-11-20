@@ -3,8 +3,14 @@ package dev.chieppa.squash.geom.surface
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.FieldAsk
 import dev.chieppa.squash.geom.field.smoothMin
-import kotlin.math.abs
 import kotlin.math.sqrt
+
+
+/**
+ * Whether a union lying between [least] and [most] at a point stays more than [margin] off zero: outside wherever [least] is past it,
+ * inside wherever [most] is short of minus it.
+ */
+internal fun clear(least: Float, most: Float, margin: Float): Boolean = least > margin || most < -margin
 
 /** Cells a side of a sub-block. */
 internal const val SUB = 2
@@ -259,21 +265,24 @@ internal object SubBlocks {
 
     /**
      * The sub-blocks whose middle lies so far from the surface, by the union of [middles] over the members [parentSlots] and [blends]
-     * describe, that the union cannot change sign anywhere in them.
+     * describe, that the union cannot change sign anywhere in them, whatever share of its blend each member [angled] takes there.
      */
-    fun far(grid: BlockGrid, middles: FloatArray, parentSlots: IntArray, blends: FloatArray): Long {
+    fun far(grid: BlockGrid, middles: FloatArray, parentSlots: IntArray, blends: FloatArray, angled: BooleanArray): Long {
         val slots = parentSlots.size
         val margin = swing(grid)
         var mask = 0L
         for (sub in 0 until SUBS) {
-            var joined = Float.MAX_VALUE
+            var least = Float.MAX_VALUE
+            var most = Float.MAX_VALUE
             for (s in 0 until slots) {
                 val parent = parentSlots[s]
                 val own = middles[s * SUBS + sub]
                 val term = if (parent >= 0 && blends[s] > 0f) smoothMin(middles[parent * SUBS + sub], own, blends[s]) else own
-                if (term < joined) joined = term
+                if (term < least) least = term
+                val upper = if (angled[s]) own else term
+                if (upper < most) most = upper
             }
-            if (abs(joined) > margin) mask = mask or (1L shl sub)
+            if (clear(least, most, margin)) mask = mask or (1L shl sub)
         }
         return mask
     }
