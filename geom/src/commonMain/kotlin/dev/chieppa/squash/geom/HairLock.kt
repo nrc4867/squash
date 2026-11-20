@@ -10,6 +10,10 @@ private const val TWO_PI = (2.0 * PI).toFloat()
 /** How far along a lock, as a share of its length, its root closes to a point inside what it grows from. */
 private const val ROOT_CLOSE = 0.02f
 
+/** How far from its root a lock's second ring lies, in its thicknesses, and the least share of its length that is. */
+private const val ROOT_REACH = 1.5f
+private const val LEAST_ROOT_U = 0.005f
+
 /** The rings round a round tip's cap. */
 private const val CAP_RINGS = 5
 
@@ -62,7 +66,7 @@ object LockBuilder {
     private fun lofted(
         name: String, axis: AxisSpline, up: Vec3, shape: ClumpShape, profile: LockProfile, rings: Int, segments: Int, middle: Vec3?, lying: Float,
     ): Patch {
-        val us = ringUs(shape, rings)
+        val us = ringUs(shape, rings, lengthOf(axis.points))
         val frames = SliceBuilder.frames(axis, us, up).let { if (middle == null) it else lyingFlat(it, us, middle, lying) }
         val slices = us.mapIndexed { ring, t ->
             val base = frames[ring]
@@ -112,16 +116,19 @@ object LockBuilder {
     }
 
     /**
-     * Where along the lock its [rings] rings lie: evenly, but for a round tip, whose last rings step evenly round its cap by angle, so
-     * the cap closes as a smooth dome rather than a flat end.
+     * Where along the lock, [length] long, its [rings] rings lie: the root ring, a second a little over its thickness from it so the root
+     * closes in a short soft end however long the lock, then evenly to the tip; a round tip's last rings step evenly round its cap by
+     * angle, so the cap closes as a smooth dome rather than a flat end.
      */
-    private fun ringUs(shape: ClumpShape, rings: Int): List<Float> {
-        if (shape.tipRound <= 0f || shape.points > 1 || rings < CAP_RINGS + 3) return List(rings) { it.toFloat() / (rings - 1) }
-        val capStart = 1f - shape.tipReach
-        val body = rings - CAP_RINGS
-        return List(body) { capStart * it / body } + List(CAP_RINGS) { k ->
-            capStart + shape.tipReach * sin((k + 1).toFloat() / CAP_RINGS * HALF_PI)
-        }
+    private fun ringUs(shape: ClumpShape, rings: Int, length: Float): List<Float> {
+        if (rings < 3) return List(rings) { it.toFloat() / (rings - 1).coerceAtLeast(1) }
+        val root = (shape.thickness * ROOT_REACH / length.coerceAtLeast(1e-6f)).coerceIn(LEAST_ROOT_U, 1f / (rings - 1))
+        val round = shape.tipRound > 0f && shape.points <= 1 && rings >= CAP_RINGS + 4
+        val cap = if (round) CAP_RINGS else 0
+        val end = if (round) 1f - shape.tipReach else 1f
+        val middle = rings - 2 - cap
+        return listOf(0f, root) + List(middle) { root + (end - root) * (it + 1) / middle } +
+            List(cap) { k -> end + shape.tipReach * sin((k + 1).toFloat() / CAP_RINGS * HALF_PI) }
     }
 
     /** The length of the curve through [guide], read at [steps] places. */

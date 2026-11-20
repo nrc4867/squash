@@ -29,7 +29,7 @@ class RecipeLockHairTest {
     @Test
     fun aPresetGivesItsGroupsSizedToTheHeadAndTheHeadItsCollider() {
         val built = builder.build(RecipeJson.read(recipe("""{"on": "head", "preset": "ponytail", "color": "hair", "band": "ribbon"}"""))).document.character
-        assertEquals(listOf("tail", "left", "right", "fringe"), built.lockGroups.map { it.id.value })
+        assertEquals(listOf("tail", "fringe"), built.lockGroups.map { it.id.value })
         assertTrue(built.lockGroups.all { it.on == PartId("head") && it.color == SlotName("hair") })
         assertEquals(SlotName("ribbon"), built.lockGroups.first().band)
         assertEquals(listOf(ColliderShape.SPHERE), built.colliders.map { it.shape })
@@ -39,14 +39,14 @@ class RecipeLockHairTest {
     fun aGroupChangesThePresetsOfItsIdOrAddsOne() {
         val hair = """{"on": "head", "preset": "bob", "reach": 0.2,
             "groups": [{"id": "fringe", "count": 4, "tip": "forked", "locks": [{"index": 1, "hidden": true}]},
-                       {"id": "crown", "removed": true},
+                       {"id": "back", "removed": true},
                        {"id": "strays", "kind": "strays", "count": 3}]}"""
         val built = builder.build(RecipeJson.read(recipe(hair))).document.character
         val fringe = assertNotNull(built.lockGroups.firstOrNull { it.id == LockGroupId("fringe") })
         assertEquals(4, fringe.count)
         assertEquals(LockTip.FORKED, fringe.tip)
         assertEquals(true, fringe.overrideOf(1)?.hidden)
-        assertTrue(built.lockGroups.none { it.id == LockGroupId("crown") })
+        assertTrue(built.lockGroups.none { it.id == LockGroupId("back") })
         assertEquals(LockGroupKind.STRAYS, built.lockGroups.last().kind)
     }
 

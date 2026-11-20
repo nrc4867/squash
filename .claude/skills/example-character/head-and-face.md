@@ -151,7 +151,7 @@ Lock hair is the way to a silhouette that breaks: each lock a separate swept par
 - **Then a preset.** `bob`, `shortSpiky`, `longStraight`, `ponytail` (with a `band` slot), `sideSwept` or `curly` on the head with `mass` and `color`. It sizes itself to the head; give `reach` only to match a sheet exactly.
 - **Change groups by id.** A group's `count`, `length`, `spread`, `around`, `height`, `rise`, `fall`, `sweep`, `curl`, `tip` and `section` change one whole group; `lengthJitter` and `seed` its raggedness. A fringe parts over the eyes by itself; shorten its `length` if it hides them. `locks` pulls single locks out by index.
 - **Rise** lifts only a lock's outer part: locks lie along the head from their roots, so `rise` above about 30 on short locks reads as spikes standing out. A tuft or a tail that should stand off the head takes `tie` (its locks then leave the tie at `rise` and hang free).
-- **Curls** roll into a spiral from about half a lock's length: wide `ribbon` locks with a `round` tip and `curl` of -1.5 to -2 (outward) read as rolled curls; thick `clump` locks curled read as tubes. A curl tighter than its thickness folds into itself.
+- **Curls** roll into a spiral from about half a lock's length. The `curly` preset's locks are few, big and round-tipped, rolling outward; its crown is a tuft tied at the front of the top. For a tuft alone (a creature's curled forelock) use `curly({ on, mass, color, tuft: true })`. A curl tighter than its thickness folds into itself.
 - **Judge** the head from the front, three-quarter, side, back and top (`close=head`): the outline should break where the cut has points, no scalp shows between locks, and the back has its own layout.
 
 ## Hand-made sockets on the head

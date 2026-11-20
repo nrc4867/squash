@@ -104,9 +104,19 @@ export const shortSpiky = (spec: LockHairSpec): RecipeHair => lockHair("shortSpi
 export const bob = (spec: LockHairSpec): RecipeHair => lockHair("bob", spec);
 /** Long straight ribbon locks falling past the shoulders. */
 export const longStraight = (spec: LockHairSpec): RecipeHair => lockHair("longStraight", spec);
-/** A ponytail: locks gathered at one tie at the back, wrapped in a band, with a short fringe and sides. */
+/** A ponytail: locks gathered at one tie at the back, wrapped in a band, with a fringe. */
 export const ponytail = (spec: LockHairSpec): RecipeHair => lockHair("ponytail", spec);
 /** A side-swept fringe over short layered hair. */
 export const sideSwept = (spec: LockHairSpec): RecipeHair => lockHair("sideSwept", spec);
-/** Curly: wide ribbon locks each rolling outward into a spiral. */
-export const curly = (spec: LockHairSpec): RecipeHair => lockHair("curly", spec);
+/** A curly preset's spec: with `tuft`, only its crown, a round mass of curls rising from the top and rolling forward over the brow. */
+export interface CurlySpec extends LockHairSpec {
+  tuft?: boolean;
+}
+
+/** Curly: fewer, bigger locks each rolling outward into a round spiral, a tied crown of curls rolling over the brow. */
+export const curly = (spec: CurlySpec): RecipeHair => {
+  const { tuft, ...rest } = spec;
+  if (!tuft) return lockHair("curly", rest);
+  const removed = ["back", "left", "right", "fringe"].map((id) => ({ id, removed: true }));
+  return lockHair("curly", { ...rest, groups: [...removed, ...(rest.groups ?? [])] });
+};

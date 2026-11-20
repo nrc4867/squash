@@ -13,7 +13,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /** How deep a lock's root sinks under the scalp, as a share of its thickness. */
-private const val ROOT_SINK = 1.2f
+private const val ROOT_SINK = 0.6f
 
 /** How far a lock lies off the scalp past its root, as a share of its thickness, before its layer and row lift it further. */
 private const val BASE_CLEARANCE = 0.15f

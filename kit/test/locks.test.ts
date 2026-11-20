@@ -15,6 +15,8 @@ test("lockMass seats a smooth mass with no locks or strand lines of its own, siz
 test("each preset helper names its preset and passes the head, mass and colours on", () => {
   assert.deepEqual(bob({ on: "head", mass: "hair-mass", color: "hair" }), { on: "head", preset: "bob", mass: "hair-mass", color: "hair" });
   assert.equal(curly({ on: "head" }).preset, "curly");
+  assert.deepEqual(curly({ on: "head", tuft: true }).groups?.filter((g) => g.removed).map((g) => g.id), ["back", "left", "right", "fringe"]);
+  assert.equal(curly({ on: "head" }).groups, undefined);
   assert.equal(ponytail({ on: "head", band: "ribbon" }).band, "ribbon");
 });
 

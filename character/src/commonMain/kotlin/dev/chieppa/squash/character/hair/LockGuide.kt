@@ -39,7 +39,7 @@ private const val FLICK_TURN = 50f
  * [CLEAR_REACH] and at most [CLEAR_MOST] of its length.
  */
 private const val CLEAR_REACH = 0.03f
-private const val CLEAR_SLOPE = 3.5f
+private const val CLEAR_SLOPE = 2f
 private const val CLEAR_MOST = 0.5f
 
 /** The fewest guide points, and how many a turn of curl adds. */
@@ -63,7 +63,8 @@ private const val TURN_IN_START = 0.75f
  * The guide curve [lock] grows along over [scalp], a few points from its sunk root to its tip. From its root it lies along the head the
  * way it grows, sweeps sideways and falls toward the ground over its length, held on the head down to just below its widest; past
  * [LIFT_FROM] of its length it lifts off by [LockSpec.rise] degrees. It curls about its side toward its tip, and a flicked tip turns out.
- * A tied lock leaves its tie at its rise instead and hangs free. Every point past its root keeps its clearance off the scalp. A lock with
+ * A tied lock leaves its tie at its rise instead and hangs free. Every point past its root keeps its clearance off the scalp, and where
+ * the scalp falls away below what it roots in, as past a mass's hem, it takes its full clearance at once rather than run on under it. A lock with
  * a guide of its own takes those points from its root instead.
  */
 fun guideOf(lock: LockSpec, scalp: Scalp): List<Vec3> {
@@ -92,6 +93,7 @@ private fun grown(lock: LockSpec, scalp: Scalp, root: Vec3): List<Vec3> {
     val path = ArrayList<Vec3>(GROW_STEPS + 1)
     var at = root
     var lift = 0f
+    val rootReach = scalp.reachToward(lock.root)
     path += at
     for (k in 1..GROW_STEPS) {
         val t = k.toFloat() / GROW_STEPS
@@ -115,7 +117,8 @@ private fun grown(lock: LockSpec, scalp: Scalp, root: Vec3): List<Vec3> {
         }
         at += d * step
         if (lock.curl != 0f && t > curlFrom) at += side * (lock.width * HELIX_PITCH * abs(lock.curl) / ((1f - curlFrom) * GROW_STEPS))
-        val clear = if (t < clearReach) -lock.sink + (lock.clearance + lock.sink) * (t / clearReach) else lock.clearance
+        val rising = t < clearReach && scalp.reachToward(at) > rootReach - lock.sink
+        val clear = if (rising) -lock.sink + (lock.clearance + lock.sink) * (t / clearReach) else lock.clearance
         at = keptOut(at, scalp, clear + lift, held)
         path += at
     }

@@ -72,16 +72,14 @@ private val PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
         PresetGroup("fringe", LockGroupKind.FRINGE, 7, 0.85f, 0.55f, 0.1f, rise = 0f, fall = 0.6f, taper = 0.85f, section = LockSection.RIBBON, tip = LockTip.ROUND, layer = 1, lengthJitter = 0.05f, physics = SOFT),
     ),
     HairPreset.LONG_STRAIGHT to listOf(
-        PresetGroup("back", LockGroupKind.BACK, 14, 3.6f, 0.5f, 0.14f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.15f, physics = SWINGING),
-        PresetGroup("left", LockGroupKind.LEFT, 7, 3.2f, 0.48f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
-        PresetGroup("right", LockGroupKind.RIGHT, 7, 3.2f, 0.48f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
+        PresetGroup("back", LockGroupKind.BACK, 16, 3.6f, 0.6f, 0.14f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.15f, physics = SWINGING),
+        PresetGroup("left", LockGroupKind.LEFT, 9, 3.2f, 0.8f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
+        PresetGroup("right", LockGroupKind.RIGHT, 9, 3.2f, 0.8f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
         PresetGroup("crown", LockGroupKind.CROWN, 8, 1.0f, 0.55f, 0.12f, rise = 0f, fall = 0.7f, taper = 0.6f, section = LockSection.RIBBON, layer = 1, spread = 1.3f, physics = SOFT),
         PresetGroup("fringe", LockGroupKind.FRINGE, 7, 1.05f, 0.4f, 0.1f, rise = 4f, fall = 0.6f, taper = 0.35f, section = LockSection.RIBBON, layer = 1, physics = SOFT),
     ),
     HairPreset.PONYTAIL to listOf(
         PresetGroup("tail", LockGroupKind.BACK, 7, 2.2f, 0.45f, 0.15f, rise = 30f, fall = 1f, taper = 0.15f, section = LockSection.RIBBON, spread = 0.35f, height = -0.4f, tie = 0.9f, banded = true, layer = 1, lengthJitter = 0.25f, physics = SWINGING),
-        PresetGroup("left", LockGroupKind.LEFT, 3, 0.55f, 0.32f, 0.1f, rise = 0f, fall = 0.85f, taper = 0.3f, height = 0.4f, physics = SOFT),
-        PresetGroup("right", LockGroupKind.RIGHT, 3, 0.55f, 0.32f, 0.1f, rise = 0f, fall = 0.85f, taper = 0.3f, height = 0.4f, physics = SOFT),
         PresetGroup("fringe", LockGroupKind.FRINGE, 9, 0.9f, 0.45f, 0.1f, rise = 4f, fall = 0.6f, taper = 0.3f, layer = 1, physics = SOFT),
     ),
     HairPreset.SIDE_SWEPT to listOf(
@@ -92,11 +90,11 @@ private val PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
         PresetGroup("fringe", LockGroupKind.FRINGE, 7, 1.25f, 0.42f, 0.12f, rise = 6f, fall = 0.45f, taper = 0.25f, sweep = -0.75f, around = 10f, layer = 2, lengthJitter = 0.3f, physics = SOFT),
     ),
     HairPreset.CURLY to listOf(
-        PresetGroup("back", LockGroupKind.BACK, 12, 1.8f, 0.5f, 0.1f, rise = 4f, fall = 0.5f, taper = 0.7f, section = LockSection.RIBBON, tip = LockTip.ROUND, curl = -2f, physics = SPRINGY),
-        PresetGroup("left", LockGroupKind.LEFT, 5, 1.6f, 0.48f, 0.1f, rise = 4f, fall = 0.5f, taper = 0.7f, section = LockSection.RIBBON, tip = LockTip.ROUND, curl = -2f, physics = SPRINGY),
-        PresetGroup("right", LockGroupKind.RIGHT, 5, 1.6f, 0.48f, 0.1f, rise = 4f, fall = 0.5f, taper = 0.7f, section = LockSection.RIBBON, tip = LockTip.ROUND, curl = -2f, physics = SPRINGY),
-        PresetGroup("crown", LockGroupKind.CROWN, 9, 1.3f, 0.5f, 0.1f, rise = 8f, fall = 0.3f, taper = 0.7f, section = LockSection.RIBBON, tip = LockTip.ROUND, curl = -2f, layer = 1, spread = 1.6f, physics = SPRINGY),
-        PresetGroup("fringe", LockGroupKind.FRINGE, 6, 1.2f, 0.48f, 0.1f, rise = 4f, fall = 0.4f, taper = 0.7f, section = LockSection.RIBBON, tip = LockTip.ROUND, curl = -2f, layer = 1, physics = SPRINGY),
+        PresetGroup("back", LockGroupKind.BACK, 8, 1.3f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
+        PresetGroup("left", LockGroupKind.LEFT, 4, 1.1f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
+        PresetGroup("right", LockGroupKind.RIGHT, 4, 1.1f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
+        PresetGroup("crown", LockGroupKind.CROWN, 9, 1.9f, 0.7f, 0.32f, rise = 40f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, spread = 1.2f, around = 180f, height = -0.4f, tie = 0.35f, physics = SPRINGY),
+        PresetGroup("fringe", LockGroupKind.FRINGE, 4, 0.9f, 0.55f, 0.26f, rise = 4f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, physics = SPRINGY),
     ),
 )
 
