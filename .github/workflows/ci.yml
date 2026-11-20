@@ -62,12 +62,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: surface
-            gradle-args: :screens-surface:integrationTest
+          - name: app
+            gradle-args: :app:integrationTest
+          - name: surface and draw
+            gradle-args: :screens-surface:integrationTest :screens-draw:integrationTest
           - name: shell and sheet
             gradle-args: :screens-shell:integrationTest :screens-sheet:integrationTest
           - name: rest
-            gradle-args: integrationTest -x :screens-surface:integrationTest -x :screens-shell:integrationTest -x :screens-sheet:integrationTest
+            gradle-args: integrationTest -x :app:integrationTest -x :screens-surface:integrationTest -x :screens-draw:integrationTest -x :screens-shell:integrationTest -x :screens-sheet:integrationTest
     steps:
       - uses: actions/checkout@v7
         with:
@@ -123,26 +125,3 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-
-  baseline-temp:
-    name: Baseline count (temporary)
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          path: squash
-      - uses: actions/checkout@v7
-        with:
-          repository: nrc4867/stretch
-          ref: ${{ env.STRETCH_REF }}
-          path: stretch
-      - uses: actions/setup-java@v6
-        with:
-          distribution: corretto
-          java-version: 25
-      - uses: gradle/actions/setup-gradle@v5
-      - run: xvfb-run --auto-servernum ./gradlew integrationTest --continue --no-build-cache
-        working-directory: squash
-      - run: tools/ci-test-summary.sh integrationTest
-        working-directory: squash
