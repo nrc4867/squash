@@ -158,7 +158,7 @@ Lock hair is built from separate swept locks in groups over an inner mass, never
 
 | helper | one line |
 | --- | --- |
-| `lockMass` | `const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" })`: `mass.part`, a smooth `hair-volume` with no locks or strands that only hides the scalp, and `mass.headSocket`, the head's socket for it. |
+| `lockMass` | `const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" })`: `mass.part`, a `hair-volume` cap with no strands that only hides the scalp, its front above the brow under the fringe's roots and its hem cut into points, and `mass.headSocket`, the head's socket for it; the same cap the app fits to a head that has none. |
 | `shortSpiky`, `bob`, `longStraight`, `ponytail`, `sideSwept`, `curly` | `bob({ on: "head", mass: "hair-mass", color: "hair" })`: one `hair` entry of that preset, sized to the head as built (`reach` gives it by hand). `ponytail` takes `band`, the tie's slot. |
 | `lockHair` | `lockHair("bob", { on: "head", groups: [{ id: "fringe", count: 9, tip: "forked" }, { id: "strays", kind: "strays", count: 3 }] })`: a preset (or `null`) with groups changing the preset's by id (`back`, `left`, `right`, `crown`, `fringe`, `strays`, `tail`), adding new ones with a `kind`, or leaving one out with `removed: true`. A group's `locks` set single locks by index: any field, a `guide` of its own, `hidden`. |
 

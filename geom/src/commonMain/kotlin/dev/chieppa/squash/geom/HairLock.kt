@@ -1,6 +1,7 @@
 package dev.chieppa.squash.geom
 
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -8,6 +9,14 @@ private const val TWO_PI = (2.0 * PI).toFloat()
 
 /** How far along a lock, as a share of its length, its root closes to a point inside what it grows from. */
 private const val ROOT_CLOSE = 0.02f
+
+/** The rings round a round tip's cap. */
+private const val CAP_RINGS = 5
+
+private const val HALF_PI = (PI / 2.0).toFloat()
+
+/** How far past where it stops lying on the head a lock's rings ease from facing away from it to carrying on, as a share of its length. */
+private const val LYING_EASE = 0.1f
 
 /** A lock's cross-section: a flattened ribbon cupped round what it lies on, or a rounded clump. */
 enum class LockProfile(internal val section: ClosedSpline) {
@@ -17,15 +26,20 @@ enum class LockProfile(internal val section: ClosedSpline) {
 
 /**
  * Builds a hair lock as a swept patch of its own: [shape] carried along a guide curve through a few points, its rings' flat side facing
- * [up] at its root and carried along without twisting but by the lock's own turn. Its root ring closes to a point, so the root is a closed
- * end sunk into what it grows from, and its tip closes as [shape] says.
+ * [up] at its root and carried along without twisting but by the lock's own turn. Where it lies on a head, up to [lying] of its length,
+ * its flat side keeps facing away from the head's [middle], so a wide lock lies flat over the head however it bends round it; past that it
+ * carries on without twisting. Its root ring closes to a point, so the root is a closed end sunk into what it grows from, and its tip
+ * closes as [shape] says.
  */
 object LockBuilder {
     /** The lock's patch, [rings] rings by [segments] points, along [guide] from its root (the first point) to its tip. */
-    fun patch(name: String, guide: List<Vec3>, up: Vec3, shape: ClumpShape, profile: LockProfile, rings: Int, segments: Int): Patch {
+    fun patch(
+        name: String, guide: List<Vec3>, up: Vec3, shape: ClumpShape, profile: LockProfile, rings: Int, segments: Int,
+        middle: Vec3? = null, lying: Float = 0f,
+    ): Patch {
         require(guide.size >= 2) { "A lock's guide needs a root and a tip" }
         val axis = AxisSpline(guide)
-        val built = lofted(name, axis, up, shape, profile, rings, segments)
+        val built = lofted(name, axis, up, shape, profile, rings, segments, middle, lying)
         val points = built.points.copyOf()
         val us = FloatArray(built.nu) { built.ringUs[it] }
         val root = guide.first()
@@ -45,9 +59,11 @@ object LockBuilder {
      * tip's points cut back between its lobes. Unlike a clump on a part, a lock's rings keep their size through a tight curl, so a curled
      * lock stays a full roll.
      */
-    private fun lofted(name: String, axis: AxisSpline, up: Vec3, shape: ClumpShape, profile: LockProfile, rings: Int, segments: Int): Patch {
-        val us = List(rings) { it.toFloat() / (rings - 1) }
-        val frames = SliceBuilder.frames(axis, us, up)
+    private fun lofted(
+        name: String, axis: AxisSpline, up: Vec3, shape: ClumpShape, profile: LockProfile, rings: Int, segments: Int, middle: Vec3?, lying: Float,
+    ): Patch {
+        val us = ringUs(shape, rings)
+        val frames = SliceBuilder.frames(axis, us, up).let { if (middle == null) it else lyingFlat(it, us, middle, lying) }
         val slices = us.mapIndexed { ring, t ->
             val base = frames[ring]
             val turn = shape.turnAt(t)
@@ -75,6 +91,37 @@ object LockBuilder {
             }
         }
         return patch.withPoints(points, patch.proxyNormals)
+    }
+
+    /**
+     * [frames] at [us] turned about their tangents so their up faces away from [middle] up to [lying], easing off over [LYING_EASE] past
+     * it, each frame past that keeping the last turn, so the rings never jump.
+     */
+    private fun lyingFlat(frames: List<Frame>, us: List<Float>, middle: Vec3, lying: Float): List<Frame> {
+        var held = 0f
+        return frames.mapIndexed { ring, frame ->
+            val away = (frame.center - middle).let { it - frame.tangent * (it dot frame.tangent) }
+            val weight = (1f - (us[ring] - lying) / LYING_EASE).coerceIn(0f, 1f)
+            if (away.length > 1e-6f && weight > 0f) {
+                val target = away.normalized()
+                val angle = atan2((frame.up cross target) dot frame.tangent, frame.up dot target)
+                held = weight * angle + (1f - weight) * held
+            }
+            if (held == 0f) frame else Frame(frame.center, frame.tangent, (frame.up * cos(held) + (frame.tangent cross frame.up) * sin(held)).normalized())
+        }
+    }
+
+    /**
+     * Where along the lock its [rings] rings lie: evenly, but for a round tip, whose last rings step evenly round its cap by angle, so
+     * the cap closes as a smooth dome rather than a flat end.
+     */
+    private fun ringUs(shape: ClumpShape, rings: Int): List<Float> {
+        if (shape.tipRound <= 0f || shape.points > 1 || rings < CAP_RINGS + 3) return List(rings) { it.toFloat() / (rings - 1) }
+        val capStart = 1f - shape.tipReach
+        val body = rings - CAP_RINGS
+        return List(body) { capStart * it / body } + List(CAP_RINGS) { k ->
+            capStart + shape.tipReach * sin((k + 1).toFloat() / CAP_RINGS * HALF_PI)
+        }
     }
 
     /** The length of the curve through [guide], read at [steps] places. */

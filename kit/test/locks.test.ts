@@ -6,10 +6,10 @@ test("lockMass seats a smooth mass with no locks or strand lines of its own, siz
   const { part, headSocket } = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.377, color: "hair" });
   assert.equal(part.template, "hair-volume");
   assert.equal(part.preset, "ponytail");
-  assert.equal(part.size, 1.1667);
+  assert.equal(part.size, 1.1);
   assert.equal(part.params?.strands, 0);
   assert.equal(part.params?.lockLines, 0);
-  assert.deepEqual(headSocket, { n: 7, u: 0.55, v: 0.5, sink: 0, outset: 0.03 });
+  assert.deepEqual(headSocket, { n: 7, u: 0.62, v: 0.5, sink: 0, outset: 0.02 });
 });
 
 test("each preset helper names its preset and passes the head, mass and colours on", () => {

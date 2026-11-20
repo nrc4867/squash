@@ -163,7 +163,7 @@ class LockBuildsTest {
             val twice = presetGroups(preset, headId, null, 0.4f)
             assertEquals(groups.first().length * 2f, twice.first().length, 1e-5f)
         }
-        assertTrue(presetGroups(HairPreset.PONYTAIL, headId, null, 0.2f, band = SlotName("ribbon")).any { it.tie == 1f && it.band == SlotName("ribbon") })
+        assertTrue(presetGroups(HairPreset.PONYTAIL, headId, null, 0.2f, band = SlotName("ribbon")).any { it.tie > 0f && it.band == SlotName("ribbon") })
         assertTrue(presetGroups(HairPreset.CURLY, headId, null, 0.2f).all { it.curl != 0f })
     }
 

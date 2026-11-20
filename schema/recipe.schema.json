@@ -589,7 +589,7 @@
           ]
         },
         "rise": {
-          "description": "Degrees it rises off the head at its root: 0 lies flat, 90 stands straight out.",
+          "description": "Degrees its outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle.",
           "anyOf": [
             {
               "type": "number",

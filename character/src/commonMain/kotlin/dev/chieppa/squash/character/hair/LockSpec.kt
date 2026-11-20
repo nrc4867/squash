@@ -16,19 +16,20 @@ import kotlin.random.Random
 private const val ROOT_SINK = 1.2f
 
 /** How far a lock lies off the scalp past its root, as a share of its thickness, before its layer and row lift it further. */
-private const val BASE_CLEARANCE = 0.5f
+private const val BASE_CLEARANCE = 0.15f
 
 /** How far each layer and each row above another lifts a lock off the scalp, as a share of its thickness. */
-private const val LAYER_LIFT = 1.4f
-private const val ROW_LIFT = 0.9f
+private const val LAYER_LIFT = 0.6f
+private const val ROW_LIFT = 0.35f
 
 /** How far every other lock of a row stands off its neighbours, as a share of its thickness, so no two lie in one surface. */
-private const val STAGGER = 0.45f
+private const val STAGGER = 0.2f
 
 /**
  * One lock of a group as it is built: its [index], where it roots ([root], facing [out], growing along [growth]), its sizes and shape with
  * its override over the group's, how far it lies off the scalp past its root ([clearance]) and how deep its root sinks ([sink]), its own
- * [guide] where it has one, its chain's [bones] and its [physics]. Two locks alike build alike, so a build keeps those it made before.
+ * [guide] where it has one, its chain's [bones] and its [physics]; a [tied] lock leaves its tie rather than lying along the head. Two locks
+ * alike build alike, so a build keeps those it made before.
  */
 data class LockSpec(
     val index: Int,
@@ -53,6 +54,7 @@ data class LockSpec(
     val guide: List<Vec3>?,
     val bones: Int,
     val physics: LockPhysics,
+    val tied: Boolean = false,
 )
 
 /** The locks [group] shows on [scalp], growing as [growth] says: every lock but those its overrides hide, each with its override over it. */
@@ -60,12 +62,13 @@ fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): Li
     val roots = rootsOf(group)
     val rows = (roots.maxOfOrNull { it.row } ?: 0) + 1
     val random = Random(group.seed * 7919 + 17)
+    val top = roots.maxOfOrNull { it.elevation } ?: 0f
     val jitters = List(roots.size) { (random.nextFloat() * 2f - 1f) * group.lengthJitter }
     return roots.mapIndexedNotNull { index, root ->
         val override = group.overrideOf(index)
         if (override?.hidden == true) return@mapIndexedNotNull null
         val place = scalp.placeAt(root.azimuth, root.elevation)
-        val length = override?.length ?: (group.length * (1f + jitters[index]) * parted(group, root)).coerceAtLeast(group.length * 0.2f)
+        val length = override?.length ?: (group.length * (1f + jitters[index]) * parted(group, root) - rowDrop(group, root, top, scalp)).coerceAtLeast(group.length * 0.2f)
         val thickness = override?.thickness ?: group.thickness
         val lift = BASE_CLEARANCE + group.layer * LAYER_LIFT + (rows - 1 - root.row) * ROW_LIFT + (index % 2) * STAGGER
         LockSpec(
@@ -91,6 +94,7 @@ fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): Li
             guide = override?.guide?.map { Vec3(it.x, it.y, it.z) },
             bones = override?.bones ?: bonesFor(length, scalp),
             physics = override?.physics ?: group.physics,
+            tied = group.tie > 0f,
         )
     }
 }
@@ -101,8 +105,19 @@ fun bonesFor(length: Float, scalp: Scalp): Int {
     return (3 + ((length / reach) - 0.5f).coerceAtLeast(0f).times(2f).roundToInt()).coerceIn(3, 6)
 }
 
+/**
+ * How much shorter a lock of a lower row is than one of the top row, which roots at [top] degrees up the head: the way along the head
+ * between them, so a group's rows end together. A crown's and strays' locks keep their length.
+ */
+private fun rowDrop(group: LockGroup, root: LockRoot, top: Float, scalp: Scalp): Float {
+    if (group.kind == LockGroupKind.CROWN || group.kind == LockGroupKind.STRAYS || root.row == 0) return 0f
+    return (top - root.elevation).coerceAtLeast(0f) * DEGREES * scalp.reachAt(root.azimuth, root.elevation)
+}
+
+private const val DEGREES = (PI / 180.0).toFloat()
+
 /** How much shorter a fringe lock over an eye is than one in the middle or at the sides, so the fringe parts to show the eyes. */
-private const val FRINGE_PART = 0.4f
+private const val FRINGE_PART = 0.25f
 
 /** A fringe lock's share of its group's length by where across the front it roots: whole in the middle and at the ends, least over each eye. */
 private fun parted(group: LockGroup, root: LockRoot): Float {

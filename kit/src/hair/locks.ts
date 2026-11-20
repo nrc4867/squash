@@ -30,11 +30,12 @@ export interface LockMassSpec {
 }
 
 /**
- * The inner mass under lock hair: a smooth `hair-volume` with no locks or strand lines of its own, sized to the head and a little
- * narrower than a full volume, so it only hides the scalp and the locks over it set the outline. Its hairline sits above the brow.
+ * The inner mass under lock hair: a `hair-volume` cap with no strand lines of its own, sized to the head and a little narrower than a
+ * full volume, so it only hides the scalp and the locks over it set the outline. Its hairline sits above the brow under the fringe's
+ * roots, its sides reach the ears and its back the nape, and its hem is cut into points: the cap the app fits to a bare head.
  */
 export function lockMass(spec: LockMassSpec): { part: RecipePart; headSocket: RecipeSocket } {
-  const { id = "hair-mass", on, socket: n, depth, height, thickness = 0.03, at = 0.55, color, params } = spec;
+  const { id = "hair-mass", on, socket: n, depth, height, thickness = 0.02, at = 0.62, color, params } = spec;
   const length = depth + 2 * thickness;
   return {
     headSocket: socket(n, at, 0.5, { sink: 0, outset: thickness }),
@@ -49,11 +50,14 @@ export function lockMass(spec: LockMassSpec): { part: RecipePart; headSocket: Re
       ...(color ? { color } : {}),
       params: {
         crown: roundTo((height * (1 - at) + thickness) / length),
-        width: 0.45,
-        back: 0.35,
-        sides: -0.05,
-        fringe: -0.15,
-        rise: 0.35,
+        width: 0.42,
+        back: 0.55,
+        sides: 0.2,
+        fringe: -0.5,
+        rise: 0.25,
+        locks: 24,
+        lockDepth: 0.12,
+        lockJag: 0.5,
         strands: 0,
         lockLines: 0,
         ...(params ?? {}),
@@ -94,9 +98,9 @@ export function lockHair(preset: LockPreset | null, spec: LockHairSpec): RecipeH
   };
 }
 
-/** Short spiky locks: chunky pointed locks lying back over the crown, a few strays breaking the outline. */
+/** Short spiky locks: pointed locks lying back over the head, their tips lifting back and up, a spiked fringe and a stray or two. */
 export const shortSpiky = (spec: LockHairSpec): RecipeHair => lockHair("shortSpiky", spec);
-/** A bob: ribbon locks to the jaw with flicked ends and a fringe parted over the eyes. */
+/** A bob: wide round-tipped ribbon locks of one length to the jaw, their ends turning in, and a full fringe parted over the eyes. */
 export const bob = (spec: LockHairSpec): RecipeHair => lockHair("bob", spec);
 /** Long straight ribbon locks falling past the shoulders. */
 export const longStraight = (spec: LockHairSpec): RecipeHair => lockHair("longStraight", spec);
@@ -104,5 +108,5 @@ export const longStraight = (spec: LockHairSpec): RecipeHair => lockHair("longSt
 export const ponytail = (spec: LockHairSpec): RecipeHair => lockHair("ponytail", spec);
 /** A side-swept fringe over short layered hair. */
 export const sideSwept = (spec: LockHairSpec): RecipeHair => lockHair("sideSwept", spec);
-/** Round curled locks: rounded clumps each rolling into a curl. */
+/** Curly: wide ribbon locks each rolling outward into a spiral. */
 export const curly = (spec: LockHairSpec): RecipeHair => lockHair("curly", spec);

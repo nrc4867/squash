@@ -48,8 +48,11 @@ private const val FORK_NOTCH = 0.14f
 /** How far a lock's tip closes over, as a share of its length, by its tip. */
 private val TIP_REACH = mapOf(LockTip.POINTED to 0.3f, LockTip.ROUND to 0.15f, LockTip.FORKED to 0.25f, LockTip.FLICKED to 0.2f)
 
+/** How far behind a lock group's contour lines lie, as a share of its locks' thickness: past a neighbour of its group, short of a group laid over it. */
+private const val CONTOUR_TUCK = 0.45f
+
 /** A band's ring round a tie, as a share of the locks' width, and its thickness, as a share of theirs. */
-private const val BAND_RADIUS = 0.75f
+private const val BAND_RADIUS = 0.55f
 private const val BAND_THICKNESS = 1.6f
 
 /** The patch name of lock [index] in its group's mesh. */
@@ -68,9 +71,11 @@ data class LockChain(val index: Int, val patch: String, val joints: List<Vec3>, 
 
 /**
  * What a lock group's part carries beside its mesh: the [group], the [head] whose bones carry it, one [chains] entry a lock in the order of
- * its patches, and the [neighbours] each lock is tied to in its group, by place in [chains]; for a group's band, no chain at all.
+ * its patches, and the [neighbours] each lock is tied to in its group, by place in [chains]; for a group's band, no chain at all. Its
+ * contour lines lie [tuck] behind where they are drawn, so a lock's edge over another lock of its group, which lies within that of it,
+ * draws no line, while its edge over the face or another group does.
  */
-class LockPlacing(val group: LockGroupId, val head: PartId, val chains: List<LockChain>, val neighbours: List<Pair<Int, Int>> = emptyList())
+class LockPlacing(val group: LockGroupId, val head: PartId, val chains: List<LockChain>, val neighbours: List<Pair<Int, Int>> = emptyList(), val tuck: Float = 0f)
 
 /** One lock as built: what it was built from, its guide curve, its patch and its chain. */
 class BuiltLock(val spec: LockSpec, val guide: List<Vec3>, val patch: Patch, val chain: LockChain)
@@ -96,7 +101,9 @@ fun buildLock(lock: LockSpec, scalp: Scalp): BuiltLock {
     val guide = guideOf(lock, scalp)
     val rings = (LOCK_RINGS + abs(lock.curl) * RINGS_PER_TURN).toInt().coerceAtMost(MOST_LOCK_RINGS)
     val profile = if (lock.section == LockSection.RIBBON) LockProfile.RIBBON else LockProfile.CLUMP
-    val patch = LockBuilder.patch(lockPatch(lock.index), guide, lock.out, clumpShapeOf(lock), profile, rings, LOCK_SEGMENTS)
+    val lying = if (lock.curl != 0f) curlStart(lock.curl) else 1f
+    val middle = if (lock.tied) null else scalp.middle
+    val patch = LockBuilder.patch(lockPatch(lock.index), guide, lock.out, clumpShapeOf(lock), profile, rings, LOCK_SEGMENTS, middle, lying)
     val axis = AxisSpline(guide)
     val along = List(4 * guide.size) { axis.pointAt(it.toFloat() / (4 * guide.size - 1)) }
     return BuiltLock(lock, guide, patch, LockChain(lock.index, patch.name, evenly(along, lock.bones + 1), lock.physics))
@@ -160,7 +167,8 @@ class LockBuilds(private val template: PartTemplate?) {
         val id = lockGroupPartId(group.id)
         val chains = made.map { it.chain }
         val neighbours = (0 until made.size - 1).map { it to it + 1 }
-        return placed(id, head, made.map { it.patch }, LockPlacing(group.id, head.id ?: group.on, chains, neighbours))
+        val tuck = made.maxOf { it.spec.thickness } * CONTOUR_TUCK
+        return placed(id, head, made.map { it.patch }, LockPlacing(group.id, head.id ?: group.on, chains, neighbours, tuck))
     }
 
     private fun bandPart(group: LockGroup, head: PlacedPart, made: List<BuiltLock>, scalp: Scalp): PlacedPart? {

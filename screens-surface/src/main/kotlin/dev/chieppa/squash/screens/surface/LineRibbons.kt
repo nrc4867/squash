@@ -106,13 +106,14 @@ private fun pixelsAlong(run: ContourRun, view: SurfaceView): Float {
 
 /**
  * [contour] at the two weights of [rule]: thick where it clears the figure, thin wherever it shows. The thin line lies half inside
- * the edge, and the thick one shows only outside it, so together they read as the silhouette's weight across.
+ * the edge, and the thick one shows only outside it, so together they read as the silhouette's weight across. With [tuck], the thin line
+ * lies that far behind the edge instead of over it, so it shows only over what lies further back than that.
  */
-fun contourDraws(contour: StrokeRibbon, rule: LineRule, color: Color, layers: LineLayers, figureRadius: Float): List<RibbonDraw> {
+fun contourDraws(contour: StrokeRibbon, rule: LineRule, color: Color, layers: LineLayers, figureRadius: Float, tuck: Float? = null): List<RibbonDraw> {
     val outer = max(0f, 2f * rule.silhouettePixels - rule.interiorPixels)
     return listOf(
         RibbonDraw(contour, LineRule(outer), color, layer = layers.behind, lift = 0f),
-        RibbonDraw(contour, LineRule(rule.interiorPixels), color, layer = layers.over, lift = figureRadius * CONTOUR_LIFT_SHARE),
+        RibbonDraw(contour, LineRule(rule.interiorPixels), color, layer = layers.over, lift = tuck?.let { -it } ?: (figureRadius * CONTOUR_LIFT_SHARE)),
     )
 }
 

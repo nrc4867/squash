@@ -114,7 +114,7 @@ data class LockOverride(
     val wave: Float? = null,
     @Doc("How far it turns about itself over its length, in degrees.") @Range(min = -360.0, max = 360.0)
     val twist: Float? = null,
-    @Doc("Degrees it rises off the head at its root: 0 lies flat, 90 stands straight out.") @Range(min = -30.0, max = 90.0)
+    @Doc("Degrees its outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle.") @Range(min = -30.0, max = 90.0)
     val rise: Float? = null,
     @Doc("How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right.") @Range(min = -1.0, max = 1.0)
     val sweep: Float? = null,
@@ -144,9 +144,9 @@ data class LockOverride(
  * A group of hair locks on a head ([on]), rooted on it or on the inner mass [mass] over it where that part is there: [count] locks of the
  * [kind]'s place, spread over [spread] of its default reach, turned [around] degrees round the head and raised [height] up it. Each lock
  * is [length] long, varying by [lengthJitter] either way by [seed], [width] across and [thickness] through at its root, tapering to
- * [taper], with the [section] and [tip] given, [tipPoints] points on a forked tip. It rises [rise] degrees off the head, sweeps [sweep]
- * sideways, falls toward the ground by [fall], curls [curl] turns, waves [wave] of its width and twists [twist] degrees. A higher [layer]
- * lies over a lower one. With [tie] the roots gather toward one point, a tail's tie, and [band] wraps it in a band. [overrides] set single
+ * [taper], with the [section] and [tip] given, [tipPoints] points on a forked tip. It lies along the head from its root and lifts its
+ * outer part [rise] degrees off it, sweeps [sweep] sideways, falls toward the ground by [fall], curls [curl] turns, waves [wave] of its
+ * width and twists [twist] degrees. A higher [layer] lies over a lower one. With [tie] the roots gather toward one point, a tail's tie, and [band] wraps it in a band. [overrides] set single
  * locks by index. [physics] says how its locks move once a solver drives them.
  */
 @Serializable
@@ -180,7 +180,7 @@ data class LockGroup(
     val tip: LockTip = LockTip.POINTED,
     @Doc("How many points a forked tip ends in.") @Range(min = 2.0, max = 3.0)
     val tipPoints: Int = 2,
-    @Doc("Degrees each lock rises off the head at its root: 0 lies flat, 90 stands straight out.") @Range(min = -30.0, max = 90.0)
+    @Doc("Degrees each lock's outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle.") @Range(min = -30.0, max = 90.0)
     val rise: Float = 10f,
     @Doc("How far the locks sweep sideways as they grow, -1 to 1: positive toward the character's right.") @Range(min = -1.0, max = 1.0)
     val sweep: Float = 0f,

@@ -22,10 +22,10 @@ data class LockRoot(val azimuth: Float, val elevation: Float, val row: Int)
 private class KindPlace(val fromAzimuth: Float, val toAzimuth: Float, val elevation: Float, val rows: Int, val rowGap: Float, val heightReach: Float)
 
 private val PLACES = mapOf(
-    LockGroupKind.FRINGE to KindPlace(-48f, 48f, 26f, 1, 0f, 20f),
-    LockGroupKind.LEFT to KindPlace(-62f, -128f, 34f, 2, 16f, 20f),
-    LockGroupKind.RIGHT to KindPlace(62f, 128f, 34f, 2, 16f, 20f),
-    LockGroupKind.BACK to KindPlace(122f, 238f, 48f, 3, 22f, 20f),
+    LockGroupKind.FRINGE to KindPlace(-48f, 48f, 46f, 1, 0f, 20f),
+    LockGroupKind.LEFT to KindPlace(-62f, -128f, 34f, 2, 12f, 20f),
+    LockGroupKind.RIGHT to KindPlace(62f, 128f, 34f, 2, 12f, 20f),
+    LockGroupKind.BACK to KindPlace(122f, 238f, 48f, 3, 16f, 20f),
     LockGroupKind.STRAYS to KindPlace(-160f, 160f, 68f, 1, 0f, 15f),
 )
 

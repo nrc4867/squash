@@ -172,7 +172,7 @@ export interface LockOverride {
   wave?: number | null;
   /** How far it turns about itself over its length, in degrees. */
   twist?: number | null;
-  /** Degrees it rises off the head at its root: 0 lies flat, 90 stands straight out. */
+  /** Degrees its outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle. */
   rise?: number | null;
   /** How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right. */
   sweep?: number | null;

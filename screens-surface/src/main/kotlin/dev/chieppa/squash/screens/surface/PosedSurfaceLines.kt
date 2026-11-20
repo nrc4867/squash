@@ -56,10 +56,18 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
     fun clothContour(view: SurfaceView): StrokeRibbon? =
         if (seeThrough.isEmpty()) null else contourRibbon(emptyList(), view, seeThrough.map { it.lines }, weightAt, hangingHems(seeThrough), seeThrough.map { it.cover.garment.inkWeight })
 
-    /** The contour of [lined] and the surface ([contour]) at [rule]'s two weights, then the see-through garments' over their cloth. */
-    fun figureContour(lined: Collection<PartLines>, view: SurfaceView, rule: LineRule, ink: Color, figureRadius: Float): List<RibbonDraw> =
-        contour(lined, view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius) }.orEmpty() +
+    /**
+     * The contour of [lined] and the surface ([contour]) at [rule]'s two weights, each lock group's apart, tucked behind by its own
+     * depth, then the see-through garments' over their cloth.
+     */
+    fun figureContour(lined: Collection<PartLines>, view: SurfaceView, rule: LineRule, ink: Color, figureRadius: Float): List<RibbonDraw> {
+        val (locks, others) = lined.partition { it.part.locks != null }
+        return contour(others, view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius) }.orEmpty() +
+            locks.flatMap { lock ->
+                contourRibbon(listOf(lock), view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius, tuck = lock.part.locks?.tuck) }.orEmpty()
+            } +
             clothContour(view)?.let { contourDraws(it, rule, ink, LineLayers.FIGURE, figureRadius).map(RibbonDraw::overSeeThroughCloth) }.orEmpty()
+    }
 
     /**
      * The ink along the surface's inked joins, its garments' inked hems and joins, and its creases and wrinkles, through [view]; each

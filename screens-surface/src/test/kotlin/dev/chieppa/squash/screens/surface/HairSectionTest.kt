@@ -12,6 +12,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.hair.HairPreset
+import dev.chieppa.squash.character.hair.MASS_TEMPLATE
 import dev.chieppa.squash.character.hair.presetGroupNames
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BodyPlanId
@@ -62,6 +63,9 @@ class HairSectionTest {
         val groups = session.document.value.character.lockGroups
         assertEquals(presetGroupNames(HairPreset.BOB), groups.map { it.id.value })
         assertTrue(groups.all { it.on == HEAD })
+        val mass = assertNotNull(groups.first().mass?.let(session.document.value.character::part), "a head with no hair mass gets one fitted in the same step")
+        assertEquals(MASS_TEMPLATE, mass.template.id.value)
+        assertTrue(groups.all { it.mass == mass.id }, "every group roots on the fitted mass")
         assertTrue(session.document.value.character.colliders.isNotEmpty(), "the body's collision shapes are set up with the first preset")
 
         onNodeWithTag(HairTags.group("fringe")).performScrollTo().performClick()
