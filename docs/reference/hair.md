@@ -97,7 +97,7 @@ Flow: a crown whorl, a centre parting.
 
 ### ponytail
 
-Flow: a crown whorl, no parting, sweepBack 0.7.
+Flow: a crown whorl, no parting.
 
 | group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
