@@ -53,6 +53,9 @@ import dev.chieppa.squash.character.build.shownJoints
 import dev.chieppa.squash.character.build.skeletonRowNode
 import dev.chieppa.squash.character.build.sliceRowNode
 import dev.chieppa.squash.character.build.dressedNode
+import dev.chieppa.squash.character.build.membraneColors
+import dev.chieppa.squash.character.build.membranesNode
+import dev.chieppa.squash.document.shownMembranes
 import dev.chieppa.squash.character.surface.HeldSurface
 import dev.chieppa.squash.character.surface.fieldWorkNode
 import dev.chieppa.squash.character.surface.HeldPaint
@@ -134,9 +137,12 @@ class CharacterSession(
         ::skeleton,
     )
 
-    val assembly: Node<*, AssembledCharacter> = graph.dressedNode(
-        placed,
-        combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
+    val assembly: Node<*, AssembledCharacter> = graph.membranesNode(
+        graph.dressedNode(
+            placed,
+            combine(document.map { dressingOf(it.character) }.distinctUntilChanged(), garmentView) { dressing, view -> dressing.seenAs(view) }.distinctUntilChanged(),
+        ),
+        document.map { it.character.shownMembranes }.distinctUntilChanged(),
     )
 
     /** The hair volumes whose band of shine shows on the hair, on its own meshes and on the one surface. */
@@ -183,7 +189,7 @@ class CharacterSession(
             assembly,
             shines,
         ),
-        document.map { garmentColors(it.character) }.distinctUntilChanged(),
+        document.map { garmentColors(it.character) + membraneColors(it.character) }.distinctUntilChanged(),
     )
 
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */

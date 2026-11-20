@@ -54,6 +54,9 @@ object ShellTags {
     const val ANATOMY_JOINTS = "part.anatomy.joints"
     const val ANATOMY_LANDMARKS = "part.anatomy.landmarks"
     const val PAIR_WITH = "part.anatomy.pair"
+    const val MEMBRANE_ADD = "part.membrane.add"
+    const val MEMBRANE_REMOVE = "part.membrane.remove"
+    const val MEMBRANE_MIRRORED = "part.membrane.mirrored"
     const val SAVE_TEMPLATE = "part.anatomy.save"
     const val SAVE_NAME = "part.anatomy.save.name"
     const val SAVE_OK = "part.anatomy.save.ok"
@@ -108,4 +111,7 @@ object ShellTags {
     fun anatomyDelete(name: String) = "part.anatomy.delete.$name"
     fun anatomyMissing(name: String) = "part.anatomy.missing.$name"
     fun pairOption(part: String) = "part.anatomy.pair.$part"
+    fun membraneTo(part: String) = "part.membrane.to.$part"
+    fun membraneRow(membrane: String) = "part.membrane.row.$membrane"
+    fun membraneSetting(name: String) = "part.membrane.$name"
 }

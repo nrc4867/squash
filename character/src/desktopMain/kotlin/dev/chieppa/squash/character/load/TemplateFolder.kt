@@ -20,7 +20,7 @@ private const val SHIPPED_INDEX = "index.txt"
 data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null) {
     companion object {
         /**
-         * Loads every `*.part.json` in [folder] in name order and every `*.plan.json` in its plans folder, the plans placing the most
+         * Loads every `*.part.json` in [folder] in name order, a version number read as a number so `paw-10` follows `paw-9`, and every `*.plan.json` in its plans folder, the plans placing the most
          * parts first, a pair counting once, then among equals the most counting each side, then by name, so Blank, which places its
          * root alone, comes last.
          */
@@ -36,7 +36,7 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
         fun shipped(): TemplateFolder = packed
 
         private fun load(files: List<String>, read: (String) -> String): TemplateFolder {
-            val parts = files.filter { '/' !in it && it.endsWith(PART_SUFFIX) }.sorted()
+            val parts = files.filter { '/' !in it && it.endsWith(PART_SUFFIX) }.sortedBy(::nameOrder)
                 .map { TemplateLoader.loadPart(it, read(it)) }
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
@@ -56,3 +56,9 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
         }
     }
 }
+
+/** How wide a number in a file name is padded for its name order. */
+private const val NAME_NUMBER_WIDTH = 6
+
+/** [name] with each run of digits padded to the same width, so names sort by their numbers' values. */
+private fun nameOrder(name: String): String = Regex("\\d+").replace(name) { it.value.padStart(NAME_NUMBER_WIDTH, '0') }

@@ -120,6 +120,16 @@
     <string name="shell_part_off">off</string>
     <string name="shell_part_none">No part selected</string>
     <string name="shell_part_blend">Join blend</string>
+    <string name="shell_membranes">Membranes</string>
+    <string name="shell_membrane_add">Add membrane</string>
+    <string name="shell_membrane_to">To %1$s</string>
+    <string name="shell_membrane_between">%1$s to %2$s</string>
+    <string name="shell_membrane_edge">Edge curve</string>
+    <string name="shell_membrane_billow">Billow</string>
+    <string name="shell_membrane_thickness">Thickness</string>
+    <string name="shell_membrane_sink">Sink</string>
+    <string name="shell_membrane_mirrored">Both sides</string>
+    <string name="shell_membrane_remove">Remove</string>
 
     <string name="shell_step_add">Add %1$s</string>
     <string name="shell_step_remove">Remove %1$s</string>

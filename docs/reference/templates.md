@@ -12,21 +12,21 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `claw` | 1 | - | Claw | horn | yes |
 | `ear` | 3 | 1, 2 | Ear | ear | yes |
 | `fin` | 1 | - | Fin | fin | yes |
-| `foot` | 8 | 1, 2, 3, 4, 5, 6, 7 | Foot | foot | no |
-| `foot-bird` | 4 | 1, 2, 3 | Bird foot | foot | no |
+| `foot` | 9 | 1, 2, 3, 4, 5, 6, 7, 8 | Foot | foot | no |
+| `foot-bird` | 5 | 1, 2, 3, 4 | Bird foot | foot | no |
 | `hair` | 1 | - | Hair | hair | yes |
 | `hair-cap` | 1 | - | Hair cap | hair | no |
 | `hair-clump` | 1 | - | Hair clump | hair | yes |
 | `hair-tuft` | 1 | - | Hair tuft | hair | yes |
 | `hair-volume` | 1 | - | Hair volume | hair | no |
-| `hand` | 7 | 1, 2, 3, 4, 5, 6 | Hand | hand | no |
+| `hand` | 8 | 1, 2, 3, 4, 5, 6, 7 | Hand | hand | no |
 | `head` | 2 | 1 | Head | head | no |
 | `head-bird` | 1 | - | Bird head | head | no |
 | `head-round` | 2 | 1 | Round head | head | no |
 | `horn` | 1 | - | Horn | horn | yes |
 | `leg` | 1 | - | Leg | leg | yes |
 | `leg-bird` | 1 | - | Bird leg | leg | yes |
-| `paw` | 9 | 1, 2, 3, 4, 5, 6, 7, 8 | Paw | foot | no |
+| `paw` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9 | Paw | foot | no |
 | `plate` | 1 | - | Plate | fin | yes |
 | `ring` | 1 | - | Ring | none (guessed from where it sits) | no |
 | `sheet` | 1 | - | Sheet | none (guessed from where it sits) | yes |
@@ -322,7 +322,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.08 | 0.02 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
-## foot 8
+## foot 9
 
 | fact | value |
 | --- | --- |
@@ -357,7 +357,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:4.1` | `toes:4` | x | [-30, 40] | down, back |
 | `toes:4.2` | `toes:4` | x | [-30, 40] | down, back |
 
-Patches: `body`, `toes:<i>`
+Patches: `body`, `toes:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -370,6 +370,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `nail:4` | toes:4 | [0.705, 0.727] | [0.1, 0.4] | fill | nails |
 | `sole` | body | [0.14, 1] | [0.37, 0.63] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
+| `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
 
 Parameters:
 
@@ -393,8 +394,12 @@ Parameters:
 | `clawCurl` | 0.35 | -1 to 1 | How much each claw curls down (positive) or up (negative). |
 | `pads` | 0 (off) | a flag: 1 or 0 | Builds a pad under each toe tip in the slot pad. |
 | `beans` | 0 | 0 to 0.8 | How far each toe pad rises from its toe. |
+| `webbing` | 0 (off) | a flag: 1 or 0 | Builds a thin skin web between neighbouring toes, inked along its free edge only. |
+| `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
+| `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
+| `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
 
-## foot-bird 4
+## foot-bird 5
 
 | fact | value |
 | --- | --- |
@@ -429,7 +434,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:back.1` | `toes:back` | x | [-15, 80] | up |
 | `toes:back.2` | `toes:back` | x | [-15, 80] | up |
 
-Patches: `body`, `toes:<i>`
+Patches: `body`, `toes:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -445,6 +450,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `pad:back` | toes:back | [0.262, 0.363] | [0.6, 0.9] | fill | pad |
 | `top` | body | [0, 0.4] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
+| `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
 
 Parameters:
 
@@ -465,6 +471,10 @@ Parameters:
 | `pads` | 1 (on) | a flag: 1 or 0 | Builds a pad under each toe tip. |
 | `padSize` | 0.35 | 0 to 0.8 | How far each toe pad rises from the toe. |
 | `width` | 0.12 | 0.06 to 0.3 | Half width of the foot's palm, a fraction of the length. |
+| `webbing` | 0 (off) | a flag: 1 or 0 | Builds a thin skin web between neighbouring toes, inked along its free edge only. |
+| `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
+| `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
+| `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
 
 ## hair 1
 
@@ -714,7 +724,7 @@ Presets, a part's `preset` (its own `params` override them):
 | `long` | `crown` 0.55, `width` 0.5, `back` 1.6, `sides` 1.3, `fringe` -0.02, `rise` 0.3, `flip` 0.08, `fullness` 3.2, `locks` 16, `lockDepth` 0.35, `lockJag` 0.5, `lockRound` 0.2, `lockFlare` 0.04, `layers` 2, `layerGap` 0.22, `lockLines` 0.2 |
 | `ponytail` | `crown` 0.5, `width` 0.46, `back` 0.2, `sides` -0.02, `fringe` 0, `rise` 0.32, `flip` 0, `fullness` 2.4, `locks` 0, `lockDepth` 0, `layers` 0, `lockLines` 0 |
 
-## hand 7
+## hand 8
 
 | fact | value |
 | --- | --- |
@@ -753,7 +763,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `fingers:thumb.2` | `fingers:thumb` | x | [-20, 35] | back |
 | `fingers:thumb.3` | `fingers:thumb` | x | [-20, 35] | back |
 
-Patches: `body`, `fingers:<i>`
+Patches: `body`, `fingers:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -766,6 +776,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `nail:thumb` | fingers:thumb | [0.57, 0.626] | [0.1, 0.4] | fill | nails |
 | `back` | body | [0, 0.7] | [0, 0.5] | fill | - |
 | `fingers` | fingers | [0, 1] | [0, 1] | fill | - |
+| `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
 
 Parameters:
 
@@ -785,6 +796,10 @@ Parameters:
 | `knuckles` | 0.85 | 0 to 1.5 | Knuckle ball at each finger's root, a share of the finger's radius; 0 for none. |
 | `spread` | 1 | 0 to 3 | Multiplies the fingers' fan angle across the palm: below 1 closer, above 1 spread wide. |
 | `merge` | 0.1 | 0 to 2 | How much neighbouring fingers fuse: small stands them apart to their roots, 1 or more joins them to the tips as a mitten. |
+| `webbing` | 0 (off) | a flag: 1 or 0 | Builds a thin skin web between neighbouring fingers, inked along its free edge only. |
+| `webReach` | 1 | 0.2 to 1 | How far up the fingers the web reaches from where they leave the palm: 1 a full web to the tips, 0.5 a half web. |
+| `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
+| `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
 
 ## head 2
 
@@ -1036,7 +1051,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 9
+## paw 10
 
 | fact | value |
 | --- | --- |
@@ -1069,7 +1084,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:3.1` | `toes:3` | x | [-20, 60] | down, back |
 | `toes:3.2` | `toes:3` | x | [-20, 60] | down, back |
 
-Patches: `body`, `toes:<i>`
+Patches: `body`, `toes:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -1087,6 +1102,7 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `sock` | body | [0, 0.5] | [0, 1] | fill | - |
 | `top` | body | [0, 0.66] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
+| `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
 
 Parameters:
 
@@ -1108,6 +1124,10 @@ Parameters:
 | `width` | 0.2 | 0.08 to 0.4 | Half width of the paw's main pad, a fraction of the length. |
 | `height` | 0.19 | 0.08 to 0.4 | Half height of the paw's main pad, a fraction of the length. |
 | `ankle` | 0.09 | 0.05 to 0.3 | Radius of the wrist rising from the paw's back into the leg, a fraction of the length. |
+| `webbing` | 0 (off) | a flag: 1 or 0 | Builds a thin skin web between neighbouring toes, inked along its free edge only. |
+| `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
+| `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
+| `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
 
 ## plate 1
 

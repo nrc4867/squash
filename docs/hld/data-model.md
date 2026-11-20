@@ -45,6 +45,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Owned part | A part instance a garment owns (`PartInstance.garment`): built, placed and rigged as any part while the garment is worn | Document, on the character |
 | Outfit | A name and at most one garment per wardrobe slot | Document, in the wardrobe |
 | Worn part | A part resolved through the worn garments' changes, innermost first, the outermost winning | Derived |
+| Membrane | A thin sheet of skin spanned between parts: two rails, each a chain of edges on parts from (u, v) to (u, v) in order from its root to its free edge, how far its free edge curves in, how far it billows, its thickness and how deep its rails sit, a palette slot or none, and whether it is built again on the other side; changed by `SetMembrane` (surface.md, Membranes) | Document, on the character |
 
 A character saves as a `.squash` file: a zip holding the document as `character.json`, with each reference image beside it under `images/` in its own encoding, so a file carries everything it shows. Plain JSON, with images inline as base64, opens too, from the open dialog or a drop on Home; the example characters are kept that way. Saving a character opened from JSON asks where to save it as a `.squash` file and leaves the JSON as it is.
 

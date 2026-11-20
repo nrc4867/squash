@@ -28,18 +28,101 @@ private const val ROUND_FLOOR = 0.6f
 /** How far from a rail's middle the ring next to it sits, in that rail's half heights. */
 private const val END_RING = 0.35f
 
-/** One side of a membrane: a swept patch and the stretch of its u the membrane runs along, from its root at [from] to its edge at [to]. */
-class MembraneRail(val patch: Patch, val from: Float, val to: Float) {
-    init {
-        requireNotNull(patch.slices) { "A membrane's rail ${patch.name} has no slices" }
+/**
+ * One side of a membrane, read from its root (reach 0) to where its free edge meets it (reach 1): the ring there, the u a vertex there
+ * rides at on the patch [name], and the widest half height over the stretch.
+ */
+interface MembraneRail {
+    val name: String
+
+    /** The widest half height of its rings over its stretch. */
+    val halfHeight: Float
+
+    fun ringAt(reach: Float): RailRing
+
+    /** The u a vertex at [reach] rides at on [name]. */
+    fun uAt(reach: Float): Float
+}
+
+/** A swept patch as a membrane's rail: the stretch of its u from its root at [from] to its edge at [to]. */
+fun MembraneRail(patch: Patch, from: Float, to: Float): MembraneRail = PatchRail(patch, from, to)
+
+/**
+ * A straight rail named [name] from [root] to [tip], its up [up], its half height [rootHalf] at the root narrowing straight to [tipHalf],
+ * its u running from [fromU] to [toU]: a digit's axis.
+ */
+class LineRail(
+    override val name: String,
+    private val root: Vec3,
+    private val tip: Vec3,
+    private val up: Vec3,
+    private val rootHalf: Float,
+    private val tipHalf: Float,
+    private val fromU: Float,
+    private val toU: Float,
+) : MembraneRail {
+    override val halfHeight: Float get() = maxOf(rootHalf, tipHalf)
+
+    override fun ringAt(reach: Float) = RailRing(root + (tip - root) * reach, up, rootHalf + (tipHalf - rootHalf) * reach)
+
+    override fun uAt(reach: Float) = fromU + (toU - fromU) * reach
+}
+
+/** A rail read through [ring] and [u], named [name], [halfHeight] at its widest: a chain of edges over several parts. */
+class ReadRail(override val name: String, override val halfHeight: Float, private val ring: (Float) -> RailRing, private val u: (Float) -> Float) : MembraneRail {
+    override fun ringAt(reach: Float) = ring(reach)
+
+    override fun uAt(reach: Float) = u(reach)
+}
+
+/**
+ * How a membrane is shaped: [thickness] of its rails' half height half way between them, its free edge dipping [sag] of its reach toward
+ * its middle, and its middle standing [billow] of the gap between its rails off the plane between them, nothing at its root and most at
+ * its free edge: toward [down] where the sheet lies more level than [STEEP], else toward [away].
+ */
+data class MembraneShape(val thickness: Float, val sag: Float, val billow: Float = 0f, val down: Vec3? = null, val away: Vec3? = null) {
+    companion object {
+        /** How far a sheet's up may turn from [down], as the cosine between them, before it billows toward [away] instead. */
+        const val STEEP = 0.4f
     }
 }
 
-/** How a membrane is shaped: [thickness] of its rails' half height half way between them, its free edge dipping [sag] of its reach toward its middle. */
-data class MembraneShape(val thickness: Float, val sag: Float)
+/** A rail's ring at one reach: its middle, the way its up points and its half height. */
+class RailRing(val middle: Vec3, val up: Vec3, val half: Float)
 
-/** A rail's ring at one u: its middle, the way its up points and its half height. */
-private class RailRing(val middle: Vec3, val up: Vec3, val half: Float)
+/** A swept patch's stretch of u from [from] to [to], read between its rings. */
+private class PatchRail(val patch: Patch, val from: Float, val to: Float) : MembraneRail {
+    init {
+        requireNotNull(patch.slices) { "A membrane's rail ${patch.name} has no slices" }
+    }
+
+    override val name: String get() = patch.name
+
+    override fun uAt(reach: Float): Float = from + (to - from) * reach
+
+    override val halfHeight: Float by lazy {
+        val slices = requireNotNull(patch.slices)
+        val low = minOf(from, to)
+        val high = maxOf(from, to)
+        slices.filter { it.u in low..high }.maxOfOrNull { it.height / 2f } ?: (ringOf(slices, (low + high) / 2f).height / 2f)
+    }
+
+    override fun ringAt(reach: Float): RailRing {
+        val slice = ringOf(requireNotNull(patch.slices), uAt(reach))
+        return RailRing(slice.frame.center, slice.frame.up, slice.height / 2f)
+    }
+
+    /** The ring of [slices] at [u], its middle, up and height read straight between the rings either side. */
+    private fun ringOf(slices: List<Slice>, u: Float): Slice {
+        val next = slices.indexOfFirst { it.u >= u }
+        if (next <= 0) return slices[if (next == 0) 0 else slices.lastIndex]
+        val a = slices[next - 1]
+        val b = slices[next]
+        val t = if (b.u > a.u) (u - a.u) / (b.u - a.u) else 0f
+        val frame = Frame(a.frame.center + (b.frame.center - a.frame.center) * t, a.frame.tangent, (a.frame.up + (b.frame.up - a.frame.up) * t).normalized())
+        return Slice(u, frame, a.height + (b.height - a.height) * t, a.width + (b.width - a.width) * t, a.section, a.proxyNormalFrame)
+    }
+}
 
 /**
  * A surface spanned between two rails, a web between two digits. Its rings run across it from the first rail to the second, the
@@ -55,10 +138,10 @@ object MembraneBuilder {
     fun membrane(name: String, first: MembraneRail, second: MembraneRail, rings: Int, segments: Int, shape: MembraneShape): Patch {
         require(rings >= MIN_RINGS && segments >= MIN_SEGMENTS && segments % 2 == 0) { "$name: a membrane needs $MIN_RINGS rings and an even $MIN_SEGMENTS segments" }
         val half = segments / 2
-        val firstHalf = first.halfHeight()
-        val secondHalf = second.halfHeight()
+        val firstHalf = first.halfHeight
+        val secondHalf = second.halfHeight
         val web = shape.thickness * minOf(firstHalf, secondHalf)
-        val gap = (second.ringAt(second.at(MIDDLE)).middle - first.ringAt(first.at(MIDDLE)).middle).length
+        val gap = (second.ringAt(MIDDLE).middle - first.ringAt(MIDDLE).middle).length
         val across = acrossShares(rings, gap, firstHalf, secondHalf)
         val facing = facing(first, second)
         val count = rings * segments
@@ -74,10 +157,10 @@ object MembraneBuilder {
                 val step = (column % half).toFloat() / (half - 1)
                 val t = if (pole) MIDDLE else if (onFirstFace) step else 1f - step
                 val reach = t * (1f - shape.sag * sin(PI.toFloat() * s))
-                val uA = first.at(reach)
-                val uB = second.at(reach)
-                val a = first.ringAt(uA)
-                val b = second.ringAt(uB)
+                val uA = first.uAt(reach)
+                val uB = second.uAt(reach)
+                val a = first.ringAt(reach)
+                val b = second.ringAt(reach)
                 val between = b.middle - a.middle
                 val point = if (pole) {
                     if (ring == 0) a.middle else b.middle
@@ -89,7 +172,7 @@ object MembraneBuilder {
                     val thin = minOf(web, FILLET * minOf(ownA, ownB))
                     val swell = (FILLET * ownA - thin).coerceAtLeast(0f) * fillet(s * width / ownA) + (FILLET * ownB - thin).coerceAtLeast(0f) * fillet((1f - s) * width / ownB)
                     val thick = (thin + swell).coerceAtMost(FILLET * maxOf(ownA, ownB)) * edgeScale(t)
-                    a.middle + between * s + up * (if (onFirstFace == facing) thick else -thick)
+                    a.middle + between * s + up * (if (onFirstFace == facing) thick else -thick) + billowAt(shape, up, width, s, t)
                 }
                 val i = ring * segments + column
                 points[i * Patch.COMPONENTS] = point.x
@@ -100,7 +183,7 @@ object MembraneBuilder {
                 shares[i] = smoothStep(s)
             }
         }
-        return Patch(name, rings, segments, closedV = true, slices = null, points = points, spanned = Spanned(first.patch.name, second.patch.name, firstUs, secondUs, shares))
+        return Patch(name, rings, segments, closedV = true, slices = null, points = points, spanned = Spanned(first.name, second.name, firstUs, secondUs, shares))
     }
 
     /**
@@ -120,17 +203,25 @@ object MembraneBuilder {
         }
     }
 
-    private fun MembraneRail.at(reach: Float): Float = from + (to - from) * reach
+    /** How far the membrane's middle stands off the plane between its rails at [s] across and [t] toward its free edge, along [up] turned toward the shape's down. */
+    private fun billowAt(shape: MembraneShape, up: Vec3, width: Float, s: Float, t: Float): Vec3 {
+        if (shape.billow == 0f) return Vec3.ZERO
+        val down = shape.down
+        val lean = if (down != null && kotlin.math.abs(up dot down) >= MembraneShape.STEEP) down else shape.away ?: down
+        val toward = lean?.let { if ((up dot it) < 0f) up * -1f else up } ?: up
+        val outward = 1f - (1f - t) * (1f - t)
+        return toward * (shape.billow * width * sin(PI.toFloat() * s) * outward)
+    }
 
     /**
      * Whether the first face lies on the rails' up side for the membrane to face out: true when the rails run toward their edge, the
      * first rail to the second and their up turn the way the build's columns wind.
      */
     private fun facing(first: MembraneRail, second: MembraneRail): Boolean {
-        val root = first.ringAt(first.at(0f)).middle
-        val edge = first.ringAt(first.at(1f)).middle
-        val middle = first.ringAt(first.at(MIDDLE))
-        val across = second.ringAt(second.at(MIDDLE)).middle - middle.middle
+        val root = first.ringAt(0f).middle
+        val edge = first.ringAt(1f).middle
+        val middle = first.ringAt(MIDDLE)
+        val across = second.ringAt(MIDDLE).middle - middle.middle
         return ((edge - root) cross across) dot middle.up <= 0f
     }
 
@@ -156,30 +247,5 @@ object MembraneBuilder {
         val left = direction - along * (direction dot along)
         if (left.length > TINY) return left.normalized()
         return PartAxes.of(along).up
-    }
-
-    /** The widest half height of this rail's rings over its stretch. */
-    private fun MembraneRail.halfHeight(): Float {
-        val slices = requireNotNull(patch.slices)
-        val low = minOf(from, to)
-        val high = maxOf(from, to)
-        return slices.filter { it.u in low..high }.maxOfOrNull { it.height / 2f } ?: (ringOf(slices, (low + high) / 2f).let { it.height / 2f })
-    }
-
-    private fun MembraneRail.ringAt(u: Float): RailRing {
-        val slices = requireNotNull(patch.slices)
-        val slice = ringOf(slices, u)
-        return RailRing(slice.frame.center, slice.frame.up, slice.height / 2f)
-    }
-
-    /** The ring of [slices] at [u], its middle, up and height read straight between the rings either side. */
-    private fun ringOf(slices: List<Slice>, u: Float): Slice {
-        val next = slices.indexOfFirst { it.u >= u }
-        if (next <= 0) return slices[if (next == 0) 0 else slices.lastIndex]
-        val a = slices[next - 1]
-        val b = slices[next]
-        val t = if (b.u > a.u) (u - a.u) / (b.u - a.u) else 0f
-        val frame = Frame(a.frame.center + (b.frame.center - a.frame.center) * t, a.frame.tangent, (a.frame.up + (b.frame.up - a.frame.up) * t).normalized())
-        return Slice(u, frame, a.height + (b.height - a.height) * t, a.width + (b.width - a.width) * t, a.section, a.proxyNormalFrame)
     }
 }

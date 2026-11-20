@@ -43,7 +43,7 @@ class SchemasTest {
     @Test
     fun everyShippedTemplatePassesItsSchema() {
         val parts = templates.listDirectoryEntries("*.part.json")
-        assertEquals(67, parts.size)
+        assertEquals(71, parts.size)
         for (file in parts) assertEquals(emptySet(), errors("part-template.schema.json", file.readText()), file.name)
     }
 

@@ -72,6 +72,8 @@ A socket, region or mark names a digit's patch to lie on that digit and ride it 
 - The fingers part at the tips (`smallest gap between digit tips` in `measure.txt`, near 0 means fused) and the palm reads longer than wide from the front and back.
 - The wrist meets the arm with no step: the arm's last radius about the hand's `wrist` times its size.
 
+**Webbed fingers**: `webbing: 1` with `webReach` and `webEdge` (`ears-tails-extras.md`, Webs and membranes).
+
 ## Limits
 
 - Cloth stops at the fingers' roots: a glove is fingerless, and prints on a finger show nowhere.

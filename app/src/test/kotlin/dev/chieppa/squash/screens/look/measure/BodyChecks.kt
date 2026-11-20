@@ -22,7 +22,7 @@ private const val JOIN_SHARE = 0.2f
 private const val TIP_SHARE = 0.3f
 
 /** A part of the body, not a garment's branch, loose end or a part a garment owns. */
-val PlacedPart.isBody: Boolean get() = id != null && covering == null && hanging == null && owner == null
+val PlacedPart.isBody: Boolean get() = id != null && covering == null && hanging == null && spanning == null && owner == null
 
 private fun AssembledCharacter.bodyWith(role: Role) = parts.filter { it.isBody && it.role == role }
 

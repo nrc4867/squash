@@ -95,6 +95,8 @@ class PlacedPart(
     val blend: Float? = null,
     /** The copies of it its socket shows in its place, each an instance of this one build; null for a part shown once. */
     val copies: PartCopies? = null,
+    /** For a membrane, the parts it is spanned between and where along them each of its vertices rides; null for anything else. */
+    val spanning: Spanning? = null,
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -154,11 +156,11 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
     fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning)
 
     /** This part with [copies] in place of the ones it shows. */
     fun withCopies(copies: PartCopies?): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */

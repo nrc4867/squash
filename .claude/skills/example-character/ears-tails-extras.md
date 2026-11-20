@@ -116,6 +116,21 @@ export const spines: RecipePart = { id: "spines", template: "spike", on: "torso"
 - `seed` picks the scatter; another seed, another scatter with the same look. A mane is a spread of `hair-clump`s round the back of the head and a second one down the chest.
 - A part on a spread socket leaves the one surface: field templates (`blob`) build as their own meshes there, each copy inked round.
 
+## Webs and membranes
+
+**Webs between digits** are the hand's, foot's, paw's and bird foot's own: `webbing: 1` on the part's `params` builds a thin skin web between each two neighbouring counted digits (not a thumb or a hind toe), riding both digits as they spread and curl and inked only along its free edge. `webReach` is how far up the digits it reaches from where they leave the palm or sole (1 a full web to the tips, 0.5 a half web), `webEdge` how far its free edge dips between two digits (0 straight, 0.3 to 0.4 scalloped), `webThickness` how thick it is between them. Colour it with the `webbing` area: `areas: { webbing: "web" }`. Check it with `close=feet` or `close=hands`, whose spread and curl views show it bend.
+
+**A membrane between parts** (a glider's patagium, a bat's wing from arm and finger to flank and leg) is a top-level `membranes` entry, not a part: two rails, `first` and `second`, each a list of edges `{ part, from: [u, v], to: [u, v], patch? }` in order from the membrane's root to where its free edge meets that rail. The sheet spans across from one rail to the other; its free edge runs between the rails' last ends and curves in by `edge`; its root runs between their first ends, so start both rails on the body (a flank edge before the limb's) to root it there. `billow` bulges its middle toward the ground where it lies level, out from the body where it hangs; `thickness` and `sink` (how deep the rails sit in their parts) set how it swells into them, which is what hides the join. `mirrored` (on by default) builds the other side on each pair's right part. Name a pair by its left id; a digit by its patch (`fingers:3` is a hand's last finger from the thumb side, `templates.md` lists patches). Pick each edge's v on the side facing the other rail (`docs/reference/frames.md`, Part frame), and check with a pose that spreads and folds the limbs: the sheet rides their bones.
+
+```ts
+membranes: [{
+  id: "patagium",
+  first: [{ part: "torso", from: [0.78, 0.27], to: [0.81, 0.4] }, { part: "front-leg-l", from: [0.12, 0.5], to: [0.95, 0.5] }],
+  second: [{ part: "torso", from: [0.22, 0.27], to: [0.19, 0.4] }, { part: "back-leg-l", from: [0.12, 0.0], to: [0.95, 0.0] }],
+  edge: 0.3, billow: 0.12, color: "skin",
+}],
+```
+
 ## Tufts and locks
 
 `hairTuft` is a soft tuft blended into the fur it grows from: a crown tuft, cheek fluff, a lynx ear tip (`kit/README.md`, Hair). A mane that reads as one mass is rings of `hair-clump`s on hand-made sockets round the back of the head and the chest, each blended into the head with the `fluff` preset; a spread of clumps is faster to place but its copies are separate meshes. `tuft` draws pointed tips for a cheek ruff or a crest; `furLock` a curling lock for the older `hair` template (`kit/README.md`, Shapes). **Tufts that read as horns** stand too stiff and too far out: make them short and wide at the root, lean them along the surface, and colour them as the fur they grow from.
