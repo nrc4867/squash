@@ -71,7 +71,8 @@ private const val THOUSANDTHS = 1000f
 /**
  * Hang: how far the cloth may stand off below the highest place it covers on an upright part, 0 to follow the body, with Flare once it
  * hangs; a row for each dropped seam, its place along its part, with its cross, and Drop a seam; and a row for each area that gathers the
- * cloth in, its ease, with its cross, and Gather an area; and a row for each area folded back over the cloth, and Fold an area.
+ * cloth in, its ease, with its cross, and Gather an area; a row for each area folded back over the cloth, and Fold an area; and the
+ * sheer and net areas ([SeeThroughRows]).
  */
 @Composable
 internal fun HangRows(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
@@ -113,6 +114,7 @@ internal fun HangRows(state: AppState, session: CharacterSession, character: Cha
     val ungathered = garment.areas.filter { it.gather == null }
     if (ungathered.isNotEmpty()) AreaMenu(stringResource(Res.string.dress_gather_area), StretchIcons.Plus, DressTags.GATHER_AREA, ungathered) { session.send(SetAreaGather(garment.id, it.id, NEW_GATHER)) }
     FoldRows(session, garment, gesture)
+    SeeThroughRows(session, garment, gesture)
 }
 
 /** A row for each area folded back over the cloth, its thickness, with its cross, and Fold an area. */
@@ -134,7 +136,7 @@ private fun FoldRows(session: CharacterSession, garment: Garment, gesture: Slide
 
 /** A quiet [label] button with [icon] opening a menu of [areas], [pick] sent for the one pressed. */
 @Composable
-private fun AreaMenu(label: String, icon: ImageVector, tag: String, areas: List<GarmentArea>, pick: (GarmentArea) -> Unit) {
+internal fun AreaMenu(label: String, icon: ImageVector, tag: String, areas: List<GarmentArea>, pick: (GarmentArea) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         Button(label, { open = true }, Modifier.testTag(tag), kind = ButtonKind.Quiet, icon = icon)

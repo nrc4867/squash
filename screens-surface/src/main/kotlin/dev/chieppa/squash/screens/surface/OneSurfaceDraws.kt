@@ -5,7 +5,7 @@ import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.CreaseLine
 import dev.chieppa.squash.character.surface.PosedCreases
 import dev.chieppa.squash.document.GarmentId
-import dev.chieppa.squash.character.surface.SurfaceDress
+import dev.chieppa.squash.character.surface.SurfaceGarment
 import dev.chieppa.squash.geom.ContourPoint
 import dev.chieppa.squash.geom.ContourRun
 import dev.chieppa.squash.geom.CurvePoint
@@ -15,6 +15,7 @@ import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.RibbonPoint
 import dev.chieppa.squash.render.StrokeRibbon
+import dev.chieppa.squash.render.overSeeThroughCloth
 import dev.chieppa.squash.screens.sheet.SurfaceView
 
 /**
@@ -30,9 +31,17 @@ private const val JOIN_SHORTEST_CELLS = 6f
 /** How many of the surface's cells a piece of hem runs at least to be drawn: short enough for a cuff round a thin wrist or ankle. */
 private const val HEM_SHORTEST_CELLS = 2f
 
-/** The ink along each hem, neck opening and cuff of [dress]'s garments whose hem ink is on, where it faces [view], at each one's ink weight. */
-fun hemDraws(dress: SurfaceDress, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
-    dress.garments.filter { it.cover.garment.inkHem }.flatMap { facedCurveDraws(it.hems, view, rule, color, cell, scale = it.cover.garment.inkWeight, shortestCells = HEM_SHORTEST_CELLS) }
+/**
+ * The ink along each hem, neck opening and cuff of [garments] whose hem ink is on, where it faces [view], at each one's ink weight, over
+ * see-through cloth where it lies on it.
+ */
+fun hemDraws(garments: List<SurfaceGarment>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
+    garments.filter { it.cover.garment.inkHem }.flatMap { garment ->
+        facedCurveDraws(garment.hems, view, rule, color, cell, scale = garment.cover.garment.inkWeight, shortestCells = HEM_SHORTEST_CELLS).onCloth(garment)
+    }
+
+/** These ribbons drawn over [garment]'s cloth where it is see-through, as they are otherwise. */
+fun List<RibbonDraw>.onCloth(garment: SurfaceGarment): List<RibbonDraw> = if (garment.seeThrough == null) this else map { it.overSeeThroughCloth() }
 
 /**
  * The ink along each inked join of [surface] where its surface faces [view]: each curve is cut where the surface turns from the viewer
@@ -43,10 +52,10 @@ fun joinDraws(surface: CharacterSurface, view: SurfaceView, rule: LineRule, colo
     facedCurveDraws(surface.joins, view, rule, color, surface.mesh.cell)
 
 /**
- * The hems of [dress]'s garments hanging free, as the cloth's outline at its ink weight: an open edge of cloth hanging free outlines it
+ * The hems of [garments] hanging free, as the cloth's outline at its ink weight: an open edge of cloth hanging free outlines it
  * from either side, and where the cloth turns, its own contour lies past the hem, cut away with what the garment does not cover.
  */
-fun hangingHems(dress: SurfaceDress): List<ContourRun> = dress.garments.filter { it.cover.hanging }.flatMap { garment ->
+fun hangingHems(garments: List<SurfaceGarment>): List<ContourRun> = garments.filter { it.cover.hanging }.flatMap { garment ->
     garment.hems.filter { it.size > 1 }.map { curve ->
         ContourRun(curve.map { ContourPoint(it.position, garment.cover.garment.inkWeight) }, curve.size > 2 && curve.first().position == curve.last().position)
     }
@@ -57,11 +66,21 @@ private const val CREASE_SHORTEST_CELLS = 2.5f
 
 /**
  * The ink of [creases]' lines where they face [view]: the body's at the crease ink's weight and each garment's at its own ink weight from
- * [inkWeights], each line at its own weight along it, so it tapers where its crease fades.
+ * [inkWeights], each line at its own weight along it, so it tapers where its crease fades; a [seeThrough] garment's over its cloth.
  */
-fun creaseInkDraws(creases: PosedCreases, inkWeights: Map<GarmentId, Float>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
+fun creaseInkDraws(
+    creases: PosedCreases,
+    inkWeights: Map<GarmentId, Float>,
+    view: SurfaceView,
+    rule: LineRule,
+    color: Color,
+    cell: Float,
+    seeThrough: Set<GarmentId> = emptySet(),
+): List<RibbonDraw> =
     creases.body?.lines.orEmpty().let { weightedCurveDraws(it, view, rule, color, cell, 1f) } +
-        creases.garments.flatMap { (id, marks) -> weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[id] ?: 1f) }
+        creases.garments.flatMap { (id, marks) ->
+            weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[id] ?: 1f).let { if (id in seeThrough) it.map(RibbonDraw::overSeeThroughCloth) else it }
+        }
 
 private fun weightedCurveDraws(lines: List<CreaseLine>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, scale: Float): List<RibbonDraw> =
     lines.flatMap { line -> facedCurveDraws(listOf(line.points), view, rule, color, cell, scale = scale, shortestCells = CREASE_SHORTEST_CELLS, weights = line.weights) }

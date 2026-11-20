@@ -16,8 +16,8 @@ import dev.chieppa.squash.geom.SurfaceUv
 private const val KEPT_PAINTS = 16
 
 /**
- * A garment's own color shapes, part by part: each painted area in a palette slot of its own over what it holds of the part's cloth
- * ([areaShapes]), then each branch's regions and brush strokes, anchored in the (u, v) of its part's first run, as the garment's
+ * A garment's own color shapes, part by part: each painted area in a palette slot of its own, but a see-through one, which the
+ * renderer colours with the cloth, over what it holds of the part's cloth ([areaShapes]), then each branch's regions and brush strokes, anchored in the (u, v) of its part's first run, as the garment's
  * vertices carry them, then the regions its cloth prints; a branch read on the other side of a pair takes the same shapes there. Its
  * base slot is the garment's color, painted under these, so none is held here. The ink lines its cloth prints are held by the part
  * each starts on, to be resolved on the garment's own field.
@@ -52,6 +52,7 @@ private fun areaShapes(worn: WornCover, part: PartId, patch: String): List<Lande
     val garment = worn.garment
     return garment.areas.withIndex().mapNotNull { (i, area) ->
         val slot = area.color?.takeIf { it != garment.color } ?: return@mapNotNull null
+        if (worn.cover.seeThrough.getOrNull(i) != null) return@mapNotNull null
         if (i >= cloth.areaCount || !cloth.paints(i)) return@mapNotNull null
         LandedShape(RANK_AREA, slot, part, patch, ColorShape.Level(AreaShare(cloth, i)))
     }
@@ -77,15 +78,16 @@ private fun branchShapes(branch: GarmentBranch, part: PartId, patch: String, axi
  * same object, so a garment kept whole from the last build keeps its paint.
  */
 class GarmentPaints {
-    private var kept: List<Pair<SurfaceGarment, SurfacePaint?>> = emptyList()
+    private var kept: List<Triple<SurfaceGarment, SurfacePaint?, SeeThroughCloth?>> = emptyList()
 
     /**
      * [garments], each with its own shapes painted on it (see [garmentShapes]) and the ink lines its cloth prints resolved on its surface,
-     * cut to where its cloth is, [runAll] running each one's pieces.
+     * cut to where its cloth is, and its see-through cloth read ([SeeThroughCloth]), [runAll] running each one's pieces.
      */
     suspend fun painted(garments: List<SurfaceGarment>, runAll: RunAll): List<SurfaceGarment> {
         val made = garments.map { garment ->
-            val paint = kept.firstOrNull { it.first === garment }?.second ?: run {
+            kept.firstOrNull { it.first === garment }?.let { return@map it }
+            val paint = run {
                 val shapes = garmentShapes(garment)
                 if (shapes.isEmpty()) {
                     null
@@ -94,11 +96,11 @@ class GarmentPaints {
                     SurfacePaint(laid.layers, clothCut(laid.marks) { onCloth(garment, it) }, laid.eyes).within(garment.shownValues, garment.surface)
                 }
             }
-            garment to paint
+            Triple(garment, paint, SeeThroughCloth.of(garment))
         }
-        val keep = ArrayList<Pair<SurfaceGarment, SurfacePaint?>>()
+        val keep = ArrayList<Triple<SurfaceGarment, SurfacePaint?, SeeThroughCloth?>>()
         for (each in made + kept) if (keep.size < KEPT_PAINTS && keep.none { it.first === each.first }) keep += each
         kept = keep
-        return made.map { (garment, paint) -> if (paint == null) garment else garment.painted(paint) }
+        return made.map { (garment, paint, seeThrough) -> if (paint == null && seeThrough == null) garment else garment.painted(paint, seeThrough) }
     }
 }

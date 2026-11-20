@@ -140,7 +140,10 @@ class StrokeRibbon private constructor(val vertices: FloatArray, val indices: In
     }
 }
 
-/** One ribbon to draw in a view, placed by [model], in [layer]'s slice of the depth buffer, [lift] toward the camera from where it lies. */
+/**
+ * One ribbon to draw in a view, placed by [model], in [layer]'s slice of the depth buffer, [lift] toward the camera from where it lies;
+ * one [overCloth] lies on see-through cloth and draws after it.
+ */
 @Immutable
 data class RibbonDraw(
     val ribbon: StrokeRibbon,
@@ -149,4 +152,8 @@ data class RibbonDraw(
     val model: Mat4 = Mat4.Identity,
     val layer: DepthLayer = DepthLayer.SCENE,
     val lift: Float = DEFAULT_RIBBON_LIFT,
+    val overCloth: Boolean = false,
 )
+
+/** This ribbon drawn over see-through cloth, lifted with it: see [SceneView]. */
+fun RibbonDraw.overSeeThroughCloth(): RibbonDraw = copy(overCloth = true, lift = lift + SEE_THROUGH_CLOTH_LIFT)

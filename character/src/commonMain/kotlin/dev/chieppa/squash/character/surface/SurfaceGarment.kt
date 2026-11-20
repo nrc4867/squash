@@ -15,7 +15,8 @@ import dev.chieppa.squash.geom.field.JoinedMember
  * coming out through its holes are [holes], and those coming out through the ends it reaches [ends], their members placed at rest.
  * Its own shapes are painted over its color as [paint], laid on its surface's drawn mesh and kept to what is drawn, null with none.
  * Its hem, neck opening and cuffs are those curves: smooth level curves of its coordinates, not rows of any grid. [surface] is the
- * grown surface lifted along its hems ([hemLifts]); [grown] is the surface as grown, which a cut made again starts from.
+ * grown surface lifted along its hems ([hemLifts]); [grown] is the surface as grown, which a cut made again starts from. Where its
+ * cloth shows what lies under it, [seeThrough] holds that cloth at each vertex of its surface's drawn mesh, null where it hides it whole.
  */
 class SurfaceGarment(
     val cover: WornCover,
@@ -32,6 +33,7 @@ class SurfaceGarment(
     val paint: SurfacePaint? = null,
     val seamValues: List<FloatArray> = emptyList(),
     val grown: CharacterSurface = surface,
+    val seeThrough: SeeThroughCloth? = null,
 ) {
     /**
      * The curves where each join its garment inks shares its surface equally, a covered part's run and the run it grows from, over what
@@ -51,13 +53,14 @@ class SurfaceGarment(
      * only where it shows.
      */
     fun within(shown: LevelCut, values: FloatArray): SurfaceGarment =
-        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hemsOf(surface.lines, coverage, values), lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues, grown)
+        SurfaceGarment(cover, surface, coverage, shown, shown.mesh(surface.render), hemsOf(surface.lines, coverage, values), lines, drawnCoverage, holes, values, ends, paint?.within(values, surface), seamValues, grown, seeThrough)
 
     /** This garment worn as [cover], which differs from its own only in what its cloth prints and its areas' colours, with nothing painted yet. */
     fun reprinted(cover: WornCover): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, null, seamValues, grown)
 
-    /** This garment with [paint] painted over its color. */
-    fun painted(paint: SurfacePaint): SurfaceGarment = SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues, grown)
+    /** This garment with [paint] painted over its color and its [seeThrough] cloth. */
+    fun painted(paint: SurfacePaint?, seeThrough: SeeThroughCloth?): SurfaceGarment =
+        SurfaceGarment(cover, surface, coverage, cut, drawn, hems, lines, drawnCoverage, holes, cutValues, ends, paint, seamValues, grown, seeThrough)
 
     /**
      * This garment on [moved], its surface moved, its cut laid again and its hems and lines found there again, the marks its paint inks
@@ -69,7 +72,7 @@ class SurfaceGarment(
         val laid = if (moved.render.indices.size == surface.render.indices.size) cut else LevelCut.of(cutValues, moved.render.indices)
         return SurfaceGarment(
             cover, moved, coverage, laid, laid.mesh(moved.render), hemsOf(moved.lines, coverage, cutValues), TriangleLines(moved.positions, moved.lineNormals, kept, coverage), drawnCoverage, holes, cutValues, ends,
-            paint?.let { if (carry == null) it.on(moved.render) else it.posed(moved.render, carry) }, seamValues, grown,
+            paint?.let { if (carry == null) it.on(moved.render) else it.posed(moved.render, carry) }, seamValues, grown, seeThrough,
         )
     }
 

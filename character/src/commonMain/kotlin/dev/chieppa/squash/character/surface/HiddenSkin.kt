@@ -33,7 +33,7 @@ private fun cutSlot(s: Int): Any = listOf(HIDING_SLOT, CUT_SLOT, s)
  * [SEEN_UNDER_EASES] of the garment's ease inside the coverage of a garment over it, or of those garments together, as deep as it is seen
  * past the garment's edge; each garment is cut where it lies as far inside an outer one's. So skin and inner layers seen through an
  * opening still show and end on a smooth curve, each coverage eased near its zero as a garment's cut eases it; skin round a part coming
- * out through a garment's hole stays shown.
+ * out through a garment's hole stays shown. A garment whose cloth shows what lies under it hides nothing.
  */
 class HiddenSkin(private val body: CharacterSurface, private val garments: List<SurfaceGarment>, private val memo: CoverageMemo = CoverageMemo()) {
     init {
@@ -42,7 +42,7 @@ class HiddenSkin(private val body: CharacterSurface, private val garments: List<
 
     /** Each surface the garments may hide, the body first, and for each the garments over it. */
     private val surfaces: List<CharacterSurface> = listOf(body) + garments.map { it.surface }
-    private val over: List<List<Int>> = surfaces.indices.map { s -> (s until garments.size).toList() }
+    private val over: List<List<Int>> = surfaces.indices.map { s -> (s until garments.size).filterNot { garments[it].cover.cover.isSeeThrough } }
 
     /** For each surface, what hides it: each garment over it, and those garments together as one cover where there are several. */
     private val hiders: List<List<Hider>> = surfaces.indices.map { s ->

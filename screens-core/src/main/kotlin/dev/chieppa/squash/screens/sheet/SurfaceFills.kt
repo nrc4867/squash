@@ -73,17 +73,21 @@ private fun creaseLayer(mesh: RenderMesh, shade: FloatArray) = ColorLayerDraw(me
 
 /**
  * Each garment of [dress] as a fill in its color slot, then its own paint's layers, shaded and darkened on a far side as the surface is,
- * then its shade from [creases].
+ * then its shade from [creases]. A garment whose cloth shows what lies under it fills as see-through cloth ([clothDraw]), its far sides
+ * darkened in the cloth's own tones.
  */
 fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, creases: PosedCreases? = null): List<MeshDraw> = dress.garments.map { garment ->
     val slot = garment.cover.garment.color
     val lit = palette.colorOf(slot) ?: fallback.base
     val own = palette.shadowOf(slot)
     val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
-    val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
     val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera) }
     val creased = creases?.garments?.get(garment.cover.garment.id)?.let { creaseLayer(garment.drawn, garment.cut.values(it.shade)) }
-    MeshDraw(garment.drawn, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight), layers = listOfNotNull(sides) + painted + listOfNotNull(creased))
+    val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.toLight)
+    val seeThrough = garment.seeThrough
+    if (seeThrough != null) return@map MeshDraw(garment.drawn, material, layers = painted + listOfNotNull(creased), cloth = clothDraw(garment, seeThrough, palette, fallback, shading, toCamera))
+    val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
+    MeshDraw(garment.drawn, material, layers = listOfNotNull(sides) + painted + listOfNotNull(creased))
 }
 
 /** One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat. */

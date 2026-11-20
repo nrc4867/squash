@@ -1,11 +1,11 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 76
+internal const val COLOR_LAYER_FLOATS = 80
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
- * camera by a fraction of a pixel's depth. That fraction grows where the surface turns away, since there a fragment's depth moves
+ * camera by a fraction of a pixel's depth, and on see-through cloth by its lift too. That fraction grows where the surface turns away, since there a fragment's depth moves
  * fastest between its mesh and its cut, and it never falls under a few steps of the depth buffer. So a layer passes against its
  * own mesh at any angle and at any zoom, and fails against anything truly in front of it. A shaped layer is kept at each fragment to an
  * almond and an oval, each turned, in the chart its vertices carry, as [dev.chieppa.squash.geom.ChartShape] reads them, its edge faded
@@ -26,6 +26,7 @@ struct Layer {
     positive_shadow: vec4<f32>,
     negative_lit_and_on: vec4<f32>,
     negative_shadow: vec4<f32>,
+    lift: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> layer: Layer;
@@ -58,7 +59,7 @@ fn lifted(position: vec3<f32>, normal: vec3<f32>, proxy: vec3<f32>) -> LayerOut 
     let across = length(normal);
     let facing = select(1.0, abs(dot(normal, away)) / max(across, 0.000001), across > 0.000001);
     let slope = min(sqrt(max(1.0 - facing * facing, 0.0)) / max(facing, 0.000001), MAX_SLOPE);
-    let nearer = projection * (world - vec4<f32>(away * pixel * (LIFT_PIXELS + SLOPE_LIFT_PIXELS * slope), 0.0));
+    let nearer = projection * (world - vec4<f32>(away * (pixel * (LIFT_PIXELS + SLOPE_LIFT_PIXELS * slope) + layer.lift.x), 0.0));
     let depth = min(nearer.z / nearer.w, at.z / at.w - MIN_DEPTH_LIFT / layer.viewport_and_depth.z);
     var out: LayerOut;
     out.clip = vec4<f32>(at.xy, (depth * layer.viewport_and_depth.z + layer.viewport_and_depth.w) * at.w, at.w);

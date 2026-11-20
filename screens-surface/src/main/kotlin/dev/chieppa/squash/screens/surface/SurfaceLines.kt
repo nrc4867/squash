@@ -84,7 +84,7 @@ class SurfaceLines(
 
     private fun figureDraws(view: SurfaceView): List<RibbonDraw> = buildList {
         val parts = lines.parts.values.map { if (it.part.id in inSurface) it.withoutRuns() else it }
-        surface.contour(parts, view)?.let { addAll(contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius)) }
+        addAll(surface.figureContour(parts, view, look.lines, ink, figureRadius))
         parts.forEach { addAll(creaseDraws(it, look.creases, ink, DepthLayer.SCENE)) }
         addAll(surface.inks(view, look, ink))
         addAll(surface.garmentMarkDraws(look, palette, ink, taper))

@@ -51,7 +51,7 @@ enum class DepthLayer(val scale: Float, val offset: Float) {
  * [opacity] of 1 it blends over what a view drew before it, showing only its own nearest surface, so a view draws such
  * meshes after opaque ones and furthest first. [layers] draw over a mesh at full opacity straight after it, each over the last.
  * With [instances] the mesh draws once for each of them, placed by its model in place of [model], in its material where it has one,
- * its buffers uploaded once for all of them.
+ * its buffers uploaded once for all of them. With [cloth] it is see-through cloth, drawn as [ClothDraw] says.
  */
 @Immutable
 data class MeshDraw(
@@ -63,6 +63,7 @@ data class MeshDraw(
     val layer: DepthLayer = DepthLayer.SCENE,
     val layers: List<ColorLayerDraw> = emptyList(),
     val instances: List<MeshInstance> = emptyList(),
+    val cloth: ClothDraw? = null,
 ) {
     /** This draw as each of its instances draws it, or itself with none. */
     fun each(): List<MeshDraw> =
@@ -79,7 +80,8 @@ data class FurLayerDraw(val ink: RibbonDraw?, val fills: List<MeshDraw>)
 
 /**
  * One camera's view: what it sees, drawn into [viewport] with nothing outside it. [behind] draws first, then [draws], whole before see-through, then [fur] in its order,
- * furthest part first, [ribbons] after that and [over] last.
+ * furthest part first, [ribbons] after that and [over] last. Draws of see-through cloth go after the ribbons, which show through them
+ * softened; then the ribbons draw again, so those in front of the cloth stay whole, and last the ribbons [RibbonDraw.overCloth].
  */
 @Immutable
 data class SceneView(

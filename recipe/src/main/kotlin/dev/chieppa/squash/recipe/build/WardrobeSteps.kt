@@ -8,22 +8,28 @@ import dev.chieppa.squash.document.AddOutfit
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.ClothHang
+import dev.chieppa.squash.document.ClothNet
 import dev.chieppa.squash.document.EaseKey
 import dev.chieppa.squash.document.EaseProfile
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.GarmentSlotId
+import dev.chieppa.squash.document.LEAST_NET_HOLE
+import dev.chieppa.squash.document.LEAST_NET_THREAD
 import dev.chieppa.squash.document.MOST_CLOTH_INK_WEIGHT
 import dev.chieppa.squash.document.MOST_CREASE_STRENGTH
 import dev.chieppa.squash.document.MOST_DROP
 import dev.chieppa.squash.document.MOST_HEM_ROLL
+import dev.chieppa.squash.document.MOST_NET_ANGLE
+import dev.chieppa.squash.document.MOST_NET_HOLE
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.OutfitId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeNet
 
 /** The wardrobe's slots and garments, which the parts garments own need in place before them. */
 internal fun BuildContext.garments() {
@@ -78,7 +84,6 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     }
     val joins = garment.joins.mapIndexed { i, name -> partOf("$path.joins[$i]", name) }.toSet()
     val color = garment.color?.let { slot("$path.color", it) }
-    seeThroughCloth(path, garment)
     val partFits = garment.partFits.entries.associate { (name, fit) ->
         if (fit < 0f) fail("$path.partFits.$name", "a fit is how far the cloth stands off the part, 0 or more: here $fit")
         partOf("$path.partFits.$name", name) to fit
@@ -95,8 +100,9 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
     }
     garment.areas.forEachIndexed { i, area -> area.gather?.let { if (it < 0f) fail("$path.areas[$i].gather", "a gather is the ease a band pulls the cloth in to, 0 or more: here $it") } }
     val (painted, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
+    garment.areas.forEachIndexed { i, area -> area.opacity?.let { if (it !in 0f..1f) fail("$path.areas[$i].opacity", "an opacity runs 0 to 1: here $it") } }
     garment.areas.forEachIndexed { i, area -> area.fold?.let { if (it !in 0f..MOST_FOLD) fail("$path.areas[$i].fold", "a fold stands out 0 to $MOST_FOLD over the cloth beside it: here $it") } }
-    val areas = painted.mapIndexed { i, area -> garment.areas.getOrNull(i).let { area.copy(gather = it?.gather, fold = it?.fold) } }
+    val areas = painted.mapIndexed { i, area -> garment.areas.getOrNull(i).let { area.copy(gather = it?.gather, fold = it?.fold, opacity = it?.opacity, net = it?.net?.let { net -> clothNet("$path.areas[$i].net", net) }) } }
     val regions = garment.regions.mapIndexed { i, r -> "$path.regions[$i]".let { p -> region(p, printedOn(p, r.on, r.anchors), r).also { printOffDigits(p, it.border) } } }
     val marks = garment.marks.mapIndexed { i, m ->
         val p = "$path.marks[$i]"
@@ -164,13 +170,12 @@ private fun BuildContext.printOffDigits(path: String, anchors: List<Anchor>) {
     }
 }
 
-/** Warns where [garment]'s cloth, at [path], is coloured in a palette slot with an opacity, which cloth draws whole. */
-private fun BuildContext.seeThroughCloth(path: String, garment: RecipeGarment) {
-    val seeThrough = recipe.palette.filter { it.opacity != null && it.opacity < 1f }.map { it.slot }.toSet()
-    if (garment.color in seeThrough) warn("$path.color", "cloth draws whole: slot \"${garment.color}\" has an opacity, which only a part of its own outside the one surface draws at")
-    garment.areas.forEachIndexed { i, area ->
-        if (area.color in seeThrough) warn("$path.areas[$i].color", "cloth draws whole: slot \"${area.color}\" has an opacity, which only a part of its own outside the one surface draws at")
-    }
+/** [net], at [path], as the document's net, failing where its spacing, thread or angle is out of range. */
+private fun BuildContext.clothNet(path: String, net: RecipeNet): ClothNet {
+    if (net.hole !in LEAST_NET_HOLE..MOST_NET_HOLE) fail("$path.hole", "a net's threads lie $LEAST_NET_HOLE to $MOST_NET_HOLE apart: here ${net.hole}")
+    if (net.thread < LEAST_NET_THREAD || net.thread >= net.hole) fail("$path.thread", "a thread is $LEAST_NET_THREAD wide or more, under its hole ${net.hole}: here ${net.thread}")
+    if (net.angle !in 0f..MOST_NET_ANGLE) fail("$path.angle", "a net's angle lies 0 to $MOST_NET_ANGLE degrees: here ${net.angle}")
+    return ClothNet(net.pattern, net.hole, net.thread, net.angle)
 }
 
 /** The body part a print at [path] lies on: the part [on] names, or the part its [anchors] start on. */

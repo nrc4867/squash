@@ -8,9 +8,13 @@ import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CLOTH_INK_WEIGHT
 import dev.chieppa.squash.document.DEFAULT_CREASE_STRENGTH
 import dev.chieppa.squash.document.DEFAULT_EASE
+import dev.chieppa.squash.document.DEFAULT_NET_ANGLE
+import dev.chieppa.squash.document.DEFAULT_NET_HOLE
+import dev.chieppa.squash.document.DEFAULT_NET_THREAD
 import dev.chieppa.squash.document.FIRST_LAYER
 import dev.chieppa.squash.document.GarmentSlot
 import dev.chieppa.squash.document.LooseEnd
+import dev.chieppa.squash.document.NetPattern
 import dev.chieppa.squash.document.Outfit
 import dev.chieppa.squash.document.TuckKind
 import dev.chieppa.squash.document.View
@@ -116,7 +120,7 @@ data class RecipeGarment(
     val marks: List<RecipeMark> = emptyList(),
 )
 
-/** One named area of a garment's cloth: the cells its [paint] strokes lay, in its own palette slot [color]. */
+/** One named area of a garment's cloth: the cells its [paint] strokes lay, in its own palette slot [color], sheer at [opacity] or a [net]. */
 @Serializable
 @Doc("One named area of a garment's cloth, as a row of Dress's areas: the cells its strokes paint, in its own colour.")
 data class RecipeArea(
@@ -130,8 +134,26 @@ data class RecipeArea(
     val gather: Float? = null,
     @Doc("Cloth turned back over the garment at its hem, as a rolled cuff, a rolled jeans hem or a turtleneck's fold-over: how far, in body units, the area stands out over the cloth beside it, its far edge inked and its color the cloth's back face; lies flat when left out.") @Range(min = 0.0, max = 0.03)
     val fold: Float? = null,
+    @Doc("Sheer cloth, as stockings, tights or a chiffon layer: how much of the skin under it the cloth hides where it faces the viewer, 0 to 1, times its slot's own opacity; it hides more as it turns away, so it darkens toward the silhouette. The skin's colour, shading and ink show through, tinted by the cloth. Whole when left out.") @Range(min = 0.0, max = 1.0)
+    val opacity: Float? = null,
+    @Doc("A net of thin threads whose holes show the skin, as fishnets or a lace-style mesh, finer than a cell; plain cloth when left out.")
+    val net: RecipeNet? = null,
     @Doc("The strokes that paint it, laid in order: a stroke paints cells into this area and takes them from every other; unpaint takes them from every area.")
     val paint: List<RecipeStroke> = emptyList(),
+)
+
+/** An area knitted as a net: two sets of threads [thread] wide, [hole] apart, crossing as [pattern] at [angle] degrees. */
+@Serializable
+@Doc("A net of threads laid on the body under the cloth, stretching with it in every pose; too fine to draw, it reads as an even tone.")
+data class RecipeNet(
+    @Doc("How the two sets of threads cross: diamond, both slanting from the part's length by angle, one each way, as fishnets; square, one along the part turned by angle and one square to it.")
+    val pattern: NetPattern = NetPattern.DIAMOND,
+    @Doc("The spacing between threads, in body units: about 0.02 to 0.04 for fishnets on a person-sized body.") @Range(min = 0.004, max = 0.2)
+    val hole: Float = DEFAULT_NET_HOLE,
+    @Doc("How wide a thread is, in body units, under the hole.") @Range(min = 0.0005)
+    val thread: Float = DEFAULT_NET_THREAD,
+    @Doc("In degrees, 0 to 90: a diamond net's threads' slant from the part's length, 45 for square diamonds, less for taller ones; a square net's turn from along and round.") @Range(min = 0.0, max = 90.0)
+    val angle: Float = DEFAULT_NET_ANGLE,
 )
 
 /** How a garment's cloth hangs over an upright part: down from its highest covered place, flaring by [flare], at most [limit] off the body past its ease. */

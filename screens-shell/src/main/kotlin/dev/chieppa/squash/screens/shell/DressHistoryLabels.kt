@@ -20,6 +20,8 @@ import dev.chieppa.squash.document.RenameGarmentArea
 import dev.chieppa.squash.document.RenameGarmentSlot
 import dev.chieppa.squash.document.RenameOutfit
 import dev.chieppa.squash.document.SetAreaFold
+import dev.chieppa.squash.document.SetAreaNet
+import dev.chieppa.squash.document.SetAreaOpacity
 import dev.chieppa.squash.document.SetAreaGather
 import dev.chieppa.squash.document.SetBodyPartChange
 import dev.chieppa.squash.document.SetBranchAround
@@ -70,6 +72,8 @@ import dev.chieppa.squash.uidesign.generated.dress_step_edge_ink
 import dev.chieppa.squash.uidesign.generated.dress_step_fit
 import dev.chieppa.squash.uidesign.generated.dress_step_garment
 import dev.chieppa.squash.uidesign.generated.dress_step_fold
+import dev.chieppa.squash.uidesign.generated.dress_step_net
+import dev.chieppa.squash.uidesign.generated.dress_step_sheer
 import dev.chieppa.squash.uidesign.generated.dress_step_gather
 import dev.chieppa.squash.uidesign.generated.dress_step_hang
 import dev.chieppa.squash.uidesign.generated.dress_step_hem_roll
@@ -145,6 +149,8 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
             is SetGarmentDrop -> text(Res.string.dress_step_drop, name(command.garment), name(command.part))
             is SetAreaGather -> text(Res.string.dress_step_gather, name(command.garment))
             is SetAreaFold -> text(Res.string.dress_step_fold, name(command.garment))
+            is SetAreaOpacity -> text(Res.string.dress_step_sheer, name(command.garment))
+            is SetAreaNet -> text(Res.string.dress_step_net, name(command.garment))
             is SetGarmentPaint -> text(Res.string.dress_step_paint, name(command.garment))
             is RenameGarmentArea -> text(Res.string.dress_step_area_name, command.name)
             is SetTuck -> text(Res.string.dress_step_tuck, name(command.garment), name(command.part))

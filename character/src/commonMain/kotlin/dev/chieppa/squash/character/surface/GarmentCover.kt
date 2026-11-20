@@ -28,12 +28,17 @@ data class GarmentCover(
     val branches: Map<PartId, GarmentBranch>,
     val twins: Map<PartId, PartId> = emptyMap(),
     val prints: GarmentPrints = GarmentPrints(),
+    val seeThrough: List<AreaSeeThrough?> = emptyList(),
 ) {
+    /** Whether any of its cloth shows what lies under it, so it hides nothing. */
+    val isSeeThrough: Boolean get() = seeThrough.any { it != null }
+
     /** Each covered part's painted cloth (see [clothOf]); a part left out is not covered. */
     val cloth: Map<PartId, ClothField> by lazy { clothOf(garment, branches, twins) }
 
-    /** This cover without what its garment prints or the colours of its areas, which neither its cloth's shape nor its cut read. */
-    val unprinted: GarmentCover get() = if (prints.isEmpty && garment.unprinted === garment) this else copy(garment = garment.unprinted, prints = GarmentPrints())
+    /** This cover without what its garment prints or the colours and see-through of its areas, which neither its cloth's shape nor its cut read. */
+    val unprinted: GarmentCover get() =
+        if (prints.isEmpty && seeThrough.isEmpty() && garment.unprinted === garment) this else copy(garment = garment.unprinted, prints = GarmentPrints(), seeThrough = emptyList())
 
     companion object {
         /** What [garment] covers on [character], its branches read on both sides of a pair. */
@@ -46,7 +51,7 @@ data class GarmentCover(
                 character.twinOf(part)?.let { twin -> branches.putIfAbsent(twin.id, branch) }
             }
             val twins = character.parts.mapNotNull { part -> character.twinOf(part)?.let { part.id to it.id } }.toMap()
-            return GarmentCover(garment, branches, twins, GarmentPrints.of(garment, character))
+            return GarmentCover(garment, branches, twins, GarmentPrints.of(garment, character), seeThroughOf(garment, character.palette))
         }
     }
 }

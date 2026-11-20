@@ -124,7 +124,7 @@ fun characterView(
     val oneLines = PosedSurfaceLines(PosedSurface(surface, state.paint, state.dress, creases = state.creases), lineWeightStrokes(state.character, state.work))
     val radius = state.character.box?.radius ?: 0f
     if (state.only == null) {
-        oneLines.contour(lined, view)?.let { ribbons += contourDraws(it, look.lines, ink, LineLayers.FIGURE, radius) }
+        ribbons += oneLines.figureContour(lined, view, look.lines, ink, radius)
         lined.forEach { ribbons += creaseDraws(it, look.creases, ink, DepthLayer.SCENE) }
         ribbons += oneLines.inks(view, look, ink)
         ribbons += oneLines.garmentMarkDraws(look, state.palette, ink, state.taper)

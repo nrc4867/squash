@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-/** A garment's fit, ink weight and hem roll: written through, a wrong one stopped at its path, and cloth in a see-through slot warned. */
+/** A garment's fit, ink weight and hem roll: written through, and a wrong one stopped at its path. */
 class RecipeGarmentFitTest {
     private val builder = RecipeBuilder(TemplateFolder.shipped())
 
@@ -69,12 +69,5 @@ class RecipeGarmentFitTest {
     fun anInkWeightOrHemRollOutOfRangeStopsAtItsPath() {
         assertEquals("$.wardrobe.garments[0].inkWeight", error(recipe(sweater(""""inkWeight": 3,"""))).path)
         assertEquals("$.wardrobe.garments[0].hemRoll", error(recipe(sweater(""""hemRoll": 0.5,"""))).path)
-    }
-
-    @Test
-    fun clothInASeeThroughSlotWarns() {
-        val palette = """{"slot": "fur", "color": "#e6b36e"}, {"slot": "knit", "color": "#4a7fc1", "opacity": 0.4}"""
-        val built = builder.build(RecipeJson.read(recipe(sweater(""""fit": 0.01,"""), palette)))
-        assertTrue(built.warnings.any { it.startsWith("$.wardrobe.garments[0].color:") && "opacity" in it }, built.warnings.toString())
     }
 }

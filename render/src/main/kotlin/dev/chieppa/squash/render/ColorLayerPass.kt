@@ -253,6 +253,7 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
             at = put(at, sides.negative.lit.red, sides.negative.lit.green, sides.negative.lit.blue, if (sides.negativeShares != null) 1f else 0f)
             put(at, sides.negative.shadow)
         }
+        put(COLOR_LAYER_FLOATS - VECTOR_FLOATS, over.cloth?.lift ?: 0f, 0f, 0f, 0f)
         device.queue.writeBuffer(buffer, data)
     }
 
