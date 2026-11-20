@@ -5,7 +5,7 @@ import dev.chieppa.squash.geom.field.smoothstep
 import kotlin.math.cos
 
 /** The bend, in degrees, at which a crease is at its deepest. */
-private const val DEEPEST_BEND = 100f
+private const val DEEPEST_BEND = 70f
 
 /** The bend, in degrees, over which a joint's own closing side takes over from its rest side. */
 private const val SIDE_FROM = 4f
@@ -15,9 +15,13 @@ private const val SIDE_TO = 20f
 private const val WIDTH_AT_REST = 0.2f
 private const val WIDTH_DEEPENED = 0.14f
 
+/** The least width of a crease's shade along the limb, in the body's mesh cells, at rest and added at its deepest: a thin joint's crease still spans enough cells to draw. */
+private const val LEAST_CELLS_AT_REST = 1.5f
+private const val LEAST_CELLS_DEEPENED = 1.5f
+
 /** How far round the limb a crease reaches either side of its inner side, in degrees, at rest and added at its deepest. */
 private const val SPAN_AT_REST = 28f
-private const val SPAN_DEEPENED = 62f
+private const val SPAN_DEEPENED = 32f
 
 /** Where round the limb a crease is at full strength, and where its middle stretch is, as shares of its reach. */
 private const val CORE_SHARE = 0.35f
@@ -106,7 +110,7 @@ class PosedCreaseJoint(
             val pivot = frames.transforms[joint.bone](joint.pivot)
             val reach = (SPAN_AT_REST + SPAN_DEEPENED * depth) * DEGREES_TO_RADIANS
             return PosedCreaseJoint(
-                joint, pivot, plane, inner, amount, joint.radius * (WIDTH_AT_REST + WIDTH_DEEPENED * depth), depth,
+                joint, pivot, plane, inner, amount, maxOf(joint.radius * (WIDTH_AT_REST + WIDTH_DEEPENED * depth), joint.cell * (LEAST_CELLS_AT_REST + LEAST_CELLS_DEEPENED * depth)), depth,
                 cos(reach), cos(reach * CORE_SHARE), cos(reach * MIDDLE_SHARE),
             )
         }

@@ -61,7 +61,7 @@ private const val CREASE_SHORTEST_CELLS = 2.5f
  */
 fun creaseInkDraws(creases: PosedCreases, inkWeights: Map<GarmentId, Float>, view: SurfaceView, rule: LineRule, color: Color, cell: Float): List<RibbonDraw> =
     creases.body?.lines.orEmpty().let { weightedCurveDraws(it, view, rule, color, cell, 1f) } +
-        creases.garments.flatMap { (id, marks) -> weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[id] ?: 1f) }
+        creases.garments.flatMap { (piece, marks) -> weightedCurveDraws(marks.lines, view, rule, color, cell, inkWeights[piece.garment] ?: 1f) }
 
 private fun weightedCurveDraws(lines: List<CreaseLine>, view: SurfaceView, rule: LineRule, color: Color, cell: Float, scale: Float): List<RibbonDraw> =
     lines.flatMap { line -> facedCurveDraws(listOf(line.points), view, rule, color, cell, scale = scale, shortestCells = CREASE_SHORTEST_CELLS, weights = line.weights) }

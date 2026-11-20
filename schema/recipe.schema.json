@@ -1174,7 +1174,7 @@
           "maximum": 2.0
         },
         "drape": {
-          "description": "How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more.",
+          "description": "How strongly it gathers in short folds just above its hems and cuffs, 0 to 2, times the character's cloth creases.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 2.0

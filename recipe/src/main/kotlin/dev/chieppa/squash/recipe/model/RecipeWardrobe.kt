@@ -63,7 +63,7 @@ data class RecipeGarment(
     val creases: Float = DEFAULT_CREASE_STRENGTH,
     @Doc("How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; tight cloth wrinkles a little less than loose.") @Range(min = 0.0, max = 2.0)
     val wrinkles: Float = DEFAULT_CREASE_STRENGTH,
-    @Doc("How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more.") @Range(min = 0.0, max = 2.0)
+    @Doc("How strongly it gathers in short folds just above its hems and cuffs, 0 to 2, times the character's cloth creases.") @Range(min = 0.0, max = 2.0)
     val drape: Float = DEFAULT_CREASE_STRENGTH,
     @Doc(
         "How far it stands off a covered part along and round it, by part (a pair by its left side), over fit and partFits: keys in order " +

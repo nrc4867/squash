@@ -130,9 +130,9 @@ const jeans = garment({ id: "jeans", slot: "bottom", color: "denim", fit: 0.01, 
 ```
 
 - `creases.skin` inks and shades the inner side of each bending joint on the body; `creases.cloth` does the same on every garment, with a small fold beside it, and turns on wrinkles and drape. Each is 0 (off) to 2, 1 when left out, and `rest` (0.3) is how much shows at rest.
-- Per garment, `creases`, `wrinkles` and `drape` (0 to 2, 1 when left out) scale the character's cloth strength. Wrinkles show where a pose bunches the cloth: a seat, a knee, an inner elbow, a waist. Drape is soft folds down a loose top from the chest and gathers above a hem or cuff.
-- **Looser cloth hangs in folds**: the fit sets it, so a loose `fit` (0.03 or more) hangs in a few long folds from the chest and gathers above its hem and cuffs, and a tight one (0.003 to 0.01) has none. Give a sweater a loose fit, not a higher `drape`, before anything else. Tight cloth still folds where a pose bunches it and at its joints: jeans fold at the knee, the seat and above the cuffs, a sleeve at the inner elbow; raise `wrinkles` (1.3 to 1.6) where the sheet's jeans fold more.
-- Each fold is a soft, light shaded sliver beside its line, inked only where it is strongest, and several hanging folds of different lengths; no specks are drawn. On dark cloth such as denim the ridge beside each fold catches a soft highlight, so folds read without a lighter colour. Cloth shows its joint folds a little at rest (a sleeve's inner elbow, the back of a knee, under the seat), more than skin, which stays subtle.
+- Per garment, `creases`, `wrinkles` and `drape` (0 to 2, 1 when left out) scale the character's cloth strength. Wrinkles show where a pose bunches the cloth: a seat, a knee, an inner elbow, a waist. Drape is short folds gathered just above a hem or cuff.
+- **Creases come from bending and bunching**: a straight limb at rest shows few or none; a bent elbow, knee or waist adds a short tapered crease, and cloth gathers in a few short folds just above its hems and cuffs. Nothing runs the length of a limb or a torso. Tight cloth wrinkles a little less than loose; raise `wrinkles` (1.3 to 1.6) where the sheet's jeans fold more.
+- A crease is the cloth's or skin's own colour a little darker, lighter than the ink, thick in its middle and pointed at its ends; a fold is a lighter sliver beside its line, inked only where it is strongest; no specks are drawn. On dark cloth such as denim the crest of a bent joint's fold catches a thin highlight. At rest cloth and skin show the same faint joint creases.
 - Judge them in a bent pose (`poses`): at rest a joint shows only a faint short line; the band and the longer line come with the bend. Close-ups render in the display pose, so a recipe copy whose `displayPose` is the bend shows the knees and elbows bent close up.
 
 ## Prints on the cloth
@@ -179,7 +179,7 @@ Render a bent pose (sitting, an arm raised) for every outfit: hems and openings 
 - **Collars and lapels.** A collar is a band of cells, folded over or flat, lying on the body; it does not stand up off the neck or flare out as a wing. Lapels that stand off are rigid owned parts (`accessories.md`) that do not follow a spine bend.
 - **Hoods** are a lump behind the head, not a hood framing the face.
 - **Open edges are cuts.** An open garment is one sheet: its edge can roll out (`hemRoll`) and a band can fold back over it (`fold`), but seen from below a hem has no underside.
-- **Wrinkles are shading, not cloth physics.** Folds rise a little from the posed cloth and drape hangs as a pattern; nothing sags or swings, and a skirt does not fold.
+- **Wrinkles are shading, not cloth physics.** Folds rise a little from the posed cloth and gathers sit as a pattern; nothing sags or swings, and a skirt does not fold.
 - **No see-through cloth.** A palette slot's `opacity` on a garment's colour or an area's is not drawn on cloth (the build warns); sheer cloth draws whole.
 - **Armpits in tight sleeves.** A raised or bent arm can push skin through a sleeve at fit 0 near the armpit; give the arm a small `partFits`.
 - **Loose ends are short flat tabs**, and a neck wrap carrying one flares like a cape collar.

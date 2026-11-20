@@ -369,7 +369,7 @@ export interface RecipeGarment {
   creases?: number;
   /** How strongly it wrinkles where a pose bunches it (a seat, a knee, an inner elbow, a waist), 0 to 2, times the character's cloth creases; tight cloth wrinkles a little less than loose. */
   wrinkles?: number;
-  /** How strongly it hangs in soft folds down a loose top from the chest and gathers above its hems and cuffs, 0 to 2, times the character's cloth creases; a looser fit folds more. */
+  /** How strongly it gathers in short folds just above its hems and cuffs, 0 to 2, times the character's cloth creases. */
   drape?: number;
   /** How far it stands off a covered part along and round it, by part (a pair by its left side), over fit and partFits: keys in order along u, each [u, ease] or [u, front, back] in body units, read as one smooth curve with no steps and flat past the first and last key; the sides take the mean of front and back. A tee tight across the chest and looser at the hem, a sleeve snug at the shoulder and bloused at the forearm, jeans fitted at the hip and flared at the ankle. */
   eases?: { [key: string]: number[][] };

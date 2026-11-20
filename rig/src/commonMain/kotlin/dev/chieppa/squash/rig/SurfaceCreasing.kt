@@ -32,9 +32,6 @@ private const val FOLD_WIDTH = 0.8f
 /** How much tight cloth wrinkles where it bunches and gathers above a hem, against fully loose cloth: jeans fold at a bent knee and bunch above their cuffs too. */
 private const val TIGHT_WRINKLES = 0.85f
 
-/** How much more of a full crease cloth shows at rest than skin does: its rest share times this, at most a full crease. */
-private const val CLOTH_REST_GAIN = 1.8f
-
 /** How strong a joint's shade band is on skin and on cloth, so a band shows only at the crease's core: on skin only at a deep bend. */
 private const val SKIN_SHADE = 0.7f
 private const val CLOTH_SHADE = 0.8f
@@ -46,8 +43,12 @@ private const val SKIN_INK = 0.7f
 private const val SKIN_SIDES_FROM = 0.6f
 private const val CLOTH_SIDES_FROM = 0.3f
 
-/** How much light a joint crease's fold either side catches at its crest, against a full fold's. */
-private const val RIDGE_LIGHT = 0.8f
+/**
+ * Where on a joint crease's fold either side, by its height as a share of its most, its highlight starts and is full: a thin line along
+ * the crest of a well bent joint's fold alone.
+ */
+private const val RIDGE_LIGHT_FROM = 0.6f
+private const val RIDGE_LIGHT_FULL = 0.9f
 
 /** The fewest vertices an island of band keeps, so no band shows as a speck. */
 private const val LEAST_BAND = 8
@@ -126,7 +127,7 @@ class PoseCreasing(private val rig: CreaseRig, private val frames: BoneFrames, p
         if (creases.cloth <= 0f) return null
         val rest = rig.garments[garment.surface] ?: return null
         val own = settings.garments[garment.cover.garment.id] ?: return null
-        val joints = posedJoints(creases.cloth * own.creases, minOf(1f, creases.rest * CLOTH_REST_GAIN))
+        val joints = posedJoints(creases.cloth * own.creases, creases.rest)
         return GarmentCreasing(garment.surface, rest, joints, own * creases.cloth)
     }
 }
@@ -176,9 +177,9 @@ class GarmentCreasing internal constructor(
 
     /**
      * The garment's shade and ink as [worn], its ink kept to what of it shows: its joint creases as [shape] read them on the posed cloth
-     * before its folds rose, which move it too little to move them, or read on [worn] where the pose left the cloth at rest; each fold a
-     * sliver of a lighter band beside its ink and a ridge of light on its other side, inked only where strongest; a joint crease's
-     * folds either side catch the light too; no island of either band smaller than [LEAST_BAND] vertices.
+     * before its folds rose, which move it too little to move them, or read on [worn] where the pose left the cloth at rest; each wrinkle
+     * and gather a sliver of a lighter band beside its ink, inked only where strongest; a thin highlight along the crest of a joint
+     * crease's folds either side; no island of either band smaller than [LEAST_BAND] vertices.
      */
     fun marks(worn: SurfaceGarment): CreaseMarks {
         val surface = worn.surface
@@ -188,23 +189,16 @@ class GarmentCreasing internal constructor(
         val field = shaped?.takeIf { it.shade.size == count } ?: JointCreaseField.of(restRead.reach, joints, surface.render.vertices, count, CLOTH_SHADE, cloth = true)
         val bunched = bunching
         val wrinkle = foldEnvelope(count) { v -> (bunched?.getOrElse(v) { 0f } ?: 0f) * wrinkling }
-        val drape = foldEnvelope(count) { v -> pattern.drape.getOrElse(v) { 0f } * strengths.drape * loose }
         val gather = foldEnvelope(count) { v -> pattern.gather.getOrElse(v) { 0f } * strengths.drape * tightness }
         val folds = FloatArray(count) { v ->
-            maxOf(foldShade(pattern.wrinkle, wrinkle, v), foldShade(pattern.drapePhase, drape, v), foldShade(pattern.gatherPhase, gather, v))
+            maxOf(foldShade(pattern.wrinkle, wrinkle, v), foldShade(pattern.gatherPhase, gather, v))
         }
         val lights = FloatArray(count) { v ->
-            maxOf(
-                field.ridge[v] * RIDGE_LIGHT,
-                foldLight(pattern.wrinkle, wrinkle, v),
-                foldLight(pattern.drapePhase, drape, v),
-                foldLight(pattern.gatherPhase, gather, v),
-            )
+            smoothstep(RIDGE_LIGHT_FROM, RIDGE_LIGHT_FULL, field.ridge[v])
         }
         val lines = surface.lines
         val ink = jointInk(lines, field, CLOTH_SIDES_FROM, 1f, shown) +
             crestInk(lines, pattern.wrinkle, foldInk(wrinkle), shown) +
-            crestInk(lines, pattern.drapePhase, foldInk(drape), shown) +
             crestInk(lines, pattern.gatherPhase, foldInk(gather), shown)
         val indices = surface.render.indices
         return CreaseMarks(withoutSpecks(field.shade, indices, LEAST_BAND), ink, withoutSpecks(folds, indices, LEAST_BAND), lights)
@@ -226,19 +220,6 @@ private fun foldShade(phase: FloatArray, envelope: FloatArray, v: Int): Float {
     val d = p - TURN * round(p / TURN)
     val half = FOLD_WIDTH * e * 0.5f
     return (BAND_FROM + (half - abs(d - half)) / FOLD_WIDTH).coerceIn(0f, 1f)
-}
-
-/**
- * How strongly the ridge of a fold of [phase] with [envelope] catches the light at vertex [v], 0 to 1: across the same width as its band
- * but on the crease's other side, strongest in its middle, so the fold reads as a ridge and a valley even on dark cloth.
- */
-private fun foldLight(phase: FloatArray, envelope: FloatArray, v: Int): Float {
-    val e = envelope[v]
-    if (e <= 0f) return 0f
-    val p = phase.getOrElse(v) { 0f }
-    val d = p - TURN * round(p / TURN)
-    val half = FOLD_WIDTH * e * 0.5f
-    return (e * (1f - abs(d + half) / half)).coerceIn(0f, 1f)
 }
 
 /** A fold's ink weight from its [envelope]: only where it is strongest. */

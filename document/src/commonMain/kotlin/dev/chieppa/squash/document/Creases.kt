@@ -15,7 +15,7 @@ const val REST_CREASE = 0.3f
 
 /**
  * A character's creases and wrinkles: [skin], how strongly a bending joint creases the body's surface on its inner side, ink and shade;
- * [cloth], how strongly every garment creases at those joints, wrinkles where it bunches and hangs in folds, times each garment's own
+ * [cloth], how strongly every garment creases at those joints, wrinkles where it bunches and gathers above its hems, times each garment's own
  * strengths; and [rest], how much of a joint's crease shows at rest, as a share of a full bend's. Both strengths are on at
  * [DEFAULT_CREASE_STRENGTH] by default; 0 is off for either. See HLD: look,
  * Creases and wrinkles.

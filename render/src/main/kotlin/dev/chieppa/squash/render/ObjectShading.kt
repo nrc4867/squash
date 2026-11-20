@@ -7,7 +7,7 @@ import dev.chieppa.squash.geom.Vec3
 /** How deep a color's default shadow tone shifts in two-tone. See [shadeShifted]. */
 private const val SHADOW_DEPTH = 0.24f
 
-/** How deep a crease's or a wrinkle's shade band shifts what it lies on, as a shadow tone shifts its color. */
+/** How deep a crease's shade band shifts what it lies on into its own shade, as a shadow tone shifts its color. */
 private const val CREASE_DEPTH = 0.3f
 
 /** How much of a color the far side of a pair keeps. */
@@ -109,34 +109,35 @@ val DefaultToneRule = ToneRule { color, ownShadow, shading, side, toCamera ->
  */
 fun Color.shadeShifted(depth: Float): Color {
     if (depth == 0f) return this
+    val factor = shadeFactor(depth)
+    return Color((red * factor.red).coerceIn(0f, 1f), (green * factor.green).coerceIn(0f, 1f), (blue * factor.blue).coerceIn(0f, 1f), alpha)
+}
+
+/** What [shadeShifted] multiplies each channel of this color by at [depth], opaque. */
+fun Color.shadeFactor(depth: Float): Color {
     val most = maxOf(red, green, blue)
     val saturation = if (most > 0f) (most - minOf(red, green, blue)) / most else 0f
     val warm = ((saturation - COOL_BELOW) / (WARM_ABOVE - COOL_BELOW)).coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
-    fun loss(cool: Float, warmLoss: Float) = 1f - (cool + (warmLoss - cool) * warm) * depth
-    return Color(
-        (red * loss(COOL_RED_LOSS, WARM_RED_LOSS)).coerceIn(0f, 1f),
-        (green * loss(COOL_GREEN_LOSS, WARM_GREEN_LOSS)).coerceIn(0f, 1f),
-        (blue * loss(COOL_BLUE_LOSS, WARM_BLUE_LOSS)).coerceIn(0f, 1f),
-        alpha,
-    )
+    fun loss(cool: Float, warmLoss: Float) = (1f - (cool + (warmLoss - cool) * warm) * depth).coerceIn(0f, 1f)
+    return Color(loss(COOL_RED_LOSS, WARM_RED_LOSS), loss(COOL_GREEN_LOSS, WARM_GREEN_LOSS), loss(COOL_BLUE_LOSS, WARM_BLUE_LOSS))
 }
 
 /**
- * What a crease's shade band multiplies the color under it by: white shifted by [CREASE_DEPTH] as a shadow tone shifts white, a cool
- * grey, so a band darkens any color without turning it tan. In a two-tone shadow the band multiplies by three quarters as much.
+ * What a crease's shade band multiplies [color] under it by: the factor that shifts it [CREASE_DEPTH] into its own shade, so a band on
+ * skin is a darker skin tone and on white cloth a cool grey. In a two-tone shadow the band multiplies by three quarters as much.
  */
-val CREASE_TONES: Tones = Color.White.shadeShifted(CREASE_DEPTH).let { Tones(it, Color.White.shadeShifted(CREASE_DEPTH * IN_SHADOW_SHARE)) }
+fun creaseTones(color: Color): Tones = Tones(color.shadeFactor(CREASE_DEPTH), color.shadeFactor(CREASE_DEPTH * IN_SHADOW_SHARE))
 
-/** How deep a cloth fold's band shifts what it lies on: lighter than a joint's crease, so hanging folds read soft. */
+/** How deep a cloth fold's band shifts what it lies on: lighter than a joint's crease, so folds read soft. */
 private const val FOLD_DEPTH = 0.16f
 
-/** What a cloth fold's band multiplies the color under it by, as [CREASE_TONES] but lighter. */
-val FOLD_TONES: Tones = Color.White.shadeShifted(FOLD_DEPTH).let { Tones(it, Color.White.shadeShifted(FOLD_DEPTH * IN_SHADOW_SHARE)) }
+/** What a cloth fold's band multiplies [color] under it by, as [creaseTones] but lighter. */
+fun foldTones(color: Color): Tones = Tones(color.shadeFactor(FOLD_DEPTH), color.shadeFactor(FOLD_DEPTH * IN_SHADOW_SHARE))
 
-/** The luminance under which cloth is dark enough for its folds' ridges to show a highlight, how far toward white a highlight lies, and its most opacity. */
+/** The luminance under which cloth is dark enough for its creases' folds to show a highlight, how far toward white a highlight lies, and its most opacity. */
 private const val DARK_CLOTH = 0.4f
 private const val HIGHLIGHT_LIFT = 0.35f
-const val HIGHLIGHT_OPACITY = 0.6f
+const val HIGHLIGHT_OPACITY = 0.45f
 
 /** Whether [this] color is dark enough that shade alone barely shows on it, so its folds' ridges catch a highlight. */
 val Color.isDarkCloth: Boolean get() = 0.2126f * red + 0.7152f * green + 0.0722f * blue < DARK_CLOTH

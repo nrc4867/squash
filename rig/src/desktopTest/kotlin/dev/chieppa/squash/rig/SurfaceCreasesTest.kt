@@ -56,7 +56,7 @@ class SurfaceCreasesTest {
         val restBody = assertNotNull(rest.body)
         assertTrue(restBody.lines.isNotEmpty(), "a faint line at rest")
         assertTrue(restBody.shade.max() < 0.5f, "no band at rest: ${restBody.shade.max()}")
-        assertNotNull(rest.garments[sweater])
+        assertTrue(rest.garments.keys.any { it.garment == sweater }, "the sweater creases")
 
         session.send(SetPose(Pose(listOf(BonePose(leg.id, "knee", BENT)))))
         val bent = posed(pose)

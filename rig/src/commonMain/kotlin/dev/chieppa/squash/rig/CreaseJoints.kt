@@ -54,7 +54,8 @@ private const val UPRIGHT = 0.6f
  * A joint that creases: its [bone] in the rig, the bone whose turn carries its parent side, [parent], and the nearest bone with a span
  * before it, [carrier]; its [pivot], its bone's rest [direction], and the rest direction a bend is measured against, [reference]: its
  * parent's where the joint rests bent, as an ankle does, else its own. [radius] is how thick the body is across it, [inner] the side it
- * closes on at rest, square to its rest plane, null where it rests with no side, and [strength] its role's crease strength.
+ * closes on at rest, square to its rest plane, null where it rests with no side, [strength] its role's crease strength, and [cell] the
+ * body's mesh cell there, so its crease is never narrower than the mesh can draw.
  */
 class CreaseJoint(
     val bone: Int,
@@ -66,6 +67,7 @@ class CreaseJoint(
     val radius: Float,
     val inner: Vec3?,
     val strength: Float,
+    val cell: Float = 0f,
 ) {
     /** The normal of the plane through the pivot that splits the joint's rest angle evenly. */
     val restPlane: Vec3 get() = (reference + direction).unitOr(direction)
@@ -100,7 +102,7 @@ fun creaseJoints(rig: Rig, positions: FloatArray, skin: SurfaceSkin, cell: Float
             isSeat(rig, role, i, parent, direction, roles) -> square(FRONT * -1f, plane)
             else -> oneWayInner(bone, direction, plane) ?: if (role == Role.NECK) square(FRONT, plane) else null
         }
-        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength)
+        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength, cell)
     }
 }
 

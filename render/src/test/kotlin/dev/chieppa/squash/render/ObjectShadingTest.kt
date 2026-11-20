@@ -24,13 +24,17 @@ class ObjectShadingTest {
         val shaded = red.shadeShifted(0.24f)
         assertTrue(shaded.blue / red.blue < shaded.red / red.red, "a saturated color loses blue fastest: $shaded")
         assertEquals(Color.White, Color.White.shadeShifted(0f))
-        assertTrue(CREASE_TONES.lit.blue > CREASE_TONES.lit.red, "a crease band is cool too")
-        assertTrue(CREASE_TONES.shadow.red > CREASE_TONES.lit.red, "and lighter where it lies in shadow")
+        val onWhite = creaseTones(Color.White)
+        assertTrue(onWhite.lit.blue > onWhite.lit.red, "a crease band on white is cool too")
+        assertTrue(onWhite.shadow.red > onWhite.lit.red, "and lighter where it lies in shadow")
+        val skin = Color(0.98f, 0.85f, 0.76f)
+        val onSkin = creaseTones(skin)
+        assertTrue(onSkin.lit.red > onSkin.lit.blue && onSkin.lit.red < 1f, "on skin a crease is a darker, warmer skin tone: ${onSkin.lit}")
     }
 
     @Test
     fun aFoldIsLighterThanACreaseAndOnlyDarkClothCatchesAHighlight() {
-        assertTrue(FOLD_TONES.lit.red > CREASE_TONES.lit.red && FOLD_TONES.lit.red < 1f, "a fold's band is lighter than a crease's")
+        assertTrue(foldTones(Color.White).lit.red > creaseTones(Color.White).lit.red && foldTones(Color.White).lit.red < 1f, "a fold's band is lighter than a crease's")
         val denim = Color(0.25f, 0.31f, 0.44f)
         assertTrue(denim.isDarkCloth)
         assertTrue(!Color(0.4f, 0.6f, 0.42f).isDarkCloth && !Color.White.isDarkCloth, "mid and pale cloth show their folds by shade alone")
