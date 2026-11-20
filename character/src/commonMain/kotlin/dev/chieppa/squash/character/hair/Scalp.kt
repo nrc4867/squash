@@ -63,6 +63,10 @@ class Scalp private constructor(val middle: Vec3, private val reach: FloatArray)
         return ScalpPlace(point, out, down, round, azimuth, elevation)
     }
 
+    override fun equals(other: Any?): Boolean = other is Scalp && middle == other.middle && reach.contentEquals(other.reach)
+
+    override fun hashCode(): Int = 31 * middle.hashCode() + reach.contentHashCode()
+
     companion object {
         /** The scalp of [head], with the hair [mass] over it where there is one, read from their vertices where they show at rest. */
         fun of(head: PlacedPart, mass: PlacedPart?): Scalp {
