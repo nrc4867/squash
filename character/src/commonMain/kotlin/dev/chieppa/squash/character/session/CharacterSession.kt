@@ -58,6 +58,7 @@ import dev.chieppa.squash.character.build.dressedNode
 import dev.chieppa.squash.character.build.membraneColors
 import dev.chieppa.squash.character.build.membranesNode
 import dev.chieppa.squash.character.hair.LockBuilds
+import dev.chieppa.squash.character.hair.LockHair
 import dev.chieppa.squash.character.hair.LOCK_TEMPLATE
 import dev.chieppa.squash.character.hair.lockColors
 import dev.chieppa.squash.character.hair.lockGroupsNode
@@ -158,7 +159,7 @@ class CharacterSession(
 
     val assembly: Node<*, AssembledCharacter> = graph.lockGroupsNode(
         bodyAssembly,
-        document.map { it.character.lockGroups }.distinctUntilChanged(),
+        document.map { LockHair(it.character.lockGroups, it.character.scalpFlows) }.distinctUntilChanged(),
         lockBuilds,
     )
 

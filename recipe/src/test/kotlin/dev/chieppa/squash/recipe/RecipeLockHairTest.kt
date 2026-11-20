@@ -2,11 +2,16 @@ package dev.chieppa.squash.recipe
 
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.ColliderShape
+import dev.chieppa.squash.document.Cowlick
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.LockGroupKind
 import dev.chieppa.squash.document.LockTip
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Parting
+import dev.chieppa.squash.document.PartingKind
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.Whorl
+import dev.chieppa.squash.document.scalpFlowOn
 import dev.chieppa.squash.recipe.build.RecipeBuilder
 import dev.chieppa.squash.recipe.export.exportRecipe
 import kotlin.test.Test
@@ -55,6 +60,37 @@ class RecipeLockHairTest {
         assertEquals("$.hair[0].groups[0].kind", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "groups": [{"id": "new"}]}"""))) }.path)
         assertEquals("$.hair[0].on", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "nobody", "preset": "bob"}"""))) }.path)
         assertEquals("$.hair[0].groups[0]", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "groups": [{"id": "g", "kind": "back", "count": 99}]}"""))) }.path)
+    }
+
+    @Test
+    fun aFlowChangesThePresetsAndExportsAndBuildsBackTheSame() {
+        val preset = builder.build(RecipeJson.read(recipe("""{"on": "head", "preset": "sideSwept", "reach": 0.2}"""))).document.character
+        assertEquals(PartingKind.SIDE, preset.scalpFlowOn(PartId("head")).parting.kind, "a side-swept preset parts at the side")
+        val hair = """{"on": "head", "preset": "longStraight", "reach": 0.2,
+            "flow": {"part": {"kind": "side", "at": -0.5, "clean": 0.6, "color": "hair"}, "sweepBack": 0.4,
+                     "cowlicks": [{"around": 20, "up": 50, "radius": 15, "turn": 0.3, "lift": 25}]},
+            "groups": [{"id": "crown", "flow": 0.5}]}"""
+        val built = builder.build(RecipeJson.read(recipe(hair))).document
+        val flow = built.character.scalpFlowOn(PartId("head"))
+        assertEquals(Parting(PartingKind.SIDE, at = -0.5f, clean = 0.6f, color = SlotName("hair")), flow.parting)
+        assertEquals(0.4f, flow.sweepBack)
+        assertEquals(Whorl(), flow.whorl, "what the flow leaves out is the preset's")
+        assertEquals(listOf(Cowlick(20f, 50f, 15f, turn = 0.3f, lift = 25f)), flow.cowlicks)
+        assertEquals(0.5f, built.character.lockGroups.first { it.id == LockGroupId("crown") }.flow)
+        val again = builder.build(exportRecipe(built).recipe).document.character
+        assertEquals(built.character.scalpFlows, again.scalpFlows)
+        assertEquals(built.character.lockGroups, again.lockGroups)
+        assertEquals("$.hair[0].flow.part.color", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "flow": {"part": {"kind": "centre", "color": "nothing"}}}"""))) }.path)
+    }
+
+    @Test
+    fun aFittedMassIsFittedToTheHeadAndItsGroupsRootOnIt() {
+        val built = builder.build(RecipeJson.read(recipe("""{"on": "head", "preset": "bob", "fitMass": {"params": {"back": 0.6}}}"""))).document.character
+        val mass = assertNotNull(built.part(PartId("head-hair")), "a fitted mass takes the head's id with -hair")
+        assertEquals(PartId("head"), mass.socket?.parent)
+        assertEquals(0.6f, built.resolved(mass).shape.params["back"], "a param given replaces the fitted one")
+        assertTrue(built.lockGroups.all { it.mass == mass.id })
+        assertEquals("$.hair[0].fitMass", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "mass": "head", "fitMass": {}}"""))) }.path)
     }
 
     @Test

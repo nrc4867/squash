@@ -1,7 +1,7 @@
 // Hair made of locks: each lock a separate swept part, in groups over an inner mass that hides the scalp. See docs/hld/parts.md,
 // Hair locks, and the skill's head-and-face.md.
 
-import type { RecipeHair, RecipeLockGroup, RecipePart, RecipeSocket } from "../schema/recipe.ts";
+import type { Cowlick, RecipeHair, RecipeLockGroup, RecipeMassFit, RecipePart, RecipeParting, RecipeScalpFlow, RecipeSocket, Whorl } from "../schema/recipe.ts";
 import { socket } from "../parts/rig.ts";
 import { roundTo } from "../geom/point.ts";
 import { HAIR_LENGTHS } from "./index.ts";
@@ -25,16 +25,36 @@ export interface LockMassSpec {
   at?: number;
   /** Its palette slot: the locks' colour. */
   color?: string;
-  /** Hair-volume parameters over the mass's own. */
+  /** Hair-volume parameters over the mass's own (docs/reference/hair.md, Inner mass). */
+  params?: Record<string, number>;
+}
+
+export interface FitMassSpec {
+  /** Its part id; the head's id with `-hair` when left out. */
+  id?: string;
+  /** Its palette slot; the palette's `hair` slot, else the head's colour, when left out. */
+  color?: string;
+  /**
+   * Hair-volume parameters over the fitted ones, each with its range in docs/reference/hair.md (Inner mass): `width` (half width, a
+   * share of its length), `back` (how far it hangs at the back), `sides` (how far its sides hang), `fringe` (how far its front hangs;
+   * negative stops it above the brow), `rise`, `crown` (how far its top rises), `locks`, `lockDepth`, `lockJag` (its hem's points).
+   */
   params?: Record<string, number>;
 }
 
 /**
- * The inner mass under lock hair: a `hair-volume` cap with no strand lines of its own, sized to the head and a little narrower than a
- * full volume, so it only hides the scalp and the locks over it set the outline. Its hairline sits above the brow under the fringe's
- * roots, its sides reach the ears and its back the nape, and its hem is cut into points: the cap the app fits to a bare head.
+ * The inner mass under lock hair, fitted to the head as built: a `hair-volume` cap with no strand lines of its own, sized by the head's
+ * box with its top following the skull's dome, its hairline above the brow under the fringe's roots, its sides to the ears, its back to
+ * the nape and its hem cut into points, the cap the app's preset menu fits. Give it as a preset helper's `mass`; `params` override the
+ * fit. Given `socket`, `depth` and `height` instead, it is placed by hand: `{ part, headSocket }`, a part and the head's socket for it.
  */
-export function lockMass(spec: LockMassSpec): { part: RecipePart; headSocket: RecipeSocket } {
+export function lockMass(spec?: FitMassSpec): RecipeMassFit;
+export function lockMass(spec: LockMassSpec): { part: RecipePart; headSocket: RecipeSocket };
+export function lockMass(spec: FitMassSpec | LockMassSpec = {}): RecipeMassFit | { part: RecipePart; headSocket: RecipeSocket } {
+  if (!("depth" in spec)) {
+    const { id, color, params } = spec;
+    return { ...(id ? { id } : {}), ...(color ? { color } : {}), ...(params && Object.keys(params).length > 0 ? { params } : {}) };
+  }
   const { id = "hair-mass", on, socket: n, depth, height, thickness = 0.02, at = 0.62, color, params } = spec;
   const length = depth + 2 * thickness;
   return {
@@ -66,11 +86,37 @@ export function lockMass(spec: LockMassSpec): { part: RecipePart; headSocket: Re
   };
 }
 
+/** A centre parting: the hair splits along the middle of the top and lies away to each side. */
+export function centrePart(spec: Omit<RecipeParting, "kind"> = {}): RecipeParting {
+  return { kind: "centre", ...spec };
+}
+
+/**
+ * A side parting on the character's `side`, `at` 0 to 1 of the most a parting sits off the middle (about over the outer corner of the
+ * eye; 0.6 when left out).
+ */
+export function sidePart(side: "left" | "right", at = 0.6, spec: Omit<RecipeParting, "kind" | "at"> = {}): RecipeParting {
+  return { kind: "side", at: side === "left" ? -Math.abs(at) : Math.abs(at), ...spec };
+}
+
+/** The crown whorl: `around` degrees from the front (180 the back), `up` degrees from level, `turn` -1 to 1 (positive clockwise from above). */
+export function whorl(spec: Whorl = {}): Whorl {
+  return { ...spec };
+}
+
+/**
+ * A cowlick at `around` and `up` degrees: `turn` 0 flips the hair back against the flow, 1 or -1 swirls it; `lift` degrees raises the
+ * locks over it; `radius` degrees how far it reaches. A fringe flick at the hairline: `cowlick({ around: 15, up: 48, lift: 25 })`.
+ */
+export function cowlick(spec: Cowlick = {}): Cowlick {
+  return { ...spec };
+}
+
 export interface LockHairSpec {
   /** The head the locks grow on. */
   on: string;
-  /** The inner mass's part id, from `lockMass`. */
-  mass?: string;
+  /** The inner mass: a fitted one from `lockMass()`, or the id of a mass part placed by hand. */
+  mass?: string | RecipeMassFit;
   /** The locks' palette slot. */
   color?: string;
   /** A ponytail band's palette slot. */
@@ -81,20 +127,24 @@ export interface LockHairSpec {
   groups?: RecipeLockGroup[];
   /** Whether to set up the body's collision shapes; on unless false. */
   colliders?: boolean;
+  /** Which way the hair grows over the scalp: `whorl`, `part` (`centrePart()`, `sidePart(...)`), `sweep`, `sweepBack`, `cowlicks`; each field given replaces the preset's. */
+  flow?: RecipeScalpFlow;
 }
 
 /** Lock hair of `preset` on a head: one entry of a recipe's `hair`. */
 export function lockHair(preset: LockPreset | null, spec: LockHairSpec): RecipeHair {
-  const { on, mass, color, band, reach, groups, colliders } = spec;
+  const { on, mass, color, band, reach, groups, colliders, flow } = spec;
   return {
     on,
     ...(preset ? { preset } : {}),
-    ...(mass ? { mass } : {}),
+    ...(typeof mass === "string" ? { mass } : {}),
+    ...(mass !== undefined && typeof mass !== "string" ? { fitMass: mass } : {}),
     ...(color ? { color } : {}),
     ...(band ? { band } : {}),
     ...(reach !== undefined ? { reach } : {}),
     ...(groups && groups.length > 0 ? { groups } : {}),
     ...(colliders === false ? { colliders: false } : {}),
+    ...(flow ? { flow } : {}),
   };
 }
 

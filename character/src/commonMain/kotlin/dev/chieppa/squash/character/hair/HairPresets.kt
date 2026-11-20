@@ -7,7 +7,11 @@ import dev.chieppa.squash.document.LockPhysics
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Parting
+import dev.chieppa.squash.document.PartingKind
+import dev.chieppa.squash.document.ScalpFlow
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.Whorl
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -26,7 +30,7 @@ enum class HairPreset {
  * One group of a preset, its sizes as shares of the head's reach from its middle: [length], [width] and [thickness]; everything else as a
  * [LockGroup] holds it.
  */
-private class PresetGroup(
+class PresetGroup(
     val name: String,
     val kind: LockGroupKind,
     val count: Int,
@@ -51,6 +55,7 @@ private class PresetGroup(
     val banded: Boolean = false,
     val seed: Int = 1,
     val physics: LockPhysics = LockPhysics(),
+    val flow: Float = 1f,
 )
 
 private val SOFT = LockPhysics(stiffness = 0.35f, damping = 0.3f, angleLimit = 70f)
@@ -76,30 +81,52 @@ private val PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
         PresetGroup("left", LockGroupKind.LEFT, 9, 3.2f, 0.8f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
         PresetGroup("right", LockGroupKind.RIGHT, 9, 3.2f, 0.8f, 0.12f, rise = 0f, fall = 0.95f, taper = 0.45f, section = LockSection.RIBBON, spread = 1.2f, physics = SWINGING),
         PresetGroup("crown", LockGroupKind.CROWN, 8, 1.0f, 0.55f, 0.12f, rise = 0f, fall = 0.7f, taper = 0.6f, section = LockSection.RIBBON, layer = 1, spread = 1.3f, physics = SOFT),
+        PresetGroup("top", LockGroupKind.TOP, 12, 2.4f, 0.6f, 0.1f, rise = 0f, fall = 0.9f, taper = 0.45f, section = LockSection.RIBBON, layer = 2, lengthJitter = 0.1f, physics = SWINGING),
         PresetGroup("fringe", LockGroupKind.FRINGE, 7, 1.05f, 0.4f, 0.1f, rise = 4f, fall = 0.6f, taper = 0.35f, section = LockSection.RIBBON, layer = 1, physics = SOFT),
     ),
     HairPreset.PONYTAIL to listOf(
-        PresetGroup("tail", LockGroupKind.BACK, 7, 2.2f, 0.45f, 0.15f, rise = 30f, fall = 1f, taper = 0.15f, section = LockSection.RIBBON, spread = 0.35f, height = -0.4f, tie = 0.9f, banded = true, layer = 1, lengthJitter = 0.25f, physics = SWINGING),
+        PresetGroup("tail", LockGroupKind.BACK, 7, 2.2f, 0.45f, 0.15f, rise = 30f, fall = 1f, taper = 0.15f, section = LockSection.RIBBON, spread = 0.35f, height = -0.4f, tie = 0.9f, banded = true, layer = 1, lengthJitter = 0.25f, physics = SWINGING, flow = 0f),
         PresetGroup("fringe", LockGroupKind.FRINGE, 9, 0.9f, 0.45f, 0.1f, rise = 4f, fall = 0.6f, taper = 0.3f, layer = 1, physics = SOFT),
     ),
     HairPreset.SIDE_SWEPT to listOf(
         PresetGroup("back", LockGroupKind.BACK, 11, 0.8f, 0.46f, 0.13f, rise = 8f, fall = 0.7f, taper = 0.3f, physics = SOFT),
         PresetGroup("left", LockGroupKind.LEFT, 5, 0.65f, 0.4f, 0.12f, rise = 4f, fall = 0.75f, taper = 0.3f, physics = SOFT),
         PresetGroup("right", LockGroupKind.RIGHT, 5, 0.65f, 0.4f, 0.12f, rise = 4f, fall = 0.75f, taper = 0.3f, physics = SOFT),
-        PresetGroup("crown", LockGroupKind.CROWN, 8, 0.8f, 0.46f, 0.12f, rise = 0f, fall = 0.5f, taper = 0.3f, layer = 1, spread = 1.3f, physics = SOFT),
+        PresetGroup("crown", LockGroupKind.CROWN, 8, 0.8f, 0.46f, 0.12f, rise = 0f, fall = 0.5f, taper = 0.3f, layer = 2, spread = 1.3f, physics = SOFT),
+        PresetGroup("top", LockGroupKind.TOP, 10, 0.9f, 0.46f, 0.12f, rise = 4f, fall = 0.55f, taper = 0.3f, layer = 1, spread = 0.85f, height = 0.15f, physics = SOFT),
         PresetGroup("fringe", LockGroupKind.FRINGE, 7, 1.25f, 0.42f, 0.12f, rise = 6f, fall = 0.45f, taper = 0.25f, sweep = -0.75f, around = 10f, layer = 2, lengthJitter = 0.3f, physics = SOFT),
     ),
     HairPreset.CURLY to listOf(
         PresetGroup("back", LockGroupKind.BACK, 8, 1.3f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
         PresetGroup("left", LockGroupKind.LEFT, 4, 1.1f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
         PresetGroup("right", LockGroupKind.RIGHT, 4, 1.1f, 0.55f, 0.26f, rise = 4f, fall = 0.5f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, physics = SPRINGY),
-        PresetGroup("crown", LockGroupKind.CROWN, 9, 1.9f, 0.7f, 0.32f, rise = 40f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, spread = 1.2f, around = 180f, height = -0.4f, tie = 0.35f, physics = SPRINGY),
+        PresetGroup("crown", LockGroupKind.CROWN, 9, 1.9f, 0.7f, 0.32f, rise = 40f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, spread = 1.2f, around = 180f, height = -0.4f, tie = 0.35f, physics = SPRINGY, flow = 0f),
         PresetGroup("fringe", LockGroupKind.FRINGE, 4, 0.9f, 0.55f, 0.26f, rise = 4f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, physics = SPRINGY),
     ),
 )
 
+/** How far to the character's right a side-swept preset's parting sits, -1 to 1 of the most a parting sits off the middle. */
+private const val SIDE_PART_AT = 0.62f
+
+/** How far up the head short spiky hair's whorl sits, in degrees: over the back group's roots, so their spikes lift back. */
+private const val SPIKY_WHORL_UP = 82f
+
+/**
+ * The scalp flow [preset] grows by on head [on]: a crown whorl for every preset, high on the crown for short spiky hair; a centre
+ * parting for long straight hair, and a parting on the character's right with the hair combed toward the left for side-swept.
+ */
+fun presetFlow(preset: HairPreset, on: PartId): ScalpFlow = when (preset) {
+    HairPreset.LONG_STRAIGHT -> ScalpFlow(on, parting = Parting(PartingKind.CENTRE, clean = 0.9f))
+    HairPreset.SIDE_SWEPT -> ScalpFlow(on, parting = Parting(PartingKind.SIDE, at = SIDE_PART_AT, clean = 0.85f), sweep = -0.35f)
+    HairPreset.SHORT_SPIKY -> ScalpFlow(on, Whorl(up = SPIKY_WHORL_UP))
+    HairPreset.BOB, HairPreset.PONYTAIL, HairPreset.CURLY -> ScalpFlow(on)
+}
+
 /** The names of [preset]'s groups, which are their ids with the prefix a character gives them. */
 fun presetGroupNames(preset: HairPreset): List<String> = PRESETS.getValue(preset).map { it.name }
+
+/** [preset]'s groups as it lays them out, its sizes shares of the head's reach. */
+fun presetLayout(preset: HairPreset): List<PresetGroup> = PRESETS.getValue(preset)
 
 /**
  * The lock groups of [preset] on head [on], their roots on [mass] where there is one, sized to a head reaching [reach] from its middle,
@@ -135,5 +162,6 @@ fun presetGroups(preset: HairPreset, on: PartId, mass: PartId?, reach: Float, pr
             band = if (g.banded) band ?: color else null,
             color = color,
             physics = g.physics,
+            flow = g.flow,
         )
     }

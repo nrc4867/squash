@@ -19,6 +19,7 @@ object Reference {
             "part-parameters.md" to PartParameters.render(),
             "frames.md" to Frames.render(tube),
             "face-and-clothes.md" to FaceAndClothes.render(folder.parts),
+            "hair.md" to Hair.render(folder.parts),
         ).mapValues { (_, text) -> text.trimEnd() + "\n" }
     }
 
@@ -37,6 +38,7 @@ object Reference {
                     listOf("part-parameters.md", "dotted part parameters (`move.*`, `socket.<n>.*`, `joint.<n>.*`, `curve.<n>.*`, `generic.*`, `join.ink`, `rig.reach.*`) and the recipe fields that write them"),
                     listOf("frames.md", "body space, which way u, v and each view's y run for a part resting each way, and which way `degrees`, `lean`, `turn` and `twist` move a bone"),
                     listOf("face-and-clothes.md", "mouth group roles and controls and how a mouth opens; region borders, corners and two-tone faces; how a painted eye faces and lands on its head, wrapped or flat, and every eye look field with its range and units; how garment fit, covers, redraws and swaps combine; head cheats that follow the camera, view keys"),
+                    listOf("hair.md", "lock hair: every lock group field with its default, range and units; each kind, section and tip; each preset's groups and flow; the scalp flow's whorl, parting, sweep and cowlick fields; the fitted inner mass's parameters"),
                 ),
             ),
         )

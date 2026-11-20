@@ -7,7 +7,15 @@ import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.hair.Scalp
 import dev.chieppa.squash.character.hair.autoColliders
 import dev.chieppa.squash.character.hair.headReach
+import dev.chieppa.squash.character.hair.fittedMass
+import dev.chieppa.squash.character.hair.presetFlow
+import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.recipe.model.RecipeMassFit
 import dev.chieppa.squash.character.hair.presetGroups
+import dev.chieppa.squash.document.Parting
+import dev.chieppa.squash.document.ScalpFlow
+import dev.chieppa.squash.document.SetScalpFlow
+import dev.chieppa.squash.recipe.model.RecipeScalpFlow
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.PartData
@@ -24,7 +32,8 @@ private fun BuildContext.bareBody(): AssembledCharacter {
 
 /**
  * The hair: on each head, its preset's groups sized to the head, each group the recipe names changing the preset's of that id or added
- * after them; and once, the body's collision shapes where any hair asks for them.
+ * after them, and the preset's scalp flow with what the recipe's flow changes; and once, the body's collision shapes where any hair asks
+ * for them.
  */
 internal fun BuildContext.hair() {
     if (recipe.hair.isEmpty()) return
@@ -33,7 +42,8 @@ internal fun BuildContext.hair() {
     recipe.hair.forEachIndexed { i, hair ->
         val path = "$.hair[$i]"
         val on = partOf("$path.on", hair.on)
-        val mass = hair.mass?.let { partOf("$path.mass", it) }
+        if (hair.mass != null && hair.fitMass != null) fail("$path.fitMass", "give mass or fitMass, not both")
+        val mass = hair.mass?.let { partOf("$path.mass", it) } ?: hair.fitMass?.let { fit -> fitted("$path.fitMass", on, body, fit) }
         val color = hair.color?.let { slot("$path.color", it) }
         val band = hair.band?.let { slot("$path.band", it) }
         val prefix = if (i == 0) "" else "${hair.on}-"
@@ -53,15 +63,41 @@ internal fun BuildContext.hair() {
         val added = hair.groups.withIndex().filter { (_, g) -> (prefix + g.id) !in presetIds && g.id !in presetIds }.map { (j, g) ->
             val at = "$path.groups[$j]"
             if (g.removed) fail("$at.removed", "no preset group \"${g.id}\" to leave out; the preset's groups are ${preset.joinToString { it.id.value }.ifEmpty { "none" }}")
-            val kind = g.kind ?: fail("$at.kind", "a group the preset does not give needs its kind: fringe, left, right, back, crown or strays")
+            val kind = g.kind ?: fail("$at.kind", "a group the preset does not give needs its kind: fringe, left, right, back, crown, strays or top")
             changed(at, guard(at) { LockGroup(LockGroupId(g.id), kind, on, mass, color = color) }, g)
         }
         for (group in fromPreset + added) {
             if (!taken.add(group.id.value)) fail(path, "a lock group is already called \"${group.id.value}\"")
             send(path, SetLockGroup(group.id, group))
         }
+        val base = hair.preset?.let { presetFlow(it, on) }
+        val flow = hair.flow?.let { flowed("$path.flow", base ?: ScalpFlow(on), it) } ?: base
+        flow?.let { send("$path.flow", SetScalpFlow(on, it)) }
     }
     if (recipe.hair.any { it.colliders }) send("$.hair", SetColliders(autoColliders(body)))
+}
+
+/** A mass fitted over head [on] as [body] builds it, added to the document; its id. */
+private fun BuildContext.fitted(path: String, on: PartId, body: AssembledCharacter, fit: RecipeMassFit): PartId {
+    val head = body.part(on) ?: fail(path, "${on.value} builds nothing to fit a mass over")
+    val slot = fit.color?.let { slot("$path.color", it) }
+    val made = guard(path) { fittedMass(document.character, head, on, fit.id?.let(::PartId), fit.params, slot) } ?: fail(path, "${on.value} builds no box to fit a mass to")
+    if (fit.id != null && made.id.value != fit.id) fail("$path.id", "a part is already called \"${fit.id}\"")
+    made.commands.forEach { send(path, it) }
+    return made.id
+}
+
+/** [flow] with what [change] sets, failing at [path] when a value is out of its range. */
+private fun BuildContext.flowed(path: String, flow: ScalpFlow, change: RecipeScalpFlow): ScalpFlow = guard(path) {
+    flow.copy(
+        whorl = change.whorl ?: flow.whorl,
+        parting = change.part?.let { part ->
+            Parting(part.kind, part.at, part.length, part.clean, part.color?.let { slot("$path.part.color", it) })
+        } ?: flow.parting,
+        sweep = change.sweep ?: flow.sweep,
+        sweepBack = change.sweepBack ?: flow.sweepBack,
+        cowlicks = change.cowlicks ?: flow.cowlicks,
+    )
 }
 
 /** [group] with what [change] sets, failing at [path] when a value is out of its range. */
@@ -92,6 +128,7 @@ private fun BuildContext.changed(path: String, group: LockGroup, change: RecipeL
         band = change.band?.let { slot("$path.band", it) } ?: group.band,
         color = change.color?.let { slot("$path.color", it) } ?: group.color,
         physics = change.physics ?: group.physics,
+        flow = change.flow ?: group.flow,
         overrides = change.locks?.sortedBy { it.index } ?: group.overrides,
     )
 }

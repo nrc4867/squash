@@ -12,6 +12,12 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
+/** The most degrees a lock's outer part lifts off the head. */
+private const val MOST_RISE = 90f
+
+/** The most a lock sweeps either way with the flow's bend added to its group's sweep. */
+private const val MOST_SWEEP = 1.5f
+
 /** How deep a lock's root sinks under the scalp, as a share of its thickness. */
 private const val ROOT_SINK = 0.6f
 
@@ -59,7 +65,7 @@ data class LockSpec(
 
 /** The locks [group] shows on [scalp], growing as [growth] says: every lock but those its overrides hide, each with its override over it. */
 fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): List<LockSpec> {
-    val roots = rootsOf(group)
+    val roots = growth.roots(group)
     val rows = (roots.maxOfOrNull { it.row } ?: 0) + 1
     val random = Random(group.seed * 7919 + 17)
     val top = roots.maxOfOrNull { it.elevation } ?: 0f
@@ -83,8 +89,8 @@ fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): Li
             section = override?.section ?: group.section,
             tip = override?.tip ?: group.tip,
             tipPoints = group.tipPoints,
-            rise = override?.rise ?: group.rise,
-            sweep = override?.sweep ?: group.sweep,
+            rise = override?.rise ?: (group.rise + growth.rise(place, group)).coerceAtMost(MOST_RISE),
+            sweep = override?.sweep ?: (group.sweep + growth.sweep(place, group)).coerceIn(-MOST_SWEEP, MOST_SWEEP),
             fall = group.fall,
             curl = override?.curl ?: group.curl,
             wave = override?.wave ?: group.wave,
@@ -110,7 +116,7 @@ fun bonesFor(length: Float, scalp: Scalp): Int {
  * between them, so a group's rows end together. A crown's and strays' locks keep their length.
  */
 private fun rowDrop(group: LockGroup, root: LockRoot, top: Float, scalp: Scalp): Float {
-    if (group.kind == LockGroupKind.CROWN || group.kind == LockGroupKind.STRAYS || root.row == 0) return 0f
+    if (group.kind == LockGroupKind.CROWN || group.kind == LockGroupKind.STRAYS || group.kind == LockGroupKind.TOP || root.row == 0) return 0f
     return (top - root.elevation).coerceAtLeast(0f) * DEGREES * scalp.reachAt(root.azimuth, root.elevation)
 }
 

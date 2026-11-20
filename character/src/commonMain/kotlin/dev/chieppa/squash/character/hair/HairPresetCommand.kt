@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetColliders
 import dev.chieppa.squash.document.SetLockGroup
+import dev.chieppa.squash.document.SetScalpFlow
 import dev.chieppa.squash.document.Together
 
 /** The template an inner mass is built from. */
@@ -17,7 +18,7 @@ fun massOn(character: Character, head: PartId): PartId? =
 
 /**
  * One step that gives [head] the lock groups of [preset] in place of those it holds, rooted on its hair mass, sized to the head as
- * [assembled] builds it, and sets up the body's collision shapes where the character holds none. A head with no mass gets one fitted over
+ * [assembled] builds it, with the preset's scalp flow, and sets up the body's collision shapes where the character holds none. A head with no mass gets one fitted over
  * it in the same step, so no scalp shows between the locks. Null when the head builds nothing.
  */
 fun hairPresetCommand(character: Character, assembled: AssembledCharacter, head: PartId, preset: HairPreset): DocumentCommand? {
@@ -31,5 +32,6 @@ fun hairPresetCommand(character: Character, assembled: AssembledCharacter, head:
     val removed = character.lockGroups.filter { it.on == head }.map { SetLockGroup(it.id, null) }
     val added = presetGroups(preset, head, mass, reach, prefix).map { SetLockGroup(it.id, it) }
     val colliders = if (character.colliders.isEmpty()) listOf(SetColliders(autoColliders(assembled))) else emptyList()
-    return Together(fitted?.commands.orEmpty() + removed + added + colliders)
+    val flow = SetScalpFlow(head, presetFlow(preset, head))
+    return Together(fitted?.commands.orEmpty() + removed + added + flow + colliders)
 }

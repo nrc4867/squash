@@ -45,9 +45,56 @@ private const val ROOT_JITTER = 0.25f
 /** How far strays wander up and down, in degrees. */
 private const val STRAY_RISE = 18f
 
+/** Where a top group's roots run over the head, in degrees from straight ahead: from behind the hairline back to the crown. */
+private const val TOP_FROM = 56f
+private const val TOP_TO = 110f
+
+/** How far a top group's height moves its roots forward over the head, in degrees. */
+private const val TOP_HEIGHT_REACH = 15f
+
+/** How far either side of the head's middle a top group's first rows root where there is no parting, in degrees. */
+private const val TOP_SPLIT = 5f
+
+/** How far a top group's second row roots outside its first, in degrees. */
+private const val TOP_ROW_GAP = 11f
+
+/** How many locks a side of a top group holds before it lays a second row. */
+private const val TOP_ONE_ROW = 6
+
+/** How far a top group's roots wander across, in degrees, away from the line between its sides. */
+private const val TOP_WANDER = 1.5f
+
+/**
+ * A top group's roots: two runs from behind the hairline back to the crown, one either side of [line] or of the head's middle where
+ * there is no parting, the left's first, each in two rows once it holds enough locks, the second row outside the first.
+ */
+private fun topRoots(group: LockGroup, line: PartLine?, random: Random): List<LockRoot> {
+    val middle = (TOP_FROM + TOP_TO) / 2f - group.height * TOP_HEIGHT_REACH
+    val half = (TOP_TO - TOP_FROM) / 2f * group.spread
+    val from = middle - half
+    val to = middle + half
+    val gap = if (line == null) TOP_SPLIT else PART_GAP + TOP_WANDER
+    val left = (group.count + 1) / 2
+    return List(group.count) { k ->
+        val side = if (k < left) -1f else 1f
+        val j = if (k < left) k else k - left
+        val n = if (k < left) left else group.count - left
+        val rows = if (n >= TOP_ONE_ROW) 2 else 1
+        val row = j % rows
+        val step = (to - from) / n
+        val stagger = if (side > 0f) 0.25f else -0.25f
+        val along = from + step * (j + 0.5f + stagger) + (random.nextFloat() * 2f - 1f) * step * ROOT_JITTER
+        val centre = line?.acrossAt(along) ?: 0f
+        val across = centre + group.around + side * (gap + row * TOP_ROW_GAP + random.nextFloat() * TOP_WANDER)
+        val (azimuth, elevation) = Scalp.anglesOf(PartLine.direction(along, across))
+        LockRoot(azimuth, elevation, row)
+    }
+}
+
 /** The middle of [group]'s roots, in degrees round and up the head. */
 fun centreOf(group: LockGroup): Pair<Float, Float> = when (group.kind) {
     LockGroupKind.CROWN -> (CROWN_AZIMUTH + group.around) to (CROWN_ELEVATION + group.height * 15f)
+    LockGroupKind.TOP -> Scalp.anglesOf(PartLine.direction((TOP_FROM + TOP_TO) / 2f - group.height * TOP_HEIGHT_REACH, group.around))
     else -> {
         val place = PLACES.getValue(group.kind)
         ((place.fromAzimuth + place.toAzimuth) / 2f + group.around) to (place.elevation + group.height * place.heightReach)
@@ -56,13 +103,16 @@ fun centreOf(group: LockGroup): Pair<Float, Float> = when (group.kind) {
 
 /**
  * Where each of [group]'s locks roots: its kind's place, spread over [LockGroup.spread] of its reach, turned [LockGroup.around] and raised
- * by [LockGroup.height], each root wandering a little by the group's seed, and gathered toward the middle by its tie.
+ * by [LockGroup.height], each root wandering a little by the group's seed, and gathered toward the middle by its tie. A top group's
+ * roots run either side of [line], the parting, where there is one.
  */
-fun rootsOf(group: LockGroup): List<LockRoot> {
+fun rootsOf(group: LockGroup, line: PartLine? = null): List<LockRoot> {
     val random = Random(group.seed)
     val (centreAzimuth, centreElevation) = centreOf(group)
     val count = group.count
-    val laid = if (group.kind == LockGroupKind.CROWN) {
+    val laid = if (group.kind == LockGroupKind.TOP) {
+        topRoots(group, line, random)
+    } else if (group.kind == LockGroupKind.CROWN) {
         List(count) { i ->
             val angle = GOLDEN_ANGLE * i + random.nextFloat() * 10f
             val reach = CROWN_REACH * group.spread * sqrt((i + 0.5f) / count) * (0.9f + 0.2f * random.nextFloat())
@@ -93,11 +143,19 @@ fun rootsOf(group: LockGroup): List<LockRoot> {
 }
 
 /**
- * Which way a lock grows along the scalp from where it roots, before it rises off it: a flow field over the head plugs in here. The way
- * is a unit direction along the scalp at [place], in body space.
+ * Which way a lock grows along the scalp from where it roots, before it rises off it, as a unit direction along the scalp at [place] in
+ * body space; how many degrees more than its group's rise it lifts off the head there, and how much more than its group's sweep it bends
+ * round as it grows; and where a group's locks root. [ScalpField], the
+ * scalp's flow field, is the one a build grows by.
  */
 fun interface LockGrowth {
     fun at(place: ScalpPlace, group: LockGroup): Vec3
+
+    fun rise(place: ScalpPlace, group: LockGroup): Float = 0f
+
+    fun sweep(place: ScalpPlace, group: LockGroup): Float = 0f
+
+    fun roots(group: LockGroup): List<LockRoot> = rootsOf(group)
 }
 
 /**

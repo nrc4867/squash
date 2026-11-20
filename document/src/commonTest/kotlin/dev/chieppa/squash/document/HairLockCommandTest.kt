@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 /** Lock groups, single locks set by hand and collision shapes: each set, replaced, removed and undone as one serializable step. */
@@ -98,6 +99,54 @@ class HairLockCommandTest {
             .apply(SetLockGroup(fringeId, fringe.withOverride(1, LockOverride(1, hidden = true))).apply(empty).document).document
         val text = Json.encodeToString(SquashDocument.serializer(), saved)
         assertEquals(saved, readDocument(text))
+    }
+
+    @Test
+    fun aScalpFlowIsSetReplacedClearedAndEachUndone() {
+        val flow = ScalpFlow(head.id, Whorl(around = 160f, turn = -0.5f), Parting(PartingKind.SIDE, at = 0.6f, color = SlotName("scalp")), sweep = 0.3f, cowlicks = listOf(Cowlick(around = 20f)))
+        val command = SetScalpFlow(head.id, flow)
+        assertRoundTrips(command)
+        assertEquals(ScalpFlow(head.id), empty.character.scalpFlowOn(head.id), "a head with no flow of its own takes the default")
+        val set = command.apply(empty).document
+        assertEquals(flow, set.character.scalpFlowOn(head.id))
+        val centre = flow.copy(parting = Parting(PartingKind.CENTRE))
+        scenario(set) {
+            run(SetScalpFlow(head.id, centre))
+            expect(set.copy(character = set.character.copy(scalpFlows = listOf(centre))))
+            undo()
+            expect(set)
+            run(SetScalpFlow(head.id, null))
+            expect(empty)
+            undo()
+            expect(set)
+        }
+        assertFailsWith<IllegalArgumentException> { SetScalpFlow(PartId("nobody"), ScalpFlow(PartId("nobody"))).apply(empty) }
+        assertFailsWith<IllegalArgumentException> { SetScalpFlow(head.id, ScalpFlow(PartId("other"))) }
+        assertFailsWith<IllegalArgumentException> { Parting(at = 2f) }
+        assertFailsWith<IllegalArgumentException> { Whorl(up = 120f) }
+        assertFailsWith<IllegalArgumentException> { ScalpFlow(head.id, cowlicks = List(MOST_COWLICKS + 1) { Cowlick() }) }
+        val text = Json.encodeToString(SquashDocument.serializer(), set)
+        assertEquals(set, readDocument(text))
+    }
+
+    @Test
+    fun aBlendedSlotReadsAsItsSlotsMixed() {
+        val skin = SlotName("skin")
+        val hair = SlotName("hair")
+        val palette = Palette(listOf(PaletteSlot(skin, SlotColor(1f, 0.8f, 0.6f), shadow = SlotColor(0.8f, 0.6f, 0.4f)), PaletteSlot(hair, SlotColor(0.4f, 0.2f, 0f), shadow = SlotColor(0.2f, 0f, 0f))))
+        val scalp = blendedSlot(skin, hair, 0.5f)
+        fun assertNear(expected: SlotColor, actual: SlotColor?) {
+            val got = assertNotNull(actual)
+            assertEquals(expected.red, got.red, 1e-5f)
+            assertEquals(expected.green, got.green, 1e-5f)
+            assertEquals(expected.blue, got.blue, 1e-5f)
+        }
+        assertNear(SlotColor(0.7f, 0.5f, 0.3f), palette.color(scalp))
+        assertNear(SlotColor(0.5f, 0.3f, 0.2f), palette.shadow(scalp))
+        assertEquals(1f, palette.opacity(scalp))
+        assertNull(palette.color(SlotName("nothing")))
+        assertEquals(palette.color(skin), palette.color(blendedSlot(skin, SlotName("nothing"), 0.5f)), "a blend with a missing slot takes the one there")
+        assertFailsWith<IllegalArgumentException> { blendedSlot(skin, hair, 2f) }
     }
 
     @Test

@@ -304,6 +304,17 @@
     <string name="face_hair_kind_back">Back</string>
     <string name="face_hair_kind_crown">Crown</string>
     <string name="face_hair_kind_strays">Strays</string>
+    <string name="face_hair_kind_top">Top</string>
+    <string name="face_hair_flow">Flow</string>
+    <string name="face_hair_part_none">No parting</string>
+    <string name="face_hair_part_centre">Centre parting</string>
+    <string name="face_hair_part_side">Side parting</string>
+    <string name="face_hair_part_at">Parting</string>
+    <string name="face_hair_whorl_around">Whorl</string>
+    <string name="face_hair_whorl_turn">Whorl turn</string>
+    <string name="face_hair_sweep">Sweep</string>
+    <string name="face_hair_cowlick_add">Add cowlick</string>
+    <string name="face_hair_cowlick_remove">Remove cowlick</string>
     <string name="face_hair_count">Count</string>
     <string name="face_hair_length">Length</string>
     <string name="face_hair_spread">Spread</string>
