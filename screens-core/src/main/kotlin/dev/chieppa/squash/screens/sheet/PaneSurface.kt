@@ -55,8 +55,8 @@ class LastPaneSurface {
 /**
  * What [color]'s one surface draws in a pane, the pose's when [posedPane], seen with the camera at [toCamera], each eye
  * along [toViewer] from its middle: its garments, then the
- * surface with its paint, or with [only] that part's own section of it; each at [opacity] in [layer], outlined [outline] wide. Nothing
- * without a [color].
+ * surface with its paint, or with [only] that part's own section of it; each at [opacity] in [layer], outlined [outline] wide. [keyed],
+ * the surface with its head cheats for this view, draws in place of the surface shown. Nothing without a [color].
  */
 fun SheetLook.surfaceDraws(
     color: PaneColor?,
@@ -67,9 +67,10 @@ fun SheetLook.surfaceDraws(
     layer: DepthLayer = DepthLayer.SCENE,
     only: PartId? = null,
     toViewer: (Vec3) -> Vec3 = { toCamera },
+    keyed: PosedSurface? = null,
 ): List<MeshDraw> {
     val held = color?.surface ?: return emptyList()
-    val shown = held.shown(posedPane)
+    val shown = keyed ?: held.shown(posedPane)
     val fallback = part.copy(ink = color.palette.colorOf(INK_SLOT) ?: part.ink)
     val section = only?.let { held.section(it, posedPane) }
     val garments = if (only == null) shown.dress?.let { garmentDraws(it, color.palette, fallback, color.shading, toCamera, shown.creases) }.orEmpty() else emptyList()

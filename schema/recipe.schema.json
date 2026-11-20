@@ -364,6 +364,143 @@
       },
       "additionalProperties": false
     },
+    "KeyMove": {
+      "description": "How a key moves one thing on a head, in the head's own directions as seen with the camera on the head's left; Squash mirrors it for the camera on the right.",
+      "type": "object",
+      "properties": {
+        "feature": {
+          "description": "What it moves by name on each head: muzzle (the head's muzzle run, or the part on its muzzle socket such as a beak), ears (the parts on its ear sockets) or nose (its nose piece or the part on its nose socket). Give this or part.",
+          "anyOf": [
+            {
+              "enum": [
+                "muzzle",
+                "ears",
+                "nose",
+                "head"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "part": {
+          "description": "The part it moves, with everything on it. Give this or feature.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "run": {
+          "description": "One run or piece of the part by name, such as muzzle or nose, in place of the whole part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "forward": {
+          "description": "How far it moves along the head's facing, a share of the head's length.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "up": {
+          "description": "How far it moves up the head, a share of the head's length.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "left": {
+          "description": "How far it moves toward the head's left, which is toward the camera in a keyed view, a share of the head's length.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "yaw": {
+          "description": "Degrees it turns about the head's up through its root, its front toward the head's left.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "pitch": {
+          "description": "Degrees it turns about the head's left through its root, its front up.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "roll": {
+          "description": "Degrees it turns about the head's facing through its root, its top toward the head's left.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "twist": {
+          "description": "Degrees it turns about its own length through its root, its front toward the head's left: an ear opening toward the camera.",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "scale": {
+          "description": "How much larger it is, about its root.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4.0
+        },
+        "width": {
+          "description": "How much wider it is across the head, from left to right, about its root.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4.0
+        },
+        "height": {
+          "description": "How much taller it is along the head's up, about its root.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4.0
+        },
+        "depth": {
+          "description": "How much deeper it is along the head's facing, about its root.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4.0
+        },
+        "area": {
+          "description": "One of the part's areas by name, such as chin or cheeks: the move then shapes only that area, eased out past its edge, on the one surface.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "push": {
+          "description": "How far its surface swells out along its normals, a share of the head's length; negative sinks it.",
+          "type": "number",
+          "minimum": -0.5,
+          "maximum": 0.5
+        },
+        "nearPush": {
+          "description": "How far the half of its surface on the camera's side swells out along its normals, a share of the head's length: the near cheek filling out.",
+          "type": "number",
+          "minimum": -0.5,
+          "maximum": 0.5
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "LooseEnd": {
       "type": "object",
       "properties": {
@@ -698,6 +835,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/RecipeShading"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "viewKeys": {
+          "description": "Head cheats that follow the camera: the face style, how far the face follows the camera, and keys per view moving the muzzle, ears, nose, any part or the head's shape. Every head's defaults when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ViewKeys"
             },
             {
               "type": "null"
@@ -3190,6 +3338,109 @@
       "required": [
         "type"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ViewKey": {
+      "description": "A head cheat at one view: what it moves there.",
+      "type": "object",
+      "properties": {
+        "view": {
+          "description": "The view: front, three-quarter, side, three-quarter-back or back, by where the camera sits round the head's own facing.",
+          "enum": [
+            "front",
+            "three-quarter",
+            "side",
+            "three-quarter-back",
+            "back"
+          ]
+        },
+        "side": {
+          "description": "The camera's side of the head this key holds for: left or right. Left out, the key is for the left and Squash mirrors it for the right; the front and back take none.",
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "moves": {
+          "description": "What it moves.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/KeyMove"
+          }
+        }
+      },
+      "required": [
+        "view"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ViewKeys": {
+      "description": "Head cheats that follow the camera: what each view moves on the head, blended between neighbouring views as the camera turns round the head's own facing.",
+      "type": "object",
+      "properties": {
+        "auto": {
+          "description": "Whether every head's default keys apply: its muzzle leans toward the camera and its ears turn toward profile. On when left out.",
+          "type": "boolean"
+        },
+        "keys": {
+          "description": "Keys per view, each move replacing the default for the same thing at that view.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ViewKey"
+          }
+        },
+        "face": {
+          "description": "How the face meets a turning camera: turning (the face slides part way round toward the camera and the head's shape changes from view to view) or fixed (the head keeps one shape from the front round to the side and the face stays turned to the viewer). The head template's when left out.",
+          "anyOf": [
+            {
+              "enum": [
+                "turning",
+                "fixed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "faceFollow": {
+          "description": "How far the face's features (eyes, brows, nose, mouth, muzzle, cheek marks) slide round the head toward the camera, from 0 (fixed on the head) to 1 (centred on the viewer up to the side view). Past the side view they slide back and hide behind the head. The face style's when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "keepFace": {
+          "description": "Whether the face slides as one piece and keeps its features' size, rather than gathering toward the far side as it turns. The face style's when left out.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },

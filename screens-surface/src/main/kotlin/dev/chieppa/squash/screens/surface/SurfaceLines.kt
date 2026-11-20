@@ -6,7 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BodyLines
+import dev.chieppa.squash.character.viewkeys.KeyedView
+import dev.chieppa.squash.character.viewkeys.ViewKeyCache
 import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.PartLines
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
@@ -73,6 +76,8 @@ class SurfaceLines(
     private val faces: FaceWork? = null,
     private val pickedWeight: PickedLineWeight? = null,
     private val surface: PosedSurfaceLines,
+    private val keys: ViewKeyCache? = null,
+    private val body: AssembledCharacter? = null,
 ) : SurfaceRibbons {
     private val inSurface: Set<PartId> = surface.parts
 
@@ -80,7 +85,18 @@ class SurfaceLines(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, List<RibbonDraw>>) = size > KEPT_VIEWS
     }
 
-    override fun figure(view: SurfaceView): List<RibbonDraw> = kept.getOrPut(if (view is FullView) Triple(view.current, view.width, view.height) else view) { figureDraws(view) }
+    override fun figure(view: SurfaceView): List<RibbonDraw> = kept.getOrPut(if (view is FullView) Triple(view.current, view.width, view.height) else view) {
+        val keyed = keyedFor(view) ?: return@getOrPut figureDraws(view)
+        val shown = keyed.surface ?: return@getOrPut figureDraws(view)
+        SurfaceLines(keyed.lines, work, look, taper, ink, figureRadius, palette, picked, faces, pickedWeight, surface.on(shown)).figureDraws(view)
+    }
+
+    /** The head cheats as a free view sees them, over the lines' own body and surface; none for a locked pane, which shows what is drawn. */
+    override fun keyedFor(view: SurfaceView): KeyedView? {
+        if (keys == null || body == null || view !is FullView) return null
+        val keyed = keys.keyed(body, lines, work, surface.shown, view::toViewer)
+        return keyed.takeIf { it.body !== body || it.surface !== surface.shown }
+    }
 
     private fun figureDraws(view: SurfaceView): List<RibbonDraw> = buildList {
         val parts = lines.parts.values.map { if (it.part.id in inSurface) it.withoutRuns() else it }
@@ -165,7 +181,8 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
     val bins = remember(open) { FaceBinsHeld() }
     val expression = document.character.shownExpression
     val surface = rememberPaneSurface(open)?.shown(posed)
-    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, locked, expression, surface) {
+    val keys by remember(open) { open.viewKeys.output }.collectAsState()
+    return remember(lines, work, character, rules, ink, density, palette, picked, pickedWeight, locked, expression, surface, keys) {
         val shown = lines
         val held = work
         val whole = character
@@ -176,7 +193,7 @@ fun rememberSurfaceLines(state: AppState, posed: Boolean = false): SurfaceRibbon
             val look = characterLook(rules, density)
             val parts = shown.parts.mapValues { it.value.part }
             val faces = FaceWork(FaceInput(parts, held, shown, palette, expression), look.marks, ink, rules.taper) { part, view -> locked ?: bins.binOf(part, view) }
-            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, PosedSurfaceLines(surface, lineWeightStrokes(whole, held)))
+            SurfaceLines(shown, held, look, rules.taper, ink, radius, palette, picked, faces, pickedWeight, PosedSurfaceLines(surface, lineWeightStrokes(whole, held)), keys, whole)
         }
     }
 }

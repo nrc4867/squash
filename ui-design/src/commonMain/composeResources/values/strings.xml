@@ -275,6 +275,10 @@
     <string name="shell_drawer_angle_versions">Angle versions</string>
     <string name="face_mouth">Mouth</string>
     <string name="face_eyes">Eyes</string>
+    <string name="face_view_turning">Turning face</string>
+    <string name="face_view_fixed">Fixed face</string>
+    <string name="face_follow">Face follows</string>
+    <string name="face_view_keys">View keys</string>
     <string name="face_controls">Controls</string>
     <string name="face_layers">Layers</string>
     <string name="face_layer_empty">empty</string>

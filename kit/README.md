@@ -165,6 +165,8 @@ Face places are the head seen from straight ahead: x to the character's left, y 
 | `taper` | `width: taper(0.3)` thins a line's ends. |
 | `faceEye` | `faceEye("eyes", { on: "head", face: [0.05, 0.14], look: { white: "eye-white" } })`, mirrored unless told. |
 
+Head cheats that follow the camera are the recipe's `viewKeys`, typed by the schema with no helper: `viewKeys: { face: "fixed", faceFollow: 0.8, keys: [{ view: "three-quarter", moves: [{ feature: "muzzle", yaw: 12, left: 0.04 }, { part: "ear-l", twist: 20 }] }, { view: "back", moves: [{ feature: "head", width: 1.06 }] }] }`. `face` is `turning` (the face slides part way toward the camera and the head's shape changes by view) or `fixed` (one head shape from front to side, the face kept turned to the viewer); keys are written for the camera on the head's left and mirrored for the right unless a key names `side`. Left out, every head takes its template's defaults. `close=orbit` renders the head round from front to back with and without its keys, and turned on its neck under a fixed camera (docs/reference/face-and-clothes.md, View keys).
+
 ## Clothes
 
 | helper | one line |

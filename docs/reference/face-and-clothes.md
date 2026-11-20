@@ -200,3 +200,37 @@ Fields as the schema describes them:
 | change `through` | The part comes out through a hole: an armhole or neckline with cuff false, a collar or sleeve cuff with cuff true. |
 | change `redraw` | The part keeps its template and takes this shape over its own: outlines and parameters by name, regions by id. |
 | change `swap` | The part takes another template with this shape while the garment is worn, as a closed shoe swaps a foot for a blob. |
+
+## View keys
+
+A recipe's `viewKeys`: head cheats that follow the camera. Squash builds each head once at eight directions round its own facing (front, three-quarter, side and three-quarter back on either side, and back) on the surface it already has, and blends the two nearest as the camera turns, so the head's paint, eyes and ink marks ride on it. Which keys hold is read from where the camera sits round the head's own facing, so a head turned over the shoulder picks its keys by where it points. Keys are written as seen with the camera on the head's left; for the right Squash mirrors them, a paired part's move going to its twin, unless a key names `side`.
+
+With `auto` every head has defaults: its muzzle leans toward the camera, its ears turn toward profile, its back is drawn a little wider and lower, and, in the turning face style, its near cheek fills out and its chin slides toward the camera. Its face follows the camera as far as its style says, sliding back to hide behind the head past the side view.
+
+| field | meaning |
+| --- | --- |
+| viewKeys `auto` | Whether every head's default keys apply: its muzzle leans toward the camera and its ears turn toward profile. On when left out. |
+| viewKeys `keys` | Keys per view, each move replacing the default for the same thing at that view. |
+| viewKeys `face` | How the face meets a turning camera: turning (the face slides part way round toward the camera and the head's shape changes from view to view) or fixed (the head keeps one shape from the front round to the side and the face stays turned to the viewer). The head template's when left out. |
+| viewKeys `faceFollow` | How far the face's features (eyes, brows, nose, mouth, muzzle, cheek marks) slide round the head toward the camera, from 0 (fixed on the head) to 1 (centred on the viewer up to the side view). Past the side view they slide back and hide behind the head. The face style's when left out. |
+| viewKeys `keepFace` | Whether the face slides as one piece and keeps its features' size, rather than gathering toward the far side as it turns. The face style's when left out. |
+| key `view` | The view: front, three-quarter, side, three-quarter-back or back, by where the camera sits round the head's own facing. |
+| key `side` | The camera's side of the head this key holds for: left or right. Left out, the key is for the left and Squash mirrors it for the right; the front and back take none. |
+| key `moves` | What it moves. |
+| move `feature` | What it moves by name on each head: muzzle (the head's muzzle run, or the part on its muzzle socket such as a beak), ears (the parts on its ear sockets) or nose (its nose piece or the part on its nose socket). Give this or part. |
+| move `part` | The part it moves, with everything on it. Give this or feature. |
+| move `run` | One run or piece of the part by name, such as muzzle or nose, in place of the whole part. |
+| move `forward` | How far it moves along the head's facing, a share of the head's length. |
+| move `up` | How far it moves up the head, a share of the head's length. |
+| move `left` | How far it moves toward the head's left, which is toward the camera in a keyed view, a share of the head's length. |
+| move `yaw` | Degrees it turns about the head's up through its root, its front toward the head's left. |
+| move `pitch` | Degrees it turns about the head's left through its root, its front up. |
+| move `roll` | Degrees it turns about the head's facing through its root, its top toward the head's left. |
+| move `twist` | Degrees it turns about its own length through its root, its front toward the head's left: an ear opening toward the camera. |
+| move `scale` | How much larger it is, about its root. |
+| move `width` | How much wider it is across the head, from left to right, about its root. |
+| move `height` | How much taller it is along the head's up, about its root. |
+| move `depth` | How much deeper it is along the head's facing, about its root. |
+| move `area` | One of the part's areas by name, such as chin or cheeks: the move then shapes only that area, eased out past its edge, on the one surface. |
+| move `push` | How far its surface swells out along its normals, a share of the head's length; negative sinks it. |
+| move `nearPush` | How far the half of its surface on the camera's side swells out along its normals, a share of the head's length: the near cheek filling out. |

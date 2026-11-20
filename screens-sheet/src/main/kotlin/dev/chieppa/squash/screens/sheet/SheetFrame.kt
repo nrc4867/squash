@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.sheet
 
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.viewkeys.KeyedView
 import dev.chieppa.squash.screens.references.TraceDraws
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -104,9 +105,10 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
             return SceneView(rect, camera.viewProjection(rect.width, rect.height), draws, ribbons, fur.layers)
         }
         val shownPlanned = if (posed != null) emptyList() else planned
+        val keyed = surface?.keyedFor(sight)
         val draws = listOf(fullGround(selection, look)) +
-            placed.mapNotNull { look.colored(it, input.color, toCamera, 0f, posed = posed.of(it))?.withFace(it, surface, sight) } +
-            look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer) +
+            placed.mapNotNull { look.colored(it, input.color, toCamera, 0f, posed = keyed.of(it) ?: posed.of(it))?.withFace(it, surface, sight) } +
+            look.surfaceDraws(input.color, toCamera, posed != null, toViewer = sight::toViewer, keyed = keyed?.surface) +
             shownPlanned.sortedByDescending { (it.center.toGpu() - eye).length }.map { look.draw(it, look.fullOutline, plannedOpacity) }
         val ribbons = surface?.figure(sight).orEmpty()
         val fur = look.furDraws(input.fullFur, input.color, toCamera, selection)
@@ -121,6 +123,13 @@ private fun sceneView(pane: SheetPane, input: SheetInput): SceneView? {
     val draws = lockedDraws(view, body, camera.basis, selection, look, input.hints, input.color, posed) { (part, draw) -> draw.withFace(part, surface, camera) }
     val traces = input.traces(camera.basis.back)
     return SceneView(rect, camera.viewProjection(), draws, lockedRibbons(view, camera, selection, look, input.hints, input.color, surface), fur.layers, traces.behind, traces.over)
+}
+
+/** [part] as these head cheats show it, or null where they leave it as the pane would show it. */
+internal fun KeyedView?.of(part: SheetPart): PlacedPart? {
+    val id = part.id ?: return null
+    val shown = this?.body?.part(id) ?: return null
+    return shown.takeIf { it.surface.mesh !== part.mesh }
 }
 
 /** [part] as this pose shows it, or null for a part the pose holds none of or with no pose. */

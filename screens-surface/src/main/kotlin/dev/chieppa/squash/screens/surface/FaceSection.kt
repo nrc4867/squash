@@ -56,7 +56,8 @@ internal fun AppState.pickFeature(character: Character, holder: PartId, feature:
 
 /**
  * The Face inspector, on the head whatever is selected: Eyes or Mouth. The eyes are its painted eyes (see [PaintedEyeSection]). The mouth
- * shows its controls and its roles as layers in draw order with what each holds; a head with no mouth offers to add one.
+ * shows its controls and its roles as layers in draw order with what each holds; a head with no mouth offers to add one. Above them, how
+ * the face meets a turning camera (see [ViewKeyRows]).
  */
 @Composable
 fun FaceSection(state: AppState, session: CharacterSession) {
@@ -76,6 +77,7 @@ fun FaceSection(state: AppState, session: CharacterSession) {
             }, Modifier.fillMaxWidth().testTag(FaceTags.NEW_MOUTH), kind = ButtonKind.Quiet, icon = SquashIcons.Marks)
         }
     }
+    ViewKeyRows(session, holder)
     if (face.feature == FaceFeature.EYES) return PaintedEyeSection(state, session, character, holder)
     val picked = face.group?.takeIf { it.part == holder } ?: return
     val group = character.groupOf(picked) ?: return

@@ -1,5 +1,7 @@
 package dev.chieppa.squash.character.session
 
+import dev.chieppa.squash.character.viewkeys.ViewKeyCache
+import dev.chieppa.squash.character.viewkeys.viewKeysNode
 import dev.chieppa.squash.character.build.builtTemplate
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.character.model.PartTemplate
@@ -194,6 +196,12 @@ class CharacterSession(
 
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */
     val bodyFur: Node<*, BodyFur> = graph.bodyFurNode(document, templates, assembly, bodySurfaceWork)
+
+    /**
+     * The character's head cheats that follow the camera, built once each assembly at rest, made when first asked for so a session no
+     * view turns freely never builds them. See HLD: look, View keys.
+     */
+    val viewKeys: Node<*, ViewKeyCache> by lazy { graph.viewKeysNode(document, assembly, characterSurface) }
 
     private val pose = MutableStateFlow<Node<*, Held>?>(null)
 

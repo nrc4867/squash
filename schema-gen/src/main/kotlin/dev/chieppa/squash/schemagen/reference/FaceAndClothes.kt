@@ -19,6 +19,9 @@ import dev.chieppa.squash.recipe.model.RecipeStroke
 import dev.chieppa.squash.recipe.model.RecipeTuck
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
+import dev.chieppa.squash.document.KeyMove
+import dev.chieppa.squash.document.ViewKey
+import dev.chieppa.squash.document.ViewKeys
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonObject
@@ -143,6 +146,30 @@ internal object FaceAndClothes {
                 listOf("change `redraw`", docOf(RecipeChange.Redraw.serializer().descriptor.annotations)),
                 listOf("change `swap`", docOf(RecipeChange.Swap.serializer().descriptor.annotations)),
             )
+        append(table(listOf("field", "meaning"), rows))
+        appendLine()
+        viewKeys()
+    }
+
+    /** The recipe's `viewKeys`: what each view moves on a head and how its face follows the camera. */
+    private fun StringBuilder.viewKeys() {
+        appendLine("## View keys")
+        appendLine()
+        appendLine(
+            "A recipe's `viewKeys`: head cheats that follow the camera. Squash builds each head once at eight directions round its own facing " +
+                "(front, three-quarter, side and three-quarter back on either side, and back) on the surface it already has, and blends the two " +
+                "nearest as the camera turns, so the head's paint, eyes and ink marks ride on it. Which keys hold is read from where the camera sits " +
+                "round the head's own facing, so a head turned over the shoulder picks its keys by where it points. Keys are written as seen with the " +
+                "camera on the head's left; for the right Squash mirrors them, a paired part's move going to its twin, unless a key names `side`.",
+        )
+        appendLine()
+        appendLine(
+            "With `auto` every head has defaults: its muzzle leans toward the camera, its ears turn toward profile, its back is drawn a little " +
+                "wider and lower, and, in the turning face style, its near cheek fills out and its chin slides toward the camera. Its face follows " +
+                "the camera as far as its style says, sliding back to hide behind the head past the side view.",
+        )
+        appendLine()
+        val rows = docs("viewKeys", ViewKeys.serializer().descriptor) + docs("key", ViewKey.serializer().descriptor) + docs("move", KeyMove.serializer().descriptor)
         append(table(listOf("field", "meaning"), rows))
     }
 
