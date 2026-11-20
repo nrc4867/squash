@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.CharacterId
+import dev.chieppa.squash.document.Cowlick
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.LockGroupKind
@@ -15,8 +16,10 @@ import dev.chieppa.squash.document.LockOverride
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.document.ScalpFlow
 import dev.chieppa.squash.document.SetLockGroup
 import dev.chieppa.squash.document.SetLockOverride
+import dev.chieppa.squash.document.SetScalpFlow
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
@@ -62,5 +65,12 @@ class LockSessionTest {
         val after = assertNotNull(session.bodyLines.output.value)
         assertSame(lines.parts.getValue(head).grids.first(), after.parts.getValue(head).grids.first(), "the head's line grids are kept")
         assertSame(lines.parts.getValue(lockGroupPartId(back.id)).grids.first(), after.parts.getValue(lockGroupPartId(back.id)).grids.first(), "the other group's are kept")
+
+        session.send(SetScalpFlow(head, ScalpFlow(head, cowlicks = listOf(Cowlick(around = 0f, up = 46f, radius = 20f)))))
+        runCurrent()
+        assertTrue(session.graph.settled.value)
+        assertSame(body, session.bodyAssembly.output.value, "a flow edit does not assemble the body again")
+        assertTrue(session.lockBuilds.lastBuilt in 1 until fringe.count, "a cowlick builds only the locks it reaches: ${session.lockBuilds.lastBuilt}")
+        assertSame(backPart, session.assembly.output.value?.part(lockGroupPartId(back.id)), "a group the cowlick does not reach is the same part")
     }
 }

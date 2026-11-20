@@ -101,6 +101,34 @@ class HairLockCommandTest {
     }
 
     @Test
+    fun aScalpFlowIsSetReplacedClearedAndEachUndone() {
+        val flow = ScalpFlow(head.id, Whorl(around = 160f, turn = -0.5f), Parting(PartingKind.SIDE, at = 0.6f, color = SlotName("scalp")), sweep = 0.3f, cowlicks = listOf(Cowlick(around = 20f)))
+        val command = SetScalpFlow(head.id, flow)
+        assertRoundTrips(command)
+        assertEquals(ScalpFlow(head.id), empty.character.scalpFlowOn(head.id), "a head with no flow of its own takes the default")
+        val set = command.apply(empty).document
+        assertEquals(flow, set.character.scalpFlowOn(head.id))
+        val centre = flow.copy(parting = Parting(PartingKind.CENTRE))
+        scenario(set) {
+            run(SetScalpFlow(head.id, centre))
+            expect(set.copy(character = set.character.copy(scalpFlows = listOf(centre))))
+            undo()
+            expect(set)
+            run(SetScalpFlow(head.id, null))
+            expect(empty)
+            undo()
+            expect(set)
+        }
+        assertFailsWith<IllegalArgumentException> { SetScalpFlow(PartId("nobody"), ScalpFlow(PartId("nobody"))).apply(empty) }
+        assertFailsWith<IllegalArgumentException> { SetScalpFlow(head.id, ScalpFlow(PartId("other"))) }
+        assertFailsWith<IllegalArgumentException> { Parting(at = 2f) }
+        assertFailsWith<IllegalArgumentException> { Whorl(up = 120f) }
+        assertFailsWith<IllegalArgumentException> { ScalpFlow(head.id, cowlicks = List(MOST_COWLICKS + 1) { Cowlick() }) }
+        val text = Json.encodeToString(SquashDocument.serializer(), set)
+        assertEquals(set, readDocument(text))
+    }
+
+    @Test
     fun aGroupShowsAsAPartOfItsOwn() {
         val withGroup = SetLockGroup(fringeId, fringe).apply(empty).document
         assertEquals(fringeId, lockGroupOf(lockGroupPartId(fringeId)))

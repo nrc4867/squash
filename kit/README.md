@@ -154,22 +154,28 @@ const parts = [head, { ...hair.part, sockets: [...front.sockets, socket(20, 0.4,
 
 ### Lock hair
 
-Lock hair is built from separate swept locks in groups over an inner mass, never in the one surface: its outline breaks where the cut has points or flicks (`docs/hld/parts.md`, Hair locks). It is a recipe's `hair` list, one entry a head.
+Lock hair is built from separate swept locks in groups over an inner mass, never in the one surface: its outline breaks where the cut has points or flicks (`docs/hld/parts.md`, Hair locks). It is a recipe's `hair` list, one entry a head. `docs/reference/hair.md` lists every group field with its default, range and units, each kind, section and tip, each preset's groups with their values and flow, the flow's fields and the fitted mass's parameters.
 
 | helper | one line |
 | --- | --- |
-| `lockMass` | `const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" })`: `mass.part`, a `hair-volume` cap with no strands that only hides the scalp, its front above the brow under the fringe's roots and its hem cut into points, and `mass.headSocket`, the head's socket for it; the same cap the app fits to a head that has none. |
-| `shortSpiky`, `bob`, `longStraight`, `ponytail`, `sideSwept`, `curly` | `bob({ on: "head", mass: "hair-mass", color: "hair" })`: one `hair` entry of that preset, sized to the head as built (`reach` gives it by hand). `ponytail` takes `band`, the tie's slot; `curly({ ..., tuft: true })` keeps only its crown, a tuft of curls rolling over the brow. |
-| `lockHair` | `lockHair("bob", { on: "head", groups: [{ id: "fringe", count: 9, tip: "forked" }, { id: "strays", kind: "strays", count: 3 }] })`: a preset (or `null`) with groups changing the preset's by id (`back`, `left`, `right`, `crown`, `fringe`, `strays`, `tail`), adding new ones with a `kind`, or leaving one out with `removed: true`. A group's `locks` set single locks by index: any field, a `guide` of its own, `hidden`. |
+| `lockMass` | `lockMass()`: the inner mass fitted to the head as built, as the app's preset menu fits one: a `hair-volume` cap with no strands that only hides the scalp, sized by the head's box with its top following the skull's dome, its front above the brow under the fringe's roots and its hem cut into points. Give it as a preset's `mass`; `lockMass({ id, color, params })` names it, colours it or overrides the fit (`params`: `width`, `back`, `sides`, `fringe`, `rise`, `crown`, `locks`, `lockDepth`, `lockJag`, ranges in hair.md, Inner mass). `lockMass({ on, socket, depth, height })` places one by hand instead and returns `{ part, headSocket }`. |
+| `shortSpiky`, `bob`, `longStraight`, `ponytail`, `sideSwept`, `curly` | `bob({ on: "head", mass: lockMass(), color: "hair" })`: one `hair` entry of that preset, sized to the head as built (`reach` gives it by hand). `ponytail` takes `band`, the tie's slot; `curly({ ..., tuft: true })` keeps only its crown, a tuft of curls rolling over the brow. |
+| `lockHair` | `lockHair("bob", { on: "head", groups: [{ id: "fringe", count: 9, tip: "forked" }, { id: "strays", kind: "strays", count: 3 }] })`: a preset (or `null`) with groups changing the preset's by id (`back`, `left`, `right`, `crown`, `top`, `fringe`, `strays`, `tail`; which a preset holds is in hair.md), adding new ones, which need a `kind`, or leaving one out with `removed: true`. No `groups`, or `groups: []`, keeps the preset's as they are. A group's `locks` set single locks by index: any field, a `guide` of its own, `hidden`. |
+| `centrePart`, `sidePart` | `sidePart("right", 0.6)`: a parting for a hair entry's `flow.part`, `at` 0 to 1 of the most a parting sits off the middle (about over the outer corner of the eye); either takes `clean` (0 a soft, wandering split to 1 sharp), `length` (1 to the crown) and `color` (the scalp's slot along it). |
+| `whorl`, `cowlick` | `whorl({ around: 170, up: 70, turn: 0.5 })`: the crown point hair spirals out from (`around` degrees from the front, 180 the back; `up` degrees from level; `turn` -1 to 1, clockwise seen from above). `cowlick({ around: 15, up: 48, turn: 0.7, lift: 40 })`: a local swirl (`turn` 1 or -1) or flip (`turn` 0) reaching `radius` degrees, its locks lifted `lift` degrees: a fringe flick at the hairline. |
 
 ```ts
-const mass = lockMass({ on: "head", socket: 7, depth: 0.29, height: 0.38, color: "hair" });
-head.sockets = [...(head.sockets ?? []), mass.headSocket];
-const hair = [bob({ on: "head", mass: mass.part.id, color: "hair", groups: [{ id: "fringe", count: 7, sweep: -0.3 }] })];
-// mass.part joins the recipe's parts; hair is the recipe's hair.
+const hair = [
+  sideSwept({
+    on: "head", mass: lockMass(), color: "hair",
+    flow: { part: sidePart("left", 0.5), whorl: whorl({ turn: -0.4 }), cowlicks: [cowlick({ around: -15, up: 50, lift: 30 })] },
+    groups: [{ id: "fringe", count: 7, sweep: 0.3 }],
+  }),
+];
+// hair is the recipe's hair; the fitted mass is added to the head by the build.
 ```
 
-Each group's `physics` (stiffness, damping, weight, gravity, wind, angleLimit, neighbours) and each lock's chain of 3 to 6 bones are kept for a solver; `colliders: false` leaves out the body's collision shapes.
+A hair entry's `flow` sets which way every lock root grows: `whorl`, `part`, `sweep` (an overall comb toward the character's right, -1 to 1), `sweepBack` (toward the back) and `cowlicks`; each field given replaces the preset's flow's. A group follows the flow as far as its `flow` (1 by default; 0 keeps its kind's own way), its `sweep` adds to it, and a lock's own values win over both. Roots keep off a parting, so the scalp shows along it as a thin line. Each group's `physics` (stiffness, damping, weight, gravity, wind, angleLimit, neighbours) and each lock's chain of 3 to 6 bones are kept for a solver; `colliders: false` leaves out the body's collision shapes.
 
 ## Face
 

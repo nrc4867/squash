@@ -10,6 +10,7 @@ import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetParameters
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
@@ -40,27 +41,35 @@ private val MASS_SHAPE = mapOf(
 /** A mass fitted to a head, ready to add: its [id] and the [commands] that add it, its socket first. */
 class FittedMass(val id: PartId, val commands: List<DocumentCommand>)
 
-/**
- * A hair mass of the hair-volume template fitted over [head] as built, on a socket of its own at the back of the head, sized by the head's
- * box and coloured as lock hair is; null when the head builds no box. See HLD: parts, Hair locks.
- */
-fun fittedMass(character: Character, head: PlacedPart, headId: PartId): FittedMass? {
-    val box = head.box ?: return null
-    val instance = character.part(headId) ?: return null
-    val depth = box.size.x
+/** The parameters of a mass fitted over a head [depth] deep from back to front and [height] tall. */
+fun fittedMassShape(depth: Float, height: Float): Map<String, Float> {
     val outset = depth * MASS_OUTSET
     val length = depth + 2f * outset
+    val crown = (height * (1f - MASS_SOCKET_U) + outset) / length
+    return MASS_SHAPE + mapOf("size" to length / MASS_LENGTH, "crown" to crown)
+}
+
+/**
+ * A hair mass of the hair-volume template fitted over [head] as built, on a socket of its own at the back of the head, sized by the head's
+ * box and coloured as lock hair is, or [slot]; [params] given replace the fitted ones. Its id is [wanted], or the head's id with `-hair`,
+ * numbered on where a part holds it. Null when the head builds no box. See HLD: parts, Hair locks.
+ */
+fun fittedMass(
+    character: Character, head: PlacedPart, headId: PartId, wanted: PartId? = null, params: Map<String, Float> = emptyMap(), slot: SlotName? = null,
+): FittedMass? {
+    val box = head.box ?: return null
+    val instance = character.part(headId) ?: return null
+    val outset = box.size.x * MASS_OUTSET
     val socket = HandSockets.nextId(character.resolvedShape(instance).params)
-    val id = freeId(character, PartId("${headId.value}-hair"))
-    val crown = (box.size.y * (1f - MASS_SOCKET_U) + outset) / length
-    val slot = HAIR_SLOT.takeIf { slot -> character.palette.slots.any { it.name == slot } } ?: character.resolved(instance).surface.baseSlot
+    val id = freeId(character, wanted ?: PartId("${headId.value}-hair"))
+    val color = slot ?: HAIR_SLOT.takeIf { hair -> character.palette.slots.any { it.name == hair } } ?: character.resolved(instance).surface.baseSlot
     return FittedMass(
         id,
         listOf(
             HandSockets.add(headId, socket, MASS_SOCKET_U, MASS_SOCKET_V, 0f, false, sink = 0f, outset = outset),
             AddPart(PartInstance(id, TemplateRef(TemplateId(MASS_TEMPLATE), MASS_VERSION), SocketRef(headId, HandSockets.name(socket)), role = Role.HAIR)),
-            SetParameters(id, MASS_SHAPE + mapOf("size" to length / MASS_LENGTH, "crown" to crown)),
-            SetBaseSlot(id, slot),
+            SetParameters(id, fittedMassShape(box.size.x, box.size.y) + params),
+            SetBaseSlot(id, color),
         ),
     )
 }

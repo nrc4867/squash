@@ -25,6 +25,24 @@ export interface BonePose {
   [note: `x-${string}`]: unknown;
 }
 
+/** A cowlick: a small swirl or flip at a point, as a fringe flicking up at the hairline. */
+export interface Cowlick {
+  /** Degrees round the head from the front, positive toward the character's right. */
+  around?: number;
+  /** Degrees up the head from level. */
+  up?: number;
+  /** How far across the head it reaches, in degrees. */
+  radius?: number;
+  /** How strongly it rules the hair over it, 0 not at all to 2. */
+  strength?: number;
+  /** 0 flips the hair back against the flow; 1 swirls it clockwise round the point seen from outside, -1 the other way. */
+  turn?: number;
+  /** Degrees the locks over it lift off the head, most at its middle. */
+  lift?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template. */
 export interface EyeLook {
   /** Half the opening's width, from its middle to each corner, in units across. */
@@ -524,7 +542,7 @@ export interface RecipeGeneric {
   [note: `x-${string}`]: unknown;
 }
 
-/** Hair made of locks on a head: each lock a separate swept part, in groups (a fringe, the sides, the back, the crown, strays) over an inner mass. A preset gives a whole hairstyle; groups add to it or change its groups by id. */
+/** Hair made of locks on a head: each lock a separate swept part, in groups (a fringe, the sides, the back, the crown, strays, the top) over an inner mass. A preset gives a whole hairstyle; groups add to it or change its groups by id. docs/reference/hair.md lists every field's range and units and each preset's groups. */
 export interface RecipeHair {
   /** The head the locks grow on, by part id. */
   on: string;
@@ -538,10 +556,14 @@ export interface RecipeHair {
   color?: string | null;
   /** The palette slot of a ponytail's band; the locks' colour when left out. */
   band?: string | null;
-  /** Groups of locks: a group whose id a preset gives changes only the fields it sets; any other id adds a group. */
+  /** Groups of locks: a group whose id a preset gives changes only the fields it sets; any other id adds a group, which needs its kind. Left out or empty, the preset's groups stay as they are. */
   groups?: RecipeLockGroup[];
   /** Whether the body's collision shapes (a sphere in the head, a capsule along the neck, a sphere at each shoulder) are set up from the built body, for a solver to keep hair out of. */
   colliders?: boolean;
+  /** Which way the hair grows over the scalp: a whorl, a parting, an overall sweep and cowlicks. Each field given replaces the preset's; the preset's flow, else a crown whorl with no parting, when left out. */
+  flow?: RecipeScalpFlow | null;
+  /** An inner mass fitted to the head as built, as the app's preset menu fits one, in place of a mass part of the recipe's own: give this or mass, not both. */
+  fitMass?: RecipeMassFit | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -612,17 +634,17 @@ export interface RecipeLineWeight {
 
 /** A group of locks. Every field but id is optional: a preset's group of the same id keeps what this leaves out; a new group needs its kind. */
 export interface RecipeLockGroup {
-  /** The group's id; a preset's groups are back, left, right, crown, fringe, strays and tail. */
+  /** The group's id; a preset's groups are back, left, right, crown, top, fringe, strays and tail, which of them each preset gives in docs/reference/hair.md. */
   id: string;
-  /** Where it roots: fringe, left, right, back, crown or strays. */
-  kind?: ("fringe" | "left" | "right" | "back" | "crown" | "strays") | null;
+  /** Where it roots: fringe, left, right, back, crown, strays or top. Needed for a group the preset does not give. */
+  kind?: ("fringe" | "left" | "right" | "back" | "crown" | "strays" | "top") | null;
   /** How many locks. */
   count?: number | null;
-  /** How far round the head its roots reach, a share of its kind's own reach. */
+  /** How far round the head its roots reach, a share of its kind's own reach (a fringe's about 96 degrees across the front, a side's about 66, the back's about 116): 1 the kind's own, 0 all at its middle. */
   spread?: number | null;
   /** Degrees its roots turn round the head, positive toward the character's right. */
   around?: number | null;
-  /** How far up the head its roots move, -1 to 1. */
+  /** How far up the head its roots move, -1 to 1 of about 20 degrees (15 for a crown, strays and the top, whose height moves it forward). */
   height?: number | null;
   /** Each lock's length, in body units. */
   length?: number | null;
@@ -634,15 +656,15 @@ export interface RecipeLockGroup {
   thickness?: number | null;
   /** What share of its root width a lock keeps toward its tip. */
   taper?: number | null;
-  /** ribbon, a flattened lock cupped round the head, or clump, a rounded one. */
+  /** ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), or clump, a rounded one (spiky, short or curly hair, tufts). */
   section?: ("ribbon" | "clump") | null;
-  /** pointed, round, forked (2 or 3 points) or flicked (turning out at its end). */
+  /** pointed (spikes, ragged ends), round (a bob's blunt ends, curls), forked into 2 or 3 points (a choppy, layered fringe) or flicked, turning out 50 degrees at its end (a flicked fringe or hem). */
   tip?: ("pointed" | "round" | "forked" | "flicked") | null;
   /** How many points a forked tip ends in. */
   tipPoints?: number | null;
-  /** Degrees each lock rises off the head at its root: 0 lies flat, 90 stands straight out. */
+  /** Degrees each lock's outer part lifts off the head, past about half its length; it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. Over about 30 short locks read as spikes. A tied lock leaves its tie at this angle. */
   rise?: number | null;
-  /** How far the locks sweep sideways as they grow, -1 to 1: positive toward the character's right. */
+  /** How far the locks sweep sideways as they grow, over the way the scalp's flow grows them, -1 to 1: 1 turns a lock 70 degrees round over its length toward the character's right. */
   sweep?: number | null;
   /** How far the locks fall toward the ground along their length, 0 none to 1 hanging. */
   fall?: number | null;
@@ -664,6 +686,8 @@ export interface RecipeLockGroup {
   color?: string | null;
   /** How its locks move once physics drives them: stiffness, damping, weight, gravity, wind, angleLimit, neighbours. */
   physics?: LockPhysics | null;
+  /** How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's. */
+  flow?: number | null;
   /** Single locks set by hand, by index: any field given replaces the group's for that lock, guide gives it a curve of its own, hidden leaves it out. */
   locks?: LockOverride[] | null;
   /** Leaves out a preset's group of this id. */
@@ -701,6 +725,18 @@ export interface RecipeMark {
   flight?: MarkFlight[];
   /** In a garment's marks only: the body part its places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
   on?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** An inner mass fitted to the head as built: a hair-volume cap with no strands, sized by the head's box, its top following the skull's dome, its front above the brow and its hem cut into points. */
+export interface RecipeMassFit {
+  /** Its part id; the head's id with -hair when left out. */
+  id?: string | null;
+  /** Its palette slot; the palette's hair slot, else the head's colour, when left out. */
+  color?: string | null;
+  /** hair-volume parameters over the fitted ones (templates.md, hair-volume): width, back, sides, fringe, rise, crown, locks, lockDepth, lockJag and the rest. Most heads need none. */
+  params?: { [key: string]: number };
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -854,6 +890,22 @@ export interface RecipePart {
   [note: `x-${string}`]: unknown;
 }
 
+/** A parting: none, centre or side; where across the top; how far back; how clean; the scalp's colour along it. */
+export interface RecipeParting {
+  /** none, centre or side. */
+  kind?: "none" | "centre" | "side";
+  /** How far across the top it runs, -1 to 1 of the most a part sits off the middle (about over the outer corner of the eye): positive toward the character's right. */
+  at?: number;
+  /** How far back from the hairline it runs: 1 reaches the crown. */
+  length?: number;
+  /** How clean the split is, 0 a soft, wandering split to 1 a sharp, straight line. */
+  clean?: number;
+  /** The palette slot of the scalp along it: the head's own colour when left out, or a darker scalp tone. */
+  color?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** Copies of the part on a socket repeated along a path on its part, its axis along the surface's normal and its up along the path: beads, studs, a row of buttons, chain links. */
 export interface RecipePath {
   /** How many copies, evenly from end to end; as many as pitch fits when left out. */
@@ -895,6 +947,22 @@ export interface RecipeRegion {
   mirrored?: boolean;
   /** In a garment's regions only: the body part its border's places lie on, as the cloth over it prints them (a pair's side by its own id). Left out with anchors. */
   on?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Which way hair grows over the scalp. Every lock root takes its direction from it unless its group's flow is under 1. Each field given replaces the preset's. */
+export interface RecipeScalpFlow {
+  /** The crown point hair spirals out from: around (degrees from the front toward the character's right, 180 the back), up (degrees from level, 90 the top), turn (-1 to 1, positive clockwise seen from above), strength (0 to 2) and radius (degrees across the head). */
+  whorl?: Whorl | null;
+  /** A line where hair splits and lies away to each side, the scalp showing along it as a thin line. */
+  part?: RecipeParting | null;
+  /** An overall comb toward one side, -1 to 1: positive toward the character's right; strongest over the top. */
+  sweep?: number | null;
+  /** An overall comb back over the top, -1 to 1: positive toward the back, negative forward. */
+  sweepBack?: number | null;
+  /** Small local swirls or flips, at most 8: around and up place each as a whorl's; radius in degrees; strength 0 to 2; turn 0 flips the hair back against the flow, 1 or -1 swirls it; lift in degrees raises the locks over it. */
+  cowlicks?: Cowlick[] | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -1141,6 +1209,22 @@ export interface ViewKeys {
   faceFollow?: number | null;
   /** Whether the face slides as one piece and keeps its features' size, rather than gathering toward the far side as it turns. The face style's when left out. */
   keepFace?: boolean | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The crown point hair spirals out from. */
+export interface Whorl {
+  /** Degrees round the head from the front, positive toward the character's right: 180 is the back. */
+  around?: number;
+  /** Degrees up the head from level: 90 is the top. */
+  up?: number;
+  /** How far hair turns round the whorl as it leaves it, -1 to 1: positive clockwise seen from above, 0 straight out. */
+  turn?: number;
+  /** How strongly it rules the hair round it, 0 not at all to 2. */
+  strength?: number;
+  /** How far across the head it reaches, in degrees. */
+  radius?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

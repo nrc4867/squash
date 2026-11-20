@@ -2,10 +2,7 @@ package dev.chieppa.squash.screens.surface
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -14,8 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.hair.HairPreset
 import dev.chieppa.squash.character.hair.hairPresetCommand
 import dev.chieppa.squash.character.session.CharacterSession
@@ -28,7 +23,6 @@ import dev.chieppa.squash.document.MOST_LOCK_CURL
 import dev.chieppa.squash.document.LEAST_LOCKS
 import dev.chieppa.squash.document.SHORTEST_LOCK
 import dev.chieppa.squash.document.SetLockGroup
-import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.lockGroup
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
@@ -41,6 +35,7 @@ import dev.chieppa.squash.uidesign.generated.face_hair_kind_fringe
 import dev.chieppa.squash.uidesign.generated.face_hair_kind_left
 import dev.chieppa.squash.uidesign.generated.face_hair_kind_right
 import dev.chieppa.squash.uidesign.generated.face_hair_kind_strays
+import dev.chieppa.squash.uidesign.generated.face_hair_kind_top
 import dev.chieppa.squash.uidesign.generated.face_hair_length
 import dev.chieppa.squash.uidesign.generated.face_hair_preset
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_bob
@@ -51,21 +46,14 @@ import dev.chieppa.squash.uidesign.generated.face_hair_preset_short_spiky
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_side_swept
 import dev.chieppa.squash.uidesign.generated.face_hair_remove
 import dev.chieppa.squash.uidesign.generated.face_hair_spread
-import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.Menu
 import dev.chieppa.stretch.frame.MenuItem
-import dev.chieppa.stretch.frame.SettingRow
-import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
-import dev.chieppa.stretch.ui.Slider
-import dev.chieppa.stretch.ui.formatNumber
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
-
-private val HAIR_READOUT_WIDTH = 52.dp
 
 /** Test tags for the Hair section. */
 object HairTags {
@@ -93,11 +81,13 @@ private val KIND_NAMES: Map<LockGroupKind, StringResource> = mapOf(
     LockGroupKind.BACK to Res.string.face_hair_kind_back,
     LockGroupKind.CROWN to Res.string.face_hair_kind_crown,
     LockGroupKind.STRAYS to Res.string.face_hair_kind_strays,
+    LockGroupKind.TOP to Res.string.face_hair_kind_top,
 )
 
 /**
  * The Hair section of the Face inspector, on the face's head: Preset, whose menu gives the head a preset's lock groups in one step, a row
- * a group, and the picked group's count, length, spread and curl, each drag one undo step, and Remove group.
+ * a group, and the picked group's count, length, spread and curl, each drag one undo step, and Remove group; then, on a head with
+ * locks, its scalp flow ([FlowSettings]).
  */
 @Composable
 fun HairSection(session: CharacterSession) {
@@ -133,6 +123,7 @@ fun HairSection(session: CharacterSession) {
         if (group != null) {
             key(group.id) { GroupSettings(session, group) { picked = null } }
         }
+        if (groups.isNotEmpty()) FlowSettings(session, head)
     }
 }
 
@@ -160,32 +151,6 @@ private fun GroupSlider(
     value: Float,
     range: ClosedFloatingPointRange<Float>,
     change: (LockGroup, Float) -> LockGroup,
-) {
-    var gesture by remember { mutableStateOf<History<SquashDocument>.Transaction?>(null) }
-    var range0 by remember { mutableStateOf(range) }
-    DisposableEffect(Unit) { onDispose { gesture?.commit() } }
-    if (gesture == null) range0 = range
-    SettingRow(label) {
-        Slider(
-            value.coerceIn(range0),
-            { next ->
-                val current = session.document.value.character.lockGroup(id) ?: return@Slider
-                val open = gesture ?: session.history.begin().also { gesture = it }
-                open.update(SetLockGroup(id, change(current, next.coerceIn(range0))))
-            },
-            label,
-            Modifier.testTag(HairTags.setting(name)).weight(1f),
-            valueRange = range0,
-            onValueChangeFinished = {
-                gesture?.commit()
-                gesture = null
-            },
-        )
-        BasicText(
-            formatNumber(value),
-            Modifier.width(HAIR_READOUT_WIDTH),
-            style = Stretch.type.value.merge(TextStyle(color = Stretch.colors.inkMuted)),
-            maxLines = 1,
-        )
-    }
+) = HairSlider(session, HairTags.setting(name), label, value, range) { document, next ->
+    document.character.lockGroup(id)?.let { SetLockGroup(id, change(it, next)) }
 }

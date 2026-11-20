@@ -13,15 +13,18 @@ import dev.chieppa.squash.character.build.HandSockets
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.hair.HairPreset
 import dev.chieppa.squash.character.hair.MASS_TEMPLATE
+import dev.chieppa.squash.character.hair.partingPartId
 import dev.chieppa.squash.character.hair.presetGroupNames
 import dev.chieppa.squash.document.AddParts
 import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
+import dev.chieppa.squash.document.PartingKind
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SocketRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.lockGroupPartId
+import dev.chieppa.squash.document.scalpFlowOn
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.screens.shell.shipped
@@ -30,6 +33,7 @@ import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private val HEAD = PartId("head")
@@ -78,5 +82,38 @@ class HairSectionTest {
         assertTrue(session.document.value.character.lockGroups.none { it.id.value == "fringe" })
         work.settle(session)
         assertNotNull(session.assembly.output.value?.part(lockGroupPartId(groups.first().id)), "the groups left are built")
+    }
+
+    @Test
+    fun theFlowSetsTheHeadsPartingAndCowlicksEachInOneStep() = runComposeUiTest {
+        withHead()
+        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.verticalScroll(rememberScrollState())) { HairSection(session) } } }
+        onNodeWithTag(HairTags.PRESET).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithTag(HairTags.preset(HairPreset.LONG_STRAIGHT)).performClick()
+        waitForIdle()
+        val flow = { session.document.value.character.scalpFlowOn(HEAD) }
+        assertEquals(PartingKind.CENTRE, flow().parting.kind, "a preset gives the head its flow")
+        val before = steps()
+        onNodeWithTag(HairFlowTags.part(PartingKind.SIDE)).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(before + 1, steps(), "a parting's kind is one step")
+        assertEquals(PartingKind.SIDE, flow().parting.kind)
+        assertTrue(flow().parting.at != 0f, "a side parting sits off the middle")
+        onNodeWithTag(HairFlowTags.setting("part.at")).assertExists()
+        onNodeWithTag(HairFlowTags.setting("whorl.turn")).assertExists()
+        onNodeWithTag(HairFlowTags.ADD_COWLICK).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(before + 2, steps(), "adding a cowlick is one step")
+        assertEquals(1, flow().cowlicks.size)
+        onNodeWithTag(HairFlowTags.removeCowlick(0)).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(before + 3, steps(), "removing one is one step")
+        assertTrue(flow().cowlicks.isEmpty())
+        onNodeWithTag(HairFlowTags.part(PartingKind.NONE)).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithTag(HairFlowTags.setting("part.at")).assertDoesNotExist()
+        work.settle(session)
+        assertNull(session.assembly.output.value?.part(partingPartId(HEAD)), "no parting, no strip of scalp")
     }
 }

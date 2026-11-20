@@ -51,6 +51,32 @@ data class SetLockOverride(val group: LockGroupId, val index: Int, val override:
     }
 }
 
+/**
+ * Sets the scalp flow over head [on] to [flow], adding it after the others when new, or restored to [index] when undoing a removal; null
+ * returns the head to the default flow. The head exists.
+ */
+@Serializable
+@SerialName("setScalpFlow")
+data class SetScalpFlow(val on: PartId, val flow: ScalpFlow?, val index: Int? = null) : DocumentCommand {
+    init {
+        require(flow == null || flow.on == on) { "Scalp flow on ${flow?.on?.value} given for ${on.value}" }
+    }
+
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        if (flow != null) document.requirePart(on)
+        val flows = document.character.scalpFlows
+        val at = flows.indexOfFirst { it.on == on }
+        val old = flows.getOrNull(at)
+        val now = when {
+            flow == null -> flows.filterNot { it.on == on }
+            old == null -> (index ?: flows.size).coerceIn(0, flows.size).let { flows.take(it) + flow + flows.drop(it) }
+            else -> flows.map { if (it.on == on) flow else it }
+        }
+        val undo = if (old == null) SetScalpFlow(on, null) else SetScalpFlow(on, old, at)
+        return Applied(document.copy(character = document.character.copy(scalpFlows = now)), undo)
+    }
+}
+
 /** Sets the character's collision shapes to [colliders]; every part they ride exists. */
 @Serializable
 @SerialName("setColliders")

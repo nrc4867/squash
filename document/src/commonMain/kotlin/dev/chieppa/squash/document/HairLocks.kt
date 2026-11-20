@@ -20,6 +20,7 @@ enum class LockGroupKind {
     @SerialName("back") BACK,
     @SerialName("crown") CROWN,
     @SerialName("strays") STRAYS,
+    @SerialName("top") TOP,
 }
 
 /** A lock's cross-section: a flattened ribbon or a rounded clump. */
@@ -147,10 +148,11 @@ data class LockOverride(
  * [taper], with the [section] and [tip] given, [tipPoints] points on a forked tip. It lies along the head from its root and lifts its
  * outer part [rise] degrees off it, sweeps [sweep] sideways, falls toward the ground by [fall], curls [curl] turns, waves [wave] of its
  * width and twists [twist] degrees. A higher [layer] lies over a lower one. With [tie] the roots gather toward one point, a tail's tie, and [band] wraps it in a band. [overrides] set single
- * locks by index. [physics] says how its locks move once a solver drives them.
+ * locks by index. [physics] says how its locks move once a solver drives them. Its locks grow the way the head's [ScalpFlow] says, as
+ * far as [flow], and their kind's own way the rest.
  */
 @Serializable
-@Doc("A group of hair locks on a head: a fringe, a side, the back, the crown or strays, each lock a separate swept part.")
+@Doc("A group of hair locks on a head: a fringe, a side, the back, the crown, strays or the top, each lock a separate swept part.")
 data class LockGroup(
     val id: LockGroupId,
     val kind: LockGroupKind,
@@ -160,11 +162,11 @@ data class LockGroup(
     val mass: PartId? = null,
     @Doc("How many locks.") @Range(min = 1.0, max = 48.0)
     val count: Int = 7,
-    @Doc("How far round the head its roots reach, a share of its kind's own reach.") @Range(min = 0.0, max = 2.0)
+    @Doc("How far round the head its roots reach, a share of its kind's own reach (a fringe's about 96 degrees across the front, a side's about 66, the back's about 116): 1 the kind's own, 0 all at its middle.") @Range(min = 0.0, max = 2.0)
     val spread: Float = 1f,
     @Doc("Degrees its roots turn round the head, positive toward the character's right.") @Range(min = -180.0, max = 180.0)
     val around: Float = 0f,
-    @Doc("How far up the head its roots move, -1 to 1, a share of its kind's own height.") @Range(min = -1.0, max = 1.0)
+    @Doc("How far up the head its roots move, -1 to 1 of about 20 degrees (15 for a crown, strays and the top, whose height moves it forward).") @Range(min = -1.0, max = 1.0)
     val height: Float = 0f,
     @Doc("Each lock's length, in body units.") @Range(min = 0.005, max = 3.0)
     val length: Float = 0.12f,
@@ -182,7 +184,7 @@ data class LockGroup(
     val tipPoints: Int = 2,
     @Doc("Degrees each lock's outer part lifts off the head, where it lies along the head from its root: 0 lies flat all along, 90 stands its end straight out. A tied lock leaves its tie at this angle.") @Range(min = -30.0, max = 90.0)
     val rise: Float = 10f,
-    @Doc("How far the locks sweep sideways as they grow, -1 to 1: positive toward the character's right.") @Range(min = -1.0, max = 1.0)
+    @Doc("How far the locks sweep sideways as they grow, over the way the scalp's flow grows them, -1 to 1: 1 turns a lock 70 degrees round over its length toward the character's right.") @Range(min = -1.0, max = 1.0)
     val sweep: Float = 0f,
     @Doc("How far the locks fall toward the ground along their length, 0 none to 1 hanging.") @Range(min = 0.0, max = 1.0)
     val fall: Float = 0.5f,
@@ -204,6 +206,8 @@ data class LockGroup(
     val color: SlotName? = null,
     @Doc("How its locks move once physics drives them.")
     val physics: LockPhysics = LockPhysics(),
+    @Doc("How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's.") @Range(min = 0.0, max = 1.0)
+    val flow: Float = 1f,
     @Doc("Single locks set by hand, by index.")
     val overrides: List<LockOverride> = emptyList(),
 ) {
@@ -213,7 +217,7 @@ data class LockGroup(
         require(height in -1f..1f) { "A lock group's height is -1 to 1, not $height" }
         require(length in SHORTEST_LOCK..LONGEST_LOCK) { "A lock's length is $SHORTEST_LOCK to $LONGEST_LOCK, not $length" }
         require(width in NARROWEST_LOCK..WIDEST_LOCK && thickness in NARROWEST_LOCK..WIDEST_LOCK) { "A lock's width and thickness are $NARROWEST_LOCK to $WIDEST_LOCK" }
-        require(lengthJitter in 0f..1f && taper in 0f..1f && fall in 0f..1f && tie in 0f..1f) { "A lock group's length jitter, taper, fall and tie are 0 to 1" }
+        require(lengthJitter in 0f..1f && taper in 0f..1f && fall in 0f..1f && tie in 0f..1f && flow in 0f..1f) { "A lock group's length jitter, taper, fall, tie and flow are 0 to 1" }
         require(tipPoints in 2..3) { "A forked tip has 2 or 3 points, not $tipPoints" }
         require(curl in -MOST_LOCK_CURL..MOST_LOCK_CURL) { "A lock curls at most $MOST_LOCK_CURL turns, not $curl" }
         require(layer >= 0) { "A lock group's layer is 0 or more, not $layer" }
