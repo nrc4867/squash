@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.LintContext
 import dev.chieppa.squash.character.model.Param
 import dev.chieppa.squash.geom.ClumpShape
+import dev.chieppa.squash.geom.VolumeShape
 import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
 
@@ -89,10 +90,26 @@ data class TubeClump(
         ).flatMap { (field, param) -> ctx.param("clump.$field", param) }
 }
 
-/** How a clump inks: [strands] lines along each broad face, and its outline and strands fading in over [rootSoft] of it from the root. */
-data class ClumpInk(val strands: Int, val rootSoft: Float, val flowing: Boolean = false) {
+/**
+ * How a clump inks: [strands] lines along each broad face, and its outline and strands fading in over [rootSoft] of it from the root;
+ * for a hair volume, its [flow] in their place.
+ */
+data class ClumpInk(val strands: Int, val rootSoft: Float, val flow: FlowInk? = null) {
     companion object {
         /** The parameters a clump's ink reads, which placing carries so its lines can read them. */
         val PARAMS: Set<String> = setOf("strands", "rootSoft")
+
+        /** The parameters a hair volume's ink reads as well, which placing carries for a hair part. */
+        val FLOW_PARAMS: Set<String> = setOf(
+            "crown", "width", "back", "sides", "fringe", "rise", "flip", "fullness", "parting", "partDepth", "locks", "lockDepth", "lockJag",
+            "lockSkew", "lockRound", "lockSeed", "lockFlare", "sweep", "layers", "layerGap", "lockLines",
+        )
     }
 }
+
+/**
+ * How a hair volume inks: [strands] lines flowing down its [shape] and gathering into its locks, the ragged edges of [layers] layers of
+ * locks [layerGap] of its length apart over its hem, and lines [lockLines] of its length up from each notch between two locks. See
+ * [dev.chieppa.squash.geom.HairFlow].
+ */
+data class FlowInk(val shape: VolumeShape, val strands: Int, val layers: Int, val layerGap: Float, val lockLines: Float)

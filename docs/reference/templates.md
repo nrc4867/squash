@@ -584,6 +584,7 @@ Presets, a part's `preset` (its own `params` override them):
 | `fluff` | `width` 0.42, `thickness` 0.14, `taper` 0.8, `swell` 0.15, `tipRound` 0.8, `points` 3, `notch` 0.12, `wave` 0 |
 | `wavy` | `width` 0.3, `thickness` 0.09, `taper` 0.45, `swell` 0.15, `tipRound` 0.2, `points` 1, `wave` 0.3, `waves` 1.5 |
 | `strand` | `width` 0.12, `thickness` 0.06, `taper` 0.25, `swell` 0.05, `tipRound` 0, `points` 1, `wave` 0 |
+| `fine` | `width` 0.22, `thickness` 0.14, `taper` 0.12, `swell` 0.08, `tipRound` 0, `points` 1, `wave` 0, `flare` 0.6, `rootSoft` 0.35 |
 
 ## hair-tuft 1
 
@@ -685,7 +686,7 @@ Parameters:
 | `fullness` | 2.6 | 1.5 to 6 | How full it stays toward its front and back: 2 rounds it as an ellipse, higher squares it. |
 | `parting` | 0.04 | -0.2 to 0.2 | Where round its top its parting lies: 0 the middle, toward 0.25 its v 0.25 side, negative the other side. |
 | `partDepth` | 0 | 0 to 0.3 | How deep the parting dents its top, a share of its crown. |
-| `hemShade` | 0.12 | 0.01 to 1 | How far up from each ring's lowest point its hem area reaches, a fraction of the length. |
+| `hemShade` | 0.05 | 0.01 to 1 | How far up from the hem its hem area reaches, each way round, so it runs evenly along every lock's end: a fraction of the length. |
 | `partShade` | 0.012 | 0.002 to 0.1 | How wide its parting area is, a share of a turn. |
 | `shineAt` | 0.55 | -0.9 to 0.95 | The height of its band of shine on the sphere through its rings, -1 underneath to 1 at the crown. |
 | `shineWidth` | 0.12 | 0 to 0.8 | How wide its band of shine is, on the same sphere. |
@@ -699,16 +700,19 @@ Parameters:
 | `lockSeed` | 1 | 0 to 99 | Which locks are the shorter ones. |
 | `lockFlare` | 0 | -0.3 to 0.6 | How far each lock's point splays out sideways, a share of the half width. |
 | `sweep` | 0 | -1 to 1 | How far the fringe sweeps aside: longer toward the side v 0.25 faces when positive, toward the other when negative. |
-| `strands` | 10 | 0 to 40 | How many strand lines are inked flowing down over it from its crown. |
+| `strands` | 30 | 0 to 90 | How many strand lines are inked flowing down over it from below its crown, each gathering into its lock's point toward the hem. |
+| `layers` | 0 | 0 to 4 | How many layers of locks lie over its hem, each inked as a ragged edge higher up with its points over the notches under it. |
+| `layerGap` | 0.12 | 0.02 to 0.5 | How far apart its layers' edges lie, a fraction of the length. |
+| `lockLines` | 0 | 0 to 0.5 | How far up from each notch between two locks a line is inked, where one lock lies over the next, a fraction of the length. |
 
 Presets, a part's `preset` (its own `params` override them):
 
 | preset | sets |
 | --- | --- |
-| `short` | `crown` 0.53, `width` 0.47, `back` 0.36, `sides` 0.06, `fringe` 0, `rise` 0.3, `flip` 0, `fullness` 2.6, `locks` 22, `lockDepth` 0.22, `lockJag` 0.6, `lockRound` 0, `lockFlare` 0.12 |
-| `bob` | `crown` 0.56, `width` 0.52, `back` 0.6, `sides` 0.5, `fringe` 0.05, `rise` 0.3, `flip` 0.2, `fullness` 3, `locks` 16, `lockDepth` 0.32, `lockJag` 0.45, `lockRound` 0.1, `lockFlare` 0.06 |
-| `long` | `crown` 0.55, `width` 0.5, `back` 1.6, `sides` 1.3, `fringe` -0.02, `rise` 0.3, `flip` 0.08, `fullness` 3.2, `locks` 16, `lockDepth` 0.35, `lockJag` 0.5, `lockRound` 0.2, `lockFlare` 0.04 |
-| `ponytail` | `crown` 0.5, `width` 0.46, `back` 0.2, `sides` -0.02, `fringe` 0, `rise` 0.32, `flip` 0, `fullness` 2.4, `locks` 0, `lockDepth` 0 |
+| `short` | `crown` 0.53, `width` 0.47, `back` 0.36, `sides` 0.06, `fringe` 0, `rise` 0.3, `flip` 0, `fullness` 2.6, `locks` 22, `lockDepth` 0.22, `lockJag` 0.6, `lockRound` 0, `lockFlare` 0.12, `layers` 1, `layerGap` 0.1, `lockLines` 0.1 |
+| `bob` | `crown` 0.56, `width` 0.52, `back` 0.6, `sides` 0.5, `fringe` 0.05, `rise` 0.3, `flip` 0.2, `fullness` 3, `locks` 16, `lockDepth` 0.32, `lockJag` 0.45, `lockRound` 0.1, `lockFlare` 0.06, `layers` 2, `layerGap` 0.12, `lockLines` 0.14 |
+| `long` | `crown` 0.55, `width` 0.5, `back` 1.6, `sides` 1.3, `fringe` -0.02, `rise` 0.3, `flip` 0.08, `fullness` 3.2, `locks` 16, `lockDepth` 0.35, `lockJag` 0.5, `lockRound` 0.2, `lockFlare` 0.04, `layers` 2, `layerGap` 0.22, `lockLines` 0.2 |
+| `ponytail` | `crown` 0.5, `width` 0.46, `back` 0.2, `sides` -0.02, `fringe` 0, `rise` 0.32, `flip` 0, `fullness` 2.4, `locks` 0, `lockDepth` 0, `layers` 0, `lockLines` 0 |
 
 ## hand 7
 

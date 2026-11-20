@@ -133,10 +133,10 @@ Hair is one mass in the one surface: a volume over the skull whose hem parts int
 
 | helper | one line |
 | --- | --- |
-| `hairVolume` | `const hair = hairVolume({ on: "head", socket: 11, depth: 0.29, height: 0.33, preset: "bob", color: "hair", hem: "hair-dark", shine: "hair-light" })`: `hair.part` and `hair.headSocket`, the head's socket at the back of the skull standing off it by `thickness`; its hem parts into locks (`locks`, `lockDepth`, `lockJag`, `lockFlare`). |
-| `hairClump` | `hairClump({ id: "lock", on: "hair", socket: 3, length: 0.12, preset: "soft", tip: "hair-dark", curve: [[0.5, 0.05], [0.95, 0.15]] })`: one curved, tapering lock blended into the volume at its root; `params` sets `width`, `taper`, `tipRound`, `points`, `twist`, `wave` and the rest. |
+| `hairVolume` | `const hair = hairVolume({ on: "head", socket: 11, depth: 0.29, height: 0.33, preset: "bob", color: "hair", shine: "hair-light" })`: `hair.part` and `hair.headSocket`, the head's socket at the back of the skull standing off it by `thickness`; its hem parts into locks (`locks`, `lockDepth`, `lockJag`, `lockFlare`), inked as layers (`layers`, `layerGap`), lock lines (`lockLines`) and fine strands gathering into the locks (`strands`); `hem` colours an even band along every lock's end, left out for hair coloured to its tips. |
+| `hairClump` | `hairClump({ id: "lock", on: "hair", socket: 3, length: 0.12, preset: "fine", curve: [[0.5, 0.05], [0.95, 0.15]] })`: one curved, tapering lock blended into the volume at its root; `params` sets `width`, `taper`, `tipRound`, `points`, `twist`, `wave` and the rest. |
 | `hairTuft` | `hairTuft({ id: "tuft", on: "head", socket: 10, length: 0.06, preset: "crown" })`: a soft tuft blended into what it grows from. |
-| `fringe` | `fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 5, lengths: [0.2, 0.17, 0.15, 0.12, 0.1], from: 0.14, to: -0.1, sweep: -0.45 })`: `{ sockets, parts }`, clumps over the brow swept to one side. |
+| `fringe` | `fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 5, lengths: [0.2, 0.17, 0.15, 0.12, 0.1], from: 0.14, to: -0.1, sweep: -0.45 })`: `{ sockets, parts }`, clumps over the brow swept to one side, `fine` clumps unless `preset` says otherwise. |
 | `fall` | `fall({ id: "fall", on: "hair", socket: 10, area: { u: [0, 0.78], v: [0.22, 0.78] }, count: 42, length: 0.12, droop: 86, jitter: 0.25 })`: one clump as copies lying down over a part, each its own mesh: for fur and manes rather than hair that merges. |
 | `crown` | `crown({ id: "cowlick", on: "hair", firstSocket: 20, count: 2, length: 0.06, turn: 70, rise: 30 })`: clumps round the crown, a swirl lying flat or, rising, a cowlick. |
 | `HAIR_LENGTHS` | the templates' own lengths at size 1, which turn a length into `size`. |
@@ -144,9 +144,9 @@ Hair is one mass in the one surface: a volume over the skull whose hem parts int
 Put a set's `sockets` on the volume's `sockets` and its `parts` among the recipe's parts:
 
 ```ts
-const hair = hairVolume({ on: "head", socket: 11, depth: 0.29, height: 0.33, preset: "bob", color: "hair", hem: "hair-dark", shine: "hair-light" });
-const front = fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 4, lengths: [0.18, 0.15, 0.13, 0.1], sweep: -0.4, color: "hair", tip: "hair-dark" });
-const lock = hairClump({ id: "lock-1", on: "hair", socket: 20, length: 0.13, preset: "soft", color: "hair", tip: "hair-dark", rest: "down", curve: [[0.5, 0.06], [0.95, 0.16]] });
+const hair = hairVolume({ on: "head", socket: 11, depth: 0.29, height: 0.33, preset: "bob", color: "hair", shine: "hair-light", params: { strands: 50 } });
+const front = fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 5, lengths: [0.18, 0.15, 0.13, 0.11, 0.09], sweep: -0.4, color: "hair", params: { width: 0.3, thickness: 0.2 } });
+const lock = hairClump({ id: "lock-1", on: "hair", socket: 20, length: 0.13, preset: "fine", color: "hair", rest: "down", curve: [[0.5, 0.06], [0.95, 0.16]] });
 head.sockets = [hair.headSocket];
 const parts = [head, { ...hair.part, sockets: [...front.sockets, socket(20, 0.4, 0.3, { sink: 0.5 })] }, ...front.parts, lock];
 ```

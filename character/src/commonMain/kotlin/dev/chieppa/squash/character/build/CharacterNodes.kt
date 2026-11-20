@@ -10,6 +10,7 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.isWorn
@@ -61,7 +62,7 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 fun assemblyParts(character: Character): List<AssemblyPart> {
     val hidden = hiddenUnderGarments(character)
     return character.parts.filter { it.id !in hidden }.map { part ->
-        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) || JoinParams.isJoin(it) || it in ClumpInk.PARAMS }
+        val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) || JoinParams.isJoin(it) || it in ClumpInk.PARAMS || (part.role == Role.HAIR && it in ClumpInk.FLOW_PARAMS) }
         val worn = character.wornPart(part)
         val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
         AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets, part.garment, part.blend, character.resolved(part).surface.shades)

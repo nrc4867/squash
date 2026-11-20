@@ -12,7 +12,7 @@ export const HAIR_LENGTHS = { volume: 0.3, clump: 0.2, tuft: 0.12 } as const;
 /** The hair volume's presets (`templates.md`, hair-volume). */
 export type VolumePreset = "short" | "bob" | "long" | "ponytail";
 /** The hair clump's presets (`templates.md`, hair-clump). */
-export type ClumpPreset = "lock" | "spike" | "soft" | "fluff" | "wavy" | "strand";
+export type ClumpPreset = "lock" | "spike" | "soft" | "fluff" | "wavy" | "strand" | "fine";
 /** The hair tuft's presets (`templates.md`, hair-tuft). */
 export type TuftPreset = "crown" | "cheek" | "point";
 
@@ -33,7 +33,10 @@ export interface HairVolumeSpec extends Placed {
   /** Where up the head the socket sits, its u: 0.5 the middle of a `head-round`. */
   at?: number;
   preset?: VolumePreset;
-  /** Palette slots for its areas: the hem along its lowest edge, its parting and its band of shine, which the clumps over it show too. */
+  /**
+   * Palette slots for its areas: the hem, a narrow band along every lock's end (left out, the hair's colour runs to the tips), its parting
+   * and its band of shine, which the clumps over it show too.
+   */
   hem?: string;
   parting?: string;
   shine?: string;
@@ -152,10 +155,11 @@ export interface FringeSpec extends SetSpec {
 
 /**
  * A fringe: `count` clumps over the front of a volume from v `from` to `to`, hanging down over the brow, bowed out over it and swept
- * sideways together by `sweep`, the longest swept furthest: a side-swept fringe with a long lock across it.
+ * sideways together by `sweep`, the longest swept furthest: a side-swept fringe with a long lock across it. Its clumps take the `fine`
+ * preset unless `preset` says otherwise: narrow, tapering to points that part at their tips while their roots blend into the volume.
  */
 export function fringe(spec: FringeSpec): ClumpSet {
-  const { id, firstSocket, count, lengths, from = -0.08, to = 0.08, u = 0.92, sweep = 0, bow = 0.12, ...clump } = spec;
+  const { id, firstSocket, count, lengths, from = -0.08, to = 0.08, u = 0.92, sweep = 0, bow = 0.12, preset = "fine", ...clump } = spec;
   const sockets: RecipeSocket[] = [];
   const parts: RecipePart[] = [];
   for (let i = 0; i < count; i++) {
@@ -166,6 +170,7 @@ export function fringe(spec: FringeSpec): ClumpSet {
     parts.push(
       hairClump({
         ...clump,
+        preset,
         id: `${id}-${i + 1}`,
         socket: firstSocket + i,
         length,

@@ -103,9 +103,9 @@ private fun areaShapes(holder: PartId, work: ResolvedSurfaceWork, input: PartCol
 /** The points round an oval area's border. */
 private const val OVAL_POINTS = 24
 
-/** [area]'s shapes on its patch: its loops, else its rectangle or the oval inside it. */
+/** [area]'s shapes on its patch: its level, else its loops, else its rectangle or the oval inside it. */
 private fun areaShapes(area: AreaSpec): List<ColorShape> =
-    area.loops?.map { loop -> ColorShape.Border(loop.map { (u, v) -> SurfaceUv(u, v) }) } ?: listOf(areaShape(area))
+    area.level?.let { listOf(ColorShape.Level(it)) } ?: area.loops?.map { loop -> ColorShape.Border(loop.map { (u, v) -> SurfaceUv(u, v) }) } ?: listOf(areaShape(area))
 
 /** [area]'s shape on its patch: its rectangle, or the oval inside it. */
 private fun areaShape(area: AreaSpec): ColorShape {

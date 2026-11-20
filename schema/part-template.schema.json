@@ -3019,7 +3019,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3031,7 +3031,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3043,7 +3043,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3055,7 +3055,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3067,7 +3067,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3079,7 +3079,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3091,7 +3091,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3103,7 +3103,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3115,7 +3115,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3127,7 +3127,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3139,7 +3139,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3151,7 +3151,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3163,7 +3163,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3175,7 +3175,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3187,7 +3187,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3199,7 +3199,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         }
@@ -3321,7 +3321,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3333,7 +3333,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3345,7 +3345,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3357,7 +3357,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3369,7 +3369,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3381,7 +3381,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3393,7 +3393,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3405,7 +3405,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3417,7 +3417,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3429,7 +3429,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3441,7 +3441,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3453,7 +3453,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3465,7 +3465,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3477,7 +3477,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3489,7 +3489,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3501,7 +3501,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3513,7 +3513,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3525,7 +3525,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3537,7 +3537,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3549,7 +3549,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3561,7 +3561,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3573,7 +3573,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3585,7 +3585,7 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
@@ -3597,19 +3597,55 @@
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         },
         "strands": {
-          "description": "How many strand lines are inked flowing down over it from its crown.",
+          "description": "How many strand lines are inked flowing down over it from its crown and gathering into its locks.",
           "oneOf": [
             {
               "type": "number"
             },
             {
               "type": "string",
-              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "layers": {
+          "description": "How many layers of locks lie over its hem, each a ragged edge inked higher up, its points over the notches under it.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "layerGap": {
+          "description": "How far apart its layers' edges lie, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "lockLines": {
+          "description": "How far up from each notch between two locks a line is inked, where one lock lies over the next, a fraction of the length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
             }
           ]
         }

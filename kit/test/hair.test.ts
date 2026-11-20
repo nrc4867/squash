@@ -22,7 +22,7 @@ test("a fringe, a fall and a crown each place their clumps on their own sockets"
   const front = fringe({ id: "fringe", on: "hair", firstSocket: 1, count: 3, lengths: [0.2, 0.15], sweep: -0.4 });
   assert.deepEqual(front.sockets.map((s) => s.n), [1, 2, 3]);
   assert.deepEqual(front.parts.map((p) => p.size), [1, 0.75, 0.75]);
-  assert.ok(front.parts.every((p) => p.rest === "down" && p.curve?.[1]?.[2] === -0.4));
+  assert.ok(front.parts.every((p) => p.rest === "down" && p.curve?.[1]?.[2] === -0.4 && p.preset === "fine"));
   const back = fall({ id: "fall", on: "hair", socket: 9, area: { u: [0, 0.7], v: [0.2, 0.8] }, count: 30, length: 0.1 });
   assert.equal(back.parts.length, 1);
   assert.equal(back.sockets[0].spread?.droop, 70);

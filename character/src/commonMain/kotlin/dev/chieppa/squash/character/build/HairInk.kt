@@ -1,14 +1,18 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.block.ClumpInk
+import dev.chieppa.squash.character.block.FlowInk
 import dev.chieppa.squash.character.surface.firstRunIndex
 import dev.chieppa.squash.document.Anchor
-import dev.chieppa.squash.geom.Patch
-import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.geom.HairFlow
+import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.layerEdges
+import dev.chieppa.squash.geom.lockLines
+import dev.chieppa.squash.geom.strands
+import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -58,8 +62,8 @@ fun rootFade(patch: Patch, soft: Float): FloatArray {
  */
 fun strandRuns(placed: PlacedPart, ink: ClumpInk): List<WeightedRun> {
     val id = placed.id ?: return emptyList()
+    ink.flow?.let { return flowingStrands(placed, id, it) }
     if (ink.strands <= 0) return emptyList()
-    if (ink.flowing) return flowingStrands(placed, id, ink.strands)
     val copies = placed.copies
     val surface = copies?.rule?.surface ?: placed.surface
     val patches = surface.patches
@@ -94,60 +98,44 @@ private fun strandPlaces(patch: Patch, ink: ClumpInk): List<StrandLine> {
     return lines
 }
 
-/** How far down from the crown, in radians on the volume's sphere, flowing strands start: the first, and how much later the others may. */
-private const val FLOW_START = 0.35f
-private const val FLOW_STAGGER = 0.55f
+/** How heavy a volume's strand lines, its layers' edges and the lines between its locks are, as a share of the line weight. */
+private const val FLOW_STRAND_WEIGHT = 0.6f
+private const val FLOW_EDGE_WEIGHT = 0.9f
+private const val FLOW_LOCK_WEIGHT = 0.85f
 
-/** How far down from the crown, in radians, flowing strands end at most, how much sooner the others may, and the least run they keep. */
-private const val FLOW_END = 2.5f
-private const val FLOW_SOONER = 0.6f
-private const val FLOW_LEAST = 0.4f
-
-/** How far a flowing strand sways from its way round as it falls, in radians, and how often. */
-private const val FLOW_SWAY = 0.18f
-private const val FLOW_WAVES = 1.7f
-
-/** How many places a flowing strand is sampled at, before it stops at the hem. */
-private const val FLOW_PLACES = 40
-
-/** How far off the surface a flowing strand stands, as a share of its ring's reach from its middle. */
-private const val FLOW_LIFT = 0.012f
+/** How far off the surface a flowing line stands, as a share of the volume's reach from its middle. */
+private const val FLOW_LIFT = 0.01f
 
 /**
- * [count] strand lines flowing down over a hair volume, read on the sphere through its rings (u 0 the back to 1 the front, v round
- * each ring from the top): each falls from near the crown along its own way round, the ways spread evenly and staggered, and stops at
- * the hem, where the surface turns back up, so it runs down into the locks the hem parts into. See HLD: parts, Hair.
+ * A hair volume's lines from its [flow] (see [HairFlow]): strand lines falling from below the crown and gathering into their locks, thin
+ * at both ends; the ragged edges of its layers of locks, thinning toward each end; and lines up from each notch of its hem, heaviest at
+ * the notch. Each is laid on the volume's own surface where it lies on the volume's (u, v). See HLD: parts, Hair.
  */
-private fun flowingStrands(placed: PlacedPart, id: PartId, count: Int): List<WeightedRun> {
+private fun flowingStrands(placed: PlacedPart, id: PartId, flow: FlowInk): List<WeightedRun> {
     val patch = placed.surface.patches.firstOrNull { it.nu > 1 && it.nv > 2 } ?: return emptyList()
-    val shownUp = placed.surface::shown
-    return (0 until count).mapNotNull { k ->
-        val wayAt = 2f * PI.toFloat() * (k + 0.5f + 0.3f * (((k * 7) % 5) / 4f - 0.5f)) / count
-        val start = FLOW_START + FLOW_STAGGER * (((k * 5) % 7) / 6f)
-        val end = FLOW_END - FLOW_SOONER * (((k * 3) % 5) / 4f)
-        val places = ArrayList<Triple<Anchor, Vec3, Vec3>>()
-        var lowest = Float.MAX_VALUE
-        for (i in 0 until FLOW_PLACES) {
-            val down = start + (end - start) * i / (FLOW_PLACES - 1)
-            val way = wayAt + FLOW_SWAY * sin(FLOW_WAVES * down + k)
-            val x = sin(down) * cos(way)
-            val z = sin(down) * sin(way)
-            val u = ((x + 1f) / 2f).coerceIn(0f, 1f)
-            val v = (atan2(z, cos(down)) / (2f * PI.toFloat())).let { it - floor(it) }
-            val (anchor, point, normal) = sampleAt(patch, u, v, id)
-            val height = shownUp(point).y
-            if (height > lowest + 1e-4f && i > 2) break
-            lowest = minOf(lowest, height)
-            places += Triple(anchor, placed.origin + shownUp(point), shownUp(normal).normalized())
+    val lines = HairFlow.of(flow.shape)
+    val shown = placed.surface::shown
+    val lift = FLOW_LIFT * patchReach(patch)
+    fun laid(run: List<Vec2>, weight: (Float) -> Float): WeightedRun {
+        val n = run.size
+        val places = run.map { (t, angle) ->
+            val v = (angle / (2f * PI.toFloat())).let { it - floor(it) }
+            val (anchor, point, normal) = sampleAt(patch, t, v, id, lift)
+            ResolvedPoint(anchor, placed.origin + shown(point), shown(normal).normalized())
         }
-        if (places.size < 3 || (end - start) * places.size / FLOW_PLACES < FLOW_LEAST) return@mapNotNull null
-        val n = places.size
-        WeightedRun(places.map { (a, p, nrm) -> ResolvedPoint(a, p, nrm) }, List(n) { i -> sqrt(sin(PI.toFloat() * i / (n - 1)).coerceAtLeast(0f)) })
+        return WeightedRun(places, List(n) { i -> weight(i.toFloat() / (n - 1)) })
     }
+    fun even(s: Float) = sqrt(sin(PI.toFloat() * s).coerceAtLeast(0f))
+    return lines.strands(flow.strands).map { laid(it) { s -> FLOW_STRAND_WEIGHT * even(s) } } +
+        lines.layerEdges(flow.layers, flow.layerGap).map { laid(it) { s -> FLOW_EDGE_WEIGHT * even(s) } } +
+        lines.lockLines(flow.lockLines).map { laid(it) { s -> FLOW_LOCK_WEIGHT * sqrt(s) * even(0.5f + 0.5f * s) } }
 }
 
-/** The point of [patch] at ([u], [v]), between its grid points, lifted off the surface along its normal, with its anchor and normal. */
-private fun sampleAt(patch: Patch, u: Float, v: Float, part: PartId): Triple<Anchor, Vec3, Vec3> {
+/**
+ * The point of [patch] at ([u], [v]), between its grid points, lifted [lift] off the surface along the surface's normal there, with its
+ * anchor and normal.
+ */
+private fun sampleAt(patch: Patch, u: Float, v: Float, part: PartId, lift: Float): Triple<Anchor, Vec3, Vec3> {
     val us = patch.ringUs
     val ring = us.indexOfFirst { it >= u }.let { if (it <= 0) 1 else it }.coerceAtMost(patch.nu - 1)
     val t = ((u - us[ring - 1]) / (us[ring] - us[ring - 1]).coerceAtLeast(1e-6f)).coerceIn(0f, 1f)
@@ -157,10 +145,16 @@ private fun sampleAt(patch: Patch, u: Float, v: Float, part: PartId): Triple<Anc
     fun at(r: Int, c: Int) = patch.point(patch.index(r, c.mod(patch.nv)))
     fun across(r: Int) = at(r, c0) + (at(r, c0 + 1) - at(r, c0)) * s
     val point = across(ring - 1) + (across(ring) - across(ring - 1)) * t
-    val centre = ringCentre(patch, ring - 1) + (ringCentre(patch, ring) - ringCentre(patch, ring - 1)) * t
-    val out = point - centre
-    val normal = if (out.length > 1e-7f) out.normalized() else Vec3(0f, 1f, 0f)
-    return Triple(Anchor(part, patch.name, u, v), point + normal * (out.length * FLOW_LIFT), normal)
+    val along = across(ring) - across(ring - 1)
+    val round = (at(ring - 1, c0 + 1) - at(ring - 1, c0)) + (at(ring, c0 + 1) - at(ring, c0))
+    val facing = round cross along
+    val out = point - ringCentre(patch, ring - 1)
+    val normal = when {
+        facing.length > 1e-9f -> facing.normalized().let { if (it dot out < 0f) it * -1f else it }
+        out.length > 1e-7f -> out.normalized()
+        else -> Vec3(0f, 1f, 0f)
+    }
+    return Triple(Anchor(part, patch.name, u, v), point + normal * lift, normal)
 }
 
 private class StrandLine(val places: List<Triple<Anchor, Vec3, Vec3>>, val weights: List<Float>) : List<Triple<Anchor, Vec3, Vec3>> by places
@@ -177,6 +171,15 @@ private fun placeAt(patch: Patch, u: Float, column: Int): Triple<Anchor, Vec3, V
     val normal = if (out.length > 1e-7f) out.normalized() else Vec3(0f, 1f, 0f)
     val lifted = point + normal * (out.length * STRAND_LIFT)
     return Triple(Anchor(dev.chieppa.squash.document.PartId(""), patch.name, u, column.toFloat() / patch.segments), lifted, normal)
+}
+
+/** How far [patch]'s furthest point lies from its middle. */
+private fun patchReach(patch: Patch): Float {
+    val count = patch.nu * patch.nv
+    var sum = Vec3.ZERO
+    for (i in 0 until count) sum += patch.point(i)
+    val middle = sum * (1f / count)
+    return (0 until count).maxOf { (patch.point(it) - middle).length }
 }
 
 private fun ringCentre(patch: Patch, ring: Int): Vec3 {

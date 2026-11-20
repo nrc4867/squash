@@ -22,7 +22,7 @@
     "fullness":   { "doc": "How full it stays toward its front and back: 2 rounds it as an ellipse, higher squares it.", "default": 2.6, "min": 1.5, "max": 6.0 },
     "parting":    { "doc": "Where round its top its parting lies: 0 the middle, toward 0.25 its v 0.25 side, negative the other side.", "default": 0.04, "min": -0.2, "max": 0.2 },
     "partDepth":  { "doc": "How deep the parting dents its top, a share of its crown.", "default": 0.0, "min": 0.0, "max": 0.3 },
-    "hemShade":   { "doc": "How far up from each ring's lowest point its hem area reaches, a fraction of the length.", "default": 0.12, "min": 0.01, "max": 1.0 },
+    "hemShade":   { "doc": "How far up from the hem its hem area reaches, each way round, so it runs evenly along every lock's end: a fraction of the length.", "default": 0.05, "min": 0.01, "max": 1.0 },
     "partShade":  { "doc": "How wide its parting area is, a share of a turn.", "default": 0.012, "min": 0.002, "max": 0.1 },
     "shineAt":    { "doc": "The height of its band of shine on the sphere through its rings, -1 underneath to 1 at the crown.", "default": 0.55, "min": -0.9, "max": 0.95 },
     "shineWidth": { "doc": "How wide its band of shine is, on the same sphere.", "default": 0.12, "min": 0.0, "max": 0.8 },
@@ -36,13 +36,16 @@
     "lockSeed":   { "doc": "Which locks are the shorter ones.", "default": 1, "min": 0, "max": 99, "step": 1 },
     "lockFlare":  { "doc": "How far each lock's point splays out sideways, a share of the half width.", "default": 0.0, "min": -0.3, "max": 0.6 },
     "sweep":      { "doc": "How far the fringe sweeps aside: longer toward the side v 0.25 faces when positive, toward the other when negative.", "default": 0.0, "min": -1.0, "max": 1.0 },
-    "strands":    { "doc": "How many strand lines are inked flowing down over it from its crown.", "default": 10, "min": 0, "max": 40, "step": 1 }
+    "strands":    { "doc": "How many strand lines are inked flowing down over it from below its crown, each gathering into its lock's point toward the hem.", "default": 30, "min": 0, "max": 90, "step": 1 },
+    "layers":     { "doc": "How many layers of locks lie over its hem, each inked as a ragged edge higher up with its points over the notches under it.", "default": 0, "min": 0, "max": 4, "step": 1 },
+    "layerGap":   { "doc": "How far apart its layers' edges lie, a fraction of the length.", "default": 0.12, "min": 0.02, "max": 0.5 },
+    "lockLines":  { "doc": "How far up from each notch between two locks a line is inked, where one lock lies over the next, a fraction of the length.", "default": 0.0, "min": 0.0, "max": 0.5 }
   },
   "presets": {
-    "short":    { "crown": 0.53, "width": 0.47, "back": 0.36, "sides": 0.06, "fringe": 0.0, "rise": 0.3, "flip": 0.0, "fullness": 2.6, "locks": 22, "lockDepth": 0.22, "lockJag": 0.6, "lockRound": 0.0, "lockFlare": 0.12 },
-    "bob":      { "crown": 0.56, "width": 0.52, "back": 0.6, "sides": 0.5, "fringe": 0.05, "rise": 0.3, "flip": 0.2, "fullness": 3.0, "locks": 16, "lockDepth": 0.32, "lockJag": 0.45, "lockRound": 0.1, "lockFlare": 0.06 },
-    "long":     { "crown": 0.55, "width": 0.5, "back": 1.6, "sides": 1.3, "fringe": -0.02, "rise": 0.3, "flip": 0.08, "fullness": 3.2, "locks": 16, "lockDepth": 0.35, "lockJag": 0.5, "lockRound": 0.2, "lockFlare": 0.04 },
-    "ponytail": { "crown": 0.5, "width": 0.46, "back": 0.2, "sides": -0.02, "fringe": 0.0, "rise": 0.32, "flip": 0.0, "fullness": 2.4, "locks": 0, "lockDepth": 0.0 }
+    "short":    { "crown": 0.53, "width": 0.47, "back": 0.36, "sides": 0.06, "fringe": 0.0, "rise": 0.3, "flip": 0.0, "fullness": 2.6, "locks": 22, "lockDepth": 0.22, "lockJag": 0.6, "lockRound": 0.0, "lockFlare": 0.12, "layers": 1, "layerGap": 0.1, "lockLines": 0.1 },
+    "bob":      { "crown": 0.56, "width": 0.52, "back": 0.6, "sides": 0.5, "fringe": 0.05, "rise": 0.3, "flip": 0.2, "fullness": 3.0, "locks": 16, "lockDepth": 0.32, "lockJag": 0.45, "lockRound": 0.1, "lockFlare": 0.06, "layers": 2, "layerGap": 0.12, "lockLines": 0.14 },
+    "long":     { "crown": 0.55, "width": 0.5, "back": 1.6, "sides": 1.3, "fringe": -0.02, "rise": 0.3, "flip": 0.08, "fullness": 3.2, "locks": 16, "lockDepth": 0.35, "lockJag": 0.5, "lockRound": 0.2, "lockFlare": 0.04, "layers": 2, "layerGap": 0.22, "lockLines": 0.2 },
+    "ponytail": { "crown": 0.5, "width": 0.46, "back": 0.2, "sides": -0.02, "fringe": 0.0, "rise": 0.32, "flip": 0.0, "fullness": 2.4, "locks": 0, "lockDepth": 0.0, "layers": 0, "lockLines": 0.0 }
   },
   "join": { "blend": 0.1, "ink": false },
   "blocks": [
@@ -50,7 +53,7 @@
       "flip": "$flip", "fullness": "$fullness", "parting": "$parting", "partDepth": "$partDepth", "hemShade": "$hemShade", "partShade": "$partShade",
       "shineAt": "$shineAt", "shineWidth": "$shineWidth", "shineJag": "$shineJag", "shineTeeth": "$shineTeeth", "locks": "$locks",
       "lockDepth": "$lockDepth", "lockJag": "$lockJag", "lockSkew": "$lockSkew", "lockRound": "$lockRound", "lockSeed": "$lockSeed", "lockFlare": "$lockFlare", "sweep": "$sweep",
-      "strands": "$strands" },
+      "strands": "$strands", "layers": "$layers", "layerGap": "$layerGap", "lockLines": "$lockLines" },
     { "kind": "socket", "name": "crown", "u": 0.45, "v": 0.0 },
     { "kind": "socket", "name": "fringe", "u": 0.9, "v": 0.0, "sink": 0.6 },
     { "kind": "socket", "name": "tail", "u": 0.1, "v": 0.08 }

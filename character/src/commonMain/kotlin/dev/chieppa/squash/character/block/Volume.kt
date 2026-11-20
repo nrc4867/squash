@@ -13,6 +13,7 @@ import dev.chieppa.squash.character.model.PatchName
 import dev.chieppa.squash.character.model.Span
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.geom.EndClosure
+import dev.chieppa.squash.geom.HemLevel
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.ShineBand
 import dev.chieppa.squash.geom.Vec2
@@ -31,6 +32,9 @@ const val PARTING_AREA = "parting"
 
 /** The area a volume's band of shine fills, on it and on the hair laid over it. */
 const val SHINE_AREA = "shine"
+
+/** The most layers of locks a volume's hem shows. */
+private const val MAX_LAYERS = 4
 
 /** The share of the volume's length, from its front, its parting area runs back over. */
 private const val PARTING_AREA_REACH = 0.55f
@@ -95,8 +99,14 @@ data class Volume(
     val lockFlare: Param = Param.of(0f),
     @Doc("How far the fringe sweeps aside: longer toward the side v 0.25 faces when positive, toward the other when negative.")
     val sweep: Param = Param.of(0f),
-    @Doc("How many strand lines are inked flowing down over it from its crown.")
+    @Doc("How many strand lines are inked flowing down over it from its crown and gathering into its locks.")
     val strands: Param = Param.of(0f),
+    @Doc("How many layers of locks lie over its hem, each a ragged edge inked higher up, its points over the notches under it.")
+    val layers: Param = Param.of(0f),
+    @Doc("How far apart its layers' edges lie, a fraction of the length.")
+    val layerGap: Param = Param.of(0.12f),
+    @Doc("How far up from each notch between two locks a line is inked, where one lock lies over the next, a fraction of the length.")
+    val lockLines: Param = Param.of(0f),
 ) : Block {
     override fun run() = u
 
@@ -125,8 +135,16 @@ data class Volume(
         sweep = sweep.resolve(values),
     )
 
-    override fun clumpInk(values: Map<String, Float>): ClumpInk? =
-        strands.resolve(values).roundToInt().takeIf { it > 0 }?.let { ClumpInk(it, 0f, flowing = true) }
+    override fun clumpInk(values: Map<String, Float>): ClumpInk {
+        val flow = FlowInk(
+            shape = shape(values, 1f),
+            strands = strands.resolve(values).roundToInt().coerceAtLeast(0),
+            layers = layers.resolve(values).roundToInt().coerceIn(0, MAX_LAYERS),
+            layerGap = layerGap.resolve(values).coerceAtLeast(0f),
+            lockLines = lockLines.resolve(values).coerceAtLeast(0f),
+        )
+        return ClumpInk(flow.strands, 0f, flow)
+    }
 
     private fun band(values: Map<String, Float>) = ShineBand(
         shineAt.resolve(values),
@@ -178,7 +196,7 @@ data class Volume(
         val part = partShade.resolve(values).coerceIn(0.002f, 0.2f)
         val loops = stretched(band(values).loops())
         return listOf(
-            AreaSpec(HEM_AREA, Span(u.start, u.end), Span(0.25f, 0.75f), AreaTag.FILL, patch, loops = stretched(shape(values, 1f).hemLoops(hem))),
+            AreaSpec(HEM_AREA, Span(u.start, u.end), Span(0.25f, 0.75f), AreaTag.FILL, patch, level = HemLevel(shape(values, 1f), hem)),
             AreaSpec(PARTING_AREA, Span(u.end - (u.end - u.start) * PARTING_AREA_REACH, u.end), Span(wrap(partV - part), wrap(partV + part)), AreaTag.FILL, patch),
             AreaSpec(SHINE_AREA, Span(u.start, u.end), Span(0f, 1f), AreaTag.FILL, patch, loops = loops),
         )
@@ -197,6 +215,7 @@ data class Volume(
             "parting" to parting, "partDepth" to partDepth, "hemShade" to hemShade, "partShade" to partShade, "shineAt" to shineAt,
             "shineWidth" to shineWidth, "shineJag" to shineJag, "shineTeeth" to shineTeeth, "locks" to locks, "lockDepth" to lockDepth,
             "lockJag" to lockJag, "lockSkew" to lockSkew, "lockRound" to lockRound, "lockSeed" to lockSeed, "lockFlare" to lockFlare, "sweep" to sweep, "strands" to strands,
+            "layers" to layers, "layerGap" to layerGap, "lockLines" to lockLines,
         ).flatMap { (field, param) -> ctx.param(field, param) }
 }
 

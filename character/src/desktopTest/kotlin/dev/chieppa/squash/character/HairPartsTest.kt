@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.block.ClumpInk
 import dev.chieppa.squash.character.block.HEM_AREA
 import dev.chieppa.squash.character.block.PARTING_AREA
 import dev.chieppa.squash.character.block.SHINE_AREA
@@ -13,10 +14,15 @@ import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.document.TemplateId
+import dev.chieppa.squash.geom.HairFlow
+import dev.chieppa.squash.geom.HemLevel
 import dev.chieppa.squash.geom.Vec3
+import kotlin.math.PI
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The hair templates: a volume with its hem, parting and shine, clumps with their tips, tufts, presets and the copies' droop. See HLD: parts, Hair. */
@@ -43,12 +49,16 @@ class HairPartsTest {
     }
 
     @Test
-    fun `a volume inks strands flowing over it and a clump along its top`() {
+    fun `a volume inks strands flowing over it, its layers' edges and lock lines, and a clump along its top`() {
         val volume = latest("hair-volume")
-        val flowing = assertNotNull(volume.blocks.firstNotNullOfOrNull { it.clumpInk(volume.defaults) })
-        assertTrue(flowing.flowing && flowing.strands > 0)
+        val flow = assertNotNull(volume.blocks.firstNotNullOfOrNull { it.clumpInk(volume.defaults) }?.flow)
+        assertTrue(flow.strands > 0)
+        val bob = assertNotNull(volume.blocks.firstNotNullOfOrNull { it.clumpInk(volume.defaults + volume.presets.getValue("bob")) }?.flow)
+        assertEquals(2, bob.layers)
+        assertTrue(bob.lockLines > 0f && bob.shape.locks > 0)
+        assertTrue(ClumpInk.FLOW_PARAMS.containsAll(listOf("layers", "layerGap", "lockLines", "locks", "lockDepth")))
         val clump = latest("hair-clump")
-        assertEquals(false, assertNotNull(clump.blocks.firstNotNullOfOrNull { it.clumpInk(clump.defaults) }).flowing)
+        assertNull(assertNotNull(clump.blocks.firstNotNullOfOrNull { it.clumpInk(clump.defaults) }).flow)
     }
 
     @Test
@@ -79,7 +89,12 @@ class HairPartsTest {
         val areas = PartBuilder.areas(volume, emptyMap()).associateBy { it.name }
         assertEquals(setOf(HEM_AREA, PARTING_AREA, SHINE_AREA), areas.keys)
         assertEquals(2, areas.getValue(SHINE_AREA).loops?.size)
-        assertEquals(2, areas.getValue(HEM_AREA).loops?.size)
+        val hem = assertIs<HemLevel>(areas.getValue(HEM_AREA).level)
+        val flow = HairFlow.of(hem.shape)
+        val lowest = (1 until 40).flatMap { r -> (0 until 64).map { s -> r / 40f to s * 2f * PI.toFloat() / 64 } }
+            .minBy { (t, a) -> hem.shape.heightAt(t, a) - flow.hemAt(hem.shape.azimuthAt(t, a)) }
+        assertTrue(hem.at(lowest.first, lowest.second / (2f * PI.toFloat()), 1f, 1f) > 0f)
+        assertTrue(hem.at(0.5f, 0f, 1f, 1f) < 0f, "the crown is not hem")
         assertNotNull(volume.blocks.firstNotNullOfOrNull { it.hairShine(volume.defaults, volume.axis.length) })
     }
 

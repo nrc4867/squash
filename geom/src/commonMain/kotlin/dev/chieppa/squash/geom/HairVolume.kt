@@ -45,10 +45,6 @@ private const val SWEEP_REACH = 0.25f
 private const val CURTAIN_FROM = 0.55f
 private const val CURTAIN_TO = 0.85f
 
-/** How many rings and steps round each the hem is found over. */
-private const val HEM_ROWS = 48
-private const val HEM_STEPS = 64
-
 /** How many places each edge of a shine band is drawn through. */
 private const val SHINE_PLACES = 48
 
@@ -129,27 +125,52 @@ data class VolumeShape(
      * The section of the ring at [t], with [segments] control points, in body units about the axis: an ellipse over the top, and under it
      * the sides' hang falling to the middle's, so a short middle leaves two curtains either side.
      */
-    fun sectionAt(t: Float, segments: Int): ClosedSpline {
-        val partAngle = parting * TWO_PI
-        val reach = ((t - (1f - PARTING_REACH)) / PARTING_REACH).coerceIn(0f, 1f)
-        val top = topOver(t)
-        val half = halfWidthAt(t)
-        return ClosedSpline(
-            List(segments) { k ->
-                val angle = k * TWO_PI / segments
-                val up = cos(angle)
-                if (up >= 0f) {
-                    val off = wrappedAngle(angle - partAngle)
-                    val dent = partDepth * crown * length * reach * closing(t) * exp(-(off / PARTING_WIDTH) * (off / PARTING_WIDTH))
-                    Vec2(sin(angle) * half, up * top - dent)
-                } else {
-                    val under = up * up
-                    val splay = 1f + flip * under + lockFlare * lockPoint(t, angle)
-                    Vec2(sin(angle) * half * splay, up * hangAt(t, angle))
-                }
-            },
-            Vec2(0f, 0f),
-        )
+    fun sectionAt(t: Float, segments: Int): ClosedSpline =
+        ClosedSpline(List(segments) { k -> sectionPoint(t, k * TWO_PI / segments) }, Vec2(0f, 0f))
+
+    /** The place on the ring at [t] at [angle] round it from its top, about the risen axis: x toward the side v 0.25 faces, y up. */
+    fun sectionPoint(t: Float, angle: Float): Vec2 {
+        val up = cos(angle)
+        if (up >= 0f) {
+            val off = wrappedAngle(angle - parting * TWO_PI)
+            val reach = ((t - (1f - PARTING_REACH)) / PARTING_REACH).coerceIn(0f, 1f)
+            val dent = partDepth * crown * length * reach * closing(t) * exp(-(off / PARTING_WIDTH) * (off / PARTING_WIDTH))
+            return Vec2(sin(angle) * halfWidthAt(t), up * topOver(t) - dent)
+        }
+        val splay = 1f + flip * up * up + lockFlare * lockPoint(t, angle)
+        return Vec2(sin(angle) * halfWidthAt(t) * splay, up * hangAt(t, angle))
+    }
+
+    /** How high the place at [t] and [angle] lies above the axis before it rises, in body units. */
+    fun heightAt(t: Float, angle: Float): Float = riseAt(t) + sectionPoint(t, angle).y
+
+    /** The place at [t] and [angle] in the volume's own space: x along it from its back, y up from the axis before it rises, z toward v 0.25. */
+    fun pointAt(t: Float, angle: Float): Vec3 {
+        val p = sectionPoint(t, angle)
+        return Vec3(t * length, riseAt(t) + p.y, p.x)
+    }
+
+    /**
+     * Which way round the head the place at [t] and [angle] lies, in radians from -pi to pi: the way its locks are laid out, the same
+     * for a place on the top and the place under it, so hair flowing down keeps it.
+     */
+    fun azimuthAt(t: Float, angle: Float): Float = lockTurn(t, sin(angle))
+
+    /** Where round its lock [azimuth] lies, in locks from the first: its whole part the lock, and a lock's point at that plus [lockCentre]. */
+    fun lockTurnOf(azimuth: Float): Float = (azimuth / TWO_PI + 0.5f) * locks
+
+    /** Where across each lock its point lies, a share of the lock from the notch before it. */
+    val lockCentre: Float get() = 0.5f + 0.4f * lockSkew.coerceIn(-1f, 1f)
+
+    /** The azimuth at [turn] locks round, as [lockTurnOf] counts them. */
+    fun azimuthOfTurn(turn: Float): Float = (turn / locks - 0.5f) * TWO_PI
+
+    /** How much shorter lock [k] is, 0 to 1, the same for the same [seed]. */
+    fun lockShortness(k: Int, seed: Int = lockSeed): Float {
+        var h = (k + 1) * 374761393 + seed * 668265263
+        h = (h xor (h ushr 13)) * 1274126177
+        h = h xor (h ushr 16)
+        return (h and 0xFFFF) / 65535f
     }
 
     /** How far the ring at [t] reaches from the risen axis at [angle] round it, on its lower half: its hang, cut into locks. */
@@ -173,7 +194,7 @@ data class VolumeShape(
         val below = smooth((-cos(angle) - LOCKS_FROM) / LOCKS_SPAN)
         if (below <= 0f) return 0f
         val (shaped, lock) = lockShape(t, angle)
-        val short = lockJag * shortness(lock.mod(locks))
+        val short = lockJag * lockShortness(lock.mod(locks))
         return lockDepth * length * below * (shaped + short * (1f - shaped))
     }
 
@@ -187,10 +208,10 @@ data class VolumeShape(
 
     /** How far from its lock's point, 0 at the point to 1 at a notch, the hem at [t] and [angle] lies, shaped by [lockRound], and which lock. */
     private fun lockShape(t: Float, angle: Float): Pair<Float, Int> {
-        val turn = (lockTurn(t, sin(angle)) / TWO_PI + 0.5f) * locks
+        val turn = lockTurnOf(lockTurn(t, sin(angle)))
         val lock = floor(turn)
         val within = turn - lock
-        val point = 0.5f + 0.4f * lockSkew.coerceIn(-1f, 1f)
+        val point = lockCentre
         val off = if (within < point) (point - within) / point else (within - point) / (1f - point)
         return off.pow(1f + lockRound) to lock.toInt()
     }
@@ -211,44 +232,10 @@ data class VolumeShape(
         return atan2(y, x)
     }
 
-    /** How much shorter lock [k] is, 0 to 1, the same for the same seed. */
-    private fun shortness(k: Int): Float {
-        var h = (k + 1) * 374761393 + lockSeed * 668265263
-        h = (h xor (h ushr 13)) * 1274126177
-        h = h xor (h ushr 16)
-        return (h and 0xFFFF) / 65535f
-    }
-
     /** How far a ring hangs at [across], the sine of the angle round it from the top, between its [middle] hang and its [side] hang. */
     private fun hangOver(across: Float, side: Float, middle: Float): Float {
         val a = ((abs(across) - CURTAIN_FROM) / (CURTAIN_TO - CURTAIN_FROM)).coerceIn(0f, 1f)
         return middle + (side - middle) * a * a * (3f - 2f * a)
-    }
-
-    /** How far below the risen axis the ring at [t] reaches at [angle] round it, in body units; negative above it. */
-    private fun depthAt(t: Float, angle: Float): Float {
-        val up = cos(angle)
-        if (up >= 0f) return -up * topOver(t)
-        return -up * hangAt(t, angle)
-    }
-
-    /**
-     * The hem: on each ring, the stretch round it within [depth] body units of its lowest point, as two loops of places (u, v) on its
-     * halves toward v 0.25 and v 0.75, so the hem follows the curtains and the back wherever they end.
-     */
-    fun hemLoops(depth: Float): List<List<Vec2>> {
-        val rows = (1 until HEM_ROWS).mapNotNull { i ->
-            val t = i.toFloat() / HEM_ROWS
-            val angles = (0..HEM_STEPS).map { PI.toFloat() * (0.5f + 0.5f * it / HEM_STEPS) }
-            val depths = angles.map { depthAt(t, it) }
-            val deepest = depths.max()
-            if (deepest <= 0f) return@mapNotNull null
-            val inside = depths.indices.filter { depths[it] >= deepest - depth }
-            Triple(t, angles[inside.first()] / TWO_PI, angles[inside.last()] / TWO_PI)
-        }
-        if (rows.size < 2) return emptyList()
-        val half = rows.map { Vec2(it.first, it.second) } + rows.reversed().map { Vec2(it.first, it.third) }
-        return listOf(half, half.map { Vec2(it.x, 1f - it.y) }.reversed())
     }
 
     /** The volume's rings over [us] along [axis], their up from [up], each ring's section with [segments] control points. */

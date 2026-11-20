@@ -84,13 +84,6 @@ class HairShapesTest {
     }
 
     @Test
-    fun `the hem follows each ring's lowest stretch`() {
-        val loops = bob.hemLoops(0.05f)
-        assertEquals(2, loops.size)
-        assertTrue(loops[0].all { it.y in 0.25f..0.5f })
-    }
-
-    @Test
     fun `locks cut the hem up between their points and leave the top whole`() {
         val parted = bob.copy(locks = 12, lockDepth = 0.3f)
         val whole = bob.sectionAt(0.3f, 48).controlPoints
