@@ -2867,6 +2867,28 @@
               "type": "null"
             }
           ]
+        },
+        "rows": {
+          "description": "Lays the copies in this many rows evenly along the area, count of them evenly round each, in place of a scatter: plates, scales, shingles. With outward near 90 each lies back along the part toward its end, over the root of the next row.",
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stagger": {
+          "description": "How far round every other row is shifted, as a share of the gap between two copies in a row, where the copies lie in rows; 0.5 when left out, as bricks lie.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

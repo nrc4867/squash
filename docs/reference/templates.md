@@ -27,7 +27,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `horn` | 1 | - | Horn | horn | yes |
 | `leg` | 1 | - | Leg | leg | yes |
 | `leg-bird` | 1 | - | Bird leg | leg | yes |
-| `paw` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9 | Paw | foot | no |
+| `paw` | 11 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | Paw | foot | no |
 | `plate` | 1 | - | Plate | fin | yes |
 | `pocket` | 1 | - | Pocket | other | yes |
 | `ring` | 1 | - | Ring | none (guessed from where it sits) | no |
@@ -1099,7 +1099,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 10
+## paw 11
 
 | fact | value |
 | --- | --- |
