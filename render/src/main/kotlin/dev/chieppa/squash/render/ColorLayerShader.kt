@@ -192,7 +192,8 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
         if (mode < 1.5) {
             cut_level = oval_level_of(q, layer.cut);
         } else {
-            cut_level = almond_level(p - layer.cut.xy);
+            let moved = p - layer.cut.xy;
+            cut_level = almond_level(vec2<f32>(moved.x / layer.cut.z, moved.y));
         }
         cut_level = cut_level * layer.cut_mode.y;
         alpha = alpha * clamp(0.5 - cut_level / (max(fwidth(cut_level), 0.0000001) + layer.shape_extra.w), 0.0, 1.0);

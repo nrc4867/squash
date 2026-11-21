@@ -17,4 +17,8 @@ private fun targetColor(target: TintTarget, palette: Palette, ink: Color, skinSh
     TintTarget.Ink -> ink
     TintTarget.White -> Color.White
     TintTarget.SkinShadow -> skinShadow
+    TintTarget.LidShade -> LID_SHADE
 }
+
+/** The cool grey lilac a lid's shadow on an eye's white is drawn toward. */
+private val LID_SHADE = Color(red = 0.56f, green = 0.53f, blue = 0.68f)

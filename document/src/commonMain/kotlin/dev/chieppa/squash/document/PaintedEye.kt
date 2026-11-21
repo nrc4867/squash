@@ -65,7 +65,7 @@ data class EyeLook(
     val highlightUp: Float = 0.35f,
     @Doc("Whether a lid line is inked round the opening.")
     val lid: Boolean = true,
-    @Doc("How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there.") @Range(min = 0.0, max = 3.0)
+    @Doc("How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn.") @Range(min = 0.0, max = 3.0)
     @Serializable(with = LashCountSerializer::class)
     val lashes: Int = 1,
     @Doc("Whether a brow is inked over the opening.")
@@ -88,7 +88,7 @@ data class EyeLook(
     val ink: SlotName? = null,
     @Doc("The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line.")
     val lidMass: EyeLidMass = EyeLidMass(),
-    @Doc("Lashes as thick wedges growing out of the upper lid near the back corner.")
+    @Doc("Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks.")
     val lashClumps: EyeLashClumps = EyeLashClumps(),
     @Doc("The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim.")
     val irisShade: EyeIrisShade = EyeIrisShade(),

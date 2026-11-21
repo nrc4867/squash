@@ -45,7 +45,7 @@ export interface Cowlick {
 
 /** The iris shaded in cel tones: a darker top melting into the pupil, a lighter crescent along its bottom and a darker rim; each off at 0. */
 export interface EyeIrisShade {
-  /** How far down the darker top reaches, a share of the iris's height; its lower edge follows the iris's top. 0 none. */
+  /** How far down the darker top reaches, a share of the iris's height, where there is no crescent; with one it reaches down to the crescent. 0 none. */
   upper?: number;
   /** The darker top's palette slot; left out, the iris's colour taken darken of the way to the pupil's. */
   upperSlot?: string | null;
@@ -53,7 +53,7 @@ export interface EyeIrisShade {
   darken?: number;
   /** How soft the darker top's lower edge is, a share of the iris's half height: 0 a hard cel edge. */
   soft?: number;
-  /** How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height. 0 none. */
+  /** How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height; it thins to nothing below the middle. 0 none. */
   lower?: number;
   /** The crescent's palette slot; left out, the iris's colour taken lighten of the way to the white's. */
   lowerSlot?: string | null;
@@ -67,7 +67,7 @@ export interface EyeIrisShade {
   [note: `x-${string}`]: unknown;
 }
 
-/** Lashes as thick wedges growing out of the upper lid near the back corner, in the lid mass's slot, beside the lash flicks. */
+/** Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks. */
 export interface EyeLashClumps {
   /** How many wedges: 0 none. */
   count?: number;
@@ -99,13 +99,13 @@ export interface EyeLidMass {
   [note: `x-${string}`]: unknown;
 }
 
-/** A shadow band on the white under the upper lid, following its curve; off while depth is 0. */
+/** A shadow band on the white under the upper lid, following its curve and thinning toward the corners; off while depth is 0. */
 export interface EyeLidShadow {
-  /** How deep the band reaches under the upper lid, a share of the opening's height. */
+  /** How deep the band reaches under the upper lid's middle, a share of the opening's height: about 0.15 to 0.2 hugs the lid. */
   depth?: number;
-  /** The band's palette slot; left out, the white's colour taken share of the way to the skin's shadow tone. */
+  /** The band's palette slot; left out, the white's colour taken share of the way to a cool grey lilac. */
   slot?: string | null;
-  /** How far the band's colour goes from the white's toward the skin's shadow tone, when it names no slot. */
+  /** How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot. */
   share?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
@@ -151,7 +151,7 @@ export interface EyeLook {
   highlightUp?: number;
   /** Whether a lid line is inked round the opening. */
   lid?: boolean;
-  /** How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there. */
+  /** How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn. */
   lashes?: number;
   /** Whether a brow is inked over the opening. */
   brow?: boolean;
@@ -173,7 +173,7 @@ export interface EyeLook {
   ink?: string | null;
   /** The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line. */
   lidMass?: EyeLidMass;
-  /** Lashes as thick wedges growing out of the upper lid near the back corner. */
+  /** Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks. */
   lashClumps?: EyeLashClumps;
   /** The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim. */
   irisShade?: EyeIrisShade;

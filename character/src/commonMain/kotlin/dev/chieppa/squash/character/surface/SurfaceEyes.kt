@@ -142,7 +142,7 @@ object SurfaceEyes {
         val across = frame.across
         val along = frame.along
         val around = frame.around
-        val shapes = EyeShapes(look, eye.gazeForward, eye.gazeUp)
+        val shapes = EyeShapes(look, eye.gazeForward, eye.gazeUp, lidAspect(look, along, around))
         val reach = EYE_REACH * look.width * along
         val mesh = surface.mesh
         val rim = (shapes.opening as ColorShape.Border).points.maxOf { sqrt((it.u * along).let { a -> a * a } + (it.v * around).let { b -> b * b }) }

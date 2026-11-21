@@ -97,7 +97,7 @@ How a painted eye looks. Lengths are shares of the head's own coordinates at the
 | `highlightForward` | 0.25 | -1 to 1 | How far the highlight's middle sits toward the front from the iris's middle, a share of irisSize. |
 | `highlightUp` | 0.35 | -1 to 1 | How far the highlight's middle sits up from the iris's middle, a share of the iris's half height. |
 | `lid` | true | - | Whether a lid line is inked round the opening. |
-| `lashes` | 1 | 0 to 3 | How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there. |
+| `lashes` | 1 | 0 to 3 | How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn. |
 | `brow` | true | - | Whether a brow is inked over the opening. |
 | `browRaise` | 0.0 | -0.2 to 0.4 | How far the brow rises above its place over the opening, in units down (about 2 heights above the middle). |
 | `browTilt` | 0.0 | -90 to 90 | Degrees the brow turns about its middle, its front end up. |
@@ -108,7 +108,7 @@ How a painted eye looks. Lengths are shares of the head's own coordinates at the
 | `highlight` | none | - | The highlight's palette slot. |
 | `ink` | none | - | The lines' palette slot; the ink's when left out. |
 | `lidMass` | off | - | The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line. |
-| `lashClumps` | off | - | Lashes as thick wedges growing out of the upper lid near the back corner. |
+| `lashClumps` | off | - | Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks. |
 | `irisShade` | off | - | The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim. |
 | `lidShadow` | off | - | A shadow band on the white under the upper lid. |
 
@@ -130,7 +130,7 @@ The lid drawn as a tapered mass of ink in place of the even lid line; off while 
 
 #### `lashClumps`
 
-Lashes as thick wedges growing out of the upper lid near the back corner, in the lid mass's slot, beside the lash flicks.
+Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks.
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |
@@ -144,11 +144,11 @@ The iris shaded in cel tones: a darker top melting into the pupil, a lighter cre
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |
-| `upper` | 0.0 | 0 to 1 | How far down the darker top reaches, a share of the iris's height; its lower edge follows the iris's top. 0 none. |
+| `upper` | 0.0 | 0 to 1 | How far down the darker top reaches, a share of the iris's height, where there is no crescent; with one it reaches down to the crescent. 0 none. |
 | `upperSlot` | none | - | The darker top's palette slot; left out, the iris's colour taken darken of the way to the pupil's. |
 | `darken` | 0.5 | 0 to 1 | How far the darker top's colour goes from the iris's toward the pupil's, when it names no slot. |
 | `soft` | 0.0 | 0 to 1 | How soft the darker top's lower edge is, a share of the iris's half height: 0 a hard cel edge. |
-| `lower` | 0.0 | 0 to 1 | How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height. 0 none. |
+| `lower` | 0.0 | 0 to 1 | How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height; it thins to nothing below the middle. 0 none. |
 | `lowerSlot` | none | - | The crescent's palette slot; left out, the iris's colour taken lighten of the way to the white's. |
 | `lighten` | 0.45 | 0 to 1 | How far the crescent's colour goes from the iris's toward the white's, when it names no slot. |
 | `rim` | 0.0 | 0 to 0.5 | The width of a darker ring round the iris's edge, a share of its half width. 0 none. |
@@ -156,13 +156,13 @@ The iris shaded in cel tones: a darker top melting into the pupil, a lighter cre
 
 #### `lidShadow`
 
-A shadow band on the white under the upper lid, following its curve; off while depth is 0.
+A shadow band on the white under the upper lid, following its curve and thinning toward the corners; off while depth is 0.
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |
-| `depth` | 0.0 | 0 to 1 | How deep the band reaches under the upper lid, a share of the opening's height. |
-| `slot` | none | - | The band's palette slot; left out, the white's colour taken share of the way to the skin's shadow tone. |
-| `share` | 0.45 | 0 to 1 | How far the band's colour goes from the white's toward the skin's shadow tone, when it names no slot. |
+| `depth` | 0.0 | 0 to 0.5 | How deep the band reaches under the upper lid's middle, a share of the opening's height: about 0.15 to 0.2 hugs the lid. |
+| `slot` | none | - | The band's palette slot; left out, the white's colour taken share of the way to a cool grey lilac. |
+| `share` | 0.4 | 0 to 1 | How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot. |
 
 The kit's `animeEye` turns them all on together with values that read as a drawn toon eye.
 

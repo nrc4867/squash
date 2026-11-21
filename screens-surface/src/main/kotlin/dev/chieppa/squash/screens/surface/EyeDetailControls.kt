@@ -37,6 +37,9 @@ private val FLICK_LIFT_RANGE = -1f..2f
 /** How long a lash clump may be, in the opening's heights. */
 private val CLUMP_LENGTH_RANGE = 0f..2f
 
+/** How deep the lid's shadow may reach, a share of the opening's height. */
+private val SHADOW_RANGE = 0f..0.5f
+
 /** How wide the iris's rim may be, a share of its half width. */
 private val RIM_RANGE = 0f..0.5f
 
@@ -65,7 +68,7 @@ private val TONE_SLIDERS = listOf(
     DetailSlider(Res.string.face_detail_iris_shade, "iris-shade", 0f..1f, { it.irisShade.upper }) { l, v -> l.copy(irisShade = l.irisShade.copy(upper = v)) },
     DetailSlider(Res.string.face_detail_iris_light, "iris-light", 0f..1f, { it.irisShade.lower }) { l, v -> l.copy(irisShade = l.irisShade.copy(lower = v)) },
     DetailSlider(Res.string.face_detail_iris_rim, "iris-rim", RIM_RANGE, { it.irisShade.rim }) { l, v -> l.copy(irisShade = l.irisShade.copy(rim = v)) },
-    DetailSlider(Res.string.face_detail_lid_shadow, "lid-shadow", 0f..1f, { it.lidShadow.depth }) { l, v -> l.copy(lidShadow = l.lidShadow.copy(depth = v)) },
+    DetailSlider(Res.string.face_detail_lid_shadow, "lid-shadow", SHADOW_RANGE, { it.lidShadow.depth }) { l, v -> l.copy(lidShadow = l.lidShadow.copy(depth = v)) },
     DetailSlider(Res.string.face_detail_flat_top, "flat-top", 0f..1f, { it.topFlatness }) { l, v -> l.copy(topFlatness = v) },
     DetailSlider(Res.string.face_detail_outer_corner, "outer-corner", 0f..1f, { it.outerCorner }) { l, v -> l.copy(outerCorner = v) },
 )

@@ -58,7 +58,7 @@ internal class ColorLayerUniform {
         var at = 2 * MATRIX_FLOATS + DETAIL_AFTER_VECTORS * VECTOR_FLOATS
         at = put(at, shape.opening.topFlat, shape.opening.outerCorner, if (lid != null) 1f else 0f, cut?.soft ?: 0f)
         val oval = cut?.oval
-        at = if (oval != null) put(at, oval.u, oval.v, oval.halfU, oval.halfV) else put(at, cut?.du ?: 0f, cut?.dv ?: 0f, 1f, 1f)
+        at = if (oval != null) put(at, oval.u, oval.v, oval.halfU, oval.halfV) else put(at, cut?.du ?: 0f, cut?.dv ?: 0f, cut?.widen ?: 1f, 1f)
         val mode = when {
             cut == null -> 0f
             oval != null -> 1f
@@ -67,7 +67,7 @@ internal class ColorLayerUniform {
         at = put(at, mode, if (cut?.outside == true) -1f else 1f, 0f, 0f)
         at = put(at, lid?.weight ?: 0f, lid?.inner ?: 0f, lid?.flick ?: 0f, lid?.flickLift ?: 0f)
         at = put(at, lid?.lower ?: 0f, lid?.lowerExtent ?: 0f, lid?.clumps?.toFloat() ?: 0f, lid?.clumpLength ?: 0f)
-        put(at, lid?.clumpSpread ?: 0f, 0f, 0f, 0f)
+        put(at, lid?.clumpSpread ?: 0f, lid?.aspect ?: 1f, 0f, 0f)
     }
 
     private fun put(at: Int, color: Color) = put(at, color.red, color.green, color.blue, color.alpha)

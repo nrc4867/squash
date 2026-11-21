@@ -18,4 +18,7 @@ sealed interface TintTarget {
 
     /** The shadow tone of the skin the layer lies on. */
     data object SkinShadow : TintTarget
+
+    /** The cool grey lilac a lid's shadow on an eye's white is drawn toward. */
+    data object LidShade : TintTarget
 }

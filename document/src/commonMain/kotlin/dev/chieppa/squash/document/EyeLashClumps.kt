@@ -8,11 +8,12 @@ import kotlinx.serialization.Serializable
 const val MOST_CLUMPS = 5
 
 /**
- * Lashes drawn as [count] thick wedges growing out of the upper lid, in the lid mass's slot: the outermost [length] of the opening's height
- * long and each further one a little shorter, their roots spread over [spread] of the lid from the back corner, each swept toward it.
+ * Lashes drawn as [count] thick curved wedges growing out of the upper lid, in the lid mass's slot, in place of the lash flicks: the
+ * outermost [length] of the opening's height long and each further one a little shorter, their roots spread over [spread] of the lid from
+ * the back corner, each rising off the lid and sweeping toward that corner, rounding into the lid where they meet it.
  */
 @Serializable
-@Doc("Lashes as thick wedges growing out of the upper lid near the back corner, in the lid mass's slot, beside the lash flicks.")
+@Doc("Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks.")
 data class EyeLashClumps(
     @Doc("How many wedges: 0 none.") @Range(min = 0.0, max = 5.0)
     val count: Int = 0,

@@ -126,7 +126,7 @@
       "type": "object",
       "properties": {
         "upper": {
-          "description": "How far down the darker top reaches, a share of the iris's height; its lower edge follows the iris's top. 0 none.",
+          "description": "How far down the darker top reaches, a share of the iris's height, where there is no crescent; with one it reaches down to the crescent. 0 none.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
@@ -155,7 +155,7 @@
           "maximum": 1.0
         },
         "lower": {
-          "description": "How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height. 0 none.",
+          "description": "How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height; it thins to nothing below the middle. 0 none.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
@@ -201,7 +201,7 @@
       "additionalProperties": false
     },
     "EyeLashClumps": {
-      "description": "Lashes as thick wedges growing out of the upper lid near the back corner, in the lid mass's slot, beside the lash flicks.",
+      "description": "Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks.",
       "type": "object",
       "properties": {
         "count": {
@@ -286,17 +286,17 @@
       "additionalProperties": false
     },
     "EyeLidShadow": {
-      "description": "A shadow band on the white under the upper lid, following its curve; off while depth is 0.",
+      "description": "A shadow band on the white under the upper lid, following its curve and thinning toward the corners; off while depth is 0.",
       "type": "object",
       "properties": {
         "depth": {
-          "description": "How deep the band reaches under the upper lid, a share of the opening's height.",
+          "description": "How deep the band reaches under the upper lid's middle, a share of the opening's height: about 0.15 to 0.2 hugs the lid.",
           "type": "number",
           "minimum": 0.0,
-          "maximum": 1.0
+          "maximum": 0.5
         },
         "slot": {
-          "description": "The band's palette slot; left out, the white's colour taken share of the way to the skin's shadow tone.",
+          "description": "The band's palette slot; left out, the white's colour taken share of the way to a cool grey lilac.",
           "anyOf": [
             {
               "type": "string"
@@ -307,7 +307,7 @@
           ]
         },
         "share": {
-          "description": "How far the band's colour goes from the white's toward the skin's shadow tone, when it names no slot.",
+          "description": "How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
@@ -433,7 +433,7 @@
           "type": "boolean"
         },
         "lashes": {
-          "description": "How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there.",
+          "description": "How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn.",
           "type": "integer",
           "minimum": 0.0,
           "maximum": 3.0
@@ -520,7 +520,7 @@
           "$ref": "#/$defs/EyeLidMass"
         },
         "lashClumps": {
-          "description": "Lashes as thick wedges growing out of the upper lid near the back corner.",
+          "description": "Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks.",
           "$ref": "#/$defs/EyeLashClumps"
         },
         "irisShade": {

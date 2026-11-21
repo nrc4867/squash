@@ -3,20 +3,26 @@ package dev.chieppa.squash.render
 import dev.chieppa.squash.geom.CLUMP_ROOT
 import dev.chieppa.squash.geom.CLUMP_ROOT_SHARE
 import dev.chieppa.squash.geom.CLUMP_SHORTER
+import dev.chieppa.squash.geom.CLUMP_START
 import dev.chieppa.squash.geom.CLUMP_SWEEP
 import dev.chieppa.squash.geom.CLUMP_SWEEP_MORE
 import dev.chieppa.squash.geom.CURVE_REFINE
 import dev.chieppa.squash.geom.CURVE_SAMPLES
+import dev.chieppa.squash.geom.FILLET_DEPTH
 import dev.chieppa.squash.geom.FLAT_SPAN
+import dev.chieppa.squash.geom.FLICK_ROOT
 import dev.chieppa.squash.geom.INNER_POINT
-import dev.chieppa.squash.geom.LID_ASPECT
+import dev.chieppa.squash.geom.LID_FILLET
 import dev.chieppa.squash.geom.LID_INSET
-import dev.chieppa.squash.geom.LID_SEAM
 import dev.chieppa.squash.geom.LID_TAPER_FROM
 import dev.chieppa.squash.geom.LID_TAPER_TO
 import dev.chieppa.squash.geom.LOWER_TAPER_POWER
+import dev.chieppa.squash.geom.OUTER_END
+import dev.chieppa.squash.geom.OUTER_HEIGHT
+import dev.chieppa.squash.geom.OUTER_TAPER_FROM
 import dev.chieppa.squash.geom.ROUND_POWER
 import dev.chieppa.squash.geom.ROUND_SPAN
+import dev.chieppa.squash.geom.STROKE_PIECES
 
 /**
  * WGSL for the shaped layer's eye shapes in [COLOR_LAYER_WGSL]'s `Layer` uniform, as [dev.chieppa.squash.geom.ChartAlmond] and
@@ -28,8 +34,14 @@ const ROUND_POWER: f32 = $ROUND_POWER;
 const ROUND_SPAN: f32 = $ROUND_SPAN;
 const FLAT_SPAN: f32 = $FLAT_SPAN;
 const LID_INSET: f32 = $LID_INSET;
-const LID_SEAM: f32 = $LID_SEAM;
-const LID_ASPECT: f32 = $LID_ASPECT;
+const LID_FILLET: f32 = $LID_FILLET;
+const CLUMP_START: f32 = $CLUMP_START;
+const FILLET_DEPTH: f32 = $FILLET_DEPTH;
+const OUTER_END: f32 = $OUTER_END;
+const OUTER_HEIGHT: f32 = $OUTER_HEIGHT;
+const OUTER_TAPER_FROM: f32 = $OUTER_TAPER_FROM;
+const FLICK_ROOT: f32 = $FLICK_ROOT;
+const STROKE_PIECES: i32 = $STROKE_PIECES;
 const LID_TAPER_FROM: f32 = $LID_TAPER_FROM;
 const LID_TAPER_TO: f32 = $LID_TAPER_TO;
 const CLUMP_SWEEP: f32 = $CLUMP_SWEEP;
@@ -90,7 +102,34 @@ fn inner_point(a: f32) -> f32 {
 
 // The upper lid mass's thickness at a along the lid, in heights.
 fn lid_thickness(a: f32) -> f32 {
-    return layer.lid_a.x * (1.0 - (1.0 - layer.lid_a.y) * eased(LID_TAPER_FROM, LID_TAPER_TO, a)) * inner_point(a);
+    let inward = 1.0 - (1.0 - layer.lid_a.y) * eased(LID_TAPER_FROM, LID_TAPER_TO, a);
+    let drop = eased(0.0, OUTER_HEIGHT, upper_open(a)) * eased(-1.0, OUTER_TAPER_FROM, a);
+    let outward = select(1.0, OUTER_END + (1.0 - OUTER_END) * drop, a < 0.0);
+    return layer.lid_a.x * inward * outward * inner_point(a);
+}
+
+// The smaller of a and b, rounded over k where they meet.
+fn smooth_min(a: f32, b: f32, k: f32) -> f32 {
+    let h = max(k - abs(a - b), 0.0) / k;
+    return min(a, b) - h * h * k * FILLET_DEPTH;
+}
+
+// How far outside a stroke tapering from root_half at its root to a point at root + reach (x, y) lies, its way across bent by bend_x
+// and its way up by bend_y.
+fn stroke_level(x: f32, y: f32, root: vec2<f32>, reach: vec2<f32>, root_half: f32, bend_x: f32, bend_y: f32) -> f32 {
+    var best = 1000000.0;
+    var start = vec2<f32>(0.0, 0.0);
+    let q = vec2<f32>((x - root.x) * layer.lid_c.y, y - root.y);
+    for (var i = 1; i <= STROKE_PIECES; i = i + 1) {
+        let t = f32(i) / f32(STROKE_PIECES);
+        let end = vec2<f32>((t + (t * t - t) * bend_x) * reach.x * layer.lid_c.y, (t + (t * t - t) * bend_y) * reach.y);
+        let edge = end - start;
+        let h = clamp(dot(q - start, edge) / max(dot(edge, edge), 0.000000000001), 0.0, 1.0);
+        let at = (f32(i - 1) + h) / f32(STROKE_PIECES);
+        best = min(best, length(q - start - edge * h) - root_half * (1.0 - at));
+        start = end;
+    }
+    return best;
 }
 
 // The height of the upper lid at a, or with lower set the lower lid's.
@@ -102,12 +141,12 @@ fn lid_edge(a: f32, lower: bool) -> f32 {
 }
 
 fn apart(x: f32, y: f32, a: f32, lower: bool) -> f32 {
-    let dx = (x - a) * LID_ASPECT;
+    let dx = (x - a) * layer.lid_c.y;
     let dy = y - lid_edge(a, lower);
     return dx * dx + dy * dy;
 }
 
-// The place along a lid nearest (x, y), and how far that is, widths counted as LID_ASPECT heights.
+// The place along a lid nearest (x, y), and how far that is, widths counted as the lid's aspect in heights.
 fn nearest(x: f32, y: f32, lower: bool) -> vec2<f32> {
     var best = -1.0;
     var best_apart = 1000000.0;
@@ -137,17 +176,20 @@ fn nearest(x: f32, y: f32, lower: bool) -> vec2<f32> {
 // Lash clump i of count growing out of the upper lid, at (x, y) in widths and heights.
 fn clump_level(i: i32, count: i32, x: f32, y: f32) -> f32 {
     let k = (f32(i) + 0.5) / f32(count);
-    let root_x = -1.0 + 2.0 * layer.lid_c.x * k;
+    let root_x = -1.0 + CLUMP_START + 2.0 * layer.lid_c.x * k;
     let root_y = upper_open(root_x) + 0.5 * lid_thickness(root_x);
     let reach_length = layer.lid_b.w * (1.0 - CLUMP_SHORTER * k);
     let sweep = CLUMP_SWEEP + CLUMP_SWEEP_MORE * (1.0 - k);
-    let d = vec2<f32>(-sweep * reach_length * LID_ASPECT, reach_length);
-    let reach = length(d);
-    let q = vec2<f32>((x - root_x) * LID_ASPECT, y - root_y);
-    let t = dot(q, d) / (reach * reach);
-    let across = abs(q.x * d.y - q.y * d.x) / reach;
-    let half_width = (CLUMP_ROOT + CLUMP_ROOT_SHARE * reach_length) * (1.0 - t);
-    return max(across - half_width, max(-t * reach, (t - 1.0) * reach));
+    let root_half = CLUMP_ROOT + CLUMP_ROOT_SHARE * reach_length;
+    return stroke_level(x, y, vec2<f32>(root_x, root_y), vec2<f32>(-sweep * reach_length, reach_length), root_half, 1.0, 0.0);
+}
+
+// The flick past the back corner, rooted across the upper band's end there, running straight out and lifting to its tip.
+fn flick_level(x: f32, y: f32) -> f32 {
+    let end = layer.lid_a.x * FLICK_ROOT;
+    let root_y = (end - LID_INSET) / 2.0;
+    let reach = vec2<f32>(-layer.lid_a.z, layer.lid_a.w - root_y);
+    return stroke_level(x, y, vec2<f32>(-1.0, root_y), reach, (end + LID_INSET) / 2.0, 0.0, 1.0);
 }
 
 // A pixel's span in the lid's level at p, read from the chart itself, which is smooth, rather than from the level, whose creases along
@@ -167,14 +209,8 @@ fn lid_level(p: vec2<f32>) -> f32 {
         let top = nearest(x, y, false);
         let top_side = select(top.y, -top.y, abs(x) < 1.0 && y < upper_open(x));
         level = max(top_side - lid_thickness(top.x), -top_side - LID_INSET * inner_point(top.x));
-        let flick = layer.lid_a.z;
-        if (flick > 0.0) {
-            let lift = layer.lid_a.w;
-            let s = clamp((-1.0 - x) / flick, 0.0, 1.0);
-            let low = -LID_INSET + (lift + LID_INSET) * s * s;
-            let start = lid_thickness(-1.0);
-            let high = start + (lift - start) * s;
-            level = min(level, max(max(low - y, y - high), max((x + 1.0 - LID_SEAM) * LID_ASPECT, (-1.0 - flick - x) * LID_ASPECT)));
+        if (layer.lid_a.z > 0.0) {
+            level = smooth_min(level, flick_level(x, y), LID_FILLET);
         }
         let lower = layer.lid_b.x;
         let extent = layer.lid_b.y;
@@ -184,13 +220,14 @@ fn lid_level(p: vec2<f32>) -> f32 {
             let s = clamp((bottom.x + 1.0) / (2.0 * extent), 0.0, 1.0);
             let fade = raised(1.0 - s, LOWER_TAPER_POWER);
             let band = max(bottom_side - lower * weight * fade, -bottom_side - LID_INSET * fade);
-            level = min(level, max(band, (bottom.x + 1.0 - 2.0 * extent) * LID_ASPECT));
+            level = smooth_min(level, max(band, (bottom.x + 1.0 - 2.0 * extent) * layer.lid_c.y), LID_FILLET);
         }
     }
     let count = i32(layer.lid_b.z + 0.5);
     if (count > 0 && layer.lid_b.w > 0.0) {
+        let over_lid = upper_open(clamp(x, -1.0, 1.0)) - LID_INSET - y;
         for (var i = 0; i < count; i = i + 1) {
-            level = min(level, clump_level(i, count, x, y));
+            level = smooth_min(level, max(clump_level(i, count, x, y), over_lid), LID_FILLET);
         }
     }
     return level * layer.opening.y;

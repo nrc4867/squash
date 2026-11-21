@@ -50,6 +50,8 @@ class EyeDetailTest {
         val lid = assertNotNull(shapes.detail.lid)
         assertEquals(3, lid.clumps)
         assertNotNull(EyeShapes(EyeLook()).lid, "a plain look keeps its line")
+        assertTrue(shapes.lashes.isEmpty(), "lash clumps take the flicks' place")
+        assertEquals(1, EyeShapes(EyeLook()).lashes.size)
     }
 
     @Test
@@ -66,7 +68,7 @@ class EyeDetailTest {
         val tones = EyeTones(detailed)
         assertEquals(SlotName("iris"), tones.irisUpper.slot)
         assertEquals(TintTarget.Slot(SlotName("pupil"), TintTarget.Ink), tones.irisUpper.tint?.toward)
-        assertEquals(TintTarget.SkinShadow, tones.lidShadow.tint?.toward)
+        assertEquals(TintTarget.LidShade, tones.lidShadow.tint?.toward)
         assertEquals(TintTarget.Ink, tones.lid.tint?.toward, "a lid mass with no slot and no ink slot is the ink")
         val own = EyeTones(detailed.copy(irisShade = detailed.irisShade.copy(upperSlot = SlotName("deep"))))
         assertEquals(SlotName("deep"), own.irisUpper.slot)

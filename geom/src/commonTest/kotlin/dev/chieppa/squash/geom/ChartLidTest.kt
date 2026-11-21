@@ -45,8 +45,9 @@ class ChartLidTest {
     @Test
     fun theMassThinsTowardTheFrontCorner() {
         val lid = ChartLid(weight = 0.3f)
-        assertTrue(lid.thickness(-0.5f) > lid.thickness(0.6f), "heavier toward the back than the front")
-        assertEquals(0f, lid.thickness(1f), "it comes to a point at the front corner")
+        assertTrue(lid.thickness(shaped, -0.5f) > lid.thickness(shaped, 0.6f), "heavier toward the back than the front")
+        assertEquals(0f, lid.thickness(shaped, 1f), "it comes to a point at the front corner")
+        assertTrue(lid.thickness(shaped, -1f) < lid.thickness(shaped, -0.5f), "and thins where it drops to the back corner")
     }
 
     @Test
@@ -65,8 +66,9 @@ class ChartLidTest {
     fun clumpsGrowOutOfTheLidNearTheBackCorner() {
         val bare = ChartLid(weight = 0.2f)
         val clumped = bare.copy(clumps = 3, clumpLength = 0.6f)
-        val u = -0.958f * shaped.width
-        val v = 0.648f * shaped.height
+        val root = -1f + CLUMP_START + 2f * clumped.clumpSpread / (2f * clumped.clumps)
+        val u = -0.727f * shaped.width
+        val v = (shaped.upper(root) + 0.5f * clumped.thickness(shaped, root) + 0.2f) * shaped.height
         assertTrue(bare.level(shaped, u, v) > 0f, "the bare lid does not reach there")
         assertTrue(clumped.level(shaped, u, v) < 0f, "the outermost wedge stands there, above the lid near the back corner")
     }
