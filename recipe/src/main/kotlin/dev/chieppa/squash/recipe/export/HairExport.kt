@@ -50,6 +50,7 @@ private fun exported(shell: HairShell) = RecipeHairShell(
     soft = shell.soft,
     fade = shell.fade,
     fadeTo = shell.fadeTo,
+    steps = shell.steps,
 )
 
 private fun exported(outline: HairOutline) = RecipeHairOutline(

@@ -89,11 +89,17 @@ class HairCutSectionTest {
         assertTrue(character().lockGroups.all { it.mass == null }, "its locks root on the head")
         onNodeWithTag(HairTags.group("top")).performScrollTo().performClick()
         waitForIdle()
+        val top = { character().lockGroups.first { it.id.value == "top" } }
+        assertNotNull(top().trim, "an undercut's top is cut above the ears")
         val before = steps()
         onNodeWithTag(HairCutTags.TRIM).performScrollTo().performClick()
         waitForIdle()
-        assertEquals(before + 1, steps(), "switching a trim on is one step")
-        assertNotNull(character().lockGroups.first { it.id.value == "top" }.trim)
+        assertEquals(before + 1, steps(), "switching a trim off is one step")
+        assertNull(top().trim)
+        onNodeWithTag(HairCutTags.TRIM).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(before + 2, steps(), "switching it on is one step")
+        assertNotNull(top().trim)
         onNodeWithTag(HairTags.setting("trim.level")).assertExists()
     }
 }

@@ -319,6 +319,7 @@
     <string name="face_hair_shell_thickness">Thickness</string>
     <string name="face_hair_shell_shade">Stubble</string>
     <string name="face_hair_shell_soft">Softness</string>
+    <string name="face_hair_shell_steps">Steps</string>
     <string name="face_hair_shell_front">Hairline</string>
     <string name="face_hair_shell_temples">Temples</string>
     <string name="face_hair_shell_sideburns">Sideburns</string>

@@ -65,6 +65,8 @@ data class RecipeHairShell(
     val fade: ShellFade? = null,
     @Doc("How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded.") @Range(min = 0.0, max = 1.0)
     val fadeTo: Float? = null,
+    @Doc("How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft.") @Range(min = 0.0, max = 5.0)
+    val steps: Int? = null,
     @Doc("Leaves out the preset's shell.")
     val removed: Boolean = false,
 )

@@ -22,6 +22,9 @@ private val FLAT = LockTrim(level = 1.32f, blunt = true)
 private val BOB_HEM = LockTrim(level = -0.62f, tilt = 6f)
 private val BANGS = LockTrim(level = 0.42f, tilt = 0f)
 
+/** Where an undercut's top ends, its tips tapering: over the shaved sides, above the ears. */
+private val UNDERCUT_LINE = LockTrim(level = 0.35f, blunt = false)
+
 /** The short-hair presets and those built from braids and buns, laid out as [presetLayout] gives them. */
 internal val CUT_PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
     HairPreset.BUZZ_CUT to emptyList(),
@@ -35,9 +38,9 @@ internal val CUT_PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
         PresetGroup("back", LockGroupKind.BACK, 9, 1.3f, 0.34f, 0.22f, rise = 0f, fall = 0f, taper = 0.95f, tip = LockTip.ROUND, height = 1f, spread = 0.8f, stand = 0.9f, trim = FLAT, flow = 0f, lengthJitter = 0f, physics = BRUSH),
     ),
     HairPreset.UNDERCUT to listOf(
-        PresetGroup("top", LockGroupKind.TOP, 16, 1.3f, 0.55f, 0.13f, rise = 4f, fall = 0.4f, taper = 0.4f, spread = 0.9f, height = 0.4f, physics = SOFT),
-        PresetGroup("crown", LockGroupKind.CROWN, 10, 1.0f, 0.55f, 0.13f, rise = 2f, fall = 0.5f, taper = 0.4f, layer = 1, spread = 1.05f, physics = SOFT),
-        PresetGroup("fringe", LockGroupKind.FRINGE, 5, 1.0f, 0.5f, 0.13f, rise = 6f, fall = 0.5f, taper = 0.35f, sweep = -0.2f, spread = 0.4f, height = 1f, layer = 2, physics = SOFT),
+        PresetGroup("top", LockGroupKind.TOP, 22, 1.2f, 0.7f, 0.16f, rise = 10f, fall = 0.15f, taper = 0.4f, spread = 0.55f, height = 0.6f, trim = UNDERCUT_LINE, physics = SOFT),
+        PresetGroup("crown", LockGroupKind.CROWN, 12, 0.9f, 0.65f, 0.16f, rise = 8f, fall = 0.2f, taper = 0.4f, layer = 1, spread = 0.55f, trim = UNDERCUT_LINE, physics = SOFT),
+        PresetGroup("fringe", LockGroupKind.FRINGE, 5, 0.9f, 0.5f, 0.13f, rise = 8f, fall = 0.3f, taper = 0.35f, sweep = -0.2f, spread = 0.4f, height = 1f, layer = 2, physics = SOFT),
     ),
     HairPreset.BLUNT_BOB to listOf(
         PresetGroup("back", LockGroupKind.BACK, 10, 2.2f, 0.85f, 0.12f, rise = 0f, fall = 0.9f, taper = 0.9f, section = LockSection.RIBBON, tip = LockTip.ROUND, spread = 1.15f, lengthJitter = 0f, trim = BOB_HEM, physics = SOFT),
@@ -72,6 +75,6 @@ fun presetShell(preset: HairPreset, on: PartId): HairShell? = when (preset) {
     HairPreset.BUZZ_CUT -> HairShell(on, thickness = 0.014f)
     HairPreset.FADE -> HairShell(on, thickness = 0.02f, fade = ShellFade.HIGH)
     HairPreset.FLAT_TOP -> HairShell(on, thickness = 0.016f, fade = ShellFade.MID, fadeTo = 0.15f)
-    HairPreset.UNDERCUT -> HairShell(on, thickness = 0.008f, shade = 0.45f)
+    HairPreset.UNDERCUT -> HairShell(on, thickness = 0.012f, shade = 0.7f)
     else -> null
 }

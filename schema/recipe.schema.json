@@ -2631,6 +2631,19 @@
             }
           ]
         },
+        "steps": {
+          "description": "How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0.0,
+              "maximum": 5.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "removed": {
           "description": "Leaves out the preset's shell.",
           "type": "boolean"

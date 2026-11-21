@@ -774,6 +774,8 @@ export interface RecipeHairShell {
   fade?: ("none" | "low" | "mid" | "high") | null;
   /** How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded. */
   fadeTo?: number | null;
+  /** How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft. */
+  steps?: number | null;
   /** Leaves out the preset's shell. */
   removed?: boolean;
   /** A note the build reads past. */

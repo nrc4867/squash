@@ -46,7 +46,8 @@ data class Hairline(
  * Hair cut to the skin over a head ([on]): a thin shell lying [thickness] off the scalp, a share of the head's reach, inside a [hairline],
  * in a stubble [tone] (when left out, the head's colour carried [shade] of the way toward the hair's), its edge softening into the skin
  * over [soft] degrees. With a [fade] it fades into the skin up the sides and back from the hairline, low, mid or high, down to [fadeTo] of
- * its tone at the hairline. Locks may lie over it.
+ * its tone at the hairline. With [steps] its tone changes in that many flat bands with crisp edges, its edge crisp too; with none it
+ * changes smoothly. Locks may lie over it.
  */
 @Serializable
 @Doc("Hair cut to the skin over a head: a thin shell inside a hairline, in a stubble tone, fading into the skin up the sides and back.")
@@ -66,8 +67,11 @@ data class HairShell(
     val fade: ShellFade = ShellFade.NONE,
     @Doc("How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded.") @Range(min = 0.0, max = 1.0)
     val fadeTo: Float = 0f,
+    @Doc("How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades; 0 fades smoothly and softens the edge over soft.") @Range(min = 0.0, max = 5.0)
+    val steps: Int = 3,
 ) {
     init {
+        require(steps == 0 || steps in 2..MOST_SHELL_STEPS) { "A shell steps through 2 to $MOST_SHELL_STEPS bands, or 0 to fade smoothly, not $steps" }
         require(thickness in 0f..MOST_SHELL_THICKNESS) { "A shell stands 0 to $MOST_SHELL_THICKNESS of the head's reach off it, not $thickness" }
         require(shade in 0f..1f && fadeTo in 0f..1f) { "A shell's shade and fadeTo are 0 to 1" }
         require(soft in 0f..MOST_SHELL_SOFT) { "A shell's edge softens over 0 to $MOST_SHELL_SOFT degrees, not $soft" }
@@ -76,6 +80,9 @@ data class HairShell(
 
 /** The most a shell stands off the scalp, a share of the head's reach. */
 const val MOST_SHELL_THICKNESS = 0.1f
+
+/** The most bands a shell's fade steps through. */
+const val MOST_SHELL_STEPS = 5
 
 /** The most degrees a shell's edge softens over. */
 const val MOST_SHELL_SOFT = 20f

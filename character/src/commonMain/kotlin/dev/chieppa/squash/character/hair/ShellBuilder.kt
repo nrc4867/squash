@@ -15,8 +15,8 @@ import kotlin.math.cos
 const val SHELL_PATCH = "shell"
 
 /** The rings from a shell's edge to the crown, and the points round each. */
-private const val SHELL_RINGS = 40
-private const val SHELL_COLUMNS = 120
+private const val SHELL_RINGS = 96
+private const val SHELL_COLUMNS = 180
 
 /** How far past its softened hairline a shell's edge runs, in degrees, so the edge lies in bare skin. */
 private const val EDGE_MARGIN = 3f
@@ -70,11 +70,14 @@ fun hairlineAt(hairline: Hairline, azimuth: Float): Float {
 }
 
 /**
- * How much of a shell's tone shows at [azimuth] and [elevation], 0 bare skin to 1 whole: none below its hairline, softening into it over
- * its soft degrees, and with a fade, rising from its fadeTo at the hairline to whole by the fade's reach up the sides and back.
+ * How much of a shell's tone shows at [azimuth] and [elevation], 0 bare skin to 1 whole: none below its hairline, and with a fade, rising
+ * from its fadeTo at the hairline to whole by the fade's reach up the sides and back. With steps it rises in that many flat bands of even
+ * height, their edges following the hairline and drawing in to it toward the front, where the fade gives way to the front's edge, and its
+ * edge is crisp; with none it rises smoothly, its edge softening over its soft degrees.
  */
 fun shellToneAt(shell: HairShell, azimuth: Float, elevation: Float): Float {
     val line = hairlineAt(shell.hairline, azimuth)
+    if (shell.steps > 0) return steppedTone(shell, azimuth, elevation - line)
     val soft = shell.soft.coerceAtLeast(0.5f)
     val edge = smooth((elevation - line + soft / 2f) / soft)
     val reach = FADE_REACH.getValue(shell.fade)
@@ -83,6 +86,15 @@ fun shellToneAt(shell: HairShell, azimuth: Float, elevation: Float): Float {
     val sides = smooth((a - FADE_FROM) / (FADE_WHOLE - FADE_FROM))
     val faded = shell.fadeTo + (1f - shell.fadeTo) * smooth((elevation - line) / reach)
     return edge * (1f - sides * (1f - faded))
+}
+
+/** A stepped shell's tone [above] its hairline at [azimuth]: none below it, then its fade's bands, each a flat share of the way to whole. */
+private fun steppedTone(shell: HairShell, azimuth: Float, above: Float): Float {
+    if (above < 0f) return 0f
+    val span = FADE_REACH.getValue(shell.fade) * smooth((fromFront(azimuth) - FADE_FROM) / (FADE_WHOLE - FADE_FROM))
+    if (above >= span) return 1f
+    val band = (above / span * shell.steps).toInt().coerceAtMost(shell.steps - 1)
+    return shell.fadeTo + (1f - shell.fadeTo) * band / (shell.steps - 1)
 }
 
 /**

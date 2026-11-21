@@ -146,7 +146,7 @@ Flow: a crown whorl, no parting.
 
 Flow: a crown whorl, no parting.
 
-Shell: thickness 0.014, fade none, shade 0.6.
+Shell: thickness 0.014, fade none, 3 steps, shade 0.6.
 
 No inner mass: its locks root on the head.
 
@@ -154,7 +154,7 @@ No inner mass: its locks root on the head.
 
 Flow: a crown whorl, no parting.
 
-Shell: thickness 0.02, fade high, shade 0.6.
+Shell: thickness 0.02, fade high, 3 steps, shade 0.6.
 
 No inner mass: its locks root on the head.
 
@@ -162,7 +162,7 @@ No inner mass: its locks root on the head.
 
 Flow: a crown whorl, no parting.
 
-Shell: thickness 0.016, fade mid, fadeTo 0.15, shade 0.6.
+Shell: thickness 0.016, fade mid, fadeTo 0.15, 3 steps, shade 0.6.
 
 No inner mass: its locks root on the head.
 
@@ -179,15 +179,15 @@ No inner mass: its locks root on the head.
 
 Flow: a crown whorl, a side parting at 0.62, sweep -0.3.
 
-Shell: thickness 0.008, fade none, shade 0.45.
+Shell: thickness 0.012, fade none, 3 steps, shade 0.7.
 
 No inner mass: its locks root on the head.
 
 | group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `top` | top | 16 | 1.3 | 0.55 | 0.13 | 4 | 0.4 | 0 | 0 | 0.4 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
-| `crown` | crown | 10 | 1 | 0.55 | 0.13 | 2 | 0.5 | 0 | 0 | 0.4 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
-| `fringe` | fringe | 5 | 1 | 0.5 | 0.13 | 6 | 0.5 | -0.2 | 0 | 0.35 | clump | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `top` | top | 22 | 1.2 | 0.7 | 0.16 | 10 | 0.15 | 0 | 0 | 0.4 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | level 0.35, tilt 0 | 0 |
+| `crown` | crown | 12 | 0.9 | 0.65 | 0.16 | 8 | 0.2 | 0 | 0 | 0.4 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | level 0.35, tilt 0 | 0 |
+| `fringe` | fringe | 5 | 0.9 | 0.5 | 0.13 | 8 | 0.3 | -0.2 | 0 | 0.35 | clump | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### bluntBob
 
@@ -280,6 +280,7 @@ Which way each lock root grows: a background fall down the head, a whorl spirall
 | `shell.soft` | 3.0 | 0 to 20 | Degrees over which its edge softens into the skin. |
 | `shell.fade` | none | - | How high up the sides and back it fades into the skin: none, low (just above the ears and nape), mid (to the temples) or high (to the corners of the top). |
 | `shell.fadeTo` | 0.0 | 0 to 1 | How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded. |
+| `shell.steps` | 3 | 0 to 5 | How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades; 0 fades smoothly and softens the edge over soft. |
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |

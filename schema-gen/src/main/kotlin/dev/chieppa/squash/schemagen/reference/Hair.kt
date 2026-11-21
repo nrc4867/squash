@@ -168,6 +168,7 @@ internal object Hair {
         "thickness ${num(shell.thickness)}",
         "fade ${serialName(shell.fade.name)}",
         shell.fadeTo.takeIf { it > 0f }?.let { "fadeTo ${num(it)}" },
+        if (shell.steps == 0) "smooth" else "${shell.steps} steps",
         "shade ${num(shell.shade)}",
     ).joinToString(", ")
 

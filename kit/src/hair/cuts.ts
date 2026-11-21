@@ -10,7 +10,8 @@ export type FadeLevel = NonNullable<RecipeHairShell["fade"]>;
 /**
  * Hair cut to the skin: a thin shell over the scalp inside a hairline (`hairline: { front, temples, sideburns, ears, nape }`, degrees up the
  * head from level), in a stubble tone (`tone`, else the skin carried `shade` toward the hair), fading into the skin up the sides and back
- * (`fade`: none, low, mid or high; `fadeTo`, the tone left at the hairline). Give it as a hair entry's `shell`.
+ * (`fade`: none, low, mid or high; `fadeTo`, the tone left at the hairline) in `steps` flat bands with crisp edges (3 by default; 0 fades
+ * smoothly, its edge softening over `soft` degrees). Give it as a hair entry's `shell`.
  */
 export function hairShell(spec: RecipeHairShell = {}): RecipeHairShell {
   return { ...spec };

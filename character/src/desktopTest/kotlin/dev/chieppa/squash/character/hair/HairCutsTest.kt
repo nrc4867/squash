@@ -98,7 +98,7 @@ class HairCutsTest {
 
     @Test
     fun aShellShowsItsToneAboveItsHairlineAndFadesUpTheSides() {
-        val shell = HairShell(headId, fade = ShellFade.HIGH)
+        val shell = HairShell(headId, fade = ShellFade.HIGH, steps = 0)
         assertEquals(0f, shellToneAt(shell, 0f, shell.hairline.front - 10f))
         assertEquals(1f, shellToneAt(shell, 0f, shell.hairline.front + 10f))
         val side = hairlineAt(shell.hairline, 90f)
@@ -106,6 +106,17 @@ class HairCutsTest {
         assertTrue(rising.zipWithNext().all { (a, b) -> b >= a }, "the fade only rises up the side: $rising")
         assertTrue(rising.zipWithNext().all { (a, b) -> b - a < 0.35f }, "with no hard band: $rising")
         assertEquals(1f, shellToneAt(shell, 90f, side + 45f), 1e-4f)
+    }
+
+    @Test
+    fun aSteppedShellFadesInFlatBandsWithACrispFrontEdge() {
+        val shell = HairShell(headId, fade = ShellFade.HIGH, steps = 3)
+        assertEquals(0f, shellToneAt(shell, 0f, shell.hairline.front - 0.5f))
+        assertEquals(1f, shellToneAt(shell, 0f, shell.hairline.front + 0.5f))
+        val side = hairlineAt(shell.hairline, 90f)
+        val tones = (0 until 40).map { shellToneAt(shell, 90f, side + it + 0.5f) }
+        assertEquals(listOf(0f, 0.5f, 1f), tones.distinct(), "three flat bands up the side")
+        assertTrue(tones.zipWithNext().all { (a, b) -> b >= a }, "rising only: $tones")
     }
 
     @Test

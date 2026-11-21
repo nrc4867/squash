@@ -205,6 +205,7 @@ private fun BuildContext.shelled(path: String, on: PartId, base: HairShell?, cha
             soft = change.soft ?: from.soft,
             fade = change.fade ?: from.fade,
             fadeTo = change.fadeTo ?: from.fadeTo,
+            steps = change.steps ?: from.steps,
         )
     }
 }
