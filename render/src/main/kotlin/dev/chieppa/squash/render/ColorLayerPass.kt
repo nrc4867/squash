@@ -1,7 +1,6 @@
 package dev.chieppa.squash.render
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.geom.ChartShape
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.stretch.gpu.GpuContext
@@ -22,16 +21,6 @@ import dev.chieppa.stretch.gpu.webgpu.RenderPipelineSpec
 import dev.chieppa.stretch.gpu.webgpu.VertexAttribute
 import dev.chieppa.stretch.gpu.webgpu.VertexBufferLayout
 import dev.chieppa.stretch.gpu.webgpu.VertexFormat
-
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
-
-private const val MATRIX_FLOATS = 16
-private const val VECTOR_FLOATS = 4
-
-/** Vectors in the `Layer` uniform before its sides' tones. */
-private const val SIDES_AFTER_VECTORS = 7
 
 /**
  * One color layer over a mesh: a cut's [mesh] in the [tones] its slot shows as, solid or with each vertex's opacity in [alphas], or kept
@@ -186,11 +175,11 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
     }
 
     private val slots = ArrayList<Slot>()
-    private val data = FloatArray(COLOR_LAYER_FLOATS)
+    private val uniform = ColorLayerUniform()
 
     override fun draw(pass: GpuRenderPass, slot: Int, mesh: GpuMesh, extras: List<GpuBuffer>, layer: ColorLayerDraw, over: MeshDraw, view: SceneView) {
         val held = slotAt(slot)
-        write(held.buffer, layer, over, view)
+        device.queue.writeBuffer(held.buffer, uniform.write(layer, over, view))
         val alphas = extras.firstOrNull()
         if (layer.crease && alphas != null) {
             pass.setPipeline(creased)
@@ -225,46 +214,6 @@ internal class ColorLayerPass(context: GpuContext) : ColorLayers {
             slots += Slot(buffer, group)
         }
         return slots[index]
-    }
-
-    private fun write(buffer: GpuBuffer, layer: ColorLayerDraw, over: MeshDraw, view: SceneView) {
-        view.viewProjection.copyInto(data, 0)
-        over.model.copyInto(data, MATRIX_FLOATS)
-        var at = 2 * MATRIX_FLOATS
-        at = put(at, layer.tones.lit)
-        at = put(at, layer.tones.shadow)
-        val light = over.material.toLight
-        at = put(at, light.x, light.y, light.z, if (over.material.shading == Shading.TWO_TONE) 1f else 0f)
-        at = put(at, view.viewport.width.toFloat(), view.viewport.height.toFloat(), over.layer.scale, over.layer.offset)
-        val shape = layer.shape
-        if (shape != null) {
-            val o = shape.opening
-            at = put(at, o.width, o.height, o.lowerLid, o.frontNarrowing)
-            val oval = shape.oval
-            at = put(at, oval?.u ?: 0f, oval?.v ?: 0f, oval?.halfU ?: 1f, oval?.halfV ?: 1f)
-            val angle = shape.turn * PI.toFloat() / 180f
-            put(at, cos(angle), sin(angle), if (oval != null) 1f else 0f, shape.ovalTurn * PI.toFloat() / 180f)
-        }
-        val sides = layer.sides
-        if (sides != null) {
-            at = 2 * MATRIX_FLOATS + SIDES_AFTER_VECTORS * VECTOR_FLOATS
-            at = put(at, sides.positive.lit.red, sides.positive.lit.green, sides.positive.lit.blue, if (sides.positiveShares != null) 1f else 0f)
-            at = put(at, sides.positive.shadow)
-            at = put(at, sides.negative.lit.red, sides.negative.lit.green, sides.negative.lit.blue, if (sides.negativeShares != null) 1f else 0f)
-            put(at, sides.negative.shadow)
-        }
-        put(COLOR_LAYER_FLOATS - VECTOR_FLOATS, over.cloth?.lift ?: 0f, 0f, 0f, 0f)
-        device.queue.writeBuffer(buffer, data)
-    }
-
-    private fun put(at: Int, color: Color) = put(at, color.red, color.green, color.blue, color.alpha)
-
-    private fun put(at: Int, a: Float, b: Float, c: Float, d: Float): Int {
-        data[at] = a
-        data[at + 1] = b
-        data[at + 2] = c
-        data[at + 3] = d
-        return at + VECTOR_FLOATS
     }
 
     override fun close() {

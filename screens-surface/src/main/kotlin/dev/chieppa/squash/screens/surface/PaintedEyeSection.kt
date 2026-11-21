@@ -89,11 +89,14 @@ object PaintedEyeTags {
     fun fill(name: String) = "face.painted.fill.$name"
 
     fun line(name: String) = "face.painted.line.$name"
+
+    fun detail(name: String) = "face.painted.detail.$name"
 }
 
 /**
  * The Eyes of a head: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
- * front, its highlight, its gaze, whether it lies flat across the face and its lines. Size, turn and place are the panes' handles. A head with no painted eye offers to add one
+ * front, its highlight, its gaze, whether it lies flat across the face, its lines and its detail (lid mass, lash clumps, iris tones, lid
+ * shadow and opening shape). Size, turn and place are the panes' handles. A head with no painted eye offers to add one
  * at its eye landmark.
  */
 @Composable
@@ -162,6 +165,7 @@ private fun MoreSection(state: AppState, session: CharacterSession, eye: Painted
                 Segmented((0..MOST_LASHES).toList(), look.lashes, { count -> styled { it.copy(lashes = count) } }, { it.toString() }, Modifier.weight(1f).testTag(PaintedEyeTags.line("lashes")), fill = true)
             }
             LineToggle(Res.string.face_role_lid, PaintedEyeTags.line("lid"), look.lid) { on -> styled { it.copy(lid = on) } }
+            EyeDetailControls(session, eye, drag)
         }
     }
 }

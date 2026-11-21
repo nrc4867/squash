@@ -43,6 +43,74 @@ export interface Cowlick {
   [note: `x-${string}`]: unknown;
 }
 
+/** The iris shaded in cel tones: a darker top melting into the pupil, a lighter crescent along its bottom and a darker rim; each off at 0. */
+export interface EyeIrisShade {
+  /** How far down the darker top reaches, a share of the iris's height, where there is no crescent; with one it reaches down to the crescent. 0 none. */
+  upper?: number;
+  /** The darker top's palette slot; left out, the iris's colour taken darken of the way to the pupil's. */
+  upperSlot?: string | null;
+  /** How far the darker top's colour goes from the iris's toward the pupil's, when it names no slot. */
+  darken?: number;
+  /** How soft the darker top's lower edge is, a share of the iris's half height: 0 a hard cel edge. */
+  soft?: number;
+  /** How far up the lighter crescent along the iris's bottom reaches at its middle, a share of the iris's height; it thins to nothing below the middle. 0 none. */
+  lower?: number;
+  /** The crescent's palette slot; left out, the iris's colour taken lighten of the way to the white's. */
+  lowerSlot?: string | null;
+  /** How far the crescent's colour goes from the iris's toward the white's, when it names no slot. */
+  lighten?: number;
+  /** The width of a darker ring round the iris's edge, a share of its half width. 0 none. */
+  rim?: number;
+  /** The ring's palette slot; the darker top's colour when left out. */
+  rimSlot?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks. */
+export interface EyeLashClumps {
+  /** How many wedges: 0 none. */
+  count?: number;
+  /** The outermost wedge's length, a share of the opening's height; each further one is a little shorter. */
+  length?: number;
+  /** How much of the upper lid their roots spread over, from the back corner. */
+  spread?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The lid drawn as a tapered mass of ink in place of the even lid line; off while weight is 0. Lengths are shares of the opening. */
+export interface EyeLidMass {
+  /** The upper lid's thickness at its heaviest, from its middle to its back corner, a share of the opening's height; 0 draws no mass and keeps the lid line. */
+  weight?: number;
+  /** The upper lid's thickness at its front corner, a share of its heaviest. */
+  inner?: number;
+  /** How far the mass runs on past the back corner, tapering to a point, a share of the opening's half width. */
+  flick?: number;
+  /** How far the flick's tip rises above the back corner, a share of the opening's height; below 0 it droops. */
+  flickLift?: number;
+  /** The lower lid's thickness at the back corner, a share of the upper's heaviest: 0 leaves the lower lid open, 1 as heavy as the upper. */
+  lower?: number;
+  /** How much of the lower lid is drawn, from the back corner inward, thinning to nothing at its end: 1 the whole lower lid. */
+  lowerExtent?: number;
+  /** The mass's palette slot; the look's ink when left out. */
+  slot?: string | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A shadow band on the white under the upper lid, following its curve and thinning toward the corners; off while depth is 0. */
+export interface EyeLidShadow {
+  /** How deep the band reaches under the upper lid's middle, a share of the opening's height: about 0.15 to 0.2 hugs the lid. */
+  depth?: number;
+  /** The band's palette slot; left out, the white's colour taken share of the way to a cool grey lilac. */
+  slot?: string | null;
+  /** How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot. */
+  share?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** How a painted eye looks. Lengths are shares of the head's own coordinates at the eye's middle: across (width, irisSize, irisForward) of the one that runs toward the face's front, down (height, irisUp, browRaise) of the one that runs down it. On an upright head (head-round) across is v, once round the head at the eye, and down is u, the head's length from chin to crown, so a unit across spans about 2.2 times a unit down; on a head resting forward (head, head-bird) across is u, along the head, and down is v, once round it. face-and-clothes.md gives both in body units for each head template. */
 export interface EyeLook {
   /** Half the opening's width, from its middle to each corner, in units across. */
@@ -53,6 +121,10 @@ export interface EyeLook {
   lowerLid?: number;
   /** How much the opening narrows toward its back corner and widens toward its front, a share of its height: 0 an even almond. */
   frontNarrowing?: number;
+  /** How flat the upper lid runs, closing steeply at the corners: 0 the lower lid's round curve, 1 nearly straight, so with frontNarrowing or openingTilt it runs slanted. */
+  topFlatness?: number;
+  /** How sharp the back corner is where the lids meet: 0 round, 1 a point. */
+  outerCorner?: number;
   /** Degrees the whole eye turns in its plane about its middle, its front end up. */
   tilt?: number;
   /** Degrees the opening alone turns about its middle, its front end up, before tilt; the iris stays level. */
@@ -79,7 +151,7 @@ export interface EyeLook {
   highlightUp?: number;
   /** Whether a lid line is inked round the opening. */
   lid?: boolean;
-  /** How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there. */
+  /** How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn. */
   lashes?: number;
   /** Whether a brow is inked over the opening. */
   brow?: boolean;
@@ -99,6 +171,14 @@ export interface EyeLook {
   highlight?: string | null;
   /** The lines' palette slot; the ink's when left out. */
   ink?: string | null;
+  /** The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line. */
+  lidMass?: EyeLidMass;
+  /** Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks. */
+  lashClumps?: EyeLashClumps;
+  /** The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim. */
+  irisShade?: EyeIrisShade;
+  /** A shadow band on the white under the upper lid. */
+  lidShadow?: EyeLidShadow;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

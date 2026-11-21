@@ -3,6 +3,10 @@ package dev.chieppa.squash.schemagen.reference
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.document.EyeIrisShade
+import dev.chieppa.squash.document.EyeLashClumps
+import dev.chieppa.squash.document.EyeLidMass
+import dev.chieppa.squash.document.EyeLidShadow
 import dev.chieppa.squash.document.EyeLook
 import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkGroupId
@@ -24,6 +28,8 @@ import dev.chieppa.squash.document.ViewKey
 import dev.chieppa.squash.document.ViewKeys
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.jsonObject
 
 /** What each mouth role holds. */
@@ -100,7 +106,15 @@ internal object FaceAndClothes {
         appendLine()
         appendLine(docOf(EyeLook.serializer().descriptor.annotations))
         appendLine()
-        append(table(listOf("field", "default", "range", "meaning"), lookRows()))
+        append(table(listOf("field", "default", "range", "meaning"), lookRows(EyeLook.serializer(), EyeLook())))
+        appendLine()
+        appendLine("The look's detail groups are each off by default. Their lengths are shares of the opening or the iris, so they keep their look as the eye is sized:")
+        appendLine()
+        detailTable("lidMass", EyeLidMass.serializer(), EyeLidMass())
+        detailTable("lashClumps", EyeLashClumps.serializer(), EyeLashClumps())
+        detailTable("irisShade", EyeIrisShade.serializer(), EyeIrisShade())
+        detailTable("lidShadow", EyeLidShadow.serializer(), EyeLidShadow())
+        appendLine("The kit's `animeEye` turns them all on together with values that read as a drawn toon eye.")
         appendLine()
         appendLine("One unit of a look's lengths in body units, on each head template built undrawn at size 1, at its eye landmark; a drawn head scales them with its own size and shape. A round iris takes the irisRatio in the last column:")
         appendLine()
@@ -179,16 +193,33 @@ internal object FaceAndClothes {
         listOf("$owner ${code(descriptor.getElementName(i))}", doc)
     }
 
-    /** Each eye look field with its default, its range and its meaning. */
+    /** A detail group's heading, its meaning and its fields' table. */
     @OptIn(ExperimentalSerializationApi::class)
-    private fun lookRows(): List<List<String>> {
-        val descriptor = EyeLook.serializer().descriptor
-        val defaults = Json { encodeDefaults = true }.encodeToJsonElement(EyeLook.serializer(), EyeLook()).jsonObject
+    private fun <T> StringBuilder.detailTable(name: String, serializer: KSerializer<T>, defaults: T) {
+        appendLine("#### ${code(name)}")
+        appendLine()
+        appendLine(docOf(serializer.descriptor.annotations))
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), lookRows(serializer, defaults)))
+        appendLine()
+    }
+
+    /** Each field of [serializer]'s type with its default in [defaults], its range and its meaning; a nested group's default is `off`. */
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun <T> lookRows(serializer: KSerializer<T>, defaults: T): List<List<String>> {
+        val descriptor = serializer.descriptor
+        val values = Json { encodeDefaults = true }.encodeToJsonElement(serializer, defaults).jsonObject
         return (0 until descriptor.elementsCount).map { i ->
             val name = descriptor.getElementName(i)
             val annotations = descriptor.getElementAnnotations(i)
             val range = annotations.filterIsInstance<Range>().firstOrNull()?.let { "${num(it.min.toFloat())} to ${num(it.max.toFloat())}" } ?: "-"
-            val default = defaults[name]?.let { if (it is JsonNull) "none" else it.toString().trim('"') } ?: "-"
+            val default = values[name]?.let {
+                when (it) {
+                    is JsonNull -> "none"
+                    is JsonObject -> "off"
+                    else -> it.toString().trim('"')
+                }
+            } ?: "-"
             listOf(code(name), default, range, docOf(annotations))
         }
     }

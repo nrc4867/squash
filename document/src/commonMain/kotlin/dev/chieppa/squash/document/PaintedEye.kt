@@ -20,7 +20,9 @@ private const val UNITS = "Lengths are shares of the head's own coordinates at t
  * further than its place over the opening and turned [browTilt] degrees about its middle, its front end up. The opening alone is turned
  * [openingTilt] degrees about its middle, the lashes following its back corner; then the whole eye is turned [tilt] degrees in its plane,
  * and its facing [lookOut] degrees outward.
- * Each fill shows its palette slot: [white], [iris], [pupil], [highlight] and [ink] for the lines.
+ * Each fill shows its palette slot: [white], [iris], [pupil], [highlight] and [ink] for the lines. The upper lid runs [topFlatness] flat
+ * and the back corner [outerCorner] sharp. Off by default: a [lidMass] in place of the lid line, [lashClumps], an [irisShade] and a
+ * [lidShadow] on the white.
  */
 @Serializable
 @Doc("How a painted eye looks. $UNITS")
@@ -33,6 +35,10 @@ data class EyeLook(
     val lowerLid: Float = 0.72f,
     @Doc("How much the opening narrows toward its back corner and widens toward its front, a share of its height: 0 an even almond.") @Range(min = -0.9, max = 0.9)
     val frontNarrowing: Float = 0.18f,
+    @Doc("How flat the upper lid runs, closing steeply at the corners: 0 the lower lid's round curve, 1 nearly straight, so with frontNarrowing or openingTilt it runs slanted.") @Range(min = 0.0, max = 1.0)
+    val topFlatness: Float = 0f,
+    @Doc("How sharp the back corner is where the lids meet: 0 round, 1 a point.") @Range(min = 0.0, max = 1.0)
+    val outerCorner: Float = 0f,
     @Doc("Degrees the whole eye turns in its plane about its middle, its front end up.") @Range(min = -90.0, max = 90.0)
     val tilt: Float = 0f,
     @Doc("Degrees the opening alone turns about its middle, its front end up, before tilt; the iris stays level.") @Range(min = -90.0, max = 90.0)
@@ -59,7 +65,7 @@ data class EyeLook(
     val highlightUp: Float = 0.35f,
     @Doc("Whether a lid line is inked round the opening.")
     val lid: Boolean = true,
-    @Doc("How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there.") @Range(min = 0.0, max = 3.0)
+    @Doc("How many lash flicks rise from the upper lid: 0 none, 1 at the back corner, 2 and 3 spread forward along the lid from there; none while lash clumps are drawn.") @Range(min = 0.0, max = 3.0)
     @Serializable(with = LashCountSerializer::class)
     val lashes: Int = 1,
     @Doc("Whether a brow is inked over the opening.")
@@ -80,6 +86,14 @@ data class EyeLook(
     val highlight: SlotName? = null,
     @Doc("The lines' palette slot; the ink's when left out.")
     val ink: SlotName? = null,
+    @Doc("The lid drawn as a tapered mass of ink with a flick past the back corner and a lighter lower lid, in place of the even lid line.")
+    val lidMass: EyeLidMass = EyeLidMass(),
+    @Doc("Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks.")
+    val lashClumps: EyeLashClumps = EyeLashClumps(),
+    @Doc("The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim.")
+    val irisShade: EyeIrisShade = EyeIrisShade(),
+    @Doc("A shadow band on the white under the upper lid.")
+    val lidShadow: EyeLidShadow = EyeLidShadow(),
 ) {
     init {
         require(lashes in 0..MOST_LASHES) { "An eye has 0 to $MOST_LASHES lashes, not $lashes" }

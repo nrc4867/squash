@@ -1,17 +1,18 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 80
+internal const val COLOR_LAYER_FLOATS = 104
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
  * camera by a fraction of a pixel's depth, and on see-through cloth by its lift too. That fraction grows where the surface turns away, since there a fragment's depth moves
  * fastest between its mesh and its cut, and it never falls under a few steps of the depth buffer. So a layer passes against its
  * own mesh at any angle and at any zoom, and fails against anything truly in front of it. A shaped layer is kept at each fragment to an
- * almond and an oval, each turned, in the chart its vertices carry, as [dev.chieppa.squash.geom.ChartShape] reads them, its edge faded
- * over a pixel. A crease layer multiplies what is under it by its tone where its per-vertex shade is at least a half.
+ * almond and an oval, each turned, or to a lid's mass about the almond, and by a cut, in the chart its vertices carry, as
+ * [dev.chieppa.squash.geom.ChartShape] reads them (see [EYE_SHAPE_WGSL]), its edge faded over a pixel and its cut's over its softness
+ * too. A crease layer multiplies what is under it by its tone where its per-vertex shade is at least a half.
  */
-internal const val COLOR_LAYER_WGSL = """
+internal val COLOR_LAYER_WGSL = """
 struct Layer {
     view_projection: mat4x4<f32>,
     model: mat4x4<f32>,
@@ -26,6 +27,12 @@ struct Layer {
     positive_shadow: vec4<f32>,
     negative_lit_and_on: vec4<f32>,
     negative_shadow: vec4<f32>,
+    shape_extra: vec4<f32>,
+    cut: vec4<f32>,
+    cut_mode: vec4<f32>,
+    lid_a: vec4<f32>,
+    lid_b: vec4<f32>,
+    lid_c: vec4<f32>,
     lift: vec4<f32>,
 };
 
@@ -146,18 +153,15 @@ fn vs_shaped(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
     return out;
 }
 
-// How far outside the almond a chart point lies, along v between its corners: at most zero inside.
-fn almond_level(p: vec2<f32>) -> f32 {
-    let o = layer.opening;
-    let a = clamp(p.x / o.x, -1.0, 1.0);
-    let open = sqrt(max(1.0 - a * a, 0.0)) * (1.0 + o.w * a);
-    return max(max(p.y - o.y * open, -o.y * o.z * open - p.y), (abs(p.x) - o.x) * o.y / o.x);
+// How far outside an oval a chart point lies, in shares of its lesser half: at most zero inside.
+fn oval_level_of(p: vec2<f32>, oval: vec4<f32>) -> f32 {
+    let q = (p - oval.xy) / oval.zw;
+    return (length(q) - 1.0) * min(oval.z, oval.w);
 }
 
-// How far outside the oval a chart point lies, in shares of its lesser half: at most zero inside.
+// How far outside the layer's oval a chart point lies.
 fn oval_level(p: vec2<f32>) -> f32 {
-    let q = (p - layer.oval.xy) / layer.oval.zw;
-    return (length(q) - 1.0) * min(layer.oval.z, layer.oval.w);
+    return oval_level_of(p, layer.oval);
 }
 
 @fragment
@@ -165,17 +169,39 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
     let c = layer.turn_and_oval.x;
     let s = layer.turn_and_oval.y;
     let p = vec2<f32>(in.chart.x * c + in.chart.y * s, -in.chart.x * s + in.chart.y * c);
-    var level = almond_level(p);
-    if (layer.turn_and_oval.z > 0.5) {
-        let oc = cos(layer.turn_and_oval.w);
-        let os = sin(layer.turn_and_oval.w);
-        level = max(level, oval_level(vec2<f32>(in.chart.x * oc + in.chart.y * os, -in.chart.x * os + in.chart.y * oc)));
+    let oc = cos(layer.turn_and_oval.w);
+    let os = sin(layer.turn_and_oval.w);
+    let q = vec2<f32>(in.chart.x * oc + in.chart.y * os, -in.chart.x * os + in.chart.y * oc);
+    var level: f32;
+    var spread: f32;
+    if (layer.shape_extra.z > 0.5) {
+        let pixel = lid_pixel(p);
+        level = lid_level(p) + 0.5 * pixel;
+        spread = pixel;
+    } else {
+        level = almond_level(p);
+        if (layer.turn_and_oval.z > 0.5) {
+            level = max(level, oval_level(q));
+        }
+        spread = fwidth(level);
     }
-    let alpha = clamp(0.5 - level / max(fwidth(level), 0.0000001), 0.0, 1.0);
+    var alpha = clamp(0.5 - level / max(spread, 0.0000001), 0.0, 1.0);
+    let mode = layer.cut_mode.x;
+    if (mode > 0.5) {
+        var cut_level: f32;
+        if (mode < 1.5) {
+            cut_level = oval_level_of(q, layer.cut);
+        } else {
+            let moved = p - layer.cut.xy;
+            cut_level = almond_level(vec2<f32>(moved.x / layer.cut.z, moved.y));
+        }
+        cut_level = cut_level * layer.cut_mode.y;
+        alpha = alpha * clamp(0.5 - cut_level / (max(fwidth(cut_level), 0.0000001) + layer.shape_extra.w), 0.0, 1.0);
+    }
     let toned = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
     if (alpha <= 0.0) {
         discard;
     }
     return vec4<f32>(toned, alpha);
 }
-""" + TONE_WGSL
+""" + EYE_SHAPE_WGSL + TONE_WGSL
