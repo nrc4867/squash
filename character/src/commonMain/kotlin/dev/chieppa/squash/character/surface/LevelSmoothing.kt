@@ -4,7 +4,7 @@ import dev.chieppa.squash.geom.collections.IntList
 import kotlin.math.abs
 
 /** How many times a level is eased toward its neighbours' near its zero, and how far each time. */
-private const val LEVEL_STEPS = 6
+internal const val NEAR_ZERO_STEPS = 6
 private const val LEVEL_FACTOR = 0.5f
 
 /** How much a fitted plane's slope is held toward none, as a share of the squared spread of the neighbours it is fitted to. */
@@ -32,7 +32,8 @@ fun smoothedNearZero(
 
 /**
  * The work of [smoothedNearZero], in batches whose pieces are independent of one another, handed out by [next] until it gives null, then
- * read from [result]. Each step eases every moving vertex from the values the step before left, so the pieces of a step may run at once.
+ * read from [result]. Each of its [steps] eases every moving vertex from the values the step before left, so the pieces of a step may run
+ * at once; more steps ease over a wider stretch of the mesh.
  */
 class NearZeroSmoothing(
     private val values: FloatArray,
@@ -41,6 +42,7 @@ class NearZeroSmoothing(
     private val band: Float,
     private val positions: FloatArray? = null,
     private val shift: Float = Float.POSITIVE_INFINITY,
+    private val steps: Int = NEAR_ZERO_STEPS,
 ) {
     private val start = IntArray(vertexCount + 1)
     private var links = IntArray(0)
@@ -56,11 +58,11 @@ class NearZeroSmoothing(
         step++
         return when {
             step == 0 -> listOf({ linked() })
-            step <= LEVEL_STEPS -> {
+            step <= steps -> {
                 if (step > 1) current = following.also { following = current }
                 chunked(moving.size, SMOOTHING_CHUNK) { from, to -> ease(from, to) }.ifEmpty { listOf({}) }
             }
-            step == LEVEL_STEPS + 1 -> {
+            step == steps + 1 -> {
                 current = following.also { following = current }
                 for (v in moving) current[v] = current[v].coerceIn(values[v] - shift, values[v] + shift)
                 null

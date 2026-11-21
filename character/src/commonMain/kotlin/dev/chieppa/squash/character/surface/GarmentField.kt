@@ -24,6 +24,9 @@ private const val CUFF_BLEND_EASES = 2f
 /** How many of its cells a garment's narrowest band spans at least: a garment narrower than that at the body's cell meshes finer. */
 private const val BAND_CELLS = 4f
 
+/** How many times a garment's cells are halved from the body's at most where its cloth is drawn and a piece of it or a gap is that narrow. */
+const val DRAWN_LEVEL = 3
+
 /**
  * A garment's field on a body's [field]: the first runs of the parts [worn] covers, whose (u, v) its branches read, each grown by its branch's ease and joined to the run it
  * grows from as the body joins them, where that run is covered too; a branch with a shell adds the shell's solid, grown already, its u
@@ -35,7 +38,9 @@ private const val BAND_CELLS = 4f
  * steps, so a small stroke keeps the same solid. Its runs keep their parts' own (u, v), so each of its
  * vertices knows where on the body it grows from. It meshes at the cell of the finest run it covers, no finer than [DETAIL_LEVEL] (see
  * [digitLevels]), so a shoe or a hood is as fine as the foot or the head under it, halved again up to [DIGIT_LEVEL] times from the body's
- * cell while its narrowest band, along a part or round it, spans fewer than [BAND_CELLS] cells, so a belt or a strap keeps its width.
+ * cell while its narrowest band, along a part or round it, spans fewer than [BAND_CELLS] cells, so a belt or a strap keeps its width;
+ * where its cloth is drawn, up to [DRAWN_LEVEL] times while its narrowest drawn piece or gap does, so a strap, a tie or the gap between two
+ * cups is several cells across.
  * A covered run whose ease varies along or round it, or whose cloth hangs, is grown ring by ring by [grownRuns] past its branch's least ease (see
  * [GrownRuns]).
  */
@@ -170,22 +175,28 @@ private fun reachesNear(reach: ClothReach, u: Float): Boolean {
 
 /**
  * The cell [worn] meshes at over [field]'s runs [kept]: that of the finest of them, no finer than [DETAIL_LEVEL], halved further while
- * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells'.
+ * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells' and a drawn
+ * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere.
  */
 private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>): Float {
     val levels = digitLevels(field)
     var narrowest = Float.MAX_VALUE
+    var finest = DIGIT_LEVEL
     for (run in kept) {
         val at = field.runs[run]
+        val scales = RunScales(at.patch)
+        worn.clothOf(at.partId)?.drawnNarrowest(scales::along, scales::around)?.let { drawn ->
+            narrowest = minOf(narrowest, drawn)
+            finest = DRAWN_LEVEL
+        }
         val band = bandOf(at.partId, worn)
         if (!band.partial && band.allRound) continue
-        val scales = RunScales(at.patch)
         if (band.partial) narrowest = minOf(narrowest, band.along * scales.along(band.middle))
         if (!band.allRound) narrowest = minOf(narrowest, band.around * scales.around(band.middle))
     }
     var level = kept.maxOfOrNull { minOf(levels[it], DETAIL_LEVEL) } ?: 0
     var cell = field.cell / (1 shl level)
-    while (level < DIGIT_LEVEL && narrowest < BAND_CELLS * cell) {
+    while (level < finest && narrowest < BAND_CELLS * cell) {
         cell /= 2f
         level++
     }

@@ -22,6 +22,20 @@ class ClothSeams(private val field: CharacterField, private val worn: WornCover)
     fun values(mesh: SurfaceMesh): List<FloatArray> = areaValues(mesh) + dropValues(mesh)
 
     /**
+     * [values] with each area's seam eased near zero by [smoothing], its values read as distances in [unit]s of the body, so a seam
+     * between drawn areas follows the shapes' outline as smoothly as the garment's hem does; NaN where they were NaN.
+     */
+    fun smoothedValues(mesh: SurfaceMesh, unit: Float, smoothing: (FloatArray) -> FloatArray): List<FloatArray> {
+        val read = values(mesh)
+        val seams = if (areas < 2) 0 else areas - 1
+        return read.mapIndexed { i, seam ->
+            if (i >= seams) return@mapIndexed seam
+            val eased = smoothing(FloatArray(seam.size) { v -> if (seam[v].isNaN()) unit else seam[v] * unit })
+            FloatArray(seam.size) { v -> if (seam[v].isNaN()) Float.NaN else eased[v] / unit }
+        }
+    }
+
+    /**
      * For each run whose cloth drops its seam, one value a vertex: how far past the seam along the run it lies, over the runs it holds that
      * are that run; zero along the seam, NaN where the vertex lies mostly on other runs.
      */

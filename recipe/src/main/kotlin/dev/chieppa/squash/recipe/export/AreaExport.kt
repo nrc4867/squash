@@ -1,9 +1,11 @@
 package dev.chieppa.squash.recipe.export
 
+import dev.chieppa.squash.character.surface.DrawnCloth
 import dev.chieppa.squash.document.CHART_COLUMNS
+import dev.chieppa.squash.document.ClothOutline
+import dev.chieppa.squash.document.ClothShape
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.Garment
-import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.cellsOfRuns
 import dev.chieppa.squash.recipe.model.RecipeArea
@@ -21,12 +23,33 @@ internal fun paintsItsBoxes(garment: Garment): Boolean {
     return boxes.areas.map { it.cells } == garment.areas.map { it.cells }
 }
 
-/** [area] as a recipe area painting exactly its cells: a box a run of columns, rows with the same runs taken together. */
-internal fun areaOf(area: GarmentArea): RecipeArea =
-    RecipeArea(
-        area.id.value, area.name, area.color?.value, area.gather, area.fold, area.opacity, area.net?.let { RecipeNet(it.pattern, it.hole, it.thread, it.angle) },
-        area.cells.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) },
+/**
+ * [garment]'s areas as recipe areas painting exactly their cells: on a part whose cloth is read from its shapes, laid area by area, those
+ * shapes as exact strokes; elsewhere a box a run of columns, rows with the same runs taken together.
+ */
+internal fun areasOf(garment: Garment): List<RecipeArea> {
+    val drawn = garment.shapes.map { it.part }.distinct().filter { part ->
+        val order = garment.shapes.filter { it.part == part }.map { shape -> garment.areas.indexOfFirst { it.id == shape.area } }
+        order.zipWithNext().all { (a, b) -> a <= b } && DrawnCloth.of(garment, part)?.laysExactly(DrawnCloth.cellsOf(garment, part)) == true
+    }.toSet()
+    return garment.areas.map { area ->
+        val exact = garment.shapes.filter { it.part in drawn && it.area == area.id }.map(::strokeOf)
+        RecipeArea(
+            area.id.value, area.name, area.color?.value, area.gather, area.fold, area.opacity, area.net?.let { RecipeNet(it.pattern, it.hole, it.thread, it.angle) },
+            area.cells.filterKeys { it !in drawn }.flatMap { (part, runs) -> boxesOf(part, cellsOfRuns(runs)) } + exact,
+        )
+    }
+}
+
+/** [shape] as the exact stroke that lays it. */
+private fun strokeOf(shape: ClothShape): RecipeStroke = when (val outline = shape.outline) {
+    is ClothOutline.Box -> RecipeStroke(shape.part.value, RecipeStrokeShape.BOX, shape.unpaint, u = listOf(outline.from, outline.to), v = listOf(outline.fromV, outline.toV), exact = true)
+    is ClothOutline.Ellipse -> RecipeStroke(shape.part.value, RecipeStrokeShape.ELLIPSE, shape.unpaint, u = listOf(outline.from, outline.to), v = listOf(outline.fromV, outline.toV), exact = true)
+    is ClothOutline.Path -> RecipeStroke(
+        shape.part.value, RecipeStrokeShape.LASSO, shape.unpaint, points = outline.points.map { listOf(it.u, it.v) }, exact = true,
+        curved = outline.curved, corners = outline.corners.sorted(),
     )
+}
 
 internal fun holesOf(garment: Garment): List<RecipeHole> = garment.holes.map { RecipeHole(it.part.value, it.cuff) }
 

@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.shape.BodyChart
 import dev.chieppa.squash.character.surface.ClothField
 import dev.chieppa.squash.character.surface.ClothReach
+import dev.chieppa.squash.character.surface.DrawnCloth
 import dev.chieppa.squash.character.surface.areaLevel
 import dev.chieppa.squash.character.surface.onLevel
 import dev.chieppa.squash.document.CHART_CELLS
@@ -15,6 +16,7 @@ import dev.chieppa.squash.character.shape.SurfaceMask
 import dev.chieppa.squash.character.shape.edgesOf
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.ClothNet
+import dev.chieppa.squash.document.ClothShape
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentAreaId
@@ -55,9 +57,9 @@ class GarmentEdgeOn(val area: Int, val edge: MaskEdge)
 /**
  * A garment's cloth on a body's [chart]: its [areas] painted and its [holes]. The [cloth] is every area's cells but those of each holed
  * part and the parts beyond it, with a band round the root of each part whose hole has a cuff; its [edges] are each area's, a seam
- * where it meets another area.
+ * where it meets another area. Where a part's cells are what the garment's [shapes] lay, its cloth is read from those shapes.
  */
-class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val holes: List<GarmentHole>) {
+class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val holes: List<GarmentHole>, val shapes: List<ClothShape> = emptyList()) {
     /** The parts the holes let out, with every part beyond each. */
     val holed: Set<PartId> by lazy {
         val out = HashSet<PartId>()
@@ -94,8 +96,10 @@ class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val hol
 
     /** Each part's painted cloth as the garment is cut on it, by the pair's leader, its areas' fields in the areas' order. */
     val fields: Map<PartId, ClothField> by lazy {
+        val ids = areas.map { it.id }
         chart.parts.mapNotNull { part ->
-            ClothField.of(shown.map { mask -> BooleanArray(CHART_CELLS) { mask.held(part.id, it) } })?.let { part.id to it }
+            val cells = shown.map { mask -> BooleanArray(CHART_CELLS) { mask.held(part.id, it) } }
+            ClothField.of(cells, DrawnCloth.of(shapes, ids, part.id))?.let { part.id to it }
         }.toMap()
     }
 
@@ -136,7 +140,7 @@ class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val hol
     fun area(id: GarmentAreaId?): PaintedArea? = areas.firstOrNull { it.id == id }
 
     /** This garment with its areas [areas] and holes [holes]. */
-    fun with(areas: List<PaintedArea> = this.areas, holes: List<GarmentHole> = this.holes): PaintedGarment = PaintedGarment(chart, areas, holes)
+    fun with(areas: List<PaintedArea> = this.areas, holes: List<GarmentHole> = this.holes): PaintedGarment = PaintedGarment(chart, areas, holes, shapes)
 
     /** The areas as the garment saves them. */
     fun savedAreas(): List<GarmentArea> = areas.map { it.saved() }
@@ -156,7 +160,7 @@ private object PaintMemo {
         if (last != null && now != null && now.first == garment && now.second === body && now.third == character.parts) return last
         val chart = bodyChart(character, body)
         val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells), it.color, it.gather, it.fold, it.opacity, it.net) }
-        return PaintedGarment(chart, areas, garment.holes).also {
+        return PaintedGarment(chart, areas, garment.holes, garment.shapes).also {
             key = Triple(garment, body, character.parts)
             held = it
         }

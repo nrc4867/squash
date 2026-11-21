@@ -140,6 +140,8 @@ fn pairField(p: vec3<f32>, b: u32, n: u32, i: u32, before: f32, after: f32) -> v
     return vec3<f32>(d, along, angle);
 }
 
+fn holds(p: vec3<f32>, b: u32, i: u32) -> bool { return plane(p, b + i) >= 0.0 && plane(p, b + i + 1u) <= 0.0; }
+
 fn wrapped(v: f32) -> f32 { return v - floor(v); }
 fn around(a: f32, b: f32) -> f32 { let d = b - a; return d - floor(d + 0.5); }
 
@@ -203,6 +205,16 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     }
     answers[id.x * 3u] = field - member.origin.w;
     if (!place) { return; }
+    // Placed by the neighbouring pair whose planes hold the point where the nearest pair's do not.
+    if (!holds(p, b, bestPair)) {
+        var holding = bestPair;
+        if (bestPair > 0u && holds(p, b, bestPair - 1u)) { holding = bestPair - 1u; }
+        else if (bestPair + 2u < n && holds(p, b, bestPair + 1u)) { holding = bestPair + 1u; }
+        if (holding != bestPair) {
+            best = pairField(p, b, n, holding, plane(p, b + holding), plane(p, b + holding + 1u));
+            bestPair = holding;
+        }
+    }
     let o = b + bestPair;
     let k = o + 1u;
     let gap = gapOf(o);

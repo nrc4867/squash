@@ -6,3 +6,4 @@ export * from "./ease.ts";
 export * from "./opening.ts";
 export * from "./clothes.ts";
 export * from "./hosiery.ts";
+export * from "./fine.ts";

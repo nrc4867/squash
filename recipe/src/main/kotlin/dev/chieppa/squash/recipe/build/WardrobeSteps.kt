@@ -99,7 +99,7 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
         ClothHang(hang.limit, hang.flare)
     }
     garment.areas.forEachIndexed { i, area -> area.gather?.let { if (it < 0f) fail("$path.areas[$i].gather", "a gather is the ease a band pulls the cloth in to, 0 or more: here $it") } }
-    val (painted, holes, tucks) = if (paints(garment)) paintedCloth(path, garment, bare) else Triple(emptyList(), emptyList(), emptyList())
+    val (painted, holes, tucks, shapes) = if (paints(garment)) paintedCloth(path, garment, bare) else PaintedCloth()
     garment.areas.forEachIndexed { i, area -> area.opacity?.let { if (it !in 0f..1f) fail("$path.areas[$i].opacity", "an opacity runs 0 to 1: here $it") } }
     garment.areas.forEachIndexed { i, area -> area.fold?.let { if (it !in 0f..MOST_FOLD) fail("$path.areas[$i].fold", "a fold stands out 0 to $MOST_FOLD over the cloth beside it: here $it") } }
     val areas = painted.mapIndexed { i, area -> garment.areas.getOrNull(i).let { area.copy(gather = it?.gather, fold = it?.fold, opacity = it?.opacity, net = it?.net?.let { net -> clothNet("$path.areas[$i].net", net) }) } }
@@ -136,6 +136,7 @@ private fun BuildContext.garment(path: String, garment: RecipeGarment, bare: Bar
             eases = eases,
             hang = hang,
             drops = drops,
+            shapes = shapes,
         )
     }
 }

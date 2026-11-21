@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.dress.painted
 import dev.chieppa.squash.character.dress.paintedOf
 import dev.chieppa.squash.character.dress.shapeCommands
 import dev.chieppa.squash.character.shape.SurfaceMask
+import dev.chieppa.squash.document.ClothShape
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentAreaId
@@ -37,11 +38,19 @@ internal class BareBody(private val context: BuildContext) {
 /** Whether [garment]'s cloth is painted, holed or tucked, so its shape is written from its cells as Dress writes it. */
 internal fun paints(garment: RecipeGarment): Boolean = garment.areas.isNotEmpty() || garment.holes.isNotEmpty() || garment.tucks.isNotEmpty()
 
+/** A recipe garment's cloth as painted: its [areas], [holes], Tuck choices and the [shapes] its exact strokes keep, in the order laid. */
+internal data class PaintedCloth(
+    val areas: List<GarmentArea> = emptyList(),
+    val holes: List<GarmentHole> = emptyList(),
+    val tucks: List<TuckChoice> = emptyList(),
+    val shapes: List<ClothShape> = emptyList(),
+)
+
 /**
- * [garment]'s areas, each laid stroke by stroke in order on the bare body's chart (see [painted]), and its holes and Tuck choices, read
- * at [path].
+ * [garment]'s areas, each laid stroke by stroke in order on the bare body's chart (see [painted]), its holes and Tuck choices, and the
+ * shapes of its exact strokes, read at [path].
  */
-internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bare: BareBody): Triple<List<GarmentArea>, List<GarmentHole>, List<TuckChoice>> {
+internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bare: BareBody): PaintedCloth {
     val character = document.character
     val chart = bodyChart(character, bare.body)
     val ids = garment.areas.mapIndexed { i, area -> GarmentAreaId(area.id).also { if (garment.areas.take(i).any { it.id == area.id }) fail("$path.areas[$i].id", "area \"${area.id}\" is named twice") } }
@@ -51,13 +60,23 @@ internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bar
         emptyList(),
     )
     val middle = middlePartsOf(character)
+    val shapes = ArrayList<ClothShape>()
     garment.areas.forEachIndexed { i, area ->
         area.paint.forEachIndexed { j, stroke ->
             val p = "$path.areas[$i].paint[$j]"
             if (stroke.clean !in 0f..1f) fail("$p.clean", "clean lies from 0 to 1, not ${stroke.clean}")
-            val cells = strokeCells(p, stroke, chart, bare.places)
-            if (cells.isEmpty) warn(p, "the stroke holds no cell's middle; a cell is 1/64 of u by 1/32 of v")
-            cloth = painted(cloth, ids[i], cells, PaintStyle(erase = stroke.unpaint, clean = stroke.clean, mirrored = if (stroke.mirrored) middle else emptySet()))
+            if (stroke.exact) {
+                for (exact in exactStrokes(p, stroke, chart)) {
+                    if (exact.cells.isEmpty && !stroke.unpaint) warn(p, "the stroke lies on no cell of its part")
+                    cloth = painted(cloth, ids[i], exact.cells, PaintStyle(erase = stroke.unpaint))
+                    shapes += ClothShape(exact.part, ids[i], exact.outline, stroke.unpaint)
+                }
+            } else {
+                if (stroke.curved || stroke.corners.isNotEmpty()) fail("$p.curved", "a lasso is curved only when exact")
+                val cells = strokeCells(p, stroke, chart, bare.places)
+                if (cells.isEmpty) warn(p, "the stroke holds no cell's middle; a cell is 1/64 of u by 1/32 of v")
+                cloth = painted(cloth, ids[i], cells, PaintStyle(erase = stroke.unpaint, clean = stroke.clean, mirrored = if (stroke.mirrored) middle else emptySet()))
+            }
         }
     }
     cloth.areas.forEachIndexed { i, area -> if (area.mask.isEmpty) warn("$path.areas[$i]", "the area holds no cells once every stroke is laid") }
@@ -68,7 +87,7 @@ internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bar
     if (holes.distinctBy { it.part }.size != holes.size) fail("$path.holes", "two holes round one part")
     val tucks = garment.tucks.mapIndexed { i, tuck -> TuckChoice(chart.leaderOf(partOf("$path.tucks[$i].part", tuck.part)), tuck.kind, tuck.tucked) }
     if (garment.joins.isNotEmpty() && garment.areas.isNotEmpty()) warn("$path.joins", "a garment with areas inks the joins where two areas meet; these are not used")
-    return Triple(cloth.savedAreas(), holes, tucks)
+    return PaintedCloth(cloth.savedAreas(), holes, tucks, shapes)
 }
 
 /**
