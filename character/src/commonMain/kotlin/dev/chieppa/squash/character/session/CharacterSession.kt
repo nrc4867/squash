@@ -62,6 +62,8 @@ import dev.chieppa.squash.character.hair.LockHair
 import dev.chieppa.squash.character.hair.LOCK_TEMPLATE
 import dev.chieppa.squash.character.hair.lockColors
 import dev.chieppa.squash.character.hair.lockGroupsNode
+import dev.chieppa.squash.character.hair.lockLayersNode
+import dev.chieppa.squash.character.hair.shellSpecs
 import dev.chieppa.squash.document.shownMembranes
 import dev.chieppa.squash.character.surface.HeldSurface
 import dev.chieppa.squash.character.surface.fieldWorkNode
@@ -159,7 +161,7 @@ class CharacterSession(
 
     val assembly: Node<*, AssembledCharacter> = graph.lockGroupsNode(
         bodyAssembly,
-        document.map { LockHair(it.character.lockGroups, it.character.scalpFlows) }.distinctUntilChanged(),
+        document.map { LockHair(it.character.lockGroups, it.character.scalpFlows, shellSpecs(it.character)) }.distinctUntilChanged(),
         lockBuilds,
     )
 
@@ -198,16 +200,19 @@ class CharacterSession(
      * Every part's color, cut to the mesh in each part's surface space, and each worn garment's. Made with the session, so
      * [Graph.settled] covers it from the start. Its `output` keeps the last result while a newer run is pending. See HLD: look, Color is vector.
      */
-    val bodyColor: Node<*, BodyColor> = graph.dressedColorNode(
-        graph.shinedColorNode(
-            graph.bodyColorNode(
-                document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
-                ::heldColor,
+    val bodyColor: Node<*, BodyColor> = graph.lockLayersNode(
+        graph.dressedColorNode(
+            graph.shinedColorNode(
+                graph.bodyColorNode(
+                    document.map { doc -> doc.character.parts.map { it.id } }.distinctUntilChanged(),
+                    ::heldColor,
+                ),
+                assembly,
+                shines,
             ),
-            assembly,
-            shines,
+            document.map { garmentColors(it.character) + membraneColors(it.character) + lockColors(it.character) }.distinctUntilChanged(),
         ),
-        document.map { garmentColors(it.character) + membraneColors(it.character) + lockColors(it.character) }.distinctUntilChanged(),
+        assembly,
     )
 
     /** Every part's fur strokes with the grain and the slot under each, camera aside. Made with the session, so [Graph.settled] covers it from the start. */

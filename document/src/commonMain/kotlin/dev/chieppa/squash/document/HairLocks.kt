@@ -23,11 +23,12 @@ enum class LockGroupKind {
     @SerialName("top") TOP,
 }
 
-/** A lock's cross-section: a flattened ribbon or a rounded clump. */
+/** A lock's cross-section: a flattened ribbon, a rounded clump, or a braid of three strands. */
 @Serializable
 enum class LockSection {
     @SerialName("ribbon") RIBBON,
     @SerialName("clump") CLUMP,
+    @SerialName("braid") BRAID,
 }
 
 /** How a lock ends. */
@@ -163,7 +164,9 @@ const val MOST_ROOT_MOVE = 45f
  * outer part [rise] degrees off it, sweeps [sweep] sideways, falls toward the ground by [fall], curls [curl] turns, waves [wave] of its
  * width and twists [twist] degrees. A higher [layer] lies over a lower one. With [tie] the roots gather toward one point, a tail's tie, and [band] wraps it in a band. [overrides] set single
  * locks by index. [physics] says how its locks move once a solver drives them. Its locks grow the way the head's [ScalpFlow] says, as
- * far as [flow], and their kind's own way the rest.
+ * far as [flow], and their kind's own way the rest. Each lies [lie] of its length along the head before it lifts, or turns [stand] of the
+ * way toward straight up from its root; a [trim] cuts its tip
+ * to a plane, and a tied lock [coil]s round its tie into a bun.
  */
 @Serializable
 @Doc("A group of hair locks on a head: a fringe, a side, the back, the crown, strays or the top, each lock a separate swept part.")
@@ -222,6 +225,14 @@ data class LockGroup(
     val physics: LockPhysics = LockPhysics(),
     @Doc("How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's.") @Range(min = 0.0, max = 1.0)
     val flow: Float = 1f,
+    @Doc("How much of each lock's length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a brush or a flat top.") @Range(min = 0.05, max = 0.95)
+    val lie: Float = 0.55f,
+    @Doc("How far each lock turns from the way it grows toward straight up from its root, 0 following the head to 1 standing straight up: a brush, a flat top.") @Range(min = 0.0, max = 1.0)
+    val stand: Float = 0f,
+    @Doc("A plane its lock tips are cut to; uncut when left out.")
+    val trim: LockTrim? = null,
+    @Doc("With tie, how many turns each lock coils round the tie into a bun: about 1.5 a bun; 0 hangs free.") @Range(min = 0.0, max = 3.0)
+    val coil: Float = 0f,
     @Doc("Single locks set by hand, by index.")
     val overrides: List<LockOverride> = emptyList(),
 ) {
@@ -235,6 +246,9 @@ data class LockGroup(
         require(tipPoints in 2..3) { "A forked tip has 2 or 3 points, not $tipPoints" }
         require(curl in -MOST_LOCK_CURL..MOST_LOCK_CURL) { "A lock curls at most $MOST_LOCK_CURL turns, not $curl" }
         require(layer >= 0) { "A lock group's layer is 0 or more, not $layer" }
+        require(lie in 0.05f..0.95f) { "A lock lies 0.05 to 0.95 of its length along the head, not $lie" }
+        require(coil in 0f..MOST_LOCK_COIL) { "A lock coils 0 to $MOST_LOCK_COIL turns round its tie, not $coil" }
+        require(stand in 0f..1f) { "A lock group's stand is 0 to 1, not $stand" }
         require(overrides.map { it.index }.toSet().size == overrides.size) { "Lock group ${id.value} overrides a lock twice" }
     }
 

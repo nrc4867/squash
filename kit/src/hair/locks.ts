@@ -1,7 +1,7 @@
 // Hair made of locks: each lock a separate swept part, in groups over an inner mass that hides the scalp. See docs/hld/parts.md,
 // Hair locks, and the skill's head-and-face.md.
 
-import type { Cowlick, RecipeHair, RecipeHairOutline, RecipeLockGroup, RecipeMassFit, RecipePart, RecipeParting, RecipeScalpFlow, RecipeSocket, Whorl } from "../schema/recipe.ts";
+import type { Cowlick, RecipeHair, RecipeHairOutline, RecipeHairShell, RecipeLockGroup, RecipeMassFit, RecipePart, RecipeParting, RecipeScalpFlow, RecipeSocket, Whorl } from "../schema/recipe.ts";
 import { socket } from "../parts/rig.ts";
 import { roundTo } from "../geom/point.ts";
 import { HAIR_LENGTHS } from "./index.ts";
@@ -131,11 +131,13 @@ export interface LockHairSpec {
   flow?: RecipeScalpFlow;
   /** The hair's drawn outline per view, which with `fit` the outer locks are fitted to: `hairOutline([readHairOutline(".../hair-front.json")])`. */
   outline?: RecipeHairOutline;
+  /** Hair cut to the skin under the locks: `hairShell({ fade: "mid" })`; each field given replaces the preset's shell's. */
+  shell?: RecipeHairShell;
 }
 
 /** Lock hair of `preset` on a head: one entry of a recipe's `hair`. */
 export function lockHair(preset: LockPreset | null, spec: LockHairSpec): RecipeHair {
-  const { on, mass, color, band, reach, groups, colliders, flow, outline } = spec;
+  const { on, mass, color, band, reach, groups, colliders, flow, outline, shell } = spec;
   return {
     on,
     ...(preset ? { preset } : {}),
@@ -148,6 +150,7 @@ export function lockHair(preset: LockPreset | null, spec: LockHairSpec): RecipeH
     ...(colliders === false ? { colliders: false } : {}),
     ...(flow ? { flow } : {}),
     ...(outline ? { outline } : {}),
+    ...(shell ? { shell } : {}),
   };
 }
 

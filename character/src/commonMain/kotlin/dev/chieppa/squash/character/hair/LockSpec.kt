@@ -35,8 +35,9 @@ private const val STAGGER = 0.2f
 /**
  * One lock of a group as it is built: its [index], where it roots ([root], facing [out], growing along [growth]), its sizes and shape with
  * its override over the group's, how far it lies off the scalp past its root ([clearance]) and how deep its root sinks ([sink]), its own
- * [guide] where it has one, its chain's [bones] and its [physics]; a [tied] lock leaves its tie rather than lying along the head. Two locks
- * alike build alike, so a build keeps those it made before.
+ * [guide] where it has one, its chain's [bones] and its [physics]; a [tied] lock leaves its tie rather than lying along the head, and
+ * winds [coil] turns round it into a bun where that is above 0. A [trim] cuts its tip to a plane; [stand] turns it toward straight up. Two locks alike build alike, so a
+ * build keeps those it made before.
  */
 data class LockSpec(
     val index: Int,
@@ -63,6 +64,9 @@ data class LockSpec(
     val physics: LockPhysics,
     val tied: Boolean = false,
     val lie: Float = LOCK_LIE,
+    val trim: TrimPlane? = null,
+    val coil: Float = 0f,
+    val stand: Float = 0f,
 )
 
 /** How much of a lying lock's length lies along the head before it lifts off, unless its override says otherwise; a curl starting sooner lifts it there. */
@@ -118,9 +122,14 @@ class GroupLocks(val group: LockGroup, val scalp: Scalp, val growth: LockGrowth 
             bones = override?.bones ?: bonesFor(length, scalp),
             physics = override?.physics ?: group.physics,
             tied = group.tie > 0f,
-            lie = override?.lie ?: LOCK_LIE,
+            lie = override?.lie ?: group.lie,
+            trim = trim,
+            coil = if (group.tie > 0f) group.coil else 0f,
+            stand = group.stand,
         )
     }
+
+    private val trim: TrimPlane? = group.trim?.let { TrimPlane.of(it, scalp) }
 
     /** The length the lock at [index] grows to with no override: the group's, jittered, a fringe's parted over the eyes, a lower row's shorter. */
     fun grownLength(index: Int): Float {

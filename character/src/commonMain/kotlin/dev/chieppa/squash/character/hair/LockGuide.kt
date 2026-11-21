@@ -47,7 +47,11 @@ private const val LEAST_POINTS = 5
 private const val POINTS_PER_TURN = 6
 private const val MOST_POINTS = 18
 
+/** How many guide points each turn of a bun's coil adds. */
+private const val COIL_POINTS_PER_TURN = 8
+
 private val DOWN = Vec3(0f, -1f, 0f)
+private val UP = Vec3(0f, 1f, 0f)
 
 
 /** How far below level, as the sine of the angle down from the scalp's middle, the head stops holding a lock, which hangs free from there. */
@@ -61,13 +65,15 @@ private const val TURN_IN_START = 0.75f
  * The guide curve [lock] grows along over [scalp], a few points from its sunk root to its tip. From its root it lies along the head the
  * way it grows, sweeps sideways and falls toward the ground over its length, held on the head down to just below its widest; past
  * [LockSpec.lie] of its length it lifts off by [LockSpec.rise] degrees. It curls about its side toward its tip, and a flicked tip turns out.
+ * A standing lock turns [LockSpec.stand] of the way toward straight up at every step, the head holding it that much less.
  * A tied lock leaves its tie at its rise instead and hangs free. Every point past its root keeps its clearance off the scalp, and where
  * the scalp falls away below what it roots in, as past a mass's hem, it takes its full clearance at once rather than run on under it. A lock with
- * a guide of its own takes those points from its root instead.
+ * a guide of its own takes those points from its root instead, and a tied lock that coils winds round its tie into a bun ([coiled]).
  */
 fun guideOf(lock: LockSpec, scalp: Scalp): List<Vec3> {
     val root = lock.root - lock.out * lock.sink
     lock.guide?.let { own -> return listOf(root) + own.map { lock.root + it } }
+    if (lock.tied && lock.coil > 0f) return evenly(coiled(lock, scalp, root), (LEAST_POINTS + ceil(lock.coil * COIL_POINTS_PER_TURN).toInt()).coerceAtMost(MOST_POINTS))
     val path = grown(lock, scalp, root)
     val points = (LEAST_POINTS + ceil(abs(lock.curl) * POINTS_PER_TURN).toInt()).coerceAtMost(MOST_POINTS)
     return evenly(path, points)
@@ -100,7 +106,7 @@ private fun grown(lock: LockSpec, scalp: Scalp, root: Vec3): List<Vec3> {
         d = (d * (1f - f) + DOWN * f).let { if (it.length < 1e-4f) d else it.normalized() }
         val here = (at - scalp.middle).let { if (it.length < 1e-6f) lock.out else it.normalized() }
         val lifted = if (lock.tied) 1f else smooth((t - liftFrom) / (1f - liftFrom))
-        val over = if (lock.tied) 0f else (here.y / HUG_BELOW + 1f).coerceIn(0f, 1f)
+        val over = if (lock.tied) 0f else (here.y / HUG_BELOW + 1f).coerceIn(0f, 1f) * (1f - lock.stand)
         if (over > 0f) {
             val along = d - here * (d dot here)
             if (along.length > 1e-4f) d = (d * (1f - over) + along.normalized() * over).normalized()
@@ -113,6 +119,7 @@ private fun grown(lock: LockSpec, scalp: Scalp, root: Vec3): List<Vec3> {
             val s = (t - FLICK_START) / (1f - FLICK_START)
             d = turned(d, side, FLICK_TURN * DEGREES * s * s)
         }
+        if (lock.stand > 0f) d = (d * (1f - lock.stand) + UP * lock.stand).let { if (it.length < 1e-4f) d else it.normalized() }
         at += d * step
         if (lock.curl != 0f && t > curlFrom) at += side * (lock.width * HELIX_PITCH * abs(lock.curl) / ((1f - curlFrom) * GROW_STEPS))
         val rising = t < clearReach && scalp.reachToward(at) > rootReach - lock.sink
