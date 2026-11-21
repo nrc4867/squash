@@ -30,16 +30,16 @@ internal object MouthShapesReference {
         appendLine()
         appendLine("### Mouth styles")
         appendLine()
-        appendLine("A mouth talks in the style its group's `style` names, else the one its head template's `mouth` names, else `lips`. A style is a preset file, `templates/mouths/<name>.mouth.json` (schema `schema/mouth-style.schema.json`): where its line runs, how deep it opens, how much each control does on it (`scale`), and its nine shapes. A style whose `speaks` is false holds its shapes as data only: a picked shape leaves its mouth as its own controls draw it, and the Face stage shows it no Shapes strip. A `seam` style, a beak's, parts nothing on the head: its lower half drops on the jaw and shows the inner and tongue roles' fills on its top, the tongue reaching further out with `tongue`.")
+        appendLine("A mouth talks in the style its group's `style` names, else the one its head template's `mouth` names, else `lips`. A style is a preset file, `templates/mouths/<name>.mouth.json` (schema `schema/mouth-style.schema.json`): where its line runs, how deep it opens, how much each control does on it (`scale`), and its nine shapes. A style whose `speaks` is false holds its shapes as data only: a picked shape leaves its mouth as its own controls draw it, and the Face stage shows it no Shapes strip. A `seam` style, a beak's, parts nothing on the head: its lower half drops on the jaw and shows the inner and tongue roles' fills on its top, the tongue reaching further out with `tongue`. Where the lips part, a mouth is cut into the head as a shallow recess, `carve` of the lip line's width deep at most and never much deeper than the lips part there, its walls in the inner role's fill, darker toward the back, so the side outline shows a notch; `carve` 0, as `painted` has, paints the opening on the surface only.")
         appendLine()
         append(
             table(
-                listOf("style", "line", "speaks", "depth", "scale"),
+                listOf("style", "line", "speaks", "depth", "carve", "scale"),
                 mouths.map { style ->
                     val scale = style.scale
                     val scaled = listOf("open" to scale.open, "wide" to scale.wide, "round" to scale.round, "smile" to scale.smile, "upperLip" to scale.upperLip, "lowerLip" to scale.lowerLip, "tongue" to scale.tongue)
                         .filter { it.second != 1f }.joinToString { "${it.first} ${it.second}" }.ifEmpty { "all 1" }
-                    listOf(code(style.id), style.line.name.lowercase(), if (style.speaks) "yes" else "no", style.depth.toString(), scaled)
+                    listOf(code(style.id), style.line.name.lowercase(), if (style.speaks) "yes" else "no", style.depth.toString(), style.carve.toString(), scaled)
                 },
             ),
         )

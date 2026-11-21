@@ -22,7 +22,7 @@ suspend fun fieldWork(work: BodySurfaceWork, field: CharacterField, runAll: RunA
     val anchors = FieldAnchors(field)
     val landed = { point: ResolvedPoint ->
         val anchor = point.anchor
-        if (anchor.part to anchor.patch !in runs || point.normal == Vec3.ZERO) {
+        if (anchor.part to anchor.patch !in runs || point.normal == Vec3.ZERO || anchors.acrossOpening(anchor, point.position - point.normal * anchor.offset)) {
             point
         } else {
             val (position, normal) = anchors.onSurface(point.position - point.normal * anchor.offset, point.normal, anchors.cellOf(anchor.part, anchor.patch))

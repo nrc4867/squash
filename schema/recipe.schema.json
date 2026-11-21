@@ -1443,7 +1443,7 @@
           "$ref": "#/$defs/MarkControls"
         },
         "style": {
-          "description": "The mouth style the group talks in, by preset name (lips, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's.",
+          "description": "The mouth style the group talks in, by preset name (lips, painted, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's.",
           "anyOf": [
             {
               "type": "string"

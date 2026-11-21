@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.session
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.BodyRecesses
 import dev.chieppa.squash.character.build.HeldShapes
 import dev.chieppa.squash.character.build.ShineSource
 import dev.chieppa.squash.character.surface.HeldDress
@@ -38,7 +39,7 @@ import kotlinx.coroutines.flow.map
  * ([mesh]) and finished from its parts [placed] on their sockets, at the coarse cell while a gesture is open, null for a character with
  * no part in the field; the [paint] laid on it, every part's color shapes from [shapes] by their coordinates and its painted eyes; the
  * [dress] it wears; and the node that shows it posed, which the rig gives through [showPosed]. The body's and the garments' meshers read
- * their fields through [reads].
+ * their fields through [reads]; the body is cut by the mouths' [recesses].
  */
 class SessionSurface(
     graph: Graph,
@@ -47,6 +48,7 @@ class SessionSurface(
     shapes: (PartId) -> Node<*, HeldShapes>,
     reads: FieldReads = CpuFieldReads,
     shines: Flow<List<ShineSource>> = flowOf(emptyList()),
+    recesses: Node<*, BodyRecesses>? = null,
 ) {
     /** Whether a gesture is open on the history: a drag in progress. */
     private val gesture: Flow<Boolean> = combine(history.document, history.steps) { _, _ -> history.inGesture }.distinctUntilChanged()
@@ -59,6 +61,7 @@ class SessionSurface(
         placed,
         gesture,
         reads,
+        recesses,
     )
 
     val surface: Node<*, HeldSurface> = graph.characterSurfaceNode(mesh)

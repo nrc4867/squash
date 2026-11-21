@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character
 
+import dev.chieppa.squash.character.build.BACK_TINT
 import dev.chieppa.squash.character.build.OpenMouths
 import dev.chieppa.squash.character.build.SurfaceWorkInput
 import dev.chieppa.squash.character.build.openMouths
@@ -86,7 +87,8 @@ class MouthOpeningTest {
     @Test
     fun anOpenMouthFillsItsOpeningTongueAndTeethInOrderAndInksItsLowerLip() {
         val mouth = opened(1f)
-        assertEquals(listOf(INNER, TONGUE, TOOTH), mouth.shapes.map { it.slot })
+        assertEquals(listOf(INNER, INNER, TONGUE, TOOTH), mouth.shapes.map { it.slot }, "the opening, then its carved back")
+        assertEquals(listOf(null, BACK_TINT), mouth.shapes.take(2).map { it.tint }, "the back is the opening's fill taken darker")
         assertTrue(mouth.shapes.all { it.part == HEAD && it.patch == BODY_PATCH })
         val teeth = mouth.shapes.last().shape as ColorShape.Border
         assertEquals(teeth.points.indices.toSet(), teeth.corners, "a tooth is sharp at every place")

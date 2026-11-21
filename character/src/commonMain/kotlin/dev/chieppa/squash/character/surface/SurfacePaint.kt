@@ -199,7 +199,7 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
                 val closedV = chart.surface.field.runs[members.first()].patch.closedV
                 PaintSplits.of(chart, members, triangles, UvShapeDistance(shape.shape, closedV), closedV, eased, section, values)
             }
-            return PaintLayer.of(shape.slot, chart.surface, values, triangles, split = split, source = shape.source) to LaidShape(distances, values)
+            return PaintLayer.of(shape.slot, chart.surface, values, triangles, split = split, source = shape.source, tint = shape.tint) to LaidShape(distances, values)
         }
     }
 }

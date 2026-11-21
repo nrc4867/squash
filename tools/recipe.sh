@@ -18,7 +18,7 @@
 #     every agent and checkout on 127.0.0.1 only (port 47830), <limit> builds at a time (2), each given up after <timeout> minutes (20);
 #     when this checkout's engine is compiled again it finishes its builds and starts again on the new one; until Ctrl-C
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false,
-# close=face,hand,foot (the default; also hands, feet, joins, orbit (the head round with and without its view keys), hair (the head framed alone from a hair outline's front, three-quarter, side and back), turn (the whole character from eight ways round in its own shading), part ids such as close=foot-l,head, or none), around=false (no back and
+# close=face,hand,foot (the default; also hands, feet, joins, orbit (the head round with and without its view keys), hair (the head framed alone from a hair outline's front, three-quarter, side and back), mouth (the first mouth framed close from the front, three-quarter and side, and with faces=shapes saying each shape), turn (the whole character from eight ways round in its own shading), part ids such as close=foot-l,head, or none), around=false (no back and
 # top views), only=<id>,... (draw just those parts; no close-ups, no measure unless measure=true), outfits=<id,...|all>,
 # poses=<name,...|all>, set=part:name:value,... (set=head:mouth.shape:o shows a mouth shape as a preview), faces=shapes (the face close-up
 # saying each of the nine mouth shapes, and a contact sheet of them), reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search

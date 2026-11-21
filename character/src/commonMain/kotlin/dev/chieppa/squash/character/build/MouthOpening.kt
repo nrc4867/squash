@@ -2,6 +2,10 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.mouth.FlatPiece
+import dev.chieppa.squash.character.mouth.MouthRecess
+import dev.chieppa.squash.character.mouth.mouthRecessOf
+import dev.chieppa.squash.character.surface.LayerTint
+import dev.chieppa.squash.character.surface.TintTarget
 import dev.chieppa.squash.character.mouth.ShapedMouth
 import dev.chieppa.squash.character.mouth.mouthMarks
 import dev.chieppa.squash.character.mouth.shapeMouth
@@ -15,12 +19,19 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
+import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Vec2
 
 /** The rank an open mouth's fills paint at: over every region and stroke of its part. */
 internal const val RANK_MOUTH = 4
 
 private const val MIN_SHAPE_POINTS = 3
+
+/** How deep into a carved mouth, a share of the way from the lips, its back starts, which shows darker than the walls near the lips. */
+private const val BACK_DEPTH = 0.5f
+
+/** How far the back of a carved mouth's inside is taken toward the ink, so it reads darker than the walls near the lips. */
+internal val BACK_TINT = LayerTint(TintTarget.Ink, 0.35f)
 private const val MIN_LINE_POINTS = 2
 
 /** What a shaped mouth adds to its part: fills in layer order, ink lines, and the lip line marks those lines stand in for. */
@@ -40,14 +51,35 @@ fun openMouths(holder: PartId, work: ResolvedSurfaceWork, surfaces: Map<PartId, 
     val surface = surfaces[holder] ?: return OpenMouths.NONE
     val marks = work.marks.associateBy { it.id }
     val bySource = work.marks.groupBy { it.source }
-    val shaped = work.groups.filter { it.isMouth }.mapNotNull { group ->
-        val placed = group.mouthMarks { id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
-        val mouth = shapeMouth(holder, placed, group.controls, work.mouthStyles[group.id] ?: MouthStyle.PLAIN, surface) ?: return@mapNotNull null
-        if (mouth.flat.restsAsDrawn) null else MouthLanding(holder, group, mouth, surface, marks, bySource)
+    val shaped = shapedMouths(holder, work, surface).mapNotNull { (group, mouth) ->
+        if (mouth.flat.restsAsDrawn) {
+            null
+        } else {
+            val back = mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve)?.solid?.deeperThan(BACK_DEPTH)
+            MouthLanding(holder, group, mouth, surface, marks, bySource, back)
+        }
     }
     if (shaped.isEmpty()) return OpenMouths.NONE
     return OpenMouths(shaped.flatMap { it.shapes() }, shaped.flatMap { it.lines() }, shaped.flatMap { it.replaced() }.toSet())
 }
+
+/** Every mouth group [holder]'s [work] holds, shaped on its [surface] in the style [work] names for it (plain lips where none). */
+internal fun shapedMouths(holder: PartId, work: ResolvedSurfaceWork, surface: PartSurface): List<Pair<MarkGroup, ShapedMouth>> {
+    val bySource = work.marks.groupBy { it.source }
+    return work.groups.filter { it.isMouth }.mapNotNull { group ->
+        val placed = group.mouthMarks { id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
+        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface)?.let { group to it }
+    }
+}
+
+private fun styleOf(work: ResolvedSurfaceWork, group: MarkGroup): MouthStyle = work.mouthStyles[group.id] ?: MouthStyle.PLAIN
+
+/**
+ * The recess each mouth [holder] holds cuts into it where its lips part, as its style carves it; none for a painted style or a mouth at
+ * rest. See HLD: look, Mouth.
+ */
+fun mouthRecesses(holder: PartId, work: ResolvedSurfaceWork, surface: PartSurface): List<MouthRecess> =
+    shapedMouths(holder, work, surface).mapNotNull { (group, mouth) -> mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve) }
 
 /** One shaped mouth laid on its part: its pieces as color shapes on the lip line's patch and its lines as marks. */
 private class MouthLanding(
@@ -57,6 +89,7 @@ private class MouthLanding(
     private val surface: PartSurface,
     private val marks: Map<MarkId, ResolvedMark>,
     private val bySource: Map<MarkId, List<ResolvedMark>>,
+    private val back: List<SurfaceUv>?,
 ) {
     private val role = group.roles.associateBy { it.role }
     private val flat = mouth.flat
@@ -65,12 +98,16 @@ private class MouthLanding(
 
     fun shapes(): List<LandedShape> {
         val inner = flat.opening?.let { fill(role[MarkRole.INNER]?.fill, it, flat.openingCorners) }
+        val slot = role[MarkRole.INNER]?.fill
+        val back = back?.takeIf { slot != null && it.size >= MIN_SHAPE_POINTS }?.let {
+            LandedShape(RANK_MOUTH, checkNotNull(slot), holder, mouth.patch, ColorShape.Border(it, curved = true), tint = BACK_TINT)
+        }
         val within = flat.tongue.filterNot { it.over }.mapNotNull { fill(role[MarkRole.TONGUE]?.fill, it.loop, emptySet()) } +
             flat.teeth.filterNot { it.over }.mapNotNull { tooth(it) }
         val over = flat.tongue.filter { it.over }.mapNotNull { fill(role[MarkRole.TONGUE]?.fill, it.loop, emptySet()) } +
             flat.teeth.filter { it.over }.mapNotNull { tooth(it) }
         val lips = flat.lips.mapNotNull { fill(role[MarkRole.LIP_LINE]?.fill, it, emptySet()) }
-        return lips + listOfNotNull(inner) + within + over
+        return lips + listOfNotNull(inner, back) + within + over
     }
 
     private fun tooth(piece: FlatPiece) = fill(role[MarkRole.TEETH]?.fill, piece.loop, piece.loop.indices.toSet())

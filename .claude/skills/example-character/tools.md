@@ -37,7 +37,7 @@ After the file, as `key=value`; the kit passes them on unchanged:
 | --- | --- |
 | `render=false` | the character file only, a few seconds |
 | `measure=false` | skip the measurements |
-| `close=face,hand,foot` | the close-ups (the default); also part ids (`close=ear-l,tail,head`), each framed close per outfit; `hands` and `feet` the bare hand or paw at rest, curled, open and spread from six sides; `joins` the neck, shoulder and hip; `none` no close-ups |
+| `close=face,hand,foot` | the close-ups (the default); also part ids (`close=ear-l,tail,head`), each framed close per outfit; `hands` and `feet` the bare hand or paw at rest, curled, open and spread from six sides; `joins` the neck, shoulder and hip; `mouth` the first mouth from the front, three-quarter and side (each shape with `faces=shapes`); `none` no close-ups |
 | `only=head,ear-l` | draw and frame just those parts in every view; no close-ups, no measure unless `measure=true` |
 | `around=false` | leave out the back and top views |
 | `outfits=a,b` or `all`, `poses=a,b` or `all` | which outfits (default the shown one) and named poses (default all) |

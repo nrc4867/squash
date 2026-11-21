@@ -9,6 +9,9 @@ import dev.chieppa.squash.document.SlotName
 val SKIN = SlotName("skin")
 val HAIR_BROWN = SlotName("hair")
 val LIPS = SlotName("lips")
+
+/** The inside of her mouth, which shows as her lips part. */
+val MOUTH_INSIDE = SlotName("mouth")
 val BLUSH = SlotName("blush")
 val HAZEL = SlotName("hazel")
 val EYE_WHITE = SlotName("eye-white")
@@ -28,6 +31,7 @@ fun womanColor(): List<DocumentCommand> = listOf(
     SetPaletteSlot(HAIR_BROWN, SlotColor(0.45f, 0.27f, 0.15f)),
     SetPaletteSlot(BROW, SlotColor(0.30f, 0.18f, 0.10f)),
     SetPaletteSlot(LIPS, SlotColor(0.83f, 0.47f, 0.48f)),
+    SetPaletteSlot(MOUTH_INSIDE, SlotColor(0.45f, 0.17f, 0.20f)),
     SetPaletteSlot(BLUSH, SlotColor(0.97f, 0.74f, 0.70f)),
     SetPaletteSlot(HAZEL, SlotColor(0.52f, 0.47f, 0.22f)),
     SetPaletteSlot(EYE_WHITE, SlotColor(0.99f, 0.97f, 0.95f)),

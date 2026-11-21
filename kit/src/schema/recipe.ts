@@ -453,7 +453,7 @@ export interface MarkGroup {
   name: string;
   roles: GroupRole[];
   controls?: MarkControls;
-  /** The mouth style the group talks in, by preset name (lips, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's. */
+  /** The mouth style the group talks in, by preset name (lips, painted, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's. */
   style?: string | null;
   /** The spoken shapes this mouth changes from its style's, by name: each value set here replaces the style's. */
   shapes?: { rest?: MouthShapeValues; mbp?: MouthShapeValues; ai?: MouthShapeValues; e?: MouthShapeValues; o?: MouthShapeValues; u?: MouthShapeValues; fv?: MouthShapeValues; l?: MouthShapeValues; etc?: MouthShapeValues };

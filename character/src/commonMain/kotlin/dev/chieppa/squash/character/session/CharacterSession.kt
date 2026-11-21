@@ -13,6 +13,11 @@ import dev.chieppa.squash.character.build.BodyColor
 import dev.chieppa.squash.character.build.BodyLines
 import dev.chieppa.squash.character.build.BodyFur
 import dev.chieppa.squash.character.build.BodySurfaceWork
+import dev.chieppa.squash.character.build.BodyRecesses
+import dev.chieppa.squash.character.build.PartRecesses
+import dev.chieppa.squash.character.build.bodyRecessesNode
+import dev.chieppa.squash.character.build.mouthHolders
+import dev.chieppa.squash.character.build.partRecessesNode
 import dev.chieppa.squash.character.build.ColorSource
 import dev.chieppa.squash.character.build.FurCamera
 import dev.chieppa.squash.character.build.FurCameras
@@ -180,8 +185,18 @@ class CharacterSession(
     /** The hair volumes whose band of shine shows on the hair, on its own meshes and on the one surface. */
     private val shines = document.map { shineSources(it.character, templates) }.distinctUntilChanged()
 
+    private val recessNodes = mutableMapOf<PartId, Node<*, PartRecesses>>()
+
+    /**
+     * The recesses the mouths cut into their parts where their lips part, as the face shows them: what the one surface is cut by, and
+     * the walls teeth stand on. Made with the session, so [Graph.settled] covers it from the start.
+     */
+    val mouthRecesses: Node<*, BodyRecesses> = graph.bodyRecessesNode(document.map { mouthHolders(it.character) }) { part ->
+        recessNodes.getOrPut(part) { graph.partRecessesNode(part, surfaceWork(part), surface(part)) }
+    }
+
     /** The character as one surface, its paint and its posed form; see [SessionSurface]. */
-    val sessionSurface = SessionSurface(graph, history, placed, ::heldShapes, reads, shines)
+    val sessionSurface = SessionSurface(graph, history, placed, ::heldShapes, reads, shines, mouthRecesses)
 
     /** The character's body as one surface; null for a character with no part in the field. */
     val characterSurface: Node<*, HeldSurface> get() = sessionSurface.surface

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.mouth.MouthRecess
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.surface.SurfaceMesh
@@ -54,16 +55,16 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val read
         val surface: CharacterSurface get() = checkNotNull(finish).surface
     }
 
-    /** A build of [character]'s surface, at twice the cell when [dragging]; null when it has no field part. */
-    fun start(character: AssembledCharacter, dragging: Boolean): Build? {
-        val field = fieldOf(character, solids, cellShare) ?: return null
+    /** A build of [character]'s surface with [recesses] cut into it, at twice the cell when [dragging]; null when it has no field part. */
+    fun start(character: AssembledCharacter, dragging: Boolean, recesses: List<MouthRecess> = emptyList()): Build? {
+        val field = fieldOf(character, solids, cellShare, recesses) ?: return null
         if (fine == null || abs(field.cell / cell - 1f) > CELL_DRIFT) {
             cell = field.cell
             fine = AdaptiveMesher(cell, reads)
             coarse = AdaptiveMesher(cell * COARSE_FACTOR, reads)
         }
         val mesher = checkNotNull(if (dragging) coarse else fine)
-        return Build(CharacterField(field.field, field.runs, mesher.cell), mesher, digitLevels(field))
+        return Build(CharacterField(field.field, field.runs, mesher.cell, field.recesses), mesher, digitLevels(field))
     }
 
     /** [character]'s surface, built with [runAll] running each batch of work; null when it has no field part. */

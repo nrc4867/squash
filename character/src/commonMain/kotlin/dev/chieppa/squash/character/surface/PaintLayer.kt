@@ -128,7 +128,7 @@ class PaintLayer(
             val cut = if (split != null) LevelCut.of(split.values, indices, candidates, split.splits) else LevelCut.of(values, indices, candidates)
             if (cut.isEmpty) return null
             if (flat) return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat = true, values = values, candidates = candidates, indices = indices, split = split, source = source, tint = tint)
-            return PaintLayer(slot, cut, cut.mesh(surface.render), sides(cut, surface.positiveZ), sides(cut, surface.negativeZ), values = values, candidates = candidates, indices = indices, split = split, source = source)
+            return PaintLayer(slot, cut, cut.mesh(surface.render), sides(cut, surface.positiveZ), sides(cut, surface.negativeZ), values = values, candidates = candidates, indices = indices, split = split, source = source, tint = tint)
         }
 
         private fun sides(cut: LevelCut, shares: FloatArray): FloatArray? = cut.values(shares).takeIf { values -> values.any { it > 0f } }

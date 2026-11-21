@@ -139,6 +139,7 @@ class LookArgs(args: Array<String>) {
         const val EYES = "eyes"
         const val HAIR = "hair"
         const val TURN = "turn"
+        const val MOUTH = "mouth"
 
         /** How wide each whole-character view is by default, in pixels. */
         const val VIEW_TILE = 600
@@ -147,7 +148,7 @@ class LookArgs(args: Array<String>) {
         const val NONE = "none"
 
         /** Every word `close=` takes; anything else it holds is a part id. */
-        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES, HAIR, TURN)
+        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES, HAIR, TURN, MOUTH)
 
         /** The `faces=` word for every mouth shape. */
         const val FACES_SHAPES = "shapes"
