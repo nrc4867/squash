@@ -11,7 +11,6 @@ import dev.chieppa.squash.document.SHORTEST_LOCK
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.ln
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /** How many places along a lock its fit reads. */
@@ -22,6 +21,9 @@ private const val SIDE_SHARE = 0.5f
 
 /** How far along a lock, as a share of its length, its tip closes to a point. */
 private const val TIP_CLOSE = 0.3f
+
+/** How wide a lock is [t] of the way along it, as a share of its width: narrowing to [taper] of it, then closing to a point over its tip. */
+internal fun lockShare(t: Float, taper: Float): Float = (1f - (1f - taper) * t) * ((1f - t) / TIP_CLOSE).coerceAtMost(1f)
 
 /** How much a missed tip weighs, per the outline's height. */
 private const val TIP_WEIGHT = 4f
@@ -64,53 +66,11 @@ private const val SHORTEST_KEPT = 0.3f
 /** The halvings that find how far a straying lock is shortened. */
 private const val SHORTEN_STEPS = 8
 
-/**
- * What a fit gives one lock, each value null where it leaves the lock's own: its [length] and [width] in body units, its [rise] in
- * degrees, its [sweep] and [fall], how much of it [lie]s along the head before it lifts, and how far its root moves [around] and [up] the
- * head in degrees.
- */
-data class FittedLock(
-    val length: Float? = null,
-    val rise: Float? = null,
-    val sweep: Float? = null,
-    val fall: Float? = null,
-    val around: Float? = null,
-    val up: Float? = null,
-    val width: Float? = null,
-    val lie: Float? = null,
-    val tip: LockTip? = null,
-) {
-    /** These values over [base], the lock's override at [index] with nothing fitted, or none. */
-    fun over(base: LockOverride?, index: Int): LockOverride = (base ?: LockOverride(index)).copy(
-        length = length ?: base?.length,
-        rise = rise ?: base?.rise,
-        sweep = sweep ?: base?.sweep,
-        fall = fall ?: base?.fall,
-        around = around ?: base?.around,
-        up = up ?: base?.up,
-        width = width ?: base?.width,
-        lie = lie ?: base?.lie,
-        tip = tip ?: base?.tip,
-    )
+/** How far from its tip, as a share of the outline's height, a fitted lock's tip may land and still reach it. */
+private const val REACHED = 0.06f
 
-    /** These values rounded, so a fit given the same outline twice writes the same values and nothing builds again. */
-    fun rounded(): FittedLock = FittedLock(
-        length?.let { round(it, 0.0005f).coerceIn(SHORTEST_LOCK, LONGEST_LOCK) },
-        rise?.let { round(it, 0.5f) },
-        sweep?.let { round(it, 0.01f).coerceIn(-1f, 1f) },
-        fall?.let { round(it, 0.01f).coerceIn(0f, 1f) },
-        around?.let { round(it, 0.5f) },
-        up?.let { round(it, 0.5f) },
-        width?.let { round(it, 0.0005f) },
-        lie?.let { round(it, 0.01f).coerceIn(LEAST_LIE, MOST_LIE) },
-        tip,
-    )
-
-    companion object {
-        /** The values a search over [x], laid out as [LockFitter] lays them, gives, with [width] and [tip]. */
-        internal fun of(x: FloatArray, width: Float?, tip: LockTip?) = FittedLock(x[LENGTH], x[RISE], x[SWEEP], x[FALL], x[AROUND], x[UP], width, x[LIE], tip)
-    }
-}
+/** How near the longest a search may grow it, as a share, a fitted lock's length counts as at its longest. */
+private const val AT_LONGEST = 0.98f
 
 /** Where each value of a lock lies in the values a fit searches. */
 private const val LENGTH = 0
@@ -121,17 +81,8 @@ private const val AROUND = 4
 private const val UP = 5
 private const val LIE = 6
 
-/** The least and most of a lock's length that lies along the head before it lifts. */
-private const val LEAST_LIE = 0.05f
-private const val MOST_LIE = 0.95f
-
-private fun round(value: Float, step: Float): Float = (value / step).roundToInt() * step
-
-/**
- * Where one lock is fitted to in one [view]: its tip on [tip], its sides along the outline's [edge] round it, [width] across in body
- * units where the outline gives it, and its end [shape] where the outline draws one, a flick.
- */
-class LockTarget(val view: FitView, val tip: Vec2, val edge: List<Vec2>, val width: Float?, val shape: LockTip? = null)
+/** The values a search over [x], laid out as [LockFitter] lays them, gives, with [width] and [tip]. */
+private fun fittedOf(x: FloatArray, width: Float?, tip: LockTip?) = FittedLock(x[LENGTH], x[RISE], x[SWEEP], x[FALL], x[AROUND], x[UP], width, x[LIE], tip)
 
 /**
  * Fits the lock at [index] of a group laid out as [laid], from [base], its override with nothing fitted, to the outline's [views]: each
@@ -144,13 +95,9 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
 
     /** The values that land the lock's tip on [target]'s and keep it inside the outline, searched by compass steps from a few starts. */
     fun fitTo(target: LockTarget): FittedLock {
-        val view = target.view
-        val root = view.head.flat(start.root)
-        val reached = (view.head.flat(guide.last()) - root).let { sqrt(it.x * it.x + it.y * it.y) }
-        val wanted = length(target.tip, root)
-        val grown = (start.length * (wanted / reached.coerceAtLeast(1e-4f)).coerceIn(0.4f, 3f)).coerceIn(SHORTEST_LOCK, LONGEST_LOCK)
+        val grown = grownFor(target)
         val lower = floatArrayOf(maxOf(SHORTEST_LOCK, grown * 0.25f), -30f, -1f, 0f, -MOST_AROUND, -MOST_UP, LEAST_LIE)
-        val upper = floatArrayOf(minOf(LONGEST_LOCK, grown * 3f), 90f, 1f, 1f, MOST_AROUND, MOST_UP, MOST_LIE)
+        val upper = floatArrayOf(longestFor(grown), 90f, 1f, 1f, MOST_AROUND, MOST_UP, MOST_LIE)
         val steps = floatArrayOf(grown * 0.25f, 15f, 0.25f, 0.2f, 6f, 5f, 0.15f)
         val starts = listOf(start.rise to start.lie) + START_RISES.map { it to LEAST_LIE + (start.lie - LEAST_LIE) * (1f - it / 90f) }
         var best: Pair<FloatArray, Float>? = null
@@ -160,8 +107,28 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
             if (best == null || found.second < best.second) best = found
         }
         val x = checkNotNull(best).first
-        return FittedLock.of(x, target.width, target.shape).rounded()
+        return fittedOf(x, target.width, target.shape).rounded()
     }
+
+    /** Why [fitted], what [fitTo] gave for [target], ends short of its tip, or null where its tip lands within [REACHED] of the view's height. */
+    fun shortOf(fitted: FittedLock, target: LockTarget): UnreachedTip.Why? {
+        val view = target.view
+        val tip = view.head.flat(guideOf(laid.spec(index, fitted.over(base, index)), scalp).last())
+        if (length(tip, target.tip) <= view.height * REACHED) return null
+        val longest = longestFor(grownFor(target))
+        return if ((fitted.length ?: start.length) >= longest * AT_LONGEST) UnreachedTip.Why.OUT_OF_REACH else UnreachedTip.Why.KEPT_INSIDE
+    }
+
+    /** The length a search for [target] starts from: the lock's own, scaled by how far its tip lands from its root against how far the target lies. */
+    private fun grownFor(target: LockTarget): Float {
+        val view = target.view
+        val root = view.head.flat(start.root)
+        val reached = (view.head.flat(guide.last()) - root).let { sqrt(it.x * it.x + it.y * it.y) }
+        val wanted = length(target.tip, root)
+        return (start.length * (wanted / reached.coerceAtLeast(1e-4f)).coerceIn(0.4f, 3f)).coerceIn(SHORTEST_LOCK, LONGEST_LOCK)
+    }
+
+    private fun longestFor(grown: Float): Float = minOf(LONGEST_LOCK, grown * 3f)
 
     /** The lock shortened, and laid down where that is not enough, until it strays no further outside the outline than it may; null where it stays inside. */
     fun keptIn(): FittedLock? {
@@ -187,7 +154,7 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
 
     private fun tolerance(): Float = views.minOf { it.height } * STRAY_TOLERANCE
 
-    private fun specOf(x: FloatArray, target: LockTarget): LockSpec = laid.spec(index, FittedLock.of(x, target.width, target.shape).over(base, index))
+    private fun specOf(x: FloatArray, target: LockTarget): LockSpec = laid.spec(index, fittedOf(x, target.width, target.shape).over(base, index))
 
     private fun cost(x: FloatArray, target: LockTarget): Float {
         val spec = specOf(x, target)

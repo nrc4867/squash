@@ -21,14 +21,22 @@ export interface HairTraceOptions {
   colors?: Pixel[];
   /** How far in Lab a pixel may lie from a hair colour and still be hair. */
   tolerance?: number;
+  /** Colours that are not hair, the skin's: a pixel nearer one of them than every hair colour is not hair. */
+  exclude?: Pixel[];
   /** The head's origin in the sheet's pixels: the bottom of the chin under the head's middle. */
   origin: [number, number];
-  /** The head's drawn units a pixel. */
+  /** The head's drawn units a pixel, or with `heads` its lengths a pixel. */
   unitsPerPixel: number;
+  /** Whether the points are in the sheet head's lengths from its chin rather than the head's drawn units. */
+  heads?: boolean;
+  /** How high the eye line stands over the chin, in head lengths, where it was read. */
+  eyes?: number;
   /** How far, in pixels, a simplified outline may stray from the traced one. */
   simplify?: number;
   /** The radius, in pixels, ink lines between locks are closed over. */
   close?: number;
+  /** The radius, in pixels, of lines in a hair colour that are dropped: the face's and the ears' own lines, drawn in the hair's tone. */
+  line?: number;
 }
 
 export interface HairTrace extends RecipeOutlineView {
@@ -51,14 +59,18 @@ const VALLEY_TURN = 35;
 const TURN_REACH = 0.02;
 /** Holes in the hair smaller than this share of its region are shine and streaks, filled. */
 const HOLE_SHARE = 0.02;
+/** The radius, in pixels, of lines in the hair's colours that are opened away before tracing. */
+const LINE_OPEN = 1;
 
 /** The hair region of `options.box` in `image`, traced: its outline in the head's drawn units with its tips and valleys. */
 export function traceHair(image: Raster, options: HairTraceOptions): HairTrace {
   const { box } = options;
   const keys = (options.colors ?? [seedColor(image, box)]).map(toLab);
   const tolerance = options.tolerance ?? DEFAULT_TOLERANCE;
-  let mask = keyed(image, box, keys, tolerance);
   const r = options.close ?? 2;
+  let mask = keyed(image, box, keys, tolerance, (options.exclude ?? []).map(toLab), r);
+  const line = options.line ?? LINE_OPEN;
+  if (line > 0) mask = dilate(erode(mask, line), line);
   if (r > 0) mask = erode(dilate(mask, r), r);
   mask = highest(mask);
   mask = fillHoles(mask, box.w * box.h * HOLE_SHARE);
@@ -78,6 +90,8 @@ export function traceHair(image: Raster, options: HairTraceOptions): HairTrace {
     colors: (options.colors ?? [seedColor(image, box)]).map(pixelToHex),
     origin: options.origin,
     unitsPerPixel: u,
+    ...(options.heads ? { heads: true } : {}),
+    ...(options.eyes !== undefined ? { eyes: roundTo(options.eyes) } : {}),
   };
 }
 
@@ -150,7 +164,7 @@ function dist(a: Point, b: Point): number {
 }
 
 /** The commonest colour, in coarse bins, of the region's top rows that are not the background's lightest. */
-function seedColor(image: Raster, box: Box): Pixel {
+export function seedColor(image: Raster, box: Box): Pixel {
   const counts = new Map<number, { n: number; sum: [number, number, number] }>();
   const rows = Math.max(2, Math.round(box.h * SEED_ROWS));
   for (let y = box.y; y < box.y + rows; y++) {
@@ -174,18 +188,37 @@ function seedColor(image: Raster, box: Box): Pixel {
   return [Math.round(best.sum[0] / best.n), Math.round(best.sum[1] / best.n), Math.round(best.sum[2] / best.n)];
 }
 
-function keyed(image: Raster, box: Box, keys: Lab[], tolerance: number): Mask {
+/** How much darker than the first hair colour a hair colour is to be a shadow's, kept only where it covers more than a line's width. */
+const SHADOW_DROP = 20;
+
+/**
+ * The pixels of `box` keyed as hair: within `tolerance` of a key and nearer it than any of `exclude`. Pixels keyed by a shadow's key, much
+ * darker than the first, are opened by `open`, so the ink lines round the face and neck, as dark as a shadow but a line wide, drop out.
+ */
+function keyed(image: Raster, box: Box, keys: Lab[], tolerance: number, exclude: Lab[], open: number): Mask {
   const width = box.w;
   const height = box.h;
   const data = new Uint8Array(width * height);
+  const shadow = new Uint8Array(width * height);
+  const dark = keys.map((k) => k[0] < keys[0][0] - SHADOW_DROP);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const sx = box.x + x;
       const sy = box.y + y;
       if (sx < 0 || sy < 0 || sx >= image.width || sy >= image.height) continue;
       const lab = toLab(pixelAt(image, sx, sy));
-      if (keys.some((k) => labDistance(lab, k) <= tolerance)) data[y * width + x] = 1;
+      const distances = keys.map((k) => labDistance(lab, k));
+      const near = Math.min(...distances);
+      if (near > tolerance || exclude.some((e) => labDistance(lab, e) <= near)) continue;
+      if (dark[distances.indexOf(near)]) shadow[y * width + x] = 1;
+      else data[y * width + x] = 1;
     }
+  }
+  if (open > 0 && shadow.some((v) => v === 1)) {
+    const opened = dilate(erode({ width, height, data: shadow }, open), open);
+    for (let i = 0; i < data.length; i++) if (opened.data[i]) data[i] = 1;
+  } else {
+    for (let i = 0; i < data.length; i++) if (shadow[i]) data[i] = 1;
   }
   return { width, height, data };
 }
@@ -199,4 +232,64 @@ function highest(mask: Mask): Mask {
   const data = new Uint8Array(mask.width * mask.height);
   for (let i = 0; i < data.length; i++) if (labels[i] === top.label) data[i] = 1;
   return { width: mask.width, height: mask.height, data };
+}
+
+/** A share of the counted pixels a colour bin must hold to be a hair colour, and how near two bins are, in Lab, to be one colour. */
+const COLOR_SHARE = 0.03;
+const COLOR_MERGE = 18;
+/** The most hair colours picked. */
+const MOST_COLORS = 5;
+/** Pixels this dark and grey are ink, and this light and grey paper or eye white, never hair. */
+const INK_LIGHTNESS = 40;
+const PAPER_LIGHTNESS = 90;
+const GREY_CHROMA = 12;
+
+/**
+ * The hair's colours in `box` of `image` above row `above` (the top of the eyes): the commonest colours there, in coarse bins, holding at
+ * least 3% of its pixels once near bins are gathered, that are neither ink, paper nor eye white and lie nearer `seed`'s family than any of `exclude` (the skin and the
+ * paper), `seed` first: the hair's base tone with its shine and shadow, so a sheet is traced with no colours given.
+ */
+export function hairColors(image: Raster, box: Box, above: number, seed: Pixel, exclude: Pixel[], tolerance = DEFAULT_TOLERANCE): Pixel[] {
+  const not = exclude.map(toLab);
+  const bins = new Map<number, { n: number; sum: [number, number, number] }>();
+  let counted = 0;
+  const bottom = Math.min(box.y + box.h, above);
+  for (let y = box.y; y < bottom; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      if (x < 0 || y < 0 || x >= image.width || y >= image.height) continue;
+      const p = pixelAt(image, x, y);
+      const lab = toLab(p);
+      const chroma = Math.hypot(lab[1], lab[2]);
+      if (chroma < GREY_CHROMA && (lab[0] < INK_LIGHTNESS || lab[0] > PAPER_LIGHTNESS)) continue;
+      if (not.some((e) => labDistance(lab, e) <= tolerance)) continue;
+      counted++;
+      const key = ((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4);
+      const held = bins.get(key) ?? { n: 0, sum: [0, 0, 0] };
+      held.n++;
+      held.sum[0] += p[0];
+      held.sum[1] += p[1];
+      held.sum[2] += p[2];
+      bins.set(key, held);
+    }
+  }
+  const clusters: { lab: Lab; n: number; sum: [number, number, number] }[] = [];
+  for (const bin of [...bins.values()].sort((a, b) => b.n - a.n)) {
+    const lab = toLab([bin.sum[0] / bin.n, bin.sum[1] / bin.n, bin.sum[2] / bin.n].map(Math.round) as Pixel);
+    const home = clusters.find((c) => labDistance(c.lab, lab) < COLOR_MERGE);
+    if (home) {
+      home.n += bin.n;
+      for (let i = 0; i < 3; i++) home.sum[i] += bin.sum[i];
+    } else {
+      clusters.push({ lab, n: bin.n, sum: [...bin.sum] });
+    }
+  }
+  const picked: { lab: Lab; pixel: Pixel }[] = [{ lab: toLab(seed), pixel: seed }];
+  for (const c of clusters.sort((a, b) => b.n - a.n)) {
+    if (c.n < counted * COLOR_SHARE || picked.length >= MOST_COLORS) break;
+    const pixel: Pixel = [Math.round(c.sum[0] / c.n), Math.round(c.sum[1] / c.n), Math.round(c.sum[2] / c.n)];
+    const lab = toLab(pixel);
+    if (picked.some((p) => labDistance(p.lab, lab) < COLOR_MERGE)) continue;
+    picked.push({ lab, pixel });
+  }
+  return picked.map((c) => c.pixel);
 }

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.character.hair.fit
 
+import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -20,6 +22,28 @@ class FitPartsTest {
         val a = PI * i / spikes
         val r = if (i % 2 == 0) 1.0 else 0.5
         Vec2((r * cos(a)).toFloat(), (r * sin(a)).toFloat())
+    }
+
+    @Test
+    fun aGridClosedRoundItsRingsHasTwoTrianglesACellAndWrapsRoundEachRing() {
+        val points = List(3 * 4) { Vec3(it.toFloat(), 0f, 0f) }
+        val closed = PointGrid(3, 4, closedV = true, points).triangles()
+        assertEquals(2 * 4 * 2 * 3, closed.size)
+        assertTrue(closed.all { it in points.indices })
+        assertTrue((0 until closed.size / 3).any { t -> 3 in closed.slice(3 * t until 3 * t + 3) && 0 in closed.slice(3 * t until 3 * t + 3) })
+        assertEquals(2 * 3 * 2 * 3, PointGrid(3, 4, closedV = false, points).triangles().size)
+    }
+
+    @Test
+    fun aViewTurnedRoundTheHeadSeesWhatTheOutlineViewAtThatTurnSees() {
+        val front = HeadView(OutlineView.FRONT, Vec3.ZERO, Vec3.Y cross Vec3(1f, 0f, 0f), Vec3.Y, Vec3(1f, 0f, 0f), 1f)
+        val p = Vec3(0.3f, 0.2f, -0.4f)
+        val back = front.turned(180f)
+        assertEquals(-front.flat(p).x, back.flat(p).x, 1e-5f)
+        assertEquals(front.flat(p).y, back.flat(p).y, 1e-5f)
+        val side = front.turned(90f)
+        assertEquals(-front.depth(p), side.flat(p).x, 1e-5f)
+        assertEquals(front.flat(p).x, side.depth(p), 1e-5f)
     }
 
     @Test

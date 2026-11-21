@@ -23,7 +23,9 @@ import dev.chieppa.squash.document.SetColliders
 import dev.chieppa.squash.document.SetLockGroup
 import dev.chieppa.squash.recipe.model.RecipeLockGroup
 import dev.chieppa.squash.recipe.model.RecipeHairOutline
+import dev.chieppa.squash.character.hair.fit.UnreachedTip
 import dev.chieppa.squash.character.hair.fit.hairFit
+import java.util.Locale
 import dev.chieppa.squash.document.CurvePoint
 import dev.chieppa.squash.document.HairOutline
 import dev.chieppa.squash.document.HairOutlineView
@@ -92,9 +94,21 @@ internal fun BuildContext.hair() {
     for ((on, path) in fits) {
         val fit = guard(path) { hairFit(document.character, massed, on) } ?: continue
         fit.commands.forEach { send("$path.fit", it) }
-        if (fit.missed > 0) warn("$path.fit", "${fit.missed} of the outline's tips reached by no lock: give the groups near them more locks")
+        for (tip in fit.unreached) {
+            val at = String.format(Locale.ROOT, "%.3f,%.3f", tip.at.x, tip.at.y)
+            warn("$path.fit", "the ${tip.view.name.lowercase()} outline's tip at $at reached by no lock: ${UNREACHED_WHY.getValue(tip.why)}")
+        }
     }
 }
+
+/** Why a tip was reached by no lock, as a recipe warning says it. */
+private val UNREACHED_WHY = mapOf(
+    UnreachedTip.Why.NO_LOCK_FACES to "no lock's root faces that view; add a group on that side",
+    UnreachedTip.Why.TOO_FEW_LOCKS to "every lock facing it went to another tip; give the group near it more locks",
+    UnreachedTip.Why.NO_LOCK_SERVES to "only fringe locks (for a tip off the face) or locks facing away (for a tip over it) were left; add locks to a group there",
+    UnreachedTip.Why.OUT_OF_REACH to "the lock sent to it ends short of it at the longest a fit grows it; give a group rooted nearer it",
+    UnreachedTip.Why.KEPT_INSIDE to "the lock sent to it was held short of it to stay inside the outlines",
+)
 
 /** [given] as the document holds it, failing at [path] when a view or a point is out of its range. */
 private fun BuildContext.outlined(path: String, on: PartId, given: RecipeHairOutline): HairOutline = guard(path) {
@@ -106,7 +120,7 @@ private fun BuildContext.outlined(path: String, on: PartId, given: RecipeHairOut
                 if (p.size != 2) fail("$path.views[$i].points[$j]", "a point is [x, y]")
                 CurvePoint(p[0], p[1])
             }
-            guard("$path.views[$i]") { HairOutlineView(view.view, points, view.tips, view.valleys) }
+            guard("$path.views[$i]") { HairOutlineView(view.view, points, view.tips, view.valleys, view.heads, view.eyes) }
         },
         given.fit,
     )

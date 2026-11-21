@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { outlineFeatures, traceHair } from "squash-kit/sheet";
+import { hairColors, outlineFeatures, traceHair } from "squash-kit/sheet";
 import { hairOutline, readHairOutline } from "../src/hair/outline.ts";
 import { ellipse, sheet } from "./sheet/figures.ts";
 import type { Pixel } from "squash-kit/sheet";
@@ -56,4 +56,35 @@ test("an outline written by the sheet reads back as a recipe's view, the front n
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("an outline in the sheet head's lengths keeps its units and eye line through a recipe", () => {
+  const image = sheet(120, 120);
+  ellipse(image, 60, 50, 30, 30, HAIR);
+  ellipse(image, 60, 70, 22, 26, SKIN);
+  const trace = traceHair(image, { view: "front", box: { x: 0, y: 0, w: 120, h: 120 }, colors: [HAIR], exclude: [SKIN], origin: [60, 96], unitsPerPixel: 1 / 76, heads: true, eyes: 0.34 });
+  assert.equal(trace.heads, true);
+  assert.equal(trace.eyes, 0.34);
+  assert.ok(Math.abs(Math.max(...trace.points.map(([, y]) => y)) - 1) < 0.05, "the top of the hair a head length over the chin");
+  const dir = mkdtempSync(join(tmpdir(), "kit-hair-"));
+  try {
+    const path = join(dir, "hair-front.json");
+    writeFileSync(path, JSON.stringify(trace));
+    const read = readHairOutline(path);
+    assert.equal(read.heads, true);
+    assert.equal(read.eyes, 0.34);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the hair's tones are picked above the eyes, the skin and paper left out", () => {
+  const image = sheet(120, 120);
+  ellipse(image, 60, 50, 30, 30, HAIR);
+  ellipse(image, 50, 40, 8, 8, [190, 130, 80]);
+  ellipse(image, 60, 70, 22, 26, SKIN);
+  const picked = hairColors(image, { x: 0, y: 0, w: 120, h: 120 }, 60, HAIR, [SKIN, [244, 240, 232]]);
+  assert.deepEqual(picked[0], HAIR);
+  assert.ok(picked.length >= 2, "the shine is a tone of its own");
+  assert.ok(picked.every((c) => Math.abs(c[0] - SKIN[0]) + Math.abs(c[1] - SKIN[1]) + Math.abs(c[2] - SKIN[2]) > 40), "no tone is the skin's");
 });

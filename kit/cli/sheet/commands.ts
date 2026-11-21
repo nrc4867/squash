@@ -1,10 +1,11 @@
 import { formatBox } from "../../src/sheet/core/box.ts";
-import { pixelToHex } from "../../src/sheet/core/color.ts";
+import { hexToPixel, pixelToHex } from "../../src/sheet/core/color.ts";
 import { readAcross } from "../../src/sheet/measure/across.ts";
 import { targetsOf } from "../../src/sheet/measure/measurement.ts";
 import { checkImage } from "../../src/sheet/read/check.ts";
 import { gridImage } from "../../src/sheet/read/grid.ts";
-import { parseColors, traceHair, type HairView } from "../../src/sheet/read/hair.ts";
+import { hairColors, parseColors, seedColor, traceHair, type HairView } from "../../src/sheet/read/hair.ts";
+import { hairFrame } from "../../src/sheet/read/hair-frame.ts";
 import { hairImage } from "../../src/sheet/read/hair-image.ts";
 import { viewCrop, viewsOverview } from "../../src/sheet/read/overview.ts";
 import { sheetPalette } from "../../src/sheet/read/palette.ts";
@@ -152,29 +153,43 @@ export const sheetCommands: Record<string, SheetCommand> = {
     const m = measured.measurement;
     const as = (options.text("as") ?? m.view.guess.facing) as HairView;
     if (!HAIR_VIEWS.includes(as)) throw new Error(`as=${as}: ${HAIR_VIEWS.join(", ")}`);
-    const chin = options.points("chin")?.[0] ?? [m.axis, m.landmarks.chin?.y ?? m.view.box.y + m.headPixels];
+    const read = hairFrame(m);
+    const chin = options.points("chin")?.[0] ?? read.chin;
     const crown = options.points("crown")?.[0];
     const headHeight = options.number("headHeight");
-    const scale = options.number("scale") ??
-      (crown && headHeight ? headHeight / Math.max(1, chin[1] - crown[1]) : m.bodyPerPixel / (options.number("headScale") ?? 1));
+    const given = options.number("scale") ?? (crown && headHeight ? headHeight / Math.max(1, chin[1] - crown[1]) : undefined);
+    const headScale = options.number("headScale");
+    const drawn = given ?? (headScale !== undefined ? m.bodyPerPixel / headScale : undefined);
+    const heads = drawn === undefined;
+    const scale = drawn ?? 1 / Math.max(1, chin[1] - read.crown);
     const view = m.view.box;
     const box = options.box() ?? { x: view.x, y: view.y, w: view.w, h: Math.min(view.h, Math.round(chin[1] - view.y + m.headPixels * 0.6)) };
     const colors = options.text("colors");
+    const tolerance = options.number("tolerance");
+    const skin = m.face ? [hexToPixel(m.face.skin)] : [];
+    const exclude = [...skin, sheet.background.ground];
+    const seed = m.face?.hair ? hexToPixel(m.face.hair) : seedColor(sheet.image, box);
+    const keys = colors ? parseColors(colors) : hairColors(sheet.image, box, read.eyeTop ?? chin[1], seed, exclude, tolerance);
     const trace = traceHair(sheet.image, {
       view: as,
       box,
-      colors: colors ? parseColors(colors) : undefined,
-      tolerance: options.number("tolerance"),
+      colors: keys,
+      tolerance,
+      exclude: colors ? undefined : skin,
       origin: chin,
       unitsPerPixel: scale,
       simplify: options.number("simplify"),
       close: options.number("close"),
+      line: options.number("line"),
+      heads,
+      eyes: heads && read.eyes !== undefined ? read.eyes : undefined,
     });
     const out = new SheetOutput(options.outDir(image));
     const name = `hair-${as}`;
     out.json(`${name}.json`, trace);
     out.png(`${name}.png`, hairImage(sheet.image, box, trace));
-    console.log(`  ${as}: ${trace.points.length} points, ${trace.tips?.length ?? 0} tips, ${trace.valleys?.length ?? 0} valleys, ${scale.toPrecision(4)} head units a pixel, origin ${chin.join(",")}, colours ${trace.colors.join(",")}`);
+    const unit = heads ? `${scale.toPrecision(4)} head lengths a pixel (chin ${chin.join(",")}, crown row ${read.crown}${trace.eyes !== undefined ? `, eyes ${trace.eyes} over the chin` : ""})` : `${scale.toPrecision(4)} head units a pixel, origin ${chin.join(",")}`;
+    console.log(`  ${as}: ${trace.points.length} points, ${trace.tips?.length ?? 0} tips, ${trace.valleys?.length ?? 0} valleys, ${unit}, colours ${trace.colors.join(",")}`);
   },
 };
 

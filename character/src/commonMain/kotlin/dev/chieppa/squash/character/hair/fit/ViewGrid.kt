@@ -104,6 +104,19 @@ class DepthRaster(val grid: ViewGrid) {
         }
     }
 
+    /** Draws [surface] as [view] sees it, tagged [tag]. */
+    fun draw(surface: PointGrid, view: HeadView, tag: Int) {
+        val flat = surface.points.map(view::flat)
+        val ds = surface.points.map(view::depth)
+        val indices = surface.triangles()
+        for (t in 0 until indices.size / 3) {
+            val a = indices[3 * t]
+            val b = indices[3 * t + 1]
+            val c = indices[3 * t + 2]
+            triangle(flat[a].x, flat[a].y, ds[a], flat[b].x, flat[b].y, ds[b], flat[c].x, flat[c].y, ds[c], tag)
+        }
+    }
+
     private fun triangle(ax: Float, ay: Float, ad: Float, bx: Float, by: Float, bd: Float, cx: Float, cy: Float, cd: Float, tag: Int) {
         val area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
         if (area * area < 1e-20f) return

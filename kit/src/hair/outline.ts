@@ -1,4 +1,5 @@
-// A hair outline for lock hair to be fitted to: one closed curve a view round the region the hair covers, in the head's drawn units.
+// A hair outline for lock hair to be fitted to: one closed curve a view round the region the hair covers, in the head's drawn units or,
+// as `kit sheet hair` reads it, in the sheet head's lengths.
 // `kit sheet hair` traces one from a sheet; see docs/hld/parts.md, Hair locks.
 
 import { readFileSync } from "node:fs";
@@ -16,7 +17,7 @@ export function hairOutline(views: RecipeOutlineView[], options: { fit?: boolean
 /** One view of an outline as `kit sheet hair` wrote it (`hair-front.json`), keeping only what a recipe takes. */
 export function readHairOutline(path: string): RecipeOutlineView {
   const read = JSON.parse(readFileSync(path, "utf8")) as RecipeOutlineView;
-  const { view, points, tips, valleys } = read;
+  const { view, points, tips, valleys, heads, eyes } = read;
   if (!view || !Array.isArray(points)) throw new Error(`${path}: not a hair outline (kit sheet hair writes one)`);
-  return { view, points, ...(tips ? { tips } : {}), ...(valleys ? { valleys } : {}) };
+  return { view, points, ...(tips ? { tips } : {}), ...(valleys ? { valleys } : {}), ...(heads ? { heads } : {}), ...(typeof eyes === "number" ? { eyes } : {}) };
 }

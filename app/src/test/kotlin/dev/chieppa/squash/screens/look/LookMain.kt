@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.SetCharacterCreases
@@ -19,6 +20,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.FACE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FEET
 import dev.chieppa.squash.screens.look.LookArgs.Companion.FOOT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HAND
+import dev.chieppa.squash.screens.look.LookArgs.Companion.HAIR
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.DRAG
 import dev.chieppa.squash.screens.look.LookArgs.Companion.EYES
@@ -43,6 +45,12 @@ private const val VIEW_WIDTH_PARTS = 2
 /** The face close-up's sides and size: front, three-quarter and side, square tiles. */
 private val FACE_AZIMUTHS = listOf(0f, 40f, 90f)
 private const val FACE_TILE = 600
+
+/** The hair close-up's sides, as a hair outline's views turn: front, three-quarter, side and back. */
+private val HAIR_AZIMUTHS = OutlineView.entries.map { it.turn }
+
+/** How much of each hair close-up is left free round the head it frames, room for the hair standing off it. */
+private const val HAIR_MARGIN = 0.45f
 
 /**
  * Renders examples through the real graph, rig and scene on the GPU to PNGs, with no test runner: per outfit, the whole character
@@ -141,6 +149,7 @@ fun renderSession(
             }
             session.send(ShowExpression(shown))
         }
+        if (HAIR in close) parts.head?.let { head -> views.keep(session, "$name-hair", setOf(head), HAIR_AZIMUTHS, FACE_TILE, FACE_TILE, margin = HAIR_MARGIN) }
         if (EYES in close) {
             val eyes = EyeCloseUps(work, errors, folder)
             eyes.keep(session, "$name-eyes")
