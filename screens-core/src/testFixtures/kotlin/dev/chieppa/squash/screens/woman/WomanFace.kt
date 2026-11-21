@@ -70,11 +70,19 @@ val WOMAN_EYE = EyeLook(
 fun womanPaintedEyes(look: EyeLook = WOMAN_EYE, front: EyeLook? = null): List<DocumentCommand> =
     listOf(SetPaintedEye(WOMAN_EYES, PaintedEye(WOMAN_EYES, at(EYE.x, EYE.y), look, front = front)))
 
-/** The lip line, a soft closed smile across the middle under the nose, and the mouth group that holds it. */
+/** The lip line, a soft closed smile across the middle under the nose, and the mouth group that holds it, its inside in [MOUTH_INSIDE]. */
 private fun mouth(): List<DocumentCommand> {
     val lipLine = Mark(MarkId("mouth-line"), listOf(-0.2f to -0.720f, -0.1f to -0.750f, 0f to -0.755f, 0.1f to -0.750f, 0.2f to -0.720f).map { (x, y) -> at(x, y) })
     val empty = mouthGroup(MarkGroupId("mouth"), "mouth")
-    val group = empty.copy(roles = empty.roles.map { if (it.role == MarkRole.LIP_LINE) it.copy(marks = listOf(lipLine.id)) else it })
+    val group = empty.copy(
+        roles = empty.roles.map {
+            when (it.role) {
+                MarkRole.LIP_LINE -> it.copy(marks = listOf(lipLine.id))
+                MarkRole.INNER -> it.copy(fill = MOUTH_INSIDE)
+                else -> it
+            }
+        },
+    )
     return listOf(SetMark(HEAD, lipLine.id, lipLine), SetMarkGroup(HEAD, group.id, group))
 }
 

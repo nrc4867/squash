@@ -25,6 +25,12 @@ private const val BLEND_BULGE = 0.25f
 
 private const val TINY = 1e-12f
 
+/**
+ * How far along its line, at most, the search for the surface goes, as a multiple of the field where it starts or of the cell, whichever
+ * is larger, so a place where the field flattens, between a groove's walls, does not throw it across the body.
+ */
+private const val SEARCH_REACH = 4f
+
 /** How much the field must change along a line, per unit of its length, for a point to be moved onto the surface along that line. */
 private const val LEAST_SLOPE = 0.2f
 
@@ -32,7 +38,7 @@ private const val LEAST_SLOPE = 0.2f
  * Anchors resolved on a character's field rather than on any mesh: an anchor `(part, patch, u, v, offset)` starts at its point on its
  * run's own swept surface at (u, v), in body space, then moves along the joined field's gradient to where the field is zero, and off by its
  * offset along the normal there. On a part's own share it lands where it would without the join, moved a little by the blend; where
- * parts blend it lands on the blend. Null for an anchor naming a part or patch the field does not hold. The gradient is read at the scale
+ * parts blend it lands on the blend; across a mouth's opening it stays where its run puts it. Null for an anchor naming a part or patch the field does not hold. The gradient is read at the scale
  * of the cell the anchor's run meshes at (see [digitLevels]), so a face's anchors read its field as finely as its mesh is made.
  */
 class FieldAnchors(private val field: CharacterField) {
@@ -47,8 +53,20 @@ class FieldAnchors(private val field: CharacterField) {
     fun resolve(anchor: Anchor): ResolvedPoint? {
         val run = field.runs.firstOrNull { it.partId == anchor.part && it.patch.name == anchor.patch } ?: return null
         val start = run.part.surface.pointAt(anchor.copy(offset = 0f)) ?: return null
+        if (field.inRecess(run.part, start.position)) return ResolvedPoint(anchor, start.position + run.part.origin + start.normal * anchor.offset, start.normal)
         val (position, normal) = onSurface(start.position + run.part.origin, start.normal, cellOf(anchor.part, anchor.patch))
         return ResolvedPoint(anchor, position + normal * anchor.offset, normal)
+    }
+
+    /**
+     * Whether a place at [body], body point of [anchor] on its run's own surface, lies across a mouth's opening, where the field is cut
+     * away behind it: there an anchor stays where its run puts it, so a lip's line drawn across the opening stays on the lips' surface
+     * rather than falling onto a wall of the recess.
+     */
+    fun acrossOpening(anchor: Anchor, body: Vec3): Boolean {
+        if (field.recesses.isEmpty()) return false
+        val run = field.runs.firstOrNull { it.partId == anchor.part && it.patch.name == anchor.patch } ?: return false
+        return field.inRecess(run.part, body - run.part.origin)
     }
 
     /**
@@ -81,11 +99,12 @@ class FieldAnchors(private val field: CharacterField) {
         val unit = direction * (1f / sqrt(squared))
         var near = 0f
         var nearValue = start
-        var far = -start / sqrt(squared)
+        val reach = maxOf(abs(start), cell) * SEARCH_REACH
+        var far = (-start / sqrt(squared)).coerceIn(-reach, reach)
         var farValue = field.field.value(from + unit * far)
         var steps = 0
         while (abs(farValue) > close && steps < MOST_STEPS && farValue != nearValue) {
-            val next = far - farValue * (far - near) / (farValue - nearValue)
+            val next = (far - farValue * (far - near) / (farValue - nearValue)).coerceIn(-reach, reach)
             near = far
             nearValue = farValue
             far = next
@@ -110,11 +129,12 @@ class FieldAnchors(private val field: CharacterField) {
         if (abs(slope) < LEAST_SLOPE) return onSurface(from, direction, cell)
         var near = 0f
         var nearValue = start
-        var far = -start / slope
+        val reach = maxOf(abs(start), cell) * SEARCH_REACH
+        var far = (-start / slope).coerceIn(-reach, reach)
         var farValue = field.field.value(from + unit * far)
         var steps = 0
         while (abs(farValue) > close && steps < MOST_STEPS && farValue != nearValue) {
-            val next = far - farValue * (far - near) / (farValue - nearValue)
+            val next = (far - farValue * (far - near) / (farValue - nearValue)).coerceIn(-reach, reach)
             near = far
             nearValue = farValue
             far = next

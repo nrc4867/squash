@@ -25,6 +25,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.HAIR
 import dev.chieppa.squash.screens.look.LookArgs.Companion.HANDS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.DRAG
 import dev.chieppa.squash.screens.look.LookArgs.Companion.EYES
+import dev.chieppa.squash.screens.look.LookArgs.Companion.MOUTH
 import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.ORBIT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.RELEASE
@@ -173,6 +174,7 @@ fun renderSession(
             }
             session.sessionSurface.lidPreview.value = null
         }
+        if (MOUTH in close) keepMouths(session, work, errors, folder, name, look.faceShapes)
         if (TURN in close) views.keep(session, "$name-turn", azimuths = TURN_AZIMUTHS, only = only, tile = tile, height = height)
         if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, name, it, parts.faceFramed(it)) }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
@@ -194,6 +196,24 @@ fun renderSession(
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
     }
+}
+
+/**
+ * The close-ups of [session]'s first mouth as it shows, as `<name>-mouth`, and with [shapes] saying each spoken shape, with a sheet of
+ * them all; nothing where it has no mouth.
+ */
+private fun keepMouths(session: CharacterSession, work: TestWork, errors: MutableList<String>, folder: File, name: String, shapes: Boolean) {
+    val mouths = MouthCloseUps(work, errors, folder)
+    val spot = mouths.spotOf(session) ?: return
+    mouths.keep(session, "$name-mouth", spot)
+    if (!shapes) return
+    val said = session.mouthPreview.value
+    val kept = MouthShapeName.entries.map { shape ->
+        session.mouthPreview.value = shape
+        "$name-mouth-shape-${shape.word}".also { mouths.keep(session, it, spot) }.let { shape.word to it }
+    }
+    session.mouthPreview.value = said
+    keepShapeSheet(folder, kept, "$name-mouth-shapes")
 }
 
 /**

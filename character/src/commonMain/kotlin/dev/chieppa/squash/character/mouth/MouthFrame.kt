@@ -7,7 +7,11 @@ import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.floor
 import kotlin.math.hypot
 
@@ -17,6 +21,12 @@ private const val FRAME_STEP = 0.004f
 /** How many steps a flat place is walked toward its place on the patch, and how near is near enough, in body units. */
 private const val WALK_STEPS = 8
 private const val WALK_NEAR = 1e-5f
+
+/** The u halfway along a run: a walk round a closed end goes round the one at u 1 from past it, else the one at u 0. */
+private const val MIDDLE_U = 0.5f
+
+/** How many steps the walk round a closed end takes at most. */
+private const val POLE_WALK_STEPS = 16
 
 /** The most one step of the walk moves in u or v. */
 private const val WALK_STRIDE = 0.05f
@@ -73,8 +83,50 @@ class MouthFrame private constructor(
         }
     }
 
-    fun onPatch(p: Vec2): SurfaceUv {
-        val seed = seeds.minByOrNull { (flat, _) -> hypot(flat.x - p.x, flat.y - p.y) }?.second ?: middle
+    fun onPatch(p: Vec2): SurfaceUv = onPatchFrom(p, seeds.minByOrNull { (flat, _) -> hypot(flat.x - p.x, flat.y - p.y) }?.second ?: middle)
+
+    /** [p] found on the patch by walking from [seed], a place near it: where the frame folds round a pole, the place on the same fold as [seed]. */
+    fun onPatchFrom(p: Vec2, seed: SurfaceUv): SurfaceUv {
+        val walked = walked(p, seed)
+        if (miss(walked, p) < WALK_NEAR) return walked
+        val round = roundPole(p, seed)
+        return if (miss(round, p) < miss(walked, p)) round else walked
+    }
+
+    /** How far [uv] lies from [p] in the flat frame. */
+    private fun miss(uv: SurfaceUv, p: Vec2): Float = flatAt(uv.u, middle.v + unwrapped(uv.v - middle.v))?.let { hypot(it.x - p.x, it.y - p.y) } ?: Float.MAX_VALUE
+
+    /**
+     * [p] found by walking in a flat chart round the closed end nearer [seed], `(a, b)` the distance from the pole in u laid out at the
+     * angle round it, so a walk that crosses the pole, as round a muzzle's tip, runs straight through it.
+     */
+    private fun roundPole(p: Vec2, seed: SurfaceUv): SurfaceUv {
+        val far = seed.u > MIDDLE_U
+        val turn = 2f * PI.toFloat()
+        fun uvOf(a: Float, b: Float): SurfaceUv {
+            val r = hypot(a, b).coerceAtMost(1f)
+            val v = atan2(b, a) / turn
+            return SurfaceUv(if (far) 1f - r else r, v - floor(v))
+        }
+        fun flatOf(a: Float, b: Float) = uvOf(a, b).let { flatAt(it.u, middle.v + unwrapped(it.v - middle.v)) }
+        val r0 = if (far) 1f - seed.u else seed.u
+        var a = r0 * cos(turn * seed.v)
+        var b = r0 * sin(turn * seed.v)
+        repeat(POLE_WALK_STEPS) {
+            val here = flatOf(a, b) ?: return uvOf(a, b)
+            val miss = here - p
+            if (hypot(miss.x, miss.y) < WALK_NEAR) return uvOf(a, b)
+            val da = flatOf(a + FRAME_STEP, b)?.let { (it - here) * (1f / FRAME_STEP) } ?: return uvOf(a, b)
+            val db = flatOf(a, b + FRAME_STEP)?.let { (it - here) * (1f / FRAME_STEP) } ?: return uvOf(a, b)
+            val det = da.x * db.y - db.x * da.y
+            if (abs(det) < TINY) return uvOf(a, b)
+            a -= ((miss.x * db.y - db.x * miss.y) / det).coerceIn(-WALK_STRIDE, WALK_STRIDE)
+            b -= ((da.x * miss.y - miss.x * da.y) / det).coerceIn(-WALK_STRIDE, WALK_STRIDE)
+        }
+        return uvOf(a, b)
+    }
+
+    private fun walked(p: Vec2, seed: SurfaceUv): SurfaceUv {
         var u = seed.u
         var v = seed.v
         repeat(WALK_STEPS) {

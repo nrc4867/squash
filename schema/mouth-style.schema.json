@@ -189,6 +189,12 @@
           "minimum": 0.05,
           "maximum": 1.0
         },
+        "carve": {
+          "description": "How deep the head is cut in behind the opening where the lips part, at most, a share of the lip line's width; 0 paints the opening on the surface only.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
         "span": {
           "description": "How much of the lip line parts, a share of it either side of its middle: 1 for lips, less for a muzzle, whose line runs shut back along its sides.",
           "type": "number",

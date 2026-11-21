@@ -103,8 +103,8 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
 }
 
 /**
- * One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat, taken by its tint, which
- * reads [skinShadow] as the skin's shadow tone. A shaded layer drawn to a shape lies on one side of the body's plane, so it is darkened
+ * One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat, taken by its tint either
+ * way, which reads [skinShadow] as the skin's shadow tone. A shaded layer drawn to a shape lies on one side of the body's plane, so it is darkened
  * whole as the side most of it holds.
  */
 private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, skinShadow: Color): List<ColorLayerDraw> {
@@ -121,7 +121,9 @@ private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartM
         }
         return listOf(ColorLayerDraw(layer.mesh, palette.tonesOf(layer.slot, fallback.base, shading, side, toCamera), shape = layer.shape))
     }
-    val tones = palette.tonesOf(layer.slot, fallback.base, shading, null, toCamera)
+    val tones = palette.tonesOf(layer.slot, fallback.base, shading, null, toCamera).let { tones ->
+        if (layer.tint == null) tones else tones.copy(lit = tinted(tones.lit, layer.tint, palette, fallback.ink, skinShadow), shadow = tinted(tones.shadow, layer.tint, palette, fallback.ink, skinShadow))
+    }
     return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(palette, layer.slot, fallback, shading, toCamera, layer.positive, layer.negative)))
 }
 

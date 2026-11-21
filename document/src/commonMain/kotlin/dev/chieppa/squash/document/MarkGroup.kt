@@ -62,7 +62,7 @@ data class MarkGroup(
     val name: String,
     val roles: List<GroupRole>,
     val controls: MarkControls = MarkControls(),
-    @Doc("The mouth style the group talks in, by preset name (lips, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's.")
+    @Doc("The mouth style the group talks in, by preset name (lips, painted, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's.")
     val style: String? = null,
     @Doc("The spoken shapes this mouth changes from its style's, by name: each value set here replaces the style's.")
     val shapes: Map<MouthShapeName, MouthShapeValues> = emptyMap(),

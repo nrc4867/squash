@@ -53,7 +53,7 @@ internal fun withSoles(runs: List<FieldRun>, members: List<JoinedMember>, solids
             if (reached.isEmpty()) continue
             val rounding = reached.minOf { (it.solid as TurnedEllipsoid).radii.let { r -> minOf(r.y, r.z) } } * floor.rim * ROUNDING
             val carved = solids.kept(listOf(Same(member.solid), member.origin, member.mirrored, level, rounding) + reached.map { Same(it.solid) }) {
-                CarvedSolid(member.solid, reached.map { Hollow(it, 0f) }, member.origin, member.mirrored, rounding) { q -> q + along * (level - (q dot along)) }
+                CarvedSolid(member.solid, reached.map { Hollow(it, 0f) }, member.origin, member.mirrored, rounding, placedFrom = { q -> q + along * (level - (q dot along)) })
             }
             out[j] = JoinedMember(carved, member.origin, member.mirrored, member.blend, member.parent, member.part, member.ease, member.angles)
         }

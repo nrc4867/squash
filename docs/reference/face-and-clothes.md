@@ -49,16 +49,17 @@ Nine spoken shapes, each a preset over the seven controls above. A mouth says on
 
 ### Mouth styles
 
-A mouth talks in the style its group's `style` names, else the one its head template's `mouth` names, else `lips`. A style is a preset file, `templates/mouths/<name>.mouth.json` (schema `schema/mouth-style.schema.json`): where its line runs, how deep it opens, how much each control does on it (`scale`), and its nine shapes. A style whose `speaks` is false holds its shapes as data only: a picked shape leaves its mouth as its own controls draw it, and the Face stage shows it no Shapes strip. A `seam` style, a beak's, parts nothing on the head: its lower half drops on the jaw and shows the inner and tongue roles' fills on its top, the tongue reaching further out with `tongue`.
+A mouth talks in the style its group's `style` names, else the one its head template's `mouth` names, else `lips`. A style is a preset file, `templates/mouths/<name>.mouth.json` (schema `schema/mouth-style.schema.json`): where its line runs, how deep it opens, how much each control does on it (`scale`), and its nine shapes. A style whose `speaks` is false holds its shapes as data only: a picked shape leaves its mouth as its own controls draw it, and the Face stage shows it no Shapes strip. A `seam` style, a beak's, parts nothing on the head: its lower half drops on the jaw and shows the inner and tongue roles' fills on its top, the tongue reaching further out with `tongue`. Where the lips part, a mouth is cut into the head as a shallow recess, `carve` of the lip line's width deep at most and never much deeper than the lips part there, its walls in the inner role's fill, darker toward the back, so the side outline shows a notch; `carve` 0, as `painted` has, paints the opening on the surface only.
 
-| style | line | speaks | depth | scale |
-| --- | --- | --- | --- | --- |
-| `beak` | seam | no | 0.45 | wide 0.0, round 0.0, smile 0.0, upperLip 0.0, lowerLip 0.0 |
-| `lips` | front | yes | 0.45 | all 1 |
-| `long-muzzle` | muzzle | no | 0.55 | wide 0.2, round 0.25, smile 0.6 |
-| `minimal` | front | yes | 0.3 | wide 0.4, round 0.6, smile 0.5, upperLip 0.0, lowerLip 0.0, tongue 0.0 |
-| `short-muzzle` | muzzle | no | 0.4 | wide 0.4, round 0.4 |
-| `wide-jaw` | front | no | 0.3 | round 0.3, upperLip 0.3 |
+| style | line | speaks | depth | carve | scale |
+| --- | --- | --- | --- | --- | --- |
+| `beak` | seam | no | 0.45 | 0.2 | wide 0.0, round 0.0, smile 0.0, upperLip 0.0, lowerLip 0.0 |
+| `lips` | front | yes | 0.45 | 0.2 | all 1 |
+| `long-muzzle` | muzzle | no | 0.55 | 0.2 | wide 0.2, round 0.25, smile 0.6 |
+| `minimal` | front | yes | 0.3 | 0.2 | wide 0.4, round 0.6, smile 0.5, upperLip 0.0, lowerLip 0.0, tongue 0.0 |
+| `painted` | front | yes | 0.45 | 0.0 | all 1 |
+| `short-muzzle` | muzzle | no | 0.4 | 0.2 | wide 0.4, round 0.4 |
+| `wide-jaw` | front | no | 0.3 | 0.2 | round 0.3, upperLip 0.3 |
 
 The `lips` style's shapes, which the other presets share before their scales:
 

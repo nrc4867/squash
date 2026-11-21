@@ -46,7 +46,7 @@ data class MouthScales(
 }
 
 /**
- * A mouth style, a preset a head template names (`templates/mouths/<id>.mouth.json`): where its line runs, how deep it opens, how much each control does
+ * A mouth style, a preset a head template names (`templates/mouths/<id>.mouth.json`): where its line runs, how deep it opens and is carved, how much each control does
  * on it, and the nine spoken shapes it says. A mouth group may name another; its own shapes override the style's. See HLD: look, Mouth.
  */
 @Serializable
@@ -63,6 +63,8 @@ data class MouthStyle(
     val line: MouthLine = MouthLine.FRONT,
     @Doc("How deep a fully open mouth drops its lower lip at its middle, a share of the lip line's width.") @Range(min = 0.05, max = 1.0)
     val depth: Float = DEFAULT_DEPTH,
+    @Doc("How deep the head is cut in behind the opening where the lips part, at most, a share of the lip line's width; 0 paints the opening on the surface only.") @Range(min = 0.0, max = 1.0)
+    val carve: Float = DEFAULT_CARVE,
     @Doc("How much of the lip line parts, a share of it either side of its middle: 1 for lips, less for a muzzle, whose line runs shut back along its sides.") @Range(min = 0.1, max = 1.0)
     val span: Float = 1f,
     @Doc("How much each control does on this mouth.")
@@ -82,6 +84,9 @@ data class MouthStyle(
     companion object {
         /** How deep a fully open mouth drops at its middle by default, a share of its width. */
         const val DEFAULT_DEPTH = 0.45f
+
+        /** How deep a mouth is cut in behind its opening by default, a share of its width. */
+        const val DEFAULT_CARVE = 0.2f
 
         /** How thick the lips' bands are at their middles by default, shares of the mouth's width. */
         const val DEFAULT_UPPER_LIP = 0.13f

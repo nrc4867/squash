@@ -40,7 +40,7 @@ class Hollow(val hollow: Solid, val wall: Float) {
  * [solid], read in its part's own space, with [hollows] cut into it: the larger of its field and each hollow's cut, rounded over [blend]
  * where above 0, so nothing of it lies within a hollow or its wall. [origin] and [mirrored] take a point of the part's own space into body
  * space, where the hollows lie. It places a point as [solid] does, a point the cut shapes from where [placedFrom] takes it when given, so
- * a dish in a sole reads the sole's own place.
+ * a dish in a sole reads the sole's own place, or where [placeCut] writes it when given, so a mouth's recess reads as its opening.
  */
 class CarvedSolid(
     val solid: Solid,
@@ -49,6 +49,7 @@ class CarvedSolid(
     val mirrored: Boolean,
     val blend: Float = 0f,
     val placedFrom: ((Vec3) -> Vec3)? = null,
+    val placeCut: ((Vec3, FloatArray) -> Unit)? = null,
 ) : PlacingSolid {
     override val low: Vec3 get() = solid.low
     override val high: Vec3 get() = solid.high
@@ -69,6 +70,12 @@ class CarvedSolid(
     override fun place(p: Vec3, out: FloatArray) {
         val cut = cut(p)
         val own = solid.distance(p)
+        val writes = placeCut
+        if (writes != null && cut > own) {
+            writes(p, out)
+            out[PLACE_FIELD] = carved(own, cut)
+            return
+        }
         val from = placedFrom?.takeIf { cut > own }?.invoke(p) ?: p
         val placing = solid as? PlacingSolid
         if (placing != null) {

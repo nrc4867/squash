@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.AreaSpec
+import dev.chieppa.squash.character.surface.LayerTint
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PatchSlot
 import dev.chieppa.squash.document.wornPart
@@ -82,8 +83,19 @@ private fun socketEnds(character: Character, parts: Set<PartId>, templates: Temp
     id to SocketEnd(parent, closing)
 }.toMap()
 
-/** A shape on one patch of one part, the part its anchors name, with the slot it shows, its layer's rank and what it comes from. */
-data class LandedShape(val rank: Int, val slot: SlotName, val part: PartId, val patch: String, val shape: ColorShape, val source: ShapeSource? = null)
+/**
+ * A shape on one patch of one part, the part its anchors name, with the slot it shows, its layer's rank and what it comes from, the
+ * slot's colour taken by [tint] where it has one.
+ */
+data class LandedShape(
+    val rank: Int,
+    val slot: SlotName,
+    val part: PartId,
+    val patch: String,
+    val shape: ColorShape,
+    val source: ShapeSource? = null,
+    val tint: LayerTint? = null,
+)
 
 /** Every color shape [holder] holds, in layer order: its template's colored patches, its filled areas, its regions, its strokes. */
 fun colorShapes(holder: PartId, work: ResolvedSurfaceWork, input: PartColorInput, surfaces: Map<PartId, PartSurface>): List<LandedShape> {

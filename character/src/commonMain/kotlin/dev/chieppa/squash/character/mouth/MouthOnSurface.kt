@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Vec2
+import kotlin.math.hypot
 
 private const val MIN_LINE_POINTS = 2
 private const val TINY = 1e-7f
@@ -31,8 +32,18 @@ class MouthMarks(
 )
 
 /** A mouth shaped on the patch [patch] of its part: the [flat] shapes, and their places on the patch through [uv]. */
-class ShapedMouth(val patch: String, val flat: FlatMouth, private val frame: MouthFrame) {
+class ShapedMouth(val holder: PartId, val patch: String, val flat: FlatMouth, private val frame: MouthFrame) {
     fun uv(places: List<Vec2>): List<SurfaceUv> = places.map(frame::onPatch)
+
+    /**
+     * [place]'s u and v on the patch, walked to from [from] where given, a place found just before it, so the walk keeps to the same side
+     * of a muzzle's tip; null where the place found lies further than [within] from it in the flat frame.
+     */
+    fun uvWithin(place: Vec2, within: Float, from: SurfaceUv? = null): SurfaceUv? {
+        val uv = if (from == null) frame.onPatch(place) else frame.onPatchFrom(place, from)
+        val back = frame.flat(Anchor(holder, patch, uv.u, uv.v))
+        return uv.takeIf { hypot(back.x - place.x, back.y - place.y) <= within }
+    }
 }
 
 /**
@@ -59,7 +70,7 @@ fun shapeMouth(holder: PartId, marks: MouthMarks, controls: MarkControls, style:
         lipUpper = style.upperLip,
         lipLower = style.lowerLip,
     )
-    return ShapedMouth(patch, MouthShaper.shape(drawing, style.scale.of(controls), style.depth, style.span), frame)
+    return ShapedMouth(holder, patch, MouthShaper.shape(drawing, style.scale.of(controls), style.depth, style.span), frame)
 }
 
 private const val MIN_LOOP = 3
