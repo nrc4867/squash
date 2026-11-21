@@ -42,7 +42,8 @@ const val GARMENT_PART_PREFIX = "garment/"
  * joint creases, wrinkles where it bunches and short folds gathered above its hems, times the character's cloth strength (HLD: look, Creases and wrinkles).
  * [eases] gives a part, by a pair's leader, a stand-off that varies along and round it, over its fit; [hang] lets the cloth over an
  * upright part fall straight from its widest place rather than follow the body in; [drops] moves the seam where a part's cloth meets the
- * cloth of the part it grows from down that part, in its u, as a dropped shoulder's. See HLD: data-model, Garments.
+ * cloth of the part it grows from down that part, in its u, as a dropped shoulder's. [shapes] are the strokes of its areas kept as
+ * vector shapes, in the order laid, which give a part's cloth its edge where its cells are what they lay. See HLD: data-model, Garments.
  */
 @Serializable
 data class Garment(
@@ -71,6 +72,7 @@ data class Garment(
     val eases: Map<PartId, EaseProfile> = emptyMap(),
     val hang: ClothHang? = null,
     val drops: Map<PartId, Float> = emptyMap(),
+    val shapes: List<ClothShape> = emptyList(),
 ) {
     init {
         require(fit == null || fit >= 0f) { "Garment ${id.value} has a negative fit" }

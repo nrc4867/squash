@@ -1,13 +1,11 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.document.Anchor
-import dev.chieppa.squash.document.CHART_CELLS
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentBranch
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.boxCells
-import dev.chieppa.squash.document.cellsOfRuns
 import dev.chieppa.squash.geom.PartSurface
 import kotlin.math.floor
 
@@ -25,7 +23,8 @@ fun clothOf(garment: Garment, branches: Map<PartId, GarmentBranch>, twins: Map<P
     for (part in branches.keys) {
         val leader = if (garment.areas.any { part in it.cells }) part else twins[part] ?: continue
         val field = made.getOrPut(leader) {
-            ClothField.of(garment.areas.map { area -> area.cells[leader]?.let(::cellsOfRuns) ?: BooleanArray(CHART_CELLS) })
+            val cells = DrawnCloth.cellsOf(garment, leader)
+            ClothField.of(cells, DrawnCloth.of(garment, leader, cells))
         } ?: continue
         out[part] = field
     }

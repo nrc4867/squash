@@ -1199,7 +1199,7 @@ export interface RecipeSpread {
   [note: `x-${string}`]: unknown;
 }
 
-/** One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v. opening: the cells round where the part on comes out (a neck, an arm, an ear) within reach past its root ring, on every part but those beyond it, its front dropping depth below the ring in its cut: unpaint one for a crew or V neckline, paint a wider one and unpaint a narrower for a collar band round it. */
+/** One Paint stroke on a part, as Dress lays it: the cells of the part's chart (64 rows along it in u, 32 columns round it in v) whose middles the shape holds. A cell is 1/64 of u by 1/32 of v; the cloth's edge is a smooth curve over the cells' edges, and an area under two cells wide drops out, unless its strokes are exact. brush: every cell within size of the path through points (or face), straight between them in u and v; one place is a dab. line: every cell within size of the straight lines in the body between its places. A brush or line reaches the parts beyond its part (from a sleeve onto the hand), never the parts it sits on. band: rows u[0] to u[1] the whole way round. box: u[0] to u[1] along and v[0] to v[1] round. ellipse: the ellipse inside that box. lasso: inside the closed polygon through points (or face), straight between them in u and v, or a smooth curve through them when curved. opening: the cells round where the part on comes out (a neck, an arm, an ear) within reach past its root ring, on every part but those beyond it, its front dropping depth below the ring in its cut: unpaint one for a crew or V neckline, paint a wider one and unpaint a narrower for a collar band round it. */
 export interface RecipeStroke {
   /** The part painted on (a pair by either side: both sides take it, mirrored). */
   on: string;
@@ -1227,6 +1227,12 @@ export interface RecipeStroke {
   reach?: number;
   /** opening: how far its front drops below the ring at its middle, in body units; 0 is a plain ring. */
   depth?: number;
+  /** band, box, ellipse, lasso: the stroke is kept as a vector shape, and where every stroke on its part is exact the cloth's edge there is the shapes' outline itself rather than a smooth curve over the cells, however narrow: a tie, a collar's points, a strap, a bikini's cups, cut crisp and with no area dropping out. It paints every cell within half a cell of it and unpaints those more than half a cell inside it; a box or band reaching within half a row of an end of its part runs on over that end. A stroke on a pair names the side the pair is kept on; clean is 0. */
+  exact?: boolean;
+  /** An exact lasso: one smooth curve through its places rather than straight between them, turning sharply at corners. */
+  curved?: boolean;
+  /** An exact lasso with curved: the indices of the places where the curve turns sharply, as a tie's tip or a collar's point. */
+  corners?: number[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

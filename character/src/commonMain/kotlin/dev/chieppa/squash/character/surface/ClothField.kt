@@ -40,7 +40,9 @@ private const val SQRT_TWO = 1.4142135f
  * cells: each cell any area paints held as 1 and the rest 0, blurred by [CLOTH_BLUR_CELLS] cells along and round, rows held at the
  * part's ends and columns wrapping round, so its [CLOTH_HEM_LEVEL] is a smooth curve along the painted cells' edge with no steps. Each
  * area of a garment of several is blurred on its own too, for the seams where areas meet ([areaAt]); all areas are blurred together
- * for the cloth, so two areas that touch leave no gap between them. Equal for the same cells painted by the same areas.
+ * for the cloth, so two areas that touch leave no gap between them. Equal for the same cells painted by the same areas. Where the cells
+ * are what the garment's shapes lay, [drawn], its edge and fields are read from the shapes instead, so the hem is the shapes' outline
+ * however fine; a union with drawn cloth in it reads each of its cloths and takes the most.
  */
 class ClothField private constructor(
     private val whole: FloatArray,
@@ -49,9 +51,14 @@ class ClothField private constructor(
     /** Where its painted cells lie on the part's chart. */
     val reach: ClothReach,
     private val held: BooleanArray,
+    private val drawn: DrawnCloth? = null,
+    private val joined: List<ClothField>? = null,
 ) {
     /** For each cell, the nearest middle of a side between a painted and an unpainted cell, as row and column in cells; empty with none. */
     private val nearest: FloatArray by lazy { nearestEdges(held) }
+
+    /** Whether its edge is read from drawn shapes, its own or a cloth's it joins. */
+    val isDrawn: Boolean get() = drawn != null || joined?.any { it.isDrawn } == true
 
     /** Whether every cell of the part is painted. */
     val paintsAll: Boolean get() = held.all { it }
@@ -66,6 +73,8 @@ class ClothField private constructor(
      * range off its hem level to [BLEND_LEVEL] past that.
      */
     fun inside(u: Float, v: Float, along: Float, around: Float): Float {
+        drawn?.let { return it.inside(u, v, along, around) }
+        joined?.let { fields -> return fields.maxOf { it.inside(u, v, along, around) } }
         val x = rowOf(u)
         val y = columnOf(v)
         val value = sample(whole, x, y)
@@ -107,13 +116,30 @@ class ClothField private constructor(
     }
 
     /** The field at (u, v), from 0 far outside the cloth to 1 deep inside it. */
-    fun at(u: Float, v: Float): Float = sample(whole, rowOf(u), columnOf(v))
+    fun at(u: Float, v: Float): Float {
+        drawn?.let { return it.at(u, v) }
+        joined?.let { fields -> return fields.maxOf { it.at(u, v) } }
+        return sample(whole, rowOf(u), columnOf(v))
+    }
+
+    /**
+     * Where its cloth is drawn, how wide its narrowest piece or gap is in body units, a unit of u at u [along] of it long and of v [around]
+     * (see [DrawnCloth.narrowest]); null where it is read from cells alone.
+     */
+    fun drawnNarrowest(along: (Float) -> Float, around: (Float) -> Float): Float? {
+        drawn?.let { return it.narrowest(along, around) }
+        return joined?.mapNotNull { it.drawnNarrowest(along, around) }?.minOrNull()
+    }
 
     /** Whether area [area] paints any cell of the part. */
     fun paints(area: Int): Boolean = areas[area] != null
 
     /** Area [area]'s own field at (u, v); 0 where that area paints nothing of the part. */
-    fun areaAt(area: Int, u: Float, v: Float): Float = areas[area]?.let { sample(it, rowOf(u), columnOf(v)) } ?: 0f
+    fun areaAt(area: Int, u: Float, v: Float): Float {
+        if (areas[area] == null) return 0f
+        drawn?.let { return it.areaAt(area, u, v) }
+        return sample(checkNotNull(areas[area]), rowOf(u), columnOf(v))
+    }
 
     override fun equals(other: Any?): Boolean = other is ClothField && other.key == key
 
@@ -132,21 +158,26 @@ class ClothField private constructor(
 
         /**
          * The field of the cells each of [areas] paints, one a cell row by row, or null where they paint none. With one area it holds no
-         * area fields of its own.
+         * area fields of its own. With [drawn], the shapes that lay exactly those cells, its edge and fields are the shapes'.
          */
-        fun of(areas: List<BooleanArray>): ClothField? {
+        fun of(areas: List<BooleanArray>, drawn: DrawnCloth? = null): ClothField? {
             val held = BooleanArray(CHART_CELLS) { cell -> areas.any { it[cell] } }
             if (held.none { it }) return null
             val own = if (areas.size < 2) emptyList() else areas.map { cells -> if (cells.any { it }) blurred(cells) else null }
-            return ClothField(blurred(held), own, areas.map(::runsOfCells), checkNotNull(ClothReach.of(held)), held)
+            val key: Any = if (drawn == null) areas.map(::runsOfCells) else areas.map(::runsOfCells) to drawn
+            return ClothField(blurred(held), own, key, checkNotNull(ClothReach.of(held)), held, drawn)
         }
 
-        /** The largest of [fields] at each cell, as cloth painted by any of them, with no area fields; null with none. */
+        /**
+         * The largest of [fields] at each cell, as cloth painted by any of them, with no area fields; null with none. Where any of them is
+         * drawn, it reads each of them and takes the most.
+         */
         fun union(fields: List<ClothField>): ClothField? {
             if (fields.size < 2) return fields.firstOrNull()
             val out = FloatArray(CHART_CELLS) { i -> fields.maxOf { it.whole[i] } }
             val held = BooleanArray(CHART_CELLS) { i -> fields.any { it.held[i] } }
-            return ClothField(out, emptyList(), fields.map { it.key }, checkNotNull(ClothReach.of(held)), held)
+            val joined = fields.takeIf { list -> list.any { it.drawn != null || it.joined != null } }
+            return ClothField(out, emptyList(), fields.map { it.key }, checkNotNull(ClothReach.of(held)), held, joined = joined)
         }
 
         /**

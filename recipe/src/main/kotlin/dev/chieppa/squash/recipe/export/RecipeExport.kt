@@ -171,7 +171,7 @@ private fun garment(garment: Garment, notCarried: MutableList<String>): RecipeGa
         hang = garment.hang?.let { RecipeHang(it.limit, it.flare) },
         drops = garment.drops.mapKeys { it.key.value },
         joins = if (painted) emptyList() else garment.joins.map { it.value },
-        areas = if (painted) garment.areas.map(::areaOf) else emptyList(),
+        areas = if (painted) areasOf(garment) else emptyList(),
         holes = holesOf(garment),
         tucks = tucksOf(garment),
         covers = garment.branches.map { RecipeCover(it.part.value, it.from, it.to, it.fromV, it.toV, it.ease, outlines(it.outlines)) },

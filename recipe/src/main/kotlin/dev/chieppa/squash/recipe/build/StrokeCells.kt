@@ -99,7 +99,7 @@ private fun near(v: Float, from: Float, to: Float): Float {
 }
 
 /** A [from, to] pair at [path].[field], from below to. */
-private fun BuildContext.span(path: String, field: String, pair: List<Float>): Pair<Float, Float> {
+internal fun BuildContext.span(path: String, field: String, pair: List<Float>): Pair<Float, Float> {
     if (pair.size != 2) fail("$path.$field", "give [from, to], not $pair")
     if (pair[0] >= pair[1]) fail("$path.$field", "from lies below to: here ${pair[0]} to ${pair[1]}")
     return pair[0] to pair[1]

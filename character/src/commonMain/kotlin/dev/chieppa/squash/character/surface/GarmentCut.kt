@@ -13,6 +13,9 @@ internal const val COVERAGE_CELLS = 4f
 /** How far, in cells, smoothing coverage near its zero may move it, so a garment narrower than the smoothing still shows. */
 internal const val COVERAGE_SHIFT_CELLS = 0.25f
 
+/** The most steps drawn cloth's coverage is smoothed in near its zero. */
+private const val MOST_SMOOTHING_STEPS = 64
+
 /** Vertices or quads one piece of cutting work takes. */
 private const val CUT_CHUNK = 2048
 
@@ -59,7 +62,7 @@ class GarmentCut(
             2 -> {
                 read?.values?.copyInto(coverage)
                 read = null
-                val running = smoothing ?: NearZeroSmoothing(coverage, mesh.triangles, mesh.vertexCount, mesh.cell * COVERAGE_CELLS, mesh.positions, mesh.cell * COVERAGE_SHIFT_CELLS).also { smoothing = it }
+                val running = smoothing ?: smoothingOf(coverage).also { smoothing = it }
                 running.next()?.let {
                     stage--
                     return it
@@ -83,6 +86,20 @@ class GarmentCut(
             }
             else -> null
         }
+    }
+
+    /**
+     * The smoothing of [values] near zero: over [COVERAGE_CELLS] of the mesh's cell, moving none by more than [COVERAGE_SHIFT_CELLS] of
+     * it; where the cloth is drawn and meshes finer than [DETAIL_LEVEL]'s cell, over that cell instead, in as many more steps as reach
+     * across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a drawn hem.
+     */
+    private fun smoothingOf(values: FloatArray): NearZeroSmoothing {
+        val detail = bodyCell / (1 shl DETAIL_LEVEL)
+        val drawn = mesh.cell < detail && cover.cloth.values.any { it.isDrawn }
+        val cell = if (drawn) detail else mesh.cell
+        val reach = cell / mesh.cell
+        val steps = if (drawn) minOf((NEAR_ZERO_STEPS * reach * reach).toInt(), MOST_SMOOTHING_STEPS) else NEAR_ZERO_STEPS
+        return NearZeroSmoothing(values, mesh.triangles, mesh.vertexCount, cell * COVERAGE_CELLS, mesh.positions, cell * COVERAGE_SHIFT_CELLS, steps)
     }
 
     companion object {

@@ -172,12 +172,15 @@ data class SetGarmentDrop(val garment: GarmentId, val part: PartId, val drop: Fl
     }
 }
 
-/** Sets the areas painted for [garment] and its holes. */
+/** Sets the areas painted for [garment] and its holes, keeping its shapes only on the parts whose cells stay as they were. */
 @Serializable
 @SerialName("setGarmentPaint")
 data class SetGarmentPaint(val garment: GarmentId, val areas: List<GarmentArea>, val holes: List<GarmentHole>) : DocumentCommand {
     override fun apply(document: SquashDocument): Applied<SquashDocument> =
-        document.garmentChanged(garment) { it.copy(areas = areas, holes = holes) }
+        document.garmentChanged(garment) { held ->
+            val kept = held.shapes.filter { shape -> held.areas.map { it.id to it.cells[shape.part] } == areas.map { it.id to it.cells[shape.part] } }
+            held.copy(areas = areas, holes = holes, shapes = kept)
+        }
 }
 
 /** Names [garment]'s area [area] [name]. */
