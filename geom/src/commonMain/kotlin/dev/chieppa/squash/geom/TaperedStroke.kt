@@ -3,6 +3,7 @@ package dev.chieppa.squash.geom
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 /** How many straight pieces a tapered stroke's curve is read as. */
@@ -12,7 +13,8 @@ const val STROKE_PIECES = 6
  * A stroke that tapers from [rootHalf] at its root ([rootX], [rootY]) to a point at its tip, ([reachX], [reachY]) on from the root, its
  * middle bent: [bendX] of the way across is reached as the square of the way along instead of in step with it, and [bendY] up, so a
  * stroke with [bendX] 1 rises straight off its root and sweeps across at its tip, and one with [bendY] 1 runs out straight and lifts at
- * its tip. Places across are counted [aspect] times, as a lid measures them.
+ * its tip. Places across are counted [aspect] times, as a lid measures them. Its half width falls off as the way left to its tip raised
+ * to [taper]: in step with it at 1, to a finer point above.
  */
 class TaperedStroke(
     private val rootX: Float,
@@ -23,6 +25,7 @@ class TaperedStroke(
     private val bendX: Float,
     private val bendY: Float,
     private val aspect: Float,
+    private val taper: Float = 1f,
 ) {
     /** How far outside the stroke ([x], [y]) lies, places across counted [aspect] times: at most zero inside. */
     fun level(x: Float, y: Float): Float {
@@ -41,7 +44,8 @@ class TaperedStroke(
             val dx = px - ex * h
             val dy = py - ey * h
             val at = (i - 1 + h) / STROKE_PIECES
-            best = min(best, sqrt(dx * dx + dy * dy) - rootHalf * (1f - at))
+            val left = 1f - at
+            best = min(best, sqrt(dx * dx + dy * dy) - rootHalf * (if (taper == 1f) left else left.pow(taper)))
             ax = bx
             ay = by
         }

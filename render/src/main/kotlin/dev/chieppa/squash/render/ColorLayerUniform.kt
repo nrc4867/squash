@@ -51,10 +51,13 @@ internal class ColorLayerUniform {
         return data
     }
 
-    /** [shape]'s opening's flatness and corner, its cut and its lid mass, after the sides' tones. */
+    /** [shape]'s opening's flatness and corner, its cut, its lid mass, its lids' pose and its lid paint, after the sides' tones. */
     private fun writeDetail(shape: ChartShape) {
         val cut = shape.cut
         val lid = shape.lid
+        val paint = shape.paint
+        val mark = paint?.mark
+        val lids = shape.opening.lids
         var at = 2 * MATRIX_FLOATS + DETAIL_AFTER_VECTORS * VECTOR_FLOATS
         at = put(at, shape.opening.topFlat, shape.opening.outerCorner, if (lid != null) 1f else 0f, cut?.soft ?: 0f)
         val oval = cut?.oval
@@ -67,7 +70,16 @@ internal class ColorLayerUniform {
         at = put(at, mode, if (cut?.outside == true) -1f else 1f, 0f, 0f)
         at = put(at, lid?.weight ?: 0f, lid?.inner ?: 0f, lid?.flick ?: 0f, lid?.flickLift ?: 0f)
         at = put(at, lid?.lower ?: 0f, lid?.lowerExtent ?: 0f, lid?.clumps?.toFloat() ?: 0f, lid?.clumpLength ?: 0f)
-        put(at, lid?.clumpSpread ?: 0f, lid?.aspect ?: 1f, 0f, 0f)
+        at = put(at, lid?.clumpSpread ?: 0f, lid?.aspect ?: paint?.aspect ?: 1f, lid?.shoulder ?: -1f, lid?.lowerShoulder ?: -1f)
+        at = put(at, lids.close, lids.rise, lids.closedAt, lids.closedBend)
+        val paintMode = when {
+            paint == null -> 0f
+            mark == null -> 1f
+            else -> 2f
+        }
+        at = put(at, lids.closedSlope, paintMode, paint?.above ?: 0f, paint?.fade ?: 0f)
+        at = put(at, mark?.along ?: 0f, mark?.above ?: 0f, mark?.reachX ?: 0f, mark?.reachY ?: 0f)
+        put(at, mark?.halfWidth ?: 0f, mark?.bend ?: 0f, lid?.clumpWidth ?: 0f, 0f)
     }
 
     private fun put(at: Int, color: Color) = put(at, color.red, color.green, color.blue, color.alpha)

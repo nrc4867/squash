@@ -46,6 +46,17 @@ data class SetEyeGaze(val id: String, val forward: Float, val up: Float) : Docum
     override fun apply(document: SquashDocument): Applied<SquashDocument> = changeEye(document, id) { it.copy(gazeForward = forward, gazeUp = up) }
 }
 
+/** Sets where the painted eye [id]'s lids stand: its upper [upperClose] of the way down to the closed line and its lower [lowerRise] of the way up. */
+@Serializable
+@SerialName("setEyeLids")
+data class SetEyeLids(val id: String, val upperClose: Float, val lowerRise: Float) : DocumentCommand {
+    init {
+        require(upperClose in 0f..1f && lowerRise in 0f..1f) { "A lid stands between 0 and 1, not $upperClose, $lowerRise" }
+    }
+
+    override fun apply(document: SquashDocument): Applied<SquashDocument> = changeEye(document, id) { it.withLids(LidPose(upperClose, lowerRise)) }
+}
+
 /** Places the painted eye [id] at ([u], [v]) on its head with its opening [width] by [height], turned [tilt] degrees (see [framed]). */
 @Serializable
 @SerialName("setEyeFrame")

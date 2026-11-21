@@ -67,14 +67,36 @@ export interface EyeIrisShade {
   [note: `x-${string}`]: unknown;
 }
 
-/** Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks. */
+/** Lashes as tapering strokes growing out of the upper lid's outer part, curving out and up, in the lid mass's slot, in place of the lash flicks. */
 export interface EyeLashClumps {
-  /** How many wedges: 0 none. */
+  /** How many lashes: 0 none. */
   count?: number;
-  /** The outermost wedge's length, a share of the opening's height; each further one is a little shorter. */
+  /** The outermost lash's length, a share of the opening's height: its curve runs about twice that to its tip. Each further one is a little shorter. */
   length?: number;
-  /** How much of the upper lid their roots spread over, from the back corner. */
+  /** How much of the upper lid their roots spread over, from where it turns down to the back corner. */
   spread?: number;
+  /** Each lash's thickness either side at its root, a share of the opening's height; it tapers to a fine point. Small and spread wide reads as a few separate lashes. */
+  width?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A mark on the upper lid, a liner wing or one piece of a pattern: a stroke from a root on the lid tapering to a point, moving with the lid as it closes and kept off the open eye. */
+export interface EyeLidMark {
+  /** Where its root sits along the lid: -1 the back corner, 1 the front, beyond them past the corners. */
+  along?: number;
+  /** How far above the lash line its root sits, in the opening's heights. */
+  above?: number;
+  /** How far its tip runs toward the back corner from its root, in the opening's half widths; below 0 toward the front. */
+  out?: number;
+  /** How far its tip rises above its root, in the opening's heights. */
+  up?: number;
+  /** Its thickness either side at its root, in the opening's heights; it tapers to a point, a round dot where it reaches nowhere. */
+  width?: number;
+  /** How much it runs out first and lifts at its tip: 0 straight, 1 a curve. */
+  bend?: number;
+  /** Its palette slot; the look's ink when left out. */
+  slot?: string | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -107,6 +129,28 @@ export interface EyeLidShadow {
   slot?: string | null;
   /** How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot. */
   share?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** How an eye's lids meet when closed and how the upper lid is painted: its own colour, a fade up from the lash line and marks that move with it. Lengths are shares of the opening's height. */
+export interface EyeLids {
+  /** Where the closed lids meet at the opening's middle, in its heights up from the middle: 1 the open upper lid's top, -lowerLid the lower lid's bottom. */
+  closedAt?: number;
+  /** How far the closed line's middle stands above a straight line through its ends, in heights: above 0 it arches up as a happy closed eye does, below 0 it sags, 0 straight. */
+  closedBend?: number;
+  /** Degrees the closed line turns, its front end up. */
+  closedTilt?: number;
+  /** The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid is the skin and fade and above do nothing. */
+  slot?: string | null;
+  /** The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin. */
+  fadeTo?: string | null;
+  /** How far up from the lash line the lid's colour fades out, in heights; 0 an even colour. */
+  fade?: number;
+  /** How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening. */
+  above?: number;
+  /** Marks painted on the upper lid, a liner wing or a pattern, each moving with the lid as it closes. */
+  marks?: EyeLidMark[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -179,6 +223,8 @@ export interface EyeLook {
   irisShade?: EyeIrisShade;
   /** A shadow band on the white under the upper lid. */
   lidShadow?: EyeLidShadow;
+  /** How the lids meet when closed, and the upper lid's own colour, fade and marks. */
+  lids?: EyeLids;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -531,6 +577,10 @@ export interface RecipeEye {
   mirrored?: boolean;
   /** Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front. */
   flat?: boolean;
+  /** How far the upper lid stands down from open (0) to the look's closed line (1). */
+  upperClose?: number;
+  /** How far the lower lid stands up from open (0) to the look's closed line (1). */
+  lowerRise?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

@@ -77,6 +77,20 @@ class EyeCommandsTest {
     }
 
     @Test
+    fun lidsStandAndUndoAndKeepTheLook() {
+        scenario(start) {
+            run(SetEyeLids(eye.id, 0.6f, 0.2f))
+            expect {
+                assertEquals(LidPose(0.6f, 0.2f), it.eye().lidPose)
+                assertEquals(start.character.paintedEyes.single().look, it.eye().look)
+            }
+            undo()
+            expect(start)
+        }
+        assertFailsWith<IllegalArgumentException> { SetEyeLids(eye.id, 1.2f, 0f) }
+    }
+
+    @Test
     fun aFramesDragIsOneStepAndTheFrontLookFollows() {
         scenario(start) {
             gesture(SetEyeFrame(eye.id, 0.62f, 0.2f, 0.09f, 0.04f, 0f), SetEyeFrame(eye.id, 0.65f, 0.22f, 0.12f, 0.06f, 10f))
@@ -105,7 +119,7 @@ class EyeCommandsTest {
     @Test
     fun theCommandsAndNewFieldsSerialize() {
         val json = Json { classDiscriminator = "type" }
-        listOf(SetEyeRoundness(eye.id, 1f), SetEyeFromFront(eye.id, 0.5f), SetEyeGaze(eye.id, 0.1f, 0.2f), SetEyeFrame(eye.id, 0.5f, 0.5f, 0.1f, 0.05f, 3f)).forEach {
+        listOf(SetEyeRoundness(eye.id, 1f), SetEyeFromFront(eye.id, 0.5f), SetEyeGaze(eye.id, 0.1f, 0.2f), SetEyeFrame(eye.id, 0.5f, 0.5f, 0.1f, 0.05f, 3f), SetEyeLids(eye.id, 1f, 0.5f)).forEach {
             assertEquals<DocumentCommand>(it, json.decodeFromString<DocumentCommand>(json.encodeToString<DocumentCommand>(it)))
         }
         val saved = Json.encodeToString(PaintedEye.serializer(), eye.copy(front = null))

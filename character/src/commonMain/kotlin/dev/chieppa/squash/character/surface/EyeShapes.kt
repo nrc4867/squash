@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.document.EyeLook
+import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.geom.ChartAlmond
 import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ColorShape
@@ -35,22 +36,27 @@ private val BROW_LINE = listOf(-1.0f to 1.5f, -0.1f to 2.05f, 0.8f to 2.1f)
  * The shapes of a painted eye of [look], in its own chart: u forward toward the head's front and v up, each a share of the head's own u
  * and v at the eye's middle, the opening's middle at the origin: its fills as shapes and its ink lines as places along them. The iris,
  * pupil and highlight look [gazeForward] of the opening's half width forward and [gazeUp] of its half height up. The lid mass measures
- * distance with the opening [lidAspect] times as wide as it is high, as it lies on the head.
+ * distance with the opening [lidAspect] times as wide as it is high, as it lies on the head. The lids stand at [lidPose], closing the
+ * opening's fills and carrying the lid line, the lashes and the lid's mass and paint on their moving edges.
  */
-class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Float = 0f, lidAspect: Float = LID_ASPECT) {
-    /** The opening as an almond before its tilts, and its fills' ovals before the eye's tilt, as a renderer reads them at each fragment. */
-    val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing, look.topFlatness, look.outerCorner)
+class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Float = 0f, lidAspect: Float = LID_ASPECT, lidPose: LidPose = LidPose.OPEN) {
+    /** The opening as an almond before its tilts, its lids standing at the pose, and its fills' ovals before the eye's tilt, as a renderer reads them at each fragment. */
+    val almond = ChartAlmond(look.width, look.height, look.lowerLid, look.frontNarrowing, look.topFlatness, look.outerCorner, chartLids(look, lidPose, lidAspect))
 
     private val rim = List(OVAL_POINTS) { i -> almond.rim(2.0 * PI * i / OVAL_POINTS).let { turned(it.u, it.v, turn) } }
 
-    /** The opening: an almond, rounder over the top than under, narrowed toward its back corner, its top flattened and back corner sharpened as the look says. */
+    /** The opening wide open: an almond, rounder over the top than under, narrowed toward its back corner, its top flattened and back corner sharpened as the look says. */
     val opening: ColorShape = ColorShape.Border(rim)
 
     /**
-     * The lid line round the opening, from its back corner over the top and under the bottom, its first place repeated last; none where
-     * a lid mass is drawn in its place.
+     * The lid line round the opening on its lids' edges, from its back corner over the top and under the bottom, its first place repeated
+     * last; none where a lid mass is drawn in its place.
      */
-    val lid: List<SurfaceUv>? = if (look.lid && !look.lidMass.isOn) rim + rim.first() else null
+    val lid: List<SurfaceUv>? = if (look.lid && !look.lidMass.isOn) {
+        List(OVAL_POINTS) { i -> almond.lidRim(2.0 * PI * i / OVAL_POINTS).let { turned(it.u, it.v, turn) } }.let { it + it.first() }
+    } else {
+        null
+    }
 
     private val irisMiddle = SurfaceUv(look.irisForward + gazeForward * look.width, look.irisUp + gazeUp * look.height)
     private val irisHigh = look.irisSize * look.irisRatio
@@ -75,7 +81,7 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
     val highlight: ColorShape = oval(highlightOval)
 
     /** The lid mass, lash clumps, iris tones and lid shadow, each shaped about the opening and the iris. */
-    val detail = EyeDetailShapes(look, irisOval, lidAspect)
+    val detail = EyeDetailShapes(look, almond, irisOval, lidAspect)
 
     /** The opening's turn, its own tilt and the eye's, in degrees. */
     val turn: Float get() = look.tilt + look.openingTilt
@@ -104,7 +110,7 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
      * shortened by its share, then turned with the eye.
      */
     private fun lashLine(index: Int): List<SurfaceUv> {
-        val rimPlace = almond.rim(LASH_ANGLES[index])
+        val rimPlace = almond.lidRim(LASH_ANGLES[index])
         val root = turned(rimPlace.u, rimPlace.v, look.openingTilt)
         val length = LASH_LENGTHS[index]
         return LASH_LINE.map { (u, v) -> turned(root.u + look.width * u * length, root.v + look.height * v * length, look.tilt) }

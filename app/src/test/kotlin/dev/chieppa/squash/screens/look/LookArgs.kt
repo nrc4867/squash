@@ -1,5 +1,6 @@
 package dev.chieppa.squash.screens.look
 
+import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.fieldgpu.GpuFieldReads
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
@@ -40,6 +41,12 @@ class LookArgs(args: Array<String>) {
      * `none` asks for no close-up at all.
      */
     val close: Set<String> = values["close"]?.split(',')?.filter { it != NONE }?.toSet() ?: setOf(FACE, HAND, FOOT)
+
+    /**
+     * The lid poses the eyes close-up is rendered in besides as saved, from `lids=open,0.5,0.6:0.2,blink`: a number the upper lid's close,
+     * `upper:lower` both lids', `blink` both shut; each is shown as a preview, not an edit, and kept as `<outfit>-eyes-lids-<entry>`.
+     */
+    val lidPoses: List<Pair<String, LidPose>> = values["lids"]?.split(',')?.filter { it.isNotEmpty() }?.map { entry -> entry.replace(':', '-') to lidPoseOf(entry) }.orEmpty()
 
     /** The entries of [close] that name no close-up, which are part ids, each framed close per outfit. */
     val closeParts: List<String> = close.filter { it !in CLOSE_WORDS }
@@ -132,5 +139,21 @@ class LookArgs(args: Array<String>) {
 
         /** Every word `close=` takes; anything else it holds is a part id. */
         val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES)
+
+        /** The `lids=` words for both lids open and both shut. */
+        const val LIDS_OPEN = "open"
+        const val LIDS_BLINK = "blink"
+
+        /** The lid pose a `lids=` entry names. */
+        fun lidPoseOf(entry: String): LidPose = when (entry) {
+            LIDS_OPEN -> LidPose.OPEN
+            LIDS_BLINK -> LidPose.BLINK
+            else -> {
+                val upper = requireNotNull(entry.substringBefore(':').toFloatOrNull()) { "lids takes open, blink, a number or upper:lower, not $entry" }
+                val lower = if (':' in entry) requireNotNull(entry.substringAfter(':').toFloatOrNull()) { "lids takes upper:lower, not $entry" } else 0f
+                require(upper in 0f..1f && lower in 0f..1f) { "a lid stands between 0 and 1, not $entry" }
+                LidPose(upper, lower)
+            }
+        }
     }
 }

@@ -5,6 +5,8 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.ChartAlmond
 import dev.chieppa.squash.geom.ChartCut
 import dev.chieppa.squash.geom.ChartLid
+import dev.chieppa.squash.geom.ChartLidPaint
+import dev.chieppa.squash.geom.ChartLids
 import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ChartShape
 import dev.chieppa.squash.geom.LevelCut
@@ -13,8 +15,8 @@ import dev.chieppa.squash.geom.RenderMesh
 /**
  * A fill drawn to a shape read at each fragment: each vertex of the surface's drawn mesh at ([u], [v]) in the shape's chart, the fill kept
  * inside [opening], turned [turn] degrees, and, where given, [oval], turned [ovalTurn] degrees, and kept by [cut]; with a [lid], the lid's
- * mass about the opening in place of its inside. Its layer's mesh reaches [grow] past where its values cut it, so the drawn shape's whole
- * edge lies on it.
+ * mass about the opening in place of its inside, and with [paint] that paint on the upper lid. Its layer's mesh reaches [grow] past where
+ * its values cut it, so the drawn shape's whole edge lies on it.
  */
 class LayerFill(
     val u: FloatArray,
@@ -26,7 +28,11 @@ class LayerFill(
     val grow: Float,
     val cut: ChartCut? = null,
     val lid: ChartLid? = null,
-)
+    val paint: ChartLidPaint? = null,
+) {
+    /** This fill with its opening's lids standing as [lids]. */
+    fun withLids(lids: ChartLids): LayerFill = LayerFill(u, v, opening.copy(lids = lids), oval, turn, ovalTurn, grow, cut, lid, paint)
+}
 
 /**
  * One color layer on the one surface: [slot] over [cut], laid as [mesh] on the surface it was cut from, with each of its vertices' share
@@ -55,6 +61,12 @@ class PaintLayer(
 ) {
     /** This layer laid on [render], the same surface moved. */
     fun on(render: RenderMesh): PaintLayer = PaintLayer(slot, cut, cut.mesh(render), positive, negative, flat, values, candidates, fill, shape, indices, split, source, tint)
+
+    /** This layer with its shape's lids standing as [lids], laid where it lies: itself where it has no shape. */
+    fun withLids(lids: ChartLids): PaintLayer {
+        val shape = shape ?: return this
+        return PaintLayer(slot, cut, mesh, positive, negative, flat, values, candidates, fill?.withLids(lids), shape.withLids(lids), indices, split, source, tint)
+    }
 
     /** This layer where [kept] is at least zero too, one value a vertex of [surface]'s drawn mesh, cut over the triangles of the mesh it was first cut on and laid on [render]; null where none is. */
     fun within(kept: FloatArray, surface: CharacterSurface, render: RenderMesh): PaintLayer? {
@@ -101,7 +113,7 @@ class PaintLayer(
                 val u = cut.values(fill.u)
                 val v = cut.values(fill.v)
                 val chart = FloatArray(u.size * 2) { if (it % 2 == 0) u[it / 2] else v[it / 2] }
-                val shape = ChartShape(chart, fill.opening, fill.oval, fill.turn, fill.ovalTurn, fill.cut, fill.lid)
+                val shape = ChartShape(chart, fill.opening, fill.oval, fill.turn, fill.ovalTurn, fill.cut, fill.lid, fill.paint)
                 return PaintLayer(slot, cut, cut.mesh(surface.render), null, null, flat, values, candidates, fill, shape, indices, source = source, tint = tint)
             }
             val cut = if (split != null) LevelCut.of(split.values, indices, candidates, split.splits) else LevelCut.of(values, indices, candidates)

@@ -62,12 +62,14 @@ data class PaintInput(val parts: List<PartId>, val eyes: List<PaintedEye>, val s
 /**
  * The paint of every holder among [input]'s parts, their color shapes from [shapes], on [surface]'s one surface, then the hair's bands
  * of shine (see [hairShineLayer]), then its painted eyes.
- * See [SurfacePaint.of] and [SurfaceEyes]. Its shapes and its eyes are laid in parallel on the graph's dispatcher.
+ * See [SurfacePaint.of] and [SurfaceEyes]. Its shapes and its eyes are laid in parallel on the graph's dispatcher, and an eye whose lids
+ * alone moved is not laid again (see [EyeMemo]).
  */
 fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput>, shapes: (PartId) -> Node<*, HeldShapes>): Node<*, HeldPaint> {
     val surfaceSource = follow<HeldSurface, PaintSource>(surface, cacheSize = KEPT_BUILDS, stage = BuildStages.SURFACE_WORK) { PaintSource.Surface(it) }
     val wrapped = HashMap<PartId, Node<*, PaintSource>>()
     val memo = PaintMemo()
+    val eyeMemo = EyeMemo()
     return gather(
         input,
         sourcesOf = { held ->
@@ -81,7 +83,7 @@ fun Graph.surfacePaintNode(surface: Node<*, HeldSurface>, input: Flow<PaintInput
         val held = (gathered.values[PaintKey(null)] as? PaintSource.Surface)?.held?.surface ?: return@gather HeldPaint(null)
         val shapes = gathered.shape.parts.mapNotNull { id -> (gathered.values[PaintKey(id)] as? PaintSource.Shapes)?.let { id to it.held } }.toMap()
         coroutineScope {
-            val eyes = async { SurfaceEyes.of(held, gathered.shape.eyes, IN_PARALLEL) }
+            val eyes = async { SurfaceEyes.of(held, gathered.shape.eyes, IN_PARALLEL, eyeMemo) }
             val paint = SurfacePaint.of(held, shapes, IN_PARALLEL, memo)
             val shine = SurfacePaint(gathered.shape.shines.mapNotNull { hairShineLayer(held, it) })
             HeldPaint(paint + shine + eyes.await(), held)

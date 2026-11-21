@@ -66,6 +66,7 @@ import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.SetSocketBlend
 import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetEyeFrame
+import dev.chieppa.squash.document.SetEyeLids
 import dev.chieppa.squash.document.SetEyeFromFront
 import dev.chieppa.squash.document.SetEyeGaze
 import dev.chieppa.squash.document.SetEyeRoundness
@@ -176,7 +177,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetOutlines -> outlines.replace(FIRST, command.outlines.keys.joinToString(VIEW_JOIN) { views[it].orEmpty() })
             is SetParameters, is AddParameters -> moved
             is SetSocketBlend -> blend.replace(FIRST, command.blend?.let(::formatNumber).orEmpty())
-            is SetPaintedEye, is SetEyeRoundness, is SetEyeFromFront, is SetEyeGaze, is SetEyeFrame -> paintedEye
+            is SetPaintedEye, is SetEyeRoundness, is SetEyeFromFront, is SetEyeGaze, is SetEyeFrame, is SetEyeLids -> paintedEye
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
             is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))
             is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())

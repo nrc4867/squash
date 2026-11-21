@@ -41,6 +41,8 @@ import dev.chieppa.squash.screens.surface.FACE_FRONT
 import dev.chieppa.squash.screens.surface.FACE_WRITES_TAG
 import dev.chieppa.squash.screens.surface.FaceTags
 import dev.chieppa.squash.screens.surface.PaintedEyeTags
+import dev.chieppa.squash.screens.surface.EyeLidTags
+import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.screens.surface.HeadAngleTags
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
@@ -50,6 +52,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 
@@ -129,6 +133,32 @@ class FaceFlowTest {
         onNodeWithTag(PaintedEyeTags.FLAT).performScrollTo().performClick()
         waitForIdle()
         assertTrue(eye().flat, "Flat lays the eye flat across the face")
+    }
+
+    @Test
+    fun anEyesLidsStandByCommandAndBlinkWithNoEdit() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen()
+        val session = assertNotNull(state.session.value)
+        stage(Key.Four)
+        fun eye() = session.document.value.character.paintedEyes.single()
+        onNodeWithTag(EyeLidTags.slider("upper-close")).assertDoesNotExist()
+        onNode(hasText("LIDS") and hasAnyAncestor(hasTestTag(EyeLidTags.SECTION))).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithTag(EyeLidTags.slider("upper-close")).performScrollTo().performMouseInput { click(Offset(width - 1f, centerY)) }
+        waitForIdle()
+        assertTrue(eye().upperClose > 0.95f, "Upper close stands the upper lid shut, at ${eye().upperClose}")
+        session.history.undo()
+        waitForIdle()
+        assertEquals(0f, eye().upperClose, "one drag is one step of undo")
+
+        val before = session.document.value
+        onNodeWithTag(EyeLidTags.BLINK).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(LidPose.BLINK, session.sessionSurface.lidPreview.value, "Blink shows the lids shut")
+        assertSame(before, session.document.value, "and edits nothing")
+        onNodeWithTag(EyeLidTags.BLINK).performClick()
+        waitForIdle()
+        assertNull(session.sessionSurface.lidPreview.value)
     }
 
     @Test

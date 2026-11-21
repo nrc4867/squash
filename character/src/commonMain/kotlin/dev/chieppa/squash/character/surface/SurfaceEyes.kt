@@ -15,7 +15,6 @@ import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.ChartCut
 import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.ColorShape
-import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.UvShapeDistance
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.character.build.PlacedPart
@@ -66,27 +65,38 @@ private const val ACROSS_AXIS = 0.5f
 object SurfaceEyes {
     /**
      * [eyes] painted on [surface], each eye's layers in order, white, lid shadow, iris, its lighter crescent, darker top and rim, pupil,
-     * highlight and lid mass, those its look leaves off left out, and its lid, lashes and brow as the head's ink marks, in its look and its front look; each side of each look is one piece of [runAll]'s work.
+     * highlight, the lid's own colour and marks and its mass, those its look leaves off left out, and its lid, lashes and brow as the
+     * head's ink marks, in its look and its front look, its lids standing where the eye says; each side of each look laid anew is one piece
+     * of [runAll]'s work. With a [memo], a side laid on the same surface last time is taken from it with its lids stood again, so moving
+     * a lid lays no layer.
      */
-    suspend fun of(surface: CharacterSurface, eyes: List<PaintedEye>, runAll: RunAll = IN_TURN): SurfacePaint {
+    suspend fun of(surface: CharacterSurface, eyes: List<PaintedEye>, runAll: RunAll = IN_TURN, memo: EyeMemo? = null): SurfacePaint {
         if (eyes.isEmpty()) return SurfacePaint.NONE
         val chart = surface.chart
         val anchors = FieldAnchors(surface.field)
         val placed = eyes.map { eye -> placeOf(chart, anchors, eye) }
         val looks = eyes.map { eye -> listOfNotNull(eye.look, eye.shownFront()) }
-        val painted = eyes.indices.map { e -> looks[e].map { arrayOfNulls<SurfacePaint>(sidesOf(eyes[e]).size) } }
+        val earlier = memo?.earlier(surface).orEmpty()
+        val keys = eyes.indices.map { e -> looks[e].map { look -> sidesOf(eyes[e]).indices.map { side -> EyeSideKey.of(eyes[e], look, side) } } }
+        val laid = eyes.indices.map { e -> looks[e].indices.map { l -> Array(keys[e][l].size) { side -> earlier[keys[e][l][side]] } } }
         runAll(
             eyes.indices.filter { placed[it] != null }.flatMap { e ->
                 looks[e].indices.flatMap { l ->
-                    sidesOf(eyes[e]).mapIndexed { side, anchor -> { painted[e][l][side] = paintOne(chart, anchors, eyes[e], looks[e][l], anchor, side) } }
+                    sidesOf(eyes[e]).mapIndexedNotNull { side, anchor ->
+                        if (laid[e][l][side] != null) null else { -> laid[e][l][side] = layOne(chart, anchors, eyes[e], looks[e][l], anchor, side) }
+                    }
                 }
             },
         )
+        memo?.keep(surface, eyes.indices.flatMap { e -> looks[e].indices.flatMap { l -> keys[e][l].indices.mapNotNull { side -> laid[e][l][side]?.let { keys[e][l][side] to it } } } }.toMap())
         return SurfacePaint(
             emptyList(),
             eyes = eyes.indices.mapNotNull { e ->
                 val (middle, facing) = placed[e] ?: return@mapNotNull null
-                val versions = painted[e].map { sides -> sides.filterNotNull().fold(SurfacePaint.NONE) { all, one -> all + one } }
+                val versions = looks[e].indices.map { l ->
+                    sidesOf(eyes[e]).indices.mapNotNull { side -> laid[e][l][side]?.let { standOne(anchors, eyes[e], looks[e][l], it) } }
+                        .fold(SurfacePaint.NONE) { all, one -> all + one }
+                }
                 EyeVersions(versions[0], versions.getOrNull(1), facing, middle, eyes[e].anchor.copy(offset = 0f, v = 0.5f))
             },
         )
@@ -114,7 +124,7 @@ object SurfaceEyes {
     }
 
     /** One side's frame: where its middle resolves, its head's members, and the chart's directions and scales there. */
-    private class Frame(val middle: ResolvedPoint, val members: List<Int>, val facing: Vec3, val up: Vec3, val across: Vec3, val along: Float, val around: Float)
+    internal class Frame(val middle: ResolvedPoint, val members: List<Int>, val facing: Vec3, val up: Vec3, val across: Vec3, val along: Float, val around: Float)
 
     private fun frameOf(surface: CharacterSurface, anchors: FieldAnchors, anchor: Anchor, mirrored: Boolean, look: EyeLook, flat: Boolean): Frame? {
         val middle = anchors.resolve(anchor.copy(offset = 0f)) ?: return null
@@ -131,10 +141,13 @@ object SurfaceEyes {
         return Frame(middle, members, facing, up, across, along, around)
     }
 
-    private fun paintOne(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, anchor: Anchor, side: Int): SurfacePaint {
-        val id = eye.id
+    /** One side of an eye laid with its lids open: where it lies, at which [anchor] and [side], and its [layers]. */
+    internal class Laid(val frame: Frame, val anchor: Anchor, val side: Int, val layers: List<PaintLayer>)
+
+    /** [eye]'s [side] at [anchor] in [look] laid on the surface with its lids open, its layers reaching wherever a lid may stand; null where it does not frame. */
+    private fun layOne(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, anchor: Anchor, side: Int): Laid? {
         val surface = chart.surface
-        val frame = frameOf(surface, anchors, anchor, side > 0, look, eye.flat) ?: return SurfacePaint.NONE
+        val frame = frameOf(surface, anchors, anchor, side > 0, look, eye.flat) ?: return null
         val middle = frame.middle
         val members = frame.members
         val facing = frame.facing
@@ -159,7 +172,7 @@ object SurfaceEyes {
         val opening = distances(shapes.opening, near)
         val open = BooleanArray(near.size) { near[it] && opening[it] > -chart.reach }
         fun inside(shape: ColorShape) = distances(shape, open)
-        val (chartU, chartV) = chartAt(surface, candidates, middle.position, across * (1f / along), up * (1f / around))
+        val (chartU, chartV) = eyeChartAt(surface, candidates, middle.position, across * (1f / along), up * (1f / around))
         val grow = mesh.cell * FILL_GROW_CELLS
         fun layer(slot: SlotName?, values: FloatArray, oval: ChartOval?, cut: ChartCut? = null, tint: LayerTint? = null) =
             if (oval != null && (oval.halfU <= 0f || oval.halfV <= 0f)) null else PaintLayer.of(slot, surface, values, candidates, flat = true, fill = LayerFill(chartU, chartV, shapes.almond, oval, shapes.turn, shapes.fillTurn, grow, cut), tint = tint)
@@ -177,8 +190,26 @@ object SurfaceEyes {
             cutLayer(tones.irisRim, iris, shapes.irisOval, detail.irisRim),
             layer(look.pupil, within(inside(shapes.pupil)), shapes.pupilOval),
             layer(look.highlight, within(inside(shapes.highlight)), shapes.highlightOval),
-            lidMassLayer(chart, members, middle.position, facing, across, up, along, around, shapes, tones.lid, grow),
-        )
+        ) + eyeLidLayers(chart, members, middle.position, facing, across, up, along, around, shapes, tones, grow)
+        return Laid(frame, anchor, side, layers)
+    }
+
+    /** [laid] with [eye]'s lids stood where it says in [look]: its layers closed by them, and its lid, lashes and brow as the head's ink marks. */
+    private fun standOne(anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, laid: Laid): SurfacePaint {
+        val id = eye.id
+        val frame = laid.frame
+        val anchor = laid.anchor
+        val side = laid.side
+        val middle = frame.middle
+        val facing = frame.facing
+        val up = frame.up
+        val across = frame.across
+        val along = frame.along
+        val around = frame.around
+        val aspect = lidAspect(look, along, around)
+        val shapes = EyeShapes(look, eye.gazeForward, eye.gazeUp, aspect, eye.lidPose)
+        val lids = shapes.almond.lids
+        val layers = if (lids.isOpen) laid.layers else laid.layers.map { it.withLids(lids) }
         val cell = anchors.cellOf(anchor.part, anchor.patch)
         fun mark(name: String, places: List<SurfaceUv>?, width: MarkWidth, alongFacing: Boolean = true): ResolvedMark? {
             places ?: return null
@@ -192,60 +223,6 @@ object SurfaceEyes {
         val lashes = shapes.lashes.mapIndexed { i, lash -> mark(if (i == 0) "lashes" else "lashes-$i", lash, MarkWidth()) }
         val marks = listOfNotNull(mark("lid", shapes.lid, LID_WIDTH)) + lashes.filterNotNull() + listOfNotNull(mark("brow", shapes.brow, browWidth(look.browWidth), alongFacing = false))
         return SurfacePaint(layers, mapOf(anchor.part to marks))
-    }
-
-    /**
-     * The lid mass of [shapes] as a flat layer in [tone]: cut over the vertices of the head's [members] facing the eye within the mass's
-     * reach of [middle], an oval in the chart, and drawn to the mass at each fragment. Null where the look draws none.
-     */
-    private fun lidMassLayer(
-        chart: SurfaceChart,
-        members: List<Int>,
-        middle: Vec3,
-        facing: Vec3,
-        across: Vec3,
-        up: Vec3,
-        along: Float,
-        around: Float,
-        shapes: EyeShapes,
-        tone: EyeTones.Tone,
-        grow: Float,
-    ): PaintLayer? {
-        val lid = shapes.detail.lid ?: return null
-        val (reachU, reachV) = shapes.detail.lidReach
-        val surface = chart.surface
-        val mesh = surface.mesh
-        val reach = sqrt((reachU * along).let { it * it } + (reachV * around).let { it * it }) + chart.reach
-        val near = chart.held(members) { v -> (mesh.position(v) - middle).length <= reach && (mesh.normal(v) dot facing) >= LEAST_FACING }
-        val candidates = chart.trianglesNear(chart.trianglesOf(members), near)
-        val scale = minOf(reachU * along, reachV * around)
-        val values = chart.layOn(members, near, candidates) { v, _, _ ->
-            val offset = mesh.position(v) - middle
-            val u = (offset dot across) / along / reachU
-            val w = (offset dot up) / around / reachV
-            (1f - sqrt(u * u + w * w)) * scale
-        }
-        val (chartU, chartV) = chartAt(surface, candidates, middle, across * (1f / along), up * (1f / around))
-        val fill = LayerFill(chartU, chartV, shapes.almond, null, shapes.turn, shapes.fillTurn, grow, lid = lid)
-        return PaintLayer.of(tone.slot, surface, values, candidates, flat = true, fill = fill, tint = tone.tint)
-    }
-
-    /** Each drawn vertex of [candidates]' chart place, ([u], [v]) per unit of its offset from [middle] along [toU] and [toV]; zero elsewhere. */
-    private fun chartAt(surface: CharacterSurface, candidates: IntArray, middle: Vec3, toU: Vec3, toV: Vec3): Pair<FloatArray, FloatArray> {
-        val render = surface.render
-        val u = FloatArray(render.vertexCount)
-        val v = FloatArray(render.vertexCount)
-        val indices = render.indices
-        val width = RenderMesh.FLOATS_PER_VERTEX
-        for (tri in candidates) for (c in 0 until 3) {
-            val at = indices[tri * 3 + c]
-            val x = render.vertices[at * width] - middle.x
-            val y = render.vertices[at * width + 1] - middle.y
-            val z = render.vertices[at * width + 2] - middle.z
-            u[at] = x * toU.x + y * toU.y + z * toU.z
-            v[at] = x * toV.x + y * toV.y + z * toV.z
-        }
-        return u to v
     }
 
     /**
