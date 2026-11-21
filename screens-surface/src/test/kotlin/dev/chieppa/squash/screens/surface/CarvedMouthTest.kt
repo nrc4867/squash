@@ -50,8 +50,8 @@ class CarvedMouthTest {
             (top + bottom) * 0.5f
         }
         assertTrue(fieldAt(opening) > 0f, "the middle of the opening is open")
-        val back = recess.wallAt(0.5f, 0.9f, upper = false)
-        assertTrue(abs(fieldAt(back.position)) < recess.rounding, "a point on the wall teeth would stand on lies on the surface")
+        val back = recess.wallAt(SIDE, 0.9f, upper = false)
+        assertTrue(abs(fieldAt(back.position)) < recess.rounding, "a point on the wall teeth would stand on, along the muzzle's side, lies on the surface")
         val step = recess.rounding * STEP_SHARE
         assertTrue(fieldAt(back.position + back.normal * step) > fieldAt(back.position - back.normal * step), "the wall's normal points into the open mouth")
         session.history.undo()
@@ -69,6 +69,9 @@ class CarvedMouthTest {
 
     private companion object {
         const val PAINTED = "painted"
+
+        /** A place along the mouth line on one side of the muzzle, a share of the way from one corner to the other. */
+        const val SIDE = 0.2f
 
         /** How far either side of the wall the field is read, a share of the lips' rounding. */
         const val STEP_SHARE = 0.25f

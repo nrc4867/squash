@@ -68,6 +68,9 @@ import org.junit.jupiter.api.Tag
 private const val WIDTH = 1440
 private const val HEIGHT = 900
 
+/** A mouth style whose shapes are held as data only. */
+private const val LONG_MUZZLE = "long-muzzle"
+
 private object NoFaceFiles : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? = null
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? = null
@@ -193,12 +196,16 @@ class FaceFlowTest {
     }
 
     @Test
-    fun aMuzzleShowsNoShapesAndOnLipsPickingAShapePreviewsItWithoutAnEditAndResetTakesTheStylesBack() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun aLongMuzzleShowsNoShapesAndOnLipsPickingAShapePreviewsItWithoutAnEditAndResetTakesTheStylesBack() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
         pickMouth(state)
         val mouth = assertNotNull(state.face.group)
         fun group() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == mouth.id }
+        onNodeWithTag(FaceTags.SHAPES).assertExists()
+        session.send(SetMarkGroup(HEAD, mouth.id, group().copy(style = LONG_MUZZLE)))
+        settle(work) { state.session.value?.graph?.settled?.value == true }
+        waitForIdle()
         onNodeWithTag(FaceTags.SHAPES).assertDoesNotExist()
         session.send(SetMarkGroup(HEAD, mouth.id, group().copy(style = MouthStyle.LIPS)))
         settle(work) { state.session.value?.graph?.settled?.value == true }
