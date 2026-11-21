@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.mouth.mouthStylesOf
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.LineGrid
@@ -20,8 +21,10 @@ fun Graph.partSurfaceWorkNode(
     document: Flow<SquashDocument>,
     part: PartId,
     surface: (PartId) -> Node<*, PartSurface>,
+    templates: TemplateLibrary? = null,
 ): Node<*, ResolvedSurfaceWork> = gather(
-    document.map { surfaceWorkInput(it.character, part) }.distinctUntilChanged(),
+    document.map { doc -> surfaceWorkInput(doc.character, part).let { input -> templates?.let { input.copy(mouthStyles = mouthStylesOf(doc.character, part, it)) } ?: input } }
+        .distinctUntilChanged(),
     sourcesOf = { input -> input.parts.associateWith(surface) },
     stage = BuildStages.SURFACE_WORK,
 ) { (input, surfaces) ->

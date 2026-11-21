@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/MouthStyle",
+  "$defs": {
+    "MouthScales": {
+      "description": "How much each control does on this mouth: 1 in full, 0 nothing.",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "wide": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "round": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "smile": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "upperLip": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "lowerLip": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "tongue": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MouthShapeValues": {
+      "description": "A spoken shape's controls; each left out takes the style's value, or 0 in a style.",
+      "type": "object",
+      "properties": {
+        "open": {
+          "description": "Jaw and lip gap.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wide": {
+          "description": "Corners out or in.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "round": {
+          "description": "Pucker: a narrow, round opening.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "smile": {
+          "description": "Corners up or down, added to the mouth's own smile.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upperLip": {
+          "description": "Raises the upper lip to show the upper teeth.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lowerLip": {
+          "description": "Tucks under the teeth (1) or presses (-1).",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tongue": {
+          "description": "Lifts the tongue to the teeth, then out past the lip.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MouthStyle": {
+      "description": "A mouth style: where the line runs, how deep it opens, how much each control does, and the nine spoken shapes.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "format": {
+          "description": "The grammar version of the file.",
+          "type": "integer",
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "id": {
+          "description": "The name a template's `mouth` and a group's `style` use.",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "line": {
+          "description": "Where the mouth line runs: front (lips), muzzle (from under the nose back along its sides) or seam (between a beak's halves, which only the jaw opens).",
+          "enum": [
+            "front",
+            "muzzle",
+            "seam"
+          ]
+        },
+        "depth": {
+          "description": "How deep a fully open mouth drops its lower lip at its middle, a share of the lip line's width.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 1.0
+        },
+        "span": {
+          "description": "How much of the lip line parts, a share of it either side of its middle: 1 for lips, less for a muzzle, whose line runs shut back along its sides.",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1.0
+        },
+        "scale": {
+          "description": "How much each control does on this mouth.",
+          "$ref": "#/$defs/MouthScales"
+        },
+        "upperLip": {
+          "description": "How thick the upper lip's band is at its middle, a share of the lip line's width, where the lip line's role has a fill.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.5
+        },
+        "lowerLip": {
+          "description": "How thick the lower lip's band is at its middle, a share of the lip line's width, where the lip line's role has a fill.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.5
+        },
+        "speaks": {
+          "description": "Whether the spoken shapes move this mouth: false keeps its mouth as its own controls draw it whatever shape is picked, its shapes held as data only.",
+          "type": "boolean"
+        },
+        "shapes": {
+          "description": "The nine spoken shapes; a shape left out says nothing but rest.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "rest",
+              "mbp",
+              "ai",
+              "e",
+              "o",
+              "u",
+              "fv",
+              "l",
+              "etc"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/MouthShapeValues"
+          }
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

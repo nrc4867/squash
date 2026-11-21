@@ -20,7 +20,8 @@
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false,
 # close=face,hand,foot (the default; also hands, feet, joins, orbit (the head round with and without its view keys), hair (the head framed alone from a hair outline's front, three-quarter, side and back), turn (the whole character from eight ways round in its own shading), part ids such as close=foot-l,head, or none), around=false (no back and
 # top views), only=<id>,... (draw just those parts; no close-ups, no measure unless measure=true), outfits=<id,...|all>,
-# poses=<name,...|all>, set=part:name:value,..., reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search
+# poses=<name,...|all>, set=part:name:value,... (set=head:mouth.shape:o shows a mouth shape as a preview), faces=shapes (the face close-up
+# saying each of the nine mouth shapes, and a contact sheet of them), reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search
 # the camera, print it, then score) [ground=#rrggbb] [scale=<body units a metre>], targets=<file>,<file> (proportion targets from
 # `kit sheet measure`, checked beside the recipe's own in measure.txt).
 # Paths may be relative to where it is run from and may hold spaces. Prints every file it writes. Exits 2 on a recipe error.
@@ -66,7 +67,7 @@ compile_engine() {
 }
 
 if [ $# -eq 0 ]; then
-  sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,29p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit 2
 fi
 if [ "$1" = fresh ]; then

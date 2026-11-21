@@ -74,12 +74,16 @@ class LookArgs(args: Array<String>) {
 
     /**
      * Parameters to set on parts before rendering, from `set=part:name:value,...`, each sent as Set parameter over the example as it
-     * is built, a pair's both sides: a variant of an example without a fixture of its own.
+     * is built, a pair's both sides: a variant of an example without a fixture of its own. `<group>.shape` takes a spoken shape's name
+     * and shows it as a preview (see [applySetting]).
      */
-    val settings: List<Triple<String, String, Float>> = values["set"]?.split(',')?.map { entry ->
+    val settings: List<Triple<String, String, String>> = values["set"]?.split(',')?.map { entry ->
         val (part, name, value) = entry.split(':').also { require(it.size == 3) { "set takes part:name:value, not $entry" } }
-        Triple(part, name, value.toFloat())
+        Triple(part, name, value)
     }.orEmpty()
+
+    /** With `faces=shapes`, the face close-up again saying each of the nine mouth shapes, as previews, and a contact sheet of them. */
+    val faceShapes: Boolean = values["faces"]?.split(',')?.contains(FACES_SHAPES) == true
 
     /** Templates to swap parts to before anything else, from `template=part:id:version,...`, each sent as Set template. */
     val templates: List<Pair<String, String>> = values["template"]?.split(',')?.map { entry ->
@@ -144,6 +148,9 @@ class LookArgs(args: Array<String>) {
 
         /** Every word `close=` takes; anything else it holds is a part id. */
         val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES, HAIR, TURN)
+
+        /** The `faces=` word for every mouth shape. */
+        const val FACES_SHAPES = "shapes"
 
         /** The `lids=` words for both lids open and both shut. */
         const val LIDS_OPEN = "open"

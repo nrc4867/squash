@@ -241,6 +241,8 @@ export interface GroupRole {
   ink?: boolean;
   fill?: string | null;
   marks?: string[];
+  /** Marks of this role that draw over the lips, open or closed, so fangs show over a shut mouth; the lip ink breaks under them. Teeth and tongue only. */
+  over?: string[];
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -414,14 +416,22 @@ export interface LooseEnd {
 
 /** A mouth's controls. */
 export interface MarkControls {
-  /** How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it. */
+  /** How far the mouth opens: 0 closed, 1 open. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the upper lip and a lower lip below it. */
   open?: number;
+  /** Draws the corners out (1) or in (-1). */
+  wide?: number;
+  /** Puckers the mouth to a narrow, round opening. */
+  round?: number;
+  /** Lifts the corners (1) or drops them (-1); a mood a spoken shape's own smile adds to. */
+  smile?: number;
+  /** Raises the upper lip off the upper teeth. */
+  upperLip?: number;
+  /** Tucks the lower lip up under the upper teeth (1, as for F and V) or presses the lips together (-1, as for M, B and P). */
+  lowerLip?: number;
+  /** Lifts the tongue to the upper teeth by 0.5, then out past the lower lip by 1, as for a blep. */
+  tongue?: number;
   /** 0 shows the group's own marks, 1 the shown expression's. */
   expressionBlend?: number;
-  /** Scales the mouth across. */
-  width?: number;
-  /** Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE. */
-  mouthShape?: ("SMILE" | "FROWN" | "O" | "GRIMACE") | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -443,6 +453,10 @@ export interface MarkGroup {
   name: string;
   roles: GroupRole[];
   controls?: MarkControls;
+  /** The mouth style the group talks in, by preset name (lips, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's. */
+  style?: string | null;
+  /** The spoken shapes this mouth changes from its style's, by name: each value set here replaces the style's. */
+  shapes?: { rest?: MouthShapeValues; mbp?: MouthShapeValues; ai?: MouthShapeValues; e?: MouthShapeValues; o?: MouthShapeValues; u?: MouthShapeValues; fv?: MouthShapeValues; l?: MouthShapeValues; etc?: MouthShapeValues };
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -456,6 +470,26 @@ export interface MarkVersion {
 
 export interface MarkWidth {
   stops?: WidthStop[];
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A spoken shape's controls; each left out takes the style's value, or 0 in a style. */
+export interface MouthShapeValues {
+  /** Jaw and lip gap. */
+  open?: number | null;
+  /** Corners out or in. */
+  wide?: number | null;
+  /** Pucker: a narrow, round opening. */
+  round?: number | null;
+  /** Corners up or down, added to the mouth's own smile. */
+  smile?: number | null;
+  /** Raises the upper lip to show the upper teeth. */
+  upperLip?: number | null;
+  /** Tucks under the teeth (1) or presses (-1). */
+  lowerLip?: number | null;
+  /** Lifts the tongue to the teeth, then out past the lip. */
+  tongue?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

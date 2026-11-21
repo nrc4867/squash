@@ -3178,10 +3178,7 @@
                                     {
                                         "role": "corners"
                                     }
-                                ],
-                                "controls": {
-                                    "open": 0.0
-                                }
+                                ]
                             }
                         ],
                         "regions": [
@@ -13196,5 +13193,5 @@
             }
         ]
     },
-    "format": 20
+    "format": 21
 }

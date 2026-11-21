@@ -6,8 +6,6 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.centerY
 import androidx.compose.ui.test.click
@@ -24,7 +22,11 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.MarkRole
-import dev.chieppa.squash.document.MouthShape
+import dev.chieppa.squash.document.MouthShapeName
+import dev.chieppa.squash.document.MouthShapeValues
+import dev.chieppa.squash.document.SetMarkGroup
+import dev.chieppa.squash.document.SetMouthShape
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.Screen
 import dev.chieppa.squash.screens.SquashApp
@@ -185,18 +187,32 @@ class FaceFlowTest {
     }
 
     @Test
-    fun theMouthShowsNoShapeUntilOneIsPicked() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+    fun aMuzzleShowsNoShapesAndOnLipsPickingAShapePreviewsItWithoutAnEditAndResetTakesTheStylesBack() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
         val state = fennecOpen()
         val session = assertNotNull(state.session.value)
         pickMouth(state)
         val mouth = assertNotNull(state.face.group)
-        fun shape() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == mouth.id }.controls.mouthShape
-        assertEquals(null, shape())
-        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).assertIsNotSelected()
-        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).performClick()
+        fun group() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == mouth.id }
+        onNodeWithTag(FaceTags.SHAPES).assertDoesNotExist()
+        session.send(SetMarkGroup(HEAD, mouth.id, group().copy(style = MouthStyle.LIPS)))
+        settle(work) { state.session.value?.graph?.settled?.value == true }
         waitForIdle()
-        assertEquals(MouthShape.SMILE, shape())
-        onNode(hasText("Smile") and hasAnyAncestor(hasTestTag(FaceTags.SHAPE))).assertIsSelected()
+        val before = session.document.value
+        onNodeWithTag(FaceTags.shapeControl("open")).assertDoesNotExist()
+        onNodeWithTag(FaceTags.shape(MouthShapeName.O)).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(MouthShapeName.O, session.mouthPreview.value)
+        assertEquals(before, session.document.value, "picking a shape is no edit")
+        onNodeWithTag(FaceTags.shapeControl("round")).assertExists()
+        onNodeWithTag(FaceTags.SHAPE_RESET).assertIsNotEnabled()
+        session.send(SetMouthShape(HEAD, mouth.id, MouthShapeName.O, MouthShapeValues(round = 0.4f)))
+        waitForIdle()
+        onNodeWithTag(FaceTags.SHAPE_RESET).assertIsEnabled().performClick()
+        waitForIdle()
+        assertEquals(emptyMap(), group().shapes, "Reset takes the style's shape back")
+        onNodeWithTag(FaceTags.shape(MouthShapeName.O)).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(null, session.mouthPreview.value, "picking it again lets it go")
     }
 
     @Test

@@ -24,7 +24,10 @@ import dev.chieppa.squash.screens.lines.PickedGroup
 import dev.chieppa.squash.screens.sheet.INK_SLOT
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.surface.paint.SlotChoice
+import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.face_over
+import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.squash.uidesign.generated.face_layer_drawing
 import dev.chieppa.squash.uidesign.generated.face_layer_drawn
 import dev.chieppa.squash.uidesign.generated.face_layer_empty
@@ -43,6 +46,12 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private val LAYER_DOT = 12.dp
+
+/** The roles whose marks may draw over the lips. */
+private val OVER_ROLES = setOf(MarkRole.TEETH, MarkRole.TONGUE)
+
+/** The roles a slot fills: the closed ones, and the lip line, whose fill shows the lips as bands. */
+private val FILLED_ROLES = CLOSED_ROLES + MarkRole.LIP_LINE
 private val LAYER_GAP = 8.dp
 
 private val ROLE_NAMES: Map<MarkRole, StringResource> = mapOf(
@@ -72,7 +81,7 @@ internal fun LayersSection(state: AppState, session: CharacterSession, character
             }
             val name = stringResource(ROLE_NAMES.getValue(role))
             ListRow(role == shown, { state.face.role = role }, Modifier.testTag(FaceTags.role(role))) {
-                if (role in CLOSED_ROLES) {
+                if (role in FILLED_ROLES) {
                     SlotChoice(character.palette, held.fill, name, FaceTags.roleFill(role), { FaceTags.fillSlot(it.value) }, { slot ->
                         session.send(SetMarkGroup(picked.part, group.id, group.withRole(held.copy(fill = slot))))
                     }, editor = session)
@@ -82,6 +91,12 @@ internal fun LayersSection(state: AppState, session: CharacterSession, character
                 Spacer(Modifier.width(LAYER_GAP))
                 RowText(name, Modifier.weight(1f))
                 RowText(stringResource(status), subtle = true)
+                if (role in OVER_ROLES && drawn) {
+                    val over = held.marks.isNotEmpty() && held.over.containsAll(held.marks)
+                    IconButton(SquashIcons.MarkOver, stringResource(Res.string.face_over), {
+                        session.send(SetMarkGroup(picked.part, group.id, group.withRole(held.copy(over = if (over) emptyList() else held.marks))))
+                    }, Modifier.testTag(FaceTags.over(role)), on = over)
+                }
             }
         }
     }

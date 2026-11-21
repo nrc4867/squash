@@ -80,6 +80,6 @@ class CloseUps(private val work: TestWork, private val errors: MutableList<Strin
     }
 
     companion object {
-        fun shippedLibrary(): TemplateLibrary = TemplateFolder.shipped().let { TemplateLibrary(it.parts, it.plans) }
+        fun shippedLibrary(): TemplateLibrary = TemplateFolder.shipped().library()
     }
 }

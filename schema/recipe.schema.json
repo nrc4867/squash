@@ -722,6 +722,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "over": {
+          "description": "Marks of this role that draw over the lips, open or closed, so fangs show over a shut mouth; the lip ink breaks under them. Teeth and tongue only.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -1337,7 +1344,43 @@
       "type": "object",
       "properties": {
         "open": {
-          "description": "How far the mouth opens: 0 closed, 1 open, and 1 when left out. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the lip line and a lower lip below it.",
+          "description": "How far the mouth opens: 0 closed, 1 open. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the upper lip and a lower lip below it.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "wide": {
+          "description": "Draws the corners out (1) or in (-1).",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "round": {
+          "description": "Puckers the mouth to a narrow, round opening.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "smile": {
+          "description": "Lifts the corners (1) or drops them (-1); a mood a spoken shape's own smile adds to.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "upperLip": {
+          "description": "Raises the upper lip off the upper teeth.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lowerLip": {
+          "description": "Tucks the lower lip up under the upper teeth (1, as for F and V) or presses the lips together (-1, as for M, B and P).",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "tongue": {
+          "description": "Lifts the tongue to the upper teeth by 0.5, then out past the lower lip by 1, as for a blep.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
@@ -1347,28 +1390,6 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
-        },
-        "width": {
-          "description": "Scales the mouth across.",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 3.0
-        },
-        "mouthShape": {
-          "description": "Bends the lip line from its drawing: SMILE, FROWN, O or GRIMACE.",
-          "anyOf": [
-            {
-              "enum": [
-                "SMILE",
-                "FROWN",
-                "O",
-                "GRIMACE"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
         }
       },
       "patternProperties": {
@@ -1420,6 +1441,37 @@
         },
         "controls": {
           "$ref": "#/$defs/MarkControls"
+        },
+        "style": {
+          "description": "The mouth style the group talks in, by preset name (lips, short-muzzle, long-muzzle, beak, wide-jaw, minimal); none takes its head template's.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shapes": {
+          "description": "The spoken shapes this mouth changes from its style's, by name: each value set here replaces the style's.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "rest",
+              "mbp",
+              "ai",
+              "e",
+              "o",
+              "u",
+              "fv",
+              "l",
+              "etc"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/MouthShapeValues"
+          }
         }
       },
       "required": [
@@ -1461,6 +1513,107 @@
           "items": {
             "$ref": "#/$defs/WidthStop"
           }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MouthShapeValues": {
+      "description": "A spoken shape's controls; each left out takes the style's value, or 0 in a style.",
+      "type": "object",
+      "properties": {
+        "open": {
+          "description": "Jaw and lip gap.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wide": {
+          "description": "Corners out or in.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "round": {
+          "description": "Pucker: a narrow, round opening.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "smile": {
+          "description": "Corners up or down, added to the mouth's own smile.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upperLip": {
+          "description": "Raises the upper lip to show the upper teeth.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lowerLip": {
+          "description": "Tucks under the teeth (1) or presses (-1).",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tongue": {
+          "description": "Lifts the tongue to the teeth, then out past the lip.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "patternProperties": {

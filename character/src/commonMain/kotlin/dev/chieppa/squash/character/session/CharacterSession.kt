@@ -93,6 +93,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
+import dev.chieppa.squash.character.mouth.speaking
+import dev.chieppa.squash.document.MouthShapeName
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -118,6 +121,15 @@ class CharacterSession(
      */
     val viewGraph = Graph(scope, dispatcher)
     val document: StateFlow<SquashDocument> get() = history.document
+
+    /**
+     * The spoken shape every mouth is shown saying in place of its controls, null to show the document's: a shape picked in the Face stage
+     * or a recipe's `set=`, which is no edit. The views set it.
+     */
+    val mouthPreview = MutableStateFlow<MouthShapeName?>(null)
+
+    /** The document as the face shows it: [document] with every mouth saying [mouthPreview]. What the jaw, surface work and color read. */
+    private val shownFace: Flow<SquashDocument> = combine(history.document, mouthPreview) { doc, shape -> doc.speaking(shape, templates) }
 
     private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
@@ -290,7 +302,7 @@ class CharacterSession(
         val instance = document.value.character.part(part)
         val template = instance?.let { templates.find(it.template) }
         val axes = template?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
-        val joints = document.map { doc -> template?.let { shownJoints(doc.character, part, it) }.orEmpty() }
+        val joints = shownFace.map { doc -> template?.let { shownJoints(doc.character, part, it) }.orEmpty() }
         graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template)
     }
 
@@ -306,11 +318,11 @@ class CharacterSession(
      * for the session's life. A part not in the document holds nothing.
      */
     fun surfaceWork(part: PartId): Node<*, ResolvedSurfaceWork> =
-        works.getOrPut(part) { graph.partSurfaceWorkNode(document, part, ::surface) }
+        works.getOrPut(part) { graph.partSurfaceWorkNode(shownFace, part, ::surface, templates) }
 
     /** [part]'s color shapes where they land, before they are cut; one per part for the session's life. */
     fun heldShapes(part: PartId): Node<*, HeldShapes> = shapes.getOrPut(part) {
-        graph.partShapesNode(partColorInputs(document, part, templates), part, surfaceWork(part), colorDetail, ::surface)
+        graph.partShapesNode(partColorInputs(shownFace, part, templates), part, surfaceWork(part), colorDetail, ::surface)
     }
 
     /** [part]'s color shapes, cut to the surfaces they land on; one per part for the session's life. */

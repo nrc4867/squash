@@ -18,7 +18,7 @@ object Reference {
             "proportions.md" to Proportions.render(folder.parts, folder.plans),
             "part-parameters.md" to PartParameters.render(),
             "frames.md" to Frames.render(tube),
-            "face-and-clothes.md" to FaceAndClothes.render(folder.parts),
+            "face-and-clothes.md" to FaceAndClothes.render(folder.parts, folder.mouths),
             "hair.md" to Hair.render(folder.parts),
         ).mapValues { (_, text) -> text.trimEnd() + "\n" }
     }

@@ -2303,6 +2303,17 @@
             }
           }
         },
+        "mouth": {
+          "description": "The mouth style a mouth on a part of this template talks in, by preset name (templates/mouths/<name>.mouth.json); none for lips.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "blocks": {
           "type": "array",
           "items": {

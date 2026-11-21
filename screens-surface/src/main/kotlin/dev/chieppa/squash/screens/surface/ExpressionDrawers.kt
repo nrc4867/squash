@@ -123,7 +123,7 @@ private fun FaceThumbnail(work: ResolvedSurfaceWork?, expressed: ExpressionId?, 
 
 /** A tile of the band; one whose drawing is [undrawn] shows what stands in for it inside a dashed edge, tagged [undrawnTag]. */
 @Composable
-private fun Tile(name: String, selected: Boolean, tag: String, onClick: () -> Unit, undrawn: Boolean = false, undrawnTag: String = "", art: @Composable (Modifier) -> Unit) {
+internal fun Tile(name: String, selected: Boolean, tag: String, onClick: () -> Unit, undrawn: Boolean = false, undrawnTag: String = "", art: @Composable (Modifier) -> Unit) {
     val c = Stretch.colors
     Card(Modifier.size(TILE).testTag(tag), onClick, selected) {
         Column(Modifier.fillMaxSize().padding(TILE_PAD), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {

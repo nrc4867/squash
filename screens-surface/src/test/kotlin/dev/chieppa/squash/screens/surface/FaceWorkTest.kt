@@ -10,10 +10,11 @@ import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkRole
-import dev.chieppa.squash.document.MouthShape
+import dev.chieppa.squash.document.MouthShapeName
 import dev.chieppa.squash.document.SetMarkControls
+import dev.chieppa.squash.document.SetMarkGroup
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.document.ShowExpression
-import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.screens.fennec.EARS_BACK
@@ -83,15 +84,26 @@ class FaceWorkTest {
     }
 
     @Test
-    fun aMouthsShapeAndWidthMoveItsLine() {
-        val lip = listOf(Vec2(0.98f, 0.4f), Vec2(0.9f, 0.34f), Vec2(0.78f, 0.31f), Vec2(0.68f, 0.28f))
-        assertEquals(lip, shapedLip(lip, MarkControls()), "with no shape it is as drawn")
-        assertTrue(shapedLip(lip, MarkControls(mouthShape = MouthShape.SMILE)).last().y < lip.last().y, "a smile lifts the corner")
-        assertTrue(shapedLip(lip, MarkControls(mouthShape = MouthShape.FROWN)).last().y > lip.last().y, "a frown drops it")
-        assertTrue(shapedLip(lip, MarkControls(width = 0.5f)).last().x > lip.last().x, "narrower pulls the corner toward the front")
-        val lower = lowerLip(lip, 1f)
-        assertEquals(0.5f, lower.first().y, 1e-5f, "at the front it parts to the underside")
-        assertEquals(lip.last(), lower.last(), "the corner does not part")
+    fun aSmileMovesTheLineTheViewDrawsAndAPreviewSaysAShapeWithoutAnEdit() {
+        val rest = faces().draws(HEAD, side)
+        session.send(SetMarkControls(HEAD, MOUTH, MarkControls(smile = 1f)))
+        val smiling = faces().draws(HEAD, side)
+        assertNotEquals(rest.ribbons, smiling.ribbons, "the smile bends the lip line drawn")
+        session.history.undo()
+        session.mouthPreview.value = MouthShapeName.AI
+        val muzzle = faces().draws(HEAD, side)
+        assertEquals(rest.layers.size, muzzle.layers.size, "a muzzle's style says no shape")
+        assertEquals(rest.ribbons.size, muzzle.ribbons.size)
+        session.mouthPreview.value = null
+        val group = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == MOUTH }
+        session.send(SetMarkGroup(HEAD, MOUTH, group.copy(style = MouthStyle.LIPS)))
+        val lips = faces().draws(HEAD, side)
+        val saved = session.document.value
+        session.mouthPreview.value = MouthShapeName.AI
+        val saying = faces().draws(HEAD, side)
+        assertTrue(saying.layers.size > lips.layers.size, "saying ai opens a mouth in lips on the view")
+        assertEquals(saved, session.document.value, "a preview is no edit")
+        session.mouthPreview.value = null
     }
 
     @Test

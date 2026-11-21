@@ -1,6 +1,5 @@
 package dev.chieppa.squash.screens.surface
 
-import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.SquashDocument
@@ -18,7 +17,7 @@ internal fun sideCamera(target: Vec3, offset: Vec3 = Vec3(0f, 0f, -5f)) = Camera
 /** An open [document] with its real graph on [work], settled. */
 internal fun openSession(document: SquashDocument, work: TestWork): CharacterSession {
     val folder = TemplateFolder.shipped()
-    val session = CharacterSession(document, TemplateLibrary(folder.parts, folder.plans), work.scope, work.dispatcher)
+    val session = CharacterSession(document, folder.library(), work.scope, work.dispatcher)
     work.settle(session)
     return session
 }

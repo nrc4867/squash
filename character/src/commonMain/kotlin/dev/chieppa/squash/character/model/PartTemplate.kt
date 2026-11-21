@@ -135,6 +135,8 @@ data class PartTemplate(
     val join: JoinSpec = JoinSpec(),
     @Doc("Named starting looks: each a set of parameter values a part of this template takes in one step, as a bob or a short crop of hair.")
     val presets: Map<String, Map<String, Float>> = emptyMap(),
+    @Doc("The mouth style a mouth on a part of this template talks in, by preset name (templates/mouths/<name>.mouth.json); none for lips.")
+    val mouth: String? = null,
     val blocks: List<Block>,
 ) {
     val ref: TemplateRef get() = TemplateRef(id, version)

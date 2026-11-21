@@ -12,6 +12,7 @@ import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkRole
+import dev.chieppa.squash.document.MouthShapeName
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.screens.AppState
@@ -31,11 +32,20 @@ import org.jetbrains.compose.resources.stringResource
 /** Test tags for the Face inspector. */
 object FaceTags {
     const val FEATURE = "face.feature"
-    const val OPEN = "face.open"
-    const val SHAPE = "face.shape"
-    const val WIDTH = "face.width"
     const val NEW_MOUTH = "face.new-mouth"
     const val ROLE_FILL = "face.role-fill"
+    const val SHAPES = "face.shapes"
+    const val SHAPE_RESET = "face.shapes.reset"
+
+    /** The mouth's own control [name] (open, wide, round, smile, upper-lip, lower-lip, tongue). */
+    fun control(name: String) = "face.control.$name"
+
+    /** The picked shape's control [name]. */
+    fun shapeControl(name: String) = "face.shapes.control.$name"
+
+    fun shape(shape: MouthShapeName) = "face.shapes.${shape.word}"
+
+    fun over(role: MarkRole) = "face.role-over.${role.name.lowercase()}"
 
     fun role(role: MarkRole) = "face.role.${role.name.lowercase()}"
     fun roleFill(role: MarkRole) = "face.role-fill.${role.name.lowercase()}"
@@ -81,6 +91,8 @@ fun FaceSection(state: AppState, session: CharacterSession) {
     if (face.feature == FaceFeature.EYES) return PaintedEyeSection(state, session, character, holder)
     val picked = face.group?.takeIf { it.part == holder } ?: return
     val group = character.groupOf(picked) ?: return
-    MouthControls(session, picked, group)
+    val speaking by session.mouthPreview.collectAsState()
+    MouthShapesSection(session, picked, group)
+    if (speaking == null) MouthControls(session, picked, group)
     LayersSection(state, session, character, picked, group)
 }

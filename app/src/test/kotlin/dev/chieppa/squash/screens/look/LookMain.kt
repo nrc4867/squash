@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.look
 
 import dev.chieppa.squash.character.session.CharacterSession
+import dev.chieppa.squash.document.MouthShapeName
 import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
@@ -105,7 +106,7 @@ fun renderSession(
     val document = session.document.value
     look.creases?.let { (skin, cloth) -> session.send(SetCharacterCreases(document.character.creases.copy(skin = skin, cloth = cloth))) }
     look.templates.forEach { (part, ref) -> session.send(SetTemplate(PartId(part), TemplateRef(TemplateId(ref.substringBefore(':')), ref.substringAfter(':').toInt()))) }
-    look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
+    look.settings.forEach { (part, name, value) -> applySetting(session, part, name, value, System.err::println) }
     work.settle(session)
     look.outlineDrags.forEach { it.apply(session, work) }
     if (look.paintTest) paintTestOf(session, document.character.id.value)
@@ -152,6 +153,15 @@ fun renderSession(
                 views.keep(session, "$name-face-${expression.id.value}", parts.faceFramed(head), FACE_AZIMUTHS, FACE_TILE, FACE_TILE)
             }
             session.send(ShowExpression(shown))
+            if (look.faceShapes) {
+                val said = session.mouthPreview.value
+                val kept = MouthShapeName.entries.map { shape ->
+                    session.mouthPreview.value = shape
+                    "$name-face-shape-${shape.word}".also { views.keep(session, it, parts.faceFramed(head), FACE_AZIMUTHS, FACE_TILE, FACE_TILE) }.let { shape.word to it }
+                }
+                session.mouthPreview.value = said
+                keepShapeSheet(folder, kept, "$name-face-shapes")
+            }
         }
         if (HAIR in close) parts.head?.let { head -> views.keep(session, "$name-hair", setOf(head), HAIR_AZIMUTHS, FACE_TILE, FACE_TILE, margin = HAIR_MARGIN) }
         if (EYES in close) {

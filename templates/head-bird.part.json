@@ -14,6 +14,7 @@
     "size": { "doc": "Scales the part: its drawn length and width together.", "default": 1.0, "min": 0.4, "max": 2.5 }
   },
   "grain": { "toward": "start" },
+  "mouth": "beak",
   "blocks": [
     { "kind": "skull",    "u": [0.0, 1.0], "width": 0.88, "depth": 0.94 },
     { "kind": "joint",    "name": "neck",   "u": 0.0,            "hinge": "x", "limits": [-40, 40] },
