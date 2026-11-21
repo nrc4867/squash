@@ -54,12 +54,13 @@ A mouth talks in the style its group's `style` names, else the one its head temp
 | style | line | speaks | depth | carve | scale |
 | --- | --- | --- | --- | --- | --- |
 | `beak` | seam | yes | 0.45 | 0.2 | wide 0.0, round 0.0, smile 0.0, upperLip 0.0, lowerLip 0.0 |
-| `lips` | front | yes | 0.45 | 0.2 | all 1 |
-| `long-muzzle` | muzzle | no | 0.55 | 0.2 | wide 0.2, round 0.25, smile 0.6, upperLip 0.25 |
-| `minimal` | front | yes | 0.3 | 0.2 | wide 0.4, round 0.6, smile 0.5, upperLip 0.0, lowerLip 0.0, tongue 0.0 |
+| `carved` | front | yes | 0.45 | 0.2 | all 1 |
+| `lips` | front | yes | 0.45 | 0.0 | all 1 |
+| `long-muzzle` | muzzle | no | 0.55 | 0.0 | wide 0.2, round 0.25, smile 0.6, upperLip 0.25 |
+| `minimal` | front | yes | 0.3 | 0.0 | wide 0.4, round 0.6, smile 0.5, upperLip 0.0, lowerLip 0.0, tongue 0.0 |
 | `painted` | front | yes | 0.45 | 0.0 | all 1 |
-| `short-muzzle` | muzzle | yes | 0.4 | 0.2 | wide 0.4, round 0.4, upperLip 0.25 |
-| `wide-jaw` | front | no | 0.3 | 0.2 | round 0.3, upperLip 0.3 |
+| `short-muzzle` | muzzle | yes | 0.4 | 0.0 | wide 0.4, round 0.4, upperLip 0.25 |
+| `wide-jaw` | front | no | 0.3 | 0.0 | round 0.3, upperLip 0.3 |
 
 The `lips` style's shapes, which the other presets share before their scales:
 
@@ -129,7 +130,7 @@ A change in a jaw's `slots` (`{"row", "slot", ...}`) takes any slot field, and `
 | `human` | blocks: incisor, lateral, canine, 2 premolar, 3 molar | blocks: 2 lower-incisor, canine, 2 premolar, 3 molar |  |  |
 | `rodent` | blocks: incisor, 4 cheek | blocks: lower-incisor, 3 cheek | upper 0 |  |
 | `shark` | blocks: 10 triangle / 10 triangle / 10 triangle | blocks: 10 triangle / 10 triangle / 10 triangle |  |  |
-| `toon-simple` | bar: 4 front | none: 4 front |  | `lips`, `minimal` |
+| `toon-simple` | bar: 4 front | none: 4 front |  | `carved`, `lips`, `minimal` |
 | `viper` | blocks: fang, 6 hook | blocks: 7 hook |  |  |
 
 ### Tongue

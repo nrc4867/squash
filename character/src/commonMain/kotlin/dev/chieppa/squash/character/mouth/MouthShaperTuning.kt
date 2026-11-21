@@ -66,6 +66,9 @@ internal const val PRESS_THIN = 0.3f
 internal const val TUCK_THIN = 0.6f
 internal const val ROUND_FULL = 0.4f
 
+/** How much a full pucker thins drawn lips, which it draws in with the corners, so they gather round the opening rather than stand tall. */
+internal const val PUCKER_THIN = 0.45f
+
 /** How far the room below the upper lip, or above the lower, reaches, in mouth widths: past anything a tongue or tooth reaches. */
 internal const val BELOW = 10f
 

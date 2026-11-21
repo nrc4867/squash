@@ -92,10 +92,17 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
 
     private val drawnInner = drawing.inner?.takeIf { it.size >= MIN_LOOP && jaw >= LEAST_OPEN }
 
+    /** The stretch of the line, by sample, where the lips part, a sample past it either side where they meet; null where they do not part. */
+    private val parted: IntRange? = run {
+        val open = xs.indices.filter { lowerY(xs[it]) - upperY(xs[it]) > width * LEAST_OPEN }
+        if (open.isEmpty()) null else maxOf(0, open.first() - 1)..minOf(xs.lastIndex, open.last() + 1)
+    }
+
+    /** The opening between the lips, only where they part, so no sliver runs on along a line held shut. */
     private val opening: List<Vec2>? = run {
         when {
             drawnInner != null -> drawnInner.map(::carried)
-            xs.any { lowerY(it) - upperY(it) > width * LEAST_OPEN } -> upper + lower.reversed().drop(1).dropLast(1)
+            parted != null -> upper.slice(parted) + lower.slice(parted).reversed().drop(1).dropLast(1)
             else -> null
         }
     }
@@ -129,7 +136,7 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
             lips = lipFills(),
             lipsDrawn = lipsDrawn,
             lipMoved = !c.drawnLine || covers.isNotEmpty(),
-            openingCorners = if (opening == null || drawnInner != null) emptySet() else setOf(0, SAMPLES - 1),
+            openingCorners = if (opening == null || drawnInner != null) emptySet() else setOf(0, parted?.let { it.last - it.first } ?: 0),
         )
     }
 
@@ -222,13 +229,14 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
 
     /**
      * A drawn lip shape where the lips hold it now: one lying mostly above the lip line rides the upper lip and one below it the lower, each
-     * place kept at its height off the line as the lip's band thins or fills, and drawn in or out with the corners.
+     * place kept at its height off the line as the lip thins by press, tuck and pucker, and drawn in or out with the corners, so a pucker
+     * gathers the lips round its opening rather than stretching them tall.
      */
     private fun followed(shape: List<Vec2>): List<Vec2> {
         val upperShape = shape.sumOf { (it.y - lipAt(it.x)).toDouble() } < 0.0
         val press = max(0f, -c.lowerLip)
         val tuck = max(0f, c.lowerLip)
-        val thick = 1f - PRESS_THIN * press + ROUND_FULL * c.round
+        val thick = (1f - PRESS_THIN * press) * (1f - PUCKER_THIN * c.round)
         return shape.map { p ->
             val off = p.y - lipAt(p.x)
             if (upperShape) {

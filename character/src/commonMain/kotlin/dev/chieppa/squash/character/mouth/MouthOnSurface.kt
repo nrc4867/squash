@@ -99,7 +99,7 @@ fun shapeMouth(
         lipShapes = marks.lipRegions.map { border -> if (border.all { it.part == holder && it.patch == patch }) border.map(frame::flat) else emptyList() },
     )
     val lipUv = own.map { mark -> curveThrough(mark.map { Vec2(it.u, mark.first().v + unwrapped(it.v - mark.first().v)) }) }
-    return ShapedMouth(holder, patch, MouthShaper.shape(drawing, style.scale.of(controls), style.depth, style.span), frame, lipUv)
+    return ShapedMouth(holder, patch, MouthShaper.shape(drawing, style.controlsOf(controls), style.depth, style.span), frame, lipUv)
 }
 
 private fun unwrapped(dv: Float) = dv - floor(dv + 0.5f)

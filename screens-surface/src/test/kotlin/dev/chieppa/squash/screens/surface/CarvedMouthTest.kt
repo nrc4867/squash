@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Tag
 
 private val MOUTH = MarkGroupId("mouth")
 
-/** A mouth that opens cuts a recess into the head behind its lips, which a closed or painted mouth does not. */
+/** A carved mouth that opens cuts a recess into the head behind its lips, which a closed or painted one does not. */
 @Tag("integration")
 class CarvedMouthTest {
     private val work = TestWork()
@@ -40,7 +40,9 @@ class CarvedMouthTest {
     }
 
     @Test
-    fun anOpenMouthIsCutIntoTheHeadAndAClosedOneIsNot() {
+    fun anOpenCarvedMouthIsCutIntoTheHeadAndAClosedOneIsNot() {
+        val group = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == MOUTH }
+        session.send(SetMarkGroup(HEAD, MOUTH, group.copy(style = CARVED)))
         assertEquals(BodyRecesses.NONE, recesses(), "a closed mouth cuts nothing")
         session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.7f)))
         val recess = recesses().of(HEAD).single()
@@ -57,18 +59,18 @@ class CarvedMouthTest {
         session.history.undo()
         assertEquals(BodyRecesses.NONE, recesses(), "closing it again fills the head back in")
         assertTrue(assertNotNull(session.characterSurface.output.value?.surface).field.recesses.isEmpty(), "the surface is built uncut")
+        session.history.undo()
     }
 
     @Test
-    fun aPaintedMouthOpensOnTheSurfaceOnly() {
-        val group = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == MOUTH }
-        session.send(SetMarkGroup(HEAD, MOUTH, group.copy(style = PAINTED, controls = group.controls.copy(open = 0.7f))))
-        assertEquals(BodyRecesses.NONE, recesses(), "a painted style cuts nothing")
+    fun aMuzzlesOwnStyleOpensOnTheSurfaceOnly() {
+        session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.7f)))
+        assertEquals(BodyRecesses.NONE, recesses(), "a short muzzle paints its opening and cuts nothing")
         session.history.undo()
     }
 
     private companion object {
-        const val PAINTED = "painted"
+        const val CARVED = "carved"
 
         /** A place along the mouth line on one side of the muzzle, a share of the way from one corner to the other. */
         const val SIDE = 0.2f

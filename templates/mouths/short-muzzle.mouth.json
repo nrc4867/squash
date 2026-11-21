@@ -8,7 +8,9 @@
   "speaks": true,
   "span": 0.5,
   "depth": 0.4,
+  "carve": 0,
   "scale": { "wide": 0.4, "round": 0.4, "upperLip": 0.25 },
+  "limits": { "wideOut": 0 },
   "shapes": {
     "rest": {},
     "mbp": { "wide": 0.15, "lowerLip": -1 },
