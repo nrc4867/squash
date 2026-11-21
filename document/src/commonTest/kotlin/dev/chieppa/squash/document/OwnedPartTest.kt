@@ -46,11 +46,34 @@ class OwnedPartTest {
     }
 
     @Test
+    fun bindingAnOwnedPartIsOneUndoableStep() {
+        val start = withBrim()
+        scenario(start) {
+            run(SetPartBind(brim, PartBind.FOLLOW, STIFF))
+            expect { assertEquals(PartBind.FOLLOW, it.character.part(brim)?.bind) }
+            expect { assertEquals(STIFF, it.character.part(brim)?.stiff) }
+            undo()
+            expect(start)
+        }
+    }
+
+    @Test
+    fun onlyAnOwnedPartIsBoundAndItsStiffnessIsAShare() {
+        assertFailsWith<IllegalArgumentException> { SetPartBind(HEAD, PartBind.FOLLOW, null).apply(withBrim()) }
+        assertFailsWith<IllegalArgumentException> { SetPartBind(brim, null, 1.5f) }
+        assertFailsWith<IllegalArgumentException> { brimOnHead.copy(stiff = -0.1f) }
+    }
+
+    @Test
     fun onlyThatGarmentsPartsSitOnAnOwnedPart() {
         val body = PartInstance(pom, WinterFennec.ref("blob"), SocketRef(brim, "socket.1"), role = Role.OTHER)
         assertFailsWith<IllegalArgumentException> { AddParts(listOf(body)).apply(withBrim()) }
         val owned = AddParts(listOf(body.copy(garment = HAT))).apply(withBrim()).document
         assertEquals(listOf(brim, pom), owned.character.ownedBy(HAT).map { it.id })
         assertEquals(WINTER, owned.character.wardrobe.shown)
+    }
+
+    private companion object {
+        const val STIFF = 0.4f
     }
 }

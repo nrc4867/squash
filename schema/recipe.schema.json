@@ -3554,6 +3554,33 @@
             }
           ]
         },
+        "bind": {
+          "description": "For a part a garment owns, which bones it moves with: single rides the one bone it sits on, rigid, as a heel, buckle or button; follow takes the bones of the body under it, weighted as the body's skin is there, so a boot shaft, knee band or shell round a limb bends with the joint it crosses and keeps its stand-off from the body in a pose. Left out, a part that goes round the limb under it and crosses a joint there follows, and any other rides one bone.",
+          "anyOf": [
+            {
+              "enum": [
+                "single",
+                "follow"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stiff": {
+          "description": "For a part a garment owns that follows the body, how rigid it keeps each stretch between joints, 0 to 1: 0 bends as the skin under it bends, more gathers the bend toward the joint, as a stiff boot shaft does, and 1 keeps each vertex on its heaviest bone alone. 0 when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "size": {
           "description": "Scales the drawn part: its length and width together.",
           "anyOf": [

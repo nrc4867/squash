@@ -42,7 +42,7 @@ private val READOUT_WIDTH = 40.dp
 
 /**
  * The Dress inspector: the worn garments' layers, then the armed tool's options, then the picked garment, with its fit, its painted
- * areas, edges and holes, and its hem ink, the small parts tucked inside it, what its cloth prints, its loose ends and its color. The layers come first because the rest changes with
+ * areas, edges and holes, and its hem ink, the small parts tucked inside it, what its cloth prints, its loose ends, the parts it owns and its color. The layers come first because the rest changes with
  * the pick, so picking one leaves its row where it was.
  */
 @Composable
@@ -59,6 +59,7 @@ fun DressInspector(state: AppState, session: CharacterSession) {
         TuckSection(state, session, character, garment)
         PrintsSection(session, garment)
         LooseEndsSection(state, session, character, garment)
+        OwnedPartsSection(state, session, character, garment)
         GarmentColorSection(session, character, garment)
     }
 }

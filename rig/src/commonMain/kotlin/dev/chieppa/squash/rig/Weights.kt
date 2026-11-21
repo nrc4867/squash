@@ -32,7 +32,7 @@ class PartWeights(val part: PartId, val bones: IntArray, val weights: FloatArray
 }
 
 /** One vertex being weighed: its bones and shares so far. */
-private class Blend(own: Map<Int, Float>) {
+internal class Blend(own: Map<Int, Float>) {
     val shares = own.toMutableMap()
 
     /** Gives [share] of the whole to [bone], the rest keeping their proportions. */

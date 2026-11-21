@@ -113,4 +113,6 @@ object DressTags {
     fun follow(end: LooseEndId) = "dress.looseEnd.follow.${end.value}"
     fun spring(end: LooseEndId) = "dress.looseEnd.spring.${end.value}"
     fun collide(end: LooseEndId) = "dress.looseEnd.collide.${end.value}"
+    fun bind(part: PartId) = "dress.owned.bind.${part.value}"
+    fun stiff(part: PartId) = "dress.owned.stiff.${part.value}"
 }

@@ -13,10 +13,6 @@ private const val CLEAR_EASES = 1.5f
 /** How far from a garment's vertex, in cells, the part hanging inside it is looked for. */
 private const val PUSH_REACH_CELLS = 6f
 
-/** How many times the push is eased toward each vertex's neighbours' along the garment's quads, so the cloth moves as one sheet. */
-private const val PUSH_STEPS = 8
-private const val PUSH_FACTOR = 0.5f
-
 /**
  * [garment], posed as its surface [moved], pushed out of the parts of the posed [body] that hang inside it, as a skirt is pushed out of
  * the legs in each pose: belled out first as cloth hanging free does (see [flaredHem]), then each vertex of the garment that lies less than
@@ -99,32 +95,4 @@ private fun hangingInside(garment: SurfaceGarment, body: CharacterSurface): IntA
         val member = mesh.held[v * HELD]
         member >= 0 && runs[member].partId !in covered && runs[member].partId in under
     }.toIntArray()
-}
-
-/** [push], three values a vertex, eased toward each vertex's neighbours along [triangles], never below what it held. */
-private fun eased(push: FloatArray, triangles: IntArray, corners: Int) {
-    val sum = FloatArray(corners * 3)
-    val count = IntArray(corners)
-    repeat(PUSH_STEPS) {
-        sum.fill(0f)
-        count.fill(0)
-        for (tri in 0 until triangles.size / 3) for (c in 0 until 3) {
-            val a = triangles[tri * 3 + c]
-            val b = triangles[tri * 3 + (c + 1) % 3]
-            for (k in 0 until 3) {
-                sum[a * 3 + k] += push[b * 3 + k]
-                sum[b * 3 + k] += push[a * 3 + k]
-            }
-            count[a]++
-            count[b]++
-        }
-        for (v in 0 until corners) {
-            if (count[v] == 0) continue
-            for (k in 0 until 3) {
-                val mean = sum[v * 3 + k] / count[v]
-                val next = push[v * 3 + k] + PUSH_FACTOR * (mean - push[v * 3 + k])
-                push[v * 3 + k] = if (kotlin.math.abs(next) > kotlin.math.abs(push[v * 3 + k])) next else push[v * 3 + k]
-            }
-        }
-    }
 }

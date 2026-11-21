@@ -46,6 +46,7 @@ import dev.chieppa.squash.document.SetHemInk
 import dev.chieppa.squash.document.SetJoinInk
 import dev.chieppa.squash.document.SetLayers
 import dev.chieppa.squash.document.SetLooseEnd
+import dev.chieppa.squash.document.SetPartBind
 import dev.chieppa.squash.document.SetPartEase
 import dev.chieppa.squash.document.SetPartFit
 import dev.chieppa.squash.document.SetTuck
@@ -81,6 +82,7 @@ import dev.chieppa.squash.uidesign.generated.dress_step_ink_weight
 import dev.chieppa.squash.uidesign.generated.dress_step_join_ink
 import dev.chieppa.squash.uidesign.generated.dress_step_layers
 import dev.chieppa.squash.uidesign.generated.dress_step_loose_end
+import dev.chieppa.squash.uidesign.generated.dress_step_bind
 import dev.chieppa.squash.uidesign.generated.dress_step_outline
 import dev.chieppa.squash.uidesign.generated.dress_step_paint
 import dev.chieppa.squash.uidesign.generated.dress_step_part_ease
@@ -157,6 +159,7 @@ internal fun dressLabels(views: Map<View, String>): (Command<SquashDocument>) ->
             is SetGarmentColor -> text(Res.string.dress_step_color, name(command.garment))
             is SetBodyPartChange -> text(Res.string.dress_step_change, name(command.garment), name(command.part))
             is SetLooseEnd -> text(Res.string.dress_step_loose_end, name(command.garment))
+            is SetPartBind -> text(Res.string.dress_step_bind, name(command.part))
             is SetGarmentAreaColor -> text(Res.string.dress_step_area_color, name(command.garment))
             is SetGarmentRegion -> text(if (command.region == null) Res.string.dress_step_remove_print else Res.string.dress_step_print, name(command.garment), command.id.value)
             is SetGarmentMark -> text(if (command.mark == null) Res.string.dress_step_remove_print else Res.string.dress_step_print, name(command.garment), command.id.value)
@@ -182,7 +185,7 @@ private val DRESS_STEPS = listOf(
     Res.string.history_rename_garment, Res.string.history_new_worn_garment, Res.string.dress_step_cover, Res.string.dress_step_uncover, Res.string.dress_step_range,
     Res.string.dress_step_around, Res.string.dress_step_ease, Res.string.dress_step_outline, Res.string.dress_step_surface,
     Res.string.dress_step_join_ink, Res.string.dress_step_edge_ink, Res.string.dress_step_ink_weight, Res.string.dress_step_hem_roll, Res.string.dress_step_creases, Res.string.dress_step_fit, Res.string.dress_step_part_fit, Res.string.dress_step_paint, Res.string.dress_step_area_name, Res.string.dress_step_tuck, Res.string.dress_step_color,
-    Res.string.dress_step_change, Res.string.dress_step_loose_end, Res.string.dress_step_remove_loose_end, Res.string.dress_step_slot,
+    Res.string.dress_step_change, Res.string.dress_step_loose_end, Res.string.dress_step_bind, Res.string.dress_step_remove_loose_end, Res.string.dress_step_slot,
     Res.string.dress_step_area_color, Res.string.dress_step_print, Res.string.dress_step_remove_print,
     Res.string.dress_step_layers, Res.string.dress_step_add_slot, Res.string.dress_step_remove_slot, Res.string.dress_step_rename_slot,
     Res.string.dress_step_add_outfit, Res.string.history_remove_outfit, Res.string.history_rename_outfit, Res.string.history_duplicate_outfit, Res.string.dress_step_pick,

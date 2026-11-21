@@ -1,8 +1,15 @@
 package dev.chieppa.squash.screens.look.measure
 
 import dev.chieppa.squash.character.build.AssembledCharacter
-import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.rig.Rig
 import kotlin.math.abs
+
+/** Each part a garment owns that [rig] holds, by id, with the bones it moves with: `follow` when bound to the body's, else `single`. */
+fun bindLines(rig: Rig, rest: AssembledCharacter): String? {
+    val owned = rest.parts.filter { it.owner != null }.mapNotNull { placed -> placed.id?.let(rig::part) }
+    if (owned.isEmpty()) return null
+    return "owned parts bound " + owned.joinToString { "${it.id.value} ${if (it.hold != null) "follow" else "single"}" }
+}
 
 /**
  * How far each part a garment owns strays from moving rigidly between [rest] and [posed]: the largest change in any vertex's distance

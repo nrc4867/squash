@@ -12,16 +12,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
-/** What the rig reads from the document beside the assembly: each part's joint reaches by joint name, and each seam's strokes by its child. */
-data class RigInput(val reach: Map<PartId, Map<String, Float>> = emptyMap(), val seams: Map<PartId, List<SeamStroke>> = emptyMap())
+/**
+ * What the rig reads from the document beside the assembly: each part's joint reaches by joint name, each seam's strokes by its child, and
+ * how each part a garment owns that sets its binding is bound.
+ */
+data class RigInput(
+    val reach: Map<PartId, Map<String, Float>> = emptyMap(),
+    val seams: Map<PartId, List<SeamStroke>> = emptyMap(),
+    val binds: Map<PartId, OwnedBind> = emptyMap(),
+)
 
-/** What [character] gives its rig: the reaches and seam strokes each part resolves to, its side's reading of its pair's. */
+/** What [character] gives its rig: the reaches and seam strokes each part resolves to, its side's reading of its pair's, and its owned parts' bindings. */
 fun rigInput(character: Character): RigInput {
     val reach = character.parts.associate { part ->
         part.id to character.resolved(part).params.mapNotNull { (name, value) -> RigParams.reachJoint(name)?.let { it to value } }.toMap()
     }.filterValues { it.isNotEmpty() }
     val seams = character.parts.associate { it.id to character.resolved(it).surface.seams }.filterValues { it.isNotEmpty() }
-    return RigInput(reach, seams)
+    val binds = character.parts.filter { it.garment != null && (it.bind != null || it.stiff != null) }.associate { it.id to OwnedBind(it.bind, it.stiff ?: 0f) }
+    return RigInput(reach, seams, binds)
 }
 
 /** The one source the body's rig node reads. */
@@ -48,7 +56,7 @@ class SessionRig(session: CharacterSession) {
     ) { gathered ->
         val assembled = gathered.values.getValue(AssemblySource)
         val input = gathered.shape
-        rigOf(assembled, StrokePaint(assembled, input.seams), cancellationCheck(), JointReach { part, joint -> input.reach[part]?.get(joint) ?: 1f })
+        rigOf(assembled, StrokePaint(assembled, input.seams), cancellationCheck(), JointReach { part, joint -> input.reach[part]?.get(joint) ?: 1f }) { input.binds[it] ?: OwnedBind.RULE }
     }
 
     private val bodyInput = session.graph.follow<Rig, WholeRigInput>(body) { WholeRigInput.Body(it) }
