@@ -183,7 +183,7 @@ How an eye's lids meet when closed and how the upper lid is painted: its own col
 | `closedTilt` | 0.0 | -45 to 45 | Degrees the closed line turns, its front end up. |
 | `slot` | none | - | The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid is the skin and fade and above do nothing. |
 | `fadeTo` | none | - | The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin. |
-| `fade` | 0.0 | 0 to 3 | How far up from the lash line the lid's colour fades out, in heights; 0 an even colour. |
+| `fade` | 0.0 | 0 to 3 | How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour. |
 | `above` | 0.0 | 0 to 3 | How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening. |
 | `marks` | [] | - | Marks painted on the upper lid, a liner wing or a pattern, each moving with the lid as it closes. |
 

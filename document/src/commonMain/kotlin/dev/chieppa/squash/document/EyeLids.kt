@@ -27,7 +27,7 @@ data class EyeLids(
     val slot: SlotName? = null,
     @Doc("The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin.")
     val fadeTo: SlotName? = null,
-    @Doc("How far up from the lash line the lid's colour fades out, in heights; 0 an even colour.") @Range(min = 0.0, max = 3.0)
+    @Doc("How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour.") @Range(min = 0.0, max = 3.0)
     val fade: Float = 0f,
     @Doc("How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening.") @Range(min = 0.0, max = 3.0)
     val above: Float = 0f,

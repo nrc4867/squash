@@ -145,7 +145,7 @@ export interface EyeLids {
   slot?: string | null;
   /** The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin. */
   fadeTo?: string | null;
-  /** How far up from the lash line the lid's colour fades out, in heights; 0 an even colour. */
+  /** How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour. */
   fade?: number;
   /** How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening. */
   above?: number;

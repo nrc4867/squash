@@ -426,7 +426,7 @@
           ]
         },
         "fade": {
-          "description": "How far up from the lash line the lid's colour fades out, in heights; 0 an even colour.",
+          "description": "How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 3.0
