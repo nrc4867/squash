@@ -30,7 +30,7 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
 
     /**
      * The character from each of [azimuths] in degrees round from its front, or from each direction of [toViewers], framed on [framed] parts
-     * or on all of it, [tile] by [height] pixels a view, two-tone with lines and each head's face in the version its angle shows, kept as the
+     * or on all of it with [margin] of each view left free, [tile] by [height] pixels a view, two-tone with lines and each head's face in the version its angle shows, kept as the
      * image [name]. With [only], just those parts are drawn and framed.
      */
     fun keep(
@@ -42,11 +42,11 @@ class WomanViews(private val work: TestWork, private val errors: MutableList<Str
         height: Int = 900,
         toViewers: List<Vec3> = azimuths.map(::probeAzimuth),
         only: Set<PartId>? = null,
+        margin: Float = if (framed == null) WHOLE_MARGIN else CLOSE_MARGIN,
     ) {
         val state = session.posedState().let { if (only == null) it else it.keptTo(only) }
         val parts = state.character.parts.filter { it.id != null }
         val framing = parts.filter { framed == null || it.id in framed }
-        val margin = if (framed == null) WHOLE_MARGIN else CLOSE_MARGIN
         val views = toViewers.mapIndexed { i, toViewer ->
             val rect = PixelRect(i * tile, 0, tile, height)
             val camera = framedCamera(framing, toViewer, tile, height, margin)

@@ -58,6 +58,10 @@ internal class MassBuilds(private val mass: PlacedPart, private val data: PartDa
     /** The mass's points in body space with [params] over its own. */
     fun points(params: Map<String, Float>): List<Vec3> = if (params.isEmpty()) placed else pointsOf(data.params + params).map(carry)
 
+    /** The mass's surface grids in body space with [params] over its own, built afresh either way, so a refit draws the mass as the first fit did. */
+    fun grids(params: Map<String, Float>): List<PointGrid> =
+        PartBuilder.build(mass.template, data.copy(params = data.params + params)).map { patch -> PointGrid(patch.nu, patch.nv, patch.closedV, patchPoints(patch.points).map(carry)) }
+
     private fun pointsOf(params: Map<String, Float>): List<Vec3> =
         PartBuilder.build(mass.template, data.copy(params = params)).flatMap { patchPoints(it.points) }
 

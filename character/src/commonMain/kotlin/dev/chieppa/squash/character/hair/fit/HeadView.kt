@@ -34,6 +34,13 @@ class HeadView(val view: OutlineView, val origin: Vec3, val right: Vec3, val up:
     /** A body-space length in drawn units. */
     fun drawn(length: Float): Float = length / scale
 
+    /** This view with its camera turned [degrees] further round the head's up toward the character's left; it keeps its [view]'s name. */
+    fun turned(degrees: Float): HeadView {
+        val turn = degrees * DEGREES
+        val toward = (toViewer * cos(turn) + (up cross toViewer) * sin(turn)).normalized()
+        return HeadView(view, origin, up cross toward, up, toward, scale)
+    }
+
     companion object {
         /** [head], a head [size] times its drawn size, seen from [view]. */
         fun of(head: PlacedPart, size: Float, view: OutlineView): HeadView {

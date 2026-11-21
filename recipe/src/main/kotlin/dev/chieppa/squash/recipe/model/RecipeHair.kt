@@ -64,6 +64,10 @@ data class RecipeOutlineView(
     val tips: List<Int>? = null,
     @Doc("The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region).")
     val valleys: List<Int>? = null,
+    @Doc("Whether the points are in the sheet head's lengths (its chin to its crown in this view is 1, from its chin), as kit sheet hair reads them, rather than the head's drawn units: the build sizes them to the head as built, by its eye line where the front view gives eyes and the head has painted eyes, else by its height.")
+    val heads: Boolean = false,
+    @Doc("How high the sheet's eye line stands over its chin in this view, in head lengths: on the front view, what sizes an outline given in heads.") @Range(min = 0.05, max = 0.95)
+    val eyes: Float? = null,
 )
 
 /** An inner mass fitted to the head as built. */

@@ -3390,6 +3390,23 @@
               "type": "null"
             }
           ]
+        },
+        "heads": {
+          "description": "Whether the points are in the sheet head's lengths (its chin to its crown in this view is 1, from its chin), as kit sheet hair reads them, rather than the head's drawn units: the build sizes them to the head as built, by its eye line where the front view gives eyes and the head has painted eyes, else by its height.",
+          "type": "boolean"
+        },
+        "eyes": {
+          "description": "How high the sheet's eye line stands over its chin in this view, in head lengths: on the front view, what sizes an outline given in heads.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.95
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

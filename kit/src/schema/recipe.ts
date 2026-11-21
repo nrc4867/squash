@@ -966,6 +966,10 @@ export interface RecipeOutlineView {
   tips?: number[] | null;
   /** The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region). */
   valleys?: number[] | null;
+  /** Whether the points are in the sheet head's lengths (its chin to its crown in this view is 1, from its chin), as kit sheet hair reads them, rather than the head's drawn units: the build sizes them to the head as built, by its eye line where the front view gives eyes and the head has painted eyes, else by its height. */
+  heads?: boolean;
+  /** How high the sheet's eye line stands over its chin in this view, in head lengths: on the front view, what sizes an outline given in heads. */
+  eyes?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

@@ -67,9 +67,9 @@ private const val MORE_LOCK_PASSES = 1
 
 /**
  * What fitting a head's hair to its outline gives: the [commands] that set it, the inner mass's parameters and the lock groups that change;
- * how many locks it [fitted] to tips and [kept] inside the outline, and how many tips no lock reached ([missed]).
+ * how many locks it [fitted] to tips and [kept] inside the outline, and the tips no lock reached ([unreached]).
  */
-class HairFit(val commands: List<DocumentCommand>, val fitted: Int, val kept: Int, val missed: Int) {
+class HairFit(val commands: List<DocumentCommand>, val fitted: Int, val kept: Int, val unreached: List<UnreachedTip>) {
     /** One step that sets it all, or null when nothing changes. */
     val command: DocumentCommand? get() = if (commands.isEmpty()) null else Together(commands)
 }
@@ -79,7 +79,8 @@ class HairFit(val commands: List<DocumentCommand>, val fitted: Int, val kept: In
  * inner mass's crown and width sized to the outline's envelope seen from the front, then in each view the outline's tips paired with the
  * locks whose roots face that view by how near their tips land, each paired lock's root, length, rise, sweep, fall and width searched so
  * its tip lands on its tip and its edges follow the outline between the valleys either side, and every other lock shortened, or laid down,
- * where it would stray outside the outline. Tied groups and locks with guides of their own are left as they are. A fit owns the length,
+ * where it would stray outside the outline; then touched up ([touchedUp]) where locks stand out of the head and mass, leave a gap at the
+ * hairline or stand up as thin spikes. Tied groups and locks with guides of their own are left as they are. A fit owns the length,
  * rise, sweep, fall, root and width overrides of the locks it reaches; it is deterministic, so the same outline fits the same values.
  * Null where the head has no outline, no locks or builds nothing. See HLD: parts, Hair locks.
  */
@@ -88,15 +89,17 @@ fun hairFit(character: Character, assembled: AssembledCharacter, head: PartId, o
     val headPart = assembled.part(head) ?: return null
     val originals = character.lockGroups.filter { it.on == head && it.tie == 0f }
     if (originals.isEmpty()) return null
+    val drawn = drawnOutline(character, headPart, outline)
     val size = HeadView.sizeOf(character, headPart)
     val hairOn = character.lockGroups.filter { it.on == head }.mapNotNull { it.mass }.toSet()
     val occluders = assembled.parts.filter { it.id != null && it.locks == null && it.copies == null && it.role != Role.HAIR && it.id !in hairOn }
-    val views = VIEW_ORDER.mapNotNull { which -> outline.view(which)?.let { FitView(HeadView.of(headPart, size, which), FlatOutline.of(it), occluders) } }
+    val views = VIEW_ORDER.mapNotNull { which -> drawn.view(which)?.let { FitView(HeadView.of(headPart, size, which), FlatOutline.of(it), occluders) } }
     val front = views.first()
     val commands = ArrayList<DocumentCommand>()
     val massId = originals.firstNotNullOfOrNull { it.mass }
     val massPart = massId?.let(assembled::part)
     var massPoints = massPart?.shownPoints()
+    var massGrids: List<PointGrid> = emptyList()
     if (massId != null && massPart != null) {
         val instance = character.part(massId)
         if (instance != null) {
@@ -105,10 +108,12 @@ fun hairFit(character: Character, assembled: AssembledCharacter, head: PartId, o
             val builds = MassBuilds(massPart, data)
             massPoints = builds.points(emptyMap())
             val least = headPart.box?.let { fittedMassShape(it.size.x, it.size.y) }.orEmpty()
-            fitMass(front, Scalp.of(headPart, null).middle, builds, massPart.template.defaults + data.params, thickness, least)?.let { refit ->
-                massPoints = refit.points
-                if (refit.params.isNotEmpty()) commands += SetParameters(massId, refit.params)
+            val refit = fitMass(front, Scalp.of(headPart, null).middle, builds, massPart.template.defaults + data.params, thickness, least)
+            refit?.let {
+                massPoints = it.points
+                if (it.params.isNotEmpty()) commands += SetParameters(massId, it.params)
             }
+            massGrids = builds.grids(refit?.params.orEmpty())
         }
     }
     val scalps = HashMap<PartId?, Scalp>()
@@ -123,8 +128,9 @@ fun hairFit(character: Character, assembled: AssembledCharacter, head: PartId, o
         groups = groups.map { g -> result.short[g.id]?.let { more -> g.copy(count = (g.count + more).coerceAtMost(MOST_LOCKS)) } ?: g }
         result = fitLocks(groups, views, ::scalpOf, field)
     }
+    val touched = touchedUp(groups, { GroupLocks(it, scalpOf(it), field) }, result.locks, headPart, front.head, massPoints, massGrids)
     for ((original, group) in originals.zip(groups)) {
-        val fitted = result.locks.filterKeys { it.first == group.id }
+        val fitted = touched.filterKeys { it.first == group.id }
         val overrides = (0 until group.count).mapNotNull { index ->
             val base = group.overrideOf(index)
             fitted[group.id to index]?.over(base, index) ?: base
@@ -132,7 +138,7 @@ fun hairFit(character: Character, assembled: AssembledCharacter, head: PartId, o
         val now = group.copy(overrides = overrides)
         if (now != original) commands += SetLockGroup(group.id, now)
     }
-    return HairFit(commands, result.fitted, result.kept, result.missed)
+    return HairFit(commands, result.fitted, result.kept, result.unreached)
 }
 
 /** [override] with what a fit sets taken out, or null where nothing else is left. */
@@ -144,8 +150,8 @@ internal fun withoutFit(override: LockOverride): LockOverride? {
     return if (override.guide != null) override else left.takeIf { it != LockOverride(override.index) }
 }
 
-/** The locks a fit sets, by group and index; how many it fitted to tips and kept inside; the tips it missed; and how many more locks each group wants for them. */
-private class LockFits(val locks: Map<Pair<LockGroupId, Int>, FittedLock>, val fitted: Int, val kept: Int, val missed: Int, val short: Map<LockGroupId, Int>)
+/** The locks a fit sets, by group and index; how many it fitted to tips and kept inside; the tips no lock reached; and how many more locks each group wants for them. */
+private class LockFits(val locks: Map<Pair<LockGroupId, Int>, FittedLock>, val fitted: Int, val kept: Int, val unreached: List<UnreachedTip>, val short: Map<LockGroupId, Int>)
 
 /** One lock a fit may move: its group as laid out, its index and its override with nothing fitted. */
 private class Candidate(val group: LockGroup, val laid: GroupLocks, val index: Int, val base: LockOverride?) {
@@ -163,14 +169,14 @@ private fun fitLocks(groups: List<LockGroup>, views: List<FitView>, scalpOf: (Lo
     val fitters = all.associate { it.key to LockFitter(it.laid, it.index, it.base, views) }
     val out = HashMap<Pair<LockGroupId, Int>, FittedLock>()
     val short = HashMap<LockGroupId, Int>()
-    var missed = 0
+    val unreached = ArrayList<UnreachedTip>()
     for (view in views) {
         val tipIndices = view.outline.tips.filter { prominence(view, it) >= view.height * LEAST_PROMINENCE }
         val tips = tipIndices.map { view.outline.points[it] }
         if (tips.isEmpty()) continue
         val open = all.filter { it.key !in out && (fitters.getValue(it.key).start.out dot view.head.toViewer) > FACING_AWAY }
         if (open.isEmpty()) {
-            missed += tips.size
+            tips.forEach { unreached += UnreachedTip(view.head.view, it, UnreachedTip.Why.NO_LOCK_FACES) }
             continue
         }
         val cost = Array(tips.size) { t ->
@@ -188,14 +194,18 @@ private fun fitLocks(groups: List<LockGroup>, views: List<FitView>, scalpOf: (Lo
         val pairing = cheapestPairing(cost)
         pairing.forEachIndexed { t, c ->
             if (c < 0 || cost[t][c] >= UNFIT_COST) {
-                missed++
+                unreached += UnreachedTip(view.head.view, tips[t], if (c < 0) UnreachedTip.Why.TOO_FEW_LOCKS else UnreachedTip.Why.NO_LOCK_SERVES)
                 val nearest = open.minBy { length(view.head.flat(fitters.getValue(it.key).start.root), tips[t]) }
                 short[nearest.group.id] = (short[nearest.group.id] ?: 0) + 1
                 return@forEachIndexed
             }
             val candidate = open[c]
+            val fitter = fitters.getValue(candidate.key)
             val middle = view.head.flat(candidate.laid.scalp.middle)
-            out[candidate.key] = fitters.getValue(candidate.key).fitTo(targetAt(view, tipIndices[t], candidate.group, middle))
+            val target = targetAt(view, tipIndices[t], candidate.group, middle)
+            val fitted = fitter.fitTo(target)
+            out[candidate.key] = fitted
+            fitter.shortOf(fitted, target)?.let { unreached += UnreachedTip(view.head.view, tips[t], it) }
         }
     }
     val fitted = out.size
@@ -207,7 +217,7 @@ private fun fitLocks(groups: List<LockGroup>, views: List<FitView>, scalpOf: (Lo
             kept++
         }
     }
-    return LockFits(out, fitted, kept, missed, short)
+    return LockFits(out, fitted, kept, unreached, short)
 }
 
 /** How far the tip at point [tip] of [view]'s outline stands out of the line between the valleys either side of it; unbounded with none near. */
