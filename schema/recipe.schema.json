@@ -2276,6 +2276,31 @@
       },
       "additionalProperties": false
     },
+    "RecipeGlow": {
+      "description": "A glow: the slot's colour whatever the light.",
+      "type": "object",
+      "properties": {
+        "strength": {
+          "description": "How far its middle lifts toward white, 0 to 1.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "halo": {
+          "description": "How wide a soft ring it draws round itself, in pixels; none when 0.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 32.0
+        }
+      },
+      "required": [
+        "strength"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "RecipeHair": {
       "description": "Hair made of locks on a head: each lock a separate swept part, in groups (a fringe, the sides, the back, the crown, strays, the top) over an inner mass. A preset gives a whole hairstyle; groups add to it or change its groups by id. docs/reference/hair.md lists every field's range and units and each preset's groups.",
       "type": "object",
@@ -2506,6 +2531,33 @@
       "required": [
         "n",
         "u"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeKeyLight": {
+      "description": "The way to a key light in body space: x forward, y up, z to the character's right; any length but zero.",
+      "type": "object",
+      "properties": {
+        "x": {
+          "description": "Forward.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Up.",
+          "type": "number"
+        },
+        "z": {
+          "description": "To the character's right.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
       ],
       "patternProperties": {
         "^x-": {}
@@ -3123,6 +3175,152 @@
           "additionalProperties": {
             "type": "number"
           }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeMaterial": {
+      "description": "A palette slot's toon material: a preset, and any setting changed from it. Written as the preset's name alone where nothing changes.",
+      "type": "object",
+      "properties": {
+        "preset": {
+          "description": "The finish it starts from: matte (two tones, the default), skin, cloth, plastic (a sharp round spot), metal (three hard tones, a band and a bright rim), glass (see-through with a streak) or glow (its colour whatever the light, with a halo).",
+          "enum": [
+            "matte",
+            "skin",
+            "cloth",
+            "plastic",
+            "metal",
+            "glass",
+            "glow"
+          ]
+        },
+        "steps": {
+          "description": "How many flat tones it shades in, 1 to 3: 1 flat, 2 lit and shadow, 3 lit, a middle tone and shadow.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0,
+              "maximum": 3.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shadow": {
+          "description": "Its own shadow tone; when left out, the shadow slot's colour, else its colour shifted darker.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shadowSlot": {
+          "description": "A palette slot whose colour is its shadow tone.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shadowDepth": {
+          "description": "How much darker its shifted shadow is, 0 to 1; the character's own depth when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shadowShift": {
+          "description": "Which way its shifted shadow turns: auto (warm for a saturated colour, cool for a pale one), cool or warm.",
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "cool",
+                "warm"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rim": {
+          "description": "A light edge along the silhouette.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeRim"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shine": {
+          "description": "A shine from the key light: a spot, a band or a streak.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeShine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seeThrough": {
+          "description": "How much of what lies behind a part or cloth in it the part hides, 0 to 1, more toward the silhouette on cloth: a lens at 0.35 shows the eyes through it. Whole when left out. On a separate part it holds for its base colour, drawn after everything whole; on cloth it multiplies each area's own.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "glow": {
+          "description": "A glow: its colour whatever the light, its middle lifted toward white, with a halo round it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeGlow"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "patternProperties": {
@@ -4080,6 +4278,51 @@
       },
       "additionalProperties": false
     },
+    "RecipeRim": {
+      "description": "A light edge along the silhouette.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "description": "How far in from the silhouette it reaches on the side turned from the light, 0 to 1, as a share of the way to the middle of a round form.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "color": {
+          "description": "Its colour; the slot's colour lifted toward white when left out.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "width"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "RecipeScalpFlow": {
       "description": "Which way hair grows over the scalp. Every lock root takes its direction from it unless its group's flow is under 1. Each field given replaces the preset's.",
       "type": "object",
@@ -4179,6 +4422,17 @@
             "view",
             "body"
           ]
+        },
+        "key": {
+          "description": "The shot's key light, fixed to the body: a surface is lit where it or the light above reaches, and materials' spots, bands and streaks come from it, so they stay toward it as the camera turns. From the light above when left out.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeKeyLight"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "patternProperties": {
@@ -4273,6 +4527,61 @@
       },
       "additionalProperties": false
     },
+    "RecipeShine": {
+      "description": "A shine from the key light, where the surface faces halfway between the light and the viewer.",
+      "type": "object",
+      "properties": {
+        "shape": {
+          "description": "Its shape: none, spot (small, sharp and round), band (broad and hard, with a darker reflection beside it) or streak (thin, across the light's way).",
+          "enum": [
+            "none",
+            "spot",
+            "band",
+            "streak"
+          ]
+        },
+        "size": {
+          "description": "How large it is, 0 to 1.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "color": {
+          "description": "Its colour; near white in the slot's hue when left out.",
+          "anyOf": [
+            {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "shape",
+        "size"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "RecipeSlot": {
       "description": "A named colour.",
       "type": "object",
@@ -4300,32 +4609,6 @@
             }
           ]
         },
-        "shadow": {
-          "description": "Its own shadow tone; a warm shift of the colour when left out.",
-          "anyOf": [
-            {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "pattern": "^#[0-9a-fA-F]{6}$"
-                },
-                {
-                  "type": "array",
-                  "minItems": 3,
-                  "maxItems": 3,
-                  "items": {
-                    "type": "number",
-                    "minimum": 0.0,
-                    "maximum": 1.0
-                  }
-                }
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "label": {
           "description": "What the app calls it; the slot's name when left out.",
           "anyOf": [
@@ -4337,11 +4620,26 @@
             }
           ]
         },
-        "opacity": {
-          "description": "How much of what lies behind a part coloured in it the part hides, 0 to 1: a lens at 0.35 shows the eyes through it. Whole when left out. It holds for a part's base colour, drawn after everything whole.",
+        "material": {
+          "description": "Its toon material, which anything painted in it takes: a preset's name (\"metal\"), or an object with a preset and the settings it changes. Matte when left out.",
           "anyOf": [
             {
-              "type": "number"
+              "oneOf": [
+                {
+                  "enum": [
+                    "matte",
+                    "skin",
+                    "cloth",
+                    "plastic",
+                    "metal",
+                    "glass",
+                    "glow"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/RecipeMaterial"
+                }
+              ]
             },
             {
               "type": "null"

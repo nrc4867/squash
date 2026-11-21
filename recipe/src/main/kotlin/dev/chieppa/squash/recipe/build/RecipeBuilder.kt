@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.DocumentCommand
+import dev.chieppa.squash.document.KeyLight
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.CharacterCreases
 import dev.chieppa.squash.document.CharacterShading
@@ -47,7 +48,11 @@ class RecipeBuilder(private val templates: TemplateFolder) {
         val empty = SquashDocument(Character(CharacterId(recipe.id), recipe.name, plan.ref))
         val context = BuildContext(recipe, templates, plan, empty)
         with(context) {
-            recipe.palette.forEachIndexed { i, slot -> send("$.palette[$i]", SetPaletteSlot(SlotName(slot.slot), slot.color.slotColor, shadow = slot.shadow?.slotColor, label = slot.label, opacity = slot.opacity)) }
+            recipe.palette.forEachIndexed { i, slot ->
+                slot.material?.shadowSlot?.let { slot("$.palette[$i].material.shadowSlot", it) }
+                val material = slot.material?.let { guard("$.palette[$i].material") { it.slotMaterial } }
+                send("$.palette[$i]", SetPaletteSlot(SlotName(slot.slot), slot.color.slotColor, label = slot.label, material = material))
+            }
             val body = recipe.parts.withIndex().filter { it.value.garment == null }
             val owned = recipe.parts.withIndex().filter { it.value.garment != null }
             val bodyIds = body.map { (i, part) -> placePart(i, part) }
@@ -80,7 +85,8 @@ private fun BuildContext.pose(path: String, bones: List<BonePose>): Pose {
 /** Sends [shading] as the character's, its far side's depth checked at its path. */
 private fun BuildContext.shading(shading: RecipeShading) {
     if (shading.farSide !in 0f..MOST_FAR_SIDE_DEPTH) fail("$.shading.farSide", "a far side's depth lies from 0 to $MOST_FAR_SIDE_DEPTH: here ${shading.farSide}")
-    send("$.shading", SetCharacterShading(CharacterShading(shading.mode, shading.farSideDarker, shading.farSide, shading.light)))
+    val key = shading.key?.let { key -> guard("$.shading.key") { KeyLight(key.x, key.y, key.z) } }
+    send("$.shading", SetCharacterShading(CharacterShading(shading.mode, shading.farSideDarker, shading.farSide, shading.light, key)))
 }
 
 /** Sends [keys] as the character's view keys, each part a move names read as the recipe names it, at its path. */

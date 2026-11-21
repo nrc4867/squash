@@ -8,6 +8,7 @@ import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.SetCharacterShading
 import dev.chieppa.squash.document.ShadingLight
 import dev.chieppa.squash.document.ShadingMode
+import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.FarSideDarkening
 import dev.chieppa.squash.render.LightFrame
 import dev.chieppa.squash.render.ObjectShading
@@ -25,6 +26,7 @@ fun CharacterShading.objectShading() = ObjectShading(
         ShadingLight.VIEW -> LightFrame.VIEW
         ShadingLight.BODY -> LightFrame.BODY
     },
+    key = key?.let { Vec3(it.x, it.y, it.z).normalized() },
 )
 
 /** How the open character is shaded, flat with none open. */

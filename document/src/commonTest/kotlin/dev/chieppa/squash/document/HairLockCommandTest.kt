@@ -161,7 +161,7 @@ class HairLockCommandTest {
     fun aBlendedSlotReadsAsItsSlotsMixed() {
         val skin = SlotName("skin")
         val hair = SlotName("hair")
-        val palette = Palette(listOf(PaletteSlot(skin, SlotColor(1f, 0.8f, 0.6f), shadow = SlotColor(0.8f, 0.6f, 0.4f)), PaletteSlot(hair, SlotColor(0.4f, 0.2f, 0f), shadow = SlotColor(0.2f, 0f, 0f))))
+        val palette = Palette(listOf(PaletteSlot(skin, SlotColor(1f, 0.8f, 0.6f), material = SlotMaterial(shadow = SlotColor(0.8f, 0.6f, 0.4f))), PaletteSlot(hair, SlotColor(0.4f, 0.2f, 0f), material = SlotMaterial(shadow = SlotColor(0.2f, 0f, 0f)))))
         val scalp = blendedSlot(skin, hair, 0.5f)
         fun assertNear(expected: SlotColor, actual: SlotColor?) {
             val got = assertNotNull(actual)

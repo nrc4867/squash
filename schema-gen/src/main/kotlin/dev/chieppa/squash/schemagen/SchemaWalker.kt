@@ -26,10 +26,15 @@ private const val SEALED_VALUE_ELEMENT = 1
 /**
  * Writes a JSON Schema by walking a serial descriptor, the structure the parser reads, so the schema accepts what the
  * parser accepts. Sealed subclasses become `oneOf` on [discriminator]; nullability and defaults give `required`;
- * `@Range` and `@Doc` give `minimum`, `maximum` and `description`. See HLD: data-model, One source of truth.
+ * `@Range` and `@Doc` give `minimum`, `maximum` and `description`. A type in [fragments] is written as given; one in [alternatives] is
+ * its fragment or the object its descriptor walks to. See HLD: data-model, One source of truth.
  */
 @OptIn(ExperimentalSerializationApi::class)
-class SchemaWalker(private val discriminator: String, private val fragments: Map<String, JsonObject>) {
+class SchemaWalker(
+    private val discriminator: String,
+    private val fragments: Map<String, JsonObject>,
+    private val alternatives: Map<String, Pair<JsonObject, SerialDescriptor>> = emptyMap(),
+) {
     private val defs = sortedMapOf<String, JsonObject>()
 
     fun schema(root: SerialDescriptor): JsonObject {
@@ -51,6 +56,9 @@ class SchemaWalker(private val discriminator: String, private val fragments: Map
 
     private fun walkPlain(descriptor: SerialDescriptor): JsonObject {
         fragments[plainName(descriptor)]?.let { return it }
+        alternatives[plainName(descriptor)]?.let { (fragment, written) ->
+            return buildJsonObject { put("oneOf", JsonArray(listOf(fragment, walkPlain(written)))) }
+        }
         if (descriptor.isInline) return walk(descriptor.getElementDescriptor(0))
         return when (val kind = descriptor.kind) {
             is PrimitiveKind -> primitive(kind)

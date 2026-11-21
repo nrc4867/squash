@@ -37,6 +37,7 @@ import dev.chieppa.squash.uidesign.generated.color_shading_flat
 import dev.chieppa.squash.uidesign.generated.color_shading_two_tone
 import dev.chieppa.squash.uidesign.generated.color_size
 import dev.chieppa.squash.uidesign.generated.color_softness
+import dev.chieppa.squash.uidesign.generated.material_section
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Stretch
@@ -59,6 +60,7 @@ fun ColorDrawerContent(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val tool by state.tool.collectAsState()
     PaintSection(state, session, document, tool)
+    MaterialSection(state, session, document)
     PartPaintSection(state, session, document)
     ShadingSection(state)
 }
@@ -75,6 +77,18 @@ private fun PaintSection(state: AppState, session: CharacterSession, document: S
         if (tool == BuildTool.BRUSH) BrushRows(state)
         if (tool == BuildTool.FILL) FillRow(state)
     }
+}
+
+/** The current slot's material: its preset, then its settings under More. */
+@Composable
+private fun MaterialSection(state: AppState, session: CharacterSession, document: SquashDocument) {
+    val current = state.paintSlot() ?: return
+    val character = document.character
+    if (character.palette.slots.none { it.name == current }) return
+    DrawerSection(stringResource(Res.string.material_section), divider = false) {
+        MaterialPresets(session, character, current)
+    }
+    MaterialMore(session, character, current, state.paint.materialMoreOpen) { state.paint.materialMoreOpen = it }
 }
 
 @Composable

@@ -20,6 +20,18 @@ object PaintTags {
     const val VIEW_LIGHT = "color.viewLight"
     const val SKIN_CREASES = "color.skinCreases"
     const val CLOTH_CREASES = "color.clothCreases"
+    const val MATERIAL_MORE = "color.material.more"
+    const val MATERIAL_STEPS = "color.material.steps"
+    const val MATERIAL_SHADOW_DEPTH = "color.material.shadowDepth"
+    const val MATERIAL_SHADOW_SHIFT = "color.material.shadowShift"
+    const val MATERIAL_RIM = "color.material.rim"
+    const val MATERIAL_SHINE = "color.material.shine"
+    const val MATERIAL_SHINE_SIZE = "color.material.shineSize"
+    const val MATERIAL_SEE_THROUGH = "color.material.seeThrough"
+    const val MATERIAL_GLOW = "color.material.glow"
+    const val MATERIAL_HALO = "color.material.halo"
+
+    fun materialPreset(name: String) = "color.material.preset.$name"
 
     fun slot(name: String) = "color.slot.$name"
     fun section(name: String) = "color.section.$name"

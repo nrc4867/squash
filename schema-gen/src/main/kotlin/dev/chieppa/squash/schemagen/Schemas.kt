@@ -12,7 +12,9 @@ import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SPAN_SERIAL_NAME
 import dev.chieppa.squash.character.model.SectionSpecSerializer
 import dev.chieppa.squash.recipe.model.Recipe
+import dev.chieppa.squash.document.MaterialPreset
 import dev.chieppa.squash.recipe.model.RecipeColor
+import dev.chieppa.squash.recipe.model.RecipeMaterial
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
@@ -88,6 +90,15 @@ object Schemas {
         ),
     )
 
+    /** The types written either as a fragment or as an object of their own. */
+    @OptIn(ExperimentalSerializationApi::class)
+    private val alternatives: Map<String, Pair<JsonObject, SerialDescriptor>> = mapOf(
+        RecipeMaterial.SERIAL_NAME to (
+            buildJsonObject { put("enum", JsonArray(MaterialPreset.serializer().descriptor.let { d -> (0 until d.elementsCount).map { JsonPrimitive(d.getElementName(it)) } })) } to
+                RecipeMaterial.serializer().descriptor
+            ),
+    )
+
     @OptIn(ExperimentalSerializationApi::class)
     private val json = Json {
         prettyPrint = true
@@ -103,7 +114,7 @@ object Schemas {
     /** Every schema file's name and text. */
     fun render(): Map<String, String> = files.mapValues { (_, file) ->
         val (descriptor, discriminator) = file
-        val schema: JsonElement = SchemaWalker(discriminator, fragments).schema(descriptor)
+        val schema: JsonElement = SchemaWalker(discriminator, fragments, alternatives).schema(descriptor)
         json.encodeToString(JsonElement.serializer(), schema) + "\n"
     }
 }

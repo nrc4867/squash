@@ -21,7 +21,8 @@ class DocumentFormatTest {
     private val formatThree = File("src/desktopTest/fixtures/format-3.json").readText()
     private val formatFour = File("src/desktopTest/fixtures/format-4.json").readText()
     private val formatFive = File("src/desktopTest/fixtures/format-5.json").readText()
-    private val formatFourteen = File("src/desktopTest/fixtures/format-14.json").readText()
+    private val formatNineteen = File("src/desktopTest/fixtures/format-19.json").readText()
+    private val formatFourteen =File("src/desktopTest/fixtures/format-14.json").readText()
     private val formatSixteenDrawnAndPainted = File("src/desktopTest/fixtures/format-16-drawn-and-painted.json").readText()
     private val formatSixteenDrawnOnly = File("src/desktopTest/fixtures/format-16-drawn-only.json").readText()
     private val combs = Grain(listOf(GrainComb(u = 0.25f, v = 0.5f, du = 0f, dv = 1f)))
@@ -85,17 +86,27 @@ class DocumentFormatTest {
         val document = readDocument(formatThree)
         assertEquals(DOCUMENT_FORMAT, document.format)
         assertEquals(CharacterShading(), document.character.shading)
-        assertTrue(document.character.palette.slots.all { it.shadow == null })
+        assertTrue(document.character.palette.slots.all { it.material == null })
     }
 
     @Test
-    fun theShadingChoiceAndASlotsShadowSurviveASave() {
+    fun aFormatNineteenSlotsShadowAndOpacityMoveIntoItsMaterial() {
+        val palette = readDocument(formatNineteen).character.palette
+        assertEquals(SlotMaterial(shadow = SlotColor(0.7f, 0.45f, 0.2f)), palette.slots[0].material)
+        assertEquals(SlotMaterial(seeThrough = 0.35f), palette.slots[1].material)
+        assertEquals("Lens", palette.slots[1].label)
+        assertEquals(0.35f, palette.opacity(SlotName("lens")))
+        assertEquals(null, palette.slots[2].material)
+    }
+
+    @Test
+    fun theShadingChoiceAndASlotsMaterialSurviveASave() {
         val cream = SlotName("cream")
         val tone = SlotColor(0.85f, 0.7f, 0.5f)
         val commands = listOf(
             SetPaletteSlot(cream, SlotColor(0.99f, 0.94f, 0.82f)),
-            SetSlotShadow(cream, tone),
-            SetCharacterShading(CharacterShading(ShadingMode.TWO_TONE, farSideDarker = false)),
+            SetSlotMaterial(cream, SlotMaterial(MaterialPreset.METAL, shadow = tone, rim = MaterialRim(0.2f))),
+            SetCharacterShading(CharacterShading(ShadingMode.TWO_TONE, farSideDarker = false, key = KeyLight(0.3f, 0.8f, 0.5f))),
         )
         val shaded = commands.fold(readDocument(formatThree)) { document, command -> command.apply(document).document }
         assertEquals(shaded, readDocument(Json.encodeToString(SquashDocument.serializer(), shaded)))

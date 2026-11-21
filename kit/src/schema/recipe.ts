@@ -680,6 +680,16 @@ export interface RecipeGeneric {
   [note: `x-${string}`]: unknown;
 }
 
+/** A glow: the slot's colour whatever the light. */
+export interface RecipeGlow {
+  /** How far its middle lifts toward white, 0 to 1. */
+  strength: number;
+  /** How wide a soft ring it draws round itself, in pixels; none when 0. */
+  halo?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** Hair made of locks on a head: each lock a separate swept part, in groups (a fringe, the sides, the back, the crown, strays, the top) over an inner mass. A preset gives a whole hairstyle; groups add to it or change its groups by id. docs/reference/hair.md lists every field's range and units and each preset's groups. */
 export interface RecipeHair {
   /** The head the locks grow on, by part id. */
@@ -752,6 +762,18 @@ export interface RecipeJoint {
   high?: number;
   /** Whether a stretch handle may move it away from the joint before it. */
   stretch?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The way to a key light in body space: x forward, y up, z to the character's right; any length but zero. */
+export interface RecipeKeyLight {
+  /** Forward. */
+  x: number;
+  /** Up. */
+  y: number;
+  /** To the character's right. */
+  z: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -887,6 +909,32 @@ export interface RecipeMassFit {
   color?: string | null;
   /** hair-volume parameters over the fitted ones (templates.md, hair-volume): width, back, sides, fringe, rise, crown, locks, lockDepth, lockJag and the rest. Most heads need none. */
   params?: { [key: string]: number };
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A palette slot's toon material: a preset, and any setting changed from it. Written as the preset's name alone where nothing changes. */
+export interface RecipeMaterial {
+  /** The finish it starts from: matte (two tones, the default), skin, cloth, plastic (a sharp round spot), metal (three hard tones, a band and a bright rim), glass (see-through with a streak) or glow (its colour whatever the light, with a halo). */
+  preset?: "matte" | "skin" | "cloth" | "plastic" | "metal" | "glass" | "glow";
+  /** How many flat tones it shades in, 1 to 3: 1 flat, 2 lit and shadow, 3 lit, a middle tone and shadow. */
+  steps?: number | null;
+  /** Its own shadow tone; when left out, the shadow slot's colour, else its colour shifted darker. */
+  shadow?: (string | [number, number, number]) | null;
+  /** A palette slot whose colour is its shadow tone. */
+  shadowSlot?: string | null;
+  /** How much darker its shifted shadow is, 0 to 1; the character's own depth when left out. */
+  shadowDepth?: number | null;
+  /** Which way its shifted shadow turns: auto (warm for a saturated colour, cool for a pale one), cool or warm. */
+  shadowShift?: ("auto" | "cool" | "warm") | null;
+  /** A light edge along the silhouette. */
+  rim?: RecipeRim | null;
+  /** A shine from the key light: a spot, a band or a streak. */
+  shine?: RecipeShine | null;
+  /** How much of what lies behind a part or cloth in it the part hides, 0 to 1, more toward the silhouette on cloth: a lens at 0.35 shows the eyes through it. Whole when left out. On a separate part it holds for its base colour, drawn after everything whole; on cloth it multiplies each area's own. */
+  seeThrough?: number | null;
+  /** A glow: its colour whatever the light, its middle lifted toward white, with a halo round it. */
+  glow?: RecipeGlow | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -1123,6 +1171,16 @@ export interface RecipeRegion {
   [note: `x-${string}`]: unknown;
 }
 
+/** A light edge along the silhouette. */
+export interface RecipeRim {
+  /** How far in from the silhouette it reaches on the side turned from the light, 0 to 1, as a share of the way to the middle of a round form. */
+  width: number;
+  /** Its colour; the slot's colour lifted toward white when left out. */
+  color?: (string | [number, number, number]) | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** Which way hair grows over the scalp. Every lock root takes its direction from it unless its group's flow is under 1. Each field given replaces the preset's. */
 export interface RecipeScalpFlow {
   /** The crown point hair spirals out from: around (degrees from the front toward the character's right, 180 the back), up (degrees from level, 90 the top), turn (-1 to 1, positive clockwise seen from above), strength (0 to 2) and radius (degrees across the head). */
@@ -1149,6 +1207,8 @@ export interface RecipeShading {
   farSide?: number;
   /** view: the light turns with the camera, from in front of the viewer, above and to their left, so a back view is lit as the front is; body: fixed in front of the character, so a back view falls in shade. */
   light?: "view" | "body";
+  /** The shot's key light, fixed to the body: a surface is lit where it or the light above reaches, and materials' spots, bands and streaks come from it, so they stay toward it as the camera turns. From the light above when left out. */
+  key?: RecipeKeyLight | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -1167,18 +1227,28 @@ export interface RecipeShape {
   [note: `x-${string}`]: unknown;
 }
 
+/** A shine from the key light, where the surface faces halfway between the light and the viewer. */
+export interface RecipeShine {
+  /** Its shape: none, spot (small, sharp and round), band (broad and hard, with a darker reflection beside it) or streak (thin, across the light's way). */
+  shape: "none" | "spot" | "band" | "streak";
+  /** How large it is, 0 to 1. */
+  size: number;
+  /** Its colour; near white in the slot's hue when left out. */
+  color?: (string | [number, number, number]) | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** A named colour. */
 export interface RecipeSlot {
   /** The name parts, regions and garments use for it. */
   slot: string;
   /** The colour: "#rrggbb", or [red, green, blue] from 0 to 1. */
   color: string | [number, number, number];
-  /** Its own shadow tone; a warm shift of the colour when left out. */
-  shadow?: (string | [number, number, number]) | null;
   /** What the app calls it; the slot's name when left out. */
   label?: string | null;
-  /** How much of what lies behind a part coloured in it the part hides, 0 to 1: a lens at 0.35 shows the eyes through it. Whole when left out. It holds for a part's base colour, drawn after everything whole. */
-  opacity?: number | null;
+  /** Its toon material, which anything painted in it takes: a preset's name ("metal"), or an object with a preset and the settings it changes. Matte when left out. */
+  material?: (("matte" | "skin" | "cloth" | "plastic" | "metal" | "glass" | "glow") | RecipeMaterial) | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

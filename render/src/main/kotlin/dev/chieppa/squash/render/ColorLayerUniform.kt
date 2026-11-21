@@ -15,6 +15,9 @@ private const val SIDES_AFTER_VECTORS = 7
 /** Vectors in the `Layer` uniform before a shape's detail: its opening's flatness and corner, its cut and its lid mass. */
 private const val DETAIL_AFTER_VECTORS = 11
 
+/** Where the `Layer` uniform's lift lies, before its material's finish and key light. */
+private const val LIFT_AT = COLOR_LAYER_FLOATS - (FINISH_VECTORS + 2) * VECTOR_FLOATS
+
 /** The `Layer` uniform of [COLOR_LAYER_WGSL], packed into one array reused for every layer. */
 internal class ColorLayerUniform {
     val data = FloatArray(COLOR_LAYER_FLOATS)
@@ -47,7 +50,9 @@ internal class ColorLayerUniform {
             at = put(at, sides.negative.lit.red, sides.negative.lit.green, sides.negative.lit.blue, if (sides.negativeShares != null) 1f else 0f)
             put(at, sides.negative.shadow)
         }
-        put(COLOR_LAYER_FLOATS - VECTOR_FLOATS, over.cloth?.lift ?: 0f, 0f, 0f, 0f)
+        val finishAt = put(LIFT_AT, over.cloth?.lift ?: 0f, 0f, 0f, 0f)
+        val key = over.material.key
+        put(layer.tones.finish.writeInto(data, finishAt), key?.x ?: 0f, key?.y ?: 0f, key?.z ?: 0f, if (key != null) 1f else 0f)
         return data
     }
 

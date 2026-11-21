@@ -1,7 +1,7 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 120
+internal const val COLOR_LAYER_FLOATS = 144
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
@@ -38,7 +38,18 @@ struct Layer {
     lid_mark: vec4<f32>,
     lid_more: vec4<f32>,
     lift: vec4<f32>,
+    f0: vec4<f32>,
+    f1: vec4<f32>,
+    f2: vec4<f32>,
+    f3: vec4<f32>,
+    f4: vec4<f32>,
+    key: vec4<f32>,
 };
+
+// The layer's tone at [proxy] in its own lit and shadow colors, by its material.
+fn layer_tone(proxy: vec3<f32>, lit: vec3<f32>, shadow: vec3<f32>) -> vec3<f32> {
+    return finished(proxy, layer.to_light_and_two_tone, lit, shadow, away_from(layer.view_projection), layer.f0, layer.f1, layer.f2, layer.f3, layer.f4, layer.key);
+}
 
 @group(0) @binding(0) var<uniform> layer: Layer;
 
@@ -85,7 +96,7 @@ fn vs_layer(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @l
 
 @fragment
 fn fs_layer(in: LayerOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection)), 1.0);
+    return vec4<f32>(layer_tone(in.proxy, layer.lit.rgb, layer.shadow.rgb), 1.0);
 }
 
 @vertex
@@ -100,7 +111,7 @@ fn vs_fading(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @
 
 @fragment
 fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection)), in.alpha);
+    return vec4<f32>(layer_tone(in.proxy, layer.lit.rgb, layer.shadow.rgb), in.alpha);
 }
 
 // A crease's shade band: where the shade carried per vertex is at least a half, its edge smoothed over a pixel, the color under it
@@ -109,7 +120,7 @@ fn fs_fading(in: FadingOut) -> @location(0) vec4<f32> {
 @fragment
 fn fs_crease(in: FadingOut) -> @location(0) vec4<f32> {
     let band = clamp((in.alpha - 0.5) / max(fwidth(in.alpha), 0.0000001) + 0.5, 0.0, 1.0);
-    let toned = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
+    let toned = layer_tone(in.proxy, layer.lit.rgb, layer.shadow.rgb);
     if (band <= 0.0) {
         discard;
     }
@@ -135,9 +146,9 @@ fn vs_sided(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>, @l
 // The layer's tone with its far sides' tones over it by each side's share, as fading layers of those tones drawn over it in turn would show.
 @fragment
 fn fs_sided(in: SidedOut) -> @location(0) vec4<f32> {
-    var color = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
-    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.positive_lit_and_on.rgb, layer.positive_shadow.rgb, away_from(layer.view_projection)), clamp(in.sides.x, 0.0, 1.0));
-    color = mix(color, tone(in.proxy, layer.to_light_and_two_tone, layer.negative_lit_and_on.rgb, layer.negative_shadow.rgb, away_from(layer.view_projection)), clamp(in.sides.y, 0.0, 1.0));
+    var color = layer_tone(in.proxy, layer.lit.rgb, layer.shadow.rgb);
+    color = mix(color, layer_tone(in.proxy, layer.positive_lit_and_on.rgb, layer.positive_shadow.rgb), clamp(in.sides.x, 0.0, 1.0));
+    color = mix(color, layer_tone(in.proxy, layer.negative_lit_and_on.rgb, layer.negative_shadow.rgb), clamp(in.sides.y, 0.0, 1.0));
     return vec4<f32>(color, 1.0);
 }
 
@@ -214,10 +225,10 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
         cut_level = cut_level * layer.cut_mode.y;
         alpha = alpha * clamp(0.5 - cut_level / (max(fwidth(cut_level), 0.0000001) + layer.shape_extra.w), 0.0, 1.0);
     }
-    let toned = tone(in.proxy, layer.to_light_and_two_tone, layer.lit.rgb, layer.shadow.rgb, away_from(layer.view_projection));
+    let toned = layer_tone(in.proxy, layer.lit.rgb, layer.shadow.rgb);
     if (alpha <= 0.0) {
         discard;
     }
     return vec4<f32>(toned, alpha);
 }
-""" + EYE_SHAPE_WGSL + LID_MASS_WGSL + LID_PAINT_WGSL + TONE_WGSL
+""" + EYE_SHAPE_WGSL + LID_MASS_WGSL + LID_PAINT_WGSL + TONE_WGSL + FINISH_WGSL

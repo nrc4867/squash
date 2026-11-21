@@ -64,13 +64,13 @@ class ShadingCommandTest {
     }
 
     @Test
-    fun aSlotsShadowIsSetClearedUndoneAndSerializable() {
-        val command = SetSlotShadow(cream, tan)
+    fun aSlotsMaterialShadowIsSetClearedUndoneAndSerializable() {
+        val command = SetSlotMaterial(cream, SlotMaterial(shadow = tan))
         assertRoundTrips(command)
         val set = command.apply(withCream).document
         assertEquals(tan, set.character.palette.shadow(cream))
         assertEquals(pale, set.character.palette.color(cream))
-        assertNull(SetSlotShadow(cream, null).apply(set).document.character.palette.shadow(cream))
+        assertNull(SetSlotMaterial(cream, null).apply(set).document.character.palette.shadow(cream))
         scenario(withCream) {
             run(command)
             expect(set)
@@ -80,13 +80,38 @@ class ShadingCommandTest {
     }
 
     @Test
-    fun aShadowNeedsItsSlot() {
-        assertFailsWith<IllegalArgumentException> { SetSlotShadow(SlotName("none"), tan).apply(empty) }
+    fun aShadowSlotGivesItsColourAsTheShadow() {
+        val withTan = SetPaletteSlot(SlotName("tan"), tan).apply(withCream).document
+        val set = SetSlotMaterial(cream, SlotMaterial(shadowSlot = SlotName("tan"))).apply(withTan).document
+        assertEquals(tan, set.character.palette.shadow(cream))
     }
 
     @Test
-    fun recoloringASlotKeepsItsShadowAndUndoingARemovalBringsItBack() {
-        val shaded = SetSlotShadow(cream, tan).apply(withCream).document
+    fun aMaterialNeedsItsSlot() {
+        assertFailsWith<IllegalArgumentException> { SetSlotMaterial(SlotName("none"), SlotMaterial(MaterialPreset.METAL)).apply(empty) }
+    }
+
+    @Test
+    fun aPresetsSettingsHoldWhereAMaterialSetsNone() {
+        val metal = SlotMaterial(MaterialPreset.METAL, steps = 2)
+        assertEquals(2, metal.look.steps)
+        assertEquals(MaterialPreset.METAL.look.shine, metal.look.shine)
+        assertEquals(MaterialLook(), SlotMaterial(MaterialPreset.SKIN).look)
+        assertEquals(MaterialLook(), SlotMaterial(MaterialPreset.CLOTH).look)
+        assertEquals(true, SlotMaterial(MaterialPreset.GLASS).presetOnly)
+        assertEquals(false, metal.presetOnly)
+    }
+
+    @Test
+    fun aSlotsSeeThroughIsItsMaterials() {
+        val glass = SetSlotMaterial(cream, SlotMaterial(MaterialPreset.GLASS)).apply(withCream).document.character.palette
+        assertEquals(MaterialPreset.GLASS.look.seeThrough, glass.opacity(cream))
+        assertEquals(1f, withCream.character.palette.opacity(cream))
+    }
+
+    @Test
+    fun recoloringASlotKeepsItsMaterialAndUndoingARemovalBringsItBack() {
+        val shaded = SetSlotMaterial(cream, SlotMaterial(shadow = tan)).apply(withCream).document
         val recolored = SetPaletteSlot(cream, SlotColor(0.9f, 0.9f, 0.8f)).apply(shaded).document
         assertEquals(tan, recolored.character.palette.shadow(cream))
         val removed = SetPaletteSlot(cream, null).apply(shaded)
@@ -97,6 +122,6 @@ class ShadingCommandTest {
     @Test
     fun whatIsLeftAtItsDefaultWritesNothing() {
         val text = Json.encodeToString(SquashDocument.serializer(), withCream)
-        assertEquals(false, "shading" in text || "shadow" in text, text)
+        assertEquals(false, "shading" in text || "material" in text, text)
     }
 }

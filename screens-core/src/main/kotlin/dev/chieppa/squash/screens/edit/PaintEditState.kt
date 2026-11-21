@@ -28,6 +28,9 @@ class PaintEditState {
     var softness by mutableFloatStateOf(0f)
     var fillReach by mutableStateOf(FillReach.UNDER_POINTER)
 
+    /** Whether the slot material's More section is open. */
+    var materialMoreOpen by mutableStateOf(false)
+
     /** Which slots show in the drawer. */
     val shelf = SlotShelf()
 
@@ -43,6 +46,7 @@ class PaintEditState {
         brushRadius = DEFAULT_BRUSH_RADIUS
         softness = 0f
         fillReach = FillReach.UNDER_POINTER
+        materialMoreOpen = false
         selectedRegion = null
         shelf.clear()
     }
