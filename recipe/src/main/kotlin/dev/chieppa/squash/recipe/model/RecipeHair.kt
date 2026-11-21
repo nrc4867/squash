@@ -4,13 +4,16 @@ import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.hair.HairPreset
 import dev.chieppa.squash.document.Cowlick
+import dev.chieppa.squash.document.Hairline
 import dev.chieppa.squash.document.LockGroupKind
 import dev.chieppa.squash.document.LockOverride
 import dev.chieppa.squash.document.LockPhysics
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
+import dev.chieppa.squash.document.LockTrim
 import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.document.PartingKind
+import dev.chieppa.squash.document.ShellFade
 import dev.chieppa.squash.document.Whorl
 import kotlinx.serialization.Serializable
 
@@ -22,7 +25,7 @@ data class RecipeHair(
     val on: String,
     @Doc("The inner mass the roots sit on, a hair-volume part on the head, by id; it hides the scalp and lies inside the locks. The head itself when left out.")
     val mass: String? = null,
-    @Doc("A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept or curly (round curled locks).")
+    @Doc("A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept, curly (round curled locks), buzzCut and fade (a shell cut to the skin), flatTop (a brush cut level over faded sides), undercut (a long top over shaved sides), bluntBob (cut square at the jaw with blunt bangs), braid, twinBraids, bun or spaceBuns.")
     val preset: HairPreset? = null,
     @Doc("How far the head reaches from its middle, in body units, which a preset's sizes are shares of; read off the built head when left out.") @Range(min = 0.01, max = 2.0)
     val reach: Float? = null,
@@ -40,6 +43,32 @@ data class RecipeHair(
     val fitMass: RecipeMassFit? = null,
     @Doc("The hair's drawn outline per view, which with fit the outer locks are fitted to: kit sheet hair traces one from a sheet.")
     val outline: RecipeHairOutline? = null,
+    @Doc("Hair cut to the skin over the head: a thin shell inside a hairline, in a stubble tone, fading into the skin up the sides and back. Each field given replaces the preset's shell's; the defaults where the preset has none.")
+    val shell: RecipeHairShell? = null,
+)
+
+/** A head's short-hair shell in a recipe, every field optional: the preset's shell, else the defaults, fills the rest. */
+@Serializable
+@Doc("Hair cut to the skin: a thin shell over the scalp inside a hairline, in a stubble tone, fading into the skin up the sides and back.")
+data class RecipeHairShell(
+    @Doc("Where its hairline runs round the head: front, temples, sideburns, ears and nape, each in degrees up the head from level.")
+    val hairline: Hairline? = null,
+    @Doc("How far it stands off the scalp, a share of the head's reach from its middle: about 0.01 a buzz cut.") @Range(min = 0.0, max = 0.1)
+    val thickness: Float? = null,
+    @Doc("Its palette slot; when left out, a stubble tone: the head's colour carried shade of the way toward the hair's.")
+    val tone: String? = null,
+    @Doc("How far the stubble tone carries the head's colour toward the hair's, 0 bare skin to 1 the hair's own.") @Range(min = 0.0, max = 1.0)
+    val shade: Float? = null,
+    @Doc("Degrees over which its edge softens into the skin.") @Range(min = 0.0, max = 20.0)
+    val soft: Float? = null,
+    @Doc("How high up the sides and back it fades into the skin: none, low (just above the ears and nape), mid (to the temples) or high (to the corners of the top).")
+    val fade: ShellFade? = null,
+    @Doc("How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded.") @Range(min = 0.0, max = 1.0)
+    val fadeTo: Float? = null,
+    @Doc("How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft.") @Range(min = 0.0, max = 5.0)
+    val steps: Int? = null,
+    @Doc("Leaves out the preset's shell.")
+    val removed: Boolean = false,
 )
 
 /** A head's hair outline in a recipe: its views, each a closed curve with its tips and valleys, and whether the locks are fitted to it. */
@@ -140,7 +169,7 @@ data class RecipeLockGroup(
     val thickness: Float? = null,
     @Doc("What share of its root width a lock keeps toward its tip.") @Range(min = 0.0, max = 1.0)
     val taper: Float? = null,
-    @Doc("ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), or clump, a rounded one (spiky, short or curly hair, tufts).")
+    @Doc("ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), clump, a rounded one (spiky, short or curly hair, tufts), or braid, three strands plaited along the lock to a tie with a short loose tail; a tied group of one braid lock is a braid.")
     val section: LockSection? = null,
     @Doc("pointed (spikes, ragged ends), round (a bob's blunt ends, curls), forked into 2 or 3 points (a choppy, layered fringe) or flicked, turning out 50 degrees at its end (a flicked fringe or hem).")
     val tip: LockTip? = null,
@@ -172,6 +201,14 @@ data class RecipeLockGroup(
     val physics: LockPhysics? = null,
     @Doc("How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's.") @Range(min = 0.0, max = 1.0)
     val flow: Float? = null,
+    @Doc("How much of each lock's length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a brush or a flat top.") @Range(min = 0.05, max = 0.95)
+    val lie: Float? = null,
+    @Doc("How far each lock turns from the way it grows toward straight up from its root, 0 following the head to 1 standing straight up: a brush, a flat top.") @Range(min = 0.0, max = 1.0)
+    val stand: Float? = null,
+    @Doc("A plane its lock tips are cut to, for blunt ends and flat tops: level (a share of the head's reach above the skull's middle, negative toward the jaw), tilt (degrees, positive stands its front higher) and blunt (whether a cut lock ends square).")
+    val trim: LockTrim? = null,
+    @Doc("With tie, how many turns each lock coils round the tie into a bun: about 1.5 a bun; 0 hangs free.") @Range(min = 0.0, max = 3.0)
+    val coil: Float? = null,
     @Doc("Single locks set by hand, by index: any field given replaces the group's for that lock, guide gives it a curve of its own, hidden leaves it out.")
     val locks: List<LockOverride>? = null,
     @Doc("Leaves out a preset's group of this id.")

@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * A character: its parts, in [pairs] the data each mirrored pair shares, held for exactly the pairs its parts name, its
  * [palette], its [expressions], its [shading], its [creases], the [lineRules] that weigh its lines, the [traces] drawn over in its views,
- * the [pose] it stands in, the [displayPose] under it, its [wardrobe], its [paintedEyes], its [membranes], skin spanned between parts, its [lockGroups] of hair locks, the [scalpFlows] they grow by, its [colliders], the shapes hair is kept out of, its [viewKeys], head cheats that follow the camera, and its [hairOutlines], the hair's drawn outline on each head its locks are fitted to. The pose is the character's one working pose until shots hold a
+ * the [pose] it stands in, the [displayPose] under it, its [wardrobe], its [paintedEyes], its [membranes], skin spanned between parts, its [lockGroups] of hair locks, the [scalpFlows] they grow by, its [colliders], the shapes hair is kept out of, its [viewKeys], head cheats that follow the camera, its [hairOutlines], the hair's drawn outline on each head its locks are fitted to, and its [hairShells], hair cut to the skin over a head. The pose is the character's one working pose until shots hold a
  * pose per key. The display pose is saved with the character and shows it as it is meant to be seen, a biped's arms brought down from
  * the rest it is built in: a bone the working pose leaves at rest stands as the display pose holds it, see [shownPose]. Its body is one surface meshed from its parts' joined solids.
  * See HLD: data-model.
@@ -34,6 +34,7 @@ data class Character(
     val colliders: List<Collider> = emptyList(),
     val viewKeys: ViewKeys = ViewKeys(),
     val hairOutlines: List<HairOutline> = emptyList(),
+    val hairShells: List<HairShell> = emptyList(),
 ) {
     init {
         val named = parts.mapNotNullTo(mutableSetOf()) { it.pair }
@@ -41,6 +42,7 @@ data class Character(
         require(parts.none { isBranchPart(it.id) }) { "A part id starts as a garment's branch does" }
         require(scalpFlows.map { it.on }.toSet().size == scalpFlows.size) { "Two scalp flows lie on one head" }
         require(hairOutlines.map { it.on }.toSet().size == hairOutlines.size) { "Two hair outlines lie on one head" }
+        require(hairShells.map { it.on }.toSet().size == hairShells.size) { "Two hair shells lie on one head" }
         val byId = parts.associateBy { it.id }
         for (part in parts) {
             val owner = part.garment

@@ -103,6 +103,32 @@ data class SetHairOutline(val on: PartId, val outline: HairOutline?, val index: 
     }
 }
 
+/**
+ * Sets the short-hair shell over head [on] to [shell], adding it after the others when new, or restored to [index] when undoing a
+ * removal; null removes it. The head exists.
+ */
+@Serializable
+@SerialName("setHairShell")
+data class SetHairShell(val on: PartId, val shell: HairShell?, val index: Int? = null) : DocumentCommand {
+    init {
+        require(shell == null || shell.on == on) { "Hair shell on ${shell?.on?.value} given for ${on.value}" }
+    }
+
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        if (shell != null) document.requirePart(on)
+        val shells = document.character.hairShells
+        val at = shells.indexOfFirst { it.on == on }
+        val old = shells.getOrNull(at)
+        val now = when {
+            shell == null -> shells.filterNot { it.on == on }
+            old == null -> (index ?: shells.size).coerceIn(0, shells.size).let { shells.take(it) + shell + shells.drop(it) }
+            else -> shells.map { if (it.on == on) shell else it }
+        }
+        val undo = if (old == null) SetHairShell(on, null) else SetHairShell(on, old, at)
+        return Applied(document.copy(character = document.character.copy(hairShells = now)), undo)
+    }
+}
+
 /** Sets the character's collision shapes to [colliders]; every part they ride exists. */
 @Serializable
 @SerialName("setColliders")

@@ -732,6 +732,46 @@
       },
       "additionalProperties": false
     },
+    "Hairline": {
+      "description": "Where a short-hair shell's hairline runs round the head, in degrees up the head from level, the same on both sides.",
+      "type": "object",
+      "properties": {
+        "front": {
+          "description": "Degrees up the head where it crosses the middle of the forehead.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 80.0
+        },
+        "temples": {
+          "description": "Degrees up the head at its corners above the outer brows: above front recedes them, below rounds them.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 80.0
+        },
+        "sideburns": {
+          "description": "Degrees up the head at the foot of the sideburns, in front of the ears.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 80.0
+        },
+        "ears": {
+          "description": "Degrees up the head over the ears.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 80.0
+        },
+        "nape": {
+          "description": "Degrees up the head at the middle of the nape.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 80.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Hide": {
       "description": "The part is not built while the garment is worn.",
       "type": "object",
@@ -1078,7 +1118,8 @@
             {
               "enum": [
                 "ribbon",
-                "clump"
+                "clump",
+                "braid"
               ]
             },
             {
@@ -1223,6 +1264,32 @@
         "y",
         "z"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "LockTrim": {
+      "description": "A plane the group's lock tips are cut to: a blunt bob's hem, blunt bangs, a flat top.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "description": "How high the cut lies above the skull's middle, a share of the head's reach from its middle: negative below it, toward the jaw; about 1.1 over the top of the head.",
+          "type": "number",
+          "minimum": -3.0,
+          "maximum": 2.0
+        },
+        "tilt": {
+          "description": "Degrees the cut tilts about the head's side to side: positive stands its front higher, a bob longer at the back.",
+          "type": "number",
+          "minimum": -60.0,
+          "maximum": 60.0
+        },
+        "blunt": {
+          "description": "Whether a cut lock ends square, as wide as it was where it was cut; a lock not cut keeps its own tip.",
+          "type": "boolean"
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },
@@ -2321,7 +2388,7 @@
           ]
         },
         "preset": {
-          "description": "A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept or curly (round curled locks).",
+          "description": "A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept, curly (round curled locks), buzzCut and fade (a shell cut to the skin), flatTop (a brush cut level over faded sides), undercut (a long top over shaved sides), bluntBob (cut square at the jaw with blunt bangs), braid, twinBraids, bun or spaceBuns.",
           "anyOf": [
             {
               "enum": [
@@ -2330,7 +2397,16 @@
                 "longStraight",
                 "ponytail",
                 "sideSwept",
-                "curly"
+                "curly",
+                "buzzCut",
+                "fade",
+                "flatTop",
+                "undercut",
+                "bluntBob",
+                "braid",
+                "twinBraids",
+                "bun",
+                "spaceBuns"
               ]
             },
             {
@@ -2416,6 +2492,17 @@
               "type": "null"
             }
           ]
+        },
+        "shell": {
+          "description": "Hair cut to the skin over the head: a thin shell inside a hairline, in a stubble tone, fading into the skin up the sides and back. Each field given replaces the preset's shell's; the defaults where the preset has none.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeHairShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -2445,6 +2532,123 @@
       "required": [
         "views"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeHairShell": {
+      "description": "Hair cut to the skin: a thin shell over the scalp inside a hairline, in a stubble tone, fading into the skin up the sides and back.",
+      "type": "object",
+      "properties": {
+        "hairline": {
+          "description": "Where its hairline runs round the head: front, temples, sideburns, ears and nape, each in degrees up the head from level.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hairline"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "How far it stands off the scalp, a share of the head's reach from its middle: about 0.01 a buzz cut.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tone": {
+          "description": "Its palette slot; when left out, a stubble tone: the head's colour carried shade of the way toward the hair's.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shade": {
+          "description": "How far the stubble tone carries the head's colour toward the hair's, 0 bare skin to 1 the hair's own.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "soft": {
+          "description": "Degrees over which its edge softens into the skin.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 20.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fade": {
+          "description": "How high up the sides and back it fades into the skin: none, low (just above the ears and nape), mid (to the temples) or high (to the corners of the top).",
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "low",
+                "mid",
+                "high"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fadeTo": {
+          "description": "How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "steps": {
+          "description": "How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0.0,
+              "maximum": 5.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "removed": {
+          "description": "Leaves out the preset's shell.",
+          "type": "boolean"
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },
@@ -2776,12 +2980,13 @@
           ]
         },
         "section": {
-          "description": "ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), or clump, a rounded one (spiky, short or curly hair, tufts).",
+          "description": "ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), clump, a rounded one (spiky, short or curly hair, tufts), or braid, three strands plaited along the lock to a tie with a short loose tail; a tied group of one braid lock is a braid.",
           "anyOf": [
             {
               "enum": [
                 "ribbon",
-                "clump"
+                "clump",
+                "braid"
               ]
             },
             {
@@ -2973,6 +3178,56 @@
               "type": "number",
               "minimum": 0.0,
               "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lie": {
+          "description": "How much of each lock's length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a brush or a flat top.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.95
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stand": {
+          "description": "How far each lock turns from the way it grows toward straight up from its root, 0 following the head to 1 standing straight up: a brush, a flat top.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trim": {
+          "description": "A plane its lock tips are cut to, for blunt ends and flat tops: level (a share of the head's reach above the skull's middle, negative toward the jaw), tilt (degrees, positive stands its front higher) and blunt (whether a cut lock ends square).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LockTrim"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coil": {
+          "description": "With tie, how many turns each lock coils round the tie into a bun: about 1.5 a bun; 0 hangs free.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 3.0
             },
             {
               "type": "null"

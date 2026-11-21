@@ -9,6 +9,10 @@ import dev.chieppa.squash.character.hair.autoColliders
 import dev.chieppa.squash.character.hair.headReach
 import dev.chieppa.squash.character.hair.fittedMass
 import dev.chieppa.squash.character.hair.presetFlow
+import dev.chieppa.squash.character.hair.presetShell
+import dev.chieppa.squash.document.HairShell
+import dev.chieppa.squash.document.SetHairShell
+import dev.chieppa.squash.recipe.model.RecipeHairShell
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.recipe.model.RecipeMassFit
 import dev.chieppa.squash.character.hair.presetGroups
@@ -83,6 +87,7 @@ internal fun BuildContext.hair() {
         val base = hair.preset?.let { presetFlow(it, on) }
         val flow = hair.flow?.let { flowed("$path.flow", base ?: ScalpFlow(on), it) } ?: base
         flow?.let { send("$path.flow", SetScalpFlow(on, it)) }
+        shelled("$path.shell", on, hair.preset?.let { presetShell(it, on) }, hair.shell)?.let { send("$path.shell", SetHairShell(on, it)) }
         hair.outline?.let { given ->
             send("$path.outline", SetHairOutline(on, outlined("$path.outline", on, given)))
             if (given.fit) fits += on to "$path.outline"
@@ -178,6 +183,29 @@ private fun BuildContext.changed(path: String, group: LockGroup, change: RecipeL
         color = change.color?.let { slot("$path.color", it) } ?: group.color,
         physics = change.physics ?: group.physics,
         flow = change.flow ?: group.flow,
+        lie = change.lie ?: group.lie,
+        trim = change.trim ?: group.trim,
+        coil = change.coil ?: group.coil,
+        stand = change.stand ?: group.stand,
         overrides = change.locks?.sortedBy { it.index } ?: group.overrides,
     )
+}
+
+/** The shell over head [on]: [base], the preset's or none, with what [change] sets; null where neither gives one or [change] removes it. */
+private fun BuildContext.shelled(path: String, on: PartId, base: HairShell?, change: RecipeHairShell?): HairShell? {
+    if (change == null) return base
+    if (change.removed) return null
+    val from = base ?: HairShell(on)
+    return guard(path) {
+        from.copy(
+            hairline = change.hairline ?: from.hairline,
+            thickness = change.thickness ?: from.thickness,
+            tone = change.tone?.let { slot("$path.tone", it) } ?: from.tone,
+            shade = change.shade ?: from.shade,
+            soft = change.soft ?: from.soft,
+            fade = change.fade ?: from.fade,
+            fadeTo = change.fadeTo ?: from.fadeTo,
+            steps = change.steps ?: from.steps,
+        )
+    }
 }

@@ -59,7 +59,7 @@ internal fun lockRigs(character: AssembledCharacter, rigged: List<RigPart>, body
             val first = body.size + bones.size
             bones += chainBones(id, chain, body[carrier].name)
             val indices = List(chain.bones) { first + it }
-            owned[chain.patch] = carrier to indices
+            for (patch in chain.patches) owned[patch] = carrier to indices
             val neighbours = placing.neighbours.mapNotNull { (a, b) -> if (a == k) firstChain + b else if (b == k) firstChain + a else null }
             chains += RigChain(id, placing.group, chain.index, carrier, indices, chain.physics, neighbours)
         }
@@ -86,7 +86,7 @@ private fun chainBones(id: PartId, chain: LockChain, carrier: BoneName): List<Bo
     )
 }
 
-/** [placed] weighted to its chains: each patch's vertices along the chain [owned] names for it, by their u. */
+/** [placed] weighted to its chains: each patch's vertices along the chain [owned] names for it, by the u each takes its bone from. */
 private fun weighted(placed: PlacedPart, id: PartId, owned: Map<String, Pair<Int, List<Int>>>): RigPart {
     val mesh = placed.surface.mesh
     val bones = IntArray(mesh.vertexCount * MAX_INFLUENCES) { -1 }
@@ -98,7 +98,7 @@ private fun weighted(placed: PlacedPart, id: PartId, owned: Map<String, Pair<Int
         val (carrier, chain) = owned[patch.name] ?: (0 to emptyList())
         for (local in 0 until patch.nu * patch.nv) {
             val vertex = start + local
-            val u = patch.ringUs[local / patch.nv]
+            val u = patch.boneUOf(local)
             if (chain.isEmpty()) {
                 bones[vertex * MAX_INFLUENCES] = carrier
                 weights[vertex * MAX_INFLUENCES] = 1f

@@ -245,6 +245,22 @@ export interface GroupRole {
   [note: `x-${string}`]: unknown;
 }
 
+/** Where a short-hair shell's hairline runs round the head, in degrees up the head from level, the same on both sides. */
+export interface Hairline {
+  /** Degrees up the head where it crosses the middle of the forehead. */
+  front?: number;
+  /** Degrees up the head at its corners above the outer brows: above front recedes them, below rounds them. */
+  temples?: number;
+  /** Degrees up the head at the foot of the sideburns, in front of the ears. */
+  sideburns?: number;
+  /** Degrees up the head over the ears. */
+  ears?: number;
+  /** Degrees up the head at the middle of the nape. */
+  nape?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** The part is not built while the garment is worn. */
 export interface Hide {
   type: "hide";
@@ -328,7 +344,7 @@ export interface LockOverride {
   around?: number | null;
   /** Degrees its root moves up the head from where its group lays it. */
   up?: number | null;
-  section?: ("ribbon" | "clump") | null;
+  section?: ("ribbon" | "clump" | "braid") | null;
   tip?: ("pointed" | "round" | "forked" | "flicked") | null;
   /** Its guide curve: a few points from its root, in place of the curve its group grows it along. */
   guide?: LockPoint[] | null;
@@ -367,6 +383,18 @@ export interface LockPoint {
   x: number;
   y: number;
   z: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A plane the group's lock tips are cut to: a blunt bob's hem, blunt bangs, a flat top. */
+export interface LockTrim {
+  /** How high the cut lies above the skull's middle, a share of the head's reach from its middle: negative below it, toward the jaw; about 1.1 over the top of the head. */
+  level?: number;
+  /** Degrees the cut tilts about the head's side to side: positive stands its front higher, a bob longer at the back. */
+  tilt?: number;
+  /** Whether a cut lock ends square, as wide as it was where it was cut; a lock not cut keeps its own tip. */
+  blunt?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -696,8 +724,8 @@ export interface RecipeHair {
   on: string;
   /** The inner mass the roots sit on, a hair-volume part on the head, by id; it hides the scalp and lies inside the locks. The head itself when left out. */
   mass?: string | null;
-  /** A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept or curly (round curled locks). */
-  preset?: ("shortSpiky" | "bob" | "longStraight" | "ponytail" | "sideSwept" | "curly") | null;
+  /** A whole hairstyle: shortSpiky, bob, longStraight, ponytail (tied with a band), sideSwept, curly (round curled locks), buzzCut and fade (a shell cut to the skin), flatTop (a brush cut level over faded sides), undercut (a long top over shaved sides), bluntBob (cut square at the jaw with blunt bangs), braid, twinBraids, bun or spaceBuns. */
+  preset?: ("shortSpiky" | "bob" | "longStraight" | "ponytail" | "sideSwept" | "curly" | "buzzCut" | "fade" | "flatTop" | "undercut" | "bluntBob" | "braid" | "twinBraids" | "bun" | "spaceBuns") | null;
   /** How far the head reaches from its middle, in body units, which a preset's sizes are shares of; read off the built head when left out. */
   reach?: number | null;
   /** The locks' palette slot; the mass's base colour, else the head's, when left out. */
@@ -714,6 +742,8 @@ export interface RecipeHair {
   fitMass?: RecipeMassFit | null;
   /** The hair's drawn outline per view, which with fit the outer locks are fitted to: kit sheet hair traces one from a sheet. */
   outline?: RecipeHairOutline | null;
+  /** Hair cut to the skin over the head: a thin shell inside a hairline, in a stubble tone, fading into the skin up the sides and back. Each field given replaces the preset's shell's; the defaults where the preset has none. */
+  shell?: RecipeHairShell | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -724,6 +754,30 @@ export interface RecipeHairOutline {
   views: RecipeOutlineView[];
   /** Whether the build fits the hair to the outline: the outer locks' roots, lengths, rise, sweep, fall and widths so their tips land on its tips and their edges follow it, the inner mass's crown and width to the region it covers, and every other lock kept inside it. The fitted values are the locks' overrides and the mass's parameters. */
   fit?: boolean;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** Hair cut to the skin: a thin shell over the scalp inside a hairline, in a stubble tone, fading into the skin up the sides and back. */
+export interface RecipeHairShell {
+  /** Where its hairline runs round the head: front, temples, sideburns, ears and nape, each in degrees up the head from level. */
+  hairline?: Hairline | null;
+  /** How far it stands off the scalp, a share of the head's reach from its middle: about 0.01 a buzz cut. */
+  thickness?: number | null;
+  /** Its palette slot; when left out, a stubble tone: the head's colour carried shade of the way toward the hair's. */
+  tone?: string | null;
+  /** How far the stubble tone carries the head's colour toward the hair's, 0 bare skin to 1 the hair's own. */
+  shade?: number | null;
+  /** Degrees over which its edge softens into the skin. */
+  soft?: number | null;
+  /** How high up the sides and back it fades into the skin: none, low (just above the ears and nape), mid (to the temples) or high (to the corners of the top). */
+  fade?: ("none" | "low" | "mid" | "high") | null;
+  /** How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded. */
+  fadeTo?: number | null;
+  /** How many flat bands a fade steps through from its lowest tone to its whole, each with a crisp edge, as a toon shades (2 to 5, 3 by default); 0 fades smoothly and softens the edge over soft. */
+  steps?: number | null;
+  /** Leaves out the preset's shell. */
+  removed?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -828,8 +882,8 @@ export interface RecipeLockGroup {
   thickness?: number | null;
   /** What share of its root width a lock keeps toward its tip. */
   taper?: number | null;
-  /** ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), or clump, a rounded one (spiky, short or curly hair, tufts). */
-  section?: ("ribbon" | "clump") | null;
+  /** ribbon, a flattened lock cupped round the head (smooth, straight or wavy hair, a bob, long hair), clump, a rounded one (spiky, short or curly hair, tufts), or braid, three strands plaited along the lock to a tie with a short loose tail; a tied group of one braid lock is a braid. */
+  section?: ("ribbon" | "clump" | "braid") | null;
   /** pointed (spikes, ragged ends), round (a bob's blunt ends, curls), forked into 2 or 3 points (a choppy, layered fringe) or flicked, turning out 50 degrees at its end (a flicked fringe or hem). */
   tip?: ("pointed" | "round" | "forked" | "flicked") | null;
   /** How many points a forked tip ends in. */
@@ -860,6 +914,14 @@ export interface RecipeLockGroup {
   physics?: LockPhysics | null;
   /** How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's. */
   flow?: number | null;
+  /** How much of each lock's length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a brush or a flat top. */
+  lie?: number | null;
+  /** How far each lock turns from the way it grows toward straight up from its root, 0 following the head to 1 standing straight up: a brush, a flat top. */
+  stand?: number | null;
+  /** A plane its lock tips are cut to, for blunt ends and flat tops: level (a share of the head's reach above the skull's middle, negative toward the jaw), tilt (degrees, positive stands its front higher) and blunt (whether a cut lock ends square). */
+  trim?: LockTrim | null;
+  /** With tie, how many turns each lock coils round the tie into a bun: about 1.5 a bun; 0 hangs free. */
+  coil?: number | null;
   /** Single locks set by hand, by index: any field given replaces the group's for that lock, guide gives it a curve of its own, hidden leaves it out. */
   locks?: LockOverride[] | null;
   /** Leaves out a preset's group of this id. */
