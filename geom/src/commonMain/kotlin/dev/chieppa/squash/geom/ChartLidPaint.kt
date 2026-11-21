@@ -24,6 +24,7 @@ data class ChartLidMark(
  * Paint on an eye's upper lid, read in its opening's chart and riding the lid's edge where it stands (see [ChartLids]): with no [mark],
  * the lid's skin, from its edge up to where the open lid lies and on [above] heights over that at its middle, thinning to the corners,
  * fading out over [fade] heights up from the edge, and toward the corners, where [fade] is above 0; with a [mark], that mark, kept off the open part of the eye.
+ * A [swept] paint is the skin both lids cover as they move: the open opening less what their edges leave open, nothing with the lids open.
  * Widths are counted as [aspect] heights.
  */
 data class ChartLidPaint(
@@ -31,9 +32,11 @@ data class ChartLidPaint(
     val fade: Float = 0f,
     val mark: ChartLidMark? = null,
     val aspect: Float = LID_ASPECT,
+    val swept: Boolean = false,
 ) {
     /** How far outside the paint ([u], [v]) lies about [opening], in its heights: at most zero inside. */
     fun level(opening: ChartAlmond, u: Float, v: Float): Float {
+        if (swept) return max(opening.openLevel(u, v), -opening.level(u, v))
         val x = u / opening.width
         val y = v / opening.height
         val a = x.coerceIn(-1f, 1f)
@@ -45,7 +48,7 @@ data class ChartLidPaint(
 
     /** How much of the paint shows at ([u], [v]): 1 at the lid's edge, falling off over [fade] heights above it and toward the corners. */
     fun share(opening: ChartAlmond, u: Float, v: Float): Float {
-        if (mark != null || fade <= 0f) return 1f
+        if (swept || mark != null || fade <= 0f) return 1f
         val x = u / opening.width
         val a = x.coerceIn(-1f, 1f)
         return (1f - smoothstep(0f, fade, v / opening.height - opening.topEdge(a))) * (1f - smoothstep(CORNER_FADE_FROM, 1f, abs(x)))

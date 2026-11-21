@@ -61,6 +61,9 @@ class EyeDetailShapes(look: EyeLook, opening: ChartAlmond, iris: ChartOval, lidA
         )
     }
 
+    /** The skin both lids cover as they close, in the colour of the head's paint where the eye sits. */
+    val lidCover: ChartLidPaint = ChartLidPaint(aspect = lidAspect, swept = true)
+
     /** The upper lid's skin in its own colour, its fade over it: null where the lid is the skin. */
     val lidSkin: ChartLidPaint? = look.lids.takeIf { it.isPainted }?.let { ChartLidPaint(it.above, it.fade, aspect = lidAspect) }
 
@@ -72,10 +75,8 @@ class EyeDetailShapes(look: EyeLook, opening: ChartAlmond, iris: ChartOval, lidA
         ChartLidPaint(mark = ChartLidMark(mark.along, mark.above, -mark.out, mark.up, mark.width, mark.bend), aspect = lidAspect)
     }
 
-    /** How far from the opening's middle the lid's mass and paint may reach across and up or down at any pose, in the chart; zero where there is none. */
-    val lidReach: Pair<Float, Float> = if (lid == null && lidSkin == null && lidMarks.isEmpty()) {
-        0f to 0f
-    } else {
+    /** How far from the opening's middle the lids, their mass and paint may reach across and up or down at any pose, in the chart. */
+    val lidReach: Pair<Float, Float> = run {
         val lids = look.lids
         val mass = lid ?: ChartLid(0f)
         val clumpLength = if (mass.clumps > 0) mass.clumpLength * LASH_REACH else 0f

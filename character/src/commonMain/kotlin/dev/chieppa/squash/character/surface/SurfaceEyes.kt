@@ -68,9 +68,16 @@ object SurfaceEyes {
      * highlight, the lid's own colour and marks and its mass, those its look leaves off left out, and its lid, lashes and brow as the
      * head's ink marks, in its look and its front look, its lids standing where the eye says; each side of each look laid anew is one piece
      * of [runAll]'s work. With a [memo], a side laid on the same surface last time is taken from it with its lids stood again, so moving
-     * a lid lays no layer.
+     * a lid lays no layer. The skin the lids cover as they close takes the colour of the layer of [under]'s paint below the eyes that
+     * the eye sits in (see [paintEyeSitsIn]), else its head's own skin.
      */
-    suspend fun of(surface: CharacterSurface, eyes: List<PaintedEye>, runAll: RunAll = IN_TURN, memo: EyeMemo? = null): SurfacePaint {
+    suspend fun of(
+        surface: CharacterSurface,
+        eyes: List<PaintedEye>,
+        runAll: RunAll = IN_TURN,
+        memo: EyeMemo? = null,
+        under: suspend () -> EyeGround = { EyeGround.NONE },
+    ): SurfacePaint {
         if (eyes.isEmpty()) return SurfacePaint.NONE
         val chart = surface.chart
         val anchors = FieldAnchors(surface.field)
@@ -89,12 +96,13 @@ object SurfaceEyes {
             },
         )
         memo?.keep(surface, eyes.indices.flatMap { e -> looks[e].indices.flatMap { l -> keys[e][l].indices.mapNotNull { side -> laid[e][l][side]?.let { keys[e][l][side] to it } } } }.toMap())
+        val beneath = under()
         return SurfacePaint(
             emptyList(),
             eyes = eyes.indices.mapNotNull { e ->
                 val (middle, facing) = placed[e] ?: return@mapNotNull null
                 val versions = looks[e].indices.map { l ->
-                    sidesOf(eyes[e]).indices.mapNotNull { side -> laid[e][l][side]?.let { standOne(anchors, eyes[e], looks[e][l], it) } }
+                    sidesOf(eyes[e]).indices.mapNotNull { side -> laid[e][l][side]?.let { standOne(anchors, eyes[e], looks[e][l], it, beneath) } }
                         .fold(SurfacePaint.NONE) { all, one -> all + one }
                 }
                 EyeVersions(versions[0], versions.getOrNull(1), facing, middle, eyes[e].anchor.copy(offset = 0f, v = 0.5f))
@@ -141,8 +149,11 @@ object SurfaceEyes {
         return Frame(middle, members, facing, up, across, along, around)
     }
 
-    /** One side of an eye laid with its lids open: where it lies, at which [anchor] and [side], and its [layers]. */
-    internal class Laid(val frame: Frame, val anchor: Anchor, val side: Int, val layers: List<PaintLayer>)
+    /**
+     * One side of an eye laid with its lids open: where it lies, at which [anchor] and [side], its [layers], and the vertices [covered] by
+     * its opening and a [COVER_MARGIN] round it.
+     */
+    internal class Laid(val frame: Frame, val anchor: Anchor, val side: Int, val layers: List<PaintLayer>, val covered: IntArray)
 
     /** [eye]'s [side] at [anchor] in [look] laid on the surface with its lids open, its layers reaching wherever a lid may stand; null where it does not frame. */
     private fun layOne(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, anchor: Anchor, side: Int): Laid? {
@@ -191,11 +202,16 @@ object SurfaceEyes {
             layer(look.pupil, within(inside(shapes.pupil)), shapes.pupilOval),
             layer(look.highlight, within(inside(shapes.highlight)), shapes.highlightOval),
         ) + eyeLidLayers(chart, members, middle.position, facing, across, up, along, around, shapes, tones, grow)
-        return Laid(frame, anchor, side, layers)
+        val margin = -COVER_MARGIN * look.height * around
+        val covered = near.indices.filter { near[it] && opening[it] >= margin }.toIntArray()
+        return Laid(frame, anchor, side, layers, covered)
     }
 
-    /** [laid] with [eye]'s lids stood where it says in [look]: its layers closed by them, and its lid, lashes and brow as the head's ink marks. */
-    private fun standOne(anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, laid: Laid): SurfacePaint {
+    /**
+     * [laid] with [eye]'s lids stood where it says in [look]: its layers closed by them, the skin they cover in the colour of the layer of
+     * [under]'s paint the eye sits in, else its head's skin, and its lid, lashes and brow as the head's ink marks.
+     */
+    private fun standOne(anchors: FieldAnchors, eye: PaintedEye, look: EyeLook, laid: Laid, under: EyeGround): SurfacePaint {
         val id = eye.id
         val frame = laid.frame
         val anchor = laid.anchor
@@ -209,7 +225,7 @@ object SurfaceEyes {
         val aspect = lidAspect(look, along, around)
         val shapes = EyeShapes(look, eye.gazeForward, eye.gazeUp, aspect, eye.lidPose)
         val lids = shapes.almond.lids
-        val layers = if (lids.isOpen) laid.layers else laid.layers.map { it.withLids(lids) }
+        val layers = if (lids.isOpen) laid.layers.filterNot { it.isLidCover } else coveredAs(laid.layers, paintEyeSitsIn(laid.covered, under.layers), under.skinOf(laid.anchor.part)).map { it.withLids(lids) }
         val cell = anchors.cellOf(anchor.part, anchor.patch)
         fun mark(name: String, places: List<SurfaceUv>?, width: MarkWidth, alongFacing: Boolean = true): ResolvedMark? {
             places ?: return null

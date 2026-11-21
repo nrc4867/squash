@@ -404,7 +404,7 @@
           "maximum": 45.0
         },
         "slot": {
-          "description": "The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid is the skin and fade and above do nothing.",
+          "description": "The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid takes the colour of the face's painted area the eye sits in, the skin where none is, and fade and above do nothing.",
           "anyOf": [
             {
               "type": "string"

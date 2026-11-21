@@ -78,6 +78,13 @@ class EyeLidsTest {
     }
 
     @Test
+    fun everyEyeCoversWhatItsLidsCloseOverEvenWithNoLidPaint() {
+        val detail = EyeShapes(EyeLook()).detail
+        assertTrue(detail.lidCover.swept, "the lids cover what they close over")
+        assertTrue(detail.lidReach.first > 0f && detail.lidReach.second > 0f, "so a plain eye lays its lids too")
+    }
+
+    @Test
     fun aFrontLookBlendsTheClosedLine() {
         val half = EyeLook().toward(EyeLook(lids = EyeLids(closedAt = 0.25f, closedBend = 0.5f)), 0.5f)
         assertEquals(0f, half.lids.closedAt, 1e-6f)

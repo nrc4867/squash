@@ -65,18 +65,23 @@ data class ChartAlmond(
 
     /** How far outside it ([u], [v]) lies, along v where it lies between the corners and its lids' edges: at most zero inside. */
     fun level(u: Float, v: Float): Float {
-        val a = (u / width).coerceIn(-1f, 1f)
-        val open = if (isPlain) {
-            val open = sqrt(max(1f - a * a, 0f)) * (1f + frontNarrowing * a)
-            max(max(v - height * open, -height * lowerLid * open - v), (abs(u) - width) * height / width)
-        } else {
-            max(max(v - height * upper(a), -height * lowerLid * lower(a) - v), (abs(u) - width) * height / width)
-        }
+        val open = openLevel(u, v)
         if (lids.isOpen) return open
+        val a = (u / width).coerceIn(-1f, 1f)
         val top = topEdge(a)
         val bottom = bottomEdge(a)
         val shut = max(SHUT_GAP - (top - bottom), 0f) * height
         return max(open, max(v - height * top, height * bottom - v) + shut)
+    }
+
+    /** How far outside it ([u], [v]) lies with its lids open, as [level] reads it: at most zero inside. */
+    fun openLevel(u: Float, v: Float): Float {
+        val a = (u / width).coerceIn(-1f, 1f)
+        if (isPlain) {
+            val open = sqrt(max(1f - a * a, 0f)) * (1f + frontNarrowing * a)
+            return max(max(v - height * open, -height * lowerLid * open - v), (abs(u) - width) * height / width)
+        }
+        return max(max(v - height * upper(a), -height * lowerLid * lower(a) - v), (abs(u) - width) * height / width)
     }
 
     /** How far its open top lid rises at [a], in heights, as [level] reads it. */
@@ -86,7 +91,7 @@ data class ChartAlmond(
     fun openBottom(a: Float): Float = -lowerLid * (if (isPlain) sqrt(max(1f - a * a, 0f)) * (1f + frontNarrowing * a) else lower(a))
 
     /** Where its lids' closed line lies at [a], in heights. */
-    fun closedLine(a: Float): Float = lids.closed(openTop(a), openBottom(a), a)
+    fun closedLine(a: Float): Float = lids.closed(openTop(a), openBottom(a), a, openTop(0f) - openBottom(0f))
 
     /** Where its top lid's moving edge lies at [a], in heights: the open lid, [ChartLids.close] of the way down to the closed line. */
     fun topEdge(a: Float): Float = openTop(a).let { top -> if (lids.close <= 0f) top else mixed(top, closedLine(a), lids.close) }

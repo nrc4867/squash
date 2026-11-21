@@ -183,6 +183,9 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
         let pixel = lid_pixel(p);
         level = lid_level(p) + 0.5 * pixel;
         spread = pixel;
+    } else if (layer.lid_paint.y > 2.5) {
+        level = max(almond_open_level(p), -almond_level(p));
+        spread = fwidth(level);
     } else if (layer.lid_paint.y > 1.5) {
         let pixel = lid_pixel(p);
         level = lid_paint_level(p) + 0.5 * pixel;

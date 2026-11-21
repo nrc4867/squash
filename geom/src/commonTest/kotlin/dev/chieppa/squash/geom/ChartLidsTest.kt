@@ -1,5 +1,6 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -72,6 +73,30 @@ class ChartLidsTest {
         assertTrue(skin.share(half, 0f, h * (half.topEdge(0f) + 0.05f)) > skin.share(half, 0f, h * (half.topEdge(0f) + 0.4f)), "it fades going up")
         val above = ChartLidPaint(above = 0.5f)
         assertTrue(above.level(open, 0f, h * (open.openTop(0f) + 0.3f)) < 0f, "with above it shows over the open lid too")
+    }
+
+    @Test
+    fun theCoveredSkinIsWhatTheLidsHaveClosedOverAndNothingOpen() {
+        val cover = ChartLidPaint(swept = true)
+        for (i in 0..20) for (j in 0..10) {
+            val u = open.width * (-1.2f + 2.4f * i / 20)
+            val v = h * (-1.2f + 2.4f * j / 10)
+            assertTrue(cover.level(open, u, v) >= 0f, "nothing is covered with the lids open, at $u, $v")
+        }
+        val shut = standing(1f, 1f)
+        assertTrue(cover.level(shut, 0f, h * 0.5f) < 0f && cover.level(shut, 0f, -h * 0.5f) < 0f, "shut, both lids cover the opening")
+        val half = standing(0.5f, 0.5f)
+        assertTrue(cover.level(half, 0f, h * (half.closedLine(0f) + half.topEdge(0f)) / 2f) > 0f, "half shut, the part still open is not")
+        assertTrue(cover.level(half, 0f, h * (half.topEdge(0f) + open.openTop(0f)) / 2f) < 0f, "the part the upper lid came over is")
+        assertTrue(cover.level(shut, 0f, h * (open.openTop(0f) + 0.1f)) > 0f, "nor anything past the open opening")
+    }
+
+    @Test
+    fun aClosedLineStraightAcrossTheMiddleStaysStraightUntilTheCorners() {
+        val shut = standing(1f, 1f)
+        assertEquals(ChartLids.DEFAULT_CLOSED_AT, shut.closedLine(0f), 1e-6f)
+        assertEquals(ChartLids.DEFAULT_CLOSED_AT, shut.closedLine(-0.5f), 1e-6f)
+        assertTrue(abs(shut.closedLine(-0.999f)) < abs(ChartLids.DEFAULT_CLOSED_AT) * 0.5f, "at the corner it is drawn in to where the lids meet")
     }
 
     @Test

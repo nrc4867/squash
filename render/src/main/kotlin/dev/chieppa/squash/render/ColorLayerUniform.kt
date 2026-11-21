@@ -74,6 +74,7 @@ internal class ColorLayerUniform {
         at = put(at, lids.close, lids.rise, lids.closedAt, lids.closedBend)
         val paintMode = when {
             paint == null -> 0f
+            paint.swept -> 3f
             mark == null -> 1f
             else -> 2f
         }

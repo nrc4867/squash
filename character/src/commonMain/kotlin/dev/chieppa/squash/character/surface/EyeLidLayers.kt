@@ -8,8 +8,9 @@ import kotlin.math.sqrt
 private const val LEAST_LID_FACING = 0.2f
 
 /**
- * The lid's layers of [shapes] as flat layers in [tones], in order: its skin's fade-into colour, its skin, its marks, then its ink mass;
- * those the look leaves off left out. All are cut once over the vertices of the head's [members] facing the eye within the lid's reach of
+ * The lid's layers of [shapes] in [tones], in order: the skin the lids cover as they close, shaded and in no slot until it is given the
+ * head's (see [PaintLayer.coloredAs]), then as flat layers its skin's fade-into colour, its skin, its marks and its ink mass, those the
+ * look leaves off left out. All are cut once over the vertices of the head's [members] facing the eye within the lid's reach of
  * [middle] at any pose, an oval in the eye's chart of [across] and [up], which runs [along] and [around] body units a unit, and each is
  * drawn to its own shape at each fragment, so the lids move by their shapes alone.
  */
@@ -42,13 +43,14 @@ internal fun eyeLidLayers(
         (1f - sqrt(u * u + w * w)) * scale
     }
     val (chartU, chartV) = eyeChartAt(surface, candidates, middle, across * (1f / along), up * (1f / around))
-    fun layer(tone: EyeTones.Tone, paint: ChartLidPaint?, withMass: Boolean): PaintLayer? {
+    fun layer(tone: EyeTones.Tone, paint: ChartLidPaint?, withMass: Boolean, flat: Boolean = true): PaintLayer? {
         val fill = LayerFill(chartU, chartV, shapes.almond, null, shapes.turn, shapes.fillTurn, grow, lid = if (withMass) detail.lid else null, paint = paint)
-        return PaintLayer.of(tone.slot, surface, values, candidates, flat = true, fill = fill, tint = tone.tint)
+        return PaintLayer.of(tone.slot, surface, values, candidates, flat = flat, fill = fill, tint = tone.tint)
     }
+    val cover = layer(EyeTones.Tone(null, null), detail.lidCover, withMass = false, flat = false)
     val paints = listOfNotNull(
         detail.lidSkinUnder?.let { tones.lidSkinUnder to it },
         detail.lidSkin?.let { tones.lidSkin to it },
     ) + detail.lidMarks.mapIndexed { i, mark -> tones.lidMarks[i] to mark }
-    return paints.mapNotNull { (tone, paint) -> layer(tone, paint, withMass = false) } + listOfNotNull(detail.lid?.let { layer(tones.lid, null, withMass = true) })
+    return listOfNotNull(cover) + paints.mapNotNull { (tone, paint) -> layer(tone, paint, withMass = false) } + listOfNotNull(detail.lid?.let { layer(tones.lid, null, withMass = true) })
 }

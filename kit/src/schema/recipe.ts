@@ -141,7 +141,7 @@ export interface EyeLids {
   closedBend?: number;
   /** Degrees the closed line turns, its front end up. */
   closedTilt?: number;
-  /** The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid is the skin and fade and above do nothing. */
+  /** The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid takes the colour of the face's painted area the eye sits in, the skin where none is, and fade and above do nothing. */
   slot?: string | null;
   /** The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin. */
   fadeTo?: string | null;

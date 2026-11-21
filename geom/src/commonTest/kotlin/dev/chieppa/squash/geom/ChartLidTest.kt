@@ -60,25 +60,29 @@ class ChartLidTest {
     }
 
     @Test
-    fun onATallOpeningTheMassEndsAtTheShoulderAndLeavesTheSideBare() {
+    fun onATallOpeningTheMassEndsAtTheShoulderAndCarriesOnAsAThinLine() {
         val tall = ChartAlmond(width = 0.04f, height = 0.11f, lowerLid = 0.9f, frontNarrowing = 0f, topFlat = 0.35f, outerCorner = 0.8f)
         val aspect = 0.6f
         val shoulder = ChartLid.shoulderOf(tall, aspect)
         assertTrue(shoulder > -0.9f, "a tall opening's upper lid turns down well in from its back corner, not at $shoulder")
         val lid = ChartLid(0.25f, aspect = aspect, shoulder = shoulder)
         val top = lid.thickness(tall, 0f)
-        assertTrue(lid.thickness(tall, -0.97f) < 0.05f * top, "down the steep side it thins away")
+        assertEquals(SIDE_LINE, lid.thickness(tall, -0.97f), 1e-3f, "down the steep side it thins to a line")
         assertTrue(lid.thickness(tall, -0.3f) > 0.7f * top, "and it stays even over the top")
+        assertTrue(lid.level(tall, -tall.width * 1.005f, 0f) < 0f, "the line closes the back corner")
     }
 
     @Test
     fun aLowerBandDoesNotTrailDownTheSide() {
         val tall = ChartAlmond(width = 0.04f, height = 0.11f, lowerLid = 0.9f, frontNarrowing = 0f, outerCorner = 0.8f)
         val aspect = 0.6f
-        val lid = ChartLid(0.25f, lower = 0.6f, lowerExtent = 0.4f, aspect = aspect, lowerShoulder = ChartLid.shoulderOf(tall, aspect, lowerLid = true))
+        val lowerShoulder = ChartLid.shoulderOf(tall, aspect, lowerLid = true)
+        val lid = ChartLid(0.25f, lower = 0.6f, lowerExtent = 0.4f, aspect = aspect, lowerShoulder = lowerShoulder)
         val h = tall.height
         val side = -0.95f
-        assertTrue(lid.level(tall, side * tall.width, tall.openBottom(side) * h - 0.03f * h) > 0f, "no band low on the steep side")
+        assertTrue(lid.level(tall, side * tall.width, tall.openBottom(side) * h - 0.1f * h) > 0f, "no band low on the steep side")
+        val within = lowerShoulder + LOWER_RAMP + 0.1f
+        assertTrue(lid.level(tall, within * tall.width, tall.openBottom(within) * h - 0.05f * h) < 0f, "the band has its weight past the shoulder")
     }
 
     @Test
@@ -111,6 +115,33 @@ class ChartLidTest {
         assertTrue(lashed.level(shaped, u, v) < 0f, "the outermost lash runs there, out toward the back corner and up off the lid")
         val tip = (root + reachX) * shaped.width to (rootY + reachY) * shaped.height
         assertTrue(lashed.level(shaped, tip.first, tip.second + 0.03f * shaped.height) > 0f, "it ends in a point")
+    }
+
+    @Test
+    fun lashesKeepRisingUntilTheLidIsNearlyShutThenHangDown() {
+        val lashed = lidOf(weight = 0.2f, clumps = 1, clumpLength = 0.6f)
+        val root = lashed.shoulder + LASH_START + lashed.clumpSpread
+        /** The place [t] of the way along the one lash with the lids [close] of the way shut, standing [degrees] above level, [length] long. */
+        fun along(close: Float, degrees: Float, length: Float, t: Float): Pair<ChartAlmond, Pair<Float, Float>> {
+            val lidded = shaped.copy(lids = ChartLids(close, close))
+            val rootY = lidded.topEdge(root) + 0.5f * lashed.thickness(lidded, root)
+            val angle = degrees * PI.toFloat() / 180f
+            val bend = LASH_BEND * (1f - lashDrop(close))
+            val u = (root - t * length * kotlin.math.cos(angle) / LID_ASPECT) * shaped.width
+            val v = (rootY + (t + (t * t - t) * bend) * length * kotlin.math.sin(angle)) * shaped.height
+            return lidded to (u to v)
+        }
+        val length = 0.6f * LASH_REACH * (1f - LASH_SHORTER * 0.5f)
+        assertEquals(0f, lashDrop(0.5f), "half shut, the lashes have not lowered")
+        val rising = LASH_ANGLE_OUTER + (LASH_ANGLE_INNER - LASH_ANGLE_OUTER) * 0.5f
+        val (half, up) = along(0.5f, rising, length, 0.6f)
+        assertTrue(lashed.level(half, up.first, up.second) < 0f, "half shut, a lash still rises off the lid as it does open")
+        val hanging = LASH_CLOSED_OUTER + (LASH_CLOSED_INNER - LASH_CLOSED_OUTER) * 0.5f
+        assertTrue(hanging < 0f, "shut, a lash hangs below level")
+        val (shut, down) = along(1f, hanging, length * LASH_CLOSED_LENGTH, 0.8f)
+        assertTrue(lashed.level(shut, down.first, down.second) < 0f, "shut, the lash hangs down and out, shorter")
+        val (_, far) = along(1f, hanging, length, 1f)
+        assertTrue(lashed.level(shut, far.first, far.second) > 0f, "and does not reach as far as it does open")
     }
 
     @Test

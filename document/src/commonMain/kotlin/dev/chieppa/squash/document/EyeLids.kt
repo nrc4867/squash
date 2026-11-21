@@ -10,9 +10,9 @@ const val MOST_LID_MARKS = 6
 /**
  * How an eye's lids look as they close, and the upper lid's own paint. Closed, the lids meet on a line crossing the opening's middle
  * [closedAt] of its height up, its middle [closedBend] heights above a straight line through its ends, turned [closedTilt] degrees with
- * its front end up, eased into the corners. The upper lid's skin shows [slot] where the lid covers the opening, and over the skin [above]
- * heights above the open lid, fading over [fade] heights up from the lash line into [fadeTo] or the skin; the [marks] lie on the lid and
- * move with it. With no slot the lid is the skin, its marks still drawn.
+ * its front end up, drawn in toward the corners. The upper lid's skin shows [slot] where the lid covers the opening, and over the skin
+ * [above] heights above the open lid, fading over [fade] heights up from the lash line into [fadeTo] or the skin; the [marks] lie on the
+ * lid and move with it. With no slot the lids are the head's paint the eye sits in, their marks still drawn.
  */
 @Serializable
 @Doc("How an eye's lids meet when closed and how the upper lid is painted: its own colour, a fade up from the lash line and marks that move with it. Lengths are shares of the opening's height.")
@@ -23,7 +23,7 @@ data class EyeLids(
     val closedBend: Float = 0f,
     @Doc("Degrees the closed line turns, its front end up.") @Range(min = -45.0, max = 45.0)
     val closedTilt: Float = 0f,
-    @Doc("The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid is the skin and fade and above do nothing.")
+    @Doc("The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid takes the colour of the face's painted area the eye sits in, the skin where none is, and fade and above do nothing.")
     val slot: SlotName? = null,
     @Doc("The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin.")
     val fadeTo: SlotName? = null,

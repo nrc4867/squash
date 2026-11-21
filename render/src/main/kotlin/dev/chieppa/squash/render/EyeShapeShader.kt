@@ -1,6 +1,6 @@
 package dev.chieppa.squash.render
 
-import dev.chieppa.squash.geom.CLOSED_SOFT
+import dev.chieppa.squash.geom.CLOSED_DRAW_IN
 import dev.chieppa.squash.geom.CORNER_FADE_FROM
 import dev.chieppa.squash.geom.SHUT_GAP
 import dev.chieppa.squash.geom.FLAT_SPAN
@@ -16,8 +16,8 @@ internal val EYE_SHAPE_WGSL = """
 const ROUND_POWER: f32 = $ROUND_POWER;
 const ROUND_SPAN: f32 = $ROUND_SPAN;
 const FLAT_SPAN: f32 = $FLAT_SPAN;
-const CLOSED_SOFT: f32 = $CLOSED_SOFT;
 const SHUT_GAP: f32 = $SHUT_GAP;
+const CLOSED_DRAW_IN: f32 = $CLOSED_DRAW_IN;
 const CORNER_FADE_FROM: f32 = $CORNER_FADE_FROM;
 
 // x raised to power, 0 at 0.
@@ -65,16 +65,14 @@ fn open_bottom(a: f32) -> f32 {
     return -layer.opening.z * lower_open(a);
 }
 
-// The smaller of a and b, eased over k where they are near.
-fn soft_min(a: f32, b: f32, k: f32) -> f32 {
-    let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
-    return b + (a - b) * h - k * h * (1.0 - h);
-}
-
-// Where the lids' closed line lies at a, in heights, eased into the open lids near the corners.
+// Where the lids' closed line lies at a, in heights, drawn in toward the corners by how open the opening still is there.
 fn closed_line(a: f32) -> f32 {
     let raw = layer.lid_pose.z - layer.lid_pose.w * a * a + layer.lid_paint.x * a;
-    return -soft_min(-soft_min(raw, open_top(a), CLOSED_SOFT), -open_bottom(a), CLOSED_SOFT);
+    let top = open_top(a);
+    let bottom = open_bottom(a);
+    let middle = open_top(0.0) - open_bottom(0.0);
+    let open = select(0.0, eased(0.0, CLOSED_DRAW_IN, (top - bottom) / max(middle, 0.0000001)), middle > 0.0);
+    return min(max(raw * open, bottom), top);
 }
 
 // The top lid's moving edge at a, in heights.
@@ -97,17 +95,22 @@ fn bottom_edge(a: f32) -> f32 {
     return bottom + (closed_line(a) - bottom) * min(rise, 1.0);
 }
 
+// How far outside the almond with its lids open a chart point lies: at most zero inside.
+fn almond_open_level(p: vec2<f32>) -> f32 {
+    let o = layer.opening;
+    let a = clamp(p.x / o.x, -1.0, 1.0);
+    if (is_plain()) {
+        let open = sqrt(max(1.0 - a * a, 0.0)) * (1.0 + o.w * a);
+        return max(max(p.y - o.y * open, -o.y * o.z * open - p.y), (abs(p.x) - o.x) * o.y / o.x);
+    }
+    return max(max(p.y - o.y * upper_open(a), -o.y * o.z * lower_open(a) - p.y), (abs(p.x) - o.x) * o.y / o.x);
+}
+
 // How far outside the almond a chart point lies, along v between its corners and its lids' edges: at most zero inside.
 fn almond_level(p: vec2<f32>) -> f32 {
     let o = layer.opening;
     let a = clamp(p.x / o.x, -1.0, 1.0);
-    var level: f32;
-    if (is_plain()) {
-        let open = sqrt(max(1.0 - a * a, 0.0)) * (1.0 + o.w * a);
-        level = max(max(p.y - o.y * open, -o.y * o.z * open - p.y), (abs(p.x) - o.x) * o.y / o.x);
-    } else {
-        level = max(max(p.y - o.y * upper_open(a), -o.y * o.z * lower_open(a) - p.y), (abs(p.x) - o.x) * o.y / o.x);
-    }
+    let level = almond_open_level(p);
     if (layer.lid_pose.x <= 0.0 && layer.lid_pose.y <= 0.0) {
         return level;
     }
