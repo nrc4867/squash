@@ -112,7 +112,7 @@ Each module is a Gradle subproject. A module may use any layer below it, never o
 | Interfaces | `agent` | Later: MCP tools generated from the command registry |
 | Interfaces core | `screens-core` | What every screen shares: `AppState`, the `PaneTool` seam, locked cameras, the panes' look, labels and scene surface, the curve and spine edit state |
 | Presentation | `ui-design` | Squash-only components, generated icons, strings |
-| Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading, outlines, stroke ribbons |
+| Presentation | `render` | On `stretch-gpu`: skinned meshes, flat and two-tone shading with toon materials, outlines, stroke ribbons |
 | Presentation | `field-gpu` | On `stretch-gpu`: `GpuFieldReads`, the one surface's field reads in a compute shader |
 | Domain | `anim` | Later: clips and timing |
 | Domain | `recipe` | Character recipes: the recipe model and its JSON reader, the builder that sends a recipe's document commands, and the export of a character as a recipe (see Recipes) |

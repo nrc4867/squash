@@ -1,7 +1,7 @@
 // Hand, foot and face readings, the facing guess, pale parts, clothing edges and the targets, on an invented toon child.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { palette, targets } from "squash-kit";
+import { material, palette, targets } from "squash-kit";
 import { clothEdges, measureView, readSheet, sheetProfiles, targetsOf, type Reading } from "squash-kit/sheet";
 import type { ToonOptions } from "./sheet/toons.ts";
 import { toon, TOON } from "./sheet/toons.ts";
@@ -130,6 +130,17 @@ test("targets reads shares of the head and of the height, and refuses a name it 
 
 test("a palette slot takes its own shadow tone", () => {
   const colors = palette({ skin: "#d8b48e", ink: "#101010" }, { shadow: { skin: "#b08a74" } });
-  assert.deepEqual(colors.slots[0], { slot: "skin", color: "#d8b48e", shadow: "#b08a74" });
+  assert.deepEqual(colors.slots[0], { slot: "skin", color: "#d8b48e", material: { shadow: "#b08a74" } });
   assert.deepEqual(colors.slots[1], { slot: "ink", color: "#101010" });
+});
+
+test("a palette slot takes a material by name or with settings, and opacity and shadow on top", () => {
+  const colors = palette(
+    { buckle: "#c8c8d0", lens: "#203040", lamp: "#ffd860" },
+    { material: { buckle: "metal", lens: "glass", lamp: material("glow", { glow: { strength: 0.8, halo: 12 } }) }, opacity: { lens: 0.4 } },
+  );
+  assert.deepEqual(colors.slots[0], { slot: "buckle", color: "#c8c8d0", material: "metal" });
+  assert.deepEqual(colors.slots[1], { slot: "lens", color: "#203040", material: { preset: "glass", seeThrough: 0.4 } });
+  assert.deepEqual(colors.slots[2], { slot: "lamp", color: "#ffd860", material: { preset: "glow", glow: { strength: 0.8, halo: 12 } } });
+  assert.equal(material("plastic"), "plastic");
 });

@@ -22,6 +22,9 @@ import dev.chieppa.stretch.gpu.webgpu.RenderPipelineSpec
 private const val MATRIX_FLOATS = 16
 private const val VECTOR_FLOATS = 4
 
+/** The shells a glow's halo draws in, outer first. */
+private const val HALO_SHELLS = 2
+
 /** Keeps what is there: a pipeline blending with this writes only depth, however the pass's color target is set up. */
 private val DEPTH_ONLY = BlendState(
     color = BlendComponent(BlendFactor.Zero, BlendFactor.One),
@@ -63,7 +66,9 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
     private val outlineDepth = pipeline("vs_outline", "fs_outline", CullMode.Front, DEPTH_ONLY)
     private val fillBlend = pipeline("vs_fill", "fs_fill", CullMode.None, BlendState.AlphaBlending, DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual))
     private val outlineBlend = pipeline("vs_outline", "fs_outline", CullMode.Front, BlendState.AlphaBlending, DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual))
-    private val pipelines = listOf(fill, outline, fillDepth, outlineDepth, fillBlend, outlineBlend)
+    private val haloDepth = pipeline("vs_halo", "fs_halo", CullMode.Front, DEPTH_ONLY, DepthState(context.depthFormat, compare = CompareFunction.LessEqual))
+    private val haloBlend = pipeline("vs_halo", "fs_halo", CullMode.Front, BlendState.AlphaBlending, DepthState(context.depthFormat, write = false, compare = CompareFunction.LessEqual))
+    private val pipelines = listOf(fill, outline, fillDepth, outlineDepth, fillBlend, outlineBlend, haloDepth, haloBlend)
     private val slots = mutableListOf<Slot>()
     private val data = FloatArray(DRAW_FLOATS)
 
@@ -103,6 +108,23 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
         }
     }
 
+    /**
+     * The halo of a glowing [draw] drawn earlier this frame in uniform [slot], its outer shell and then its inner one, each laying its
+     * depth before it blends so it shows once wherever its back faces overlap, behind everything in front of it.
+     */
+    fun drawHalo(pass: GpuRenderPass, slot: Int, mesh: GpuMesh) {
+        val uniforms = slotAt(slot)
+        pass.setVertexBuffer(0, mesh.vertices)
+        pass.setIndexBuffer(mesh.indices, IndexFormat.Uint32)
+        for (shell in 0 until HALO_SHELLS) {
+            for (pipeline in listOf(haloDepth, haloBlend)) {
+                pass.setPipeline(pipeline)
+                pass.setBindGroup(0, uniforms.groups.getValue(pipeline))
+                pass.drawIndexed(mesh.mesh.indices.size, 1, 0, 0, shell)
+            }
+        }
+    }
+
     private fun drawWith(pass: GpuRenderPass, withOutline: GpuRenderPipeline, withFill: GpuRenderPipeline, uniforms: Slot, mesh: GpuMesh, draw: MeshDraw) {
         if (draw.outlinePixels > 0f) drawOne(pass, withOutline, uniforms, mesh)
         drawOne(pass, withFill, uniforms, mesh)
@@ -137,7 +159,10 @@ internal class MeshPass(private val context: GpuContext) : AutoCloseable {
         )
         at = data.put(at, material.ink)
         at = data.put(at, draw.outlinePixels, view.viewport.width.toFloat(), view.viewport.height.toFloat(), 0f)
-        data.put(at, draw.layer.scale, draw.layer.offset, draw.opacity, 0f)
+        at = data.put(at, draw.layer.scale, draw.layer.offset, draw.opacity, 0f)
+        at = material.finish.writeInto(data, at)
+        val key = material.key
+        data.put(at, key?.x ?: 0f, key?.y ?: 0f, key?.z ?: 0f, if (key != null) 1f else 0f)
         device.queue.writeBuffer(buffer, data)
     }
 

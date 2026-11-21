@@ -44,7 +44,7 @@ It prints `cat.recipe.json` (written beside `cat.ts`), then everything `tools/re
 | `heights` | write the JSON, probe every part, and print the file's exported `heights` planned against built |
 | `sheet <command> <image>` | read a character sheet image, before any build: see [Reading a character sheet](#reading-a-character-sheet) |
 
-Options after the file go to `tools/recipe.sh` unchanged: `render=false`, `outfits=all`, `poses=all`, `close=face,hand,foot,joins` (`close=eyes` for both painted eyes close from the front, three-quarter and side; `close=none` for no close-ups), `set=part:name:value`, `reference=...` (with `fit=true` the camera search can land on the far side of the character, as a silhouette does not tell front from back: it prints the far-side camera too, and `eye=`, `target=` and `fov=` fix the one the reference shows), `targets=<file>,<file>` (proportion targets, see Targets). `probe` prints every socket where its part's `socketsAt` put it. `out=<folder>` puts both the recipe JSON and the build there.
+Options after the file go to `tools/recipe.sh` unchanged: `render=false`, `outfits=all`, `poses=all`, `close=face,hand,foot,joins` (`close=eyes` for both painted eyes close from the front, three-quarter and side; `close=turn` for the whole character from eight ways round in its own shading, to see a key light's shines stay toward it; `close=none` for no close-ups), `set=part:name:value`, `reference=...` (with `fit=true` the camera search can land on the far side of the character, as a silhouette does not tell front from back: it prints the far-side camera too, and `eye=`, `target=` and `fov=` fix the one the reference shows), `targets=<file>,<file>` (proportion targets, see Targets). `probe` prints every socket where its part's `socketsAt` put it. `out=<folder>` puts both the recipe JSON and the build there.
 
 The default export is a recipe, or a function returning one (it may be async). Character files use only syntax Node can strip (no `enum`, no `namespace`), and import types with `import type` or `type` in the braces; the typecheck says so when they don't.
 
@@ -53,7 +53,7 @@ The default export is a recipe, or a function returning one (it may be async). C
 | helper | one line |
 | --- | --- |
 | `recipe` | `export default recipe({ id: "cat", name: "Cat", plan: "blank", parts })` fills `format`. |
-| shading | `recipe({ ..., shading: { farSide: 0.3 } })` sets how much darker the far side is (0 to 0.5, 0.18 when left out); `light: "body"` fixes the light in front of the character instead of turning it with the view. |
+| shading | `recipe({ ..., shading: { farSide: 0.3 } })` sets how much darker the far side is (0 to 0.5, 0.18 when left out); `light: "body"` fixes the light in front of the character instead of turning it with the view; `key: { x: 0.3, y: 0.8, z: 0.5 }` sets the shot's key light, fixed to the body (x forward, y up, z to its right): a surface is lit where it or the view's light reaches, and materials' spots, bands and streaks come from it, so they stay on the side toward it as the camera turns. |
 | types | every schema type by its schema name: `RecipePart`, `RecipeGarment`, `BonePose`, `RecipeRegion`, ... |
 
 ## Body plan
@@ -239,7 +239,8 @@ A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v,
 
 | helper | one line |
 | --- | --- |
-| `palette` | `const colors = palette({ skin: "#d8b48e", ink: [0.1, 0.08, 0.08] })`; `palette: colors.slots`, `color: colors.slot("skin")` fails on a slot not declared. `palette({ lens: "#203040" }, { opacity: { lens: 0.35 } })` makes a part coloured `lens` see-through; `palette({ skin: "#d8b48e" }, { shadow: { skin: "#b08a74" } })` gives a slot its own shadow tone (a warm shift of the colour when left out). |
+| `palette` | `const colors = palette({ skin: "#d8b48e", ink: [0.1, 0.08, 0.08] })`; `palette: colors.slots`, `color: colors.slot("skin")` fails on a slot not declared. `palette({ lens: "#203040" }, { opacity: { lens: 0.35 } })` makes a part coloured `lens` see-through; `palette({ skin: "#d8b48e" }, { shadow: { skin: "#b08a74" } })` gives a slot its own shadow tone (a shift of the colour when left out); both are settings of the slot's material. `palette({ buckle: "#c8c8d0", frame: "#a02030", lens: "#203040", gem: "#ffd860" }, { material: { buckle: "metal", frame: "plastic", lens: "glass", gem: "glow" } })` gives slots a toon material that everything painted in them takes: matte (the default), skin, cloth, plastic (a sharp round spot), metal (three hard tones, a band and a bright rim), glass (see-through with a streak) or glow (its colour whatever the light, with a halo). |
+| `material` | `material("metal", { rim: { width: 0.15 }, shine: { shape: "band", size: 0.5 } })` is a preset with settings changed: `steps` (1 to 3 tones), `shadow`, `shadowSlot`, `shadowDepth`, `shadowShift` (auto, cool, warm), `rim` (width, color), `shine` (shape none, spot, band or streak; size; color), `seeThrough` (0 to 1) and `glow` (strength, halo in pixels). |
 | `mix`, `shade` | `shade("#d8b48e", -0.2)` is darker, `mix(a, b, 0.5)` halfway. |
 | `toRgb`, `toHex` | convert between `#rrggbb` and `[r, g, b]`. |
 

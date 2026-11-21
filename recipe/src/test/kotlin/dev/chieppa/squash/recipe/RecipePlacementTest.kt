@@ -1,6 +1,7 @@
 package dev.chieppa.squash.recipe
 
 import dev.chieppa.squash.character.load.TemplateFolder
+import dev.chieppa.squash.document.MaterialPreset
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.recipe.build.RecipeBuilder
@@ -20,7 +21,7 @@ class RecipePlacementTest {
 
     private val petal = """{"id": "petal", "template": "sheet", "on": "body", "socket": "socket.2", "rest": "out", "outward": 75, "roll": 30, "topMiddle": true, "color": "lens"}"""
 
-    private fun recipe(parts: String) = """{"format": 1, "id": "toy", "name": "Toy", "palette": [{"slot": "lens", "color": "#203040", "opacity": 0.35}], "parts": [$parts]}"""
+    private fun recipe(parts: String) = """{"format": 1, "id": "toy", "name": "Toy", "palette": [{"slot": "lens", "color": "#203040", "material": {"preset": "glass", "seeThrough": 0.35}}], "parts": [$parts]}"""
 
     @Test
     fun theFieldsBuildTheirParameters() {
@@ -46,7 +47,8 @@ class RecipePlacementTest {
         val row = exported.parts.first { it.id == "body" }.sockets.first { it.n == 1 }
         assertEquals(1f, row.toV)
         assertEquals(0.02f, row.outset)
-        assertEquals(0.35f, exported.palette.single().opacity)
+        assertEquals(0.35f, exported.palette.single().material?.seeThrough)
+        assertEquals(MaterialPreset.GLASS, exported.palette.single().material?.preset)
         assertEquals(built, builder.build(RecipeJson.read(RecipeJson.write(exported))).document)
     }
 

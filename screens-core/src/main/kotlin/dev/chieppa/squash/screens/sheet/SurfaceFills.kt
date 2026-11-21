@@ -14,6 +14,7 @@ import dev.chieppa.squash.character.surface.garmentPiece
 import dev.chieppa.squash.character.surface.isFieldRun
 import dev.chieppa.squash.character.surface.separatePieces
 import dev.chieppa.squash.document.Palette
+import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.geom.LevelCut
 import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
@@ -21,10 +22,8 @@ import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.creaseTones
 import dev.chieppa.squash.render.foldTones
-import dev.chieppa.squash.render.shadeShifted
 import dev.chieppa.squash.render.ColorLayerDraw
 import dev.chieppa.squash.render.LayerSides
-import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PartMaterial
@@ -57,22 +56,20 @@ fun surfaceDraw(
     val root = surface.field.runs.firstOrNull { it.part.socket == null } ?: surface.field.runs.first()
     val slot = color.parts[root.partId]?.baseSlot
     val lit = palette.colorOf(slot) ?: fallback.base
-    val own = palette.shadowOf(slot)
-    val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
+    val base = palette.tonesOf(slot, fallback.base, shading, null, toCamera)
     val cut = section?.cut
     val shownCut = cut ?: skin
     val mesh = shownCut?.mesh(surface.render) ?: surface.render
     val sides = if (shownCut == null) {
-        sideLayers(mesh, lit, own, shading, toCamera, surface.positiveZ, surface.negativeZ)
+        sideLayers(mesh, palette, slot, fallback, shading, toCamera, surface.positiveZ, surface.negativeZ)
     } else {
-        sideLayers(mesh, lit, own, shading, toCamera, shownCut.values(surface.positiveZ), shownCut.values(surface.negativeZ))
+        sideLayers(mesh, palette, slot, fallback, shading, toCamera, shownCut.values(surface.positiveZ), shownCut.values(surface.negativeZ))
     }
     val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
     val creased = creases?.takeIf { section == null }?.let { creaseLayer(mesh, shownCut?.values(it.shade) ?: it.shade, creaseTones(lit)) }
-    val skinShadow = own ?: lit.shadeShifted(shading.shadowDepth)
-    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, skinShadow) } + listOfNotNull(creased)
-    return MeshDraw(mesh, PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)), layers = layers)
+    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, base.shadow) } + listOfNotNull(creased)
+    return MeshDraw(mesh, shading.material(base, fallback.ink, toCamera), layers = layers)
 }
 
 /** A crease's shade band over [mesh], [shade] one value a vertex, in [tones]. */
@@ -95,15 +92,13 @@ private fun clothCreaseLayers(mesh: RenderMesh, marks: CreaseMarks, lit: Color, 
 fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, creases: PosedCreases? = null): List<MeshDraw> = dress.garments.map { garment ->
     val slot = garment.cover.garment.color
     val lit = palette.colorOf(slot) ?: fallback.base
-    val own = palette.shadowOf(slot)
-    val base = DefaultToneRule.tones(lit, own, shading, null, toCamera)
-    val skinShadow = own ?: lit.shadeShifted(shading.shadowDepth)
-    val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, skinShadow) }
+    val base = palette.tonesOf(slot, fallback.base, shading, null, toCamera)
+    val painted = garment.paint?.layers.orEmpty().flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, base.shadow) }
     val creased = creases?.garments?.get(garment.cover.garmentPiece)?.let { clothCreaseLayers(garment.drawn, it, lit, base, garment.cut::values) }.orEmpty()
-    val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera))
+    val material = shading.material(base, fallback.ink, toCamera)
     val seeThrough = garment.seeThrough
     if (seeThrough != null) return@map MeshDraw(garment.drawn, material, layers = painted + creased, cloth = clothDraw(garment, seeThrough, palette, fallback, shading, toCamera))
-    val sides = sideLayers(garment.drawn, lit, own, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
+    val sides = sideLayers(garment.drawn, palette, slot, fallback, shading, toCamera, garment.cut.values(garment.surface.positiveZ), garment.cut.values(garment.surface.negativeZ))
     MeshDraw(garment.drawn, material, layers = listOfNotNull(sides) + painted + creased)
 }
 
@@ -118,29 +113,31 @@ private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartM
         val shown = tinted(layerLit, layer.tint, palette, fallback.ink, skinShadow)
         return listOf(ColorLayerDraw(layer.mesh, Tones(shown, shown), shape = layer.shape))
     }
-    val layerOwn = palette.shadowOf(layer.slot)
     if (layer.shape != null) {
         val side = when {
             (layer.positive?.average() ?: 0.0) > HALF_SHARE -> BodySide.POSITIVE_Z
             (layer.negative?.average() ?: 0.0) > HALF_SHARE -> BodySide.NEGATIVE_Z
             else -> null
         }
-        return listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, side, toCamera), shape = layer.shape))
+        return listOf(ColorLayerDraw(layer.mesh, palette.tonesOf(layer.slot, fallback.base, shading, side, toCamera), shape = layer.shape))
     }
-    val tones = DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera)
-    return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)))
+    val tones = palette.tonesOf(layer.slot, fallback.base, shading, null, toCamera)
+    return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(palette, layer.slot, fallback, shading, toCamera, layer.positive, layer.negative)))
 }
 
 /** [mesh] darkened as each side of the body's plane shows from [toCamera], by each vertex's share of that side, [positive] and [negative]. */
-private fun sideLayers(mesh: RenderMesh, lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): ColorLayerDraw? =
-    layerSides(lit, own, shading, toCamera, positive, negative)?.let { ColorLayerDraw(mesh, DefaultToneRule.tones(lit, own, shading, null, toCamera), sides = it) }
+private fun sideLayers(
+    mesh: RenderMesh, palette: Palette, slot: SlotName?, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?,
+): ColorLayerDraw? = layerSides(palette, slot, fallback, shading, toCamera, positive, negative)?.let {
+    ColorLayerDraw(mesh, palette.tonesOf(slot, fallback.base, shading, null, toCamera), sides = it)
+}
 
-/** The far sides' tones of [lit] and [own] by [positive] and [negative] shares, or null where neither side holds any. */
-private fun layerSides(lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): LayerSides? {
+/** The far sides' tones of [slot] by [positive] and [negative] shares, or null where neither side holds any. */
+private fun layerSides(palette: Palette, slot: SlotName?, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, positive: FloatArray?, negative: FloatArray?): LayerSides? {
     if (positive == null && negative == null) return null
     return LayerSides(
-        DefaultToneRule.tones(lit, own, shading, BodySide.POSITIVE_Z, toCamera), positive,
-        DefaultToneRule.tones(lit, own, shading, BodySide.NEGATIVE_Z, toCamera), negative,
+        palette.tonesOf(slot, fallback.base, shading, BodySide.POSITIVE_Z, toCamera), positive,
+        palette.tonesOf(slot, fallback.base, shading, BodySide.NEGATIVE_Z, toCamera), negative,
     )
 }
 

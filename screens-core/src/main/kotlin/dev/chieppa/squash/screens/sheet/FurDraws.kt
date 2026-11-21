@@ -19,7 +19,6 @@ import dev.chieppa.squash.document.View
 import dev.chieppa.squash.document.WidthStop
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.BodySide
-import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.DepthLayer
 import dev.chieppa.squash.render.FurLayerDraw
 import dev.chieppa.squash.render.LineRule
@@ -94,8 +93,7 @@ fun furDraws(fur: ShownFur, ink: Color, layer: DepthLayer = DepthLayer.SCENE, pa
 
 /** What fur over [slot] fills with: its palette color and shadow as a part's surface takes them, on [side], with the camera at [toCamera]. A wedge's mesh carries its root's normal, so two-tone reads the surface there. */
 fun furMaterial(palette: Palette, slot: SlotName?, fallback: Color, ink: Color, shading: ObjectShading, side: BodySide?, toCamera: Vec3): PartMaterial {
-    val tones = DefaultToneRule.tones(palette.colorOf(slot) ?: fallback, palette.shadowOf(slot), shading, side, toCamera)
-    return PartMaterial(tones.lit, tones.shadow, ink, shading.mode, shading.lightFor(toCamera))
+    return shading.material(palette.tonesOf(slot, fallback, shading, side, toCamera), ink, toCamera)
 }
 
 private fun PartFurView.edgeRibbons(): List<StrokeRibbon> = wedges.flatMap { wedge ->

@@ -10,7 +10,8 @@ import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.CharacterShading
 import dev.chieppa.squash.document.ShadingLight
 import dev.chieppa.squash.render.LightFrame
-import dev.chieppa.squash.document.SetSlotShadow
+import dev.chieppa.squash.document.SetSlotMaterial
+import dev.chieppa.squash.document.SlotMaterial
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.Palette
@@ -80,7 +81,7 @@ class SurfaceDrawsTest {
     @Test
     fun aSlotsOwnShadowIsItsShadowToneOnTheBaseAndItsLayers() {
         val tone = SlotColor(0.5f, 0.3f, 0.2f)
-        val shaded = SetSlotShadow(fur, tone).apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("p"), 1), palette = palette))).document.character.palette
+        val shaded = SetSlotMaterial(fur, SlotMaterial(shadow = tone)).apply(SquashDocument(Character(CharacterId("c"), "C", BodyPlanRef(BodyPlanId("p"), 1), palette = palette))).document.character.palette
         val drawn = draw(PartColor(fur, listOf(layer(fur))), from = shaded, shading = ObjectShading(Shading.TWO_TONE))
         val expected = Color(tone.red, tone.green, tone.blue)
         assertEquals(expected, drawn.material.shade)

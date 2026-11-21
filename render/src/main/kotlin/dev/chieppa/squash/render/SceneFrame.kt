@@ -7,7 +7,7 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.stretch.frame.ViewportOverlay
 import dev.chieppa.stretch.gpu.Mat4
 
-/** A mesh's colors. [ink] is its outline. */
+/** A mesh's colors. [ink] is its outline. [finish] is its slot's material as it draws, and [key] the way to the shot's key light, if any. */
 @Immutable
 data class PartMaterial(
     val base: Color,
@@ -15,6 +15,8 @@ data class PartMaterial(
     val ink: Color = base,
     val shading: Shading = Shading.FLAT,
     val toLight: Vec3 = DEFAULT_TO_LIGHT,
+    val finish: Finish = Finish.PLAIN,
+    val key: Vec3? = null,
 ) {
     companion object {
         val DEFAULT_TO_LIGHT = Vec3(0.7f, 0.5f, -0.5f).normalized()

@@ -53,7 +53,7 @@ class RecipeSeeThroughClothTest {
 
     @Test
     fun clothInASeeThroughSlotIsSheerWithNoWarning() {
-        val palette = """{"slot": "fur", "color": "#e6b36e"}, {"slot": "nylon", "color": "#202024", "opacity": 0.4}"""
+        val palette = """{"slot": "fur", "color": "#e6b36e"}, {"slot": "nylon", "color": "#202024", "material": {"preset": "cloth", "seeThrough": 0.4}}"""
         val built = builder.build(RecipeJson.read(recipe(area("leg", 0.3f, 0.9f), palette)))
         assertTrue(built.warnings.none { "opacity" in it }, built.warnings.toString())
     }

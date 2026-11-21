@@ -1,0 +1,46 @@
+{
+    "character": {
+        "id": "fennec",
+        "name": "Fennec",
+        "bodyPlan": {
+            "id": "canine-quadruped",
+            "version": 1
+        },
+        "palette": {
+            "slots": [
+                {
+                    "name": "fur",
+                    "color": {
+                        "red": 0.91,
+                        "green": 0.64,
+                        "blue": 0.29
+                    },
+                    "shadow": {
+                        "red": 0.7,
+                        "green": 0.45,
+                        "blue": 0.2
+                    }
+                },
+                {
+                    "name": "lens",
+                    "color": {
+                        "red": 0.2,
+                        "green": 0.25,
+                        "blue": 0.3
+                    },
+                    "label": "Lens",
+                    "opacity": 0.35
+                },
+                {
+                    "name": "ink",
+                    "color": {
+                        "red": 0.1,
+                        "green": 0.08,
+                        "blue": 0.08
+                    }
+                }
+            ]
+        }
+    },
+    "format": 19
+}

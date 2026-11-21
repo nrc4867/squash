@@ -40,7 +40,7 @@ private val SLOT_GAP = 6.dp
 /**
  * A swatch showing [slot] of [palette], or none, which opens the palette under [title] to pick another. [tagOf] names each choice for tests, and [footer] adds to
  * the popover, given what closes it. With an [editor], the popover is the reduced palette: a pick keeps it open, New color adds a slot and picks it, and the
- * picked slot's color is edited in place under the swatches.
+ * picked slot's color and material are edited in place under the swatches.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -78,7 +78,7 @@ fun SlotChoice(
     }
 }
 
-/** New color, and the picker over [slot] once there is one. */
+/** New color, and the picker and material over [slot] once there is one. */
 @Composable
 private fun SlotEditor(session: CharacterSession, slot: SlotName?, onPick: (SlotName) -> Unit) {
     val document by session.document.collectAsState()
@@ -93,4 +93,7 @@ private fun SlotEditor(session: CharacterSession, slot: SlotName?, onPick: (Slot
     }
     val color = slot?.let(character.palette::colorOf) ?: return
     SlotPicker(session, slot, color, Modifier.fillMaxWidth().testTag(PaintTags.CHOICE_PICKER))
+    var moreOpen by remember { mutableStateOf(false) }
+    MaterialPresets(session, character, slot)
+    MaterialMore(session, character, slot, moreOpen) { moreOpen = it }
 }

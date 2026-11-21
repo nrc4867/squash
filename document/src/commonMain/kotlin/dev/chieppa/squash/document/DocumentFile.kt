@@ -38,9 +38,15 @@ private const val SLOT_KEY = "slot"
 private const val CURVED_KEY = "curved"
 private const val EDGES_KEY = "edges"
 private const val FILL_KEY = "fill"
+private const val PALETTE_KEY = "palette"
+private const val SLOTS_KEY = "slots"
+private const val SHADOW_KEY = "shadow"
+private const val OPACITY_KEY = "opacity"
+private const val SEE_THROUGH_KEY = "seeThrough"
+private const val MATERIAL_KEY = "material"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved, 18 to ::boxesPainted)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved, 18 to ::boxesPainted, 19 to ::slotFinishesIntoMaterials)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a
@@ -93,6 +99,26 @@ private fun oneSurfaceOnly(document: JsonObject): JsonObject {
     val unfilleted = garments?.let { held -> JsonObject(wardrobe + (GARMENTS_KEY to JsonArray(held.map { JsonObject(it.jsonObject - FILLET_KEY) }))) }
     val moved = character - ONE_SURFACE_KEY + listOfNotNull(unfilleted?.let { WARDROBE_KEY to it })
     return drawnEyesRemoved(JsonObject(document + (CHARACTER_KEY to JsonObject(moved))))
+}
+
+/**
+ * Format 19 to 20: a palette slot's shadow tone and opacity are its material's shadow and see-through, so a slot saved with either holds
+ * them in a matte material.
+ */
+private fun slotFinishesIntoMaterials(document: JsonObject): JsonObject {
+    val character = document.getValue(CHARACTER_KEY).jsonObject
+    val palette = character[PALETTE_KEY] as? JsonObject ?: return document
+    val slots = palette[SLOTS_KEY] as? JsonArray ?: return document
+    val moved = slots.map { saved ->
+        val slot = saved.jsonObject
+        val shadow = slot[SHADOW_KEY]
+        val opacity = slot[OPACITY_KEY]
+        if (shadow == null && opacity == null) return@map slot
+        val material = listOfNotNull(shadow?.let { SHADOW_KEY to it }, opacity?.let { SEE_THROUGH_KEY to it }).toMap()
+        JsonObject(slot - SHADOW_KEY - OPACITY_KEY + (MATERIAL_KEY to JsonObject(material)))
+    }
+    val kept = JsonObject(palette + (SLOTS_KEY to JsonArray(moved)))
+    return JsonObject(document + (CHARACTER_KEY to JsonObject(character + (PALETTE_KEY to kept))))
 }
 
 /**

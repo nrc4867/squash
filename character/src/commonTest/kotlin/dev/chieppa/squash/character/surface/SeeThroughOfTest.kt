@@ -5,9 +5,11 @@ import dev.chieppa.squash.document.Garment
 import dev.chieppa.squash.document.GarmentArea
 import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentId
+import dev.chieppa.squash.document.MaterialPreset
 import dev.chieppa.squash.document.Palette
 import dev.chieppa.squash.document.PaletteSlot
 import dev.chieppa.squash.document.SlotColor
+import dev.chieppa.squash.document.SlotMaterial
 import dev.chieppa.squash.document.SlotName
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +19,7 @@ import kotlin.test.assertTrue
 class SeeThroughOfTest {
     private val nylon = SlotName("nylon")
     private val lace = SlotName("lace")
-    private val palette = Palette(listOf(PaletteSlot(nylon, SlotColor(0.1f, 0.1f, 0.1f), opacity = 0.5f), PaletteSlot(lace, SlotColor(0f, 0f, 0f))))
+    private val palette = Palette(listOf(PaletteSlot(nylon, SlotColor(0.1f, 0.1f, 0.1f), material = SlotMaterial(MaterialPreset.CLOTH, seeThrough = 0.5f)), PaletteSlot(lace, SlotColor(0f, 0f, 0f))))
 
     private fun garment(vararg areas: GarmentArea) = Garment(GarmentId("sock"), "Sock", color = lace, areas = areas.toList())
 

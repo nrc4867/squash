@@ -105,6 +105,20 @@ data class RecipeShading(
     val farSide: Float = FAR_SIDE_DEPTH,
     @Doc("view: the light turns with the camera, from in front of the viewer, above and to their left, so a back view is lit as the front is; body: fixed in front of the character, so a back view falls in shade.")
     val light: ShadingLight = ShadingLight.VIEW,
+    @Doc("The shot's key light, fixed to the body: a surface is lit where it or the light above reaches, and materials' spots, bands and streaks come from it, so they stay toward it as the camera turns. From the light above when left out.")
+    val key: RecipeKeyLight? = null,
+)
+
+/** The way to a key light in body space. */
+@Serializable
+@Doc("The way to a key light in body space: x forward, y up, z to the character's right; any length but zero.")
+data class RecipeKeyLight(
+    @Doc("Forward.")
+    val x: Float,
+    @Doc("Up.")
+    val y: Float,
+    @Doc("To the character's right.")
+    val z: Float,
 )
 
 /** A named colour of the palette. */
@@ -115,12 +129,11 @@ data class RecipeSlot(
     val slot: String,
     @Doc("The colour: \"#rrggbb\", or [red, green, blue] from 0 to 1.")
     val color: RecipeColor,
-    @Doc("Its own shadow tone; a warm shift of the colour when left out.")
-    val shadow: RecipeColor? = null,
     @Doc("What the app calls it; the slot's name when left out.")
     val label: String? = null,
-    @Doc("How much of what lies behind a part coloured in it the part hides, 0 to 1: a lens at 0.35 shows the eyes through it. Whole when left out. It holds for a part's base colour, drawn after everything whole.")
-    val opacity: Float? = null,
+    @Doc("Its toon material, which anything painted in it takes: a preset's name (\"metal\"), or an object with a preset and the settings it changes. Matte when left out.")
+    @Serializable(with = RecipeMaterialSerializer::class)
+    val material: RecipeMaterial? = null,
 )
 
 /** A named expression: joints of the face's parts set to angles, and how far it opens mouths. */

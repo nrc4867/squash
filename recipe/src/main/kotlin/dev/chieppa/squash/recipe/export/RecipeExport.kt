@@ -18,6 +18,8 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
 import dev.chieppa.squash.recipe.model.Recipe
 import dev.chieppa.squash.recipe.model.RecipeCreases
+import dev.chieppa.squash.recipe.model.RecipeKeyLight
+import dev.chieppa.squash.recipe.model.RecipeMaterial
 import dev.chieppa.squash.recipe.model.RecipeShading
 import dev.chieppa.squash.recipe.model.RecipeChange
 import dev.chieppa.squash.recipe.model.RecipeColor
@@ -58,7 +60,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         name = character.name,
         plan = character.bodyPlan.id.value,
         planVersion = character.bodyPlan.version,
-        palette = character.palette.slots.map { RecipeSlot(it.name.value, RecipeColor.of(it.color), it.shadow?.let(RecipeColor::of), it.label, it.opacity) },
+        palette = character.palette.slots.map { RecipeSlot(it.name.value, RecipeColor.of(it.color), it.label, it.material?.let(RecipeMaterial::of)) },
         parts = parts,
         eyes = character.paintedEyes.map { eye ->
             RecipeEye(eye.id, eye.anchor.part.value, eye.anchor.patch, eye.anchor.u, eye.anchor.v, null, eye.look, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.mirrored, eye.flat, eye.upperClose, eye.lowerRise)
@@ -77,7 +79,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         wardrobe = wardrobe,
         displayPose = bones(character.displayPose, "display pose", notCarried),
         creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
-        shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light) },
+        shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light, it.key?.let { key -> RecipeKeyLight(key.x, key.y, key.z) }) },
         viewKeys = character.viewKeys.takeIf { it != ViewKeys() },
     )
     return RecipeExport(recipe, notCarried)

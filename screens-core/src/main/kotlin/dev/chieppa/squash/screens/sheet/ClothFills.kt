@@ -9,7 +9,6 @@ import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.CLOTH_FLOATS
 import dev.chieppa.squash.render.ClothDraw
-import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.ObjectShading
 import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.Tones
@@ -26,7 +25,7 @@ fun clothDraw(garment: SurfaceGarment, cloth: SeeThroughCloth, palette: Palette,
     val looks = garment.cover.cover.seeThrough
     val slots = areas.mapIndexed { i, area -> if (looks.getOrNull(i) != null) area.color ?: garmentSlot else garmentSlot }
     val sides = HashMap<SlotName?, SideTones>()
-    fun sidesOf(slot: SlotName?) = sides.getOrPut(slot) { SideTones.of(palette.colorOf(slot) ?: fallback.base, palette.shadowOf(slot), shading, toCamera) }
+    fun sidesOf(slot: SlotName?) = sides.getOrPut(slot) { SideTones.of(palette, slot, fallback.base, shading, toCamera) }
     val positive = garment.surface.positiveZ
     val negative = garment.surface.negativeZ
     val channels = Array(CLOTH_FLOATS) { FloatArray(count) }
@@ -63,10 +62,10 @@ private class SideTones(val near: Tones, val positive: Tones, val negative: Tone
     )
 
     companion object {
-        fun of(lit: Color, own: Color?, shading: ObjectShading, toCamera: Vec3) = SideTones(
-            DefaultToneRule.tones(lit, own, shading, null, toCamera),
-            DefaultToneRule.tones(lit, own, shading, BodySide.POSITIVE_Z, toCamera),
-            DefaultToneRule.tones(lit, own, shading, BodySide.NEGATIVE_Z, toCamera),
+        fun of(palette: Palette, slot: SlotName?, fallback: Color, shading: ObjectShading, toCamera: Vec3) = SideTones(
+            palette.tonesOf(slot, fallback, shading, null, toCamera),
+            palette.tonesOf(slot, fallback, shading, BodySide.POSITIVE_Z, toCamera),
+            palette.tonesOf(slot, fallback, shading, BodySide.NEGATIVE_Z, toCamera),
         )
     }
 }

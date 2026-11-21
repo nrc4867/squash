@@ -61,7 +61,7 @@ enum class LightFrame { VIEW, BODY }
 /**
  * One object's shading choice. Flat by default, which needs nothing but its color. [toLight] is the way to the light in body space as seen
  * from the front; with a [LightFrame.VIEW] light it turns round the body's up with the camera, so a back or side view is lit from the
- * viewer's front, above and left as the front view is.
+ * viewer's front, above and left as the front view is. [key] is the way to the shot's key light in body space, fixed to the body.
  */
 @Immutable
 data class ObjectShading(
@@ -70,9 +70,13 @@ data class ObjectShading(
     val shadowDepth: Float = SHADOW_DEPTH,
     val farSide: FarSideDarkening = FarSideDarkening(),
     val light: LightFrame = LightFrame.VIEW,
+    val key: Vec3? = null,
 ) {
     /** The way to the light seen with the camera at [toCamera] from the body. */
     fun lightFor(toCamera: Vec3): Vec3 = if (light == LightFrame.BODY) toLight else viewLight(toLight, toCamera)
+
+    /** A mesh's material in [tones], outlined in [ink], seen with the camera at [toCamera]: lit by this shading's light and its [key]. */
+    fun material(tones: Tones, ink: Color, toCamera: Vec3): PartMaterial = PartMaterial(tones.lit, tones.shadow, ink, mode, lightFor(toCamera), tones.finish, key)
 }
 
 /**
@@ -87,9 +91,9 @@ fun viewLight(toLight: Vec3, toCamera: Vec3): Vec3 {
     return Vec3(toLight.x * c - toLight.z * s, toLight.y, toLight.x * s + toLight.z * c)
 }
 
-/** The two colors a color shows as: [lit], and [shadow] where two-tone falls in shade. */
+/** The two colors a color shows as: [lit], and [shadow] where two-tone falls in shade; [finish] is how its material draws past them. */
 @Immutable
-data class Tones(val lit: Color, val shadow: Color)
+data class Tones(val lit: Color, val shadow: Color, val finish: Finish = Finish.PLAIN)
 
 /** Turns a color and its slot's own shadow tone, if it has one, into what it shows as on one object in one view. */
 fun interface ToneRule {
@@ -107,17 +111,24 @@ val DefaultToneRule = ToneRule { color, ownShadow, shading, side, toCamera ->
  * moving toward orange, so it does not turn grey; a pale, grey or white one cools to a lilac grey, so white in shade reads
  * as white and not tan.
  */
-fun Color.shadeShifted(depth: Float): Color {
+fun Color.shadeShifted(depth: Float, shift: ShadeShift = ShadeShift.AUTO): Color {
     if (depth == 0f) return this
-    val factor = shadeFactor(depth)
+    val factor = shadeFactor(depth, shift)
     return Color((red * factor.red).coerceIn(0f, 1f), (green * factor.green).coerceIn(0f, 1f), (blue * factor.blue).coerceIn(0f, 1f), alpha)
 }
 
+/** Which way [shadeShifted] turns a color: by its saturation, or always cool or warm. */
+enum class ShadeShift { AUTO, COOL, WARM }
+
 /** What [shadeShifted] multiplies each channel of this color by at [depth], opaque. */
-fun Color.shadeFactor(depth: Float): Color {
+fun Color.shadeFactor(depth: Float, shift: ShadeShift = ShadeShift.AUTO): Color {
     val most = maxOf(red, green, blue)
     val saturation = if (most > 0f) (most - minOf(red, green, blue)) / most else 0f
-    val warm = ((saturation - COOL_BELOW) / (WARM_ABOVE - COOL_BELOW)).coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
+    val warm = when (shift) {
+        ShadeShift.COOL -> 0f
+        ShadeShift.WARM -> 1f
+        ShadeShift.AUTO -> ((saturation - COOL_BELOW) / (WARM_ABOVE - COOL_BELOW)).coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
+    }
     fun loss(cool: Float, warmLoss: Float) = (1f - (cool + (warmLoss - cool) * warm) * depth).coerceIn(0f, 1f)
     return Color(loss(COOL_RED_LOSS, WARM_RED_LOSS), loss(COOL_GREEN_LOSS, WARM_GREEN_LOSS), loss(COOL_BLUE_LOSS, WARM_BLUE_LOSS))
 }

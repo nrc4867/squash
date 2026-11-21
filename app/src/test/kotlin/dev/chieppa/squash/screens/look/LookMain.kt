@@ -28,6 +28,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.ORBIT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.RELEASE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.SURFACE
+import dev.chieppa.squash.screens.look.LookArgs.Companion.TURN
 import dev.chieppa.squash.screens.smoke.CloseUps
 import dev.chieppa.squash.screens.smoke.WomanViews
 import dev.chieppa.squash.screens.look.shots.ReferenceShot
@@ -44,6 +45,9 @@ private const val VIEW_WIDTH_PARTS = 2
 
 /** The face close-up's sides and size: front, three-quarter and side, square tiles. */
 private val FACE_AZIMUTHS = listOf(0f, 40f, 90f)
+
+/** The ways round the character a turn shows it from, in degrees. */
+private val TURN_AZIMUTHS = listOf(0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f)
 private const val FACE_TILE = 600
 
 /** The hair close-up's sides, as a hair outline's views turn: front, three-quarter, side and back. */
@@ -159,6 +163,7 @@ fun renderSession(
             }
             session.sessionSurface.lidPreview.value = null
         }
+        if (TURN in close) views.keep(session, "$name-turn", azimuths = TURN_AZIMUTHS, only = only, tile = tile, height = height)
         if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, name, it, parts.faceFramed(it)) }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
         closeParts.forEach { closeUps.keepAround(session, it, "$name-${it.value}") }

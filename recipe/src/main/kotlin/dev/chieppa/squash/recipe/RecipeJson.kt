@@ -6,6 +6,7 @@ import dev.chieppa.squash.recipe.model.RecipeColor
 import dev.chieppa.squash.recipe.model.RecipeExpression
 import dev.chieppa.squash.recipe.model.RecipeEye
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeMaterialSerializer
 import dev.chieppa.squash.recipe.model.RecipePart
 import dev.chieppa.squash.recipe.model.RecipeSlot
 import dev.chieppa.squash.recipe.model.RecipeTarget
@@ -86,8 +87,9 @@ object RecipeJson {
             items.forEachIndexed { i, item ->
                 if (!decodes(serializer, item)) {
                     val slot = (item as? JsonObject)?.takeIf { serializer == RecipeSlot.serializer() }
-                    val colour = slot?.entries?.firstOrNull { (key, value) -> (key == "color" || key == "shadow") && !decodes(RecipeColor.serializer(), value) }
-                    return "$path[$i]" + (colour?.let { ".${it.key}" } ?: "")
+                    val colour = slot?.entries?.firstOrNull { (key, value) -> key == "color" && !decodes(RecipeColor.serializer(), value) }
+                    val material = slot?.get("material")?.takeIf { !decodes(RecipeMaterialSerializer, it) }
+                    return "$path[$i]" + (colour?.let { ".${it.key}" } ?: material?.let { ".material" } ?: "")
                 }
             }
         }

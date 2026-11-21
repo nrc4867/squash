@@ -16,7 +16,6 @@ import dev.chieppa.squash.geom.WidthSample
 import dev.chieppa.squash.geom.dragProfile
 import dev.chieppa.squash.render.BodySide
 import dev.chieppa.squash.render.ColorLayerDraw
-import dev.chieppa.squash.render.DefaultToneRule
 import dev.chieppa.squash.render.LineRule
 import dev.chieppa.squash.render.MeshDraw
 import dev.chieppa.squash.render.MeshInstance
@@ -27,7 +26,6 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.RibbonPoint
 import dev.chieppa.squash.render.StrokeRibbon
-import dev.chieppa.squash.render.ToneRule
 import dev.chieppa.stretch.gpu.Mat4
 
 /** How far along a mark with no width of its own its ends taper, as a share of its length. */
@@ -49,7 +47,7 @@ fun Palette.shadowOf(slot: SlotName?): Color? = slot?.let(::shadow)?.let { Color
 /**
  * A part's draw with its color from [palette]. Its base shows the slot its work names; with none named, or one the palette does
  * not hold, [fallback]'s base, the look's own part color. A layer whose slot the palette does not hold is not drawn, so what is
- * under it shows. [side] and [toCamera] choose its tones through [rule]. It draws at its base slot's opacity. With [copies] it draws
+ * under it shows. [side] and [toCamera] choose its tones, each slot's material its finish ([tonesOf]). It draws at its base slot's opacity. With [copies] it draws
  * once for each copy, [mesh] being the part's own at rest, each in the slot that copy shows, its own base where it names none.
  */
 fun coloredPartDraw(
@@ -62,20 +60,19 @@ fun coloredPartDraw(
     toCamera: Vec3,
     model: Mat4,
     outlinePixels: Float,
-    rule: ToneRule = DefaultToneRule,
     cutMesh: (PatchCut) -> RenderMesh = { it.mesh },
     copies: PartCopies? = null,
 ): MeshDraw {
-    val base = rule.tones(palette.colorOf(color?.baseSlot) ?: fallback.base, palette.shadowOf(color?.baseSlot), shading, side, toCamera)
+    val base = palette.tonesOf(color?.baseSlot, fallback.base, shading, side, toCamera)
     fun drawn(cuts: List<SlottedCut<SlotName>>) = cuts.mapNotNull { layer ->
-        palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), rule.tones(it, palette.shadowOf(layer.slot), shading, side, toCamera), layer.cut.alphas) }
+        palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), palette.tonesOf(layer.slot, it, shading, side, toCamera), layer.cut.alphas) }
     }
     val layers = drawn(color?.layers.orEmpty())
     val copyLayers = color?.copies?.map(::drawn)
-    val material = PartMaterial(base.lit, base.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera))
+    val material = shading.material(base, fallback.ink, toCamera)
     val instances = copies?.places?.mapIndexed { i, place ->
         val shade = place.slot?.let { slot ->
-            palette.colorOf(slot)?.let { rule.tones(it, palette.shadowOf(slot), shading, side, toCamera) }?.let { PartMaterial(it.lit, it.shadow, fallback.ink, shading.mode, shading.lightFor(toCamera)) }
+            palette.colorOf(slot)?.let { palette.tonesOf(slot, it, shading, side, toCamera) }?.let { shading.material(it, fallback.ink, toCamera) }
         }
         MeshInstance(copyModel(place), shade, copyLayers?.getOrNull(i))
     }.orEmpty()

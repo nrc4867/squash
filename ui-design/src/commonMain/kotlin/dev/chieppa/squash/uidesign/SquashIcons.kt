@@ -365,6 +365,51 @@ object SquashIcons {
             stroke("M3 10c2.5 3.2 7.5 3.2 10 0")
         }
     }
+    val MaterialCloth: ImageVector by lazy {
+        icon("material-cloth") {
+            stroke("M3 2.5h10l1 11c-1-.8-2-.8-3 0-1-.8-2-.8-3 0-1-.8-2-.8-3 0-1-.8-2-.8-3 0z")
+            stroke("M6 2.5l-.8 10.2")
+            stroke("M10 2.5l.8 10.2")
+        }
+    }
+    val MaterialGlass: ImageVector by lazy {
+        icon("material-glass") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            stroke("M4.8 8.6l3.8-3.8")
+            stroke("M6.6 10.4l1.2-1.2")
+        }
+    }
+    val MaterialGlow: ImageVector by lazy {
+        icon("material-glow") {
+            fill("M4.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0z")
+            stroke("M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1")
+        }
+    }
+    val MaterialMatte: ImageVector by lazy {
+        icon("material-matte") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            fill("M4.1 11.9L11.9 4.1A5.5 5.5 0 0 1 4.1 11.9z")
+        }
+    }
+    val MaterialMetal: ImageVector by lazy {
+        icon("material-metal") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            fill("M3.4 5.4Q8 3.4 12.6 5.4L13.2 7.2Q8 5.2 2.8 7.2z")
+            stroke("M7.4 11.5A3.6 3.6 0 0 0 11.5 8.6")
+        }
+    }
+    val MaterialPlastic: ImageVector by lazy {
+        icon("material-plastic") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            fill("M4.6 6a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0z")
+        }
+    }
+    val MaterialSkin: ImageVector by lazy {
+        icon("material-skin") {
+            stroke("M2.5 8a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z")
+            fill("M13.5 8A5.5 5.5 0 0 1 8 13.5A7 7 0 0 1 13.5 8z")
+        }
+    }
     val Membrane: ImageVector by lazy {
         icon("membrane") {
             stroke("M2.75 2.25l1.5 11.5")

@@ -10,7 +10,8 @@ import java.util.IdentityHashMap
 /**
  * Draws a [SceneFrame]: each view in its own part of the surface with its own camera, then the overlay across the whole
  * surface. Within a view its whole draws go first and those below full opacity after them, in their order, so what lies behind a
- * see-through part shows through it; see-through cloth draws as [SceneView] says. Keeps the buffers of the meshes in the latest frame. Draws only when the frame changes.
+ * see-through part shows through it; see-through cloth draws as [SceneView] says, and the halos of glowing whole draws go after
+ * everything but its images over it, so they tint what lies round them. Keeps the buffers of the meshes in the latest frame. Draws only when the frame changes.
  */
 class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
     private val meshes = MeshPass(context)
@@ -40,7 +41,9 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
             for (image in view.behind) images.draw(pass, imageSlot++, image, view)
             val (cloth, solid) = view.draws.flatMap { it.each() }.partition { it.cloth != null }
             val (whole, seenThrough) = solid.partition { it.opacity >= 1f }
+            val glowing = ArrayList<Pair<Int, GpuMesh>>()
             for (draw in whole) {
+                if (draw.material.finish.glowing) glowing += slot to uploadedFor(draw.mesh)
                 meshes.draw(pass, slot++, uploadedFor(draw.mesh), draw, view)
                 for (layer in draw.layers) colorLayers.draw(pass, layerSlot++, uploadedFor(layer.mesh), layer.extras.map(::uploadedAlphasFor), layer, draw, view)
             }
@@ -59,6 +62,7 @@ class ViewsScene(private val context: GpuContext) : GpuScene<SceneFrame> {
                 for (ribbon in under) ribbons.draw(pass, ribbonSlot++, ribbon, view)
             }
             for (ribbon in overCloth) ribbons.draw(pass, ribbonSlot++, ribbon, view)
+            for ((glowSlot, mesh) in glowing) meshes.drawHalo(pass, glowSlot, mesh)
             for (image in view.over) images.draw(pass, imageSlot++, image, view)
         }
         pass.setViewport(0f, 0f, frame.width.toFloat(), frame.height.toFloat())

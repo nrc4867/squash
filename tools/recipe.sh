@@ -14,7 +14,7 @@
 #   tools/recipe.sh crop <sheet.png> [out=<folder>] [ground=#rrggbb]   a sheet of views on one background split by its gaps into
 #     view-1.png, view-2.png ... (default folder <sheet>-views beside it)
 # Options: out=<folder> (default build/recipes/<id>), render=false (character file only), measure=false,
-# close=face,hand,foot (the default; also hands, feet, joins, orbit (the head round with and without its view keys), hair (the head framed alone from a hair outline's front, three-quarter, side and back), part ids such as close=foot-l,head, or none), around=false (no back and
+# close=face,hand,foot (the default; also hands, feet, joins, orbit (the head round with and without its view keys), hair (the head framed alone from a hair outline's front, three-quarter, side and back), turn (the whole character from eight ways round in its own shading), part ids such as close=foot-l,head, or none), around=false (no back and
 # top views), only=<id>,... (draw just those parts; no close-ups, no measure unless measure=true), outfits=<id,...|all>,
 # poses=<name,...|all>, set=part:name:value,..., reference=<png> with eye=x,y,z target=x,y,z fov=<degrees> or fit=true (search
 # the camera, print it, then score) [ground=#rrggbb] [scale=<body units a metre>], targets=<file>,<file> (proportion targets from

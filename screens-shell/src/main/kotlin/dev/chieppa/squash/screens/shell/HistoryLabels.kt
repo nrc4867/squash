@@ -61,6 +61,7 @@ import dev.chieppa.squash.character.build.PlacementParams
 import dev.chieppa.squash.document.SetParameter
 import dev.chieppa.squash.document.SetPaletteSlot
 import dev.chieppa.squash.document.SetSlotLabel
+import dev.chieppa.squash.document.SetSlotMaterial
 import dev.chieppa.squash.document.SetParameters
 import dev.chieppa.squash.document.AddParameters
 import dev.chieppa.squash.document.SetSocketBlend
@@ -90,6 +91,7 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.color_step_area
 import dev.chieppa.squash.uidesign.generated.color_step_base
+import dev.chieppa.squash.uidesign.generated.color_step_material
 import dev.chieppa.squash.uidesign.generated.color_step_palette
 import dev.chieppa.squash.uidesign.generated.color_step_region
 import dev.chieppa.squash.uidesign.generated.color_step_creases
@@ -132,6 +134,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val updated = stringResource(Res.string.anatomy_update)
     val moved = stringResource(Res.string.move_step)
     val palette = stringResource(Res.string.color_step_palette, FIRST)
+    val material = stringResource(Res.string.color_step_material, FIRST)
     val base = stringResource(Res.string.color_step_base, FIRST)
     val area = stringResource(Res.string.color_step_area, FIRST)
     val region = stringResource(Res.string.color_step_region, FIRST)
@@ -180,6 +183,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetPaintedEye, is SetEyeRoundness, is SetEyeFromFront, is SetEyeGaze, is SetEyeFrame, is SetEyeLids -> paintedEye
             is SetPaletteSlot -> palette.replace(FIRST, displayName(command.name.value))
             is SetSlotLabel -> palette.replace(FIRST, command.label ?: displayName(command.name.value))
+            is SetSlotMaterial -> material.replace(FIRST, displayName(command.name.value))
             is SetBaseSlot -> base.replace(FIRST, command.slot?.let { displayName(it.value) }.orEmpty())
             is SetAreaFill -> area.replace(FIRST, displayName(command.area.substringAfterLast(":")))
             is SetRegion -> region.replace(FIRST, displayName(command.id.value))
