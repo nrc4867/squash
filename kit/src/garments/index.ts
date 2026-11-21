@@ -7,3 +7,5 @@ export * from "./opening.ts";
 export * from "./clothes.ts";
 export * from "./hosiery.ts";
 export * from "./fine.ts";
+export * from "./hats.ts";
+export * from "./gloves.ts";

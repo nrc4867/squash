@@ -37,15 +37,18 @@ class ChartPlaces private constructor(val chart: BodyChart, private val sides: L
      * Each side's ring of [part]'s cells at [row], a pair's on both sides: the middle of the ring's cells, and how far they lie from it on
      * average.
      */
-    fun rings(part: dev.chieppa.squash.document.PartId, row: Int): List<Pair<Vec3, Float>> = sides.filter { it.part == chart.leaderOf(part) }.mapNotNull { side ->
-        val points = (0 until CHART_COLUMNS).mapNotNull { column ->
+    fun rings(part: dev.chieppa.squash.document.PartId, row: Int): List<Pair<Vec3, Float>> = ringPoints(part, row).map { points ->
+        val middle = points.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / points.size)
+        middle to points.sumOf { (it - middle).length.toDouble() }.toFloat() / points.size
+    }
+
+    /** Each side's ring of [part]'s cells at [row], a pair's on both sides: the middles of the ring's cells that lie somewhere, round it in order. */
+    fun ringPoints(part: dev.chieppa.squash.document.PartId, row: Int): List<List<Vec3>> = sides.filter { it.part == chart.leaderOf(part) }.mapNotNull { side ->
+        (0 until CHART_COLUMNS).mapNotNull { column ->
             val cell = row * CHART_COLUMNS + column
             val x = side.xyz[cell * 3]
             if (x.isNaN()) null else Vec3(x, side.xyz[cell * 3 + 1], side.xyz[cell * 3 + 2])
-        }
-        if (points.isEmpty()) return@mapNotNull null
-        val middle = points.fold(Vec3.ZERO) { sum, p -> sum + p } * (1f / points.size)
-        middle to points.sumOf { (it - middle).length.toDouble() }.toFloat() / points.size
+        }.ifEmpty { null }
     }
 
     /** The cells whose middle [project] puts on screen where [inside] holds, through the whole body, front and back alike. */

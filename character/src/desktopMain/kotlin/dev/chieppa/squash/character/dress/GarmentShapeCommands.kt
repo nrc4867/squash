@@ -69,7 +69,7 @@ private fun wornOf(character: Character, body: AssembledCharacter, garment: Garm
     val hidden = tucks.filter { !it.kind.digits && it.tucked }.mapTo(HashSet()) { it.part }
     hidden.forEach { changes[it] = BodyPartChange.Hide }
     tucks.filter { it.kind.digits && it.tucked }.groupBy { it.part }.forEach { (part, items) ->
-        changes[part] = BodyPartChange.Redraw(PartData(params = items.associate { digitParam(it.kind) to 0f }))
+        changes[part] = BodyPartChange.Redraw(PartData(params = items.fold(emptyMap<String, Float>()) { held, item -> held + tuckedParams(item.kind) }))
     }
     val branches = boxes.filterKeys { it !in hidden }
     for (part in painted.chart.parts) {

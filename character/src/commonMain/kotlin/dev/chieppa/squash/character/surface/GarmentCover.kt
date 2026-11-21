@@ -67,7 +67,8 @@ data class GarmentCover(
  * part at the root of this piece where the garment is worn in pieces that meet nowhere (see [pieces]), else null; [cloth], the painted
  * cloth over each part it covers, a cuff's being its band, which is all coverage reads of what it covers; a branch's range is read only
  * where it runs past its part's end. The parts that come out, with a cuff or none, and those that hang inside are read over the region
- * each part's cells paint ([clothBranch]).
+ * each part's cells paint ([clothBranch]). [digits] are the covered parts whose cloth reaches their far end the whole way round, so it
+ * follows each digit they build (a glove's fingers, a boot's hooves) as well as the part's own run.
  */
 class WornCover(
     val cover: GarmentCover,
@@ -80,6 +81,7 @@ class WornCover(
     val hangsFree: Set<PartId> = emptySet(),
     val cloth: Map<PartId, ClothField> = cover.cloth,
     val eases: Map<PartId, ClothEase> = emptyMap(),
+    val digits: Set<PartId> = emptySet(),
 ) {
     val garment: Garment get() = cover.garment
 
@@ -104,8 +106,11 @@ class WornCover(
     /** The branch over [part], one of the garment's own or a cuff's; null where the garment does not cover it. */
     fun branchOf(part: PartId): GarmentBranch? = branches[part]
 
+    /** Whether its cloth follows the digits of [part] (see [digits]). */
+    fun followsDigits(part: PartId): Boolean = part in digits
+
     /** What equals for the same branches, cuffs, holes, shells, piece and open ends, the shells by their objects, whatever its cloth prints. */
-    val key: List<Any?> = listOf(cover.unprinted, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree)
+    val key: List<Any?> = listOf(cover.unprinted, branches, cuffs, holes, shells.mapValues { Same(it.value.surface) }, piece, openEnds, hangsFree, digits)
 
     /**
      * What equals for the same garment grown the same way, whatever comes out through it: the garment but what it covers, the branches,
@@ -119,6 +124,7 @@ class WornCover(
         shells.mapValues { Same(it.value.surface) },
         piece,
         eases,
+        digits,
     )
 
     companion object {
@@ -134,6 +140,7 @@ class WornCover(
             val built = HashMap<PartId, PlacedPart>()
             val open = HashMap<PartId, OpenEnds>()
             val free = HashSet<PartId>()
+            val digits = HashSet<PartId>()
             for ((part, branch) in fitted) {
                 val covered = body.part(part) ?: continue
                 val reach = cover.cloth[part]?.reach ?: continue
@@ -164,8 +171,9 @@ class WornCover(
                     shells.over(garment, whole, covered)?.let { built[part] = it }
                 }
                 if (reach.allRound && hangsDownPast(ran, covered)) free += part
+                if (reach.allRound && reach.reachesHigh) digits += part
             }
-            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free, cloth = cloth, eases = eases.filterValues { !it.uniform })
+            return WornCover(cover, branches, cuffs, holes - cuffs, built, openEnds = open, hangsFree = free, cloth = cloth, eases = eases.filterValues { !it.uniform }, digits = digits)
         }
     }
 }

@@ -50,5 +50,6 @@ fun coverUnion(worn: List<WornCover>): WornCover? {
         OpenEnds(low, high, if (low || high) reaching.flatMapTo(HashSet()) { it.openEnds[part]?.parts.orEmpty() } else emptySet())
     }
     val cloth = merged.keys.mapNotNull { part -> ClothField.union(worn.mapNotNull { it.clothOf(part) })?.let { part to it } }.toMap()
-    return WornCover(worn.first().cover, merged, emptySet(), emptySet(), emptyMap(), openEnds = open, cloth = cloth)
+    val digits = merged.keys.filterTo(HashSet()) { part -> worn.any { part in it.digits } }
+    return WornCover(worn.first().cover, merged, emptySet(), emptySet(), emptyMap(), openEnds = open, cloth = cloth, digits = digits)
 }

@@ -25,7 +25,8 @@ private const val HEM_INSET_CELLS = 1.5f
  * ease of a part coming out through an end, [ends], their members as placed, so the garment grown over the run's closed end stays open
  * round the part coming out and closes over the rest of the end; and cloth whose branch runs past an end it reaches, onto a shell
  * hanging free, ending a little short of where the branch says, on the shell's wall. A run of a part the garment does not cover, or a
- * part's later run, which its cloth does not read, counts as [reach] outside. The share-weighted sum of those is one smooth function,
+ * part's later run, which its cloth does not read, counts as [reach] outside, but a digit of a part whose digits it follows
+ * ([WornCover.digits]), which counts as [reach] inside. The share-weighted sum of those is one smooth function,
  * zero along the hem, the neck opening and the cuffs. Where a part comes out through a hole of the garment, [holes], its members as
  * placed, the coverage is at most how far the vertex lies outside them, less [clear]. Safe to read from many threads at once.
  */
@@ -38,6 +39,10 @@ class Coverage(
     private val ends: List<JoinedMember> = emptyList(),
 ) {
     private val branches = Array(field.runs.size) { field.runs[it].takeIf { run -> run.first }?.let { run -> worn.branchOf(run.partId) } }
+    private val digits = BooleanArray(field.runs.size) { r ->
+        val run = field.runs[r]
+        !run.first && worn.followsDigits(run.partId) && worn.clothOf(run.partId) != null && isDigitRun(run.part, run.patch)
+    }
     private val cloths = Array(field.runs.size) { field.runs[it].takeIf { run -> run.first }?.let { run -> worn.clothOf(run.partId) } }
     private val scales = Array(field.runs.size) { if (branches[it] != null) RunScales(field.runs[it].patch) else null }
     private val open = Array(field.runs.size) { if (branches[it] != null) worn.openEnds[field.runs[it].partId] else null }
@@ -55,7 +60,11 @@ class Coverage(
             val share = mesh.heldShares[v * HELD + k]
             val branch = branches[member]
             val cloth = cloths[member]
-            val inside = if (branch == null || cloth == null) -reach else clothInside(mesh, v, k, member, branch, cloth)
+            val inside = when {
+                digits[member] -> reach
+                branch == null || cloth == null -> -reach
+                else -> clothInside(mesh, v, k, member, branch, cloth)
+            }
             sum += share * inside.coerceIn(-reach, reach)
             total += share
         }

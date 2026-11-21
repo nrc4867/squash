@@ -47,7 +47,8 @@ const val DRAWN_LEVEL = 3
 fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacter, solids: RunSolids, clips: RunClips, grownRuns: GrownRuns = GrownRuns()): CharacterField? {
     val kept = field.runs.indices.filter { field.runs[it].first && worn.branchOf(field.runs[it].partId) != null && worn.clothOf(field.runs[it].partId) != null }
     val near = joinedNear(field, worn, kept)
-    val grown = (kept + near.keys).sorted()
+    val digits = digitRunsOf(field, worn, kept)
+    val grown = (kept + near.keys + digits).sorted()
     val renumbered = HashMap<Int, Int>().also { map -> grown.forEachIndexed { i, run -> map[run] = i } }
     val runs = ArrayList<FieldRun>()
     val members = ArrayList<JoinedMember>()
@@ -60,6 +61,7 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         val neighbour = near[run]
         val ease = member.ease + (neighbour?.ease ?: checkNotNull(branch).ease)
         val solid = if (neighbour != null) clips.of(member.solid, at.patch, neighbour.from, neighbour.to, field.cell)
+        else if (!at.first) member.solid
         else checkNotNull(worn.clothOf(at.partId)).reach.let { reach ->
             val cloth = worn.eases[at.partId]
             val hang = worn.garment.hang?.takeIf { at.part.role in HANGING }
@@ -71,7 +73,7 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         }
         runs += at
         members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease, member.angles)
-        if (neighbour == null) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
+        if (neighbour == null && at.first) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
     }
     for ((at, shell) in shells) {
         runs += at
@@ -95,7 +97,22 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         members += JoinedMember(solid, placed.origin, placed.mirrored, blend, parent, nextPart++, ease)
     }
     if (runs.isEmpty()) return null
-    return CharacterField(JoinedField(members), runs, bandCell(field, worn, kept))
+    return CharacterField(JoinedField(members), runs, bandCell(field, worn, kept, digits.isNotEmpty()))
+}
+
+/**
+ * The runs of [field] that are digits of a part [worn] follows the digits of ([WornCover.digits]), whose own first run is among [kept]:
+ * each finger, toe or hoof of a gloved hand or a booted foot, grown with the part's ease and joined to its first run as the body joins it,
+ * so the cloth parts between the digits as the skin does and each digit's cloth rides that digit's bones.
+ */
+private fun digitRunsOf(field: CharacterField, worn: WornCover, kept: List<Int>): List<Int> {
+    if (worn.digits.isEmpty()) return emptyList()
+    val members = field.field.members
+    val firsts = kept.toSet()
+    return field.runs.indices.filter { r ->
+        val run = field.runs[r]
+        !run.first && members[r].parent in firsts && worn.followsDigits(run.partId) && isDigitRun(run.part, run.patch)
+    }
 }
 
 /**
@@ -176,9 +193,11 @@ private fun reachesNear(reach: ClothReach, u: Float): Boolean {
 /**
  * The cell [worn] meshes at over [field]'s runs [kept]: that of the finest of them, no finer than [DETAIL_LEVEL], halved further while
  * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells' and a drawn
- * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere.
+ * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere; at the digits' own
+ * level, [DIGIT_LEVEL], where it follows [digits], so each glove finger is as fine as the finger under it.
  */
-private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>): Float {
+private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>, digits: Boolean): Float {
+    if (digits) return field.cell / (1 shl DIGIT_LEVEL)
     val levels = digitLevels(field)
     var narrowest = Float.MAX_VALUE
     var finest = DIGIT_LEVEL

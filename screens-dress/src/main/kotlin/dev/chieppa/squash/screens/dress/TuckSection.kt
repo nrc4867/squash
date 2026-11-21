@@ -40,7 +40,8 @@ private const val PAIR = 2
 
 /**
  * Tuck: a row for each small part, or part's digits, inside the garment as drawn and in the selection (see [shownTucks]), Tucked or
- * Shaped; one shaped that pokes through the cloth in lumps is washed in the warn colour. Fingers are only shaped. Absent while it holds none.
+ * Shaped; one shaped that pokes through the cloth in lumps is washed in the warn colour. Fingers tuck into a mitten on a hand that can fuse
+ * them and are only shaped on any other. Absent while it holds none.
  */
 @Composable
 internal fun TuckSection(state: AppState, session: CharacterSession, character: Character, garment: Garment) {
