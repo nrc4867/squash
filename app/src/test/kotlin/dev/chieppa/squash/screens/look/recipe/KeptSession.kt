@@ -7,7 +7,6 @@ import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.recipe.build.RecipeBuild
 import dev.chieppa.squash.rig.SessionPose
 import dev.chieppa.squash.screens.TestWork
-import dev.chieppa.squash.screens.TestWorkCloser
 import dev.chieppa.squash.screens.smoke.CloseUps
 
 /** A session open on a recipe's character, its pose node and the work it runs on. */
@@ -16,15 +15,14 @@ class OpenSession(val session: CharacterSession, val pose: SessionPose, val work
 /**
  * One session kept from build to build of a recipe. Each build takes the session back to the empty character it started from and sends
  * the new build's commands, so the graph's caches keep what an edit left as it was and only the rest is derived again. A build that
- * starts from another empty character, or whose commands do not give the same document, gets a session of its own. The sessions of
- * other work, closed by then, are forgotten each time.
+ * starts from another empty character, or whose commands do not give the same document, gets a session of its own. Only this keeper's
+ * own work is ever closed, so sessions kept for other builds in the same process run on.
  */
 class KeptSession(private val library: TemplateLibrary = CloseUps.shippedLibrary()) : AutoCloseable {
     private var kept: OpenSession? = null
 
     /** A session showing [built]'s document. */
     fun open(built: RecipeBuild): OpenSession {
-        TestWorkCloser.closeAll(setOfNotNull(kept?.work))
         val empty = emptyOf(built.document.character)
         kept?.let { open ->
             val history = open.session.history

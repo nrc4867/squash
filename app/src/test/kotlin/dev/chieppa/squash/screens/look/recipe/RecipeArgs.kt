@@ -47,8 +47,14 @@ class RecipeArgs(args: Array<String>) {
     /** With `watch=true`, the build runs again whenever the recipe file changes, in this one process, until stopped. */
     val watch: Boolean = values["watch"] == "true"
 
+    /** With `serve=true`, the process serves builds to clients on this machine instead (see `server.serve`). */
+    val serve: Boolean = values["serve"] == "true"
+
     /** A character sheet to split into one image a view, into [out]. */
     val crop: File? = file("crop")
+
+    /** Whether the command renders, so it needs a GPU device: a build or watch that writes more than the character file. */
+    val renders: Boolean = export == null && probe == null && crop == null && !buildOnly
 
     /** Files of proportion targets to check the build against besides the recipe's own, JSON lists as `kit sheet measure` writes (`targets-<view>.json`), from `targets=<file>,<file>`. */
     val targets: List<File> = values["targets"]?.split(',')?.filter { it.isNotEmpty() }?.map { path -> File(path).let { if (it.isAbsolute) it else File(root, path) } } ?: emptyList()
