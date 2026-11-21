@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.ResolvedPoint
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.mouth.AnchoredMark
 import dev.chieppa.squash.character.mouth.FlatPiece
+import dev.chieppa.squash.character.mouth.MouthDentition
 import dev.chieppa.squash.character.mouth.MouthMarks
 import dev.chieppa.squash.character.mouth.shapeMouth
 import dev.chieppa.squash.document.Anchor
@@ -13,8 +14,10 @@ import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
+import dev.chieppa.squash.document.TongueLevel
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
+import dev.chieppa.squash.geom.SurfaceUv
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
@@ -42,6 +45,7 @@ fun mouthDraws(
     tolerance: Float,
     origin: Vec3 = Vec3.ZERO,
     style: MouthStyle = MouthStyle.PLAIN,
+    dentition: MouthDentition = MouthDentition.NONE,
 ): MouthDraws {
     val shown = MarkRole.entries.associateWith { roleShapes(group, it, marks, expressed, bin) }
     val lipShapes = shown.getValue(MarkRole.LIP_LINE)
@@ -58,15 +62,19 @@ fun mouthDraws(
         tongue = anchored(MarkRole.TONGUE),
         tongueFilled = role(MarkRole.TONGUE)?.fill != null,
         lipsFilled = role(MarkRole.LIP_LINE)?.fill != null,
+        tongueShown = group.tongueLevel != TongueLevel.NONE,
     )
     val drawn = lipShapes.mapNotNull { shape -> lineOn(surface, origin, like, shape.patch, shape.places)?.let { shape.source.copy(id = shape.source.id, points = it, versions = emptyMap(), width = shape.width) } }
-    val mouth = shapeMouth(holder, placed, group.controls, style, surface) ?: return MouthDraws(emptyList(), drawn)
+    val mouth = shapeMouth(holder, placed, group.controls, style, surface, dentition) ?: return MouthDraws(emptyList(), drawn)
     val flat = mouth.flat
     fun line(id: String, places: List<Vec2>) = lineOn(surface, origin, like, mouth.patch, mouth.uv(places).map { Vec2(it.u, it.v) })?.let {
         first.source.copy(id = MarkId(id), points = it, versions = emptyMap(), width = first.width)
     }
     val base = group.id.value
-    val lips = (if (flat.lipMoved) flat.upper.mapIndexedNotNull { i, piece -> line("$base~upper-$i", piece) } else drawn) +
+    fun lineUv(id: String, places: List<SurfaceUv>) = lineOn(surface, origin, like, mouth.patch, places.map { Vec2(it.u, it.v) })?.let {
+        first.source.copy(id = MarkId(id), points = it, versions = emptyMap(), width = first.width)
+    }
+    val lips = (if (flat.lipMoved) mouth.upperUv().mapIndexedNotNull { i, piece -> lineUv("$base~upper-$i", piece) } else drawn) +
         flat.lower.mapIndexedNotNull { i, piece -> line("$base~lower-$i", piece) } +
         listOfNotNull(flat.crease?.let { line("$base~crease", it) }) +
         inked(group, MarkRole.TONGUE, flat.tongue, ::line) + inked(group, MarkRole.TEETH, flat.teeth, ::line)

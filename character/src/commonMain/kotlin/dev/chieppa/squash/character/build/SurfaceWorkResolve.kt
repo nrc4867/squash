@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.MouthStyle
+import dev.chieppa.squash.character.mouth.MouthDentition
 import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BrushStroke
@@ -36,7 +37,7 @@ data class ExpressionWork(val id: ExpressionId, val name: String, val marks: Map
 /**
  * What a part's resolved surface work reads from the document, and the parts it names that exist, the part itself among them. [mirrors] are
  * the other sides of its mirrored marks, by the mark each mirrors, and [regionMirrors] of its mirrored regions; [mouthStyles] the style each
- * of its mouths talks in, where a template library was there to read them.
+ * of its mouths talks in and [dentitions] the teeth each draws, where a template library was there to read them.
  */
 data class SurfaceWorkInput(
     val surface: SurfaceWork = SurfaceWork(),
@@ -45,6 +46,7 @@ data class SurfaceWorkInput(
     val mirrors: Map<MarkId, Mark> = emptyMap(),
     val regionMirrors: Map<RegionId, Region> = emptyMap(),
     val mouthStyles: Map<MarkGroupId, MouthStyle> = emptyMap(),
+    val dentitions: Map<MarkGroupId, MouthDentition> = emptyMap(),
 )
 
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
@@ -119,6 +121,7 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
         },
         lineWeights = surface.lineWeights.mapNotNull { checkCancelled(); resolveWeight(it, point) },
         mouthStyles = input.mouthStyles,
+        dentitions = input.dentitions,
     )
 }
 

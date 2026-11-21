@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.BodySurfaceWork
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.build.ResolvedSurfaceWork
 import dev.chieppa.squash.character.model.MouthStyle
+import dev.chieppa.squash.character.mouth.MouthDentition
 import dev.chieppa.squash.document.CameraBin
 import dev.chieppa.squash.document.ExpressionId
 import dev.chieppa.squash.document.Palette
@@ -70,7 +71,8 @@ class FaceWork(
         val ribbons = ArrayList<RibbonDraw>()
         for (group in work.groups.filter { it.isMouth }) {
             val style = work.mouthStyles[group.id] ?: MouthStyle.PLAIN
-            val mouth = mouthDraws(group, marks, expression?.marks?.get(group.id), placed.surface, bin, input.palette, FACE_TOLERANCE, placed.origin, style)
+            val dentition = work.dentitions[group.id] ?: MouthDentition.NONE
+            val mouth = mouthDraws(group, marks, expression?.marks?.get(group.id), placed.surface, bin, input.palette, FACE_TOLERANCE, placed.origin, style, dentition)
             layers += mouth.layers
             mouth.lips.mapNotNullTo(ribbons) { it.lineDraw(input.lines?.parts?.get(part), rule, ink, taper, DepthLayer.SCENE) }
         }

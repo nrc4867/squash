@@ -11,7 +11,7 @@ data class GroupRole(
     val ink: Boolean = true,
     val fill: SlotName? = null,
     val marks: List<MarkId> = emptyList(),
-    @Doc("Marks of this role that draw over the lips, open or closed, so fangs show over a shut mouth; the lip ink breaks under them. Teeth and tongue only.")
+    @Doc("Drawn marks of this role that draw over the lips, open or closed, the lip ink breaking under them: a tongue out, or a drawn tooth. Teeth and tongue only; the teeth's own slots carry their own over flag.")
     val over: List<MarkId> = emptyList(),
 )
 
@@ -66,6 +66,10 @@ data class MarkGroup(
     val style: String? = null,
     @Doc("The spoken shapes this mouth changes from its style's, by name: each value set here replaces the style's.")
     val shapes: Map<MouthShapeName, MouthShapeValues> = emptyMap(),
+    @Doc("The mouth's teeth: a preset, by default its style's, and only what this mouth changes of it.")
+    val teeth: MouthTeeth = MouthTeeth(),
+    @Doc("How much tongue the mouth draws: none, or flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark).")
+    val tongueLevel: TongueLevel = TongueLevel.FLAT,
 ) {
     init {
         val named = roles.map { it.role }

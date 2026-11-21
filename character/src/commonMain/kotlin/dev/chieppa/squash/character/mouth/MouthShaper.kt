@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.mouth
 
+import dev.chieppa.squash.document.JawName
 import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.geom.Vec2
@@ -10,75 +11,6 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
-
-/** Places along each lip of a shaped mouth. */
-private const val SAMPLES = 25
-
-/** How far `wide` 1 draws the corners out, a share of the mouth's half width. */
-private const val WIDE_REACH = 0.25f
-
-/** How far `round` 1 draws the corners in, a share of the mouth's half width. */
-private const val ROUND_NARROW = 0.5f
-
-/** How far `smile` 1 lifts the corners, a share of the mouth's width. */
-private const val SMILE_LIFT = 0.16f
-
-/** How far `upperLip` 1 raises the upper lip's middle, a share of the mouth's width. */
-private const val UPPER_RAISE = 0.1f
-
-/** How far `round` 1 arches the upper lip up, a share of the lower lip's drop under it. */
-private const val ROUND_ARCH = 0.35f
-
-/** How much of the drop `lowerLip` 1 takes back as the lower lip tucks up under the teeth. */
-private const val TUCK = 0.7f
-
-/** Past how hard a press the lips show a crease under them. */
-private const val CREASE_FROM = 0.3f
-
-/** How far under the lip line a full press's crease sits at its middle, a share of the mouth's width. */
-private const val CREASE_GAP = 0.035f
-
-/** How far the crease reaches either side of the middle, a share of the mouth's half width. */
-private const val CREASE_REACH = 0.5f
-
-/** Below this a jaw has not opened. */
-private const val LEAST_OPEN = 0.01f
-
-/** How far below the lip line a tooth's top may sit and still be an upper tooth, a share of the mouth's width. */
-private const val UPPER_TOOTH_REACH = 0.03f
-
-/** The tongue control at which the tongue's tip is up at the upper teeth; past it the tongue comes out. */
-private const val TONGUE_UP = 0.5f
-
-/** How far under the upper lip the lifted tongue's top stays, a share of its height. */
-private const val TONGUE_TIP_ROOM = 0.1f
-
-/** How far up behind the upper teeth the lifted tongue's tip tucks, a share of its height. */
-private const val TONGUE_BEHIND_TEETH = 0.15f
-
-/** How near the middle the upper teeth's lower edge is read, a share of the mouth's half width. */
-private const val TEETH_MIDDLE = 0.3f
-
-/** How much of the tongue is still above the lower lip when it is fully out. */
-private const val TONGUE_OUT_ABOVE = 0.3f
-
-/** A tongue no mark draws: its width and height, shares of the mouth's width, how much of it sits below the lower lip at rest, and its places. */
-private const val PLAIN_TONGUE_WIDTH = 0.35f
-private const val PLAIN_TONGUE_HEIGHT = 0.2f
-private const val PLAIN_TONGUE_SUNK = 0.4f
-private const val PLAIN_TONGUE_STEPS = 16
-
-/** Past how far a tuck the upper teeth rest over the lower lip, and how far down its band they reach, a share of it. */
-private const val TUCK_UNDER = 0.3f
-private const val TUCK_REST = 0.4f
-
-/** How much a full press and a full tuck thin a lip's band, and a full pucker thickens it. */
-private const val PRESS_THIN = 0.3f
-private const val TUCK_THIN = 0.6f
-private const val ROUND_FULL = 0.4f
-
-/** How far down the room below the upper lip reaches, in mouth widths: past anything a tongue reaches. */
-private const val BELOW = 10f
 
 private const val TINY = 1e-6f
 
@@ -95,7 +27,8 @@ val PLAIN_TONGUE = MarkId("tongue")
  * - `lowerLip` tucks the lower lip up (taking back the drop) or presses the lips shut, with a crease under them;
  * - `tongue` lifts the tongue to the upper teeth, then out past the lower lip.
  *
- * Teeth that reach the lip line ride the upper lip; teeth below it ride the jaw, as the tongue does. Pieces flagged over, and a tongue out
+ * Drawn teeth that reach the lip line ride the upper lip; teeth below it ride the jaw, as the tongue does. The dentition's teeth are laid
+ * on the inner mouth's [TeethSeat]: the upper jaw on the lip line as drawn, the lower on the jaw's drop. Pieces flagged over, and a tongue out
  * past the lip, draw over the lips and break their ink; everything else shows only inside the opening. See HLD: look, Mouth.
  */
 object MouthShaper {
@@ -167,16 +100,28 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
         }
     }
 
+    /** The seat F2's inner mouth gives the teeth: the upper row on the lip line as drawn, fixed to the skull, the lower on the jaw's drop below it. */
+    private val seat = object : TeethSeat {
+        override val middle = this@Shaping.middle
+        override val width = this@Shaping.width
+        override fun reach(sign: Int) = if (sign > 0) right - middle else middle - left
+        override fun upperLine(x: Float) = lipAt(x)
+        override fun lowerLine(x: Float) = lipAt(x) + drop(x)
+        override fun heightScale(x: Float) = drawing.heightScale(Vec2(x, lipAt(x)))
+    }
+
     fun shaped(): FlatMouth {
-        val teeth = drawing.teeth.flatMap(::tooth)
+        val teeth = drawing.teeth.flatMap(::tooth) + layTeeth(drawing.dentition, seat).flatMap(::seated)
         val front = teeth.filterNot { it.over }.flatMap { it.loop }.filter { abs(it.x - middle) <= TEETH_MIDDLE * half }
         val teethEdge = front.maxOfOrNull { it.y }
         val tongue = tongueMarks().flatMap { tongue(it, teethEdge) }
         val covers = (teeth + tongue).filter { it.over }.map { it.loop }
         val upperCovers = (teeth + tongue).filter { it.over && it.breaksUpper }.map { it.loop }
         val lowerLine = opening?.let { loop -> if (drawnInner != null) bottomOf(loop) else lower }
+        val heldRuns = if (c.drawnLine && drawing.lipMarks.isNotEmpty()) drawing.lipMarks.flatMapIndexed { i, mark -> brokenRuns(mark, upperCovers).map { LipRun(i, it) } } else null
         return FlatMouth(
-            upper = brokenUnder(upper, upperCovers),
+            upper = heldRuns?.map { drawing.lipMarks[it.mark].subList(it.range.first, it.range.last + 1) } ?: brokenUnder(upper, upperCovers),
+            upperRuns = heldRuns,
             lower = lowerLine?.let { brokenUnder(it, covers) }.orEmpty(),
             crease = crease(),
             opening = opening,
@@ -195,14 +140,43 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
         val extent = Extent(mark.places)
         val upperTooth = extent.top <= lipAt(extent.middle) + UPPER_TOOTH_REACH * width
         val moved = mark.places.map { if (upperTooth) ridden(it) else carried(it) }
-        if (upperTooth && !mark.over && c.lowerLip > TUCK_UNDER) {
-            val resting = upper + xs.reversed().map { x -> Vec2(xOf(x), max(lowerY(x), upperY(x)) + TUCK_REST * band(x, drawing.lipLower, tucked = true)) }
-            return clipClosed(moved, resting).filter { it.size >= MIN_LOOP }.map { FlatPiece(mark.id, it, over = true, breaksUpper = false) }
-        }
+        if (upperTooth && !mark.over && c.lowerLip > TUCK_UNDER) return tucked(mark.id, moved)
         return pieces(mark.id, moved, mark.over, opening)
     }
 
+    /** An upper tooth resting over a lower lip tucked under it. */
+    private fun tucked(id: MarkId, loop: List<Vec2>): List<FlatPiece> {
+        val resting = upper + xs.reversed().map { x -> Vec2(xOf(x), max(lowerY(x), upperY(x)) + TUCK_REST * band(x, drawing.lipLower, tucked = true)) }
+        return clipClosed(loop, resting).filter { it.size >= MIN_LOOP }.map { FlatPiece(id, it, over = true, breaksUpper = false) }
+    }
+
+    /** The room above the lower lip, a little past it, which a lower tooth over the lips stands in. */
+    private val aboveLower by lazy {
+        val edge = xs.map { Vec2(xOf(it), lowerY(it) + OVER_SEAT * width) }
+        edge.reversed() + Vec2(edge.first().x, edge.first().y - BELOW * width) + Vec2(edge.last().x, edge.last().y - BELOW * width)
+    }
+
+    /** The room below the upper lip, a little past it, which an upper tooth over the lips hangs in. */
+    private val belowUpperSeat by lazy {
+        val edge = upper.map { Vec2(it.x, it.y - OVER_SEAT * width) }
+        edge + Vec2(edge.last().x, edge.last().y + BELOW * width) + Vec2(edge.first().x, edge.first().y + BELOW * width)
+    }
+
+    /**
+     * A tooth of the dentition as the lips show it: over the lips, cut to below the upper lip for the upper jaw or above the lower lip for
+     * the lower, so its hidden root stays hidden; an upper tooth resting on a tucked lower lip; else inside the opening.
+     */
+    private fun seated(tooth: FlatTooth): List<FlatPiece> {
+        val upperJaw = tooth.jaw == JawName.UPPER
+        return when {
+            tooth.over -> clipClosed(tooth.loop, if (upperJaw) belowUpperSeat else aboveLower).filter { it.size >= MIN_LOOP }.map { FlatPiece(tooth.id, it, over = true) }
+            upperJaw && c.lowerLip > TUCK_UNDER -> tucked(tooth.id, tooth.loop)
+            else -> pieces(tooth.id, tooth.loop, over = false, within = opening)
+        }
+    }
+
     private fun tongueMarks(): List<FlatMark> {
+        if (!drawing.tongueShown) return emptyList()
         if (drawing.tongue.isNotEmpty()) return drawing.tongue
         if (!drawing.tongueFilled || c.tongue <= 0f) return emptyList()
         val height = PLAIN_TONGUE_HEIGHT * width

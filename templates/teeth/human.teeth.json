@@ -1,0 +1,105 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "human",
+  "name": "Human",
+  "types": {
+    "incisor": {
+      "width": 0.1,
+      "length": 0.11,
+      "tip": "flat"
+    },
+    "lateral": {
+      "width": 0.085,
+      "length": 0.095,
+      "tip": "flat"
+    },
+    "canine": {
+      "width": 0.085,
+      "length": 0.105,
+      "tip": "round"
+    },
+    "premolar": {
+      "width": 0.08,
+      "length": 0.08,
+      "tip": "round"
+    },
+    "molar": {
+      "width": 0.1,
+      "length": 0.07,
+      "tip": "flat"
+    },
+    "lower-incisor": {
+      "width": 0.07,
+      "length": 0.085,
+      "tip": "flat"
+    }
+  },
+  "upper": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "incisor"
+          },
+          {
+            "type": "lateral"
+          },
+          {
+            "type": "canine"
+          },
+          {
+            "type": "premolar"
+          },
+          {
+            "type": "premolar"
+          },
+          {
+            "type": "molar"
+          },
+          {
+            "type": "molar"
+          },
+          {
+            "type": "molar"
+          }
+        ]
+      }
+    ]
+  },
+  "lower": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "lower-incisor"
+          },
+          {
+            "type": "lower-incisor"
+          },
+          {
+            "type": "canine",
+            "length": 0.09
+          },
+          {
+            "type": "premolar"
+          },
+          {
+            "type": "premolar"
+          },
+          {
+            "type": "molar"
+          },
+          {
+            "type": "molar"
+          },
+          {
+            "type": "molar"
+          }
+        ]
+      }
+    ]
+  }
+}

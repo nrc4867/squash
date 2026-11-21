@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "cow",
+  "name": "Cow or deer",
+  "types": {
+    "incisor": {
+      "width": 0.07,
+      "length": 0.07,
+      "tip": "flat"
+    },
+    "cheek": {
+      "width": 0.09,
+      "length": 0.05,
+      "tip": "flat"
+    }
+  },
+  "upper": {
+    "level": "none",
+    "rows": []
+  },
+  "lower": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "incisor"
+          },
+          {
+            "type": "incisor"
+          },
+          {
+            "type": "incisor"
+          },
+          {
+            "type": "incisor"
+          },
+          {
+            "type": "cheek",
+            "gap": 0.3
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -46,6 +46,12 @@ import dev.chieppa.squash.screens.surface.PaintedEyeTags
 import dev.chieppa.squash.screens.surface.EyeLidTags
 import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.screens.surface.HeadAngleTags
+import dev.chieppa.squash.screens.surface.TeethTags
+import dev.chieppa.squash.document.JawName
+import dev.chieppa.squash.document.MouthTeeth
+import dev.chieppa.squash.document.ToothSlotChange
+import dev.chieppa.squash.document.TongueLevel
+import dev.chieppa.squash.document.TeethLevel
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.FileChooser
 import dev.chieppa.stretch.test.setStretchContent
@@ -213,6 +219,43 @@ class FaceFlowTest {
         onNodeWithTag(FaceTags.shape(MouthShapeName.O)).performScrollTo().performClick()
         waitForIdle()
         assertEquals(null, session.mouthPreview.value, "picking it again lets it go")
+    }
+
+    @Test
+    fun aMouthsTeethStartFromItsStylesPresetAndKeepOnlyWhatTheyChange() = runDesktopComposeUiTest(WIDTH, HEIGHT) {
+        val state = fennecOpen()
+        val session = assertNotNull(state.session.value)
+        pickMouth(state)
+        val mouth = assertNotNull(state.face.group)
+        fun teeth() = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == mouth.id }.teeth
+        assertEquals(MouthTeeth(), teeth())
+        onNodeWithTag(TeethTags.RESET).performScrollTo().assertIsNotEnabled()
+
+        onNodeWithTag(TeethTags.setting("length")).performScrollTo().performMouseInput { click(Offset(width - 1f, centerY)) }
+        waitForIdle()
+        val longer = teeth().upper.slots.single()
+        assertEquals(ToothSlotChange(row = 0, slot = 0, length = longer.length), longer, "a drag keeps only the length it set")
+        assertNotNull(longer.length)
+
+        onNodeWithTag(TeethTags.OVER).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(true, teeth().upper.slots.single().over)
+        onNodeWithTag(TeethTags.RESET).assertIsEnabled().performClick()
+        waitForIdle()
+        assertEquals(MouthTeeth(), teeth(), "Reset takes the preset's slot back")
+
+        onNodeWithTag(TeethTags.ADD_SLOT).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(1, teeth().upper.added.size)
+        onNode(hasText("Bar") and hasAnyAncestor(hasTestTag(TeethTags.level(JawName.LOWER)))).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(TeethLevel.BAR, teeth().lower.level)
+        onNode(hasText("Blocks") and hasAnyAncestor(hasTestTag(TeethTags.level(JawName.LOWER)))).performScrollTo().performClick()
+        waitForIdle()
+        assertNull(teeth().lower.level, "the preset's own level keeps nothing")
+        onNode(hasText("None") and hasAnyAncestor(hasTestTag(TeethTags.TONGUE))).performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(TongueLevel.NONE, session.document.value.character.resolved(HEAD)?.surface?.groups?.first { it.id == mouth.id }?.tongueLevel)
     }
 
     @Test

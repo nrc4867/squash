@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.MouthShapeValues
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetMarkControls
 import dev.chieppa.squash.document.SquashDocument
+import dev.chieppa.squash.document.TongueLevel
 import dev.chieppa.squash.document.isMouth
 
 /** The style [group] on [part] talks in: the one it names, else its part's template's, else lips. */
@@ -23,6 +24,12 @@ fun TemplateLibrary.mouthStyleOf(part: PartInstance, group: MarkGroup): MouthSty
 fun mouthStylesOf(character: Character, part: PartId, templates: TemplateLibrary): Map<MarkGroupId, MouthStyle> {
     val instance = character.part(part) ?: return emptyMap()
     return character.resolved(instance).surface.groups.filter { it.isMouth }.associate { it.id to templates.mouthStyleOf(instance, it) }
+}
+
+/** The teeth each mouth on [part] of [character] draws, by group, from the presets [templates] holds. */
+fun dentitionsOf(character: Character, part: PartId, templates: TemplateLibrary): Map<MarkGroupId, MouthDentition> {
+    val instance = character.part(part) ?: return emptyMap()
+    return character.resolved(instance).surface.groups.filter { it.isMouth }.associate { it.id to templates.dentitionOf(it, templates.mouthStyleOf(instance, it)) }
 }
 
 /** What [group], talking in [style], sets saying [shape]: the style's shape under the group's own override. */
@@ -60,6 +67,7 @@ fun MarkGroup.mouthMarks(placesOf: (MarkId) -> List<List<Anchor>>): MouthMarks {
         tongue = marks(MarkRole.TONGUE),
         tongueFilled = role(MarkRole.TONGUE)?.fill != null,
         lipsFilled = role(MarkRole.LIP_LINE)?.fill != null,
+        tongueShown = tongueLevel != TongueLevel.NONE,
     )
 }
 

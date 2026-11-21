@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TeethPreset",
+  "$defs": {
+    "Jaw": {
+      "description": "One jaw: the level it draws at and its rows, the first in front.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "description": "How much of this jaw shows: none, bar or blocks.",
+          "enum": [
+            "none",
+            "bar",
+            "blocks"
+          ]
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToothRow"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "TeethPreset": {
+      "description": "A teeth preset: tooth types and two jaws of rows of slots, from the middle outward, mirrored unless a slot says otherwise.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "format": {
+          "description": "The grammar version of the file.",
+          "type": "integer",
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "id": {
+          "description": "The name a mouth style's `teeth` and a group's `teeth.preset` use.",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "types": {
+          "description": "The tooth types its slots hold, by name.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/ToothType"
+          }
+        },
+        "upper": {
+          "description": "The upper jaw, riding the skull.",
+          "$ref": "#/$defs/Jaw"
+        },
+        "lower": {
+          "description": "The lower jaw, riding the jaw bone.",
+          "$ref": "#/$defs/Jaw"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothRow": {
+      "description": "A row of slots from the middle outward, mirrored to the other side unless a slot says otherwise.",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToothSlot"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothSlot": {
+      "description": "One place in a row, from the middle outward: a tooth type, how far it sits from the slot before it, and any of the type's settings changed here.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The tooth type by name, from the preset's `types`.",
+          "type": "string"
+        },
+        "gap": {
+          "description": "Space before this slot, after the one nearer the middle, or from the middle for the first; a share of the mouth's width.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "at": {
+          "description": "Where the slot's middle sits along the row, its distance from the mouth's middle as a share of the mouth's width, in place of following the slot before it.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "description": "The type's width, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 0.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "length": {
+          "description": "The type's length, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "curve": {
+          "description": "The type's curve, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tip": {
+          "description": "The type's tip, changed for this slot.",
+          "anyOf": [
+            {
+              "enum": [
+                "flat",
+                "round",
+                "point",
+                "chisel"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "over": {
+          "description": "Whether it shows over the lips, open or shut, breaking their ink: incisors, fangs, a crocodile's lower teeth.",
+          "type": "boolean"
+        },
+        "side": {
+          "description": "Which sides it fills: both, mirrored, unless left or right.",
+          "enum": [
+            "both",
+            "left",
+            "right"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothType": {
+      "description": "A kind of tooth; sizes are shares of the mouth's width.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "description": "How wide the tooth is at its root.",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.5
+        },
+        "length": {
+          "description": "How far it reaches from the lip's line, past it for the upper jaw and up from it for the lower.",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 1.0
+        },
+        "tip": {
+          "description": "How its free end is cut: flat, round, point or chisel.",
+          "enum": [
+            "flat",
+            "round",
+            "point",
+            "chisel"
+          ]
+        },
+        "curve": {
+          "description": "How far its tip hooks toward the middle (above 0) or away from it (below 0), a share of its length.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

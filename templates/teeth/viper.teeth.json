@@ -1,0 +1,94 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "viper",
+  "name": "Viper",
+  "types": {
+    "fang": {
+      "width": 0.045,
+      "length": 0.26,
+      "tip": "point",
+      "curve": 0.35
+    },
+    "hook": {
+      "width": 0.03,
+      "length": 0.04,
+      "tip": "point",
+      "curve": 0.3
+    }
+  },
+  "upper": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "fang",
+            "gap": 0.08
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          }
+        ]
+      }
+    ]
+  },
+  "lower": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          },
+          {
+            "type": "hook",
+            "gap": 0.02
+          }
+        ]
+      }
+    ]
+  }
+}

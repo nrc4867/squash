@@ -4,6 +4,7 @@
   "id": "wide-jaw",
   "name": "Wide jaw",
   "line": "front",
+  "teeth": "crocodile",
   "speaks": false,
   "depth": 0.3,
   "scale": { "round": 0.3, "upperLip": 0.3 },

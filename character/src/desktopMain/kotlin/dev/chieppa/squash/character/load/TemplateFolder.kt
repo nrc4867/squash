@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.model.TeethPreset
 import java.nio.file.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
@@ -16,18 +17,26 @@ private const val PLAN_SUFFIX = ".plan.json"
 private const val PLANS_FOLDER = "plans"
 private const val MOUTH_SUFFIX = ".mouth.json"
 private const val MOUTHS_FOLDER = "mouths"
+private const val TEETH_SUFFIX = ".teeth.json"
+private const val TEETH_FOLDER = "teeth"
 
 /** Where the build packs the templates folder on the classpath, and the file there naming what it holds. */
 private const val SHIPPED_ROOT = "dev/chieppa/squash/templates"
 private const val SHIPPED_INDEX = "index.txt"
 
 /**
- * Everything in a templates folder: its part templates, body plans and [mouths], the mouth styles of its mouths folder; and [saved], the folder templates saved from
- * parts are written to and loaded from, if any.
+ * Everything in a templates folder: its part templates, body plans, [mouths], the mouth styles of its mouths folder, and [teeth], the
+ * teeth presets of its teeth folder; and [saved], the folder templates saved from parts are written to and loaded from, if any.
  */
-data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null, val mouths: List<MouthStyle> = emptyList()) {
-    /** A library over the parts, plans and mouth styles. */
-    fun library(): TemplateLibrary = TemplateLibrary(parts, plans, mouths)
+data class TemplateFolder(
+    val parts: List<PartTemplate>,
+    val plans: List<BodyPlan>,
+    val saved: Path? = null,
+    val mouths: List<MouthStyle> = emptyList(),
+    val teeth: List<TeethPreset> = emptyList(),
+) {
+    /** A library over the parts, plans, mouth styles and teeth presets. */
+    fun library(): TemplateLibrary = TemplateLibrary(parts, plans, mouths, teeth)
 
     companion object {
         /**
@@ -38,8 +47,8 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
         fun load(folder: Path): TemplateFolder {
             val parts = folder.listDirectoryEntries().map { it.name }
             val plans = folder.resolve(PLANS_FOLDER).listDirectoryEntries().map { "$PLANS_FOLDER/${it.name}" }
-            val mouths = folder.resolve(MOUTHS_FOLDER).takeIf { it.isDirectory() }?.listDirectoryEntries()?.map { "$MOUTHS_FOLDER/${it.name}" }.orEmpty()
-            return load(parts + plans + mouths) { folder.resolve(it).readText() }
+            fun sub(name: String) = folder.resolve(name).takeIf { it.isDirectory() }?.listDirectoryEntries()?.map { "$name/${it.name}" }.orEmpty()
+            return load(parts + plans + sub(MOUTHS_FOLDER) + sub(TEETH_FOLDER)) { folder.resolve(it).readText() }
         }
 
         private val packed: TemplateFolder by lazy { load(shippedResource(SHIPPED_INDEX).lines().filter { it.isNotEmpty() }, ::shippedResource) }
@@ -54,7 +63,9 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
             val mouths = files.filter { it.startsWith("$MOUTHS_FOLDER/") && it.endsWith(MOUTH_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadMouth(it.substringAfterLast('/'), read(it)) }
-            val unordered = TemplateFolder(parts, plans, mouths = mouths)
+            val teeth = files.filter { it.startsWith("$TEETH_FOLDER/") && it.endsWith(TEETH_SUFFIX) }.sorted()
+                .map { TemplateLoader.loadTeeth(it.substringAfterLast('/'), read(it)) }
+            val unordered = TemplateFolder(parts, plans, mouths = mouths, teeth = teeth)
             return unordered.copy(
                 plans = plans.sortedWith(
                     compareByDescending<BodyPlan> { it.partCount(unordered) }.thenByDescending { it.partCount(unordered, bothSides = true) }.thenBy { it.name },

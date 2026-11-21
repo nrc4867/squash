@@ -75,6 +75,67 @@ The `lips` style's shapes, which the other presets share before their scales:
 | `l` | 0.5 | 0.1 | 0.0 | 0.0 | 0.4 | 0.0 | 0.5 |
 | `etc` | 0.22 | 0.4 | 0.0 | 0.0 | 0.5 | 0.0 | 0.0 |
 
+### Teeth
+
+A mouth's teeth come from a preset, `templates/teeth/<name>.teeth.json` (schema `schema/teeth-preset.schema.json`): tooth types by name, and an upper and a lower jaw, each with a level and rows of slots from the middle outward, mirrored to the other side unless a slot names one. The upper jaw hangs from the lip line and stays as the mouth opens; the lower stands on the jaw and drops with it. Teeth fill in the teeth role's `fill` and are inked where its `ink` is; with no fill none show. A group's `teeth` names the preset (`preset`, else its style's `teeth`) and keeps only what it changes, so a later change to the preset still reaches it:
+
+```json
+"teeth": {"preset": "cat", "upper": {"slots": [{"row": 0, "slot": 3, "length": 0.24, "over": true}]}}
+```
+
+| level | draws |
+| --- | --- |
+| `none` | no teeth |
+| `bar` | each row as one band from its first slot to its last, as long at each slot as its tooth; slots flagged `over` still show on their own |
+| `blocks` | each slot its own tooth, cut to its type's `tip` |
+
+Sizes are shares of the mouth's width. A tooth reaches a little past its jaw's line, hidden under the lip until the lip lifts off it. A slot whose `over` is set shows over the lips, open or shut, and breaks their ink: an upper one hangs below the upper lip, a lower one stands above the lower lip. Rows after a jaw's first sit behind it, a little narrower and shorter.
+
+| field | meaning |
+| --- | --- |
+| jaw `level` | The jaw's level in place of the preset's. |
+| jaw `rows` | Rows added behind the preset's. |
+| jaw `added` | Slots added at the end of a row. |
+| jaw `slots` | Changes to single slots, by row and slot index, counting the preset's slots, then added ones; rows count the preset's, then added ones. |
+| slot `type` | The tooth type by name, from the preset's `types`. |
+| slot `gap` | Space before this slot, after the one nearer the middle, or from the middle for the first; a share of the mouth's width. |
+| slot `at` | Where the slot's middle sits along the row, its distance from the mouth's middle as a share of the mouth's width, in place of following the slot before it. |
+| slot `width` | The type's width, changed for this slot. |
+| slot `length` | The type's length, changed for this slot. |
+| slot `curve` | The type's curve, changed for this slot. |
+| slot `tip` | The type's tip, changed for this slot. |
+| slot `over` | Whether it shows over the lips, open or shut, breaking their ink: incisors, fangs, a crocodile's lower teeth. |
+| slot `side` | Which sides it fills: both, mirrored, unless left or right. |
+| type `width` | How wide the tooth is at its root. |
+| type `length` | How far it reaches from the lip's line, past it for the upper jaw and up from it for the lower. |
+| type `tip` | How its free end is cut: flat, round, point or chisel. |
+| type `curve` | How far its tip hooks toward the middle (above 0) or away from it (below 0), a share of its length. |
+
+A change in a jaw's `slots` (`{"row", "slot", ...}`) takes any slot field, and `removed` takes the slot out; its row and slot count the preset's first, then those added.
+
+#### Teeth presets
+
+| preset | upper | lower | over | styles |
+| --- | --- | --- | --- | --- |
+| `bird` | none | none |  | `beak` |
+| `boar` | blocks: 3 incisor, tusk | blocks: 3 incisor, tusk | upper 3; lower 3 |  |
+| `cat` | blocks: 3 incisor, canine, 3 premolar, molar | blocks: 3 incisor, canine, 2 premolar, molar |  | `short-muzzle` |
+| `cow` | none | blocks: 4 incisor, 6 cheek |  |  |
+| `crocodile` | blocks: 15 cone | blocks: 15 cone | lower 0, 3, 8, 11 | `wide-jaw` |
+| `dog` | blocks: 3 incisor, canine, 3 premolar, carnassial, 2 molar | blocks: 3 incisor, canine, 4 premolar, carnassial, 2 molar |  | `long-muzzle` |
+| `dragon` | blocks: 3 cone, fang, 11 cone | blocks: 15 cone | upper 3 |  |
+| `frog` | none: 12 tiny | none |  |  |
+| `horse` | blocks: 3 incisor, 6 cheek | blocks: 3 incisor, 6 cheek |  |  |
+| `human` | blocks: incisor, lateral, canine, 2 premolar, 3 molar | blocks: 2 lower-incisor, canine, 2 premolar, 3 molar |  |  |
+| `rodent` | blocks: incisor, 4 cheek | blocks: lower-incisor, 3 cheek | upper 0 |  |
+| `shark` | blocks: 10 triangle / 10 triangle / 10 triangle | blocks: 10 triangle / 10 triangle / 10 triangle |  |  |
+| `toon-simple` | bar: 4 front | none: 4 front |  | `lips`, `minimal` |
+| `viper` | blocks: fang, 6 hook | blocks: 7 hook |  |  |
+
+### Tongue
+
+A group's `tongueLevel` is `flat`, its tongue marks or, with none and a filled tongue role, a plain tongue as it lifts; or `none`, no tongue at all, on a beak too.
+
 ## Regions
 
 | question | answer |

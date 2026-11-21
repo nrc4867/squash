@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.SlotName
+import dev.chieppa.squash.document.TongueLevel
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
@@ -54,7 +55,8 @@ fun jawMouthOf(character: Character, instance: PartInstance, template: PartTempl
     val controls = style.scale.of(group.controls.copy(open = character.shownOpen(group)))
     if (controls.open <= 0f) return null
     val slot = { role: MarkRole -> group.roles.firstOrNull { it.role == role }?.fill }
-    return JawMouth(slot(MarkRole.INNER), slot(MarkRole.TONGUE), controls.open, controls.tongue)
+    val tongue = slot(MarkRole.TONGUE).takeIf { group.tongueLevel != TongueLevel.NONE }
+    return JawMouth(slot(MarkRole.INNER), tongue, controls.open, controls.tongue)
 }
 
 /** [mouth]'s inside and tongue on the top of [part]'s first patch, from its root along its length, in layer order. */

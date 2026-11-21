@@ -1,0 +1,74 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "frog",
+  "name": "Frog or fish",
+  "types": {
+    "tiny": {
+      "width": 0.02,
+      "length": 0.02,
+      "tip": "point"
+    }
+  },
+  "upper": {
+    "level": "none",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          },
+          {
+            "type": "tiny",
+            "gap": 0.01
+          }
+        ]
+      }
+    ]
+  },
+  "lower": {
+    "level": "none",
+    "rows": []
+  }
+}

@@ -963,6 +963,21 @@ object SquashIcons {
             stroke("M2.5 9c3 2 8 2 11 0")
         }
     }
+    val TeethRowAdd: ImageVector by lazy {
+        icon("teeth-row-add") {
+            stroke("M1.5 2.5h9")
+            stroke("M2.5 2.5l1 3 1-3M5 2.5l1 3 1-3M7.5 2.5l1 3 1-3")
+            stroke("M3 8l.75 2 .75-2M5.25 8l.75 2 .75-2M7.5 8l.75 2 .75-2")
+            stroke("M12.5 9.5v5M10 12h5")
+        }
+    }
+    val Teeth: ImageVector by lazy {
+        icon("teeth") {
+            stroke("M2 4c2 1 10 1 12 0")
+            stroke("M3.5 4.4v2.4c0 1 .6 1.7 1.3 1.7s1.2-.7 1.2-1.7V4.8M6 4.8v2c0 1 .6 1.7 1.3 1.7s1.2-.7 1.2-1.7v-2M10 4.8v2c0 1 .6 1.7 1.3 1.7s1.2-.7 1.2-1.7V4.4")
+            stroke("M3 11.5c2 1.3 8 1.3 10 0")
+        }
+    }
     val Tidy: ImageVector by lazy {
         icon("tidy") {
             stroke("M2.5 13.5L8 8")
@@ -982,6 +997,22 @@ object SquashIcons {
             stroke("M13.5 2.5v11")
             stroke("M2.5 8h8")
             stroke("M8 5.5L10.5 8 8 10.5")
+        }
+    }
+    val ToothAdd: ImageVector by lazy {
+        icon("tooth-add") {
+            stroke("M2 3.5h7")
+            stroke("M3 3.5v3.2c0 1.2.8 2.3 1.5 2.3S6 7.9 6 6.7V3.5")
+            stroke("M6 3.5v3.2c0 1.2.8 2.3 1.5 2.3S9 7.9 9 6.7V3.5")
+            stroke("M12.5 9.5v5M10 12h5")
+        }
+    }
+    val ToothRemove: ImageVector by lazy {
+        icon("tooth-remove") {
+            stroke("M2 3.5h7")
+            stroke("M3 3.5v3.2c0 1.2.8 2.3 1.5 2.3S6 7.9 6 6.7V3.5")
+            stroke("M6 3.5v3.2c0 1.2.8 2.3 1.5 2.3S9 7.9 9 6.7V3.5")
+            stroke("M10 12h5")
         }
     }
     val Trace: ImageVector by lazy {

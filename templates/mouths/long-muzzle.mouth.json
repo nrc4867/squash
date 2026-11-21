@@ -4,6 +4,7 @@
   "id": "long-muzzle",
   "name": "Long muzzle",
   "line": "muzzle",
+  "teeth": "dog",
   "speaks": false,
   "span": 0.65,
   "depth": 0.55,

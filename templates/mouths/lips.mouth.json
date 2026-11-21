@@ -4,6 +4,7 @@
   "id": "lips",
   "name": "Lips",
   "line": "front",
+  "teeth": "toon-simple",
   "depth": 0.45,
   "scale": {},
   "shapes": {

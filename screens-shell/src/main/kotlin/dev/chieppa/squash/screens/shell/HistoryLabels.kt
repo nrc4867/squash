@@ -69,6 +69,8 @@ import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.SetEyeFrame
 import dev.chieppa.squash.document.SetEyeLids
 import dev.chieppa.squash.document.SetMouthShape
+import dev.chieppa.squash.document.SetMouthTeeth
+import dev.chieppa.squash.document.SetTongueLevel
 import dev.chieppa.squash.document.SetEyeFromFront
 import dev.chieppa.squash.document.SetEyeGaze
 import dev.chieppa.squash.document.SetEyeRoundness
@@ -98,6 +100,8 @@ import dev.chieppa.squash.uidesign.generated.color_step_region
 import dev.chieppa.squash.uidesign.generated.color_step_creases
 import dev.chieppa.squash.uidesign.generated.face_view_keys
 import dev.chieppa.squash.uidesign.generated.face_step_shape
+import dev.chieppa.squash.uidesign.generated.face_step_teeth
+import dev.chieppa.squash.uidesign.generated.face_step_tongue_level
 import dev.chieppa.squash.uidesign.generated.color_step_shading
 import dev.chieppa.squash.uidesign.generated.color_step_stroke
 import dev.chieppa.squash.uidesign.generated.fur_comb_tool
@@ -130,6 +134,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val blend = stringResource(Res.string.shell_step_blend, FIRST)
     val paintedEye = stringResource(Res.string.shell_step_painted_eye)
     val mouthShape = stringResource(Res.string.face_step_shape, FIRST)
+    val teeth = stringResource(Res.string.face_step_teeth)
+    val tongueLevel = stringResource(Res.string.face_step_tongue_level)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
     val replaced = stringResource(Res.string.history_replace_part, FIRST, SECOND)
@@ -195,6 +201,8 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetCharacterCreases -> creases
             is SetViewKeys -> viewKeys
             is SetMouthShape -> mouthShape.replace(FIRST, command.shape.word)
+            is SetMouthTeeth -> teeth
+            is SetTongueLevel -> tongueLevel
             is SetMark -> mark
             is SetLineWeight, is SetLineWeightAmount -> lineWeight
             is SetLineRules -> lineRules

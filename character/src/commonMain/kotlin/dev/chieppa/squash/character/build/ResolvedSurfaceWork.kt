@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.MouthStyle
+import dev.chieppa.squash.character.mouth.MouthDentition
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.document.CameraBin
@@ -70,6 +71,8 @@ data class ResolvedSurfaceWork(
     val lineWeights: List<ResolvedLineWeight> = emptyList(),
     /** The style each mouth group talks in, by group; a group not here talks as plain lips. */
     val mouthStyles: Map<MarkGroupId, MouthStyle> = emptyMap(),
+    /** The teeth each mouth group draws, by group; a group not here draws none. */
+    val dentitions: Map<MarkGroupId, MouthDentition> = emptyMap(),
 )
 
 /** Every part's surface work in body space, in the document's order of parts. */

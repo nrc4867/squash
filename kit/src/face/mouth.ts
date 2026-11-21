@@ -1,4 +1,4 @@
-import type { GroupRole, MarkGroup, MouthShapeValues } from "../schema/recipe.ts";
+import type { GroupRole, MarkGroup, MouthShapeValues, MouthTeeth, ToothSlotChange } from "../schema/recipe.ts";
 
 /** A spoken shape's name, as a mouth style and `set=head:mouth.shape:<name>` use it. */
 export type MouthShapeName = "rest" | "mbp" | "ai" | "e" | "o" | "u" | "fv" | "l" | "etc";
@@ -29,6 +29,10 @@ export interface MouthSpec {
   style?: string;
   /** Spoken shapes this mouth says its own way; each value set replaces the style's. */
   shapes?: Partial<Record<MouthShapeName, MouthShapeValues>>;
+  /** The teeth's dentition: a preset by name (its style's unless told) and only what this mouth changes of it, as `toothSlot` writes a change. */
+  dentition?: MouthTeeth;
+  /** How much tongue the mouth draws: `flat` (the default) or `none`. */
+  tongueLevel?: "none" | "flat";
   /** The group's id and name, `mouth` unless told. */
   id?: string;
 }
@@ -62,7 +66,17 @@ export function mouth(spec: MouthSpec = {}): MarkGroup {
   const group: MarkGroup = { id, name: id, roles, controls: { open: 0 } };
   if (spec.style) group.style = spec.style;
   if (spec.shapes) group.shapes = spec.shapes;
+  if (spec.dentition) group.teeth = spec.dentition;
+  if (spec.tongueLevel) group.tongueLevel = spec.tongueLevel;
   return group;
+}
+
+/**
+ * A change to one slot of a teeth preset, by its index in its row (row 0 the front row): only the values given are kept, so the preset's
+ * own later changes still reach the slot. `toothSlot(3, { over: true, length: 0.26 })` shows a cat's canines larger over a shut lip.
+ */
+export function toothSlot(slot: number, change: Omit<ToothSlotChange, "slot" | "row"> = {}, row = 0): ToothSlotChange {
+  return { row, slot, ...change };
 }
 
 /** A recipe build option that shows a spoken shape without saving it, as `set=` takes it. */
