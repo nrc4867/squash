@@ -86,30 +86,27 @@ listOf("look" to "LookMainKt", "recipe" to "recipe.RecipeMainKt", "measure" to "
     }
 }
 
-// ./gradlew :app:recipeLauncher writes, under app/build/recipe-launcher, the java to run and an argument file that starts the recipe command
-// with its classpath, so tools/recipe.sh watch keeps one JVM running outside Gradle and its build lock.
-tasks.register("recipeLauncher") {
-    val classpath = sourceSets["test"].runtimeClasspath
-    val java = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt())) }.map { it.executablePath.asFile.path }
-    val templates = rootProject.layout.projectDirectory.dir("templates").asFile.path
-    val root = rootProject.layout.projectDirectory.asFile.path
-    val folder = layout.buildDirectory.dir("recipe-launcher")
-    inputs.files(classpath)
-    inputs.property("java", java)
-    outputs.dir(folder)
-    doLast {
-        val out = folder.get().asFile.apply { mkdirs() }
-        fun quoted(text: String) = "\"" + text.replace(File.separatorChar, '/') + "\""
-        out.resolve("java.txt").writeText(java.get() + "\n")
-        out.resolve("args.txt").writeText(
-            listOf(
-                "--enable-native-access=ALL-UNNAMED",
-                quoted("-Dsquash.templates=$templates"),
-                "-cp",
-                quoted(classpath.files.joinToString(File.pathSeparator) { it.path }),
-                "dev.chieppa.squash.screens.look.recipe.RecipeMainKt",
-                quoted("root=$root"),
-            ).joinToString("\n") + "\n",
-        )
+// ./gradlew :app:recipeLauncher copies the recipe command's compiled classpath into a folder of its own under app/build/recipe-engine, named
+// by a hash of the classes, with the java to run and an argument file that starts it, then points app/build/recipe-launcher/engine.txt at
+// it. tools/recipe.sh runs every build and its server from the snapshot the pointer names, outside Gradle and its build lock, so a compile
+// never changes classes under a running build.
+tasks.register<JavaExec>("recipeLauncher") {
+    val runtime = sourceSets["test"].runtimeClasspath
+    val launcher = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt())) }
+    val listed = layout.buildDirectory.file("recipe-launcher/classpath.txt")
+    classpath = runtime
+    mainClass = "dev.chieppa.squash.screens.look.recipe.engine.EngineSnapshotMainKt"
+    javaLauncher = launcher
+    args(
+        "classpath=${listed.get().asFile.path}",
+        "engines=${layout.buildDirectory.dir("recipe-engine").get().asFile.path}",
+        "pointer=${layout.buildDirectory.file("recipe-launcher/engine.txt").get().asFile.path}",
+        "java=${launcher.get().executablePath.asFile.path}",
+        "templates=${rootProject.layout.projectDirectory.dir("templates").asFile.path}",
+        "root=${rootProject.layout.projectDirectory.asFile.path}",
+        "immutable=${gradle.gradleUserHomeDir.resolve("caches").path}",
+    )
+    doFirst {
+        listed.get().asFile.apply { parentFile.mkdirs() }.writeText(runtime.files.joinToString("\n") { it.path } + "\n")
     }
 }

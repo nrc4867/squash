@@ -36,8 +36,11 @@ class TestWork private constructor(val dispatcher: TestDispatcher, context: Coro
         assertTrue(session.settled, "the graph settles once its work has run")
     }
 
-    /** Cancels everything this work started, the sessions of an [AppState] built on it among them. */
-    override fun close() = scope.cancel()
+    /** Cancels everything this work started, the sessions of an [AppState] built on it among them, and forgets it in [TestWorkCloser]. */
+    override fun close() {
+        scope.cancel()
+        TestWorkCloser.closed(this)
+    }
 }
 
 /** Whether nothing in the session's graph or view graph is dirty or running. */

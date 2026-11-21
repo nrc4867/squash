@@ -89,15 +89,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
     }
 }
 
-/** Runs [block] with what it prints to standard out written to [file] instead. */
+/** Runs [block] with what this thread prints to standard out written to [file] instead. */
 internal fun printInto(file: File, block: () -> Unit) {
-    val console = System.out
-    PrintStream(FileOutputStream(file), true).use { stream ->
-        System.setOut(stream)
-        try {
-            block()
-        } finally {
-            System.setOut(console)
-        }
-    }
+    PrintStream(FileOutputStream(file), true, Charsets.UTF_8).use { stream -> ThreadOutput.into(stream) { block() } }
 }

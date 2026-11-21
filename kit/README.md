@@ -29,6 +29,16 @@ Run, from anywhere:
 
 It prints `cat.recipe.json` (written beside `cat.ts`), then everything `tools/recipe.sh` prints: the character file, the renders and `measure.txt`. A type error stops it before anything is written, as `cat.ts:12:5: error TS2322: ...`, exit 2. The first run installs the kit's own dependencies inside `kit/` from its lock file; nothing is installed beside the character file.
 
+### Building on the recipe server
+
+`tools/recipe.sh serve` starts the recipe server: one JVM, kept warm, with one GPU device, that builds for every agent and checkout on the machine. It listens on 127.0.0.1 only, port 47830 (`port=<n>`), runs two builds at a time (`limit=<n>`), the smallest waiting one first, and gives up a build after 20 minutes (`timeout=<minutes>`). It reads only the files a build names and writes only to that build's output folder; it prints what it builds to its own console and nowhere else.
+
+`tools/recipe.sh` (and so `kit`, `watch`, `probe`, `export` and `crop`) sends each build to the server when one runs with the same engine as the checkout, and prints its log as it comes; when none runs, or it runs another engine, the build runs in a JVM of its own. The command, the output and the exit code are the same either way. `SQUASH_RECIPE_SERVER=off` always builds in its own JVM; `SQUASH_RECIPE_PORT=<n>` sends to another port. A `watch` on the server builds each save in the same warm session.
+
+Gradle compiles the engine, under its lock, only when a source changed, into a snapshot folder of its own under `app/build/recipe-engine/`, named by a hash of its classes, and points `app/build/recipe-launcher/engine.txt` at it once it is whole. A build reads the pointer once, at its start, so a compile never changes classes under a running build. When the pointer of the server's checkout names a new engine, the server takes no more builds (they run in their own JVMs meanwhile), finishes those it took, and starts again on the new snapshot.
+
+The server answers on HTTP for other tools too: `POST /build` with `{"args": ["root=<checkout>", "recipe=<file>", "close=face", ...], "stream": true}` (arguments as `tools/recipe.sh` takes them, spaces as `%20`) answers one JSON event a line, `{"out": ...}`, `{"err": ...}`, then `{"done": {"code", "files", "millis"}}`; without `stream` one `{"code", "files", "log", "millis"}`. `GET /status` answers the engine, the commit, the builds running and how many wait; `GET /health` answers `{"ok": true}`.
+
 `kit/examples/mannequin.ts` is a whole biped: a height plan, tube limbs with front and back profiles, a neck, an egg head, template hands and feet, and a tee.
 
 ## Commands

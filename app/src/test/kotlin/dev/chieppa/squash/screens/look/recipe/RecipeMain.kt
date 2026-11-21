@@ -3,6 +3,8 @@ package dev.chieppa.squash.screens.look.recipe
 import dev.chieppa.squash.recipe.RecipeException
 import dev.chieppa.squash.recipe.RecipeJson
 import dev.chieppa.squash.recipe.export.exportRecipe
+import dev.chieppa.squash.screens.look.recipe.engine.EngineLease
+import dev.chieppa.squash.screens.look.recipe.server.serve
 import dev.chieppa.squash.screens.shell.SquashFormat
 import dev.chieppa.squash.screens.smoke.FrameSnapshots
 import java.io.File
@@ -16,26 +18,39 @@ internal const val RECIPE_WRONG = 2
  * and keeps its measurements, and with a reference image renders it through the reference's camera beside it with a silhouette overlay
  * and IoU (see [RecipeRun]). With `watch=true` it builds again each time the recipe changes, until stopped (see [RecipeWatch]). With
  * `export=<character file>` it instead writes the character as a recipe, with `probe=<recipe>` answers frame questions about it (see
- * [probe]), and with `crop=<sheet>` splits a character sheet into its views (see [crop]). With `status=<file>` it writes its exit status
- * there and exits 0, so Gradle reports no failure over the recipe's own error. Run through `tools/recipe.sh`.
+ * [probe]), and with `crop=<sheet>` splits a character sheet into its views (see [crop]). With `serve=true` it serves these builds to
+ * clients on this machine (see [serve]). With `status=<file>` it writes its exit status there and exits 0, so Gradle reports no failure
+ * over the recipe's own error. Run through `tools/recipe.sh`.
  */
 fun main(args: Array<String>) {
+    EngineLease.hold()
     val options = RecipeArgs(args)
-    val code = try {
-        when {
-            options.export != null -> export(options)
-            options.probe != null -> probe(options)
-            options.crop != null -> crop(options)
-            options.watch -> FrameSnapshots.keep { watch(options) }
-            options.buildOnly -> RecipeRun(options).use { it.run() }
-            else -> FrameSnapshots.keep { RecipeRun(options).use { it.run() } }
-        }
-    } catch (e: RecipeException) {
-        System.err.println("recipe error at ${e.report}")
-        RECIPE_WRONG
+    val code = when {
+        options.serve -> serve(options)
+        options.watch -> reportingRecipeErrors { FrameSnapshots.keep { watch(options) } }
+        options.renders -> FrameSnapshots.keep { runCommand(options) }
+        else -> runCommand(options)
     }
     options.status?.writeText("$code")
     exitProcess(if (options.status != null) 0 else code)
+}
+
+/** Runs the one build, export, probe or crop [options] asks for, its renders on the device [FrameSnapshots] keeps; its exit status. */
+internal fun runCommand(options: RecipeArgs): Int = reportingRecipeErrors {
+    when {
+        options.export != null -> export(options)
+        options.probe != null -> probe(options)
+        options.crop != null -> crop(options)
+        else -> RecipeRun(options).use { it.run() }
+    }
+}
+
+/** [block]'s exit status, or [RECIPE_WRONG] with the error printed when the recipe is wrong. */
+internal fun reportingRecipeErrors(block: () -> Int): Int = try {
+    block()
+} catch (e: RecipeException) {
+    System.err.println("recipe error at ${e.report}")
+    RECIPE_WRONG
 }
 
 private fun watch(options: RecipeArgs): Int {

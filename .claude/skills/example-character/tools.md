@@ -21,7 +21,7 @@ A JSON recipe builds with `tools/recipe.sh <recipe.json>`; its schema is `schema
 
 ## What a build writes
 
-It runs in its own JVM, outside Gradle and the build lock (Gradle runs first, under its lock, only when the engine's sources changed since the last build), and prints every file it writes, under `build/recipes/<id>/` of the checkout unless `out=` says otherwise:
+It runs on the recipe server when one runs on the machine with the checkout's engine (`tools/recipe.sh serve`, one warm JVM building for every agent, two builds at a time), else in its own JVM; either way outside Gradle and the build lock (Gradle runs first, under its lock, only when the engine's sources changed since the last build, into a snapshot of its own that a later compile never touches). The command and its output are the same both ways. It prints every file it writes, under `build/recipes/<id>/` of the checkout unless `out=` says otherwise:
 
 - `<id>.json`: the character file; `./gradlew :app:run -Popen=<file>` opens it in the app.
 - `renders/<outfit>.png`: front, three-quarter and side in the display pose. `<outfit>-back-top.png`: from behind, and from above with the front up. `<outfit>-rest.png` when the display pose differs from rest. `<outfit>-pose-<name>.png` per named pose. `<outfit>-face.png`, and `<outfit>-face-<expression>.png` per expression. `<outfit>-foot.png` (the first foot on a leg), `hand.png` (the first hand or paw on an arm), `<outfit>-<part>.png` per part id in `close=`. A character with no outfits is `as-saved`.
@@ -46,7 +46,7 @@ After the file, as `key=value`; the kit passes them on unchanged:
 | `reference=<png> fit=true` | search the camera that best matches the reference's silhouette, print it as `fit: eye=... target=... fov=...`, then compare through it (`judging.md`) |
 | `reference=<png> eye=x,y,z target=x,y,z fov=30` | compare through that camera; `ground=#rrggbb` keys the background, `scale=` gives body units a metre |
 
-`tools/recipe.sh watch <recipe.json> [options]` builds, then builds again on each save of the recipe in one warm process (about 5 s a rebuild); Ctrl-C stops it. With the kit, run `kit json` after each edit and leave `watch` on the JSON it writes.
+`tools/recipe.sh watch <recipe.json> [options]` builds, then builds again on each save of the recipe in one warm process, the server's when one runs (about 5 s a rebuild); Ctrl-C stops it. With the kit, run `kit json` after each edit and leave `watch` on the JSON it writes.
 
 `tools/recipe.sh export <character.json> [out=<recipe.json>]` writes any character file, an app-made one too, as a recipe, printing `not carried:` for what a recipe cannot hold.
 

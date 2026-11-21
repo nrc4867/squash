@@ -6,6 +6,8 @@
 #          so a character build never waits behind a full check. It still waits while a heavy build runs in its own checkout.
 # A waiting build holds a ticket in the lock's queue and takes the lock only when its ticket is the oldest one whose
 # process is alive; a lock or ticket whose process is gone is cleared.
+# With SQUASH_GRADLE_UNLESS set, that command runs once the lock is held, and Gradle runs only when it fails: a compile another build
+# finished while this one waited is not run again.
 # Usage, from the main checkout or any worktree:  tools/gradle-locked.sh check
 set -u
 HEAVY="${SQUASH_GRADLE_LOCK:-$HOME/.squash-gradle.lock}"
@@ -73,4 +75,5 @@ done
 echo $$ > "$LOCK/pid"
 echo "$(pwd) $*" > "$LOCK/who"
 rm -f "$QUEUE/$ticket"
+if [ -n "${SQUASH_GRADLE_UNLESS:-}" ] && eval "$SQUASH_GRADLE_UNLESS"; then exit 0; fi
 ./gradlew "$@"
