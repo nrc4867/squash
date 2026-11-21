@@ -86,7 +86,7 @@ Put it in the `displayPose`: a hand hanging dead straight reads as a glove. Pose
 
 ## On one digit
 
-A socket, region or mark names a digit's patch to lie on that digit and ride it as it curls: a ring on the third finger is `socket(1, 0.7, 0.25, { patch: digitPatch(2), sink: 0.4 })` on the hands. A patch the hand does not build warns at build; a garment's print on a digit warns too, since cloth stops where the fingers leave the palm.
+A socket, region or mark names a digit's patch to lie on that digit and ride it as it curls: a ring on the third finger is `socket(1, 0.7, 0.25, { patch: digitPatch(2), sink: 0.4 })` on the hands. A patch the hand does not build warns at build; a garment's print on a digit warns too, since prints lie on the cloth of the palm's own run. A glove covers the digits finger by finger: `glove({ digits: "fingers" })` (or `"mitten"`) in the kit.
 
 **Webbed fingers**: `webbing: 1` with `webReach` and `webEdge` (`ears-tails-extras.md`, Webs and membranes).
 

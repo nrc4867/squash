@@ -164,10 +164,10 @@ private fun BuildContext.change(path: String, part: PartId, change: RecipeChange
     }
 }
 
-/** Warns at [path] of a print placed on a digit's patch: cloth stops where a part's digits leave it, so a print there shows nowhere. */
+/** Warns at [path] of a print placed on a digit's patch: prints lie on the cloth of a part's first run, so a print there shows nowhere. */
 private fun BuildContext.printOffDigits(path: String, anchors: List<Anchor>) {
     anchors.map { it.part to it.patch }.distinct().filter { (part, patch) -> DigitPatches.digitOf(templateOf(part), patch) != null }.forEach { (part, patch) ->
-        warn("$path.patch", "cloth stops where ${part.value}'s digits leave it, so a print on \"$patch\" shows nowhere")
+        warn("$path.patch", "prints lie on the cloth over ${part.value}'s own run, not its digits, so a print on \"$patch\" shows nowhere")
     }
 }
 

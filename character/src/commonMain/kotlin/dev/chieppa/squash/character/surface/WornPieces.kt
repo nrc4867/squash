@@ -23,6 +23,6 @@ fun WornCover.pieces(body: AssembledCharacter): List<WornCover> {
     if (roots.size < 2) return listOf(this)
     return roots.map { (root, parts) ->
         val kept = parts.toSet()
-        WornCover(cover, branches.filterKeys { it in kept }, cuffs.filterTo(HashSet()) { it in kept }, holes, shells.filterKeys { it in kept }, root, openEnds.filterKeys { it in kept })
+        WornCover(cover, branches.filterKeys { it in kept }, cuffs.filterTo(HashSet()) { it in kept }, holes, shells.filterKeys { it in kept }, root, openEnds.filterKeys { it in kept }, digits = digits.filterTo(HashSet()) { it in kept })
     }
 }

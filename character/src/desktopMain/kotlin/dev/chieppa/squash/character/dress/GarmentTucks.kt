@@ -21,6 +21,18 @@ private const val TOES_PARAM = "toes"
 /** The parameter of a foot's template that sets whether its toes have claws. */
 private const val CLAWS_PARAM = "claws"
 
+/** The parameter of a hand's template that sets how far neighbouring fingers fuse. */
+private const val MERGE_PARAM = "merge"
+
+/** The parameter of a hand's template that fans its fingers across the palm. */
+private const val SPREAD_PARAM = "spread"
+
+/** How far a mitten's fingers fuse: past 1 they join to the tips. */
+private const val MITTEN_MERGE = 2f
+
+/** How far a mitten's fingers fan, folded together under one cover. */
+private const val MITTEN_SPREAD = 0.15f
+
 /** What template ids name a spike or a claw grown as a part of its own. */
 private const val SPIKE_TEMPLATE = "spike"
 private const val CLAW_TEMPLATE = "claw"
@@ -33,8 +45,18 @@ data class TuckItem(val part: PartId, val kind: TuckKind, val tucked: Boolean, v
     val pokes: Boolean get() = !tucked && (kind == TuckKind.TOES || kind == TuckKind.CLAWS)
 }
 
-/** The parameter a tucked [kind] of digits sets to nothing. */
-internal fun digitParam(kind: TuckKind): String = if (kind == TuckKind.CLAWS) CLAWS_PARAM else TOES_PARAM
+/**
+ * The parameters a tucked [kind] of digits sets on its part: toes or claws none, and fingers fused to the tips and folded together, a
+ * mitten, the thumb left free.
+ */
+internal fun tuckedParams(kind: TuckKind): Map<String, Float> = when (kind) {
+    TuckKind.CLAWS -> mapOf(CLAWS_PARAM to 0f)
+    TuckKind.FINGERS -> mapOf(MERGE_PARAM to MITTEN_MERGE, SPREAD_PARAM to MITTEN_SPREAD)
+    else -> mapOf(TOES_PARAM to 0f)
+}
+
+/** Whether [params], a Redraw's, hold every value a tucked [kind] sets. */
+private fun tuckedIn(params: Map<String, Float>?, kind: TuckKind): Boolean = params != null && tuckedParams(kind).all { (name, value) -> params[name] == value }
 
 /** What a part of [role] made from [template] is as a small part a garment can hold whole, or null for a part that is not one. */
 fun tuckKindOf(role: Role?, template: String): TuckKind? = when (role) {
@@ -70,7 +92,7 @@ fun tucksOf(character: Character, body: AssembledCharacter, garment: Garment): L
     for ((part, change) in garment.changes) if (change == BodyPartChange.Hide && character.part(part) != null) reach.putIfAbsent(part, Reach(true, true))
     return itemsOf(character, body, reach) { part, kind ->
         val change = garment.changes[part]
-        if (kind.digits) (change as? BodyPartChange.Redraw)?.data?.params?.get(digitParam(kind)) == 0f else change == BodyPartChange.Hide
+        if (kind.digits) tuckedIn((change as? BodyPartChange.Redraw)?.data?.params, kind) else change == BodyPartChange.Hide
     }
 }
 
@@ -114,7 +136,10 @@ private fun itemsOf(character: Character, body: AssembledCharacter, reach: Map<P
             out += TuckItem(part, TuckKind.TOES, toes)
             if (!toes && CLAWS_PARAM in params) out += TuckItem(part, TuckKind.CLAWS, tucked(part, TuckKind.CLAWS))
         }
-        if (TOES_PARAM !in params && placed.role == Role.HAND) out += TuckItem(part, TuckKind.FINGERS, tucked = false, choosable = false)
+        if (TOES_PARAM !in params && placed.role == Role.HAND) {
+            val fuses = MERGE_PARAM in params && SPREAD_PARAM in params
+            out += TuckItem(part, TuckKind.FINGERS, fuses && tucked(part, TuckKind.FINGERS), choosable = fuses)
+        }
     }
     return out
 }
@@ -132,7 +157,8 @@ fun tuckCommand(character: Character, body: AssembledCharacter, garment: Garment
         BodyPartChange.Hide.takeIf { tucked }
     } else {
         val data = (held as? BodyPartChange.Redraw)?.data ?: PartData()
-        val params = (data.params - digitParam(item.kind)) + if (tucked) mapOf(digitParam(item.kind) to 0f) else emptyMap()
+        val set = tuckedParams(item.kind)
+        val params = (data.params - set.keys) + if (tucked) set else emptyMap()
         val redrawn = data.copy(params = params)
         if (redrawn == PartData()) null else BodyPartChange.Redraw(redrawn)
     }

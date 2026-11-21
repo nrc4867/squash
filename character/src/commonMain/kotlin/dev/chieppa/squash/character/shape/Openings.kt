@@ -3,7 +3,9 @@ package dev.chieppa.squash.character.shape
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.Vec3
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.sqrt
 
 /** How the front of an opening drops below its ring: a round curve, as a crew or scoop neck, or two straight sides to a point, as a V-neck. */
@@ -70,7 +72,7 @@ private fun ChartPlaces.baseFrames(part: PartId, forward: Vec3): List<RootFrame>
         val narrowest = rows.minOf { it[side].second }
         val base = rows.indexOfFirst { it[side].second <= narrowest * BASE_WIDTH }
         val next = rings(part, minOf(base + AXIS_ROWS, CHART_ROWS - 1)).getOrNull(side)?.first ?: rows[base][side].first
-        RootFrame.of(rows[base][side].first, rows[base][side].second, next, forward)
+        RootFrame.of(rows[base][side].first, rows[base][side].second, ringPoints(part, base)[side], next, forward)
     }
 }
 
@@ -109,8 +111,11 @@ private fun ChartPlaces.beyond(part: PartId): Set<PartId> {
     return out
 }
 
-/** A part's base ring: its [center] and [radius], the [axis] the part leaves along, and [front] and [side] across it. */
-private class RootFrame(val center: Vec3, val radius: Float, val axis: Vec3, val front: Vec3, val side: Vec3) {
+/**
+ * A part's base ring: its [center] and mean [radius], the [axis] the part leaves along, [front] and [side] across it, and [outline], how
+ * far the ring reaches from its middle across the axis in each direction round it, so a flat ring, an ear's, opens as flat as it is.
+ */
+private class RootFrame(val center: Vec3, val radius: Float, val axis: Vec3, val front: Vec3, val side: Vec3, val outline: RingOutline) {
     /** Whether [p] lies in [opening]; [own] where it lies on the part itself, which opens all the way up it. */
     fun holds(p: Vec3, opening: Opening, own: Boolean): Boolean {
         val d = p - center
@@ -120,18 +125,50 @@ private class RootFrame(val center: Vec3, val radius: Float, val axis: Vec3, val
         val x = across dot front
         val y = across dot side
         if (along > width && !own) return false
-        if (across.length <= width && along >= -width) return true
+        if (across.length <= outline.reachAt(x, y) + opening.reach && along >= -width) return true
         return x > 0f && abs(y) < width && -along <= opening.dropAt(y / width)
     }
 
     companion object {
-        fun of(center: Vec3, radius: Float, next: Vec3, forward: Vec3): RootFrame {
+        fun of(center: Vec3, radius: Float, ring: List<Vec3>, next: Vec3, forward: Vec3): RootFrame {
             val toward = next - center
             val axis = if (toward.length > 0f) toward.normalized() else Vec3.Y
             var front = forward - axis * (forward dot axis)
             if (front.length < LEAST_ACROSS) front = Vec3.Y - axis * (Vec3.Y dot axis)
             front = front.normalized()
-            return RootFrame(center, radius, axis, front, axis cross front)
+            val side = axis cross front
+            val across = ring.map { p -> (p - center).let { d -> d - axis * (d dot axis) } }
+            return RootFrame(center, radius, axis, front, side, RingOutline.of(across.map { (it dot front) to (it dot side) }, radius))
+        }
+    }
+}
+
+/** How far a ring reaches from its middle in each direction across its axis: its points by angle, read between the two either side. */
+private class RingOutline(private val angles: FloatArray, private val reaches: FloatArray, private val fallback: Float) {
+    /** How far the ring reaches toward (x, y) across its axis; the ring's mean radius where it has too few points to say. */
+    fun reachAt(x: Float, y: Float): Float {
+        val count = angles.size
+        if (count < MIN_POINTS) return fallback
+        val a = atan2(y, x)
+        var after = angles.indexOfFirst { it >= a }
+        if (after < 0) after = 0
+        val before = (after - 1 + count) % count
+        var span = angles[after] - angles[before]
+        var into = a - angles[before]
+        if (span <= 0f) span += TWO_PI
+        if (into < 0f) into += TWO_PI
+        val t = (into / span).coerceIn(0f, 1f)
+        return reaches[before] + (reaches[after] - reaches[before]) * t
+    }
+
+    companion object {
+        /** The fewest points round a ring for its outline to be read rather than its mean radius. */
+        private const val MIN_POINTS = 4
+        private const val TWO_PI = (2.0 * PI).toFloat()
+
+        fun of(points: List<Pair<Float, Float>>, fallback: Float): RingOutline {
+            val sorted = points.map { (x, y) -> atan2(y, x) to sqrt(x * x + y * y) }.sortedBy { it.first }
+            return RingOutline(FloatArray(sorted.size) { sorted[it].first }, FloatArray(sorted.size) { sorted[it].second }, fallback)
         }
     }
 }
