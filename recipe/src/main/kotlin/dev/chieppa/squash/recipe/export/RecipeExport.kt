@@ -121,6 +121,8 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         role = part.role.takeIf { !part.roleGuessed },
         garment = part.garment?.value,
         blend = part.blend,
+        bind = part.bind,
+        stiff = part.stiff,
         size = rowScale(document, part).let { scale -> if (scale == 1f) split.size else split.size?.takeIf { it != scale } ?: if (split.size == null) 1f else null },
         lean = split.lean,
         outward = split.outward,

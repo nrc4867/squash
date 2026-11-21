@@ -1002,6 +1002,10 @@ export interface RecipePart {
   garment?: string | null;
   /** How far the smooth join with the part it sits on reaches, in body units. Left out, a part that starts open (a limb, a neck, a tail) rounds in by 1.4 times its root radius, held back where it runs close beside the part it sits on; any other takes its template's join or a quarter of its least extent. Off a template join it fills the crease where the two surfaces meet at an angle and leaves them as they are where they run alongside each other. */
   blend?: number | null;
+  /** For a part a garment owns, which bones it moves with: single rides the one bone it sits on, rigid, as a heel, buckle or button; follow takes the bones of the body under it, weighted as the body's skin is there, so a boot shaft, knee band or shell round a limb bends with the joint it crosses and keeps its stand-off from the body in a pose. Left out, a part that goes round the limb under it and crosses a joint there follows, and any other rides one bone. */
+  bind?: ("single" | "follow") | null;
+  /** For a part a garment owns that follows the body, how rigid it keeps each stretch between joints, 0 to 1: 0 bends as the skin under it bends, more gathers the bend toward the joint, as a stiff boot shaft does, and 1 keeps each vertex on its heaviest bone alone. 0 when left out. */
+  stiff?: number | null;
   /** Scales the drawn part: its length and width together. */
   size?: number | null;
   /** Degrees the part leans toward its own up (move.lean), less than 90 either way; with outward, a turn of the rest toward a corner. */

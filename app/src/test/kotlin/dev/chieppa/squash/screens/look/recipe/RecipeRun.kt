@@ -54,7 +54,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         if (options.measure) {
             val table = File(out, "measure.txt")
             document.character.wardrobe.shown?.let { open.session.send(ShowOutfit(it)) }
-            val measureTime = measureTime { printInto(table) { measureSession(id, open.session, open.work, built.poses, look, timings = false, targets = built.targets + referenceTargets()) } }
+            val measureTime = measureTime { printInto(table) { measureSession(id, open.session, open.work, built.poses, look, timings = false, targets = built.targets + referenceTargets(), rig = open.pose.rig.rig) } }
             println("measure: ${table.absolutePath} (${measureTime.inWholeMilliseconds} ms)")
         }
         options.reference?.let { reference -> ReferenceCompare(options, errors).compare(open, reference, File(out, "compare")) }

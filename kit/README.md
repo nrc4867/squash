@@ -229,8 +229,11 @@ Head cheats that follow the camera are the recipe's `viewKeys`, typed by the sch
 | --- | --- |
 | `prop` | `prop({ id: "heels", on: "feet", socket: 1, garment: "pumps", color: "patent", rest: "down", side, top })` |
 | `roundProp` | `roundProp({ id: "button", on: "torso", socket: 5, garment: "coat", color: "button", radius: 0.012, depth: 0.008 })` |
+| `limbShell` | `const shell = limbShell({ id: "shells", limb, socket: 9, garment: "shells", color: "boot", from: 0.3, to: 0.7, ease: 0.01, pair: true })`: `{ part, socket }`, a tube round a hanging limb from `from` to `to` along its outline x, `ease` off it, its edges closing in to `lip` (0.005) over `hug` so they hug the limb, and tucked into it at both ends; `limb` is `{ id, length, front, back, side }`, the limb's drawn radii as `[x, radius]`. Put `shell.socket` on the limb's `sockets`. |
+| `bootShaft` | `bootShaft({ id: "shafts", limb, socket: 7, garment: "boots", color: "boot", from: 0.54 })`: a shell from below the knee to just inside the limb's end, closing into the boot's foot, 0.02 off it, `stiff: 0.5` and `bind: "follow"`. |
+| `kneeBand` | `kneeBand({ id: "bands", limb, socket: 8, garment: "bands", color: "belt", at: 0.49, width: 0.07 })`: a band round the limb centred on `at`. |
 
-A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`; on cloth add `outset` a little past the garment's `fit`. `prop` takes `lean`, `outward`, `roll` and `topMiddle` (a lens drawn curved in Top wraps the face), and on a `tube` prop `curve` or `spiral` (a bow's loop or a ribbon's end: Side and Top give its width along the curve).
+A prop sits on a hand-made socket of the part it is on, usually `socket(n, u, v, { sink: 0 })`; on cloth add `outset` a little past the garment's `fit`. `prop` takes `lean`, `outward`, `roll` and `topMiddle` (a lens drawn curved in Top wraps the face), and on a `tube` prop `curve` or `spiral` (a bow's loop or a ribbon's end: Side and Top give its width along the curve). A prop rides the one bone it sits on; a part a garment owns that goes round a limb and crosses a joint, as every `limbShell` over a knee or an ankle does, follows the body's bones under it and bends with the joint, kept off the body in each pose. A part's `bind` (`"single"` or `"follow"`) sets it by hand, and `stiff` (0 to 1) gathers the bend toward the joint.
 
 ## Palette
 

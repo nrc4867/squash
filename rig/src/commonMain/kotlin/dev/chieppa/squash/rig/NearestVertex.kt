@@ -2,6 +2,7 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.collections.LongIntMap
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sqrt
 
@@ -72,6 +73,27 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
     }
 
     fun of(p: Vec3): Int? = nearest(p.x, p.y, p.z).takeIf { it >= 0 }
+
+    /** Hands [action] every vertex within [reach] of [p], with its distance, in no set order. */
+    fun forEachWithin(p: Vec3, reach: Float, action: (vertex: Int, distance: Float) -> Unit) {
+        if (outsideBox(p.x, p.y, p.z, reach)) return
+        val rings = ceil(reach / cell).toInt()
+        val x = index(p.x)
+        val y = index(p.y)
+        val z = index(p.z)
+        for (dx in -rings..rings) for (dy in -rings..rings) for (dz in -rings..rings) {
+            val b = buckets.get(pack(x + dx, y + dy, z + dz))
+            if (b < 0) continue
+            for (k in starts[b] until starts[b + 1]) {
+                val v = members[k]
+                val ex = positions[v * 3] - p.x
+                val ey = positions[v * 3 + 1] - p.y
+                val ez = positions[v * 3 + 2] - p.z
+                val d = sqrt(ex * ex + ey * ey + ez * ez)
+                if (d <= reach) action(v, d)
+            }
+        }
+    }
 
     /** The nearest vertex [accept] takes, all where null, in the first ring of buckets round the point's that holds any, or -1 within [MOST_RINGS] rings. */
     private fun nearest(px: Float, py: Float, pz: Float, accept: ((Int) -> Boolean)? = null): Int {

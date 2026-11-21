@@ -10,7 +10,12 @@ import dev.chieppa.squash.document.SetPose
 import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.render.PartMaterial
+import dev.chieppa.squash.graph.Node
+import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.SessionPose
+import dev.chieppa.squash.rig.posed
+import dev.chieppa.squash.screens.look.measure.shellPokes
+import dev.chieppa.squash.screens.look.measure.bindLines
 import dev.chieppa.squash.screens.TestWork
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.GarmentCover
@@ -68,13 +73,22 @@ private fun measure(example: String, look: LookArgs) = measureDocument(example, 
  */
 fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) = TestWork().use { work ->
     val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
-    SessionPose(session)
+    val pose = SessionPose(session)
     look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
-    measureSession(example, session, work, namedPoses, look, timings)
+    measureSession(example, session, work, namedPoses, look, timings, rig = pose.rig.rig)
 }
 
-/** Prints the checks of [session]'s character as [measureDocument] does, over a session already open with its pose node, on [work]. */
-fun measureSession(example: String, session: CharacterSession, work: TestWork, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true, targets: List<RecipeTarget> = emptyList()) {
+/** Prints the checks of [session]'s character as [measureDocument] does, over a session already open with its pose node and [rig], on [work]. */
+fun measureSession(
+    example: String,
+    session: CharacterSession,
+    work: TestWork,
+    namedPoses: Map<String, Pose>,
+    look: LookArgs,
+    timings: Boolean = true,
+    targets: List<RecipeTarget> = emptyList(),
+    rig: Node<*, Rig>? = null,
+) {
     work.settle(session)
     val head = LookParts(session.document.value.character).head
     val outfits = session.document.value.character.wardrobe.outfits.map { it.id }.filter { look.outfits == null || it.value in look.outfits }.ifEmpty { listOf(null) }
@@ -92,6 +106,7 @@ fun measureSession(example: String, session: CharacterSession, work: TestWork, n
             continue
         }
         report(name, shown, head?.let(shown::part))
+        rig?.output?.value?.let { bindLines(it, rest) }?.let { println("$name: $it") }
         if (outfit == outfits.first()) {
             val character = session.document.value.character
             val proportions = bodyProportions(rest, character, session.characterSurface.output.value?.surface)
@@ -108,6 +123,10 @@ fun measureSession(example: String, session: CharacterSession, work: TestWork, n
             if (outfit == outfits.first()) {
                 println("$name, $pose: arm volume inside the torso ${armInside(body).format()}")
                 propDrift(rest, body).takeIf { it.isNotEmpty() }?.let { println("$name, $pose: owned parts' drift from rigid ${it.format()}") }
+            }
+            rig?.output?.value?.let { bound ->
+                val bent = bound.posed(set)
+                bound.parts.filter { it.hold != null }.forEach { part -> shellPokes(bound, bent, part.id)?.let { println("$name, $pose: body through ${part.id.value} $it") } }
             }
             clothes("$name, $pose", session)
         }

@@ -28,6 +28,8 @@ class RigPart(
     val axis: Vec3 = Vec3.X,
     /** Where its face looks at rest, for a template that names a face direction apart from its axis; null otherwise. */
     val facing: Vec3? = null,
+    /** For a part a garment owns bound to the body's bones, where each vertex holds on to the body; null for any other part. */
+    val hold: BodyHold? = null,
 ) {
     val vertexCount: Int get() = rest.size / 3
 }
@@ -74,10 +76,16 @@ class Rig(val bones: List<Bone>, val parts: List<RigPart>, val seams: List<RigSe
 }
 
 /**
- * The rig of [character], with [paint]'s strokes on its seams and each joint's blend as wide as [reach] sets. [checkCancelled]
- * runs between parts and throws to stop a stale run.
+ * The rig of [character], with [paint]'s strokes on its seams, each joint's blend as wide as [reach] sets and each part a garment
+ * owns bound as [binds] says. [checkCancelled] runs between parts and throws to stop a stale run.
  */
-fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, checkCancelled: () -> Unit = {}, reach: JointReach = JointReach.GUESSED): Rig {
+fun rigOf(
+    character: AssembledCharacter,
+    paint: SeamPaint = SeamPaint.NONE,
+    checkCancelled: () -> Unit = {},
+    reach: JointReach = JointReach.GUESSED,
+    binds: (PartId) -> OwnedBind = { OwnedBind.RULE },
+): Rig {
     val parts = character.parts.filter { it.id != null && it.covering == null && it.hanging == null && it.spanning == null && it.locks == null }.map(::RiggedPart)
     val bones = boneTree(parts)
     val index = bones.withIndex().associate { (i, bone) -> bone.name to i }
@@ -94,9 +102,10 @@ fun rigOf(character: AssembledCharacter, paint: SeamPaint = SeamPaint.NONE, chec
             part.placed.template.axis.faces?.let { PartBuilder.facing(part.placed.template) },
         )
     }
-    val hung = looseEndRigs(character, rigged, bones)
+    val bound = boundOwned(parts, rigged, bones, binds, checkCancelled)
+    val hung = looseEndRigs(character, bound, bones)
     val spanned = membraneRigs(character, parts, index, reach)
-    return Rig(bones + hung.flatMap { it.bones }, rigged + hung.map { it.part } + spanned, seamsOf(parts, byId, index, reach)).withLocks(character)
+    return Rig(bones + hung.flatMap { it.bones }, bound + hung.map { it.part } + spanned, seamsOf(parts, byId, index, reach)).withLocks(character)
 }
 
 /**

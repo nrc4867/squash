@@ -95,6 +95,13 @@ fun Rig.posed(pose: Pose): PosedCharacter {
             bones.indexOfFirst { it.name.part == part.id }.takeIf { it >= 0 }?.let { turns[part.id] = frames.turns[it] }
         }
     }
+    for (part in parts) {
+        val hold = part.hold ?: continue
+        heldOnBody(part, hold, frames, positions, meshes)?.let { (moved, mesh) ->
+            positions[part.id] = moved
+            meshes[part.id] = mesh
+        }
+    }
     return PosedCharacter(positions, meshes, turns, rests)
 }
 

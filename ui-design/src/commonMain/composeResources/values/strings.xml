@@ -873,6 +873,12 @@
     <string name="dress_follow_through">Follow-through</string>
     <string name="dress_spring">Spring</string>
     <string name="dress_collide_body">Collide body</string>
+    <string name="dress_owned_part">%1$s · owned part</string>
+    <string name="dress_bind">Bind</string>
+    <string name="dress_bind_auto">Auto</string>
+    <string name="dress_bind_single">Single</string>
+    <string name="dress_bind_follow">Follow</string>
+    <string name="dress_stiff">Stiff</string>
     <string name="view_garments">Garments</string>
     <string name="view_garments_shown">Shown</string>
     <string name="view_garments_ghosted">Ghosted</string>
@@ -906,6 +912,7 @@
     <string name="dress_step_color">%1$s color</string>
     <string name="dress_step_change">%1$s on %2$s</string>
     <string name="dress_step_loose_end">%1$s loose end</string>
+    <string name="dress_step_bind">%1$s binding</string>
     <string name="dress_step_remove_loose_end">Remove %1$s loose end</string>
     <string name="dress_step_area_color">%1$s area color</string>
     <string name="dress_step_print">%1$s print %2$s</string>

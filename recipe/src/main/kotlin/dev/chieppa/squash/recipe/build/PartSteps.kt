@@ -13,6 +13,7 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.SetOutlines
 import dev.chieppa.squash.document.SetParameters
+import dev.chieppa.squash.document.SetPartBind
 import dev.chieppa.squash.document.SetRole
 import dev.chieppa.squash.document.SetSocketBlend
 import dev.chieppa.squash.document.Side
@@ -41,6 +42,10 @@ internal fun BuildContext.placePart(index: Int, part: RecipePart): PartIds {
     send(path, AddParts(instances))
     shape(path, ids.left, template, part, sockets?.first()?.let(::rowScale) ?: 1f)
     part.blend?.let { blend -> ids.all.forEach { send("$path.blend", SetSocketBlend(it, blend)) } }
+    if (part.bind != null || part.stiff != null) {
+        if (garment == null) fail(if (part.bind != null) "$path.bind" else "$path.stiff", "only a part a garment owns is bound to the body; give it a garment")
+        send(if (part.bind != null) "$path.bind" else "$path.stiff", SetPartBind(ids.left, part.bind, part.stiff))
+    }
     if (role == null) ids.all.forEach { id ->
         val placed = checkNotNull(document.character.part(id))
         send("$path.role", SetRole(id, guessRole(document.character, placed, templates), guessed = true))
