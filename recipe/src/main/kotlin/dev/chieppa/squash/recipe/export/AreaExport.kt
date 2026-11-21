@@ -30,7 +30,7 @@ internal fun paintsItsBoxes(garment: Garment): Boolean {
 internal fun areasOf(garment: Garment): List<RecipeArea> {
     val drawn = garment.shapes.map { it.part }.distinct().filter { part ->
         val order = garment.shapes.filter { it.part == part }.map { shape -> garment.areas.indexOfFirst { it.id == shape.area } }
-        order.zipWithNext().all { (a, b) -> a <= b } && DrawnCloth.of(garment, part, DrawnCloth.cellsOf(garment, part)) != null
+        order.zipWithNext().all { (a, b) -> a <= b } && DrawnCloth.of(garment, part)?.laysExactly(DrawnCloth.cellsOf(garment, part)) == true
     }.toSet()
     return garment.areas.map { area ->
         val exact = garment.shapes.filter { it.part in drawn && it.area == area.id }.map(::strokeOf)

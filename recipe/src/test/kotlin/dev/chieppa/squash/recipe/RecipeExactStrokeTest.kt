@@ -10,6 +10,7 @@ import dev.chieppa.squash.recipe.build.RecipeBuilder
 import dev.chieppa.squash.recipe.export.exportRecipe
 import dev.chieppa.squash.recipe.model.RecipeArea
 import dev.chieppa.squash.recipe.model.RecipeGarment
+import dev.chieppa.squash.recipe.model.RecipeOpeningCut
 import dev.chieppa.squash.recipe.model.RecipeStroke
 import dev.chieppa.squash.recipe.model.RecipeStrokeShape
 import org.junit.jupiter.api.Tag
@@ -62,9 +63,11 @@ class RecipeExactStrokeTest {
     }
 
     @Test
-    fun aStrokeThatIsNotExactBesideExactOnesIsWarnedOf() {
-        val mixed = straps.copy(areas = listOf(straps.areas.single().copy(paint = straps.areas.single().paint + RecipeStroke("torso", RecipeStrokeShape.BAND, u = listOf(0.4f, 0.5f)))))
+    fun aStrokeThatIsNotExactBesideExactOnesKeepsTheShapes() {
+        val neckline = RecipeStroke("torso", RecipeStrokeShape.OPENING, unpaint = true, cut = RecipeOpeningCut.V, depth = 0.1f)
+        val mixed = straps.copy(areas = listOf(straps.areas.single().copy(paint = straps.areas.single().paint + RecipeStroke("torso", RecipeStrokeShape.BAND, u = listOf(0.4f, 0.5f)) + neckline.copy(on = "neck"))))
         val result = builder.build(base.copy(wardrobe = base.wardrobe!!.copy(garments = base.wardrobe.garments + mixed)))
-        assertTrue(result.warnings.any { "not exact" in it }, result.warnings.toString())
+        assertTrue(result.warnings.none { "exact" in it }, result.warnings.toString())
+        assertEquals(4, result.document.character.wardrobe.garment(GarmentId("straps"))?.shapes?.size)
     }
 }

@@ -8,18 +8,20 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** A garment's shapes stay on the parts whose cells stay as painted, round-trip through the file, and undo with the paint. */
+/** A garment's shapes stay through repainting while their area does, round-trip through the file, and undo with the paint. */
 class ClothShapeCommandTest {
     private val area = GarmentAreaId("area-1")
+    private val trim = GarmentAreaId("area-2")
     private val torsoShape = ClothShape(TORSO, area, ClothOutline.Box(0.4f, 0.6f, 0.1f, 0.12f))
-    private val legShape = ClothShape(LEG_L, area, ClothOutline.Path(listOf(ClothPoint(0.2f, 0f), ClothPoint(0.3f, 0.1f), ClothPoint(0.3f, -0.1f)), curved = true, corners = setOf(0)))
+    private val legShape = ClothShape(LEG_L, trim, ClothOutline.Path(listOf(ClothPoint(0.2f, 0f), ClothPoint(0.3f, 0.1f), ClothPoint(0.3f, -0.1f)), curved = true, corners = setOf(0)))
 
     @Test
-    fun repaintingAPartDropsItsShapesAndUndoGivesThemBack() {
+    fun repaintingKeepsTheShapesOfTheAreasKeptAndUndoGivesTheRestBack() {
         val start = WinterFennec.dressed()
         val sweater = checkNotNull(start.character.wardrobe.garment(SWEATER))
-        val painted = GarmentArea(area, "", mapOf(TORSO to listOf(0, 40), LEG_L to listOf(0, 20)))
-        val shaped = sweater.copy(areas = listOf(painted), shapes = listOf(torsoShape, legShape))
+        val painted = GarmentArea(area, "", mapOf(TORSO to listOf(0, 40)))
+        val trimmed = GarmentArea(trim, "", mapOf(LEG_L to listOf(0, 20)))
+        val shaped = sweater.copy(areas = listOf(painted, trimmed), shapes = listOf(torsoShape, legShape))
         val repainted = painted.copy(cells = painted.cells + (LEG_L to listOf(0, 24)))
         scenario(start) {
             run(SetGarment(shaped))

@@ -102,7 +102,7 @@ class SeeThroughCloth(
             val around = mesh.heldV[v * HELD + slot]
             val run = runs[member]
             val cloth = garment.cover.clothOf(run.partId)
-            val area = cloth?.let { held -> (0 until held.areaCount).maxByOrNull { held.areaAt(it, u, around) } } ?: -1
+            val area = cloth?.let { held -> if (held.areaCount == 0) 0 else (0 until held.areaCount).maxByOrNull { held.areaAt(it, u, around) } } ?: -1
             val look = looks.getOrNull(area)
             out.area[v] = area
             out.opacity[v] = look?.opacity ?: 1f

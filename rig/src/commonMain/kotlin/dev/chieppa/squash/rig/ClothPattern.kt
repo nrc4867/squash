@@ -64,9 +64,16 @@ private const val GAP_FROM = -0.3f
 private const val GAP_TO = 0.4f
 
 /**
+ * The finest cell a garment's wrinkles and gathers are sized by, as a share of the body's cell: a garment meshed finer still, as drawn
+ * cloth's straps and points are, folds as one meshed at this cell does, rather than in a fringe of tiny folds along every hem.
+ */
+private const val FINEST_FOLD_SHARE = 4f
+
+/**
  * What a garment's cloth does where it bunches, read once at rest, a value each vertex of its drawn mesh: the [wrinkle] wave's phase
  * along the limb, so its crests run across it, and the gathers just above a hem as an envelope and a phase round the part ([gather],
- * [gatherPhase]); with its [looseness], from its fit, and its mesh's [cell]. Each phase wanders by smooth noise in space, so no two waves
+ * [gatherPhase]); with its [looseness], from its fit, and the [cell] its folds are sized by, its mesh's, no finer than a
+ * [FINEST_FOLD_SHARE]th of the body's. Each phase wanders by smooth noise in space, so no two waves
  * repeat. See HLD: look, Creases and wrinkles.
  */
 class ClothPattern(
@@ -82,7 +89,7 @@ class ClothPattern(
             val surface = garment.surface
             val rest = surface.render
             val count = minOf(rest.vertexCount, skin.vertexCount)
-            val cell = surface.mesh.cell
+            val cell = maxOf(surface.mesh.cell, bodyCell / FINEST_FOLD_SHARE)
             val stride = RenderMesh.FLOATS_PER_VERTEX
             val frames = PartFrames(rig)
             val chain = chainOffsets(rig)

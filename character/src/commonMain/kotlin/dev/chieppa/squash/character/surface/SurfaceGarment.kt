@@ -37,12 +37,12 @@ class SurfaceGarment(
 ) {
     /**
      * The curves where each join its garment inks shares its surface equally, a covered part's run and the run it grows from, over what
-     * the garment covers, as its surface lies.
+     * the garment covers and shows, as its surface lies, so a join or seam an outer garment hides draws no ink.
      */
     val inkedJoins: List<List<CurvePoint>> by lazy {
         val inked = cover.garment.joins
-        val joins = if (inked.isEmpty()) emptyList() else joinCurves(surface.field, surface.mesh, surface.lines, { cover.branchOf(it.partId)?.part in inked }) { coverage[it] >= 0f }
-        joins + if (cover.garment.inkHem) seamsOf(surface, coverage, seamValues) else emptyList()
+        val joins = if (inked.isEmpty()) emptyList() else joinCurves(surface.field, surface.mesh, surface.lines, { cover.branchOf(it.partId)?.part in inked }) { cutValues[it] >= 0f }
+        joins + if (cover.garment.inkHem) seamsOf(surface, cutValues, seamValues) else emptyList()
     }
 
     /** Where it is drawn, one value a vertex of its surface's drawn mesh: its [cut] is where this is at least zero. */

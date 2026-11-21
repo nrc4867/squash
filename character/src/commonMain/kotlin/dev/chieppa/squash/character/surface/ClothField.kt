@@ -7,7 +7,6 @@ import dev.chieppa.squash.document.runsOfCells
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.round
 import kotlin.math.sqrt
 
@@ -32,17 +31,15 @@ private const val BLEND_LEVEL = 0.1f
 /** How far a cloth with no edge reads inside or outside, in body units: past any reach a coverage reads. */
 private const val NO_EDGE = 1e6f
 
-/** The square root of two, for the probit from the inverse error function. */
-private const val SQRT_TWO = 1.4142135f
-
 /**
  * One part's painted cloth as a smooth field over its first run's (u, v), read from its chart of [CHART_ROWS] by [CHART_COLUMNS]
  * cells: each cell any area paints held as 1 and the rest 0, blurred by [CLOTH_BLUR_CELLS] cells along and round, rows held at the
  * part's ends and columns wrapping round, so its [CLOTH_HEM_LEVEL] is a smooth curve along the painted cells' edge with no steps. Each
  * area of a garment of several is blurred on its own too, for the seams where areas meet ([areaAt]); all areas are blurred together
- * for the cloth, so two areas that touch leave no gap between them. Equal for the same cells painted by the same areas. Where the cells
- * are what the garment's shapes lay, [drawn], its edge and fields are read from the shapes instead, so the hem is the shapes' outline
- * however fine; a union with drawn cloth in it reads each of its cloths and takes the most.
+ * for the cloth, so two areas that touch leave no gap between them. Equal for the same cells painted by the same areas. An area the
+ * garment's shapes paint, [drawn], is read from the shapes instead, so its edge is their outline however fine, less what cell strokes
+ * took and with what they added ([CellEdits]); areas no shape paints lie beneath the shapes ([ClothBeneath]); a union with drawn cloth in
+ * it reads each of its cloths and takes the most.
  */
 class ClothField private constructor(
     private val whole: FloatArray,
@@ -53,6 +50,9 @@ class ClothField private constructor(
     private val held: BooleanArray,
     private val drawn: DrawnCloth? = null,
     private val joined: List<ClothField>? = null,
+    private val edits: CellEdits? = null,
+    private val beneath: ClothBeneath? = null,
+    private val areaEdits: List<CellEdits?>? = null,
 ) {
     /** For each cell, the nearest middle of a side between a painted and an unpainted cell, as row and column in cells; empty with none. */
     private val nearest: FloatArray by lazy { nearestEdges(held) }
@@ -73,8 +73,15 @@ class ClothField private constructor(
      * range off its hem level to [BLEND_LEVEL] past that.
      */
     fun inside(u: Float, v: Float, along: Float, around: Float): Float {
-        drawn?.let { return it.inside(u, v, along, around) }
         joined?.let { fields -> return fields.maxOf { it.inside(u, v, along, around) } }
+        val drawn = drawn ?: return cellInside(u, v, along, around)
+        val shaped = drawn.inside(u, v, along, around)
+        val laid = beneath?.takeIf { it.holdsCells }?.let { maxOf(shaped, it.inside(u, v, along, around)) } ?: shaped
+        return edits?.inside(laid, u, v, along, around) ?: laid
+    }
+
+    /** [inside] read from the painted cells alone. */
+    private fun cellInside(u: Float, v: Float, along: Float, around: Float): Float {
         val x = rowOf(u)
         val y = columnOf(v)
         val value = sample(whole, x, y)
@@ -117,9 +124,11 @@ class ClothField private constructor(
 
     /** The field at (u, v), from 0 far outside the cloth to 1 deep inside it. */
     fun at(u: Float, v: Float): Float {
-        drawn?.let { return it.at(u, v) }
         joined?.let { fields -> return fields.maxOf { it.at(u, v) } }
-        return sample(whole, rowOf(u), columnOf(v))
+        val drawn = drawn ?: return sample(whole, rowOf(u), columnOf(v))
+        val shaped = drawn.at(u, v)
+        val laid = beneath?.takeIf { it.holdsCells }?.let { maxOf(shaped, it.at(u, v)) } ?: shaped
+        return edits?.at(laid, u, v) ?: laid
     }
 
     /**
@@ -136,9 +145,11 @@ class ClothField private constructor(
 
     /** Area [area]'s own field at (u, v); 0 where that area paints nothing of the part. */
     fun areaAt(area: Int, u: Float, v: Float): Float {
-        if (areas[area] == null) return 0f
-        drawn?.let { return it.areaAt(area, u, v) }
-        return sample(checkNotNull(areas[area]), rowOf(u), columnOf(v))
+        val cells = areas[area] ?: return 0f
+        val drawn = drawn ?: return sample(cells, rowOf(u), columnOf(v))
+        beneath?.areaAt(area, u, v)?.let { return it }
+        val shaped = drawn.areaAt(area, u, v)
+        return areaEdits?.getOrNull(area)?.at(shaped, u, v) ?: shaped
     }
 
     override fun equals(other: Any?): Boolean = other is ClothField && other.key == key
@@ -158,14 +169,19 @@ class ClothField private constructor(
 
         /**
          * The field of the cells each of [areas] paints, one a cell row by row, or null where they paint none. With one area it holds no
-         * area fields of its own. With [drawn], the shapes that lay exactly those cells, its edge and fields are the shapes'.
+         * area fields of its own. With [drawn], the garment's shapes on the part, its edge and fields are those of the areas
+         * a shape paints, less the cells cell strokes took from them and with those they added ([CellEdits]); areas no shape paints are
+         * read beneath the shapes ([ClothBeneath]).
          */
         fun of(areas: List<BooleanArray>, drawn: DrawnCloth? = null): ClothField? {
             val held = BooleanArray(CHART_CELLS) { cell -> areas.any { it[cell] } }
             if (held.none { it }) return null
             val own = if (areas.size < 2) emptyList() else areas.map { cells -> if (cells.any { it }) blurred(cells) else null }
             val key: Any = if (drawn == null) areas.map(::runsOfCells) else areas.map(::runsOfCells) to drawn
-            return ClothField(blurred(held), own, key, checkNotNull(ClothReach.of(held)), held, drawn)
+            val edits = drawn?.editsOf(areas)
+            val areaEdits = drawn?.let { d -> areas.indices.map { k -> d.editsOf(k, areas[k]) } }
+            val beneath = drawn?.let { ClothBeneath.of(areas, it) }
+            return ClothField(blurred(held), own, key, checkNotNull(ClothReach.of(held)), held, drawn, edits = edits, beneath = beneath, areaEdits = areaEdits)
         }
 
         /**
@@ -218,37 +234,6 @@ class ClothField private constructor(
                 }
             }
             return out
-        }
-
-        /** The probit of [p]: where under a unit normal curve a share [p] of it lies below, [p] held off 0 and 1. */
-        private fun probit(p: Float): Float {
-            val x = (2f * p - 1f).coerceIn(-0.9999f, 0.9999f)
-            var w = -ln((1f - x) * (1f + x))
-            var q: Float
-            if (w < 5f) {
-                w -= 2.5f
-                q = 2.81022636e-08f
-                q = 3.43273939e-07f + q * w
-                q = -3.5233877e-06f + q * w
-                q = -4.39150654e-06f + q * w
-                q = 0.00021858087f + q * w
-                q = -0.00125372503f + q * w
-                q = -0.00417768164f + q * w
-                q = 0.246640727f + q * w
-                q = 1.50140941f + q * w
-            } else {
-                w = sqrt(w) - 3f
-                q = -0.000200214257f
-                q = 0.000100950558f + q * w
-                q = 0.00134934322f + q * w
-                q = -0.00367342844f + q * w
-                q = 0.00573950773f + q * w
-                q = -0.0076224613f + q * w
-                q = 0.00943887047f + q * w
-                q = 1.00167406f + q * w
-                q = 2.83297682f + q * w
-            }
-            return SQRT_TWO * q * x
         }
 
         private fun rowOf(u: Float): Float = u * CHART_ROWS - 0.5f

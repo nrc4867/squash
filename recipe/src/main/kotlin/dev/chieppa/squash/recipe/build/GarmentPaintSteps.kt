@@ -21,7 +21,6 @@ import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.GarmentHole
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartData
-import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.TuckChoice
 import dev.chieppa.squash.recipe.model.RecipeGarment
 
@@ -62,7 +61,6 @@ internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bar
     )
     val middle = middlePartsOf(character)
     val shapes = ArrayList<ClothShape>()
-    val byCells = HashMap<PartId, String>()
     garment.areas.forEachIndexed { i, area ->
         area.paint.forEachIndexed { j, stroke ->
             val p = "$path.areas[$i].paint[$j]"
@@ -78,12 +76,8 @@ internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bar
                 val cells = strokeCells(p, stroke, chart, bare.places)
                 if (cells.isEmpty) warn(p, "the stroke holds no cell's middle; a cell is 1/64 of u by 1/32 of v")
                 cloth = painted(cloth, ids[i], cells, PaintStyle(erase = stroke.unpaint, clean = stroke.clean, mirrored = if (stroke.mirrored) middle else emptySet()))
-                cells.runs().keys.forEach { byCells.getOrPut(it) { p } }
             }
         }
-    }
-    shapes.map { it.part }.distinct().forEach { part ->
-        byCells[part]?.let { p -> warn(p, "a stroke that is not exact lays cells on ${part.value} too, so its cloth's edge there is read from the cells") }
     }
     cloth.areas.forEachIndexed { i, area -> if (area.mask.isEmpty) warn("$path.areas[$i]", "the area holds no cells once every stroke is laid") }
     val holes = garment.holes.mapIndexed { i, hole ->

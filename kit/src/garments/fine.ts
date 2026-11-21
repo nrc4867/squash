@@ -43,6 +43,9 @@ export function strap(on: string, from: number, to: number, at: number, width: n
 }
 
 /** What a tie is: its knot at the top of `on` and its blade down the front to a point. */
+/** How far a tie stands off the shirt under it: clear of the shirt's ink, so no line of the shirt's shows through its knot. */
+const TIE_FIT = 0.008;
+
 export interface TieSpec extends Partial<Omit<RecipeGarment, "areas">> {
   /** The tie's palette slot. */
   color: string;
@@ -74,7 +77,7 @@ export function tie(spec: TieSpec): RecipeGarment {
     [widest, -blade / 2], [knotBottom - length * 0.04, -knot * 0.3], [knotBottom, -knot * 0.38], [top, -knot / 2],
   ];
   const area: RecipeArea = { id: "tie", name: "Tie", paint: [exactLasso(on, points, { curved: true, corners: [0, 2, 4, 6, 8] })] };
-  return garment({ id: "tie", slot: "neck", layer: LAYER.over, color, fit: 0.004, ...rest, areas: [area] });
+  return garment({ id: "tie", slot: "neck", layer: LAYER.over, color, fit: TIE_FIT, ...rest, areas: [area] });
 }
 
 /** What a pointed collar is: its points lying on `on` from the neck's root down the front, either side of the middle. */

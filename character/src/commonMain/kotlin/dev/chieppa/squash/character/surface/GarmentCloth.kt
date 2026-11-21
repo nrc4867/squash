@@ -24,7 +24,7 @@ fun clothOf(garment: Garment, branches: Map<PartId, GarmentBranch>, twins: Map<P
         val leader = if (garment.areas.any { part in it.cells }) part else twins[part] ?: continue
         val field = made.getOrPut(leader) {
             val cells = DrawnCloth.cellsOf(garment, leader)
-            ClothField.of(cells, DrawnCloth.of(garment, leader, cells))
+            ClothField.of(cells, DrawnCloth.of(garment, leader))
         } ?: continue
         out[part] = field
     }

@@ -80,7 +80,8 @@ class GarmentCut(
             5 -> {
                 val lines = TriangleLines(surface.positions, surface.lineNormals, kept, checkNotNull(edges), coverage)
                 val made = checkNotNull(cut)
-                val seams = ClothSeams(surface.field, cover).values(mesh)
+                val reader = ClothSeams(surface.field, cover)
+                val seams = if (isDrawnFine()) reader.smoothedValues(mesh, bodyCell) { smoothingOf(it).run() } else reader.values(mesh)
                 done = SurfaceGarment(cover, surface, coverage, made, made.mesh(surface.render), hems, lines, fan, holes, ends = ends, seamValues = seams, grown = grown)
                 null
             }
@@ -93,9 +94,12 @@ class GarmentCut(
      * it; where the cloth is drawn and meshes finer than [DETAIL_LEVEL]'s cell, over that cell instead, in as many more steps as reach
      * across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a drawn hem.
      */
+    /** Whether its cloth is drawn and meshed finer than [DETAIL_LEVEL]'s cell. */
+    private fun isDrawnFine(): Boolean = mesh.cell < bodyCell / (1 shl DETAIL_LEVEL) && cover.cloth.values.any { it.isDrawn }
+
     private fun smoothingOf(values: FloatArray): NearZeroSmoothing {
         val detail = bodyCell / (1 shl DETAIL_LEVEL)
-        val drawn = mesh.cell < detail && cover.cloth.values.any { it.isDrawn }
+        val drawn = isDrawnFine()
         val cell = if (drawn) detail else mesh.cell
         val reach = cell / mesh.cell
         val steps = if (drawn) minOf((NEAR_ZERO_STEPS * reach * reach).toInt(), MOST_SMOOTHING_STEPS) else NEAR_ZERO_STEPS

@@ -10,8 +10,6 @@ import dev.chieppa.squash.document.GarmentAreaId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.cellsOfRuns
 import kotlin.math.abs
-import kotlin.math.exp
-import kotlin.math.sqrt
 
 /** How far outside a painting shape, in cells, a cell's middle may lie and the cell still be painted, so a shape narrower than a cell holds cells. */
 const val DRAWN_PAINT_REACH = 0.5f
@@ -102,25 +100,71 @@ class DrawnCloth(private val shapes: List<ClothShape>, private val areaOf: List<
         return d
     }
 
+    /** Whether any shape paints area [area]. */
+    fun shapes(area: Int): Boolean = areaOf.contains(area)
+
+    /**
+     * The field at (u, v) of what the shapes lay over the cloth beneath them, from 0 to 1 as [at] reads: every shape's inside, or the
+     * unpainting shapes' alone where [unpaintingOnly].
+     */
+    fun takenAt(u: Float, v: Float, unpaintingOnly: Boolean): Float = fieldOf(taken(u, v, CHART_ROWS.toFloat(), CHART_COLUMNS.toFloat()) { shapes[it].unpaint || !unpaintingOnly })
+
+    /**
+     * The field at (u, v) of what the shapes of the areas after [area] lay, which are laid after its strokes and take from it, as
+     * [takenAt] reads.
+     */
+    fun takenAfter(area: Int, u: Float, v: Float): Float = fieldOf(taken(u, v, CHART_ROWS.toFloat(), CHART_COLUMNS.toFloat()) { areaOf[it] > area })
+
+    /** How far inside the unpainting shapes (u, v) lies in body units, a unit of u [along] long and of v [around]. */
+    fun unpaintedInside(u: Float, v: Float, along: Float, around: Float): Float = taken(u, v, along, around) { shapes[it].unpaint }
+
+    private inline fun taken(u: Float, v: Float, uScale: Float, vScale: Float, read: (Int) -> Boolean): Float {
+        val uu = u.coerceIn(0f, 1f)
+        var d = NOTHING
+        for (i in shapes.indices) {
+            if (!read(i)) continue
+            if (d >= -distances[i].outsideBounds(uu, v, uScale, vScale)) continue
+            d = maxOf(d, distances[i].at(uu, v, uScale, vScale))
+        }
+        return d
+    }
+
+    /** The cells the shapes of the areas after [area] paint or unpaint, as [drawnStrokeCells] lays each. */
+    fun touchedAfter(area: Int): BooleanArray {
+        val out = BooleanArray(CHART_CELLS)
+        for (i in shapes.indices) if (areaOf[i] > area) drawnStrokeCells(shapes[i].outline, false).forEachIndexed { cell, held -> if (held) out[cell] = true }
+        return out
+    }
+
+    /** Whether the shapes lay exactly [cells], each area's. */
+    fun laysExactly(cells: List<BooleanArray>): Boolean = cells.size == this.cells.size && this.cells.indices.all { this.cells[it].contentEquals(cells[it]) }
+
+    /** What cell strokes did to area [area], whose cells are [cells], over what the shapes lay in it; null where nothing or no shape paints it. */
+    fun editsOf(area: Int, cells: BooleanArray): CellEdits? = if (!shapes(area)) null else CellEdits.of(this.cells[area], cells)
+
+    /**
+     * What cell strokes did to the whole cloth, whose cells are [cells], each area's, over what the shapes and the areas no shape paints
+     * lay together; null where nothing.
+     */
+    fun editsOf(cells: List<BooleanArray>): CellEdits? {
+        val held = BooleanArray(CHART_CELLS) { cell -> cells.any { it[cell] } }
+        val laid = BooleanArray(CHART_CELLS) { cell -> this.cells.indices.any { k -> if (shapes(k)) this.cells[k][cell] else cells.getOrNull(k)?.get(cell) == true } }
+        return CellEdits.of(laid, held)
+    }
+
     override fun equals(other: Any?): Boolean = other is DrawnCloth && other.shapes == shapes && other.areaOf == areaOf
 
     override fun hashCode(): Int = shapes.hashCode() * 31 + areaOf.hashCode()
 
     companion object {
-        /**
-         * [garment]'s shapes on [part], a pair's leader, as its cloth there, where the cells its areas hold of the part, [cells], are
-         * exactly what those shapes lay; null where it has none there or the cells say otherwise.
-         */
-        fun of(garment: Garment, part: PartId, cells: List<BooleanArray>): DrawnCloth? = of(garment.shapes, garment.areas.map { it.id }, part, cells)
+        /** [garment]'s shapes on [part], a pair's leader, as its cloth there; null where it has none there. */
+        fun of(garment: Garment, part: PartId): DrawnCloth? = of(garment.shapes, garment.areas.map { it.id }, part)
 
-        /** [shapes] on [part] as its cloth, laid into the areas [ids], where [cells], each area's, are exactly what they lay; else null. */
-        fun of(shapes: List<ClothShape>, ids: List<GarmentAreaId>, part: PartId, cells: List<BooleanArray>): DrawnCloth? {
-            val shapes = shapes.filter { it.part == part }
-            if (shapes.isEmpty() || cells.size != ids.size) return null
-            val areaOf = shapes.map { ids.indexOf(it.area) }
-            if (areaOf.any { it < 0 }) return null
-            val drawn = DrawnCloth(shapes, areaOf, ids.size)
-            return drawn.takeIf { drawn.cells.indices.all { k -> drawn.cells[k].contentEquals(cells[k]) } }
+        /** [shapes] on [part] laid into the areas [ids], those of an area not among them left out; null where none is left. */
+        fun of(shapes: List<ClothShape>, ids: List<GarmentAreaId>, part: PartId): DrawnCloth? {
+            val kept = shapes.filter { it.part == part && it.area in ids }
+            if (kept.isEmpty()) return null
+            return DrawnCloth(kept, kept.map { ids.indexOf(it.area) }, ids.size)
         }
 
         /** The cells each of [garment]'s areas holds of [part], from its runs. */
@@ -167,19 +211,3 @@ private fun strokeCells(shape: ClothOutlineDistance, unpaint: Boolean): BooleanA
 
 /** The field of a blurred straight edge [cells] cells inside it, blurred as painted cells are: the normal curve's share below [cells] over the blur. */
 internal fun fieldOf(cells: Float): Float = normalShare(cells / CLOTH_BLUR_CELLS)
-
-/** The share of a unit normal curve lying below [x]. */
-private fun normalShare(x: Float): Float {
-    val z = abs(x) / sqrt(2f)
-    val t = 1f / (1f + ERF_P * z)
-    val poly = t * (ERF_A1 + t * (ERF_A2 + t * (ERF_A3 + t * (ERF_A4 + t * ERF_A5))))
-    val erf = 1f - poly * exp(-z * z)
-    return if (x >= 0f) 0.5f + 0.5f * erf else 0.5f - 0.5f * erf
-}
-
-private const val ERF_P = 0.3275911f
-private const val ERF_A1 = 0.254829592f
-private const val ERF_A2 = -0.284496736f
-private const val ERF_A3 = 1.421413741f
-private const val ERF_A4 = -1.453152027f
-private const val ERF_A5 = 1.061405429f

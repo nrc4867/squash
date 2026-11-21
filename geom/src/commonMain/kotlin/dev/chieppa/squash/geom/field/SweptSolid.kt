@@ -23,7 +23,8 @@ const val PLACE_ARRAY = 5
  * distance from the nearest stretch and runs on smoothly from pair to pair; inside it is negative.
  *
  * Each ring keeps its u along the part and, beside its radius in each direction, the v of its section there, so [place] reads where a
- * point lies on the run: u eased between the two rings of the nearest stretch, carried on along the end ring's axis past either end by the
+ * point lies on the run: u eased between the two rings of the nearest stretch, or of the neighbouring stretch whose planes hold the point
+ * where the nearest stretch's do not, carried on along the end ring's axis past either end by the
  * run's length per u, and v the section's in the point's direction round.
  */
 class SweptSolid internal constructor(
@@ -103,9 +104,34 @@ class SweptSolid internal constructor(
             }
         }
         if (bestPair < 0 || best > cell.bound) return scan(px, py, pz, out)
-        if (out != null) placeAt(bestPair, bestAlong, bestAngle, out)
+        if (out != null) placeBy(px, py, pz, bestPair, bestAlong, bestAngle, out)
         return best
     }
+
+    /**
+     * Writes u and v for ([px], [py], [pz]) into [out], read by pair [nearest], the nearest stretch, at [along] and [angle], unless the point
+     * lies outside that pair's planes and inside a neighbouring pair's: then by that pair, so u eases on from ring to ring through the
+     * point's own slab rather than holding at the nearest stretch's end ring, as it would off a curved or hollowed stretch.
+     */
+    private fun placeBy(px: Float, py: Float, pz: Float, nearest: Int, along: Float, angle: Float, out: FloatArray) {
+        val holding = holdingPair(px, py, pz, nearest)
+        if (holding == nearest) {
+            placeAt(nearest, along, angle, out)
+            return
+        }
+        pairAt(px, py, pz, holding, out)
+        placeAt(holding, out[PLACE_ALONG], out[PLACE_ANGLE], out)
+    }
+
+    /** [nearest], where its planes hold ([px], [py], [pz]) or neither neighbour's do; else the neighbour whose planes hold it. */
+    internal fun holdingPair(px: Float, py: Float, pz: Float, nearest: Int): Int {
+        if (holds(px, py, pz, nearest)) return nearest
+        if (nearest > 0 && holds(px, py, pz, nearest - 1)) return nearest - 1
+        if (nearest + 1 < count - 1 && holds(px, py, pz, nearest + 1)) return nearest + 1
+        return nearest
+    }
+
+    private fun holds(px: Float, py: Float, pz: Float, i: Int): Boolean = plane(px, py, pz, i) >= 0f && plane(px, py, pz, i + 1) <= 0f
 
     /**
      * Whether pair [i] cannot give less than [best] at ([px], [py], [pz]): inside, where its planes do not hold the point; outside,
@@ -153,7 +179,7 @@ class SweptSolid internal constructor(
             }
             before = after
         }
-        if (out != null) placeAt(bestPair, bestAlong, bestAngle, out)
+        if (out != null) placeBy(px, py, pz, bestPair, bestAlong, bestAngle, out)
         return best
     }
 

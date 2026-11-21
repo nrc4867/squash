@@ -99,7 +99,7 @@ class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val hol
         val ids = areas.map { it.id }
         chart.parts.mapNotNull { part ->
             val cells = shown.map { mask -> BooleanArray(CHART_CELLS) { mask.held(part.id, it) } }
-            ClothField.of(cells, DrawnCloth.of(shapes, ids, part.id, cells))?.let { part.id to it }
+            ClothField.of(cells, DrawnCloth.of(shapes, ids, part.id))?.let { part.id to it }
         }.toMap()
     }
 

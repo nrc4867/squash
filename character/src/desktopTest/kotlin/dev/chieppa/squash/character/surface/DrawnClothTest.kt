@@ -36,7 +36,7 @@ class DrawnClothTest {
 
     private fun clothOf(garment: Garment): ClothField {
         val cells = DrawnCloth.cellsOf(garment, TORSO)
-        return assertNotNull(ClothField.of(cells, DrawnCloth.of(garment, TORSO, cells)))
+        return assertNotNull(ClothField.of(cells, DrawnCloth.of(garment, TORSO)))
     }
 
     @Test
@@ -87,14 +87,16 @@ class DrawnClothTest {
     }
 
     @Test
-    fun cellsTheShapesDidNotLayAreReadAsCells() {
-        val strap = ClothShape(TORSO, BODY, ClothOutline.Box(0.6f, 0.9f, 0.2f, 0.3f))
-        val laid = garment(listOf(strap))
+    fun cellsPaintedOtherwiseAreReadAsCellsThereAndTheShapesKeepTheirEdgeElsewhere() {
+        val band = ClothShape(TORSO, BODY, ClothOutline.Box(0.4f, 1f))
+        val laid = garment(listOf(band))
         val cells = DrawnCloth.cellsOf(laid, TORSO).map { it.copyOf() }
-        cells[0][CHART_COLUMNS * 2] = true
-        val repainted = garment(listOf(strap), cells)
-        assertNull(DrawnCloth.of(repainted, TORSO, DrawnCloth.cellsOf(repainted, TORSO)))
-        assertNotNull(DrawnCloth.of(laid, TORSO, DrawnCloth.cellsOf(laid, TORSO)))
+        for (row in 56 until CHART_ROWS) for (column in 0 until 4) cells[0][row * CHART_COLUMNS + column] = false
+        val cut = clothOf(garment(listOf(band), cells))
+        assertTrue(cut.at(0.95f, 2f / CHART_COLUMNS) < CLOTH_HEM_LEVEL, "the cells cut out stay cut out")
+        assertTrue(cut.at(0.95f, 0.5f) > 0.99f)
+        assertEquals(0f, cut.inside(0.4f, 0.5f, ALONG, AROUND), 1e-4f, "the band's own hem, far from the cut, is the shape's")
+        assertNull(DrawnCloth.of(laid.copy(shapes = listOf(band.copy(area = GarmentAreaId("gone")))), TORSO))
     }
 
     @Test

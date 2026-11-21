@@ -1227,7 +1227,7 @@ export interface RecipeStroke {
   reach?: number;
   /** opening: how far its front drops below the ring at its middle, in body units; 0 is a plain ring. */
   depth?: number;
-  /** band, box, ellipse, lasso: the stroke is kept as a vector shape, and where every stroke on its part is exact the cloth's edge there is the shapes' outline itself rather than a smooth curve over the cells, however narrow: a tie, a collar's points, a strap, a bikini's cups, cut crisp and with no area dropping out. It paints every cell within half a cell of it and unpaints those more than half a cell inside it; a box or band reaching within half a row of an end of its part runs on over that end. A stroke on a pair names the side the pair is kept on; clean is 0. */
+  /** band, box, ellipse, lasso: the stroke is kept as a vector shape, and the cloth's edge is the shapes' outline itself rather than a smooth curve over the cells, however narrow: a tie, a collar's points, a strap, a bikini's cups, cut crisp and with no area dropping out. Where a stroke that is not exact (an opening, a brush) takes or adds cells, the edge there is the cells'. It paints every cell within half a cell of it and unpaints those more than half a cell inside it; a box or band reaching within half a row of an end of its part runs on over that end. A stroke on a pair names the side the pair is kept on; clean is 0. */
   exact?: boolean;
   /** An exact lasso: one smooth curve through its places rather than straight between them, turning sharply at corners. */
   curved?: boolean;
