@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.model.MouthStyle
+import dev.chieppa.squash.character.mouth.dentitionOf
 import dev.chieppa.squash.character.mouth.mouthMarks
 import dev.chieppa.squash.character.mouth.mouthStyleOf
 import dev.chieppa.squash.character.mouth.saying
@@ -87,7 +88,8 @@ internal fun MouthShapesSection(session: CharacterSession, picked: PickedGroup, 
     )
     val marks = held?.marks?.groupBy { it.source }.orEmpty()
     val placed = group.mouthMarks { id -> marks[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
-    fun shaped(shape: MouthShapeName) = surface?.let { shapeMouth(picked.part, placed, group.controls.speaking(group.saying(shape, style)), style, it) }
+    val dentition = session.templates.dentitionOf(group, style)
+    fun shaped(shape: MouthShapeName) = surface?.let { shapeMouth(picked.part, placed, group.controls.speaking(group.saying(shape, style)), style, it, dentition) }
     val rest = shaped(MouthShapeName.REST)
     DrawerSection(stringResource(Res.string.face_shapes)) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag(FaceTags.SHAPES), horizontalArrangement = Arrangement.spacedBy(STRIP_GAP)) {

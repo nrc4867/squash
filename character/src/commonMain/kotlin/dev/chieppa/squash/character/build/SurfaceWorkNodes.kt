@@ -1,5 +1,6 @@
 package dev.chieppa.squash.character.build
 
+import dev.chieppa.squash.character.mouth.dentitionsOf
 import dev.chieppa.squash.character.mouth.mouthStylesOf
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
@@ -23,7 +24,10 @@ fun Graph.partSurfaceWorkNode(
     surface: (PartId) -> Node<*, PartSurface>,
     templates: TemplateLibrary? = null,
 ): Node<*, ResolvedSurfaceWork> = gather(
-    document.map { doc -> surfaceWorkInput(doc.character, part).let { input -> templates?.let { input.copy(mouthStyles = mouthStylesOf(doc.character, part, it)) } ?: input } }
+    document.map { doc ->
+        val input = surfaceWorkInput(doc.character, part)
+        templates?.let { input.copy(mouthStyles = mouthStylesOf(doc.character, part, it), dentitions = dentitionsOf(doc.character, part, it)) } ?: input
+    }
         .distinctUntilChanged(),
     sourcesOf = { input -> input.parts.associateWith(surface) },
     stage = BuildStages.SURFACE_WORK,

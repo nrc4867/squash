@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.model.TeethPreset
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
@@ -13,8 +14,20 @@ import kotlin.concurrent.Volatile
  * Every loaded template by its pinned id and version, and the body plans that place them. Templates are only ever added, each under
  * a ref no loaded template has, so nothing read from the library before an [add] reads differently after it.
  */
-class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emptyList(), mouths: List<MouthStyle> = emptyList()) {
+class TemplateLibrary(
+    templates: List<PartTemplate>,
+    plans: List<BodyPlan> = emptyList(),
+    mouths: List<MouthStyle> = emptyList(),
+    teeth: List<TeethPreset> = emptyList(),
+) {
     private val mouthsById = mouths.associateBy { it.id }
+    private val teethById = teeth.associateBy { it.id }
+
+    /** The teeth preset named [id], or [TeethPreset.NONE] when none is loaded under it. */
+    fun teethPreset(id: String?): TeethPreset = id?.let(teethById::get) ?: TeethPreset.NONE
+
+    /** Every loaded teeth preset. */
+    val teethPresets: Collection<TeethPreset> get() = teethById.values
 
     /** The mouth style named [id], or [MouthStyle.PLAIN] when none is loaded under it. */
     fun mouthStyle(id: String?): MouthStyle = mouthsById[id ?: MouthStyle.LIPS] ?: mouthsById[MouthStyle.LIPS] ?: MouthStyle.PLAIN

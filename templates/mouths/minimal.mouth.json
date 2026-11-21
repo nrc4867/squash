@@ -4,6 +4,7 @@
   "id": "minimal",
   "name": "Minimal",
   "line": "front",
+  "teeth": "toon-simple",
   "depth": 0.3,
   "scale": { "wide": 0.4, "round": 0.6, "smile": 0.5, "upperLip": 0, "lowerLip": 0, "tongue": 0 },
   "shapes": {

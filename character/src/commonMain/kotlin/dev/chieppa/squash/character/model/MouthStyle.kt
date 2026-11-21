@@ -77,6 +77,8 @@ data class MouthStyle(
     val speaks: Boolean = true,
     @Doc("The nine spoken shapes; a shape left out says nothing but rest.")
     val shapes: Map<MouthShapeName, MouthShapeValues> = emptyMap(),
+    @Doc("The teeth preset a mouth of this style starts from (templates/teeth/<name>.teeth.json); none for no teeth.")
+    val teeth: String? = null,
 ) {
     /** What [shape] sets on this style, under [override]. */
     fun shape(shape: MouthShapeName, override: MouthShapeValues? = null): MouthShapeValues = (shapes[shape] ?: MouthShapeValues()).under(override)

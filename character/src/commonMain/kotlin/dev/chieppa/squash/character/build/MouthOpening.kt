@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.mouth.FlatPiece
+import dev.chieppa.squash.character.mouth.MouthDentition
 import dev.chieppa.squash.character.mouth.MouthRecess
 import dev.chieppa.squash.character.mouth.mouthRecessOf
 import dev.chieppa.squash.character.surface.LayerTint
@@ -68,7 +69,7 @@ internal fun shapedMouths(holder: PartId, work: ResolvedSurfaceWork, surface: Pa
     val bySource = work.marks.groupBy { it.source }
     return work.groups.filter { it.isMouth }.mapNotNull { group ->
         val placed = group.mouthMarks { id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
-        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface)?.let { group to it }
+        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface, work.dentitions[group.id] ?: MouthDentition.NONE)?.let { group to it }
     }
 }
 
@@ -119,7 +120,7 @@ private class MouthLanding(
 
     fun lines(): List<ResolvedMark> {
         val id = group.id.value
-        val upper = if (flat.lipMoved) flat.upper.mapIndexedNotNull { i, piece -> line("$id-upper-lip-$i", piece) } else emptyList()
+        val upper = if (flat.lipMoved) mouth.upperUv().mapIndexedNotNull { i, piece -> lineOn("$id-upper-lip-$i", piece) } else emptyList()
         val lower = flat.lower.mapIndexedNotNull { i, piece -> line("$id-lower-lip${if (i == 0) "" else "-$i"}", piece) }
         val crease = flat.crease?.let { line("$id-crease", it) }
         fun inked(role: MarkRole, pieces: List<FlatPiece>) =
@@ -129,8 +130,10 @@ private class MouthLanding(
 
     fun replaced(): List<MarkId> = if (flat.lipMoved) lipMarks.flatMap { id -> bySource[id].orEmpty().map { it.id } } else emptyList()
 
-    private fun line(id: String, places: List<Vec2>): ResolvedMark? {
-        val points = mouth.uv(places).mapNotNull { surface.pointAt(Anchor(holder, mouth.patch, it.u, it.v)) }
+    private fun line(id: String, places: List<Vec2>): ResolvedMark? = lineOn(id, mouth.uv(places))
+
+    private fun lineOn(id: String, places: List<SurfaceUv>): ResolvedMark? {
+        val points = places.mapNotNull { surface.pointAt(Anchor(holder, mouth.patch, it.u, it.v)) }
         if (points.size < MIN_LINE_POINTS) return null
         return ResolvedMark(MarkId(id), points, lipMark?.width ?: MarkWidth(), ink = true, cameraLocked = false, versions = emptyMap(), slot = lipMark?.slot)
     }

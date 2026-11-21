@@ -190,25 +190,6 @@ data class SetMarkControls(
     }
 }
 
-/** Sets how the group [id] that [part] shows says [shape], in place of its style's; null values, or none set, take the style's again. */
-@Serializable
-@SerialName("setMouthShape")
-data class SetMouthShape(
-    val part: PartId,
-    val id: MarkGroupId,
-    val shape: MouthShapeName,
-    val values: MouthShapeValues?,
-    val thisSide: Boolean = false,
-) : DocumentCommand {
-    override fun apply(document: SquashDocument): Applied<SquashDocument> {
-        val instance = document.requirePart(part)
-        val shown = document.character.editBase(instance, thisSide).surface.groups.firstOrNull { it.id == id }
-        val group = requireNotNull(shown) { "No mark group ${id.value} on ${part.value}" }
-        val shapes = if (values == null || values.isEmpty) group.shapes - shape else group.shapes + (shape to values)
-        return SetMarkGroup(part, id, group.copy(shapes = shapes), thisSide).apply(document)
-    }
-}
-
 /** Adds, replaces or removes the region [id]. */
 @Serializable
 @SerialName("setRegion")

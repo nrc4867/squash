@@ -94,5 +94,6 @@ fun FaceSection(state: AppState, session: CharacterSession) {
     val speaking by session.mouthPreview.collectAsState()
     MouthShapesSection(session, picked, group)
     if (speaking == null) MouthControls(session, picked, group)
+    TeethSection(session, picked, group)
     LayersSection(state, session, character, picked, group)
 }

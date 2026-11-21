@@ -240,6 +240,17 @@
           "additionalProperties": {
             "$ref": "#/$defs/MouthShapeValues"
           }
+        },
+        "teeth": {
+          "description": "The teeth preset a mouth of this style starts from (templates/teeth/<name>.teeth.json); none for no teeth.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

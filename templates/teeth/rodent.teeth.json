@@ -1,0 +1,73 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "rodent",
+  "name": "Rodent",
+  "types": {
+    "incisor": {
+      "width": 0.1,
+      "length": 0.2,
+      "tip": "chisel"
+    },
+    "lower-incisor": {
+      "width": 0.08,
+      "length": 0.13,
+      "tip": "chisel"
+    },
+    "cheek": {
+      "width": 0.07,
+      "length": 0.05,
+      "tip": "round"
+    }
+  },
+  "upper": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "incisor",
+            "gap": 0.006,
+            "over": true
+          },
+          {
+            "type": "cheek",
+            "gap": 0.25
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          }
+        ]
+      }
+    ]
+  },
+  "lower": {
+    "level": "blocks",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "lower-incisor",
+            "gap": 0.006
+          },
+          {
+            "type": "cheek",
+            "gap": 0.25
+          },
+          {
+            "type": "cheek"
+          },
+          {
+            "type": "cheek"
+          }
+        ]
+      }
+    ]
+  }
+}

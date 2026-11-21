@@ -4,6 +4,7 @@
   "id": "short-muzzle",
   "name": "Short muzzle",
   "line": "muzzle",
+  "teeth": "cat",
   "speaks": false,
   "span": 0.5,
   "depth": 0.4,

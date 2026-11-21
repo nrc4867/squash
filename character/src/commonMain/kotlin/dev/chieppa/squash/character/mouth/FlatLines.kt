@@ -20,19 +20,20 @@ internal fun inside(p: Vec2, loop: List<Vec2>): Boolean {
 private const val MIN_RUN = 3
 
 /** [line] broken where it passes inside any of [covers]: the runs of [MIN_RUN] places or more left outside them. */
-internal fun brokenUnder(line: List<Vec2>, covers: List<List<Vec2>>): List<List<Vec2>> {
-    if (covers.isEmpty()) return listOf(line)
-    val runs = ArrayList<List<Vec2>>()
-    var run = ArrayList<Vec2>()
-    for (p in line) {
-        if (covers.any { inside(p, it) }) {
-            if (run.size >= MIN_RUN) runs += run
-            run = ArrayList()
-        } else {
-            run += p
+internal fun brokenUnder(line: List<Vec2>, covers: List<List<Vec2>>): List<List<Vec2>> = brokenRuns(line, covers).map { line.subList(it.first, it.last + 1) }
+
+/** The index runs of [line] left outside every one of [covers], each of [MIN_RUN] places or more. */
+internal fun brokenRuns(line: List<Vec2>, covers: List<List<Vec2>>): List<IntRange> {
+    if (covers.isEmpty()) return if (line.isEmpty()) emptyList() else listOf(line.indices)
+    val runs = ArrayList<IntRange>()
+    var start = 0
+    for (i in line.indices) {
+        if (covers.any { inside(line[i], it) }) {
+            if (i - start >= MIN_RUN) runs += start until i
+            start = i + 1
         }
     }
-    if (run.size >= MIN_RUN) runs += run
+    if (line.size - start >= MIN_RUN) runs += start until line.size
     return runs
 }
 

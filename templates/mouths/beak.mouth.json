@@ -4,6 +4,7 @@
   "id": "beak",
   "name": "Beak",
   "line": "seam",
+  "teeth": "bird",
   "speaks": false,
   "depth": 0.45,
   "scale": { "wide": 0, "round": 0, "smile": 0, "upperLip": 0, "lowerLip": 0 },

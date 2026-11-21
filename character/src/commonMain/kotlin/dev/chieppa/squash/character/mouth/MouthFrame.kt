@@ -44,6 +44,9 @@ private const val POLE_STEP = 0.005f
 /** Half a turn round the patch in v: a walk past a closed end comes back on the far side of its pole. */
 private const val HALF_TURN = 0.5f
 
+/** The most a height is spread by the unrolling, so a place nearly behind the middle does not blow up. */
+private const val MOST_HEIGHT_SCALE = 8f
+
 /**
  * A flat frame laid on a part's patch at a middle place: x across the face and y down it, in body units, a place on the patch read as its
  * body point seen square to the surface there and unrolled to keep its distance from the middle, so a mouth's shapes are worked level whichever way the head's coordinates run, a muzzle's
@@ -68,6 +71,18 @@ class MouthFrame private constructor(
         val y = d dot down
         val square = hypot(x, y)
         if (square < TINY) Vec2(0f, 0f) else (d.length / square).let { Vec2(x * it, y * it) }
+    }
+
+    /**
+     * How many flat units a body unit up or down the surface takes at the flat place [p]: 1 near the middle, more where the unrolling
+     * spreads a place far round the surface, as along a long muzzle's side.
+     */
+    fun heightScale(p: Vec2): Float {
+        val uv = onPatch(p)
+        val point = at(uv.u, uv.v) ?: return 1f
+        val d = point - origin
+        val square = hypot(d dot across, d dot down)
+        return if (square < TINY) 1f else (d.length / square).coerceIn(1f, MOST_HEIGHT_SCALE)
     }
 
     fun flat(anchor: Anchor): Vec2 = flatAt(anchor.u, middle.v + unwrapped(anchor.v - middle.v)) ?: Vec2(0f, 0f)

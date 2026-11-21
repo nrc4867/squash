@@ -2,6 +2,27 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$ref": "#/$defs/Recipe",
   "$defs": {
+    "AddedToothSlot": {
+      "description": "A slot added at the end of a row.",
+      "type": "object",
+      "properties": {
+        "row": {
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 16.0
+        },
+        "slot": {
+          "$ref": "#/$defs/ToothSlot"
+        }
+      },
+      "required": [
+        "slot"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "Anchor": {
       "type": "object",
       "properties": {
@@ -724,7 +745,7 @@
           }
         },
         "over": {
-          "description": "Marks of this role that draw over the lips, open or closed, so fangs show over a shut mouth; the lip ink breaks under them. Teeth and tongue only.",
+          "description": "Drawn marks of this role that draw over the lips, open or closed, the lip ink breaking under them: a tongue out, or a drawn tooth. Teeth and tongue only; the teeth's own slots carry their own over flag.",
           "type": "array",
           "items": {
             "type": "string"
@@ -790,6 +811,52 @@
       "required": [
         "type"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "JawTeeth": {
+      "description": "What a mouth changes of one jaw of its preset; each left out keeps the preset's.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "description": "The jaw's level in place of the preset's.",
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "bar",
+                "blocks"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rows": {
+          "description": "Rows added behind the preset's.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToothRow"
+          }
+        },
+        "added": {
+          "description": "Slots added at the end of a row.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AddedToothSlot"
+          }
+        },
+        "slots": {
+          "description": "Changes to single slots, by row and slot index, counting the preset's slots, then added ones; rows count the preset's, then added ones.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToothSlotChange"
+          }
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },
@@ -1472,6 +1539,17 @@
           "additionalProperties": {
             "$ref": "#/$defs/MouthShapeValues"
           }
+        },
+        "teeth": {
+          "description": "The mouth's teeth: a preset, by default its style's, and only what this mouth changes of it.",
+          "$ref": "#/$defs/MouthTeeth"
+        },
+        "tongueLevel": {
+          "description": "How much tongue the mouth draws: none, or flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark).",
+          "enum": [
+            "none",
+            "flat"
+          ]
         }
       },
       "required": [
@@ -1614,6 +1692,35 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "MouthTeeth": {
+      "description": "A mouth's teeth: a preset by name and what this mouth changes of each jaw.",
+      "type": "object",
+      "properties": {
+        "preset": {
+          "description": "The teeth preset by name (templates/teeth/<name>.teeth.json); none takes the mouth style's.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upper": {
+          "description": "What this mouth changes of the upper jaw.",
+          "$ref": "#/$defs/JawTeeth"
+        },
+        "lower": {
+          "description": "What this mouth changes of the lower jaw.",
+          "$ref": "#/$defs/JawTeeth"
         }
       },
       "patternProperties": {
@@ -5674,6 +5781,260 @@
       },
       "required": [
         "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothRow": {
+      "description": "A row of slots from the middle outward, mirrored to the other side unless a slot says otherwise.",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToothSlot"
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothSlot": {
+      "description": "One place in a row, from the middle outward: a tooth type, how far it sits from the slot before it, and any of the type's settings changed here.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The tooth type by name, from the preset's `types`.",
+          "type": "string"
+        },
+        "gap": {
+          "description": "Space before this slot, after the one nearer the middle, or from the middle for the first; a share of the mouth's width.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "at": {
+          "description": "Where the slot's middle sits along the row, its distance from the mouth's middle as a share of the mouth's width, in place of following the slot before it.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "description": "The type's width, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 0.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "length": {
+          "description": "The type's length, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "curve": {
+          "description": "The type's curve, changed for this slot.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tip": {
+          "description": "The type's tip, changed for this slot.",
+          "anyOf": [
+            {
+              "enum": [
+                "flat",
+                "round",
+                "point",
+                "chisel"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "over": {
+          "description": "Whether it shows over the lips, open or shut, breaking their ink: incisors, fangs, a crocodile's lower teeth.",
+          "type": "boolean"
+        },
+        "side": {
+          "description": "Which sides it fills: both, mirrored, unless left or right.",
+          "enum": [
+            "both",
+            "left",
+            "right"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "ToothSlotChange": {
+      "description": "A change to one slot, by row and slot index: each value set replaces the slot's; removed takes it out.",
+      "type": "object",
+      "properties": {
+        "row": {
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 16.0
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 0.0,
+          "maximum": 64.0
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gap": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "at": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 0.5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "curve": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tip": {
+          "anyOf": [
+            {
+              "enum": [
+                "flat",
+                "round",
+                "point",
+                "chisel"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "over": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "side": {
+          "anyOf": [
+            {
+              "enum": [
+                "both",
+                "left",
+                "right"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "removed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "slot"
       ],
       "patternProperties": {
         "^x-": {}

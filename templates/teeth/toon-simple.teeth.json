@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "toon-simple",
+  "name": "Toon simple",
+  "types": {
+    "front": {
+      "width": 0.12,
+      "length": 0.1,
+      "tip": "flat"
+    }
+  },
+  "upper": {
+    "level": "bar",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "front"
+          },
+          {
+            "type": "front"
+          },
+          {
+            "type": "front"
+          },
+          {
+            "type": "front"
+          }
+        ]
+      }
+    ]
+  },
+  "lower": {
+    "level": "none",
+    "rows": [
+      {
+        "slots": [
+          {
+            "type": "front",
+            "length": 0.08
+          },
+          {
+            "type": "front",
+            "length": 0.08
+          },
+          {
+            "type": "front",
+            "length": 0.08
+          },
+          {
+            "type": "front",
+            "length": 0.08
+          }
+        ]
+      }
+    ]
+  }
+}

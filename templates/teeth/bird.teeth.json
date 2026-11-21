@@ -1,0 +1,15 @@
+{
+  "$schema": "../../schema/teeth-preset.schema.json",
+  "format": 1,
+  "id": "bird",
+  "name": "Bird",
+  "types": {},
+  "upper": {
+    "level": "none",
+    "rows": []
+  },
+  "lower": {
+    "level": "none",
+    "rows": []
+  }
+}
