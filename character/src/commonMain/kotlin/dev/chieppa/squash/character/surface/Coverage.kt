@@ -27,8 +27,9 @@ private const val HEM_INSET_CELLS = 1.5f
  * hanging free, ending a little short of where the branch says, on the shell's wall. A run of a part the garment does not cover, or a
  * part's later run, which its cloth does not read, counts as [reach] outside, but a digit of a part whose digits it follows
  * ([WornCover.digits]), which counts as [reach] inside. The share-weighted sum of those is one smooth function,
- * zero along the hem, the neck opening and the cuffs. Where a part comes out through a hole of the garment, [holes], its members as
- * placed, the coverage is at most how far the vertex lies outside them, less [clear]. Safe to read from many threads at once.
+ * zero along the hem, the neck opening and the cuffs. A part coming out through a hole of the garment with no cuff takes no share in that
+ * sum, so the cloth runs up to it however wide it joins the body; where it comes out, [holes], its members as placed, the coverage is at
+ * most how far the vertex lies outside them, less [clear]. Safe to read from many threads at once.
  */
 class Coverage(
     private val field: CharacterField,
@@ -43,6 +44,7 @@ class Coverage(
         val run = field.runs[r]
         !run.first && worn.followsDigits(run.partId) && worn.clothOf(run.partId) != null && isDigitRun(run.part, run.patch)
     }
+    private val through = BooleanArray(field.runs.size) { field.runs[it].partId in worn.holes }
     private val cloths = Array(field.runs.size) { field.runs[it].takeIf { run -> run.first }?.let { run -> worn.clothOf(run.partId) } }
     private val scales = Array(field.runs.size) { if (branches[it] != null) RunScales(field.runs[it].patch) else null }
     private val open = Array(field.runs.size) { if (branches[it] != null) worn.openEnds[field.runs[it].partId] else null }
@@ -56,7 +58,7 @@ class Coverage(
         var total = 0f
         for (k in 0 until HELD) {
             val member = mesh.held[v * HELD + k]
-            if (member < 0) continue
+            if (member < 0 || through[member]) continue
             val share = mesh.heldShares[v * HELD + k]
             val branch = branches[member]
             val cloth = cloths[member]

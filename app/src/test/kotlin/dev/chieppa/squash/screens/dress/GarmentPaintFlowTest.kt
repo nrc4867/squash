@@ -1,6 +1,7 @@
 package dev.chieppa.squash.screens.dress
 
 import dev.chieppa.squash.character.dress.growCommand
+import dev.chieppa.squash.character.build.rootCuffU
 import dev.chieppa.squash.character.dress.CUFF_BAND_U
 import dev.chieppa.squash.character.dress.PaintedGarment
 import dev.chieppa.squash.character.dress.bodyChart
@@ -270,7 +271,8 @@ class GarmentPaintFlowTest {
         work.settle(state.open)
         assertEquals(listOf(GarmentHole(NECK, cuff = true)), state.garment.holes)
         val cuff = assertNotNull(state.garment.branch(NECK), "a second press cuffs it: a band of cloth round the neck's root")
-        assertTrue(cuff.from <= 0f && cuff.to <= CUFF_BAND_U + CELL_U * 2, "the band runs from the root, to ${cuff.to}")
+        val reach = maxOf(CUFF_BAND_U, rootCuffU(assertNotNull(state.body.part(NECK))))
+        assertTrue(cuff.from <= 0f && cuff.to <= reach + CELL_U * 2, "the band runs from the root, to ${cuff.to}")
         hole.pressedAt(onNeck)
         work.settle(state.open)
         assertEquals(listOf(GarmentHole(NECK, cuff = true)), state.garment.holes, "a third press adds nothing")

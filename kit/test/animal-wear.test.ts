@@ -51,3 +51,17 @@ test("a hoof boot covers the hoof whole and a shaft up the leg with a band at it
   assert.equal(top?.color, "trim");
   assert.equal(hoofBoot({ color: "leather", shaft: 0 }).areas?.length, 1);
 });
+
+test("a mitten stands further off the hand than a glove", () => {
+  const gloves = glove({ color: "wool" });
+  const mittens = glove({ color: "wool", digits: "mitten" });
+  assert.ok((mittens.fit ?? 0) > (gloves.fit ?? 0));
+});
+
+test("a beanie covers the back of the skull from its back, lower than its sides", () => {
+  const knit = beanie({ color: "knit", brow: 0.6, sides: 0.3, band: 0 }).areas?.[0]?.paint?.[0];
+  assert.ok(knit?.shape === "lasso");
+  const points = knit.points as [number, number][];
+  assert.deepEqual(points[0], [0, 0]);
+  assert.ok(points[1]![1] > 0.3);
+});

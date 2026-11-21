@@ -2,6 +2,12 @@ import type { RecipeArea, RecipeGarment, RecipeStroke, RecipeTuck } from "../sch
 import { foldedBand } from "./opening.ts";
 import { garment } from "./wardrobe.ts";
 
+/** How far a glove stands off the hand, in body units: snug, but past the hand's own small dents. */
+const GLOVE_FIT = 0.005;
+
+/** How far a mitten stands off the hand, in body units: loose enough to round over its fingers' tips and the hollows between them. */
+const MITTEN_FIT = 0.012;
+
 /** How a glove meets the digits: a glove finger over each, or a mitten over the fingers together with the thumb apart. */
 export type GloveDigits = "fingers" | "mitten";
 
@@ -45,7 +51,7 @@ export function glove(spec: GloveSpec): RecipeGarment {
     }
   }
   const tucks: RecipeTuck[] = [{ part: hand, kind: "fingers", tucked: digits === "mitten" }];
-  return garment({ id: digits === "mitten" ? "mitten" : "glove", slot: "hands", fit: 0.003, hemRoll: 0.002, ...rest, color, areas, tucks: [...tucks, ...(rest.tucks ?? [])] });
+  return garment({ id: digits === "mitten" ? "mitten" : "glove", slot: "hands", fit: digits === "mitten" ? MITTEN_FIT : GLOVE_FIT, hemRoll: 0.002, ...rest, color, areas, tucks: [...tucks, ...(rest.tucks ?? [])] });
 }
 
 /** What a hoof boot is cut from: the whole hoof, its digits among it, and a shaft up the leg from the fetlock. */

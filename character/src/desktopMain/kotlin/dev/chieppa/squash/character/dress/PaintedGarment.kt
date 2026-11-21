@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.dress
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.rootCuffU
 import dev.chieppa.squash.character.shape.BodyChart
 import dev.chieppa.squash.character.surface.ClothField
 import dev.chieppa.squash.character.surface.ClothReach
@@ -24,7 +25,7 @@ import dev.chieppa.squash.document.GarmentHole
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
 
-/** How far along a part, in u, the cuff band round a hole at its root reaches. */
+/** How far along a part, in u, the cuff band round a hole at its root reaches at least; further on a part thick for its length ([rootCuffU]). */
 const val CUFF_BAND_U = 0.12f
 
 /** What new area ids start with, before their number. */
@@ -56,10 +57,20 @@ class GarmentEdgeOn(val area: Int, val edge: MaskEdge)
 
 /**
  * A garment's cloth on a body's [chart]: its [areas] painted and its [holes]. The [cloth] is every area's cells but those of each holed
- * part and the parts beyond it, with a band round the root of each part whose hole has a cuff; its [edges] are each area's, a seam
- * where it meets another area. Where a part's cells are what the garment's [shapes] lay, its cloth is read from those shapes.
+ * part and the parts beyond it, with a band round the root of each part whose hole has a cuff, as far as [cuffU] gives; its [edges] are
+ * each area's, a seam where it meets another area. Where a part's cells are what the garment's [shapes] lay, its cloth is read from
+ * those shapes.
  */
-class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val holes: List<GarmentHole>, val shapes: List<ClothShape> = emptyList()) {
+class PaintedGarment(
+    val chart: BodyChart,
+    val areas: List<PaintedArea>,
+    val holes: List<GarmentHole>,
+    val shapes: List<ClothShape> = emptyList(),
+    private val body: AssembledCharacter? = null,
+) {
+    /** How far along [part] from its root, in u, the cuff band round a hole at its root reaches. */
+    fun cuffU(part: PartId): Float = maxOf(CUFF_BAND_U, body?.part(part)?.let(::rootCuffU) ?: 0f)
+
     /** The parts the holes let out, with every part beyond each. */
     val holed: Set<PartId> by lazy {
         val out = HashSet<PartId>()
@@ -76,7 +87,8 @@ class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val hol
         val all = areas.fold(SurfaceMask.empty(chart)) { held, area -> held + area.mask }
         if (holed.isEmpty()) return@lazy all
         val cuffed = holes.filter { it.cuff }.mapNotNullTo(HashSet()) { chart.part(it.part)?.id }
-        val bands = SurfaceMask.build(chart) { part, cell -> part in cuffed && (cell / CHART_COLUMNS + 0.5f) / CHART_ROWS < CUFF_BAND_U }
+        val reach = cuffed.associateWith(::cuffU)
+        val bands = SurfaceMask.build(chart) { part, cell -> reach[part]?.let { (cell / CHART_COLUMNS + 0.5f) / CHART_ROWS < it } ?: false }
         all - SurfaceMask.whole(chart, holed) + bands
     }
 
@@ -140,7 +152,8 @@ class PaintedGarment(val chart: BodyChart, val areas: List<PaintedArea>, val hol
     fun area(id: GarmentAreaId?): PaintedArea? = areas.firstOrNull { it.id == id }
 
     /** This garment with its areas [areas] and holes [holes]. */
-    fun with(areas: List<PaintedArea> = this.areas, holes: List<GarmentHole> = this.holes): PaintedGarment = PaintedGarment(chart, areas, holes, shapes)
+    fun with(areas: List<PaintedArea> = this.areas, holes: List<GarmentHole> = this.holes): PaintedGarment =
+        PaintedGarment(chart, areas, holes, shapes, body)
 
     /** The areas as the garment saves them. */
     fun savedAreas(): List<GarmentArea> = areas.map { it.saved() }
@@ -160,7 +173,7 @@ private object PaintMemo {
         if (last != null && now != null && now.first == garment && now.second === body && now.third == character.parts) return last
         val chart = bodyChart(character, body)
         val areas = garment.areas.map { PaintedArea(it.id, it.name, SurfaceMask.of(chart, it.cells), it.color, it.gather, it.fold, it.opacity, it.net) }
-        return PaintedGarment(chart, areas, garment.holes, garment.shapes).also {
+        return PaintedGarment(chart, areas, garment.holes, garment.shapes, body).also {
             key = Triple(garment, body, character.parts)
             held = it
         }

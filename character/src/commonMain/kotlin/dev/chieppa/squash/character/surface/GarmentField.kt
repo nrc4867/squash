@@ -15,6 +15,12 @@ import dev.chieppa.squash.geom.field.JoinedMember
  */
 private const val NARROWING_EASES = 4f
 
+/**
+ * How much wider, in its ease, the blend a garment's run over a digit joins the cloth it grows from by is than the body's: the cloth
+ * rounds over each knuckle and along the palm's sides rather than creasing where the digit's cloth meets the palm's.
+ */
+private const val DIGIT_BLEND_EASES = 4f
+
 /** The narrowest a garment's run's blend into the run it grows from is, in its ease, so the two still meet along a join. */
 private const val NARROWEST_EASES = 0.5f
 
@@ -49,6 +55,7 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
     val near = joinedNear(field, worn, kept)
     val digits = digitRunsOf(field, worn, kept)
     val grown = (kept + near.keys + digits).sorted()
+    val fingers = digits.toHashSet()
     val renumbered = HashMap<Int, Int>().also { map -> grown.forEachIndexed { i, run -> map[run] = i } }
     val runs = ArrayList<FieldRun>()
     val members = ArrayList<JoinedMember>()
@@ -72,7 +79,8 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
             clips.of(grownRun ?: member.solid, at.patch, reach.from, reach.to, field.cell, past)
         }
         runs += at
-        members += JoinedMember(solid, member.origin, member.mirrored, maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES), parent, member.part, ease, member.angles)
+        val blend = if (run in fingers) member.blend + ease * DIGIT_BLEND_EASES else maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES)
+        members += JoinedMember(solid, member.origin, member.mirrored, blend, parent, member.part, ease, member.angles)
         if (neighbour == null && at.first) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
     }
     for ((at, shell) in shells) {
@@ -102,8 +110,9 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
 
 /**
  * The runs of [field] that are digits of a part [worn] follows the digits of ([WornCover.digits]), whose own first run is among [kept]:
- * each finger, toe or hoof of a gloved hand or a booted foot, grown with the part's ease and joined to its first run as the body joins it,
- * so the cloth parts between the digits as the skin does and each digit's cloth rides that digit's bones.
+ * each finger, toe or hoof of a gloved hand or a booted foot, grown with the part's ease and joined to its first run by the body's own
+ * blend widened by [DIGIT_BLEND_EASES] of its ease, so the cloth rounds over each knuckle, parts between the digits as the skin does and each digit's
+ * cloth rides that digit's bones.
  */
 private fun digitRunsOf(field: CharacterField, worn: WornCover, kept: List<Int>): List<Int> {
     if (worn.digits.isEmpty()) return emptyList()

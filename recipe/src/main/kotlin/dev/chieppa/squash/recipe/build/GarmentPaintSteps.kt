@@ -58,6 +58,7 @@ internal fun BuildContext.paintedCloth(path: String, garment: RecipeGarment, bar
         chart,
         garment.areas.mapIndexed { i, area -> PaintedArea(ids[i], area.name, SurfaceMask.empty(chart), area.color?.let { slot("$path.areas[$i].color", it) }) },
         emptyList(),
+        body = bare.body,
     )
     val middle = middlePartsOf(character)
     val shapes = ArrayList<ClothShape>()

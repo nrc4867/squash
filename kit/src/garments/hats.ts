@@ -11,6 +11,15 @@ const CROWN_STRAIGHT = 0.3;
 /** How many places the round of a crown's front is drawn through, a quarter of a rounded square from the side to the brow. */
 const CROWN_ARC_POINTS = 10;
 
+/** How much further down the back of the head than its sides a crown reaches where nothing says, in the head's v. */
+const CROWN_BACK_DROP = 0.12;
+
+/** The furthest down the back of the head a crown reaches, in the head's v from its top, short of the neck's join under it. */
+const CROWN_BACK_MOST = 0.46;
+
+/** How far from the nape toward the brow a crown's back runs low before its hem slopes up to the sides, a share of the way. */
+const CROWN_BACK_LOW = 0.12;
+
 /** How square a crown's front is: 2 an ellipse's quarter, higher flatter across the brow and rounder only at its corners. */
 const CROWN_SQUARENESS = 3;
 
@@ -25,10 +34,12 @@ export interface BeanieSpec extends Partial<Omit<RecipeGarment, "areas">> {
   head?: string;
   /** How far forward over the top it reaches, in the head's u from the back of the skull. */
   brow: number;
-  /** Where its hem crosses the back of the head above the neck at the sides, in the head's u; it rises to half that over the middle, clear of the neck's join. */
+  /** Where its hem leaves the back of the head for the sides, in the head's u; over the back it covers the skull from its back (u 0) down to `back`. */
   nape?: number;
   /** How far down the sides it reaches, in the head's v either side of its top. */
   sides?: number;
+  /** How far down the back of the head it reaches, in the head's v either side of its top: lower than its sides, over the back of the skull. */
+  back?: number;
   /** The head's v at its top: 0 on a head resting forward. */
   top?: number;
   /** How tall its folded band is at the hem, in the head's u; 0 for none. */
@@ -46,13 +57,14 @@ export interface BeanieSpec extends Partial<Omit<RecipeGarment, "areas">> {
 }
 
 /**
- * The crown of a head's chart a hat paints: the back of the skull from `nape`, `sides` down each side, rounding up to `brow` over the
- * top. One side's half, mirrored across the head's middle, so its outline never crosses the chart's seam at v 0.
+ * The crown of a head's chart a hat paints: the back of the skull from its back, `low` down it to `nape`, its hem sloping up to `sides` down each
+ * side and rounding up to `brow` over the top. One side's half, mirrored across the head's middle, so its outline never crosses the
+ * chart's seam at v 0.
  */
-function crown(head: string, nape: number, brow: number, top: number, sides: number, inset = 0): RecipeStroke {
+function crown(head: string, nape: number, brow: number, top: number, sides: number, low: number, inset = 0): RecipeStroke {
   const reach = brow - nape;
   const side = sides - inset;
-  const back = (share: number) => nape * share + inset;
+  const down = Math.max(low, sides) - inset;
   const from = nape + reach * CROWN_STRAIGHT;
   const along = brow - inset - from;
   const arc: Point[] = Array.from({ length: CROWN_ARC_POINTS + 1 }, (_, i): Point => {
@@ -60,7 +72,7 @@ function crown(head: string, nape: number, brow: number, top: number, sides: num
     const power = 2 / CROWN_SQUARENESS;
     return [from + along * Math.sin(t) ** power, top + side * Math.cos(t) ** power];
   });
-  const half: Point[] = [[back(0.5), top], [back(0.7), top + side * 0.5], [back(1), top + side], ...arc];
+  const half: Point[] = [[0, top], [0, top + down], [nape + reach * CROWN_BACK_LOW, top + down], ...arc];
   return { on: head, shape: "lasso", points: half, mirrored: true };
 }
 
@@ -81,18 +93,19 @@ function earHolesOf(ears: string[], cuff: boolean): RecipeHole[] {
  */
 export function beanie(spec: BeanieSpec): RecipeGarment {
   const {
-    color, head = "head", brow, sides = 0.3, top = 0, nape = 0.08, band = 0.06, bandColor, fold = 0.005, earHoles = [], earHole, earCuffs = false, ...rest
+    color, head = "head", brow, sides = 0.3, back, top = 0, nape = 0.08, band = 0.06, bandColor, fold = 0.005, earHoles = [], earHole, earCuffs = false, ...rest
   } = spec;
   if (!(brow > nape)) throw new Error(`beanie: brow lies past the nape, above ${nape}, not ${brow}`);
   const holes = earOpenings(earHoles, earHole);
+  const low = back ?? Math.min(CROWN_BACK_MOST, sides + CROWN_BACK_DROP);
   const areas: RecipeArea[] = [];
   if (band > 0) {
     const inset = Math.min(band, (brow - nape) / 3);
-    const banded: RecipeArea = { id: "band", name: "Band", fold, paint: [crown(head, nape, brow, top, sides)] };
+    const banded: RecipeArea = { id: "band", name: "Band", fold, paint: [crown(head, nape, brow, top, sides, low)] };
     if (bandColor) banded.color = bandColor;
-    areas.push(banded, { id: "knit", name: "Knit", paint: [crown(head, nape, brow, top, sides, inset), ...holes] });
+    areas.push(banded, { id: "knit", name: "Knit", paint: [crown(head, nape, brow, top, sides, low, inset), ...holes] });
   } else {
-    areas.push({ id: "knit", name: "Knit", paint: [crown(head, nape, brow, top, sides), ...holes] });
+    areas.push({ id: "knit", name: "Knit", paint: [crown(head, nape, brow, top, sides, low), ...holes] });
   }
   const made = garment({ id: "beanie", slot: "head", fit: 0.006, hemRoll: 0.003, ...rest, color, areas });
   if (earHoles.length > 0) made.holes = [...(rest.holes ?? []), ...earHolesOf(earHoles, earCuffs)];

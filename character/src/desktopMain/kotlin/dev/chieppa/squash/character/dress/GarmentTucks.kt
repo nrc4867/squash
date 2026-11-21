@@ -28,10 +28,10 @@ private const val MERGE_PARAM = "merge"
 private const val SPREAD_PARAM = "spread"
 
 /** How far a mitten's fingers fuse: past 1 they join to the tips. */
-private const val MITTEN_MERGE = 1.5f
+private const val MITTEN_MERGE = 2f
 
 /** How far a mitten's fingers fan, folded together under one cover. */
-private const val MITTEN_SPREAD = 0.3f
+private const val MITTEN_SPREAD = 0.15f
 
 /** What template ids name a spike or a claw grown as a part of its own. */
 private const val SPIKE_TEMPLATE = "spike"
