@@ -7,6 +7,12 @@ import kotlin.math.min
 const val CLOSED_SOFT = 0.08f
 
 /**
+ * How narrow a gap between the lids, in opening heights, is pushed outside the opening by what it lacks, so lids that meet leave no
+ * smoothed hairline of the eye along their meeting.
+ */
+const val SHUT_GAP = 0.04f
+
+/**
  * Where an eye's lids stand, read in its opening's chart in shares of its width along and heights up: the upper lid [close] of the way
  * down from its open curve to the closed line and the lower lid [rise] of the way up to it, both 0 open and 1 meeting there. The closed
  * line crosses the opening's middle [closedAt] heights up, its middle standing [closedBend] heights above a straight line through its

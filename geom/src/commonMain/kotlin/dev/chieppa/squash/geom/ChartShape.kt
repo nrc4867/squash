@@ -73,7 +73,10 @@ data class ChartAlmond(
             max(max(v - height * upper(a), -height * lowerLid * lower(a) - v), (abs(u) - width) * height / width)
         }
         if (lids.isOpen) return open
-        return max(open, max(v - height * topEdge(a), height * bottomEdge(a) - v))
+        val top = topEdge(a)
+        val bottom = bottomEdge(a)
+        val shut = max(SHUT_GAP - (top - bottom), 0f) * height
+        return max(open, max(v - height * top, height * bottom - v) + shut)
     }
 
     /** How far its open top lid rises at [a], in heights, as [level] reads it. */

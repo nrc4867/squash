@@ -4,6 +4,7 @@ import dev.chieppa.squash.document.EyeLook
 import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.geom.ChartAlmond
 import dev.chieppa.squash.geom.ChartOval
+import dev.chieppa.squash.geom.LASH_CLOSE_SWING
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.LID_ASPECT
 import dev.chieppa.squash.geom.SurfaceUv
@@ -107,13 +108,17 @@ class EyeShapes(private val look: EyeLook, gazeForward: Float = 0f, gazeUp: Floa
 
     /**
      * Lash [index]'s places, rising from its place on the upper lid as the opening's own tilt turns it, swept back as the first is and
-     * shortened by its share, then turned with the eye.
+     * shortened by its share, swung down toward the back corner as the lid closes, then turned with the eye.
      */
     private fun lashLine(index: Int): List<SurfaceUv> {
         val rimPlace = almond.lidRim(LASH_ANGLES[index])
         val root = turned(rimPlace.u, rimPlace.v, look.openingTilt)
         val length = LASH_LENGTHS[index]
-        return LASH_LINE.map { (u, v) -> turned(root.u + look.width * u * length, root.v + look.height * v * length, look.tilt) }
+        val swing = LASH_CLOSE_SWING * almond.lids.close.coerceIn(0f, 1f)
+        return LASH_LINE.map { (u, v) ->
+            val out = turned(look.width * u * length, look.height * v * length, swing)
+            turned(root.u + out.u, root.v + out.v, look.tilt)
+        }
     }
 
     /** The brow's places, raised by the look's brow raise and turned by its brow tilt about its middle place, then turned with the eye. */

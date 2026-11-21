@@ -14,7 +14,7 @@ fn lid_paint_level(p: vec2<f32>) -> f32 {
     let y = p.y / o.y;
     let a = clamp(x, -1.0, 1.0);
     if (layer.lid_paint.y < 1.5) {
-        let roof = open_top(a) + layer.lid_paint.z * sqrt(max(1.0 - a * a, 0.0));
+        let roof = open_top(a) + layer.lid_paint.z * max(1.0 - a * a, 0.0);
         return max(max(top_edge(a) - y, y - roof), (abs(x) - 1.0) * layer.lid_c.y) * o.y;
     }
     let mark = layer.lid_mark;
@@ -23,13 +23,14 @@ fn lid_paint_level(p: vec2<f32>) -> f32 {
     return max(stroke, -almond_level(p) / o.y) * o.y;
 }
 
-// How much of the lid's skin paint shows at p: 1 at its moving edge, fading out over its fade above it.
+// How much of the lid's skin paint shows at p: 1 at its moving edge, fading out over its fade above it and toward the corners.
 fn lid_paint_share(p: vec2<f32>) -> f32 {
     let fade = layer.lid_paint.w;
     if (layer.lid_paint.y > 1.5 || fade <= 0.0) {
         return 1.0;
     }
-    let a = clamp(p.x / layer.opening.x, -1.0, 1.0);
-    return 1.0 - eased(0.0, fade, p.y / layer.opening.y - top_edge(a));
+    let x = p.x / layer.opening.x;
+    let a = clamp(x, -1.0, 1.0);
+    return (1.0 - eased(0.0, fade, p.y / layer.opening.y - top_edge(a))) * (1.0 - eased(CORNER_FADE_FROM, 1.0, abs(x)));
 }
 """

@@ -1,6 +1,8 @@
 package dev.chieppa.squash.render
 
 import dev.chieppa.squash.geom.CLOSED_SOFT
+import dev.chieppa.squash.geom.CORNER_FADE_FROM
+import dev.chieppa.squash.geom.SHUT_GAP
 import dev.chieppa.squash.geom.FLAT_SPAN
 import dev.chieppa.squash.geom.ROUND_POWER
 import dev.chieppa.squash.geom.ROUND_SPAN
@@ -15,6 +17,8 @@ const ROUND_POWER: f32 = $ROUND_POWER;
 const ROUND_SPAN: f32 = $ROUND_SPAN;
 const FLAT_SPAN: f32 = $FLAT_SPAN;
 const CLOSED_SOFT: f32 = $CLOSED_SOFT;
+const SHUT_GAP: f32 = $SHUT_GAP;
+const CORNER_FADE_FROM: f32 = $CORNER_FADE_FROM;
 
 // x raised to power, 0 at 0.
 fn raised(x: f32, power: f32) -> f32 {
@@ -107,7 +111,10 @@ fn almond_level(p: vec2<f32>) -> f32 {
     if (layer.lid_pose.x <= 0.0 && layer.lid_pose.y <= 0.0) {
         return level;
     }
-    return max(level, max(p.y - o.y * top_edge(a), o.y * bottom_edge(a) - p.y));
+    let top = top_edge(a);
+    let bottom = bottom_edge(a);
+    let shut = max(SHUT_GAP - (top - bottom), 0.0) * o.y;
+    return max(level, max(p.y - o.y * top, o.y * bottom - p.y) + shut);
 }
 
 fn eased(low: f32, high: f32, x: f32) -> f32 {
