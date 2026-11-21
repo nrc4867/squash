@@ -15,6 +15,7 @@
     "size": { "default": 1.0, "min": 0.4, "max": 2.5 }
   },
   "grain": { "toward": "start" },
+  "mouth": "lips",
   "blocks": [
     { "kind": "skull",    "u": [0.0, 1.0], "width": 0.9, "depth": 0.96 },
     { "kind": "joint",    "name": "neck",  "u": 0.42,           "hinge": "x", "limits": [-40, 40] },

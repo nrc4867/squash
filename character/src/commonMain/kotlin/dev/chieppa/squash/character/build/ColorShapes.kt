@@ -43,13 +43,14 @@ data class SocketEnd(val parent: PartId, val closing: BorderClosing)
 
 /**
  * What a part's color reads besides its surface work: the parts its anchors name, its template's areas and colored patches, and for each
- * named part sitting on a socket, how a border crossing that socket closes on it.
+ * named part sitting on a socket, how a border crossing that socket closes on it; and for the lower half of a beak the mouth it shows as it drops.
  */
 data class PartColorInput(
     val parts: Set<PartId> = emptySet(),
     val areas: List<AreaSpec> = emptyList(),
     val patchSlots: List<PatchSlot> = emptyList(),
     val socketEnds: Map<PartId, SocketEnd> = emptyMap(),
+    val jawMouth: JawMouth? = null,
 )
 
 /**
@@ -65,7 +66,13 @@ fun partColorInput(character: Character, part: PartId, templates: TemplateLibrar
     val areas = PartBuilder.areas(template, params).map { area ->
         if (area.color == null || character.palette.color(SlotName(area.color)) != null) area else area.copy(color = null)
     }
-    return PartColorInput(named, areas, PartBuilder.patchSlots(template, params), socketEnds(character, named, templates))
+    return PartColorInput(
+        named,
+        areas,
+        PartBuilder.patchSlots(template, params),
+        socketEnds(character, named, templates),
+        jawMouthOf(character, instance, template, templates),
+    )
 }
 
 private fun socketEnds(character: Character, parts: Set<PartId>, templates: TemplateLibrary): Map<PartId, SocketEnd> = parts.mapNotNull { id ->

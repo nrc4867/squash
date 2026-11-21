@@ -6,7 +6,7 @@ import java.io.File
 private const val DEFAULT_CLOSE = "face,hand,foot"
 
 /** The look arguments a recipe build passes on to the renderer and measure as given. */
-private val PASSED_ON = setOf("close", "outfits", "poses", "set", "reads", "scale", "around", "lids")
+private val PASSED_ON = setOf("close", "outfits", "poses", "set", "reads", "scale", "around", "lids", "faces")
 
 /** A recipe build renders each outfit's back and top views unless told otherwise. */
 private const val DEFAULT_AROUND = "true"

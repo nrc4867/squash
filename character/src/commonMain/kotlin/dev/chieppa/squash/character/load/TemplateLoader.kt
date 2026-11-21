@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.lint.BodyPlanLint
 import dev.chieppa.squash.character.lint.Finding
 import dev.chieppa.squash.character.lint.TemplateLint
 import dev.chieppa.squash.character.model.BodyPlan
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PartTemplate
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -48,6 +49,9 @@ object TemplateLoader {
         failOnFindings(source, text, BodyPlanLint.lint(plan, parts))
         return plan
     }
+
+    /** Parses [text] as a mouth style, throwing where it does not read. */
+    fun loadMouth(source: String, text: String): MouthStyle = decode(source, text, MouthStyle.serializer())
 
     /** The file as a tree with experiment keys removed. */
     fun parseTree(source: String, text: String): JsonElement {

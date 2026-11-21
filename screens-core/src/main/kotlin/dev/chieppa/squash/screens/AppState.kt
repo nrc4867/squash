@@ -2,7 +2,6 @@ package dev.chieppa.squash.screens
 
 import dev.chieppa.squash.document.membraneShownAs
 import dev.chieppa.squash.screens.sheet.PaneNavigation
-import dev.chieppa.squash.character.build.TemplateLibrary
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.session.CharacterSession
@@ -214,7 +213,7 @@ class AppState(
         val job = SupervisorJob(scope.coroutineContext[Job])
         sessionJob = job
         val sessionScope = scope + job
-        val opened = CharacterSession(document, TemplateLibrary(templates.parts, templates.plans), sessionScope, workers.compute, workers.fieldReads)
+        val opened = CharacterSession(document, templates.library(), sessionScope, workers.compute, workers.fieldReads)
         file.value = DocumentSession(format, document, storage, path, opened.history)
         rig.clear()
         pose.clear()

@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.BodyPlan
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.BodyPlanRef
 import dev.chieppa.squash.document.TemplateId
@@ -12,7 +13,15 @@ import kotlin.concurrent.Volatile
  * Every loaded template by its pinned id and version, and the body plans that place them. Templates are only ever added, each under
  * a ref no loaded template has, so nothing read from the library before an [add] reads differently after it.
  */
-class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emptyList()) {
+class TemplateLibrary(templates: List<PartTemplate>, plans: List<BodyPlan> = emptyList(), mouths: List<MouthStyle> = emptyList()) {
+    private val mouthsById = mouths.associateBy { it.id }
+
+    /** The mouth style named [id], or [MouthStyle.PLAIN] when none is loaded under it. */
+    fun mouthStyle(id: String?): MouthStyle = mouthsById[id ?: MouthStyle.LIPS] ?: mouthsById[MouthStyle.LIPS] ?: MouthStyle.PLAIN
+
+    /** Every loaded mouth style. */
+    val mouthStyles: Collection<MouthStyle> get() = mouthsById.values
+
     private class Loaded(templates: List<PartTemplate>) {
         val byRef = templates.associateBy { it.ref }
         val byId = templates.groupBy { it.id }

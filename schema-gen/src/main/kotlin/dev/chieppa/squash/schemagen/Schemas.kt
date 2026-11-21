@@ -3,6 +3,7 @@ package dev.chieppa.squash.schemagen
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.DIRECTION_SERIAL_NAME
 import dev.chieppa.squash.character.model.LIMITS_SERIAL_NAME
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PARAM_PATTERN
 import dev.chieppa.squash.character.model.PARAM_REF_PATTERN
 import dev.chieppa.squash.character.model.ParamDefaultSerializer
@@ -108,6 +109,7 @@ object Schemas {
     private val files: Map<String, Pair<SerialDescriptor, String>> = mapOf(
         "part-template.schema.json" to (PartTemplate.serializer().descriptor to DISCRIMINATOR),
         "body-plan.schema.json" to (BodyPlan.serializer().descriptor to DISCRIMINATOR),
+        "mouth-style.schema.json" to (MouthStyle.serializer().descriptor to DISCRIMINATOR),
         "recipe.schema.json" to (Recipe.serializer().descriptor to RECIPE_DISCRIMINATOR),
     )
 

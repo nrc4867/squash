@@ -46,7 +46,7 @@ private const val SEE_THROUGH_KEY = "seeThrough"
 private const val MATERIAL_KEY = "material"
 
 /** Each step takes a saved document in the format it is keyed by to the next. */
-private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved, 18 to ::boxesPainted, 19 to ::slotFinishesIntoMaterials)
+private val MIGRATIONS: Map<Int, (JsonObject) -> JsonObject> = mapOf(1 to ::grainIntoSurfaceWork, 2 to ::softnessOnBrushStrokes, 3 to ::shadingOnCharacter, 4 to ::lineWeightsOnSurfaceWork, 5 to ::furMarksGainAKind, 6 to ::furRulesLoseShowNear, 7 to ::labelsOnPaletteSlots, 8 to ::floatMirrorAndColorOnMarks, 9 to ::shownExpressionAndCheats, 10 to ::referencesAndTraces, 11 to ::poseOnCharacter, 12 to ::rolesOnParts, 13 to ::wardrobeOnCharacter, 14 to ::oneSurfaceOnly, 15 to ::hemInkAlone, 16 to ::drawnEyesRemoved, 17 to ::regionsGainCurved, 18 to ::boxesPainted, 19 to ::slotFinishesIntoMaterials, 20 to ::mouthControlsShape)
 
 /**
  * The document in saved [text], brought forward through the migration chain from the format it was saved in. A document in a

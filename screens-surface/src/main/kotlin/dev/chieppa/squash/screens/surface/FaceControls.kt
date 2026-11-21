@@ -1,30 +1,27 @@
 package dev.chieppa.squash.screens.surface
 
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkGroup
-import dev.chieppa.squash.document.MouthShape
+import dev.chieppa.squash.document.MouthShapeValues
 import dev.chieppa.squash.document.SetMarkControls
 import dev.chieppa.squash.screens.lines.PickedGroup
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_controls
-import dev.chieppa.squash.uidesign.generated.face_mouth_frown
-import dev.chieppa.squash.uidesign.generated.face_mouth_grimace
-import dev.chieppa.squash.uidesign.generated.face_mouth_o
-import dev.chieppa.squash.uidesign.generated.face_mouth_smile
+import dev.chieppa.squash.uidesign.generated.face_lower_lip
 import dev.chieppa.squash.uidesign.generated.face_open
-import dev.chieppa.squash.uidesign.generated.face_shape
+import dev.chieppa.squash.uidesign.generated.face_round
+import dev.chieppa.squash.uidesign.generated.face_smile
+import dev.chieppa.squash.uidesign.generated.face_tongue
+import dev.chieppa.squash.uidesign.generated.face_upper_lip
 import dev.chieppa.squash.uidesign.generated.face_value
-import dev.chieppa.squash.uidesign.generated.face_width
+import dev.chieppa.squash.uidesign.generated.face_wide
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
-import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.StringResource
@@ -32,29 +29,41 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val HUNDREDTHS = 100f
 
-/** How wide a mouth's width control reaches. */
-private val WIDTH_RANGE = 0.5f..1.5f
+private val UNIT = 0f..1f
+private val SIGNED = -1f..1f
 
-private val MOUTH_SHAPE_NAMES = mapOf(
-    MouthShape.SMILE to Res.string.face_mouth_smile,
-    MouthShape.FROWN to Res.string.face_mouth_frown,
-    MouthShape.O to Res.string.face_mouth_o,
-    MouthShape.GRIMACE to Res.string.face_mouth_grimace,
+/** One of a mouth's seven controls: its label, its test tag's name, its range, and how it reads and writes the group's controls and a shape's values. */
+internal class MouthControl(
+    val label: StringResource,
+    val name: String,
+    val range: ClosedFloatingPointRange<Float>,
+    val read: (MarkControls) -> Float,
+    val write: (MarkControls, Float) -> MarkControls,
+    val shapeRead: (MouthShapeValues) -> Float?,
+    val shapeWrite: (MouthShapeValues, Float) -> MouthShapeValues,
 )
 
+/** The seven controls, in the order the inspector shows them. */
+internal val MOUTH_CONTROLS = listOf(
+    MouthControl(Res.string.face_open, "open", UNIT, { it.open }, { c, v -> c.copy(open = v) }, { it.open }, { s, v -> s.copy(open = v) }),
+    MouthControl(Res.string.face_wide, "wide", SIGNED, { it.wide }, { c, v -> c.copy(wide = v) }, { it.wide }, { s, v -> s.copy(wide = v) }),
+    MouthControl(Res.string.face_round, "round", UNIT, { it.round }, { c, v -> c.copy(round = v) }, { it.round }, { s, v -> s.copy(round = v) }),
+    MouthControl(Res.string.face_smile, "smile", SIGNED, { it.smile }, { c, v -> c.copy(smile = v) }, { it.smile }, { s, v -> s.copy(smile = v) }),
+    MouthControl(Res.string.face_upper_lip, "upper-lip", UNIT, { it.upperLip }, { c, v -> c.copy(upperLip = v) }, { it.upperLip }, { s, v -> s.copy(upperLip = v) }),
+    MouthControl(Res.string.face_lower_lip, "lower-lip", SIGNED, { it.lowerLip }, { c, v -> c.copy(lowerLip = v) }, { it.lowerLip }, { s, v -> s.copy(lowerLip = v) }),
+    MouthControl(Res.string.face_tongue, "tongue", UNIT, { it.tongue }, { c, v -> c.copy(tongue = v) }, { it.tongue }, { s, v -> s.copy(tongue = v) }),
+)
+
+/** The mouth's own seven controls, what it shows while no shape is picked; each slider's drag is one step of undo. */
 @Composable
 internal fun MouthControls(session: CharacterSession, picked: PickedGroup, group: MarkGroup) {
     val drag = rememberCommandDrag(session)
-    fun set(controls: MarkControls) = drag.update(SetMarkControls(picked.part, group.id, controls))
     DrawerSection(stringResource(Res.string.face_controls)) {
-        ControlSlider(Res.string.face_open, group.controls.open, FaceTags.OPEN, drag::finish) { set(group.controls.copy(open = it)) }
-        val names = MOUTH_SHAPE_NAMES.mapValues { stringResource(it.value) }
-        SettingRow(stringResource(Res.string.face_shape)) {
-            Segmented<MouthShape?>(MouthShape.entries, group.controls.mouthShape, { chosen ->
-                session.send(SetMarkControls(picked.part, group.id, group.controls.copy(mouthShape = chosen.takeUnless { it == group.controls.mouthShape })))
-            }, { it?.let(names::getValue).orEmpty() }, Modifier.testTag(FaceTags.SHAPE))
+        MOUTH_CONTROLS.forEach { control ->
+            ControlSlider(control.label, control.read(group.controls), FaceTags.control(control.name), drag::finish, control.range) {
+                drag.update(SetMarkControls(picked.part, group.id, control.write(group.controls, it)))
+            }
         }
-        ControlSlider(Res.string.face_width, group.controls.width, FaceTags.WIDTH, drag::finish, WIDTH_RANGE) { set(group.controls.copy(width = it)) }
     }
 }
 

@@ -74,7 +74,7 @@ private fun measure(example: String, look: LookArgs) = measureDocument(example, 
 fun measureDocument(example: String, document: SquashDocument, namedPoses: Map<String, Pose>, look: LookArgs, timings: Boolean = true) = TestWork().use { work ->
     val session = CharacterSession(document, CloseUps.shippedLibrary(), work.scope, work.dispatcher)
     val pose = SessionPose(session)
-    look.settings.forEach { (part, name, value) -> settingCommand(session, part, name, value, System.err::println)?.let(session::send) }
+    look.settings.forEach { (part, name, value) -> applySetting(session, part, name, value, System.err::println) }
     measureSession(example, session, work, namedPoses, look, timings, rig = pose.rig.rig)
 }
 

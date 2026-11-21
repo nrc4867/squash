@@ -2,8 +2,11 @@ package dev.chieppa.squash.character.load
 
 import dev.chieppa.squash.character.catalog.partCount
 import dev.chieppa.squash.character.model.BodyPlan
+import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.PartTemplate
 import java.nio.file.Path
+import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
@@ -11,13 +14,21 @@ import kotlin.io.path.readText
 internal const val PART_SUFFIX = ".part.json"
 private const val PLAN_SUFFIX = ".plan.json"
 private const val PLANS_FOLDER = "plans"
+private const val MOUTH_SUFFIX = ".mouth.json"
+private const val MOUTHS_FOLDER = "mouths"
 
 /** Where the build packs the templates folder on the classpath, and the file there naming what it holds. */
 private const val SHIPPED_ROOT = "dev/chieppa/squash/templates"
 private const val SHIPPED_INDEX = "index.txt"
 
-/** Everything in a templates folder, and [saved], the folder templates saved from parts are written to and loaded from, if any. */
-data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null) {
+/**
+ * Everything in a templates folder: its part templates, body plans and [mouths], the mouth styles of its mouths folder; and [saved], the folder templates saved from
+ * parts are written to and loaded from, if any.
+ */
+data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPlan>, val saved: Path? = null, val mouths: List<MouthStyle> = emptyList()) {
+    /** A library over the parts, plans and mouth styles. */
+    fun library(): TemplateLibrary = TemplateLibrary(parts, plans, mouths)
+
     companion object {
         /**
          * Loads every `*.part.json` in [folder] in name order, a version number read as a number so `paw-10` follows `paw-9`, and every `*.plan.json` in its plans folder, the plans placing the most
@@ -27,7 +38,8 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
         fun load(folder: Path): TemplateFolder {
             val parts = folder.listDirectoryEntries().map { it.name }
             val plans = folder.resolve(PLANS_FOLDER).listDirectoryEntries().map { "$PLANS_FOLDER/${it.name}" }
-            return load(parts + plans) { folder.resolve(it).readText() }
+            val mouths = folder.resolve(MOUTHS_FOLDER).takeIf { it.isDirectory() }?.listDirectoryEntries()?.map { "$MOUTHS_FOLDER/${it.name}" }.orEmpty()
+            return load(parts + plans + mouths) { folder.resolve(it).readText() }
         }
 
         private val packed: TemplateFolder by lazy { load(shippedResource(SHIPPED_INDEX).lines().filter { it.isNotEmpty() }, ::shippedResource) }
@@ -40,7 +52,9 @@ data class TemplateFolder(val parts: List<PartTemplate>, val plans: List<BodyPla
                 .map { TemplateLoader.loadPart(it, read(it)) }
             val plans = files.filter { it.startsWith("$PLANS_FOLDER/") && it.endsWith(PLAN_SUFFIX) }.sorted()
                 .map { TemplateLoader.loadPlan(it.substringAfterLast('/'), read(it), parts) }
-            val unordered = TemplateFolder(parts, plans)
+            val mouths = files.filter { it.startsWith("$MOUTHS_FOLDER/") && it.endsWith(MOUTH_SUFFIX) }.sorted()
+                .map { TemplateLoader.loadMouth(it.substringAfterLast('/'), read(it)) }
+            val unordered = TemplateFolder(parts, plans, mouths = mouths)
             return unordered.copy(
                 plans = plans.sortedWith(
                     compareByDescending<BodyPlan> { it.partCount(unordered) }.thenByDescending { it.partCount(unordered, bothSides = true) }.thenBy { it.name },

@@ -359,6 +359,12 @@ object SquashIcons {
             stroke("M10.2 13a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z")
         }
     }
+    val MarkOver: ImageVector by lazy {
+        icon("mark-over") {
+            stroke("M2 6c1.5 1.2 2.6 1.5 3.6 1.5M10.4 7.5c1 0 2.1-.3 3.6-1.5")
+            stroke("M6 6.5l2 6 2-6z")
+        }
+    }
     val Marks: ImageVector by lazy {
         icon("marks") {
             stroke("M5.5 4v3M10.5 4v3")

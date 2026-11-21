@@ -1,0 +1,20 @@
+{
+  "$schema": "../../schema/mouth-style.schema.json",
+  "format": 1,
+  "id": "lips",
+  "name": "Lips",
+  "line": "front",
+  "depth": 0.45,
+  "scale": {},
+  "shapes": {
+    "rest": {},
+    "mbp": { "wide": 0.15, "lowerLip": -1 },
+    "ai": { "open": 0.85, "wide": 0.35, "upperLip": 0.2 },
+    "e": { "open": 0.35, "wide": 0.6, "smile": 0.1, "upperLip": 0.7 },
+    "o": { "open": 0.6, "wide": -0.4, "round": 0.85 },
+    "u": { "open": 0.14, "wide": -0.7, "round": 1 },
+    "fv": { "open": 0.15, "wide": 0.2, "upperLip": 0.5, "lowerLip": 1 },
+    "l": { "open": 0.5, "wide": 0.1, "upperLip": 0.4, "tongue": 0.5 },
+    "etc": { "open": 0.22, "wide": 0.4, "upperLip": 0.5 }
+  }
+}
