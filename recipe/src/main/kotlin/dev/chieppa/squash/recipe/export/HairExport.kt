@@ -35,7 +35,7 @@ internal fun exportedHair(character: Character): List<RecipeHair> {
 }
 
 private fun exported(outline: HairOutline) = RecipeHairOutline(
-    views = outline.views.map { view -> RecipeOutlineView(view.view, view.points.map { listOf(it.x, it.y) }, view.tips, view.valleys) },
+    views = outline.views.map { view -> RecipeOutlineView(view.view, view.points.map { listOf(it.x, it.y) }, view.tips, view.valleys, view.heads, view.eyes) },
     fit = outline.fit,
 )
 

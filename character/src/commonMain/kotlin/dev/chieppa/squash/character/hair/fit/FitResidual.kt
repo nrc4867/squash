@@ -100,8 +100,8 @@ private class Seen(val view: OutlineView, val outline: FlatOutline, val grid: Vi
 }
 
 private fun seen(character: Character, assembled: AssembledCharacter, head: PartId): List<Seen> {
-    val outline = character.hairOutlineOn(head) ?: return emptyList()
     val headPart = assembled.part(head) ?: return emptyList()
+    val outline = character.hairOutlineOn(head)?.let { drawnOutline(character, headPart, it) } ?: return emptyList()
     val size = HeadView.sizeOf(character, headPart)
     val masses = character.lockGroups.filter { it.on == head }.mapNotNull { it.mass }.toSet()
     val parts = assembled.parts.filter { it.id != null && it.copies == null }

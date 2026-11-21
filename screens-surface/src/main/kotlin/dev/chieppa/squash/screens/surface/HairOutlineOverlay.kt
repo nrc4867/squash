@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.hair.fit.FlatOutline
 import dev.chieppa.squash.character.hair.fit.HeadView
+import dev.chieppa.squash.character.hair.fit.drawnOutline
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.hairOutlineOn
@@ -24,7 +25,7 @@ private const val VALLEY_RADIUS = 2.5f
  */
 internal fun OverlayBuilder.hairOutlineDrawn(sight: SurfaceView, character: Character, head: PlacedPart, density: Float, ink: Color, tipInk: Color, valleyInk: Color) {
     val id: PartId = head.id ?: return
-    val outline = character.hairOutlineOn(id) ?: return
+    val outline = character.hairOutlineOn(id)?.let { drawnOutline(character, head, it) } ?: return
     val box = head.box ?: return
     val size = HeadView.sizeOf(character, head)
     for (drawn in outline.views) {

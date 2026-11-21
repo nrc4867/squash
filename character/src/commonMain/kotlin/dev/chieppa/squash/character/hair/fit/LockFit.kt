@@ -6,12 +6,11 @@ import dev.chieppa.squash.character.hair.evenly
 import dev.chieppa.squash.character.hair.guideOf
 import dev.chieppa.squash.document.LONGEST_LOCK
 import dev.chieppa.squash.document.LockOverride
-import dev.chieppa.squash.document.LockTip
 import dev.chieppa.squash.document.SHORTEST_LOCK
+import dev.chieppa.squash.document.WIDEST_LOCK
 import dev.chieppa.squash.geom.Vec2
 import dev.chieppa.squash.geom.Vec3
 import kotlin.math.ln
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /** How many places along a lock its fit reads. */
@@ -46,8 +45,8 @@ private const val RISE_UNIT = 45f
 private const val LENGTH_WEIGHT = 0.06f
 
 /** How far a root may move round and up the head, in degrees. */
-private const val MOST_AROUND = 30f
-private const val MOST_UP = 25f
+private const val MOST_AROUND = 15f
+private const val MOST_UP = 12f
 
 /** The costings a fit spends from each start. */
 private const val BUDGET = 240
@@ -55,83 +54,16 @@ private const val BUDGET = 240
 /** The rises a fit starts from beside the lock's own: lying, lifted and standing. */
 private val START_RISES = floatArrayOf(35f, 70f)
 
-/** How far outside the outline, as a share of its height, a lock may stray before it is shortened. */
-private const val STRAY_TOLERANCE = 0.012f
-
 /** The shortest a lock is shortened to, as a share of its length. */
 private const val SHORTEST_KEPT = 0.3f
 
-/** The halvings that find how far a straying lock is shortened. */
+/** The halvings that find how far a straying lock is shortened, and how much more of its length a lower rise must keep to be taken. */
 private const val SHORTEN_STEPS = 8
+private const val KEEP_MORE = 0.05f
 
-/**
- * What a fit gives one lock, each value null where it leaves the lock's own: its [length] and [width] in body units, its [rise] in
- * degrees, its [sweep] and [fall], how much of it [lie]s along the head before it lifts, and how far its root moves [around] and [up] the
- * head in degrees.
- */
-data class FittedLock(
-    val length: Float? = null,
-    val rise: Float? = null,
-    val sweep: Float? = null,
-    val fall: Float? = null,
-    val around: Float? = null,
-    val up: Float? = null,
-    val width: Float? = null,
-    val lie: Float? = null,
-    val tip: LockTip? = null,
-) {
-    /** These values over [base], the lock's override at [index] with nothing fitted, or none. */
-    fun over(base: LockOverride?, index: Int): LockOverride = (base ?: LockOverride(index)).copy(
-        length = length ?: base?.length,
-        rise = rise ?: base?.rise,
-        sweep = sweep ?: base?.sweep,
-        fall = fall ?: base?.fall,
-        around = around ?: base?.around,
-        up = up ?: base?.up,
-        width = width ?: base?.width,
-        lie = lie ?: base?.lie,
-        tip = tip ?: base?.tip,
-    )
-
-    /** These values rounded, so a fit given the same outline twice writes the same values and nothing builds again. */
-    fun rounded(): FittedLock = FittedLock(
-        length?.let { round(it, 0.0005f).coerceIn(SHORTEST_LOCK, LONGEST_LOCK) },
-        rise?.let { round(it, 0.5f) },
-        sweep?.let { round(it, 0.01f).coerceIn(-1f, 1f) },
-        fall?.let { round(it, 0.01f).coerceIn(0f, 1f) },
-        around?.let { round(it, 0.5f) },
-        up?.let { round(it, 0.5f) },
-        width?.let { round(it, 0.0005f) },
-        lie?.let { round(it, 0.01f).coerceIn(LEAST_LIE, MOST_LIE) },
-        tip,
-    )
-
-    companion object {
-        /** The values a search over [x], laid out as [LockFitter] lays them, gives, with [width] and [tip]. */
-        internal fun of(x: FloatArray, width: Float?, tip: LockTip?) = FittedLock(x[LENGTH], x[RISE], x[SWEEP], x[FALL], x[AROUND], x[UP], width, x[LIE], tip)
-    }
-}
-
-/** Where each value of a lock lies in the values a fit searches. */
-private const val LENGTH = 0
-private const val RISE = 1
-private const val SWEEP = 2
-private const val FALL = 3
-private const val AROUND = 4
-private const val UP = 5
-private const val LIE = 6
-
-/** The least and most of a lock's length that lies along the head before it lifts. */
-private const val LEAST_LIE = 0.05f
-private const val MOST_LIE = 0.95f
-
-private fun round(value: Float, step: Float): Float = (value / step).roundToInt() * step
-
-/**
- * Where one lock is fitted to in one [view]: its tip on [tip], its sides along the outline's [edge] round it, [width] across in body
- * units where the outline gives it, and its end [shape] where the outline draws one, a flick.
- */
-class LockTarget(val view: FitView, val tip: Vec2, val edge: List<Vec2>, val width: Float?, val shape: LockTip? = null)
+/** The least a lock grown past its group's length is wide, as a share of its length, and the most times its group's width it is widened to that. */
+private const val LEAST_WIDTH_SHARE = 0.28f
+private const val WIDEN_MOST = 1.8f
 
 /**
  * Fits the lock at [index] of a group laid out as [laid], from [base], its override with nothing fitted, to the outline's [views]: each
@@ -142,8 +74,11 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
     val start: LockSpec = laid.spec(index, base)
     val guide: List<Vec3> by lazy { guideOf(start, scalp) }
 
-    /** The values that land the lock's tip on [target]'s and keep it inside the outline, searched by compass steps from a few starts. */
-    fun fitTo(target: LockTarget): FittedLock {
+    /**
+     * The values that land the lock's tip on [target]'s and keep it inside the outline, searched by compass steps from a few starts; with
+     * [contain], held no thinner than a lock reads as and inside every view ([bounded], [contained]).
+     */
+    fun fitTo(target: LockTarget, contain: Boolean = true): FittedLock {
         val view = target.view
         val root = view.head.flat(start.root)
         val reached = (view.head.flat(guide.last()) - root).let { sqrt(it.x * it.x + it.y * it.y) }
@@ -160,32 +95,65 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
             if (best == null || found.second < best.second) best = found
         }
         val x = checkNotNull(best).first
-        return FittedLock.of(x, target.width, target.shape).rounded()
+        val found = FittedLock.of(x, target.width, target.shape).rounded()
+        return if (contain) contained(bounded(found)) else found
     }
 
-    /** The lock shortened, and laid down where that is not enough, until it strays no further outside the outline than it may; null where it stays inside. */
-    fun keptIn(): FittedLock? {
-        if (worstStray(start, guide) <= tolerance()) return null
-        val lowered = if (start.rise > 0f) floatArrayOf(start.rise, 0f) else floatArrayOf(start.rise)
-        for (rise in lowered) {
-            val riseOverride = if (rise == start.rise) null else rise
-            fun strays(share: Float): Float {
-                val spec = laid.spec(index, FittedLock(length = start.length * share, rise = riseOverride).over(base, index))
-                return worstStray(spec, guideOf(spec, scalp))
-            }
-            if (strays(SHORTEST_KEPT) > tolerance()) continue
+    /** The lock shortened, and laid down where that is not enough, until it strays no further outside any view than it may; null where it stays inside. */
+    fun keptIn(): FittedLock? = contained(bounded(FittedLock())).takeIf { it != FittedLock() }
+
+    /** The lock as [fitted] sets it, as it shows. */
+    fun specOf(fitted: FittedLock): LockSpec = laid.spec(index, fitted.over(base, index))
+
+    /** How far, at worst, the lock as [fitted] sets it strays outside the views' regions, as a share of what it may. */
+    fun strayShare(fitted: FittedLock): Float {
+        val spec = specOf(fitted)
+        return worstStray(spec, guideOf(spec, scalp))
+    }
+
+    /**
+     * [fitted] kept inside every view: as it is where it strays no further outside any view's region than it may, else at its own rise,
+     * half of it or lying down, whichever keeps most of its length, shortened until it does, at most to [SHORTEST_KEPT] of its length lying
+     * down; so a lock that would stand out lies over the head and still covers it.
+     */
+    fun contained(fitted: FittedLock): FittedLock {
+        if (strayShare(fitted) <= 1f) return fitted
+        val length = specOf(fitted).length
+        val rise = fitted.rise ?: start.rise
+        val rises = if (rise > 0f) floatArrayOf(rise, rise / 2f, 0f) else floatArrayOf(rise)
+        var best: FittedLock? = null
+        var bestShare = 0f
+        for (r in rises) {
+            val riseOverride = if (r == start.rise && fitted.rise == null) null else r
+            fun at(share: Float) = fitted.copy(length = length * share, rise = riseOverride)
+            if (strayShare(at(SHORTEST_KEPT)) > 1f) continue
             var inside = SHORTEST_KEPT
             var outside = 1f
             repeat(SHORTEN_STEPS) {
                 val middle = (inside + outside) / 2f
-                if (strays(middle) <= tolerance()) inside = middle else outside = middle
+                if (strayShare(at(middle)) <= 1f) inside = middle else outside = middle
             }
-            return FittedLock(length = start.length * inside, rise = riseOverride).rounded()
+            if (inside > bestShare + KEEP_MORE) {
+                best = at(inside)
+                bestShare = inside
+            }
         }
-        return FittedLock(length = start.length * SHORTEST_KEPT, rise = if (start.rise > 0f) 0f else null).rounded()
+        return (best ?: fitted.copy(length = length * SHORTEST_KEPT, rise = if (rise > 0f) 0f else fitted.rise)).rounded()
     }
 
-    private fun tolerance(): Float = views.minOf { it.height } * STRAY_TOLERANCE
+    /**
+     * [fitted] no thinner than a lock reads as: a lock grown past its group's length is at least [LEAST_WIDTH_SHARE] of its length wide,
+     * widened up to [WIDEN_MOST] times its group's width, and shortened where that is not enough, never below its group's length.
+     */
+    fun bounded(fitted: FittedLock): FittedLock {
+        val spec = specOf(fitted)
+        val own = laid.grownLength(index)
+        if (spec.length <= own || spec.width >= spec.length * LEAST_WIDTH_SHARE) return fitted
+        val widest = minOf(WIDEST_LOCK, laid.group.width * WIDEN_MOST)
+        val width = (spec.length * LEAST_WIDTH_SHARE).coerceAtMost(widest).coerceAtLeast(spec.width)
+        val length = minOf(spec.length, maxOf(own, width / LEAST_WIDTH_SHARE))
+        return fitted.copy(length = length, width = width).rounded()
+    }
 
     private fun specOf(x: FloatArray, target: LockTarget): LockSpec = laid.spec(index, FittedLock.of(x, target.width, target.shape).over(base, index))
 
@@ -201,9 +169,9 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
             c += (CONTAIN_WEIGHT * mean + WORST_WEIGHT * worst * worst) / (v.height * v.height)
         }
         c += EDGE_WEIGHT * edgeCost(spec, guide, target)
-        c += ROOT_WEIGHT * (sq(x[AROUND] / ROOT_UNIT) + sq(x[UP] / ROOT_UNIT))
-        c += SHAPE_WEIGHT * (sq((x[RISE] - start.rise) / RISE_UNIT) + sq(x[SWEEP] - start.sweep) + sq(x[FALL] - start.fall) + sq(x[LIE] - start.lie))
-        c += LENGTH_WEIGHT * sq(ln(x[LENGTH] / start.length))
+        c += ROOT_WEIGHT * (sq(x[AT_AROUND] / ROOT_UNIT) + sq(x[AT_UP] / ROOT_UNIT))
+        c += SHAPE_WEIGHT * (sq((x[AT_RISE] - start.rise) / RISE_UNIT) + sq(x[AT_SWEEP] - start.sweep) + sq(x[AT_FALL] - start.fall) + sq(x[AT_LIE] - start.lie))
+        c += LENGTH_WEIGHT * sq(ln(x[AT_LENGTH] / start.length))
         return c
     }
 
@@ -221,9 +189,10 @@ internal class LockFitter(private val laid: GroupLocks, private val index: Int, 
         return (if (n == 0) 0f else sum / n) to worst
     }
 
+    /** How far the lock strays at worst outside any view, as a share of what that view lets it ([FitView.slack]). */
     private fun worstStray(spec: LockSpec, guide: List<Vec3>): Float {
         var worst = 0f
-        for (view in views) sampled(spec, guide, view) { at, depth, _ -> worst = maxOf(worst, view.stray(at, depth)) }
+        for (view in views) sampled(spec, guide, view) { at, depth, _ -> worst = maxOf(worst, view.stray(at, depth) / view.slack) }
         return worst
     }
 

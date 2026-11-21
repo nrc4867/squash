@@ -1,6 +1,8 @@
 package dev.chieppa.squash.character.hair.fit
 
+import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.geom.Vec2
+import dev.chieppa.squash.geom.Vec3
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -62,6 +64,31 @@ class FitPartsTest {
         val (bounded, _) = patternSearch(floatArrayOf(1f, 1f), floatArrayOf(0.5f, 0.5f), floatArrayOf(-2f, 0f), floatArrayOf(2f, 2f), 400, bowl)
         assertEquals(0f, bounded[1], "a value stays within its bounds")
         assertContentEquals(found, patternSearch(floatArrayOf(1f, 1f), floatArrayOf(0.5f, 0.5f), floatArrayOf(-2f, -2f), floatArrayOf(2f, 2f), 400, bowl).first)
+    }
+
+    @Test
+    fun aRingFilledHoldsItsMiddleButNotWhatLiesOutside() {
+        val grid = ViewGrid(Vec2(0f, 0f), 1f, 20, 20)
+        val ring = BooleanArray(grid.size) { k -> hypot(k % 20 + 0.5f - 10f, k / 20 + 0.5f - 10f).let { it in 5f..7f } }
+        val filled = grid.filled(ring)
+        assertTrue(filled[grid.index(Vec2(10f, 10f))], "the hole in the ring is filled")
+        assertTrue(!filled[grid.index(Vec2(1f, 1f))], "the corner outside it is not")
+        assertTrue(filled.indices.all { !ring[it] || filled[it] }, "the ring itself stays")
+    }
+
+    @Test
+    fun aViewWithNoOutlineHoldsTheHairWithinAMarginOfThePointsGiven() {
+        val head = HeadView(OutlineView.SIDE, Vec3.ZERO, Vec3(0f, 0f, 1f), Vec3.Y, Vec3.X, 1f)
+        val circle = List(40) { i -> Vec3(0f, sin(2 * PI * i / 40).toFloat() * 0.2f + 0.2f, cos(2 * PI * i / 40).toFloat() * 0.2f) }
+        val view = assertNotNull(FitView.around(head, circle, 0.05f, 0f, emptyList()))
+        assertTrue(!view.drawn && view.outline.tips.isEmpty())
+        assertEquals(0f, view.stray(Vec3(0f, 0.2f, 0f)), "the middle of the ring is inside")
+        assertEquals(0f, view.stray(Vec3(0f, 0.43f, 0f)), "within the margin is inside")
+        assertTrue(view.stray(Vec3(0f, 0.55f, 0f)) > 0.05f, "past it strays")
+        assertEquals(0f, view.stray(Vec3(0.3f, 0.2f, 0f)), "depth toward the viewer does not count")
+        val risen = assertNotNull(FitView.around(head, circle, 0.05f, 0.2f, emptyList()))
+        assertEquals(0f, risen.stray(Vec3(0f, 0.6f, 0f)), "spikes may rise as high as the drawn views let them")
+        assertTrue(risen.stray(Vec3(0f, 0.2f, 0.4f)) > 0.05f, "but not stand out to the side")
     }
 
     @Test

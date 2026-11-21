@@ -177,6 +177,8 @@ Which way each lock root grows: a background fall down the head, a whorl spirall
 | `outline.views[].points` | [] | - | The closed curve round the region the hair covers as the view sees it, each [x, y]: x to the view's right and y up, in the head's drawn units from its origin, the frame face places use seen from the view's camera. 3 to 600 points. |
 | `outline.views[].tips` | none | - | The points of its spikes and flicks, by index into points; found from the curve's shape when left out (a turn of 50 degrees or more out of the region within 2% of its length round). |
 | `outline.views[].valleys` | none | - | The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region). |
+| `outline.views[].heads` | false | - | Whether the points are in the sheet head's lengths (its chin to its crown in this view is 1, from its chin), as kit sheet hair reads them, rather than the head's drawn units: the build sizes them to the head as built, by its eye line where the front view gives eyes and the head has painted eyes, else by its height. |
+| `outline.views[].eyes` | none | 0.05 to 0.95 | How high the sheet's eye line stands over its chin in this view, in head lengths: on the front view, what sizes an outline given in heads. |
 
 The lock overrides a fit sets, which a group's `locks` can also give by hand:
 

@@ -64,6 +64,37 @@ class ViewGrid(val low: Vec2, val cell: Float, val width: Int, val height: Int) 
         return d
     }
 
+    /** [mask] with its holes filled: every cell no path of cells outside it joins to the grid's edge. */
+    fun filled(mask: BooleanArray): BooleanArray {
+        val reached = BooleanArray(size)
+        val stack = IntArray(size)
+        var n = 0
+        fun push(k: Int) {
+            if (!mask[k] && !reached[k]) {
+                reached[k] = true
+                stack[n++] = k
+            }
+        }
+        for (i in 0 until width) {
+            push(i)
+            push((height - 1) * width + i)
+        }
+        for (j in 0 until height) {
+            push(j * width)
+            push(j * width + width - 1)
+        }
+        while (n > 0) {
+            val k = stack[--n]
+            val i = k % width
+            val j = k / width
+            if (i > 0) push(k - 1)
+            if (i < width - 1) push(k + 1)
+            if (j > 0) push(k - width)
+            if (j < height - 1) push(k + width)
+        }
+        return BooleanArray(size) { !reached[it] }
+    }
+
     companion object {
         /** A grid over [low] to [high] widened by [margin] each way, about [cells] cells along its longer side. */
         fun around(low: Vec2, high: Vec2, margin: Float, cells: Int): ViewGrid {

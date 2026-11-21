@@ -37,6 +37,22 @@ private const val SIDE_BELOW = 0.1f
 private val CROWN_RANGE = 0.1f..1.2f
 private val WIDTH_RANGE = 0.2f..1.2f
 
+/**
+ * Which outline points a hem is read from: in the front view those out past [OUTER_SHARE] of the mass's half width, below the scalp's
+ * middle and off the body; in the back those within [MIDDLE_SHARE] of it of the middle. At least [LEAST_HEM_READS] of them, the hem their
+ * value [HEM_SHARE] (front) or [NAPE_SHARE] (back) of the way up, so a stray tip below it counts for little.
+ */
+private const val OUTER_SHARE = 0.5f
+private const val MIDDLE_SHARE = 0.4f
+private const val LEAST_HEM_READS = 3
+private const val HEM_SHARE = 0.15f
+private const val NAPE_SHARE = 0.3f
+
+/** The most the fit lets the mass's sides and back hang, and the halvings that find their hang. */
+private const val SIDES_MOST = 0.8f
+private const val BACK_MOST = 1.1f
+private const val HANG_STEPS = 7
+
 /** A step mass parameters are rounded to, so the same outline fits the same mass. */
 private const val PARAM_STEP = 0.005f
 
@@ -96,12 +112,16 @@ internal class MassBuilds(private val mass: PlacedPart, private val data: PartDa
 
 /**
  * The mass's crown and width that bring its top and sides, seen in [front], to the outline's envelope there less [thickness] (its locks'
- * thickness in body units, times [INSET_THICKNESSES]), never below [least], a close cap's, so no scalp shows: the outline's reach from
- * [middle], the scalp's middle, over the head and out to its sides, taken low among nearby directions so spikes and flicks count for
- * little. Measured and resized a few rounds from the close cap, whatever the mass holds now, so the same outline always fits the same mass;
- * its [RefittedMass.params] hold only what differs from [params]. Null where the outline gives no envelope.
+ * thickness in body units, times [INSET_THICKNESSES]), never below [least], a close cap's, nor below what the mass holds in [params], so
+ * no scalp shows: the outline's reach from [middle], the scalp's middle, over the head and out to its sides, taken low among nearby
+ * directions so spikes and flicks count for little, measured and resized a few rounds. Then its sides hang down to the front outline's
+ * hem at its outer edges, and with a [behind] view drawn its back to that outline's hem over the nape, each the least hang that reaches
+ * there, less the inset, from the close cap's or the mass's own where that is more, so a bob's mass is round and full to its hem. A
+ * fit only grows the mass, so a refit of the same outline starts from what it set and changes nothing. Its [RefittedMass.params] hold only what differs from [params]. Null where the outline gives no envelope.
  */
-internal fun fitMass(front: FitView, middle: Vec3, builds: MassBuilds, params: Map<String, Float>, thickness: Float, least: Map<String, Float>): RefittedMass? {
+internal fun fitMass(
+    front: FitView, behind: FitView?, middle: Vec3, builds: MassBuilds, params: Map<String, Float>, thickness: Float, least: Map<String, Float>,
+): RefittedMass? {
     val view = front.head
     val m = view.flat(middle)
     val h = front.height
@@ -117,11 +137,16 @@ internal fun fitMass(front: FitView, middle: Vec3, builds: MassBuilds, params: M
     val widthTarget = sideReads.takeIf { it.isNotEmpty() }?.let { it.average().toFloat() - inset }
     if (topTarget == null && widthTarget == null) return null
     val socket = view.flat(builds.origin).y
-    val lowCrown = least["crown"] ?: CROWN_RANGE.start
-    val lowWidth = least["width"] ?: WIDTH_RANGE.start
-    var crown = rounded(least["crown"] ?: params["crown"] ?: return null)
-    var width = rounded(least["width"] ?: params["width"] ?: return null)
-    var points = builds.points(mapOf("crown" to crown, "width" to width))
+    val lowCrown = rounded(maxOf(least["crown"] ?: CROWN_RANGE.start, params["crown"] ?: return null))
+    val lowWidth = rounded(maxOf(least["width"] ?: WIDTH_RANGE.start, params["width"] ?: return null))
+    var crown = lowCrown
+    var width = lowWidth
+    val lowSides = rounded(maxOf(least["sides"] ?: Float.NEGATIVE_INFINITY, params["sides"] ?: return null))
+    val lowBack = rounded(maxOf(least["back"] ?: Float.NEGATIVE_INFINITY, params["back"] ?: return null))
+    var sides = lowSides
+    var back = lowBack
+    fun built() = builds.points(mapOf("crown" to crown, "width" to width, "sides" to sides, "back" to back))
+    var points = built()
     var rounds = 0
     while (rounds++ < ROUNDS) {
         val flats = points.map(view::flat)
@@ -141,13 +166,59 @@ internal fun fitMass(front: FitView, middle: Vec3, builds: MassBuilds, params: M
         if (nextCrown == crown && nextWidth == width) break
         crown = nextCrown
         width = nextWidth
-        points = builds.points(mapOf("crown" to crown, "width" to width))
+        points = built()
     }
-    val now = mapOf("crown" to crown, "width" to width).filter { (k, v) -> params[k] != v }
+    val massSide = points.map(view::flat).filter { it.y > m.y - h * SIDE_BELOW }.maxOfOrNull { abs(it.x - m.x) }
+    if (massSide != null) {
+        val outer = front.outline.resampled(h / 150f).filter { abs(it.x - m.x) >= massSide * OUTER_SHARE && it.y < m.y && !front.onBody(it) }.map { it.y }
+        if (outer.size >= LEAST_HEM_READS) {
+            val target = share(outer, HEM_SHARE) + inset
+            sides = deepest(lowSides, SIDES_MOST) { s ->
+                sides = s
+                built().map(view::flat).filter { abs(it.x - m.x) >= massSide * OUTER_SHARE }.minOfOrNull { it.y }?.let { it <= target } ?: false
+            }
+        }
+    }
+    if (behind != null) {
+        val bv = behind.head
+        val mb = bv.flat(middle)
+        val hb = behind.height
+        val bInset = bv.drawn(thickness) * INSET_THICKNESSES
+        val massHalf = points.map(bv::flat).filter { it.y > mb.y - hb * SIDE_BELOW }.maxOfOrNull { abs(it.x - mb.x) }
+        if (massHalf != null) {
+            val within = massHalf * MIDDLE_SHARE
+            val hem = behind.outline.resampled(hb / 150f).filter { abs(it.x - mb.x) <= within && it.y < mb.y }.map { it.y }
+            if (hem.size >= LEAST_HEM_READS) {
+                val target = share(hem, NAPE_SHARE) + bInset
+                back = deepest(lowBack, BACK_MOST) { b ->
+                    back = b
+                    built().map(bv::flat).filter { abs(it.x - mb.x) <= within }.minOfOrNull { it.y }?.let { it <= target } ?: false
+                }
+            }
+        }
+    }
+    points = built()
+    val now = mapOf("crown" to crown, "width" to width, "sides" to sides, "back" to back).filter { (k, v) -> params[k] != v }
     return RefittedMass(now, points)
 }
 
 private fun rounded(value: Float): Float = (value / PARAM_STEP).roundToInt() * PARAM_STEP
+
+/**
+ * The least value from [low] to [most], rounded, that [reaches] (true from there on as the value grows, a hang reaching down to its hem),
+ * found by halving; [low] where it reaches already, [most] where nothing does.
+ */
+private fun deepest(low: Float, most: Float, reaches: (Float) -> Boolean): Float {
+    if (reaches(low)) return low
+    if (!reaches(most)) return most
+    var short = low
+    var deep = most
+    repeat(HANG_STEPS) {
+        val middle = (short + deep) / 2f
+        if (reaches(middle)) deep = middle else short = middle
+    }
+    return rounded(deep)
+}
 
 /** The value [share] of the way up [values] sorted. */
 private fun share(values: List<Float>, share: Float): Float {
