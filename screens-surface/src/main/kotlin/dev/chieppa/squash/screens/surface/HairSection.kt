@@ -24,6 +24,7 @@ import dev.chieppa.squash.document.LEAST_LOCKS
 import dev.chieppa.squash.document.SHORTEST_LOCK
 import dev.chieppa.squash.document.SetLockGroup
 import dev.chieppa.squash.document.lockGroup
+import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.uidesign.SquashIcons
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_hair
@@ -87,10 +88,10 @@ private val KIND_NAMES: Map<LockGroupKind, StringResource> = mapOf(
 /**
  * The Hair section of the Face inspector, on the face's head: Preset, whose menu gives the head a preset's lock groups in one step, a row
  * a group, and the picked group's count, length, spread and curl, each drag one undo step, and Remove group; then, on a head with
- * locks, its scalp flow ([FlowSettings]).
+ * locks, its scalp flow ([FlowSettings]) and its outline ([OutlineSettings]).
  */
 @Composable
-fun HairSection(session: CharacterSession) {
+fun HairSection(state: AppState, session: CharacterSession) {
     val document by session.document.collectAsState()
     val assembled by session.assembly.output.collectAsState()
     val character = document.character
@@ -123,7 +124,10 @@ fun HairSection(session: CharacterSession) {
         if (group != null) {
             key(group.id) { GroupSettings(session, group) { picked = null } }
         }
-        if (groups.isNotEmpty()) FlowSettings(session, head)
+        if (groups.isNotEmpty()) {
+            FlowSettings(session, head)
+            OutlineSettings(state, session, head)
+        }
     }
 }
 

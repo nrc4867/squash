@@ -42,7 +42,7 @@ private val VERSIONS_WIDTH = 300.dp
 @Composable
 fun FaceInspector(state: AppState, session: CharacterSession) {
     FaceSection(state, session)
-    HairSection(session)
+    HairSection(state, session)
 }
 
 /**

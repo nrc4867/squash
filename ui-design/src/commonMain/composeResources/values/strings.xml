@@ -320,6 +320,14 @@
     <string name="face_hair_spread">Spread</string>
     <string name="face_hair_curl">Curl</string>
     <string name="face_hair_remove">Remove group</string>
+    <string name="face_hair_outline">Outline</string>
+    <string name="face_hair_outline_trace">Trace from reference</string>
+    <string name="face_hair_outline_show">Show outline</string>
+    <string name="face_hair_outline_fit">Fit to outline</string>
+    <string name="face_hair_outline_refit">Refit</string>
+    <string name="face_hair_outline_remove">Remove outline</string>
+    <string name="face_hair_outline_off">Off by</string>
+    <string name="face_hair_outline_off_value">%1$s · %2$s</string>
     <string name="face_open">Open</string>
     <string name="face_shape">Shape</string>
     <string name="face_width">Width</string>

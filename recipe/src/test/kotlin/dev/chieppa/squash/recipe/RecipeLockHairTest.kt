@@ -6,6 +6,8 @@ import dev.chieppa.squash.document.Cowlick
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.LockGroupKind
 import dev.chieppa.squash.document.LockTip
+import dev.chieppa.squash.document.OutlineView
+import dev.chieppa.squash.document.hairOutlineOn
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Parting
 import dev.chieppa.squash.document.PartingKind
@@ -91,6 +93,22 @@ class RecipeLockHairTest {
         assertEquals(0.6f, built.resolved(mass).shape.params["back"], "a param given replaces the fitted one")
         assertTrue(built.lockGroups.all { it.mass == mass.id })
         assertEquals("$.hair[0].fitMass", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "mass": "head", "fitMass": {}}"""))) }.path)
+    }
+
+    @Test
+    fun anOutlineIsHeldExportedAndBuildsBackTheSame() {
+        val square = "[[-0.2, 0.0], [0.2, 0.0], [0.2, 0.4], [-0.2, 0.4]]"
+        val hair = """{"on": "head", "preset": "bob", "reach": 0.2,
+            "outline": {"views": [{"view": "front", "points": $square, "tips": [2, 3]}, {"view": "back", "points": $square}], "fit": false}}"""
+        val built = builder.build(RecipeJson.read(recipe(hair))).document
+        val outline = assertNotNull(built.character.hairOutlineOn(PartId("head")))
+        assertEquals(listOf(OutlineView.FRONT, OutlineView.BACK), outline.views.map { it.view })
+        assertEquals(listOf(2, 3), outline.view(OutlineView.FRONT)?.tips)
+        assertEquals(false, outline.fit)
+        val again = builder.build(exportRecipe(built).recipe).document.character
+        assertEquals(built.character.hairOutlines, again.hairOutlines)
+        assertEquals(built.character.lockGroups, again.lockGroups)
+        assertEquals("$.hair[0].outline.views", assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"on": "head", "preset": "bob", "outline": {"views": [{"view": "back", "points": $square}]}}"""))) }.path)
     }
 
     @Test

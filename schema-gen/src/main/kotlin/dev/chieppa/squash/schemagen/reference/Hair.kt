@@ -13,6 +13,8 @@ import dev.chieppa.squash.document.Cowlick
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.LockGroupKind
+import dev.chieppa.squash.document.LockOverride
+import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
 import dev.chieppa.squash.document.PartId
@@ -20,6 +22,8 @@ import dev.chieppa.squash.document.Parting
 import dev.chieppa.squash.document.PartingKind
 import dev.chieppa.squash.document.ScalpFlow
 import dev.chieppa.squash.document.Whorl
+import dev.chieppa.squash.recipe.model.RecipeHairOutline
+import dev.chieppa.squash.recipe.model.RecipeOutlineView
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -48,6 +52,9 @@ private val TIPS: Map<LockTip, String> = mapOf(
     LockTip.FORKED to "split into `tipPoints` (2 or 3) points cut back between them: a choppy, layered fringe",
     LockTip.FLICKED to "turns out 50 degrees over its last 0.3: a flicked fringe or a flipped hem",
 )
+
+/** The lock override fields a fit does not set. */
+private val FIT_SKIPS = setOf("index", "thickness", "curl", "wave", "twist", "section", "guide", "bones", "physics", "hidden")
 
 /** Lock hair: every group field with its default, range and units, each preset's groups, the scalp flow and the inner mass. */
 internal object Hair {
@@ -93,6 +100,18 @@ internal object Hair {
         append(table(listOf("field", "default", "range", "meaning"), fieldRows(Parting.serializer(), Parting(), owner = "flow.part")))
         appendLine()
         append(table(listOf("field", "default", "range", "meaning"), fieldRows(Cowlick.serializer(), Cowlick(), owner = "flow.cowlicks[]")))
+        appendLine()
+        appendLine("## Outline")
+        appendLine()
+        appendLine("`outline` draws the hair's silhouette as the sheet does, one closed curve a view, and fits the hair to it: the inner mass's `crown` and `width` sized to the region the front outline covers, each tip of an outline taken by the lock whose tip lands nearest it from a root facing that view, that lock's root moved, its length, rise, sweep, fall, lie and width searched so its tip lands on the outline's tip and its sides follow the outline to the valleys either side, a tip pointing out from the head below the scalp's middle ending in a flick, and every other lock shortened, or laid down, where it would stray outside the outline. The fitted values are the locks' overrides below and the mass's parameters; a fit owns them, so values given for them by hand are replaced. Tied groups and locks with guides of their own are left as they are. The build prints, and writes under its `hair-fit.txt`, how far each outline lies from the hair as built, mean and worst in the head's drawn units, and warns of tips no lock reached. `kit sheet hair` traces an outline from a sheet's view (kit/README.md).")
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(RecipeHairOutline.serializer(), RecipeHairOutline(emptyList()), owner = "outline", skip = setOf("views"))))
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(RecipeOutlineView.serializer(), RecipeOutlineView(OutlineView.FRONT, emptyList()), owner = "outline.views[]")))
+        appendLine()
+        appendLine("The lock overrides a fit sets, which a group's `locks` can also give by hand:")
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(LockOverride.serializer(), LockOverride(0), owner = "locks[]", skip = FIT_SKIPS)))
         appendLine()
         appendLine("## Inner mass")
         appendLine()

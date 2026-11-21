@@ -50,6 +50,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         val renderTime = measureTime { renderSession(open.session, open.pose, open.work, built.poses, look, errors, renders) }
         println("renders: ${renders.absolutePath} (${renderTime.inWholeMilliseconds} ms)")
         renders.listFiles { f -> f.extension == "png" }?.sortedBy { it.name }?.forEach { println("  ${it.absolutePath}") }
+        hairFitReport(document.character, open.session.assembly.output.value, File(out, "hair-fit.txt"))
         if (options.measure) {
             val table = File(out, "measure.txt")
             document.character.wardrobe.shown?.let { open.session.send(ShowOutfit(it)) }

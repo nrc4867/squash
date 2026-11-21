@@ -1,6 +1,10 @@
 package dev.chieppa.squash.recipe.export
 
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.HairOutline
+import dev.chieppa.squash.document.hairOutlineOn
+import dev.chieppa.squash.recipe.model.RecipeHairOutline
+import dev.chieppa.squash.recipe.model.RecipeOutlineView
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ScalpFlow
@@ -16,6 +20,7 @@ import dev.chieppa.squash.recipe.model.RecipeScalpFlow
  */
 internal fun exportedHair(character: Character): List<RecipeHair> {
     val flowed = HashSet<PartId>()
+    val outlined = HashSet<PartId>()
     return character.lockGroups.groupBy { it.on to it.mass }.entries.mapIndexed { i, (key, groups) ->
         val head = key.first
         RecipeHair(
@@ -24,9 +29,15 @@ internal fun exportedHair(character: Character): List<RecipeHair> {
             groups = groups.map(::exported),
             colliders = i == 0 && character.colliders.isNotEmpty(),
             flow = character.scalpFlows.firstOrNull { it.on == head }?.takeIf { flowed.add(head) }?.let(::exported),
+            outline = character.hairOutlineOn(head)?.takeIf { outlined.add(head) }?.let(::exported),
         )
     }
 }
+
+private fun exported(outline: HairOutline) = RecipeHairOutline(
+    views = outline.views.map { view -> RecipeOutlineView(view.view, view.points.map { listOf(it.x, it.y) }, view.tips, view.valleys) },
+    fit = outline.fit,
+)
 
 private fun exported(flow: ScalpFlow) = RecipeScalpFlow(
     whorl = flow.whorl,

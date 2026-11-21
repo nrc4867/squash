@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.LockOverride
 import dev.chieppa.squash.document.LockPhysics
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
+import dev.chieppa.squash.document.OutlineView
 import dev.chieppa.squash.document.PartingKind
 import dev.chieppa.squash.document.Whorl
 import kotlinx.serialization.Serializable
@@ -37,6 +38,32 @@ data class RecipeHair(
     val flow: RecipeScalpFlow? = null,
     @Doc("An inner mass fitted to the head as built, as the app's preset menu fits one, in place of a mass part of the recipe's own: give this or mass, not both.")
     val fitMass: RecipeMassFit? = null,
+    @Doc("The hair's drawn outline per view, which with fit the outer locks are fitted to: kit sheet hair traces one from a sheet.")
+    val outline: RecipeHairOutline? = null,
+)
+
+/** A head's hair outline in a recipe: its views, each a closed curve with its tips and valleys, and whether the locks are fitted to it. */
+@Serializable
+@Doc("The hair's drawn outline: a closed curve per view round the region the hair covers, its tips and valleys, and whether the hair is fitted to it.")
+data class RecipeHairOutline(
+    @Doc("One outline a view, the front among them; side, three-quarter and back are optional.")
+    val views: List<RecipeOutlineView>,
+    @Doc("Whether the build fits the hair to the outline: the outer locks' roots, lengths, rise, sweep, fall and widths so their tips land on its tips and their edges follow it, the inner mass's crown and width to the region it covers, and every other lock kept inside it. The fitted values are the locks' overrides and the mass's parameters.")
+    val fit: Boolean = true,
+)
+
+/** One view of a hair outline in a recipe. */
+@Serializable
+@Doc("The hair's outline in one view.")
+data class RecipeOutlineView(
+    @Doc("front, three-quarter (the camera 45 degrees round toward the character's left), side (the camera on the character's left) or back.")
+    val view: OutlineView,
+    @Doc("The closed curve round the region the hair covers as the view sees it, each [x, y]: x to the view's right and y up, in the head's drawn units from its origin, the frame face places use seen from the view's camera. 3 to 600 points.")
+    val points: List<List<Float>>,
+    @Doc("The points of its spikes and flicks, by index into points; found from the curve's shape when left out (a turn of 50 degrees or more out of the region within 2% of its length round).")
+    val tips: List<Int>? = null,
+    @Doc("The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region).")
+    val valleys: List<Int>? = null,
 )
 
 /** An inner mass fitted to the head as built. */

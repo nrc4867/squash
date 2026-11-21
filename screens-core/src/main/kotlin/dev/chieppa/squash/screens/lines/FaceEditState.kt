@@ -29,6 +29,9 @@ class FaceEditState {
     var locked by mutableStateOf(false)
     var moreOpen by mutableStateOf(false)
 
+    /** Whether the head's hair outline shows over the panes that look at it from one of its views. */
+    var hairOutline by mutableStateOf(false)
+
     /** The version the view shows from any camera, when one is locked. */
     val lockedVersion: CameraBin? get() = version.takeIf { locked }
 
@@ -38,5 +41,6 @@ class FaceEditState {
         role = null
         version = null
         locked = false
+        hairOutline = false
     }
 }

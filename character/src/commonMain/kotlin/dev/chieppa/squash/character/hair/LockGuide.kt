@@ -49,8 +49,6 @@ private const val MOST_POINTS = 18
 
 private val DOWN = Vec3(0f, -1f, 0f)
 
-/** Where along a lying lock it starts to lift off the head, as a share of its length; a curl starting sooner lifts it there. */
-private const val LIFT_FROM = 0.55f
 
 /** How far below level, as the sine of the angle down from the scalp's middle, the head stops holding a lock, which hangs free from there. */
 private const val HUG_BELOW = 0.35f
@@ -62,7 +60,7 @@ private const val TURN_IN_START = 0.75f
 /**
  * The guide curve [lock] grows along over [scalp], a few points from its sunk root to its tip. From its root it lies along the head the
  * way it grows, sweeps sideways and falls toward the ground over its length, held on the head down to just below its widest; past
- * [LIFT_FROM] of its length it lifts off by [LockSpec.rise] degrees. It curls about its side toward its tip, and a flicked tip turns out.
+ * [LockSpec.lie] of its length it lifts off by [LockSpec.rise] degrees. It curls about its side toward its tip, and a flicked tip turns out.
  * A tied lock leaves its tie at its rise instead and hangs free. Every point past its root keeps its clearance off the scalp, and where
  * the scalp falls away below what it roots in, as past a mass's hem, it takes its full clearance at once rather than run on under it. A lock with
  * a guide of its own takes those points from its root instead.
@@ -89,7 +87,7 @@ private fun grown(lock: LockSpec, scalp: Scalp, root: Vec3): List<Vec3> {
     val step = (lock.length + lock.sink) / GROW_STEPS
     val curlFrom = curlStart(lock.curl)
     val clearReach = ((lock.clearance + lock.sink) * CLEAR_SLOPE / lock.length.coerceAtLeast(1e-4f)).coerceIn(CLEAR_REACH, CLEAR_MOST)
-    val liftFrom = if (lock.curl == 0f) LIFT_FROM else minOf(LIFT_FROM, curlFrom)
+    val liftFrom = if (lock.curl == 0f) lock.lie else minOf(lock.lie, curlFrom)
     val path = ArrayList<Vec3>(GROW_STEPS + 1)
     var at = root
     var lift = 0f

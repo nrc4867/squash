@@ -274,6 +274,14 @@ export interface LockOverride {
   rise?: number | null;
   /** How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right. */
   sweep?: number | null;
+  /** How far it falls toward the ground along its length, 0 none to 1 hanging. */
+  fall?: number | null;
+  /** How much of its length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a spike; 0.55 when left out. */
+  lie?: number | null;
+  /** Degrees its root moves round the head from where its group lays it, positive toward the character's right. */
+  around?: number | null;
+  /** Degrees its root moves up the head from where its group lays it. */
+  up?: number | null;
   section?: ("ribbon" | "clump") | null;
   tip?: ("pointed" | "round" | "forked" | "flicked") | null;
   /** Its guide curve: a few points from its root, in place of the curve its group grows it along. */
@@ -644,6 +652,18 @@ export interface RecipeHair {
   flow?: RecipeScalpFlow | null;
   /** An inner mass fitted to the head as built, as the app's preset menu fits one, in place of a mass part of the recipe's own: give this or mass, not both. */
   fitMass?: RecipeMassFit | null;
+  /** The hair's drawn outline per view, which with fit the outer locks are fitted to: kit sheet hair traces one from a sheet. */
+  outline?: RecipeHairOutline | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The hair's drawn outline: a closed curve per view round the region the hair covers, its tips and valleys, and whether the hair is fitted to it. */
+export interface RecipeHairOutline {
+  /** One outline a view, the front among them; side, three-quarter and back are optional. */
+  views: RecipeOutlineView[];
+  /** Whether the build fits the hair to the outline: the outer locks' roots, lengths, rise, sweep, fall and widths so their tips land on its tips and their edges follow it, the inner mass's crown and width to the region it covers, and every other lock kept inside it. The fitted values are the locks' overrides and the mass's parameters. */
+  fit?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -882,6 +902,20 @@ export interface RecipeOutline {
   closed?: boolean;
   /** The Bézier points [x, y] themselves: a start point, then two handles and an end point per segment (3n + 1 points). In place of through. */
   bezier?: number[][] | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The hair's outline in one view. */
+export interface RecipeOutlineView {
+  /** front, three-quarter (the camera 45 degrees round toward the character's left), side (the camera on the character's left) or back. */
+  view: "front" | "three-quarter" | "side" | "back";
+  /** The closed curve round the region the hair covers as the view sees it, each [x, y]: x to the view's right and y up, in the head's drawn units from its origin, the frame face places use seen from the view's camera. 3 to 600 points. */
+  points: number[][];
+  /** The points of its spikes and flicks, by index into points; found from the curve's shape when left out (a turn of 50 degrees or more out of the region within 2% of its length round). */
+  tips?: number[] | null;
+  /** The notches between them, by index into points; found from the curve's shape when left out (a turn of 35 degrees or more into the region). */
+  valleys?: number[] | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

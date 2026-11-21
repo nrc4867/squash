@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.hair
 
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.LockGroupKind
+import dev.chieppa.squash.document.LockOverride
 import dev.chieppa.squash.document.LockPhysics
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
@@ -61,23 +62,39 @@ data class LockSpec(
     val bones: Int,
     val physics: LockPhysics,
     val tied: Boolean = false,
+    val lie: Float = LOCK_LIE,
 )
+
+/** How much of a lying lock's length lies along the head before it lifts off, unless its override says otherwise; a curl starting sooner lifts it there. */
+const val LOCK_LIE = 0.55f
 
 /** The locks [group] shows on [scalp], growing as [growth] says: every lock but those its overrides hide, each with its override over it. */
 fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): List<LockSpec> {
-    val roots = growth.roots(group)
-    val rows = (roots.maxOfOrNull { it.row } ?: 0) + 1
-    val random = Random(group.seed * 7919 + 17)
-    val top = roots.maxOfOrNull { it.elevation } ?: 0f
-    val jitters = List(roots.size) { (random.nextFloat() * 2f - 1f) * group.lengthJitter }
-    return roots.mapIndexedNotNull { index, root ->
+    val laid = GroupLocks(group, scalp, growth)
+    return laid.roots.indices.mapNotNull { index ->
         val override = group.overrideOf(index)
-        if (override?.hidden == true) return@mapIndexedNotNull null
-        val place = scalp.placeAt(root.azimuth, root.elevation)
-        val length = override?.length ?: (group.length * (1f + jitters[index]) * parted(group, root) - rowDrop(group, root, top, scalp)).coerceAtLeast(group.length * 0.2f)
+        if (override?.hidden == true) null else laid.spec(index, override)
+    }
+}
+
+/**
+ * [group]'s locks laid out on [scalp] as [growth] says, each built by its index with any override: what [locksOf] builds each lock from,
+ * kept so one lock can be built again with other values without laying out the group again.
+ */
+class GroupLocks(val group: LockGroup, val scalp: Scalp, val growth: LockGrowth = KindGrowth) {
+    val roots: List<LockRoot> = growth.roots(group)
+    private val rows = (roots.maxOfOrNull { it.row } ?: 0) + 1
+    private val top = roots.maxOfOrNull { it.elevation } ?: 0f
+    private val jitters = Random(group.seed * 7919 + 17).let { random -> List(roots.size) { (random.nextFloat() * 2f - 1f) * group.lengthJitter } }
+
+    /** The lock at [index], with [override] over the group's values. */
+    fun spec(index: Int, override: LockOverride?): LockSpec {
+        val root = roots[index]
+        val place = scalp.placeAt(root.azimuth + (override?.around ?: 0f), root.elevation + (override?.up ?: 0f))
+        val length = override?.length ?: grownLength(index)
         val thickness = override?.thickness ?: group.thickness
         val lift = BASE_CLEARANCE + group.layer * LAYER_LIFT + (rows - 1 - root.row) * ROW_LIFT + (index % 2) * STAGGER
-        LockSpec(
+        return LockSpec(
             index = index,
             root = place.point,
             out = place.out,
@@ -91,7 +108,7 @@ fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): Li
             tipPoints = group.tipPoints,
             rise = override?.rise ?: (group.rise + growth.rise(place, group)).coerceAtMost(MOST_RISE),
             sweep = override?.sweep ?: (group.sweep + growth.sweep(place, group)).coerceIn(-MOST_SWEEP, MOST_SWEEP),
-            fall = group.fall,
+            fall = override?.fall ?: group.fall,
             curl = override?.curl ?: group.curl,
             wave = override?.wave ?: group.wave,
             twist = override?.twist ?: group.twist,
@@ -101,7 +118,14 @@ fun locksOf(group: LockGroup, scalp: Scalp, growth: LockGrowth = KindGrowth): Li
             bones = override?.bones ?: bonesFor(length, scalp),
             physics = override?.physics ?: group.physics,
             tied = group.tie > 0f,
+            lie = override?.lie ?: LOCK_LIE,
         )
+    }
+
+    /** The length the lock at [index] grows to with no override: the group's, jittered, a fringe's parted over the eyes, a lower row's shorter. */
+    fun grownLength(index: Int): Float {
+        val root = roots[index]
+        return (group.length * (1f + jitters[index]) * parted(group, root) - rowDrop(group, root, top, scalp)).coerceAtLeast(group.length * 0.2f)
     }
 }
 

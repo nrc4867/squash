@@ -22,6 +22,13 @@ import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.SetColliders
 import dev.chieppa.squash.document.SetLockGroup
 import dev.chieppa.squash.recipe.model.RecipeLockGroup
+import dev.chieppa.squash.recipe.model.RecipeHairOutline
+import dev.chieppa.squash.character.hair.fit.hairFit
+import dev.chieppa.squash.document.CurvePoint
+import dev.chieppa.squash.document.HairOutline
+import dev.chieppa.squash.document.HairOutlineView
+import dev.chieppa.squash.document.OutlineView
+import dev.chieppa.squash.document.SetHairOutline
 
 /** The body as built so far, every part bare, assembled once for the hair to measure its heads on. */
 private fun BuildContext.bareBody(): AssembledCharacter {
@@ -39,6 +46,7 @@ internal fun BuildContext.hair() {
     if (recipe.hair.isEmpty()) return
     val body by lazy { bareBody() }
     val taken = HashSet<String>()
+    val fits = ArrayList<Pair<PartId, String>>()
     recipe.hair.forEachIndexed { i, hair ->
         val path = "$.hair[$i]"
         val on = partOf("$path.on", hair.on)
@@ -73,8 +81,35 @@ internal fun BuildContext.hair() {
         val base = hair.preset?.let { presetFlow(it, on) }
         val flow = hair.flow?.let { flowed("$path.flow", base ?: ScalpFlow(on), it) } ?: base
         flow?.let { send("$path.flow", SetScalpFlow(on, it)) }
+        hair.outline?.let { given ->
+            send("$path.outline", SetHairOutline(on, outlined("$path.outline", on, given)))
+            if (given.fit) fits += on to "$path.outline"
+        }
     }
     if (recipe.hair.any { it.colliders }) send("$.hair", SetColliders(autoColliders(body)))
+    if (fits.isEmpty()) return
+    val massed = bareBody()
+    for ((on, path) in fits) {
+        val fit = guard(path) { hairFit(document.character, massed, on) } ?: continue
+        fit.commands.forEach { send("$path.fit", it) }
+        if (fit.missed > 0) warn("$path.fit", "${fit.missed} of the outline's tips reached by no lock: give the groups near them more locks")
+    }
+}
+
+/** [given] as the document holds it, failing at [path] when a view or a point is out of its range. */
+private fun BuildContext.outlined(path: String, on: PartId, given: RecipeHairOutline): HairOutline = guard(path) {
+    if (given.views.none { it.view == OutlineView.FRONT }) fail("$path.views", "an outline needs its front view")
+    HairOutline(
+        on,
+        given.views.mapIndexed { i, view ->
+            val points = view.points.mapIndexed { j, p ->
+                if (p.size != 2) fail("$path.views[$i].points[$j]", "a point is [x, y]")
+                CurvePoint(p[0], p[1])
+            }
+            guard("$path.views[$i]") { HairOutlineView(view.view, points, view.tips, view.valleys) }
+        },
+        given.fit,
+    )
 }
 
 /** A mass fitted over head [on] as [body] builds it, added to the document; its id. */

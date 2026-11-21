@@ -4,6 +4,8 @@ import { readAcross } from "../../src/sheet/measure/across.ts";
 import { targetsOf } from "../../src/sheet/measure/measurement.ts";
 import { checkImage } from "../../src/sheet/read/check.ts";
 import { gridImage } from "../../src/sheet/read/grid.ts";
+import { parseColors, traceHair, type HairView } from "../../src/sheet/read/hair.ts";
+import { hairImage } from "../../src/sheet/read/hair-image.ts";
 import { viewCrop, viewsOverview } from "../../src/sheet/read/overview.ts";
 import { sheetPalette } from "../../src/sheet/read/palette.ts";
 import { sheetProfiles } from "../../src/sheet/read/profiles/index.ts";
@@ -144,4 +146,36 @@ export const sheetCommands: Record<string, SheetCommand> = {
     out.png(`trace-${name}.png`, traceImage(sheet, measured.anatomy.view, trace));
     for (const line of traceLines(trace)) console.log(line);
   },
+  hair(image, options) {
+    const sheet = sheetFrom(image, options, false);
+    const measured = measuredFrom(sheet, options, false);
+    const m = measured.measurement;
+    const as = (options.text("as") ?? m.view.guess.facing) as HairView;
+    if (!HAIR_VIEWS.includes(as)) throw new Error(`as=${as}: ${HAIR_VIEWS.join(", ")}`);
+    const chin = options.points("chin")?.[0] ?? [m.axis, m.landmarks.chin?.y ?? m.view.box.y + m.headPixels];
+    const crown = options.points("crown")?.[0];
+    const headHeight = options.number("headHeight");
+    const scale = options.number("scale") ??
+      (crown && headHeight ? headHeight / Math.max(1, chin[1] - crown[1]) : m.bodyPerPixel / (options.number("headScale") ?? 1));
+    const view = m.view.box;
+    const box = options.box() ?? { x: view.x, y: view.y, w: view.w, h: Math.min(view.h, Math.round(chin[1] - view.y + m.headPixels * 0.6)) };
+    const colors = options.text("colors");
+    const trace = traceHair(sheet.image, {
+      view: as,
+      box,
+      colors: colors ? parseColors(colors) : undefined,
+      tolerance: options.number("tolerance"),
+      origin: chin,
+      unitsPerPixel: scale,
+      simplify: options.number("simplify"),
+      close: options.number("close"),
+    });
+    const out = new SheetOutput(options.outDir(image));
+    const name = `hair-${as}`;
+    out.json(`${name}.json`, trace);
+    out.png(`${name}.png`, hairImage(sheet.image, box, trace));
+    console.log(`  ${as}: ${trace.points.length} points, ${trace.tips?.length ?? 0} tips, ${trace.valleys?.length ?? 0} valleys, ${scale.toPrecision(4)} head units a pixel, origin ${chin.join(",")}, colours ${trace.colors.join(",")}`);
+  },
 };
+
+const HAIR_VIEWS: readonly string[] = ["front", "three-quarter", "side", "back"];

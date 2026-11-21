@@ -119,6 +119,14 @@ data class LockOverride(
     val rise: Float? = null,
     @Doc("How far it sweeps sideways as it grows, -1 to 1: positive toward the character's right.") @Range(min = -1.0, max = 1.0)
     val sweep: Float? = null,
+    @Doc("How far it falls toward the ground along its length, 0 none to 1 hanging.") @Range(min = 0.0, max = 1.0)
+    val fall: Float? = null,
+    @Doc("How much of its length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a spike; 0.55 when left out.") @Range(min = 0.05, max = 0.95)
+    val lie: Float? = null,
+    @Doc("Degrees its root moves round the head from where its group lays it, positive toward the character's right.") @Range(min = -45.0, max = 45.0)
+    val around: Float? = null,
+    @Doc("Degrees its root moves up the head from where its group lays it.") @Range(min = -45.0, max = 45.0)
+    val up: Float? = null,
     val section: LockSection? = null,
     val tip: LockTip? = null,
     @Doc("Its guide curve: a few points from its root, in place of the curve its group grows it along.")
@@ -138,8 +146,14 @@ data class LockOverride(
         require(width == null || width in NARROWEST_LOCK..WIDEST_LOCK) { "A lock's width is $NARROWEST_LOCK to $WIDEST_LOCK, not $width" }
         require(thickness == null || thickness in NARROWEST_LOCK..WIDEST_LOCK) { "A lock's thickness is $NARROWEST_LOCK to $WIDEST_LOCK, not $thickness" }
         require(curl == null || curl in -MOST_LOCK_CURL..MOST_LOCK_CURL) { "A lock curls at most $MOST_LOCK_CURL turns, not $curl" }
+        require(fall == null || fall in 0f..1f) { "A lock's fall is 0 to 1, not $fall" }
+        require(lie == null || lie in 0.05f..0.95f) { "A lock lies 0.05 to 0.95 of its length along the head, not $lie" }
+        require((around ?: 0f) in -MOST_ROOT_MOVE..MOST_ROOT_MOVE && (up ?: 0f) in -MOST_ROOT_MOVE..MOST_ROOT_MOVE) { "A lock's root moves at most $MOST_ROOT_MOVE degrees either way" }
     }
 }
+
+/** The most degrees a lock's root moves either way round or up the head from where its group lays it. */
+const val MOST_ROOT_MOVE = 45f
 
 /**
  * A group of hair locks on a head ([on]), rooted on it or on the inner mass [mass] over it where that part is there: [count] locks of the

@@ -130,6 +130,34 @@ class HairLockCommandTest {
     }
 
     @Test
+    fun aHairOutlineIsSetReplacedClearedAndEachUndone() {
+        val square = listOf(CurvePoint(-0.2f, 0f), CurvePoint(0.2f, 0f), CurvePoint(0.2f, 0.4f), CurvePoint(-0.2f, 0.4f))
+        val outline = HairOutline(head.id, listOf(HairOutlineView(OutlineView.FRONT, square, tips = listOf(2, 3))))
+        val command = SetHairOutline(head.id, outline)
+        assertRoundTrips(command)
+        assertNull(empty.character.hairOutlineOn(head.id))
+        val set = command.apply(empty).document
+        assertEquals(outline, set.character.hairOutlineOn(head.id))
+        val off = outline.copy(fit = false)
+        scenario(set) {
+            run(SetHairOutline(head.id, off))
+            expect(set.copy(character = set.character.copy(hairOutlines = listOf(off))))
+            undo()
+            expect(set)
+            run(SetHairOutline(head.id, null))
+            expect(empty)
+            undo()
+            expect(set)
+        }
+        assertFailsWith<IllegalArgumentException> { SetHairOutline(head.id, HairOutline(PartId("other"), outline.views)) }
+        assertFailsWith<IllegalArgumentException> { HairOutline(head.id, listOf(HairOutlineView(OutlineView.BACK, square))) }
+        assertFailsWith<IllegalArgumentException> { HairOutlineView(OutlineView.FRONT, square.take(2)) }
+        assertFailsWith<IllegalArgumentException> { HairOutlineView(OutlineView.FRONT, square, tips = listOf(9)) }
+        val text = Json.encodeToString(SquashDocument.serializer(), set)
+        assertEquals(set, readDocument(text))
+    }
+
+    @Test
     fun aBlendedSlotReadsAsItsSlotsMixed() {
         val skin = SlotName("skin")
         val hair = SlotName("hair")

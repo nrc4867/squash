@@ -97,6 +97,16 @@ abstract class FaceTool(state: AppState, var accent: Color, protected val densit
     private fun shown(sight: SurfaceView): ViewportOverlay = buildOverlay {
         drawn(sight)
         with(eyeHandles) { drawn(sight, selected, paper, density) }
+        if (state.face.hairOutline) hairOutline(sight)
+    }
+
+    /** The face's head's hair outline, over a pane looking along one of its views. */
+    private fun OverlayBuilder.hairOutline(sight: SurfaceView) {
+        val session = state.session.value ?: return
+        val character = session.document.value.character
+        val id = character.faceHead(session.templates) ?: return
+        val head = state.bodyThrough(sight)?.part(id) ?: return
+        hairOutlineDrawn(sight, character, head, density, accent, accent, selected)
     }
 
     override val paneNote: @Composable (SurfaceView) -> Unit = { sight -> if (!paintsEyes) binThrough(sight)?.let { FaceVersionChip(it) } }

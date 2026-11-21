@@ -69,7 +69,10 @@ class Scalp private constructor(val middle: Vec3, private val reach: FloatArray)
 
     companion object {
         /** The scalp of [head], with the hair [mass] over it where there is one, read from their vertices where they show at rest. */
-        fun of(head: PlacedPart, mass: PlacedPart?): Scalp {
+        fun of(head: PlacedPart, mass: PlacedPart?): Scalp = over(head, mass?.shownPoints())
+
+        /** The scalp of [head], with a hair mass over it whose points in body space are [massPoints], where there is one. */
+        fun over(head: PlacedPart, massPoints: List<Vec3>?): Scalp {
             val headPoints = head.shownPoints()
             val box = head.box
             val middle = box?.let { it.center + Vec3(0f, it.size.y * SKULL_RISE, 0f) } ?: headPoints.fold(Vec3.ZERO) { s, p -> s + p } * (1f / headPoints.size.coerceAtLeast(1))
@@ -87,7 +90,7 @@ class Scalp private constructor(val middle: Vec3, private val reach: FloatArray)
                 }
             }
             take(headPoints)
-            mass?.let { take(it.shownPoints()) }
+            massPoints?.let(::take)
             filled(reach)
             return Scalp(middle, reach)
         }

@@ -77,6 +77,32 @@ data class SetScalpFlow(val on: PartId, val flow: ScalpFlow?, val index: Int? = 
     }
 }
 
+/**
+ * Sets the hair outline on head [on] to [outline], adding it after the others when new, or restored to [index] when undoing a removal;
+ * null removes it. The head exists.
+ */
+@Serializable
+@SerialName("setHairOutline")
+data class SetHairOutline(val on: PartId, val outline: HairOutline?, val index: Int? = null) : DocumentCommand {
+    init {
+        require(outline == null || outline.on == on) { "Hair outline on ${outline?.on?.value} given for ${on.value}" }
+    }
+
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        if (outline != null) document.requirePart(on)
+        val outlines = document.character.hairOutlines
+        val at = outlines.indexOfFirst { it.on == on }
+        val old = outlines.getOrNull(at)
+        val now = when {
+            outline == null -> outlines.filterNot { it.on == on }
+            old == null -> (index ?: outlines.size).coerceIn(0, outlines.size).let { outlines.take(it) + outline + outlines.drop(it) }
+            else -> outlines.map { if (it.on == on) outline else it }
+        }
+        val undo = if (old == null) SetHairOutline(on, null) else SetHairOutline(on, old, at)
+        return Applied(document.copy(character = document.character.copy(hairOutlines = now)), undo)
+    }
+}
+
 /** Sets the character's collision shapes to [colliders]; every part they ride exists. */
 @Serializable
 @SerialName("setColliders")
