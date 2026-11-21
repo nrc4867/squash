@@ -3,7 +3,6 @@ package dev.chieppa.squash.character.viewkeys
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.copies.DEGREES_TO_RADIANS
 import dev.chieppa.squash.character.copies.turnedAbout
-import dev.chieppa.squash.character.hair.shellGroupId
 import dev.chieppa.squash.character.surface.isRun
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -17,7 +16,6 @@ internal fun turnedUp(vector: Vec3, frame: HeadFrame, degrees: Float): Vec3 =
 /**
  * [part]'s mesh's change at one direction in its own space, every vertex taking its run's or piece's map, then turned with its head's
  * face where the face reaches its root or, on the head, the piece's middle, half of it for an ear, a horn or hair; null where none moves it.
- * A short-hair shell lying on the head moves as the head does, each vertex turned with the face as far as the face reaches it.
  */
 /** What sits on a head without being part of its face, ears, horns and hair, and how much of the face's turn it takes wherever it sits, so it stays clear of the turned face. */
 private val OFF_FACE = setOf(Role.EAR, Role.HORN, Role.HAIR)
@@ -33,22 +31,21 @@ internal fun partDelta(part: PlacedPart, chains: KeyChains, head: PartId): Float
     val delta = FloatArray(mesh.vertexCount * DELTA_FLOATS)
     var first = 0
     val ranges = part.surface.patches.map { patch -> (first until first + patch.nu * patch.nv).also { first += patch.nu * patch.nv } to patch }
-    val shell = part.locks?.group == shellGroupId(head)
-    val offFace = (part.role ?: part.template.role) in OFF_FACE && !shell
+    val offFace = (part.role ?: part.template.role) in OFF_FACE
     val rootTurn = if (id == head) 0f else if (offFace) degrees * OFF_FACE_SHARE else degrees * follow.mask(part.origin, frame)
     val pieceTurns = ranges.associate { (_, patch) ->
         patch.name to if (id == head && !isRun(patch)) degrees * follow.mask(part.origin + part.surface.shown(patch.middle()), frame) else rootTurn
     }
-    val whole = if (shell) chains.of(head, null) else chains.of(id, null)
+    val whole = chains.of(id, null)
     var any = false
     for (v in 0 until mesh.vertexCount) {
         val patch = ranges.firstOrNull { v in it.first }?.second
-        val map = if (shell) whole else patch?.let { chains.of(id, it.name) } ?: whole
-        val at = v * RenderMesh.FLOATS_PER_VERTEX
-        val point = part.origin + part.surface.shown(mesh.vertices.vec(at))
-        val turn = if (shell) degrees * follow.mask(point, frame) else patch?.let { pieceTurns[it.name] } ?: rootTurn
+        val map = patch?.let { chains.of(id, it.name) } ?: whole
+        val turn = patch?.let { pieceTurns[it.name] } ?: rootTurn
         if (map == KeyAffine.IDENTITY && turn == 0f) continue
         any = true
+        val at = v * RenderMesh.FLOATS_PER_VERTEX
+        val point = part.origin + part.surface.shown(mesh.vertices.vec(at))
         val moved = chains.follow(head).turned(map(point), frame, turn)
         delta.put(v * DELTA_FLOATS, part.surface.shown(moved - point))
         for (offset in listOf(RenderMesh.NORMAL_OFFSET_FLOATS, RenderMesh.PROXY_OFFSET_FLOATS)) {

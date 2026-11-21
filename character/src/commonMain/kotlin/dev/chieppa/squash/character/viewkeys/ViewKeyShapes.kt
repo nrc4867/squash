@@ -7,6 +7,7 @@ import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.isRun
 import dev.chieppa.squash.character.copies.DEGREES_TO_RADIANS
 import dev.chieppa.squash.character.copies.turnedAbout
+import dev.chieppa.squash.character.hair.shellGroupId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.ViewKeys
 import dev.chieppa.squash.geom.Patch
@@ -20,7 +21,8 @@ internal const val DELTA_FLOATS = 9
 /**
  * A character's head cheats built once at every key direction on the meshes it already has, so a view only blends them: for each head
  * its frame at rest; for the one surface the vertices a key moves, each with its change at every direction and the head it turns with;
- * for each separate part a key moves, every vertex's change at every direction, in the part's own space. The one surface keeps its
+ * for each separate part a key moves, every vertex's change at every direction, in the part's own space, a short-hair shell's taken
+ * from its head's on the one surface so it rides the skin under it ([shellDeltas]). The one surface keeps its
  * vertices, quads and coordinates, so its paint, ink marks and eyes ride on it as on a pose. Built by [of].
  */
 class ViewKeyShapes internal constructor(
@@ -70,9 +72,11 @@ class ViewKeyShapes internal constructor(
             val parts = character.parts.mapNotNull { part ->
                 val id = part.id ?: return@mapNotNull null
                 if (part.copies != null) return@mapNotNull null
-                val head = lookup.headOf(id) ?: return@mapNotNull null
+                val shellOn = part.locks?.takeIf { it.group == shellGroupId(it.head) }?.head
+                val head = lookup.headOf(id) ?: shellOn ?: return@mapNotNull null
                 if (head !in frames) return@mapNotNull null
-                val deltas = chains.map { partDelta(part, it, head) }
+                val shared = if (shellOn == head && surface != null && built != null) shellDeltas(part, head, surface, built, frames.getValue(head)) else null
+                val deltas = shared ?: chains.map { partDelta(part, it, head) }
                 if (deltas.all { it == null }) null else id to PartDeltas(head, deltas)
             }.toMap()
             return ViewKeyShapes(
