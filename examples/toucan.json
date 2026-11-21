@@ -609,10 +609,14 @@
                                 "name": "mouth",
                                 "roles": [
                                     {
-                                        "role": "inner"
+                                        "role": "inner",
+                                        "ink": false,
+                                        "fill": "mouth"
                                     },
                                     {
-                                        "role": "tongue"
+                                        "role": "tongue",
+                                        "ink": false,
+                                        "fill": "tongue"
                                     },
                                     {
                                         "role": "teeth"
@@ -2062,6 +2066,22 @@
                         "red": 0.16,
                         "green": 0.3,
                         "blue": 0.26
+                    }
+                },
+                {
+                    "name": "mouth",
+                    "color": {
+                        "red": 0.45,
+                        "green": 0.17,
+                        "blue": 0.2
+                    }
+                },
+                {
+                    "name": "tongue",
+                    "color": {
+                        "red": 0.86,
+                        "green": 0.5,
+                        "blue": 0.55
                     }
                 }
             ]

@@ -30,13 +30,12 @@ class TeethLayoutTest {
     private fun dentition(level: TeethLevel, lower: Jaw = Jaw()) = MouthDentition(types, Jaw(level, listOf(row)), lower)
 
     /** A level seat two units wide, its jaws on the line y = 0. */
-    private class FlatSeat(private val scale: Float = 1f) : TeethSeat {
+    private class FlatSeat : TeethSeat {
         override val middle = 0f
         override val width = 2f
         override fun reach(sign: Int) = 1f
         override fun upperLine(x: Float) = 0f
         override fun lowerLine(x: Float) = 0f
-        override fun heightScale(x: Float) = scale
     }
 
     @Test
@@ -65,13 +64,11 @@ class TeethLayoutTest {
     }
 
     @Test
-    fun anUpperToothHangsDownTheLowerStandsUpAndTheSeatsHeightScaleStretchesThem() {
+    fun anUpperToothHangsDownAndTheLowerStandsUp() {
         val lower = Jaw(TeethLevel.BLOCKS, listOf(ToothRow(listOf(ToothSlot("front")))))
         val teeth = layTeeth(MouthDentition(types, Jaw(TeethLevel.BLOCKS, listOf(ToothRow(listOf(ToothSlot("front"))))), lower), FlatSeat())
         assertEquals(0.2f, teeth.filter { it.jaw == JawName.UPPER }.maxOf { tooth -> tooth.loop.maxOf { it.y } }, SLACK)
         assertEquals(-0.2f, teeth.filter { it.jaw == JawName.LOWER }.minOf { tooth -> tooth.loop.minOf { it.y } }, SLACK)
-        val stretched = layTeeth(MouthDentition(types, Jaw(TeethLevel.BLOCKS, listOf(ToothRow(listOf(ToothSlot("front"))))), Jaw()), FlatSeat(scale = 2f))
-        assertEquals(0.4f, stretched.maxOf { tooth -> tooth.loop.maxOf { it.y } }, SLACK)
     }
 
     @Test

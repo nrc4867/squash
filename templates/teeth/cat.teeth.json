@@ -10,8 +10,8 @@
       "tip": "round"
     },
     "canine": {
-      "width": 0.07,
-      "length": 0.17,
+      "width": 0.12,
+      "length": 0.4,
       "tip": "point",
       "curve": 0.15
     },
@@ -41,7 +41,8 @@
             "type": "incisor"
           },
           {
-            "type": "canine"
+            "type": "canine",
+            "gap": 0.2
           },
           {
             "type": "premolar"
@@ -75,7 +76,8 @@
           },
           {
             "type": "canine",
-            "length": 0.13
+            "gap": 0.2,
+            "length": 0.28
           },
           {
             "type": "premolar"

@@ -85,7 +85,8 @@ fun Graph.partShapesNode(
         val mouths = openMouths(part, resolved, surfaces)
         val jaw = shape.jawMouth?.let { mouth -> surfaces[part]?.let { jawMouthShapes(part, mouth, it) } }.orEmpty()
         val lines = inkLines(resolved).filter { it.id !in mouths.replaced } + mouths.lines
-        HeldShapes(resolved.baseSlot, colorShapes(part, resolved, shape, surfaces) + mouths.shapes + jaw, surfaces, step, lines)
+        val painted = if (mouths.regions.isEmpty()) resolved else resolved.copy(regions = resolved.regions.filterNot { it.id in mouths.regions })
+        HeldShapes(resolved.baseSlot, colorShapes(part, painted, shape, surfaces) + mouths.shapes + jaw, surfaces, step, lines)
     }
 }
 

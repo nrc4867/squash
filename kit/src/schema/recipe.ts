@@ -438,7 +438,7 @@ export interface LooseEnd {
 
 /** A mouth's controls. */
 export interface MarkControls {
-  /** How far the mouth opens: 0 closed, 1 open. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the upper lip and a lower lip below it. */
+  /** How far the mouth opens: 0 closed, 1 open. Parts the lips on the head's surface: the inner, tongue and teeth roles show between the upper lip and a lower lip below it. On a beak's seam it drops the lower beak on its jaw instead. */
   open?: number;
   /** Draws the corners out (1) or in (-1). */
   wide?: number;

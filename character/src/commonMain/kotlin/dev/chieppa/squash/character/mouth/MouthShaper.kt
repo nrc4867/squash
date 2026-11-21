@@ -107,7 +107,6 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
         override fun reach(sign: Int) = if (sign > 0) right - middle else middle - left
         override fun upperLine(x: Float) = lipAt(x)
         override fun lowerLine(x: Float) = lipAt(x) + drop(x)
-        override fun heightScale(x: Float) = drawing.heightScale(Vec2(x, lipAt(x)))
     }
 
     fun shaped(): FlatMouth {
@@ -127,7 +126,8 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
             opening = opening,
             teeth = teeth,
             tongue = tongue,
-            lips = lipBands(),
+            lips = lipFills(),
+            lipsDrawn = lipsDrawn,
             lipMoved = !c.drawnLine || covers.isNotEmpty(),
             openingCorners = if (opening == null || drawnInner != null) emptySet() else setOf(0, SAMPLES - 1),
         )
@@ -210,6 +210,33 @@ private class Shaping(private val drawing: MouthDrawing, private val c: MarkCont
         val press = max(0f, -c.lowerLip)
         val tuck = if (tucked) max(0f, c.lowerLip) else 0f
         return share * width * sqrt(max(0f, 1f - a * a)) * (1f - PRESS_THIN * press - TUCK_THIN * tuck + ROUND_FULL * c.round)
+    }
+
+    /**
+     * The lips' fill: the drawn lip shapes carried by the lips as they move, else, when the lip line's role is filled, a band above the
+     * upper lip and one below the lower.
+     */
+    private fun lipFills(): List<List<Vec2>> = if (lipsDrawn) drawing.lipShapes.map(::followed) else lipBands()
+
+    private val lipsDrawn = drawing.lipShapes.any { it.isNotEmpty() }
+
+    /**
+     * A drawn lip shape where the lips hold it now: one lying mostly above the lip line rides the upper lip and one below it the lower, each
+     * place kept at its height off the line as the lip's band thins or fills, and drawn in or out with the corners.
+     */
+    private fun followed(shape: List<Vec2>): List<Vec2> {
+        val upperShape = shape.sumOf { (it.y - lipAt(it.x)).toDouble() } < 0.0
+        val press = max(0f, -c.lowerLip)
+        val tuck = max(0f, c.lowerLip)
+        val thick = 1f - PRESS_THIN * press + ROUND_FULL * c.round
+        return shape.map { p ->
+            val off = p.y - lipAt(p.x)
+            if (upperShape) {
+                Vec2(xOf(p.x), upperY(p.x) + off * thick)
+            } else {
+                Vec2(xOf(p.x), max(lowerY(p.x), upperY(p.x)) + off * (thick - TUCK_THIN * tuck))
+            }
+        }
     }
 
     /** The two lips' filled bands, above the upper lip and below the lower, when the lip line's role is filled. */

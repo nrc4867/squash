@@ -18,7 +18,7 @@ Each role's marks are mark ids on the same part. A mouth rests closed: the openi
 
 | control | meaning |
 | --- | --- |
-| `open` | How far the mouth opens: 0 closed, 1 open. Drives the head's jaw where its template has one and parts the lips on the surface either way: the inner, tongue and teeth roles show between the upper lip and a lower lip below it. |
+| `open` | How far the mouth opens: 0 closed, 1 open. Parts the lips on the head's surface: the inner, tongue and teeth roles show between the upper lip and a lower lip below it. On a beak's seam it drops the lower beak on its jaw instead. |
 | `wide` | Draws the corners out (1) or in (-1). |
 | `round` | Puckers the mouth to a narrow, round opening. |
 | `smile` | Lifts the corners (1) or drops them (-1); a mood a spoken shape's own smile adds to. |
@@ -53,12 +53,12 @@ A mouth talks in the style its group's `style` names, else the one its head temp
 
 | style | line | speaks | depth | carve | scale |
 | --- | --- | --- | --- | --- | --- |
-| `beak` | seam | no | 0.45 | 0.2 | wide 0.0, round 0.0, smile 0.0, upperLip 0.0, lowerLip 0.0 |
+| `beak` | seam | yes | 0.45 | 0.2 | wide 0.0, round 0.0, smile 0.0, upperLip 0.0, lowerLip 0.0 |
 | `lips` | front | yes | 0.45 | 0.2 | all 1 |
-| `long-muzzle` | muzzle | no | 0.55 | 0.2 | wide 0.2, round 0.25, smile 0.6 |
+| `long-muzzle` | muzzle | no | 0.55 | 0.2 | wide 0.2, round 0.25, smile 0.6, upperLip 0.25 |
 | `minimal` | front | yes | 0.3 | 0.2 | wide 0.4, round 0.6, smile 0.5, upperLip 0.0, lowerLip 0.0, tongue 0.0 |
 | `painted` | front | yes | 0.45 | 0.0 | all 1 |
-| `short-muzzle` | muzzle | no | 0.4 | 0.2 | wide 0.4, round 0.4 |
+| `short-muzzle` | muzzle | yes | 0.4 | 0.2 | wide 0.4, round 0.4, upperLip 0.25 |
 | `wide-jaw` | front | no | 0.3 | 0.2 | round 0.3, upperLip 0.3 |
 
 The `lips` style's shapes, which the other presets share before their scales:
