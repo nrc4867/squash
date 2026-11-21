@@ -6,6 +6,7 @@ import dev.chieppa.squash.document.LockGroupKind
 import dev.chieppa.squash.document.LockPhysics
 import dev.chieppa.squash.document.LockSection
 import dev.chieppa.squash.document.LockTip
+import dev.chieppa.squash.document.LockTrim
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Parting
 import dev.chieppa.squash.document.PartingKind
@@ -24,6 +25,15 @@ enum class HairPreset {
     @SerialName("ponytail") PONYTAIL,
     @SerialName("sideSwept") SIDE_SWEPT,
     @SerialName("curly") CURLY,
+    @SerialName("buzzCut") BUZZ_CUT,
+    @SerialName("fade") FADE,
+    @SerialName("flatTop") FLAT_TOP,
+    @SerialName("undercut") UNDERCUT,
+    @SerialName("bluntBob") BLUNT_BOB,
+    @SerialName("braid") BRAID,
+    @SerialName("twinBraids") TWIN_BRAIDS,
+    @SerialName("bun") BUN,
+    @SerialName("spaceBuns") SPACE_BUNS,
 }
 
 /**
@@ -56,6 +66,10 @@ class PresetGroup(
     val seed: Int = 1,
     val physics: LockPhysics = LockPhysics(),
     val flow: Float = 1f,
+    val lie: Float = LOCK_LIE,
+    val trim: LockTrim? = null,
+    val coil: Float = 0f,
+    val stand: Float = 0f,
 )
 
 private val SOFT = LockPhysics(stiffness = 0.35f, damping = 0.3f, angleLimit = 70f)
@@ -103,7 +117,7 @@ private val PRESETS: Map<HairPreset, List<PresetGroup>> = mapOf(
         PresetGroup("crown", LockGroupKind.CROWN, 9, 1.9f, 0.7f, 0.32f, rise = 40f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, spread = 1.2f, around = 180f, height = -0.4f, tie = 0.35f, physics = SPRINGY, flow = 0f),
         PresetGroup("fringe", LockGroupKind.FRINGE, 4, 0.9f, 0.55f, 0.26f, rise = 4f, fall = 0.4f, taper = 0.95f, tip = LockTip.ROUND, curl = -1.8f, layer = 1, physics = SPRINGY),
     ),
-)
+) + CUT_PRESETS
 
 /** How far to the character's right a side-swept preset's parting sits, -1 to 1 of the most a parting sits off the middle. */
 private const val SIDE_PART_AT = 0.62f
@@ -119,7 +133,10 @@ fun presetFlow(preset: HairPreset, on: PartId): ScalpFlow = when (preset) {
     HairPreset.LONG_STRAIGHT -> ScalpFlow(on, parting = Parting(PartingKind.CENTRE, clean = 0.9f))
     HairPreset.SIDE_SWEPT -> ScalpFlow(on, parting = Parting(PartingKind.SIDE, at = SIDE_PART_AT, clean = 0.85f), sweep = -0.35f)
     HairPreset.SHORT_SPIKY -> ScalpFlow(on, Whorl(up = SPIKY_WHORL_UP))
-    HairPreset.BOB, HairPreset.PONYTAIL, HairPreset.CURLY -> ScalpFlow(on)
+    HairPreset.UNDERCUT -> ScalpFlow(on, parting = Parting(PartingKind.SIDE, at = SIDE_PART_AT, clean = 0.85f), sweep = -0.3f)
+    HairPreset.TWIN_BRAIDS -> ScalpFlow(on, parting = Parting(PartingKind.CENTRE, clean = 0.9f))
+    HairPreset.BOB, HairPreset.PONYTAIL, HairPreset.CURLY, HairPreset.BUZZ_CUT, HairPreset.FADE, HairPreset.FLAT_TOP, HairPreset.BLUNT_BOB,
+    HairPreset.BRAID, HairPreset.BUN, HairPreset.SPACE_BUNS -> ScalpFlow(on)
 }
 
 /** The names of [preset]'s groups, which are their ids with the prefix a character gives them. */
@@ -163,5 +180,9 @@ fun presetGroups(preset: HairPreset, on: PartId, mass: PartId?, reach: Float, pr
             color = color,
             physics = g.physics,
             flow = g.flow,
+            lie = g.lie,
+            trim = g.trim,
+            coil = g.coil,
+            stand = g.stand,
         )
     }

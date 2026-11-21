@@ -5,6 +5,8 @@ import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SetColliders
+import dev.chieppa.squash.document.SetHairShell
+import dev.chieppa.squash.document.hairShellOn
 import dev.chieppa.squash.document.SetLockGroup
 import dev.chieppa.squash.document.SetScalpFlow
 import dev.chieppa.squash.document.Together
@@ -18,13 +20,15 @@ fun massOn(character: Character, head: PartId): PartId? =
 
 /**
  * One step that gives [head] the lock groups of [preset] in place of those it holds, rooted on its hair mass, sized to the head as
- * [assembled] builds it, with the preset's scalp flow, and sets up the body's collision shapes where the character holds none. A head with no mass gets one fitted over
- * it in the same step, so no scalp shows between the locks. Null when the head builds nothing.
+ * [assembled] builds it, with the preset's scalp flow and its short-hair shell (or none), and sets up the body's collision shapes where
+ * the character holds none. A head with no mass gets one fitted over it in the same step where the preset lies on one, so no scalp shows
+ * between the locks; a preset cut short at the sides roots on the head under its shell. Null when the head builds nothing.
  */
 fun hairPresetCommand(character: Character, assembled: AssembledCharacter, head: PartId, preset: HairPreset): DocumentCommand? {
     val placed = assembled.part(head) ?: return null
-    val held = massOn(character, head)
-    val fitted = if (held == null) fittedMass(character, placed, head) else null
+    val massed = presetMassed(preset)
+    val held = massOn(character, head).takeIf { massed }
+    val fitted = if (held == null && massed) fittedMass(character, placed, head) else null
     val mass = held ?: fitted?.id
     val reach = headReach(Scalp.of(placed, held?.let(assembled::part)))
     val others = character.lockGroups.filter { it.on != head }.map { it.id.value }.toSet()
@@ -33,5 +37,7 @@ fun hairPresetCommand(character: Character, assembled: AssembledCharacter, head:
     val added = presetGroups(preset, head, mass, reach, prefix).map { SetLockGroup(it.id, it) }
     val colliders = if (character.colliders.isEmpty()) listOf(SetColliders(autoColliders(assembled))) else emptyList()
     val flow = SetScalpFlow(head, presetFlow(preset, head))
-    return Together(fitted?.commands.orEmpty() + removed + added + flow + colliders)
+    val shell = presetShell(preset, head)
+    val shells = if (shell == null && character.hairShellOn(head) == null) emptyList() else listOf(SetHairShell(head, shell))
+    return Together(fitted?.commands.orEmpty() + removed + added + flow + shells + colliders)
 }

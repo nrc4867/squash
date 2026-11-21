@@ -32,6 +32,18 @@ A group the recipe names by a preset group's id changes only the fields it sets;
 | `band` | none | - | The palette slot of a band round the tie; no band when left out. |
 | `color` | none | - | Its palette slot; the inner mass's base colour, else the head's, when left out. |
 | `flow` | 1.0 | 0 to 1 | How far its locks grow the way the scalp's flow says, 0 its kind's own way (down the head; a crown's swirling out from its middle) to 1 the flow's. |
+| `lie` | 0.55 | 0.05 to 0.95 | How much of each lock's length lies along the head before it lifts off by its rise, 0.05 to 0.95: low stands it out from near its root, a brush or a flat top. |
+| `stand` | 0.0 | 0 to 1 | How far each lock turns from the way it grows toward straight up from its root, 0 following the head to 1 standing straight up: a brush, a flat top. |
+| `trim` | none | - | A plane its lock tips are cut to; uncut when left out. |
+| `coil` | 0.0 | 0 to 3 | With tie, how many turns each lock coils round the tie into a bun: about 1.5 a bun; 0 hangs free. |
+
+A `trim` cuts each lock where its grown path first crosses a plane from the side its root lies on: a bob's hem, bangs cut straight, the level top of a flat top. A lock that never reaches it keeps its length. A blunt cut ends square, the lock as wide as it was where it was cut.
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `trim.level` | -0.6 | -3 to 2 | How high the cut lies above the skull's middle, a share of the head's reach from its middle: negative below it, toward the jaw; about 1.1 over the top of the head. |
+| `trim.tilt` | 0.0 | -60 to 60 | Degrees the cut tilts about the head's side to side: positive stands its front higher, a bob longer at the back. |
+| `trim.blunt` | true | - | Whether a cut lock ends square, as wide as it was where it was cut; a lock not cut keeps its own tip. |
 
 | kind | roots and grows |
 | --- | --- |
@@ -47,6 +59,7 @@ A group the recipe names by a preset group's id changes only the fields it sets;
 | --- | --- |
 | `ribbon` | a flattened lens cupped round the head: smooth, straight or wavy hair, a bob, long hair |
 | `clump` | a rounded egg: spiky, short or curly hair, tufts |
+| `braid` | three round strands plaited along the lock, each crossing over the middle in turn, tapering to a tie with a short loose tail past it, the tie in the group's `band` slot where it has one: a braid, twin braids |
 
 | tip | when |
 | --- | --- |
@@ -63,71 +76,163 @@ Each preset's groups, their sizes (`length`, `width`, `thickness`) as shares of 
 
 Flow: a crown whorl, no parting.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `back` | back | 14 | 0.75 | 0.42 | 0.13 | 28 | 0.15 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 |
-| `left` | left | 5 | 0.4 | 0.4 | 0.12 | 6 | 0.6 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 |
-| `right` | right | 5 | 0.4 | 0.4 | 0.12 | 6 | 0.6 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 |
-| `fringe` | fringe | 9 | 1.15 | 0.5 | 0.12 | 12 | 0.3 | 0.1 | 0 | 0.1 | clump | pointed | 1 | 0 | 1 |
-| `strays` | strays | 2 | 0.3 | 0.3 | 0.1 | 12 | 0.1 | 0 | 0 | 0.08 | clump | pointed | 1 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 14 | 0.75 | 0.42 | 0.13 | 28 | 0.15 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `left` | left | 5 | 0.4 | 0.4 | 0.12 | 6 | 0.6 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `right` | right | 5 | 0.4 | 0.4 | 0.12 | 6 | 0.6 | 0 | 0 | 0.1 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 9 | 1.15 | 0.5 | 0.12 | 12 | 0.3 | 0.1 | 0 | 0.1 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `strays` | strays | 2 | 0.3 | 0.3 | 0.1 | 12 | 0.1 | 0 | 0 | 0.08 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### bob
 
 Flow: a crown whorl, no parting.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `back` | back | 9 | 1.55 | 0.85 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 |
-| `left` | left | 5 | 1.3 | 0.8 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 |
-| `right` | right | 5 | 1.3 | 0.8 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 |
-| `fringe` | fringe | 7 | 0.85 | 0.55 | 0.1 | 0 | 0.6 | 0 | 0 | 0.85 | ribbon | round | 1 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 9 | 1.55 | 0.85 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `left` | left | 5 | 1.3 | 0.8 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `right` | right | 5 | 1.3 | 0.8 | 0.12 | 0 | 0.85 | 0 | 0.12 | 0.85 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 7 | 0.85 | 0.55 | 0.1 | 0 | 0.6 | 0 | 0 | 0.85 | ribbon | round | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### longStraight
 
 Flow: a crown whorl, a centre parting.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `back` | back | 16 | 3.6 | 0.6 | 0.14 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 |
-| `left` | left | 9 | 3.2 | 0.8 | 0.12 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 |
-| `right` | right | 9 | 3.2 | 0.8 | 0.12 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 |
-| `crown` | crown | 8 | 1 | 0.55 | 0.12 | 0 | 0.7 | 0 | 0 | 0.6 | ribbon | pointed | 1 | 0 | 1 |
-| `top` | top | 12 | 2.4 | 0.6 | 0.1 | 0 | 0.9 | 0 | 0 | 0.45 | ribbon | pointed | 2 | 0 | 1 |
-| `fringe` | fringe | 7 | 1.05 | 0.4 | 0.1 | 4 | 0.6 | 0 | 0 | 0.35 | ribbon | pointed | 1 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 16 | 3.6 | 0.6 | 0.14 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `left` | left | 9 | 3.2 | 0.8 | 0.12 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `right` | right | 9 | 3.2 | 0.8 | 0.12 | 0 | 0.95 | 0 | 0 | 0.45 | ribbon | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `crown` | crown | 8 | 1 | 0.55 | 0.12 | 0 | 0.7 | 0 | 0 | 0.6 | ribbon | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `top` | top | 12 | 2.4 | 0.6 | 0.1 | 0 | 0.9 | 0 | 0 | 0.45 | ribbon | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 7 | 1.05 | 0.4 | 0.1 | 4 | 0.6 | 0 | 0 | 0.35 | ribbon | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### ponytail
 
 Flow: a crown whorl, no parting.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `tail` | back | 7 | 2.2 | 0.45 | 0.15 | 30 | 1 | 0 | 0 | 0.15 | ribbon | pointed | 1 | 0.9 | 0 |
-| `fringe` | fringe | 9 | 0.9 | 0.45 | 0.1 | 4 | 0.6 | 0 | 0 | 0.3 | clump | pointed | 1 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `tail` | back | 7 | 2.2 | 0.45 | 0.15 | 30 | 1 | 0 | 0 | 0.15 | ribbon | pointed | 1 | 0.9 | 0 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 9 | 0.9 | 0.45 | 0.1 | 4 | 0.6 | 0 | 0 | 0.3 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### sideSwept
 
 Flow: a crown whorl, a side parting at 0.62, sweep -0.35.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `back` | back | 11 | 0.8 | 0.46 | 0.13 | 8 | 0.7 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 |
-| `left` | left | 5 | 0.65 | 0.4 | 0.12 | 4 | 0.75 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 |
-| `right` | right | 5 | 0.65 | 0.4 | 0.12 | 4 | 0.75 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 |
-| `crown` | crown | 8 | 0.8 | 0.46 | 0.12 | 0 | 0.5 | 0 | 0 | 0.3 | clump | pointed | 2 | 0 | 1 |
-| `top` | top | 10 | 0.9 | 0.46 | 0.12 | 4 | 0.55 | 0 | 0 | 0.3 | clump | pointed | 1 | 0 | 1 |
-| `fringe` | fringe | 7 | 1.25 | 0.42 | 0.12 | 6 | 0.45 | -0.75 | 0 | 0.25 | clump | pointed | 2 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 11 | 0.8 | 0.46 | 0.13 | 8 | 0.7 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `left` | left | 5 | 0.65 | 0.4 | 0.12 | 4 | 0.75 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `right` | right | 5 | 0.65 | 0.4 | 0.12 | 4 | 0.75 | 0 | 0 | 0.3 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `crown` | crown | 8 | 0.8 | 0.46 | 0.12 | 0 | 0.5 | 0 | 0 | 0.3 | clump | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `top` | top | 10 | 0.9 | 0.46 | 0.12 | 4 | 0.55 | 0 | 0 | 0.3 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 7 | 1.25 | 0.42 | 0.12 | 6 | 0.45 | -0.75 | 0 | 0.25 | clump | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
 
 ### curly
 
 Flow: a crown whorl, no parting.
 
-| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `back` | back | 8 | 1.3 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 |
-| `left` | left | 4 | 1.1 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 |
-| `right` | right | 4 | 1.1 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 |
-| `crown` | crown | 9 | 1.9 | 0.7 | 0.32 | 40 | 0.4 | 0 | -1.8 | 0.95 | clump | round | 1 | 0.35 | 0 |
-| `fringe` | fringe | 4 | 0.9 | 0.55 | 0.26 | 4 | 0.4 | 0 | -1.8 | 0.95 | clump | round | 1 | 0 | 1 |
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 8 | 1.3 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `left` | left | 4 | 1.1 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `right` | right | 4 | 1.1 | 0.55 | 0.26 | 4 | 0.5 | 0 | -1.8 | 0.95 | clump | round | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `crown` | crown | 9 | 1.9 | 0.7 | 0.32 | 40 | 0.4 | 0 | -1.8 | 0.95 | clump | round | 1 | 0.35 | 0 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 4 | 0.9 | 0.55 | 0.26 | 4 | 0.4 | 0 | -1.8 | 0.95 | clump | round | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
+
+### buzzCut
+
+Flow: a crown whorl, no parting.
+
+Shell: thickness 0.014, fade none, shade 0.6.
+
+No inner mass: its locks root on the head.
+
+### fade
+
+Flow: a crown whorl, no parting.
+
+Shell: thickness 0.02, fade high, shade 0.6.
+
+No inner mass: its locks root on the head.
+
+### flatTop
+
+Flow: a crown whorl, no parting.
+
+Shell: thickness 0.016, fade mid, fadeTo 0.15, shade 0.6.
+
+No inner mass: its locks root on the head.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `top` | top | 22 | 1.3 | 0.34 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 0 | 0 | 0 | 0.55 | 0.85 | level 1.32, tilt 0 | 0 |
+| `crown` | crown | 14 | 1.3 | 0.34 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 1 | 0 | 0 | 0.55 | 0.85 | level 1.32, tilt 0 | 0 |
+| `fringe` | fringe | 10 | 1.2 | 0.32 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 1 | 0 | 0 | 0.55 | 0.8 | level 1.32, tilt 0 | 0 |
+| `left` | left | 7 | 1.3 | 0.34 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 0 | 0 | 0 | 0.55 | 0.9 | level 1.32, tilt 0 | 0 |
+| `right` | right | 7 | 1.3 | 0.34 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 0 | 0 | 0 | 0.55 | 0.9 | level 1.32, tilt 0 | 0 |
+| `back` | back | 9 | 1.3 | 0.34 | 0.22 | 0 | 0 | 0 | 0 | 0.95 | clump | round | 0 | 0 | 0 | 0.55 | 0.9 | level 1.32, tilt 0 | 0 |
+
+### undercut
+
+Flow: a crown whorl, a side parting at 0.62, sweep -0.3.
+
+Shell: thickness 0.008, fade none, shade 0.45.
+
+No inner mass: its locks root on the head.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `top` | top | 16 | 1.3 | 0.55 | 0.13 | 4 | 0.4 | 0 | 0 | 0.4 | clump | pointed | 0 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `crown` | crown | 10 | 1 | 0.55 | 0.13 | 2 | 0.5 | 0 | 0 | 0.4 | clump | pointed | 1 | 0 | 1 | 0.55 | 0 | - | 0 |
+| `fringe` | fringe | 5 | 1 | 0.5 | 0.13 | 6 | 0.5 | -0.2 | 0 | 0.35 | clump | pointed | 2 | 0 | 1 | 0.55 | 0 | - | 0 |
+
+### bluntBob
+
+Flow: a crown whorl, no parting.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `back` | back | 10 | 2.2 | 0.85 | 0.12 | 0 | 0.9 | 0 | 0 | 0.9 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | level -0.62, tilt 6 | 0 |
+| `left` | left | 5 | 2 | 0.8 | 0.12 | 0 | 0.9 | 0 | 0 | 0.9 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | level -0.62, tilt 6 | 0 |
+| `right` | right | 5 | 2 | 0.8 | 0.12 | 0 | 0.9 | 0 | 0 | 0.9 | ribbon | round | 0 | 0 | 1 | 0.55 | 0 | level -0.62, tilt 6 | 0 |
+| `fringe` | fringe | 8 | 1.2 | 0.52 | 0.1 | 0 | 0.7 | 0 | 0 | 0.9 | ribbon | round | 1 | 0 | 1 | 0.55 | 0 | level 0.42, tilt 0 | 0 |
+
+### braid
+
+Flow: a crown whorl, no parting.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `braid` | back | 1 | 2.6 | 0.62 | 0.46 | 4 | 1 | 0 | 0 | 0.55 | braid | pointed | 0 | 1 | 0 | 0.55 | 0 | - | 0 |
+
+### twinBraids
+
+Flow: a crown whorl, a centre parting.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `braid-l` | back | 1 | 2.2 | 0.5 | 0.38 | 15 | 1 | 0 | 0 | 0.55 | braid | pointed | 0 | 1 | 0 | 0.55 | 0 | - | 0 |
+| `braid-r` | back | 1 | 2.2 | 0.5 | 0.38 | 15 | 1 | 0 | 0 | 0.55 | braid | pointed | 0 | 1 | 0 | 0.55 | 0 | - | 0 |
+
+### bun
+
+Flow: a crown whorl, no parting.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `bun` | crown | 4 | 1.9 | 0.75 | 0.5 | 70 | 0 | 0 | 0 | 0.85 | clump | round | 0 | 1 | 0 | 0.55 | 0 | - | 1.2 |
+
+### spaceBuns
+
+Flow: a crown whorl, no parting.
+
+| group | kind | count | length | width | thickness | rise | fall | sweep | curl | taper | section | tip | layer | tie | flow | lie | stand | trim | coil |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `bun-l` | left | 4 | 1.3 | 0.6 | 0.42 | 85 | 0 | 0 | 0 | 0.85 | clump | round | 0 | 1 | 0 | 0.55 | 0 | - | 1.2 |
+| `bun-r` | right | 4 | 1.3 | 0.6 | 0.42 | 85 | 0 | 0 | 0 | 0.85 | clump | round | 0 | 1 | 0 | 0.55 | 0 | - | 1.2 |
 
 ## Flow
 
@@ -162,6 +267,34 @@ Which way each lock root grows: a background fall down the head, a whorl spirall
 | `flow.cowlicks[].strength` | 1.0 | 0 to 2 | How strongly it rules the hair over it, 0 not at all to 2. |
 | `flow.cowlicks[].turn` | 0.5 | -1 to 1 | 0 flips the hair back against the flow; 1 swirls it clockwise round the point seen from outside, -1 the other way. |
 | `flow.cowlicks[].lift` | 20.0 | 0 to 60 | Degrees the locks over it lift off the head, most at its middle. |
+
+## Shell
+
+`shell` cuts the hair to the skin over the head: a thin shell lying on the scalp from just outside its hairline to the crown, in a stubble tone, its edge softening into the skin and, with a fade, its tone fading into the skin up the sides and back from the hairline. It is a part of its own riding the head's bone, coloured its tone with the head's own colour laid over it where it fades; locks may lie over it. Each field given replaces the preset's shell's, the defaults below where the preset has none; `removed: true` leaves out the preset's shell.
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `shell.thickness` | 0.012 | 0 to 0.1 | How far it stands off the scalp, a share of the head's reach from its middle: about 0.01 a buzz cut. |
+| `shell.tone` | none | - | Its palette slot; when left out, a stubble tone: the head's colour carried shade of the way toward the hair's. |
+| `shell.shade` | 0.6 | 0 to 1 | How far the stubble tone carries the head's colour toward the hair's, 0 bare skin to 1 the hair's own. |
+| `shell.soft` | 3.0 | 0 to 20 | Degrees over which its edge softens into the skin. |
+| `shell.fade` | none | - | How high up the sides and back it fades into the skin: none, low (just above the ears and nape), mid (to the temples) or high (to the corners of the top). |
+| `shell.fadeTo` | 0.0 | 0 to 1 | How much of its tone is left at the hairline under a fade, 0 bare skin to 1 none faded. |
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `shell.hairline.front` | 32.0 | -60 to 80 | Degrees up the head where it crosses the middle of the forehead. |
+| `shell.hairline.temples` | 36.0 | -60 to 80 | Degrees up the head at its corners above the outer brows: above front recedes them, below rounds them. |
+| `shell.hairline.sideburns` | -6.0 | -60 to 80 | Degrees up the head at the foot of the sideburns, in front of the ears. |
+| `shell.hairline.ears` | 8.0 | -60 to 80 | Degrees up the head over the ears. |
+| `shell.hairline.nape` | -24.0 | -60 to 80 | Degrees up the head at the middle of the nape. |
+
+| fade | reaches |
+| --- | --- |
+| `none` | no fade: the tone is whole down to the hairline |
+| `low` | fades into the skin over about 14 degrees above the hairline round the sides and back: just above the ears and nape |
+| `mid` | over about 26 degrees: to about the temples |
+| `high` | over about 40 degrees: to the corners of the top |
 
 ## Outline
 

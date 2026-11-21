@@ -8,6 +8,12 @@ import dev.chieppa.squash.character.hair.PresetGroup
 import dev.chieppa.squash.character.hair.fittedMassShape
 import dev.chieppa.squash.character.hair.presetFlow
 import dev.chieppa.squash.character.hair.presetLayout
+import dev.chieppa.squash.character.hair.presetMassed
+import dev.chieppa.squash.character.hair.presetShell
+import dev.chieppa.squash.document.HairShell
+import dev.chieppa.squash.document.Hairline
+import dev.chieppa.squash.document.LockTrim
+import dev.chieppa.squash.document.ShellFade
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.Cowlick
 import dev.chieppa.squash.document.LockGroup
@@ -44,6 +50,7 @@ private val KINDS: Map<LockGroupKind, String> = mapOf(
 private val SECTIONS: Map<LockSection, String> = mapOf(
     LockSection.RIBBON to "a flattened lens cupped round the head: smooth, straight or wavy hair, a bob, long hair",
     LockSection.CLUMP to "a rounded egg: spiky, short or curly hair, tufts",
+    LockSection.BRAID to "three round strands plaited along the lock, each crossing over the middle in turn, tapering to a tie with a short loose tail past it, the tie in the group's `band` slot where it has one: a braid, twin braids",
 )
 
 private val TIPS: Map<LockTip, String> = mapOf(
@@ -71,6 +78,10 @@ internal object Hair {
         appendLine()
         append(table(listOf("field", "default", "range", "meaning"), fieldRows(LockGroup.serializer(), LockGroup(LockGroupId("g"), LockGroupKind.FRINGE, PartId("head")), skip = setOf("id", "kind", "on", "mass", "physics", "overrides"))))
         appendLine()
+        appendLine("A `trim` cuts each lock where its grown path first crosses a plane from the side its root lies on: a bob's hem, bangs cut straight, the level top of a flat top. A lock that never reaches it keeps its length. A blunt cut ends square, the lock as wide as it was where it was cut.")
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(LockTrim.serializer(), LockTrim(), owner = "trim")))
+        appendLine()
         append(table(listOf("kind", "roots and grows"), KINDS.map { (kind, text) -> listOf(code(serialName(kind.name)), text) }))
         appendLine()
         append(table(listOf("section", "when"), SECTIONS.map { (section, text) -> listOf(code(serialName(section.name)), text) }))
@@ -85,8 +96,16 @@ internal object Hair {
             appendLine("### ${serialName(preset.name)}")
             appendLine()
             appendLine("Flow: ${flowText(presetFlow(preset, PartId("head")))}.")
-            appendLine()
-            append(table(PRESET_HEADER, presetLayout(preset).map(::presetRow)))
+            presetShell(preset, PartId("head"))?.let { appendLine(); appendLine("Shell: ${shellText(it)}.") }
+            if (!presetMassed(preset)) {
+                appendLine()
+                appendLine("No inner mass: its locks root on the head.")
+            }
+            val layout = presetLayout(preset)
+            if (layout.isNotEmpty()) {
+                appendLine()
+                append(table(PRESET_HEADER, layout.map(::presetRow)))
+            }
         }
         appendLine()
         appendLine("## Flow")
@@ -100,6 +119,16 @@ internal object Hair {
         append(table(listOf("field", "default", "range", "meaning"), fieldRows(Parting.serializer(), Parting(), owner = "flow.part")))
         appendLine()
         append(table(listOf("field", "default", "range", "meaning"), fieldRows(Cowlick.serializer(), Cowlick(), owner = "flow.cowlicks[]")))
+        appendLine()
+        appendLine("## Shell")
+        appendLine()
+        appendLine("`shell` cuts the hair to the skin over the head: a thin shell lying on the scalp from just outside its hairline to the crown, in a stubble tone, its edge softening into the skin and, with a fade, its tone fading into the skin up the sides and back from the hairline. It is a part of its own riding the head's bone, coloured its tone with the head's own colour laid over it where it fades; locks may lie over it. Each field given replaces the preset's shell's, the defaults below where the preset has none; `removed: true` leaves out the preset's shell.")
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(HairShell.serializer(), HairShell(PartId("head")), owner = "shell", skip = setOf("on", "hairline"))))
+        appendLine()
+        append(table(listOf("field", "default", "range", "meaning"), fieldRows(Hairline.serializer(), Hairline(), owner = "shell.hairline")))
+        appendLine()
+        append(table(listOf("fade", "reaches"), FADES.map { (fade, text) -> listOf(code(serialName(fade.name)), text) }))
         appendLine()
         appendLine("## Outline")
         appendLine()
@@ -120,12 +149,27 @@ internal object Hair {
         append(table(listOf("parameter", "fitted", "range", "meaning"), massRows(templates)))
     }
 
-    private val PRESET_HEADER = listOf("group", "kind", "count", "length", "width", "thickness", "rise", "fall", "sweep", "curl", "taper", "section", "tip", "layer", "tie", "flow")
+    private val PRESET_HEADER = listOf("group", "kind", "count", "length", "width", "thickness", "rise", "fall", "sweep", "curl", "taper", "section", "tip", "layer", "tie", "flow", "lie", "stand", "trim", "coil")
 
     private fun presetRow(g: PresetGroup): List<String> = listOf(
         code(g.name), serialName(g.kind.name), g.count.toString(), num(g.length), num(g.width), num(g.thickness), num(g.rise), num(g.fall),
         num(g.sweep), num(g.curl), num(g.taper), serialName(g.section.name), serialName(g.tip.name), g.layer.toString(), num(g.tie), num(g.flow),
+        num(g.lie), num(g.stand), g.trim?.let { "level ${num(it.level)}, tilt ${num(it.tilt)}" } ?: "-", num(g.coil),
     )
+
+    private val FADES: Map<ShellFade, String> = mapOf(
+        ShellFade.NONE to "no fade: the tone is whole down to the hairline",
+        ShellFade.LOW to "fades into the skin over about 14 degrees above the hairline round the sides and back: just above the ears and nape",
+        ShellFade.MID to "over about 26 degrees: to about the temples",
+        ShellFade.HIGH to "over about 40 degrees: to the corners of the top",
+    )
+
+    private fun shellText(shell: HairShell): String = listOfNotNull(
+        "thickness ${num(shell.thickness)}",
+        "fade ${serialName(shell.fade.name)}",
+        shell.fadeTo.takeIf { it > 0f }?.let { "fadeTo ${num(it)}" },
+        "shade ${num(shell.shade)}",
+    ).joinToString(", ")
 
     private fun flowText(flow: ScalpFlow): String {
         val parting = when (flow.parting.kind) {

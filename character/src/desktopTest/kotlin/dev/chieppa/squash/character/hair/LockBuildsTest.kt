@@ -160,6 +160,10 @@ class LockBuildsTest {
             val groups = presetGroups(preset, headId, null, 0.2f)
             assertEquals(presetGroupNames(preset), groups.map { it.id.value })
             assertEquals(groups.size, groups.map { it.id }.toSet().size)
+            if (groups.isEmpty()) {
+                assertNotNull(presetShell(preset, headId), "$preset gives neither groups nor a shell")
+                continue
+            }
             val twice = presetGroups(preset, headId, null, 0.4f)
             assertEquals(groups.first().length * 2f, twice.first().length, 1e-5f)
         }

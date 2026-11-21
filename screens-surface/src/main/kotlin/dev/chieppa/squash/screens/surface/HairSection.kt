@@ -39,8 +39,17 @@ import dev.chieppa.squash.uidesign.generated.face_hair_kind_strays
 import dev.chieppa.squash.uidesign.generated.face_hair_kind_top
 import dev.chieppa.squash.uidesign.generated.face_hair_length
 import dev.chieppa.squash.uidesign.generated.face_hair_preset
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_blunt_bob
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_bob
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_braid
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_bun
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_buzz_cut
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_curly
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_fade
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_flat_top
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_space_buns
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_twin_braids
+import dev.chieppa.squash.uidesign.generated.face_hair_preset_undercut
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_long_straight
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_ponytail
 import dev.chieppa.squash.uidesign.generated.face_hair_preset_short_spiky
@@ -73,6 +82,15 @@ private val PRESET_NAMES: Map<HairPreset, StringResource> = mapOf(
     HairPreset.PONYTAIL to Res.string.face_hair_preset_ponytail,
     HairPreset.SIDE_SWEPT to Res.string.face_hair_preset_side_swept,
     HairPreset.CURLY to Res.string.face_hair_preset_curly,
+    HairPreset.BUZZ_CUT to Res.string.face_hair_preset_buzz_cut,
+    HairPreset.FADE to Res.string.face_hair_preset_fade,
+    HairPreset.FLAT_TOP to Res.string.face_hair_preset_flat_top,
+    HairPreset.UNDERCUT to Res.string.face_hair_preset_undercut,
+    HairPreset.BLUNT_BOB to Res.string.face_hair_preset_blunt_bob,
+    HairPreset.BRAID to Res.string.face_hair_preset_braid,
+    HairPreset.TWIN_BRAIDS to Res.string.face_hair_preset_twin_braids,
+    HairPreset.BUN to Res.string.face_hair_preset_bun,
+    HairPreset.SPACE_BUNS to Res.string.face_hair_preset_space_buns,
 )
 
 private val KIND_NAMES: Map<LockGroupKind, StringResource> = mapOf(
@@ -87,8 +105,9 @@ private val KIND_NAMES: Map<LockGroupKind, StringResource> = mapOf(
 
 /**
  * The Hair section of the Face inspector, on the face's head: Preset, whose menu gives the head a preset's lock groups in one step, a row
- * a group, and the picked group's count, length, spread and curl, each drag one undo step, and Remove group; then, on a head with
- * locks, its scalp flow ([FlowSettings]) and its outline ([OutlineSettings]).
+ * a group, and the picked group's count, length, spread and curl, its lie, trim and coil ([GroupCutSettings]), each drag one undo step,
+ * and Remove group; then the hair cut to the skin ([ShellSettings]), and on a head with locks, its scalp flow ([FlowSettings]) and its
+ * outline ([OutlineSettings]).
  */
 @Composable
 fun HairSection(state: AppState, session: CharacterSession) {
@@ -124,6 +143,7 @@ fun HairSection(state: AppState, session: CharacterSession) {
         if (group != null) {
             key(group.id) { GroupSettings(session, group) { picked = null } }
         }
+        ShellSettings(session, head)
         if (groups.isNotEmpty()) {
             FlowSettings(session, head)
             OutlineSettings(state, session, head)
@@ -139,6 +159,7 @@ private fun GroupSettings(session: CharacterSession, group: LockGroup, removed: 
     GroupSlider(session, id, "length", stringResource(Res.string.face_hair_length), group.length, SHORTEST_LOCK..LONGEST_LOCK.coerceAtMost(group.length * 3f).coerceAtLeast(0.3f)) { g, v -> g.copy(length = v) }
     GroupSlider(session, id, "spread", stringResource(Res.string.face_hair_spread), group.spread, 0f..2f) { g, v -> g.copy(spread = v) }
     GroupSlider(session, id, "curl", stringResource(Res.string.face_hair_curl), group.curl, -MOST_LOCK_CURL..MOST_LOCK_CURL) { g, v -> g.copy(curl = v) }
+    GroupCutSettings(session, group)
     Button(stringResource(Res.string.face_hair_remove), {
         session.send(SetLockGroup(id, null))
         removed()
@@ -147,7 +168,7 @@ private fun GroupSettings(session: CharacterSession, group: LockGroup, removed: 
 
 /** One of a group's numbers on a slider; one drag is one undo step, the values it passes through previews of a single [SetLockGroup]. */
 @Composable
-private fun GroupSlider(
+internal fun GroupSlider(
     session: CharacterSession,
     id: LockGroupId,
     name: String,

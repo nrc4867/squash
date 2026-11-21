@@ -3,10 +3,9 @@ package dev.chieppa.squash.character.hair
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.BuildStages
 import dev.chieppa.squash.character.build.PartBuilder
-import dev.chieppa.squash.character.build.PartColor
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.PartTemplate
-import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.HairShell
 import dev.chieppa.squash.document.LockGroup
 import dev.chieppa.squash.document.LockGroupId
 import dev.chieppa.squash.document.LockGroupKind
@@ -17,12 +16,11 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Parting
 import dev.chieppa.squash.document.Role
 import dev.chieppa.squash.document.ScalpFlow
-import dev.chieppa.squash.document.blendedSlot
-import dev.chieppa.squash.document.scalpFlowOn
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.lockGroupPartId
 import dev.chieppa.squash.geom.AxisSpline
 import dev.chieppa.squash.geom.BandBuilder
+import dev.chieppa.squash.geom.BraidBuilder
 import dev.chieppa.squash.geom.ClumpShape
 import dev.chieppa.squash.geom.LockBuilder
 import dev.chieppa.squash.geom.LockProfile
@@ -30,6 +28,7 @@ import dev.chieppa.squash.geom.MeshBuilder
 import dev.chieppa.squash.geom.PartMesh
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.Patch
+import dev.chieppa.squash.geom.SlottedCut
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
@@ -75,21 +74,37 @@ const val BAND_PATCH = "band"
 /** The part id a lock group's band is built as. */
 fun lockBandPartId(id: LockGroupId): PartId = PartId(lockGroupPartId(id).value + "~band")
 
-/** A lock's chain at rest, in body space: its [joints] from its root to its tip, one more than its bones, and how it moves. */
-data class LockChain(val index: Int, val patch: String, val joints: List<Vec3>, val physics: LockPhysics) {
+/**
+ * A lock's chain at rest, in body space: its [joints] from its root to its tip, one more than its bones, and how it moves. It carries its
+ * [patch] and any [others] the lock is built of, a braid's further strands, tie and tail.
+ */
+data class LockChain(val index: Int, val patch: String, val joints: List<Vec3>, val physics: LockPhysics, val others: List<String> = emptyList()) {
     val bones: Int get() = joints.size - 1
+
+    /** Every patch the chain carries. */
+    val patches: List<String> get() = listOf(patch) + others
 }
 
 /**
  * What a lock group's part carries beside its mesh: the [group], the [head] whose bones carry it, one [chains] entry a lock in the order of
  * its patches, and the [neighbours] each lock is tied to in its group, by place in [chains]; for a group's band, no chain at all. Its
  * contour lines lie [tuck] behind where they are drawn, so a lock's edge over another lock of its group, which lies within that of it,
- * draws no line, while its edge over the face or another group does.
+ * draws no line, while its edge over the face or another group does. Its [layers] are colours laid over its own on whole patches or
+ * fading over it, as a braid's ties in the group's band slot and a shell's skin.
  */
-class LockPlacing(val group: LockGroupId, val head: PartId, val chains: List<LockChain>, val neighbours: List<Pair<Int, Int>> = emptyList(), val tuck: Float = 0f)
+class LockPlacing(
+    val group: LockGroupId,
+    val head: PartId,
+    val chains: List<LockChain>,
+    val neighbours: List<Pair<Int, Int>> = emptyList(),
+    val tuck: Float = 0f,
+    val layers: List<SlottedCut<SlotName>> = emptyList(),
+)
 
-/** One lock as built: what it was built from, its guide curve, its patch and its chain. */
-class BuiltLock(val spec: LockSpec, val guide: List<Vec3>, val patch: Patch, val chain: LockChain)
+/** One lock as built: what it was built from, its guide curve, its [patches], the first its own, a braid's [tie] among them, and its chain. */
+class BuiltLock(val spec: LockSpec, val guide: List<Vec3>, val patches: List<Patch>, val chain: LockChain, val tie: Patch? = null) {
+    val patch: Patch get() = patches.first()
+}
 
 /** The shape of a lock's mesh along its guide, from what [lock] says. */
 fun clumpShapeOf(lock: LockSpec): ClumpShape = ClumpShape(
@@ -107,17 +122,30 @@ fun clumpShapeOf(lock: LockSpec): ClumpShape = ClumpShape(
     flare = 0f,
 )
 
-/** [lock] built over [scalp]: its guide, its patch named for its index and its chain of bones along the guide. */
+/**
+ * [lock] built over [scalp]: its guide, cut to its trim where it has one, its patch named for its index, or a braid's strands, tie and
+ * tail, and its chain of bones along the guide.
+ */
 fun buildLock(lock: LockSpec, scalp: Scalp): BuiltLock {
-    val guide = guideOf(lock, scalp)
+    val grown = guideOf(lock, scalp)
+    val cut = lock.trim?.let { trimmed(grown, it) }
+    val guide = cut?.guide ?: grown
+    val axis = AxisSpline(guide)
+    val along = List(4 * guide.size) { axis.pointAt(it.toFloat() / (4 * guide.size - 1)) }
+    val joints = evenly(along, lock.bones + 1)
+    if (lock.section == LockSection.BRAID) {
+        val braid = BraidBuilder.patches(lockPatch(lock.index), guide, lock.out, lock.width, lock.thickness, lock.taper, LOCK_SEGMENTS)
+        val patches = braid.all
+        return BuiltLock(lock, guide, patches, LockChain(lock.index, patches.first().name, joints, lock.physics, patches.drop(1).map { it.name }), braid.tie)
+    }
     val rings = (LOCK_RINGS + abs(lock.curl) * RINGS_PER_TURN).toInt().coerceAtMost(MOST_LOCK_RINGS)
     val profile = if (lock.section == LockSection.RIBBON) LockProfile.RIBBON else LockProfile.CLUMP
     val lying = if (lock.curl != 0f) curlStart(lock.curl) else 1f
     val middle = if (lock.tied) null else scalp.middle
-    val patch = LockBuilder.patch(lockPatch(lock.index), guide, lock.out, clumpShapeOf(lock), profile, rings, LOCK_SEGMENTS, middle, lying)
-    val axis = AxisSpline(guide)
-    val along = List(4 * guide.size) { axis.pointAt(it.toFloat() / (4 * guide.size - 1)) }
-    return BuiltLock(lock, guide, patch, LockChain(lock.index, patch.name, evenly(along, lock.bones + 1), lock.physics))
+    val whole = clumpShapeOf(lock)
+    val shape = if (cut != null && lock.trim?.blunt == true) bluntAt(whole, cut.share, lock.length * cut.share) else whole
+    val patch = LockBuilder.patch(lockPatch(lock.index), guide, lock.out, shape, profile, rings, LOCK_SEGMENTS, middle, lying)
+    return BuiltLock(lock, guide, listOf(patch), LockChain(lock.index, patch.name, joints, lock.physics))
 }
 
 /**
@@ -134,21 +162,34 @@ class LockBuilds(private val template: PartTemplate?) {
 
     private class HeldStrip(val parting: Parting, val scalp: Scalp, val part: PlacedPart)
 
+    private class HeldShell(val shell: ShellSpec, val head: PlacedPart, val part: PlacedPart)
+
+    private var shells: Map<PartId, HeldShell> = emptyMap()
+
     /** How many locks the last [withLocks] built afresh rather than took as they were. */
     var lastBuilt: Int = 0
         private set
 
     /**
      * [character] with each of [shown]'s groups on it, as a part of its own and its band as another, each lock growing as its head's flow
-     * in [flows] says, or the default flow where it gives none, and the strip of scalp along each such head's parting; a group whose head
-     * is not there builds nothing.
+     * in [flows] says, or the default flow where it gives none, the strip of scalp along each such head's parting, and each of [cut]'s
+     * short-hair shells over its head; a group or shell whose head is not there builds nothing. A shell is built again only when it or its
+     * head changes.
      */
-    fun withLocks(character: AssembledCharacter, shown: List<LockGroup>, flows: List<ScalpFlow> = emptyList()): AssembledCharacter {
+    fun withLocks(character: AssembledCharacter, shown: List<LockGroup>, flows: List<ScalpFlow> = emptyList(), cut: List<ShellSpec> = emptyList()): AssembledCharacter {
+        val keptShells = HashMap<PartId, HeldShell>()
+        for (spec in cut) {
+            val head = character.part(spec.shell.on) ?: continue
+            val before = shells[spec.shell.on]
+            keptShells[spec.shell.on] = if (before != null && before.shell == spec && before.head === head) before else HeldShell(spec, head, shellPart(spec.shell.on, head, spec))
+        }
+        shells = keptShells
+        val shellParts = cut.mapNotNull { keptShells[it.shell.on]?.part }
         if (shown.isEmpty()) {
             locks = emptyMap()
             groups = emptyMap()
             strips = emptyMap()
-            return character
+            return if (shellParts.isEmpty()) character else AssembledCharacter(character.parts + shellParts, character.sockets)
         }
         val keptLocks = HashMap<Pair<LockSpec, Scalp>, BuiltLock>()
         val keptGroups = HashMap<LockGroupId, HeldGroup>()
@@ -156,7 +197,7 @@ class LockBuilds(private val template: PartTemplate?) {
         val scalps = HashMap<Pair<PlacedPart, PlacedPart?>, Scalp>()
         val fields = HashMap<PartId, ScalpField>()
         var built = 0
-        val added = ArrayList<PlacedPart>()
+        val added = ArrayList<PlacedPart>(shellParts)
         for (group in shown) {
             val head = character.part(group.on) ?: continue
             val mass = group.mass?.let(character::part)
@@ -174,7 +215,7 @@ class LockBuilds(private val template: PartTemplate?) {
                 keptLocks[key] ?: (locks[key] ?: buildLock(spec, scalp).also { built++ }).also { keptLocks[key] = it }
             }
             val before = groups[group.id]
-            val held = if (before != null && before.group.band == group.band && before.group.color == group.color && sameLocks(before.locks, made)) {
+            val held = if (before != null && before.group.band == group.band && before.group.color == group.color && before.group.section == group.section && sameLocks(before.locks, made)) {
                 before
             } else {
                 HeldGroup(made, group, groupPart(group, head, made), bandPart(group, head, made, scalp))
@@ -197,12 +238,26 @@ class LockBuilds(private val template: PartTemplate?) {
         val id = lockGroupPartId(group.id)
         val chains = made.map { it.chain }
         val neighbours = (0 until made.size - 1).map { it to it + 1 }
-        val tuck = made.maxOf { it.spec.thickness } * if (group.kind == LockGroupKind.CROWN && group.tie == 0f) CROWN_TUCK else CONTOUR_TUCK
-        return placed(id, head, made.map { it.patch }, LockPlacing(group.id, head.id ?: group.on, chains, neighbours, tuck))
+        val tight = (group.kind == LockGroupKind.CROWN && group.tie == 0f) || group.section == LockSection.BRAID
+        val tuck = made.maxOf { it.spec.thickness } * if (tight) CROWN_TUCK else CONTOUR_TUCK
+        val placing = LockPlacing(group.id, head.id ?: group.on, chains, neighbours, tuck)
+        val band = group.band ?: return placed(id, head, made.flatMap { it.patches }, placing)
+        return placed(id, head, made.flatMap { it.patches }, placing) { surface ->
+            made.mapNotNull { lock -> lock.tie?.let { wholePatchCut(surface, it.name) }?.let { SlottedCut(band, it) } }
+        }
+    }
+
+    private fun shellPart(on: PartId, head: PlacedPart, shell: ShellSpec): PlacedPart {
+        val mesh = ShellMesh.of(shell.shell, head)
+        val placing = LockPlacing(shellGroupId(on), head.id ?: on, emptyList(), tuck = mesh.tuck)
+        val skin = shell.skin ?: return placed(shellPartId(on), head, listOf(mesh.patch), placing)
+        return placed(shellPartId(on), head, listOf(mesh.patch), placing) { surface ->
+            listOfNotNull(wholePatchCut(surface, SHELL_PATCH, mesh.skin)?.let { SlottedCut(skin, it) })
+        }
     }
 
     private fun bandPart(group: LockGroup, head: PlacedPart, made: List<BuiltLock>, scalp: Scalp): PlacedPart? {
-        if (group.band == null || made.isEmpty()) return null
+        if (group.band == null || made.isEmpty() || group.section == LockSection.BRAID) return null
         val roots = made.map { it.guide.first() }
         val middle = roots.fold(Vec3.ZERO) { s, p -> s + p } * (1f / roots.size)
         val ahead = made.map { it.guide[1] - it.guide[0] }.fold(Vec3.ZERO) { s, d -> s + d }.let { if (it.length > 0f) it.normalized() else (middle - scalp.middle).normalized() }
@@ -220,16 +275,27 @@ class LockBuilds(private val template: PartTemplate?) {
         return placed(partingPartId(on), head, listOf(strip.patch), LockPlacing(partingGroupId(on), head.id ?: on, emptyList(), tuck = strip.tuck))
     }
 
-    private fun placed(id: PartId, head: PlacedPart, patches: List<Patch>, placing: LockPlacing): PlacedPart {
+    private fun placed(
+        id: PartId,
+        head: PlacedPart,
+        patches: List<Patch>,
+        placing: LockPlacing,
+        layers: (PartSurface) -> List<SlottedCut<SlotName>> = { emptyList() },
+    ): PlacedPart {
         val template = template ?: head.template
         val mesh = PartMesh(id.value, patches.map { patch -> MeshBuilder.build(patch) { 0 } })
         val surface = PartSurface.of(mesh, PartBuilder.axes(template), mirrored = false)
-        return PlacedPart(id, template, null, surface, Vec3.ZERO, role = Role.HAIR, locks = placing)
+        val laid = layers(surface)
+        val withLayers = if (laid.isEmpty()) placing else LockPlacing(placing.group, placing.head, placing.chains, placing.neighbours, placing.tuck, laid)
+        return PlacedPart(id, template, null, surface, Vec3.ZERO, role = Role.HAIR, locks = withLayers)
     }
 }
 
-/** A character's lock hair as its build reads it: its lock [groups] and the [flows] over its heads. */
-data class LockHair(val groups: List<LockGroup>, val flows: List<ScalpFlow>)
+/** A head's short-hair [shell] as its build reads it, with the [skin] slot its edge and fade show, the head's base slot. */
+data class ShellSpec(val shell: HairShell, val skin: SlotName?)
+
+/** A character's lock hair as its build reads it: its lock [groups], the [flows] over its heads and the short-hair [shells] on them. */
+data class LockHair(val groups: List<LockGroup>, val flows: List<ScalpFlow>, val shells: List<ShellSpec> = emptyList())
 
 /** [assembled] with the lock hair [hair] gives on it, each group built by [builds], which keeps what it built before. */
 fun Graph.lockGroupsNode(assembled: Node<*, AssembledCharacter>, hair: Flow<LockHair>, builds: LockBuilds): Node<*, AssembledCharacter> = gather(
@@ -237,41 +303,5 @@ fun Graph.lockGroupsNode(assembled: Node<*, AssembledCharacter>, hair: Flow<Lock
     sourcesOf = { mapOf(Unit to assembled) },
     stage = BuildStages.ASSEMBLY,
 ) { (shown, built) ->
-    builds.withLocks(built.getValue(Unit), shown.groups, shown.flows)
+    builds.withLocks(built.getValue(Unit), shown.groups, shown.flows, shown.shells)
 }
-
-/** The palette slot lock hair takes where neither it nor its mass names one. */
-val HAIR_SLOT = SlotName("hair")
-
-/**
- * The base colour of every lock group [character] holds and of each band: its own slot, else its mass's base slot, else the palette's
- * hair slot, else its head's.
- */
-fun lockColors(character: Character): Map<PartId, PartColor> = character.lockGroups.flatMap { group ->
-    listOfNotNull(
-        lockGroupPartId(group.id) to PartColor(groupSlot(character, group), emptyList()),
-        group.band?.let { lockBandPartId(group.id) to PartColor(it, emptyList()) },
-    )
-}.toMap() + partingColors(character)
-
-/** How far a parting's scalp tone carries the head's colour toward its hair's: a skin darkened toward the hair, as scalp shows through it. */
-private const val SCALP_TOWARD_HAIR = 0.4f
-
-/** [group]'s slot: its own, else its mass's base slot, else the palette's hair slot, else its head's base slot. */
-private fun groupSlot(character: Character, group: LockGroup): SlotName? = group.color
-    ?: group.mass?.let(character::part)?.let { character.resolved(it).surface.baseSlot }
-    ?: HAIR_SLOT.takeIf { slot -> character.palette.slots.any { it.name == slot } }
-    ?: character.part(group.on)?.let { character.resolved(it).surface.baseSlot }
-
-/**
- * The colour of the strip of scalp along each parting over a head with locks: the parting's own slot, else the head's base colour carried
- * toward its first group's hair colour, a scalp tone.
- */
-private fun partingColors(character: Character): Map<PartId, PartColor> = character.lockGroups.groupBy { it.on }.mapNotNull { (head, groups) ->
-    val parting = character.scalpFlowOn(head).parting
-    if (!parting.shown) return@mapNotNull null
-    val skin = character.part(head)?.let { character.resolved(it).surface.baseSlot }
-    val hair = groupSlot(character, groups.first())
-    val slot = parting.color ?: if (skin != null && hair != null && skin != hair) blendedSlot(skin, hair, SCALP_TOWARD_HAIR) else skin
-    partingPartId(head) to PartColor(slot, emptyList())
-}.toMap()
