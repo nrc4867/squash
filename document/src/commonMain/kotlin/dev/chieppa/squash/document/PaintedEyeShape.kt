@@ -57,7 +57,18 @@ fun EyeLook.toward(to: EyeLook, t: Float): EyeLook {
             lower = mix(lidMass.lower, to.lidMass.lower),
             lowerExtent = mix(lidMass.lowerExtent, to.lidMass.lowerExtent),
         ),
-        lashClumps = near.lashClumps.copy(length = mix(lashClumps.length, to.lashClumps.length), spread = mix(lashClumps.spread, to.lashClumps.spread)),
+        lashClumps = near.lashClumps.copy(
+            length = mix(lashClumps.length, to.lashClumps.length),
+            spread = mix(lashClumps.spread, to.lashClumps.spread),
+            width = mix(lashClumps.width, to.lashClumps.width),
+        ),
+        lids = near.lids.copy(
+            closedAt = mix(lids.closedAt, to.lids.closedAt),
+            closedBend = mix(lids.closedBend, to.lids.closedBend),
+            closedTilt = mix(lids.closedTilt, to.lids.closedTilt),
+            fade = mix(lids.fade, to.lids.fade),
+            above = mix(lids.above, to.lids.above),
+        ),
         irisShade = near.irisShade.copy(
             upper = mix(irisShade.upper, to.irisShade.upper),
             darken = mix(irisShade.darken, to.irisShade.darken),

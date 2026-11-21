@@ -1,6 +1,7 @@
 package dev.chieppa.squash.recipe.model
 
 import dev.chieppa.squash.annotations.Doc
+import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.EyeLook
 import kotlinx.serialization.Serializable
@@ -34,4 +35,8 @@ data class RecipeEye(
     val mirrored: Boolean = true,
     @Doc("Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front.")
     val flat: Boolean = false,
+    @Doc("How far the upper lid stands down from open (0) to the look's closed line (1).") @Range(min = 0.0, max = 1.0)
+    val upperClose: Float = 0f,
+    @Doc("How far the lower lid stands up from open (0) to the look's closed line (1).") @Range(min = 0.0, max = 1.0)
+    val lowerRise: Float = 0f,
 )

@@ -5,6 +5,8 @@ import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.EyeIrisShade
 import dev.chieppa.squash.document.EyeLashClumps
+import dev.chieppa.squash.document.EyeLidMark
+import dev.chieppa.squash.document.EyeLids
 import dev.chieppa.squash.document.EyeLidMass
 import dev.chieppa.squash.document.EyeLidShadow
 import dev.chieppa.squash.document.EyeLook
@@ -116,6 +118,10 @@ internal object FaceAndClothes {
         detailTable("lidShadow", EyeLidShadow.serializer(), EyeLidShadow())
         appendLine("The kit's `animeEye` turns them all on together with values that read as a drawn toon eye.")
         appendLine()
+        appendLine("The look's `lids` say where the lids meet when the eye's `upperClose` and `lowerRise` shut it, and paint the upper lid; the kit's `closedLids`, `eyeshadow` and `linerWing` write them. `close=eyes lids=open,0.5,blink` renders the eyes in those lid poses without saving them:")
+        appendLine()
+        detailTable("lids", EyeLids.serializer(), EyeLids())
+        detailTable("lids.marks[]", EyeLidMark.serializer(), EyeLidMark())
         appendLine("One unit of a look's lengths in body units, on each head template built undrawn at size 1, at its eye landmark; a drawn head scales them with its own size and shape. A round iris takes the irisRatio in the last column:")
         appendLine()
         append(table(listOf("head", "chart", "unit across", "unit down", "round iris's irisRatio"), EyeUnits.rows(templates)))

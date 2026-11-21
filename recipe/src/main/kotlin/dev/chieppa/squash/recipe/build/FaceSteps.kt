@@ -32,7 +32,7 @@ internal fun BuildContext.eyes() = recipe.eyes.forEachIndexed { i, eye ->
     }
     checkSlots("$path.look", eye.look)
     eye.front?.let { checkSlots("$path.front", it) }
-    send(path, SetPaintedEye(eye.id, guard(path) { PaintedEye(eye.id, anchor, eye.look, eye.mirrored, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.flat) }))
+    send(path, SetPaintedEye(eye.id, guard(path) { PaintedEye(eye.id, anchor, eye.look, eye.mirrored, eye.front, eye.fromFront, eye.gazeForward, eye.gazeUp, eye.flat, eye.upperClose, eye.lowerRise) }))
 }
 
 private fun BuildContext.checkSlots(path: String, look: EyeLook) {
@@ -47,7 +47,10 @@ private fun BuildContext.checkSlots(path: String, look: EyeLook) {
         "irisShade.lowerSlot" to look.irisShade.lowerSlot,
         "irisShade.rimSlot" to look.irisShade.rimSlot,
         "lidShadow.slot" to look.lidShadow.slot,
-    ).forEach { (field, slot: SlotName?) -> slot?.let { slot("$path.$field", it.value) } }
+        "lids.slot" to look.lids.slot,
+        "lids.fadeTo" to look.lids.fadeTo,
+    ).plus(look.lids.marks.mapIndexed { i, mark -> "lids.marks[$i].slot" to mark.slot })
+        .forEach { (field, slot: SlotName?) -> slot?.let { slot("$path.$field", it.value) } }
 }
 
 /** The named expressions. */

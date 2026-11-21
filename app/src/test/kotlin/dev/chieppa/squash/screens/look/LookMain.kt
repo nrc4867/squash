@@ -141,7 +141,15 @@ fun renderSession(
             }
             session.send(ShowExpression(shown))
         }
-        if (EYES in close) EyeCloseUps(work, errors, folder).keep(session, "$name-eyes")
+        if (EYES in close) {
+            val eyes = EyeCloseUps(work, errors, folder)
+            eyes.keep(session, "$name-eyes")
+            for ((label, pose) in look.lidPoses) {
+                session.sessionSurface.lidPreview.value = pose
+                eyes.keep(session, "$name-eyes-lids-$label")
+            }
+            session.sessionSurface.lidPreview.value = null
+        }
         if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, name, it, parts.faceFramed(it)) }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }
         closeParts.forEach { closeUps.keepAround(session, it, "$name-${it.value}") }

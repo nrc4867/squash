@@ -31,6 +31,9 @@ import dev.chieppa.squash.render.PartMaterial
 import dev.chieppa.squash.render.Tones
 import androidx.compose.ui.graphics.Color
 
+/** How much of a shaped layer, as an average share, must lie on one side of the body's plane to be darkened as that side. */
+private const val HALF_SHARE = 0.5
+
 /**
  * A character's one surface as a fill: its root part's base slot, shaded by the carried shading normals, with each side of a pair's far
  * darkening laid over the surface as a layer that shows by that side's share of each vertex, so a far leg darkens and its join into the
@@ -106,7 +109,8 @@ fun garmentDraws(dress: SurfaceDress, palette: Palette, fallback: PartMaterial, 
 
 /**
  * One [layer] of paint as fills: its slot shaded, darkened on a far side, or flat and unshaded when it is flat, taken by its tint, which
- * reads [skinShadow] as the skin's shadow tone.
+ * reads [skinShadow] as the skin's shadow tone. A shaded layer drawn to a shape lies on one side of the body's plane, so it is darkened
+ * whole as the side most of it holds.
  */
 private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartMaterial, shading: ObjectShading, toCamera: Vec3, skinShadow: Color): List<ColorLayerDraw> {
     val layerLit = palette.colorOf(layer.slot) ?: fallback.base
@@ -115,6 +119,14 @@ private fun paintLayerDraws(layer: PaintLayer, palette: Palette, fallback: PartM
         return listOf(ColorLayerDraw(layer.mesh, Tones(shown, shown), shape = layer.shape))
     }
     val layerOwn = palette.shadowOf(layer.slot)
+    if (layer.shape != null) {
+        val side = when {
+            (layer.positive?.average() ?: 0.0) > HALF_SHARE -> BodySide.POSITIVE_Z
+            (layer.negative?.average() ?: 0.0) > HALF_SHARE -> BodySide.NEGATIVE_Z
+            else -> null
+        }
+        return listOf(ColorLayerDraw(layer.mesh, DefaultToneRule.tones(layerLit, layerOwn, shading, side, toCamera), shape = layer.shape))
+    }
     val tones = DefaultToneRule.tones(layerLit, layerOwn, shading, null, toCamera)
     return listOf(ColorLayerDraw(layer.mesh, tones, sides = layerSides(layerLit, layerOwn, shading, toCamera, layer.positive, layer.negative)))
 }

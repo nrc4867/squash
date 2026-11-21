@@ -71,6 +71,8 @@ An expression's `open` (`{"mouth": 1}`) opens a group by id while that expressio
 | eye `gazeUp` | Gaze up, a share of the opening's half height. |
 | eye `mirrored` | Whether it is painted again on the other side of the head. |
 | eye `flat` | Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front. |
+| eye `upperClose` | How far the upper lid stands down from open (0) to the look's closed line (1). |
+| eye `lowerRise` | How far the lower lid stands up from open (0) to the look's closed line (1). |
 
 ### Eye look
 
@@ -111,6 +113,7 @@ How a painted eye looks. Lengths are shares of the head's own coordinates at the
 | `lashClumps` | off | - | Lashes as thick curved wedges growing out of the upper lid near the back corner, in place of the lash flicks. |
 | `irisShade` | off | - | The iris in cel tones: a darker top, a lighter crescent along its bottom and a darker rim. |
 | `lidShadow` | off | - | A shadow band on the white under the upper lid. |
+| `lids` | off | - | How the lids meet when closed, and the upper lid's own colour, fade and marks. |
 
 The look's detail groups are each off by default. Their lengths are shares of the opening or the iris, so they keep their look as the eye is sized:
 
@@ -130,13 +133,14 @@ The lid drawn as a tapered mass of ink in place of the even lid line; off while 
 
 #### `lashClumps`
 
-Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks.
+Lashes as tapering strokes growing out of the upper lid's outer part, curving out and up, in the lid mass's slot, in place of the lash flicks.
 
 | field | default | range | meaning |
 | --- | --- | --- | --- |
-| `count` | 0 | 0 to 5 | How many wedges: 0 none. |
-| `length` | 0.5 | 0 to 2 | The outermost wedge's length, a share of the opening's height; each further one is a little shorter. |
-| `spread` | 0.35 | 0.05 to 1 | How much of the upper lid their roots spread over, from the back corner. |
+| `count` | 0 | 0 to 5 | How many lashes: 0 none. |
+| `length` | 0.5 | 0 to 2 | The outermost lash's length, a share of the opening's height: its curve runs about twice that to its tip. Each further one is a little shorter. |
+| `spread` | 0.35 | 0.05 to 1 | How much of the upper lid their roots spread over, from where it turns down to the back corner. |
+| `width` | 0.07 | 0.01 to 0.3 | Each lash's thickness either side at its root, a share of the opening's height; it tapers to a fine point. Small and spread wide reads as a few separate lashes. |
 
 #### `irisShade`
 
@@ -165,6 +169,37 @@ A shadow band on the white under the upper lid, following its curve and thinning
 | `share` | 0.4 | 0 to 1 | How far the band's colour goes from the white's toward a cool grey lilac, when it names no slot. |
 
 The kit's `animeEye` turns them all on together with values that read as a drawn toon eye.
+
+The look's `lids` say where the lids meet when the eye's `upperClose` and `lowerRise` shut it, and paint the upper lid; the kit's `closedLids`, `eyeshadow` and `linerWing` write them. `close=eyes lids=open,0.5,blink` renders the eyes in those lid poses without saving them:
+
+#### `lids`
+
+How an eye's lids meet when closed and how the upper lid is painted: its own colour, a fade up from the lash line and marks that move with it. Lengths are shares of the opening's height.
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `closedAt` | -0.25 | -2 to 1 | Where the closed lids meet at the opening's middle, in its heights up from the middle: 1 the open upper lid's top, -lowerLid the lower lid's bottom. |
+| `closedBend` | 0.0 | -1 to 1 | How far the closed line's middle stands above a straight line through its ends, in heights: above 0 it arches up as a happy closed eye does, below 0 it sags, 0 straight. |
+| `closedTilt` | 0.0 | -45 to 45 | Degrees the closed line turns, its front end up. |
+| `slot` | none | - | The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid takes the colour of the face's painted area the eye sits in, the skin where none is, and fade and above do nothing. |
+| `fadeTo` | none | - | The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin. |
+| `fade` | 0.0 | 0 to 3 | How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour. |
+| `above` | 0.0 | 0 to 3 | How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening. |
+| `marks` | [] | - | Marks painted on the upper lid, a liner wing or a pattern, each moving with the lid as it closes. |
+
+#### `lids.marks[]`
+
+A mark on the upper lid, a liner wing or one piece of a pattern: a stroke from a root on the lid tapering to a point, moving with the lid as it closes and kept off the open eye.
+
+| field | default | range | meaning |
+| --- | --- | --- | --- |
+| `along` | -1.0 | -1.5 to 1.5 | Where its root sits along the lid: -1 the back corner, 1 the front, beyond them past the corners. |
+| `above` | 0.0 | -0.5 to 3 | How far above the lash line its root sits, in the opening's heights. |
+| `out` | 0.4 | -2 to 2 | How far its tip runs toward the back corner from its root, in the opening's half widths; below 0 toward the front. |
+| `up` | 0.3 | -2 to 2 | How far its tip rises above its root, in the opening's heights. |
+| `width` | 0.1 | 0.01 to 1 | Its thickness either side at its root, in the opening's heights; it tapers to a point, a round dot where it reaches nowhere. |
+| `bend` | 0.5 | 0 to 1 | How much it runs out first and lifts at its tip: 0 straight, 1 a curve. |
+| `slot` | none | - | Its palette slot; the look's ink when left out. |
 
 One unit of a look's lengths in body units, on each head template built undrawn at size 1, at its eye landmark; a drawn head scales them with its own size and shape. A round iris takes the irisRatio in the last column:
 

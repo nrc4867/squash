@@ -16,6 +16,7 @@ import dev.chieppa.squash.character.surface.characterSurfaceNode
 import dev.chieppa.squash.character.surface.surfaceGarmentsNode
 import dev.chieppa.squash.character.surface.shownPaintNode
 import dev.chieppa.squash.character.surface.surfacePaintNode
+import dev.chieppa.squash.document.LidPose
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
@@ -62,9 +63,18 @@ class SessionSurface(
 
     val surface: Node<*, HeldSurface> = graph.characterSurfaceNode(mesh)
 
+    /**
+     * Where every painted eye's lids are shown standing in place of where the document has them, null to show the document's: a blink or
+     * a lid pose shown in the panes, which is no edit. The views set it.
+     */
+    val lidPreview = MutableStateFlow<LidPose?>(null)
+
     val paint: Node<*, HeldPaint> = graph.surfacePaintNode(
         surface,
-        combine(history.document, shines) { doc, shine -> PaintInput(doc.character.parts.map { it.id }, doc.character.paintedEyes, shine) }.distinctUntilChanged(),
+        combine(history.document, shines, lidPreview) { doc, shine, lids ->
+            val eyes = doc.character.paintedEyes.let { eyes -> if (lids == null) eyes else eyes.map { it.withLids(lids) } }
+            PaintInput(doc.character.parts.map { it.id }, eyes, shine)
+        }.distinctUntilChanged(),
         shapes,
     )
 

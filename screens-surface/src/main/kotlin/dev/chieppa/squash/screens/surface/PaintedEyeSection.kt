@@ -94,7 +94,7 @@ object PaintedEyeTags {
 }
 
 /**
- * The Eyes of a head: its painted eye's Roundness, Pupil and Colors, and under More how much rounder it reads from the
+ * The Eyes of a head: its painted eye's Roundness, Pupil and Colors, its Lids (see [EyeLidSection]), and under More how much rounder it reads from the
  * front, its highlight, its gaze, whether it lies flat across the face, its lines and its detail (lid mass, lash clumps, iris tones, lid
  * shadow and opening shape). Size, turn and place are the panes' handles. A head with no painted eye offers to add one
  * at its eye landmark.
@@ -130,6 +130,7 @@ internal fun PaintedEyeSection(state: AppState, session: CharacterSession, chara
             FillSwatch(character, session, Res.string.face_role_white, "white", look.white) { slot -> styled { it.copy(white = slot) } }
         }
     }
+    EyeLidSection(state, session, character, eye)
     MoreSection(state, session, eye)
 }
 

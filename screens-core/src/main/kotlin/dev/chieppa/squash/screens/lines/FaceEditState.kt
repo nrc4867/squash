@@ -29,6 +29,9 @@ class FaceEditState {
     var locked by mutableStateOf(false)
     var moreOpen by mutableStateOf(false)
 
+    /** Whether a painted eye's Lids section is open. */
+    var lidsOpen by mutableStateOf(false)
+
     /** Whether the head's hair outline shows over the panes that look at it from one of its views. */
     var hairOutline by mutableStateOf(false)
 

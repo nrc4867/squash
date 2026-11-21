@@ -201,26 +201,89 @@
       "additionalProperties": false
     },
     "EyeLashClumps": {
-      "description": "Lashes as thick curved wedges growing out of the upper lid near the back corner, in the lid mass's slot, in place of the lash flicks.",
+      "description": "Lashes as tapering strokes growing out of the upper lid's outer part, curving out and up, in the lid mass's slot, in place of the lash flicks.",
       "type": "object",
       "properties": {
         "count": {
-          "description": "How many wedges: 0 none.",
+          "description": "How many lashes: 0 none.",
           "type": "integer",
           "minimum": 0.0,
           "maximum": 5.0
         },
         "length": {
-          "description": "The outermost wedge's length, a share of the opening's height; each further one is a little shorter.",
+          "description": "The outermost lash's length, a share of the opening's height: its curve runs about twice that to its tip. Each further one is a little shorter.",
           "type": "number",
           "minimum": 0.0,
           "maximum": 2.0
         },
         "spread": {
-          "description": "How much of the upper lid their roots spread over, from the back corner.",
+          "description": "How much of the upper lid their roots spread over, from where it turns down to the back corner.",
           "type": "number",
           "minimum": 0.05,
           "maximum": 1.0
+        },
+        "width": {
+          "description": "Each lash's thickness either side at its root, a share of the opening's height; it tapers to a fine point. Small and spread wide reads as a few separate lashes.",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.3
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLidMark": {
+      "description": "A mark on the upper lid, a liner wing or one piece of a pattern: a stroke from a root on the lid tapering to a point, moving with the lid as it closes and kept off the open eye.",
+      "type": "object",
+      "properties": {
+        "along": {
+          "description": "Where its root sits along the lid: -1 the back corner, 1 the front, beyond them past the corners.",
+          "type": "number",
+          "minimum": -1.5,
+          "maximum": 1.5
+        },
+        "above": {
+          "description": "How far above the lash line its root sits, in the opening's heights.",
+          "type": "number",
+          "minimum": -0.5,
+          "maximum": 3.0
+        },
+        "out": {
+          "description": "How far its tip runs toward the back corner from its root, in the opening's half widths; below 0 toward the front.",
+          "type": "number",
+          "minimum": -2.0,
+          "maximum": 2.0
+        },
+        "up": {
+          "description": "How far its tip rises above its root, in the opening's heights.",
+          "type": "number",
+          "minimum": -2.0,
+          "maximum": 2.0
+        },
+        "width": {
+          "description": "Its thickness either side at its root, in the opening's heights; it tapers to a point, a round dot where it reaches nowhere.",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1.0
+        },
+        "bend": {
+          "description": "How much it runs out first and lifts at its tip: 0 straight, 1 a curve.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "slot": {
+          "description": "Its palette slot; the look's ink when left out.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "patternProperties": {
@@ -311,6 +374,75 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "EyeLids": {
+      "description": "How an eye's lids meet when closed and how the upper lid is painted: its own colour, a fade up from the lash line and marks that move with it. Lengths are shares of the opening's height.",
+      "type": "object",
+      "properties": {
+        "closedAt": {
+          "description": "Where the closed lids meet at the opening's middle, in its heights up from the middle: 1 the open upper lid's top, -lowerLid the lower lid's bottom.",
+          "type": "number",
+          "minimum": -2.0,
+          "maximum": 1.0
+        },
+        "closedBend": {
+          "description": "How far the closed line's middle stands above a straight line through its ends, in heights: above 0 it arches up as a happy closed eye does, below 0 it sags, 0 straight.",
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "closedTilt": {
+          "description": "Degrees the closed line turns, its front end up.",
+          "type": "number",
+          "minimum": -45.0,
+          "maximum": 45.0
+        },
+        "slot": {
+          "description": "The upper lid's own colour, an eyeshadow or a darker lid, shown where it covers the opening and, with above, over the skin above it; left out, the lid takes the colour of the face's painted area the eye sits in, the skin where none is, and fade and above do nothing.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fadeTo": {
+          "description": "The colour the lid's own colour fades into going up from the lash line; left out, it fades into the skin.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fade": {
+          "description": "How far up from the lash line the lid's colour fades out, in heights, fading toward the corners too; 0 an even colour.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 3.0
+        },
+        "above": {
+          "description": "How far the lid's colour reaches over the skin above the open lid at its middle, thinning to the corners, in heights; 0 only where the lid covers the opening.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 3.0
+        },
+        "marks": {
+          "description": "Marks painted on the upper lid, a liner wing or a pattern, each moving with the lid as it closes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EyeLidMark"
+          }
         }
       },
       "patternProperties": {
@@ -530,6 +662,10 @@
         "lidShadow": {
           "description": "A shadow band on the white under the upper lid.",
           "$ref": "#/$defs/EyeLidShadow"
+        },
+        "lids": {
+          "description": "How the lids meet when closed, and the upper lid's own colour, fade and marks.",
+          "$ref": "#/$defs/EyeLids"
         }
       },
       "patternProperties": {
@@ -1765,6 +1901,18 @@
         "flat": {
           "description": "Whether it lies flat across the face, a decal projected from the way the head faces (turned out by the look's lookOut), in place of following the head's curve from the surface's normal at its middle. Flat keeps a large eye on a small, round head reading as drawn from the front.",
           "type": "boolean"
+        },
+        "upperClose": {
+          "description": "How far the upper lid stands down from open (0) to the look's closed line (1).",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lowerRise": {
+          "description": "How far the lower lid stands up from open (0) to the look's closed line (1).",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
         }
       },
       "required": [

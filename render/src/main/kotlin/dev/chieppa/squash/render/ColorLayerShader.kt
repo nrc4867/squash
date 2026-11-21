@@ -1,7 +1,7 @@
 package dev.chieppa.squash.render
 
 /** Floats in [COLOR_LAYER_WGSL]'s `Layer` uniform. */
-internal const val COLOR_LAYER_FLOATS = 104
+internal const val COLOR_LAYER_FLOATS = 120
 
 /**
  * WGSL for [ColorLayerPass]: triangles lying on their mesh's own triangles, in the mesh's slice of the depth buffer, pulled toward the
@@ -33,6 +33,10 @@ struct Layer {
     lid_a: vec4<f32>,
     lid_b: vec4<f32>,
     lid_c: vec4<f32>,
+    lid_pose: vec4<f32>,
+    lid_paint: vec4<f32>,
+    lid_mark: vec4<f32>,
+    lid_more: vec4<f32>,
     lift: vec4<f32>,
 };
 
@@ -174,10 +178,22 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
     let q = vec2<f32>(in.chart.x * oc + in.chart.y * os, -in.chart.x * os + in.chart.y * oc);
     var level: f32;
     var spread: f32;
+    var share = 1.0;
     if (layer.shape_extra.z > 0.5) {
         let pixel = lid_pixel(p);
         level = lid_level(p) + 0.5 * pixel;
         spread = pixel;
+    } else if (layer.lid_paint.y > 2.5) {
+        level = max(almond_open_level(p), -almond_level(p));
+        spread = fwidth(level);
+    } else if (layer.lid_paint.y > 1.5) {
+        let pixel = lid_pixel(p);
+        level = lid_paint_level(p) + 0.5 * pixel;
+        spread = pixel;
+    } else if (layer.lid_paint.y > 0.5) {
+        level = lid_paint_level(p);
+        spread = fwidth(level);
+        share = lid_paint_share(p);
     } else {
         level = almond_level(p);
         if (layer.turn_and_oval.z > 0.5) {
@@ -185,7 +201,7 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
         }
         spread = fwidth(level);
     }
-    var alpha = clamp(0.5 - level / max(spread, 0.0000001), 0.0, 1.0);
+    var alpha = clamp(0.5 - level / max(spread, 0.0000001), 0.0, 1.0) * share;
     let mode = layer.cut_mode.x;
     if (mode > 0.5) {
         var cut_level: f32;
@@ -204,4 +220,4 @@ fn fs_shaped(in: ShapedOut) -> @location(0) vec4<f32> {
     }
     return vec4<f32>(toned, alpha);
 }
-""" + EYE_SHAPE_WGSL + TONE_WGSL
+""" + EYE_SHAPE_WGSL + LID_MASS_WGSL + LID_PAINT_WGSL + TONE_WGSL

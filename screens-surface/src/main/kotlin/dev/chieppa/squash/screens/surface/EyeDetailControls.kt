@@ -11,6 +11,7 @@ import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.styled
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_detail_clump_length
+import dev.chieppa.squash.uidesign.generated.face_detail_clump_width
 import dev.chieppa.squash.uidesign.generated.face_detail_clumps
 import dev.chieppa.squash.uidesign.generated.face_detail_flat_top
 import dev.chieppa.squash.uidesign.generated.face_detail_flick
@@ -37,6 +38,9 @@ private val FLICK_LIFT_RANGE = -1f..2f
 /** How long a lash clump may be, in the opening's heights. */
 private val CLUMP_LENGTH_RANGE = 0f..2f
 
+/** How thick a lash may be at its root, in the opening's heights. */
+private val CLUMP_WIDTH_RANGE = 0.01f..0.3f
+
 /** How deep the lid's shadow may reach, a share of the opening's height. */
 private val SHADOW_RANGE = 0f..0.5f
 
@@ -62,6 +66,7 @@ private val LID_SLIDERS = listOf(
 
 private val CLUMP_SLIDERS = listOf(
     DetailSlider(Res.string.face_detail_clump_length, "clump-length", CLUMP_LENGTH_RANGE, { it.lashClumps.length }) { l, v -> l.copy(lashClumps = l.lashClumps.copy(length = v)) },
+    DetailSlider(Res.string.face_detail_clump_width, "clump-width", CLUMP_WIDTH_RANGE, { it.lashClumps.width }) { l, v -> l.copy(lashClumps = l.lashClumps.copy(width = v)) },
 )
 
 private val TONE_SLIDERS = listOf(

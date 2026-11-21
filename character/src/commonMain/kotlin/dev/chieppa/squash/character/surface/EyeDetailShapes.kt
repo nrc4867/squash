@@ -1,10 +1,12 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.document.EyeLook
-import dev.chieppa.squash.geom.CLUMP_SWEEP
-import dev.chieppa.squash.geom.CLUMP_SWEEP_MORE
+import dev.chieppa.squash.geom.ChartAlmond
 import dev.chieppa.squash.geom.ChartCut
 import dev.chieppa.squash.geom.ChartLid
+import dev.chieppa.squash.geom.ChartLidMark
+import dev.chieppa.squash.geom.ChartLidPaint
+import dev.chieppa.squash.geom.LASH_REACH
 import dev.chieppa.squash.geom.ChartOval
 import dev.chieppa.squash.geom.LID_ASPECT
 import kotlin.math.abs
@@ -30,12 +32,13 @@ private const val SHADE_WIDE = 2f
 private const val SHADOW_WIDEN = 1.25f
 
 /**
- * The detail of a painted eye of [look] over its plain fills, in the eye's chart: the lid's ink mass and lash clumps about the opening,
- * the iris's darker top, lighter crescent and rim as cuts of [iris], and the lid's shadow as a cut of the opening. Each is null while the
- * look leaves it off. The lid mass measures distance with the opening's width [lidAspect] times its height, as it lies on the head.
+ * The detail of a painted eye of [look] over its plain fills, in the eye's chart: the lid's ink mass and lash clumps about [opening], its
+ * skin's own colour and its marks, the iris's darker top, lighter crescent and rim as cuts of [iris], and the lid's shadow as a cut of the
+ * opening. Each is null while the look leaves it off. The lid's pieces measure distance with the opening's width [lidAspect] times its
+ * height, as it lies on the head.
  */
-class EyeDetailShapes(look: EyeLook, iris: ChartOval, lidAspect: Float = LID_ASPECT) {
-    /** The lid's mass and lash clumps about the opening. */
+class EyeDetailShapes(look: EyeLook, opening: ChartAlmond, iris: ChartOval, lidAspect: Float = LID_ASPECT) {
+    /** The lid's mass and lash clumps about the opening, riding its lids. */
     val lid: ChartLid? = if (!look.lidMass.isOn && !look.lashClumps.isOn) {
         null
     } else {
@@ -51,19 +54,40 @@ class EyeDetailShapes(look: EyeLook, iris: ChartOval, lidAspect: Float = LID_ASP
             clumps = if (clumps.isOn) clumps.count else 0,
             clumpLength = clumps.length,
             clumpSpread = clumps.spread,
+            clumpWidth = clumps.width,
             aspect = lidAspect,
+            shoulder = ChartLid.shoulderOf(opening, lidAspect),
+            lowerShoulder = ChartLid.shoulderOf(opening, lidAspect, lowerLid = true),
         )
     }
 
-    /** How far from the opening's middle the lid mass may reach across and up or down, in the chart; zero where there is none. */
-    val lidReach: Pair<Float, Float> = lid?.let { mass ->
-        val clumpLength = if (mass.clumps > 0) mass.clumpLength else 0f
-        val across = look.width * (1f + LID_REACH_ACROSS + max(mass.flick, (CLUMP_SWEEP + CLUMP_SWEEP_MORE) * clumpLength))
+    /** The skin both lids cover as they close, in the colour of the head's paint where the eye sits. */
+    val lidCover: ChartLidPaint = ChartLidPaint(aspect = lidAspect, swept = true)
+
+    /** The upper lid's skin in its own colour, its fade over it: null where the lid is the skin. */
+    val lidSkin: ChartLidPaint? = look.lids.takeIf { it.isPainted }?.let { ChartLidPaint(it.above, it.fade, aspect = lidAspect) }
+
+    /** The colour the lid's skin fades into, laid whole under it: null where it fades into the skin or does not fade. */
+    val lidSkinUnder: ChartLidPaint? = look.lids.takeIf { it.isPainted && it.fadeTo != null && it.fade > 0f }?.let { ChartLidPaint(it.above, aspect = lidAspect) }
+
+    /** The marks on the upper lid, in order. */
+    val lidMarks: List<ChartLidPaint> = look.lids.marks.map { mark ->
+        ChartLidPaint(mark = ChartLidMark(mark.along, mark.above, -mark.out, mark.up, mark.width, mark.bend), aspect = lidAspect)
+    }
+
+    /** How far from the opening's middle the lids, their mass and paint may reach across and up or down at any pose, in the chart. */
+    val lidReach: Pair<Float, Float> = run {
+        val lids = look.lids
+        val mass = lid ?: ChartLid(0f)
+        val clumpLength = if (mass.clumps > 0) mass.clumpLength * LASH_REACH else 0f
+        val marksAcross = look.lids.marks.maxOfOrNull { abs(it.along) + abs(it.out) + it.width / lidAspect } ?: 0f
+        val marksUp = look.lids.marks.maxOfOrNull { it.above + max(it.up, 0f) + it.width } ?: 0f
+        val across = look.width * max(1f + LID_REACH_ACROSS + max(mass.flick, clumpLength / lidAspect), marksAcross)
         val open = 1f + abs(look.frontNarrowing)
-        val up = open + mass.weight + clumpLength + max(mass.flickLift, 0f)
+        val up = open + mass.weight + maxOf(clumpLength, lids.above, marksUp) + max(mass.flickLift, 0f)
         val down = look.lowerLid * open + mass.weight * mass.lower + max(-mass.flickLift, 0f)
         across * LID_REACH_MARGIN to look.height * max(up, down) * LID_REACH_MARGIN
-    } ?: (0f to 0f)
+    }
 
     /**
      * The oval the iris's lighter crescent is cut from: its bottom the crescent's depth up from the iris's, wider than the iris and

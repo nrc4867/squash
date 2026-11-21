@@ -22,7 +22,7 @@ private const val UNITS = "Lengths are shares of the head's own coordinates at t
  * and its facing [lookOut] degrees outward.
  * Each fill shows its palette slot: [white], [iris], [pupil], [highlight] and [ink] for the lines. The upper lid runs [topFlatness] flat
  * and the back corner [outerCorner] sharp. Off by default: a [lidMass] in place of the lid line, [lashClumps], an [irisShade] and a
- * [lidShadow] on the white.
+ * [lidShadow] on the white. Its [lids] say where the lids meet when closed and how the upper lid is painted.
  */
 @Serializable
 @Doc("How a painted eye looks. $UNITS")
@@ -94,6 +94,8 @@ data class EyeLook(
     val irisShade: EyeIrisShade = EyeIrisShade(),
     @Doc("A shadow band on the white under the upper lid.")
     val lidShadow: EyeLidShadow = EyeLidShadow(),
+    @Doc("How the lids meet when closed, and the upper lid's own colour, fade and marks.")
+    val lids: EyeLids = EyeLids(),
 ) {
     init {
         require(lashes in 0..MOST_LASHES) { "An eye has 0 to $MOST_LASHES lashes, not $lashes" }
@@ -107,7 +109,8 @@ data class EyeLook(
  * [gazeForward] of the opening's half width toward the head's front and [gazeUp] of its half height up, clipped by the opening.
  * A [flat] eye faces the way its head faces, turned outward by its look-out, and is laid on the head as a decal projected from there, so
  * it reads as drawn when seen from its facing however round the head is; otherwise it faces the surface's normal at its middle and
- * follows the head's curve round from there.
+ * follows the head's curve round from there. Its upper lid stands [upperClose] of the way down to the look's closed line and its lower
+ * [lowerRise] of the way up to it, both 0 open and 1 shut.
  */
 @Serializable
 data class PaintedEye(
@@ -120,8 +123,17 @@ data class PaintedEye(
     val gazeForward: Float = 0f,
     val gazeUp: Float = 0f,
     val flat: Boolean = false,
+    val upperClose: Float = 0f,
+    val lowerRise: Float = 0f,
 ) {
     init {
         require(fromFront in 0f..1f) { "From front is between 0 and 1, not $fromFront" }
+        require(upperClose in 0f..1f && lowerRise in 0f..1f) { "A lid stands between 0 and 1, not $upperClose, $lowerRise" }
     }
+
+    /** Where its lids stand. */
+    val lidPose: LidPose get() = LidPose(upperClose, lowerRise)
+
+    /** This eye with its lids standing at [pose]. */
+    fun withLids(pose: LidPose): PaintedEye = copy(upperClose = pose.upperClose, lowerRise = pose.lowerRise)
 }
