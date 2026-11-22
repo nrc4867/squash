@@ -129,10 +129,11 @@ private const val MOUTH_LANDMARK = "mouth"
 /** The degrees [character] shows [part]'s jaw open at. */
 fun Character.jawDegrees(part: PartId): Float = shownPose.of(part, JAW_JOINT)?.degrees ?: 0f
 
-/** The jaw split of [part] while its jaw shows open, else null. */
+/** The jaw split of [part] while its jaw shows open and may open at all, else null, so a jaw held to 0 shows its head exactly shut. */
 fun openJawOf(character: Character, part: PartInstance, templates: TemplateLibrary): JawSplit? {
     if (character.jawDegrees(part.id) <= 0f) return null
     val template = templates.find(part.template) ?: return null
+    if ((jawLimitOf(character, part, templates) ?: 0f) <= 0f) return null
     return jawSplitOf(character, part, template, templates)
 }
 

@@ -92,7 +92,7 @@ class JawSplitTest {
     @Test
     fun theJawOpensAsFarAsItsStyleOrItsOwnLimitSays() {
         val quadruped = made("canine-quadruped", "head")
-        assertEquals(12f, jawLimitOf(quadruped.character, quadruped.head(), library), "a short muzzle's style holds it to its own limit")
+        assertEquals(0f, jawLimitOf(quadruped.character, quadruped.head(), library), "a short muzzle's style holds its jaw shut")
         val biped = made("biped", "head-round")
         assertEquals(15f, jawLimitOf(biped.character, biped.head(), library), "lips open less far than the template's jaw joint")
         val held = SetParameter(biped.head().id, RigParams.JAW, 12f).apply(biped).document
@@ -114,7 +114,9 @@ class JawSplitTest {
         val head = document.head().id
         val colored = listOf(SetPaletteSlot(FUR, SlotColor(0.9f, 0.6f, 0.3f)), SetPaletteSlot(INK, SlotColor(0.1f, 0.1f, 0.1f)), SetBaseSlot(head, FUR))
             .fold(document) { held, command -> command.apply(held).document }
-        val posed = SetBoneAngle(head, JAW_JOINT, 10f).apply(colored).document
+        val held = SetBoneAngle(head, JAW_JOINT, 10f).apply(colored).document
+        assertSame(held, held.withOpenJaws(library), "a jaw its style holds shut adds nothing however it is posed")
+        val posed = SetParameter(head, RigParams.JAW, 20f).apply(held).document
         val shown = posed.withOpenJaws(library)
         val group = shown.character.resolved(shown.head()).surface.groups.single { it.isMouth }
         assertEquals(2, group.roles.single { it.role == MarkRole.LIP_LINE }.marks.size)
