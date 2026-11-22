@@ -29,6 +29,7 @@ import dev.chieppa.squash.screens.look.LookArgs.Companion.MOUTH
 import dev.chieppa.squash.screens.look.LookArgs.Companion.JOINS
 import dev.chieppa.squash.screens.look.LookArgs.Companion.ORBIT
 import dev.chieppa.squash.screens.look.LookArgs.Companion.RELEASE
+import dev.chieppa.squash.screens.look.LookArgs.Companion.STRIP
 import dev.chieppa.squash.screens.look.LookArgs.Companion.SURFACE
 import dev.chieppa.squash.screens.look.LookArgs.Companion.TURN
 import dev.chieppa.squash.screens.smoke.CloseUps
@@ -175,6 +176,7 @@ fun renderSession(
             session.sessionSurface.lidPreview.value = null
         }
         if (MOUTH in close) keepMouths(session, work, errors, folder, name, look.faceShapes)
+        if (STRIP in close) PoseStrip(work, errors, folder).keep(session, sessionPose, parts.arms, "$name-strip", tile, height)
         if (TURN in close) views.keep(session, "$name-turn", azimuths = TURN_AZIMUTHS, only = only, tile = tile, height = height)
         if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, name, it, parts.faceFramed(it)) }
         if (FOOT in close) parts.foot?.let { closeUps.keepAround(session, it, "$name-foot") }

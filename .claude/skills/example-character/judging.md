@@ -21,6 +21,7 @@ With a single view cropped from the sheet (`kit sheet views` writes `<view>.png`
 ## 3. Close-ups
 
 - `close=face,hand,foot` (the default), `close=hands,feet` (bare, at rest, curled, open, spread, from six sides), `close=joins` (neck, shoulder, hip), and **any part id**: `close=ear-l,tail,head`, framed close per outfit as `<outfit>-<id>.png`.
+- **`close=strip`, the pose strip, accompanies every review of a body change**: `<outfit>-strip.png` shows the display pose, rest and a T-pose side by side, which the display pose alone hides shoulder and underarm faults. Look at the shoulder and underarm in the T panel and the rest panel before the display one.
 - `only=head,ear-l` draws just those parts in every view: the fastest look at one part.
 - Each expression renders its face as `<outfit>-face-<expression>.png`; each named pose as `<outfit>-pose-<name>.png`.
 
