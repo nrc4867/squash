@@ -9,7 +9,7 @@
   "span": 0.5,
   "depth": 0.4,
   "carve": 0,
-  "jaw": 25,
+  "jaw": 12,
   "scale": { "wide": 0.4, "round": 0.4, "upperLip": 0.25 },
   "limits": { "wideOut": 0 },
   "shapes": {

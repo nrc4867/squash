@@ -47,7 +47,7 @@ data class SurfaceWorkInput(
     val regionMirrors: Map<RegionId, Region> = emptyMap(),
     val mouthStyles: Map<MarkGroupId, MouthStyle> = emptyMap(),
     val dentitions: Map<MarkGroupId, MouthDentition> = emptyMap(),
-    val jaws: Set<MarkGroupId> = emptySet(),
+    val jaws: Map<MarkGroupId, Float> = emptyMap(),
 )
 
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */

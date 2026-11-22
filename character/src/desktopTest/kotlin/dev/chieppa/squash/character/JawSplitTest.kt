@@ -92,7 +92,7 @@ class JawSplitTest {
     @Test
     fun theJawOpensAsFarAsItsStyleOrItsOwnLimitSays() {
         val quadruped = made("canine-quadruped", "head")
-        assertEquals(25f, jawLimitOf(quadruped.character, quadruped.head(), library), "a short muzzle's style holds it to its own limit")
+        assertEquals(12f, jawLimitOf(quadruped.character, quadruped.head(), library), "a short muzzle's style holds it to its own limit")
         val biped = made("biped", "head-round")
         assertEquals(15f, jawLimitOf(biped.character, biped.head(), library), "lips open less far than the template's jaw joint")
         val held = SetParameter(biped.head().id, RigParams.JAW, 12f).apply(biped).document

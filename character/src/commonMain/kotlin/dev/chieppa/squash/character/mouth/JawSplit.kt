@@ -148,6 +148,13 @@ fun jawLimitOf(character: Character, part: PartInstance, templates: TemplateLibr
     return own ?: split.style.jaw ?: joint.limits?.max ?: 0f
 }
 
+/** [openJawGroup] with how far open [part]'s jaw shows, a share of its limit; empty while it shows shut. */
+fun openJawShares(character: Character, part: PartInstance, templates: TemplateLibrary): Map<MarkGroupId, Float> {
+    val group = openJawGroup(character, part, templates) ?: return emptyMap()
+    val limit = jawLimitOf(character, part, templates)?.takeIf { it > 0f } ?: return emptyMap()
+    return mapOf(group to (character.jawDegrees(part.id) / limit).coerceIn(0f, 1f))
+}
+
 /** The mouth group the jaw of [part] splits along while it shows open: its own, or the one [withOpenJaws] adds. */
 fun openJawGroup(character: Character, part: PartInstance, templates: TemplateLibrary): MarkGroupId? = when (val split = openJawOf(character, part, templates)) {
     is JawSplit.Drawn -> split.group.id

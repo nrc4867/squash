@@ -5,7 +5,7 @@ torso/ribs parent torso/waist pivot 0.5371 0.0313 0.0000 along 0.9344 0.3562 0.0
 torso/chest parent torso/ribs pivot 0.7162 0.0995 0.0000 along 0.7798 0.6261 0.0000 length 0.2296 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0
 torso/withers parent torso/chest pivot 0.8952 0.2433 0.0000 along 0.9900 0.1413 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits -20.0..20.0 stretch
 head/neck parent torso/chest pivot 0.7441 0.4793 -0.0336 along 0.9984 -0.0571 0.0000 length 0.4844 hinge 0.0000 0.0000 -1.0000 limits -40.0..40.0
-head/jaw parent head/neck pivot 1.2276 0.4516 -0.0336 along 0.9630 -0.2694 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits 0.0..35.0
+head/jaw parent head/neck pivot 0.9858 0.4556 -0.0336 along 0.9630 -0.2694 0.0000 length 0.0000 hinge 0.0000 0.0000 -1.0000 limits 0.0..35.0
 ear-l/base parent head/neck pivot 1.0024 0.6179 -0.1795 along -0.0070 0.8456 -0.5338 length 0.4320 hinge 0.0000 0.5338 0.8456 limits -40.0..40.0
 ear-l/fold parent ear-l/base pivot 0.9994 0.9832 -0.4101 along -0.0407 0.8449 -0.5333 length 0.2882 hinge 0.0000 0.5338 0.8456 limits 0.0..150.0
 ear-l/tip parent ear-l/fold pivot 0.9876 1.2267 -0.5638 along -0.1386 0.8375 -0.5286 length 0.0000 hinge 0.0000 0.5338 0.8456 limits -20.0..20.0

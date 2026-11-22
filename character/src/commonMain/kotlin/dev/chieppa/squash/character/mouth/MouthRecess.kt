@@ -44,9 +44,18 @@ private const val TINY = 1e-6f
 
 /**
  * A mouth's recess, cut into [part]'s run [patch] where its lips part: the groove behind the opening of the mouth group [group], swept
- * along its line from one corner to the other, in the part's own space as its rest surface holds it, shown or not. See HLD: look, Mouth.
+ * along its line from one corner to the other, in the part's own space as its rest surface holds it, shown or not; a [jaw]'s, whose lips part
+ * on the surface as the jaw drops where [lipsPart]. See HLD: look, Mouth.
  */
-data class MouthRecess(val part: PartId, val group: MarkGroupId, val patch: String, val stations: List<RecessStation>, val reach: Float, val jaw: Boolean = false) {
+data class MouthRecess(
+    val part: PartId,
+    val group: MarkGroupId,
+    val patch: String,
+    val stations: List<RecessStation>,
+    val reach: Float,
+    val jaw: Boolean = false,
+    val lipsPart: Boolean = true,
+) {
     /** The recess as a solid, in the part's own space. */
     val solid: RecessSolid by lazy { RecessSolid(stations, reach) }
 
@@ -65,9 +74,17 @@ data class MouthRecess(val part: PartId, val group: MarkGroupId, val patch: Stri
  * The recess behind [mouth]'s opening on [holder]'s [surface], [carve] of its width deep at most and never deeper than [DEEP_PER_HALF]
  * times how far its lips part at a place; null where its lips do not part or [carve] is 0, a painted mouth. A [jaw]'s pocket, behind the
  * slit a posed jaw drops away from, is [JAW_POCKET] of the distance between its corners deep at the opening's tallest, shallower toward
- * the corners.
+ * the corners; its lips part on the surface where [lipsPart], else its opening is painted and the jaw takes only the face below its lower lip.
  */
-fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surface: PartSurface, carve: Float, jaw: Boolean = false): MouthRecess? {
+fun mouthRecessOf(
+    holder: PartId,
+    group: MarkGroupId,
+    mouth: ShapedMouth,
+    surface: PartSurface,
+    carve: Float,
+    jaw: Boolean = false,
+    lipsPart: Boolean = true,
+): MouthRecess? {
     if (carve <= 0f && !jaw) return null
     val loop = mouth.flat.opening?.takeIf { it.size >= MIN_LOOP } ?: return null
     val left = loop.minOf { it.x }
@@ -104,7 +121,7 @@ fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surfac
         RecessStation(r.middle, down, normals[i] * -1f, halves[i], depth, r.place, r.upperPlace, r.lowerPlace)
     }
     if (stations.size < 2) return null
-    return MouthRecess(holder, group, mouth.patch, stations, tallest * REACH_PER_HALF, jaw)
+    return MouthRecess(holder, group, mouth.patch, stations, tallest * REACH_PER_HALF, jaw, lipsPart)
 }
 
 /** A station's top, bottom and middle on the surface and the surface's outward normal at the middle, in the part's own space, and their places on the patch. */

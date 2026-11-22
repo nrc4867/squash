@@ -33,7 +33,10 @@ class MouthMarks(
     val lipsFilled: Boolean = false,
     val tongueShown: Boolean = true,
     val lipRegions: List<List<Anchor>> = emptyList(),
-)
+) {
+    /** These marks with no inner outline drawn, so the opening is the lips' own parting. */
+    fun withoutInner() = MouthMarks(lip, null, teeth, tongue, tongueFilled, lipsFilled, tongueShown, lipRegions)
+}
 
 /**
  * A mouth shaped on the patch [patch] of its part: the [flat] shapes, and their places on the patch through [uv]; [lipUv] holds each lip

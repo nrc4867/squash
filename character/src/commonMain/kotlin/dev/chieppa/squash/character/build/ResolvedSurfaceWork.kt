@@ -73,8 +73,8 @@ data class ResolvedSurfaceWork(
     val mouthStyles: Map<MarkGroupId, MouthStyle> = emptyMap(),
     /** The teeth each mouth group draws, by group; a group not here draws none. */
     val dentitions: Map<MarkGroupId, MouthDentition> = emptyMap(),
-    /** The mouth groups a posed jaw splits the part along, which cut the jaw's pocket where their lips part. */
-    val jaws: Set<MarkGroupId> = emptySet(),
+    /** The mouth groups a posed jaw splits the part along, which cut its pocket where their lips part, by how far open it is of its limit. */
+    val jaws: Map<MarkGroupId, Float> = emptyMap(),
 )
 
 /** Every part's surface work in body space, in the document's order of parts. */

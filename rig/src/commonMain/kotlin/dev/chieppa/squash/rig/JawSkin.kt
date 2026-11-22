@@ -1,6 +1,7 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.block.Landmark
+import dev.chieppa.squash.character.block.Socket
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.JAW_JOINT
 import dev.chieppa.squash.character.build.PlacedPart
@@ -21,12 +22,32 @@ fun Rig.withJawLimits(limits: Map<PartId, Float>, character: AssembledCharacter)
     if (limits.isEmpty()) return this
     val held = bones.map { bone ->
         val limit = limits[bone.name.part]?.takeIf { bone.name.joint == JAW_JOINT } ?: return@map bone
-        val mouth = character.parts.firstOrNull { it.id == bone.name.part }?.let(::mouthPointOf)
-        val drops = mouth == null || ((bone.hinge cross (mouth - bone.pivot)) dot BODY_DOWN) >= 0f
-        bone.copy(limits = Limits(0f, limit), hinge = if (drops) bone.hinge else bone.hinge * -1f)
+        val part = character.parts.firstOrNull { it.id == bone.name.part }
+        val mouth = part?.let(::mouthPointOf)
+        val pivot = mouth?.let { hingeOf(part, bone.hinge.normalized(), it) } ?: bone.pivot
+        val drops = mouth == null || ((bone.hinge cross (mouth - pivot)) dot BODY_DOWN) >= 0f
+        bone.copy(pivot = pivot, limits = Limits(0f, limit), hinge = if (drops) bone.hinge else bone.hinge * -1f)
     }
     return Rig(held, parts, seams, chains)
 }
+
+/** How far up from its mouth toward its ear a head's jaw hinges, as a share of the way. */
+private const val TOWARD_EAR = 0.1f
+
+/**
+ * Where [part]'s jaw hinges at rest in body space, turning about [hinge], with its [mouth] there: as far back as its ear and part of the
+ * way up from the mouth toward it, as a jaw hinges at its back below the ear, so its chin swings down and back; null where it has no ear.
+ */
+private fun hingeOf(part: PlacedPart, hinge: Vec3, mouth: Vec3): Vec3? {
+    val id = part.id ?: return null
+    val socket = part.template.blocks.filterIsInstance<Socket>().firstOrNull { it.name == EAR_SOCKET } ?: return null
+    val ear = part.surface.pointAt(Anchor(id, BODY_PATCH, socket.u, socket.v))?.position?.let { it + part.origin } ?: return null
+    val across = (ear - mouth).let { it - hinge * (it dot hinge) }
+    val up = BODY_DOWN * (across dot BODY_DOWN)
+    return mouth + (across - up) + up * TOWARD_EAR
+}
+
+private const val EAR_SOCKET = "ear"
 
 private val BODY_DOWN = Vec3(0f, -1f, 0f)
 
