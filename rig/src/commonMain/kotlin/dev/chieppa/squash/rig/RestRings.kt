@@ -12,13 +12,20 @@ private const val TINY = 1e-9f
  * [around], each with its mean value weight (Floater, "Mean value coordinates", 2003) in [weights], read in the plane square to the
  * vertex's rest normal: the weights that rebuild the vertex as the mean of its neighbours where it lies at rest, so a vertex relaxed toward
  * them in a pose keeps the spacing the rest surface gave it rather than bunching (Vaillant et al., "Implicit Skinning", 2013). A vertex on
- * the mesh's border, one of whose edges only one triangle holds, is [open] and is not relaxed.
+ * the mesh's border, one of whose edges only one triangle holds, is [open]; it relaxes along the border instead, toward the point between
+ * its two border neighbours that its rest distances to them give ([alongBorder], [borderShares]).
  */
 internal class RestRings(count: Int, triangles: IntArray, positions: FloatArray, normals: FloatArray) {
     val starts = IntArray(count + 1)
     val around: IntArray
     val weights: FloatArray
     val open = BooleanArray(count)
+
+    /** For a vertex on the border between exactly two border neighbours, those two, -1 otherwise, two a vertex. */
+    val alongBorder = IntArray(count * 2) { -1 }
+
+    /** For such a vertex, the first border neighbour's share of the point between them that its rest spacing gives it. */
+    val borderShares = FloatArray(count)
 
     init {
         val sets = Array(count) { LinkedHashMap<Int, Int>(8) }
@@ -31,6 +38,16 @@ internal class RestRings(count: Int, triangles: IntArray, positions: FloatArray,
         for (v in 0 until count) {
             starts[v + 1] = starts[v] + sets[v].size
             if (sets[v].values.any { it != 2 }) open[v] = true
+            val border = sets[v].entries.filter { it.value == 1 }.map { it.key }
+            if (border.size == 2) {
+                val la = (positions.vec(border[0] * 3) - positions.vec(v * 3)).length
+                val lb = (positions.vec(border[1] * 3) - positions.vec(v * 3)).length
+                if (la + lb > TINY) {
+                    alongBorder[v * 2] = border[0]
+                    alongBorder[v * 2 + 1] = border[1]
+                    borderShares[v] = lb / (la + lb)
+                }
+            }
         }
         around = IntArray(starts[count])
         weights = FloatArray(starts[count])

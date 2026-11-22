@@ -91,10 +91,18 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
                     for (i in from until until) {
                         val v = moved[i]
                         val normal = normals[i] ?: continue
-                        if (!relaxing[i] || rings.open[v]) continue
+                        if (!relaxing[i]) continue
                         val p = before.vec(v * 3)
-                        var target = Vec3.ZERO
-                        for (k in rings.starts[v] until rings.starts[v + 1]) target += before.vec(rings.around[k] * 3) * rings.weights[k]
+                        val target = if (rings.open[v]) {
+                            val a = rings.alongBorder[v * 2]
+                            if (a < 0) continue
+                            val share = rings.borderShares[v]
+                            before.vec(a * 3) * share + before.vec(rings.alongBorder[v * 2 + 1] * 3) * (1f - share)
+                        } else {
+                            var sum = Vec3.ZERO
+                            for (k in rings.starts[v] until rings.starts[v + 1]) sum += before.vec(rings.around[k] * 3) * rings.weights[k]
+                            sum
+                        }
                         val toward = target - p
                         val along = toward - normal * (toward dot normal)
                         val (settled, turned) = settle(reader, posed, levels[v], sets[i], p + along * RELAX_SHARE, SETTLING_STEPS, stopAtContact = false)
