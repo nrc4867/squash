@@ -19,13 +19,14 @@ private const val LEVEL = 1e-6f
 
 /**
  * The lean in degrees that turns [bone] across its hinge until it points level, away from the body's middle plane, or null when no
- * lean does. Of the leans that level it, the one that points it most directly out to the side is taken.
+ * lean does. Of the leans that level it, the one that points it most directly out to the side is taken. Out to the side is along
+ * body z, the side the bone's pivot lies on.
  */
 fun levelLean(bone: Bone): Float? {
-    val outward = sign(if (abs(bone.pivot.x) > LEVEL) bone.pivot.x else bone.direction.x)
+    val outward = sign(if (abs(bone.pivot.z) > LEVEL) bone.pivot.z else bone.direction.z)
     if (outward == 0f) return null
     fun height(lean: Float): Float = (localTurn(bone, BoneAngles(0f, 0f, lean)) * bone.direction).y
-    fun reach(lean: Float): Float = (localTurn(bone, BoneAngles(0f, 0f, lean)) * bone.direction).x * outward
+    fun reach(lean: Float): Float = (localTurn(bone, BoneAngles(0f, 0f, lean)) * bone.direction).z * outward
     val roots = mutableListOf<Float>()
     var low = -LEAN_RANGE.toFloat()
     while (low < LEAN_RANGE) {

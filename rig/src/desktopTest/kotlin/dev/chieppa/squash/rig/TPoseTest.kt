@@ -16,15 +16,19 @@ class TPoseTest {
     private val left = PartId("arm-l")
     private val right = PartId("arm-r")
 
-    /** An arm pair at rest leaning out [outward] degrees from straight down, the root bone named [root] and its next [elbow]. */
+    /**
+     * An arm pair at rest leaning out [outward] degrees from straight down in body space (x forward, z to the right, the left arm on -z,
+     * a hinge across the body as a hinge-x joint of a part resting down has),
+     * the root bone named [root] and its next [elbow].
+     */
     private fun arms(outward: Float, root: String, elbow: String, forward: Float = 0f): Rig {
         val radians = outward * PI.toFloat() / 180f
         val ahead = forward * PI.toFloat() / 180f
         fun bone(part: PartId, joint: String, parent: String?, sign: Float, length: Float) = Bone(
-            BoneName(part, joint), parent?.let { BoneName(part, it) }, Vec3(sign * 0.2f, 1.4f, 0f),
-            Vec3(sign * sin(radians), -cos(radians) * cos(ahead), cos(radians) * sin(ahead)).normalized(), length, Vec3.X, null, false, mirrored = sign < 0f,
+            BoneName(part, joint), parent?.let { BoneName(part, it) }, Vec3(0.004f, 1.4f, sign * 0.2f),
+            Vec3(cos(radians) * sin(ahead), -cos(radians) * cos(ahead), sign * sin(radians)).normalized(), length, Vec3.Z, null, false, mirrored = sign > 0f,
         )
-        val bones = listOf(left to 1f, right to -1f).flatMap { (part, sign) ->
+        val bones = listOf(left to -1f, right to 1f).flatMap { (part, sign) ->
             listOf(bone(part, root, null, sign, 0.3f), bone(part, elbow, root, sign, 0.3f), bone(part, "tip", elbow, sign, 0f))
         }
         return Rig(bones, emptyList())
@@ -41,7 +45,7 @@ class TPoseTest {
         val r = upperArmAfter(rig, right, root)
         assertEquals(0f, l.y, 1e-3f, "left $l")
         assertEquals(0f, r.y, 1e-3f, "right $r")
-        assertTrue(l.x > 0.9f && r.x < -0.9f, "straight out to each side: $l $r")
+        assertTrue(l.z < -0.9f && r.z > 0.9f, "straight out to each side: $l $r")
     }
 
     @Test
@@ -59,7 +63,7 @@ class TPoseTest {
         val rig = arms(30f, "shoulder", "elbow", forward = 20f)
         val l = upperArmAfter(rig, left, "shoulder")
         assertEquals(0f, l.y, 1e-3f)
-        assertTrue(l.x > 0f)
+        assertTrue(l.z < 0f)
     }
 
     @Test
