@@ -19,6 +19,8 @@ You write the file, run it, read every render, change one thing, run again. Pref
 - **Original models only.** Draw every outline and proportion yourself from the reference; never reshape another example's data or copy its numbers. Read other recipes and `kit/examples/mannequin.ts` for structure only. Template-free bodies (the `blank` plan, `tube`, `blob`, `sheet` parts) are fine. Names are generic or invented: never a real character, franchise or brand.
 - **No throwaway worktrees.** A character file lives anywhere on disk; the kit builds it from there. A new shipped example is `recipes/<name>.recipe.json`, made in the task's own worktree.
 - **One change a run.** Body first, bare, from every side; then the head and face; then hands and feet; then extras; then one garment at a time.
+- **The bare body is the anatomy under the clothes, not their outline.** A sweater's dropped shoulder, a waistband's pinch, a hem's ledge at the hip or a rip at the knee belongs to its garment. Infer the body beneath, smoother and simpler than the clothed sheet, with every side one curve (`body.md`, Smooth profiles); the garments put the folds back on top.
+- **Improve, don't restart.** When a character already has a build, change that file. Settings tuned in earlier rounds (hands, feet, face) are kept unless a render beside the sheet shows them worse.
 - **Read every render the run prints**, and `measure.txt`, before the next change. Judge against the sheet, not against memory of it.
 - **Every feature has an entry.** The feature list goes in the file as `"x-features"`; when you finish, each feature names the recipe entry that makes it (`judging.md`).
 

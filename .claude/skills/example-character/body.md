@@ -47,7 +47,7 @@ import { bodyPlan, joint, socket, tubePart, vToward } from "squash-kit";
 
 const plan = bodyPlan({ crotch: 0.2, hip: 0.22, waist: 0.3, chest: 0.42, shoulder: 0.58, torsoTop: 0.62 }, { hips: 0.15 });
 const torso = plan.upright("crotch", "torsoTop");
-const stations = [0.2, 0.22, 0.26, plan.h("waist"), 0.36, plan.h("chest"), 0.5, plan.h("shoulder"), 0.61];
+const stations = [0.21, 0.25, plan.h("waist"), 0.36, plan.h("chest"), 0.5, 0.57];
 
 export const torsoPart = tubePart(
   {
@@ -67,9 +67,9 @@ export const torsoPart = tubePart(
     closed: true,
     at: stations.map(torso.x),
     profiles: {
-      front: [0.08, 0.11, 0.13, 0.13, 0.135, 0.13, 0.11, 0.09, 0.05],
-      back: [0.09, 0.115, 0.125, 0.12, 0.12, 0.12, 0.11, 0.09, 0.05],
-      left: [0.1, plan.w("hips"), 0.15, 0.145, 0.15, 0.15, 0.13, 0.12, 0.06],
+      front: [0.09, 0.12, 0.125, 0.13, 0.135, 0.11, 0.06],
+      back: [0.1, 0.12, 0.115, 0.115, 0.12, 0.11, 0.06],
+      left: [0.11, plan.w("hips"), 0.14, 0.145, 0.15, 0.13, 0.08],
     },
   },
 );
@@ -80,8 +80,20 @@ export const torsoPart = tubePart(
 A tube's Side outline takes two profiles across its y and Top the other two (`kit/README.md`, `tube`): for a part resting up or down they are `front` and `back` in Side, `left`/`right` (or `outer`/`inner` on a pair) in Top; for one resting forward or back (an arm held out, a tail) `up` and `down` in Side and `left`/`right` in Top; for one resting out, `up` and `down` in Side and `front`/`back` in Top. **Give both sides of every profile**: the belly and the back, the chest and the shoulder blades, the shin and the calf, the seat. Front and back are set apart, so a round belly or a seat is just a larger front or back radius at its stations; a lone Top side is mirrored. Read the side view's grid for the front and back radii and the front view's for the left and right.
 
 - A limb narrows and swells: thigh to knee to calf to ankle, shoulder to elbow to forearm to wrist. **A leg of one constant width with no knee** reads as a pipe; give the knee and ankle their narrowing and the calf its swell at the back.
-- Use enough stations to hold the shape: 7 to 11 for a torso or leg, 6 to 9 for an arm or neck. `roundStations` gives stations bunched toward the ends of a round closed part (a head, a belly).
 - One front section holds for the whole part (Front, where the template says `section`); a chest cannot have a different section from the waist. Draw the difference with the four profiles instead.
+
+### Smooth profiles
+
+The outline runs through every station's radius exactly, its direction carried on from the stations either side. So it is only as smooth as the numbers: a radius a little above or below the line its neighbours make puts a bend there, and ten measured radii give a side that wobbles in and out like a hand-traced line. A bare body is smoother than its sheet: the garments carry the folds.
+
+- **Stations go where the shape turns, not at every measurement.** Each profile of a torso holds 5 to 7 stations, a leg 5 to 7, an arm 4 to 6, a neck 3: one at each widest or narrowest place (seat, hip, waist, chest, knee, calf, elbow, wrist) and as few between as keep the gaps even. `roundStations` gives stations bunched toward the ends of a round closed part (a head, a belly); use it only there.
+- **Between two features a radius only grows or only shrinks.** From the hip it narrows to the waist, from the waist it widens to the chest, and it narrows from the chest to the top. A radius that turns back in between (0.10, 0.104, 0.096, 0.098, 0.10) is measuring noise or a fold of the clothes: drop it, or set it on the line between its neighbours.
+- **Change gently.** Between neighbouring stations a radius changes by no more than about a third. A hip of 0.135 two stations below a waist of 0.088 is a corner, not a curve: move the waist station up, or narrow the hip, until the side reads as one sweep.
+- **Even gaps.** No gap between stations under half the gap beside it: a station crowded next to another turns the outline sharply there.
+- **Meet the next part's width.** A leg's last radius matches the foot's width where the foot starts, and an arm's the hand's: a foot wider than the ankle shows as a step in the front view. Taper the limb toward that radius, and narrow the foot's heel in its Top outline if it still steps.
+- **Every profile, both views.** On a torso resting up, `left` and `right` are its half width (the front view's outline) and `front` and `back` its half depth (the side view's): smooth all four, each with the same stations.
+- **Room at a closed end.** On a closed part (a torso, a head) keep the last station well short of the end, about its own radius (0.05 below a top whose last radius is 0.09), so the top rounds over. A last station a hair short of the end makes the top a flat shelf with a corner at the shoulder. The shoulder socket sits at its own height whatever the stations; it may fall on or just below the last station. A short shoulder-to-top span still takes one station below the shoulder and one at it. This is the top only: the torso's first station stays at the crotch, where a skirt or shorts cover starts from it.
+- Check the bare front, ¾ and side before any garment: each side of the torso reads as one curve out at the hip, in at the waist, out at the chest and over the shoulder, and each limb tapers with no ripple. A ripple is a station to drop; a corner is two radii too far apart. For a quick look at the profiles alone, build with `outfits=bare close=none measure=false`.
 
 ### Outlines drawn by hand
 
@@ -127,7 +139,7 @@ The head goes on the neck's end socket at `sink: 0`, drawn from the neck's top (
 - **A leg swings about its own start**, so start it at the hip joint, inside the pelvis (a socket on the torso's side at hip height, sunk), not where the thigh leaves the pelvis's underside.
 - Which way v faces depends on the rest (`frames.md`): on a part resting up v 0 faces forward and 0.75 the left; `vToward("up", "left")` says it for you. `probe part=<id>` prints every socket's body point.
 - Joins are one surface: each part blends into its parent over its `blend` (body units). Left out, a limb, neck or tail rounds into its parent by 1.4 times its root radius, held back where it hangs close beside the parent so it does not web to it; leave it out on the neck, shoulders and hips. A head, hand or foot takes its template's join or a quarter of its least extent. The blend fills a crease where a part leaves its parent at an angle and leaves the two surfaces as they are where they run alongside each other, so a join never swells. A neck on the torso's closed top sits on the top's middle, rises out of the torso and flows into the shoulders, even where it is wider than the top: draw its front and back as the sheet shows them.
-- **Shoulders read best when the torso is not widest exactly at the arm socket.** Put the torso's widest station a little below the shoulder socket (the chest) and let it narrow toward the top. The arm's top then leaves a shoulder that slopes away above it and meets it at a crease the blend rounds into a shoulder. Widest at the socket, the torso's side stands upright there and the arm's top runs alongside it, so nothing rounds it: the arm's width sits on top of the torso's widest point and the outline steps out at the shoulder line. `inkJoin: false` leaves a join unlined, which a body of one fur colour wants at the neck, shoulders and hips; **ink seams at the hips** of a smooth creature mean a join is still inked.
+- **Shoulders read best when the torso is not widest exactly at the arm socket.** Put the torso's widest station a little below the shoulder socket (the chest) and let it narrow toward the top. The arm's top then leaves a shoulder that slopes away above it and meets it at a crease the blend rounds into a shoulder. Widest at the socket, the torso's side stands upright there and the arm's top runs alongside it, so nothing rounds it: the arm's width sits on top of the torso's widest point and the outline steps out at the shoulder line. An arm on a shoulder socket at `sink: 0` leaves its flat root standing proud of the torso: a nub where the arm's top meets the shoulder line. Three settings together make the shoulder one curve from the neck over the arm: the torso's widest station a little below the shoulder socket and narrowing toward the top, the shoulder socket at `sink` 0.3 to 0.4, and the arm at `blend` 0.05 (or its default). A narrower top pulls the arm sockets inward, since they sit on the surface: keep the shoulders' width by widening the top station rather than sinking the socket less. A larger arm blend (0.08) shelves the shoulder and webs the armpit. `inkJoin: false` leaves a join unlined, which a body of one fur colour wants at the neck, shoulders and hips; **ink seams at the hips** of a smooth creature mean a join is still inked.
 - `orient(along, up)` gives the `rest`, `lean`, `outward` and `roll` that point a part along any direction (a leg splayed out, a tail up and back).
 
 ## 6. Joints where the sheet puts them

@@ -92,6 +92,7 @@ tools/recipe.sh kit sheet profiles C:/refs/pip.png names=front,side,back front=f
 - Above the armpits the torso is held to the armpit's width where the arms join it: draw the chest and shoulders yourself from the grid.
 - Clothes are silhouette: a baggy tee or shorts widen the torso and legs. Take the body under them thinner (about the fit of the garment, `clothing.md`) and let the garment stand off it.
 - A leg's front and back come from the side view, where both legs overlap: the nearer leg's outline.
+- The radii are measured, so they carry the drawing's wobble and the clothes' folds. Never paste them as they are: keep the radius at each widest and narrowest place, drop the rest, and smooth what is left (`body.md`, Smooth profiles). `stations=5` to `7` reads few enough to start from.
 
 In code, the same numbers without the files (`squash-kit/sheet`):
 
