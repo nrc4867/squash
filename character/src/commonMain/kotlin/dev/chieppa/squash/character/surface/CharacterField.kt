@@ -57,7 +57,8 @@ class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val 
 
 /**
  * A character's field: its runs' solids joined in [field], [runs] saying which part and run each member is, the [cell] it meshes at, the
- * mouths' [recesses] cut into it, and the level each member meshes at, [levels] (see `CellLevels`), every member at [cell] where empty.
+ * mouths' [recesses] cut into it, and, for a garment's field, the level each member meshes at, [levels] (see `CellLevels`); every member
+ * reads as meshing at [cell] where it is empty, as a body's field leaves it.
  */
 class CharacterField(
     val field: JoinedField,
