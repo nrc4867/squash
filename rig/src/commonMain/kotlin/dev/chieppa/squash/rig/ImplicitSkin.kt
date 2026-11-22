@@ -3,6 +3,7 @@ package dev.chieppa.squash.rig
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.geom.Vec3
+import kotlin.concurrent.Volatile
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -14,6 +15,9 @@ private const val SETTLING_STEPS = 2
 
 /** How many rounds of relaxing along the surface the moved vertices take. */
 private const val RELAX_ROUNDS = 3
+
+/** How many rounds of relaxing a pose that starts from the last refit takes, whose corners that last refit relaxed already. */
+private const val TRACKED_RELAX_ROUNDS = 1
 
 /** How far toward where its neighbours place it, along the surface, a vertex moves each round. */
 private const val RELAX_SHARE = 0.5f
@@ -32,6 +36,12 @@ private const val LONGEST_STEP_CELLS = 4f
 
 /** The differences' step, as a share of the field's cell. */
 private const val GRADIENT_SHARE = 0.25f
+
+/** How far apart, entry by entry, two poses' bone maps may lie for the later to start from where the earlier left the surface. */
+private const val TRACKED_TURN = 0.1f
+
+/** How far apart, in the field's cells, two poses' bone maps may move a point for the later to start from where the earlier left it. */
+private const val TRACKED_SHIFT_CELLS = 2f
 
 /** Vertices a piece of the work takes. */
 private const val CHUNK = 256
@@ -56,16 +66,22 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
     /** Each corner's field at rest, NaN until first read. */
     private val levels = FloatArray(corners) { Float.NaN }
 
+    /** The last refit and the bone maps it was made for, which a pose near them starts from. */
+    @Volatile
+    private var tracked: Tracked? = null
+
     /**
      * Moves the corners at [positions], posed by linear blend through [frames], onto the field [frames] poses, each piece of the work run by
      * [runAll] and timed into [breakdown]: how far each moved, or null when the pose moves none.
      */
     suspend fun refit(frames: BoneFrames, positions: FloatArray, runAll: RunAll, breakdown: PoseBreakdown? = null): Refit? {
         val posed = field.posed(frames)
-        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, frames, runAll) } ?: return null
+        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, frames, positions, posed, runAll) } ?: return null
         val moved = chosen.moved
         val sets = Array(moved.size) { chosen.setOf(moved[it], positions.vec(moved[it] * 3)) }
         val blended = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] }
+        val last = tracked?.takeIf { it.near(frames.transforms, cell) }
+        val starts = if (last == null) blended else FloatArray(moved.size * 3) { blended[it] + last.offsets[moved[it / 3] * 3 + it % 3] }
         val normals = arrayOfNulls<Vec3>(moved.size)
         val reads = LongArray((moved.size + CHUNK - 1) / CHUNK)
         breakdown.time("project") {
@@ -74,7 +90,7 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
                 for (i in from until until) {
                     val v = moved[i]
                     if (levels[v].isNaN()) levels[v] = reader.read(field.rest, surface.positions.vec(v * 3), members.sets, v * MOST_MEMBERS, members.counts[v], withGradient = true)
-                    val (p, normal) = settle(reader, posed, levels[v], sets[i], positions.vec(v * 3), MOST_STEPS, stopAtContact = true)
+                    val (p, normal) = settle(reader, posed, levels[v], sets[i], starts.vec(i * 3), MOST_STEPS, stopAtContact = true)
                     positions.put(v * 3, p)
                     normals[i] = normal
                 }
@@ -82,8 +98,8 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
             })
         }
         val relaxed = breakdown.time("relax") {
-            val relaxing = relaxing(moved, blended, positions)
-            repeat(RELAX_ROUNDS) {
+            val relaxing = relaxing(moved, starts, positions)
+            repeat(if (last == null) RELAX_ROUNDS else TRACKED_RELAX_ROUNDS) {
                 val before = positions.copyOf()
                 runAll(chunked(moved.size, CHUNK) { from, until ->
                     val reader = PosedFieldReader(field, h)
@@ -115,19 +131,19 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
         }
         breakdown?.count("moved", moved.size.toLong())
         breakdown?.count("relaxed", relaxed.toLong())
-        breakdown?.count("reads", reads.sum())
+        breakdown?.count("reads", reads.sum() + chosen.reads)
         val offsets = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] - blended[it] }
-        return Refit(moved, offsets, normals)
+        return Refit(moved, offsets, normals).also { tracked = Tracked(frames.transforms.toList(), it.offsetsOf(corners)) }
     }
 
     /**
-     * Which of the [moved] corners to relax: those projecting moved from where linear blend put them, [blended], further than
-     * [RELAX_FROM_SHARE] of a cell to [positions], and their neighbours.
+     * Which of the [moved] corners to relax: those projecting moved from where it started them, [starts], further than [RELAX_FROM_SHARE]
+     * of a cell to [positions], and their neighbours.
      */
-    private fun relaxing(moved: IntArray, blended: FloatArray, positions: FloatArray): BooleanArray {
+    private fun relaxing(moved: IntArray, starts: FloatArray, positions: FloatArray): BooleanArray {
         val shifted = BooleanArray(corners)
         val limit = cell * RELAX_FROM_SHARE
-        for ((i, v) in moved.withIndex()) if ((positions.vec(v * 3) - blended.vec(i * 3)).length > limit) shifted[v] = true
+        for ((i, v) in moved.withIndex()) if ((positions.vec(v * 3) - starts.vec(i * 3)).length > limit) shifted[v] = true
         return BooleanArray(moved.size) { i ->
             val v = moved[i]
             shifted[v] || (rings.starts[v] until rings.starts[v + 1]).any { shifted[rings.around[it]] }
@@ -167,4 +183,27 @@ class Refit(val moved: IntArray, val offsets: FloatArray, val normals: Array<Vec
     fun offsetsOf(corners: Int): FloatArray = FloatArray(corners * 3).also { all ->
         for ((i, v) in moved.withIndex()) for (k in 0 until 3) all[v * 3 + k] = offsets[i * 3 + k]
     }
+}
+
+/**
+ * A refit's [offsets] from linear blend, three floats a corner, and the bone maps, [transforms], it was made for: a pose whose maps lie
+ * near them starts each corner from its last offset, tracking the surface from one step of a drag to the next (Vaillant, Guennebaud,
+ * Barthe, Wyvill, Cani, "Robust Iso-Surface Tracking for Interactive Character Skinning", 2014), so most corners start on their level and
+ * only what the step changed is projected and relaxed again. A pose far from it starts again from linear blend.
+ */
+private class Tracked(val transforms: List<Affine>, val offsets: FloatArray) {
+    /** Whether [other] lies near enough to these maps to start from them, for a field of [cell]. */
+    fun near(other: List<Affine>, cell: Float): Boolean {
+        if (other.size != transforms.size) return false
+        val shift = cell * TRACKED_SHIFT_CELLS
+        for (b in other.indices) {
+            val a = transforms[b]
+            val o = other[b]
+            if (!close(a.linear.x, o.linear.x, TRACKED_TURN) || !close(a.linear.y, o.linear.y, TRACKED_TURN) || !close(a.linear.z, o.linear.z, TRACKED_TURN)) return false
+            if (!close(a.offset, o.offset, shift)) return false
+        }
+        return true
+    }
+
+    private fun close(a: Vec3, b: Vec3, most: Float): Boolean = abs(a.x - b.x) <= most && abs(a.y - b.y) <= most && abs(a.z - b.z) <= most
 }

@@ -20,6 +20,9 @@ internal class VertexMembers(private val surface: SkinSurface, private val skin:
     val sets = IntArray(surface.vertexCount * MOST_MEMBERS)
     val counts = IntArray(surface.vertexCount)
 
+    /** For each corner, how near a member must come to it to change its field: the widest blend or reach among its members, and a cell. */
+    private val within = FloatArray(surface.vertexCount)
+
     init {
         val members = field.members
         val reaches = surface.field.reaches
@@ -42,14 +45,18 @@ internal class VertexMembers(private val surface: SkinSurface, private val skin:
             val direct = count
             for (i in 0 until direct) add(members[sets[at + i]].parent, always = false)
             counts[v] = count
+            var widest = 0f
+            for (i in 0 until count) widest = maxOf(widest, reaches[sets[at + i]], members[sets[at + i]].blend)
+            within[v] = widest + cell
         }
     }
 
     /**
-     * Whether corner [v], at rest at [point], lies at a bend of [transforms]: its bones take it to different places, or a piece of one of
-     * its members that reaches it moves apart from them by its map in [maps] ([PosedField.maps]).
+     * Whether corner [v], at rest at [point] and posed by linear blend at [blended], lies at a bend of [transforms]: its bones take it to
+     * different places, or a piece of one of its members that reaches it moves apart from them by its map in [maps] ([PosedField.maps])
+     * and that member, [posed], lies near enough to [blended] to change its field there; [reads] counts the solid reads.
      */
-    fun bendsAt(v: Int, point: Vec3, transforms: List<Affine>, maps: Array<Affine?>): Boolean {
+    fun bendsAt(v: Int, point: Vec3, blended: Vec3, transforms: List<Affine>, maps: Array<Affine?>, posed: PosedField.Posed, reads: LongArray): Boolean {
         var first: Vec3? = null
         fun differs(to: Vec3): Boolean {
             val was = first ?: run { first = to; return false }
@@ -60,7 +67,9 @@ internal class VertexMembers(private val surface: SkinSurface, private val skin:
             if (bone >= 0 && skin.weights[v * MAX_INFLUENCES + slot] > 0f && differs(transforms[bone](point))) return true
         }
         for (i in 0 until counts[v]) {
-            for (piece in field.pieces[sets[v * MOST_MEMBERS + i]]) if (piece.cut(point) <= piece.rounding && differs(maps[piece.slot]?.invoke(point) ?: point)) return true
+            val m = sets[v * MOST_MEMBERS + i]
+            val apart = field.pieces[m].any { piece -> piece.cut(point) <= piece.rounding && differs(maps[piece.slot]?.invoke(point) ?: point) }
+            if (apart && posed.own(m, blended, reads) <= within[v]) return true
         }
         return false
     }
