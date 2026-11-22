@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.ShowOutfit
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.fieldgpu.GpuFieldReads
 import dev.chieppa.squash.geom.field.CpuFieldReads
+import dev.chieppa.squash.rig.ImplicitSkinning
 import dev.chieppa.squash.screens.look.LookArgs
 import dev.chieppa.squash.screens.look.exampleDocument
 import dev.chieppa.squash.screens.look.measure.RunStats
@@ -25,6 +26,7 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     val look = LookArgs(args)
     val drag = DragArgs(args)
+    ImplicitSkinning.on = drag.skinning != "bones"
     for (example in look.examples) {
         val document = exampleDocument(example, look.fromFile, look.examplesFolder)
         if (drag.reads.size > 1 || drag.reads.firstOrNull() == "gpu") {
@@ -39,7 +41,9 @@ fun main(args: Array<String>) {
             open.settle()
             val name = "$example ${outfit?.value ?: "as saved"}${if (drag.creases) " creased" else ""}"
             println("$name: open ${(System.nanoTime() - opening) / 1_000_000} ms")
-            for (script in drag.scripts(open)) DragTimer(open, drag.runs, drag.record).time(name, script)
+            val poses = if (drag.poseReport) PoseCollector() else null
+            for (script in drag.scripts(open)) DragTimer(open, drag.runs, drag.record, poses).time(name, script)
+            poses?.close()
             if (drag.switch) DragTimer(open, drag.runs).switchOutfits(name)
         }
     }
@@ -65,7 +69,8 @@ private fun compareReads(example: String, document: SquashDocument, look: LookAr
 
 /**
  * What the drag command was asked for: `drags=move:<part>,pose:<part>:<joint>,fit:<garment>,ease:<garment>:<part>`, `switch=true` for the outfit switch, `runs=<n>`,
- * `creases=on` to play them with the character's creases and wrinkles on, and `jfr=<folder>` to record each gesture's timed runs; `reads=cpu,gpu` plays each gesture on a session reading its fields on each, in turn.
+ * `creases=on` to play them with the character's creases and wrinkles on, and `jfr=<folder>` to record each gesture's timed runs, `skinning=bones` to pose by linear blend alone, with no refit to the posed field, `pose-report=true` to print where each later move's posing of the surface spends its time, stage by stage, with its
+ * field reads ([dev.chieppa.squash.rig.PoseBreakdown]); `reads=cpu,gpu` plays each gesture on a session reading its fields on each, in turn.
  */
 class DragArgs(args: Array<String>) {
     private val values: Map<String, String> = args.flatMap { it.split(' ') }.filter { '=' in it }.associate { it.substringBefore('=') to it.substringAfter('=') }
@@ -73,6 +78,8 @@ class DragArgs(args: Array<String>) {
     val switch: Boolean = values["switch"] == "true"
     val creases: Boolean = values["creases"] == "on"
     val record: File? = values["jfr"]?.let(::File)
+    val poseReport: Boolean = values["pose-report"] == "true"
+    val skinning: String? = values["skinning"]
     val reads: List<String> = values["reads"]?.split(',').orEmpty()
     private val drags: List<List<String>> = values["drags"]?.split(',')?.map { it.split(':') }.orEmpty()
 

@@ -29,7 +29,13 @@ private const val POKE_CHUNK = 2048
  * sleeve, never against the cloth over the torso beside it. [rest] is the body at rest, whose drawn mesh the paint's layers were cut on; posed, a pose may leave out quads where parts touch.
  * What coverage hides follows the pose by itself, since coverage reads coordinates; this finds what a pose pushes through the cloth.
  */
-class PosedHiding(private val body: CharacterSurface, private val rest: CharacterSurface, private val garments: List<SurfaceGarment>, private val dress: SurfaceDress) {
+class PosedHiding(
+    private val body: CharacterSurface,
+    private val rest: CharacterSurface,
+    private val garments: List<SurfaceGarment>,
+    private val dress: SurfaceDress,
+    private val atRest: RestHiding? = null,
+) {
     private val restIndices = rest.render.indices
 
     /** The body's paint kept to the skin that shows posed, and the dress as posed, the search for what came through run in pieces by [runAll]. */
@@ -40,9 +46,13 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
         val surfaces = listOf(body) + garments.map { it.surface }
         val near = garments.map { garment -> NearestVertex(garment.surface.positions, garment.surface.mesh.cell) }
         val parts = (listOf(body) + garments.map { it.surface }).map(::bodyPartsOf)
+        val rests = listOf(rest) + dress.garments.map { it.surface }
+        val reach = body.mesh.cell * POKE_REACH_CELLS
+        val movedBoxes = garments.mapIndexed { g, garment -> movedBox(rests[g + 1].positions, garment.surface.positions, reach) }
+        val kept = atRest?.takeIf { it.dress === dress }
         val shown = surfaces.mapIndexed { s, surface ->
             val base = if (s == 0) restShown else garments[s - 1].shownValues
-            pushedThrough(surface, base, dress.under[s], (s until garments.size).toList(), near, parts, s, runAll)
+            pushedThrough(surface, rests[s].positions, base, dress.under[s], (s until garments.size).toList(), near, movedBoxes.takeIf { kept != null }, kept?.lowered?.get(s), parts, s, runAll)
         }
         val skin = recut(body, shown[0] ?: restShown)
         val worn = garments.mapIndexed { i, garment -> shown[i + 1]?.let { garment.within(LevelCut.of(it, garment.surface.render.indices), it) } ?: garment }
@@ -63,10 +73,13 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
 
     /**
      * [base] lowered where [surface]'s vertices that lie inside the coverage of the garments [outer] over it, as [under] says, have come
-     * out through one of them; null where none has.
+     * out through one of them; null where none has. With [movedBoxes], a vertex the pose left where it rests at [restPositions] and that lies
+     * in no garment's moved box, near no cloth the pose moved, lies against every garment as at rest and takes its value there from
+     * [restLowered], the same search made at rest, null where it lowered nothing.
      */
     private suspend fun pushedThrough(
-        surface: CharacterSurface, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>, parts: List<Array<String?>>, s: Int, runAll: RunAll,
+        surface: CharacterSurface, restPositions: FloatArray, base: FloatArray, under: FloatArray, outer: List<Int>, near: List<NearestVertex>, movedBoxes: List<FloatArray?>?,
+        restLowered: FloatArray?, parts: List<Array<String?>>, s: Int, runAll: RunAll,
     ): FloatArray? {
         if (outer.isEmpty()) return null
         val cell = surface.mesh.cell
@@ -77,6 +90,13 @@ class PosedHiding(private val body: CharacterSurface, private val rest: Characte
         runAll(chunked(corners, POKE_CHUNK) { from, until ->
             for (v in from until until) {
                 if (under[v] <= 0f || base[v] < 0f) continue
+                if (movedBoxes != null && !moved(restPositions, positions, v) && outer.none { g -> movedBoxes[g]?.let { inBox(it, positions, v) } == true }) {
+                    val was = restLowered?.get(v) ?: continue
+                    if (was >= base[v]) continue
+                    lowered[v] = was
+                    lowers[from / POKE_CHUNK] = true
+                    continue
+                }
                 var least = Float.MAX_VALUE
                 val part = parts[s][v]
                 for (g in outer) {
@@ -117,4 +137,15 @@ private fun bodyPartsOf(surface: CharacterSurface): Array<String?> {
 private fun bodyPartOf(part: PartId): String {
     if (!isBranchPart(part)) return part.value
     return part.value.removePrefix(GARMENT_PART_PREFIX).split('/').getOrElse(1) { part.value }
+}
+
+/** What [PosedHiding] lowers on each surface of [dress] at rest, the body's first, null where it lowers nothing: kept while the dress is the same. */
+class RestHiding(val dress: SurfaceDress, val lowered: List<FloatArray?>) {
+    companion object {
+        /** The search [PosedHiding] makes on [rest], the body at rest, wearing [dress] as it rests, its pieces run by [runAll]. */
+        suspend fun of(rest: CharacterSurface, dress: SurfaceDress, runAll: RunAll = IN_TURN): RestHiding {
+            val worn = PosedHiding(rest, rest, dress.garments, dress).of(null, runAll).second
+            return RestHiding(dress, listOf(worn.shown.takeIf { it !== dress.shown }) + worn.garments.mapIndexed { i, g -> g.shownValues.takeIf { it !== dress.garments[i].shownValues } })
+        }
+    }
 }

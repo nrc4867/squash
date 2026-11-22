@@ -13,6 +13,12 @@ data class Affine(val linear: Mat3, val offset: Vec3) {
     /** What this map does to a normal, up to its length: the cofactor matrix of [linear], its inverse transposed times its determinant. */
     val normals: Mat3 by lazy { Mat3(linear.y cross linear.z, linear.z cross linear.x, linear.x cross linear.y) }
 
+    /** The map that undoes this one; [linear] is never singular, since a stretch is held above [MIN_STRETCH]. */
+    val inverse: Affine by lazy {
+        val undo = normals.transposed() * (1f / (linear.x dot (linear.y cross linear.z)))
+        Affine(undo, (undo * offset) * -1f)
+    }
+
     /** Whether this map leaves every point where it is. */
     val isIdentity: Boolean get() = linear.x.isAxis(1f, 0f, 0f) && linear.y.isAxis(0f, 1f, 0f) && linear.z.isAxis(0f, 0f, 1f) && offset.isAxis(0f, 0f, 0f)
 
@@ -22,6 +28,12 @@ data class Affine(val linear: Mat3, val offset: Vec3) {
 }
 
 private fun Vec3.isAxis(x: Float, y: Float, z: Float) = this.x == x && this.y == y && this.z == z
+
+/** This map with its rows and columns swapped. */
+internal fun Mat3.transposed(): Mat3 = Mat3(Vec3(x.x, y.x, z.x), Vec3(x.y, y.y, z.y), Vec3(x.z, y.z, z.z))
+
+/** This map with every entry scaled by [s]. */
+internal operator fun Mat3.times(s: Float): Mat3 = Mat3(x * s, y * s, z * s)
 
 /** Column by column: this map after [other]. */
 internal operator fun Mat3.times(other: Mat3): Mat3 = Mat3(this * other.x, this * other.y, this * other.z)

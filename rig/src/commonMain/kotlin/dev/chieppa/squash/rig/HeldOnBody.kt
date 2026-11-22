@@ -100,7 +100,5 @@ private fun Rig.ownTurn(part: PartId, frames: BoneFrames): Pair<Mat3, Vec3>? {
     return turn to frames.transforms[bone](bones[bone].pivot)
 }
 
-private fun Mat3.transposed(): Mat3 = Mat3(Vec3(x.x, y.x, z.x), Vec3(x.y, y.y, z.y), Vec3(x.z, y.z, z.z))
-
 private fun Mat3.isStill(): Boolean =
     (x - Vec3.X).length < STILL && (y - Vec3.Y).length < STILL && (z - Vec3.Z).length < STILL

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlin.concurrent.Volatile
+import kotlin.time.TimeSource
 
 /**
  * A one surface's skin: its weights from [rig], with the [surface] they were read on, and the [dress] it wears with each garment's
@@ -50,7 +51,7 @@ private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
  * until the full surface follows the drag's end. While a pane does, the coarse surface is posed without looking for skin the pose
  * pushes through a garment ([PosedHiding.kept]). With the character's creases on, the posed surface carries them too, read on the skin
  * once ([CreaseRig]) and in each pose ([PoseCreasing]), the garments' folds raised before what they hide is found; a change of the
- * creases' settings poses again and builds nothing.
+ * creases' settings poses again and builds nothing. While [PoseReport.sink] is set, each posing's [PoseBreakdown] goes to it.
  */
 class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flow<Pose>) {
     private val graph = session.graph
@@ -89,6 +90,20 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     @Volatile
     private var lastCreaseRig: CreaseRig? = null
 
+    /** The implicit skins of the last skin refitted, which a pose on the same skin keeps. */
+    @Volatile
+    private var lastFits: ImplicitSkins? = null
+
+    private fun fitsOf(held: HeldSkin): ImplicitSkins? =
+        if (!ImplicitSkinning.on || held.coarse) null else lastFits?.takeIf { it.held === held } ?: ImplicitSkins(held).also { lastFits = it }
+
+    /** What hiding lowers at rest on the last dress hidden, which a pose wearing the same dress keeps. */
+    @Volatile
+    private var lastRestHiding: RestHiding? = null
+
+    private suspend fun restHidingOf(rest: CharacterSurface, dress: SurfaceDress): RestHiding =
+        lastRestHiding?.takeIf { it.dress === dress } ?: RestHiding.of(rest, dress, IN_PARALLEL).also { lastRestHiding = it }
+
     private fun creaseRigOf(held: HeldSkin): CreaseRig = lastCreaseRig?.takeIf { it.skin === held } ?: CreaseRig.of(held, lastCreaseRig).also { lastCreaseRig = it }
 
     private val shaped = combine(pose, session.document.map { CreaseSettings.of(it.character) }.distinctUntilChanged()) { shown, creases -> PoseShape(shown, creases) }
@@ -106,24 +121,36 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val skin = held.skin
         if (surface == null || skin == null) return@gather HeldPosedSurface(null)
         if (!laid.isOn(surface)) return@gather lastPosed ?: HeldPosedSurface(null)
+        val breakdown = PoseReport.start()
+        val began = breakdown?.let { TimeSource.Monotonic.markNow() }
         val frames = boneFrames(held.rig, gathered.shape.pose)
         val settings = gathered.shape.creases
         val creasing = if (settings.creases.on && !held.coarse) PoseCreasing(creaseRigOf(held), frames, settings) else null
-        val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL)
+        val fits = fitsOf(held)
+        val bodyBreakdown = breakdown?.let { PoseBreakdown() }
+        val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL, breakdown = bodyBreakdown, fit = fits?.of(0, frames))
+        bodyBreakdown?.let { breakdown?.merged(it, "body ") }
         val garmentCreasing = held.dress?.garments.orEmpty().map { creasing?.garment(it) }
         val worn = held.dress?.let { dress ->
             val moved = coroutineScope {
                 dress.garments.mapIndexed { i, garment ->
                     async {
-                        val posed = posedSurface(garment.surface, held.garments[i], null, frames, shape = garmentCreasing[i]?.let { it::shape })
-                        garment.movedTo(hangingPushed(garment, posed.surface, body.surface), posed.carry)
+                        val own = breakdown?.let { PoseBreakdown() }
+                        val posed = own.time("all") {
+                            posedSurface(garment.surface, held.garments[i], null, frames, IN_PARALLEL, garmentCreasing[i]?.let { it::shape }, own, fits?.of(i + 1, frames))
+                        }
+                        val hung = own.time("hang") { garment.movedTo(hangingPushed(garment, posed.surface, body.surface), posed.carry) }
+                        own?.count("vertices", garment.surface.mesh.vertexCount.toLong())
+                        hung to own
                     }
                 }.awaitAll()
             }
-            val hiding = PosedHiding(body.surface, surface, moved, dress)
-            if (held.coarse) hiding.kept(body.paint) else hiding.of(body.paint, IN_PARALLEL)
+            moved.forEachIndexed { i, (_, own) -> own?.let { breakdown?.merged(it, "garment ${dress.garments[i].cover.garment.id.value} ") } }
+            val atRest = if (held.coarse) null else breakdown.time("hiding at rest") { restHidingOf(surface, dress) }
+            val hiding = PosedHiding(body.surface, surface, moved.map { it.first }, dress, atRest)
+            breakdown.time("hiding") { if (held.coarse) hiding.kept(body.paint) else hiding.of(body.paint, IN_PARALLEL) }
         }
-        val creases = creasing?.let { poseCreasing ->
+        val creases = breakdown.time("creases") { creasing?.let { poseCreasing ->
             val byPiece = held.dress?.garments.orEmpty().zip(garmentCreasing).mapNotNull { (garment, creased) -> creased?.let { garment.cover.garmentPiece to it } }.toMap()
             val dressed = worn?.second
             coroutineScope {
@@ -133,6 +160,11 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
                 }
                 PosedCreases(bodyMarks.await(), garmentMarks.awaitAll().toMap())
             }
+        } }
+        if (breakdown != null && began != null) {
+            breakdown.count("body vertices", surface.mesh.vertexCount.toLong())
+            breakdown.add("node", began.elapsedNow().inWholeNanoseconds)
+            PoseReport.sink?.invoke(breakdown)
         }
         HeldPosedSurface(PosedSurface(body.surface, worn?.first ?: body.paint, worn?.second, body.carry, creases), held.coarse).also { lastPosed = it }
     }

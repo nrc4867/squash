@@ -9,9 +9,10 @@ import java.io.File
 
 /**
  * Plays gestures and switches on [open], once to warm and then [runs] times, and prints each step's time until the graph settles; with a
- * [record] folder, the timed runs of each gesture are recorded under the JDK's flight recorder into it.
+ * [record] folder, the timed runs of each gesture are recorded under the JDK's flight recorder into it; with [poses], each later move's
+ * posings are broken down by stage.
  */
-class DragTimer(private val open: DragSession, private val runs: Int, private val record: File? = null) {
+class DragTimer(private val open: DragSession, private val runs: Int, private val record: File? = null, private val poses: PoseCollector? = null) {
     private val history get() = open.session.history
     private var lastFrom = 0L
 
@@ -38,7 +39,10 @@ class DragTimer(private val open: DragSession, private val runs: Int, private va
             if (run == 1) recording = record?.let { Recording(Configuration.getConfiguration("profile")).apply { start() } }
             val gesture = history.begin()
             script.frames(run).forEachIndexed { i, command ->
-                val took = step(if (timed && i > 0) ran else null) { gesture.update(command) }
+                val later = timed && i > 0
+                if (later) poses?.begin()
+                val took = step(if (later) ran else null) { gesture.update(command) }
+                if (later) poses?.keep()
                 if (timed) (if (i == 0) first else frames) += took
                 if (timed && i > 0) shown += open.ran(lastFrom).filterKeys { it in SHOWN }.values.maxOrNull() ?: took
             }
@@ -65,6 +69,7 @@ class DragTimer(private val open: DragSession, private val runs: Int, private va
         printStats(name, "${script.label} undo", undo)
         printStats(name, "${script.label} redo", redo)
         printRan(name, "${script.label} moves", ran)
+        poses?.print(name, "${script.label} each later move")
         printRan(name, "${script.label} release", ranOnRelease)
         printRan(name, "${script.label} undo", ranOnUndo)
         printRan(name, "${script.label} redo", ranOnRedo)
