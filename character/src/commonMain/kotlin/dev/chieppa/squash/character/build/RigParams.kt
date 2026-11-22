@@ -20,4 +20,7 @@ object RigParams {
     fun reachJoint(name: String): String? = name.takeIf { it.startsWith(REACH_PREFIX) }?.removePrefix(REACH_PREFIX)
 
     fun isRig(name: String) = name.startsWith(PREFIX)
+
+    /** The widest a head's jaw opens, in degrees, in place of its mouth style's or its template's. */
+    const val JAW = "${PREFIX}jaw"
 }

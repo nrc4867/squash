@@ -921,6 +921,7 @@ Joints, which poses name; the move is for positive `degrees` on the left side at
 | joint | u | hinge | limits | +degrees moves the tip |
 | --- | --- | --- | --- | --- |
 | `neck` | 0.25 | x | [-40, 40] | back |
+| `jaw` | 0.453 | x | [0, 25] | back |
 
 Patches: `body`
 

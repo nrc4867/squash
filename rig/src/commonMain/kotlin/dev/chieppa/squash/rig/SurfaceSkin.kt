@@ -66,7 +66,7 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
         }
 
         /** Each quad middle [from] until [to]'s weights: the mean of its four corners'. */
-        private fun middleWeights(indices: IntArray, corners: Int, from: Int, to: Int, bones: IntArray, weights: FloatArray) {
+        internal fun middleWeights(indices: IntArray, corners: Int, from: Int, to: Int, bones: IntArray, weights: FloatArray) {
             val blend = WeightBlend()
             for (quad in from until to) {
                 blend.clear()

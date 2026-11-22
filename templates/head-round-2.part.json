@@ -19,6 +19,7 @@
   "blocks": [
     { "kind": "skull",    "u": [0.0, 1.0], "width": 0.9, "depth": 0.96 },
     { "kind": "joint",    "name": "neck",  "u": 0.25, "hinge": "x", "limits": [-40, 40] },
+    { "kind": "joint",    "name": "jaw",   "u": 0.45335543, "v": 0.0, "hinge": "x", "limits": [0, 25] },
     { "kind": "socket",   "name": "ear",   "u": 0.5, "v": 0.75, "pair": "x", "outward": "normal" },
     { "kind": "landmark", "name": "eye",   "u": 0.55, "v": 0.94, "pair": "x" },
     { "kind": "landmark", "name": "nose",  "u": 0.42, "v": 0.0 },

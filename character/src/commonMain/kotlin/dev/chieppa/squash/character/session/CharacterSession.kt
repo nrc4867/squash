@@ -100,6 +100,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import dev.chieppa.squash.character.mouth.speaking
+import dev.chieppa.squash.character.mouth.withOpenJaws
 import dev.chieppa.squash.document.MouthShapeName
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -133,8 +134,11 @@ class CharacterSession(
      */
     val mouthPreview = MutableStateFlow<MouthShapeName?>(null)
 
-    /** The document as the face shows it: [document] with every mouth saying [mouthPreview]. What the jaw, surface work and color read. */
-    private val shownFace: Flow<SquashDocument> = combine(history.document, mouthPreview) { doc, shape -> doc.speaking(shape, templates) }
+    /**
+     * The document as the face shows it: [document] with every mouth saying [mouthPreview] and every jaw the pose opens parted at its mouth
+     * line. What the jaw, surface work, color and the mouths' recesses read.
+     */
+    private val shownFace: Flow<SquashDocument> = combine(history.document, mouthPreview) { doc, shape -> doc.speaking(shape, templates).withOpenJaws(templates) }
 
     private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
@@ -191,7 +195,7 @@ class CharacterSession(
      * The recesses the mouths cut into their parts where their lips part, as the face shows them: what the one surface is cut by, and
      * the walls teeth stand on. Made with the session, so [Graph.settled] covers it from the start.
      */
-    val mouthRecesses: Node<*, BodyRecesses> = graph.bodyRecessesNode(document.map { mouthHolders(it.character) }) { part ->
+    val mouthRecesses: Node<*, BodyRecesses> = graph.bodyRecessesNode(shownFace.map { mouthHolders(it.character) }) { part ->
         recessNodes.getOrPut(part) { graph.partRecessesNode(part, surfaceWork(part), surface(part)) }
     }
 

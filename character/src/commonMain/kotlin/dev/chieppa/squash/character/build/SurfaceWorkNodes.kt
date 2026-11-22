@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.mouth.dentitionsOf
 import dev.chieppa.squash.character.mouth.mouthStylesOf
+import dev.chieppa.squash.character.mouth.openJawGroup
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.geom.LineGrid
@@ -26,7 +27,10 @@ fun Graph.partSurfaceWorkNode(
 ): Node<*, ResolvedSurfaceWork> = gather(
     document.map { doc ->
         val input = surfaceWorkInput(doc.character, part)
-        templates?.let { input.copy(mouthStyles = mouthStylesOf(doc.character, part, it), dentitions = dentitionsOf(doc.character, part, it)) } ?: input
+        templates?.let { library ->
+            val jaws = doc.character.part(part)?.let { openJawGroup(doc.character, it, library) }.let(::setOfNotNull)
+            input.copy(mouthStyles = mouthStylesOf(doc.character, part, library), dentitions = dentitionsOf(doc.character, part, library), jaws = jaws)
+        } ?: input
     }
         .distinctUntilChanged(),
     sourcesOf = { input -> input.parts.associateWith(surface) },

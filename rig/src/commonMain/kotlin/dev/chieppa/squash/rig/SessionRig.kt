@@ -2,6 +2,8 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.RigParams
+import dev.chieppa.squash.character.build.TemplateLibrary
+import dev.chieppa.squash.character.mouth.jawLimitOf
 import dev.chieppa.squash.character.session.CharacterSession
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.PartId
@@ -20,10 +22,19 @@ data class RigInput(
     val reach: Map<PartId, Map<String, Float>> = emptyMap(),
     val seams: Map<PartId, List<SeamStroke>> = emptyMap(),
     val binds: Map<PartId, OwnedBind> = emptyMap(),
+    val jaws: Map<PartId, Float> = emptyMap(),
 )
 
-/** What [character] gives its rig: the reaches and seam strokes each part resolves to, its side's reading of its pair's, and its owned parts' bindings. */
-fun rigInput(character: Character): RigInput {
+/**
+ * What [character] gives its rig: the reaches and seam strokes each part resolves to, its side's reading of its pair's, its owned parts'
+ * bindings, and with [templates] the widest each head's jaw opens.
+ */
+fun rigInput(character: Character, templates: TemplateLibrary? = null): RigInput {
+    val jaws = templates?.let { library -> character.parts.mapNotNull { part -> jawLimitOf(character, part, library)?.let { part.id to it } }.toMap() }.orEmpty()
+    return rigInputOf(character).copy(jaws = jaws)
+}
+
+private fun rigInputOf(character: Character): RigInput {
     val reach = character.parts.associate { part ->
         part.id to character.resolved(part).params.mapNotNull { (name, value) -> RigParams.reachJoint(name)?.let { it to value } }.toMap()
     }.filterValues { it.isNotEmpty() }
@@ -51,12 +62,13 @@ private sealed interface WholeRigInput {
  */
 class SessionRig(session: CharacterSession) {
     private val body: Node<*, Rig> = session.graph.gather(
-        session.document.map { rigInput(it.character) }.distinctUntilChanged(),
+        session.document.map { rigInput(it.character, session.templates) }.distinctUntilChanged(),
         { mapOf(AssemblySource to session.bodyAssembly) },
     ) { gathered ->
         val assembled = gathered.values.getValue(AssemblySource)
         val input = gathered.shape
         rigOf(assembled, StrokePaint(assembled, input.seams), cancellationCheck(), JointReach { part, joint -> input.reach[part]?.get(joint) ?: 1f }) { input.binds[it] ?: OwnedBind.RULE }
+            .withJawLimits(input.jaws, assembled)
     }
 
     private val bodyInput = session.graph.follow<Rig, WholeRigInput>(body) { WholeRigInput.Body(it) }

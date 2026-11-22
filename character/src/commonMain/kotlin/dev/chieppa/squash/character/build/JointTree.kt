@@ -44,8 +44,11 @@ class JointTree(template: PartTemplate, patches: Collection<String>) {
     /** The chain's joint owning the part at [u]. */
     fun ownerAt(u: Float): Int = (chain.count { it.u <= u } - 1).coerceIn(0, (owning - 1).coerceAtLeast(0))
 
-    /** The chain's joint that carries a socket at [u]: the last at or below it, so an end joint carries what sits on the part's end. */
-    fun carrierAt(u: Float): Int = (chain.count { it.u <= u } - 1).coerceAtLeast(0)
+    /**
+     * The chain's joint that carries a socket at [u]: the last at or below it, so an end joint carries what sits on the part's end. A joint
+     * that turns one side of the part only, as a jaw does, carries nothing.
+     */
+    fun carrierAt(u: Float): Int = chain.indices.lastOrNull { chain[it].u <= u && chain[it].v == null } ?: 0
 
     /** Where the span of the chain's joint at [index] ends along u. */
     fun spanEnd(index: Int): Float = if (index + 1 < chain.size) chain[index + 1].u else 1f

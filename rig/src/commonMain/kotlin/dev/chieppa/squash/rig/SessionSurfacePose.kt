@@ -75,7 +75,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val dress = (gathered.values.getValue(SkinSource.DRESS) as HeldDress).dress
         if (dress?.isOn(surface) == false) return@gather lastSkin ?: HeldSkin(held, null, null)
         val garments = dress?.garments.orEmpty().map { garment -> garmentSkins.of(held, garment, IN_PARALLEL) }
-        HeldSkin(held, surface, SurfaceSkin.of(held, surface, IN_PARALLEL), dress, garments, shown.coarse).also { lastSkin = it }
+        HeldSkin(held, surface, SurfaceSkin.of(held, surface, IN_PARALLEL).withJaws(held, surface), dress, garments, shown.coarse).also { lastSkin = it }
     }
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }

@@ -11,6 +11,7 @@ import dev.chieppa.squash.character.mouth.ShapedMouth
 import dev.chieppa.squash.character.mouth.mouthMarks
 import dev.chieppa.squash.character.mouth.shapeMouth
 import dev.chieppa.squash.document.Anchor
+import dev.chieppa.squash.document.MarkControls
 import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
@@ -65,7 +66,7 @@ fun openMouths(holder: PartId, work: ResolvedSurfaceWork, surfaces: Map<PartId, 
         if (mouth.flat.restsAsDrawn) {
             null
         } else {
-            val back = mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve)?.solid?.deeperThan(BACK_DEPTH)
+            val back = mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve, group.id in work.jaws)?.solid?.deeperThan(BACK_DEPTH)
             MouthLanding(holder, group, mouth, surface, marks, bySource, back, lipRegionsOf(work, group))
         }
     }
@@ -78,15 +79,43 @@ fun openMouths(holder: PartId, work: ResolvedSurfaceWork, surfaces: Map<PartId, 
     )
 }
 
-/** Every mouth group [holder]'s [work] holds, shaped on its [surface] in the style [work] names for it (plain lips where none). */
+/**
+ * Every mouth group [holder]'s [work] holds, shaped on its [surface] in the style [work] names for it (plain lips where none); one an open
+ * jaw splits along parted at least to its slit, with no teeth.
+ */
 internal fun shapedMouths(holder: PartId, work: ResolvedSurfaceWork, surface: PartSurface): List<Pair<MarkGroup, ShapedMouth>> {
     val bySource = work.marks.groupBy { it.source }
     return work.groups.filter { it.isMouth }.mapNotNull { group ->
         val regions = lipRegionsOf(work, group).map { region -> region.border.map { it.anchor } }
         val placed = group.mouthMarks({ id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, regions)
-        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface, work.dentitions[group.id] ?: MouthDentition.NONE)?.let { group to it }
+        val style = styleOf(work, group)
+        val jaw = group.id in work.jaws
+        val dentition = if (jaw) MouthDentition.NONE else work.dentitions[group.id] ?: MouthDentition.NONE
+        fun shaped(controls: MarkControls) = shapeMouth(holder, placed, controls, style, surface, dentition)
+        val mouth = shaped(group.controls) ?: return@mapNotNull null
+        if (!jaw) return@mapNotNull group to mouth
+        val open = slitOpen(holder, mouth, style, surface)
+        if (open <= group.controls.open) group to mouth else group to (shaped(group.controls.copy(open = open)) ?: mouth)
     }
 }
+
+/**
+ * The open that parts [mouth] to its jaw's slit: its lips [SLIT_DROP] of the straight distance between its corners apart at its middle,
+ * whatever length of line its style lays that over.
+ */
+private fun slitOpen(holder: PartId, mouth: ShapedMouth, style: MouthStyle, surface: PartSurface): Float {
+    val line = mouth.flat.upper.flatten()
+    if (line.size < MIN_LINE_POINTS) return 0f
+    val first = line.minBy { it.x }
+    val last = line.maxBy { it.x }
+    val width = last.x - first.x
+    val ends = mouth.uv(listOf(first, last)).mapNotNull { surface.pointAt(Anchor(holder, mouth.patch, it.u, it.v))?.position }
+    if (ends.size < 2 || width <= 0f) return 0f
+    return (SLIT_DROP * (ends[1] - ends[0]).length / (style.depth * width)).coerceIn(0f, 1f)
+}
+
+/** How far apart a jaw's slit parts the lips at their middle, as a share of the straight distance between the mouth's corners. */
+private const val SLIT_DROP = 0.25f
 
 /** The regions [work] paints in [group]'s lip line fill: its lips' color as drawn. */
 fun lipRegionsOf(work: ResolvedSurfaceWork, group: MarkGroup): List<ResolvedRegion> {
@@ -97,11 +126,11 @@ fun lipRegionsOf(work: ResolvedSurfaceWork, group: MarkGroup): List<ResolvedRegi
 private fun styleOf(work: ResolvedSurfaceWork, group: MarkGroup): MouthStyle = work.mouthStyles[group.id] ?: MouthStyle.PLAIN
 
 /**
- * The recess each mouth [holder] holds cuts into it where its lips part, as its style carves it; none for a painted style or a mouth at
- * rest. See HLD: look, Mouth.
+ * The recess each mouth [holder] holds cuts into it where its lips part, as its style carves it, or as a jaw's pocket for a mouth its
+ * open jaw splits along; none for a painted style or a mouth at rest. See HLD: look, Mouth.
  */
 fun mouthRecesses(holder: PartId, work: ResolvedSurfaceWork, surface: PartSurface): List<MouthRecess> =
-    shapedMouths(holder, work, surface).mapNotNull { (group, mouth) -> mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve) }
+    shapedMouths(holder, work, surface).mapNotNull { (group, mouth) -> mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve, group.id in work.jaws) }
 
 /** One shaped mouth laid on its part: its pieces as color shapes on the lip line's patch and its lines as marks. */
 private class MouthLanding(

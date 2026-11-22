@@ -7,6 +7,7 @@
   "teeth": "toon-simple",
   "depth": 0.45,
   "carve": 0,
+  "jaw": 15,
   "scale": {},
   "shapes": {
     "rest": {},

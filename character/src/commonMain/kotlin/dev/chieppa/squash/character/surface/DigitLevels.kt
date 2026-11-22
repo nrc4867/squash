@@ -20,7 +20,8 @@ private val DETAIL_ROLES = setOf(Role.HEAD, Role.JAW, Role.EAR, Role.HAND, Role.
 
 /**
  * The level each member of [field] meshes at (see `CellLevels`): [DIGIT_LEVEL] for a digit, a run of a part's row of toes or fingers, or
- * a pocket's lining, whose rim and hollow are smaller than the part it is cut into,
+ * a pocket's lining, whose rim and hollow are smaller than the part it is cut into, or a muzzle's run a jaw's slit too narrow for its own
+ * cell is cut into,
  * [DETAIL_LEVEL] for every other run of a head, jaw, ear, hand or foot, and the body's own cell for every other run, legs, arms, tails, the
  * torso and hair among them, but a tail or a horn (an antler, a trunk) whose tip is thinner than [THIN_TIP_CELLS] of the body's cells across,
  * at [DETAIL_LEVEL], so its round end, a hook at it and a branch on it are several cells across; and a hand's or a foot's own run whose far
@@ -30,11 +31,26 @@ fun digitLevels(field: CharacterField): IntArray = IntArray(field.runs.size) { i
     val run = field.runs[i]
     when {
         isDigitRun(run.part, run.patch) || (run.first && pocketOf(run.part) != null) -> DIGIT_LEVEL
+        narrowSlitIn(field, run) -> DIGIT_LEVEL
         run.part.role in END_ROLES && thinEnd(run, field.cell / (1 shl DETAIL_LEVEL)) -> DIGIT_LEVEL
         run.part.role in DETAIL_ROLES || (run.part.role in THIN_TIP_ROLES && thinTip(run, field.cell)) -> DETAIL_LEVEL
         else -> 0
     }
 }
+
+/**
+ * Whether a posed jaw's slit cut into [run] of [field] is too narrow for its lips to mesh apart at [DETAIL_LEVEL]: under [SLIT_CELLS] of
+ * its cells tall. Only a run apart from its part's body run, as a muzzle, meshes finer for it; a head's body run carries the whole head's
+ * outline and keeps its own cell.
+ */
+private fun narrowSlitIn(field: CharacterField, run: FieldRun): Boolean {
+    if (run.first) return false
+    val cell = field.cell / (1 shl DETAIL_LEVEL)
+    return field.recesses.any { it.jaw && it.part == run.partId && it.patch == run.patch.name && 2f * it.stations.maxOf { s -> s.half } < SLIT_CELLS * cell }
+}
+
+/** How many cells tall a jaw's slit must be at its tallest for its lips to mesh apart. */
+private const val SLIT_CELLS = 2f
 
 /** The roles a thin tip meshes finer for. */
 private val THIN_TIP_ROLES = setOf(Role.TAIL, Role.HORN)

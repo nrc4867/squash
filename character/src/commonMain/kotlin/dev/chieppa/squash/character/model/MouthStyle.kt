@@ -81,6 +81,8 @@ data class MouthStyle(
     val shapes: Map<MouthShapeName, MouthShapeValues> = emptyMap(),
     @Doc("The teeth preset a mouth of this style starts from (templates/teeth/<name>.teeth.json); none for no teeth.")
     val teeth: String? = null,
+    @Doc("The widest a head of this style opens its jaw, in degrees, in place of its template's jaw joint limit; none keeps the template's.") @Range(min = 0.0, max = 60.0)
+    val jaw: Float? = null,
 ) {
     /** [controls] as a mouth of this style does them: scaled, then held to its limits. */
     fun controlsOf(controls: MarkControls): MarkControls = limits.of(scale.of(controls))

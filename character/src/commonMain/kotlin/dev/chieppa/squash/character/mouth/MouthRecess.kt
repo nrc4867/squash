@@ -14,6 +14,7 @@ import dev.chieppa.squash.geom.field.RecessWallPoint
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 /** How many places along the mouth line its recess is laid at, corner to corner. */
 private const val STATIONS = 25
@@ -30,6 +31,12 @@ private const val REACH_PER_HALF = 0.75f
 /** How far a place found on the patch may miss its place in the mouth's flat frame, a share of the mouth's width; a station missing by more is left out. */
 private const val WALK_MISS = 0.02f
 
+/**
+ * How deep a jaw's pocket goes behind its slit at the slit's tallest, as a share of the straight distance between the slit's corners: the
+ * lips' width, or across a muzzle between the ends of its line.
+ */
+const val JAW_POCKET = 0.32f
+
 /** The fewest stations a recess is laid along. */
 private const val MIN_STATIONS = 3
 
@@ -39,7 +46,7 @@ private const val TINY = 1e-6f
  * A mouth's recess, cut into [part]'s run [patch] where its lips part: the groove behind the opening of the mouth group [group], swept
  * along its line from one corner to the other, in the part's own space as its rest surface holds it, shown or not. See HLD: look, Mouth.
  */
-data class MouthRecess(val part: PartId, val group: MarkGroupId, val patch: String, val stations: List<RecessStation>, val reach: Float) {
+data class MouthRecess(val part: PartId, val group: MarkGroupId, val patch: String, val stations: List<RecessStation>, val reach: Float, val jaw: Boolean = false) {
     /** The recess as a solid, in the part's own space. */
     val solid: RecessSolid by lazy { RecessSolid(stations, reach) }
 
@@ -56,10 +63,12 @@ data class MouthRecess(val part: PartId, val group: MarkGroupId, val patch: Stri
 
 /**
  * The recess behind [mouth]'s opening on [holder]'s [surface], [carve] of its width deep at most and never deeper than [DEEP_PER_HALF]
- * times how far its lips part at a place; null where its lips do not part or [carve] is 0, a painted mouth.
+ * times how far its lips part at a place; null where its lips do not part or [carve] is 0, a painted mouth. A [jaw]'s pocket, behind the
+ * slit a posed jaw drops away from, is [JAW_POCKET] of the distance between its corners deep at the opening's tallest, shallower toward
+ * the corners.
  */
-fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surface: PartSurface, carve: Float): MouthRecess? {
-    if (carve <= 0f) return null
+fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surface: PartSurface, carve: Float, jaw: Boolean = false): MouthRecess? {
+    if (carve <= 0f && !jaw) return null
     val loop = mouth.flat.opening?.takeIf { it.size >= MIN_LOOP } ?: return null
     val left = loop.minOf { it.x }
     val right = loop.maxOf { it.x }
@@ -87,13 +96,15 @@ fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surfac
     if (tallest < TINY) return null
     val first = (halves.indexOfFirst { it > TINY } - 1).coerceAtLeast(0)
     val last = (halves.indexOfLast { it > TINY } + 1).coerceAtMost(raw.lastIndex)
+    val chord = (raw[last].middle - raw[first].middle).length
     val stations = (first..last).map { i ->
         val r = raw[i]
         val down = downs[i] ?: nearestDown(downs, i) ?: fallback
-        RecessStation(r.middle, down, normals[i] * -1f, halves[i], min(carve * width, DEEP_PER_HALF * halves[i]), r.place, r.upperPlace, r.lowerPlace)
+        val depth = if (jaw) min(JAW_POCKET * chord * sqrt(halves[i] / tallest), facingRoom(raw, normals, i)) else min(carve * width, DEEP_PER_HALF * halves[i])
+        RecessStation(r.middle, down, normals[i] * -1f, halves[i], depth, r.place, r.upperPlace, r.lowerPlace)
     }
     if (stations.size < 2) return null
-    return MouthRecess(holder, group, mouth.patch, stations, tallest * REACH_PER_HALF)
+    return MouthRecess(holder, group, mouth.patch, stations, tallest * REACH_PER_HALF, jaw)
 }
 
 /** A station's top, bottom and middle on the surface and the surface's outward normal at the middle, in the part's own space, and their places on the patch. */
@@ -128,6 +139,19 @@ private fun outward(raw: List<Raw>, i: Int): Vec3 {
     val n = square.normalized()
     return if ((n dot r.normal) < 0f) n * -1f else n
 }
+
+/**
+ * How deep station [i] of [raw] may go before it meets the pocket of a station across the mouth from it, as on the other side of a narrow
+ * muzzle: [FACING_ROOM] of the way to the nearest station whose outward way, [normals], faces back against its own.
+ */
+private fun facingRoom(raw: List<Raw>, normals: List<Vec3>, i: Int): Float =
+    raw.indices.filter { (normals[it] dot normals[i]) < FACING }.minOfOrNull { (raw[it].middle - raw[i].middle).length * FACING_ROOM } ?: Float.MAX_VALUE
+
+/** How far two stations' outward ways must turn against each other to face across the mouth, as the cosine between them. */
+private const val FACING = -0.3f
+
+/** The share of the way to a station across the mouth a jaw's pocket may reach, so the two sides' pockets never meet. */
+private const val FACING_ROOM = 0.4f
 
 private fun nearestDown(downs: List<Vec3?>, i: Int): Vec3? =
     downs.indices.filter { downs[it] != null }.minByOrNull { abs(it - i) }?.let { downs[it] }

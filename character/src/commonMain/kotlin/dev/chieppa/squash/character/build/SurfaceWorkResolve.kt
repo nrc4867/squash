@@ -47,6 +47,7 @@ data class SurfaceWorkInput(
     val regionMirrors: Map<RegionId, Region> = emptyMap(),
     val mouthStyles: Map<MarkGroupId, MouthStyle> = emptyMap(),
     val dentitions: Map<MarkGroupId, MouthDentition> = emptyMap(),
+    val jaws: Set<MarkGroupId> = emptySet(),
 )
 
 /** What [part] holds in [character]; empty when no such part is there. An expression counts for the groups the part holds. */
@@ -122,6 +123,7 @@ fun resolveSurfaceWork(input: SurfaceWorkInput, surfaces: Map<PartId, PartSurfac
         lineWeights = surface.lineWeights.mapNotNull { checkCancelled(); resolveWeight(it, point) },
         mouthStyles = input.mouthStyles,
         dentitions = input.dentitions,
+        jaws = input.jaws,
     )
 }
 
