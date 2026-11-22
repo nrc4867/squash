@@ -4,8 +4,19 @@ import { steps, type Point } from "../geom/point.ts";
 import { twoSidedLoop, twoSidedOpen } from "./loop.ts";
 import { outline, type Shape } from "./shape.ts";
 
-/** Radii by direction, one per station. `front` is `forward`. A pair's left side may name `outer` (its left) and `inner` (its right). */
-export type TubeProfiles = Partial<Record<Direction | PairDirection | "front", readonly number[]>>;
+/** A radius curve along a tube: a few `[x, r]` places it passes through, smooth but at `corners`, or its Bézier points. */
+export type TubeCurve = { through: readonly Point[]; corners?: readonly number[] } | { bezier: readonly Point[] };
+
+/**
+ * Radii by direction: one per station, or each a curve of its own along the part (`TubeCurve`), which `tubePart` builds as drawn. `front`
+ * is `forward`. A pair's left side may name `outer` (its left) and `inner` (its right).
+ */
+export type TubeProfiles = Partial<Record<Direction | PairDirection | "front", readonly number[] | TubeCurve>>;
+
+/** Whether a profile is a curve rather than radii at stations. */
+export function isTubeCurve(profile: readonly number[] | TubeCurve | undefined): profile is TubeCurve {
+  return profile !== undefined && !Array.isArray(profile);
+}
 
 export interface TubeSpec {
   /** The way the part rests, which decides which profiles Side and Top take (frames.md). */
@@ -31,12 +42,17 @@ export interface TubeOutlines {
 const DEFAULT_TIP = 1;
 
 function profile(profiles: TubeProfiles, direction: Direction): readonly number[] | undefined {
-  const named = profiles[direction];
+  const named = radii(profiles[direction]);
   if (named) return named;
-  if (direction === "forward") return profiles.front;
-  if (direction === "left") return profiles.outer;
-  if (direction === "right") return profiles.inner;
+  if (direction === "forward") return radii(profiles.front);
+  if (direction === "left") return radii(profiles.outer);
+  if (direction === "right") return radii(profiles.inner);
   return undefined;
+}
+
+function radii(profile: readonly number[] | TubeCurve | undefined): readonly number[] | undefined {
+  if (isTubeCurve(profile)) throw new Error("tube: a profile drawn as a curve is built by tubePart, as the part's tube");
+  return profile;
 }
 
 function stationsX(spec: TubeSpec, count: number, tipRadius: number, startRadius: number): number[] {

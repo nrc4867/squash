@@ -46,6 +46,8 @@ data class RecipePart(
     val outward: Float? = null,
     @Doc("Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.")
     val outlines: Map<View, RecipeOutline> = emptyMap(),
+    @Doc("A tube part's widths as curves along its bone, in place of its Side and Top outlines: they are built into them as drawn.")
+    val tube: RecipeTube? = null,
     @Doc("The direction the part rests in, in place of its template's (move.rest): a generic root resting up is a standing body.")
     val rest: RecipeRest? = null,
     @Doc("Degrees the part rolls about its own axis, turning its up toward its v 0.25 side, after rest, lean and outward (move.roll): a sheet resting out and rolled 90 faces forward.")
@@ -118,6 +120,8 @@ data class RecipeSocket(
     val sink: Float? = null,
     @Doc("How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out.")
     val outset: Float? = null,
+    @Doc("How far from the part's axis, in body units, the root of a part on it sits, toward v at u: the part's root lies there however wide this part is drawn, in place of on the surface sunk by sink. A part on a figure takes it from the fit when left out.")
+    val reach: Float? = null,
     @Doc("Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on, a part on each. Many of one part over an area or along a line take spread or path instead.")
     val count: Int? = null,
     @Doc("A row's last socket's u; the row's u when left out.")

@@ -41,6 +41,8 @@ data class Recipe(
     val planVersion: Int? = null,
     @Doc("Named colours, in order. Every colour the recipe uses is a slot named here.")
     val palette: List<RecipeSlot> = emptyList(),
+    @Doc("The body drawn as a figure outline that the tube parts giving no profiles are fitted to.")
+    val figure: RecipeFigure? = null,
     @Doc("The parts, each after the part it sits on. A garment's own parts (shades, a heel, a buckle) name their garment.")
     val parts: List<RecipePart> = emptyList(),
     @Doc("Painted eyes on a head.")

@@ -22,7 +22,7 @@ import dev.chieppa.squash.recipe.model.RecipeSocket
 import kotlin.math.roundToInt
 
 /** The keys a single hand-made socket's parameters use, which a recipe socket stands for. */
-private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset", "digit")
+private val SOCKET_FIELDS = setOf("u", "v", "outward", "pair", "sink", "outset", "reach", "digit")
 
 /** The keys a row of hand-made sockets adds, and the one it may add besides. */
 private val ROW_FIELDS = setOf("count", "to", "size", "falloff")
@@ -91,6 +91,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
             id, params.getValue(HandSockets.u(id)), params.getValue(HandSockets.v(id)), params[HandSockets.outward(id)] ?: 0f,
             params[HandSockets.pair(id)] == 1f, params[HandSockets.sink(id)],
             outset = params[HandSockets.outset(id)],
+            reach = params[HandSockets.reach(id)],
             count = if (row) count.roundToInt() else null,
             to = if (row) params[HandSockets.to(id)] else null,
             toV = if (row) params[HandSockets.toV(id)] else null,

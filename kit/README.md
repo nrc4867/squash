@@ -102,6 +102,7 @@ Shapes are `{ points, corners, closed }`; `outline(shape)` makes a recipe outlin
 | helper | one line |
 | --- | --- |
 | `tube` | `tube({ rest: "down", length: leg.length, at: stations.map(leg.x), profiles: { front, back, outer, inner } })` gives `{ side, top }`; Side takes the profiles across its y for that rest, Top the others (by rest: up or down, Side `front` and `back`, Top `left` and `right`; forward or back, Side `up` and `down`, Top `left` and `right`; out, Side `up` and `down`, Top `front` and `back`; `outer` and `inner` name a pair's `left` and `right`), a lone Top side is mirrored; `closed: true` rounds both ends (a torso, a head); `tip: 0` ends flat. |
+| `TubeCurve` | a profile drawn as a curve along the part, in place of radii at stations: `{ through: [[0, 0.03], [0.12, 0.026], [0.22, 0.02]] }` (x along the part, r its radius that way; `corners` for sharp places) or `{ bezier }`. Give every profile of a part one way; `tubePart` writes curves as the part's `tube`, which the build turns into its Side and Top outlines as drawn, rounded over to the axis at `length` (and at 0 when `closed`; `tip: 0` ends it square). |
 | `roundStations` | `const egg = roundStations(0.25, 9, 0.55); tube({ ..., closed: true, at: egg.at, profiles: { front: egg.radii(0.098), ... } })` |
 | `outline` | `outline(oval({ rx: 0.1 }))` is `{ through, corners, closed }`. |
 | `shape`, `mapShape` | `shape(points, [2])`; `mapShape(s, (p) => scale(p, 2))`. |
@@ -124,8 +125,9 @@ A part's `role` is what it is to the body, one of `body`, `spine`, `neck`, `head
 | helper | one line |
 | --- | --- |
 | `tubePart` | `tubePart({ id: "legs", on: "torso", socket: "socket.3", ...pair("leg"), joints }, { rest: "down", length, profiles })`, a generic tube at `FINE` (96 rings, 32 segments). |
+| `figurePart` | `figurePart({ id: "arms", on: "torso", socket: "socket.2", ...pair("arm"), outward: 45, joints }, { rest: "down", length: 0.23 })`, a generic tube whose widths, join and root the recipe's `figure` fits (see [Figure](#figure)). |
 | `FINE`, `SMALL` | `generic` samplings for big and small generic parts. |
-| `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })`; `{ sink: 0, outset: 0.016 }` stands a part just off a shirt of fit 0.012. |
+| `socket` | `socket(2, torso.u(plan.h("shoulder")), vToward("up", "left"), { mirrored: true })`; `{ sink: 0, outset: 0.016 }` stands a part just off a shirt of fit 0.012; `{ reach: 0.07 }` puts the root of the part on it 0.07 from this part's axis toward v at u, however wide this part is drawn there, in place of on its surface sunk by `sink`. |
 | `digitPatch` | `socket(1, 0.7, 0.25, { patch: digitPatch(2) })` lies on a hand's third finger and rides it, a ring; `digitPatch("thumb")`, `digitPatch(0, "toes")`. Regions and marks take the same `patch`. |
 | `ringSocket` | `ringSocket(4, torso.u(plan.h("waist")), 12, { sink: 0, outset: 0.02 })`, twelve sockets round a part: studs round a belt. |
 | `spreadSocket` | `spreadSocket(3, { u: [0.1, 0.9], v: [0, 1] }, { count: 200, seed: 4, spacing: 0.03, sizeJitter: 0.2, leanJitter: 12 }, { size: 1, falloff: 0.5 })`, one socket showing copies of the one part on it over an area: wool, spines, tufts, scales. The part on it gives `shades: ["wool-2", "wool-3"]` for copies in a few slots. |
@@ -137,6 +139,24 @@ A part's `role` is what it is to the body, one of `body`, `spine`, `neck`, `head
 | `digitCurl` | `digitCurl("hand-l", { count: 3, curl: [-6, -10, -6], thumb: [6, 4, 2] })` poses every joint of a hand's three numbered fingers and its thumb; `row: "toes"` for a foot or paw. |
 | `bothSides` | `displayPose: bothSides("arm", { joint: "base", lean: -28 })` |
 | `curve`, `spiral` (part fields) | `curve: [[0.4, 0], [0.7, 0.25], [0.55, 0.5, 0.1]]` or `spiral: { turns: -1.5, pitch: -0.5, shrink: 0.5 }` on any part whose template sweeps (`templates.md`, curve column): a hook, a tusk, a coiled horn or trunk. |
+
+## Figure
+
+A body's tubes can take their widths from a drawn **figure outline**: the whole body's front and side drawn as a few strokes, which the build fits the parts to. The parts made with `figurePart` take their profiles, the blend of the join to their parent and, on a socket that gives no `reach`, where their root sits, all from the fit; nothing about them is set by hand but their skeleton (rest, length, outward, joints, and the socket's u at the joint's height).
+
+| helper | one line |
+| --- | --- |
+| `figure` | `recipe({ ..., figure: figure(readFigureOutline("man.figure.json"), { rootHeight: plan.h("crotch") }) })`. `rootHeight` is how high above the ground the root part's origin stands; `pose` is the pose the outline is drawn in (the display pose when left out, `[]` for one drawn at rest); `rounds` the correction rounds (3; 0 builds the plain fit). |
+| `readFigureOutline` | reads a `squash-figure-outline/1` file, as `tools/recipe.sh figure` writes one: `{ format, front: [{ id, points, corners?, mirrored? }], side: [...] }`. |
+| `FigureOutline` | the file's type, to write an outline in the character file itself. |
+
+**Drawing the outline.** Body units, y up from the ground. The front view is the character's left half, x from the body's middle toward its left; the side view is seen from its left, x forward. Each stroke is a smooth curve through few places (like an outline's `through`), sharp at its `corners` (a tight armpit), and runs with the figure on its right. A stroke ending on the middle (x 0) with `mirrored: true` crosses it level: the crotch. Leave the head, hands and feet out: strokes stop at the chin, the wrists and the ankles. Draw it in the pose the display pose shows (arms hanging relaxed) or at rest with `pose: []`.
+
+**What the fit reads.** Each stroke is sampled and every sample goes to the nearest bone of the pose it is drawn in that it lies along and faces away from, so the body's side under a hanging arm goes to the torso. Each limb's root is moved onto its drawn middle, and the socket it sits on takes that place as its `reach` and v. Each part's radii are read across its own bones, so an arm drawn hanging is fitted in its own frame and built right in its A-pose, and become its profile curves through the fewest places that follow them. What a view cannot show is filled by rules read off the skeleton: a trunk's closed top under a neck rounds over from just below the neck's fillet; gaps are bridged; an open end the outline leaves (under a hand, a head) holds level; a limb's inner side hidden under the trunk keeps the ratio its seen stretch has to its outer side; a limb the side view cannot show (an arm over the torso) is as deep as it is wide; the side view reads a limb only where most of it lies above or below its parent.
+
+**Corrections.** The fitted parts are then built alone and their joined field read straight along each view's depth at every sample (a limb's carried to its bones at rest): where the body stands out past the outline or falls short, the part's widths there take off a share, for `rounds` rounds, and the round nearest the outline is kept. The build prints the fit's time, each round's, and the mean miss by round, writes `<id>.fitted.recipe.json`, the recipe as fitted (every profile, blend and reach written in, no figure), and writes `renders/figure-front.png` and `figure-side.png`: the character in its display pose through a far, narrow camera, the outline dashed green over it and every stretch the build misses by more than an ink line's width marked red in place.
+
+**Converting a character.** `tools/recipe.sh figure <recipe.json> [out=<file>]` traces a built recipe's body tubes (generic tubes with drawn Side and Top outlines on the root or on each other) at rest into `<id>.figure.json`, cut where the head, hands and feet hide them, and writes `<id>.figure.recipe.json`: the recipe with those tubes given up for the figure, as a start for drawing over.
 
 ## Hair
 

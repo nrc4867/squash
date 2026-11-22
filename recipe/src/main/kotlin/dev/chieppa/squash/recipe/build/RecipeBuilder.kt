@@ -31,7 +31,15 @@ import dev.chieppa.squash.recipe.model.RecipeTarget
  * A built recipe: the character, the commands that made it from the empty character on its plan, what looked doubtful, and the named
  * poses the recipe asks to be rendered in.
  */
-class RecipeBuild(val document: SquashDocument, val commands: List<DocumentCommand>, val warnings: List<String>, val poses: Map<String, Pose>, val targets: List<RecipeTarget> = emptyList())
+class RecipeBuild(
+    val document: SquashDocument,
+    val commands: List<DocumentCommand>,
+    val warnings: List<String>,
+    val poses: Map<String, Pose>,
+    val targets: List<RecipeTarget> = emptyList(),
+    /** How the recipe's figure was fitted, or null without one. */
+    val figure: FigureReport? = null,
+)
 
 /**
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
@@ -41,7 +49,9 @@ class RecipeBuild(val document: SquashDocument, val commands: List<DocumentComma
  * Anything wrong fails as a [RecipeException] at the recipe path that caused it. See HLD: architecture, Recipes.
  */
 class RecipeBuilder(private val templates: TemplateFolder) {
-    fun build(recipe: Recipe): RecipeBuild {
+    fun build(drawn: Recipe): RecipeBuild {
+        val figure = drawn.figure?.let { fittedFigure(drawn, it, templates) }
+        val recipe = figure?.recipe ?: drawn
         if (recipe.format != RECIPE_FORMAT) throw RecipeException("$.format", "this build reads recipe format $RECIPE_FORMAT, not ${recipe.format}")
         val plan = templates.plans.filter { it.id == BodyPlanId(recipe.plan) && (recipe.planVersion == null || it.version == recipe.planVersion) }.maxByOrNull { it.version }
             ?: throw RecipeException("$.plan", "no body plan \"${recipe.plan}\"${recipe.planVersion?.let { " version $it" } ?: ""}; plans: ${templates.plans.map { it.id.value }.distinct().sorted().joinToString()}")
@@ -69,7 +79,7 @@ class RecipeBuilder(private val templates: TemplateFolder) {
             recipe.shading?.let { shading(it) }
             recipe.viewKeys?.let { viewKeys(it) }
             val poses = recipe.poses.mapValues { (name, bones) -> pose("$.poses.$name", bones) }
-            return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets)
+            return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets, figure)
         }
     }
 }

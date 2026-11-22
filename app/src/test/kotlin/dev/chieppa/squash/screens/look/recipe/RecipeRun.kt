@@ -39,6 +39,14 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         val saved = File(out, "$id.json").apply { writeText(SquashFormat().plainText(document) + "\n") }
         built.warnings.forEach { System.err.println("recipe warning at $it") }
         println("recipe: built ${built.commands.size} commands in ${buildTime.inWholeMilliseconds} ms")
+        built.figure?.let { figure ->
+            val rounds = figure.roundTimes.joinToString { "${it.inWholeMilliseconds}" }
+            val means = figure.means.joinToString { "%.4f".format(it) }
+            val refits = figure.refitTimes.joinToString { "${it.inWholeMilliseconds}" }
+            println("figure: fit ${figure.fitTime.inWholeMilliseconds} ms (again with corrections: ${refits.ifEmpty { "none" }} ms); rounds on the field ${rounds.ifEmpty { "none" }} ms; mean miss by round $means; ${figure.measure.misses.size} stretches past the tolerance")
+            val fitted = File(out, "$id.fitted.recipe.json").apply { writeText(RecipeJson.write(figure.recipe.copy(figure = null))) }
+            println("figure: the recipe as fitted, ${fitted.absolutePath}")
+        }
         println("character: ${saved.absolutePath}")
         if (options.buildOnly) return 0
         val look = LookArgs(options.lookArgs(document.character.wardrobe.shown?.value))
@@ -50,6 +58,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         val renderTime = measureTime { renderSession(open.session, open.pose, open.work, built.poses, look, errors, renders) }
         println("renders: ${renders.absolutePath} (${renderTime.inWholeMilliseconds} ms)")
         renders.listFiles { f -> f.extension == "png" }?.sortedBy { it.name }?.forEach { println("  ${it.absolutePath}") }
+        built.figure?.let { FigureOverlay(options, errors).keep(open, it, renders) }
         hairFitReport(document.character, open.session.assembly.output.value, File(out, "hair-fit.txt"))
         if (options.measure) {
             val table = File(out, "measure.txt")

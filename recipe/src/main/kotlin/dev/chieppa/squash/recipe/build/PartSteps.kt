@@ -93,7 +93,7 @@ private fun BuildContext.shape(path: String, id: PartId, template: PartTemplate,
     part.sockets.forEachIndexed { i, s -> send("$path.sockets[$i]", socketCommand("$path.sockets[$i]", id, s, params, part.sockets) { name -> own.firstOrNull { it.name == name } }) }
     checkParams(path, template, params)
     if (params.isNotEmpty()) send("$path.params", SetParameters(id, params))
-    val outlines = if (part.outlines.isNotEmpty()) curves(path, part.outlines) else emptyMap()
+    val outlines = (if (part.outlines.isNotEmpty()) curves(path, part.outlines) else emptyMap()) + tubeOf(path, part)
     if (outlines.isNotEmpty()) send("$path.outlines", SetOutlines(id, outlines))
     checkCurve(path, template, part, params, outlines)
 }
@@ -114,4 +114,16 @@ private fun BuildContext.checkCurve(path: String, template: PartTemplate, part: 
     } else if (fit.clipped) {
         warn(at, "the curve bends tighter than the part is thick, so its rings narrow to ${(fit.hold * 100f).roundToInt()}% there; spread the places or the coil, or thin the part")
     }
+}
+
+/** [part]'s tube profiles built into its Side and Top outlines, none without a tube. */
+private fun BuildContext.tubeOf(path: String, part: RecipePart): Map<View, OutlineCurve> {
+    val tube = part.tube ?: return emptyMap()
+    val at = "$path.tube"
+    if (View.SIDE in part.outlines || View.TOP in part.outlines) fail(at, "a tube's profiles draw its Side and Top; give outlines.side and outlines.top or a tube, not both")
+    val rest = part.rest ?: fail("$path.rest", "a tube with profiles names the way it rests")
+    if (tube.length <= 0f) fail("$at.length", "a tube's length is above 0: here ${tube.length}")
+    if (tube.profiles.isEmpty()) fail("$at.profiles", "a tube needs its radius profiles${if (recipe.figure != null) "; a part the figure fits takes them from it" else ""}")
+    val curves = tube.profiles.mapValues { (name, outline) -> curve("$at.profiles.$name", outline) }
+    return tubeOutlines(tube, rest, curves) { field, message -> fail("$at.$field", message) }
 }

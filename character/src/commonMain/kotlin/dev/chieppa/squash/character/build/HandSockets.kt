@@ -28,7 +28,7 @@ private fun wrapped(v: Float): Float = if (v in 0f..1f) v else v - floor(v)
 
 /**
  * Sockets a person places on a part with the Move tool, held in that part's parameters as `socket.<n>.u`, `.v`, `.outward`,
- * `.sink`, `.outset` and `.pair`, so pairs, overrides, undo and saving treat them like any other. Socket `<n>` is named `socket.<n>`, takes every
+ * `.sink`, `.outset`, `.reach` and `.pair`, so pairs, overrides, undo and saving treat them like any other. Socket `<n>` is named `socket.<n>`, takes every
  * template, and with `pair` set has a mirrored twin. With `.count` above 1 it is a row: that many sockets evenly spaced from `.u`
  * to `.to` along it and from `.v` to `.toV` round it, named `socket.<n>.<i>` from 0, a part placed on the first starting at `.size` and on the
  * last at `.falloff` of that; a row whose v runs a whole turn closes round the part, its sockets a turn's share apart. With `.spread` it
@@ -56,6 +56,12 @@ object HandSockets {
 
     /** How far a part on it stands off the surface along its normal, in body units, before it sinks; 0 when unset. */
     fun outset(id: Int) = "${name(id)}.outset"
+
+    /**
+     * How far from its part's axis, in body units, the root of a part on it sits, toward its v at its u: set, the part's root lies there
+     * whatever the width of the part under it, in place of on the surface sunk by `.sink`.
+     */
+    fun reach(id: Int) = "${name(id)}.reach"
 
     /** The digit it sits on, as [DigitPatches] numbers them, so its u and v lie on that digit's patch; the part's first run reaching u when unset. */
     fun digit(id: Int) = "${name(id)}.digit"
@@ -160,10 +166,11 @@ object HandSockets {
         val tilt = params[outward(id)] ?: 0f
         val sink = params[sink(id)] ?: 1f
         val outset = params[outset(id)] ?: 0f
+        val reach = params[reach(id)]
         val patch = params[digit(id)]?.roundToInt()?.let(digitPatch)
         copiesOf(params, id)?.let { return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset, copies = it.copy(patch = patch))) }
         val count = (params[count(id)] ?: 1f).roundToInt().coerceIn(1, MAX_COUNT)
-        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset))
+        if (count == 1) return@flatMap listOf(SocketSpec(name(id), u, v, Outward.NORMAL, pair, emptyList(), tilt, sink, patch = patch, outset = outset, reach = reach))
         val last = params[to(id)] ?: u
         val lastV = params[toV(id)] ?: v
         val closed = abs(lastV - v) >= 1f - CLOSED_TURN
@@ -246,13 +253,16 @@ object HandSockets {
 
     /**
      * The command that places socket [id] on [part] at [u] and [v], [outward] degrees from the normal, mirrored when [paired], a part on
-     * it stood [outset] off the surface and sunk [sink] times its own depth, or once with null, on [digit] when given: one undo step. It fails
-     * on a part that already holds socket [id]; [move] moves one.
+     * it stood [outset] off the surface and sunk [sink] times its own depth, or once with null, or with [reach] its root that far from the
+     * part's axis, on [digit] when given: one undo step. It fails on a part that already holds socket [id]; [move] moves one.
      */
-    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null, outset: Float? = null, digit: Int? = null): AddParameters =
+    fun add(part: PartId, id: Int, u: Float, v: Float, outward: Float, paired: Boolean, sink: Float? = null, outset: Float? = null, digit: Int? = null, reach: Float? = null): AddParameters =
         AddParameters(
             part,
-            mapOf(u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink, outset(id) to outset, digit(id) to digit?.toFloat()),
+            mapOf(
+                u(id) to u, v(id) to v, outward(id) to outward, pair(id) to if (paired) FLAG_ON else null, sink(id) to sink, outset(id) to outset, digit(id) to digit?.toFloat(),
+                reach(id) to reach,
+            ),
         )
 
     /**
@@ -273,7 +283,7 @@ object HandSockets {
 
     /** Every parameter socket [id] may hold. */
     fun keysOf(id: Int): List<String> = listOf(
-        u(id), v(id), outward(id), sink(id), outset(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id), spread(id), repeat(id),
+        u(id), v(id), outward(id), sink(id), outset(id), reach(id), pair(id), count(id), to(id), toV(id), size(id), falloff(id), digit(id), spread(id), repeat(id),
         seed(id), spacing(id), edge(id), sizeJitter(id), leanJitter(id), turnJitter(id), droop(id), pitch(id), roll(id), sag(id),
     ) + (0 until MAX_VIA).flatMap { listOf(viaU(id, it), viaV(id, it)) }
 }

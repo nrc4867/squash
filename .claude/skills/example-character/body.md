@@ -1,6 +1,6 @@
 # The body
 
-The body is laid out in this order, and each step is built and read before the next: a height plan, the torso, a real neck, the legs, the arms, then the head, hands and feet on their joints. `kit/examples/mannequin.ts` is a whole biped laid out this way; read it for structure, never for numbers.
+The body is laid out in this order, and each step is built and read before the next: a height plan, the figure outline with the torso, a real neck, the legs and the arms fitted to it, then the head, hands and feet on their joints. `kit/examples/mannequin.ts` is a whole biped laid out this way; read it for structure, never for numbers.
 
 ## 1. The height plan first
 
@@ -36,7 +36,18 @@ Check the plan before drawing a part. The head, hands and feet are the proportio
 
 After the first build, `tools/recipe.sh kit heights <file>` prints each mark planned against built. A difference means a socket sinks (below) or the feet moved the body: fix the socket, not the plan.
 
-## 2. Tubes before templates
+## 2. The figure first
+
+The body's tubes (torso, neck, arms, legs) are drawn as one **figure outline** and fitted, not tuned radius by radius (`kit/README.md`, Figure). Body first means drawing or adjusting the figure:
+
+- **Draw the figure** from the sheet's front and side views: the front's left half and the side from the left, a few strokes in body units on the plan's ground (`readFigureOutline` of a file, or a `FigureOutline` in the character file), stopping at the chin, the wrists and the ankles, corners only where the sheet draws them sharp (a tight armpit), `mirrored` on the inner leg's end at the crotch. Draw it in the display pose the sheet shows, or at rest with `pose: []`.
+- **Lay out the skeleton**: each body tube a `figurePart` with its rest, length, `outward` and joints, and its socket's u at the joint's height from the plan (`torso.u(plan.h("shoulder"))`), its v the side it leaves from. Give no profiles, no blend and no `reach` or `sink`: the fit reads the widths, the join's blend and where each root sits off the outline.
+- **Read the build**: `figure: fit ... mean miss by round ...` in the run's output, and `renders/figure-front.png` and `figure-side.png`, which mark in red every stretch the built body misses the outline by more than an ink line. A miss is a drawing to change (a stroke, a corner, a place) or a skeleton fact (a joint height, a length, the pose it is drawn in), never a radius to tune.
+- **An existing character**: `tools/recipe.sh figure <recipe.json>` traces its body into a figure outline and writes the recipe on it, as a start to draw over.
+
+Fall back to the radii below for a tube the figure does not hold: a tail, a snout, a horn.
+
+## 3. Tubes before templates
 
 Where a tube fits, use a tube: torso, neck, arms, legs, a long tail, a snout. `tubePart` and `tube` (`kit/README.md`, Shapes and Parts) draw it from radii at stations, so its outline is exactly the sheet's widths at exactly the plan's heights. Use a template where the part needs what only a template has: a head with a face (`head-round`, `head`, `head-bird`), hands with fingers, feet or paws with toes, ears with a cup, curled tails (`tail-curve`). `templates.md` says what each holds; `docs/hld/parts.md` what it is built from.
 
@@ -75,7 +86,7 @@ export const torsoPart = tubePart(
 );
 ```
 
-## 3. Every part in front and back
+## 4. Every part in front and back
 
 A tube's Side outline takes two profiles across its y and Top the other two (`kit/README.md`, `tube`): for a part resting up or down they are `front` and `back` in Side, `left`/`right` (or `outer`/`inner` on a pair) in Top; for one resting forward or back (an arm held out, a tail) `up` and `down` in Side and `left`/`right` in Top; for one resting out, `up` and `down` in Side and `front`/`back` in Top. **Give both sides of every profile**: the belly and the back, the chest and the shoulder blades, the shin and the calf, the seat. Front and back are set apart, so a round belly or a seat is just a larger front or back radius at its stations; a lone Top side is mirrored. Read the side view's grid for the front and back radii and the front view's for the left and right.
 
@@ -95,7 +106,7 @@ Where no tube fits (a templated torso, a muzzle, a blob), draw the outline yours
 
 Besides `outlines`: `size`; `lean` and `outward` (each under 90; past that take another `rest`); `roll` (any angle about the part's own axis); `rest` (`forward`, `back`, `up`, `down`, `out`) in place of the template's; `blend`; `inkJoin`; `generic: { section, views, rings, segments }` for a `tube`, `blob` or `sheet` (`FINE` and `SMALL` in the kit; rings up to 96, segments up to 32); `jointsAt` and `socketsAt` to move a template's own joints and sockets (a socket's `[u, v]`, or `[u, v, sink]` to set how deep a part on it sits, times that part's own sink, 0 to 4); `landmarks`; `params` by name for template parameters and any dotted key without a field (`part-parameters.md`). `role` is the template's or guessed from where the part sits: give it for a generic part. A mirrored pair is one entry with `pair` (`{ ...pair("arm") }` names the sides `arm-l` and `arm-r`), described as its left side; a pair on a pair (hands on arms) names the parent pair's id in `on`, and each side sits on its own side. Elsewhere (poses, covers, expressions) a side is named by its own id.
 
-## 4. A real neck
+## 5. A real neck
 
 A neck is its own part between the torso's top and the head, never a head sunk into the shoulders. Even a creature with no visible neck has a short one: it lets the head turn, keeps the chin off the chest, and gives the collar of a garment somewhere to sit.
 
@@ -121,7 +132,7 @@ export const neckPart = tubePart(
 
 The head goes on the neck's end socket at `sink: 0`, drawn from the neck's top (`head-and-face.md`).
 
-## 5. Sockets, sinks and blends
+## 6. Sockets, sinks and blends
 
 - A part on a hand-made socket sinks into its parent by its own depth (`sink` 1, the default). `sink: 0` seats it on the surface. **A neck on the torso's top socket at the default sink drops the neck, the head and everything on it by the neck's depth**: give it `sink: 0`, and the head on the neck's end `sink: 0`. Shoulders take 0 to 0.25; hips the default (the leg starts inside the pelvis). `heights` shows every sink that moved a joint off the plan.
 - **A leg swings about its own start**, so start it at the hip joint, inside the pelvis (a socket on the torso's side at hip height, sunk), not where the thigh leaves the pelvis's underside.
@@ -130,7 +141,7 @@ The head goes on the neck's end socket at `sink: 0`, drawn from the neck's top (
 - **Shoulders read best when the torso is not widest exactly at the arm socket.** Put the torso's widest station a little below the shoulder socket (the chest) and let it narrow toward the top. The arm's top then leaves a shoulder that slopes away above it and meets it at a crease the blend rounds into a shoulder. Widest at the socket, the torso's side stands upright there and the arm's top runs alongside it, so nothing rounds it: the arm's width sits on top of the torso's widest point and the outline steps out at the shoulder line. `inkJoin: false` leaves a join unlined, which a body of one fur colour wants at the neck, shoulders and hips; **ink seams at the hips** of a smooth creature mean a join is still inked.
 - `orient(along, up)` gives the `rest`, `lean`, `outward` and `roll` that point a part along any direction (a leg splayed out, a tail up and back).
 
-## 6. Joints where the sheet puts them
+## 7. Joints where the sheet puts them
 
 Hand-made joints (`joint(n, u, { low, high })`) are where the part bends: knee, elbow, spine. Place each by the plan (`leg.u(plan.h("knee"))`), then check after the build:
 
@@ -139,7 +150,7 @@ Hand-made joints (`joint(n, u, { low, high })`) are where the part bends: knee, 
 - Limits: a knee bends back, `low: 0, high: 140`; an elbow forward, `low: -145, high: 0` (signs in `frames.md`, Bone axes); a spine joint ±25.
 - Limits also place the creases: a joint that bends much further one way (a knee, an elbow, a shoulder) shows a faint crease on that side at rest, and every joint creases on the side it closes toward as it bends (`clothing.md`, Creases and wrinkles). Draw no neck, collar, elbow, knee or ankle lines as marks: `creases: { skin: 1 }` draws them, and they deepen with the pose.
 
-## 7. Rest and display pose
+## 8. Rest and display pose
 
 A biped is built in **A-pose**: arms 45 degrees out (`outward: 45`), legs straight down (`outward` about 1). It rests that way so the arms clear the body while building. The `displayPose` is how it is shown and saved:
 
