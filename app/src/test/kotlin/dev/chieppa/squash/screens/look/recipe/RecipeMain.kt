@@ -2,6 +2,9 @@ package dev.chieppa.squash.screens.look.recipe
 
 import dev.chieppa.squash.recipe.RecipeException
 import dev.chieppa.squash.recipe.RecipeJson
+import dev.chieppa.squash.recipe.build.convertToFigure
+import dev.chieppa.squash.recipe.build.figureOutlineJson
+import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.recipe.export.exportRecipe
 import dev.chieppa.squash.screens.look.recipe.engine.EngineLease
 import dev.chieppa.squash.screens.look.recipe.server.serve
@@ -18,7 +21,7 @@ internal const val RECIPE_WRONG = 2
  * and keeps its measurements, and with a reference image renders it through the reference's camera beside it with a silhouette overlay
  * and IoU (see [RecipeRun]). With `watch=true` it builds again each time the recipe changes, until stopped (see [RecipeWatch]). With
  * `export=<character file>` it instead writes the character as a recipe, with `probe=<recipe>` answers frame questions about it (see
- * [probe]), and with `crop=<sheet>` splits a character sheet into its views (see [crop]). With `serve=true` it serves these builds to
+ * [probe]), with `figure=<recipe>` converts its body to a figure (see [figure]), and with `crop=<sheet>` splits a character sheet into its views (see [crop]). With `serve=true` it serves these builds to
  * clients on this machine (see [serve]). With `status=<file>` it writes its exit status there and exits 0, so Gradle reports no failure
  * over the recipe's own error. Run through `tools/recipe.sh`.
  */
@@ -41,6 +44,7 @@ internal fun runCommand(options: RecipeArgs): Int = reportingRecipeErrors {
         options.export != null -> export(options)
         options.probe != null -> probe(options)
         options.crop != null -> crop(options)
+        options.figure != null -> figure(options)
         else -> RecipeRun(options).use { it.run() }
     }
 }
@@ -69,6 +73,25 @@ private fun export(options: RecipeArgs): Int {
     out.parentFile?.mkdirs()
     out.writeText(RecipeJson.write(exported.recipe))
     exported.notCarried.forEach { System.err.println("not carried: $it") }
+    println("recipe: ${out.absolutePath}")
+    return 0
+}
+
+/**
+ * Converts the recipe `figure=` names to a figure: its body's tubes traced at rest into a figure outline, written as `<id>.figure.json`,
+ * and the recipe with those tubes fitted to it, as `<id>.figure.recipe.json` beside it or [RecipeArgs.out].
+ */
+private fun figure(options: RecipeArgs): Int {
+    val source = requireNotNull(options.figure)
+    if (!source.isFile) throw RecipeException("$", "no recipe file at ${source.absolutePath}")
+    val recipe = RecipeJson.read(source.readText())
+    val converted = convertToFigure(recipe, TemplateFolder.shipped())
+    val out = options.out ?: File(source.parentFile, "${recipe.id}.figure.recipe.json")
+    out.parentFile?.mkdirs()
+    val outline = File(out.parentFile, "${recipe.id}.figure.json")
+    outline.writeText(figureOutlineJson(converted.figure))
+    out.writeText(RecipeJson.write(converted.recipe))
+    println("figure: ${outline.absolutePath}")
     println("recipe: ${out.absolutePath}")
     return 0
 }

@@ -555,6 +555,8 @@ export interface Recipe {
   planVersion?: number | null;
   /** Named colours, in order. Every colour the recipe uses is a slot named here. */
   palette?: RecipeSlot[];
+  /** The body drawn as a figure outline that the tube parts giving no profiles are fitted to. */
+  figure?: RecipeFigure | null;
   /** The parts, each after the part it sits on. A garment's own parts (shades, a heel, a buckle) name their garment. */
   parts?: RecipePart[];
   /** Painted eyes on a head. */
@@ -681,6 +683,38 @@ export interface RecipeEye {
   upperClose?: number;
   /** How far the lower lid stands up from open (0) to the look's closed line (1). */
   lowerRise?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** The body drawn as a figure outline, front and side, which the tube parts that give no profiles are fitted to: their widths, the blend where each joins its parent, and where each limb's root sits. Head, hands and feet are left out: the strokes stop at the chin, the wrists and the ankles. */
+export interface RecipeFigure {
+  /** How high above the ground the outline stands on the root part's origin sits, in body units: its strokes' y is height above that ground. */
+  rootHeight: number;
+  /** The front view: the character's left half, x from the body's middle toward its left, y up from the ground. Each stroke runs with the figure on its right. */
+  front?: RecipeFigureStroke[];
+  /** The side view from the character's left: x forward from the body's middle, y up from the ground. Each stroke runs with the figure on its right. */
+  side?: RecipeFigureStroke[];
+  /** The pose the outline is drawn in, over the rest: each limb is read in its own bones as this pose shows them. The display pose when left out; [] for a figure drawn at rest. */
+  pose?: BonePose[] | null;
+  /** Rounds of correction read off the built body's own silhouette, each a field evaluation: where the joined body lies off the outline, the parts' widths are moved by a share of it. 3 when left out; 0 builds the plain fit. */
+  rounds?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** One open stretch of the outline: a smooth curve through a few places, sharp at its corners, or its Bézier points, running with the figure on its right. */
+export interface RecipeFigureStroke {
+  /** Its name, for messages and the misses a build marks. */
+  id: string;
+  /** Places the stroke passes through, [x, y] each: few, as drawn. */
+  through?: number[][] | null;
+  /** Indices into through that are sharp corners, as an armpit drawn tight. */
+  corners?: number[];
+  /** The Bézier points [x, y] themselves: a start point, then two handles and an end point per segment (3n + 1 points). In place of through. */
+  bezier?: number[][] | null;
+  /** Whether an end lying on the body's middle (x 0) runs on into its mirror image, so it crosses the middle level, as the crotch does. */
+  mirrored?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -1196,6 +1230,8 @@ export interface RecipePart {
   outward?: number | null;
   /** Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says. */
   outlines?: { side?: RecipeOutline; top?: RecipeOutline; front?: RecipeOutline };
+  /** A tube part's widths as curves along its bone, in place of its Side and Top outlines: they are built into them as drawn. */
+  tube?: RecipeTube | null;
   /** The direction the part rests in, in place of its template's (move.rest): a generic root resting up is a standing body. */
   rest?: ("forward" | "back" | "up" | "down" | "out") | null;
   /** Degrees the part rolls about its own axis, turning its up toward its v 0.25 side, after rest, lean and outward (move.roll): a sheet resting out and rolled 90 faces forward. */
@@ -1403,6 +1439,8 @@ export interface RecipeSocket {
   sink?: number | null;
   /** How far a part on it stands off the surface along its normal, in body units, before it sinks: a pocket or button on a shirt of fit 0.012 takes a little more than 0.012 with sink 0. 0 when left out. */
   outset?: number | null;
+  /** How far from the part's axis, in body units, the root of a part on it sits, toward v at u: the part's root lies there however wide this part is drawn, in place of on the surface sunk by sink. A part on a figure takes it from the fit when left out. */
+  reach?: number | null;
   /** Makes it a row of this many sockets (2 to 16), evenly from u to `to` along the part and from v to toV round it, named socket.<n>.0, socket.<n>.1 and on, a part on each. Many of one part over an area or along a line take spread or path instead. */
   count?: number | null;
   /** A row's last socket's u; the row's u when left out. */
@@ -1509,6 +1547,20 @@ export interface RecipeTarget {
   value: number;
   /** How far off it may be before it is flagged: a share of the value for a size (0.15 when left out), a share of the head for a place (0.05 when left out). */
   tolerance?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A tube part's widths as curves along its bone, one a direction: x along the part from its socket end, y its radius that way. They become its Side and Top outlines as drawn, rounded to the axis at its length (and at 0 when closed). On a figure, the fit draws the profiles it leaves out. */
+export interface RecipeTube {
+  /** Its length along its bone: outline x runs 0 to this. */
+  length: number;
+  /** Radius curves by direction: forward (or front), back, up, down, left and right; a pair's left side may name outer (its left) and inner (its right). Its rest decides which two Side takes and which two Top takes (frames.md); a Top direction left out mirrors the other. Each is an open curve through a few [x, r] places, smooth but at its corners, or its Bézier points. */
+  profiles?: { [key: string]: RecipeOutline };
+  /** Rounded at its socket end too, as a torso or head drawn all round is; open there when left out, as a limb is. */
+  closed?: boolean;
+  /** Ends square at its length rather than rounding over: a sleeve's cut end. */
+  flat?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

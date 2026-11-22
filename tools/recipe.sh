@@ -10,6 +10,8 @@
 #     uv=<part>:<u>,<v>[,<patch>]   the body point there        point=<x>,<y>,<z>   the part, u and v nearest that point
 #     face=<head>:<x>,<y>   the u and v at that place on the head's face (x to its left, y up)
 #   tools/recipe.sh export <character.json> [out=<recipe.json>]   a character file written as a recipe
+#   tools/recipe.sh figure <recipe.json> [out=<recipe.json>]   the recipe's body tubes converted to a figure: its silhouette at rest
+#     traced into a figure outline (<id>.figure.json) and the recipe with those tubes fitted to it (<id>.figure.recipe.json, or out=)
 #   tools/recipe.sh kit [check|json|probe|heights] <character.ts> [option ...]   a TypeScript character file anywhere on disk, checked,
 #     run and written as <name>.recipe.json beside it (or in out=), then built with these options (kit/README.md)
 #   tools/recipe.sh crop <sheet.png> [out=<folder>] [ground=#rrggbb]   a sheet of views on one background split by its gaps into
@@ -100,7 +102,7 @@ case "$1" in
     if command -v cygpath >/dev/null 2>&1; then bash_path="$(cygpath -w "$BASH")"; fi
     SQUASH_BASH="$bash_path" exec node "$root/kit/run.ts" "$@"
     ;;
-  export|probe|crop)
+  export|probe|crop|figure)
     [ $# -ge 2 ] || { echo "tools/recipe.sh $1 needs a file" >&2; exit 2; }
     args="$1=$(encoded "$(absolute "$2")")"
     shift 2

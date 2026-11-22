@@ -84,7 +84,8 @@ internal fun BuildContext.socketCommand(
 ): AddParameters {
     socket.sink?.takeIf { it < 0f }?.let { warn("$path.sink", "a sink below 0 is not a stand-off; give outset, in body units, with sink 0") }
     val digit = socket.patch?.let { patch -> digitOf("$path.patch", part, patch, params) }
-    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset, digit)
+    socket.reach?.takeIf { it < 0f }?.let { fail("$path.reach", "a root's reach from the axis is 0 or more: here $it") }
+    val one = HandSockets.add(part, socket.n, socket.u, socket.v, socket.outward, socket.mirrored, socket.sink, socket.outset, digit, socket.reach)
     if (socket.spread != null || socket.path != null) return AddParameters(part, one.values + copyParams(path, socket, siblings, offered))
     val count = socket.count
     if (count == null) {

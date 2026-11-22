@@ -34,6 +34,8 @@ data class SocketSpec(
     val patch: String? = null,
     val spread: Float = 0f,
     val outset: Float = 0f,
+    /** How far from its part's axis the root of a part on it sits, toward its v at its u, in place of on the surface sunk by [sink]; null for that. */
+    val reach: Float? = null,
     /** The copies of the one part on it it shows in place of that part, over an area or along a path; null for one part. */
     val copies: CopySpec? = null,
 )

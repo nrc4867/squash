@@ -41,6 +41,9 @@ private const val ALONG_STEP = 0.08f
 /** A ring whose points lie within this share of the ring [ALONG_STEP] in from it of their middle is a pole: a closed end. */
 private const val POLE_SHARE = 0.05f
 
+/** How near its parent's axis, in body units, a socket's surface point lies for a root by reach to sit on the axis: a pole. */
+private const val AXIS_ROOT = 1e-5f
+
 /** A place on a part's surface and which way it faces out. */
 class SurfacePlace(val point: Vec3, val out: Vec3)
 
@@ -301,8 +304,24 @@ private class Assembler(
             Outward.ALONG -> frame.alongAt(spec.u, spec.patch) ?: along
         }
         val mount = templates.mountOffset(template.ref)
+        spec.reach?.let { reach -> rootAt(frame, spec, v, reach)?.let { return it - (if (mirroredHere) mount.mirrored else mount) } }
         val standing = if (spec.outset == 0f) point else point + (frame.normalAt(spec.u, v, spec.patch) ?: into) * spec.outset
         return standing - into * (templates.socketSink(template.ref) * spec.sink) - (if (mirroredHere) mount.mirrored else mount)
+    }
+
+    /**
+     * Where the root of a part on socket [spec] sits when the socket gives its [reach]: that far from [frame]'s axis at the socket's u,
+     * toward the socket's [v], so the part stays where it is however wide its parent is drawn there. The axis point is the middle of the
+     * ring at u carried onto the line along the part from its origin.
+     */
+    private fun rootAt(frame: PlacedPart, spec: SocketSpec, v: Float, reach: Float): Vec3? {
+        val middle = frame.middleAt(spec.u, spec.patch) ?: return null
+        val rest = PartBuilder.axes(frame.template).along
+        val along = (if (frame.mirrored) rest.mirrored else rest).normalized()
+        val axis = frame.origin + along * ((middle - frame.origin) dot along)
+        val toward = frame.pointOn(spec.u, v, spec.patch)?.let { it - axis }?.let { it - along * (it dot along) }
+        if (toward == null || toward.length < AXIS_ROOT) return axis
+        return axis + toward.normalized() * reach
     }
 
     private fun socketV(parent: PlacedPart, spec: SocketSpec, side: Side?): Float =
