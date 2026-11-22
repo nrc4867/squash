@@ -2,7 +2,9 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.JointSpec
+import dev.chieppa.squash.character.model.MouthLine
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.mouth.mouthStyleOf
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.ExpressionSet
 import dev.chieppa.squash.document.MarkGroup
@@ -30,17 +32,20 @@ private fun Hinge.direction(axes: PartAxes) = when (this) {
 }
 
 /**
- * The degrees [character] holds each of [part]'s joints at: those its shown expression sets, and for a part holding a mouth its jaw, which the mouth's open runs up to
- * the joint's limit, on top. A part of role jaw holding no mouth, a beak's lower half, shares the jaw of the nearest part it hangs from that holds one: its own jaw
- * takes the degrees the shown expression sets that part's jaw and that mouth's open. Named by joint.
+ * The degrees [character] holds each of [part]'s joints at: those its shown expression sets, and for a part holding a mouth on a beak's seam its jaw, which the
+ * mouth's open runs up to the joint's limit, on top. A part of role jaw holding no mouth, a beak's lower half, shares the jaw of the nearest part it hangs from that
+ * holds one: its own jaw takes the degrees the shown expression sets that part's jaw and that mouth's open. A mouth whose lips part on the head, as [templates]
+ * styles it, opens no jaw: its lips part on the head as it stands. Named by joint.
  */
-fun shownJoints(character: Character, part: PartId, template: PartTemplate): Map<String, Float> {
+fun shownJoints(character: Character, part: PartId, template: PartTemplate, templates: TemplateLibrary): Map<String, Float> {
     val instance = character.part(part) ?: return emptyMap()
     val joints = character.shownSet?.pose?.joints.orEmpty()
     val held = joints.filter { it.part == part }.associateTo(LinkedHashMap()) { it.joint to it.degrees }
     val holder = mouthHolder(character, instance, template) ?: return held
     if (holder.id != part) joints.firstOrNull { it.part == holder.id && it.joint == JAW_JOINT }?.let { held.getOrPut(JAW_JOINT) { it.degrees } }
-    val open = character.resolved(holder).surface.groups.firstOrNull { it.isMouth }?.let { character.shownOpen(it) } ?: 0f
+    val group = character.resolved(holder).surface.groups.firstOrNull { it.isMouth }
+    if (group == null || templates.mouthStyleOf(holder, group).line != MouthLine.SEAM) return held
+    val open = character.shownOpen(group)
     if (open > 0f) {
         val jaw = template.blocks.flatMap { it.joints() }.firstOrNull { it.name == JAW_JOINT }
         if (jaw != null) held[JAW_JOINT] = (held[JAW_JOINT] ?: 0f) + open * (jaw.limits?.max ?: 0f)

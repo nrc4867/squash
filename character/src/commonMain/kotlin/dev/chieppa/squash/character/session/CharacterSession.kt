@@ -317,7 +317,7 @@ class CharacterSession(
         val instance = document.value.character.part(part)
         val template = instance?.let { templates.find(it.template) }
         val axes = template?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
-        val joints = shownFace.map { doc -> template?.let { shownJoints(doc.character, part, it) }.orEmpty() }
+        val joints = shownFace.map { doc -> template?.let { shownJoints(doc.character, part, it, templates) }.orEmpty() }
         graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template)
     }
 

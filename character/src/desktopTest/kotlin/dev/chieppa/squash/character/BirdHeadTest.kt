@@ -37,6 +37,7 @@ private const val SIDEWAYS = 0.7f
 /** A bird head with a beak: the lower half swings with the head's jaw as the mouth opens, and its eye landmark puts an eye on each side. */
 class BirdHeadTest {
     private val plan = shipped.plans.single { it.id.value == "bird" }
+    private val library = shipped.library()
 
     private fun bird(vararg more: (Character) -> DocumentCommand): Character {
         var next = 0
@@ -60,11 +61,11 @@ class BirdHeadTest {
         val open = bird(*opened(1f))
         val lower = template("beak-lower")
         val head = template("head-bird")
-        assertEquals(emptyMap(), shownJoints(closed, LOWER, lower))
+        assertEquals(emptyMap(), shownJoints(closed, LOWER, lower, library))
         val jaw = assertNotNull(head.blocks.flatMap { it.joints() }.single { it.name == JAW_JOINT }.limits).max
-        assertEquals(mapOf(JAW_JOINT to jaw), shownJoints(open, HEAD, head), "the head's jaw opens to its limit")
-        assertEquals(mapOf(JAW_JOINT to jaw), shownJoints(open, LOWER, lower), "the lower beak takes the same angle")
-        assertEquals(emptyMap(), shownJoints(open, BEAK, template("beak")), "the upper beak holds still")
+        assertEquals(mapOf(JAW_JOINT to jaw), shownJoints(open, HEAD, head, library), "the head's jaw opens to its limit")
+        assertEquals(mapOf(JAW_JOINT to jaw), shownJoints(open, LOWER, lower, library), "the lower beak takes the same angle")
+        assertEquals(emptyMap(), shownJoints(open, BEAK, template("beak"), library), "the upper beak holds still")
     }
 
     @Test
@@ -72,7 +73,7 @@ class BirdHeadTest {
         val lower = template("beak-lower")
         val axes = PartBuilder.axes(lower)
         val rest = PartBuilder.mesh("beak-lower", lower, PartBuilder.build(lower))
-        val swung = rest.bent(bendsOf(shownJoints(bird(*opened(1f)), LOWER, lower), lower, axes))
+        val swung = rest.bent(bendsOf(shownJoints(bird(*opened(1f)), LOWER, lower, library), lower, axes))
         val restTip = rest.patches.single().patch.surfaceAt(1f, 0.5f).position
         val swungTip = swung.patches.single().patch.surfaceAt(1f, 0.5f).position
         val restBase = rest.patches.single().patch.surfaceAt(0f, 0f).position

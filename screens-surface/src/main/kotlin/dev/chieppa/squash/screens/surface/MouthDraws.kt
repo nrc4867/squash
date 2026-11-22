@@ -46,6 +46,7 @@ fun mouthDraws(
     origin: Vec3 = Vec3.ZERO,
     style: MouthStyle = MouthStyle.PLAIN,
     dentition: MouthDentition = MouthDentition.NONE,
+    lipRegions: List<List<Anchor>> = emptyList(),
 ): MouthDraws {
     val shown = MarkRole.entries.associateWith { roleShapes(group, it, marks, expressed, bin) }
     val lipShapes = shown.getValue(MarkRole.LIP_LINE)
@@ -63,6 +64,7 @@ fun mouthDraws(
         tongueFilled = role(MarkRole.TONGUE)?.fill != null,
         lipsFilled = role(MarkRole.LIP_LINE)?.fill != null,
         tongueShown = group.tongueLevel != TongueLevel.NONE,
+        lipRegions = lipRegions,
     )
     val drawn = lipShapes.mapNotNull { shape -> lineOn(surface, origin, like, shape.patch, shape.places)?.let { shape.source.copy(id = shape.source.id, points = it, versions = emptyMap(), width = shape.width) } }
     val mouth = shapeMouth(holder, placed, group.controls, style, surface, dentition) ?: return MouthDraws(emptyList(), drawn)
@@ -86,7 +88,7 @@ fun mouthDraws(
         if (!cut.isEmpty) layers += ColorLayerDraw(cut.mesh, Tones(color, color))
     }
     fun tooth(piece: FlatPiece) = fill(MarkRole.TEETH, piece.loop, piece.loop.indices.toSet())
-    flat.lips.forEach { fill(MarkRole.LIP_LINE, it, emptySet()) }
+    if (!flat.lipsDrawn || !flat.restsAsDrawn) flat.lips.forEach { fill(MarkRole.LIP_LINE, it, emptySet()) }
     flat.opening?.let { fill(MarkRole.INNER, it, flat.openingCorners) }
     flat.tongue.filterNot { it.over }.forEach { fill(MarkRole.TONGUE, it.loop, emptySet()) }
     flat.teeth.filterNot { it.over }.forEach(::tooth)

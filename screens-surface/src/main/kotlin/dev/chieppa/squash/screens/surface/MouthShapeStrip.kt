@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import dev.chieppa.squash.character.build.lipRegionsOf
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.mouth.dentitionOf
 import dev.chieppa.squash.character.mouth.mouthMarks
@@ -87,7 +88,8 @@ internal fun MouthShapesSection(session: CharacterSession, picked: PickedGroup, 
         lips = palette.colorOf(group.roles.firstOrNull { it.role == MarkRole.LIP_LINE }?.fill),
     )
     val marks = held?.marks?.groupBy { it.source }.orEmpty()
-    val placed = group.mouthMarks { id -> marks[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
+    val lipRegions = held?.let { lipRegionsOf(it, group) }.orEmpty().map { region -> region.border.map { it.anchor } }
+    val placed = group.mouthMarks({ id -> marks[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, lipRegions)
     val dentition = session.templates.dentitionOf(group, style)
     fun shaped(shape: MouthShapeName) = surface?.let { shapeMouth(picked.part, placed, group.controls.speaking(group.saying(shape, style)), style, it, dentition) }
     val rest = shaped(MouthShapeName.REST)

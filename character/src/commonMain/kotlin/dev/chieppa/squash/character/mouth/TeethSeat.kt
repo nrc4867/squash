@@ -19,7 +19,4 @@ interface TeethSeat {
 
     /** Where the lower jaw's line runs at [x]: its teeth stand up from it, and drop with the jaw. */
     fun lowerLine(x: Float): Float
-
-    /** How many flat units up or down a share of the mouth's width of height takes at [x], so a tooth there keeps its height on the head. */
-    fun heightScale(x: Float): Float = 1f
 }

@@ -55,9 +55,9 @@ fun SquashDocument.speaking(shape: MouthShapeName?, library: TemplateLibrary): S
 
 /**
  * [group]'s marks as the shaper reads them, each mark's places from [placesOf]: the mark's own and its mirror's where it is mirrored, none
- * for a mark not there.
+ * for a mark not there, and [lipRegions], the borders of its lips' painted color.
  */
-fun MarkGroup.mouthMarks(placesOf: (MarkId) -> List<List<Anchor>>): MouthMarks {
+fun MarkGroup.mouthMarks(placesOf: (MarkId) -> List<List<Anchor>>, lipRegions: List<List<Anchor>> = emptyList()): MouthMarks {
     fun role(role: MarkRole) = roles.firstOrNull { it.role == role }
     fun marks(role: MarkRole) = role(role)?.let { held -> held.marks.flatMap { id -> placesOf(id).map { AnchoredMark(id, it, id in held.over) } } }.orEmpty()
     return MouthMarks(
@@ -68,6 +68,7 @@ fun MarkGroup.mouthMarks(placesOf: (MarkId) -> List<List<Anchor>>): MouthMarks {
         tongueFilled = role(MarkRole.TONGUE)?.fill != null,
         lipsFilled = role(MarkRole.LIP_LINE)?.fill != null,
         tongueShown = tongueLevel != TongueLevel.NONE,
+        lipRegions = lipRegions,
     )
 }
 

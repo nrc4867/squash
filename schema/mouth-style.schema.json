@@ -2,6 +2,64 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$ref": "#/$defs/MouthStyle",
   "$defs": {
+    "MouthLimits": {
+      "description": "How far each control may go on this mouth, after its scale, so it stays whole from every view: a shape asking for more goes only this far. 1 leaves a control free.",
+      "type": "object",
+      "properties": {
+        "open": {
+          "description": "The most it opens.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "wideOut": {
+          "description": "The most it draws its corners out.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "wideIn": {
+          "description": "The most it draws its corners in.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "round": {
+          "description": "The most it puckers.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "smile": {
+          "description": "The most it lifts or drops its corners.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "upperLip": {
+          "description": "The most it raises its upper lip.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "lowerLip": {
+          "description": "The most it tucks or presses its lower lip.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "tongue": {
+          "description": "The most it lifts or puts out its tongue.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "MouthScales": {
       "description": "How much each control does on this mouth: 1 in full, 0 nothing.",
       "type": "object",
@@ -204,6 +262,10 @@
         "scale": {
           "description": "How much each control does on this mouth.",
           "$ref": "#/$defs/MouthScales"
+        },
+        "limits": {
+          "description": "How far each control may go on this mouth after its scale, so it stays whole from every view; a character's own style may loosen them.",
+          "$ref": "#/$defs/MouthLimits"
         },
         "upperLip": {
           "description": "How thick the upper lip's band is at its middle, a share of the lip line's width, where the lip line's role has a fill.",

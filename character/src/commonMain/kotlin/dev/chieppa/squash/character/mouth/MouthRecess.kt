@@ -67,14 +67,12 @@ fun mouthRecessOf(holder: PartId, group: MarkGroupId, mouth: ShapedMouth, surfac
     if (width < TINY) return null
     val within = width * WALK_MISS
     fun at(uv: SurfaceUv) = surface.pointAt(Anchor(holder, mouth.patch, uv.u, uv.v))
-    var previous: SurfaceUv? = null
     val raw = (0 until STATIONS).mapNotNull { i ->
         val x = left + width * i / (STATIONS - 1)
         val (top, bottom) = crossings(loop, x) ?: return@mapNotNull null
-        val middleUv = mouth.uvWithin(Vec2(x, (top + bottom) / 2f), within, previous) ?: return@mapNotNull null
-        previous = middleUv
-        val upperUv = mouth.uvWithin(Vec2(x, top), within, middleUv) ?: return@mapNotNull null
-        val lowerUv = if (bottom - top < TINY) upperUv else mouth.uvWithin(Vec2(x, bottom), within, middleUv) ?: return@mapNotNull null
+        val middleUv = mouth.uvWithin(Vec2(x, (top + bottom) / 2f), within) ?: return@mapNotNull null
+        val upperUv = mouth.uvWithin(Vec2(x, top), within) ?: return@mapNotNull null
+        val lowerUv = if (bottom - top < TINY) upperUv else mouth.uvWithin(Vec2(x, bottom), within) ?: return@mapNotNull null
         val upper = at(upperUv) ?: return@mapNotNull null
         val lower = at(lowerUv) ?: return@mapNotNull null
         val middle = at(middleUv) ?: return@mapNotNull null

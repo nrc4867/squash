@@ -16,6 +16,7 @@ import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.document.RegionId
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.geom.ColorShape
@@ -35,8 +36,16 @@ private const val BACK_DEPTH = 0.5f
 internal val BACK_TINT = LayerTint(TintTarget.Ink, 0.35f)
 private const val MIN_LINE_POINTS = 2
 
-/** What a shaped mouth adds to its part: fills in layer order, ink lines, and the lip line marks those lines stand in for. */
-data class OpenMouths(val shapes: List<LandedShape>, val lines: List<ResolvedMark>, val replaced: Set<MarkId> = emptySet()) {
+/**
+ * What a shaped mouth adds to its part: fills in layer order, ink lines, the lip line marks those lines stand in for, and the lip regions
+ * its moved lips' fills stand in for.
+ */
+data class OpenMouths(
+    val shapes: List<LandedShape>,
+    val lines: List<ResolvedMark>,
+    val replaced: Set<MarkId> = emptySet(),
+    val regions: Set<RegionId> = emptySet(),
+) {
     companion object {
         val NONE = OpenMouths(emptyList(), emptyList())
     }
@@ -57,20 +66,32 @@ fun openMouths(holder: PartId, work: ResolvedSurfaceWork, surfaces: Map<PartId, 
             null
         } else {
             val back = mouthRecessOf(holder, group.id, mouth, surface, styleOf(work, group).carve)?.solid?.deeperThan(BACK_DEPTH)
-            MouthLanding(holder, group, mouth, surface, marks, bySource, back)
+            MouthLanding(holder, group, mouth, surface, marks, bySource, back, lipRegionsOf(work, group))
         }
     }
     if (shaped.isEmpty()) return OpenMouths.NONE
-    return OpenMouths(shaped.flatMap { it.shapes() }, shaped.flatMap { it.lines() }, shaped.flatMap { it.replaced() }.toSet())
+    return OpenMouths(
+        shaped.flatMap { it.shapes() },
+        shaped.flatMap { it.lines() },
+        shaped.flatMap { it.replaced() }.toSet(),
+        shaped.flatMap { it.replacedRegions() }.toSet(),
+    )
 }
 
 /** Every mouth group [holder]'s [work] holds, shaped on its [surface] in the style [work] names for it (plain lips where none). */
 internal fun shapedMouths(holder: PartId, work: ResolvedSurfaceWork, surface: PartSurface): List<Pair<MarkGroup, ShapedMouth>> {
     val bySource = work.marks.groupBy { it.source }
     return work.groups.filter { it.isMouth }.mapNotNull { group ->
-        val placed = group.mouthMarks { id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }
+        val regions = lipRegionsOf(work, group).map { region -> region.border.map { it.anchor } }
+        val placed = group.mouthMarks({ id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, regions)
         shapeMouth(holder, placed, group.controls, styleOf(work, group), surface, work.dentitions[group.id] ?: MouthDentition.NONE)?.let { group to it }
     }
+}
+
+/** The regions [work] paints in [group]'s lip line fill: its lips' color as drawn. */
+fun lipRegionsOf(work: ResolvedSurfaceWork, group: MarkGroup): List<ResolvedRegion> {
+    val slot = group.roles.firstOrNull { it.role == MarkRole.LIP_LINE }?.fill ?: return emptyList()
+    return work.regions.filter { it.slot == slot }
 }
 
 private fun styleOf(work: ResolvedSurfaceWork, group: MarkGroup): MouthStyle = work.mouthStyles[group.id] ?: MouthStyle.PLAIN
@@ -91,6 +112,7 @@ private class MouthLanding(
     private val marks: Map<MarkId, ResolvedMark>,
     private val bySource: Map<MarkId, List<ResolvedMark>>,
     private val back: List<SurfaceUv>?,
+    private val lipRegions: List<ResolvedRegion>,
 ) {
     private val role = group.roles.associateBy { it.role }
     private val flat = mouth.flat
@@ -107,15 +129,24 @@ private class MouthLanding(
             flat.teeth.filterNot { it.over }.mapNotNull { tooth(it) }
         val over = flat.tongue.filter { it.over }.mapNotNull { fill(role[MarkRole.TONGUE]?.fill, it.loop, emptySet()) } +
             flat.teeth.filter { it.over }.mapNotNull { tooth(it) }
-        val lips = flat.lips.mapNotNull { fill(role[MarkRole.LIP_LINE]?.fill, it, emptySet()) }
+        val lipSlot = role[MarkRole.LIP_LINE]?.fill
+        val lips = if (flat.lipsDrawn) {
+            flat.lips.mapIndexedNotNull { i, loop -> lipRegions.getOrNull(i)?.let { fill(lipSlot, loop, it.corners, it.curved) } }
+        } else {
+            flat.lips.mapNotNull { fill(lipSlot, it, emptySet()) }
+        }
         return lips + listOfNotNull(inner, back) + within + over
     }
 
+    /** The lip regions the moved lips' fills stand in for. */
+    fun replacedRegions(): List<RegionId> =
+        if (flat.lipsDrawn) lipRegions.filterIndexed { i, _ -> flat.lips.getOrNull(i).orEmpty().size >= MIN_SHAPE_POINTS }.map { it.id } else emptyList()
+
     private fun tooth(piece: FlatPiece) = fill(role[MarkRole.TEETH]?.fill, piece.loop, piece.loop.indices.toSet())
 
-    private fun fill(slot: SlotName?, loop: List<Vec2>, corners: Set<Int>): LandedShape? {
+    private fun fill(slot: SlotName?, loop: List<Vec2>, corners: Set<Int>, curved: Boolean = true): LandedShape? {
         if (slot == null || loop.size < MIN_SHAPE_POINTS) return null
-        return LandedShape(RANK_MOUTH, slot, holder, mouth.patch, ColorShape.Border(mouth.uv(loop), corners = corners, curved = true))
+        return LandedShape(RANK_MOUTH, slot, holder, mouth.patch, ColorShape.Border(mouth.uv(loop), corners = corners, curved = curved))
     }
 
     fun lines(): List<ResolvedMark> {
@@ -124,7 +155,7 @@ private class MouthLanding(
         val lower = flat.lower.mapIndexedNotNull { i, piece -> line("$id-lower-lip${if (i == 0) "" else "-$i"}", piece) }
         val crease = flat.crease?.let { line("$id-crease", it) }
         fun inked(role: MarkRole, pieces: List<FlatPiece>) =
-            if (this.role[role]?.ink == true) pieces.mapIndexedNotNull { i, p -> line("$id-${role.name.lowercase()}-$i", p.loop + p.loop.take(1)) } else emptyList()
+            if (this.role[role]?.let { it.ink && it.fill != null } == true) pieces.mapIndexedNotNull { i, p -> line("$id-${role.name.lowercase()}-$i", p.loop + p.loop.take(1)) } else emptyList()
         return upper + lower + listOfNotNull(crease) + inked(MarkRole.TONGUE, flat.tongue) + inked(MarkRole.TEETH, flat.teeth)
     }
 

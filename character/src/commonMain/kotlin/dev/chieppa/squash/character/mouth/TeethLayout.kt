@@ -80,7 +80,7 @@ private class RowLayout(private val jaw: JawName, private val r: Int, row: Tooth
 
     private fun line(x: Float) = if (jaw == JawName.UPPER) seat.upperLine(x) else seat.lowerLine(x)
 
-    private fun place(x: Float, t: Float, scale: Float) = Vec2(x, line(x) + down * t * scale)
+    private fun place(x: Float, t: Float) = Vec2(x, line(x) + down * t)
 
     /** [slot] as its own tooth: its outline from root to tip, its tip hooked toward the middle by its curve. */
     private fun block(slot: Laid): FlatTooth {
@@ -92,10 +92,9 @@ private class RowLayout(private val jaw: JawName, private val r: Int, row: Tooth
         val hook = -slot.sign * tooth.curve * length
         val inner = -slot.sign.toFloat()
         val outline = outline(tooth.tip, half, length, root, inner)
-        val scale = seat.heightScale(centre)
         val loop = outline.map { (u, t) ->
             val along = (t / length).coerceIn(0f, 1f)
-            place(centre + u + hook * along * along, t, scale)
+            place(centre + u + hook * along * along, t)
         }
         return FlatTooth(MarkId(slot.id), loop, jaw, slot.over)
     }
@@ -163,9 +162,8 @@ private class RowLayout(private val jaw: JawName, private val r: Int, row: Tooth
                 }
             }
         }
-        val scales = xs.map(seat::heightScale)
-        val tips = xs.mapIndexed { i, x -> place(x, lengthAt(x), scales[i]) }
-        val roots = xs.indices.reversed().map { i -> place(xs[i], root, scales[i]) }
+        val tips = xs.map { x -> place(x, lengthAt(x)) }
+        val roots = xs.reversed().map { x -> place(x, root) }
         return FlatTooth(MarkId("$prefix-bar"), tips + roots, jaw, over = false)
     }
 }

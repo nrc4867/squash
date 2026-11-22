@@ -69,6 +69,8 @@ data class MouthStyle(
     val span: Float = 1f,
     @Doc("How much each control does on this mouth.")
     val scale: MouthScales = MouthScales(),
+    @Doc("How far each control may go on this mouth after its scale, so it stays whole from every view; a character's own style may loosen them.")
+    val limits: MouthLimits = MouthLimits(),
     @Doc("How thick the upper lip's band is at its middle, a share of the lip line's width, where the lip line's role has a fill.") @Range(min = 0.0, max = 0.5)
     val upperLip: Float = DEFAULT_UPPER_LIP,
     @Doc("How thick the lower lip's band is at its middle, a share of the lip line's width, where the lip line's role has a fill.") @Range(min = 0.0, max = 0.5)
@@ -80,6 +82,9 @@ data class MouthStyle(
     @Doc("The teeth preset a mouth of this style starts from (templates/teeth/<name>.teeth.json); none for no teeth.")
     val teeth: String? = null,
 ) {
+    /** [controls] as a mouth of this style does them: scaled, then held to its limits. */
+    fun controlsOf(controls: MarkControls): MarkControls = limits.of(scale.of(controls))
+
     /** What [shape] sets on this style, under [override]. */
     fun shape(shape: MouthShapeName, override: MouthShapeValues? = null): MouthShapeValues = (shapes[shape] ?: MouthShapeValues()).under(override)
 

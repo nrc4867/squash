@@ -21,7 +21,8 @@ class AnchoredMark(val id: MarkId, val anchors: List<Anchor>, val over: Boolean)
 /**
  * A mouth's marks by their anchors, as the shaper reads them: its lip line's places, the inner role's drawn shape if any, its teeth and
  * tongue, whether its tongue role is filled, so a tongue no mark draws shows when lifted, and whether its lip line's role is, so the lips
- * show filled bands; and whether a tongue shows at all.
+ * show filled bands; and whether a tongue shows at all. [lipRegions] are the borders of the regions painted in the lip line role's fill, the
+ * lips' color as drawn, which the lips carry as they move in place of bands.
  */
 class MouthMarks(
     val lip: List<List<Anchor>>,
@@ -31,6 +32,7 @@ class MouthMarks(
     val tongueFilled: Boolean = false,
     val lipsFilled: Boolean = false,
     val tongueShown: Boolean = true,
+    val lipRegions: List<List<Anchor>> = emptyList(),
 )
 
 /**
@@ -51,12 +53,9 @@ class ShapedMouth(
         lipUv.getOrNull(run.mark)?.subList(run.range.first, run.range.last + 1)?.map { SurfaceUv(it.x, it.y - floor(it.y)) }
     } ?: flat.upper.map(::uv)
 
-    /**
-     * [place]'s u and v on the patch, walked to from [from] where given, a place found just before it, so the walk keeps to the same side
-     * of a muzzle's tip; null where the place found lies further than [within] from it in the flat frame.
-     */
-    fun uvWithin(place: Vec2, within: Float, from: SurfaceUv? = null): SurfaceUv? {
-        val uv = if (from == null) frame.onPatch(place) else frame.onPatchFrom(place, from)
+    /** [place]'s u and v on the patch; null where the place found lies further than [within] from it in the flat frame. */
+    fun uvWithin(place: Vec2, within: Float): SurfaceUv? {
+        val uv = frame.onPatch(place)
         val back = frame.flat(Anchor(holder, patch, uv.u, uv.v))
         return uv.takeIf { hypot(back.x - place.x, back.y - place.y) <= within }
     }
@@ -79,7 +78,7 @@ fun shapeMouth(
     val held = marks.lip.map { mark -> mark.filter { it.part == holder } }
     val patch = held.flatten().firstOrNull()?.patch ?: return null
     val own = held.map { mark -> mark.filter { it.patch == patch } }.filter { it.isNotEmpty() }
-    val frame = MouthFrame.of(holder, patch, own.flatten(), surface) ?: return null
+    val frame = MouthFrame.of(holder, patch, own, surface) ?: return null
     val curves = own.map { mark -> curveThrough(mark.map(frame::flat)) }
     val lip = curves.flatten().sortedBy { it.x }
     if (lip.size < MIN_LINE_POINTS || lip.last().x - lip.first().x < TINY) return null
@@ -96,11 +95,11 @@ fun shapeMouth(
         lipLower = style.lowerLip,
         dentition = dentition,
         tongueShown = marks.tongueShown,
-        heightScale = frame::heightScale,
         lipMarks = curves,
+        lipShapes = marks.lipRegions.map { border -> if (border.all { it.part == holder && it.patch == patch }) border.map(frame::flat) else emptyList() },
     )
     val lipUv = own.map { mark -> curveThrough(mark.map { Vec2(it.u, mark.first().v + unwrapped(it.v - mark.first().v)) }) }
-    return ShapedMouth(holder, patch, MouthShaper.shape(drawing, style.scale.of(controls), style.depth, style.span), frame, lipUv)
+    return ShapedMouth(holder, patch, MouthShaper.shape(drawing, style.controlsOf(controls), style.depth, style.span), frame, lipUv)
 }
 
 private fun unwrapped(dv: Float) = dv - floor(dv + 0.5f)

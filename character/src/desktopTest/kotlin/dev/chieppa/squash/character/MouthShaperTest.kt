@@ -85,4 +85,24 @@ class MouthShaperTest {
         assertTrue(piece.loop.maxOf { it.y } > 0f, "it hangs below the lip line")
         assertTrue(shape(MarkControls(tongue = 0.3f), tongues = listOf(FlatMark(MarkId("tongue"), tongue))).tongue.isEmpty(), "a lifted tongue stays in a shut mouth")
     }
+
+    /** An upper lip drawn above the line and a lower one below it. */
+    private val upperLip = listOf(Vec2(-1f, 0f), Vec2(0f, -0.2f), Vec2(1f, 0f), Vec2(0f, -0.02f))
+    private val lowerLip = listOf(Vec2(-1f, 0f), Vec2(0f, 0.02f), Vec2(1f, 0f), Vec2(0f, 0.3f))
+
+    private fun lips(controls: MarkControls) = MouthShaper.shape(MouthDrawing(lip, lipsFilled = true, lipShapes = listOf(upperLip, lowerLip)), controls, DEPTH)
+
+    @Test
+    fun drawnLipsRestAsDrawnAndMoveWithTheLips() {
+        val rest = lips(MarkControls())
+        assertTrue(rest.restsAsDrawn, "drawn lips at rest add nothing to what is painted")
+        assertEquals(listOf(upperLip, lowerLip), rest.lips)
+        val open = lips(MarkControls(open = 1f)).lips
+        assertEquals(upperLip, open[0], "the upper lip holds while the jaw drops")
+        assertEquals(0.3f + DEPTH * 2f, open[1][3].y, SLACK, "the lower lip's middle drops with the lower lip")
+        val round = lips(MarkControls(round = 1f)).lips
+        assertTrue(round[1].maxOf { it.x } < 1f, "a pucker draws the lips' corners in")
+        val pressed = lips(MarkControls(lowerLip = -1f)).lips
+        assertTrue(pressed[0][1].y > -0.2f, "pressed lips thin")
+    }
 }

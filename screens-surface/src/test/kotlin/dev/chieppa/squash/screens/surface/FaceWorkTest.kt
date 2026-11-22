@@ -70,7 +70,7 @@ class FaceWorkTest {
     }
 
     @Test
-    fun aMouthOpensItsLipsItsColorAndItsJaw() {
+    fun aMuzzlesMouthOpensItsLipsAndItsColorOnTheHeadAsItStands() {
         val closed = faces().draws(HEAD, side)
         val chin = { assertNotNull(session.assembly.output.value?.part(HEAD)).surface.patches.first { it.name == "muzzle" } }
         work.settle(session)
@@ -79,9 +79,12 @@ class FaceWorkTest {
         val open = faces().draws(HEAD, side)
         assertTrue(open.layers.size > closed.layers.size, "the inner color and the tongue show")
         assertTrue(open.ribbons.size > closed.ribbons.size, "a lower lip parts from each line")
-        assertEquals(mapOf("jaw" to 0.6f * 35f), shownJoints(session.document.value.character, HEAD, assertNotNull(session.templates.find(assertNotNull(session.document.value.character.part(HEAD)).template))))
-        assertNotEquals(before.toList(), chin().points.toList(), "the jaw turns the muzzle's underside")
+        assertEquals(emptyMap(), shownJoints(session.document.value.character, HEAD, headTemplate(), session.templates), "a muzzle's lips part on the head")
+        work.settle(session)
+        assertEquals(before.toList(), chin().points.toList(), "the muzzle's underside holds still")
     }
+
+    private fun headTemplate() = assertNotNull(session.templates.find(assertNotNull(session.document.value.character.part(HEAD)).template))
 
     @Test
     fun aSmileMovesTheLineTheViewDrawsAndAPreviewSaysAShapeWithoutAnEdit() {
@@ -92,8 +95,7 @@ class FaceWorkTest {
         session.history.undo()
         session.mouthPreview.value = MouthShapeName.AI
         val muzzle = faces().draws(HEAD, side)
-        assertEquals(rest.layers.size, muzzle.layers.size, "a muzzle's style says no shape")
-        assertEquals(rest.ribbons.size, muzzle.ribbons.size)
+        assertTrue(muzzle.layers.size > rest.layers.size, "saying ai opens a short muzzle's mouth on the view")
         session.mouthPreview.value = null
         val group = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == MOUTH }
         session.send(SetMarkGroup(HEAD, MOUTH, group.copy(style = MouthStyle.LIPS)))
@@ -122,7 +124,7 @@ class FaceWorkTest {
         work.settle(session)
         assertEquals(rest, assertNotNull(earTip()), "neutral stands it back up")
         session.send(ShowExpression(HAPPY))
-        assertEquals(setOf("jaw"), shownJoints(session.document.value.character, HEAD, assertNotNull(session.templates.find(assertNotNull(session.document.value.character.part(HEAD)).template))).keys)
+        assertEquals(setOf("jaw"), shownJoints(session.document.value.character, HEAD, headTemplate(), session.templates).keys)
     }
 
     @Test

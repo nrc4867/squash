@@ -52,7 +52,7 @@ fun jawMouthOf(character: Character, instance: PartInstance, template: PartTempl
     val group = character.resolved(holder).surface.groups.first { it.isMouth }
     val style = templates.mouthStyleOf(holder, group)
     if (style.line != MouthLine.SEAM) return null
-    val controls = style.scale.of(group.controls.copy(open = character.shownOpen(group)))
+    val controls = style.controlsOf(group.controls.copy(open = character.shownOpen(group)))
     if (controls.open <= 0f) return null
     val slot = { role: MarkRole -> group.roles.firstOrNull { it.role == role }?.fill }
     val tongue = slot(MarkRole.TONGUE).takeIf { group.tongueLevel != TongueLevel.NONE }
