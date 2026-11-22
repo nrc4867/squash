@@ -92,7 +92,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
                 return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.grown)
             }
             val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { AdaptiveMesher(nextField.cell, reads) }
-            Piece(i, nextCover, nextField, mesher.begin(nextField.field, nextField.levels, mesh.channels), null)
+            Piece(i, nextCover, nextField, mesher.begin(nextField.field, nextField.levels, mesh.channels, nextField.finestCell), null)
         }
 
         /** One garment being made: meshed by [run] and finished, or cut again on its kept surface [recut]. */

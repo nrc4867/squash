@@ -53,16 +53,13 @@ class LevelSmoothingTest {
     }
 
     @Test
-    fun eachVertexIsEasedByItsOwnScaleAndSteps() {
+    fun eachVertexMovesNoFurtherThanItsOwnShift() {
         val length = 12
         val values = FloatArray(length * 2) { v -> if (v / 2 == length / 2) 0.004f else -0.004f }
         val middle = length / 2 * 2
-        val scales = FloatArray(values.size) { v -> if (v / 2 == length / 2 + 1) 0f else 1f }
-        val stepsOf = IntArray(values.size) { v -> if (v / 2 == length / 2 - 1) 0 else NEAR_ZERO_STEPS }
-        val eased = NearZeroSmoothing(values, strip(length), values.size, band = 0.05f, shift = 0.003f, scales = scales, stepsOf = stepsOf).run()
-        assertTrue(eased[middle] > 0f, "the narrow band is held by its own shift: ${eased[middle]}")
-        assertEquals(values[middle + 2], eased[middle + 2], "a vertex of no scale lies outside the band and stays")
-        assertEquals(values[middle - 2], eased[middle - 2], "a vertex given no steps stays")
-        assertTrue(eased[middle] < values[middle], "the band eases toward its neighbours")
+        val shifts = FloatArray(values.size) { v -> if (v == middle) 0.001f else 0.01f }
+        val eased = NearZeroSmoothing(values, strip(length), values.size, band = 0.05f, shift = 0.01f, shifts = shifts).run()
+        assertTrue(eased[middle] >= values[middle] - 0.001f - 1e-6f, "a vertex of a small shift is held to it: ${eased[middle]}")
+        assertTrue(eased[middle + 1] < 0f, "beside it a vertex of the larger shift is eased across zero: ${eased[middle + 1]}")
     }
 }

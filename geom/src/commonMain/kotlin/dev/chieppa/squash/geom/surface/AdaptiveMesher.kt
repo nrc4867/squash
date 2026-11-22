@@ -24,18 +24,19 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
     }
 
     /**
-     * A run meshing [next] with its members at [levels] (see [CellLevels.memberLevels]): hand out its batches of work with [Run.next],
-     * each batch's pieces independent of one another, until it has none, then read [Run.mesh]. Level 0 reads grown members' channels from
-     * [lent] where it can, as [SurfaceMesher.begin] says.
+     * A run meshing [next] with its members at [levels] (see [CellLevels.of]): hand out its batches of work with [Run.next], each
+     * batch's pieces independent of one another, until it has none, then read [Run.mesh]. Level 0 reads grown members' channels from
+     * [lent] where it can, as [SurfaceMesher.begin] says. Its mesh reads as meshed at [reported], the cell its users size their work by:
+     * a garment's finest, so its cloth is cut, eased and folded as one meshed at that cell all over is.
      */
-    fun begin(next: JoinedField, levels: IntArray, lent: ChannelSource? = null): Run {
+    fun begin(next: JoinedField, levels: IntArray, lent: ChannelSource? = null, reported: Float = cell): Run {
         val plan = CellLevels.of(next, cell, levels)
         val runs = List(plan.count) { level -> mesher(level).begin(next, if (level == 0) lent else null, plan.region(level)) }
-        return Run(plan, runs)
+        return Run(plan, runs, reported)
     }
 
     /** One run over a field, its levels' runs side by side. */
-    inner class Run internal constructor(private val plan: CellLevels, private val runs: List<SurfaceMesher.MeshRun>) {
+    inner class Run internal constructor(private val plan: CellLevels, private val runs: List<SurfaceMesher.MeshRun>, private val reported: Float) {
         private val running = BooleanArray(runs.size) { true }
         private var joining: Joining? = null
         private var done: SurfaceMesh? = null
@@ -74,7 +75,7 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
         }
 
         private fun finish(parts: List<SurfaceMesh>, bases: IntArray, joined: SurfaceMesh?) {
-            val mesh = pinchSplit(joined ?: parts[0])
+            val mesh = pinchSplit(joined ?: parts[0]).atCell(reported)
             if (mesh !== parts[0] || last !== lastParts.firstOrNull()) {
                 val before = last
                 if (before != null) {

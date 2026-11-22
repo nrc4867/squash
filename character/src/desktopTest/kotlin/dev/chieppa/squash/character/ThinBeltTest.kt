@@ -65,7 +65,8 @@ class ThinBeltTest {
         val both = assertNotNull(session.sessionSurface.dress.output.value?.dress?.garments?.singleOrNull(), "the belt and the leg's cloth are worn")
         assertTrue(both.surface.field.cellOf(memberOf(both, torsoPart.id)) < body.mesh.cell, "the belt still meshes finer than the body")
         assertEquals(body.mesh.cell, both.surface.field.cellOf(memberOf(both, leftLeg.id)), "the leg's cloth meshes at the body's cell")
-        assertEquals(body.mesh.cell, both.surface.mesh.cell, "the garment meshes at the cell of its coarsest cloth, the leg's")
+        assertEquals(body.mesh.cell, both.surface.field.cell, "the garment meshes from the cell of its coarsest cloth, the leg's")
+        assertEquals(both.surface.field.cellOf(memberOf(both, torsoPart.id)), both.surface.mesh.cell, "its mesh reads as meshed at the belt's cell")
     }
 
     /** The member of [worn]'s field over [part]'s first run. */

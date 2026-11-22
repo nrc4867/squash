@@ -33,8 +33,8 @@ fun smoothedNearZero(
 /**
  * The work of [smoothedNearZero], in batches whose pieces are independent of one another, handed out by [next] until it gives null, then
  * read from [result]. Each of its [steps] eases every moving vertex from the values the step before left, so the pieces of a step may run
- * at once; more steps ease over a wider stretch of the mesh. With [scales], a vertex's [band] and [shift] are each times its own scale, and
- * with [stepsOf] it eases in only as many of the steps as its own, so a mesh of cells of several sizes is eased by each vertex's cell.
+ * at once; more steps ease over a wider stretch of the mesh. With [shifts], each vertex moves no further than its own shift in place of
+ * [shift].
  */
 class NearZeroSmoothing(
     private val values: FloatArray,
@@ -44,8 +44,7 @@ class NearZeroSmoothing(
     private val positions: FloatArray? = null,
     private val shift: Float = Float.POSITIVE_INFINITY,
     private val steps: Int = NEAR_ZERO_STEPS,
-    private val scales: FloatArray? = null,
-    private val stepsOf: IntArray? = null,
+    private val shifts: FloatArray? = null,
 ) {
     private val start = IntArray(vertexCount + 1)
     private var links = IntArray(0)
@@ -68,7 +67,7 @@ class NearZeroSmoothing(
             step == steps + 1 -> {
                 current = following.also { following = current }
                 for (v in moving) {
-                    val most = shift * (scales?.get(v) ?: 1f)
+                    val most = shifts?.get(v) ?: shift
                     current[v] = current[v].coerceIn(values[v] - most, values[v] + most)
                 }
                 null
@@ -94,7 +93,7 @@ class NearZeroSmoothing(
             links[filled[v]++] = triangles[tri * 3 + (c + 2) % 3]
         }
         val near = IntList()
-        for (v in 0 until vertexCount) if (abs(values[v]) < band * (scales?.get(v) ?: 1f)) near.add(v)
+        for (v in 0 until vertexCount) if (abs(values[v]) < band) near.add(v)
         moving = near.toArray()
         current = values.copyOf()
         following = values.copyOf()
@@ -105,7 +104,7 @@ class NearZeroSmoothing(
         val fit = if (positions != null) PlaneFit(positions) else null
         for (i in from until to) {
             val v = moving[i]
-            if (start[v + 1] == start[v] || (stepsOf != null && step > stepsOf[v])) {
+            if (start[v + 1] == start[v]) {
                 following[v] = current[v]
                 continue
             }

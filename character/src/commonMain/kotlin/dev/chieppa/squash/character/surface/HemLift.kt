@@ -9,10 +9,10 @@ internal const val HEM_LIFT_CELLS = 0.15f
 /** How far past the skin a garment's hem keeps showing, in the body's cells, over which its least lift fades out. */
 private const val LIFT_FADE_CELLS = 1f
 
-/** How wide a hem's roll is, in the roll's own height, beyond [ROLL_CELLS] of the cell the garment meshes at there. */
+/** How wide a hem's roll is, in the roll's own height, beyond [ROLL_CELLS] of the garment's cell. */
 private const val ROLL_WIDTH_HEIGHTS = 2.5f
 
-/** How many of the cells the garment meshes at there a hem's roll spans at least beyond its height's share, so its profile is sampled by several vertices. */
+/** How many of the garment's cells a hem's roll spans at least beyond its height's share, so its profile is sampled by several vertices. */
 private const val ROLL_CELLS = 2f
 
 /** How much of a hem's roll's width stands at its full height before it rounds down to the cloth. */
@@ -30,15 +30,15 @@ internal fun hemLifts(surface: CharacterSurface, cover: WornCover, coverage: Flo
     val roll = cover.garment.hemRoll
     val eases = Array(surface.field.runs.size) { r -> surface.field.runs[r].takeIf { it.first }?.let { cover.branchOf(it.partId)?.ease } }
     if (roll <= 0f && eases.all { it == null || it >= least }) return null
-    val cells = if (roll > 0f) vertexCells(surface.field, mesh) else null
+    val rollWidth = roll * ROLL_WIDTH_HEIGHTS + mesh.cell * ROLL_CELLS
     val lifts = FloatArray(mesh.vertexCount)
     var any = false
     for (v in 0 until mesh.vertexCount) {
         val ease = easeAt(mesh.held, mesh.heldShares, v, eases)
         val inside = maxOf(coverage[v], 0f)
         val shown = bodyCell * HIDING_CELLS + ease * SEEN_UNDER_EASES
-        val rolled = if (cells == null) 0f else (roll * ROLL_WIDTH_HEIGHTS + cells[v] * ROLL_CELLS).let { width -> roll * fade(inside, width * ROLL_FLAT_SHARE, width) }
-        val lift = maxOf(0f, least - ease) * fade(inside, shown, shown + bodyCell * LIFT_FADE_CELLS) + rolled
+        val lift = maxOf(0f, least - ease) * fade(inside, shown, shown + bodyCell * LIFT_FADE_CELLS) +
+            roll * fade(inside, rollWidth * ROLL_FLAT_SHARE, rollWidth)
         lifts[v] = lift
         if (lift > 0f) any = true
     }

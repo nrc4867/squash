@@ -49,3 +49,9 @@ class SurfaceMesh(
     fun position(v: Int): Vec3 = Vec3(positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2])
     fun normal(v: Int): Vec3 = Vec3(normals[v * 3], normals[v * 3 + 1], normals[v * 3 + 2])
 }
+
+/** This mesh read as meshed at [cell]: the same vertices, triangles and what each vertex holds, and the same change from the mesh before it. */
+internal fun SurfaceMesh.atCell(cell: Float): SurfaceMesh = if (cell == this.cell) this else SurfaceMesh(
+    cell, positions, normals, triangles, winners, parents, shares, winnerOwn, parentOwn, held, heldShares, heldU, heldV, heldOwn, blocks, channels,
+    blockKeys, blockStarts, quadCount,
+).also { it.change = change }
