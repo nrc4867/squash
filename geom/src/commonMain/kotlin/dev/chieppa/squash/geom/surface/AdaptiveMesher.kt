@@ -3,6 +3,7 @@ package dev.chieppa.squash.geom.surface
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.JoinedField
+import dev.chieppa.squash.geom.field.ReadRounds
 
 /**
  * Meshes a joined field into one surface with cells of several sizes: the body at [cell], and around each member whose radius asks for
@@ -41,6 +42,12 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
 
         /** The mesh the run made, once [next] has given null. */
         val mesh: SurfaceMesh get() = checkNotNull(done) { "The run has work left" }
+
+        /**
+         * The rounds of reads the levels' runs wait on, where their reads are gathered, for the caller to answer beside other runs' with
+         * [ReadRounds.answerTogether] before it calls [next] again; [next] gives batches answering them alone otherwise.
+         */
+        val asking: List<ReadRounds> get() = runs.indices.mapNotNull { level -> runs[level].asking?.takeIf { running[level] } }
 
         /** The next batch of work, or null when the run is done. */
         fun next(): List<() -> Unit>? {

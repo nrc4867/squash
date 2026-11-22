@@ -51,4 +51,18 @@ class LevelSmoothingTest {
         assertTrue(held[middle] > 0f, "held, the narrow band stays: ${held[middle]}")
         for (v in values.indices) assertTrue(abs(held[v] - values[v]) <= 0.003f + 1e-6f)
     }
+
+    @Test
+    fun eachVertexIsEasedByItsOwnScaleAndSteps() {
+        val length = 12
+        val values = FloatArray(length * 2) { v -> if (v / 2 == length / 2) 0.004f else -0.004f }
+        val middle = length / 2 * 2
+        val scales = FloatArray(values.size) { v -> if (v / 2 == length / 2 + 1) 0f else 1f }
+        val stepsOf = IntArray(values.size) { v -> if (v / 2 == length / 2 - 1) 0 else NEAR_ZERO_STEPS }
+        val eased = NearZeroSmoothing(values, strip(length), values.size, band = 0.05f, shift = 0.003f, scales = scales, stepsOf = stepsOf).run()
+        assertTrue(eased[middle] > 0f, "the narrow band is held by its own shift: ${eased[middle]}")
+        assertEquals(values[middle + 2], eased[middle + 2], "a vertex of no scale lies outside the band and stays")
+        assertEquals(values[middle - 2], eased[middle - 2], "a vertex given no steps stays")
+        assertTrue(eased[middle] < values[middle], "the band eases toward its neighbours")
+    }
 }

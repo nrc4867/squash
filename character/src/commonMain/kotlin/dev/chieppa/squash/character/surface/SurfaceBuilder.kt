@@ -31,8 +31,8 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val read
      * One build: hand out its batches with [next] until it has none, then read [surface]; or hand out only the mesher's with
      * [nextMeshing], then read [mesh] and finish it apart.
      */
-    inner class Build internal constructor(val field: CharacterField, mesher: AdaptiveMesher, levels: IntArray) {
-        private val run: AdaptiveMesher.Run = mesher.begin(field.field, levels)
+    inner class Build internal constructor(val field: CharacterField, mesher: AdaptiveMesher) {
+        private val run: AdaptiveMesher.Run = mesher.begin(field.field, field.levels)
         private var meshed = false
         private var finish: SurfaceFinish? = null
 
@@ -64,7 +64,7 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val read
             coarse = AdaptiveMesher(cell * COARSE_FACTOR, reads)
         }
         val mesher = checkNotNull(if (dragging) coarse else fine)
-        return Build(CharacterField(field.field, field.runs, mesher.cell, field.recesses), mesher, digitLevels(field))
+        return Build(CharacterField(field.field, field.runs, mesher.cell, field.recesses, digitLevels(field)), mesher)
     }
 
     /** [character]'s surface, built with [runAll] running each batch of work; null when it has no field part. */

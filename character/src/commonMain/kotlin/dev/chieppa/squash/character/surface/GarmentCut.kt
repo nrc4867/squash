@@ -89,21 +89,30 @@ class GarmentCut(
         }
     }
 
-    /**
-     * The smoothing of [values] near zero: over [COVERAGE_CELLS] of the mesh's cell, moving none by more than [COVERAGE_SHIFT_CELLS] of
-     * it; where the cloth is drawn and meshes finer than [DETAIL_LEVEL]'s cell, over that cell instead, in as many more steps as reach
-     * across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a drawn hem.
-     */
-    /** Whether its cloth is drawn and meshed finer than [DETAIL_LEVEL]'s cell. */
-    private fun isDrawnFine(): Boolean = mesh.cell < bodyCell / (1 shl DETAIL_LEVEL) && cover.cloth.values.any { it.isDrawn }
+    /** The cell each vertex of the mesh was meshed at. */
+    private val cells = vertexCells(grown.field, mesh)
 
+    /** Whether its cloth is drawn. */
+    private val drawn = cover.cloth.values.any { it.isDrawn }
+
+    /** Whether its cloth is drawn and any of it meshed finer than [DETAIL_LEVEL]'s cell. */
+    private fun isDrawnFine(): Boolean = drawn && cells.any { it < bodyCell / (1 shl DETAIL_LEVEL) }
+
+    /**
+     * The smoothing of [values] near zero: at each vertex over [COVERAGE_CELLS] of the cell it meshed at, moving none by more than
+     * [COVERAGE_SHIFT_CELLS] of it; where the cloth is drawn and meshes finer than [DETAIL_LEVEL]'s cell, over that cell instead, in as
+     * many more steps as reach across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a
+     * drawn hem.
+     */
     private fun smoothingOf(values: FloatArray): NearZeroSmoothing {
         val detail = bodyCell / (1 shl DETAIL_LEVEL)
-        val drawn = isDrawnFine()
-        val cell = if (drawn) detail else mesh.cell
-        val reach = cell / mesh.cell
-        val steps = if (drawn) minOf((NEAR_ZERO_STEPS * reach * reach).toInt(), MOST_SMOOTHING_STEPS) else NEAR_ZERO_STEPS
-        return NearZeroSmoothing(values, mesh.triangles, mesh.vertexCount, cell * COVERAGE_CELLS, mesh.positions, cell * COVERAGE_SHIFT_CELLS, steps)
+        val scales = FloatArray(mesh.vertexCount) { v -> if (drawn && cells[v] < detail) detail else cells[v] }
+        val stepsOf = IntArray(mesh.vertexCount) { v ->
+            val reach = scales[v] / cells[v]
+            if (reach > 1f) minOf((NEAR_ZERO_STEPS * reach * reach).toInt(), MOST_SMOOTHING_STEPS) else NEAR_ZERO_STEPS
+        }
+        val steps = stepsOf.maxOrNull() ?: NEAR_ZERO_STEPS
+        return NearZeroSmoothing(values, mesh.triangles, mesh.vertexCount, COVERAGE_CELLS, mesh.positions, COVERAGE_SHIFT_CELLS, steps, scales, stepsOf)
     }
 
     companion object {
