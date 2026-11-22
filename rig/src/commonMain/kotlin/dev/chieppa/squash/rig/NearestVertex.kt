@@ -2,6 +2,7 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.collections.LongIntMap
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sqrt
@@ -56,7 +57,7 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
         val y = points[at * 3 + 1]
         val z = points[at * 3 + 2]
         if (outsideBox(x, y, z, reach)) return null
-        val v = nearest(x, y, z, accept)
+        val v = nearest(x, y, z, accept, minOf(MOST_RINGS, ceil(reach / cell).toInt() + 1))
         if (v < 0) return null
         val dx = positions[v * 3] - x
         val dy = positions[v * 3 + 1] - y
@@ -95,15 +96,19 @@ internal class NearestVertex(private val positions: FloatArray, private val cell
         }
     }
 
-    /** The nearest vertex [accept] takes, all where null, in the first ring of buckets round the point's that holds any, or -1 within [MOST_RINGS] rings. */
-    private fun nearest(px: Float, py: Float, pz: Float, accept: ((Int) -> Boolean)? = null): Int {
+    /**
+     * The nearest vertex [accept] takes, all where null, in the first ring of buckets round the point's that holds any, or -1 within [rings]
+     * rings. Each ring past the first reads only its own shell of buckets, the ones inside it having held none.
+     */
+    private fun nearest(px: Float, py: Float, pz: Float, accept: ((Int) -> Boolean)? = null, rings: Int = MOST_RINGS): Int {
         val x = index(px)
         val y = index(py)
         val z = index(pz)
-        for (ring in 1..MOST_RINGS) {
+        for (ring in 1..rings) {
             var best = -1
             var least = Float.MAX_VALUE
             for (dx in -ring..ring) for (dy in -ring..ring) for (dz in -ring..ring) {
+                if (ring > 1 && maxOf(abs(dx), abs(dy), abs(dz)) < ring) continue
                 val b = buckets.get(pack(x + dx, y + dy, z + dz))
                 if (b < 0) continue
                 for (k in starts[b] until starts[b + 1]) {

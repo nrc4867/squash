@@ -16,7 +16,9 @@ import kotlin.math.floor
  * the drawn mesh with its normal and shading normal, the normals its lines read, the paint laid again on the posed mesh, and each ink
  * mark's places carried by the vertex nearest each. The skin's contact quads are left out. A pose that moves no bone leaves them as
  * they rest. Each batch of vertices is posed by [runAll]. A pose that moves a bone hands the posed drawn vertices and the corners' places to
- * [shape] before they are made a surface, for it to move them further. Each stage's time goes to [breakdown] when there is one.
+ * [shape] before they are made a surface, for it to move them further; with [fit], they are first refitted to the posed field
+ * ([ImplicitSkin]), and a mark carried by a vertex the refit moved moves and turns with it. Each stage's time goes to [breakdown] when
+ * there is one.
  */
 suspend fun posedSurface(
     surface: CharacterSurface,
@@ -26,6 +28,7 @@ suspend fun posedSurface(
     runAll: RunAll = IN_TURN,
     shape: ((vertices: FloatArray, positions: FloatArray) -> Unit)? = null,
     breakdown: PoseBreakdown? = null,
+    fit: ImplicitSkin? = null,
 ): PosedSurface {
     val transforms = frames.transforms
     val twists = frames.twists
@@ -54,6 +57,15 @@ suspend fun posedSurface(
             }
         }
     }) }
+    val refit = fit?.refit(frames, positions, runAll, breakdown)
+    val shifts = refit?.let { made ->
+        breakdown.time("write") {
+            val turns = FloatArray(made.moved.size * 3)
+            for ((i, v) in made.moved.withIndex()) made.normals[i]?.let { turns.put(i * 3, it - lineNormals.vec(v * 3)) }
+            writeRefit(made, corners, surface.render.indices, vertices, positions, lineNormals)
+            VertexShifts(made, turns)
+        }
+    }
     breakdown.time("shape") { shape?.invoke(vertices, positions) }
     val parted = skin.contacts.any { it }
     val fan = surface.render.indices
@@ -65,7 +77,9 @@ suspend fun posedSurface(
     fun carried(point: ResolvedPoint): ResolvedPoint {
         val v = near.of(point.position) ?: return point
         val blended = blendVertex(point.position, point.normal, point.normal, skin.bones, skin.weights, v * MAX_INFLUENCES, transforms, twists) ?: return point
-        return point.copy(position = blended.position, normal = blended.normal.unitOr(point.normal))
+        val normal = blended.normal.unitOr(point.normal)
+        val shift = shifts?.of(v) ?: return point.copy(position = blended.position, normal = normal)
+        return point.copy(position = blended.position + shift.first, normal = (normal + shift.second).unitOr(normal))
     }
     val posedPaint = breakdown.time("paint") { paint?.posed(render, ::carried) }
     return PosedSurface(posed, posedPaint, carry = ::carried)
