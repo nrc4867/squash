@@ -47,7 +47,7 @@ import { bodyPlan, joint, socket, tubePart, vToward } from "squash-kit";
 
 const plan = bodyPlan({ crotch: 0.2, hip: 0.22, waist: 0.3, chest: 0.42, shoulder: 0.58, torsoTop: 0.62 }, { hips: 0.15 });
 const torso = plan.upright("crotch", "torsoTop");
-const stations = [0.2, 0.22, 0.26, plan.h("waist"), 0.36, plan.h("chest"), 0.5, plan.h("shoulder"), 0.61];
+const stations = [0.21, 0.25, plan.h("waist"), 0.36, plan.h("chest"), 0.5, 0.57];
 
 export const torsoPart = tubePart(
   {
@@ -67,9 +67,9 @@ export const torsoPart = tubePart(
     closed: true,
     at: stations.map(torso.x),
     profiles: {
-      front: [0.08, 0.11, 0.13, 0.13, 0.135, 0.13, 0.11, 0.09, 0.05],
-      back: [0.09, 0.115, 0.125, 0.12, 0.12, 0.12, 0.11, 0.09, 0.05],
-      left: [0.1, plan.w("hips"), 0.15, 0.145, 0.15, 0.15, 0.13, 0.12, 0.06],
+      front: [0.09, 0.12, 0.125, 0.13, 0.135, 0.11, 0.06],
+      back: [0.1, 0.12, 0.115, 0.115, 0.12, 0.11, 0.06],
+      left: [0.11, plan.w("hips"), 0.14, 0.145, 0.15, 0.13, 0.08],
     },
   },
 );
@@ -80,8 +80,18 @@ export const torsoPart = tubePart(
 A tube's Side outline takes two profiles across its y and Top the other two (`kit/README.md`, `tube`): for a part resting up or down they are `front` and `back` in Side, `left`/`right` (or `outer`/`inner` on a pair) in Top; for one resting forward or back (an arm held out, a tail) `up` and `down` in Side and `left`/`right` in Top; for one resting out, `up` and `down` in Side and `front`/`back` in Top. **Give both sides of every profile**: the belly and the back, the chest and the shoulder blades, the shin and the calf, the seat. Front and back are set apart, so a round belly or a seat is just a larger front or back radius at its stations; a lone Top side is mirrored. Read the side view's grid for the front and back radii and the front view's for the left and right.
 
 - A limb narrows and swells: thigh to knee to calf to ankle, shoulder to elbow to forearm to wrist. **A leg of one constant width with no knee** reads as a pipe; give the knee and ankle their narrowing and the calf its swell at the back.
-- Use enough stations to hold the shape: 7 to 11 for a torso or leg, 6 to 9 for an arm or neck. `roundStations` gives stations bunched toward the ends of a round closed part (a head, a belly).
 - One front section holds for the whole part (Front, where the template says `section`); a chest cannot have a different section from the waist. Draw the difference with the four profiles instead.
+
+### Smooth profiles
+
+The outline runs through every station's radius exactly, its direction carried on from the stations either side. So it is only as smooth as the numbers: a radius a little above or below the line its neighbours make puts a bend there, and ten measured radii give a side that wobbles in and out like a hand-traced line. A bare body is smoother than its sheet: the garments carry the folds.
+
+- **Stations go where the shape turns, not at every measurement.** Each profile of a torso holds 5 to 7 stations, a leg 5 to 7, an arm 4 to 6, a neck 3: one at each widest or narrowest place (seat, hip, waist, chest, knee, calf, elbow, wrist) and as few between as keep the gaps even. `roundStations` gives stations bunched toward the ends of a round closed part (a head, a belly); use it only there.
+- **Between two features a radius only grows or only shrinks.** From the hip it narrows to the waist, from the waist it widens to the chest, and it narrows from the chest to the top. A radius that turns back in between (0.10, 0.104, 0.096, 0.098, 0.10) is measuring noise or a fold of the clothes: drop it, or set it on the line between its neighbours.
+- **Change gently.** Between neighbouring stations a radius changes by no more than about a third. A hip of 0.135 two stations below a waist of 0.088 is a corner, not a curve: move the waist station up, or narrow the hip, until the side reads as one sweep.
+- **Even gaps.** No gap between stations under half the gap beside it: a station crowded next to another turns the outline sharply there.
+- **Room at a closed end.** On a closed part (a torso, a head) keep the last station at least its own radius short of the end, so the top rounds over. A last station of 0.05 just short of the end makes the top a flat shelf with a corner at the shoulder.
+- Check the bare front, ¾ and side before any garment: each side of the torso reads as one curve out at the hip, in at the waist, out at the chest and over the shoulder, and each limb tapers with no ripple. A ripple is a station to drop; a corner is two radii too far apart.
 
 ### Outlines drawn by hand
 
