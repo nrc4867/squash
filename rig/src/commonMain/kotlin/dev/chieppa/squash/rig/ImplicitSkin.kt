@@ -38,10 +38,9 @@ private const val CHUNK = 256
 
 /**
  * Implicit skinning on a one surface (Vaillant, Barthe, Guennebaud, Cani, Rohmer, Wyvill, Gourmel, Paulin, "Implicit Skinning", 2013):
- * after linear blend, each vertex near a bend, one whose bones or the member pieces round it move apart, and each that a pose brings
- * against a member of another part ([ChosenVertices]), is moved along the posed field's gradient ([PosedField]) back to the level it lay
- * on at rest, so an inner bend creases where the members meet, a joint keeps the volume its join gives, and a limb pressed against the
- * body or another limb flattens against it. A vertex stops where the gradient turns sharply between steps, a contact. The moved vertices
+ * after linear blend, each vertex near a bend, one whose bones or the member pieces round it move apart ([ChosenVertices]), is moved
+ * along the posed field's gradient ([PosedField]) back to the level it lay on at rest, so an inner bend creases where the members meet and
+ * a joint keeps the volume its join gives. A vertex stops where the gradient turns sharply between steps, a contact. The moved vertices
  * are then relaxed along the surface toward where their neighbours place them by their rest mean value weights ([RestRings]) and moved
  * back onto the level, a few rounds, so they keep the rest surface's spacing over what the pose bent. Each vertex ends at an offset from
  * where linear blend puts it on the same rest mesh, in the same order ([Refit]).
@@ -63,7 +62,7 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
      */
     suspend fun refit(frames: BoneFrames, positions: FloatArray, runAll: RunAll, breakdown: PoseBreakdown? = null): Refit? {
         val posed = field.posed(frames)
-        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, frames, positions, posed, runAll) } ?: return null
+        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, frames, runAll) } ?: return null
         val moved = chosen.moved
         val sets = Array(moved.size) { chosen.setOf(moved[it], positions.vec(moved[it] * 3)) }
         val blended = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] }
@@ -116,8 +115,7 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
         }
         breakdown?.count("moved", moved.size.toLong())
         breakdown?.count("relaxed", relaxed.toLong())
-        breakdown?.count("in contact", chosen.inContact.toLong())
-        breakdown?.count("reads", reads.sum() + chosen.reads)
+        breakdown?.count("reads", reads.sum())
         val offsets = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] - blended[it] }
         return Refit(moved, offsets, normals)
     }

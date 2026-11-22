@@ -45,12 +45,6 @@ internal class VertexMembers(private val surface: SkinSurface, private val skin:
         }
     }
 
-    /** Whether corner [v] reads member [m]. */
-    fun has(v: Int, m: Int): Boolean {
-        for (i in 0 until counts[v]) if (sets[v * MOST_MEMBERS + i] == m) return true
-        return false
-    }
-
     /**
      * Whether corner [v], at rest at [point], lies at a bend of [transforms]: its bones take it to different places, or a piece of one of
      * its members that reaches it moves apart from them by its map in [maps] ([PosedField.maps]).

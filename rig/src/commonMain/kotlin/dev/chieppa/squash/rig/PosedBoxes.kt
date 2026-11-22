@@ -4,14 +4,12 @@ import dev.chieppa.squash.geom.Vec3
 
 /**
  * Each member of a [PosedField]'s box as a pose takes it, the box round its rest box carried by each of its pieces' [maps] ([PosedField.maps]), grown by
- * [cell]; and for each member, the other members whose posed boxes meet its own, [near], which a vertex it holds may meet in contact.
+ * [cell].
  */
 internal class PosedBoxes(field: PosedField, maps: Array<Affine?>, cell: Float) {
     private val count = field.members.size
     private val lows = FloatArray(count * 3)
     private val highs = FloatArray(count * 3)
-
-    val near: List<IntArray>
 
     init {
         for (m in 0 until count) {
@@ -34,12 +32,7 @@ internal class PosedBoxes(field: PosedField, maps: Array<Affine?>, cell: Float) 
             lows.put(m * 3, low - Vec3(cell, cell, cell))
             highs.put(m * 3, high + Vec3(cell, cell, cell))
         }
-        near = List(count) { a -> (0 until count).filter { b -> b != a && meet(a, b) }.toIntArray() }
     }
-
-    /** Whether posed point [p] lies in member [m]'s posed box. */
-    fun holds(m: Int, p: Vec3): Boolean =
-        p.x >= lows[m * 3] && p.x <= highs[m * 3] && p.y >= lows[m * 3 + 1] && p.y <= highs[m * 3 + 1] && p.z >= lows[m * 3 + 2] && p.z <= highs[m * 3 + 2]
 
     /** How far posed point [p] lies outside member [m]'s posed box; 0 inside it. */
     fun distance(m: Int, p: Vec3): Float {
@@ -49,6 +42,4 @@ internal class PosedBoxes(field: PosedField, maps: Array<Affine?>, cell: Float) 
         return kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
     }
 
-    private fun meet(a: Int, b: Int): Boolean =
-        (0 until 3).all { k -> lows[a * 3 + k] <= highs[b * 3 + k] && lows[b * 3 + k] <= highs[a * 3 + k] }
 }
