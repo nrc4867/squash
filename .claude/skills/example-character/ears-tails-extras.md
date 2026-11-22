@@ -10,7 +10,7 @@ An ear is the `ear` template, version 3 (the newest): one surface with the head,
 - **Its depth and cup**: `thickness` 0.6 to 0.9 gives a full round back that reads from behind; `cup` 0.3 to 0.4 dishes a hollow into the front; `rim` 0.15 to 0.25 the rim round it. Fill its `inner` area and the colour follows the hollow.
 - **Its tip**: pointed by default; `roundTip: 1` with `taper` 0.6 to 0.8 and `tipReach` about `width` times `taper` rounds it, and a round ear (a mouse's, a bear's) takes `taper` near 1.
 - Aim it with `outward` (out from the head's middle) and `lean` (toward its own up, the face on `head-round`): the cup should face the way the sheet's inner ear shows, usually forward and a little out. Judge its splay from above (`-back-top.png`).
-- **The blend.** The skull rises into the ear over 0.3 of the ear's length; two big ears close together on a small head fuse across the crown into one shape. Give the ear a `blend` in body units (0.02 to 0.03 on a small head) to keep a dip between them.
+- **The blend.** The skull rises into the ear over 0.3 of the ear's length; two big ears close together on a small head fuse across the crown into one shape. Leave `blend` out by default: the ear's own wide blend makes its lower edge flow into the head's outline. A small `blend` (0.02 to 0.03) replaces that whole join, so it also leaves the ear's lower edge standing out past the head as a shelf; set one only when the two ears fuse across the crown, and check the front and three-quarter close-ups for a shelf.
 
 ```ts
 import { leaf, outline, pair, type RecipePart } from "squash-kit";
@@ -25,7 +25,6 @@ export const ears: RecipePart = {
   areas: { inner: "inner-ear" },
   outward: 22,
   size: 0.7,
-  blend: 0.025,
   params: { width: 0.6, thickness: 0.7, cup: 0.35, rim: 0.2, roundTip: 1, taper: 0.9, tipReach: 0.5 },
 };
 
