@@ -21,6 +21,16 @@ private const val LEAST_RADIUS = 0.002
 private const val STRAY_REACH = 4
 private const val STRAY_SHARE = 0.35
 
+/** A front view sample this near the body's middle, in body units, is drawn meeting it. */
+private const val MIDDLE_REACH = 0.003
+
+/** A sample on the middle meets it when the side takes at least this share of its stroke within [MEETING_RUN] of it, in body units. */
+private const val MEETING_SHARE = 0.6
+private const val MEETING_RUN = 0.02
+
+/** How far past the middle a limb's inner side reaches above where it is drawn meeting it, as a share of its width there. */
+private const val CROSSING_SHARE = 0.15
+
 /** Body units between the radii a fill writes. */
 private const val FILL_STEP = 0.004
 
@@ -35,6 +45,7 @@ internal fun profiles(
     val out = LinkedHashMap<String, Radii>()
     val order = if (spec.kind == FigureKind.TRUNK) listOf("left", "front", "back") else listOf("outer", "inner", "front", "back")
     val read = HashMap<String, Radii>()
+    var crossing: ((Double) -> Double)? = null
     for (view in FigureView.entries) {
         if (spec.part !in reads.getValue(view)) continue
         for (side in BoneSide.entries) {
@@ -43,6 +54,7 @@ internal fun profiles(
             val samples = split.getValue(view).taken.filter { it.part == spec.part && it.side == side }
             val ends = endsUnder(spec, view, side, split.getValue(view), specs)
             read[name] = binned(samples.filter { it.x <= ends }, input.spacing)
+            if (name == "inner" && view == FigureView.FRONT) crossing = crossingTheMiddle(samples, input.spacing)
         }
     }
     for (name in order) {
@@ -53,7 +65,7 @@ internal fun profiles(
             else -> null
         }
         val radii = when {
-            seen.isNotEmpty() -> filled(spec, seen, across)
+            seen.isNotEmpty() -> filled(spec, seen, across, if (name == "inner") crossing else null)
             name == "front" || name == "back" -> roundDepth(spec, out) ?: continue
             else -> continue
         }
@@ -78,6 +90,33 @@ private fun endsUnder(spec: FigurePartSpec, view: FigureView, side: BoneSide, sp
     return ends
 }
 
+/**
+ * Where a limb's inner side, drawn in the front view, meets the body's middle, as between two legs: above that place the limbs are
+ * one, so the inner side there reaches past the middle, by a share of its width where it is drawn meeting it, and the drawn arch
+ * below opens as steeply as it is drawn rather than closing to a slit. Null when the side is not drawn reaching the middle: a sample
+ * on the middle meets it only as the end of a run of this side's outline, not as a few of another part's, as a chest's beside an arm.
+ */
+private fun crossingTheMiddle(samples: List<PartSample>, spacing: Double): ((Double) -> Double)? {
+    val meet = samples.filter { m ->
+        abs(m.sample.at.x) <= MIDDLE_REACH &&
+            samples.count { it.sample.stroke == m.sample.stroke && abs(it.sample.along - m.sample.along) <= MEETING_RUN } * spacing >= MEETING_SHARE * MEETING_RUN
+    }.minByOrNull { it.x } ?: return null
+    val bone = meet.bone
+    val dir = bone.to - bone.from
+    val length = dir.length
+    if (length <= 0) return null
+    val across = abs(dir.y) / length
+    if (across <= 0) return null
+    val past = CROSSING_SHARE * meet.radius
+    val apex = meet.x
+    return { x ->
+        if (x >= apex) 0.0 else {
+            val on = bone.from + dir * ((x - bone.xFrom) / (bone.xTo - bone.xFrom))
+            abs(on.x) / across + past
+        }
+    }
+}
+
 /** [samples]' radii averaged in bins [spacing] long along the part. */
 private fun binned(samples: List<PartSample>, spacing: Double): Radii =
     withoutStrays(samples.groupBy { Math.floor(it.x / spacing).toLong() }.toSortedMap().map { (_, bin) -> P2(bin.map { it.x }.average(), bin.map { it.radius }.average()) })
@@ -95,9 +134,9 @@ private fun withoutStrays(radii: Radii): Radii = radii.filterIndexed { i, p ->
 /**
  * [seen] radii over the part's whole run: gaps bridged by a curve that follows the seen slopes without swinging past its ends, an open
  * part's ends the outline leaves held level, or for a limb's inner side kept to the ratio its first seen radius has to [across], its
- * outer side, and the whole evened out.
+ * outer side, and never under [least] there, and the whole evened out.
  */
-private fun filled(spec: FigurePartSpec, seen: Radii, across: Radii?): Radii {
+private fun filled(spec: FigurePartSpec, seen: Radii, across: Radii?, least: ((Double) -> Double)? = null): Radii {
     val open = !spec.closed
     var r = seen.filter { it.x >= 0 && it.x <= spec.length }
     if (r.isEmpty()) return r
@@ -108,7 +147,7 @@ private fun filled(spec: FigurePartSpec, seen: Radii, across: Radii?): Radii {
         if (r.first().x > FILL_STEP) {
             val first = r.first()
             val ratio = across?.let { first.y / readAt(it, first.x).coerceAtLeast(LEAST_RADIUS) }
-            val root = fillRun(0.0, first.x) { x -> if (ratio != null && across != null) readAt(across, x) * ratio else first.y }
+            val root = fillRun(0.0, first.x) { x -> maxOf(least?.invoke(x) ?: 0.0, if (ratio != null && across != null) readAt(across, x) * ratio else first.y) }
             r = root + r
         }
     }

@@ -106,4 +106,24 @@ class FigureFitTest {
         assertEquals(0.1, readAt(left, 0.3), 3e-3)
         assertEquals(0.03, readAt(fit.parts.getValue("neck").radii.getValue("left"), 0.06), 2e-3)
     }
+
+    @Test
+    fun legsDrawnMeetingInTheMiddleAreOneAboveTheArchAndOpenAsDrawnBelowIt() {
+        val legs = FigurePartSpec(
+            "legs", "leg-l", FigureKind.LIMB, length = 0.33, closed = false, rest = RecipeRest.DOWN,
+            parent = "trunk", socketU = 0.1, socketV = 0.75, reach = 0.05,
+        )
+        // The trunk's origin at 0.4, the leg's root 0.05 above it and 0.05 out; its inner side drawn up to the middle at 0.36.
+        val front = listOf(
+            FigureStroke.through("outer", listOf(P2(0.08, 0.45), P2(0.08, 0.3), P2(0.08, 0.13))),
+            FigureStroke.through("inner", listOf(P2(0.03, 0.13), P2(0.028, 0.25), P2(0.02, 0.32), P2(0.008, 0.352), P2(0.0, 0.36)), mirrored = true),
+        )
+        val fit = fitFigure(FigureInput(mapOf(FigureView.FRONT to front), emptyList(), 0.4, listOf(trunk, legs)))
+        val inner = fit.parts.getValue("legs").radii.getValue("inner")
+        for (x in listOf(0.0, 0.03, 0.06)) {
+            assertTrue(readAt(inner, x) > 0.05 + 0.004, "above the arch the leg reaches past the middle: ${readAt(inner, x)} at $x")
+        }
+        assertEquals(0.05 - 0.028, readAt(inner, 0.2), 2e-3, "below it the leg's inner side follows the drawing")
+        assertEquals(0.05 - 0.02, readAt(inner, 0.13), 3e-3)
+    }
 }
