@@ -92,7 +92,9 @@ class GarmentCut(
     /**
      * The smoothing of [values] near zero: over [COVERAGE_CELLS] of the mesh's cell, moving none by more than [COVERAGE_SHIFT_CELLS] of
      * it; where the cloth is drawn and meshes finer than [DETAIL_LEVEL]'s cell, over that cell instead, in as many more steps as reach
-     * across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a drawn hem.
+     * across it, so the body's coordinates, which vary unevenly within the body's cell, leave no steps along a drawn hem. A vertex of
+     * cloth meshed coarser than the mesh's cell, a garment's away from its narrow bands, moves less in proportion, so the plane its farther
+     * neighbours give does not carry it across zero into an island of cloth.
      */
     /** Whether its cloth is drawn and meshed finer than [DETAIL_LEVEL]'s cell. */
     private fun isDrawnFine(): Boolean = mesh.cell < bodyCell / (1 shl DETAIL_LEVEL) && cover.cloth.values.any { it.isDrawn }
@@ -103,7 +105,10 @@ class GarmentCut(
         val cell = if (drawn) detail else mesh.cell
         val reach = cell / mesh.cell
         val steps = if (drawn) minOf((NEAR_ZERO_STEPS * reach * reach).toInt(), MOST_SMOOTHING_STEPS) else NEAR_ZERO_STEPS
-        return NearZeroSmoothing(values, mesh.triangles, mesh.vertexCount, cell * COVERAGE_CELLS, mesh.positions, cell * COVERAGE_SHIFT_CELLS, steps)
+        val shift = cell * COVERAGE_SHIFT_CELLS
+        val field = grown.field
+        val shifts = if (field.levels.distinct().size < 2) null else FloatArray(mesh.vertexCount) { v -> shift * mesh.cell / field.cellOf(mesh.winners[v]) }
+        return NearZeroSmoothing(values, mesh.triangles, mesh.vertexCount, cell * COVERAGE_CELLS, mesh.positions, shift, steps, shifts)
     }
 
     companion object {

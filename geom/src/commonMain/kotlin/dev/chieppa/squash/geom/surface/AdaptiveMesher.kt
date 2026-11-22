@@ -3,6 +3,7 @@ package dev.chieppa.squash.geom.surface
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.JoinedField
+import dev.chieppa.squash.geom.field.ReadRounds
 
 /**
  * Meshes a joined field into one surface with cells of several sizes: the body at [cell], and around each member whose radius asks for
@@ -23,24 +24,31 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
     }
 
     /**
-     * A run meshing [next] with its members at [levels] (see [CellLevels.memberLevels]): hand out its batches of work with [Run.next],
-     * each batch's pieces independent of one another, until it has none, then read [Run.mesh]. Level 0 reads grown members' channels from
-     * [lent] where it can, as [SurfaceMesher.begin] says.
+     * A run meshing [next] with its members at [levels] (see [CellLevels.of]): hand out its batches of work with [Run.next], each
+     * batch's pieces independent of one another, until it has none, then read [Run.mesh]. Level 0 reads grown members' channels from
+     * [lent] where it can, as [SurfaceMesher.begin] says. Its mesh reads as meshed at [reported], the cell its users size their work by:
+     * a garment's finest, so its cloth is cut, eased and folded as one meshed at that cell all over is.
      */
-    fun begin(next: JoinedField, levels: IntArray, lent: ChannelSource? = null): Run {
+    fun begin(next: JoinedField, levels: IntArray, lent: ChannelSource? = null, reported: Float = cell): Run {
         val plan = CellLevels.of(next, cell, levels)
         val runs = List(plan.count) { level -> mesher(level).begin(next, if (level == 0) lent else null, plan.region(level)) }
-        return Run(plan, runs)
+        return Run(plan, runs, reported)
     }
 
     /** One run over a field, its levels' runs side by side. */
-    inner class Run internal constructor(private val plan: CellLevels, private val runs: List<SurfaceMesher.MeshRun>) {
+    inner class Run internal constructor(private val plan: CellLevels, private val runs: List<SurfaceMesher.MeshRun>, private val reported: Float) {
         private val running = BooleanArray(runs.size) { true }
         private var joining: Joining? = null
         private var done: SurfaceMesh? = null
 
         /** The mesh the run made, once [next] has given null. */
         val mesh: SurfaceMesh get() = checkNotNull(done) { "The run has work left" }
+
+        /**
+         * The rounds of reads the levels' runs wait on, where their reads are gathered, for the caller to answer beside other runs' with
+         * [ReadRounds.answerTogether] before it calls [next] again; [next] gives batches answering them alone otherwise.
+         */
+        val asking: List<ReadRounds> get() = runs.indices.mapNotNull { level -> runs[level].asking?.takeIf { running[level] } }
 
         /** The next batch of work, or null when the run is done. */
         fun next(): List<() -> Unit>? {
@@ -67,7 +75,7 @@ class AdaptiveMesher(val cell: Float, private val reads: FieldReads = CpuFieldRe
         }
 
         private fun finish(parts: List<SurfaceMesh>, bases: IntArray, joined: SurfaceMesh?) {
-            val mesh = pinchSplit(joined ?: parts[0])
+            val mesh = pinchSplit(joined ?: parts[0]).atCell(reported)
             if (mesh !== parts[0] || last !== lastParts.firstOrNull()) {
                 val before = last
                 if (before != null) {

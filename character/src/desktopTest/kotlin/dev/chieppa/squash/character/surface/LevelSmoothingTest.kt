@@ -51,4 +51,15 @@ class LevelSmoothingTest {
         assertTrue(held[middle] > 0f, "held, the narrow band stays: ${held[middle]}")
         for (v in values.indices) assertTrue(abs(held[v] - values[v]) <= 0.003f + 1e-6f)
     }
+
+    @Test
+    fun eachVertexMovesNoFurtherThanItsOwnShift() {
+        val length = 12
+        val values = FloatArray(length * 2) { v -> if (v / 2 == length / 2) 0.004f else -0.004f }
+        val middle = length / 2 * 2
+        val shifts = FloatArray(values.size) { v -> if (v == middle) 0.001f else 0.01f }
+        val eased = NearZeroSmoothing(values, strip(length), values.size, band = 0.05f, shift = 0.01f, shifts = shifts).run()
+        assertTrue(eased[middle] >= values[middle] - 0.001f - 1e-6f, "a vertex of a small shift is held to it: ${eased[middle]}")
+        assertTrue(eased[middle + 1] < 0f, "beside it a vertex of the larger shift is eased across zero: ${eased[middle + 1]}")
+    }
 }

@@ -56,12 +56,25 @@ class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val 
 }
 
 /**
- * A character's field: its runs' solids joined in [field], [runs] saying which part and run each member is, the [cell] it meshes at, and
- * the mouths' [recesses] cut into it.
+ * A character's field: its runs' solids joined in [field], [runs] saying which part and run each member is, the [cell] it meshes at, the
+ * mouths' [recesses] cut into it, and, for a garment's field, the level each member meshes at, [levels] (see `CellLevels`); every member
+ * reads as meshing at [cell] where it is empty, as a body's field leaves it.
  */
-class CharacterField(val field: JoinedField, val runs: List<FieldRun>, val cell: Float, val recesses: List<MouthRecess> = emptyList()) {
+class CharacterField(
+    val field: JoinedField,
+    val runs: List<FieldRun>,
+    val cell: Float,
+    val recesses: List<MouthRecess> = emptyList(),
+    val levels: IntArray = IntArray(0),
+) {
     /** The parts in the field. */
     val parts: Set<PartId> = runs.mapTo(LinkedHashSet()) { it.partId }
+
+    /** The cell member [member] meshes at. */
+    fun cellOf(member: Int): Float = cell / (1 shl levels.getOrElse(member) { 0 })
+
+    /** The cell its finest member meshes at. */
+    val finestCell: Float get() = cell / (1 shl (levels.maxOrNull() ?: 0))
 
     /**
      * Whether [local], a point of [part]'s own space as its surface shows it, lies across the opening of one of its mouths' recesses or on

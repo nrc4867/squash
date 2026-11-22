@@ -5,6 +5,7 @@ import dev.chieppa.squash.character.build.endPointsDown
 import dev.chieppa.squash.document.CHART_ROWS
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.geom.collections.IntList
 import dev.chieppa.squash.geom.field.JoinedField
 import dev.chieppa.squash.geom.field.JoinedMember
 
@@ -42,11 +43,8 @@ const val DRAWN_LEVEL = 3
  * [CUFF_BLEND_EASES] of its ease, so a cuff over a thin part flows into the garment. Null when it covers no run.
  * Each run it covers only part of is kept by [clips] to round what it covers, its cloth's [ClothReach]: the painted rows rounded out to
  * steps, so a small stroke keeps the same solid. Its runs keep their parts' own (u, v), so each of its
- * vertices knows where on the body it grows from. It meshes at the cell of the finest run it covers, no finer than [DETAIL_LEVEL] (see
- * [digitLevels]), so a shoe or a hood is as fine as the foot or the head under it, halved again up to [DIGIT_LEVEL] times from the body's
- * cell while its narrowest band, along a part or round it, spans fewer than [BAND_CELLS] cells, so a belt or a strap keeps its width;
- * where its cloth is drawn, up to [DRAWN_LEVEL] times while its narrowest drawn piece or gap does, so a strap, a tie or the gap between two
- * cups is several cells across.
+ * vertices knows where on the body it grows from. Each member meshes at a level of its own (see [bandLevel]), so a narrow band refines
+ * only the cloth round its own run; its cell is that of its coarsest member, the others' levels counted from it.
  * A covered run whose ease varies along or round it, or whose cloth hangs, is grown ring by ring by [grownRuns] past its branch's least ease (see
  * [GrownRuns]).
  */
@@ -59,7 +57,10 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
     val renumbered = HashMap<Int, Int>().also { map -> grown.forEachIndexed { i, run -> map[run] = i } }
     val runs = ArrayList<FieldRun>()
     val members = ArrayList<JoinedMember>()
-    val shells = ArrayList<Pair<FieldRun, JoinedMember>>()
+    val levels = IntList()
+    val shells = ArrayList<Triple<FieldRun, JoinedMember, Int>>()
+    val base = baseLevel(field, kept, digits.isNotEmpty())
+    val keptLevel = { run: Int -> bandLevel(field, worn, run, base) }
     for (run in grown) {
         val at = field.runs[run]
         val member = field.field.members[run]
@@ -78,15 +79,19 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
             val past = if (grownRun == null) 0f else (cloth?.most ?: branch.ease) - branch.ease + (hang?.limit ?: 0f)
             clips.of(grownRun ?: member.solid, at.patch, reach.from, reach.to, field.cell, past)
         }
+        val level = keptLevel(neighbour?.by ?: run)
         runs += at
+        levels.add(level)
         val blend = if (run in fingers) member.blend + ease * DIGIT_BLEND_EASES else maxOf(member.blend - ease * NARROWING_EASES, ease * NARROWEST_EASES)
         members += JoinedMember(solid, member.origin, member.mirrored, blend, parent, member.part, ease, member.angles)
-        if (neighbour == null && at.first) worn.shells[at.partId]?.let { shell -> shells += at to JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part) }
+        if (neighbour == null && at.first) worn.shells[at.partId]?.let { shell -> shells += Triple(at, JoinedMember(solids.of(shell.surface.patches.first()), shell.origin, shell.mirrored, 0f, -1, member.part), level) }
     }
-    for ((at, shell) in shells) {
+    for ((at, shell, level) in shells) {
         runs += at
         members += shell
+        levels.add(level)
     }
+    val cuffLevel = (0 until levels.size).maxOfOrNull { levels[it] } ?: 0
     var nextPart = (field.field.members.maxOfOrNull { it.part } ?: -1) + 1
     for (cuffed in worn.cuffs) {
         if (cuffed in field.parts) continue
@@ -103,9 +108,11 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
         runs += FieldRun(placed, index, patch, true)
         val blend = if (parent < 0) 0f else maxOf(socketBlend(placed, solid, patch), ease * CUFF_BLEND_EASES)
         members += JoinedMember(solid, placed.origin, placed.mirrored, blend, parent, nextPart++, ease)
+        levels.add(cuffLevel)
     }
     if (runs.isEmpty()) return null
-    return CharacterField(JoinedField(members), runs, bandCell(field, worn, kept, digits.isNotEmpty()))
+    val coarsest = (0 until levels.size).minOf { levels[it] }
+    return CharacterField(JoinedField(members), runs, field.cell / (1 shl coarsest), levels = IntArray(levels.size) { levels[it] - coarsest })
 }
 
 /**
@@ -152,8 +159,11 @@ private val HANGING = setOf(Role.BODY, Role.SPINE, Role.LEG)
 /** How far along a covered part from its root, in chart rows, its cloth starts at most for a garment whose ease varies to grow over the part it sits on near the join. */
 private const val NEAR_PARENT_ROWS = 32
 
-/** An uncovered run a garment grows over, from [from] to [to] along it, standing off it by [ease], the ease of the covered run it sits on. */
-private class NearJoin(val from: Float, val to: Float, val ease: Float)
+/**
+ * An uncovered run a garment grows over, from [from] to [to] along it, standing off it by [ease], the ease of the covered run [by] it sits
+ * on, whose level it meshes at.
+ */
+private class NearJoin(val from: Float, val to: Float, val ease: Float, val by: Int)
 
 /**
  * The first runs of [field] that [worn] does not cover, each a part on a socket of one of its covered runs [kept] past where the covered
@@ -181,13 +191,13 @@ private fun joinedNear(field: CharacterField, worn: WornCover, kept: List<Int>):
             val socket = child.part.socketSpec?.u ?: continue
             if (child.partId in worn.outThroughEnds && !field.runs[k].part.endPointsDown(high = socket >= 0.5f)) continue
             if (!reachesNear(reach, socket)) continue
-            near.putIfAbsent(c, NearJoin(0f, NEAR_JOIN_U, ease))
+            near.putIfAbsent(c, NearJoin(0f, NEAR_JOIN_U, ease, k))
         }
         val parent = members[k].parent
         val socket = field.runs[k].part.socketSpec?.u
         val varies = worn.eases[field.runs[k].partId] != null
         if (varies && parent >= 0 && parent !in covered && members[k].blend > 0f && socket != null && reach.firstRow < NEAR_PARENT_ROWS) {
-            near.putIfAbsent(parent, NearJoin(socket - NEAR_JOIN_U, socket + NEAR_JOIN_U, ease))
+            near.putIfAbsent(parent, NearJoin(socket - NEAR_JOIN_U, socket + NEAR_JOIN_U, ease, k))
         }
     }
     return near
@@ -200,35 +210,37 @@ private fun reachesNear(reach: ClothReach, u: Float): Boolean {
 }
 
 /**
- * The cell [worn] meshes at over [field]'s runs [kept]: that of the finest of them, no finer than [DETAIL_LEVEL], halved further while
- * [worn]'s narrowest band over them spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells' and a drawn
- * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere; at the digits' own
- * level, [DIGIT_LEVEL], where it follows [digits], so each glove finger is as fine as the finger under it.
+ * The level (see `CellLevels`) a garment over [field]'s runs [kept] meshes at everywhere: that of the finest of them, no finer than
+ * [DETAIL_LEVEL], so a shoe or a hood is as fine as the foot or the head under it; [DIGIT_LEVEL] where it follows [digits], so each glove
+ * finger is as fine as the finger under it.
  */
-private fun bandCell(field: CharacterField, worn: WornCover, kept: List<Int>, digits: Boolean): Float {
-    if (digits) return field.cell / (1 shl DIGIT_LEVEL)
+private fun baseLevel(field: CharacterField, kept: List<Int>, digits: Boolean): Int {
+    if (digits) return DIGIT_LEVEL
     val levels = digitLevels(field)
+    return kept.maxOfOrNull { minOf(levels[it], DETAIL_LEVEL) } ?: 0
+}
+
+/**
+ * The level [worn]'s cloth over [field]'s covered run [run] meshes at: [level], the garment's own (see [baseLevel]), halved further while
+ * [worn]'s narrowest band over the run spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells' and a drawn
+ * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere, so a belt, a strap, a tie
+ * or the gap between two cups is several cells across while the rest of the garment meshes at its own level.
+ */
+private fun bandLevel(field: CharacterField, worn: WornCover, run: Int, level: Int): Int {
+    val at = field.runs[run]
+    val scales = RunScales(at.patch)
     var narrowest = Float.MAX_VALUE
     var finest = DIGIT_LEVEL
-    for (run in kept) {
-        val at = field.runs[run]
-        val scales = RunScales(at.patch)
-        worn.clothOf(at.partId)?.drawnNarrowest(scales::along, scales::around)?.let { drawn ->
-            narrowest = minOf(narrowest, drawn)
-            finest = DRAWN_LEVEL
-        }
-        val band = bandOf(at.partId, worn)
-        if (!band.partial && band.allRound) continue
-        if (band.partial) narrowest = minOf(narrowest, band.along * scales.along(band.middle))
-        if (!band.allRound) narrowest = minOf(narrowest, band.around * scales.around(band.middle))
+    worn.clothOf(at.partId)?.drawnNarrowest(scales::along, scales::around)?.let { drawn ->
+        narrowest = drawn
+        finest = DRAWN_LEVEL
     }
-    var level = kept.maxOfOrNull { minOf(levels[it], DETAIL_LEVEL) } ?: 0
-    var cell = field.cell / (1 shl level)
-    while (level < finest && narrowest < BAND_CELLS * cell) {
-        cell /= 2f
-        level++
-    }
-    return cell
+    val band = bandOf(at.partId, worn)
+    if (band.partial) narrowest = minOf(narrowest, band.along * scales.along(band.middle))
+    if (!band.allRound) narrowest = minOf(narrowest, band.around * scales.around(band.middle))
+    var refined = level
+    while (refined < finest && narrowest < BAND_CELLS * field.cell / (1 shl refined)) refined++
+    return refined
 }
 
 /** How far a garment covers one part: along it in u about [middle], [along] where [partial], and round it [around] where not [allRound]. */

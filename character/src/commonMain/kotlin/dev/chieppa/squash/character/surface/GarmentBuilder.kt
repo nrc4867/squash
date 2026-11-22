@@ -6,8 +6,8 @@ import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.field.CpuFieldReads
 import dev.chieppa.squash.geom.field.FieldReads
 import dev.chieppa.squash.geom.field.ReadRounds
+import dev.chieppa.squash.geom.surface.AdaptiveMesher
 import dev.chieppa.squash.geom.surface.SurfaceMesh
-import dev.chieppa.squash.geom.surface.SurfaceMesher
 
 /** The work a garment build's batch does: meshing a garment, finishing its surface, cutting it, or finding the skin it hides. */
 enum class DressStage { MESH, FINISH, CUT, HIDE }
@@ -21,7 +21,7 @@ enum class DressStage { MESH, FINISH, CUT, HIDE }
  * together. The meshers read the garments' fields through [reads].
  */
 class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
-    private val meshers = HashMap<Triple<GarmentId, PartId?, Float>, SurfaceMesher>()
+    private val meshers = HashMap<Triple<GarmentId, PartId?, Float>, AdaptiveMesher>()
 
     /** Each garment's last build, with what its surface was grown from and what it was cut by. */
     private val kept = HashMap<Pair<GarmentId, PartId?>, Kept>()
@@ -58,13 +58,13 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
             val running = works ?: begin().also { works = it }
             val tasks = ArrayList<() -> Unit>()
             var first: DressStage? = null
-            val asking = running.mapNotNull { it.asking }
+            val asking = running.flatMap { it.asking }
             if (asking.isNotEmpty()) {
                 first = DressStage.MESH
                 tasks += { ReadRounds.answerTogether(reads, asking) }
             }
             for (work in running) {
-                if (work.asking != null) continue
+                if (work.asking.isNotEmpty()) continue
                 val batch = work.next() ?: continue
                 if (first == null) first = work.stage
                 tasks += batch
@@ -91,20 +91,20 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
                 }
                 return@mapNotNull Piece(i, nextCover, nextField, null, last.garment.grown)
             }
-            val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { SurfaceMesher(nextField.cell, reads) }
-            Piece(i, nextCover, nextField, mesher.begin(nextField.field, mesh.channels), null)
+            val mesher = meshers.getOrPut(Triple(nextCover.garment.id, nextCover.piece, nextField.cell)) { AdaptiveMesher(nextField.cell, reads) }
+            Piece(i, nextCover, nextField, mesher.begin(nextField.field, nextField.levels, mesh.channels, nextField.finestCell), null)
         }
 
         /** One garment being made: meshed by [run] and finished, or cut again on its kept surface [recut]. */
-        private inner class Piece(val index: Int, val cover: WornCover, val grown: CharacterField, val run: SurfaceMesher.MeshRun?, val recut: CharacterSurface?) {
+        private inner class Piece(val index: Int, val cover: WornCover, val grown: CharacterField, val run: AdaptiveMesher.Run?, val recut: CharacterSurface?) {
             private var finish: SurfaceFinish? = null
             private var cutting: GarmentCut? = null
             private var done = false
             var stage: DressStage = DressStage.MESH
                 private set
 
-            /** The round of reads the garment's mesher waits on, answered beside the other garments'. */
-            val asking: ReadRounds? get() = if (done || finish != null) null else run?.asking
+            /** The rounds of reads the garment's mesher waits on, answered beside the other garments'. */
+            val asking: List<ReadRounds> get() = if (done || finish != null) emptyList() else run?.asking.orEmpty()
 
             fun next(): List<() -> Unit>? {
                 if (done) return null
@@ -139,7 +139,7 @@ class GarmentBuilder(private val reads: FieldReads = CpuFieldReads) {
 
     /** What a garment's surface is grown from: equal for the same shape of cover over members that read the same at the same cell. */
     private fun shapeOf(cover: WornCover, field: CharacterField): Any =
-        listOf(cover.shapeKey, field.field.members.map { it.key to (it.blend to it.parent) }, field.cell)
+        listOf(cover.shapeKey, field.field.members.map { it.key to (it.blend to it.parent) }, field.cell, field.levels.toList())
 
     /** A garment as last built, with what its surface was grown from, [shape], and what it was cut by, [cut]. */
     private class Kept(val shape: Any, val cut: Any, val garment: SurfaceGarment)

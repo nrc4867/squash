@@ -33,7 +33,8 @@ fun smoothedNearZero(
 /**
  * The work of [smoothedNearZero], in batches whose pieces are independent of one another, handed out by [next] until it gives null, then
  * read from [result]. Each of its [steps] eases every moving vertex from the values the step before left, so the pieces of a step may run
- * at once; more steps ease over a wider stretch of the mesh.
+ * at once; more steps ease over a wider stretch of the mesh. With [shifts], each vertex moves no further than its own shift in place of
+ * [shift].
  */
 class NearZeroSmoothing(
     private val values: FloatArray,
@@ -43,6 +44,7 @@ class NearZeroSmoothing(
     private val positions: FloatArray? = null,
     private val shift: Float = Float.POSITIVE_INFINITY,
     private val steps: Int = NEAR_ZERO_STEPS,
+    private val shifts: FloatArray? = null,
 ) {
     private val start = IntArray(vertexCount + 1)
     private var links = IntArray(0)
@@ -64,7 +66,10 @@ class NearZeroSmoothing(
             }
             step == steps + 1 -> {
                 current = following.also { following = current }
-                for (v in moving) current[v] = current[v].coerceIn(values[v] - shift, values[v] + shift)
+                for (v in moving) {
+                    val most = shifts?.get(v) ?: shift
+                    current[v] = current[v].coerceIn(values[v] - most, values[v] + most)
+                }
                 null
             }
             else -> null

@@ -44,10 +44,13 @@ private const val LEAST_SLOPE = 0.2f
 class FieldAnchors(private val field: CharacterField) {
     private val levels by lazy { digitLevels(field) }
 
-    /** The cell run [part]'s patch [patch] meshes at: the field's cell halved once for each of its level's steps; the field's own for a run it does not hold. */
+    /**
+     * The cell run [part]'s patch [patch] is read at: the field's finest cell halved once for each of its level's steps; that finest cell
+     * for a run it does not hold.
+     */
     fun cellOf(part: PartId, patch: String): Float {
         val run = field.runs.indexOfFirst { it.partId == part && it.patch.name == patch }
-        return if (run < 0) field.cell else field.cell / (1 shl levels[run])
+        return if (run < 0) field.finestCell else field.finestCell / (1 shl levels[run])
     }
 
     fun resolve(anchor: Anchor): ResolvedPoint? {
@@ -90,7 +93,7 @@ class FieldAnchors(private val field: CharacterField) {
      * [from] moved along the field's gradient there to where the field is zero, by false position along that line, with the surface's
      * normal where it lands, or [fallback] where the field has no gradient; the gradient read at the scale of [cell].
      */
-    fun onSurface(from: Vec3, fallback: Vec3, cell: Float = field.cell): Pair<Vec3, Vec3> {
+    fun onSurface(from: Vec3, fallback: Vec3, cell: Float = field.finestCell): Pair<Vec3, Vec3> {
         val close = cell * CLOSE_SHARE
         val start = field.field.value(from)
         val direction = gradient(from, cell)
@@ -120,7 +123,7 @@ class FieldAnchors(private val field: CharacterField) {
      * [from] moved along the line through it along [direction] to where the field is zero, by false position, with the surface's normal
      * where it lands; as [onSurface] where the field barely changes along that line. The gradient is read at the scale of [cell].
      */
-    fun onSurfaceAlong(from: Vec3, direction: Vec3, cell: Float = field.cell): Pair<Vec3, Vec3> {
+    fun onSurfaceAlong(from: Vec3, direction: Vec3, cell: Float = field.finestCell): Pair<Vec3, Vec3> {
         val close = cell * CLOSE_SHARE
         val start = field.field.value(from)
         if (abs(start) <= close) return onSurface(from, direction, cell)
@@ -148,7 +151,7 @@ class FieldAnchors(private val field: CharacterField) {
     }
 
     /** The joined field's gradient at [p], by central differences a share of [cell] apart. */
-    fun gradient(p: Vec3, cell: Float = field.cell): Vec3 {
+    fun gradient(p: Vec3, cell: Float = field.finestCell): Vec3 {
         val step = cell * GRADIENT_SHARE
         val f = field.field
         val x = f.value(p + Vec3(step, 0f, 0f)) - f.value(p - Vec3(step, 0f, 0f))
