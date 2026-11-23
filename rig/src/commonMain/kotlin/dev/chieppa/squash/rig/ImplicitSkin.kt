@@ -68,6 +68,19 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
     private val h = cell * GRADIENT_SHARE
     private val rings by lazy { RestRings(corners, surface.triangles, surface.positions, surface.normals) }
 
+    /**
+     * The corners linear blend alone carries: those of a head built with its jaw open that follow only its jaw and the bone the jaw hangs
+     * from. Its halves are cut to fit, so a pose shuts them onto each other exactly, and moving them onto the posed field would crumple
+     * the lips and chin where the halves meet.
+     */
+    private val rigid = BooleanArray(corners) { v ->
+        val jaw = surface.jaws.getOrElse(v) { -1 }
+        jaw >= 0 && (0 until MAX_INFLUENCES).all { slot ->
+            val bone = skin.bones[v * MAX_INFLUENCES + slot]
+            bone < 0 || skin.weights[v * MAX_INFLUENCES + slot] <= 0f || bone == jaw || bone == rig.parents[jaw]
+        }
+    }
+
     /** Each corner's field at rest, NaN until first read. */
     private val levels = FloatArray(corners) { Float.NaN }
 
@@ -84,7 +97,7 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
      */
     suspend fun refit(frames: BoneFrames, positions: FloatArray, runAll: RunAll, breakdown: PoseBreakdown? = null): Refit? {
         val posed = field.posed(frames)
-        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, frames, positions, posed, runAll) } ?: return null
+        val chosen = breakdown.time("choose") { ChosenVertices.of(surface, field, members, rigid, frames, positions, posed, runAll) } ?: return null
         val moved = chosen.moved
         val sets = Array(moved.size) { chosen.setOf(moved[it], positions.vec(moved[it] * 3)) }
         val blended = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] }

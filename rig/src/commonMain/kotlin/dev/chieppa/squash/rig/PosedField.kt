@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.character.surface.OpenJaw
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.smoothMax
@@ -8,12 +9,28 @@ import dev.chieppa.squash.geom.field.smoothMin
 /** The forward difference a piece's gradient is read over, as a share of the field's cell. */
 private const val GRADIENT_SHARE = 0.25f
 
-/**
- * One bound of a [MemberPiece]: across a joint, the plane through [point] with outward [normal]; the piece reaches [margin] past it.
- */
-internal class PieceBound(val point: Vec3, val normal: Vec3, val margin: Float) {
+/** One bound of a [MemberPiece], which the piece reaches [margin] past. */
+internal interface PieceBound {
+    val margin: Float
+
     /** How far rest point [q] lies past the bound and its margin; negative within. */
-    fun outside(q: Vec3): Float = ((q - point) dot normal) - margin
+    fun outside(q: Vec3): Float
+}
+
+/** A [PieceBound] across a joint: the plane through [point] with outward [normal]. */
+internal class PlaneBound(val point: Vec3, val normal: Vec3, override val margin: Float) : PieceBound {
+    override fun outside(q: Vec3): Float = ((q - point) dot normal) - margin
+}
+
+/**
+ * A [PieceBound] along a mouth built open by [jaw]: the middle of the gap between the palate and the jaw's floor, the [palate]'s side of
+ * it or the jaw's, so the lining's piece on each side turns with its own half.
+ */
+internal class GapBound(private val jaw: OpenJaw, private val palate: Boolean, override val margin: Float) : PieceBound {
+    override fun outside(q: Vec3): Float {
+        val above = jaw.cut.aboveGapMiddle(q - jaw.origin)
+        return (if (palate) -above else above) - margin
+    }
 }
 
 /**
@@ -57,11 +74,20 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
         val bonesBySlot = ArrayList<Int>()
         val next = { bone: Int -> bonesBySlot += bone; bonesBySlot.size - 1 }
         val own = members.indices.map { surface.ownBones[it].toList() }
-        pieces = members.indices.map { m -> piecesOf(own[m], m, rig, next) }
+        pieces = members.indices.map { m ->
+            val lining = surface.linings.getOrNull(m)
+            if (lining != null && own[m].size == 2) liningPieces(own[m], lining, next) else piecesOf(own[m], m, rig, next)
+        }
         slots = bonesBySlot.size
         slotBones = bonesBySlot.toIntArray()
         membersOf = List(rig.bones.size) { b -> members.indices.filter { m -> pieces[m].any { it.bone == b } }.toIntArray() }
     }
+
+    /** A lining's two pieces: the palate's side of the gap on [own]'s first bone, the jaw's on its second, overlapping by the jaw's rounding. */
+    private fun liningPieces(own: List<Int>, jaw: OpenJaw, next: (Int) -> Int): List<MemberPiece> = listOf(
+        MemberPiece(own[0], listOf(GapBound(jaw, palate = true, margin = maxOf(jaw.rounding, cell))), next(own[0])),
+        MemberPiece(own[1], listOf(GapBound(jaw, palate = false, margin = maxOf(jaw.rounding, cell))), next(own[1])),
+    )
 
     private fun piecesOf(own: List<Int>, m: Int, rig: Rig, next: (Int) -> Int): List<MemberPiece> {
         if (own.isEmpty()) return listOf(MemberPiece(-1, emptyList(), next(-1)))
@@ -71,10 +97,10 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
             val bone = rig.bones[b]
             val bounds = ArrayList<PieceBound>()
             val parent = rig.parents[b]
-            if (parent in long) bounds += PieceBound(bone.pivot, (rig.bones[parent].direction + bone.direction).normalized() * -1f, radiusAt(member, bone.pivot))
+            if (parent in long) bounds += PlaneBound(bone.pivot, (rig.bones[parent].direction + bone.direction).normalized() * -1f, radiusAt(member, bone.pivot))
             for (child in long) if (rig.parents[child] == b) {
                 val nextBone = rig.bones[child]
-                bounds += PieceBound(nextBone.pivot, (bone.direction + nextBone.direction).normalized(), radiusAt(member, nextBone.pivot))
+                bounds += PlaneBound(nextBone.pivot, (bone.direction + nextBone.direction).normalized(), radiusAt(member, nextBone.pivot))
             }
             MemberPiece(b, bounds, next(b))
         }

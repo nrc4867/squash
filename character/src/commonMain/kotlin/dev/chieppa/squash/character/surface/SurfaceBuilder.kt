@@ -64,7 +64,7 @@ class SurfaceBuilder(private val cellShare: Float = CELL_SHARE, private val read
             coarse = AdaptiveMesher(cell * COARSE_FACTOR, reads)
         }
         val mesher = checkNotNull(if (dragging) coarse else fine)
-        return Build(CharacterField(field.field, field.runs, mesher.cell, field.recesses), mesher, digitLevels(field))
+        return Build(CharacterField(field.field, field.runs, mesher.cell, field.recesses, openJaws = field.openJaws), mesher, digitLevels(field))
     }
 
     /** [character]'s surface, built with [runAll] running each batch of work; null when it has no field part. */

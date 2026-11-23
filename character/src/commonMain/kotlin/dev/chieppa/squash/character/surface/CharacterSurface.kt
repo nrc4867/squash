@@ -20,7 +20,8 @@ private const val EASING_STEPS = 3
  * over a few rings of neighbours, three values a vertex of [mesh], and the curves where each inked join's two parts share the surface
  * equally, [joins]. [positiveZ] and [negativeZ] hold each vertex's share of paired parts on that side of the body's plane, so a far side
  * darkens by how much of it is that side's. [chin] holds each vertex's shade under a head's chin, 0 to 1, or is null where no head's
- * neck style casts one (see [ChinShade]). A posed surface keeps the [mesh] it was meshed as, with everything it draws moved.
+ * neck style casts one (see [ChinShade]). [mouthEdges] are where each mouth built open turns from skin to its inside, inked as joins are.
+ * A posed surface keeps the [mesh] it was meshed as, with everything it draws moved.
  */
 class CharacterSurface(
     val field: CharacterField,
@@ -33,6 +34,7 @@ class CharacterSurface(
     val positions: FloatArray,
     val lineNormals: FloatArray,
     val chin: FloatArray? = null,
+    val mouthEdges: List<List<CurvePoint>> = emptyList(),
 ) {
     /**
      * This surface moved: drawn as [render], its vertices at [positions] with [lineNormals], its lines and joins found there again over
@@ -40,7 +42,7 @@ class CharacterSurface(
      */
     fun movedTo(render: RenderMesh, positions: FloatArray, lineNormals: FloatArray, triangles: IntArray = mesh.triangles): CharacterSurface {
         val moved = TriangleLines(positions, lineNormals, triangles)
-        return CharacterSurface(field, mesh, render, moved, joinCurves(field, mesh, moved), positiveZ, negativeZ, positions, lineNormals, chin)
+        return CharacterSurface(field, mesh, render, moved, joinCurves(field, mesh, moved), positiveZ, negativeZ, positions, lineNormals, chin, mouthEdgeCurves(field, mesh, moved))
     }
 
     /** The surface read by its parts' coordinates, made once when first asked for. */

@@ -55,7 +55,10 @@ class FieldAnchors(private val field: CharacterField) {
 
     fun resolve(anchor: Anchor): ResolvedPoint? {
         val run = field.runs.firstOrNull { it.partId == anchor.part && it.patch.name == anchor.patch } ?: return null
-        val start = run.part.surface.pointAt(anchor.copy(offset = 0f)) ?: return null
+        val start = run.part.surface.pointAt(anchor.copy(offset = 0f))?.let { point ->
+            val jaw = field.openJawOf(anchor.part)
+            if (jaw == null || !jaw.onJaw(point.position)) point else point.copy(position = jaw.cut.open(point.position), normal = jaw.cut.opened * point.normal)
+        } ?: return null
         if (field.inRecess(run.part, start.position)) return ResolvedPoint(anchor, start.position + run.part.origin + start.normal * anchor.offset, start.normal)
         val (position, normal) = onSurface(start.position + run.part.origin, start.normal, cellOf(anchor.part, anchor.patch))
         return ResolvedPoint(anchor, position + normal * anchor.offset, normal)

@@ -28,6 +28,8 @@ data class Bone(
     val mirrored: Boolean = false,
     /** Where on a digit's chain this bone is, or null for a bone of its part's own chain. */
     val digit: DigitPlace? = null,
+    /** The tip, in degrees, its part's surface is built turned by at this joint, so a pose's tip of 0 turns it back by as much. */
+    val built: Float = 0f,
 )
 
 /**

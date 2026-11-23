@@ -44,12 +44,12 @@ fun hemDraws(garments: List<SurfaceGarment>, view: SurfaceView, rule: LineRule, 
 fun List<RibbonDraw>.onCloth(garment: SurfaceGarment): List<RibbonDraw> = if (garment.seeThrough == null) this else map { it.overSeeThroughCloth() }
 
 /**
- * The ink along each inked join of [surface] where its surface faces [view]: each curve is cut where the surface turns from the viewer
+ * The ink along each inked join of [surface], and each edge of a mouth built open, where its surface faces [view]: each curve is cut where the surface turns from the viewer
  * past [JOIN_LEAST_FACING],
  * a piece shorter than [JOIN_SHORTEST_CELLS] of the surface's cells is left out, and a piece thins toward where the surface turns.
  */
 fun joinDraws(surface: CharacterSurface, view: SurfaceView, rule: LineRule, color: Color): List<RibbonDraw> =
-    facedCurveDraws(surface.joins, view, rule, color, surface.mesh.cell)
+    facedCurveDraws(surface.joins + surface.mouthEdges, view, rule, color, surface.mesh.cell)
 
 /**
  * The hems of [garments] hanging free, as the cloth's outline at its ink weight: an open edge of cloth hanging free outlines it

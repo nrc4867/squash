@@ -12,7 +12,7 @@ private const val CHOOSE_CHUNK = 2048
 
 /**
  * The corners of a surface a pose refits, [moved]: those near a bend, whose bones take them to different places, or where a member
- * piece moving apart from them comes near enough to change their field. Members that a pose lays against each other without a join
+ * piece moving apart from them comes near enough to change their field, unless [rigid] keeps them where linear blend puts them. Members that a pose lays against each other without a join
  * between them meet by their plain union as linear blend leaves them. [reads] counts the solid reads the choosing made.
  */
 internal class ChosenVertices private constructor(
@@ -35,9 +35,9 @@ internal class ChosenVertices private constructor(
     companion object {
         /**
          * The corners of [surface] that [frames] bends, posed by linear blend at [positions] in a field [posed], which a refit moves, or
-         * null for none; each piece of the choosing run by [runAll].
+         * null for none, never one [rigid] flags; each piece of the choosing run by [runAll].
          */
-        suspend fun of(surface: SkinSurface, field: PosedField, members: VertexMembers, frames: BoneFrames, positions: FloatArray, posed: PosedField.Posed, runAll: RunAll): ChosenVertices? {
+        suspend fun of(surface: SkinSurface, field: PosedField, members: VertexMembers, rigid: BooleanArray, frames: BoneFrames, positions: FloatArray, posed: PosedField.Posed, runAll: RunAll): ChosenVertices? {
             val corners = surface.vertexCount
             val transforms = frames.transforms
             val maps = field.maps(transforms)
@@ -45,7 +45,7 @@ internal class ChosenVertices private constructor(
             val reads = LongArray((corners + CHOOSE_CHUNK - 1) / CHOOSE_CHUNK)
             runAll(chunked(corners, CHOOSE_CHUNK) { from, until ->
                 val count = LongArray(1)
-                for (v in from until until) chosen[v] = members.bendsAt(v, surface.positions.vec(v * 3), positions.vec(v * 3), transforms, maps, posed, count)
+                for (v in from until until) chosen[v] = !rigid[v] && members.bendsAt(v, surface.positions.vec(v * 3), positions.vec(v * 3), transforms, maps, posed, count)
                 reads[from / CHOOSE_CHUNK] = count[0]
             })
             val moved = (0 until corners).filter { chosen[it] }.toIntArray()

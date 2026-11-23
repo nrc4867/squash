@@ -8,9 +8,10 @@ import dev.chieppa.squash.document.SetMarkControls
 import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.screens.TestWork
-import dev.chieppa.squash.screens.fennec.HEAD
-import dev.chieppa.squash.screens.fennec.MUZZLE_PATCH
+import dev.chieppa.squash.document.BODY_PATCH
+import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.screens.fennec.fennecDocument
+import dev.chieppa.squash.screens.woman.womanDocument
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,12 +20,18 @@ import kotlin.test.assertTrue
 import org.junit.jupiter.api.Tag
 
 private val MOUTH = MarkGroupId("mouth")
+private val HEAD = PartId("head")
 
-/** A carved mouth that opens cuts a recess into the head behind its lips, which a closed or painted one does not. */
+/**
+ * A carved mouth that opens cuts a recess into the head behind its lips, which a closed or painted one does not, nor one on a head whose jaw
+ * is built open, which its jaw opens.
+ */
 @Tag("integration")
 class CarvedMouthTest {
     private val work = TestWork()
-    private val session: CharacterSession by lazy { openSession(fennecDocument(), work) }
+    private val woman: CharacterSession by lazy { openSession(womanDocument(), work) }
+    private val fennec: CharacterSession by lazy { openSession(fennecDocument(), work) }
+    private var session: CharacterSession = woman
 
     private fun recesses(): BodyRecesses {
         work.settle(session)
@@ -46,14 +53,14 @@ class CarvedMouthTest {
         assertEquals(BodyRecesses.NONE, recesses(), "a closed mouth cuts nothing")
         session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.7f)))
         val recess = recesses().of(HEAD).single()
-        assertEquals(MUZZLE_PATCH, recess.patch, "the recess is cut into the run the lips lie on")
+        assertEquals(BODY_PATCH, recess.patch, "the recess is cut into the run the lips lie on")
         val opening = recess.wallAt(0.5f, 0f, upper = true).position.let { top ->
             val bottom = recess.wallAt(0.5f, 0f, upper = false).position
             (top + bottom) * 0.5f
         }
         assertTrue(fieldAt(opening) > 0f, "the middle of the opening is open")
         val back = recess.wallAt(SIDE, 0.9f, upper = false)
-        assertTrue(abs(fieldAt(back.position)) < recess.rounding, "a point on the wall teeth would stand on, along the muzzle's side, lies on the surface")
+        assertTrue(abs(fieldAt(back.position)) < recess.rounding, "a point on the wall teeth would stand on, along the mouth's side, lies on the surface")
         val step = recess.rounding * STEP_SHARE
         assertTrue(fieldAt(back.position + back.normal * step) > fieldAt(back.position - back.normal * step), "the wall's normal points into the open mouth")
         session.history.undo()
@@ -63,7 +70,22 @@ class CarvedMouthTest {
     }
 
     @Test
+    fun aHeadWithItsJawBuiltOpenIsNotCut() {
+        session = fennec
+        val group = assertNotNull(session.document.value.character.resolved(HEAD)).surface.groups.first { it.id == MOUTH }
+        session.send(SetMarkGroup(HEAD, MOUTH, group.copy(style = CARVED)))
+        session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.7f)))
+        work.settle(session)
+        val surface = assertNotNull(session.characterSurface.output.value?.surface)
+        assertTrue(surface.field.openJaws.isNotEmpty(), "the fennec's jaw is built open")
+        assertTrue(surface.field.recesses.isEmpty(), "its jaw opens the mouth, so nothing is carved")
+        session.history.undo()
+        session.history.undo()
+    }
+
+    @Test
     fun aMuzzlesOwnStyleOpensOnTheSurfaceOnly() {
+        session = fennec
         session.send(SetMarkControls(HEAD, MOUTH, MarkControls(open = 0.7f)))
         assertEquals(BodyRecesses.NONE, recesses(), "a short muzzle paints its opening and cuts nothing")
         session.history.undo()

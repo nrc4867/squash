@@ -29,8 +29,13 @@ internal fun ownShading(field: CharacterField, mesh: SurfaceMesh, from: Int, to:
             val member = mesh.held[v * HELD + k]
             if (member < 0) continue
             val fill = maxOf(field.field.reaches[member] * FILL_SHARE, mesh.cell)
-            val weight = mesh.heldShares[v * HELD + k] * nearness(mesh.heldOwn[v * HELD + k], fill)
-            shading += reader(member).shading(mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k]) * weight
+            val run = field.runs[member]
+            val jaw = run.jawSide?.let { field.openJawOf(run.partId) }
+            val skin = if (jaw == null) 1f else skinShare(jaw, mesh.position(v))
+            if (run.jawSide == JawSide.LINING || skin <= 0f) continue
+            val weight = mesh.heldShares[v * HELD + k] * nearness(mesh.heldOwn[v * HELD + k], fill) * skin
+            val own = reader(member).shading(mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k])
+            shading += (if (run.jawSide == JawSide.JAW && jaw != null) jaw.cut.opened * own else own) * weight
             weights += weight
         }
         held[v] = weights
@@ -38,6 +43,15 @@ internal fun ownShading(field: CharacterField, mesh: SurfaceMesh, from: Int, to:
         out[v * 3 + 1] = shading.y
         out[v * 3 + 2] = shading.z
     }
+}
+
+/**
+ * How much of a run's own shading a point [p] on a head built with its jaw open, [jaw], takes: all of it on the skin, none on the cut's
+ * faces and the lining, which shade by the surface's own normal, easing between across the lips' rounding.
+ */
+private fun skinShare(jaw: OpenJaw, p: Vec3): Float {
+    val x = (-jaw.inside(p) / jaw.rounding).coerceIn(0f, 1f)
+    return x * x * (3f - 2f * x)
 }
 
 /** 1 on a run's own surface, falling smoothly to 0 where its own field reaches [fill] outside it. */

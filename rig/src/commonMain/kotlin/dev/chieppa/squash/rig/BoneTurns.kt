@@ -64,9 +64,10 @@ fun held(angles: BoneAngles, limits: Limits?, mode: JointMode): BoneAngles {
  * turn about its length as it rests.
  */
 fun localTurn(bone: Bone, angles: BoneAngles): Mat3 {
-    if (angles.turn == 0f && angles.lean == 0f && angles.twist == 0f) return rotation(bone.hinge, angles.tip * DEGREES_TO_RADIANS)
+    val tip = angles.tip - bone.built
+    if (angles.turn == 0f && angles.lean == 0f && angles.twist == 0f) return rotation(bone.hinge, tip * DEGREES_TO_RADIANS)
     val axes = bone.axes()
-    val bent = rotation(axes.z, angles.turn * DEGREES_TO_RADIANS) * rotation(axes.y, angles.lean * DEGREES_TO_RADIANS) * rotation(axes.x, angles.tip * DEGREES_TO_RADIANS)
+    val bent = rotation(axes.z, angles.turn * DEGREES_TO_RADIANS) * rotation(axes.y, angles.lean * DEGREES_TO_RADIANS) * rotation(axes.x, tip * DEGREES_TO_RADIANS)
     return if (angles.twist == 0f) bent else bent * rotation(axes.z, angles.twist * DEGREES_TO_RADIANS)
 }
 
@@ -78,7 +79,7 @@ fun anglesOf(bone: Bone, turn: Mat3): BoneAngles {
     val lean = asin((-m20).coerceIn(-1f, 1f))
     val tip = atan2(m(axes.z, axes.y), m(axes.z, axes.z))
     val spin = atan2(m(axes.y, axes.x), m(axes.x, axes.x))
-    return BoneAngles(tip * RADIANS_TO_DEGREES, spin * RADIANS_TO_DEGREES, lean * RADIANS_TO_DEGREES)
+    return BoneAngles(tip * RADIANS_TO_DEGREES + bone.built, spin * RADIANS_TO_DEGREES, lean * RADIANS_TO_DEGREES)
 }
 
 /** The rotation's transpose, which undoes it. */
