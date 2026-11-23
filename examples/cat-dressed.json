@@ -1273,34 +1273,6 @@
                                 "mirrored": true
                             }
                         ],
-                        "groups": [
-                            {
-                                "id": "mouth",
-                                "name": "mouth",
-                                "roles": [
-                                    {
-                                        "role": "inner",
-                                        "ink": false,
-                                        "fill": "nose"
-                                    },
-                                    {
-                                        "role": "tongue"
-                                    },
-                                    {
-                                        "role": "teeth"
-                                    },
-                                    {
-                                        "role": "lipLine",
-                                        "marks": [
-                                            "mouth"
-                                        ]
-                                    },
-                                    {
-                                        "role": "corners"
-                                    }
-                                ]
-                            }
-                        ],
                         "regions": [
                             {
                                 "id": "muzzle",
