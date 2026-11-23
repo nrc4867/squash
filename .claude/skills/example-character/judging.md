@@ -1,6 +1,6 @@
 # Judging
 
-Judge after every build, against the sheet, not against what you meant. A run prints every file it wrote: open every PNG, then `measure.txt`. A feature not seen in a render is not done, whatever the recipe says.
+Judge after every build, against the sheet's intent, not against what you meant and not against its pixels: a part that copies a small or overlapped drawing literally is as wrong as one that ignores it. A run prints every file it wrote: open every PNG, then `measure.txt`. A feature not seen in a render is not done, whatever the recipe says.
 
 ## 1. Matched views beside the sheet
 
@@ -62,6 +62,8 @@ Check each one, every character:
 | clothing copied into the body | a bare body with a dropped shoulder, a waistband pinch or a ledge at the hip | infer the anatomy under the clothes (`body.md`, Smooth profiles) |
 | constant-width kneeless legs | pipes from hip to ankle | narrow the knee and ankle, swell the calf at the back (`body.md`) |
 | oversized hands | hands as long as the face is high | `size` from the sheet (`hands.md`) |
+| copied the sheet's drawing literally | a balloon hand or palm deeper than the wrist, a blob foot, a sleeve or thigh traced into the part | measure the proportion and build the part from the template's parameters, drawing only where the sheet shows the part large and clear (`hands.md`, `feet-and-paws.md`) |
+| stock template the sheet doesn't support | default-size stubby hands or generic feet that ignore the sheet's size, finger length or toe end | size from the measured proportion, shape the digits to the intent (`hands.md`, `feet-and-paws.md`) |
 | floating or sunk feet | soles off the ground or through it | the leg's length and end socket (`feet-and-paws.md`) |
 | touching thighs | legs fused at the crotch, trousers one tube | the hips' width and the leg sockets' v (`body.md`) |
 

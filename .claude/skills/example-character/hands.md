@@ -1,13 +1,45 @@
 # Hands
 
-The sheet is the truth. A hand is the `hand` template (version 9, the newest) on the arm's end socket, drawn from the sheet: trace the back of the hand and its edge, paste them as outlines, build, and judge it beside the sheet's crops. The template supplies the bones, the digits, the nail areas and sensible defaults; its parameters shape the digits, never the hand's silhouette. `templates.md`, hand, lists its parameters, its digit joints and its `nail:<i>` areas; `docs/hld/parts.md` says how it is built. A front paw on an arm is a `paw` instead (`feet-and-paws.md`).
+Build the hand the character means, as a part that poses well. The sheet says what the hands are like: their size against the head, how soft or bony, how long the fingers, where the thumb sits. The `hand` template (version 9, the newest) says how a hand is built so it curls and spreads: bones, digits, nail areas. Neither is the answer by itself. On most sheets a hand is a few dozen pixels, turned, curled or against a sleeve or a thigh: a trace of it is a blob, and the template at its defaults is nobody's hand. `templates.md`, hand, lists its parameters, digit joints and `nail:<i>` areas; `docs/hld/parts.md` says how it is built. A front paw on an arm is a `paw` instead (`feet-and-paws.md`).
 
-## 1. Read the sheet
+## 1. Measure the proportions first
 
-- **Measure**: `tools/recipe.sh kit sheet measure <sheet> views=front,side,back` reads `handLength` (wrist to fingertip) and `handWidth` per hand, splits a hand touching the body or the other hand, checks the views against each other, and marks a width more than 0.8 of the length unsure: a spread hand reads as wide as its spread fingers. Declare the readings you trust as targets (`targets: targets({ handLength: "0.38 head", handWidth: "0.2 head" })`).
-- **Zoom** the hands (`kit sheet zoom ... region=hands`) and write down: how many digits, each finger's length against the middle one, how thick, how far they spread, the thumb's place.
+- **Zoom every hand** the sheet draws, in every view: `kit sheet zoom <sheet> view=<view> region=hands`, or `box=x,y,w,h scale=4` for each hand. Write down the intent in words: small or large for the head, soft or bony, finger length against the palm, how thick and how rounded the tips, how far they spread, where the thumb leaves the palm and how far it stands out.
+- **Size against the head**: `kit sheet measure <sheet> views=front,side,back` reads `handLength` and `handWidth`, but a hand that is spread, turned, curled or touching something reads unsure, and two hands can differ by half. Where it is unsure, measure wrist to fingertip on the zooms yourself, in head heights, for each hand, and choose one length between them: an open hand seen flat reads longest, a hanging curled one shortest. Write the chosen proportion in the file as a target (`targets: targets({ handLength: "0.35 head" })`) with the readings it came from.
 
-## 2. Trace
+## 2. Choose the construction
+
+Pick what gives a clean, posable hand that carries the intent:
+
+- **The template with parameters** is the usual answer: no outlines, `size` for the length, the digit parameters for the rest. Build once at `size` 1, read `handLength` in `measure.txt`, and set `size` to the target over that length.
+- **Drawn outlines** only where the sheet shows the hand large and clear (a big flat hand in a side or front view, a character whose hands are a feature), traced from a zoomed crop (below) and kept to a sane depth: the hand's Top (its thickness) about half the wrist's width or less, never the sheet's flat drawing taken as a thickness.
+
+Then shape it to the intent:
+
+- **Fingers**: `fingerLength` (about 0.8 to 0.9 for short toon fingers, near the palm's own length), `fingerThickness` (1.2 to 1.5 for soft, rounded fingers), `knuckles` low (0.2 to 0.4) for a smooth soft hand, `merge` 0.1 to 0.2 to keep them apart. One digit's own shape: `"fingers.2.length": 0.9`, `"fingers.0.width": 1.1`, `"fingers.thumb.spread": 10` (degrees further out in the fan), counted from the thumb's side; `spread` for the whole fan.
+- **The palm**: thinner than the wrist, never a flat card behind a round wrist. Undrawn, `palmThickness` sets its depth (0.1 to 0.13 on a small hand on a round forearm, so the hand does not step down from the wrist like a flipper), `palmWidth` and `palmLength` its breadth and length, `cup` 0.02 to 0.05 a slight hollow.
+- **The wrist** is the arm's own end: the hand reads the arm's end radius (`limb`) and runs the arm straight into it, so never set it. When the wrist comes out wider than the hand wants, slim the arm's end: on a figure, narrow the arm's two strokes over its last stretch toward the wrist (a forearm tapers); on a tube, its last stations.
+
+```ts
+import { pair, type RecipePart } from "squash-kit";
+
+/** Small soft hands, about 0.35 of a head long: short round fingers, the thumb low and standing out. */
+export const hands: RecipePart = {
+  id: "hands",
+  template: "hand",
+  on: "arms",
+  socket: "socket.1",
+  ...pair("hand"),
+  role: "hand",
+  size: 0.52,
+  outward: 45,
+  inkJoin: false,
+  color: "skin",
+  params: { digits: 5, thumb: 1, fingerLength: 0.9, fingerThickness: 1.35, "fingers.thumb.spread": 10, knuckles: 0.3, merge: 0.15, palmThickness: 0.12, cup: 0.04 },
+};
+```
+
+## 3. Tracing, where the sheet shows the hand large
 
 ```
 tools/recipe.sh kit sheet trace <sheet> names=front,side,back view=side part=hand-right as=side
@@ -18,37 +50,13 @@ tools/recipe.sh kit sheet trace <sheet> names=front,side,back view=front box=x,y
 - **Side** (`side`): the back of the hand as the character's side view shows it, x down from the wrist to the fingertips, y forward (the thumb's side). A posed hand, a wave with the palm to the viewer, is traced from a `box=` with `wrist=` and `tip=` along its middle finger.
 - **Top** (`top`): the hand edge-on, as the front view shows a hand hanging with its palm in: x down, y toward the character's right; it sets the hand's thickness.
 
-A spread hand traced whole carries its spread in the outline. For a hand at rest, keep the traced palm and draw the fingers' end closed round their tips at the length the sheet shows, then give the spread with the parameters below.
+Paste at `size: 1` (the trace prints body units). The drawing is the palm: the solid is cut back at the fingers' knuckles and the fingers stand from it, carried to the drawn length and breadth. Keep the traced palm, close the fingers' end round their tips at the length the sheet shows, and give the spread with the parameters. Look at the trace before pasting: a trace that takes in a sleeve, a thigh or the other hand, or that comes out deeper than the wrist, is the drawing, not the hand; drop it and use the template.
 
-## 3. Draw
+## 4. Check it as a 3D part
 
-```ts
-import { pair, type RecipePart } from "squash-kit";
-
-export const hands: RecipePart = {
-  id: "hands",
-  template: "hand",
-  on: "arms",
-  socket: "socket.1",
-  ...pair("hand"),
-  role: "hand",
-  size: 1,
-  outward: 45,
-  inkJoin: false,
-  color: "skin",
-  params: { digits: 4, thumb: 1, "fingers.1.length": 1.08, "fingers.2.length": 0.9 },
-  outlines: {
-    side: { through: [[0, -0.022], [0.035, -0.03], [0.08, -0.033], [0.12, -0.028], [0.15, -0.015], [0.17, 0], [0.16, 0.017], [0.12, 0.03], [0.08, 0.036], [0.045, 0.04], [0.02, 0.028], [0, 0.022]], closed: true },
-    top: { through: [[0, -0.014], [0.05, -0.015], [0.1, -0.012], [0.15, -0.008], [0.17, 0], [0.15, 0.008], [0.1, 0.014], [0.05, 0.016], [0, 0.014]], closed: true },
-  },
-};
-```
-
-- **Size 1**: outlines are body units, as the trace prints them.
-- **The drawing is the palm.** The drawn solid is cut back at the fingers' knuckles and the fingers stand from it, carried to the drawn length and breadth.
-- **One digit's own shape**, read after the drawing fits: `"fingers.2.length": 0.9` (the third finger shorter), `"fingers.0.width": 1.1`, `"fingers.thumb.spread": 10` (degrees further out in the fan), counted from the thumb's side. `fingerLength`, `fingerThickness`, `spread`, `merge` and `knuckles` change them all.
-- **The wrist** is the arm's own end: the hand reads the arm's end radius (`limb`) and the arm runs straight into it, so never set it and never flare the arm's last stations.
-- **Undrawn**, the parameters shape the hand as before (`palmLength`, `palmWidth`, `palmThickness`), a quick stand-in.
+- The palm thinner than the wrist, and the wrist no wider than the forearm's end: no balloon palm, no bulb at the wrist, no flat card.
+- The fingers apart at rest and in the T-pose (`smallest gap between digit tips` in `measure.txt` above 0), none crossing another.
+- `handLength` and `handWidth` in `measure.txt` against the target.
 
 ## Digits
 
@@ -80,9 +88,9 @@ export const relaxedHands: BonePose[] = ["hand-l", "hand-r"].flatMap((part) =>
 
 Put it in the `displayPose`: a hand hanging dead straight reads as a glove. Pose the sheet's own pose (a wave, a hand on a hip) as a named pose and render it beside the sheet.
 
-## 4. Judge side by side
+## 5. Judge side by side
 
-`close=hands` renders the bare hand at rest, curled, open and spread from six sides; put the back, the palm and the side beside the sheet's crops at the same scale, and the sheet's pose beside its view. Check the hand's length against the face's height in the front render, the palm's breadth against the fingers' length, each finger's length against the sheet, the wrist meeting the arm with no step, and `handLength` and `handWidth` in `measure.txt`. Wrong silhouette: fix the outline. Wrong digits: fix the digit parameters.
+Render `close=strip,hands,hand-l` with `poses=` naming a T-pose: `hand-rest.png` (the bare hand at rest, curled, open and spread from six sides), `<outfit>-hand-l.png` in the display pose bare and dressed, `<outfit>-pose-t-hand-l.png`, and the strip. Put each beside the sheet's zoomed crops of the hands at the same scale. Check the hand's length against the face's height in the front render, the palm's breadth against the fingers' length, the thumb's place, and the hand coming out of a sleeve's cuff as the sheet draws it. Judge by eye: whether it reads as the sheet's hand, not whether a number matches. Wrong size: `size`. Wrong digits: the digit parameters. Wrong silhouette on a drawn hand: the outline, kept thin.
 
 ## On one digit
 
