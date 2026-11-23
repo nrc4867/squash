@@ -7,6 +7,8 @@ import dev.chieppa.squash.document.PartChange
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.recipe.RecipeException
+import dev.chieppa.squash.recipe.figure.BoneSide
+import dev.chieppa.squash.recipe.figure.BoneSurface
 import dev.chieppa.squash.recipe.figure.BuiltRadii
 import dev.chieppa.squash.recipe.figure.FieldSilhouette
 import dev.chieppa.squash.recipe.figure.FigureFit
@@ -42,6 +44,15 @@ private const val GAIN = 0.6
 
 /** The shares of a join's blend a key's outline is read among. */
 private val KEY_BLEND_SHARES = listOf(0.6, 1.0, 1.5, 2.2, 3.2)
+
+/** The fills a key's outline is read among for the creases inside a part's bent joints, as shares of its radius at the joint. */
+private val KEY_BEND_SHARES = listOf(0.0, 0.5, 1.0)
+
+/** How far out from a bone a part's posed surface is looked for, in body units. */
+private const val POSED_REACH = 0.2
+
+/** A limb's samples further than this many root radii along it are measured against its own silhouette where another part hides it. */
+private const val ALONE_FROM = 1.5
 
 /** Samples within this many root radii of a part's root, as drawn, show its join. */
 private const val JOIN_REACH = 2.5
@@ -141,33 +152,60 @@ fun fittedKey(
         )
         val profiles = specs.associate { it.part to profilesOf(recipe, it.part) }
         val built = BuiltRadii { part, profile, x -> profiles[part]?.get(profile)?.takeIf { it.isNotEmpty() }?.let { readAt(it, x) } }
-        val fit = fitFigure(FigureInput(strokes, key.pose, rootHeight, specs, built = built))
         val parts = specs.associateBy { it.part }
         val body = bodyDocument(recipe, parts.keys, templates)
         val fields = KeyedFields(body.character, library)
         val pose = Pose(key.pose.map { bone -> bone.copy(part = poseId(recipe, bone.part)) })
+        val plain = bodies?.silhouette(body, pose, emptyList(), rootHeight)
+        val posed = plain?.let { silhouette -> FigureView.entries.associateWith { view -> posedSurface(recipe, parts, silhouette, view) } }.orEmpty()
+        val fit = fitFigure(FigureInput(strokes, key.pose, rootHeight, specs, built = built, posed = posed))
         fun measured(changes: List<RecipeKeyChange>): FigureMeasure {
             val made = changes.flatMap { documentChanges(recipe, it, path) }
-            if (bodies != null) return measure(fit, bodies.silhouette(body, pose, made, rootHeight), rootHeight) { 0.0 }
+            if (bodies != null) {
+                val silhouette = bodies.silhouette(body, pose, made, rootHeight)
+                return measure(fit, silhouette, rootHeight, alone = { sample -> aloneFor(recipe, parts.getValue(sample.part), sample, silhouette) }) { 0.0 }
+            }
             val field = requireNotNull(fields.of(made)) { "key: the body built no field" }
             return measure(fit, FieldSilhouette(field.field, rootHeight), rootHeight) { sample -> seamShare(recipe, parts.getValue(sample.part), sample) }
         }
-        val blends = if (outline.joins) joinShares(recipe, fit, specs, rootHeight, ::measured) else emptyMap()
+        val bends = bendShares(recipe, fit, ::measured)
+        val blends = if (outline.joins) joinShares(recipe, fit, specs, rootHeight, bends, ::measured) else emptyMap()
         var offsets: Map<String, Map<String, Profile>> = emptyMap()
         var best: Pair<List<RecipeKeyChange>, FigureMeasure>? = null
         val means = mutableListOf(measured(emptyList()).mean)
         repeat(outline.rounds ?: DEFAULT_KEY_ROUNDS) {
-            val changes = keyChanges(recipe, offsets, blends)
+            val changes = keyChanges(recipe, offsets, blends, bends)
             val measure = measured(changes)
             means += measure.mean
             if (best == null || measure.mean < best.second.mean) best = changes to measure
             offsets = corrected(offsets, fit, measure, GAIN)
         }
         val (changes, measure) = requireNotNull(best)
-        val traced = bodies?.let { posedOutline(it.silhouette(body, pose, emptyList(), rootHeight), fit, rootHeight) }
+        val traced = plain?.let { posedOutline(recipe, specs, it, fit, rootHeight) }
         report = KeyReport(key.name, changes, fit, measure, means, Duration.ZERO, traced)
     }
     return KeyReport(report.name, report.changes, report.fit, report.measure, report.means, time, report.posed)
+}
+
+/**
+ * The surfaces of [silhouette]'s posed body as [view] shows them: a limb's radius on a side of one of its bones past its join with its
+ * parent, read from the bone out to the edge of the silhouette the limb casts alone, so a sample goes to the part whose surface in the
+ * pose lies nearest it, as the pose has shaped it (the round end of a forearm turned forward makes the back of a bent elbow). Nearer
+ * the root, and on a trunk, the join's surface is shared and none is read.
+ */
+private fun posedSurface(recipe: Recipe, specs: Map<String, FigurePartSpec>, silhouette: Silhouette, view: FigureView): BoneSurface {
+    val alone = HashMap<String, Silhouette?>()
+    return BoneSurface { bone, side, x ->
+        if (specs[bone.part]?.kind != FigureKind.LIMB) return@BoneSurface null
+        val root = rootRadius(recipe, bone.part) ?: return@BoneSurface null
+        if (x < ALONE_FROM * root) return@BoneSurface null
+        val own = alone.getOrPut(bone.part) {
+            recipePartNamed(recipe, bone.part)?.let { part -> silhouette.alone(documentIds(part).map { it.value }.toSet()) }
+        } ?: return@BoneSurface null
+        val span = bone.xTo - bone.xFrom
+        val at = bone.from + (bone.to - bone.from) * (if (span > 0) ((x - bone.xFrom) / span).coerceIn(0.0, 1.0) else 0.0)
+        own.reachFrom(view, at, if (side == BoneSide.PLUS) bone.plus else bone.plus * -1.0, POSED_REACH)
+    }
 }
 
 /** The document part a pose's bone on recipe part [name] turns: a side by its own id, a pair by its left side, or the part. */
@@ -176,15 +214,23 @@ private fun poseId(recipe: Recipe, name: PartId): PartId {
     return if (part.id == name.value) documentIds(part).first() else name
 }
 
-/** [silhouette] traced into a figure outline over the reach of [fit]'s posed chains, in both views. */
-private fun posedOutline(silhouette: Silhouette, fit: FigureFit, rootHeight: Double): RecipeFigure {
+/**
+ * [silhouette] traced into a figure outline over the reach of [fit]'s posed chains, in both views, with each limb of [specs] traced
+ * alone in the side view as well, its strokes named for it (`arms-alone-1`), where the trunk may hide it.
+ */
+private fun posedOutline(recipe: Recipe, specs: List<FigurePartSpec>, silhouette: Silhouette, fit: FigureFit, rootHeight: Double): RecipeFigure {
     val joints = fit.posed.values.flatMap { chain -> chain.joints.map { it.at } }
     val height = joints.maxOf { it.y } + rootHeight + TRACE_HEADROOM
     fun reach(view: FigureView) = joints.maxOf { abs(project(view, it, rootHeight).x) } + TRACE_HEADROOM
+    val limbs = specs.filter { it.kind == FigureKind.LIMB }.flatMap { spec ->
+        val part = recipePartNamed(recipe, spec.part) ?: return@flatMap emptyList()
+        val alone = silhouette.alone(documentIds(part).map { it.value }.toSet()) ?: return@flatMap emptyList()
+        tracedStrokes(FigureView.SIDE, alone, reach(FigureView.SIDE), height).map { it.copy(id = "${spec.part}-alone-${it.id.substringAfterLast('-')}") }
+    }
     return RecipeFigure(
         rootHeight.toFloat(),
         front = tracedStrokes(FigureView.FRONT, silhouette, reach(FigureView.FRONT), height),
-        side = tracedStrokes(FigureView.SIDE, silhouette, reach(FigureView.SIDE), height),
+        side = tracedStrokes(FigureView.SIDE, silhouette, reach(FigureView.SIDE), height) + limbs,
         pose = emptyList(),
     )
 }
@@ -196,29 +242,69 @@ private fun documentChanges(recipe: Recipe, change: RecipeKeyChange, path: Strin
 }
 
 /**
- * The share of its blend each join the outline reaches takes: the body is measured with every such join's blend scaled by each of a few
- * shares at once, and each keeps the share whose silhouette lies nearest the strokes round its root.
+ * Whether a sample at [at] in [view] shows [spec]'s join: within [JOIN_REACH] root radii of its root, and nearer the root than the
+ * part's first joint past it, so the strokes round a short limb's elbow or knee shape that joint, not the join above it.
  */
-private fun joinShares(recipe: Recipe, fit: FigureFit, specs: List<FigurePartSpec>, rootHeight: Double, measured: (List<RecipeKeyChange>) -> FigureMeasure): Map<String, Float> {
-    val samples = fit.split.flatMap { (view, split) -> split.taken.map { view to it } }
+private fun showsJoin(recipe: Recipe, fit: FigureFit, spec: FigurePartSpec, view: FigureView, at: P2, rootHeight: Double): Boolean {
+    val radius = rootRadius(recipe, spec.part) ?: return false
+    val chain = fit.posed.getValue(spec.part)
+    val fromRoot = (at - project(view, chain.root, rootHeight)).length
+    val fromJoint = chain.joints.getOrNull(1)?.let { (at - project(view, it.at, rootHeight)).length } ?: Double.MAX_VALUE
+    return fromRoot <= JOIN_REACH * radius && fromRoot < fromJoint
+}
+
+/**
+ * The share of its blend each join the outline reaches takes: the body is measured, its creases filled by [bends], with every such join's
+ * blend scaled by each of a few shares at once, and each keeps the share whose silhouette lies nearest the strokes round its root
+ * ([showsJoin]), those in a bent joint's crease left out.
+ */
+private fun joinShares(recipe: Recipe, fit: FigureFit, specs: List<FigurePartSpec>, rootHeight: Double, bends: Map<String, Float>, measured: (List<RecipeKeyChange>) -> FigureMeasure): Map<String, Float> {
+    val samples = fit.split.flatMap { (view, split) -> split.taken.filter { !it.crease }.map { view to it } }
     val joining = specs.filter { spec ->
-        val radius = rootRadius(recipe, spec.part) ?: return@filter false
-        if (spec.parent == null || recipe.parts.first { it.id == spec.part }.blend == null) return@filter false
-        val root = fit.posed.getValue(spec.part).root
-        samples.any { (view, sample) -> sample.part == spec.part && (sample.sample.at - project(view, root, rootHeight)).length <= JOIN_REACH * radius }
+        if (spec.parent == null || rootRadius(recipe, spec.part) == null || recipe.parts.first { it.id == spec.part }.blend == null) return@filter false
+        samples.any { (view, sample) -> sample.part == spec.part && showsJoin(recipe, fit, spec, view, sample.sample.at, rootHeight) }
     }
     if (joining.isEmpty()) return emptyMap()
     val scores = joining.associate { it.part to DoubleArray(KEY_BLEND_SHARES.size) }
     KEY_BLEND_SHARES.forEachIndexed { k, share ->
-        val measure = measured(joining.map { RecipeKeyChange(it.part, blend = share.toFloat()) })
+        val measure = measured(keyChanges(recipe, emptyMap(), joining.associate { it.part to share.toFloat() }, bends))
         for (spec in joining) {
-            val root = fit.posed.getValue(spec.part).root
-            val reach = JOIN_REACH * requireNotNull(rootRadius(recipe, spec.part))
-            val near = measure.samples.filter { m -> (m.sample.sample.at - project(m.view, root, rootHeight)).length <= reach }
+            val near = measure.samples.filter { m -> !m.sample.crease && showsJoin(recipe, fit, spec, m.view, m.sample.sample.at, rootHeight) }
             scores.getValue(spec.part)[k] = near.map { abs(it.miss) }.average().takeIf { !it.isNaN() } ?: 0.0
         }
     }
     return joining.associate { spec -> spec.part to KEY_BLEND_SHARES[scores.getValue(spec.part).withIndex().minBy { it.value }.index].toFloat() }
+}
+
+/**
+ * The fill each part whose bent joints the outline draws a crease inside takes, as a share of its radius at the joint: the body is
+ * measured with every such part's creases filled by each of a few shares at once, and each keeps the share whose silhouette lies nearest
+ * its crease samples.
+ */
+private fun bendShares(recipe: Recipe, fit: FigureFit, measured: (List<RecipeKeyChange>) -> FigureMeasure): Map<String, Float> {
+    val creased = fit.split.values.flatMap { split -> split.taken.filter { it.crease }.map { it.part } }.toSet()
+    if (creased.isEmpty()) return emptyMap()
+    val scores = creased.associateWith { DoubleArray(KEY_BEND_SHARES.size) }
+    KEY_BEND_SHARES.forEachIndexed { k, share ->
+        val measure = measured(keyChanges(recipe, emptyMap(), emptyMap(), creased.associateWith { share.toFloat() }))
+        for (part in creased) {
+            val near = measure.samples.filter { it.sample.part == part && it.sample.crease }
+            scores.getValue(part)[k] = near.map { abs(it.miss) }.average().takeIf { !it.isNaN() } ?: Double.MAX_VALUE
+        }
+    }
+    return creased.associateWith { part -> KEY_BEND_SHARES[scores.getValue(part).withIndex().minBy { it.value }.index].toFloat() }.filterValues { it > 0f }
+}
+
+/**
+ * The silhouette [spec]'s own surface casts alone in [silhouette]'s body, for a sample of a limb past its join with its parent, where
+ * its parent may stand over it in a view; null nearer the root, where the join's surface is the parent's as much as the limb's.
+ */
+private fun aloneFor(recipe: Recipe, spec: FigurePartSpec, sample: PartSample, silhouette: Silhouette): Silhouette? {
+    if (spec.kind != FigureKind.LIMB) return null
+    val radius = rootRadius(recipe, spec.part) ?: return null
+    if (sample.x < ALONE_FROM * radius) return null
+    val part = recipePartNamed(recipe, spec.part) ?: return null
+    return silhouette.alone(documentIds(part).map { it.value }.toSet())
 }
 
 /**
@@ -244,10 +330,10 @@ private fun profilesOf(recipe: Recipe, part: String): Map<String, List<P2>> =
 
 /**
  * [offsets], radius changes by part and profile, as width scales: each change eased along its part and read over the radius the part's
- * own profile gives there, and [blends] as the blends' scales.
+ * own profile gives there, [blends] as the blends' scales and [bends] as the fills of the parts' bent joints.
  */
-private fun keyChanges(recipe: Recipe, offsets: Map<String, Map<String, Profile>>, blends: Map<String, Float>): List<RecipeKeyChange> =
-    (offsets.keys + blends.keys).map { part ->
+private fun keyChanges(recipe: Recipe, offsets: Map<String, Map<String, Profile>>, blends: Map<String, Float>, bends: Map<String, Float>): List<RecipeKeyChange> =
+    (offsets.keys + blends.keys + bends.keys).map { part ->
         val radii = profilesOf(recipe, part)
         val widths = offsets[part].orEmpty().mapNotNull { (name, change) ->
             val drawn = radii[name]?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
@@ -258,7 +344,7 @@ private fun keyChanges(recipe: Recipe, offsets: Map<String, Map<String, Profile>
                 listOf(rounded(change.at[i]), rounded(scale))
             }
         }.toMap()
-        RecipeKeyChange(part, widths, blends[part])
+        RecipeKeyChange(part, widths, blends[part], bends[part])
     }
 
 private fun smoothed(values: List<Double>): List<Double> {

@@ -39,7 +39,9 @@ class PosedKeyBodies(private val library: TemplateLibrary) : KeyBodies, AutoClos
         session.send(SetPose(pose))
         work.drain()
         val posed = checkNotNull(sessionPose.surface.posed.output.value?.posed) { "the fitting session posed no surface" }.surface
-        return MeshSilhouette(posed.positions, posed.mesh.triangles, rootHeight)
+        val runs = posed.field.runs
+        val owners = Array(posed.mesh.vertexCount) { v -> posed.mesh.winners[v].let { w -> runs.getOrNull(w)?.partId?.value } }
+        return MeshSilhouette(posed.positions, posed.mesh.triangles, owners, rootHeight)
     }
 
     private fun open(body: SquashDocument): Triple<SquashDocument, CharacterSession, Pair<SessionPose, TestWork>> {
@@ -55,11 +57,26 @@ class PosedKeyBodies(private val library: TemplateLibrary) : KeyBodies, AutoClos
     }
 }
 
-/** The silhouette a posed mesh casts in each figure view: its triangles filled into a raster of [CELL] cells, made per view when first read. */
-private class MeshSilhouette(private val positions: FloatArray, private val triangles: IntArray, private val rootHeight: Double) : Silhouette {
+/**
+ * The silhouette a posed mesh casts in each figure view: its triangles filled into a raster of [CELL] cells, made per view when first
+ * read. [owners] names the part each vertex's surface belongs to, which a part's silhouette alone keeps the triangles of.
+ */
+private class MeshSilhouette(
+    private val positions: FloatArray,
+    private val triangles: IntArray,
+    private val owners: Array<String?>,
+    private val rootHeight: Double,
+) : Silhouette {
     private val rasters = HashMap<FigureView, Raster>()
+    private val alone = HashMap<Set<String>, MeshSilhouette>()
 
     override fun inside(view: FigureView, q: P2): Boolean = rasters.getOrPut(view) { raster(view) }.inside(q)
+
+    /** The triangles at least two of whose corners [parts] own, as a silhouette of their own. */
+    override fun alone(parts: Set<String>): Silhouette = alone.getOrPut(parts) {
+        val kept = (0 until triangles.size / 3).filter { t -> (0 until 3).count { owners[triangles[t * 3 + it]] in parts } >= 2 }
+        MeshSilhouette(positions, IntArray(kept.size * 3) { triangles[kept[it / 3] * 3 + it % 3] }, owners, rootHeight)
+    }
 
     private fun place(view: FigureView, v: Int): P2 {
         val x = positions[v * 3].toDouble()

@@ -3,6 +3,7 @@ package dev.chieppa.squash.recipe.figure
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.recipe.model.RecipeRest
 import kotlin.math.abs
+import kotlin.math.acos
 
 /** Body units between outline samples. */
 const val FIGURE_SPACING = 0.002
@@ -62,9 +63,11 @@ class FigureInput(
     val offsets: Map<String, Map<String, Profile>> = emptyMap(),
     /** The body the outline is drawn over, when it is already built: a key's. */
     val built: BuiltRadii? = null,
+    /** That body's surfaces as each view shows them in the pose, where they can be read off it posed; [built]'s radii where not. */
+    val posed: Map<FigureView, BoneSurface> = emptyMap(),
 ) {
     /** This input with [offsets] in place of its own. */
-    fun withOffsets(offsets: Map<String, Map<String, Profile>>) = FigureInput(strokes, pose, rootHeight, parts, spacing, offsets, built)
+    fun withOffsets(offsets: Map<String, Map<String, Profile>>) = FigureInput(strokes, pose, rootHeight, parts, spacing, offsets, built, posed)
 }
 
 /** A built body's radius: [part]'s on the side [profile] names, at [x] along it; null where it has no such profile. */
@@ -123,7 +126,7 @@ fun fitFigure(input: FigureInput): FigureFit {
         reads = mapOf(
             FigureView.FRONT to posed.keys,
             FigureView.SIDE to posed.values.filter { chain ->
-                shownFromSide(chain, posed) || input.built?.let { clearOfParent(chain, posed, specs, it, input.rootHeight) } == true
+                shownFromSide(chain, posed) || (input.built != null && (clearOfParent(chain, posed, specs, input.built, input.rootHeight) || bentInSide(chain, input.rootHeight)))
             }.map { it.part }.toSet(),
         )
         split = FigureView.entries.associateWith { view ->
@@ -131,7 +134,10 @@ fun fitFigure(input: FigureInput): FigureFit {
                 if (input.built == null) chain.viewBones(view, input.rootHeight) else chain.viewBonesFrom(rest.getValue(chain.part), view, input.rootHeight)
             }
             val surface = input.built?.let { built ->
-                BoneSurface { bone, side, x -> built.radius(bone.part, profileName(specs.getValue(bone.part).kind, view, side), x) }
+                val posedSurface = input.posed[view]
+                BoneSurface { bone, side, x ->
+                    posedSurface?.radius(bone, side, x) ?: built.radius(bone.part, profileName(specs.getValue(bone.part).kind, view, side), x)
+                }
             }
             splitByBones(input.strokes[view].orEmpty().flatMap { it.samples(input.spacing) }, bones, surface)
         }
@@ -201,6 +207,16 @@ private fun shownFromSide(chain: FigureChain, posed: Map<String, FigureChain>): 
     val steps = 20
     val outside = (0..steps).count { k -> chain.at(k.toDouble() / steps).y.let { it < low || it > high } }
     return outside.toDouble() / (steps + 1) >= SIDE_SHOWN_SHARE
+}
+
+/** Whether a limb's [chain] bends at a joint in the side view's plane, as an elbow bent forward does, so the side view shows the bend. */
+private fun bentInSide(chain: FigureChain, rootHeight: Double): Boolean {
+    if (chain.kind == FigureKind.TRUNK) return false
+    return chain.viewBones(FigureView.SIDE, rootHeight).zipWithNext().any { (a, b) ->
+        val da = a.to - a.from
+        val db = b.to - b.from
+        da.length > 1e-6 && db.length > 1e-6 && acos(((da dot db) / (da.length * db.length)).coerceIn(-1.0, 1.0)) >= CREASE_BEND
+    }
 }
 
 /**

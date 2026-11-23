@@ -8,6 +8,9 @@ import kotlin.math.sin
 /** How far either way along a sample's normal the built edge is looked for, in body units. */
 private const val EDGE_REACH = 0.03
 
+/** How far inside an edge a place is read to find whose edge it is, in body units. */
+private const val EDGE_INSIDE = 0.001
+
 /** A miss larger than this share of the outline's height, the ground to its top (the chin), is marked: about an ink line's width. */
 const val MISS_TOLERANCE = 0.004
 
@@ -45,11 +48,28 @@ private fun atRest(sample: PartSample, rest: FigureChain, rootHeight: Double, vi
 }
 
 /**
+ * How far along [normal] from [at] the edge of the sample's own part lies: the body's edge where the part casts it, else, where another
+ * part stands over it in the view (an elbow inside the trunk's outline from the side), the edge of the part's silhouette [alone].
+ */
+private fun ownEdge(silhouette: Silhouette, alone: Silhouette?, view: FigureView, at: P2, normal: P2): Double? {
+    val body = silhouette.edge(view, at, normal, EDGE_REACH)
+    if (alone == null || (body != null && alone.inside(view, at + normal * (body - EDGE_INSIDE)))) return body
+    return alone.edge(view, at, normal, EDGE_REACH) ?: body
+}
+
+/**
  * How far the body [silhouette] shows lies off each sample [fit] read, measured at rest: a limb's samples are carried from the pose the
- * outline is drawn in onto its bones at rest first, each by [share] of its bone's turn. Misses past the tolerance, a share of the
+ * outline is drawn in onto its bones at rest first, each by [share] of its bone's turn. A sample whose part another stands over in the
+ * view is measured against the silhouette its part casts [alone], where one is given. Misses past the tolerance, a share of the
  * figure's height, are gathered into stretches along each stroke.
  */
-fun measure(fit: FigureFit, silhouette: Silhouette, rootHeight: Double, share: (PartSample) -> Double = { 1.0 }): FigureMeasure {
+fun measure(
+    fit: FigureFit,
+    silhouette: Silhouette,
+    rootHeight: Double,
+    alone: (PartSample) -> Silhouette? = { null },
+    share: (PartSample) -> Double = { 1.0 },
+): FigureMeasure {
     val read = mutableListOf<SampleMiss>()
     val misses = mutableListOf<FigureMiss>()
     val tolerance = MISS_TOLERANCE * fit.split.values.flatMap { split -> split.taken.map { it.sample.at.y } }.fold(0.0, ::maxOf)
@@ -64,7 +84,7 @@ fun measure(fit: FigureFit, silhouette: Silhouette, rootHeight: Double, share: (
             val part = fit.parts[s.part] ?: continue
             val profile = profileName(part.spec.kind, view, s.side)
             val (at, normal) = atRest(s, fit.rest.getValue(s.part), rootHeight, view, share(s))
-            val miss = silhouette.edge(view, at, normal, EDGE_REACH)
+            val miss = ownEdge(silhouette, alone(s), view, at, normal)
             if (miss == null) {
                 close()
                 continue
@@ -88,11 +108,12 @@ fun measure(fit: FigureFit, silhouette: Silhouette, rootHeight: Double, share: (
 
 /**
  * The corrections [previous] moved by [gain] of [measure]'s misses: each part's profile, averaged in bins along the part and evened
- * between neighbouring bins, takes off its share of how far the body stands out past the outline there.
+ * between neighbouring bins, takes off its share of how far the body stands out past the outline there. A sample in the crease inside
+ * a bent joint shapes no width.
  */
 fun corrected(previous: Map<String, Map<String, Profile>>, fit: FigureFit, measure: FigureMeasure, gain: Double): Map<String, Map<String, Profile>> {
     val out = previous.mapValues { it.value.toMutableMap() }.toMutableMap()
-    for ((key, group) in measure.samples.groupBy { it.sample.part to it.profile }) {
+    for ((key, group) in measure.samples.filter { !it.sample.crease }.groupBy { it.sample.part to it.profile }) {
         val (part, profile) = key
         val length = fit.parts.getValue(part).spec.length
         val bins = maxOf(2, Math.ceil(length / BIN).toInt())

@@ -3234,6 +3234,19 @@
               "type": "null"
             }
           ]
+        },
+        "bend": {
+          "description": "How wide a smooth fill rounds the crease inside each of the part's joints the key's pose bends (the back of a bent knee, the inside of a bent elbow), as a share of the part's radius at the joint. None when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 2.0
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

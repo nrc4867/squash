@@ -952,6 +952,8 @@ export interface RecipeKeyChange {
   widths?: { [key: string]: number[][] };
   /** How much the blend where it joins its parent is scaled by; a part with no blend of its own scales the blend the build gives its join. */
   blend?: number | null;
+  /** How wide a smooth fill rounds the crease inside each of the part's joints the key's pose bends (the back of a bent knee, the inside of a bent elbow), as a share of the part's radius at the joint. None when left out. */
+  bend?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

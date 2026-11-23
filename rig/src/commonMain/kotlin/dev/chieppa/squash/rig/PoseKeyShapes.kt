@@ -11,6 +11,7 @@ import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.character.surface.RunSolids
 import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.PartChange
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.document.PoseKey
@@ -102,7 +103,7 @@ class PoseKeyBuilder(private val templates: TemplateLibrary) {
                 continue
             }
             made++
-            val (shape, read) = posedKeyShape(key, held, surface, skin, base, keyed, changes.mapTo(HashSet()) { it.part }, runAll)
+            val (shape, read) = posedKeyShape(key, held, surface, skin, base, keyed, changes, runAll)
             shapes += shape
             reads += read
         }
@@ -121,10 +122,13 @@ class PoseKeyBuilder(private val templates: TemplateLibrary) {
         skin: SurfaceSkin,
         base: CharacterField,
         keyed: CharacterField,
-        changed: Set<PartId>,
+        changes: List<PartChange>,
         runAll: RunAll,
     ): Pair<KeyShape, KeyReads?> {
         val rig = held.rig
+        val changed = changes.mapTo(HashSet()) { it.part }
+        val bendOf = changes.filter { it.bend > 0f }.associate { it.part to it.bend }
+        val bends = FloatArray(keyed.field.members.size) { m -> bendOf[keyed.runs[m].partId] ?: 0f }
         val near = changedMembers(base, changed) + changedMembers(keyed, changed)
         if (near.isEmpty() || base.field.members.size != keyed.field.members.size) return KeyShape.EMPTY to null
         val frames = boneFrames(rig, Pose(key.pose))
@@ -143,7 +147,7 @@ class PoseKeyBuilder(private val templates: TemplateLibrary) {
         val plainField = PosedField(SkinSurface.of(surface, rig, base), skin, rig)
         val keyedField = PosedField(SkinSurface.of(surface, rig, keyed), skin, rig)
         val plainPosed = plainField.posed(frames)
-        val keyedPosed = keyedField.posed(frames)
+        val keyedPosed = keyedField.posed(frames, bends)
         val boxes = plainField.posedBoxes(frames).also { plainBoxes ->
             val keyedBoxes = keyedField.posedBoxes(frames)
             for (i in plainBoxes.indices) plainBoxes[i] = if (i % 6 < 3) minOf(plainBoxes[i], keyedBoxes[i]) else maxOf(plainBoxes[i], keyedBoxes[i])
@@ -152,7 +156,7 @@ class PoseKeyBuilder(private val templates: TemplateLibrary) {
         val offsets = FloatArray(region.size * 3)
         val turns = FloatArray(region.size * 3)
         val moves = BooleanArray(region.size)
-        val differing = base.field.members.indices.filter { MemberSign.of(base.field.members[it]) != MemberSign.of(keyed.field.members[it]) }.toIntArray()
+        val differing = base.field.members.indices.filter { bends[it] > 0f || MemberSign.of(base.field.members[it]) != MemberSign.of(keyed.field.members[it]) }.toIntArray()
         runAll(chunked(region.size, KEY_CHUNK) { from, until ->
             val plain = PosedRead(plainField, plainPosed, h)
             val corrected = PosedRead(keyedField, keyedPosed, h)

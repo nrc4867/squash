@@ -11,6 +11,7 @@ import dev.chieppa.squash.recipe.figure.FigureStroke
 import dev.chieppa.squash.recipe.figure.FigureView
 import dev.chieppa.squash.recipe.figure.P2
 import dev.chieppa.squash.recipe.figure.fitFigure
+import dev.chieppa.squash.recipe.figure.project
 import dev.chieppa.squash.recipe.figure.readAt
 import dev.chieppa.squash.recipe.figure.samples
 import dev.chieppa.squash.recipe.model.RecipeRest
@@ -143,5 +144,30 @@ class FigureFitTest {
         assertTrue(split.taken.all { it.side == BoneSide.MINUS }, "raised past level, the limb's underside is still the side its back faces at rest")
         val plain = fitFigure(FigureInput(mapOf(FigureView.SIDE to listOf(underarm)), forward, rootHeight, listOf(trunk, arm))).split.getValue(FigureView.SIDE)
         assertTrue(plain.taken.none { it.part == "limbs" }, "a figure's split, reading no built body, does not read the limb from the side")
+    }
+
+    @Test
+    fun aKeysStrokeInsideABentJointIsInItsCreaseAndOneRoundTheOutsideIsNot() {
+        val leg = FigurePartSpec(
+            "legs", "leg-l", FigureKind.LIMB, length = 0.3, closed = false, rest = RecipeRest.DOWN, joints = listOf("joint.1" to 0.5),
+            parent = "trunk", socketU = 0.0, socketV = 0.5, reach = 0.05,
+        )
+        val bent = listOf(BonePose(PartId("leg-l"), "joint.1", degrees = 90f))
+        val built = BuiltRadii { part, _, _ -> if (part == "trunk") 0.08 else 0.03 }
+        val chain = fitFigure(FigureInput(emptyMap(), bent, rootHeight, listOf(trunk, leg), built = built)).posed.getValue("legs")
+        val (hip, knee, ankle) = chain.joints.map { project(FigureView.SIDE, it.at, rootHeight) }
+        val up = (hip - knee).unit()
+        val on = (ankle - knee).unit()
+        fun near(a: Double, b: Double) = knee + up * a + on * b
+        val crease = FigureStroke.through("crease", listOf(near(0.045, 0.03), near(0.037, 0.032), near(0.032, 0.037), near(0.03, 0.045)))
+        val outside = FigureStroke.through("outside", listOf(near(0.06, -0.03), near(-0.02, -0.035), near(-0.035, -0.02), near(-0.03, 0.06)))
+        val input = FigureInput(mapOf(FigureView.SIDE to listOf(crease, outside)), bent, rootHeight, listOf(trunk, leg), built = built)
+        val split = fitFigure(input).split.getValue(FigureView.SIDE)
+        val inCrease = split.taken.filter { it.sample.stroke == "crease" }
+        assertTrue(inCrease.isNotEmpty() && inCrease.all { it.part == "legs" }, "the crease goes to the leg: ${inCrease.map { it.part }.toSet()}")
+        assertTrue(inCrease.all { it.crease }, "every sample inside the bend lies in its crease: ${inCrease.map { it.crease }}")
+        assertTrue(split.taken.filter { it.sample.stroke == "outside" }.none { it.crease }, "no sample round the outside does")
+        val plain = fitFigure(FigureInput(mapOf(FigureView.SIDE to listOf(crease)), bent, rootHeight, listOf(trunk, leg))).split.getValue(FigureView.SIDE)
+        assertTrue(plain.taken.none { it.crease }, "a figure's split, reading no built body, finds no crease")
     }
 }

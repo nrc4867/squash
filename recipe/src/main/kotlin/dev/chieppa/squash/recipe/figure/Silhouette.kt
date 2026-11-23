@@ -11,6 +11,26 @@ interface Silhouette {
     /** Whether the view place [q] lies inside the body's silhouette in [view]. */
     fun inside(view: FigureView, q: P2): Boolean
 
+    /** The silhouette the surface of the parts named [parts] casts alone, as the document names them; null where none can be read. */
+    fun alone(parts: Set<String>): Silhouette? = null
+
+    /** How far along [direction] from [at], a place inside the silhouette, its edge lies, within [reach]; null from a place outside or with no edge that near. */
+    fun reachFrom(view: FigureView, at: P2, direction: P2, reach: Double): Double? {
+        if (!inside(view, at)) return null
+        var inner = 0.0
+        var outer: Double? = null
+        while (outer == null && inner < reach) {
+            val t = minOf(reach, inner + EDGE_STEP)
+            if (inside(view, at + direction * t)) inner = t else outer = t
+        }
+        var out = outer ?: return null
+        repeat(BISECTIONS) {
+            val mid = (inner + out) / 2
+            if (inside(view, at + direction * mid)) inner = mid else out = mid
+        }
+        return (inner + out) / 2
+    }
+
     /**
      * How far along [normal] from [at] the silhouette's edge lies, within [reach] either way: positive where the body stands out past
      * [at], negative where it falls short; null where no edge crosses that stretch. The edge is the first one out from [at]. In the

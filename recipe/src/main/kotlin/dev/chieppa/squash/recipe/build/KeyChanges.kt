@@ -1,5 +1,6 @@
 package dev.chieppa.squash.recipe.build
 
+import dev.chieppa.squash.document.MAX_KEY_BEND
 import dev.chieppa.squash.document.OutlineScale
 import dev.chieppa.squash.document.PartChange
 import dev.chieppa.squash.document.PartId
@@ -72,9 +73,9 @@ internal fun partChanges(recipe: Recipe, change: RecipeKeyChange, ids: List<Part
     }.toMap()
     return ids.map { id ->
         try {
-            PartChange(id, widths, change.blend ?: 1f)
+            PartChange(id, widths, change.blend ?: 1f, change.bend ?: 0f)
         } catch (e: IllegalArgumentException) {
-            fail("$path.blend", e.message ?: e.toString())
+            fail(if (change.bend?.let { it in 0f..MAX_KEY_BEND } == false) "$path.bend" else "$path.blend", e.message ?: e.toString())
         }
     }
 }

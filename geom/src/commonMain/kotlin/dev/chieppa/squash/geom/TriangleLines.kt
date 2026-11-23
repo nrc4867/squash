@@ -1,5 +1,7 @@
 package dev.chieppa.squash.geom
 
+import kotlin.math.floor
+
 /** Ends of two runs this close, as a share of the mesh's own reach, are one place. */
 private const val JOIN_SHARE = 1e-4f
 
@@ -10,6 +12,9 @@ private const val HOLLOW_CURVATURE = -4f
 
 /** How many of the mesh's mean edge lengths a contour runs at least to be drawn. */
 private const val SHORTEST_EDGES = 4f
+
+/** How many of the mesh's mean edge lengths from the smooth contour the faces' own contour lies, at least, where it is a fold. */
+private const val FOLD_EDGES = 1.5f
 
 /** A place on a curve across a triangle mesh, with the surface's normal there. */
 class CurvePoint(val position: Vec3, val normal: Vec3)
@@ -121,6 +126,58 @@ class TriangleLines(
             val closed = curve.size > 2 && curve.first().position == curve.last().position
             ContourRun(curve.map { ContourPoint(it.position, 1f) }, closed, piece)
         }
+    }
+
+    /**
+     * Where the faces turn edge on to a viewer that [toViewer] gives the direction of, along their edges as [contours] finds them, only
+     * where that lies further than [FOLD_EDGES] of the mesh's edges from every place of [smooth], the smooth contours ([smoothContours])
+     * through the same view, and only where both ends of an edge are at least zero in [shown], one value a vertex, [kept] when it gives
+     * none for each: where the fill is drawn. That is a fold: the surface laps over itself
+     * where it bunches, as cloth does in a crease, and makes the edge the fill shows, while its vertex normals, averaged across the fold,
+     * never turn edge on there, so the smooth contour runs inside the fill or not at all. A fold shorter than [SHORTEST_EDGES] of the
+     * mesh's edges is a fleck, and left out as a smooth contour's is.
+     */
+    fun foldContours(toViewer: (Vec3) -> Vec3, smooth: List<ContourRun>, shown: FloatArray? = kept): List<ContourRun> {
+        val apart = FOLD_EDGES * meanEdge
+        if (apart <= 0f) return emptyList()
+        val gate = shown?.takeIf { it.size == vertexCount } ?: kept
+        val near = HashMap<Long, MutableList<Vec3>>()
+        fun key(x: Int, y: Int, z: Int): Long = ((x.toLong() and 0x1FFFFF) shl 42) or ((y.toLong() and 0x1FFFFF) shl 21) or (z.toLong() and 0x1FFFFF)
+        fun cellOf(v: Float): Int = floor(v / apart).toInt()
+        for (run in smooth) for (point in run.points) {
+            val p = point.position
+            near.getOrPut(key(cellOf(p.x), cellOf(p.y), cellOf(p.z))) { ArrayList() } += p
+        }
+        fun clear(p: Vec3): Boolean {
+            val cx = cellOf(p.x)
+            val cy = cellOf(p.y)
+            val cz = cellOf(p.z)
+            for (dx in -1..1) for (dy in -1..1) for (dz in -1..1) {
+                val points = near[key(cx + dx, cy + dy, cz + dz)] ?: continue
+                for (q in points) if ((q - p).length < apart) return false
+            }
+            return true
+        }
+        val facing = BooleanArray(triangleCount) { t ->
+            val n = Vec3(faceNormals[t * 3], faceNormals[t * 3 + 1], faceNormals[t * 3 + 2])
+            (n dot toViewer(at(triangles[t * 3]))) > 0f
+        }
+        val edges = ArrayList<Pair<Int, Int>>()
+        for (e in edgeA.indices) {
+            val r = right[e]
+            if (r < 0 || facing[left[e]] == facing[r]) continue
+            val a = edgeA[e]
+            val b = edgeB[e]
+            if (gate != null && (gate[a] < 0f || gate[b] < 0f)) continue
+            if (clear((at(a) + at(b)) * 0.5f)) edges += a to b
+        }
+        val pieces = connectedPieces(edges)
+        val lengths = HashMap<Int, Float>()
+        for ((a, b) in edges) pieces.getValue(a).let { lengths[it] = (lengths[it] ?: 0f) + (at(b) - at(a)).length }
+        val shortest = SHORTEST_EDGES * meanEdge
+        val runs = walkedEdges(edges).map { run -> IndexedRun(run.map { ContourPoint(at(it), 1f) }, pieces.getValue(run.first())) }
+            .filter { (lengths[it.piece] ?: 0f) >= shortest }
+        return joinedAtEnds(runs, reach * JOIN_SHARE)
     }
 
     /** How long the mesh's edges are on average. */

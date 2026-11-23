@@ -49,4 +49,6 @@ data class RecipeKeyChange(
     val widths: Map<String, List<List<Float>>> = emptyMap(),
     @Doc("How much the blend where it joins its parent is scaled by; a part with no blend of its own scales the blend the build gives its join.") @Range(min = 0.25, max = 4.0)
     val blend: Float? = null,
+    @Doc("How wide a smooth fill rounds the crease inside each of the part's joints the key's pose bends (the back of a bent knee, the inside of a bent elbow), as a share of the part's radius at the joint. None when left out.") @Range(min = 0.0, max = 2.0)
+    val bend: Float? = null,
 )

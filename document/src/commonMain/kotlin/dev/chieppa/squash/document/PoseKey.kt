@@ -10,6 +10,9 @@ import kotlinx.serialization.Serializable
 const val MIN_KEY_WIDTH = 0.25f
 const val MAX_KEY_WIDTH = 4f
 
+/** The most a pose key fills the creases inside a part's bent joints by, as a share of the part's radius at each joint. */
+const val MAX_KEY_BEND = 2f
+
 /**
  * One place along a part's outline where a key scales its width: [x] along the outline, as its points read it, and the [scale] its
  * distance from the axis takes there.
@@ -38,8 +41,9 @@ data class OutlineScale(
 }
 
 /**
- * What a key changes on one [part]: each view's outline scaled across its axis by [widths], and the blend it joins its parent by scaled
- * by [blend]. A part's own settings stay where they are; the key's changes are read over them, so an edit of the part keeps them.
+ * What a key changes on one [part]: each view's outline scaled across its axis by [widths], the blend it joins its parent by scaled
+ * by [blend], and the crease inside each of its joints the key's pose bends filled by a smooth union [bend] times the part's radius at
+ * the joint wide. A part's own settings stay where they are; the key's changes are read over them, so an edit of the part keeps them.
  */
 @Serializable
 data class PartChange(
@@ -47,13 +51,16 @@ data class PartChange(
     val widths: Map<View, OutlineScale> = emptyMap(),
     @Range(min = 0.25, max = 4.0)
     val blend: Float = 1f,
+    @Range(min = 0.0, max = 2.0)
+    val bend: Float = 0f,
 ) {
     init {
         require(blend in MIN_KEY_WIDTH..MAX_KEY_WIDTH) { "A key scales a blend from $MIN_KEY_WIDTH to $MAX_KEY_WIDTH, not $blend" }
+        require(bend in 0f..MAX_KEY_BEND) { "A key fills a bent joint's crease from 0 to $MAX_KEY_BEND of the part's radius there, not $bend" }
     }
 
     /** Whether it changes nothing. */
-    val isRest: Boolean get() = blend == 1f && widths.values.all { scale -> (scale.plus + scale.minus).all { it.scale == 1f } }
+    val isRest: Boolean get() = blend == 1f && bend == 0f && widths.values.all { scale -> (scale.plus + scale.minus).all { it.scale == 1f } }
 }
 
 /**
