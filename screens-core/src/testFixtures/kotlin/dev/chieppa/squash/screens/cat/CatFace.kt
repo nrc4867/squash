@@ -5,12 +5,16 @@ import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.EyeLook
 import dev.chieppa.squash.document.Mark
+import dev.chieppa.squash.document.MarkGroupId
 import dev.chieppa.squash.document.MarkId
+import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.MarkWidth
 import dev.chieppa.squash.document.PaintedEye
 import dev.chieppa.squash.document.SetMark
+import dev.chieppa.squash.document.SetMarkGroup
 import dev.chieppa.squash.document.SetPaintedEye
 import dev.chieppa.squash.document.WidthStop
+import dev.chieppa.squash.document.mouthGroup
 
 /** The painted eyes' id on the cat's head. */
 const val CAT_EYES = "eyes"
@@ -61,10 +65,24 @@ private fun whiskers(): List<DocumentCommand> = listOf(
     line("whisker-3", TAPER, 0.86f to 0.25f, 0.66f to 0.29f, 0.48f to 0.33f),
 )
 
-/** The mouth: a short line down from the nose, parting into two small curves. */
-private fun mouth(): List<DocumentCommand> = listOf(
-    line("mouth", EVEN, 0.99f to 0.08f, 0.985f to 0.20f, 0.95f to 0.25f, 0.91f to 0.23f),
-)
+/**
+ * The mouth: a short line down from the nose, parting into two small curves, and the group that holds it as the lip line, so the jaw
+ * opens along it onto a pink inside.
+ */
+private fun mouth(): List<DocumentCommand> {
+    val lips = line("mouth", EVEN, 0.99f to 0.08f, 0.985f to 0.20f, 0.95f to 0.25f, 0.91f to 0.23f)
+    val empty = mouthGroup(MarkGroupId("mouth"), "mouth")
+    val group = empty.copy(
+        roles = empty.roles.map { role ->
+            when (role.role) {
+                MarkRole.LIP_LINE -> role.copy(marks = listOf(MarkId("mouth")))
+                MarkRole.INNER -> role.copy(ink = false, fill = NOSE_PINK)
+                else -> role
+            }
+        },
+    )
+    return listOf(lips, SetMarkGroup(CAT_HEAD, group.id, group))
+}
 
 /** The cat's face: painted eyes, whiskers and mouth. */
 fun catFace(): List<DocumentCommand> = whiskers() + mouth() +

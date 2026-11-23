@@ -39,14 +39,52 @@ fun mouthInsideLayers(surface: CharacterSurface, slots: (OpenJaw) -> SlotName?):
 
 /**
  * The curves where each mouth built open on [field] turns from skin to its inside, over the triangles of [mesh] its head's split runs hold,
- * found on [lines], the surface where it lies now; inked as joins are.
+ * found on [lines], the surface where it lies now; inked as joins are. Each half's edge is found on its own triangles and kept only where
+ * the other half's edge lies more than the lips' edge width ([OpenJaw.edge]) from it, so a mouth shut, its two edges met along the lip
+ * line, inks nothing there and the drawn lip line is its one line, while a mouth open inks both lips.
  */
 internal fun mouthEdgeCurves(field: CharacterField, mesh: SurfaceMesh, lines: TriangleLines): List<List<CurvePoint>> = field.openJaws.flatMap { jaw ->
     val members = field.runs.indices.filter { field.runs[it].partId == jaw.part && field.runs[it].jawSide != null }.toSet()
-    val onJaw = heldBy(mesh, members)
-    val values = FloatArray(mesh.vertexCount) { v -> if (onJaw[v]) jaw.inside(mesh.position(v)) else 0f }
+    val held = heldBy(mesh, members)
+    val values = FloatArray(mesh.vertexCount) { v -> if (held[v]) jaw.inside(mesh.position(v)) else 0f }
+    val onJaw = BooleanArray(mesh.vertexCount) { v -> held[v] && jaw.jawShare(mesh.position(v)) >= 0.5f }
     val t = mesh.triangles
-    lines.zeroCurves(values) { tri -> onJaw[t[tri * 3]] && onJaw[t[tri * 3 + 1]] && onJaw[t[tri * 3 + 2]] }.map(::eased)
+    fun edgeOf(jawHalf: Boolean) = lines.zeroCurves(values) { tri ->
+        (0 until 3).all { c -> val v = t[tri * 3 + c]; held[v] && onJaw[v] == jawHalf }
+    }.map(::eased)
+    val upper = edgeOf(false)
+    val lower = edgeOf(true)
+    apart(upper, lower, jaw.edge) + apart(lower, upper, jaw.edge)
+}
+
+/** The stretches of [curves] farther than [reach] from every one of [others]. */
+private fun apart(curves: List<List<CurvePoint>>, others: List<List<CurvePoint>>, reach: Float): List<List<CurvePoint>> = curves.flatMap { curve ->
+    val out = ArrayList<List<CurvePoint>>()
+    var run = ArrayList<CurvePoint>()
+    for (point in curve) {
+        if (nearestOn(others, point.position) > reach) {
+            run += point
+        } else {
+            if (run.size >= 2) out += run
+            run = ArrayList()
+        }
+    }
+    if (run.size >= 2) out += run
+    out
+}
+
+/** The distance from [p] to the nearest of [curves], read along their segments. */
+private fun nearestOn(curves: List<List<CurvePoint>>, p: Vec3): Float {
+    var best = Float.MAX_VALUE
+    for (curve in curves) for (i in curve.indices) {
+        val a = curve[i].position
+        val b = curve.getOrNull(i + 1)?.position ?: a
+        val ab = b - a
+        val length = ab dot ab
+        val t = if (length > 0f) (((p - a) dot ab) / length).coerceIn(0f, 1f) else 0f
+        best = minOf(best, (p - (a + ab * t)).length)
+    }
+    return best
 }
 
 /** Whether each vertex of [mesh] is held by one of [members]. */

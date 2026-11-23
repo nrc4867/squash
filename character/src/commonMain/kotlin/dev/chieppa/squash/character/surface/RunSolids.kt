@@ -45,7 +45,7 @@ class RunSolids {
     private data class AnglesKey(val child: MemberKey, val parent: MemberKey, val blend: Float)
 
     private var hollows: List<Pair<Patch, SweptSolid>> = emptyList()
-    private var made: List<Pair<List<Any>, Solid>> = emptyList()
+    private var made: List<Pair<List<Any>, Any>> = emptyList()
 
     /** The hollow [patch]'s rings sweep with its mouth run on [reach] out past its first ring, kept while the run is the same object. */
     fun hollowOf(patch: Patch, reach: Float): SweptSolid {
@@ -55,8 +55,11 @@ class RunSolids {
         return solid
     }
 
-    /** What [make] makes, kept while [key], compared item by item, is the same, so a member made from unchanged solids reads as before. */
-    internal fun <T : Solid> kept(key: List<Any>, make: () -> T): T {
+    /**
+     * What [make] makes, kept while [key], compared item by item, is the same, so a member made from unchanged solids, or what it is cut
+     * by, reads as before.
+     */
+    internal fun <T : Any> kept(key: List<Any>, make: () -> T): T {
         @Suppress("UNCHECKED_CAST")
         made.firstOrNull { it.first == key }?.let { return it.second as T }
         val solid = make()

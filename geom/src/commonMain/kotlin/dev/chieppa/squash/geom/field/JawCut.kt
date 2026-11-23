@@ -43,6 +43,13 @@ class JawCut(
         return phis[i] + (phis[i + 1] - phis[i]) * t
     }
 
+    /** How far [p] lies past the mouth's corners: its distance from the hinge, across [axis], less [cornerRadius]. Turning keeps it. */
+    fun pastCorner(p: Vec3): Float {
+        val rp = FloatArray(2)
+        polar(p, rp)
+        return rp[0] - cornerRadius
+    }
+
     /** The distance from the hinge, across [axis], and the angle of [p], into [out]. */
     private fun polar(p: Vec3, out: FloatArray) {
         val d = p - hinge
@@ -69,6 +76,17 @@ class JawCut(
         val rp = FloatArray(2)
         polar(p, rp)
         return rp[0] * (rp[1] - (cutPhi(rp[0]) - built * 0.5f))
+    }
+
+    /**
+     * How far [p], as built, lies above the middle between the jaw's floor and its lower bound, both turned open: negative below it,
+     * by its distance from the hinge times the angle. A face below it faces away from the mouth.
+     */
+    fun aboveJawsUnderside(p: Vec3): Float {
+        val rp = FloatArray(2)
+        polar(p, rp)
+        val floor = cutPhi(rp[0]) - built
+        return rp[0] * (rp[1] - (floor + (lowPhi - built)) * 0.5f)
     }
 
     /** [p] as the jaw built open carries it: turned about the hinge by [built]. */

@@ -77,14 +77,17 @@ class OpenJaw(
     private val lining: Solid,
 ) {
     /**
-     * How much of the jaw's turn body point [p] on the surface takes: all of it on the jaw's half, none on the snout's, easing between
-     * across the blend that joins them at the mouth's corners, [corner] wide, by how much nearer the one half is than the other.
+     * How much of the jaw's turn body point [p] on the surface takes: all of it on the jaw's half, none on the snout's, by which half is
+     * nearer. Only in the blend that joins them at the mouth's corners does it ease between, [corner] wide, narrowing to none [corner]
+     * past them, so the lips either side of the cut each turn whole and meet where they were cut.
      */
     fun jawShare(p: Vec3): Float {
         val q = p - origin
         val upper = upperMembers.minOf { abs(it.distance(q)) }
         val jaw = jawMembers.minOf { abs(it.distance(q)) }
-        val x = (0.5f + (upper - jaw) / (2f * corner)).coerceIn(0f, 1f)
+        val width = corner * (1f - cut.pastCorner(q) / corner).coerceIn(0f, 1f)
+        if (width <= 0f) return if (jaw < upper) 1f else 0f
+        val x = (0.5f + (upper - jaw) / (2f * width)).coerceIn(0f, 1f)
         return x * x * (3f - 2f * x)
     }
 
@@ -105,7 +108,7 @@ class OpenJaw(
         val at = if (onUpper) q else cut.shut(q)
         val cutTerm = if (onUpper) -cut.region(at) else cut.region(at)
         val skin = hosts.minOf { it.distance(at) }
-        return minOf(cutTerm - skin, -skin)
+        return minOf(cutTerm - skin, -skin, cut.aboveJawsUnderside(q))
     }
 }
 
@@ -148,13 +151,17 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
         sqrt(x * x + y * y) to atan2(y, x)
     }.sortedBy { it.first }
     val built = requireNotNull(joint.limits).max * (PI.toFloat() / 180f)
-    val cut = JawCut(hinge, axis, forward, line.map { it.first }.toFloatArray(), line.map { it.second }.toFloatArray(), line.first().first, (-PI / 2).toFloat(), built)
+    val radii = line.map { it.first }
+    val phis = line.map { it.second }
+    val cut = solids.kept(listOf(hinge, axis, forward, radii, phis, built)) {
+        JawCut(hinge, axis, forward, radii.toFloatArray(), phis.toFloatArray(), radii.first(), (-PI / 2).toFloat(), built)
+    }
     val skull = members[skullIndex]
     val muzzle = members[muzzleIndex]
     val size = (muzzle.solid.high - muzzle.solid.low).let { minOf(it.x, it.y, it.z) }
     val edge = size * EDGE_SHARE
     val cheek = size * CHEEK_SHARE
-    fun halfOf(member: JoinedMember, upper: Boolean) = JawHalfSolid(member.solid, cut, upper, rounding = 0f)
+    fun halfOf(member: JoinedMember, upper: Boolean) = solids.kept(listOf(Same(member.solid), Same(cut), upper)) { JawHalfSolid(member.solid, cut, upper, rounding = 0f) }
     val out = members.toMutableList()
     val upperSkull = halfOf(skull, true)
     val upperMuzzle = halfOf(muzzle, true)
@@ -169,7 +176,7 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
     val cornerBare = JoinedMember(jawMuzzle, muzzle.origin, false, cheek, muzzleIndex, muzzle.part)
     out += JoinedMember(jawMuzzle, muzzle.origin, false, cheek, muzzleIndex, muzzle.part, 0f, solids.angles(cornerBare, out[muzzleIndex]))
     val hosts = listOf(plain[skullIndex], plain[muzzleIndex])
-    val lining = MouthLiningSolid(hosts, cut, size * LINING_INSET_SHARE, LINING_U)
+    val lining = solids.kept(hosts.map { Same(it) } + listOf(Same(cut), size)) { MouthLiningSolid(hosts, cut, size * LINING_INSET_SHARE, LINING_U) }
     out += JoinedMember(lining, muzzle.origin, false, 0f, -1, muzzle.part)
     val outRuns = runs.toMutableList()
     outRuns[skullIndex] = skullRun.on(JawSide.UPPER)

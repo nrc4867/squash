@@ -77,4 +77,19 @@ class JawCutTest {
         lining.place(middle, out)
         assertEquals(0.5f, out[PLACE_V], 0.05f)
     }
+
+    @Test
+    fun theJawsFloorAsBuiltFacesTheMouthAndTheChinsUndersideDoesNot() {
+        val floor = cut.open(Vec3(0.5f, 0f, 0f))
+        val underside = cut.open(Vec3(0.2f, -0.5f, 0f))
+        assertTrue(cut.aboveJawsUnderside(floor) > 0f)
+        assertTrue(cut.aboveJawsUnderside(underside) < 0f)
+    }
+
+    @Test
+    fun howFarPastTheCornersAPointLiesKeepsAsItTurns() {
+        val p = Vec3(0.6f, -0.1f, 0.05f)
+        assertTrue(cut.pastCorner(Vec3(0.05f, 0f, 0f)) < 0f)
+        assertEquals(cut.pastCorner(p), cut.pastCorner(cut.open(p)), 1e-5f)
+    }
 }
