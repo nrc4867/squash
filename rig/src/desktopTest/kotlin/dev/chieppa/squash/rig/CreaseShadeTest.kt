@@ -61,4 +61,22 @@ class CreaseShadeTest {
         assertEquals(0f, cloth.shade[1], "cloth 2.7 radii off takes none")
         assertTrue(skin.shade[1] > 0f, "the same place on skin would")
     }
+
+    @Test
+    fun skinTheBendCarriesWholeTakesItsShadeButNoInk() {
+        val neck = CreaseJoint(1, 0, 0, Vec3.ZERO, Vec3.X, Vec3.X, RADIUS, inner = Vec3.Y, strength = 1f)
+        val turn = rotation(Vec3.Z, (60.0 * PI / 180.0).toFloat())
+        val frames = BoneFrames(listOf(Affine.IDENTITY, Affine(turn, Vec3.ZERO)), listOf(Mat3.IDENTITY, turn))
+        val posed = PosedCreaseJoint.of(neck, frames, 1f, 0.3f)!!
+        val on = posed.at + posed.inner * RADIUS
+        val vertices = FloatArray(2 * RenderMesh.FLOATS_PER_VERTEX).also {
+            it.put(0, on)
+            it.put(RenderMesh.FLOATS_PER_VERTEX, on)
+        }
+        val reach = CreaseReach(listOf(neck), listOf(intArrayOf(0, 1)), listOf(booleanArrayOf(true, false)))
+        val field = JointCreaseField.of(reach, listOf(posed), vertices, 2)
+        assertTrue(field.ink[0] > 0f, "skin the bend folds is inked")
+        assertEquals(0f, field.ink[1], "skin the bend carries whole is not")
+        assertEquals(field.shade[0], field.shade[1], "both take the shade")
+    }
 }

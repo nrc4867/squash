@@ -32,27 +32,38 @@ private const val CLOTH_SHADE_FAR = 2.6f
 /**
  * Which vertices of one surface's drawn mesh each of [joints] can crease: those within [REACH_RADII] of its radius of its pivot at rest
  * that its bones weigh at least [REACH_INFLUENCE] together and its own bone at least [REACH_OWN] ([REACH_OWN_SHOULDER] at a shoulder), so
- * its bend moves them, in [vertices], one array a joint.
+ * its bend moves them, in [vertices], one array a joint; and of those, [bent], the ones its parent's side weighs at least [REACH_OWN] too,
+ * so its bend folds the skin there rather than carrying it whole, as it carries a head that turns on its neck: only they take its ink.
  */
-class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
+class CreaseReach(
+    val joints: List<CreaseJoint>,
+    val vertices: List<IntArray>,
+    val bent: List<BooleanArray> = vertices.map { BooleanArray(it.size) { true } },
+) {
     companion object {
         /** The reach of [joints] over the drawn mesh [rest], weighed by [skin], of its vertices only those [creasable] keeps, or all with none. */
         fun of(joints: List<CreaseJoint>, rest: RenderMesh, skin: SurfaceSkin, creasable: BooleanArray? = null): CreaseReach {
             val count = minOf(rest.vertexCount, skin.vertexCount)
             val stride = RenderMesh.FLOATS_PER_VERTEX
-            return CreaseReach(joints, joints.map { joint ->
+            val reached = joints.map { joint ->
                 val bones = intArrayOf(joint.bone, joint.parent, joint.carrier)
                 val own = intArrayOf(joint.bone)
+                val parentSide = intArrayOf(joint.parent, joint.carrier)
                 val reach = joint.radius * REACH_RADII
                 val least = if (joint.shoulder) REACH_OWN_SHOULDER else REACH_OWN
                 val within = ArrayList<Int>()
+                val bent = ArrayList<Boolean>()
                 for (v in 0 until count) {
                     if (creasable != null && !creasable.getOrElse(v) { true }) continue
                     if ((rest.vertices.vec(v * stride) - joint.pivot).length > reach) continue
-                    if (influence(skin, v, bones) >= REACH_INFLUENCE && influence(skin, v, own) >= least) within += v
+                    if (influence(skin, v, bones) >= REACH_INFLUENCE && influence(skin, v, own) >= least) {
+                        within += v
+                        bent += influence(skin, v, parentSide) >= REACH_OWN
+                    }
                 }
-                within.toIntArray()
-            })
+                within.toIntArray() to bent.toBooleanArray()
+            }
+            return CreaseReach(joints, reached.map { it.first }, reached.map { it.second })
         }
     }
 }
@@ -93,7 +104,8 @@ class JointCreaseField(
                 if (joint == null) continue
                 val index = kept.size
                 kept += joint
-                for (v in reach.vertices[j]) {
+                val bent = reach.bent[j]
+                for ((i, v) in reach.vertices[j].withIndex()) {
                     if (v >= count) continue
                     val p = vertices.vec(v * stride)
                     val facing = joint.facing(p)
@@ -103,7 +115,7 @@ class JointCreaseField(
                     val near = if (cloth) 1f - smoothstep(CLOTH_SHADE_NEAR, CLOTH_SHADE_FAR, joint.axisShare(p)) else 1f
                     val s = around * exp(-BAND_NARROWING * t * t) * shadeShare * near
                     if (s > shade[v]) shade[v] = s
-                    if (around * exp(-t * t * 0.25f) > ink[v] * exp(-along[v] * along[v] * 0.25f)) {
+                    if (bent[i] && around * exp(-t * t * 0.25f) > ink[v] * exp(-along[v] * along[v] * 0.25f)) {
                         ink[v] = around
                         middle[v] = joint.middle(facing)
                         along[v] = t

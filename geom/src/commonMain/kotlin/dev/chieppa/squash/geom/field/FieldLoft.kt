@@ -20,6 +20,9 @@ private const val SEARCH_GRID = 14
 /** Steps from a ray's far end in toward its start in which the outermost crossing is first bracketed. */
 private const val MARCH_STEPS = 64
 
+/** How many times as many rays as the grid has a ring's section is first found by, before they are spaced evenly round it. */
+private const val DENSE_RAYS = 4
+
 /** Halvings of the bracket round the outermost crossing. */
 private const val HALVINGS = 14
 
@@ -39,9 +42,11 @@ data class DrawnRing(val height: Float?, val width: Float?, val middle: Vec3?)
  * A swept patch over a [BlendedField]: planar rings across the part's axis, each found as a star-shaped section. The field's reach
  * along the axis is found first; the rings stand there closer together toward either end, as the latitudes of a sphere do, so the
  * ends close round, and the first and last are poles. In each ring's plane the section's middle is the middle of the inside of a
- * grid laid over the field's box; from it a ray at each of the fixed v angles (v = 0 toward up, 0.25 toward side) is marched in
- * from the box's edge to the outermost crossing of the field and halved down onto it. The ring's slice is fitted through those
- * points exactly, so a shell grown from the slices and the patch agree, and its shading normals are the field's gradient.
+ * grid laid over the field's box; from it rays at evenly spaced angles (0 toward up, a quarter turn toward side), four times as
+ * many as the grid has round, are marched in from the box's edge to the outermost crossing of the field and halved down onto it, and
+ * the grid's points are laid along that outline at even steps of its length within each quarter, so v measures distance round the
+ * ring and still faces up at 0 and to the side at 0.25. The ring's slice is fitted through those points exactly, so a shell grown from
+ * the slices and the patch agree, and its shading normals are the field's gradient.
  */
 object FieldLoft {
     /**
@@ -79,7 +84,7 @@ object FieldLoft {
             val u = uOf(x)
             val middle = middleAt(own, x)
             val pole = ring == 0 || (ring == rings - 1 && end == null)
-            val hits = if (pole || middle == null) null else hitsAt(field, x, middle, segments, firstCrossing).let { first -> recentred(field, x, first, segments, firstCrossing) ?: first }
+            val hits = if (pole || middle == null) null else evenHits(field, x, middle, segments, firstCrossing)
             val size = hits?.let { spanOf(it) }
             if (hits == null || size == null || max(size.second.x, size.second.y) < box * POLE_SHARE) {
                 val at = middle ?: Vec2(field.low.y + (field.high.y - field.low.y) / 2f, field.low.z + (field.high.z - field.low.z) / 2f)
@@ -122,6 +127,17 @@ object FieldLoft {
         val middle = middleAt(field, x) ?: return null
         val hits = hitsAt(field, x, middle, segments, firstCrossing = false)
         return recentred(field, x, hits, segments, firstCrossing = false) ?: hits
+    }
+
+    /**
+     * The section at [x] as [segments] points round it, spaced evenly by length within each quarter (see [evenAround]): rays cast
+     * [DENSE_RAYS] times as close as the grid's from the middle the grid's own rays settle on, so v measures distance round a thin
+     * section rather than the angle round its middle, which swings across its flat faces with every shift of that middle.
+     */
+    private fun evenHits(field: BlendedField, x: Float, middle: Vec2, segments: Int, firstCrossing: Boolean): List<Vec2> {
+        val first = hitsAt(field, x, middle, segments, firstCrossing)
+        val centre = recentredMiddle(field, x, first) ?: middle
+        return evenAround(hitsAt(field, x, centre, segments * DENSE_RAYS, firstCrossing), segments)
     }
 
     /** Where along the axis the field's solid starts and ends. */
@@ -248,11 +264,14 @@ object FieldLoft {
      * [hits] cast again from the middle of the box round them, where that lies inside the solid: rays from one ring's middle to the next
      * then keep their v at matching places round each section, so a lopsided section near a pole does not twist its cells into a fold.
      */
-    private fun recentred(field: BlendedField, x: Float, hits: List<Vec2>, segments: Int, firstCrossing: Boolean): List<Vec2>? {
+    private fun recentred(field: BlendedField, x: Float, hits: List<Vec2>, segments: Int, firstCrossing: Boolean): List<Vec2>? =
+        recentredMiddle(field, x, hits)?.let { hitsAt(field, x, it, segments, firstCrossing) }
+
+    /** The middle of the box round [hits] as (up, side), where it lies inside the solid; null where it does not. */
+    private fun recentredMiddle(field: BlendedField, x: Float, hits: List<Vec2>): Vec2? {
         val (box, _) = spanOf(hits)
         val middle = Vec2(box.y, box.x)
-        if (field.value(Vec3(x, middle.x, middle.y)) >= 0f) return null
-        return hitsAt(field, x, middle, segments, firstCrossing)
+        return middle.takeIf { field.value(Vec3(x, it.x, it.y)) < 0f }
     }
 
     /** The middle of the box round [hits] and its spans, both as (side, up). */

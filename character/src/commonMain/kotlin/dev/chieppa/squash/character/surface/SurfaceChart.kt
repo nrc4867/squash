@@ -199,15 +199,19 @@ class SurfaceChart(val surface: CharacterSurface) {
 
     /**
      * How far inside run [member]'s own section of the surface vertex [v] lies: half the least, over the other runs it holds, of how much
-     * lower the member's own field is than theirs, so zero where it shares the surface equally with a neighbour.
+     * lower the member's own field is than theirs, so zero where it shares the surface equally with a neighbour. A part's first run reads
+     * its part's other runs as its own: they grow out of it, as digits joined to a palm do, and what is painted on it carries on over
+     * them wherever it still holds the surface.
      */
     fun section(v: Int, member: Int): Float {
         var own = 0f
         for (k in 0 until HELD) if (mesh.held[v * HELD + k] == member) own = mesh.heldOwn[v * HELD + k]
+        val run = runs[member]
         var least = reach
         for (k in 0 until HELD) {
             val other = mesh.held[v * HELD + k]
             if (other < 0 || other == member) continue
+            if (run.first && runs[other].partId == run.partId) continue
             least = minOf(least, (mesh.heldOwn[v * HELD + k] - own) * 0.5f)
         }
         return least

@@ -38,11 +38,11 @@ private const val TAPER_POWER = 0.85f
 private const val CLAW_RINGS = 12
 
 /** The collar's rings, from its closed root to the claw's root, by their place back from the claw's root in claw heights and their size in the collar's. */
-private val COLLAR_BACK = floatArrayOf(0.7f, 0.6f, 0.45f, 0.28f, 0.12f)
+internal val COLLAR_BACK = floatArrayOf(0.7f, 0.6f, 0.45f, 0.28f, 0.12f)
 private val COLLAR_SIZE = floatArrayOf(0f, 0.7f, 0.95f, 1f, 0.92f)
 
 /** How far behind the claw's root its hidden anchor lies, in claw lengths: a whole retract slides it back nine tenths of that. */
-private const val ANCHOR_BACK = 2f
+internal const val ANCHOR_BACK = 2f
 
 /** How far down from the digit's line, in degrees, a retracting claw slides as it goes back, so its hooked point stays inside the toe. */
 private const val SLIDE_DEGREES = 10f
