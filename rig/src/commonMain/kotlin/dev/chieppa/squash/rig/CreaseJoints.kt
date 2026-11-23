@@ -68,6 +68,8 @@ class CreaseJoint(
     val inner: Vec3?,
     val strength: Float,
     val cell: Float = 0f,
+    /** Whether it is an arm's root on the part it sits on: a shoulder. */
+    val shoulder: Boolean = false,
 ) {
     /** The normal of the plane through the pivot that splits the joint's rest angle evenly. */
     val restPlane: Vec3 get() = (reference + direction).unitOr(direction)
@@ -102,7 +104,8 @@ fun creaseJoints(rig: Rig, positions: FloatArray, skin: SurfaceSkin, cell: Float
             isSeat(rig, role, i, parent, direction, roles) -> square(FRONT * -1f, plane)
             else -> oneWayInner(bone, direction, plane) ?: if (role == Role.NECK) square(FRONT, plane) else null
         }
-        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength, cell)
+        val shoulder = role == Role.ARM && rig.bones[parent].name.part != bone.name.part
+        CreaseJoint(i, parent, carrier, bone.pivot, direction, reference, radius, inner, strength, cell, shoulder)
     }
 }
 

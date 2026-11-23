@@ -4,6 +4,9 @@ import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.recipe.model.RecipeRest
 import kotlin.math.abs
 import kotlin.math.acos
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.tan
 
 /** Whether a part runs up the body's middle, its right mirroring its left, or is the left side of a pair. */
@@ -121,7 +124,31 @@ data class ViewBone(
     /** How far past its start and its end, as a share of its length, it takes outline. */
     val before: Double,
     val after: Double,
+    /** The way across it its [BoneSide.PLUS] side faces in the view: toward the view's +x, unless a pose turned it from there. */
+    val plus: P2 = towardPlusX(to - from),
 )
+
+/** Across a bone running [d], toward the view's +x: its direction turned a quarter that way. */
+fun towardPlusX(d: P2): P2 = (if (d.y <= 0) P2(-d.y, d.x) else P2(d.y, -d.x)).unit()
+
+/** [p] turned by the angle that takes [from] to [to]. */
+private fun turnedLike(p: P2, from: P2, to: P2): P2 {
+    val angle = atan2(to.y, to.x) - atan2(from.y, from.x)
+    val c = cos(angle)
+    val s = sin(angle)
+    return P2(p.x * c - p.y * s, p.x * s + p.y * c)
+}
+
+/**
+ * This chain's bones as [view] shows them posed, each bone's sides those it has at [rest] turned with it, so a side keeps its profile
+ * however far a pose turns the bone: an arm raised level keeps its front on top.
+ */
+fun FigureChain.viewBonesFrom(rest: FigureChain, view: FigureView, rootHeight: Double): List<ViewBone> =
+    viewBones(view, rootHeight).zip(rest.viewBones(view, rootHeight)) { posed, still ->
+        val a = still.to - still.from
+        val b = posed.to - posed.from
+        if (a.length < 1e-9 || b.length < 1e-9) posed else posed.copy(plus = turnedLike(still.plus, a, b).unit())
+    }
 
 /** A bone takes outline this share of its length past either end. */
 private const val END_REACH = 0.02

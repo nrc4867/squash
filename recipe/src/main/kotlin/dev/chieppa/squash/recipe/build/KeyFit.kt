@@ -7,6 +7,7 @@ import dev.chieppa.squash.document.PartChange
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Pose
 import dev.chieppa.squash.recipe.RecipeException
+import dev.chieppa.squash.recipe.figure.BuiltRadii
 import dev.chieppa.squash.recipe.figure.FieldSilhouette
 import dev.chieppa.squash.recipe.figure.FigureFit
 import dev.chieppa.squash.recipe.figure.FigureInput
@@ -113,9 +114,10 @@ internal fun keySpecs(recipe: Recipe): List<FigurePartSpec> {
 
 /**
  * The changes [key]'s [outline] asks of [recipe], as the figure's fit and widths stand: its strokes are split among the bones of the
- * key's pose and read in each limb's own bones, then the body of [recipe]'s tubes is built with the changes so far read over its parts
- * and its silhouette measured against them: posed in the key's pose by [bodies], or without them at rest, each limb's samples carried
- * back by as much of its bone's turn as the rig's seam band gives it. First each join the strokes reach takes the share of its
+ * key's pose by the surface of the body as built, each to the part whose posed surface lies nearest it, and read in each limb's own
+ * bones, then the body of [recipe]'s tubes is built with the changes so far read over its parts and its silhouette measured against them:
+ * posed in the key's pose by [bodies], or without them at rest, each limb's samples carried back by as much of its bone's turn as the
+ * rig's seam band gives it. First each join the strokes reach takes the share of its
  * blend nearest them; then, for the outline's rounds, each part's widths take off a share of the miss along it, and the round nearest
  * the strokes is kept. A width changes only along the stretch the strokes reach, eased out past it.
  */
@@ -137,7 +139,9 @@ fun fittedKey(
             FigureView.FRONT to outline.front.mapIndexed { i, s -> figureStroke(s, "$path.front[$i]") },
             FigureView.SIDE to outline.side.mapIndexed { i, s -> figureStroke(s, "$path.side[$i]") },
         )
-        val fit = fitFigure(FigureInput(strokes, key.pose, rootHeight, specs))
+        val profiles = specs.associate { it.part to profilesOf(recipe, it.part) }
+        val built = BuiltRadii { part, profile, x -> profiles[part]?.get(profile)?.takeIf { it.isNotEmpty() }?.let { readAt(it, x) } }
+        val fit = fitFigure(FigureInput(strokes, key.pose, rootHeight, specs, built = built))
         val parts = specs.associateBy { it.part }
         val body = bodyDocument(recipe, parts.keys, templates)
         val fields = KeyedFields(body.character, library)

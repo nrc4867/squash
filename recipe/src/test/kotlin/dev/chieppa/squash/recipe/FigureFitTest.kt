@@ -2,6 +2,8 @@ package dev.chieppa.squash.recipe
 
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.PartId
+import dev.chieppa.squash.recipe.figure.BoneSide
+import dev.chieppa.squash.recipe.figure.BuiltRadii
 import dev.chieppa.squash.recipe.figure.FigureInput
 import dev.chieppa.squash.recipe.figure.FigureKind
 import dev.chieppa.squash.recipe.figure.FigurePartSpec
@@ -125,5 +127,21 @@ class FigureFitTest {
         }
         assertEquals(0.05 - 0.028, readAt(inner, 0.2), 2e-3, "below it the leg's inner side follows the drawing")
         assertEquals(0.05 - 0.02, readAt(inner, 0.13), 3e-3)
+    }
+    @Test
+    fun aKeysStrokeUnderALimbRaisedForwardGoesToTheLimbWhicheverWayItIsDrawn() {
+        val arm = FigurePartSpec("limbs", "limb-l", FigureKind.LIMB, length = 0.3, closed = false, rest = RecipeRest.DOWN, parent = "trunk", socketU = 0.8, socketV = 0.75, reach = 0.1)
+        val forward = listOf(BonePose(PartId("limb-l"), "base", degrees = -100f))
+        // Raised a little past level; its underside drawn from near the trunk out along it, the body on the stroke's left: the wrong way round.
+        val underarm = FigureStroke.through("underarm", listOf(P2(0.1, 0.57), P2(0.18, 0.57), P2(0.26, 0.57)))
+        val built = BuiltRadii { part, _, _ -> if (part == "trunk") 0.08 else 0.03 }
+        val input = FigureInput(mapOf(FigureView.SIDE to listOf(underarm)), forward, rootHeight, listOf(trunk, arm), built = built)
+        val split = fitFigure(input).split.getValue(FigureView.SIDE)
+        assertTrue(split.unread.isEmpty(), "every sample is read: ${split.unread.size} unread")
+        assertTrue(split.taken.all { it.part == "limbs" }, "the limb's underside goes to the limb: ${split.taken.map { it.part }.toSet()}")
+        assertTrue(split.taken.all { it.sample.normal.y < -0.9 }, "the stroke faces out of the limb")
+        assertTrue(split.taken.all { it.side == BoneSide.MINUS }, "raised past level, the limb's underside is still the side its back faces at rest")
+        val plain = fitFigure(FigureInput(mapOf(FigureView.SIDE to listOf(underarm)), forward, rootHeight, listOf(trunk, arm))).split.getValue(FigureView.SIDE)
+        assertTrue(plain.taken.none { it.part == "limbs" }, "a figure's split, reading no built body, does not read the limb from the side")
     }
 }

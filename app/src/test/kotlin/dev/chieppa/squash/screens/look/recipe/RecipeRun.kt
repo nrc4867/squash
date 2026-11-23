@@ -50,13 +50,16 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         built.keys.forEach { key ->
             val means = key.means.joinToString { "%.4f".format(it) }
             val misses = File(out, "key-${key.name}.txt").apply {
-                writeText(key.measure.samples.joinToString("\n", postfix = "\n") { m -> "%s %s %.4f %.4f %s %.4f".format(m.view, m.sample.part, m.sample.sample.at.x, m.sample.sample.at.y, m.profile, m.miss) })
+                val read = key.measure.samples.map { m -> "%s %s %.4f %.4f %s %.4f %s".format(m.view, m.sample.part, m.sample.sample.at.x, m.sample.sample.at.y, m.profile, m.miss, m.sample.sample.stroke) }
+                val unread = key.fit.split.flatMap { (view, split) -> split.unread.map { "%s - %.4f %.4f unread - %s".format(view, it.at.x, it.at.y, it.stroke) } }
+                writeText((read + unread).joinToString("\n", postfix = "\n"))
             }
+            val unread = key.fit.split.values.sumOf { it.unread.size }
             key.posed?.let { posed ->
                 val traced = File(out, "key-${key.name}-posed.json").apply { writeText(figureOutlineJson(posed)) }
                 println("key ${key.name}: the body in its pose, traced, ${traced.absolutePath}")
             }
-            println("key ${key.name}: fitted in ${key.time.inWholeMilliseconds} ms; mean miss unchanged, then by round $means; ${key.measure.misses.size} stretches past the tolerance; each sample's miss in ${misses.absolutePath}")
+            println("key ${key.name}: fitted in ${key.time.inWholeMilliseconds} ms; mean miss unchanged, then by round $means; ${key.measure.misses.size} stretches past the tolerance; $unread samples no part took; each sample's miss in ${misses.absolutePath}")
         }
         built.fitted?.let { recipe ->
             val fitted = File(out, "$id.fitted.recipe.json").apply { writeText(RecipeJson.write(recipe)) }

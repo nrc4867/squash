@@ -12,6 +12,12 @@ private const val REACH_RADII = 2.6f
 private const val REACH_INFLUENCE = 0.2f
 private const val REACH_OWN = 0.04f
 
+/**
+ * The least a shoulder's own bone weighs a vertex on its crease. Its pivot lies deep inside the trunk, so a raised arm's plane meets
+ * the surface well inside the arm's root, and a vertex the arm barely moves (the base of a collar) is not its.
+ */
+private const val REACH_OWN_SHOULDER = 0.4f
+
 /** Where a crease's fold stands highest either side of its middle, in widths, and how wide each ridge is. */
 private const val RIDGE_AT = 1.3f
 private const val RIDGE_WIDTH = 0.55f
@@ -25,8 +31,8 @@ private const val CLOTH_SHADE_FAR = 2.6f
 
 /**
  * Which vertices of one surface's drawn mesh each of [joints] can crease: those within [REACH_RADII] of its radius of its pivot at rest
- * that its bones weigh at least [REACH_INFLUENCE] together and its own bone at least [REACH_OWN], so its bend moves them, in [vertices],
- * one array a joint.
+ * that its bones weigh at least [REACH_INFLUENCE] together and its own bone at least [REACH_OWN] ([REACH_OWN_SHOULDER] at a shoulder), so
+ * its bend moves them, in [vertices], one array a joint.
  */
 class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
     companion object {
@@ -38,11 +44,12 @@ class CreaseReach(val joints: List<CreaseJoint>, val vertices: List<IntArray>) {
                 val bones = intArrayOf(joint.bone, joint.parent, joint.carrier)
                 val own = intArrayOf(joint.bone)
                 val reach = joint.radius * REACH_RADII
+                val least = if (joint.shoulder) REACH_OWN_SHOULDER else REACH_OWN
                 val within = ArrayList<Int>()
                 for (v in 0 until count) {
                     if (creasable != null && !creasable.getOrElse(v) { true }) continue
                     if ((rest.vertices.vec(v * stride) - joint.pivot).length > reach) continue
-                    if (influence(skin, v, bones) >= REACH_INFLUENCE && influence(skin, v, own) >= REACH_OWN) within += v
+                    if (influence(skin, v, bones) >= REACH_INFLUENCE && influence(skin, v, own) >= least) within += v
                 }
                 within.toIntArray()
             })
