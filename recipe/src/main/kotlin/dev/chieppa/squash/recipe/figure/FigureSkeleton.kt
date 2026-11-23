@@ -26,6 +26,12 @@ private val REST_FRAME = mapOf(
     RecipeRest.OUT to Triple("up", "back", "up"),
 )
 
+/** The direction names v 0 and v 0.25 face round a part resting each way. */
+internal val REST_ROUND: Map<RecipeRest, Pair<String, String>> = REST_FRAME.mapValues { (_, names) -> names.first to names.second }
+
+/** Each direction name's opposite. */
+internal val OPPOSITE = mapOf("forward" to "back", "back" to "forward", "up" to "down", "down" to "up", "left" to "right", "right" to "left")
+
 private val REST_ALONG = mapOf(
     RecipeRest.FORWARD to "forward", RecipeRest.BACK to "back", RecipeRest.UP to "up", RecipeRest.DOWN to "down", RecipeRest.OUT to "left",
 )

@@ -34,6 +34,7 @@ class FieldSilhouette(private val field: JoinedField, private val rootHeight: Do
     }
 
     override fun inside(view: FigureView, q: P2): Boolean {
+        if (view == FigureView.TOP) return insideFromAbove(q)
         val y = (q.y - rootHeight).toFloat()
         val across = q.x.toFloat()
         var from = Float.MAX_VALUE
@@ -53,6 +54,26 @@ class FieldSilhouette(private val field: JoinedField, private val rootHeight: Do
         while (t <= to) {
             val p = if (view == FigureView.FRONT) Vec3(t.toFloat(), y, -across) else Vec3(across, y, t.toFloat())
             val f = valueAt(p)
+            if (f < 0f) return true
+            t += (f * STEP_SHARE).coerceIn(LEAST_STEP, LONGEST_STEP)
+        }
+        return false
+    }
+
+    /** Whether a ray straight down through the top view's place [q] meets the field below 0. */
+    private fun insideFromAbove(q: P2): Boolean {
+        val forward = q.y.toFloat()
+        val right = -q.x.toFloat()
+        var from = Float.MAX_VALUE
+        var to = -Float.MAX_VALUE
+        for (m in members) {
+            if (forward < m.low.x - margin || forward > m.high.x + margin || right < m.low.z - margin || right > m.high.z + margin) continue
+            from = minOf(from, m.low.y)
+            to = maxOf(to, m.high.y)
+        }
+        var t = from.toDouble()
+        while (t <= to) {
+            val f = valueAt(Vec3(forward, t.toFloat(), right))
             if (f < 0f) return true
             t += (f * STEP_SHARE).coerceIn(LEAST_STEP, LONGEST_STEP)
         }

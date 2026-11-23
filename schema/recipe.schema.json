@@ -2307,6 +2307,13 @@
             "$ref": "#/$defs/RecipeFigureStroke"
           }
         },
+        "top": {
+          "description": "The top view from above: the character's left half, x from the body's middle toward its left, y forward from the root part's origin. It shapes the widths of parts lying level, as a four-legged body's trunk or a tail, which the front view sees end on. Each stroke runs with the figure on its right.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeFigureStroke"
+          }
+        },
         "pose": {
           "description": "The pose the outline is drawn in, over the rest: each limb is read in its own bones as this pose shows them. The display pose when left out; [] for a figure drawn at rest.",
           "anyOf": [

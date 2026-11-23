@@ -53,6 +53,9 @@ class RecipeArgs(args: Array<String>) {
     /** A recipe whose body tubes to convert to a figure outline, written beside it or as [out]. */
     val figure: File? = file("figure")
 
+    /** With `views=true`, the build also writes its flat sheet: the silhouette at rest from the front, the left and above (see [SheetViews]). */
+    val views: Boolean = values["views"] == "true"
+
     /** A character sheet to split into one image a view, into [out]. */
     val crop: File? = file("crop")
 

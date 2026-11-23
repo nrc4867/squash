@@ -4,12 +4,15 @@ import type { BonePose, RecipeFigure, RecipeFigureStroke } from "../schema/recip
 
 /**
  * A figure outline as drawn or traced: open strokes for the front view (the character's left half, x from the body's middle toward its
- * left) and the side view (x forward), y up from the ground, each running with the figure on its right; head, hands and feet left out.
+ * left) and the side view (x forward), y up from the ground, and optionally the top view (the left half from above, y forward from the
+ * root part's origin), each running with the figure on its right; head, hands and feet left out.
  */
 export interface FigureOutline {
   format: "squash-figure-outline/1";
   front: FigureOutlineStroke[];
   side: FigureOutlineStroke[];
+  /** Strokes seen from above, which shape the parts lying level: a four-legged trunk, a tail. */
+  top?: FigureOutlineStroke[];
 }
 
 /** One stroke: a smooth curve through `points`, sharp at `corners`; `mirrored` runs an end on the axis on into its mirror image. */
@@ -44,6 +47,7 @@ export function figure(outline: FigureOutline, options: FigureOptions): RecipeFi
     rootHeight: options.rootHeight,
     front: outline.front.map(stroke),
     side: outline.side.map(stroke),
+    ...(outline.top?.length ? { top: outline.top.map(stroke) } : {}),
     ...(options.pose ? { pose: options.pose } : {}),
     ...(options.rounds !== undefined ? { rounds: options.rounds } : {}),
   };

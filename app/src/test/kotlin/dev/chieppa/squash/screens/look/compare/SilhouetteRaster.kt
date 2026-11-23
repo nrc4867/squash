@@ -55,7 +55,7 @@ fun rasterSilhouette(model: ModelTriangles, camera: BodyCamera, width: Int, heig
 }
 
 /** Marks the pixels whose middles lie inside the triangle, either winding. */
-private fun fill(ax: Float, ay: Float, bx: Float, by: Float, cx: Float, cy: Float, covered: BooleanArray, width: Int, height: Int) {
+internal fun fill(ax: Float, ay: Float, bx: Float, by: Float, cx: Float, cy: Float, covered: BooleanArray, width: Int, height: Int) {
     val area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
     if (area == 0f) return
     val x0 = max(0, floor(min(ax, min(bx, cx)) - 0.5f).toInt())

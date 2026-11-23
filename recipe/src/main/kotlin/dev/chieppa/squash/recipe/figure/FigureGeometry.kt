@@ -39,12 +39,33 @@ data class P3(val x: Double, val y: Double, val z: Double) {
     }
 }
 
-/** The views a figure is drawn in. */
-enum class FigureView { FRONT, SIDE }
+/**
+ * The views a figure is drawn in: the front and the top show the body's left half, x from its middle toward its left; the side is seen
+ * from its left, x forward. The front's and side's y is height above the ground, the top's y forward from the root's origin.
+ */
+enum class FigureView {
+    FRONT, SIDE, TOP;
+
+    /** Whether the view shows the body's left half, mirrored about its middle. */
+    val halved: Boolean get() = this != SIDE
+}
+
+/** The views a body standing on the ground is drawn in, which keys and the converter read. */
+val STANDING_VIEWS = listOf(FigureView.FRONT, FigureView.SIDE)
 
 /** A body place as [view] shows it, standing on a ground [rootHeight] below the root's origin. */
-fun project(view: FigureView, p: P3, rootHeight: Double): P2 =
-    if (view == FigureView.FRONT) P2(-p.z, p.y + rootHeight) else P2(p.x, p.y + rootHeight)
+fun project(view: FigureView, p: P3, rootHeight: Double): P2 = when (view) {
+    FigureView.FRONT -> P2(-p.z, p.y + rootHeight)
+    FigureView.SIDE -> P2(p.x, p.y + rootHeight)
+    FigureView.TOP -> P2(-p.z, p.x)
+}
+
+/** The body direction a direction in [view] points: x and y across the view, the view's depth left out. */
+fun unproject(view: FigureView, d: P2): P3 = when (view) {
+    FigureView.FRONT -> P3(0.0, d.y, -d.x)
+    FigureView.SIDE -> P3(d.x, d.y, 0.0)
+    FigureView.TOP -> P3(d.y, 0.0, -d.x)
+}
 
 /** A piecewise straight run of radii along a part, read between its places and held level past its ends. */
 class Profile(val at: List<Double>, val radii: List<Double>) {
