@@ -39,7 +39,7 @@ class ChartLay(private val chart: SurfaceChart, private val members: List<Int>, 
         val held = chart.mesh.held
         val set = BooleanArray(chart.corners)
         for (member in members) for (v in chart.vertices[member]) for (k in 0 until HELD) {
-            if (held[v * HELD + k] != member) continue
+            if (held[v * HELD + k] != member || chart.behindSibling(v, k)) continue
             val value = read.at(v, k, member).coerceIn(-reach, reach)
             values[v] = if (set[v]) maxOf(values[v], value) else value
             set[v] = true

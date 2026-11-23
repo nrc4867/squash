@@ -67,18 +67,17 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
                     val side = surface.field.runs[member].jawSide
                     val jaw = if (side == null) -1 else rig.indexOf(BoneName(surface.field.runs[member].partId, JAW_JOINT)) ?: -1
                     val head = if (jaw >= 0) rig.parents[jaw] else -1
-                    if (side == JawSide.JAW && jaw >= 0) {
-                        blend.add(jaw, share)
-                        continue
-                    }
                     if (side == JawSide.LINING && jaw >= 0 && head >= 0) {
                         val floor = mesh.heldV[v * HELD + k].coerceIn(0f, 1f)
                         blend.add(jaw, share * floor)
                         blend.add(head, share * (1f - floor))
                         continue
                     }
+                    val onJaw = if (jaw >= 0 && head >= 0) surface.field.openJawOf(surface.field.runs[member].partId)?.jawShare(mesh.position(v)) ?: 0f else 0f
+                    if (onJaw > 0f) blend.add(jaw, share * onJaw)
+                    if (onJaw >= 1f) continue
                     val reader = readers.getOrPut(member) { RunWeights.of(rig, surface, member) } ?: continue
-                    reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], share, if (head >= 0) jaw else -1, head)
+                    reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], share * (1f - onJaw), if (head >= 0) jaw else -1, head)
                 }
                 blend.write(bones, weights, v * MAX_INFLUENCES)
             }

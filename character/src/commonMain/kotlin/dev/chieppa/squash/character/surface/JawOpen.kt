@@ -29,17 +29,11 @@ const val JAW_JOINT = "jaw"
 /** The run a jaw is cut from. */
 private const val MUZZLE = "muzzle"
 
-/** Where the mouth line starts at the muzzle's front, in its u. */
-private const val MUZZLE_TIP = 0.985f
+/** The fewest places of a drawn lip line that make a mouth line. */
+private const val LEAST_LIP_PLACES = 2
 
-/** How far back past the jaw joint, in u, the mouth line runs. */
-private const val BACK_PAST_JAW = 0.08f
-
-/** The mouth line's places from the muzzle's tip back, each its distance in v from the underside's middle. */
-private val FROM_UNDER = floatArrayOf(0.1f, 0.13f, 0.16f, 0.175f, 0.19f, 0.205f, 0.22f)
-
-/** The rounding along the cut, as a share of the muzzle's least extent. */
-private const val ROUNDING_SHARE = 0.05f
+/** The width the lips' edge is read across, for shading and where a lining's pieces overlap, as a share of the muzzle's least extent. */
+private const val EDGE_SHARE = 0.05f
 
 /** The blend the jaw's halves join the snout's by at the mouth's corners, as a share of the muzzle's least extent. */
 private const val CHEEK_SHARE = 0.25f
@@ -51,12 +45,14 @@ private const val LINING_INSET_SHARE = 0.18f
 private const val LINING_U = 50f
 
 /**
- * Whether [part] builds its jaw open, and at what angle: a head, not mirrored, with a muzzle run and a jaw joint off its axis is built
- * with its jaw turned open to the joint's upper limit, so a pose shuts it. Null for any other part.
+ * Whether [part] builds its jaw open, and at what angle: a head, not mirrored, with a muzzle run, a jaw joint off its axis and a lip line
+ * drawn on its runs ([PlacedPart.lipLine]) is built with its jaw turned open to the joint's upper limit along that line, so a pose shuts
+ * it. Null for any other part.
  */
 fun openJawJoint(part: PlacedPart): JointSpec? {
     if (part.role != Role.HEAD || part.mirrored) return null
     if (part.surface.patches.none { it.name == MUZZLE && isFieldRun(part, it) }) return null
+    if (lipPlaces(part).size < LEAST_LIP_PLACES) return null
     val joint = part.template.blocks.flatMap { it.joints() }.firstOrNull { it.name == JAW_JOINT && it.v != null } ?: return null
     return joint.takeIf { (it.limits?.max ?: 0f) > 0f }
 }
@@ -65,7 +61,7 @@ fun openJawJoint(part: PlacedPart): JointSpec? {
 fun jawBuiltDegrees(part: PlacedPart): Float = openJawJoint(part)?.limits?.max ?: 0f
 
 /**
- * A head built with its jaw open: [part], placed at [origin], its [cut], how much the cut is rounded, [rounding], the snout's and the
+ * A head built with its jaw open: [part], placed at [origin], its [cut] along its drawn lip line, the width its lips' edge is read across, [edge], the blend its halves join by at the mouth's corners, [corner], the snout's and the
  * jaw's halves among the field's members, [upperMembers] and [jawMembers], the head's runs before the cut, [hosts], and the mouth's
  * [lining], in its own space.
  */
@@ -73,26 +69,38 @@ class OpenJaw(
     val part: PartId,
     val cut: JawCut,
     val origin: Vec3,
-    val rounding: Float,
+    val edge: Float,
+    val corner: Float,
     private val upperMembers: List<JawHalfSolid>,
     private val jawMembers: List<JawHalfSolid>,
     private val hosts: List<Solid>,
     private val lining: Solid,
 ) {
+    /**
+     * How much of the jaw's turn body point [p] on the surface takes: all of it on the jaw's half, none on the snout's, easing between
+     * across the blend that joins them at the mouth's corners, [corner] wide, by how much nearer the one half is than the other.
+     */
+    fun jawShare(p: Vec3): Float {
+        val q = p - origin
+        val upper = upperMembers.minOf { abs(it.distance(q)) }
+        val jaw = jawMembers.minOf { abs(it.distance(q)) }
+        val x = (0.5f + (upper - jaw) / (2f * corner)).coerceIn(0f, 1f)
+        return x * x * (3f - 2f * x)
+    }
+
     /** Whether [local], a point of the head's own space as it lies shut, lies on the jaw's half. */
-    fun onJaw(local: Vec3): Boolean = cut.region(local) < -rounding
+    fun onJaw(local: Vec3): Boolean = cut.region(local) < -edge
 
     /**
      * Which of its terms shapes the head at body point [p] on the surface: positive where the cut does, on the cut's faces and the lining,
-     * negative where the head's runs before the cut do, on the skin, zero along the middle of the lips' rounding, where the two give way
-     * to each other; and never positive outside those runs, where the blend at the mouth's corners fills out the cheek. Read on the half
+     * negative where the head's runs before the cut do, on the skin, zero along the lips' edge, where the two meet; and never positive outside those runs, where the blend at the mouth's corners fills out the cheek. Read on the half
      * whose surface [p] lies on, taken back shut for the jaw's, from the shape alone; the lining is inside throughout.
      */
     fun inside(p: Vec3): Float {
         val q = p - origin
         val upper = upperMembers.minOf { abs(it.distance(q)) }
         val jaw = jawMembers.minOf { abs(it.distance(q)) }
-        if (abs(lining.distance(q)) < minOf(upper, jaw)) return rounding
+        if (abs(lining.distance(q)) < minOf(upper, jaw)) return edge
         val onUpper = upper <= jaw
         val at = if (onUpper) q else cut.shut(q)
         val cutTerm = if (onUpper) -cut.region(at) else cut.region(at)
@@ -130,13 +138,11 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
     val hingeRun = head.surface.patches.filter { it.slices != null }.let { swept -> swept.firstOrNull { it.covers(joint.u) } ?: swept.first() }
     val hinge = hingeRun.ringMiddle(joint.u)
     val axis = PartBuilder.axes(head.template).side.normalized()
-    val tip = muzzleRun.patch.positionAt(MUZZLE_TIP, 0.5f) - hinge
+    val tip = muzzleRun.patch.ringMiddle(1f) - hinge
     val forward = (tip - axis * (tip dot axis)).normalized()
     val up = forward cross axis
-    val back = (joint.u + BACK_PAST_JAW).coerceAtMost(MUZZLE_TIP)
-    val line = FROM_UNDER.indices.map { i ->
-        val u = MUZZLE_TIP + (back - MUZZLE_TIP) * i / (FROM_UNDER.size - 1)
-        val d = muzzleRun.patch.positionAt(u, 0.5f - FROM_UNDER[i]) - hinge
+    val line = lipPlaces(head).map { place ->
+        val d = place - hinge
         val x = d dot forward
         val y = d dot up
         sqrt(x * x + y * y) to atan2(y, x)
@@ -146,9 +152,9 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
     val skull = members[skullIndex]
     val muzzle = members[muzzleIndex]
     val size = (muzzle.solid.high - muzzle.solid.low).let { minOf(it.x, it.y, it.z) }
-    val rounding = size * ROUNDING_SHARE
+    val edge = size * EDGE_SHARE
     val cheek = size * CHEEK_SHARE
-    fun halfOf(member: JoinedMember, upper: Boolean) = JawHalfSolid(member.solid, cut, upper, rounding)
+    fun halfOf(member: JoinedMember, upper: Boolean) = JawHalfSolid(member.solid, cut, upper, rounding = 0f)
     val out = members.toMutableList()
     val upperSkull = halfOf(skull, true)
     val upperMuzzle = halfOf(muzzle, true)
@@ -172,8 +178,13 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
     outRuns += muzzleRun.on(JawSide.JAW)
     outRuns += muzzleRun.on(JawSide.JAW)
     outRuns += muzzleRun.on(JawSide.LINING)
-    val jaw = OpenJaw(requireNotNull(head.id), cut, head.origin, rounding, listOf(upperSkull, upperMuzzle), listOf(jawSkull, jawMuzzle), hosts, lining)
+    val jaw = OpenJaw(requireNotNull(head.id), cut, head.origin, edge, cheek, listOf(upperSkull, upperMuzzle), listOf(jawSkull, jawMuzzle), hosts, lining)
     return OpenJaws(outRuns, out, listOf(jaw))
+}
+
+/** Where [part]'s lip line lies in its own space, place by place, leaving out any on a patch it does not have. */
+private fun lipPlaces(part: PlacedPart): List<Vec3> = part.lipLine.mapNotNull { anchor ->
+    part.surface.patches.firstOrNull { it.name == anchor.patch && it.slices != null }?.positionAt(anchor.u, anchor.v)
 }
 
 private fun FieldRun.on(side: JawSide) = FieldRun(part, patchIndex, patch, first && side == JawSide.UPPER, side)

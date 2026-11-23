@@ -110,7 +110,7 @@ class SurfaceChart(val surface: CharacterSurface) {
         for (member in members) for (v in vertices[member]) {
             if (only != null && !only[v]) continue
             for (k in 0 until HELD) {
-                if (mesh.held[v * HELD + k] != member) continue
+                if (mesh.held[v * HELD + k] != member || behindSibling(v, k)) continue
                 val value = read(v, k, member).coerceIn(-reach, reach)
                 out[v] = if (set[v]) maxOf(out[v], value) else value
                 set[v] = true
@@ -229,6 +229,24 @@ class SurfaceChart(val surface: CharacterSurface) {
             for (v in 0 until corners) if ((0 until HELD).any { k -> mesh.held[v * HELD + k] in split }) out[v] = jaw.inside(mesh.position(v))
         }
         out
+    }
+
+    /**
+     * Whether the member in vertex [v]'s held [slot] is a piece of a run split at an open jaw that another piece of the same run lies
+     * nearer [v] than, so the run is read once, from the piece the vertex lies on.
+     */
+    @PublishedApi
+    internal fun behindSibling(v: Int, slot: Int): Boolean {
+        val member = mesh.held[v * HELD + slot]
+        if (member < 0 || runs[member].jawSide == null) return false
+        val own = kotlin.math.abs(mesh.heldOwn[v * HELD + slot])
+        for (k in 0 until HELD) {
+            val other = mesh.held[v * HELD + k]
+            if (k == slot || other < 0 || other == member || !sameSplitRun(other, member)) continue
+            val theirs = kotlin.math.abs(mesh.heldOwn[v * HELD + k])
+            if (theirs < own || (theirs == own && k < slot)) return true
+        }
+        return false
     }
 
     /** Whether [a] and [b] are pieces of one run split at an open jaw. */

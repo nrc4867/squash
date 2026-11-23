@@ -83,10 +83,10 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
         membersOf = List(rig.bones.size) { b -> members.indices.filter { m -> pieces[m].any { it.bone == b } }.toIntArray() }
     }
 
-    /** A lining's two pieces: the palate's side of the gap on [own]'s first bone, the jaw's on its second, overlapping by the jaw's rounding. */
+    /** A lining's two pieces: the palate's side of the gap on [own]'s first bone, the jaw's on its second, overlapping by the width of its lips' edge. */
     private fun liningPieces(own: List<Int>, jaw: OpenJaw, next: (Int) -> Int): List<MemberPiece> = listOf(
-        MemberPiece(own[0], listOf(GapBound(jaw, palate = true, margin = maxOf(jaw.rounding, cell))), next(own[0])),
-        MemberPiece(own[1], listOf(GapBound(jaw, palate = false, margin = maxOf(jaw.rounding, cell))), next(own[1])),
+        MemberPiece(own[0], listOf(GapBound(jaw, palate = true, margin = maxOf(jaw.edge, cell))), next(own[0])),
+        MemberPiece(own[1], listOf(GapBound(jaw, palate = false, margin = maxOf(jaw.edge, cell))), next(own[1])),
     )
 
     private fun piecesOf(own: List<Int>, m: Int, rig: Rig, next: (Int) -> Int): List<MemberPiece> {

@@ -47,10 +47,10 @@ internal fun ownShading(field: CharacterField, mesh: SurfaceMesh, from: Int, to:
 
 /**
  * How much of a run's own shading a point [p] on a head built with its jaw open, [jaw], takes: all of it on the skin, none on the cut's
- * faces and the lining, which shade by the surface's own normal, easing between across the lips' rounding.
+ * faces and the lining, which shade by the surface's own normal, easing between across the lips' edge.
  */
 private fun skinShare(jaw: OpenJaw, p: Vec3): Float {
-    val x = (-jaw.inside(p) / jaw.rounding).coerceIn(0f, 1f)
+    val x = (-jaw.inside(p) / jaw.edge).coerceIn(0f, 1f)
     return x * x * (3f - 2f * x)
 }
 

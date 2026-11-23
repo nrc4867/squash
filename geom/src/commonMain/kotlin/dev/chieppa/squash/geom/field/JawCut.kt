@@ -38,7 +38,8 @@ class JawCut(
         if (r >= radii.last()) return phis.last()
         var i = 0
         while (i < radii.size - 2 && radii[i + 1] < r) i++
-        val t = (r - radii[i]) / (radii[i + 1] - radii[i])
+        val span = radii[i + 1] - radii[i]
+        val t = if (span > 1e-6f) (r - radii[i]) / span else 0f
         return phis[i] + (phis[i + 1] - phis[i]) * t
     }
 
