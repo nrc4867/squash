@@ -47,7 +47,8 @@ fun lineGrids(character: AssembledCharacter, checkCancelled: () -> Unit = {}, me
  */
 fun partGrids(placed: PlacedPart, kept: (Patch) -> Boolean = { true }): List<LineGrid> {
     val soft = clumpInkOf(placed)?.rootSoft ?: 0f
-    fun faded(grid: LineGrid): LineGrid = if (soft > 0f) grid.scaled(rootFade(grid.patch, soft)) else grid
+    fun blockFaded(grid: LineGrid): LineGrid = placed.template.blocks.firstNotNullOfOrNull { it.inkShare(grid.patch) }?.let(grid::scaled) ?: grid
+    fun faded(grid: LineGrid): LineGrid = blockFaded(if (soft > 0f) grid.scaled(rootFade(grid.patch, soft)) else grid)
     placed.copies?.let { copies ->
         val own = copies.rule.surface
         return copies.places.flatMap { place -> own.patches.filter(kept).map { patch -> faded(LineGrid.of(patch, place.origin) { place.turn * own.shown(it) }) } }

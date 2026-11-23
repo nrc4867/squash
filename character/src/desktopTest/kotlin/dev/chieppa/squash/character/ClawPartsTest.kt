@@ -10,6 +10,7 @@ import dev.chieppa.squash.geom.MeshBuilder
 import dev.chieppa.squash.geom.MeshInvariants
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** The template versions that offer hard claws, by id and version, and the digit row each claws block sits on. */
@@ -84,5 +85,28 @@ class ClawPartsTest {
         val grown = PartBuilder.build(paw).first { it.name == "toes:0" }
         val hard = PartBuilder.build(paw, ON).first { it.name == "toes:0" }
         assertTrue(hard.ringUs.last() < grown.ringUs.last(), "the toe no longer grows its claw past its tip")
+    }
+
+    @Test
+    fun aClawIsInkedPastItsCollarAndNotOnceSlidBackIntoItsToe() {
+        val paw = template("paw", 13)
+        val claws = paw.blocks.filterIsInstance<Claws>().single()
+        val claw = PartBuilder.build(paw, ON).first { it.name == "claws:0" }
+        val share = assertNotNull(claws.inkShare(claw))
+        val ring = { r: Int -> share[claw.index(r, 0)] }
+        assertEquals(0f, ring(1), "no ink on the collar")
+        assertEquals(1f, ring(claw.nu - 1), "whole ink at the point")
+        val back = (claw.point(claw.index(1, 0)) - claw.point(claw.index(0, 0))) * 0.9f
+        val slid = FloatArray(claw.points.size)
+        for (i in 0 until claw.nu * claw.nv) {
+            val p = claw.point(i)
+            val moved = if (i < claw.nv) p else p - back
+            slid[i * 3] = moved.x
+            slid[i * 3 + 1] = moved.y
+            slid[i * 3 + 2] = moved.z
+        }
+        val retracted = assertNotNull(claws.inkShare(claw.withPoints(slid, null)))
+        assertTrue(retracted.all { it == 0f }, "a claw slid back into its toe draws no ink")
+        assertEquals(null, claws.inkShare(PartBuilder.build(paw, ON).first { it.name == "toes:0" }), "a toe's ink is its own")
     }
 }

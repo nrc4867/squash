@@ -75,6 +75,9 @@ sealed interface Block {
     /** How the clump of hair this block builds inks at [values], or null where it builds none. */
     fun clumpInk(values: Map<String, Float>): ClumpInk? = null
 
+    /** Each of [patch]'s grid points' share of its contour ink, where this block builds that patch and fades its ink; null otherwise. */
+    fun inkShare(patch: Patch): FloatArray? = null
+
     /** The hair volume and its band of shine this block builds at [values], [length] its axis long, or null where it builds none. */
     fun hairShine(values: Map<String, Float>, length: Float): HairShine? = null
 

@@ -20,6 +20,7 @@ import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.SectionProfile
 import dev.chieppa.squash.geom.SliceBuilder
 import dev.chieppa.squash.geom.SweepSpec
+import dev.chieppa.squash.geom.Vec3
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -95,7 +96,7 @@ data class Claws(
             val digit = joined.row.digits[joined.built[k]]
             val back = JoinedDigits.backOf(joined.axes[k].direction, digit.roll * DEGREES_TO_RADIANS)
             val rings = shape.rings(joined.axes[k], taper, back)
-            val world = { p: dev.chieppa.squash.geom.Vec3 -> ctx.axes.point(p.x, p.y, p.z) }
+            val world = { p: Vec3 -> ctx.axes.point(p.x, p.y, p.z) }
             val patch = SliceBuilder.sweep(
                 SweepSpec(
                     patchName + SEPARATOR + joined.patchName(k).substringAfter(SEPARATOR), rings.us, rings.centres.map(world),
@@ -105,6 +106,35 @@ data class Claws(
             patch.withBuried(BooleanArray(patch.nu * patch.nv) { it < patch.nv }, null)
         }
     }
+
+    /**
+     * A claw's contour is inked from a little past its root to its point: its collar is skin leaving the toe, not a ring of its own,
+     * so its ink fades in over [INK_FADE] of the claw past the root. A claw slid back into its toe, its root nearer its anchor than
+     * [INK_IN] of the way it rests, is inked less, and not at all once nearer than [INK_OUT], so the point buried in the toe's tip
+     * leaves no ticks of ink where it grazes the skin.
+     */
+    override fun inkShare(patch: Patch): FloatArray? {
+        if (!patch.name.startsWith(patchName + SEPARATOR)) return null
+        val us = patch.ringUs
+        val out = smoothStep((outShare(patch) - INK_OUT) / (INK_IN - INK_OUT))
+        return FloatArray(patch.nu * patch.nv) { i -> out * smoothStep((us[i / patch.nv] - ClawU.ROOT) / ((ClawU.POINT - ClawU.ROOT) * INK_FADE)) }
+    }
+
+    /**
+     * How far out of its toe the claw [patch] stands: the span from its anchor to its root joint, the collar's closed root, as a share of
+     * that span at rest, read from the claw's own length along its rings and its height at its root, which a pose does not change.
+     */
+    private fun outShare(patch: Patch): Float {
+        val centres = (0 until patch.nu).map { ring -> (0 until patch.nv).fold(Vec3.ZERO) { sum, k -> sum + patch.point(patch.index(ring, k)) } * (1f / patch.nv) }
+        val root = patch.ringUs.indexOfFirst { it >= ClawU.ROOT }.takeIf { it > 1 } ?: return 1f
+        val length = (root until patch.nu - 1).sumOf { (centres[it + 1] - centres[it]).length.toDouble() }.toFloat()
+        val height = 2f * (0 until patch.nv).maxOf { (patch.point(patch.index(root, it)) - centres[root]).length }
+        val rest = ANCHOR_BACK * length - COLLAR_BACK.first() * height
+        if (rest <= 0f) return 1f
+        return (centres[1] - centres[0]).length / rest
+    }
+
+    private fun smoothStep(x: Float): Float = x.coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
 
     override fun lint(ctx: LintContext): List<Finding> {
         val row = ctx.template.blocks.firstOrNull { it is Digits && it.rowName == on }
@@ -127,5 +157,12 @@ data class Claws(
         private const val DEFAULT_SHEATH = 0.5f
         private const val DEFAULT_SEGMENTS = 12
         private const val DEFAULT_COLOR = "claw"
+
+        /** How much of a claw, from its root toward its point, its contour ink fades in over. */
+        private const val INK_FADE = 0.15f
+
+        /** How far out of its toe, as [outShare] reads it, a claw stands where its ink is whole, and where it is gone. */
+        private const val INK_IN = 0.45f
+        private const val INK_OUT = 0.2f
     }
 }
