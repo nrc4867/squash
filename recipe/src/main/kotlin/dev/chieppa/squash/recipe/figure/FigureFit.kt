@@ -60,9 +60,16 @@ class FigureInput(
     val spacing: Double = FIGURE_SPACING,
     /** Radius corrections by part and profile name, added to what the outline gives. */
     val offsets: Map<String, Map<String, Profile>> = emptyMap(),
+    /** The body the outline is drawn over, when it is already built: a key's. */
+    val built: BuiltRadii? = null,
 ) {
     /** This input with [offsets] in place of its own. */
-    fun withOffsets(offsets: Map<String, Map<String, Profile>>) = FigureInput(strokes, pose, rootHeight, parts, spacing, offsets)
+    fun withOffsets(offsets: Map<String, Map<String, Profile>>) = FigureInput(strokes, pose, rootHeight, parts, spacing, offsets, built)
+}
+
+/** A built body's radius: [part]'s on the side [profile] names, at [x] along it; null where it has no such profile. */
+fun interface BuiltRadii {
+    fun radius(part: String, profile: String, x: Double): Double?
 }
 
 /** A part as fitted: its radius curves' places by profile name, the dense radii they follow, and the socket it sits on. */
@@ -113,10 +120,20 @@ fun fitFigure(input: FigureInput): FigureFit {
     repeat(ROOT_ROUNDS + 1) { round ->
         rest = chains(input, specs, frames, roots)
         posed = rest.mapValues { (_, chain) -> chain.posedBy(input.pose) }
-        reads = mapOf(FigureView.FRONT to posed.keys, FigureView.SIDE to posed.values.filter { shownFromSide(it, posed) }.map { it.part }.toSet())
+        reads = mapOf(
+            FigureView.FRONT to posed.keys,
+            FigureView.SIDE to posed.values.filter { chain ->
+                shownFromSide(chain, posed) || input.built?.let { clearOfParent(chain, posed, specs, it, input.rootHeight) } == true
+            }.map { it.part }.toSet(),
+        )
         split = FigureView.entries.associateWith { view ->
-            val bones = posed.values.filter { it.part in reads.getValue(view) }.flatMap { it.viewBones(view, input.rootHeight) }
-            splitByBones(input.strokes[view].orEmpty().flatMap { it.samples(input.spacing) }, bones)
+            val bones = posed.values.filter { it.part in reads.getValue(view) }.flatMap { chain ->
+                if (input.built == null) chain.viewBones(view, input.rootHeight) else chain.viewBonesFrom(rest.getValue(chain.part), view, input.rootHeight)
+            }
+            val surface = input.built?.let { built ->
+                BoneSurface { bone, side, x -> built.radius(bone.part, profileName(specs.getValue(bone.part).kind, view, side), x) }
+            }
+            splitByBones(input.strokes[view].orEmpty().flatMap { it.samples(input.spacing) }, bones, surface)
         }
         if (round == ROOT_ROUNDS) return@repeat
         for (spec in input.parts) {
@@ -184,6 +201,30 @@ private fun shownFromSide(chain: FigureChain, posed: Map<String, FigureChain>): 
     val steps = 20
     val outside = (0..steps).count { k -> chain.at(k.toDouble() / steps).y.let { it < low || it > high } }
     return outside.toDouble() / (steps + 1) >= SIDE_SHOWN_SHARE
+}
+
+/**
+ * Whether the side view shows [chain] standing clear of its parent's built surface for at least [SIDE_SHOWN_SHARE] of its length, as an
+ * arm raised forward at the shoulder's height does.
+ */
+private fun clearOfParent(chain: FigureChain, posed: Map<String, FigureChain>, specs: Map<String, FigurePartSpec>, built: BuiltRadii, rootHeight: Double): Boolean {
+    val parent = chain.parent?.let(posed::get) ?: return false
+    if (chain.kind == FigureKind.TRUNK) return false
+    val bones = parent.viewBones(FigureView.SIDE, rootHeight)
+    val kind = specs.getValue(parent.part).kind
+    val steps = 20
+    val clear = (0..steps).count { k ->
+        val p = project(FigureView.SIDE, chain.at(k.toDouble() / steps), rootHeight)
+        bones.all { bone ->
+            val d = bone.to - bone.from
+            val t = (((p - bone.from) dot d) / (d dot d).coerceAtLeast(1e-12)).coerceIn(0.0, 1.0)
+            val off = p - (bone.from + d * t)
+            val x = bone.xFrom + (bone.xTo - bone.xFrom) * t
+            val radius = listOf(BoneSide.PLUS, BoneSide.MINUS).mapNotNull { built.radius(parent.part, profileName(kind, FigureView.SIDE, it), x) }.maxOrNull() ?: 0.0
+            off.length > radius
+        }
+    }
+    return clear.toDouble() / (steps + 1) >= SIDE_SHOWN_SHARE
 }
 
 /** [root] moved across in [view] by however far [spec]'s two sides there read off its bone together over its middle. */

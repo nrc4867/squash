@@ -19,7 +19,8 @@ private const val SKIN_CHUNK = 2048
  * [weights], summing to one. A vertex's weights are each part's share of it times that part's own weights at the vertex's (u, v) on
  * it, so deep in a part it follows the part as the part's own mesh would, and across a join the shares blend parent into child. Only
  * the runs in the line of joins through the vertex's own run count, the runs it grows from, those growing from it and those growing from
- * the same run as it, so a vertex on one paw never follows the other paw however near that lies, while two legs share their crotch.
+ * the same run as it where that run holds the vertex too, so a vertex on one paw never follows the other paw however near that lies,
+ * while two legs share their crotch, and two socks meeting between the ankles each follow their own leg.
  * A vertex of a hair part follows only that part and the part it sits on, never further up its line of joins, so hair over a nape
  * follows the head and not the neck or torso under it.
  * A quad of the mesh whose corners belong to runs no line of joins relates, two parts touching closer than the mesh's cell, is in
@@ -54,10 +55,12 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
             for (v in from until to) {
                 blend.clear()
                 val own = mesh.winners[v]
+                val atParent = own >= 0 && (0 until HELD).any { k -> mesh.held[v * HELD + k].let { it >= 0 && lineage.parentOf(own, it) } }
                 for (k in 0 until HELD) {
                     val member = mesh.held[v * HELD + k]
                     if (member < 0) continue
                     if (own >= 0 && !lineage.weighs(own, member)) continue
+                    if (own >= 0 && !atParent && lineage.siblings(own, member)) continue
                     val reader = readers.getOrPut(member) { RunWeights.of(rig, surface, member) } ?: continue
                     reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], mesh.heldShares[v * HELD + k])
                 }
@@ -130,6 +133,19 @@ private class Lineage(surface: CharacterSurface) {
         val x = first[a]
         val y = first[b]
         return x == y || descends(x, y) || descends(y, x) || (members[x].parent >= 0 && members[x].parent == members[y].parent)
+    }
+
+    /** Whether [a] and [b] are runs of two parts that grow from the same run, neither from the other: two legs. */
+    fun siblings(a: Int, b: Int): Boolean {
+        val x = first[a]
+        val y = first[b]
+        return x != y && !descends(x, y) && !descends(y, x) && members[x].parent >= 0 && members[x].parent == members[y].parent
+    }
+
+    /** Whether [member] is a run of the part [child]'s part grows from. */
+    fun parentOf(child: Int, member: Int): Boolean {
+        val parent = members[first[child]].parent
+        return parent >= 0 && first[member] == first[parent]
     }
 
     private fun descends(child: Int, ancestor: Int): Boolean {

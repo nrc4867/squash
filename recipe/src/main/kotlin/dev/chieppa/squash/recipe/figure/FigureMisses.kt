@@ -30,8 +30,8 @@ class FigureMeasure(val samples: List<SampleMiss>, val misses: List<FigureMiss>)
 }
 
 /**
- * [sample], drawn on its posed bone, carried onto the same bone at rest: its place and normal turned with the bone, by [share] of the
- * bone's turn.
+ * [sample], drawn on its posed bone, carried onto the same bone at rest: its place and normal moved and turned with the bone, by [share]
+ * of the bone's move and turn.
  */
 private fun atRest(sample: PartSample, rest: FigureChain, rootHeight: Double, view: FigureView, share: Double): Pair<P2, P2> {
     val posed = sample.bone
@@ -40,7 +40,8 @@ private fun atRest(sample: PartSample, rest: FigureChain, rootHeight: Double, vi
     val b = bone.to - bone.from
     val angle = (atan2(b.y, b.x) - atan2(a.y, a.x)) * share
     fun turn(p: P2) = P2(p.x * cos(angle) - p.y * sin(angle), p.x * sin(angle) + p.y * cos(angle))
-    return bone.from + turn(sample.sample.at - posed.from) to turn(sample.sample.normal)
+    val from = posed.from + (bone.from - posed.from) * share
+    return from + turn(sample.sample.at - posed.from) to turn(sample.sample.normal)
 }
 
 /**
