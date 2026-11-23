@@ -9,6 +9,7 @@ Every part holds its shape as numbers by name: its template's parameters (templa
 | `move.outward` | degrees it leans out from the body's middle plane, mirrored on the right; 85 at most either way | `outward` |
 | `move.rest` | the direction it rests in, in place of its template's | `rest` |
 | `move.roll` | degrees it rolls about its own axis, its up turning toward its v 0.25 side, after rest, lean and outward; any angle | `roll` |
+| `move.toeOut` | degrees it turns about its own up, its tip swinging away from the body's middle plane, mirrored on the right, after rest, lean, outward and roll: a foot's toe-out; any angle | `toeOut` |
 | `top.middle` | flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone | `topMiddle` |
 | `move.joint.<joint>` | u a template joint is moved to | `jointsAt` |
 | `move.socket.<socket>.u`, `move.socket.<socket>.v` | where a socket this part offers is moved to, both sides | `socketsAt` |

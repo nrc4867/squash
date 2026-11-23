@@ -28,7 +28,9 @@ import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
 import dev.chieppa.squash.document.View
 import dev.chieppa.squash.geom.Vec3
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,6 +69,18 @@ class FreePlacementTest {
         val after = PartBuilder.axes(tube.placedBy(turned + (PlacementParams.ROLL to -90f)))
         close(before.along, after.along, "roll leaves where the part points")
         close(before.side * -1f, after.up, "a negative roll turns the up away from the side")
+    }
+
+    @Test
+    fun toeOutTurnsAFootAboutItsUpAwayFromTheBodysPlane() {
+        val foot = library.latest(TemplateId("foot"))!!
+        val rest = PartBuilder.axes(foot)
+        val turned = PartBuilder.axes(foot.placedBy(mapOf(PlacementParams.TOE_OUT to 30f, PlacementParams.LEAN to 10f)))
+        val leaned = PartBuilder.axes(foot.placedBy(mapOf(PlacementParams.LEAN to 10f)))
+        close(leaned.up, turned.up, "the up stays, so the sole stays flat")
+        assertEquals(cos(30f * PI.toFloat() / 180f), (turned.along dot leaned.along), CLOSE, "the axis turns by the angle")
+        assertTrue((turned.along - leaned.along).z < 0f, "the tip swings toward the left, away from the plane")
+        close(rest.along, PartBuilder.axes(foot.placedBy(mapOf(PlacementParams.TOE_OUT to 0f))).along, "none leaves it as it was")
     }
 
     @Test

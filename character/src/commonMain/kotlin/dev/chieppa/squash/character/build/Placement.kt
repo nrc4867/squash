@@ -41,6 +41,9 @@ object PlacementParams {
     /** Degrees the part rolls about its own axis, turning its up toward its v = 0.25 side; any angle. */
     const val ROLL = "${PREFIX}roll"
 
+    /** Degrees the part turns about its own up, its tip swinging away from the body's plane on the left side; the right mirrors it. A foot's toe-out. */
+    const val TOE_OUT = "${PREFIX}toeOut"
+
     /** Where joint [name] sits along the part. */
     fun joint(name: String) = "$JOINT_PREFIX$name"
 
@@ -102,7 +105,7 @@ internal fun SocketSpec.placedBy(placement: Map<String, Float>, side: Side?): So
  */
 fun PartTemplate.placedBy(params: Map<String, Float>): PartTemplate {
     if (params.keys.none { PlacementParams.isPlacement(it) && !PlacementParams.isSocket(it) }) return this
-    return restingBy(params).turnedBy(params).rolledBy(params).jointsMovedBy(params)
+    return restingBy(params).turnedBy(params).rolledBy(params).toedOutBy(params).jointsMovedBy(params)
 }
 
 /** This template rolled about its rest axis by the degrees [params] hold, its up turning toward its side. */
@@ -113,6 +116,22 @@ private fun PartTemplate.rolledBy(params: Map<String, Float>): PartTemplate {
     val angle = roll * DEGREES_TO_RADIANS
     val up = axes.up * cos(angle) + axes.side * sin(angle)
     return copy(axis = axis.copy(up = up.toDirection()))
+}
+
+/**
+ * This template turned about its own up by the toe-out [params] hold, its axis swinging away from the body's plane and its up kept,
+ * so a foot turns about the leg's line at the ankle with its sole flat, whatever lean or roll it has.
+ */
+private fun PartTemplate.toedOutBy(params: Map<String, Float>): PartTemplate {
+    val toeOut = params[PlacementParams.TOE_OUT] ?: 0f
+    if (toeOut == 0f) return this
+    val axes = PartAxes.of(axis.rest.toVec3(), axis.up?.toVec3())
+    val left = Vec3.Z * -1f
+    val away = left - axes.up * (left dot axes.up)
+    val outDirection = if (away.length < SAME_U) axes.side else away.normalized()
+    val angle = toeOut * DEGREES_TO_RADIANS
+    val along = axes.along * cos(angle) + outDirection * sin(angle)
+    return copy(axis = axis.copy(rest = along.toDirection(), up = axes.up.toDirection()))
 }
 
 /** This template resting the way [params] say, its up following the new rest, or as it is when they say nothing. */

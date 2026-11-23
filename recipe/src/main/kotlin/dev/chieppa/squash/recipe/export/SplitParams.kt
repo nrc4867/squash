@@ -56,6 +56,7 @@ internal class SplitParams(params: Map<String, Float>, anatomy: Boolean = true, 
     val landmarks: List<RecipeLandmark> = if (anatomy) landmarks(params) else emptyList()
     val rest: RecipeRest? = if (anatomy) restOf(params) else null
     val roll: Float? = if (anatomy) params[PlacementParams.ROLL]?.also { lifted += PlacementParams.ROLL } else null
+    val toeOut: Float? = if (anatomy) params[PlacementParams.TOE_OUT]?.also { lifted += PlacementParams.TOE_OUT } else null
     val topMiddle: Boolean? = if (anatomy) flagOf(params, ViewParams.TOP_MIDDLE) else null
     val generic: RecipeGeneric? = if (anatomy) genericOf(params) else null
     val jointsAt: Map<String, Float> = if (anatomy) jointsAt(params) else emptyMap()

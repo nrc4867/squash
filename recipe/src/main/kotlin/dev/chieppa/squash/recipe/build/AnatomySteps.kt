@@ -121,6 +121,7 @@ internal fun BuildContext.anatomyParams(path: String, part: RecipePart): Map<Str
     val values = linkedMapOf<String, Float>()
     part.rest?.let { values[PlacementParams.REST] = it.direction.ordinal.toFloat() }
     part.roll?.let { values[PlacementParams.ROLL] = it }
+    part.toeOut?.let { values[PlacementParams.TOE_OUT] = it }
     part.topMiddle?.let { values[ViewParams.TOP_MIDDLE] = if (it) FLAG_ON else FLAG_OFF }
     part.generic?.let { values += genericParams(it) }
     part.joints.forEach { joint ->

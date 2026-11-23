@@ -44,6 +44,8 @@ data class RecipePart(
     val lean: Float? = null,
     @Doc("Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward), less than 90 either way; an A-pose arm takes 45.")
     val outward: Float? = null,
+    @Doc("Degrees the part turns about its own up, its tip swinging away from the body's middle plane, mirrored on the right (move.toeOut), after rest, lean, outward and roll: a foot's toe-out, the foot turning about the leg's line at the ankle with the leg and knee left facing forward. 0 when left out.")
+    val toeOut: Float? = null,
     @Doc("Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.")
     val outlines: Map<View, RecipeOutline> = emptyMap(),
     @Doc("A tube part's widths as curves along its bone, in place of its Side and Top outlines: they are built into them as drawn.")

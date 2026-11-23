@@ -50,6 +50,7 @@ internal object PartParameters {
         listOf(key(PlacementParams.OUTWARD), "degrees it leans out from the body's middle plane, mirrored on the right; ${num(PlacementParams.MAX_ANGLE)} at most either way", "`outward`"),
         listOf(key(PlacementParams.REST), "the direction it rests in, in place of its template's", "`rest`"),
         listOf(key(PlacementParams.ROLL), "degrees it rolls about its own axis, its up turning toward its v 0.25 side, after rest, lean and outward; any angle", "`roll`"),
+        listOf(key(PlacementParams.TOE_OUT), "degrees it turns about its own up, its tip swinging away from the body's middle plane, mirrored on the right, after rest, lean, outward and roll: a foot's toe-out; any angle", "`toeOut`"),
         listOf(key(ViewParams.TOP_MIDDLE), "flag: Top's midline moves the part's middle sideways along its length, as Side's moves it up; unset, Top sets width alone", "`topMiddle`"),
         listOf(code(PlacementParams.joint(JOINT)), "u a template joint is moved to", "`jointsAt`"),
         listOf(code(PlacementParams.socketU(SOCKET)) + ", " + code(PlacementParams.socketV(SOCKET)), "where a socket this part offers is moved to, both sides", "`socketsAt`"),
