@@ -24,6 +24,14 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // Stretch's wgpu-native bindings, from GitHub Packages: credentials from GitHubPackagesUsername and
+        // GitHubPackagesPassword (in ~/.gradle/gradle.properties, a token with read:packages; CI passes its own).
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/nrc4867/webgpu-native-ffm")
+            credentials(PasswordCredentials::class)
+            mavenContent { includeModule("dev.chieppa", "webgpu-native-ffm") }
+        }
     }
 }
 

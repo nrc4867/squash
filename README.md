@@ -50,6 +50,13 @@ The same tools build any creature, from a bird to a winged fennec.
   stretch.dir=C:/path/to/stretch
   ```
 
+- A GitHub token with the `read:packages` scope, for Stretch's wgpu-native bindings on GitHub Packages, in the same file:
+
+  ```properties
+  GitHubPackagesUsername=<your GitHub username>
+  GitHubPackagesPassword=<your token>
+  ```
+
 ### Build, run and test
 
 ```
