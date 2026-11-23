@@ -1,7 +1,5 @@
 package dev.chieppa.squash.geom
 
-import kotlin.math.floor
-
 /** Ends of two runs this close, as a share of the mesh's own reach, are one place. */
 private const val JOIN_SHARE = 1e-4f
 
@@ -15,6 +13,15 @@ private const val SHORTEST_EDGES = 4f
 
 /** How many of the mesh's mean edge lengths from the smooth contour the faces' own contour lies, at least, where it is a fold. */
 private const val FOLD_EDGES = 1.5f
+
+/** How many of the mesh's mean edge lengths inside the drawn edge of a cut mesh a fold lies, at least, not to run along the edge's own lip. */
+private const val FOLD_BORDER_EDGES = 2f
+
+/** How many of the mesh's mean edge lengths a fold along a cut mesh's lip runs, at least, to be drawn: shorter, it is a fleck beside the hem. */
+private const val LIP_SHORTEST_EDGES = 10f
+
+/** The share of its places a smooth contour has within [FOLD_EDGES] of the faces' own contour, at least, to be drawn. */
+private const val ALONG_FACES_SHARE = 0.5f
 
 /** A place on a curve across a triangle mesh, with the surface's normal there. */
 class CurvePoint(val position: Vec3, val normal: Vec3)
@@ -79,10 +86,7 @@ class TriangleLines(
      * the viewer and one facing away, so a line along them lies on the edge the fill shows. Edges with one triangle are no contour.
      */
     fun contours(toViewer: (Vec3) -> Vec3): List<ContourRun> {
-        val facing = BooleanArray(triangleCount) { t ->
-            val n = Vec3(faceNormals[t * 3], faceNormals[t * 3 + 1], faceNormals[t * 3 + 2])
-            (n dot toViewer(at(triangles[t * 3]))) > 0f
-        }
+        val facing = facingTriangles(toViewer)
         val edges = ArrayList<Pair<Int, Int>>()
         for (e in edgeA.indices) {
             val r = right[e]
@@ -100,6 +104,7 @@ class TriangleLines(
      * mesh's edges lie. Where the surface plainly bends toward the viewer across the line, its curvature along the view below
      * [HOLLOW_CURVATURE], the line is left out: on a closed surface a contour in a hollow is always hidden behind the surface itself. A
      * line shorter than [SHORTEST_EDGES] of the mesh's edges is a fleck where the surface only grazes edge on, and is left out too.
+     * So is a line that runs mostly far from where the faces themselves turn edge on ([alongFaces]).
      */
     fun smoothContours(toViewer: (Vec3) -> Vec3): List<ContourRun> {
         val facing = FloatArray(vertexCount) { v -> normalAt(v) dot toViewer(at(v)) }
@@ -120,7 +125,8 @@ class TriangleLines(
         }
         fun hollow(v: Int) = weight[v] > TINY && bend[v] / weight[v] < HOLLOW_CURVATURE
         val runs = zeroRuns(facing) { t -> !(hollow(triangles[t * 3]) && hollow(triangles[t * 3 + 1]) && hollow(triangles[t * 3 + 2])) }
-        val curves = if (kept == null) runs.map { run -> run.map { crossing(it, facing) } } else runs.flatMap { keptPieces(it, facing, kept) }
+        val crossed = if (kept == null) runs.map { run -> run.map { crossing(it, facing) } } else runs.flatMap { keptPieces(it, facing, kept) }
+        val curves = alongFaces(crossed, toViewer)
         val shortest = SHORTEST_EDGES * meanEdge
         return curves.filter { curve -> curve.zipWithNext { a, b -> (b.position - a.position).length }.sum() >= shortest }.mapIndexed { piece, curve ->
             val closed = curve.size > 2 && curve.first().position == curve.last().position
@@ -131,37 +137,24 @@ class TriangleLines(
     /**
      * Where the faces turn edge on to a viewer that [toViewer] gives the direction of, along their edges as [contours] finds them, only
      * where that lies further than [FOLD_EDGES] of the mesh's edges from every place of [smooth], the smooth contours ([smoothContours])
-     * through the same view, and only where both ends of an edge are at least zero in [shown], one value a vertex, [kept] when it gives
+     * through the same view, and only where both ends of an edge are in from zero in [shown], one value a vertex, [kept] when it gives
      * none for each: where the fill is drawn. That is a fold: the surface laps over itself
      * where it bunches, as cloth does in a crease, and makes the edge the fill shows, while its vertex normals, averaged across the fold,
      * never turn edge on there, so the smooth contour runs inside the fill or not at all. A fold shorter than [SHORTEST_EDGES] of the
-     * mesh's edges is a fleck, and left out as a smooth contour's is.
+     * mesh's edges is a fleck, and left out as a smooth contour's is. Where [shown] or [kept] is a distance in from the edge of the fill,
+     * as a garment's coverage is, a fold that runs mostly within [FOLD_BORDER_EDGES] of the mesh's edges of that edge lies along the lip
+     * of the cloth's own hem turned edge on: it is drawn only where it runs at least [LIP_SHORTEST_EDGES] of them, the hem's outline,
+     * and a shorter stretch of it, which would stand as a fleck beside the hem, is left out.
      */
     fun foldContours(toViewer: (Vec3) -> Vec3, smooth: List<ContourRun>, shown: FloatArray? = kept): List<ContourRun> {
         val apart = FOLD_EDGES * meanEdge
         if (apart <= 0f) return emptyList()
         val gate = shown?.takeIf { it.size == vertexCount } ?: kept
-        val near = HashMap<Long, MutableList<Vec3>>()
-        fun key(x: Int, y: Int, z: Int): Long = ((x.toLong() and 0x1FFFFF) shl 42) or ((y.toLong() and 0x1FFFFF) shl 21) or (z.toLong() and 0x1FFFFF)
-        fun cellOf(v: Float): Int = floor(v / apart).toInt()
-        for (run in smooth) for (point in run.points) {
-            val p = point.position
-            near.getOrPut(key(cellOf(p.x), cellOf(p.y), cellOf(p.z))) { ArrayList() } += p
-        }
-        fun clear(p: Vec3): Boolean {
-            val cx = cellOf(p.x)
-            val cy = cellOf(p.y)
-            val cz = cellOf(p.z)
-            for (dx in -1..1) for (dy in -1..1) for (dz in -1..1) {
-                val points = near[key(cx + dx, cy + dy, cz + dz)] ?: continue
-                for (q in points) if ((q - p).length < apart) return false
-            }
-            return true
-        }
-        val facing = BooleanArray(triangleCount) { t ->
-            val n = Vec3(faceNormals[t * 3], faceNormals[t * 3 + 1], faceNormals[t * 3 + 2])
-            (n dot toViewer(at(triangles[t * 3]))) > 0f
-        }
+        val border = FOLD_BORDER_EDGES * meanEdge
+        val near = ReachGrid(apart)
+        for (run in smooth) for (point in run.points) near.add(point.position)
+        fun clear(p: Vec3): Boolean = !near.near(p)
+        val facing = facingTriangles(toViewer)
         val edges = ArrayList<Pair<Int, Int>>()
         for (e in edgeA.indices) {
             val r = right[e]
@@ -173,11 +166,47 @@ class TriangleLines(
         }
         val pieces = connectedPieces(edges)
         val lengths = HashMap<Int, Float>()
-        for ((a, b) in edges) pieces.getValue(a).let { lengths[it] = (lengths[it] ?: 0f) + (at(b) - at(a)).length }
-        val shortest = SHORTEST_EDGES * meanEdge
+        val onLip = HashMap<Int, Float>()
+        for ((a, b) in edges) {
+            val piece = pieces.getValue(a)
+            val length = (at(b) - at(a)).length
+            lengths[piece] = (lengths[piece] ?: 0f) + length
+            if (gate != null && (gate[a] < border || gate[b] < border)) onLip[piece] = (onLip[piece] ?: 0f) + length
+        }
+        fun shortest(piece: Int): Float = (if ((onLip[piece] ?: 0f) * 2f > (lengths[piece] ?: 0f)) LIP_SHORTEST_EDGES else SHORTEST_EDGES) * meanEdge
         val runs = walkedEdges(edges).map { run -> IndexedRun(run.map { ContourPoint(at(it), 1f) }, pieces.getValue(run.first())) }
-            .filter { (lengths[it.piece] ?: 0f) >= shortest }
+            .filter { (lengths[it.piece] ?: 0f) >= shortest(it.piece) }
         return joinedAtEnds(runs, reach * JOIN_SHARE)
+    }
+
+    /**
+     * The curves of [curves], smooth contours, with at least [ALONG_FACES_SHARE] of their places within [FOLD_EDGES] of the mesh's edges
+     * where its faces turn edge on to a viewer that [toViewer] gives the direction of ([contours]). A curve that runs mostly where no face
+     * turns edge on lies on neither the fill's edge nor a fold: its vertex normals disagree with the faces round them, as normals smoothed
+     * across a crease do once a pose turns one side of it, and it crosses zero back and forth in loops and dashes as they waver. A curve
+     * is kept or left out whole, so a silhouette that strays from the faces for a stretch is never broken.
+     */
+    private fun alongFaces(curves: List<List<CurvePoint>>, toViewer: (Vec3) -> Vec3): List<List<CurvePoint>> {
+        val apart = FOLD_EDGES * meanEdge
+        if (apart <= 0f || curves.isEmpty()) return curves
+        val facing = facingTriangles(toViewer)
+        val faces = ReachGrid(apart)
+        for (e in edgeA.indices) {
+            val r = right[e]
+            if (r < 0 || facing[left[e]] == facing[r]) continue
+            val a = at(edgeA[e])
+            val b = at(edgeB[e])
+            faces.add(a)
+            faces.add((a + b) * 0.5f)
+            faces.add(b)
+        }
+        return curves.filter { curve -> curve.count { faces.near(it.position) } >= curve.size * ALONG_FACES_SHARE }
+    }
+
+    /** Whether each triangle faces a viewer that [toViewer] gives the direction of. */
+    private fun facingTriangles(toViewer: (Vec3) -> Vec3): BooleanArray = BooleanArray(triangleCount) { t ->
+        val n = Vec3(faceNormals[t * 3], faceNormals[t * 3 + 1], faceNormals[t * 3 + 2])
+        (n dot toViewer(at(triangles[t * 3]))) > 0f
     }
 
     /** How long the mesh's edges are on average. */
