@@ -63,7 +63,7 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
          * signed distance in body units and kept to the run's own section, so it ends where a neighbour takes the surface over. Each holder's
          * ink lines on the surface are resolved again on the field. Each shape's layer is one piece of [runAll]'s work, and the ink lines
          * another. With [memo], a shape's values at a vertex the surface's mesh keeps from the mesh the memo last painted are taken from
-         * there rather than read again. With [onOwnRuns], an ink place that lands off its own run's surface, hidden under another part
+         * there rather than read again. Each mouth built open paints its inside over all of them ([mouthInsideLayers]). With [onOwnRuns], an ink place that lands off its own run's surface, hidden under another part
          * there, is left out (see [FieldAnchors.resolveOnOwn]).
          */
         suspend fun of(
@@ -104,7 +104,8 @@ class SurfacePaint(val layers: List<PaintLayer>, val marks: Map<PartId, List<Res
                 },
             )
             memo?.keep(surface.mesh, shapes.indices.mapNotNull { i -> laid[i]?.let { shapes[i] to it } }.toMap(), sections.mapValues { it.value.value })
-            return SurfacePaint(layers.filterNotNull(), marks)
+            val insides = mouthInsideLayers(surface) { jaw -> held[jaw.part]?.insideSlot }
+            return SurfacePaint(layers.filterNotNull() + insides, marks)
         }
 
         /** Each holder's ink lines on [surface], resolved again on its field; a line broken where [onOwnRuns] leaves places out is as many lines. */

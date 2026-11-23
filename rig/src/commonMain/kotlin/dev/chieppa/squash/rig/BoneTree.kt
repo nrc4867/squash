@@ -5,6 +5,8 @@ import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.Hinge
 import dev.chieppa.squash.character.model.JointSpec
+import dev.chieppa.squash.character.surface.JAW_JOINT
+import dev.chieppa.squash.character.surface.jawBuiltDegrees
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.PartAxes
 import dev.chieppa.squash.geom.Vec3
@@ -58,7 +60,8 @@ private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {
         val pivot = part.rings.middle(joint.u)
         val owns = index < joints.owning
         val end = if (owns) part.rings.middle(joints.spanEnd(index)) else pivot
-        boneOf(part.bone(index), if (index == 0) carrier else part.bone(index - 1), pivot, end, { part.rings.tangent(joint.u) }, hingeDirection(joint.hinge, axes, mirrored), joint, mirrored, null)
+        val bone = boneOf(part.bone(index), if (index == 0) carrier else part.bone(index - 1), pivot, end, { part.rings.tangent(joint.u) }, hingeDirection(joint.hinge, axes, mirrored), joint, mirrored, null)
+        if (joint.name == JAW_JOINT) bone.copy(built = jawBuiltDegrees(part.placed)) else bone
     }
     val digits = joints.digits.flatMapIndexed { d, digit ->
         val curl = if (digit.back) -DIGIT_CURL else DIGIT_CURL

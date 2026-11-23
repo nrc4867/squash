@@ -34,6 +34,7 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
 
     private var lines: TriangleLines? = null
     private var joins: List<List<CurvePoint>> = emptyList()
+    private var mouths: List<List<CurvePoint>> = emptyList()
     private var stage = 0
     private var render: RenderMesh? = null
     private val edges = TriangleEdges(mesh.positions, mesh.vertexCount, mesh.triangles)
@@ -80,10 +81,10 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
                 render = RenderMesh(out, fan.triangles)
                 val drawn = TriangleLines(mesh.positions, smoothing.normals, mesh.triangles, edges)
                 lines = drawn
-                listOf({ joins = joinCurves(field, mesh, drawn) }) + chunks(count) { from, to -> compose(from, to, out) }
+                listOf({ joins = joinCurves(field, mesh, drawn) }, { mouths = mouthEdgeCurves(field, mesh, drawn) }) + chunks(count) { from, to -> compose(from, to, out) }
             }
             stage == 4 + SMOOTHING_STEPS + JOIN_SMOOTHING_STEPS -> {
-                done = CharacterSurface(field, mesh, checkNotNull(render), checkNotNull(lines), joins, positive, negative, mesh.positions, smoothing.normals, chin)
+                done = CharacterSurface(field, mesh, checkNotNull(render), checkNotNull(lines), joins, positive, negative, mesh.positions, smoothing.normals, chin, mouths)
                 null
             }
             else -> null

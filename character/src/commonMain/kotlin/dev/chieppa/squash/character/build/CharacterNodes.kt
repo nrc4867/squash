@@ -69,7 +69,8 @@ fun assemblyParts(character: Character): List<AssemblyPart> {
         val worn = character.wornPart(part)
         val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
         val joined = if (part.role == Role.HEAD && part.socket != null && character.neck != NeckStyle.BLENDED) placement + (JoinParams.NECK to NeckJoin.of(character.neck).value) else placement
-        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, joined, part.role, wornSockets, part.garment, part.blend, character.resolved(part).surface.shades)
+        val surface = character.resolved(part).surface
+        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, joined, part.role, wornSockets, part.garment, part.blend, surface.shades, lipLineOf(surface))
     }
 }
 

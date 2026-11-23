@@ -2,6 +2,8 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.character.surface.IN_TURN
+import dev.chieppa.squash.character.surface.JAW_JOINT
+import dev.chieppa.squash.character.surface.JawSide
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.document.Role
@@ -61,8 +63,21 @@ class SurfaceSkin(val bones: IntArray, val weights: FloatArray, val contacts: Bo
                     if (member < 0) continue
                     if (own >= 0 && !lineage.weighs(own, member)) continue
                     if (own >= 0 && !atParent && lineage.siblings(own, member)) continue
+                    val share = mesh.heldShares[v * HELD + k]
+                    val side = surface.field.runs[member].jawSide
+                    val jaw = if (side == null) -1 else rig.indexOf(BoneName(surface.field.runs[member].partId, JAW_JOINT)) ?: -1
+                    val head = if (jaw >= 0) rig.parents[jaw] else -1
+                    if (side == JawSide.LINING && jaw >= 0 && head >= 0) {
+                        val floor = mesh.heldV[v * HELD + k].coerceIn(0f, 1f)
+                        blend.add(jaw, share * floor)
+                        blend.add(head, share * (1f - floor))
+                        continue
+                    }
+                    val onJaw = if (jaw >= 0 && head >= 0) surface.field.openJawOf(surface.field.runs[member].partId)?.jawShare(mesh.position(v)) ?: 0f else 0f
+                    if (onJaw > 0f) blend.add(jaw, share * onJaw)
+                    if (onJaw >= 1f) continue
                     val reader = readers.getOrPut(member) { RunWeights.of(rig, surface, member) } ?: continue
-                    reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], mesh.heldShares[v * HELD + k])
+                    reader.addTo(blend, mesh.heldU[v * HELD + k], mesh.heldV[v * HELD + k], share * (1f - onJaw), if (head >= 0) jaw else -1, head)
                 }
                 blend.write(bones, weights, v * MAX_INFLUENCES)
             }
@@ -206,7 +221,8 @@ private class WeightBlend {
 
 /** A run's part's own weights read at any (u, v) on the run, eased between the four grid vertices round it. */
 private class RunWeights(private val part: RigPart, private val first: Int, private val run: dev.chieppa.squash.geom.Patch) {
-    fun addTo(blend: WeightBlend, u: Float, v: Float, share: Float) {
+    /** Adds the weights at (u, v) times [share] to [blend], any of bone [from] given to bone [to] in its place. */
+    fun addTo(blend: WeightBlend, u: Float, v: Float, share: Float, from: Int = -1, to: Int = -1) {
         val us = run.ringUs
         var ring = 0
         while (ring < run.nu - 2 && us[ring + 1] < u) ring++
@@ -217,19 +233,19 @@ private class RunWeights(private val part: RigPart, private val first: Int, priv
         val s = around - column
         val c0 = column.mod(run.nv)
         val c1 = if (run.closedV) (column + 1).mod(run.nv) else (column + 1).coerceIn(0, run.nv - 1)
-        add(blend, ring, c0.coerceIn(0, run.nv - 1), share * (1f - t) * (1f - s))
-        add(blend, ring, c1, share * (1f - t) * s)
-        add(blend, ring + 1, c0.coerceIn(0, run.nv - 1), share * t * (1f - s))
-        add(blend, ring + 1, c1, share * t * s)
+        add(blend, ring, c0.coerceIn(0, run.nv - 1), share * (1f - t) * (1f - s), from, to)
+        add(blend, ring, c1, share * (1f - t) * s, from, to)
+        add(blend, ring + 1, c0.coerceIn(0, run.nv - 1), share * t * (1f - s), from, to)
+        add(blend, ring + 1, c1, share * t * s, from, to)
     }
 
-    private fun add(blend: WeightBlend, ring: Int, column: Int, amount: Float) {
+    private fun add(blend: WeightBlend, ring: Int, column: Int, amount: Float, from: Int, to: Int) {
         if (amount <= 0f) return
         val vertex = first + run.index(ring, column)
         if (vertex >= part.vertexCount) return
         for (slot in 0 until MAX_INFLUENCES) {
             val bone = part.weights.bones[vertex * MAX_INFLUENCES + slot]
-            if (bone >= 0) blend.add(bone, part.weights.weights[vertex * MAX_INFLUENCES + slot] * amount)
+            if (bone >= 0) blend.add(if (bone == from) to else bone, part.weights.weights[vertex * MAX_INFLUENCES + slot] * amount)
         }
     }
 

@@ -197,6 +197,8 @@ fun renderSession(
             views.keep(session, "$name-pose-$pose", only = only, tile = tile, height = height)
             if (look.around) views.keep(session, "$name-pose-$pose$BACK_TOP_SUFFIX", toViewers = BACK_AND_TOP, only = only, tile = tile, height = height)
             closeParts.forEach { closeUps.keepAround(session, it, "$name-pose-$pose-${it.value}") }
+            if (MOUTH in close) keepMouths(session, work, errors, folder, "$name-pose-$pose", shapes = false)
+            if (ORBIT in close) parts.head?.let { ViewKeysLook(work, errors, folder).keep(session, "$name-pose-$pose", it, parts.faceFramed(it)) }
         }
         if (poses.isNotEmpty()) session.send(SetPose(Pose()))
     }

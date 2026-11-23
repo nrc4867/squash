@@ -115,7 +115,8 @@ object SurfaceEyes {
 
     /** Where [eye]'s head sits between its eyes and the way it faces; null where its anchor does not resolve. */
     private fun placeOf(chart: SurfaceChart, anchors: FieldAnchors, eye: PaintedEye): Pair<Vec3, Vec3>? {
-        val middle = anchors.resolve(eye.anchor.copy(offset = 0f, v = 0.5f)) ?: anchors.resolve(eye.anchor.copy(offset = 0f)) ?: return null
+        val underOpenJaw = chart.surface.field.openJawOf(eye.anchor.part) != null
+        val middle = (if (underOpenJaw) null else anchors.resolve(eye.anchor.copy(offset = 0f, v = 0.5f))) ?: anchors.resolve(eye.anchor.copy(offset = 0f)) ?: return null
         val head = chart.surface.field.runs.firstOrNull { it.partId == eye.anchor.part }?.part ?: return null
         return middle.position to head.turn * PartBuilder.facing(head.template)
     }

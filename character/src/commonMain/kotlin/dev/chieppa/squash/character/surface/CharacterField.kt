@@ -50,16 +50,17 @@ const val CELL_SHARE = 0.1f
 
 /**
  * One member of a character's field: run [patchIndex], [patch], of [part], and whether it is the part's first run: its body run, whose
- * (u, v) are the part's own, or its first run where it has none.
+ * (u, v) are the part's own, or its first run where it has none. On a head built with its jaw open, [jawSide] says which piece of the
+ * split run it is.
  */
-class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val first: Boolean) {
+class FieldRun(val part: PlacedPart, val patchIndex: Int, val patch: Patch, val first: Boolean, val jawSide: JawSide? = null) {
     val partId: PartId get() = requireNotNull(part.id)
 }
 
 /**
  * A character's field: its runs' solids joined in [field], [runs] saying which part and run each member is, the [cell] it meshes at, the
  * mouths' [recesses] cut into it, and, for a garment's field, the level each member meshes at, [levels] (see `CellLevels`); every member
- * reads as meshing at [cell] where it is empty, as a body's field leaves it.
+ * reads as meshing at [cell] where it is empty, as a body's field leaves it. The heads built with their jaws open are [openJaws].
  */
 class CharacterField(
     val field: JoinedField,
@@ -67,7 +68,11 @@ class CharacterField(
     val cell: Float,
     val recesses: List<MouthRecess> = emptyList(),
     val levels: IntArray = IntArray(0),
+    val openJaws: List<OpenJaw> = emptyList(),
 ) {
+    /** The open jaw of [part], or null where it is built shut. */
+    fun openJawOf(part: PartId): OpenJaw? = openJaws.firstOrNull { it.part == part }
+
     /** The parts in the field. */
     val parts: Set<PartId> = runs.mapTo(LinkedHashSet()) { it.partId }
 
@@ -111,11 +116,12 @@ fun firstRunIndex(patches: List<Patch>): Int =
  * The field of [character]'s field parts: each run of each part a member, its solid swept by its rings and kept in [solids] while the
  * run is the same; a part's first run joined to the run of its socket parent nearest its socket by the part's socket blend, its other
  * runs joined to its first by its merge, and every other pair of runs meeting by a plain union, meshed at [cellShare] of its root's
- * least half-extent, with each of [recesses] cut into its part. Null with no field part.
+ * least half-extent, with each of [recesses] cut into its part but a head whose jaw is built open, which its jaw opens. Null with no field part.
  */
 fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float = CELL_SHARE, recesses: List<MouthRecess> = emptyList()): CharacterField? {
     val parts = character.parts.filter(::isFieldPart)
     if (parts.isEmpty()) return null
+    val cut = recesses.filter { recess -> parts.none { it.id == recess.part && openJawJoint(it) != null } }
     val runs = parts.flatMap { part ->
         val first = firstRunIndex(part.surface.patches)
         part.surface.patches.withIndex().filter { isFieldRun(part, it.value) }.map { (k, patch) -> FieldRun(part, k, patch, k == first) }
@@ -154,10 +160,11 @@ fun fieldOf(character: AssembledCharacter, solids: RunSolids, cellShare: Float =
             val parentMember = JoinedMember(made[parent], runs[parent].part.origin, runs[parent].part.mirrored, 0f)
             JoinedMember(made[i], part.origin, part.mirrored, blend, parent, member.part, angles = solids.angles(member, parentMember))
         }
-    }.let { withPockets(runs, it, solids) }.let { withSoles(runs, it, solids) }.let { withRecesses(runs, it, solids, recesses) }
+    }.let { withPockets(runs, it, solids) }.let { withSoles(runs, it, solids) }.let { withRecesses(runs, it, solids, cut) }
     val firsts = runs.indices.filter { runs[it].first }
     val root = firsts.filter { runs[it].part.socket == null }.ifEmpty { firsts }
-    return CharacterField(JoinedField(members), runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare, recesses)
+    val opened = withOpenJaws(runs, members, solids, plain)
+    return CharacterField(JoinedField(opened.members), opened.runs, root.maxOf { leastExtent(made[it]) / 2f } * cellShare, cut, openJaws = opened.jaws)
 }
 
 /**

@@ -8,6 +8,7 @@ import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.Outward
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SocketSpec
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.GarmentId
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -103,6 +104,8 @@ class PlacedPart(
     val spanning: Spanning? = null,
     /** For a lock group or its band, the group, the head carrying it and each lock's chain; null for anything else. */
     val locks: LockPlacing? = null,
+    /** The places of its mouth's lip line, see [AssemblyPart.lipLine]. */
+    val lipLine: List<Anchor> = emptyList(),
 ) {
     val planned: Boolean get() = id == null
     val mirrored: Boolean get() = surface.mirrored
@@ -162,11 +165,11 @@ class PlacedPart(
 
     /** This part showing [surface], turned by [turn], where it sits, with what [hiding] says hides faces of it. */
     fun showing(surface: PartSurface, turn: Mat3, hiding: Hiding? = this.hiding): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning, locks)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning, locks, lipLine)
 
     /** This part with [copies] in place of the ones it shows. */
     fun withCopies(copies: PartCopies?): PlacedPart =
-        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning, locks)
+        PlacedPart(id, template, side, surface, origin, socket, anchor, placement, lengthFactor, socketSpec, turn, role, covering, hanging, hiding, owner, blend, copies, spanning, locks, lipLine)
 }
 
 /** An empty socket on a placed part, in body space, as a part on [side] would sit on it, which lies on part [on], its parent's twin on a paired parent's right. */
@@ -258,7 +261,7 @@ private class Assembler(
         } else {
             null
         }
-        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner, blend = part.blend, copies = copies)
+        return PlacedPart(part.id, template, part.side, surface, origin, socket, anchor, part.placement, lengths.ofPart(part.id), spec, role = part.role ?: template.role, owner = part.owner, blend = part.blend, copies = copies, lipLine = part.lipLine)
     }
 
     /**

@@ -2,6 +2,7 @@ package dev.chieppa.squash.character.build
 
 import dev.chieppa.squash.document.MarkKind
 import dev.chieppa.squash.document.MarkRole
+import dev.chieppa.squash.document.isMouth
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.SlotName
 import dev.chieppa.squash.document.SquashDocument
@@ -35,7 +36,8 @@ private sealed interface ColorKey {
 
 /**
  * What a part's color shapes are before they are cut: its [baseSlot], its [shapes] in layer order, the [surfaces] they land on and the
- * [step] they flatten at; and the ink [lines] it draws over them: its marks in no group, its lip lines and its open mouths' lower lips, fur aside.
+ * [step] they flatten at; and the ink [lines] it draws over them: its marks in no group, its lip lines and its open mouths' lower lips, fur aside;
+ * and the [insideSlot] its mouth's inner role fills, which a jaw built open paints its inside in.
  */
 data class HeldShapes(
     val baseSlot: SlotName?,
@@ -43,6 +45,7 @@ data class HeldShapes(
     val surfaces: Map<PartId, PartSurface>,
     val step: Int,
     val lines: List<ResolvedMark> = emptyList(),
+    val insideSlot: SlotName? = null,
 )
 
 /** [work]'s ink lines: its marks in no group and those its groups hold as lip lines, fur aside. */
@@ -86,7 +89,8 @@ fun Graph.partShapesNode(
         val jaw = shape.jawMouth?.let { mouth -> surfaces[part]?.let { jawMouthShapes(part, mouth, it) } }.orEmpty()
         val lines = inkLines(resolved).filter { it.id !in mouths.replaced } + mouths.lines
         val painted = if (mouths.regions.isEmpty()) resolved else resolved.copy(regions = resolved.regions.filterNot { it.id in mouths.regions })
-        HeldShapes(resolved.baseSlot, colorShapes(part, painted, shape, surfaces) + mouths.shapes + jaw, surfaces, step, lines)
+        val inside = resolved.groups.firstOrNull { it.isMouth }?.roles?.firstOrNull { it.role == MarkRole.INNER }?.fill
+        HeldShapes(resolved.baseSlot, colorShapes(part, painted, shape, surfaces) + mouths.shapes + jaw, surfaces, step, lines, inside)
     }
 }
 

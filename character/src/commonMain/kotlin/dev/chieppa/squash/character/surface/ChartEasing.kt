@@ -128,7 +128,7 @@ class ChartEasing(private val chart: SurfaceChart) {
         val set = BooleanArray(corners)
         val loose = IntList()
         for (member in members) for (v in chart.vertices[member]) for (k in 0 until HELD) {
-            if (mesh.held[v * HELD + k] != member) continue
+            if (mesh.held[v * HELD + k] != member || chart.behindSibling(v, k)) continue
             set[v] = true
             val off = (kotlin.math.abs(mesh.heldOwn[v * HELD + k]) / cell - EASED_FROM_CELLS) / (EASED_FULLY_CELLS - EASED_FROM_CELLS)
             val w = off.coerceIn(0f, 1f)

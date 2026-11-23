@@ -75,8 +75,9 @@ class SurfaceChart(val surface: CharacterSurface) {
         return out.toArray().also { triangles[member] = it }
     }
 
-    /** The runs of [part]'s patch [patch]: its members in the surface's field. */
-    fun members(part: PartId, patch: String): List<Int> = runs.indices.filter { runs[it].partId == part && runs[it].patch.name == patch }
+    /** The runs of [part]'s patch [patch]: its members in the surface's field, every piece of a run split at an open jaw but its lining. */
+    fun members(part: PartId, patch: String): List<Int> =
+        runs.indices.filter { runs[it].partId == part && runs[it].patch.name == patch && runs[it].jawSide != JawSide.LINING }
 
     /** How long u and v are on run [member]'s surface. */
     fun scales(member: Int): RunScales = scales[member] ?: RunScales(runs[member].patch).also { scales[member] = it }
@@ -109,7 +110,7 @@ class SurfaceChart(val surface: CharacterSurface) {
         for (member in members) for (v in vertices[member]) {
             if (only != null && !only[v]) continue
             for (k in 0 until HELD) {
-                if (mesh.held[v * HELD + k] != member) continue
+                if (mesh.held[v * HELD + k] != member || behindSibling(v, k)) continue
                 val value = read(v, k, member).coerceIn(-reach, reach)
                 out[v] = if (set[v]) maxOf(out[v], value) else value
                 set[v] = true
@@ -201,7 +202,9 @@ class SurfaceChart(val surface: CharacterSurface) {
      * How far inside run [member]'s own section of the surface vertex [v] lies: half the least, over the other runs it holds, of how much
      * lower the member's own field is than theirs, so zero where it shares the surface equally with a neighbour. A part's first run reads
      * its part's other runs as its own: they grow out of it, as digits joined to a palm do, and what is painted on it carries on over
-     * them wherever it still holds the surface.
+     * them wherever it still holds the surface. The pieces of a run split at an open jaw are one run
+     * here, a mouth's lining, which paints as the mouth's inside, holds no section and takes none, and such a run's section ends where the
+     * mouth's inside begins.
      */
     fun section(v: Int, member: Int): Float {
         var own = 0f
@@ -210,10 +213,43 @@ class SurfaceChart(val surface: CharacterSurface) {
         var least = reach
         for (k in 0 until HELD) {
             val other = mesh.held[v * HELD + k]
-            if (other < 0 || other == member) continue
+            if (other < 0 || other == member || runs[other].jawSide == JawSide.LINING || sameSplitRun(other, member)) continue
             if (run.first && runs[other].partId == run.partId) continue
             least = minOf(least, (mesh.heldOwn[v * HELD + k] - own) * 0.5f)
         }
+        if (runs[member].jawSide != null) least = minOf(least, -mouthInside[v])
         return least
     }
+
+    /** How far inside each open jaw's mouth each corner lies ([OpenJaw.inside]), where a split run holds it; as far outside as [reach] elsewhere. */
+    private val mouthInside: FloatArray by lazy {
+        val out = FloatArray(corners) { -reach }
+        for (jaw in surface.field.openJaws) {
+            val split = runs.indices.filter { runs[it].partId == jaw.part && runs[it].jawSide != null }.toSet()
+            for (v in 0 until corners) if ((0 until HELD).any { k -> mesh.held[v * HELD + k] in split }) out[v] = jaw.inside(mesh.position(v))
+        }
+        out
+    }
+
+    /**
+     * Whether the member in vertex [v]'s held [slot] is a piece of a run split at an open jaw that another piece of the same run lies
+     * nearer [v] than, so the run is read once, from the piece the vertex lies on.
+     */
+    @PublishedApi
+    internal fun behindSibling(v: Int, slot: Int): Boolean {
+        val member = mesh.held[v * HELD + slot]
+        if (member < 0 || runs[member].jawSide == null) return false
+        val own = kotlin.math.abs(mesh.heldOwn[v * HELD + slot])
+        for (k in 0 until HELD) {
+            val other = mesh.held[v * HELD + k]
+            if (k == slot || other < 0 || other == member || !sameSplitRun(other, member)) continue
+            val theirs = kotlin.math.abs(mesh.heldOwn[v * HELD + k])
+            if (theirs < own || (theirs == own && k < slot)) return true
+        }
+        return false
+    }
+
+    /** Whether [a] and [b] are pieces of one run split at an open jaw. */
+    private fun sameSplitRun(a: Int, b: Int): Boolean =
+        runs[a].jawSide != null && runs[b].jawSide != null && runs[a].partId == runs[b].partId && runs[a].patch.name == runs[b].patch.name
 }
