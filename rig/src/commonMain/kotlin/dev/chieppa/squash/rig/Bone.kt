@@ -32,6 +32,6 @@ data class Bone(
 
 /**
  * A digit bone's place: the digit's [patch], its [index] in its toe row, the bone's [joint] number on the digit from 1 at its root,
- * and whether the digit is turned [back], as a bird's hind toe.
+ * whether the digit is turned [back], as a bird's hind toe, and the digit's patch a claw's bone rides [on], or null for a digit's own.
  */
-data class DigitPlace(val patch: String, val index: Int, val joint: Int, val back: Boolean)
+data class DigitPlace(val patch: String, val index: Int, val joint: Int, val back: Boolean, val on: String? = null)

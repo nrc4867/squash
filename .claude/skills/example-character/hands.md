@@ -1,6 +1,6 @@
 # Hands
 
-Build the hand the character means, as a part that poses well. The sheet says what the hands are like: their size against the head, how soft or bony, how long the fingers, where the thumb sits. The `hand` template (version 9, the newest) says how a hand is built so it curls and spreads: bones, digits, nail areas. Neither is the answer by itself. On most sheets a hand is a few dozen pixels, turned, curled or against a sleeve or a thigh: a trace of it is a blob, and the template at its defaults is nobody's hand. `templates.md`, hand, lists its parameters, digit joints and `nail:<i>` areas; `docs/hld/parts.md` says how it is built. A front paw on an arm is a `paw` instead (`feet-and-paws.md`).
+Build the hand the character means, as a part that poses well. The sheet says what the hands are like: their size against the head, how soft or bony, how long the fingers, where the thumb sits. The `hand` template (version 10, the newest) says how a hand is built so it curls and spreads: bones, digits, nail areas. Neither is the answer by itself. On most sheets a hand is a few dozen pixels, turned, curled or against a sleeve or a thigh: a trace of it is a blob, and the template at its defaults is nobody's hand. `templates.md`, hand, lists its parameters, digit joints and `nail:<i>` areas; `docs/hld/parts.md` says how it is built. A front paw on an arm is a `paw` instead (`feet-and-paws.md`).
 
 ## 1. Measure the proportions first
 
@@ -68,7 +68,7 @@ Paste at `size: 1` (the trace prints body units). The drawing is the palm: the s
 | 2 | on | one mitten finger and a thumb |
 | 2 to 5 | off | that many fingers, no thumb |
 
-Fewer fingers are thicker and fan wider over the same palm. A cartoon or creature hand is short and thick-fingered: `fingerThickness` 1.1 to 1.6, `knuckles` low. Very thick fingers on four or five digits touch again: thin them or use fewer. A cupped palm: `cup` 0.04 to 0.1. Nails show when the palette names `nails`, or fill `areas: { "nail:0": "claw", "nail:thumb": "claw" }`.
+Fewer fingers are thicker and fan wider over the same palm. A cartoon or creature hand is short and thick-fingered: `fingerThickness` 1.1 to 1.6, `knuckles` low. Very thick fingers on four or five digits touch again: thin them or use fewer. A cupped palm: `cup` 0.04 to 0.1. Nails show when the palette names `nails`, or fill `areas: { "nail:0": "claw", "nail:thumb": "claw" }`. Claws past the fingertips are hard claws (below), not filled nails.
 
 ## Which way the palm faces
 
@@ -95,6 +95,22 @@ Render `close=strip,hands,hand-l` with `poses=` naming a T-pose: `hand-rest.png`
 ## On one digit
 
 A socket, region or mark names a digit's patch to lie on that digit and ride it as it curls: a ring on the third finger is `socket(1, 0.7, 0.25, { patch: digitPatch(2), sink: 0.4 })` on the hands. A patch the hand does not build warns at build; a garment's print on a digit warns too, since prints lie on the cloth of the palm's own run. A glove covers the digits finger by finger: `glove({ digits: "fingers" })` (or `"mitten"`) in the kit.
+
+## Hard claws
+
+A clawed hand (a cat's, a dragon's, a creature's) takes `clawParts: 1`: a hard claw on every finger and the thumb, each its own mesh with its own ink, in the `claw` slot (name it in the palette), with a collar where it leaves the fingertip in the hand's own colour (fill `areas: { sheath: "white" }` for a white-tipped paw). The painted nails are left out while it is on. Shape them to the character, not to the defaults: `clawLength` (a share of the finger's length; 0.3 to 0.45 for a cat's small hooked claws, 0.6 and up for a raptor's), `clawThickness` (the root's height against the tip's; 0.4 to 0.5 slim, more for heavy talons), `clawHook` (0 straight, 0.5 to 0.7 a cat's hook) and `clawSheath` (the collar, 0 to 1; lower it where it reads as a ring round the claw). Judge them close up from the front, the side and below: each claw leaves the fingertip at its front a little toward the back, hooks down and ends in a sharp point, small enough that the fingertip still reads.
+
+```ts
+params: { digits: 4, thumb: 1, clawParts: 1, clawLength: 0.4, clawThickness: 0.5, clawHook: 0.6, clawSheath: 0.5 },
+```
+
+**Retract** slides every claw back into its finger, 0 out to 1 in (about half shows at 0.5): the Pose stage's Retract under Curl, or `clawRetract` in a pose. Claws show as built at rest; a character whose claws are sheathed by default puts the retract in its `displayPose`. Render the claws out, half and in (`poses` of the display pose with `clawRetract` at 0.5 and 1, `close=hands,hand-l`): fully in, nothing of a claw shows past the fingertip.
+
+```ts
+import { clawRetract, THUMB, type BonePose } from "squash-kit";
+
+const clawsIn: BonePose[] = ["hand-l", "hand-r"].flatMap((part) => clawRetract(part, { count: 3, named: [THUMB], amount: 1 }));
+```
 
 **Webbed fingers**: `webbing: 1` with `webReach` and `webEdge` (`ears-tails-extras.md`, Webs and membranes).
 

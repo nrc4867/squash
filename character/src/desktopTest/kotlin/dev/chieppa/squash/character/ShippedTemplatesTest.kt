@@ -40,9 +40,9 @@ class ShippedTemplatesTest {
         val versions = shipped.parts.groupBy({ it.id.value }, { it.version }).mapValues { (_, it) -> it.sorted() }
         assertEquals(
             mapOf(
-                "antler" to listOf(1, 2), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1, 2, 3), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                "foot-bird" to listOf(1, 2, 3, 4, 5), "hair" to listOf(1), "hair-cap" to listOf(1), "hair-clump" to listOf(1), "hair-tuft" to listOf(1), "hair-volume" to listOf(1), "hand" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "hoof" to listOf(1), "leg" to listOf(1),
-                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), "plate" to listOf(1), "pocket" to listOf(1), "ring" to listOf(1), "scute" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-curve" to listOf(1), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
+                "antler" to listOf(1, 2), "arm" to listOf(1), "beak" to listOf(1), "beak-lower" to listOf(1), "blob" to listOf(1), "claw" to listOf(1), "ear" to listOf(1, 2, 3), "fin" to listOf(1), "foot" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                "foot-bird" to listOf(1, 2, 3, 4, 5, 6), "hair" to listOf(1), "hair-cap" to listOf(1), "hair-clump" to listOf(1), "hair-tuft" to listOf(1), "hair-volume" to listOf(1), "hand" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), "head-bird" to listOf(1), "head-round" to listOf(1, 2), "horn" to listOf(1), "head" to listOf(1, 2), "hoof" to listOf(1), "leg" to listOf(1),
+                "leg-bird" to listOf(1), "paw" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), "plate" to listOf(1), "pocket" to listOf(1), "ring" to listOf(1), "scute" to listOf(1), "sheet" to listOf(1), "spike" to listOf(1), "tail" to listOf(1, 2), "tail-curve" to listOf(1), "tail-feathers" to listOf(1), "torso" to listOf(1, 2),
                 "torso-bird" to listOf(1), "torso-upright" to listOf(1), "tube" to listOf(1), "wing-feathered" to listOf(1), "wing-membrane" to listOf(1),
             ),
             versions,

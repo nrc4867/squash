@@ -730,6 +730,7 @@
     <string name="rig_step_twin">To twin</string>
     <string name="rig_step_reset">Reset seam</string>
     <string name="rig_digit_joint">%1$s %2$s</string>
+    <string name="rig_claw">%1$s claw</string>
     <string name="rig_finger_thumb">Thumb</string>
     <string name="rig_finger_index">Index</string>
     <string name="rig_finger_middle">Middle</string>
@@ -756,6 +757,7 @@
     <string name="pose_rides">Rides with body</string>
     <string name="pose_bend">Bend</string>
     <string name="pose_curl">Curl</string>
+    <string name="pose_retract">Retract</string>
     <string name="pose_length">Length</string>
     <string name="pose_keep_volume">Keep volume</string>
     <string name="pose_tip">Tip</string>

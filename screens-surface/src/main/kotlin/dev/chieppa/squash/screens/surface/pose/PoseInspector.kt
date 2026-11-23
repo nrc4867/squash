@@ -63,6 +63,7 @@ object PoseInspectorTags {
     const val RIDES = "pose.limb.rides"
     const val BEND = "pose.limb.bend"
     const val CURL = "pose.limb.curl"
+    const val RETRACT = "pose.limb.retract"
     const val LENGTH = "pose.limb.length"
     const val KEEP_VOLUME = "pose.limb.volume"
     const val BONE = "pose.turn.bone"

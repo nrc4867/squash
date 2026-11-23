@@ -8,6 +8,7 @@ import dev.chieppa.squash.rig.DigitPlace
 import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.isUpright
 import dev.chieppa.squash.uidesign.generated.Res
+import dev.chieppa.squash.uidesign.generated.rig_claw
 import dev.chieppa.squash.uidesign.generated.rig_digit_joint
 import dev.chieppa.squash.uidesign.generated.rig_finger_index
 import dev.chieppa.squash.uidesign.generated.rig_finger_little
@@ -39,6 +40,7 @@ class DigitNames(
     private val toe: String,
     private val hind: String,
     private val joint: String,
+    private val claw: String,
 ) {
     /** The name of the digit [place] is on, on a part whose digits are [fingered] or else toes, in a row of [rowSize] digits. */
     fun digit(place: DigitPlace, fingered: Boolean, rowSize: Int): String = when {
@@ -49,18 +51,20 @@ class DigitNames(
         else -> toe.replace(FIRST, (place.index + 1).toString())
     }
 
-    /** The name of the digit [patch] on [part] in [rig], or null when no bone of the rig lies on it. */
+    /** The name of the digit [patch] on [part] in [rig], or of the digit a claw rides with claw after it, or null when no bone of the rig lies on it. */
     fun digit(rig: Rig, part: PartId, patch: String): String? {
         val place = rig.bones.firstOrNull { it.name.part == part && it.digit?.patch == patch }?.digit ?: return null
-        return digit(place, fingered(rig, part), rowSize(rig, part, patch))
+        return named(rig, part, place)
     }
 
-    /** The bone [name]'s name when it lies on a digit, Index 2, or null for a bone of its part's own chain. */
+    /** The bone [name]'s name when it lies on a digit or its claw, Index 2, or null for a bone of its part's own chain. */
     fun of(rig: Rig, name: BoneName): String? {
         val place = rig.bone(name)?.digit ?: return null
-        val digit = digit(place, fingered(rig, name.part), rowSize(rig, name.part, place.patch))
-        return joint.replace(FIRST, digit).replace(SECOND, place.joint.toString())
+        return joint.replace(FIRST, named(rig, name.part, place) ?: return null).replace(SECOND, place.joint.toString())
     }
+
+    private fun named(rig: Rig, part: PartId, place: DigitPlace): String? =
+        place.on?.let { on -> digit(rig, part, on)?.let { claw.replace(FIRST, it) } } ?: digit(place, fingered(rig, part), rowSize(rig, part, place.patch))
 
     /** Whether [part]'s digits are fingers: a hand on an upright character. */
     private fun fingered(rig: Rig, part: PartId): Boolean = rig.part(part)?.role == Role.HAND && rig.isUpright
@@ -84,4 +88,5 @@ fun digitNames(): DigitNames = DigitNames(
     stringResource(Res.string.rig_toe_n, FIRST),
     stringResource(Res.string.rig_toe_hind),
     stringResource(Res.string.rig_digit_joint, FIRST, SECOND),
+    stringResource(Res.string.rig_claw, FIRST),
 )

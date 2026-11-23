@@ -30,8 +30,11 @@ data class DigitNail(
     val claw: Param = Param.of(0f),
     @Doc("How far a claw's point curls toward the digit's underside, as a share of the claw's length, -1 to 1.")
     val curl: Param = Param.of(0f),
+    @Doc("A boolean parameter that leaves the nails or claws out while it is on, as when a claws block builds hard claws in their place.")
+    val unless: ParamRef? = null,
 ) {
-    fun isOn(values: Map<String, Float>): Boolean = condition?.let { values[it.name] != 0f } ?: true
+    fun isOn(values: Map<String, Float>): Boolean =
+        (condition?.let { values[it.name] != 0f } ?: true) && (unless?.let { (values[it.name] ?: 0f) == 0f } ?: true)
 }
 
 /**

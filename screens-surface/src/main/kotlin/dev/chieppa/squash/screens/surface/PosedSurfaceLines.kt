@@ -112,9 +112,12 @@ class PosedSurfaceLines(val shown: PosedSurface, private val strokes: List<Weigh
         return contour + facedCurveDraws(border, view, look.creases, ink, shown.surface.mesh.cell, DepthLayer.FRONT)
     }
 
-    /** [part]'s own section's contour through [view] as the figure's own is drawn, with nothing where it meets its neighbours. */
-    fun sectionContour(part: PartId, view: SurfaceView, look: CharacterLook, ink: Color, figureRadius: Float): List<RibbonDraw> =
-        contourRibbon(emptyList(), view, listOf(sectionOf(part).first), weightAt)?.let { contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius) }.orEmpty()
+    /**
+     * [part]'s own section's contour through [view] as the figure's own is drawn, with nothing where it meets its neighbours, and the
+     * contour of its [pieces], its patches that are not runs, a claw or a pad, with it.
+     */
+    fun sectionContour(part: PartId, view: SurfaceView, look: CharacterLook, ink: Color, figureRadius: Float, pieces: Collection<PartLines> = emptyList()): List<RibbonDraw> =
+        contourRibbon(pieces, view, listOf(sectionOf(part).first), weightAt)?.let { contourDraws(it, look.lines, ink, LineLayers.FIGURE, figureRadius) }.orEmpty()
 }
 
 /** These lines of a part of the one surface: only its patches that are not runs, and no crease, since the surface's own joins ink it; its strands stay. */

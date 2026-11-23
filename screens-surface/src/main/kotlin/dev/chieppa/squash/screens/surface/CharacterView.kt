@@ -129,7 +129,7 @@ fun characterView(
         ribbons += oneLines.inks(view, look, ink, state.palette)
         ribbons += oneLines.garmentMarkDraws(look, state.palette, ink, state.taper)
     } else {
-        state.only.filter { it in inSurface }.forEach { ribbons += oneLines.sectionContour(it, view, look, ink, radius) }
+        state.only.filter { it in inSurface }.forEach { id -> ribbons += oneLines.sectionContour(id, view, look, ink, radius, lined.filter { it.part.id == id }) }
     }
     state.paint?.seenFrom(view::toViewer)?.marks?.forEach { (id, marks) ->
         if (state.only != null && id !in state.only) return@forEach

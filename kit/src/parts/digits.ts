@@ -34,3 +34,29 @@ export function digitCurl(part: string, curl: DigitCurl): BonePose[] {
 export function digitPatch(digit: number | typeof THUMB, row = "fingers"): string {
   return `${row}:${digit}`;
 }
+
+/** The shortest a stretch makes a span, as the rig holds it: a whole retract slides a claw this far short of its anchor. */
+const MIN_STRETCH = 0.1;
+
+/** Which hard claws a retract slides: those on a part's `count` numbered digits and on its `named` ones. */
+export type ClawRetract = {
+  /** How many numbered digits the part builds: a hand's `digits` less its thumb, a foot's or paw's `toes`. */
+  count: number;
+  /** The named digits the part builds, which carry claws too: a hand's `thumb`, a bird foot's `back`. */
+  named?: string[];
+  /** How far the claws are in, from 0, out as built, to 1, hidden inside their digits. */
+  amount: number;
+};
+
+/**
+ * The bone poses that retract one part's hard claws (`clawParts` on a hand, foot, paw or bird foot): the root joint
+ * `claws:<i>.2` of every claw, stretched toward its hidden anchor, not keeping volume, so the claw slides back whole into its digit,
+ * the slide growing with the amount's square as the rig's Retract does.
+ * `clawRetract("paw-l", { count: 3, amount: 1 })` sheathes a three-toed paw's claws; the app's Pose stage writes the same as Retract.
+ */
+export function clawRetract(part: string, retract: ClawRetract): BonePose[] {
+  const amount = Math.min(Math.max(retract.amount, 0), 1);
+  const stretch = 1 - (1 - MIN_STRETCH) * amount * amount;
+  const digits: string[] = [...Array.from({ length: retract.count }, (_, i) => String(i)), ...(retract.named ?? [])];
+  return digits.map((digit) => ({ part, joint: `claws:${digit}.2`, stretch, keepVolume: false }));
+}

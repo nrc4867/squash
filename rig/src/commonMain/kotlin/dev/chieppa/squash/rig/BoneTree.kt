@@ -66,7 +66,7 @@ private fun bonesOf(part: RiggedPart, carrier: BoneName?): List<Bone> {
             val pivot = part.rings.middle(joint.u, digit.patch)
             val end = part.rings.middle(joints.digitSpanEnd(d, k), digit.patch)
             val parent = part.bone(if (k == 0) joints.rootOf(d) else joints.indexOf(d, k - 1))
-            boneOf(part.bone(joints.indexOf(d, k)), parent, pivot, end, { part.rings.tangent(joint.u, digit.patch) }, hingeDirection(joint.hinge, axes, mirrored) * curl, joint, mirrored, DigitPlace(digit.patch, digit.index, k + 1, digit.back))
+            boneOf(part.bone(joints.indexOf(d, k)), parent, pivot, end, { part.rings.tangent(joint.u, digit.patch) }, hingeDirection(joint.hinge, axes, mirrored) * curl, joint, mirrored, DigitPlace(digit.patch, digit.index, k + 1, digit.back, digit.on))
         }
     }
     return chain + digits

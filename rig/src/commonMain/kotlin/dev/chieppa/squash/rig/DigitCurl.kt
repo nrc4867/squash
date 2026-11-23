@@ -8,8 +8,8 @@ import dev.chieppa.squash.document.Pose
 /** How far a digit joint with no limits curls at a whole curl, in degrees. */
 private const val UNLIMITED_CURL = 90f
 
-/** The bones of [part]'s digits, as places in [Rig.bones], in the order the rig lists them. */
-fun Rig.digitBones(part: PartId): List<Int> = bones.indices.filter { bones[it].name.part == part && bones[it].digit != null }
+/** The bones of [part]'s digits, as places in [Rig.bones], in the order the rig lists them; a claw's bones are not a digit's. */
+fun Rig.digitBones(part: PartId): List<Int> = bones.indices.filter { bones[it].name.part == part && bones[it].digit?.let { place -> place.on == null } == true }
 
 /** How far a whole curl tips [bone]: the farther of its limits, the way a digit closes. */
 private fun Bone.fullCurl(): Float = limits?.let { if (-it.min > it.max) it.min else it.max } ?: UNLIMITED_CURL
