@@ -19,6 +19,8 @@ import dev.chieppa.squash.rig.Limb
 import dev.chieppa.squash.rig.Rig
 import dev.chieppa.squash.rig.curlOf
 import dev.chieppa.squash.rig.curled
+import dev.chieppa.squash.rig.retractOf
+import dev.chieppa.squash.rig.retracted
 import dev.chieppa.squash.screens.AppState
 import dev.chieppa.squash.screens.surface.Readout
 import dev.chieppa.squash.uidesign.generated.Res
@@ -29,6 +31,7 @@ import dev.chieppa.squash.uidesign.generated.pose_degrees
 import dev.chieppa.squash.uidesign.generated.pose_keep_volume
 import dev.chieppa.squash.uidesign.generated.pose_length
 import dev.chieppa.squash.uidesign.generated.pose_planted
+import dev.chieppa.squash.uidesign.generated.pose_retract
 import dev.chieppa.squash.uidesign.generated.pose_rides
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.SettingRow
@@ -47,7 +50,8 @@ private val FREE_BEND = -180f..180f
 /**
  * The picked limb, named by its paw: whether it is planted and whether, lifted, it rides with the body; its knee's Bend, read and set
  * about the hinge; the Length its end joint gives the lower bone, with Keep volume, where its template offers a stretch there; and
- * the Curl of its paw's digits, where the paw has jointed digits. With Mirror on a change writes the twin too.
+ * the Curl of its paw's digits, where the paw has jointed digits, and the Retract of its hard claws, where it has them. With Mirror on a
+ * change writes the twin too.
  */
 @Composable
 internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, character: Character, limb: Limb, names: (PartId) -> String, sliders: SliderGesture) {
@@ -68,6 +72,7 @@ internal fun LimbSection(state: AppState, session: CharacterSession, rig: Rig, c
             Readout(stringResource(Res.string.pose_degrees, bend.roundToInt()))
         }
         CurlRow(session, rig, character, limb.paw ?: limb.leg, mirror, sliders)
+        RetractRow(session, rig, character, limb.paw ?: limb.leg, mirror, sliders)
         if (end.stretch) {
             val stretch = ankle?.stretch ?: 1f
             SettingRow(lengthLabel) {
@@ -88,5 +93,17 @@ private fun CurlRow(session: CharacterSession, rig: Rig, character: Character, p
     SettingRow(label) {
         Slider(curl, { sliders.change(SetPose(rig.curled(session.document.value.character.pose, parts, it))) }, label, Modifier.weight(1f).testTag(PoseInspectorTags.CURL), 0f..1f, sliders::done)
         Readout(stringResource(Res.string.edit_percent, (curl * PERCENT).roundToInt()))
+    }
+}
+
+/** Retract: one value sliding every hard claw of [paw] back into its digit, 0 out to 1 in, and its twin's with [mirror]. */
+@Composable
+private fun RetractRow(session: CharacterSession, rig: Rig, character: Character, paw: PartId, mirror: Boolean, sliders: SliderGesture) {
+    val retract = rig.retractOf(character.pose, paw) ?: return
+    val label = stringResource(Res.string.pose_retract)
+    val parts = listOfNotNull(paw, character.part(paw)?.let(character::twinOf)?.id?.takeIf { mirror })
+    SettingRow(label) {
+        Slider(retract, { sliders.change(SetPose(rig.retracted(session.document.value.character.pose, parts, it))) }, label, Modifier.weight(1f).testTag(PoseInspectorTags.RETRACT), 0f..1f, sliders::done)
+        Readout(stringResource(Res.string.edit_percent, (retract * PERCENT).roundToInt()))
     }
 }

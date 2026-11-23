@@ -137,6 +137,7 @@ A part's `role` is what it is to the body, one of `body`, `spine`, `neck`, `head
 | `pair` | `{ ...pair("arm") }` names the sides `arm-l` and `arm-r`. |
 | `sides` | `sides("arm").right` is `"arm-r"`. |
 | `digitCurl` | `digitCurl("hand-l", { count: 3, curl: [-6, -10, -6], thumb: [6, 4, 2] })` poses every joint of a hand's three numbered fingers and its thumb; `row: "toes"` for a foot or paw. |
+| `clawRetract` | `clawRetract("hand-l", { count: 3, named: [THUMB], amount: 1 })` slides a part's hard claws (`clawParts`) back into their digits, 0 out to 1 in, as the Pose stage's Retract does; `named: ["back"]` for a bird foot's hind toe. |
 | `bothSides` | `displayPose: bothSides("arm", { joint: "base", lean: -28 })` |
 | `curve`, `spiral` (part fields) | `curve: [[0.4, 0], [0.7, 0.25], [0.55, 0.5, 0.1]]` or `spiral: { turns: -1.5, pitch: -0.5, shrink: 0.5 }` on any part whose template sweeps (`templates.md`, curve column): a hook, a tusk, a coiled horn or trunk. |
 

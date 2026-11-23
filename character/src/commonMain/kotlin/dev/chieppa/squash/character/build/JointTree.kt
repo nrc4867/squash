@@ -56,8 +56,11 @@ class JointTree(template: PartTemplate, patches: Collection<String>) {
     /** The place in [specs] of joint [k] of digit [digit]. */
     fun indexOf(digit: Int, k: Int): Int = digitStart[digit] + k
 
-    /** The chain's joint digit [digit] branches from, as a place in [specs]. */
-    fun rootOf(digit: Int): Int = ownerAt(digits[digit].span.start)
+    /** The joint digit [digit] branches from, as a place in [specs]: the last of the digit it rides on, else the chain's owning its start. */
+    fun rootOf(digit: Int): Int {
+        val on = digits[digit].on?.let(byPatch::get)?.takeIf { digits[it].joints.isNotEmpty() }
+        return if (on != null) indexOf(on, digits[on].joints.size - 1) else ownerAt(digits[digit].span.start)
+    }
 
     /** The place in [specs] of the joint a vertex of [patch] at [u] follows. */
     fun boneAt(patch: String, u: Float): Int {

@@ -257,6 +257,7 @@ internal class OwnWeights(private val part: RiggedPart, index: Map<BoneName, Int
         val perU = part.rings.lengthPerU
         if (perU <= 0f) return 0f
         val digit = joints.digits[d]
+        if (digit.rigid) return 0f
         val joint = digit.joints[k]
         val before = if (k == 0) digit.span.start else digit.joints[k - 1].u
         val room = minOf(joint.u - before, joints.digitSpanEnd(d, k) - joint.u) / 2f

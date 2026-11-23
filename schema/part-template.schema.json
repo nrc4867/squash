@@ -220,6 +220,9 @@
           "$ref": "#/$defs/Cap"
         },
         {
+          "$ref": "#/$defs/Claws"
+        },
+        {
           "$ref": "#/$defs/Digits"
         },
         {
@@ -305,6 +308,129 @@
       "required": [
         "kind",
         "end"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "Claws": {
+      "description": "Hard claws on the tips of a digits row joined to the field listed before it: each its own mesh past the digit's tip, hooked to a sharp point with a collar round its root, inked and coloured on its own, riding two bones of its own from the digit's last joint so a pose slides it back into the toe.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "claws"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on": {
+          "description": "The digits row whose tips it sits on. The row is listed before the claws.",
+          "type": "string"
+        },
+        "length": {
+          "description": "How far each claw reaches past its tip, as a share of its digit's length.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "thickness": {
+          "description": "Each claw's height at its root, as a share of the tip's thickness.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "hook": {
+          "description": "How far each claw hooks toward the digit's underside from root to point: 0 straight, 1 a full hook.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "sheath": {
+          "description": "How wide the collar round each claw's root swells past it, 0 to 1: the skin it leaves the toe through.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "segments": {
+          "description": "Points round each claw's section, an even number.",
+          "type": "integer"
+        },
+        "color": {
+          "description": "The palette slot the claws show until filled; the collar shows the part's own colour.",
+          "type": "string"
+        },
+        "hinge": {
+          "description": "Which of the part's axes each claw's bones turn about, as the row's joints do.",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "limits": {
+          "description": "Degrees each claw's root joint turns within.",
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "on",
+        "length"
       ],
       "patternProperties": {
         "^x-": {}
@@ -524,6 +650,18 @@
             {
               "type": "string",
               "pattern": "^\\$[a-z][a-zA-Z0-9]*(\\*-?[0-9]+(\\.[0-9]+)?)?$"
+            }
+          ]
+        },
+        "unless": {
+          "description": "A boolean parameter that leaves the nails or claws out while it is on, as when a claws block builds hard claws in their place.",
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\$[a-z][a-zA-Z0-9]*$"
+            },
+            {
+              "type": "null"
             }
           ]
         }

@@ -4,9 +4,9 @@ Build the foot the character means, as a part that stands and poses well. The sh
 
 | template | use for | toes |
 | --- | --- | --- |
-| `foot` (version 10) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's, a sock or a shoe-like toon foot; a heel set back behind the ankle, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans` |
-| `paw` (version 12) | a digitigrade paw: a fox's, a cat's, a dragon's; a wrist rising into the leg, a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans` |
-| `foot-bird` (version 4) | a bird's foot | four toes |
+| `foot` (version 11) | a plantigrade foot: a person's, a mouse's, a bear's, an anthro's, a sock or a shoe-like toon foot; a heel set back behind the ankle, a sole, toes flat underneath | `toes` 0 to 5; `toeLength`, `toeThickness`, `spread`, `merge`, `claw`, `clawCurl`, `pads`, `beans`, `clawParts` |
+| `paw` (version 13) | a digitigrade paw: a fox's, a cat's, a dragon's; a wrist rising into the leg, a heel ball and pad, toes in a fan, claws, pads and beans | `toes` 0 to 5; `spread`, `merge`, `claws`, `claw`, `clawCurl`, `pads`, `beans`, `clawParts` |
+| `foot-bird` (version 6) | a bird's foot | four toes; `claw`, `clawCurl` |
 
 Both rest forward and stand on the floor rule: whatever ends a leg that bears weight is what the character stands on.
 
@@ -91,6 +91,19 @@ Judge by eye in the rest, display and T-pose renders, bare and dressed: whether 
 
 A paw takes the same steps: measure, then trace its Side and Top where the sheet shows the paw large and clear (front and side views of the hind feet), paste, `size: 1`, or use the template sized from the measured length. Its toes are its own: `toes` 1 to 5 (2 a cloven foot, 3 or 4 a cat's or a dog's), `merge` 0.15 to 0.3 for toes standing clear, about 1 for a mitten, `claw` and `clawCurl` for claws past the tips, `claws: 0` to retract, `pads` and `beans` for the main pad and the beans, in the slots `pad` and `claw` when the palette names them. A quadruped's every leg carries a paw: a leg with nothing on its end socket ends in a flat stump. The same holds for creature feet: a drawn outline round the toes, toes from the parameters.
 
+## Claws: grown or hard
+
+Two kinds, the same on a foot, a paw and a bird foot:
+
+- **Grown claws** (`claw`, `clawCurl`; `claws: 0` hides a paw's) are points grown out of the toe's own surface and painted: one silhouette with the toe, no ink between them, nothing to pose. Enough for a small or soft claw that is part of the toe's shape, a dragon's or a fennec's, and the default.
+- **Hard claws** (`clawParts: 1`) are a claw on every toe as its own mesh: its own contour ink, the `claw` slot, a collar where it leaves the toe (area `sheath`, the part's own colour until filled), hooked to a sharp point, and posable: **Retract** slides them back into the toes (0 out to 1 in), the Pose stage's control under Curl, or `clawRetract` in a recipe pose. Use them where the claws are a feature (white claws on a coloured paw, a cat's claws out or sheathed, talons) or where a pose must sheathe them. The grown claws and nails are left out while they are on. Shape them to the character: `clawLength` (a share of the toe's length), `clawThickness`, `clawHook`, `clawSheath`. A retracted claw hides inside its toe only while the toe has room for it: render the claws in and shorten them where a point still shows; a long hooked claw on a foot that stands flat reaches the floor.
+
+```ts
+params: { toes: 3, clawParts: 1, clawLength: 0.6, clawThickness: 0.45, clawHook: 0.6, clawSheath: 0.3 },
+```
+
+Render `close=feet,foot-l` and poses of the display pose with the claws at 0.5 and 1 (`clawRetract(part, { count: 3, amount })`; `named: ["back"]` for a bird's hind toe): out, each claw clears the toe from the front and the side; in, none shows.
+
 ## On one toe
 
 Sockets, regions and marks name a toe's patch, `toes:0` on from the inner toe (`templates.md` lists them), to lie on that toe and ride it: `socket(1, 0.9, 0.25, { patch: digitPatch(0, "toes") })` on the feet. A patch the part does not build warns at build, as does a garment's print on a toe.
@@ -100,5 +113,5 @@ Sockets, regions and marks name a toe's patch, `toes:0` on from the inner toe (`
 ## Limits
 
 - **Cloth stops at the toes' roots**: a sock or shoe covers the foot and the toes poke through or stay bare, and prints on a toe show nowhere. A closed shoe or a sock is `toes: 0` with its outline drawn.
-- **Claws are field points.** A paw's claws are grown in its own surface and painted; they cannot be separate hard parts or carry sockets.
+- **Grown claws are field points.** They are grown in the toe's own surface and painted, and cannot pose or carry sockets; hard claws (`clawParts`) are their own meshes and retract, but carry no sockets either.
 - **No toes on paddles.** A paddle foot or flipper is a drawn `blob` or `sheet` with no digits.

@@ -12,14 +12,14 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `claw` | 1 | - | Claw | horn | yes |
 | `ear` | 3 | 1, 2 | Ear | ear | yes |
 | `fin` | 1 | - | Fin | fin | yes |
-| `foot` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9 | Foot | foot | no |
-| `foot-bird` | 5 | 1, 2, 3, 4 | Bird foot | foot | no |
+| `foot` | 11 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | Foot | foot | no |
+| `foot-bird` | 6 | 1, 2, 3, 4, 5 | Bird foot | foot | no |
 | `hair` | 1 | - | Hair | hair | yes |
 | `hair-cap` | 1 | - | Hair cap | hair | no |
 | `hair-clump` | 1 | - | Hair clump | hair | yes |
 | `hair-tuft` | 1 | - | Hair tuft | hair | yes |
 | `hair-volume` | 1 | - | Hair volume | hair | no |
-| `hand` | 9 | 1, 2, 3, 4, 5, 6, 7, 8 | Hand | hand | no |
+| `hand` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9 | Hand | hand | no |
 | `head` | 2 | 1 | Head | head | no |
 | `head-bird` | 1 | - | Bird head | head | no |
 | `head-round` | 2 | 1 | Round head | head | no |
@@ -27,7 +27,7 @@ Every template at its newest version, which a recipe part gets when it gives no 
 | `horn` | 1 | - | Horn | horn | yes |
 | `leg` | 1 | - | Leg | leg | yes |
 | `leg-bird` | 1 | - | Bird leg | leg | yes |
-| `paw` | 12 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | Paw | foot | no |
+| `paw` | 13 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 | Paw | foot | no |
 | `plate` | 1 | - | Plate | fin | yes |
 | `pocket` | 1 | - | Pocket | other | yes |
 | `ring` | 1 | - | Ring | none (guessed from where it sits) | no |
@@ -325,7 +325,7 @@ Parameters:
 | `size` | 1 | 0.4 to 2.5 | Scales the part: its drawn length and width together. |
 | `girth` | 0.08 | 0.02 to 0.5 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 
-## foot 10
+## foot 11
 
 | fact | value |
 | --- | --- |
@@ -360,7 +360,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:4.1` | `toes:4` | x | [-30, 40] | down, back |
 | `toes:4.2` | `toes:4` | x | [-30, 40] | down, back |
 
-Patches: `body`, `toes:<i>`, `webbing:<i>`
+Patches: `body`, `toes:<i>`, `claws:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -371,6 +371,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `nail:2` | toes:2 | [0.784, 0.806] | [0.14, 0.36] | fill | nails |
 | `nail:3` | toes:3 | [0.751, 0.771] | [0.14, 0.36] | fill | nails |
 | `nail:4` | toes:4 | [0.707, 0.725] | [0.14, 0.36] | fill | nails |
+| `claws` | claws | [0.5, 1] | [0, 1] | fill | claw |
+| `sheath` | claws | [0, 0.5] | [0, 1] | fill | - |
 | `sole` | body | [0.14, 1] | [0.37, 0.63] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
 | `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
@@ -401,8 +403,13 @@ Parameters:
 | `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
 | `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
 | `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
+| `clawParts` | 0 (off) | a flag: 1 or 0 | Builds a hard claw on every toe's tip as its own mesh, inked and coloured on its own with a collar where it leaves the toe, riding bones of its own that a pose slides back into the toe; the nails or grown claws are left out while it is on. |
+| `clawLength` | 0.45 | 0.1 to 1.5 | How far each hard claw reaches past its tip, as a share of its toe's length. |
+| `clawThickness` | 0.5 | 0.2 to 1 | Each hard claw's height at its root, as a share of the tip's thickness. |
+| `clawHook` | 0.5 | 0 to 1 | How far each hard claw hooks toward the underside from root to point: 0 straight, 1 a full hook. |
+| `clawSheath` | 0.5 | 0 to 1 | How wide the collar round each hard claw's root swells, 0 to 1: the skin it leaves the toe through. |
 
-## foot-bird 5
+## foot-bird 6
 
 | fact | value |
 | --- | --- |
@@ -437,7 +444,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:back.1` | `toes:back` | x | [-15, 80] | up |
 | `toes:back.2` | `toes:back` | x | [-15, 80] | up |
 
-Patches: `body`, `toes:<i>`, `webbing:<i>`
+Patches: `body`, `toes:<i>`, `claws:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -451,6 +458,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `pad:1` | toes:1 | [0.502, 0.694] | [0.6, 0.9] | fill | pad |
 | `pad:2` | toes:2 | [0.425, 0.56] | [0.6, 0.9] | fill | pad |
 | `pad:back` | toes:back | [0.262, 0.363] | [0.6, 0.9] | fill | pad |
+| `claws` | claws | [0.5, 1] | [0, 1] | fill | claw |
+| `sheath` | claws | [0, 0.5] | [0, 1] | fill | - |
 | `top` | body | [0, 0.4] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
 | `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
@@ -478,6 +487,11 @@ Parameters:
 | `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
 | `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
 | `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
+| `clawParts` | 0 (off) | a flag: 1 or 0 | Builds a hard claw on every toe's tip as its own mesh, inked and coloured on its own with a collar where it leaves the toe, riding bones of its own that a pose slides back into the toe; the nails or grown claws are left out while it is on. |
+| `clawLength` | 0.45 | 0.1 to 1.5 | How far each hard claw reaches past its tip, as a share of its toe's length. |
+| `clawThickness` | 0.5 | 0.2 to 1 | Each hard claw's height at its root, as a share of the tip's thickness. |
+| `clawHook` | 0.5 | 0 to 1 | How far each hard claw hooks toward the underside from root to point: 0 straight, 1 a full hook. |
+| `clawSheath` | 0.5 | 0 to 1 | How wide the collar round each hard claw's root swells, 0 to 1: the skin it leaves the toe through. |
 
 ## hair 1
 
@@ -727,7 +741,7 @@ Presets, a part's `preset` (its own `params` override them):
 | `long` | `crown` 0.55, `width` 0.5, `back` 1.6, `sides` 1.3, `fringe` -0.02, `rise` 0.3, `flip` 0.08, `fullness` 3.2, `locks` 16, `lockDepth` 0.35, `lockJag` 0.5, `lockRound` 0.2, `lockFlare` 0.04, `layers` 2, `layerGap` 0.22, `lockLines` 0.2 |
 | `ponytail` | `crown` 0.5, `width` 0.46, `back` 0.2, `sides` -0.02, `fringe` 0, `rise` 0.32, `flip` 0, `fullness` 2.4, `locks` 0, `lockDepth` 0, `layers` 0, `lockLines` 0 |
 
-## hand 9
+## hand 10
 
 | fact | value |
 | --- | --- |
@@ -767,7 +781,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `fingers:thumb.2` | `fingers:thumb` | x | [-20, 35] | back |
 | `fingers:thumb.3` | `fingers:thumb` | x | [-20, 35] | back |
 
-Patches: `body`, `fingers:<i>`, `webbing:<i>`
+Patches: `body`, `fingers:<i>`, `claws:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -778,6 +792,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `nail:2` | fingers:2 | [0.863, 0.923] | [0.1, 0.4] | fill | nails |
 | `nail:3` | fingers:3 | [0.782, 0.829] | [0.1, 0.4] | fill | nails |
 | `nail:thumb` | fingers:thumb | [0.57, 0.626] | [0.1, 0.4] | fill | nails |
+| `claws` | claws | [0.5, 1] | [0, 1] | fill | claw |
+| `sheath` | claws | [0, 0.5] | [0, 1] | fill | - |
 | `back` | body | [0, 0.7] | [0, 0.5] | fill | - |
 | `fingers` | fingers | [0, 1] | [0, 1] | fill | - |
 | `webbing` | webbing | [0, 1] | [0, 1] | fill | - |
@@ -804,6 +820,11 @@ Parameters:
 | `webReach` | 1 | 0.2 to 1 | How far up the fingers the web reaches from where they leave the palm: 1 a full web to the tips, 0.5 a half web. |
 | `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
 | `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
+| `clawParts` | 0 (off) | a flag: 1 or 0 | Builds a hard claw on every finger's tip as its own mesh, inked and coloured on its own with a collar where it leaves the finger, riding bones of its own that a pose slides back into the finger; the nails or grown claws are left out while it is on. |
+| `clawLength` | 0.45 | 0.1 to 1.5 | How far each hard claw reaches past its tip, as a share of its finger's length. |
+| `clawThickness` | 0.5 | 0.2 to 1 | Each hard claw's height at its root, as a share of the tip's thickness. |
+| `clawHook` | 0.5 | 0 to 1 | How far each hard claw hooks toward the underside from root to point: 0 straight, 1 a full hook. |
+| `clawSheath` | 0.5 | 0 to 1 | How wide the collar round each hard claw's root swells, 0 to 1: the skin it leaves the finger through. |
 
 ## head 2
 
@@ -1125,7 +1146,7 @@ Parameters:
 | `thickness` | 0.08 | 0.04 to 0.3 | Radius with nothing drawn, a fraction of the length; drawn outlines set the shape instead. |
 | `stance` | 0.1 | 0 to 0.3 | How far the undrawn leg bends toward its underside at the joint, a fraction of its length. |
 
-## paw 12
+## paw 13
 
 | fact | value |
 | --- | --- |
@@ -1158,7 +1179,7 @@ Digit joints at the defaults, which poses name as `<patch>.<k>`, k from 1 at the
 | `toes:3.1` | `toes:3` | x | [-20, 60] | down, back |
 | `toes:3.2` | `toes:3` | x | [-20, 60] | down, back |
 
-Patches: `body`, `toes:<i>`, `webbing:<i>`
+Patches: `body`, `toes:<i>`, `claws:<i>`, `webbing:<i>`
 
 Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 
@@ -1174,6 +1195,8 @@ Paintable areas, filled with `"areas": {"<area>": "<slot>"}`:
 | `bean:1` | toes:1 | [0.703, 0.763] | [0.63, 0.87] | fill | pad |
 | `bean:2` | toes:2 | [0.703, 0.763] | [0.63, 0.87] | fill | pad |
 | `bean:3` | toes:3 | [0.613, 0.661] | [0.63, 0.87] | fill | pad |
+| `claws` | claws | [0.5, 1] | [0, 1] | fill | claw |
+| `sheath` | claws | [0, 0.5] | [0, 1] | fill | - |
 | `pad` | body | [0.16, 0.44] | [0.38, 0.62] | fill | pad |
 | `top` | body | [0, 0.66] | [0.75, 0.25] | fill | - |
 | `toes` | toes | [0, 1] | [0, 1] | fill | - |
@@ -1203,6 +1226,11 @@ Parameters:
 | `webReach` | 1 | 0.2 to 1 | How far up the toes the web reaches from where they leave the foot: 1 a full web to the tips, 0.5 a half web. |
 | `webEdge` | 0.25 | 0 to 0.6 | How far the web's free edge dips between two digits, as a share of its reach: 0 a straight edge, more a scalloped one. |
 | `webThickness` | 0.3 | 0.1 to 0.8 | How thick the web is half way between two digits, as a share of their thickness. |
+| `clawParts` | 0 (off) | a flag: 1 or 0 | Builds a hard claw on every toe's tip as its own mesh, inked and coloured on its own with a collar where it leaves the toe, riding bones of its own that a pose slides back into the toe; the nails or grown claws are left out while it is on. |
+| `clawLength` | 0.45 | 0.1 to 1.5 | How far each hard claw reaches past its tip, as a share of its toe's length. |
+| `clawThickness` | 0.5 | 0.2 to 1 | Each hard claw's height at its root, as a share of the tip's thickness. |
+| `clawHook` | 0.5 | 0 to 1 | How far each hard claw hooks toward the underside from root to point: 0 straight, 1 a full hook. |
+| `clawSheath` | 0.5 | 0 to 1 | How wide the collar round each hard claw's root swells, 0 to 1: the skin it leaves the toe through. |
 
 ## plate 1
 

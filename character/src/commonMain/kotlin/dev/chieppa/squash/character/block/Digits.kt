@@ -291,7 +291,7 @@ data class Digits(
         ctx.param("join", join) + ctx.param("knuckles", knuckles) + ctx.param("merge", merge) +
         ctx.atLeast("rings", rings, MIN_RINGS) + ctx.atLeast("segments", segments, MIN_SEGMENTS) + ctx.param("count", count) +
             ctx.param("taper", taper) + ctx.param("knuckle", knuckle) + ctx.param("flat", flat) + ctx.param("reach", reach) + ctx.param("thickness", thickness) + ctx.param("spread", spread) + ctx.param("gap", gap) +
-            nail?.let { ctx.param("nail.claw", it.claw) + ctx.param("nail.curl", it.curl) }.orEmpty() +
+            nail?.let { ctx.param("nail.claw", it.claw) + ctx.param("nail.curl", it.curl) + ctx.flag("nail.unless", it.unless) }.orEmpty() +
             pad?.let { ctx.param("pad.rise", it.rise) }.orEmpty() +
             digits.flatMapIndexed { i, digit -> digit.lint(ctx, "digits[$i]") }
 }
