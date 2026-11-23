@@ -12,8 +12,15 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   STRETCH_REF: main
+  # Stretch's wgpu-native bindings come from GitHub Packages, which needs a token even for public packages.
+  ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
+  ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   # code=false only on a pull request whose changed files are all Markdown outside docs/reference/. When this job fails its output
