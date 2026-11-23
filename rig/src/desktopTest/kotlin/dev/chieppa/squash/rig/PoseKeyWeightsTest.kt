@@ -14,6 +14,7 @@ import dev.chieppa.squash.document.PoseKey
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.TemplateId
 import dev.chieppa.squash.document.TemplateRef
+import dev.chieppa.squash.geom.Vec3
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,6 +77,25 @@ class PoseKeyWeightsTest {
         val atT = weights(raised(45f), both)
         assertEquals(0f, atT[0].left, 1e-4f)
         assertEquals(1f, atT[1].left, 1e-4f)
+    }
+
+    @Test
+    fun twoKeysOnOneJointShareAPoseBetweenThemByTheBonesTurns() {
+        val arm = Bone(BoneName(left, "base"), null, Vec3(0f, 0.6f, 0.1f), Vec3(0f, -1f, 1f).normalized(), 0.2f, Vec3(0f, 1f, 1f).normalized(), null, false)
+        val turnOf: BoneTurn = { _, _, bone -> localTurn(arm, bone.angles()) }
+        fun between(s: Float) = Pose(listOf(left, right).map { BonePose(it, "base", -90f * s, lean = 45f * (1f - s), mode = JointMode.FREE) })
+        val forward = PoseKey("forward", between(1f).bones)
+        val both = listOf(tKey, forward)
+        val read = (0..10).map { keyWeights(both, between(it / 10f), sides::get, twins::get, turnOf) }
+        assertEquals(1f, read.first()[0].left, 1e-4f)
+        assertEquals(0f, read.first()[1].left, 1e-4f)
+        assertEquals(0f, read.last()[0].left, 1e-4f)
+        assertEquals(1f, read.last()[1].left, 1e-4f)
+        val t = read.map { it[0].left }
+        val f = read.map { it[1].left }
+        assertTrue(t.zipWithNext().all { (a, b) -> b <= a + 1e-4f } && f.zipWithNext().all { (a, b) -> b >= a - 1e-4f }, "one hands over to the other: $t $f")
+        val totals = read.map { it[0].left + it[1].left }
+        assertTrue(totals.all { it > 0.7f }, "an arm held between the two keys, far from the rest, takes most of them: $totals")
     }
 
     @Test

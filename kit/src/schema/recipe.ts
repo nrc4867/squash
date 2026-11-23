@@ -948,7 +948,7 @@ export interface RecipeKeyChange {
   part: string;
   /** Width scales by direction: forward (or front), back, up, down, left, right, outer or inner as a tube's profiles name them, or side+, side-, top+ and top- for a side of the part's Side or Top outline. Each is a run of [x, scale] places along the part, eased between them and held level past its ends. */
   widths?: { [key: string]: number[][] };
-  /** How much the blend where it joins its parent is scaled by; a part with no blend of its own keeps its default. */
+  /** How much the blend where it joins its parent is scaled by; a part with no blend of its own scales the blend the build gives its join. */
   blend?: number | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;

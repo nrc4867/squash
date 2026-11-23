@@ -40,7 +40,8 @@ class LookArgs(args: Array<String>) {
      * both painted eyes framed close from the front, three-quarter and side, hair, the head and its hair framed on the head alone, so
      * builds with other hair frame alike, as a hair outline's views look: front, three-quarter (45 degrees round toward the character's
      * left), side and back, and turn, the whole character from eight ways round it in its own shading, so what its key light lights stays
-     * toward the light as the camera turns, and strip, the whole character from the front in its display pose, at rest and in a T-pose side by side.
+     * toward the light as the camera turns, strip, the whole character from the front in its display pose, at rest and in a T-pose side by side, and walk,
+     * six frames of one stride from the side and three-quarter.
      * `none` asks for no close-up at all.
      */
     val close: Set<String> = values["close"]?.split(',')?.filter { it != NONE }?.toSet() ?: setOf(FACE, HAND, FOOT)
@@ -141,6 +142,7 @@ class LookArgs(args: Array<String>) {
         const val TURN = "turn"
         const val MOUTH = "mouth"
         const val STRIP = "strip"
+        const val WALK = "walk"
 
         /** How wide each whole-character view is by default, in pixels. */
         const val VIEW_TILE = 600
@@ -149,7 +151,7 @@ class LookArgs(args: Array<String>) {
         const val NONE = "none"
 
         /** Every word `close=` takes; anything else it holds is a part id. */
-        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES, HAIR, TURN, MOUTH, STRIP)
+        val CLOSE_WORDS: Set<String> = setOf(FACE, HAND, FOOT, HANDS, FEET, JOINS, SURFACE, DRAG, RELEASE, ANCHORS, ORBIT, EYES, HAIR, TURN, MOUTH, STRIP, WALK)
 
         /** The `faces=` word for every mouth shape. */
         const val FACES_SHAPES = "shapes"

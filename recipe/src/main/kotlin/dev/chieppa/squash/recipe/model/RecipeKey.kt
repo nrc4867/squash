@@ -47,6 +47,6 @@ data class RecipeKeyChange(
     val part: String,
     @Doc("Width scales by direction: forward (or front), back, up, down, left, right, outer or inner as a tube's profiles name them, or side+, side-, top+ and top- for a side of the part's Side or Top outline. Each is a run of [x, scale] places along the part, eased between them and held level past its ends.")
     val widths: Map<String, List<List<Float>>> = emptyMap(),
-    @Doc("How much the blend where it joins its parent is scaled by; a part with no blend of its own keeps its default.") @Range(min = 0.25, max = 4.0)
+    @Doc("How much the blend where it joins its parent is scaled by; a part with no blend of its own scales the blend the build gives its join.") @Range(min = 0.25, max = 4.0)
     val blend: Float? = null,
 )

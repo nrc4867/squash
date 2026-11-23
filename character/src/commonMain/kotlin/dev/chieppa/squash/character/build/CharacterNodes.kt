@@ -24,6 +24,7 @@ import dev.chieppa.squash.graph.Graph
 import dev.chieppa.squash.graph.Node
 import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
+import dev.chieppa.squash.character.surface.RunAll
 
 /** The surface of a mesh node's part with axes [axes] on the side [side] follows, following it; a part joining a pair takes a side. */
 fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Flow<Side?>, joints: Flow<Map<String, Float>> = flowOf(emptyMap()), template: PartTemplate? = null): Node<*, PartSurface> = gather(
@@ -151,25 +152,61 @@ fun assembleNow(
     fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) {
         PlannedSurfaces.of(templates[ref], mirrored, plan?.spreadFor(ref.id) ?: 0f, lengths.ofPlanned(ref))
     }
-    val surfaces = parts.associate { part ->
-        val partData = data(part.id)
-        val mirrored = part.side == Side.RIGHT
-        val length = lengths.ofPart(part.id)
-        val onSocket = part.socket != null
-        part.id to kept.of(KeptSurfaceKey(part.template, partData, mirrored, length, onSocket)) {
-            surfaceOf(templates[part.template], partData, mirrored, lengthFactor = length, onSocket = onSocket)
-        }
-    }
+    val surfaces = surfaceKeys(parts, data, lengths).mapValues { (_, key) -> kept.of(key) { surfaceOf(key, templates) } }
     return assemble(parts, surfaces, plan, templates, ::default, lengths)
+}
+
+/** What each of [parts] is built from, as [assembleNow] builds it from [data] at [lengths]. */
+private fun surfaceKeys(parts: List<AssemblyPart>, data: (PartId) -> PartData, lengths: LegLengths): Map<PartId, KeptSurfaceKey> =
+    parts.associate { part -> part.id to KeptSurfaceKey(part.template, data(part.id), part.side == Side.RIGHT, lengths.ofPart(part.id), part.socket != null) }
+
+private fun surfaceOf(key: KeptSurfaceKey, templates: TemplateLibrary): PartSurface =
+    surfaceOf(templates[key.template], key.data, key.mirrored, lengthFactor = key.length, onSocket = key.onSocket)
+
+/**
+ * Builds each part surface [assembleNow] would build for each of [assemblies], the parts and the data each reads, that [kept] does not
+ * hold yet, all at once by [runAll], and keeps them, so the assemblies that follow take every surface from [kept].
+ */
+suspend fun buildSurfaces(assemblies: List<Pair<List<AssemblyPart>, (PartId) -> PartData>>, plan: BodyPlan?, templates: TemplateLibrary, kept: KeptSurfaces, runAll: RunAll) {
+    val wanted = assemblies.flatMap { (parts, data) -> surfaceKeys(parts, data, legLengths(parts, data, plan, templates)).values }.distinct().filter { !kept.holds(it) }
+    val made = arrayOfNulls<PartSurface>(wanted.size)
+    runAll(wanted.indices.map { i -> { made[i] = surfaceOf(wanted[i], templates) } })
+    wanted.forEachIndexed { i, key -> kept.keep(key, checkNotNull(made[i])) }
 }
 
 /** What a part's surface is built from, which [KeptSurfaces] keeps it by. */
 data class KeptSurfaceKey(val template: TemplateRef, val data: PartData, val mirrored: Boolean, val length: Float, val onSocket: Boolean)
 
-/** Part surfaces kept by what they are built from, so assemblies that differ in a few parts build only those. */
+/**
+ * Part surfaces kept by what they are built from, so assemblies that differ in a few parts build only those. [retainUsed] lets go of
+ * every surface not asked for since the last time it was called, so a keeper that lives across edits holds only what the latest builds
+ * read.
+ */
 class KeptSurfaces {
     private val kept = HashMap<KeptSurfaceKey, PartSurface>()
+    private val used = HashSet<KeptSurfaceKey>()
 
     /** The surface kept for [key], or [build]'s, kept. */
-    fun of(key: KeptSurfaceKey, build: () -> PartSurface): PartSurface = kept.getOrPut(key, build)
+    fun of(key: KeptSurfaceKey, build: () -> PartSurface): PartSurface {
+        used += key
+        return kept.getOrPut(key, build)
+    }
+
+    /** Whether a surface is kept for [key], which counts as asking for it. */
+    fun holds(key: KeptSurfaceKey): Boolean {
+        used += key
+        return key in kept
+    }
+
+    /** Keeps [surface] for [key]. */
+    fun keep(key: KeptSurfaceKey, surface: PartSurface) {
+        used += key
+        kept[key] = surface
+    }
+
+    /** Lets go of every surface not asked for since the last call. */
+    fun retainUsed() {
+        kept.keys.retainAll(used)
+        used.clear()
+    }
 }

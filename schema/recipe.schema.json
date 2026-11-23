@@ -3208,7 +3208,7 @@
           }
         },
         "blend": {
-          "description": "How much the blend where it joins its parent is scaled by; a part with no blend of its own keeps its default.",
+          "description": "How much the blend where it joins its parent is scaled by; a part with no blend of its own scales the blend the build gives its join.",
           "anyOf": [
             {
               "type": "number",
