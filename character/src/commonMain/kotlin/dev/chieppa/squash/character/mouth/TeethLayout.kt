@@ -17,10 +17,6 @@ import kotlin.math.sin
 /** How far past its jaw's line a tooth's root reaches, hidden under the lip until the lip lifts off it, a share of the mouth's width. */
 private const val ROOT = 0.06f
 
-/** How much narrower and shorter each row behind the first sits. */
-private const val ROW_NARROW = 0.12f
-private const val ROW_SHORTEN = 0.15f
-
 /** How round a flat tooth's corners are, a share of its width, and how far a chisel's edge slants back, a share of its width. */
 private const val FLAT_CORNER = 0.25f
 private const val CHISEL_SLANT = 0.2f
@@ -45,12 +41,12 @@ private class Laid(val id: String, val offset: Float, val sign: Int, val tooth: 
  * [dentition]'s teeth on [seat]: for each jaw at a level above none, its rows, back rows first and drawn narrower and shorter, laid from
  * the middle outward slot by slot, each side mirrored unless a slot names one. At blocks each slot is a tooth; at bar a row is one band
  * from its first slot to its last, as long at each slot as its tooth, and slots flagged over stay teeth of their own on it. Sizes are
- * shares of the seat's width; each tooth reaches [ROOT] past its jaw's line, so a lifting lip uncovers tooth rather than a gap. See HLD:
+ * shares of the seat's width; a jaw at shaped is built as parts, not painted. Each tooth reaches [ROOT] past its jaw's line, so a lifting lip uncovers tooth rather than a gap. See HLD:
  * look, Teeth.
  */
 fun layTeeth(dentition: MouthDentition, seat: TeethSeat): List<FlatTooth> = JawName.entries.flatMap { name ->
     val jaw = dentition.jaw(name)
-    if (jaw.level == TeethLevel.NONE) return@flatMap emptyList()
+    if (jaw.level == TeethLevel.NONE || jaw.level == TeethLevel.SHAPED) return@flatMap emptyList()
     jaw.rows.withIndex().reversed().flatMap { (r, row) -> RowLayout(name, r, row, dentition, seat).teeth(jaw.level) }
 }
 
@@ -73,7 +69,7 @@ private class RowLayout(private val jaw: JawName, private val r: Int, row: Tooth
     }
 
     fun teeth(level: TeethLevel): List<FlatTooth> = when (level) {
-        TeethLevel.NONE -> emptyList()
+        TeethLevel.NONE, TeethLevel.SHAPED -> emptyList()
         TeethLevel.BLOCKS -> laid.map(::block)
         TeethLevel.BAR -> listOfNotNull(bar()) + laid.filter { it.over }.map(::block)
     }

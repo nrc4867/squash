@@ -103,10 +103,29 @@ data class MaterialGlow(val strength: Float, val halo: Float = 0f) {
 }
 
 /**
+ * A second slot fading in along a separate part painted in this one, from its root toward its tip: none of [slot] at [from] of the part's
+ * length and all of it at [to], each 0 to 1, [from] before [to]. A claw, horn, beak or tooth darkening or paling toward its tip.
+ */
+@Serializable
+data class MaterialFade(val slot: SlotName, val from: Float = 0f, val to: Float = 1f) {
+    init {
+        require(from in 0f..1f && to in 0f..1f) { "A fade runs within 0 to 1 of a part's length, not $from to $to" }
+        require(from < to) { "A fade starts before it ends, not at $from to $to" }
+    }
+
+    /** How much of [slot] shows at [along], 0 at a part's root and 1 at its tip, eased at both ends. */
+    fun share(along: Float): Float {
+        val t = ((along - from) / (to - from)).coerceIn(0f, 1f)
+        return t * t * (3f - 2f * t)
+    }
+}
+
+/**
  * A palette slot's toon material: its [preset] and any setting it changes from it, each null where the preset's holds. [steps], 1 to 3,
  * is how many flat tones it shades in. Its shadow is [shadow], a colour of its own, else [shadowSlot]'s colour, else its colour shifted
  * [shadowDepth] darker by [shadowShift]. [rim] is a light edge on the silhouette, [shine] a shine from the light, [seeThrough], 0 to 1,
- * how much of what lies behind a part or cloth in it the part hides, and [glow] a glow that ignores the light.
+ * how much of what lies behind a part or cloth in it the part hides, [glow] a glow that ignores the light, and [fade] a second slot
+ * fading in along a separate part painted in it.
  */
 @Serializable
 data class SlotMaterial(
@@ -120,6 +139,7 @@ data class SlotMaterial(
     val shine: MaterialShine? = null,
     val seeThrough: Float? = null,
     val glow: MaterialGlow? = null,
+    val fade: MaterialFade? = null,
 ) {
     init {
         require(steps == null || steps in LEAST_STEPS..MOST_STEPS) { "A material shades in $LEAST_STEPS to $MOST_STEPS tones, not $steps" }
@@ -141,6 +161,7 @@ data class SlotMaterial(
                 shine = shine ?: base.shine,
                 seeThrough = seeThrough ?: base.seeThrough,
                 glow = glow ?: base.glow,
+                fade = fade ?: base.fade,
             )
         }
 
@@ -182,4 +203,5 @@ data class MaterialLook(
     val shine: MaterialShine? = null,
     val seeThrough: Float? = null,
     val glow: MaterialGlow? = null,
+    val fade: MaterialFade? = null,
 )

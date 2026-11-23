@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import dev.chieppa.squash.geom.bent
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.mouth.shaped.MouthPartsInput
+import dev.chieppa.squash.character.mouth.shaped.withMouthParts
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.NeckStyle
 import dev.chieppa.squash.document.PartData
@@ -27,16 +29,27 @@ import dev.chieppa.squash.graph.cancellationCheck
 import kotlinx.coroutines.flow.Flow
 import dev.chieppa.squash.character.surface.RunAll
 
-/** The surface of a mesh node's part with axes [axes] on the side [side] follows, following it; a part joining a pair takes a side. */
-fun Graph.partSurfaceNode(meshes: Node<*, PartMesh>, axes: PartAxes, side: Flow<Side?>, joints: Flow<Map<String, Float>> = flowOf(emptyMap()), template: PartTemplate? = null): Node<*, PartSurface> = gather(
-    combine(joints, side) { held, on -> held to on }.distinctUntilChanged(),
+/**
+ * The surface of a mesh node's part with axes [axes] on the side [side] follows, following it; a part joining a pair takes a side. Its
+ * shaped mouth parts, as [mouthParts] asks, are built on its mesh before its joints bend it.
+ */
+fun Graph.partSurfaceNode(
+    meshes: Node<*, PartMesh>,
+    axes: PartAxes,
+    side: Flow<Side?>,
+    joints: Flow<Map<String, Float>> = flowOf(emptyMap()),
+    template: PartTemplate? = null,
+    mouthParts: Flow<MouthPartsInput?> = flowOf(null),
+): Node<*, PartSurface> = gather(
+    combine(joints, side, mouthParts) { held, on, parts -> Triple(held, on, parts) }.distinctUntilChanged(),
     sourcesOf = { mapOf(Unit to meshes) },
     stage = BuildStages.SURFACE,
 ) { (shown, built) ->
-    val (held, on) = shown
-    val mesh = built.getValue(Unit)
+    val (held, on, parts) = shown
+    val mirrored = on == Side.RIGHT
+    val mesh = built.getValue(Unit).let { if (template == null) it else it.withMouthParts(template, parts, mirrored) }
     val own = mesh.axes ?: axes
-    PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, on == Side.RIGHT, cancellationCheck())
+    PartSurface.of(if (template == null) mesh else mesh.bent(bendsOf(held, template, own)), own, mirrored, cancellationCheck())
 }
 
 /** A template's surface with nothing drawn, [mirrored] or not, leaning [spread] degrees out as its plan places it, at each of [lengthFactor]'s values. */

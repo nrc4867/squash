@@ -154,5 +154,6 @@ fun piecesDraw(part: PlacedPart, color: PartColor?, palette: Palette, fallback: 
     return coloredPartDraw(
         pieces, own, palette, fallback, shading, part.bodySide(), toCamera, translation(part.origin), 0f,
         cutMesh = { cut -> part.surface.grid(cut.patch)?.let(cut::laidOn) ?: cut.mesh },
+        spans = spansOf(part.surface.patches),
     )
 }

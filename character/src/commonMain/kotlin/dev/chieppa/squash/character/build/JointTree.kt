@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.build
 import dev.chieppa.squash.character.model.DigitChain
 import dev.chieppa.squash.character.model.JointSpec
 import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.mouth.shaped.mouthPartChains
 
 /**
  * A part's joints as a tree: its own [chain] along the axis in u order, and a chain per digit its toe rows built, each branching
@@ -17,7 +18,7 @@ class JointTree(template: PartTemplate, patches: Collection<String>) {
 
     /** The digits' chains; none on a part with no joints of its own, since a digit has nothing to branch from. */
     val digits: List<DigitChain> =
-        if (chain.isEmpty()) emptyList() else patches.toSet().let { names -> template.blocks.flatMap { it.digitChains(names) } }
+        if (chain.isEmpty()) emptyList() else patches.toSet().let { names -> template.blocks.flatMap { it.digitChains(names) } + mouthPartChains(chain, names) }
 
     val specs: List<JointSpec> = chain + digits.flatMap { it.joints }
 
@@ -56,8 +57,12 @@ class JointTree(template: PartTemplate, patches: Collection<String>) {
     /** The place in [specs] of joint [k] of digit [digit]. */
     fun indexOf(digit: Int, k: Int): Int = digitStart[digit] + k
 
-    /** The joint digit [digit] branches from, as a place in [specs]: the last of the digit it rides on, else the chain's owning its start. */
+    /**
+     * The joint digit [digit] branches from, as a place in [specs]: the chain's joint it names, else the last of the digit it rides on, else
+     * the chain's owning its start.
+     */
     fun rootOf(digit: Int): Int {
+        digits[digit].from?.let { name -> chain.indexOfFirst { it.name == name } }?.takeIf { it >= 0 }?.let { return it }
         val on = digits[digit].on?.let(byPatch::get)?.takeIf { digits[it].joints.isNotEmpty() }
         return if (on != null) indexOf(on, digits[on].joints.size - 1) else ownerAt(digits[digit].span.start)
     }

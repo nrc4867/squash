@@ -33,7 +33,9 @@ import dev.chieppa.squash.render.RibbonDraw
 import dev.chieppa.squash.render.SceneView
 import dev.chieppa.squash.screens.sheet.bodySide
 import dev.chieppa.squash.screens.sheet.FullView
+import dev.chieppa.squash.screens.sheet.alongOf
 import dev.chieppa.squash.screens.sheet.coloredPartDraw
+import dev.chieppa.squash.screens.sheet.spansOf
 import dev.chieppa.squash.screens.sheet.furDraws
 import dev.chieppa.squash.screens.sheet.colorOf
 import dev.chieppa.squash.screens.sheet.ShownFur
@@ -115,6 +117,8 @@ fun characterView(
             copies?.rule?.surface?.mesh ?: part.surface.mesh, state.color.parts[id], state.palette, fallback, shading, part.bodySide(), eye - center, translation(part.origin), 0f,
             cutMesh = { cut -> if (copies != null) cut.mesh else part.surface.grid(cut.patch)?.let(cut::laidOn) ?: cut.mesh },
             copies = copies,
+            spans = spansOf(part.surface.patches),
+            baseAlong = if (copies == null) alongOf(part.surface.patches) else null,
         )
         val face = faces.draws(id, view)
         ribbons += face.ribbons

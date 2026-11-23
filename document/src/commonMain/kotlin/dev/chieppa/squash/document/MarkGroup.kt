@@ -68,8 +68,10 @@ data class MarkGroup(
     val shapes: Map<MouthShapeName, MouthShapeValues> = emptyMap(),
     @Doc("The mouth's teeth: a preset, by default its style's, and only what this mouth changes of it.")
     val teeth: MouthTeeth = MouthTeeth(),
-    @Doc("How much tongue the mouth draws: none, or flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark).")
+    @Doc("How much tongue the mouth draws: none, flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark), or shaped (a lofted tongue on the jaw's floor, on a jaw built open or a beak).")
     val tongueLevel: TongueLevel = TongueLevel.FLAT,
+    @Doc("How a shaped tongue's free end is cut: round, groove (a groove down its top) or fork.")
+    val tongueTip: TongueTip = TongueTip.ROUND,
 ) {
     init {
         val named = roles.map { it.role }

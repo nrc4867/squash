@@ -31,8 +31,10 @@ export interface MouthSpec {
   shapes?: Partial<Record<MouthShapeName, MouthShapeValues>>;
   /** The teeth's dentition: a preset by name (its style's unless told) and only what this mouth changes of it, as `toothSlot` writes a change. */
   dentition?: MouthTeeth;
-  /** How much tongue the mouth draws: `flat` (the default) or `none`. */
-  tongueLevel?: "none" | "flat";
+  /** How much tongue the mouth draws: `flat` (the default), `shaped` (a lofted tongue on a jaw built open or a beak's lower half) or `none`. */
+  tongueLevel?: "none" | "flat" | "shaped";
+  /** How a shaped tongue's tip is cut: `round` (the default), `groove` or `fork`. */
+  tongueTip?: "round" | "groove" | "fork";
   /** The group's id and name, `mouth` unless told. */
   id?: string;
 }
@@ -68,6 +70,7 @@ export function mouth(spec: MouthSpec = {}): MarkGroup {
   if (spec.shapes) group.shapes = spec.shapes;
   if (spec.dentition) group.teeth = spec.dentition;
   if (spec.tongueLevel) group.tongueLevel = spec.tongueLevel;
+  if (spec.tongueTip) group.tongueTip = spec.tongueTip;
   return group;
 }
 

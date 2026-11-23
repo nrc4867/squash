@@ -281,7 +281,7 @@ export interface Hide {
 /** What a mouth changes of one jaw of its preset; each left out keeps the preset's. */
 export interface JawTeeth {
   /** The jaw's level in place of the preset's. */
-  level?: ("none" | "bar" | "blocks") | null;
+  level?: ("none" | "bar" | "blocks" | "shaped") | null;
   /** Rows added behind the preset's. */
   rows?: ToothRow[];
   /** Slots added at the end of a row. */
@@ -481,8 +481,10 @@ export interface MarkGroup {
   shapes?: { rest?: MouthShapeValues; mbp?: MouthShapeValues; ai?: MouthShapeValues; e?: MouthShapeValues; o?: MouthShapeValues; u?: MouthShapeValues; fv?: MouthShapeValues; l?: MouthShapeValues; etc?: MouthShapeValues };
   /** The mouth's teeth: a preset, by default its style's, and only what this mouth changes of it. */
   teeth?: MouthTeeth;
-  /** How much tongue the mouth draws: none, or flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark). */
-  tongueLevel?: "none" | "flat";
+  /** How much tongue the mouth draws: none, flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark), or shaped (a lofted tongue on the jaw's floor, on a jaw built open or a beak). */
+  tongueLevel?: "none" | "flat" | "shaped";
+  /** How a shaped tongue's free end is cut: round, groove (a groove down its top) or fork. */
+  tongueTip?: "round" | "groove" | "fork";
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -687,6 +689,18 @@ export interface RecipeEye {
   upperClose?: number;
   /** How far the lower lid stands up from open (0) to the look's closed line (1). */
   lowerRise?: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A second palette slot fading in along a separate part, from its root toward its tip. */
+export interface RecipeFade {
+  /** The palette slot that fades in. */
+  slot: string;
+  /** Where along the part, 0 at its root and 1 at its tip, the fade starts: none of the slot shows before it. */
+  from?: number;
+  /** Where along the part the fade ends: all of the slot shows past it. After from. */
+  to?: number;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }
@@ -1151,6 +1165,8 @@ export interface RecipeMaterial {
   seeThrough?: number | null;
   /** A glow: its colour whatever the light, its middle lifted toward white, with a halo round it. */
   glow?: RecipeGlow | null;
+  /** A second palette slot fading in along a separate part painted in this one, from its root toward its tip: a claw, horn, beak or tooth darkening or paling toward its tip. */
+  fade?: RecipeFade | null;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

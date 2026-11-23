@@ -3,6 +3,7 @@ package dev.chieppa.squash.recipe.model
 import dev.chieppa.squash.annotations.Doc
 import dev.chieppa.squash.annotations.Range
 import dev.chieppa.squash.document.MOST_HALO
+import dev.chieppa.squash.document.MaterialFade
 import dev.chieppa.squash.document.MaterialGlow
 import dev.chieppa.squash.document.MaterialPreset
 import dev.chieppa.squash.document.MaterialRim
@@ -49,6 +50,8 @@ data class RecipeMaterial(
     val seeThrough: Float? = null,
     @Doc("A glow: its colour whatever the light, its middle lifted toward white, with a halo round it.")
     val glow: RecipeGlow? = null,
+    @Doc("A second palette slot fading in along a separate part painted in this one, from its root toward its tip: a claw, horn, beak or tooth darkening or paling toward its tip.")
+    val fade: RecipeFade? = null,
 ) {
     /** This material as the document holds it, its shadow slot's name as given. */
     val slotMaterial: SlotMaterial
@@ -58,6 +61,7 @@ data class RecipeMaterial(
             shine?.let { MaterialShine(it.shape, it.size, it.color?.slotColor) },
             seeThrough,
             glow?.let { MaterialGlow(it.strength, it.halo) },
+            fade?.let { MaterialFade(SlotName(it.slot), it.from, it.to) },
         )
 
     companion object {
@@ -70,6 +74,7 @@ data class RecipeMaterial(
             material.shine?.let { RecipeShine(it.shape, it.size, it.color?.let(RecipeColor::of)) },
             material.seeThrough,
             material.glow?.let { RecipeGlow(it.strength, it.halo) },
+            material.fade?.let { RecipeFade(it.slot.value, it.from, it.to) },
         )
     }
 }
@@ -108,6 +113,20 @@ data class RecipeGlow(
     @Doc("How wide a soft ring it draws round itself, in pixels; none when 0.")
     @Range(0.0, MOST_HALO.toDouble())
     val halo: Float = 0f,
+)
+
+/** A second slot fading in along a separate part. */
+@Serializable
+@Doc("A second palette slot fading in along a separate part, from its root toward its tip.")
+data class RecipeFade(
+    @Doc("The palette slot that fades in.")
+    val slot: String,
+    @Doc("Where along the part, 0 at its root and 1 at its tip, the fade starts: none of the slot shows before it.")
+    @Range(0.0, 1.0)
+    val from: Float = 0f,
+    @Doc("Where along the part the fade ends: all of the slot shows past it. After from.")
+    @Range(0.0, 1.0)
+    val to: Float = 1f,
 )
 
 /** Reads a material as a preset's name or as an object of settings; writes the name alone when it changes nothing. */

@@ -2,6 +2,7 @@ package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.mouth.shaped.isMouthPart
 import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
@@ -24,7 +25,10 @@ internal class PartRings(private val part: PlacedPart) {
     val hasRings: Boolean get() = swept.isNotEmpty()
 
     private fun runAt(u: Float, patch: String?): Patch? =
-        patch?.let { name -> swept.firstOrNull { it.name == name } } ?: swept.firstOrNull { it.covers(u) } ?: swept.firstOrNull()
+        patch?.let { name -> swept.firstOrNull { it.name == name } ?: mouthPart(name) } ?: swept.firstOrNull { it.covers(u) } ?: swept.firstOrNull()
+
+    /** A shaped mouth part named [name], which has rings but no slices. */
+    private fun mouthPart(name: String): Patch? = if (isMouthPart(name)) part.surface.patches.firstOrNull { it.name == name } else null
 
     /** The middle of the ring at [u] on [patch], or on the first run reaching [u] when it is null, in body space. */
     fun middle(u: Float, patch: String? = null): Vec3 {

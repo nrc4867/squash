@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.squash.character.build.lipRegionsOf
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.mouth.dentitionOf
+import dev.chieppa.squash.character.mouth.shaped.buildsJawOpen
 import dev.chieppa.squash.character.mouth.mouthMarks
 import dev.chieppa.squash.character.mouth.mouthStyleOf
 import dev.chieppa.squash.character.mouth.saying
@@ -89,8 +90,9 @@ internal fun MouthShapesSection(session: CharacterSession, picked: PickedGroup, 
     )
     val marks = held?.marks?.groupBy { it.source }.orEmpty()
     val lipRegions = held?.let { lipRegionsOf(it, group) }.orEmpty().map { region -> region.border.map { it.anchor } }
-    val placed = group.mouthMarks({ id -> marks[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, lipRegions)
-    val dentition = session.templates.dentitionOf(group, style)
+    val builtOpen = document.character.part(picked.part)?.let { buildsJawOpen(document.character, it, session.templates.find(it.template)) } ?: false
+    val placed = group.mouthMarks({ id -> marks[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, lipRegions, builtOpen)
+    val dentition = session.templates.dentitionOf(group, style, builtOpen)
     fun shaped(shape: MouthShapeName) = surface?.let { shapeMouth(picked.part, placed, group.controls.speaking(group.saying(shape, style)), style, it, dentition) }
     val rest = shaped(MouthShapeName.REST)
     DrawerSection(stringResource(Res.string.face_shapes)) {

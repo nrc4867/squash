@@ -3,9 +3,13 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.PartBuilder
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.JointSpec
+import dev.chieppa.squash.character.model.PartTemplate
+import dev.chieppa.squash.character.model.SurfaceMethod
+import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.BODY_PATCH
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
+import dev.chieppa.squash.geom.Patch
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.covers
 import dev.chieppa.squash.geom.field.JawCut
@@ -14,6 +18,7 @@ import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.MouthLiningSolid
 import dev.chieppa.squash.geom.field.Solid
 import dev.chieppa.squash.geom.positionAt
+import dev.chieppa.squash.geom.surfaceAt
 import dev.chieppa.squash.geom.ringMiddle
 import kotlin.math.PI
 import kotlin.math.abs
@@ -138,24 +143,8 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
     if (skullIndex < 0 || muzzleIndex < 0 || skullIndex == muzzleIndex) return null
     val skullRun = runs[skullIndex]
     val muzzleRun = runs[muzzleIndex]
-    val hingeRun = head.surface.patches.filter { it.slices != null }.let { swept -> swept.firstOrNull { it.covers(joint.u) } ?: swept.first() }
-    val hinge = hingeRun.ringMiddle(joint.u)
-    val axis = PartBuilder.axes(head.template).side.normalized()
-    val tip = muzzleRun.patch.ringMiddle(1f) - hinge
-    val forward = (tip - axis * (tip dot axis)).normalized()
-    val up = forward cross axis
-    val line = lipPlaces(head).map { place ->
-        val d = place - hinge
-        val x = d dot forward
-        val y = d dot up
-        sqrt(x * x + y * y) to atan2(y, x)
-    }.sortedBy { it.first }
-    val built = requireNotNull(joint.limits).max * (PI.toFloat() / 180f)
-    val radii = line.map { it.first }
-    val phis = line.map { it.second }
-    val cut = solids.kept(listOf(hinge, axis, forward, radii, phis, built)) {
-        JawCut(hinge, axis, forward, radii.toFloatArray(), phis.toFloatArray(), radii.first(), (-PI / 2).toFloat(), built)
-    }
+    val built = jawCutParts(head.template, head.surface.patches, lipPlaces(head), joint) ?: return null
+    val cut = solids.kept(built.key) { built.cut() }
     val skull = members[skullIndex]
     val muzzle = members[muzzleIndex]
     val size = (muzzle.solid.high - muzzle.solid.low).let { minOf(it.x, it.y, it.z) }
@@ -190,8 +179,59 @@ private fun openOne(runs: List<FieldRun>, members: List<JoinedMember>, solids: R
 }
 
 /** Where [part]'s lip line lies in its own space, place by place, leaving out any on a patch it does not have. */
-private fun lipPlaces(part: PlacedPart): List<Vec3> = part.lipLine.mapNotNull { anchor ->
-    part.surface.patches.firstOrNull { it.name == anchor.patch && it.slices != null }?.positionAt(anchor.u, anchor.v)
+private fun lipPlaces(part: PlacedPart): List<Vec3> = lipPlaces(part.surface.patches, part.lipLine)
+
+/** Where the lip line [lipLine] lies on [patches], in their own space, place by place, leaving out any on a patch they do not have. */
+fun lipPlaces(patches: List<Patch>, lipLine: List<Anchor>): List<Vec3> = lipLine.mapNotNull { anchor ->
+    patches.firstOrNull { it.name == anchor.patch && it.slices != null }?.positionAt(anchor.u, anchor.v)
+}
+
+/** The head's outward normal at each place of the lip line [lipLine] on [patches], as [lipPlaces] lists them. */
+fun lipNormals(patches: List<Patch>, lipLine: List<Anchor>): List<Vec3> = lipLine.mapNotNull { anchor ->
+    patches.firstOrNull { it.name == anchor.patch && it.slices != null }?.surfaceAt(anchor.u, anchor.v)?.normal
+}
+
+/** What a jaw's cut is made from, and [key], what it is kept by while unchanged. */
+internal class JawCutParts(val hinge: Vec3, val axis: Vec3, val forward: Vec3, val radii: List<Float>, val phis: List<Float>, val built: Float) {
+    val key: List<Any> get() = listOf(hinge, axis, forward, radii, phis, built)
+
+    fun cut() = JawCut(hinge, axis, forward, radii.toFloatArray(), phis.toFloatArray(), radii.first(), (-PI / 2).toFloat(), built)
+}
+
+/**
+ * The parts of the cut a head of [template] with [patches] is split by along the lip line at [lips], its jaw turned about [joint]: the
+ * hinge at the joint's place on the run covering it, the side axis, forward toward the muzzle's tip, and the lip line's places as distances
+ * from the hinge and angles about it, sorted by distance. Null with no muzzle run.
+ */
+internal fun jawCutParts(template: PartTemplate, patches: List<Patch>, lips: List<Vec3>, joint: JointSpec): JawCutParts? {
+    val muzzle = patches.firstOrNull { it.name == MUZZLE && it.slices != null } ?: return null
+    if (lips.size < LEAST_LIP_PLACES) return null
+    val hingeRun = patches.filter { it.slices != null }.let { swept -> swept.firstOrNull { it.covers(joint.u) } ?: swept.first() }
+    val hinge = hingeRun.ringMiddle(joint.u)
+    val axis = PartBuilder.axes(template).side.normalized()
+    val tip = muzzle.ringMiddle(1f) - hinge
+    val forward = (tip - axis * (tip dot axis)).normalized()
+    val up = forward cross axis
+    val line = lips.map { place ->
+        val d = place - hinge
+        val x = d dot forward
+        val y = d dot up
+        sqrt(x * x + y * y) to atan2(y, x)
+    }.sortedBy { it.first }
+    val built = requireNotNull(joint.limits).max * (PI.toFloat() / 180f)
+    return JawCutParts(hinge, axis, forward, line.map { it.first }, line.map { it.second }, built)
+}
+
+/**
+ * The cut a head of [template] with [patches], built as [role], [mirrored] or not, with its lip line at [lipLine], is built open along, as
+ * [openJawJoint] decides for a placed part; null for a head built shut.
+ */
+fun openJawCut(template: PartTemplate, role: Role?, mirrored: Boolean, patches: List<Patch>, lipLine: List<Anchor>): JawCut? {
+    if (role != Role.HEAD || mirrored || template.surface != SurfaceMethod.FIELD) return null
+    if (patches.none { it.name == MUZZLE && isRun(it) && !isSeparatePatch(template, it) }) return null
+    val lips = lipPlaces(patches, lipLine)
+    val joint = template.blocks.flatMap { it.joints() }.firstOrNull { it.name == JAW_JOINT && it.v != null }?.takeIf { (it.limits?.max ?: 0f) > 0f } ?: return null
+    return jawCutParts(template, patches, lips, joint)?.cut()
 }
 
 private fun FieldRun.on(side: JawSide) = FieldRun(part, patchIndex, patch, first && side == JawSide.UPPER, side)

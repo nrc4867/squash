@@ -89,6 +89,7 @@ A mouth's teeth come from a preset, `templates/teeth/<name>.teeth.json` (schema 
 | `none` | no teeth |
 | `bar` | each row as one band from its first slot to its last, as long at each slot as its tooth; slots flagged `over` still show on their own |
 | `blocks` | each slot its own tooth, cut to its type's `tip` |
+| `shaped` | each slot's tooth built as a small hard part on a head whose jaw is built open, in the teeth role's slot, plastic where it sets no material; a preset jaw at `blocks` starts here on such a head; painted as blocks on any other mouth |
 
 Sizes are shares of the mouth's width. A tooth reaches a little past its jaw's line, hidden under the lip until the lip lifts off it. A slot whose `over` is set shows over the lips, open or shut, and breaks their ink: an upper one hangs below the upper lip, a lower one stands above the lower lip. Rows after a jaw's first sit behind it, a little narrower and shorter.
 
@@ -135,7 +136,7 @@ A change in a jaw's `slots` (`{"row", "slot", ...}`) takes any slot field, and `
 
 ### Tongue
 
-A group's `tongueLevel` is `flat`, its tongue marks or, with none and a filled tongue role, a plain tongue as it lifts; or `none`, no tongue at all, on a beak too.
+A group's `tongueLevel` is `flat`, its tongue marks or, with none and a filled tongue role, a plain tongue as it lifts; `shaped`, on a head whose jaw is built open or a beak's lower half, a lofted tongue on the jaw's floor that the `tongue` control curls up toward the upper teeth by 0.5 and reaches out past the lower lip by 1, its tip `tongueTip`: `round`, `groove` or `fork` (flat on any other mouth); or `none`, no tongue at all, on a beak too. A shaped tongue is built only where the tongue role has a fill.
 
 ## Regions
 

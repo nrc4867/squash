@@ -2,10 +2,12 @@ package dev.chieppa.squash.screens.surface
 
 import dev.chieppa.squash.document.TeethLevel
 import dev.chieppa.squash.document.TongueLevel
+import dev.chieppa.squash.document.TongueTip
 import dev.chieppa.squash.uidesign.generated.Res
 import dev.chieppa.squash.uidesign.generated.face_teeth_level_bar
 import dev.chieppa.squash.uidesign.generated.face_teeth_level_blocks
 import dev.chieppa.squash.uidesign.generated.face_teeth_level_none
+import dev.chieppa.squash.uidesign.generated.face_teeth_level_shaped
 import dev.chieppa.squash.uidesign.generated.face_teeth_preset_bird
 import dev.chieppa.squash.uidesign.generated.face_teeth_preset_boar
 import dev.chieppa.squash.uidesign.generated.face_teeth_preset_cat
@@ -22,6 +24,10 @@ import dev.chieppa.squash.uidesign.generated.face_teeth_preset_toon_simple
 import dev.chieppa.squash.uidesign.generated.face_teeth_preset_viper
 import dev.chieppa.squash.uidesign.generated.face_tongue_flat
 import dev.chieppa.squash.uidesign.generated.face_tongue_none
+import dev.chieppa.squash.uidesign.generated.face_tongue_shaped
+import dev.chieppa.squash.uidesign.generated.face_tongue_tip_fork
+import dev.chieppa.squash.uidesign.generated.face_tongue_tip_groove
+import dev.chieppa.squash.uidesign.generated.face_tongue_tip_round
 import org.jetbrains.compose.resources.StringResource
 
 /** Each shipped teeth preset's name, by id; a preset not here shows the name its file gives. */
@@ -46,9 +52,17 @@ internal val TEETH_LEVEL_NAMES: Map<TeethLevel, StringResource> = mapOf(
     TeethLevel.NONE to Res.string.face_teeth_level_none,
     TeethLevel.BAR to Res.string.face_teeth_level_bar,
     TeethLevel.BLOCKS to Res.string.face_teeth_level_blocks,
+    TeethLevel.SHAPED to Res.string.face_teeth_level_shaped,
 )
 
 internal val TONGUE_LEVEL_NAMES: Map<TongueLevel, StringResource> = mapOf(
     TongueLevel.NONE to Res.string.face_tongue_none,
     TongueLevel.FLAT to Res.string.face_tongue_flat,
+    TongueLevel.SHAPED to Res.string.face_tongue_shaped,
+)
+
+internal val TONGUE_TIP_NAMES: Map<TongueTip, StringResource> = mapOf(
+    TongueTip.ROUND to Res.string.face_tongue_tip_round,
+    TongueTip.GROOVE to Res.string.face_tongue_tip_groove,
+    TongueTip.FORK to Res.string.face_tongue_tip_fork,
 )

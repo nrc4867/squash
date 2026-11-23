@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import dev.chieppa.squash.character.model.MouthStyle
 import dev.chieppa.squash.character.model.TeethPreset
 import dev.chieppa.squash.character.mouth.MouthDentition
+import dev.chieppa.squash.character.mouth.shaped.buildsJawOpen
 import dev.chieppa.squash.character.mouth.mouthStyleOf
 import dev.chieppa.squash.character.mouth.teethPresetOf
 import dev.chieppa.squash.character.session.CharacterSession
@@ -22,6 +23,8 @@ import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MouthTeeth
 import dev.chieppa.squash.document.SetMouthTeeth
 import dev.chieppa.squash.document.SetTongueLevel
+import dev.chieppa.squash.document.SetTongueTip
+import dev.chieppa.squash.document.TongueTip
 import dev.chieppa.squash.document.ShownSlot
 import dev.chieppa.squash.document.TeethLevel
 import dev.chieppa.squash.document.ToothSlotChange
@@ -52,6 +55,7 @@ import dev.chieppa.squash.uidesign.generated.face_teeth_slot_name
 import dev.chieppa.squash.uidesign.generated.face_teeth_upper
 import dev.chieppa.squash.uidesign.generated.face_teeth_width
 import dev.chieppa.squash.uidesign.generated.face_tongue_level
+import dev.chieppa.squash.uidesign.generated.face_tongue_tip
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.Dropdown
 import dev.chieppa.stretch.frame.SettingRow
@@ -72,6 +76,7 @@ object TeethTags {
     const val REMOVE_SLOT = "face.teeth.remove-slot"
     const val ADD_ROW = "face.teeth.add-row"
     const val TONGUE = "face.tongue.level"
+    const val TONGUE_TIP = "face.tongue.tip"
 
     fun level(jaw: JawName) = "face.teeth.level.${jaw.name.lowercase()}"
 
@@ -114,7 +119,9 @@ internal fun TeethSection(session: CharacterSession, picked: PickedGroup, group:
     val drag = rememberCommandDrag(session)
     val style = document.character.part(picked.part)?.let { session.templates.mouthStyleOf(it, group) } ?: MouthStyle.PLAIN
     val preset = session.templates.teethPresetOf(group, style)
-    val dentition = MouthDentition.of(preset, group.teeth)
+    val builtOpen = document.character.part(picked.part)?.let { buildsJawOpen(document.character, it, session.templates.find(it.template)) } ?: false
+    val dentition = MouthDentition.of(preset, group.teeth, builtOpen)
+    val defaults = MouthDentition.of(preset, MouthTeeth(), builtOpen)
     fun send(teeth: MouthTeeth) = session.send(SetMouthTeeth(picked.part, group.id, teeth))
     val slots = JawName.entries.flatMap { jaw ->
         group.teeth.jaw(jaw).shown(preset.jaw(jaw)).flatMap { row -> row.mapIndexed { place, shown -> JawSlot(jaw, shown, place) } }
@@ -132,7 +139,7 @@ internal fun TeethSection(session: CharacterSession, picked: PickedGroup, group:
         }
         JawName.entries.forEach { jaw ->
             SettingRow(stringResource(JAW_NAMES.getValue(jaw))) {
-                Segmented(TeethLevel.entries, dentition.jaw(jaw).level, { send(group.teeth.atLevel(jaw, it, preset.jaw(jaw).level)) }, levelNames::getValue, Modifier.weight(1f).testTag(TeethTags.level(jaw)), compact = true)
+                Segmented(TeethLevel.entries, dentition.jaw(jaw).level, { send(group.teeth.atLevel(jaw, it, defaults.jaw(jaw).level)) }, levelNames::getValue, Modifier.weight(1f).testTag(TeethTags.level(jaw)), compact = true)
             }
         }
         if (slot != null) {
@@ -140,6 +147,12 @@ internal fun TeethSection(session: CharacterSession, picked: PickedGroup, group:
         }
         SettingRow(stringResource(Res.string.face_tongue_level)) {
             Segmented(TongueLevel.entries, group.tongueLevel, { session.send(SetTongueLevel(picked.part, group.id, it)) }, tongueNames::getValue, Modifier.weight(1f).testTag(TeethTags.TONGUE), compact = true)
+        }
+        if (group.tongueLevel == TongueLevel.SHAPED) {
+            val tipNames = TongueTip.entries.associateWith { stringResource(TONGUE_TIP_NAMES.getValue(it)) }
+            SettingRow(stringResource(Res.string.face_tongue_tip)) {
+                Segmented(TongueTip.entries, group.tongueTip, { session.send(SetTongueTip(picked.part, group.id, it)) }, tipNames::getValue, Modifier.weight(1f).testTag(TeethTags.TONGUE_TIP), compact = true)
+            }
         }
     }
 }
