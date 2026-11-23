@@ -191,13 +191,17 @@ private fun evened(r: Radii): Radii = r.mapIndexed { i, p ->
     if (i == 0 || i == r.lastIndex) p else P2(p.x, (r[i - 1].y + p.y + r[i + 1].y) / 3)
 }
 
+/** A side's opposite across its part, outside the pair a halved view draws. */
+private val OPPOSITE_SIDE = mapOf("front" to "back", "back" to "front", "up" to "down", "down" to "up")
+
 /**
- * A profile no view reads, from those that are read: a limb as deep as it is wide (half its outer and inner sides together at each place)
+ * A profile no view reads, from those that are read: the opposite side's where only one of a pair is read; a limb as deep as it is wide (half its outer and inner sides together at each place)
  * or as wide as it is deep, a trunk as round as its one read pair, half that pair's two sides together.
  */
 private fun unseen(spec: FigurePartSpec, name: String, out: Map<String, Radii>): Radii? {
     val acrossNames = if (spec.kind == FigureKind.LIMB) listOf("outer", "inner") else listOf("left")
     if (name in acrossNames && acrossNames.any { it in out }) return null
+    OPPOSITE_SIDE[name]?.let { other -> out[other]?.let { return it } }
     val read = if (name in acrossNames) out.filterKeys { it !in acrossNames } else out.filterKeys { it in acrossNames }
     val curves = read.values.toList().ifEmpty { return null }
     val first = curves.first()
