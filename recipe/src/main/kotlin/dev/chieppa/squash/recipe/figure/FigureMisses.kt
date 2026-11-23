@@ -82,7 +82,7 @@ fun measure(
         for ((i, s) in fit.split.getValue(view).taken.withIndex()) {
             if (i % STRIDE != 0) continue
             val part = fit.parts[s.part] ?: continue
-            val profile = profileName(part.spec.kind, view, s.side)
+            val profile = profileName(part.spec, view, s.side)
             val (at, normal) = atRest(s, fit.rest.getValue(s.part), rootHeight, view, share(s))
             val miss = ownEdge(silhouette, alone(s), view, at, normal)
             if (miss == null) {

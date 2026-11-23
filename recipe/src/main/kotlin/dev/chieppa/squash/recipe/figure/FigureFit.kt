@@ -95,12 +95,46 @@ class FigureFit(
     val reads: Map<FigureView, Set<String>>,
 )
 
-/** Which profile a side of a part takes in a view. */
-fun profileName(kind: FigureKind, view: FigureView, side: BoneSide): String = when {
-    view == FigureView.SIDE -> if (side == BoneSide.PLUS) "front" else "back"
-    kind == FigureKind.TRUNK -> "left"
-    else -> if (side == BoneSide.PLUS) "outer" else "inner"
+/** A part's direction names as its profiles take them: a pair's left and right are its outer and inner, a front is its forward. */
+private fun directionName(kind: FigureKind, direction: String): String = when (direction) {
+    "forward" -> "front"
+    "left" -> if (kind == FigureKind.LIMB) "outer" else "left"
+    "right" -> if (kind == FigureKind.LIMB) "inner" else "right"
+    else -> direction
 }
+
+/** The four directions round [spec] at rest, by name, as its own frame turns them. */
+fun roundDirections(spec: FigurePartSpec): List<Pair<String, P3>> {
+    val frame = PartFrame.of(spec.rest, spec.outward, spec.lean)
+    val (v0, v25) = REST_ROUND.getValue(spec.rest)
+    return listOf(v0 to frame.v0, v25 to frame.v25, OPPOSITE.getValue(v0) to frame.v0 * -1.0, OPPOSITE.getValue(v25) to frame.v25 * -1.0)
+        .map { (name, d) -> directionName(spec.kind, name) to d }
+}
+
+/** The profile names a part takes, in the order a fit fills them: its across names first for a trunk or limb, then the other pair. */
+fun profileNames(spec: FigurePartSpec): List<String> {
+    val names = roundDirections(spec).map { it.first }
+    val across = if (spec.kind == FigureKind.LIMB) listOf("outer", "inner") else listOf("left")
+    return across.filter { it in names } + names.filter { it !in across && it != "right" && it != "inner" && it != "outer" }
+}
+
+/**
+ * Which profile a side of a part takes in a view: the direction round the part at rest that its bone's [side] faces in [view], so a
+ * standing trunk's side view reads its front and back and a level trunk's its up and down.
+ */
+fun profileName(spec: FigurePartSpec, view: FigureView, side: BoneSide): String {
+    val along = PartFrame.of(spec.rest, spec.outward, spec.lean).along
+    val shown = project(view, along, 0.0) - project(view, P3.ZERO, 0.0)
+    val plus = if (shown.length < 1e-9) P2(1.0, 0.0) else towardPlusX(shown)
+    val facing = unproject(view, if (side == BoneSide.PLUS) plus else plus * -1.0)
+    return roundDirections(spec).maxBy { (_, d) -> d dot facing }.first
+}
+
+/** Whether [spec]'s side named [name] is the mirror of one a halved view draws: a trunk's right. */
+fun mirroredSide(spec: FigurePartSpec, name: String): Boolean = spec.kind == FigureKind.TRUNK && name == "right"
+
+/** A bone shows its length in a view when it lies at least this share of its length across the view. */
+private const val SHOWN_LENGTH = 0.45
 
 /**
  * Fits the parts to a figure outline. Each limb's root is first moved onto its drawn middle: the outline is split among the bones of
@@ -124,10 +158,11 @@ fun fitFigure(input: FigureInput): FigureFit {
         rest = chains(input, specs, frames, roots)
         posed = rest.mapValues { (_, chain) -> chain.posedBy(input.pose) }
         reads = mapOf(
-            FigureView.FRONT to posed.keys,
+            FigureView.FRONT to if (input.built != null) posed.keys else rest.values.filter { chain -> showsLength(chain, FigureView.FRONT) && !behindAnother(chain, rest) }.map { it.part }.toSet(),
             FigureView.SIDE to posed.values.filter { chain ->
                 shownFromSide(chain, posed) || (input.built != null && (clearOfParent(chain, posed, specs, input.built, input.rootHeight) || bentInSide(chain, input.rootHeight)))
             }.map { it.part }.toSet(),
+            FigureView.TOP to rest.values.filter { chain -> chain.kind == FigureKind.TRUNK && showsLength(chain, FigureView.TOP) }.map { it.part }.toSet(),
         )
         split = FigureView.entries.associateWith { view ->
             val bones = posed.values.filter { it.part in reads.getValue(view) }.flatMap { chain ->
@@ -136,7 +171,7 @@ fun fitFigure(input: FigureInput): FigureFit {
             val surface = input.built?.let { built ->
                 val posedSurface = input.posed[view]
                 BoneSurface { bone, side, x ->
-                    posedSurface?.radius(bone, side, x) ?: built.radius(bone.part, profileName(specs.getValue(bone.part).kind, view, side), x)
+                    posedSurface?.radius(bone, side, x) ?: built.radius(bone.part, profileName(specs.getValue(bone.part), view, side), x)
                 }
             }
             splitByBones(input.strokes[view].orEmpty().flatMap { it.samples(input.spacing) }, bones, surface)
@@ -145,7 +180,7 @@ fun fitFigure(input: FigureInput): FigureFit {
         for (spec in input.parts) {
             if (spec.kind != FigureKind.LIMB || spec.reach != null) continue
             var root = roots.getValue(spec.part)
-            for (view in FigureView.entries) {
+            for (view in STANDING_VIEWS) {
                 if (spec.part !in reads.getValue(view)) continue
                 root = movedRoot(root, spec, posed.getValue(spec.part), split.getValue(view), view)
             }
@@ -198,6 +233,21 @@ private fun guessRoot(spec: FigurePartSpec, rest: Map<String, FigureChain>, fram
     return axis + frames.getValue(parentId).round(spec.socketV) * (outer * ROOT_GUESS_SHARE)
 }
 
+/** Whether [view] shows [chain] along its length rather than end on, as the front view sees a trunk lying level. */
+private fun showsLength(chain: FigureChain, view: FigureView): Boolean {
+    val shown = (project(view, chain.tip, 0.0) - project(view, chain.root, 0.0)).length
+    return shown >= SHOWN_LENGTH * (chain.tip - chain.root).length
+}
+
+/**
+ * Whether the front view sees [chain], a limb, behind another limb on the same parent further forward: a four-legged body's hind legs
+ * behind its front legs. The side view reads it.
+ */
+private fun behindAnother(chain: FigureChain, posed: Map<String, FigureChain>): Boolean {
+    if (chain.kind != FigureKind.LIMB) return false
+    return posed.values.any { other -> other.kind == FigureKind.LIMB && other.parent == chain.parent && other.part != chain.part && other.root.x > chain.root.x + (chain.tip - chain.root).length * SHOWN_LENGTH }
+}
+
 /** Whether the side view shows [chain]: a trunk always, a limb where most of it lies above or below its parent. */
 private fun shownFromSide(chain: FigureChain, posed: Map<String, FigureChain>): Boolean {
     val parent = chain.parent?.let(posed::get) ?: return true
@@ -227,7 +277,6 @@ private fun clearOfParent(chain: FigureChain, posed: Map<String, FigureChain>, s
     val parent = chain.parent?.let(posed::get) ?: return false
     if (chain.kind == FigureKind.TRUNK) return false
     val bones = parent.viewBones(FigureView.SIDE, rootHeight)
-    val kind = specs.getValue(parent.part).kind
     val steps = 20
     val clear = (0..steps).count { k ->
         val p = project(FigureView.SIDE, chain.at(k.toDouble() / steps), rootHeight)
@@ -236,7 +285,7 @@ private fun clearOfParent(chain: FigureChain, posed: Map<String, FigureChain>, s
             val t = (((p - bone.from) dot d) / (d dot d).coerceAtLeast(1e-12)).coerceIn(0.0, 1.0)
             val off = p - (bone.from + d * t)
             val x = bone.xFrom + (bone.xTo - bone.xFrom) * t
-            val radius = listOf(BoneSide.PLUS, BoneSide.MINUS).mapNotNull { built.radius(parent.part, profileName(kind, FigureView.SIDE, it), x) }.maxOrNull() ?: 0.0
+            val radius = listOf(BoneSide.PLUS, BoneSide.MINUS).mapNotNull { built.radius(parent.part, profileName(specs.getValue(parent.part), FigureView.SIDE, it), x) }.maxOrNull() ?: 0.0
             off.length > radius
         }
     }

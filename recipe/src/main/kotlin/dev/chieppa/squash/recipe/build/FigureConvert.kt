@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import dev.chieppa.squash.recipe.figure.FieldSilhouette
 import dev.chieppa.squash.recipe.figure.FigureView
+import dev.chieppa.squash.recipe.figure.STANDING_VIEWS
 import dev.chieppa.squash.recipe.figure.P2
 import dev.chieppa.squash.recipe.figure.cornersOf
 import dev.chieppa.squash.recipe.figure.Silhouette
@@ -72,7 +73,7 @@ fun convertToFigure(recipe: Recipe, templates: TemplateFolder, library: Template
     val body = assembleNow(assemblyParts(character).filter { it.owner == null }, { character.resolved(it) ?: PartData() }, plan, library)
     val rootHeight = -body.floor.toDouble()
     val spread = tubes.filter { it.pair != null && (it.outward ?: 0f) >= SPREAD_LIMB }.flatMap { sideIds(it) }.toSet()
-    val strokes = FigureView.entries.associateWith { view ->
+    val strokes = STANDING_VIEWS.associateWith { view ->
         val shown = if (view == FigureView.SIDE) ids - spread else ids
         val ends = body.parts.filter { it.id?.value !in ids && it.socket?.parent?.value in ids }.mapNotNull { it.id?.value }
         val hidden = if (view == FigureView.SIDE) ends.filter { !underSpread(character, it, spread) }.toSet() else ends.toSet()

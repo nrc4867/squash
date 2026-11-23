@@ -77,6 +77,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         println("renders: ${renders.absolutePath} (${renderTime.inWholeMilliseconds} ms)")
         renders.listFiles { f -> f.extension == "png" }?.sortedBy { it.name }?.forEach { println("  ${it.absolutePath}") }
         built.figure?.let { FigureOverlay(options, errors).keep(open, it, renders) }
+        if (options.views) SheetViews(File(out, "views")).keep(open)
         hairFitReport(document.character, open.session.assembly.output.value, File(out, "hair-fit.txt"))
         if (options.measure) {
             val table = File(out, "measure.txt")

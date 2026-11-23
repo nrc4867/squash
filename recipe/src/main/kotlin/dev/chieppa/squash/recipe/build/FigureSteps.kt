@@ -58,6 +58,7 @@ internal fun figureSpecs(recipe: Recipe): List<FigurePartSpec> {
 internal fun figureStrokes(figure: RecipeFigure): Map<FigureView, List<FigureStroke>> = mapOf(
     FigureView.FRONT to figure.front.mapIndexed { i, s -> figureStroke(s, "$.figure.front[$i]") },
     FigureView.SIDE to figure.side.mapIndexed { i, s -> figureStroke(s, "$.figure.side[$i]") },
+    FigureView.TOP to figure.top.mapIndexed { i, s -> figureStroke(s, "$.figure.top[$i]") },
 )
 
 /** [stroke] as the fit reads it, failing at [path] where it is not one. */
