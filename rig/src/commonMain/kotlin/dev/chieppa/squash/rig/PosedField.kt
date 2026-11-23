@@ -3,6 +3,10 @@ package dev.chieppa.squash.rig
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.field.JoinedMember
 import dev.chieppa.squash.geom.field.smoothMax
+import dev.chieppa.squash.geom.field.smoothMin
+
+/** The forward difference a piece's gradient is read over, as a share of the field's cell. */
+private const val GRADIENT_SHARE = 0.25f
 
 /**
  * One bound of a [MemberPiece]: across a joint, the plane through [point] with outward [normal]; the piece reaches [margin] past it.
@@ -108,16 +112,27 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
         return out
     }
 
-    /** The field posed by [frames]: each piece read through the inverse of its map. */
-    fun posed(frames: BoneFrames): Posed = Posed(maps(frames.transforms).map { it?.inverse }.toTypedArray())
+    /**
+     * The field posed by [frames]: each piece read through the inverse of its map. With [bends], for each member the share of its
+     * radius at its joints that fills the crease inside each joint the pose bends (none for a member with 0), its pieces meet there by
+     * a smooth union that far ([Posed.own]).
+     */
+    fun posed(frames: BoneFrames, bends: FloatArray? = null): Posed = Posed(maps(frames.transforms).map { it?.inverse }.toTypedArray(), bends)
 
     /** The field at rest. */
     val rest: Posed by lazy { Posed(arrayOfNulls(slots)) }
 
     /** The field with each slot's map from posed body space back to rest in [inverses], null for one that stays. */
-    inner class Posed(private val inverses: Array<Affine?>) {
-        /** Member [m]'s own field at posed body point [p]: the least over its pieces, each read at [p] taken back by its map; [reads] counts the solid reads. */
+    inner class Posed(private val inverses: Array<Affine?>, private val bends: FloatArray? = null) {
+        /**
+         * Member [m]'s own field at posed body point [p]: the least over its pieces, each read at [p] taken back by its map; [reads]
+         * counts the solid reads. Where the member fills its bent joints' creases, its two nearest pieces meet by a smooth union as wide
+         * as its fill of their rounding, by the share [posedBlendShare] gives the angle between their gradients: a crease where they
+         * meet square fills, while the outside of the bend, where they run alongside each other, stays as their union.
+         */
         fun own(m: Int, p: Vec3, reads: LongArray): Float {
+            val bend = bends?.getOrNull(m) ?: 0f
+            if (bend > 0f && pieces[m].size > 1) return filled(m, p, bend, reads)
             val member = members[m]
             var best = Float.MAX_VALUE
             for (piece in pieces[m]) {
@@ -129,6 +144,39 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
                 if (d < best) best = d
             }
             return best
+        }
+
+        private fun pieceAt(m: Int, piece: MemberPiece, p: Vec3, reads: LongArray): Float {
+            val q = inverses[piece.slot]?.invoke(p) ?: p
+            reads[0]++
+            return smoothMax(members[m].own(q), piece.cut(q), piece.rounding)
+        }
+
+        private fun filled(m: Int, p: Vec3, bend: Float, reads: LongArray): Float {
+            var first: MemberPiece? = null
+            var second: MemberPiece? = null
+            var a = Float.MAX_VALUE
+            var b = Float.MAX_VALUE
+            for (piece in pieces[m]) {
+                val d = pieceAt(m, piece, p, reads)
+                if (d < a) {
+                    second = first; b = a; first = piece; a = d
+                } else if (d < b) {
+                    second = piece; b = d
+                }
+            }
+            val one = first ?: return a
+            val two = second ?: return a
+            val k = bend * minOf(one.rounding, two.rounding)
+            if (k <= 0f || b - a >= k) return a
+            val h = cell * GRADIENT_SHARE
+            fun gradient(piece: MemberPiece, at: Float): Vec3 = Vec3(
+                pieceAt(m, piece, p + Vec3(h, 0f, 0f), reads) - at,
+                pieceAt(m, piece, p + Vec3(0f, h, 0f), reads) - at,
+                pieceAt(m, piece, p + Vec3(0f, 0f, h), reads) - at,
+            ).unitOr(Vec3.ZERO)
+            val share = posedBlendShare(gradient(one, a) dot gradient(two, b))
+            return smoothMin(a, b, k * share)
         }
     }
 }

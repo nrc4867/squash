@@ -55,23 +55,52 @@ fun contourRibbon(
     weightAt: ((Vec3) -> Float)? = null,
     edges: List<ContourRun> = emptyList(),
     scales: List<Float> = emptyList(),
-): StrokeRibbon? {
+): StrokeRibbon? = figureRibbons(parts, view, surfaces, weightAt, edges, scales, folds = false).contour
+
+/** A figure's contour as one ribbon, and the folds its surfaces' smooth contours miss ([TriangleLines.foldContours]) as another. */
+class FigureRibbons(val contour: StrokeRibbon?, val folds: StrokeRibbon?)
+
+/**
+ * [contourRibbon], with, where [folds], the folds of [surfaces] the smooth contours miss, at full weight however short and weighed as
+ * their contours are, each surface's kept to where [shown] gives it drawn (its own kept values where it gives none): a fold makes the
+ * edge of the fill wherever it shows, so it is drawn only clear of the figure ([contourDraws]).
+ */
+fun figureRibbons(
+    parts: Collection<PartLines>,
+    view: SurfaceView,
+    surfaces: List<TriangleLines> = emptyList(),
+    weightAt: ((Vec3) -> Float)? = null,
+    edges: List<ContourRun> = emptyList(),
+    scales: List<Float> = emptyList(),
+    folds: Boolean = true,
+    shown: List<FloatArray?> = emptyList(),
+): FigureRibbons {
     val ribbons = parts.flatMap { part -> part.grids.flatMap { grid -> gridRibbons(grid.contours(view::toViewer), view) } }
-    val own = surfaces.flatMapIndexed { i, lines ->
+    val own = ArrayList<StrokeRibbon>()
+    val folded = ArrayList<StrokeRibbon>()
+    for ((i, lines) in surfaces.withIndex()) {
         val runs = lines.smoothContours(view::toViewer)
         val scale = scales.getOrElse(i) { 1f }
-        if (weightAt == null && scale == 1f) return@flatMapIndexed gridRibbons(runs, view)
-        gridRibbons(runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, (weightAt?.invoke(it.position) ?: it.weight) * scale) }, run.closed, run.piece) }, view)
+        own += gridRibbons(weighed(runs, weightAt, scale), view)
+        if (folds) {
+            val drawn = shown.getOrNull(i)
+            val runsOfFolds = if (drawn == null) lines.foldContours(view::toViewer, runs) else lines.foldContours(view::toViewer, runs, drawn)
+            folded += gridRibbons(weighed(runsOfFolds, weightAt, scale), view, fade = false)
+        }
     }
-    return StrokeRibbon.joined(ribbons + own + gridRibbons(edges, view))
+    return FigureRibbons(StrokeRibbon.joined(ribbons + own + gridRibbons(edges, view)), StrokeRibbon.joined(folded))
 }
 
-/** Each of [runs] as a ribbon, thinned by the length on screen of the connected piece it belongs to, however its edges branch. */
-private fun gridRibbons(runs: List<ContourRun>, view: SurfaceView): List<StrokeRibbon> {
+/** [runs] weighed by [weightAt] in space times [scale]. */
+private fun weighed(runs: List<ContourRun>, weightAt: ((Vec3) -> Float)?, scale: Float): List<ContourRun> =
+    if (weightAt == null && scale == 1f) runs else runs.map { run -> ContourRun(run.points.map { ContourPoint(it.position, (weightAt?.invoke(it.position) ?: it.weight) * scale) }, run.closed, run.piece) }
+
+/** Each of [runs] as a ribbon, with [fade] thinned by the length on screen of the connected piece it belongs to, however its edges branch. */
+private fun gridRibbons(runs: List<ContourRun>, view: SurfaceView, fade: Boolean = true): List<StrokeRibbon> {
     val lengths = runs.groupBy { it.piece }.mapValues { (_, piece) -> piece.sumOf { pixelsAlong(it, view).toDouble() }.toFloat() }
     return runs.mapNotNull { run ->
-        val fade = (lengths.getValue(run.piece) / FULL_RUN_PIXELS).coerceAtMost(1f)
-        if (fade <= 0f) null else StrokeRibbon.along(spacedOnScreen(run, view).map { RibbonPoint(it.position, Vec3.ZERO, it.weight * fade) }, EVEN_WEIGHT, run.closed)
+        val share = if (fade) (lengths.getValue(run.piece) / FULL_RUN_PIXELS).coerceAtMost(1f) else 1f
+        if (share <= 0f) null else StrokeRibbon.along(spacedOnScreen(run, view).map { RibbonPoint(it.position, Vec3.ZERO, it.weight * share) }, EVEN_WEIGHT, run.closed)
     }
 }
 
@@ -107,12 +136,14 @@ private fun pixelsAlong(run: ContourRun, view: SurfaceView): Float {
 /**
  * [contour] at the two weights of [rule]: thick where it clears the figure, thin wherever it shows. The thin line lies half inside
  * the edge, and the thick one shows only outside it, so together they read as the silhouette's weight across. With [tuck], the thin line
- * lies that far behind the edge instead of over it, so it shows only over what lies further back than that.
+ * lies that far behind the edge instead of over it, so it shows only over what lies further back than that. [folds] draw thick
+ * only, where they clear the figure: where a fold makes the edge of the fill, the silhouette's line runs on along it.
  */
-fun contourDraws(contour: StrokeRibbon, rule: LineRule, color: Color, layers: LineLayers, figureRadius: Float, tuck: Float? = null): List<RibbonDraw> {
+fun contourDraws(contour: StrokeRibbon, rule: LineRule, color: Color, layers: LineLayers, figureRadius: Float, tuck: Float? = null, folds: StrokeRibbon? = null): List<RibbonDraw> {
     val outer = max(0f, 2f * rule.silhouettePixels - rule.interiorPixels)
-    return listOf(
+    return listOfNotNull(
         RibbonDraw(contour, LineRule(outer), color, layer = layers.behind, lift = 0f),
+        folds?.let { RibbonDraw(it, LineRule(outer), color, layer = layers.behind, lift = 0f) },
         RibbonDraw(contour, LineRule(rule.interiorPixels), color, layer = layers.over, lift = tuck?.let { -it } ?: (figureRadius * CONTOUR_LIFT_SHARE)),
     )
 }

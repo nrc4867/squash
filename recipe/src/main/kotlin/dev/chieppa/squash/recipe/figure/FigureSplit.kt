@@ -1,12 +1,16 @@
 package dev.chieppa.squash.recipe.figure
 
 import kotlin.math.abs
+import kotlin.math.acos
 
 /** Which side of its bone a sample lies on, as the view shows it: [PLUS] is the side its bone's [ViewBone.plus] faces. */
 enum class BoneSide { PLUS, MINUS }
 
-/** A sample of the outline given to one part: where along the part (its outline x), how far from its bone, on which side, on which bone. */
-data class PartSample(val part: String, val side: BoneSide, val x: Double, val radius: Double, val sample: StrokeSample, val bone: ViewBone)
+/**
+ * A sample of the outline given to one part: where along the part (its outline x), how far from its bone, on which side, on which bone,
+ * and whether it lies in the crease inside a bent joint, which no width shapes.
+ */
+data class PartSample(val part: String, val side: BoneSide, val x: Double, val radius: Double, val sample: StrokeSample, val bone: ViewBone, val crease: Boolean = false)
 
 private class Reading(val t: Double, val x: Double, val radius: Double, val side: BoneSide, val facesAway: Boolean)
 
@@ -64,15 +68,18 @@ private fun nearestBone(bones: List<ViewBone>, p: P2, normal: P2, surface: BoneS
         }
         if (wins) best = Triple(bone, r, d)
     }
-    if (best == null && surface != null && facing) return cornerBone(bones, p, normal, surface)
-    return best?.let { it.first to it.second }
+    val corner = if (surface != null && facing) cornerBone(bones, p, normal, surface) else null
+    val current = best
+    if (corner != null && (current == null || nearerSurface(corner.first, corner.third, current.first, current.third))) return corner.first to corner.second
+    return current?.let { it.first to it.second }
 }
 
 /**
  * The bone a sample round the outside of a bent joint lies nearest, past the end of the bone before the joint and before the start of the
- * one after it, as the front of a bent knee does: read about the joint, as far from it as it lies.
+ * one after it, as the front of a bent knee does: read about the joint, as far from it as it lies; with how far it lies from the
+ * surface there, so it goes to the joint rather than to a part behind whose surface lies further.
  */
-private fun cornerBone(bones: List<ViewBone>, p: P2, normal: P2, surface: BoneSurface): Pair<ViewBone, Reading>? {
+private fun cornerBone(bones: List<ViewBone>, p: P2, normal: P2, surface: BoneSurface): Triple<ViewBone, Reading, Double>? {
     var best: Triple<ViewBone, Reading, Double>? = null
     for (bone in bones) {
         val r = read(bone, p, normal)
@@ -87,7 +94,44 @@ private fun cornerBone(bones: List<ViewBone>, p: P2, normal: P2, surface: BoneSu
         val d = surfaceDistance(bone, clamped, surface)
         if (best == null || d < best.third) best = Triple(bone, clamped, d)
     }
-    return best?.let { it.first to it.second }
+    return best
+}
+
+/** A joint bent less than this in a view, in radians, has no crease inside it there. */
+internal const val CREASE_BEND = 0.5
+
+/** A sample within this many of each bone's surface radii, at its middle, of a bent joint, on its inside, lies in the joint's crease. */
+private const val CREASE_REACH = 1.6
+
+/** The side of [bone] facing [toward]. */
+private fun sideToward(bone: ViewBone, toward: P2): BoneSide = if ((toward dot bone.plus) >= 0) BoneSide.PLUS else BoneSide.MINUS
+
+/**
+ * The bone, and how it reads there, of the bent joint a sample lies in the crease inside of, as the back of a bent knee: on the inside
+ * of both bones that meet there, nearer the joint along each than [CREASE_REACH] of the other bone's surface radius at its middle; of the two,
+ * the one whose surface lies nearer. Null for a sample in no crease. A crease is its limb's whatever part's surface lies near it, since
+ * neither bone's width shapes it, the two surfaces meeting in a corner wherever they meet; a key fills it by its bend.
+ */
+private fun creaseBone(bones: List<ViewBone>, p: P2, normal: P2, surface: BoneSurface): Pair<ViewBone, Reading>? {
+    for (first in bones) {
+        val second = bones.firstOrNull { it.part == first.part && it.xFrom == first.xTo && it !== first } ?: continue
+        val joint = first.to
+        val into = (first.to - first.from).unit()
+        val out = (second.to - second.from).unit()
+        if (acos((into dot out).coerceIn(-1.0, 1.0)) < CREASE_BEND) continue
+        val firstSide = sideToward(first, out)
+        val secondSide = sideToward(second, into * -1.0)
+        val back = (p - joint) dot (into * -1.0)
+        val along = (p - joint) dot out
+        val firstRadius = surface.radius(first, firstSide, (first.xFrom + first.xTo) / 2) ?: continue
+        val secondRadius = surface.radius(second, secondSide, (second.xFrom + second.xTo) / 2) ?: continue
+        if (back < 0 || along < 0 || back > CREASE_REACH * secondRadius || along > CREASE_REACH * firstRadius) continue
+        val onFirst = read(first, p, normal)
+        val onSecond = read(second, p, normal)
+        if (onFirst.side != firstSide || onSecond.side != secondSide) continue
+        return if (surfaceDistance(first, onFirst, surface) <= surfaceDistance(second, onSecond, surface)) first to onFirst else second to onSecond
+    }
+    return null
 }
 
 /**
@@ -106,15 +150,22 @@ private fun outward(samples: List<StrokeSample>, bones: List<ViewBone>, surface:
  * Gives each sample to the nearest bone it can lie on: one whose stretch it lies along, within its reach past either end, and that its
  * outline faces away from, so the body's side under an arm goes to the trunk, not to the arm beside it; a trunk about as near as a limb
  * on it keeps the sample, as the seat does over a thigh's root seen from the side. Given the body's [surface], as a key's outline is
- * read on a body already built, each stroke first faces out from the surfaces it lies along, and a sample goes to the bone whose
- * surface, not whose axis, lies nearest it: a stroke under a raised arm describes the arm's underside, however near the trunk's axis.
+ * read on a body already built, each stroke first faces out from the surfaces it lies along, a sample in the crease inside a bent joint
+ * goes to that joint's limb ([creaseBone]), and any other to the bone whose surface, not whose axis, lies nearest it: a stroke under a
+ * raised arm describes the arm's underside, however near the trunk's axis.
  */
 fun splitByBones(samples: List<StrokeSample>, bones: List<ViewBone>, surface: BoneSurface? = null): FigureSplit {
     val taken = mutableListOf<PartSample>()
     val unread = mutableListOf<StrokeSample>()
     for (sample in if (surface == null) samples else outward(samples, bones, surface)) {
-        val best = nearestBone(bones, sample.at, sample.normal, surface, facing = true)
-        if (best == null) unread += sample else taken += PartSample(best.first.part, best.second.side, best.second.x, best.second.radius, sample, best.first)
+        val crease = surface?.let { creaseBone(bones, sample.at, sample.normal, it) }
+        val best = crease ?: nearestBone(bones, sample.at, sample.normal, surface, facing = true)
+        if (best == null) {
+            unread += sample
+            continue
+        }
+        val (bone, r) = best
+        taken += PartSample(bone.part, r.side, r.x, r.radius, sample, bone, crease = crease != null)
     }
     return FigureSplit(taken, unread)
 }

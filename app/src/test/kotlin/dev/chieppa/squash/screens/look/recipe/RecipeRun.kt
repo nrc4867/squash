@@ -50,7 +50,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         built.keys.forEach { key ->
             val means = key.means.joinToString { "%.4f".format(it) }
             val misses = File(out, "key-${key.name}.txt").apply {
-                val read = key.measure.samples.map { m -> "%s %s %.4f %.4f %s %.4f %s".format(m.view, m.sample.part, m.sample.sample.at.x, m.sample.sample.at.y, m.profile, m.miss, m.sample.sample.stroke) }
+                val read = key.measure.samples.map { m -> "%s %s %.4f %.4f %s %.4f %s %.4f".format(m.view, m.sample.part, m.sample.sample.at.x, m.sample.sample.at.y, m.profile, m.miss, m.sample.sample.stroke, m.sample.x) }
                 val unread = key.fit.split.flatMap { (view, split) -> split.unread.map { "%s - %.4f %.4f unread - %s".format(view, it.at.x, it.at.y, it.stroke) } }
                 writeText((read + unread).joinToString("\n", postfix = "\n"))
             }
