@@ -1,3 +1,5 @@
+import dev.chieppa.squash.build.WebgpuNatives
+
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.composeMultiplatform)
@@ -11,6 +13,7 @@ kotlin {
 dependencies {
     api(project(":geom"))
     api("dev.chieppa.stretch:stretch-gpu")
+    runtimeOnly(WebgpuNatives.dependency(dependencies, providers))
     testImplementation(kotlin("test"))
 }
 
