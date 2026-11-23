@@ -3,6 +3,7 @@ package dev.chieppa.squash.rig
 import dev.chieppa.squash.character.surface.RunAll
 import dev.chieppa.squash.character.surface.chunked
 import dev.chieppa.squash.geom.Vec3
+import dev.chieppa.squash.geom.surface.HELD
 import kotlin.concurrent.Volatile
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -46,11 +47,15 @@ private const val TRACKED_SHIFT_CELLS = 2f
 /** Vertices a piece of the work takes. */
 private const val CHUNK = 256
 
+/** How deep, as a share of the field's cell, linear blend must bury a corner in a member that holds none of it for the corner to stay there. */
+private const val BURIED_SHARE = 0.5f
+
 /**
  * Implicit skinning on a one surface (Vaillant, Barthe, Guennebaud, Cani, Rohmer, Wyvill, Gourmel, Paulin, "Implicit Skinning", 2013):
  * after linear blend, each vertex near a bend, one whose bones or the member pieces round it move apart ([ChosenVertices]), is moved
  * along the posed field's gradient ([PosedField]) back to the level it lay on at rest, so an inner bend creases where the members meet and
- * a joint keeps the volume its join gives. A vertex stops where the gradient turns sharply between steps, a contact. The moved vertices
+ * a joint keeps the volume its join gives. A vertex stops where the gradient turns sharply between steps, a contact, and one linear blend
+ * buries in a member holding none of it stays where linear blend leaves it ([buried]). The moved vertices
  * are then relaxed along the surface toward where their neighbours place them by their rest mean value weights ([RestRings]) and moved
  * back onto the level, a few rounds, so they keep the rest surface's spacing over what the pose bent. Each vertex ends at an offset from
  * where linear blend puts it on the same rest mesh, in the same order ([Refit]).
@@ -65,6 +70,9 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
 
     /** Each corner's field at rest, NaN until first read. */
     private val levels = FloatArray(corners) { Float.NaN }
+
+    /** Each corner's joins at rest, read with its level. */
+    private val joins = RestJoins(corners)
 
     /** The last refit and the bone maps it was made for, which a pose near them starts from. */
     @Volatile
@@ -89,7 +97,12 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
                 val reader = PosedFieldReader(field, h)
                 for (i in from until until) {
                     val v = moved[i]
-                    if (levels[v].isNaN()) levels[v] = reader.read(field.rest, surface.positions.vec(v * 3), members.sets, v * MOST_MEMBERS, members.counts[v], withGradient = true)
+                    if (levels[v].isNaN()) levels[v] = reader.readRest(field.rest, surface.positions.vec(v * 3), members.sets, v * MOST_MEMBERS, members.counts[v], joins)
+                    if (buried(v, starts.vec(i * 3), posed, reader.reads)) {
+                        positions.put(v * 3, starts.vec(i * 3))
+                        continue
+                    }
+                    reader.restAt(members.sets, v * MOST_MEMBERS, members.counts[v], joins)
                     val (p, normal) = settle(reader, posed, levels[v], sets[i], starts.vec(i * 3), MOST_STEPS, stopAtContact = true)
                     positions.put(v * 3, p)
                     normals[i] = normal
@@ -118,6 +131,7 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
                             for (k in rings.starts[v] until rings.starts[v + 1]) sum += before.vec(rings.around[k] * 3) * rings.weights[k]
                             sum
                         }
+                        reader.restAt(members.sets, v * MOST_MEMBERS, members.counts[v], joins)
                         val toward = target - p
                         val along = toward - normal * (toward dot normal)
                         val (settled, turned) = settle(reader, posed, levels[v], sets[i], p + along * RELAX_SHARE, SETTLING_STEPS, stopAtContact = false)
@@ -134,6 +148,25 @@ class ImplicitSkin(rig: Rig, val surface: SkinSurface, skin: SurfaceSkin) {
         breakdown?.count("reads", reads.sum() + chosen.reads)
         val offsets = FloatArray(moved.size * 3) { positions[moved[it / 3] * 3 + it % 3] - blended[it] }
         return Refit(moved, offsets, normals).also { tracked = Tracked(frames.transforms.toList(), it.offsetsOf(corners)) }
+    }
+
+    /**
+     * Whether corner [v], started at [p], lies buried by linear blend more than [BURIED_SHARE] of a cell inside a member [posed] that
+     * holds no share of it, as a sleeve's underside lowered into the cloth over the side: it stays where linear blend leaves it, since
+     * moving it onto that member's surface lays it over the other's skin; [reads] counts the solid reads.
+     */
+    private fun buried(v: Int, p: Vec3, posed: PosedField.Posed, reads: LongArray): Boolean {
+        for (j in 0 until members.counts[v]) {
+            val m = members.sets[v * MOST_MEMBERS + j]
+            if (holds(v, m)) continue
+            if (posed.own(m, p, reads) < -cell * BURIED_SHARE) return true
+        }
+        return false
+    }
+
+    private fun holds(v: Int, m: Int): Boolean {
+        for (k in 0 until HELD) if (surface.held[v * HELD + k] == m && surface.heldShares[v * HELD + k] > 0f) return true
+        return false
     }
 
     /**
