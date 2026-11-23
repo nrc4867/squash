@@ -59,6 +59,8 @@ data class Recipe(
     val displayPose: List<BonePose> = emptyList(),
     @Doc("Named poses the build renders besides the display pose; not saved in the character.")
     val poses: Map<String, List<BonePose>> = emptyMap(),
+    @Doc("Pose keys: the body's shape corrected in a pose, each blended in by joint angle as a pose nears it and gone at the rest.")
+    val keys: List<RecipeKey> = emptyList(),
     @Doc("Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance.")
     val targets: List<RecipeTarget> = emptyList(),
     @Doc("Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off.")

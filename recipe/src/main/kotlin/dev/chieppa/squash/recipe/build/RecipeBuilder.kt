@@ -39,19 +39,24 @@ class RecipeBuild(
     val targets: List<RecipeTarget> = emptyList(),
     /** How the recipe's figure was fitted, or null without one. */
     val figure: FigureReport? = null,
+    /** How each key's outline was fitted. */
+    val keys: List<KeyReport> = emptyList(),
+    /** The recipe as fitted, its figure and its keys' outlines given as what they fitted, or null with nothing to fit. */
+    val fitted: Recipe? = null,
 )
 
 /**
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
  * every body part, placed and shaped in the recipe's order; their colour and surface work; the wardrobe's slots and garments; the
  * parts garments own, placed, shaped and painted; the painted eyes; the membranes; the hair's lock groups and the body's collision shapes; the expressions; the outfits and the one shown; the display pose;
- * the creases; the shading; the view keys.
+ * the creases; the shading; the view keys; the pose keys.
+ * A key's outline is fitted on the body posed by [keyBodies] when given, at rest otherwise.
  * Anything wrong fails as a [RecipeException] at the recipe path that caused it. See HLD: architecture, Recipes.
  */
-class RecipeBuilder(private val templates: TemplateFolder) {
+class RecipeBuilder(private val templates: TemplateFolder, private val keyBodies: KeyBodies? = null) {
     fun build(drawn: Recipe): RecipeBuild {
         val figure = drawn.figure?.let { fittedFigure(drawn, it, templates) }
-        val recipe = figure?.recipe ?: drawn
+        val (recipe, keys) = fittedKeys(figure?.recipe ?: drawn, templates, keyBodies)
         if (recipe.format != RECIPE_FORMAT) throw RecipeException("$.format", "this build reads recipe format $RECIPE_FORMAT, not ${recipe.format}")
         val plan = templates.plans.filter { it.id == BodyPlanId(recipe.plan) && (recipe.planVersion == null || it.version == recipe.planVersion) }.maxByOrNull { it.version }
             ?: throw RecipeException("$.plan", "no body plan \"${recipe.plan}\"${recipe.planVersion?.let { " version $it" } ?: ""}; plans: ${templates.plans.map { it.id.value }.distinct().sorted().joinToString()}")
@@ -78,14 +83,16 @@ class RecipeBuilder(private val templates: TemplateFolder) {
             recipe.creases?.let { creases(it) }
             recipe.shading?.let { shading(it) }
             recipe.viewKeys?.let { viewKeys(it) }
+            if (recipe.keys.isNotEmpty()) poseKeys()
             val poses = recipe.poses.mapValues { (name, bones) -> pose("$.poses.$name", bones) }
-            return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets, figure)
+            val fitted = recipe.takeIf { figure != null || keys.isNotEmpty() }?.copy(figure = null)
+            return RecipeBuild(document, commands.toList(), warnings.toList(), poses, recipe.targets, figure, keys, fitted)
         }
     }
 }
 
 /** [bones] as a pose, each naming a part the recipe placed, a pair by its left side or each side by its own id. */
-private fun BuildContext.pose(path: String, bones: List<BonePose>): Pose {
+internal fun BuildContext.pose(path: String, bones: List<BonePose>): Pose {
     val named = bones.mapIndexed { i, bone -> bone.copy(part = partOf("$path[$i].part", bone.part.value)) }
     val twice = named.groupBy { it.part to it.joint }.filterValues { it.size > 1 }.keys.firstOrNull()
     if (twice != null) fail(path, "the pose sets ${twice.first.value} ${twice.second} twice")

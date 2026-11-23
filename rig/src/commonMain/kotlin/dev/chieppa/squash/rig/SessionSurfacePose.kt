@@ -42,7 +42,7 @@ class HeldSkin(
     val coarse: Boolean = false,
 )
 
-private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
+private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN, KEYS }
 
 /**
  * The session's one surface in the shown pose: its [skin], made again when the rig or the surface changes, and the surface [posed] by
@@ -51,7 +51,8 @@ private enum class SkinSource { RIG, SURFACE, DRESS, PAINT, SKIN }
  * until the full surface follows the drag's end. While a pane does, the coarse surface is posed without looking for skin the pose
  * pushes through a garment ([PosedHiding.kept]). With the character's creases on, the posed surface carries them too, read on the skin
  * once ([CreaseRig]) and in each pose ([PoseCreasing]), the garments' folds raised before what they hide is found; a change of the
- * creases' settings poses again and builds nothing. While [PoseReport.sink] is set, each posing's [PoseBreakdown] goes to it.
+ * creases' settings poses again and builds nothing. With pose keys, the posed surface and garments take the keys' shapes by the pose's
+ * weights ([keys], [HeldKeys.correction]). While [PoseReport.sink] is set, each posing's [PoseBreakdown] goes to it.
  */
 class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flow<Pose>) {
     private val graph = session.graph
@@ -80,6 +81,30 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     }
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }
+
+    /**
+     * The character's pose keys as shapes on its one rest surface ([poseKeyShapes]), made again when the skin or what the keys read of
+     * the character changes, and never for the coarse surface of a drag.
+     */
+    val keys: Node<*, HeldKeys> = graph.gather(
+        session.document.map { doc -> doc.character.takeIf { it.poseKeys.isNotEmpty() }?.let(::keyedCharacter) }.distinctUntilChanged(),
+        { mapOf(SkinSource.SKIN to skinSource) },
+        cacheSize = KEPT_BUILDS,
+    ) { gathered ->
+        val character = gathered.shape ?: return@gather HeldKeys.NONE
+        val held = gathered.values.getValue(SkinSource.SKIN) as HeldSkin
+        if (held.coarse) HeldKeys.NONE else poseKeyShapes(character, held, session.templates)
+    }
+
+    private val keysSource = graph.follow<HeldKeys, Any>(keys, cacheSize = KEPT_BUILDS) { it }
+
+    /** Where each garment takes the body's key correction from, kept while the body's keys are the same. */
+    @Volatile
+    private var lastGarmentKeys: Pair<HeldKeys, GarmentCorrections>? = null
+
+    private fun garmentKeysOf(keys: HeldKeys, body: CharacterSurface, moved: IntArray): GarmentCorrections =
+        lastGarmentKeys?.takeIf { it.first === keys }?.second ?: GarmentCorrections(body, moved).also { lastGarmentKeys = keys to it }
+
     private val paintSource = graph.follow<HeldPaint, Any>(session.sessionSurface.shownPaint, cacheSize = KEPT_BUILDS) { it }
 
     /** The last posed surface made with its paint laid on its surface, which a run whose paint is still another surface's keeps. */
@@ -111,7 +136,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
 
     val posed: Node<*, HeldPosedSurface> = graph.gather(
         shaped,
-        { mapOf(SkinSource.SKIN to skinSource, SkinSource.PAINT to paintSource) },
+        { mapOf(SkinSource.SKIN to skinSource, SkinSource.PAINT to paintSource, SkinSource.KEYS to keysSource) },
         cacheSize = KEPT_BUILDS,
     ) { gathered ->
         val held = gathered.values.getValue(SkinSource.SKIN) as HeldSkin
@@ -127,8 +152,11 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val settings = gathered.shape.creases
         val creasing = if (settings.creases.on && !held.coarse) PoseCreasing(creaseRigOf(held), frames, settings) else null
         val fits = fitsOf(held)
+        val keys = (gathered.values.getValue(SkinSource.KEYS) as HeldKeys).takeIf { it.surface === surface && !held.coarse }
+        val correction = keys?.let { breakdown.time("key weights") { it.correction(gathered.shape.pose) } }
+        val garmentKeys = correction?.let { made -> garmentKeysOf(keys, surface, made.moved).also { it.prepare(held.dress?.garments.orEmpty().map { g -> g.surface }) } }
         val bodyBreakdown = breakdown?.let { PoseBreakdown() }
-        val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL, breakdown = bodyBreakdown, fit = fits?.of(0, frames))
+        val body = posedSurface(surface, skin, paint, frames, IN_PARALLEL, breakdown = bodyBreakdown, fit = fits?.of(0, frames), correction = correction)
         bodyBreakdown?.let { breakdown?.merged(it, "body ") }
         val garmentCreasing = held.dress?.garments.orEmpty().map { creasing?.garment(it) }
         val worn = held.dress?.let { dress ->
@@ -137,7 +165,10 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
                     async {
                         val own = breakdown?.let { PoseBreakdown() }
                         val posed = own.time("all") {
-                            posedSurface(garment.surface, held.garments[i], null, frames, IN_PARALLEL, garmentCreasing[i]?.let { it::shape }, own, fits?.of(i + 1, frames))
+                            posedSurface(
+                                garment.surface, held.garments[i], null, frames, IN_PARALLEL, garmentCreasing[i]?.let { it::shape }, own, fits?.of(i + 1, frames),
+                                correction?.let { made -> garmentKeys?.of(garment.surface, made) },
+                            )
                         }
                         val hung = own.time("hang") { garment.movedTo(hangingPushed(garment, posed.surface, body.surface), posed.carry) }
                         own?.count("vertices", garment.surface.mesh.vertexCount.toLong())

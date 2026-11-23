@@ -45,6 +45,8 @@ The body's tubes (torso, neck, arms, legs) are drawn as one **figure outline** a
 - **Read the build**: `figure: fit ... mean miss by round ...` in the run's output, and `renders/figure-front.png` and `figure-side.png`, which mark in red every stretch the built body misses the outline by more than an ink line. A miss is a drawing to change (a stroke, a corner, a place) or a skeleton fact (a joint height, a length, the pose it is drawn in), never a radius to tune.
 - **An existing character**: `tools/recipe.sh figure <recipe.json>` traces its body into a figure outline and writes the recipe on it, as a start to draw over.
 
+- **A pose that needs drawing**: where the strip's T-pose (or another pose) shows a shape skinning cannot give, such as a tick or a dip on the shoulder top, a boxy underarm or a deltoid too flat on a raised arm, add a **pose key** (`kit/README.md`, Pose keys) rather than reshaping the rest: `poseKey(name, { pose, outline: {} })`, build, copy the strokes to fix out of `key-<name>-posed.json`, redraw them few-pointed and smooth with only the change you want, read them in with `readFigureOutline`, build again. Check `key <name>: ... mean miss` and `key-<name>.txt`, then by eye: the strip's panel in the key's pose against the build without the key, a sweep of named poses toward it a few degrees apart (no pop), the dressed strip (the clothes follow), and the rest pose unchanged.
+
 Fall back to the radii below for a tube the figure does not hold: a tail, a snout, a horn.
 
 ## 3. Tubes before templates

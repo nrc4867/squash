@@ -1884,6 +1884,13 @@
             }
           }
         },
+        "keys": {
+          "description": "Pose keys: the body's shape corrected in a pose, each blended in by joint angle as a pose nears it and gone at the rest.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeKey"
+          }
+        },
         "targets": {
           "description": "Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance.",
           "type": "array",
@@ -3133,6 +3140,95 @@
       },
       "additionalProperties": false
     },
+    "RecipeKey": {
+      "description": "A pose key: a correction of the body's shape in one pose, blended in by joint angle as a pose nears it and gone at the rest the body is built in. Give an outline redrawn in the key's pose, which the build fits to changes of the parts it touches, or the changes themselves; both, and a part's changes given replace the fitted ones.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Its name, unique among the keys.",
+          "type": "string"
+        },
+        "pose": {
+          "description": "The pose it corrects, over the rest: the bones it turns drive it. A pair's bones on one side drive that side's half of the body; a pose naming one side only drives the other through the twin bones.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BonePose"
+          }
+        },
+        "outline": {
+          "description": "The figure outline redrawn in the key's pose: only the strokes that change, few points, smooth. Read in each limb's own bones as posed, and fitted to changes of the tube parts' widths and of the blends where they join.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeKeyOutline"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "changes": {
+          "description": "Changes of the parts' widths and joins, read over the parts' own settings, so an edit of the rest keeps them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeKeyChange"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "pose"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeKeyChange": {
+      "description": "What a key changes on one part, read over its own settings.",
+      "type": "object",
+      "properties": {
+        "part": {
+          "description": "The part: a pair by its id changes both sides.",
+          "type": "string"
+        },
+        "widths": {
+          "description": "Width scales by direction: forward (or front), back, up, down, left, right, outer or inner as a tube's profiles name them, or side+, side-, top+ and top- for a side of the part's Side or Top outline. Each is a run of [x, scale] places along the part, eased between them and held level past its ends.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "blend": {
+          "description": "How much the blend where it joins its parent is scaled by; a part with no blend of its own keeps its default.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.25,
+              "maximum": 4.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "part"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
     "RecipeKeyLight": {
       "description": "The way to a key light in body space: x forward, y up, z to the character's right; any length but zero.",
       "type": "object",
@@ -3155,6 +3251,59 @@
         "y",
         "z"
       ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeKeyOutline": {
+      "description": "A figure outline redrawn in a key's pose: strokes as a figure's, in body units standing on the ground, only where the key changes the body.",
+      "type": "object",
+      "properties": {
+        "front": {
+          "description": "The front view: the character's left half, x from the body's middle toward its left, y up from the ground. Each stroke runs with the figure on its right.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeFigureStroke"
+          }
+        },
+        "side": {
+          "description": "The side view from the character's left: x forward from the body's middle, y up from the ground.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecipeFigureStroke"
+          }
+        },
+        "rootHeight": {
+          "description": "How high above the ground the root part's origin sits, in body units; the figure's when left out.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rounds": {
+          "description": "Rounds of correction on the keyed body's silhouette. 4 when left out.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0,
+              "maximum": 8.0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "joins": {
+          "description": "Whether the blends where the parts it reaches join are fitted to it too. On when left out.",
+          "type": "boolean"
+        }
+      },
       "patternProperties": {
         "^x-": {}
       },

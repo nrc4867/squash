@@ -6,6 +6,7 @@ import dev.chieppa.squash.character.build.assemblyParts
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.surface.RunSolids
 import dev.chieppa.squash.character.surface.fieldOf
+import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.recipe.figure.FieldSilhouette
 import dev.chieppa.squash.recipe.figure.FigureFit
@@ -119,13 +120,18 @@ private fun rootRadius(part: FittedPart): Double = part.radii.values.mapNotNull 
 
 /** The joined field of the parts [shaped] fits to its figure, built alone: no other part, surface work, garment or pose. */
 private fun bodyField(shaped: Recipe, ids: Set<String>, templates: TemplateFolder, library: TemplateLibrary) = run {
+    val character = bodyDocument(shaped, ids, templates).character
+    val assembled = assembleNow(assemblyParts(character), { character.resolved(it) ?: PartData() }, library.plan(character.bodyPlan), library)
+    requireNotNull(fieldOf(assembled, RunSolids())) { "figure: the fitted parts built no field" }.field
+}
+
+/** The character of [shaped]'s parts [ids] built alone: no other part, surface work, garment, key or pose. */
+internal fun bodyDocument(shaped: Recipe, ids: Set<String>, templates: TemplateFolder): SquashDocument {
     val body = shaped.copy(
         figure = null,
         parts = shaped.parts.filter { it.id in ids }.map { it.copy(regions = emptyList(), marks = emptyList(), groups = emptyList(), fur = null, lineWeights = emptyList(), areas = emptyMap()) },
         eyes = emptyList(), membranes = emptyList(), hair = emptyList(), expressions = emptyList(), wardrobe = null,
-        displayPose = emptyList(), poses = emptyMap(), targets = emptyList(), creases = null, shading = null, viewKeys = null,
+        displayPose = emptyList(), poses = emptyMap(), keys = emptyList(), targets = emptyList(), creases = null, shading = null, viewKeys = null,
     )
-    val character = RecipeBuilder(templates).build(body).document.character
-    val assembled = assembleNow(assemblyParts(character), { character.resolved(it) ?: PartData() }, library.plan(character.bodyPlan), library)
-    requireNotNull(fieldOf(assembled, RunSolids())) { "figure: the fitted parts built no field" }.field
+    return RecipeBuilder(templates).build(body).document
 }

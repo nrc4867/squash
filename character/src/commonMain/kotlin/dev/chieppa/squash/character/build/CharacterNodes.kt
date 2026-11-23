@@ -135,13 +135,41 @@ fun Graph.assemblyNode(
     )
 }
 
-/** The character of [parts] assembled at once, for a screen with no session: each part from [data], with nothing kept. */
-fun assembleNow(parts: List<AssemblyPart>, data: (PartId) -> PartData, plan: BodyPlan?, templates: TemplateLibrary): AssembledCharacter {
+/**
+ * The character of [parts] assembled at once, for a screen with no session: each part from [data], its surface taken from [kept] where
+ * a part with the same template, data, side and length was built before, and kept there.
+ */
+fun assembleNow(
+    parts: List<AssemblyPart>,
+    data: (PartId) -> PartData,
+    plan: BodyPlan?,
+    templates: TemplateLibrary,
+    kept: KeptSurfaces = KeptSurfaces(),
+): AssembledCharacter {
     val lengths = legLengths(parts, data, plan, templates)
     val defaults = HashMap<Pair<TemplateRef, Boolean>, PartSurface>()
     fun default(ref: TemplateRef, mirrored: Boolean) = defaults.getOrPut(ref to mirrored) {
         PlannedSurfaces.of(templates[ref], mirrored, plan?.spreadFor(ref.id) ?: 0f, lengths.ofPlanned(ref))
     }
-    val surfaces = parts.associate { it.id to surfaceOf(templates[it.template], data(it.id), it.side == Side.RIGHT, lengthFactor = lengths.ofPart(it.id), onSocket = it.socket != null) }
+    val surfaces = parts.associate { part ->
+        val partData = data(part.id)
+        val mirrored = part.side == Side.RIGHT
+        val length = lengths.ofPart(part.id)
+        val onSocket = part.socket != null
+        part.id to kept.of(KeptSurfaceKey(part.template, partData, mirrored, length, onSocket)) {
+            surfaceOf(templates[part.template], partData, mirrored, lengthFactor = length, onSocket = onSocket)
+        }
+    }
     return assemble(parts, surfaces, plan, templates, ::default, lengths)
+}
+
+/** What a part's surface is built from, which [KeptSurfaces] keeps it by. */
+data class KeptSurfaceKey(val template: TemplateRef, val data: PartData, val mirrored: Boolean, val length: Float, val onSocket: Boolean)
+
+/** Part surfaces kept by what they are built from, so assemblies that differ in a few parts build only those. */
+class KeptSurfaces {
+    private val kept = HashMap<KeptSurfaceKey, PartSurface>()
+
+    /** The surface kept for [key], or [build]'s, kept. */
+    fun of(key: KeptSurfaceKey, build: () -> PartSurface): PartSurface = kept.getOrPut(key, build)
 }
