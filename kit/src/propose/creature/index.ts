@@ -8,6 +8,7 @@ import { extentOf, fitBody } from "./fit.ts";
 import { figureOutline } from "./outline.ts";
 import { WIDTH_PLACES, type ParamValues } from "./params.ts";
 import { loadPlan, type CreaturePlan } from "./plan.ts";
+import { rasterBody } from "./raster.ts";
 import { proposalRecipe } from "./recipe.ts";
 
 /** A head in body units, when the readings give neither the views' scale nor the subject's height. */
@@ -69,6 +70,7 @@ export const creatureProposer: Proposer = {
     return {
       evidence,
       places: Object.fromEntries(fit.places),
+      shapes: Object.fromEntries([...sheet.views].map(([name, v]) => [name, rasterBody(fit.posed, name, fit.places.get(name)!, v.mask.width, v.mask.height)])),
       files: [
         { name: "proposal.json", value: { format: "squash-body-proposal/1", plan: plan.id, views: [...sheet.views.keys()], fit: roundTo(fit.cost), proportions: summary, evidence } },
         { name: "figure.json", value: outline },

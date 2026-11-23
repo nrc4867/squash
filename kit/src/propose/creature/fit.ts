@@ -11,7 +11,7 @@ import { rasterBody, toPixel, type ViewPlace } from "./raster.ts";
 const FIT_PIXELS = 180;
 
 /** Body drawn where the view shows nothing costs this many times a view's pixel the body leaves bare: ears, hair and tufts may stand off a body, nothing lies inside the outline but body. */
-const OVER_WEIGHT = 3;
+const OVER_WEIGHT = 2.5;
 
 /** How hard a mark held by hand pulls its landmark, per square head unit it lies off. */
 const HELD_WEIGHT = 4;
@@ -21,8 +21,7 @@ const LEAST_STEP_SHARE = 1 / 64;
 
 /** The fit's stages: the groups each moves and the sweeps it takes. */
 const STAGES: Array<{ groups: ParamGroup[]; sweeps: number }> = [
-  { groups: ["place"], sweeps: 8 },
-  { groups: ["place", "length", "pose"], sweeps: 12 },
+  { groups: ["place", "pose", "length", "size"], sweeps: 12 },
   { groups: ["place", "length", "pose", "width", "size"], sweeps: 14 },
   { groups: ["width", "size", "length"], sweeps: 8 },
 ];
@@ -44,10 +43,13 @@ export interface FitResult {
   cost: number;
 }
 
-/** A mask shrunk by `factor`: a pixel is on where at least half the pixels it covers are. */
-function shrunk(mask: Mask, factor: number): Mask {
-  const width = Math.ceil(mask.width / factor);
-  const height = Math.ceil(mask.height / factor);
+/** Room round a shrunk view, as a share of its longest side: a body drawn past the sheet's edge still costs. */
+const PAD_SHARE = 0.3;
+
+/** A mask shrunk by `factor` and padded by `pad` pixels all round: a pixel is on where at least half the pixels it covers are. */
+function shrunk(mask: Mask, factor: number, pad: number): Mask {
+  const width = Math.ceil(mask.width / factor) + 2 * pad;
+  const height = Math.ceil(mask.height / factor) + 2 * pad;
   const out = blankMask(width, height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -55,9 +57,9 @@ function shrunk(mask: Mask, factor: number): Mask {
       let all = 0;
       for (let dy = 0; dy < factor; dy++) {
         for (let dx = 0; dx < factor; dx++) {
-          const sx = x * factor + dx;
-          const sy = y * factor + dy;
-          if (sx >= mask.width || sy >= mask.height) continue;
+          const sx = (x - pad) * factor + dx;
+          const sy = (y - pad) * factor + dy;
+          if (sx < 0 || sy < 0 || sx >= mask.width || sy >= mask.height) continue;
           all++;
           on += mask.data[sy * mask.width + sx];
         }
@@ -69,7 +71,7 @@ function shrunk(mask: Mask, factor: number): Mask {
 }
 
 /** The silhouette with each hiding layer's box shrunk in by its looseness: the body lies that far inside what hides it. */
-export function loosened(mask: Mask, layers: readonly HidingLayer[], view: ViewName, pixelsPerHead: number, factor: number): Mask {
+export function loosened(mask: Mask, layers: readonly HidingLayer[], view: ViewName, pixelsPerHead: number, factor: number, pad: number): Mask {
   let out = mask;
   for (const layer of layers) {
     if (layer.view !== view) continue;
@@ -77,7 +79,7 @@ export function loosened(mask: Mask, layers: readonly HidingLayer[], view: ViewN
     if (r <= 0) continue;
     const eroded = erode(out, r);
     const next = { ...out, data: Uint8Array.from(out.data) };
-    const [bx, by, bw, bh] = layer.box.map((v) => v / factor);
+    const [bx, by, bw, bh] = layer.box.map((v, i) => v / factor + (i < 2 ? pad : 0));
     for (let y = Math.max(0, Math.floor(by)); y < Math.min(out.height, Math.ceil(by + bh)); y++) {
       for (let x = Math.max(0, Math.floor(bx)); x < Math.min(out.width, Math.ceil(bx + bw)); x++) next.data[y * out.width + x] = eroded.data[y * out.width + x];
     }
@@ -109,7 +111,7 @@ function viewCost(model: Mask, target: Mask, area: number): number {
 function holdCost(p: Param): number {
   if (p.hold === 0) return 0;
   if (p.group === "pose" || p.neutral === 0) return p.hold * (p.value - p.neutral) ** 2;
-  return p.hold * Math.log(p.value / p.neutral) ** 2 * 100;
+  return p.hold * Math.log(p.value / p.neutral) ** 2;
 }
 
 /**
@@ -121,14 +123,15 @@ export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSil
   const values = new ParamValues(planParams(plan, names));
   const longest = Math.max(...[...views.values()].map((v) => Math.max(v.mask.width, v.mask.height)));
   const factor = Math.max(1, Math.ceil(longest / FIT_PIXELS));
+  const pad = Math.ceil((PAD_SHARE * longest) / factor);
   const neutral = buildBody(plan, values, true);
   const standing = views.get("front") ?? views.get("side");
   const modelExtent = extentOf(neutral);
   const pixelsPerHead = standing ? standing.box.h / Math.max(1e-6, modelExtent.y[1]) : (views.get("top")!.box.w / Math.max(1e-6, modelExtent.z[1] - modelExtent.z[0]));
   const fitViews: FitView[] = names.map((name) => {
     const silhouette = views.get(name)!;
-    const sheet = shrunk(silhouette.mask, factor);
-    const target = loosened(sheet, layers, name, pixelsPerHead, factor);
+    const sheet = shrunk(silhouette.mask, factor, pad);
+    const target = loosened(sheet, layers, name, pixelsPerHead, factor, pad);
     const box = silhouette.box;
     let base: Px;
     if (name === "front") base = [silhouette.middle, silhouette.ground + 1];
@@ -148,7 +151,7 @@ export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSil
     let total = 0;
     for (const fv of fitViews) {
       const place = placeOf(fv);
-      const small: ViewPlace = { origin: [place.origin[0] / factor, place.origin[1] / factor], scale: place.scale / factor };
+      const small: ViewPlace = { origin: [place.origin[0] / factor + pad, place.origin[1] / factor + pad], scale: place.scale / factor };
       total += viewCost(rasterBody(body, fv.name, small, fv.sheet.width, fv.sheet.height), fv.target, fv.count);
     }
     for (const p of values.list) total += holdCost(p);

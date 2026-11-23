@@ -147,11 +147,11 @@ A body's tubes can take their widths from a drawn **figure outline**: the whole 
 
 | helper | one line |
 | --- | --- |
-| `figure` | `recipe({ ..., figure: figure(readFigureOutline("man.figure.json"), { rootHeight: plan.h("crotch") }) })`. `rootHeight` is how high above the ground the root part's origin stands; `pose` is the pose the outline is drawn in (the display pose when left out, `[]` for one drawn at rest); `rounds` the correction rounds (3; 0 builds the plain fit). |
+| `figure` | `recipe({ ..., figure: figure(readFigureOutline("man.figure.json"), { rootHeight: plan.h("crotch") }) })`; an outline with `top` strokes passes them on. `rootHeight` is how high above the ground the root part's origin stands; `pose` is the pose the outline is drawn in (the display pose when left out, `[]` for one drawn at rest); `rounds` the correction rounds (3; 0 builds the plain fit). |
 | `readFigureOutline` | reads a `squash-figure-outline/1` file, as `tools/recipe.sh figure` writes one: `{ format, front: [{ id, points, corners?, mirrored? }], side: [...] }`. |
 | `FigureOutline` | the file's type, to write an outline in the character file itself. |
 
-**Drawing the outline.** Body units, y up from the ground. The front view is the character's left half, x from the body's middle toward its left; the side view is seen from its left, x forward. Each stroke is a smooth curve through few places (like an outline's `through`), sharp at its `corners` (a tight armpit), and runs with the figure on its right. A stroke ending on the middle (x 0) with `mirrored: true` crosses it level: the crotch. Leave the head, hands and feet out: strokes stop at the chin, the wrists and the ankles. Draw it in the pose the display pose shows (arms hanging relaxed) or at rest with `pose: []`.
+**Drawing the outline.** Body units, y up from the ground. The front view is the character's left half, x from the body's middle toward its left; the side view is seen from its left, x forward; the optional top view is the left half seen from above, x toward the left and y forward from the root's origin, and shapes the parts lying level (a four-legged trunk, a tail), which the front view sees end on. Each stroke is a smooth curve through few places (like an outline's `through`), sharp at its `corners` (a tight armpit), and runs with the figure on its right. A stroke ending on the middle (x 0) with `mirrored: true` crosses it level: the crotch. Leave the head, hands and feet out: strokes stop at the chin, the wrists and the ankles. Draw it in the pose the display pose shows (arms hanging relaxed) or at rest with `pose: []`.
 
 **What the fit reads.** Each stroke is sampled and every sample goes to the nearest bone of the pose it is drawn in that it lies along and faces away from, so the body's side under a hanging arm goes to the torso. Each limb's root is moved onto its drawn middle, and the socket it sits on takes that place as its `reach` and v. Each part's radii are read across its own bones, so an arm drawn hanging is fitted in its own frame and built right in its A-pose, and become its profile curves through the fewest places that follow them. What a view cannot show is filled by rules read off the skeleton: a trunk's closed top under a neck rounds over from just below the neck's fillet; gaps are bridged; an open end the outline leaves (under a hand, a head) holds level; a limb's inner side hidden under the trunk keeps the ratio its seen stretch has to its outer side, and where it is drawn meeting the middle, as legs at the crotch, it reaches past the middle above there so the arch opens as drawn; a limb the side view cannot show (an arm over the torso) is as deep as it is wide; the side view reads a limb only where most of it lies above or below its parent.
 
@@ -393,6 +393,38 @@ The facing guess (`views.json`, `guess`) tells a back from a front by how much o
 | `keyBackground`, `readRaster` | `keyBackground(readRaster("C:/refs/fox.png")).figure`: the figure mask of any PNG or JPEG |
 
 What the silhouette cannot tell is marked rather than guessed away: legs drawn touching, or a tail or far leg filling the gap between them, hide the crotch (estimated, orange on the grid, or the knees where they touch); arms held against the body give no armpit (estimated) or hand tip, and an arm that touches the torso lower than the other parts from it makes the armpit unsure; hair as wide as the head reads as skull, so a big hairdo lowers the head count until `landmarks=crown:x,y` sets the skull's top; background a figure encloses with no way out (a curled tail against a leg) stays figure until `holes=` opens it; figures drawn overlapping are one view until `boxes=` splits them; the facing guess reads head colour and silhouette symmetry and is weak between front and three-quarter, and on tilted heads; thick ink bordering a dark area of the same tone can stay in the palette as a colour.
+
+## Proposing a body from a sheet
+
+`tools/recipe.sh kit sheet propose <readings.json> [out=<folder>] [edit=true] [port=47842]` proposes a creature's bare body at rest from up to three views of a sheet, in a body plan you choose, and writes the figure outline and a recipe on it (`docs/hld/sheet-reader.md`). The readings file names the views and how to read them:
+
+```json
+{
+  "format": "squash-sheet-readings/1",
+  "proposer": "creature",
+  "plan": "biped",
+  "views": {
+    "front": { "image": "sheet.png", "box": [40, 20, 360, 720], "ground": "#efe8dc", "tolerance": 16, "half": "left" },
+    "side": { "image": "side.png", "forward": "left" }
+  },
+  "height": 1.0,
+  "layers": [{ "id": "sweater", "kind": "clothing", "looseness": 0.1, "view": "front", "box": [20, 210, 320, 230] }],
+  "options": { "id": "pip-body" }
+}
+```
+
+| field | does |
+| --- | --- |
+| `plan` | `biped` (A-pose), `quadruped` (square stance), `bird` (wings folded), or a path to a `squash-creature-plan/1` file of your own |
+| `views` | `front`, `side`, `top`, each optional: `image` (relative to the readings file), `box` `[x, y, w, h]`, `ground` and `tolerance` for the background, `forward` (side: `left` or `right`; top: `up`, `down`, `left` or `right`), `half` (front or top: read the `left` or `right` half of the image, mirrored) |
+| `unitsPerPixel` or `height` | the scale: body units a pixel, or the subject's height (its length, from the top alone) in body units |
+| `layers` | what hides the body, a box on one view each: `kind` (`clothing`, `fur`, `hair`, `tuft`, `tail`, `feathers`, `wing`, or your own) and `looseness` in heads (the plan's default for its kind when left out) |
+| `held` | landmarks placed by hand: `{ "id": "knee", "view": "front", "at": [x, y] }`, written by the edit page |
+| `options.id` | the proposed recipe's id |
+
+It writes `proposal.json` (the proportions in heads and every reading with its source), `figure.json` (a `squash-figure-outline/1` at rest, with a `top` view for level parts), `<id>.recipe.json` (figure parts, ends as templates), `evidence-<view>.png` (each reading where it was read: blue read, magenta inferred under a layer, amber dashed from the plan, green held), `shape-<view>.png` (the proposed body over the view's silhouette, red where it stands out) and `edit.html`. With `edit=true` the page is served: drag a landmark to hold it, drag a layer's corners, type its looseness; each change proposes again, and Save keeps them in the readings file. Build the body with `tools/recipe.sh <id>.recipe.json`.
+
+`tools/recipe.sh <recipe> views=true` writes a built character's flat sheet (`views/front.png`, `side.png`, `top.png`, `views.json`): a test sheet whose answer is the character.
 
 ## Run helpers
 

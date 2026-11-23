@@ -43,10 +43,10 @@ function turned(image: Raster, view: ViewName, forward: ReadingsView["forward"])
 }
 
 /** The subject's pixels: not the background, the pieces large enough to be it, small enclosed gaps filled. */
-function subjectMask(image: Raster, ground: Pixel): Mask {
+function subjectMask(image: Raster, ground: Pixel, tolerance: number): Mask {
   const mask = blankMask(image.width, image.height);
   for (let y = 0; y < image.height; y++) {
-    for (let x = 0; x < image.width; x++) mask.data[y * image.width + x] = channelDistance(pixelAt(image, x, y), ground) > GROUND_TOLERANCE ? 1 : 0;
+    for (let x = 0; x < image.width; x++) mask.data[y * image.width + x] = channelDistance(pixelAt(image, x, y), ground) > tolerance ? 1 : 0;
   }
   const { pieces } = components(mask);
   const kept = blankMask(image.width, image.height);
@@ -147,5 +147,27 @@ export function readSilhouette(view: ViewName, image: Raster, given: ReadingsVie
   const [x, y, w, h] = given.box ?? [0, 0, image.width, image.height];
   const cropped = turned(cropRaster(image, x, y, w, h), view, given.forward);
   const ground = given.ground ? hexToPixel(given.ground) : pixelAt(cropped, 0, 0);
-  return new ViewSilhouette(view, cropped, subjectMask(cropped, ground));
+  const silhouette = new ViewSilhouette(view, cropped, subjectMask(cropped, ground, given.tolerance ?? GROUND_TOLERANCE));
+  return given.half && view !== "side" ? mirroredHalf(silhouette, given.half) : silhouette;
+}
+
+/** A front or top view read from one half only: that half's pixels, and the image too, mirrored about the subject's middle onto the other. */
+function mirroredHalf(silhouette: ViewSilhouette, half: "left" | "right"): ViewSilhouette {
+  const { image, mask } = silhouette;
+  const middle = Math.round(silhouette.middle);
+  const out = blankMask(mask.width, mask.height);
+  const picture: Raster = { width: image.width, height: image.height, data: Uint8Array.from(image.data) };
+  for (let y = 0; y < mask.height; y++) {
+    for (let x = 0; x < mask.width; x++) {
+      const kept = half === "left" ? x <= middle : x >= middle;
+      const source = kept ? x : 2 * middle - x;
+      if (source < 0 || source >= mask.width) {
+        for (let c = 0; c < 3; c++) picture.data[(y * mask.width + x) * 4 + c] = image.data[c];
+        continue;
+      }
+      out.data[y * mask.width + x] = mask.data[y * mask.width + source];
+      for (let c = 0; c < 4; c++) picture.data[(y * mask.width + x) * 4 + c] = image.data[(y * mask.width + source) * 4 + c];
+    }
+  }
+  return new ViewSilhouette(silhouette.view, picture, out);
 }

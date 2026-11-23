@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { proposers } from "../../src/propose/registry.ts";
 import type { Proposal } from "../../src/propose/proposer.ts";
 import { loadPlan } from "../../src/propose/creature/plan.ts";
-import { evidenceImage } from "../../src/reader/overlay.ts";
+import { evidenceImage, shapeImage } from "../../src/reader/overlay.ts";
 import { editPage } from "../../src/reader/page/page.ts";
 import { EDIT_PORT, serveEditPage } from "../../src/reader/page/server.ts";
 import { readReadings, writeReadings, type HeldMark } from "../../src/reader/readings.ts";
@@ -16,6 +16,10 @@ function write(out: SheetOutput, sheet: ReadSheet, proposal: Proposal, looseness
   for (const file of proposal.files) out.json(file.name, file.value);
   const layers = sheet.readings.layers ?? [];
   for (const [name, view] of sheet.views) out.png(`evidence-${name}.png`, evidenceImage(name, view.image, proposal.evidence, layers));
+  for (const [name, view] of sheet.views) {
+    const shape = proposal.shapes[name];
+    if (shape) out.png(`shape-${name}.png`, shapeImage(view.mask, shape));
+  }
   out.text("edit.html", editPage(pageViews(sheet), proposal.evidence, sheet.readings.held ?? [], layers, looseness, served));
   for (const line of proposal.lines) console.log(line);
 }

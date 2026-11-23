@@ -2,7 +2,69 @@
   "format": "squash-sheet-readings/1",
   "proposer": "creature",
   "plan": "biped",
-  "views": { "front": { "image": "front.png" }, "side": { "image": "side.png" }, "top": { "image": "top.png" } },
+  "views": {
+    "front": {
+      "image": "front.png"
+    },
+    "side": {
+      "image": "side.png"
+    },
+    "top": {
+      "image": "top.png"
+    }
+  },
   "unitsPerPixel": 0.0028544,
-  "options": { "id": "woman-proposed" }
+  "options": {
+    "id": "woman-proposed"
+  },
+  "layers": [
+    {
+      "id": "hair-front",
+      "kind": "hair",
+      "looseness": 0.15,
+      "view": "front",
+      "box": [
+        195,
+        20,
+        136,
+        200
+      ]
+    },
+    {
+      "id": "hair-side",
+      "kind": "hair",
+      "looseness": 0.15,
+      "view": "side",
+      "box": [
+        20,
+        20,
+        115,
+        180
+      ]
+    },
+    {
+      "id": "hair-back",
+      "kind": "hair",
+      "looseness": 0.15,
+      "view": "side",
+      "box": [
+        20,
+        180,
+        50,
+        120
+      ]
+    },
+    {
+      "id": "hair-top",
+      "kind": "hair",
+      "looseness": 0.15,
+      "view": "top",
+      "box": [
+        180,
+        20,
+        165,
+        160
+      ]
+    }
+  ]
 }

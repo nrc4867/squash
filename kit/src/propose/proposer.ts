@@ -1,5 +1,6 @@
 import type { ReadSheet } from "../reader/sheet.ts";
 import type { Evidence, ViewName, ViewPlace } from "../reader/types.ts";
+import type { Mask } from "../sheet/core/mask.ts";
 
 /** A file a proposal writes: its name and its JSON value. */
 export interface ProposalFile {
@@ -12,6 +13,8 @@ export interface Proposal {
   evidence: Evidence;
   places: Partial<Record<ViewName, ViewPlace>>;
   files: ProposalFile[];
+  /** What it proposes as each view would show it, in the view's pixels: laid over the view, it shows how near the proposal came. */
+  shapes: Partial<Record<ViewName, Mask>>;
   /** Lines to print about it. */
   lines: string[];
 }

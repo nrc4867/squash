@@ -1,5 +1,6 @@
 import { blendPixel, type Pixel, type Raster } from "../sheet/raster/image.ts";
 import { drawRect } from "../sheet/raster/draw.ts";
+import type { Mask } from "../sheet/core/mask.ts";
 import type { Evidence, HidingLayer, Px, Source, ViewName } from "./types.ts";
 
 /** The colour each source of a reading is drawn in: read blue, held green, a plan default amber, inferred under a layer magenta. */
@@ -38,6 +39,22 @@ function dot(image: Raster, [x, y]: Px, color: Pixel): void {
     }
   }
 }
+
+/** A view's silhouette against a proposed shape: both grey, the view alone pale, the shape alone red. */
+export function shapeImage(view: Mask, shape: Mask): Raster {
+  const out: Raster = { width: view.width, height: view.height, data: new Uint8Array(view.width * view.height * 4) };
+  for (let i = 0; i < view.data.length; i++) {
+    const s = view.data[i];
+    const b = shape.data[i];
+    out.data.set([...(s && b ? SHAPE_BOTH : s ? SHAPE_VIEW : b ? SHAPE_ONLY : SHAPE_NONE), 255], i * 4);
+  }
+  return out;
+}
+
+const SHAPE_BOTH: Pixel = [90, 90, 90];
+const SHAPE_VIEW: Pixel = [205, 205, 205];
+const SHAPE_ONLY: Pixel = [220, 60, 60];
+const SHAPE_NONE: Pixel = [255, 255, 255];
 
 /**
  * A view with its evidence drawn where it was read: the sheet faded, each measurement a line in its source's colour (a plan default

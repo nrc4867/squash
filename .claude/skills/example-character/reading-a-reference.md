@@ -110,6 +110,16 @@ const torsoOutlines = torso ? tube({ ...torso, closed: true }) : undefined;
 
 Reading the sheet in the character file ties the build to the image's path; copying the numbers in as constants keeps the file standing alone. Copy them.
 
+## 4b. A first bare body: propose
+
+For any creature, a first bare body at rest comes from the sheet before any part is drawn (`kit/README.md`, Proposing a body from a sheet):
+
+1. **Pick the plan**: `biped`, `quadruped` or `bird`. Never let a tool guess it.
+2. **Give the views**: front, side, top, whichever the sheet has, each as a `box` of the sheet with its `ground`. A three-quarter view is not a side view: leave it out. A back view adds nothing to the front. A side view that faces left says `"forward": "left"`. A front view whose arms differ (one waving) reads the hanging side with `half`.
+3. **Mark what hides the body**: a box a layer, with its kind (clothing, hair, fur, tuft, tail) and how loose it stands in heads. Hair over the skull is about a quarter of a head; a sweater a tenth; jeans less.
+4. **Run it and look**: `evidence-<view>.png` and `shape-<view>.png`. Amber dashed readings are the plan's defaults where no view shows them; magenta are inferred under a layer. A landmark on the wrong feature is dragged on the edit page (`edit=true`) and the body proposed again.
+5. **Build the proposed recipe**, then read it as a starting body: its proportions in heads (`proposal.json`) and its figure outline (`figure.json`), which you redraw where the character's intent differs (body.md, The figure first). The proposal follows the plan's rest pose and the sheet's proportions, not its pose or its clothes.
+
 ## 5. Parts up close: zoom and trace
 
 ```

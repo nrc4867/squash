@@ -11,6 +11,10 @@ export interface ReadingsView {
   box?: PxBox;
   /** The background as `#rrggbb`; the image's corner when left out. */
   ground?: string;
+  /** How far a channel may stray from the background and still be background, 0 to 255; 40 when left out. */
+  tolerance?: number;
+  /** Front or top view: the half of the image (its left or right) the subject is read from, mirrored about its middle, where the other half is posed otherwise (a waving arm). */
+  half?: "left" | "right";
   /** Side view: which way the subject faces; top view: which way its front points. Right and up when left out. */
   forward?: "left" | "right" | "up" | "down";
 }
