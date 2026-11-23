@@ -1272,6 +1272,8 @@ export interface RecipePart {
   lean?: number | null;
   /** Degrees the part leans out from the body's middle plane, mirrored on the right (move.outward), less than 90 either way; an A-pose arm takes 45. */
   outward?: number | null;
+  /** Degrees the part turns about its own up, its tip swinging away from the body's middle plane, mirrored on the right (move.toeOut), after rest, lean, outward and roll: a foot's toe-out, the foot turning about the leg's line at the ankle with the leg and knee left facing forward. 0 when left out. */
+  toeOut?: number | null;
   /** Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says. */
   outlines?: { side?: RecipeOutline; top?: RecipeOutline; front?: RecipeOutline };
   /** A tube part's widths as curves along its bone, in place of its Side and Top outlines: they are built into them as drawn. */

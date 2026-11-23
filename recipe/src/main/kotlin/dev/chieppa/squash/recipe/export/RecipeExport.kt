@@ -135,6 +135,7 @@ private fun part(document: SquashDocument, part: PartInstance, notCarried: Mutab
         outlines = outlines(data.outlines),
         rest = split.rest,
         roll = split.roll,
+        toeOut = split.toeOut,
         topMiddle = split.topMiddle,
         generic = split.generic,
         sockets = split.sockets,

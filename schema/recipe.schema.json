@@ -4608,6 +4608,17 @@
             }
           ]
         },
+        "toeOut": {
+          "description": "Degrees the part turns about its own up, its tip swinging away from the body's middle plane, mirrored on the right (move.toeOut), after rest, lean, outward and roll: a foot's toe-out, the foot turning about the leg's line at the ankle with the leg and knee left facing forward. 0 when left out.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "outlines": {
           "description": "Outlines by view. Side sets height (a profile), Top sets width, Front the cross-section from -1 to 1 where the template says.",
           "type": "object",
