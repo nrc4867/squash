@@ -9,22 +9,22 @@
     {
       "id": "torso", "kind": "trunk", "role": "body", "rest": "up", "length": 2.1, "closed": true,
       "joints": [{ "name": "joint.1", "at": 0.4, "low": -25, "high": 25 }, { "name": "joint.2", "at": 0.65, "low": -25, "high": 25 }],
-      "stations": [0, 0.2, 0.4, 0.6, 0.8, 1],
+      "stations": [0, 0.17, 0.45, 0.7, 0.86, 1],
       "radii": {
-        "left": [0.56, 0.62, 0.53, 0.58, 0.64, 0.42],
-        "front": [0.34, 0.42, 0.38, 0.44, 0.42, 0.3],
-        "back": [0.4, 0.46, 0.36, 0.38, 0.4, 0.3]
+        "left": [0.5, 0.6, 0.53, 0.6, 0.56, 0.4],
+        "front": [0.34, 0.42, 0.38, 0.44, 0.4, 0.28],
+        "back": [0.4, 0.46, 0.36, 0.38, 0.38, 0.28]
       }
     },
     {
       "id": "neck", "kind": "trunk", "role": "neck", "on": "torso", "at": 1, "offset": [0, 0, 0], "facing": ["up", "forward"],
-      "rest": "up", "length": 0.55,
+      "rest": "up", "length": 0.55, "join": 0.6,
       "stations": [0, 0.5, 1],
       "radii": { "left": [0.27, 0.23, 0.22], "front": [0.25, 0.22, 0.21], "back": [0.27, 0.24, 0.23] }
     },
     {
       "id": "arm", "kind": "limb", "role": "arm", "on": "torso", "at": 0.9, "offset": [0, 0, 0.55], "facing": ["up", "left"],
-      "rest": "down", "outward": 45, "length": 2.6,
+      "rest": "down", "outward": 45, "length": 2.6, "join": 0.1, "sink": 0.35,
       "joints": [{ "name": "joint.1", "at": 0.03, "low": -170, "high": 60 }, { "name": "joint.2", "at": 0.47, "low": -145, "high": 0 }],
       "stations": [0, 0.25, 0.5, 0.75, 1],
       "radii": {
@@ -36,7 +36,7 @@
     },
     {
       "id": "leg", "kind": "limb", "role": "leg", "on": "torso", "at": 0.07, "offset": [0, 0, 0.3], "facing": ["up", "left"],
-      "rest": "down", "outward": 1, "length": 2.85,
+      "rest": "down", "outward": 1, "length": 2.85, "join": 0.5, "covered": true,
       "joints": [{ "name": "joint.1", "at": 0.5, "low": 0, "high": 140 }],
       "stations": [0, 0.2, 0.45, 0.55, 0.75, 1],
       "radii": {
@@ -50,7 +50,7 @@
   "ends": [
     {
       "id": "head", "on": "neck", "center": [0.06, 0.35, 0], "radii": [0.46, 0.5, 0.4],
-      "recipe": { "template": "head-round", "role": "head", "templateLength": 0.5, "spans": 1 }
+      "recipe": { "template": "head-round", "draw": "upright", "role": "head", "templateLength": 0.5, "spans": 1 }
     },
     {
       "id": "hand", "on": "arm", "center": [0, -0.36, 0], "radii": [0.12, 0.36, 0.22], "follow": true,
@@ -68,8 +68,9 @@
     { "id": "elbow", "part": "arm", "at": 0.47 },
     { "id": "wrist", "part": "arm", "at": 1 },
     { "id": "crotch", "part": "torso", "at": 0 },
-    { "id": "waist", "part": "torso", "at": 0.4 },
-    { "id": "chest", "part": "torso", "at": 0.65 },
+    { "id": "hips", "part": "torso", "at": 0.17 },
+    { "id": "waist", "part": "torso", "at": 0.45 },
+    { "id": "chest", "part": "torso", "at": 0.7 },
     { "id": "hip", "part": "leg", "at": 0 },
     { "id": "knee", "part": "leg", "at": 0.5 },
     { "id": "ankle", "part": "leg", "at": 1 }

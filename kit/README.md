@@ -418,7 +418,7 @@ What the silhouette cannot tell is marked rather than guessed away: legs drawn t
 | `plan` | `biped` (A-pose), `quadruped` (square stance), `bird` (wings folded), or a path to a `squash-creature-plan/1` file of your own |
 | `views` | `front`, `side`, `top`, each optional: `image` (relative to the readings file), `box` `[x, y, w, h]`, `ground` and `tolerance` for the background, `forward` (side: `left` or `right`; top: `up`, `down`, `left` or `right`), `half` (front or top: read the `left` or `right` half of the image, mirrored) |
 | `unitsPerPixel` or `height` | the scale: body units a pixel, or the subject's height (its length, from the top alone) in body units |
-| `layers` | what hides the body, a box on one view each: `kind` (`clothing`, `fur`, `hair`, `tuft`, `tail`, `feathers`, `wing`, or your own) and `looseness` in heads (the plan's default for its kind when left out) |
+| `layers` | what hides the body, a box on one view each: `kind` (`clothing`, `fur`, `hair`, `tuft`, `tail`, `feathers`, `wing`, or your own) and `looseness` in heads (the plan's default for its kind when left out); a kind the plan stands off (`ears`, `horns`, `wings` on the quadruped) is read as no body, and an `ears` box on the front view gives the proposal its ears |
 | `held` | landmarks placed by hand: `{ "id": "knee", "view": "front", "at": [x, y] }`, written by the edit page |
 | `options.id` | the proposed recipe's id |
 

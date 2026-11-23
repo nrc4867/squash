@@ -2,6 +2,7 @@ import { add, apply, compose, cross, IDENTITY, scale, sub, turnAbout, unit, type
 import { DIRECTION, partFrame, profileFor } from "./frames.ts";
 import { bendJoint, type ParamValues } from "./params.ts";
 import type { CreaturePlan, PlanEnd, PlanPart } from "./plan.ts";
+import { scaleAlong, scalesOf } from "./widths.ts";
 
 /** Sections taken along each part, and round each section. */
 const SECTIONS = 14;
@@ -68,18 +69,14 @@ export function profileRadius(part: PlanPart, values: ParamValues, name: string,
 
 /** A part's radius by profile name and share along it, its width scales read once. */
 export function radiusReader(part: PlanPart, values: ParamValues): (name: string, t: number) => number {
-  const scales = new Map<string, [number, number, number]>();
-  for (const profile of Object.keys(part.radii)) {
-    scales.set(profile, [values.get(`${part.id}.${profile}.0`, 1), values.get(`${part.id}.${profile}.0.5`, 1), values.get(`${part.id}.${profile}.1`, 1)]);
-  }
+  const scales = new Map<string, number[]>();
+  for (const profile of Object.keys(part.radii)) scales.set(profile, scalesOf(values, part.id, profile));
   return (name, t) => {
     const profile = profileFor(part, name);
     const base = part.radii[profile];
     const s = scales.get(profile);
     if (!base || !s) return 0;
-    const [a, b, c] = s;
-    const scale = a * (1 - t) * (1 - 2 * t) + 4 * b * t * (1 - t) + c * t * (2 * t - 1);
-    return atStations(part.stations, base, t) * Math.max(LEAST_SCALE, scale);
+    return atStations(part.stations, base, t) * Math.max(LEAST_SCALE, scaleAlong(s, t));
   };
 }
 
@@ -206,10 +203,17 @@ function buildEnd(end: PlanEnd, parts: Map<string, BuiltPart>, values: ParamValu
   return { end, center, axes, radii };
 }
 
+/** A ring of a body's surface: the part or end it belongs to, its outline points, and whether it is the right side of a mirrored pair. */
+export interface BodyRing {
+  owner: string;
+  points: V3[];
+  mirrored?: boolean;
+}
+
 /** Every place a body's surface passes through, as rings: its parts' sections and its ends' slices, each with its outline points. */
-export function bodyRings(body: BuiltBody): Array<{ owner: string; points: V3[] }[]> {
-  const out: Array<{ owner: string; points: V3[] }[]> = [];
-  const mirror = (rings: Array<{ owner: string; points: V3[] }>) => rings.map((r) => ({ owner: r.owner, points: r.points.map(([x, y, z]): V3 => [x, y, -z]) }));
+export function bodyRings(body: BuiltBody): BodyRing[][] {
+  const out: BodyRing[][] = [];
+  const mirror = (rings: BodyRing[]) => rings.map((r) => ({ owner: r.owner, points: r.points.map(([x, y, z]): V3 => [x, y, -z]), mirrored: true }));
   for (const built of body.parts.values()) {
     const rings = built.sections.map((s) => ({ owner: built.part.id, points: ringPoints(s) }));
     out.push(rings);

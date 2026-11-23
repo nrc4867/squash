@@ -1,8 +1,10 @@
-import { blankMask, erode, type Mask } from "../../sheet/core/mask.ts";
+import { blankMask, dilate, erode, type Mask } from "../../sheet/core/mask.ts";
 import type { HeldMark } from "../../reader/readings.ts";
 import type { ViewSilhouette } from "../../reader/silhouette.ts";
 import type { HidingLayer, Px, ViewName } from "../../reader/types.ts";
 import { buildBody, type BuiltBody } from "./body.ts";
+import { coverCost } from "./cover.ts";
+import { smoothWidthCost } from "./widths.ts";
 import { ParamValues, planParams, type Param, type ParamGroup } from "./params.ts";
 import type { CreaturePlan } from "./plan.ts";
 import { rasterBody, toPixel, type ViewPlace } from "./raster.ts";
@@ -11,7 +13,10 @@ import { rasterBody, toPixel, type ViewPlace } from "./raster.ts";
 const FIT_PIXELS = 180;
 
 /** Body drawn where the view shows nothing costs this many times a view's pixel the body leaves bare: ears, hair and tufts may stand off a body, nothing lies inside the outline but body. */
-const OVER_WEIGHT = 2.5;
+const OVER_WEIGHT = 1.5;
+
+/** Under a hiding layer the outline is a guess loosened off the cover, so body past it costs only as much as view left bare. */
+const OVER_WEIGHT_HIDDEN = 1;
 
 /** How hard a mark held by hand pulls its landmark, per square head unit it lies off. */
 const HELD_WEIGHT = 4;
@@ -19,11 +24,15 @@ const HELD_WEIGHT = 4;
 /** A step is given up once it shrinks to this share of where it started. */
 const LEAST_STEP_SHARE = 1 / 64;
 
-/** The fit's stages: the groups each moves and the sweeps it takes. */
-const STAGES: Array<{ groups: ParamGroup[]; sweeps: number }> = [
+/**
+ * The fit's stages: the groups each moves, the sweeps it takes, and how far off the body (head units) view it leaves bare still costs.
+ * The first stage reaches the whole view to find the body; the later ones only near it, so ears, a tuft or a brush of a tail standing
+ * well off the body stop pulling the head or the trunk out toward them.
+ */
+const STAGES: Array<{ groups: ParamGroup[]; sweeps: number; reach?: number }> = [
   { groups: ["place", "pose", "length", "size"], sweeps: 12 },
-  { groups: ["place", "length", "pose", "width", "size"], sweeps: 14 },
-  { groups: ["width", "size", "length"], sweeps: 8 },
+  { groups: ["place", "length", "pose", "width", "size"], sweeps: 14, reach: 0.45 },
+  { groups: ["width", "size", "length"], sweeps: 8, reach: 0.3 },
 ];
 
 /** One view as the fit reads it: the sheet's silhouette shrunk, with the hiding layers loosened off it, and where the body lies over it. */
@@ -31,6 +40,8 @@ interface FitView {
   name: ViewName;
   sheet: Mask;
   target: Mask;
+  /** Pixels under a hiding layer's box. */
+  hidden: Mask;
   base: Px;
   count: number;
 }
@@ -94,17 +105,33 @@ function count(mask: Mask): number {
   return n;
 }
 
-/** How far the body lies off the view: body where the view shows none, weighted, and view the body leaves bare, over the view's area. */
-function viewCost(model: Mask, target: Mask, area: number): number {
+/**
+ * How far the body lies off the view: body where the view shows none, weighted (less under a hiding layer), and view the body leaves
+ * bare (only within `near` of the body, when given), over the view's area.
+ */
+function viewCost(model: Mask, target: Mask, hidden: Mask, area: number, near?: Mask): number {
   let over = 0;
   let under = 0;
   for (let i = 0; i < model.data.length; i++) {
     const m = model.data[i];
     const t = target.data[i];
-    if (m && !t) over++;
-    else if (t && !m) under++;
+    if (m && !t) over += hidden.data[i] ? OVER_WEIGHT_HIDDEN : OVER_WEIGHT;
+    else if (t && !m && (!near || near.data[i])) under++;
   }
-  return (OVER_WEIGHT * over + under) / Math.max(1, area);
+  return (over + under) / Math.max(1, area);
+}
+
+/** The pixels under any of a view's layers' boxes, on the shrunk and padded view. */
+function boxPixels(width: number, height: number, layers: readonly HidingLayer[], view: ViewName, factor: number, pad: number): Mask {
+  const out = blankMask(width, height);
+  for (const layer of layers) {
+    if (layer.view !== view) continue;
+    const [bx, by, bw, bh] = layer.box.map((v, i) => v / factor + (i < 2 ? pad : 0));
+    for (let y = Math.max(0, Math.floor(by)); y < Math.min(height, Math.ceil(by + bh)); y++) {
+      for (let x = Math.max(0, Math.floor(bx)); x < Math.min(width, Math.ceil(bx + bw)); x++) out.data[y * width + x] = 1;
+    }
+  }
+  return out;
 }
 
 /** The pull of a parameter toward its neutral value. */
@@ -118,8 +145,11 @@ function holdCost(p: Param): number {
  * Fits the plan's body to the sheet's views by model-based silhouette fitting: lengths, width scales, end sizes and the pose the sheet
  * shows are moved one at a time, by steps that halve when neither way helps, to lower how far the body's silhouette lies off each view.
  */
-export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSilhouette>, layers: readonly HidingLayer[], held: readonly HeldMark[]): FitResult {
+export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSilhouette>, allLayers: readonly HidingLayer[], held: readonly HeldMark[]): FitResult {
   const names = [...views.keys()];
+  const standOff = new Set(plan.standOff ?? []);
+  const layers = allLayers.filter((l) => !standOff.has(l.kind));
+  const free = allLayers.filter((l) => standOff.has(l.kind));
   const values = new ParamValues(planParams(plan, names));
   const longest = Math.max(...[...views.values()].map((v) => Math.max(v.mask.width, v.mask.height)));
   const factor = Math.max(1, Math.ceil(longest / FIT_PIXELS));
@@ -131,13 +161,18 @@ export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSil
   const fitViews: FitView[] = names.map((name) => {
     const silhouette = views.get(name)!;
     const sheet = shrunk(silhouette.mask, factor, pad);
-    const target = loosened(sheet, layers, name, pixelsPerHead, factor, pad);
+    const read = loosened(sheet, layers, name, pixelsPerHead, factor, pad);
+    const target = { ...read, data: Uint8Array.from(read.data) };
     const box = silhouette.box;
     let base: Px;
     if (name === "front") base = [silhouette.middle, silhouette.ground + 1];
     else if (name === "side") base = [box.x + box.w / 2 - pixelsPerHead * ((modelExtent.x[0] + modelExtent.x[1]) / 2), silhouette.ground + 1];
     else base = [silhouette.middle, box.y + box.h / 2 + pixelsPerHead * ((modelExtent.x[0] + modelExtent.x[1]) / 2)];
-    return { name, sheet, target, base, count: count(target) };
+    const hidden = boxPixels(sheet.width, sheet.height, layers, name, factor, pad);
+    // What a stand-off box holds is no body: the body is fitted to stay out of it, as out of the view's ground.
+    const off = boxPixels(sheet.width, sheet.height, free, name, factor, pad);
+    for (let i = 0; i < target.data.length; i++) if (off.data[i]) target.data[i] = 0;
+    return { name, sheet, target, hidden, base, count: count(target) };
   });
   const placeOf = (fv: FitView): ViewPlace => {
     const s = pixelsPerHead * values.get("scale", 1);
@@ -146,15 +181,19 @@ export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSil
     if (fv.name === "top") return { origin: [bx, by + s * values.get("top.y")], scale: s };
     return { origin: [bx, by], scale: s };
   };
+  let reach: number | undefined;
   const cost = (): number => {
     const body = buildBody(plan, values, true);
     let total = 0;
     for (const fv of fitViews) {
       const place = placeOf(fv);
       const small: ViewPlace = { origin: [place.origin[0] / factor + pad, place.origin[1] / factor + pad], scale: place.scale / factor };
-      total += viewCost(rasterBody(body, fv.name, small, fv.sheet.width, fv.sheet.height), fv.target, fv.count);
+      const model = rasterBody(body, fv.name, small, fv.sheet.width, fv.sheet.height);
+      const near = reach === undefined ? undefined : dilate(model, Math.max(1, Math.round(reach * small.scale)));
+      total += viewCost(model, fv.target, fv.hidden, fv.count, near);
     }
     for (const p of values.list) total += holdCost(p);
+    total += coverCost(plan, values) + smoothWidthCost(plan, values);
     for (const mark of held) {
       const at = body.landmarks.get(mark.id);
       const fv = fitViews.find((v) => v.name === mark.view);
@@ -167,6 +206,8 @@ export function fitBody(plan: CreaturePlan, views: ReadonlyMap<ViewName, ViewSil
   };
   let best = cost();
   for (const stage of STAGES) {
+    reach = stage.reach;
+    best = cost();
     const moving = values.list.filter((p) => stage.groups.includes(p.group));
     const steps = new Map(moving.map((p) => [p.key, p.step]));
     for (let sweep = 0; sweep < stage.sweeps; sweep++) {

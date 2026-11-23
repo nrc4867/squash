@@ -18,13 +18,13 @@
     },
     {
       "id": "neck", "kind": "trunk", "role": "neck", "on": "trunk", "at": 0.92, "offset": [0, 0.15, 0], "facing": ["forward", "up"],
-      "rest": "up", "lean": 40, "length": 1.0,
+      "rest": "up", "lean": 40, "length": 1.0, "join": 0.5,
       "stations": [0, 0.5, 1],
       "radii": { "left": [0.33, 0.28, 0.26], "front": [0.36, 0.3, 0.28], "back": [0.34, 0.28, 0.26] }
     },
     {
       "id": "front-leg", "kind": "limb", "role": "arm", "on": "trunk", "at": 0.84, "offset": [0, -0.2, 0.28], "facing": ["forward", "left"],
-      "rest": "down", "outward": 2, "length": 2.05,
+      "rest": "down", "outward": 2, "length": 2.05, "join": 0.3, "covered": true, "sink": 0.5,
       "joints": [{ "name": "joint.1", "at": 0.5, "low": -100, "high": 20 }],
       "stations": [0, 0.3, 0.6, 1],
       "radii": {
@@ -36,7 +36,7 @@
     },
     {
       "id": "back-leg", "kind": "limb", "role": "leg", "on": "trunk", "at": 0.14, "offset": [0, -0.2, 0.3], "facing": ["forward", "left"],
-      "rest": "down", "outward": 2, "length": 2.05,
+      "rest": "down", "outward": 2, "length": 2.05, "join": 0.3, "covered": true, "sink": 0.5,
       "joints": [{ "name": "joint.1", "at": 0.45, "low": 0, "high": 140 }],
       "stations": [0, 0.3, 0.6, 1],
       "radii": {
@@ -48,15 +48,15 @@
     },
     {
       "id": "tail", "kind": "trunk", "role": "tail", "on": "trunk", "at": 0, "offset": [0.15, 0.25, 0], "facing": ["forward", "up"],
-      "rest": "back", "lean": 25, "length": 1.8, "closed": true,
-      "stations": [0, 0.5, 1],
-      "radii": { "left": [0.17, 0.13, 0.07], "up": [0.18, 0.14, 0.07], "down": [0.18, 0.14, 0.07] }
+      "rest": "back", "lean": 25, "length": 1.8, "closed": true, "figure": false,
+      "stations": [0, 0.25, 0.5, 0.75, 1],
+      "radii": { "left": [0.14, 0.18, 0.2, 0.17, 0.1], "up": [0.15, 0.19, 0.21, 0.18, 0.1], "down": [0.15, 0.19, 0.21, 0.18, 0.1] }
     }
   ],
   "ends": [
     {
       "id": "head", "on": "neck", "center": [0.35, 0.2, 0], "radii": [0.75, 0.5, 0.45],
-      "recipe": { "template": "head", "role": "head", "templateLength": 0.55, "spans": 0 }
+      "recipe": { "template": "head", "draw": "forward", "role": "head", "templateLength": 0.55, "spans": 0 }
     },
     {
       "id": "muzzle", "on": "neck", "center": [1.05, 0.1, 0], "radii": [0.45, 0.22, 0.2]
@@ -81,5 +81,7 @@
     { "id": "tail-tip", "part": "tail", "at": 1 }
   ],
   "layers": { "fur": 0.1, "tail": 0.05, "tuft": 0.3, "clothing": 0.06 },
-  "recipe": { "poses": {"step": [{"part": "front-leg-l", "joint": "base", "lean": 30}, {"part": "back-leg-r", "joint": "base", "lean": -25}, {"part": "neck", "joint": "base", "degrees": 20}]} }
+  "standOff": ["ears", "horns", "wings"],
+  "drawnOff": { "ears": { "id": "ear", "template": "ear", "templateLength": 0.3, "tilt": 16, "on": "head", "socket": "ear", "role": "ear", "params": { "cup": 0.35, "thickness": 0.6 }, "fields": { "blend": 0.03 } } },
+  "recipe": { "poses": {"step": [{"part": "front-leg-l", "joint": "base", "degrees": -14}, {"part": "front-leg-r", "joint": "base", "degrees": 14}, {"part": "back-leg-l", "joint": "base", "degrees": 12}, {"part": "back-leg-r", "joint": "base", "degrees": -16}]} }
 }

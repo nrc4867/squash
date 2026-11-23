@@ -7,7 +7,7 @@
   "rootHeight": 1.7,
   "parts": [
     {
-      "id": "trunk", "kind": "trunk", "role": "body", "rest": "forward", "lean": 40, "length": 2.4, "closed": true,
+      "id": "trunk", "kind": "trunk", "role": "body", "rest": "forward", "lean": 55, "length": 2.4, "closed": true,
       "stations": [0, 0.25, 0.5, 0.75, 1],
       "radii": {
         "left": [0.38, 0.6, 0.68, 0.6, 0.38],
@@ -17,13 +17,13 @@
     },
     {
       "id": "neck", "kind": "trunk", "role": "neck", "on": "trunk", "at": 0.95, "offset": [0, 0, 0], "facing": ["forward", "up"],
-      "rest": "up", "lean": 15, "length": 0.55,
+      "rest": "up", "lean": 15, "length": 0.55, "join": 0.4,
       "stations": [0, 0.5, 1],
       "radii": { "left": [0.38, 0.33, 0.32], "front": [0.4, 0.34, 0.33], "back": [0.38, 0.33, 0.32] }
     },
     {
       "id": "leg", "kind": "limb", "role": "leg", "on": "trunk", "at": 0.3, "offset": [0, -0.5, 0.3], "facing": ["forward", "down"],
-      "rest": "down", "outward": 3, "length": 1.0,
+      "rest": "down", "outward": 3, "length": 1.0, "join": 0.12,
       "joints": [{ "name": "joint.1", "at": 0.5, "low": 0, "high": 140 }],
       "stations": [0, 0.5, 1],
       "radii": {
@@ -37,7 +37,7 @@
   "ends": [
     {
       "id": "head", "on": "neck", "center": [0.15, 0.35, 0], "radii": [0.55, 0.5, 0.45],
-      "recipe": { "template": "head-bird", "role": "head", "templateLength": 0.3, "spans": 1 }
+      "recipe": { "template": "head-bird", "draw": "forward", "role": "head", "templateLength": 0.3, "spans": 1 }
     },
     {
       "id": "beak", "on": "neck", "center": [1.0, 0.4, 0], "radii": [0.6, 0.22, 0.15], "hides": true,
@@ -49,7 +49,7 @@
     },
     {
       "id": "wing", "on": "trunk", "at": 0.6, "center": [-0.3, 0.1, 0.62], "radii": [0.95, 0.45, 0.14], "hides": true, "pair": true,
-      "recipe": { "template": "wing-feathered", "role": "wing", "templateLength": 0.55, "spans": 0, "fields": { "lean": -50, "outward": -55 } }
+      "recipe": { "template": "wing-feathered", "role": "wing", "templateLength": 0.55, "spans": 0, "seat": { "u": 0.82, "v": 0.15 }, "fields": { "lean": -50, "outward": -55 } }
     },
     {
       "id": "tail", "on": "trunk", "at": 0, "center": [-0.45, -0.15, 0], "radii": [0.7, 0.14, 0.3], "hides": true,

@@ -2,7 +2,65 @@
   "format": "squash-sheet-readings/1",
   "proposer": "creature",
   "plan": "quadruped",
-  "views": { "front": { "image": "front.png" }, "side": { "image": "side.png" }, "top": { "image": "top.png" } },
+  "views": {
+    "front": {
+      "image": "front.png"
+    },
+    "side": {
+      "image": "side.png"
+    },
+    "top": {
+      "image": "top.png"
+    }
+  },
   "unitsPerPixel": 0.0039975,
-  "options": { "id": "dragon-proposed" }
+  "options": {
+    "id": "dragon-proposed"
+  },
+  "layers": [
+    {
+      "id": "wing-front-left",
+      "kind": "wings",
+      "view": "front",
+      "box": [
+        20,
+        40,
+        185,
+        85
+      ]
+    },
+    {
+      "id": "wing-front-right",
+      "kind": "wings",
+      "view": "front",
+      "box": [
+        300,
+        40,
+        185,
+        85
+      ]
+    },
+    {
+      "id": "wing-top-left",
+      "kind": "wings",
+      "view": "top",
+      "box": [
+        25,
+        245,
+        185,
+        130
+      ]
+    },
+    {
+      "id": "wing-top-right",
+      "kind": "wings",
+      "view": "top",
+      "box": [
+        285,
+        245,
+        185,
+        130
+      ]
+    }
+  ]
 }

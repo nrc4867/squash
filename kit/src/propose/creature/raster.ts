@@ -56,12 +56,12 @@ function fillConvex(mask: Mask, polygon: readonly Px[]): void {
 
 /**
  * A body's silhouette in a view, `width` by `height` pixels: each pair of neighbouring rings of a part or end filled as the hull of the
- * two, so every part reads end on as well as along. `keep` picks the parts and ends drawn by id.
+ * two, so every part reads end on as well as along. `keep` picks the parts and ends drawn by id, and whether a pair's right side is drawn.
  */
-export function rasterBody(body: BuiltBody, view: ViewName, place: ViewPlace, width: number, height: number, keep: (owner: string) => boolean = () => true): Mask {
+export function rasterBody(body: BuiltBody, view: ViewName, place: ViewPlace, width: number, height: number, keep: (owner: string, mirrored: boolean) => boolean = () => true): Mask {
   const mask = blankMask(width, height);
   for (const rings of bodyRings(body)) {
-    if (rings.length === 0 || !keep(rings[0].owner)) continue;
+    if (rings.length === 0 || !keep(rings[0].owner, rings[0].mirrored === true)) continue;
     const projected = rings.map((r) => r.points.map((p) => toPixel(view, place, p)));
     for (let i = 0; i + 1 < projected.length; i++) {
       const hull = convexHull([...projected[i], ...projected[i + 1]].map(([x, y]) => ({ x, y })));

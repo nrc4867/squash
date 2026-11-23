@@ -3,10 +3,13 @@ import type { ReadSheet } from "../../reader/sheet.ts";
 import type { ViewName, ViewPlace } from "../../reader/types.ts";
 import type { Proposal, Proposer } from "../proposer.ts";
 import { buildBody, profileRadius, type BuiltBody } from "./body.ts";
+import { drawnHead, type DrawnHead } from "./drawn/head.ts";
+import { offParts } from "./drawn/offParts.ts";
 import { fitEvidence } from "./evidence.ts";
 import { extentOf, fitBody } from "./fit.ts";
 import { figureOutline } from "./outline.ts";
-import { WIDTH_PLACES, type ParamValues } from "./params.ts";
+import type { ParamValues } from "./params.ts";
+import { WIDTH_PLACES } from "./widths.ts";
 import { loadPlan, type CreaturePlan } from "./plan.ts";
 import { rasterBody } from "./raster.ts";
 import { proposalRecipe } from "./recipe.ts";
@@ -27,7 +30,7 @@ function bodyUnit(sheet: ReadSheet, rest: BuiltBody, places: Map<ViewName, ViewP
   return DEFAULT_HEAD / headHeight;
 }
 
-/** The body's proportions in head units: where each landmark stands, each part's length and its widths at root, middle and tip. */
+/** The body's proportions in head units: where each landmark stands, each part's length and its widths at each of its width places. */
 function proportions(plan: CreaturePlan, rest: BuiltBody, values: ParamValues, headHeight: number, unit: number) {
   const heads = (v: number) => roundTo(v / headHeight, 3);
   const builtOf = (part: string) => rest.parts.get(part)!;
@@ -62,7 +65,16 @@ export const creatureProposer: Proposer = {
     const unit = bodyUnit(sheet, rest, fit.places, headHeight);
     const id = typeof readings.options?.id === "string" ? readings.options.id : DEFAULT_ID;
     const outline = figureOutline(rest, unit);
-    const recipe = proposalRecipe(plan, rest, unit, outline, id);
+    const drawn = new Map<string, DrawnHead>();
+    for (const end of fit.posed.ends) {
+      const draw = end.end.recipe?.draw;
+      if (!draw) continue;
+      const shapes = fit.posed.ends.filter((e) => e.end.on === end.end.on && !e.end.recipe);
+      drawn.set(end.end.id, drawnHead({ views: sheet.views, places: fit.places, layers }, end, shapes, draw, fit.posed.parts.get(end.end.on)));
+    }
+    const headIds = new Set(fit.posed.ends.filter((e) => e.end.id === plan.head || (e.end.on === plan.ends.find((x) => x.id === plan.head)!.on && !e.end.recipe)).map((e) => e.end.id));
+    const off = offParts({ views: sheet.views, places: fit.places, layers }, fit.posed, Object.keys(plan.drawnOff ?? {}), headIds);
+    const recipe = proposalRecipe(plan, rest, unit, outline, id, { drawn, values: fit.values, off });
     const sizes = new Map([...sheet.views].map(([name, v]) => [name, [v.mask.width, v.mask.height] as [number, number]]));
     const evidence = fitEvidence(fit, sizes, layers, held, plan.head);
     const summary = proportions(plan, rest, fit.values, headHeight, unit);

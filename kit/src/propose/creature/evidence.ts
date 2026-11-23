@@ -4,12 +4,12 @@ import type { Evidence, HidingLayer, Measure, Px, Source, ViewName } from "../..
 import type { Mask } from "../../sheet/core/mask.ts";
 import { radiusToward, type BuiltBody, type Section } from "./body.ts";
 import type { FitResult } from "./fit.ts";
-import { WIDTH_PLACES } from "./params.ts";
+import { WIDTH_PLACES } from "./widths.ts";
 import { rasterBody, toPixel, toPixelDirection } from "./raster.ts";
 import { showsLength } from "./reads.ts";
+import { VIEW_DEPTH } from "./drawn/views.ts";
 
-/** Each view's depth: the body direction it looks along. */
-const DEPTH: Record<ViewName, V3> = { front: [1, 0, 0], side: [0, 0, 1], top: [0, 1, 0] };
+const DEPTH = VIEW_DEPTH;
 
 /** A direction lies across a view when it leans off the view's depth by at least this much. */
 const ACROSS_VIEW = 0.5;
@@ -37,7 +37,7 @@ function covered(mask: Mask, [x, y]: Px): boolean {
 
 /**
  * What the fit read, where it read it on each view, in head units: every landmark as a mark, every part's length along it, and its
- * widths at its root, middle and tip toward each profile, from its middle to its edge. A width no given view reads is the plan's
+ * widths at each of its width places (`WIDTH_PLACES`) toward each profile, from its middle to its edge. A width no given view reads is the plan's
  * default; one under a hiding layer (a box the user gave, or an end that hides the body, as folded wings) is inferred.
  */
 export function fitEvidence(

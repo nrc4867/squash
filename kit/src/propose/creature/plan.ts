@@ -28,6 +28,14 @@ export interface PlanPart {
   rest: Rest;
   outward?: number;
   lean?: number;
+  /** How round its join to its parent is drawn: the radius, head units, its outline curves through where it leaves the parent. */
+  join?: number;
+  /** Whether its root lies within its parent's side (a thigh's top under the hips): the fit keeps the parent wide enough to cover it. */
+  covered?: boolean;
+  /** Whether the figure outline draws it; a part left out (a brush of a tail) is a tube of its own fitted radii. */
+  figure?: boolean;
+  /** How deep its root sinks into its parent, a share of its own depth (a shoulder 0.3 to 0.4, so the arm's top rounds into it). */
+  sink?: number;
   /** Its length at rest in head units. */
   length: number;
   closed?: boolean;
@@ -64,6 +72,10 @@ export interface PlanEnd {
     spans: 0 | 1 | 2;
     /** The template socket it sits on; a hand-made socket on its part when left out. */
     socket?: string;
+    /** How the head is drawn from the sheet (`drawn/head.ts`): up from the chin, or forward from the back of the skull. Undrawn when left out. */
+    draw?: "upright" | "forward";
+    /** Where its hand-made socket sits on its part, when not where the end meets it: u along, v round, and how deep it sinks (1 when left out). */
+    seat?: { u: number; v: number; sink?: number };
     /** Another end it sits on in the recipe, as a beak on its head, on that end's `socket`. */
     within?: string;
     fields?: Record<string, unknown>;
@@ -90,6 +102,27 @@ export interface CreaturePlan {
   landmarks: Array<{ id: string; part: string; at: number }>;
   /** Default looseness by hiding layer kind, in head units of stand-off. */
   layers: Record<string, number>;
+  /**
+   * Layer kinds that stand off the body rather than hide it (ears, horns, wings): what their boxes hold is fitted as no body, and the
+   * proposal reads what a box holds past the head as that part, when the plan names it in `drawnOff`.
+   */
+  standOff?: string[];
+  /** Parts read from a stand-off layer's box by kind: their template, the end they sit on and its socket, and their recipe fields. */
+  drawnOff?: Record<
+    string,
+    {
+      id: string;
+      template: string;
+      /** The template's own length at size 1 and its own lean out from straight up, degrees. */
+      templateLength: number;
+      tilt: number;
+      on: string;
+      socket: string;
+      role: Role;
+      params?: Record<string, number>;
+      fields?: Record<string, unknown>;
+    }
+  >;
   /** The recipe's plan, palette colour and pose fields for the proposed body. */
   recipe: { displayPose?: unknown[]; poses?: Record<string, unknown[]> };
 }
