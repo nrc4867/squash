@@ -22,6 +22,7 @@ import dev.chieppa.squash.recipe.figure.FieldSilhouette
 import dev.chieppa.squash.recipe.figure.FigureView
 import dev.chieppa.squash.recipe.figure.P2
 import dev.chieppa.squash.recipe.figure.cornersOf
+import dev.chieppa.squash.recipe.figure.Silhouette
 import dev.chieppa.squash.recipe.figure.fewestStrokePlaces
 import dev.chieppa.squash.recipe.figure.traceBoundary
 import dev.chieppa.squash.recipe.model.Recipe
@@ -164,10 +165,20 @@ private fun traced(view: FigureView, assembled: AssembledCharacter, shown: Set<S
     val body = FieldSilhouette(requireNotNull(fieldOfParts(assembled, shown)) { "figure: the body built no field" }, rootHeight)
     val cover = apartField(assembled, hidden)?.let { FieldSilhouette(it, rootHeight) }
     val box = requireNotNull(assembled.box)
-    val top = box.high.y + rootHeight + TRACE_MARGIN
+    val front = view == FigureView.FRONT
+    val reach = (if (front) maxOf(-box.low.z, box.high.z) else maxOf(-box.low.x, box.high.x)).toDouble()
+    return tracedStrokes(view, body, reach, box.high.y + rootHeight, cover)
+}
+
+/**
+ * The strokes of [view] traced off [body]'s silhouette within [reach] of the middle and up to [height]: its boundary, the front's cut to
+ * its left half where it crosses the middle, then cut again wherever [cover] covers it, each run kept as a few places with its corners.
+ */
+internal fun tracedStrokes(view: FigureView, body: Silhouette, reach: Double, height: Double, cover: Silhouette? = null): List<RecipeFigureStroke> {
+    val top = height + TRACE_MARGIN
     val step = top / TRACE_ROWS
     val front = view == FigureView.FRONT
-    val reach = (if (front) maxOf(-box.low.z, box.high.z) else maxOf(-box.low.x, box.high.x)).toDouble() + TRACE_MARGIN
+    val reach = reach + TRACE_MARGIN
     val inside: (P2) -> Boolean = { q -> body.inside(view, if (front) P2(abs(q.x), q.y) else q) }
     val loops = traceBoundary(P2(-reach, -TRACE_MARGIN), P2(reach, top), step, inside)
     val runs = loops.flatMap { loop -> if (front) leftHalf(loop) else listOf(loop) }
@@ -205,7 +216,7 @@ private fun leftHalf(loop: List<P2>): List<List<P2>> {
 private fun axisCrossing(a: P2, b: P2): P2 = P2(0.0, a.y + (b.y - a.y) * (-a.x) / (b.x - a.x))
 
 /** [run] cut wherever [cover] covers it, a little out along its normal, into the stretches it leaves showing. */
-private fun uncovered(run: List<P2>, view: FigureView, cover: FieldSilhouette?): List<List<P2>> {
+private fun uncovered(run: List<P2>, view: FigureView, cover: Silhouette?): List<List<P2>> {
     if (cover == null) return listOf(run)
     val out = mutableListOf<List<P2>>()
     var current = mutableListOf<P2>()

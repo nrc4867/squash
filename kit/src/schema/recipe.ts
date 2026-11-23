@@ -573,6 +573,8 @@ export interface Recipe {
   displayPose?: BonePose[];
   /** Named poses the build renders besides the display pose; not saved in the character. */
   poses?: { [key: string]: BonePose[] };
+  /** Pose keys: the body's shape corrected in a pose, each blended in by joint angle as a pose nears it and gone at the rest. */
+  keys?: RecipeKey[];
   /** Proportions the built character is checked against, read off a reference: measure.txt flags each one the build is off by more than its tolerance. */
   targets?: RecipeTarget[];
   /** Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off. */
@@ -926,6 +928,32 @@ export interface RecipeJoint {
   [note: `x-${string}`]: unknown;
 }
 
+/** A pose key: a correction of the body's shape in one pose, blended in by joint angle as a pose nears it and gone at the rest the body is built in. Give an outline redrawn in the key's pose, which the build fits to changes of the parts it touches, or the changes themselves; both, and a part's changes given replace the fitted ones. */
+export interface RecipeKey {
+  /** Its name, unique among the keys. */
+  name: string;
+  /** The pose it corrects, over the rest: the bones it turns drive it. A pair's bones on one side drive that side's half of the body; a pose naming one side only drives the other through the twin bones. */
+  pose: BonePose[];
+  /** The figure outline redrawn in the key's pose: only the strokes that change, few points, smooth. Read in each limb's own bones as posed, and fitted to changes of the tube parts' widths and of the blends where they join. */
+  outline?: RecipeKeyOutline | null;
+  /** Changes of the parts' widths and joins, read over the parts' own settings, so an edit of the rest keeps them. */
+  changes?: RecipeKeyChange[];
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** What a key changes on one part, read over its own settings. */
+export interface RecipeKeyChange {
+  /** The part: a pair by its id changes both sides. */
+  part: string;
+  /** Width scales by direction: forward (or front), back, up, down, left, right, outer or inner as a tube's profiles name them, or side+, side-, top+ and top- for a side of the part's Side or Top outline. Each is a run of [x, scale] places along the part, eased between them and held level past its ends. */
+  widths?: { [key: string]: number[][] };
+  /** How much the blend where it joins its parent is scaled by; a part with no blend of its own keeps its default. */
+  blend?: number | null;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
 /** The way to a key light in body space: x forward, y up, z to the character's right; any length but zero. */
 export interface RecipeKeyLight {
   /** Forward. */
@@ -934,6 +962,22 @@ export interface RecipeKeyLight {
   y: number;
   /** To the character's right. */
   z: number;
+  /** A note the build reads past. */
+  [note: `x-${string}`]: unknown;
+}
+
+/** A figure outline redrawn in a key's pose: strokes as a figure's, in body units standing on the ground, only where the key changes the body. */
+export interface RecipeKeyOutline {
+  /** The front view: the character's left half, x from the body's middle toward its left, y up from the ground. Each stroke runs with the figure on its right. */
+  front?: RecipeFigureStroke[];
+  /** The side view from the character's left: x forward from the body's middle, y up from the ground. */
+  side?: RecipeFigureStroke[];
+  /** How high above the ground the root part's origin sits, in body units; the figure's when left out. */
+  rootHeight?: number | null;
+  /** Rounds of correction on the keyed body's silhouette. 4 when left out. */
+  rounds?: number | null;
+  /** Whether the blends where the parts it reaches join are fitted to it too. On when left out. */
+  joins?: boolean;
   /** A note the build reads past. */
   [note: `x-${string}`]: unknown;
 }

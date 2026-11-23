@@ -7,6 +7,7 @@ import dev.chieppa.squash.recipe.RecipeException
 import dev.chieppa.squash.recipe.RecipeJson
 import dev.chieppa.squash.recipe.build.RecipeBuild
 import dev.chieppa.squash.recipe.build.RecipeBuilder
+import dev.chieppa.squash.recipe.build.figureOutlineJson
 import dev.chieppa.squash.recipe.model.RecipeTarget
 import dev.chieppa.squash.screens.look.LookArgs
 import dev.chieppa.squash.screens.look.measureSession
@@ -24,6 +25,7 @@ import kotlin.time.measureTime
  */
 class RecipeRun(private val options: RecipeArgs, private val templates: TemplateFolder = TemplateFolder.shipped()) : AutoCloseable {
     private val sessions = KeptSession()
+    private val keyBodies = PosedKeyBodies(templates.library())
 
     /** The recipe file. */
     val file: File = options.recipe ?: throw RecipeException("$", "name the recipe file: tools/recipe.sh <recipe.json>")
@@ -31,7 +33,7 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
     /** Builds [text], the recipe as read, and judges it; the exit status: 0, or 1 when a render failed. */
     fun run(text: String = readRecipe()): Int {
         lateinit var built: RecipeBuild
-        val buildTime = measureTime { built = RecipeBuilder(templates).build(RecipeJson.read(text)) }
+        val buildTime = measureTime { built = RecipeBuilder(templates, keyBodies).build(RecipeJson.read(text)) }
         val document = built.document
         val id = document.character.id.value
         val out = options.out ?: File(options.root, "build/recipes/$id")
@@ -44,8 +46,21 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
             val means = figure.means.joinToString { "%.4f".format(it) }
             val refits = figure.refitTimes.joinToString { "${it.inWholeMilliseconds}" }
             println("figure: fit ${figure.fitTime.inWholeMilliseconds} ms (again with corrections: ${refits.ifEmpty { "none" }} ms); rounds on the field ${rounds.ifEmpty { "none" }} ms; mean miss by round $means; ${figure.measure.misses.size} stretches past the tolerance")
-            val fitted = File(out, "$id.fitted.recipe.json").apply { writeText(RecipeJson.write(figure.recipe.copy(figure = null))) }
-            println("figure: the recipe as fitted, ${fitted.absolutePath}")
+        }
+        built.keys.forEach { key ->
+            val means = key.means.joinToString { "%.4f".format(it) }
+            val misses = File(out, "key-${key.name}.txt").apply {
+                writeText(key.measure.samples.joinToString("\n", postfix = "\n") { m -> "%s %s %.4f %.4f %s %.4f".format(m.view, m.sample.part, m.sample.sample.at.x, m.sample.sample.at.y, m.profile, m.miss) })
+            }
+            key.posed?.let { posed ->
+                val traced = File(out, "key-${key.name}-posed.json").apply { writeText(figureOutlineJson(posed)) }
+                println("key ${key.name}: the body in its pose, traced, ${traced.absolutePath}")
+            }
+            println("key ${key.name}: fitted in ${key.time.inWholeMilliseconds} ms; mean miss unchanged, then by round $means; ${key.measure.misses.size} stretches past the tolerance; each sample's miss in ${misses.absolutePath}")
+        }
+        built.fitted?.let { recipe ->
+            val fitted = File(out, "$id.fitted.recipe.json").apply { writeText(RecipeJson.write(recipe)) }
+            println("fit: the recipe as fitted, ${fitted.absolutePath}")
         }
         println("character: ${saved.absolutePath}")
         if (options.buildOnly) return 0
@@ -77,7 +92,10 @@ class RecipeRun(private val options: RecipeArgs, private val templates: Template
         RecipeJson.readTargets(file.readText())
     }
 
-    override fun close() = sessions.close()
+    override fun close() {
+        sessions.close()
+        keyBodies.close()
+    }
 
     /** The recipe file's text, failing as a recipe error when there is none. */
     fun readRecipe(): String {

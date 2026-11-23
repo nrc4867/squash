@@ -158,6 +158,16 @@ A body's tubes can take their widths from a drawn **figure outline**: the whole 
 
 **Converting a character.** `tools/recipe.sh figure <recipe.json> [out=<file>]` traces a built recipe's body tubes (generic tubes with drawn Side and Top outlines on the root or on each other) at rest into `<id>.figure.json`, cut where the head, hands and feet hide them, and writes `<id>.figure.recipe.json`: the recipe with those tubes given up for the figure, as a start for drawing over.
 
+### Pose keys
+
+A **pose key** corrects the body in one pose, where skinning alone does not shape it as drawn: a T-pose shoulder top as one curve from the neck into the arm, a rounded underarm, a fuller deltoid on a raised arm. It is blended in by joint angle as a pose nears it (all of it at the key, none at the rest the body is built in) and stored as changes of the parts' widths and joins, read over their own settings, so editing the figure or a part later keeps it.
+
+| Helper | Use |
+| --- | --- |
+| `poseKey` | `poseKey("t", { pose: bothSides("arm", { joint: "base", lean: 45, mode: "free" }), outline: readFigureOutline("t-key.json") })` in the recipe's `keys`. `outline` is the figure redrawn in the key's pose, only the strokes that change (front and optionally side), which the build fits to changes; `changes` gives them directly (`{ part: "arms", widths: { outer: [[0, 1], [0.05, 1.08], [0.12, 1]] }, blend: 1.3 }`: a scale run per direction a tube's profile names, or `side+`, `side-`, `top+`, `top-`; a part named here keeps its own over the fit); `rounds` the width rounds (4); `joins: false` leaves the blends. |
+
+**Adding a key.** Add the key with its pose and an empty outline (`outline: {}`) and build the strip (`close=strip`): the build writes `key-<name>-posed.json`, the body in the key's pose with no change traced into a figure outline. Copy the strokes that need shaping, redraw them (few points, smooth, the change you want and nothing else), read them in with `readFigureOutline`, and build again: the run prints `key <name>: ... mean miss unchanged, then by round ...`, and `key-<name>.txt` lists each sample's part, place and miss (positive where the body stands out past the stroke). Judge the strip's panel in the key's pose, a sweep of poses toward it (named `poses` a few degrees apart, which should change smoothly with no pop), the dressed strip, and the rest, which no key changes. `<id>.fitted.recipe.json` gives each key as the changes it fitted.
+
 ## Hair
 
 Hair is one mass in the one surface: a volume over the skull whose hem parts into locks, clumps blended into it and tufts on fur (`docs/hld/parts.md`, Hair; the skill's `head-and-face.md`, Hair). Lengths are body units; a head's own `size` does not scale its hair, so give the head's depth and height as built.

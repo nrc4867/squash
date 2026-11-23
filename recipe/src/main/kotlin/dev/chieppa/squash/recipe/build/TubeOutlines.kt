@@ -22,6 +22,9 @@ private val DIRECTIONS = mapOf(
 
 private val OPPOSITE = mapOf("forward" to "back", "back" to "forward", "up" to "down", "down" to "up", "left" to "right", "right" to "left")
 
+/** The direction facing away from [direction]. */
+fun oppositeDirection(direction: String): String = OPPOSITE.getValue(direction)
+
 /** Which direction Side's +y and Top's +y face for each rest (frames.md). */
 private val REST_VIEWS = mapOf(
     RecipeRest.FORWARD to ("up" to "right"),

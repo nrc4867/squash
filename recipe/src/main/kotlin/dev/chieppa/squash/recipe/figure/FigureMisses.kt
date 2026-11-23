@@ -29,23 +29,26 @@ class FigureMeasure(val samples: List<SampleMiss>, val misses: List<FigureMiss>)
     val largest: Double = samples.maxOfOrNull { abs(it.miss) } ?: 0.0
 }
 
-/** [sample], drawn on its posed bone, carried onto the same bone at rest: its place and normal turned with the bone. */
-private fun atRest(sample: PartSample, rest: FigureChain, rootHeight: Double, view: FigureView): Pair<P2, P2> {
+/**
+ * [sample], drawn on its posed bone, carried onto the same bone at rest: its place and normal turned with the bone, by [share] of the
+ * bone's turn.
+ */
+private fun atRest(sample: PartSample, rest: FigureChain, rootHeight: Double, view: FigureView, share: Double): Pair<P2, P2> {
     val posed = sample.bone
     val bone = rest.viewBones(view, rootHeight).firstOrNull { it.xFrom == posed.xFrom } ?: return sample.sample.at to sample.sample.normal
     val a = posed.to - posed.from
     val b = bone.to - bone.from
-    val angle = atan2(b.y, b.x) - atan2(a.y, a.x)
+    val angle = (atan2(b.y, b.x) - atan2(a.y, a.x)) * share
     fun turn(p: P2) = P2(p.x * cos(angle) - p.y * sin(angle), p.x * sin(angle) + p.y * cos(angle))
     return bone.from + turn(sample.sample.at - posed.from) to turn(sample.sample.normal)
 }
 
 /**
  * How far the body [silhouette] shows lies off each sample [fit] read, measured at rest: a limb's samples are carried from the pose the
- * outline is drawn in onto its bones at rest first. Misses past the tolerance, a share of the figure's height, are gathered into
- * stretches along each stroke.
+ * outline is drawn in onto its bones at rest first, each by [share] of its bone's turn. Misses past the tolerance, a share of the
+ * figure's height, are gathered into stretches along each stroke.
  */
-fun measure(fit: FigureFit, silhouette: FieldSilhouette, rootHeight: Double): FigureMeasure {
+fun measure(fit: FigureFit, silhouette: Silhouette, rootHeight: Double, share: (PartSample) -> Double = { 1.0 }): FigureMeasure {
     val read = mutableListOf<SampleMiss>()
     val misses = mutableListOf<FigureMiss>()
     val tolerance = MISS_TOLERANCE * fit.split.values.flatMap { split -> split.taken.map { it.sample.at.y } }.fold(0.0, ::maxOf)
@@ -59,7 +62,7 @@ fun measure(fit: FigureFit, silhouette: FieldSilhouette, rootHeight: Double): Fi
             if (i % STRIDE != 0) continue
             val part = fit.parts[s.part] ?: continue
             val profile = profileName(part.spec.kind, view, s.side)
-            val (at, normal) = atRest(s, fit.rest.getValue(s.part), rootHeight, view)
+            val (at, normal) = atRest(s, fit.rest.getValue(s.part), rootHeight, view, share(s))
             val miss = silhouette.edge(view, at, normal, EDGE_REACH)
             if (miss == null) {
                 close()

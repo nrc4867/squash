@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.character.surface.CharacterField
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.geom.field.JoinedField
 
@@ -23,16 +24,19 @@ class SkinSurface(
     val vertexCount: Int get() = positions.size / 3
 
     companion object {
-        /** [surface] as [rig] carries it: each run's own bones its digit's for a digit's run, its part's otherwise. */
-        fun of(surface: CharacterSurface, rig: Rig): SkinSurface {
-            val runs = surface.field.runs
+        /**
+         * [surface] as [rig] carries it: each run's own bones its digit's for a digit's run, its part's otherwise; read in [field], the
+         * surface's own unless another of the same character is given.
+         */
+        fun of(surface: CharacterSurface, rig: Rig, field: CharacterField = surface.field): SkinSurface {
+            val runs = field.runs
             val digits = rig.bones.mapNotNullTo(HashSet()) { it.digit?.patch }
             val own = runs.map { run ->
                 val digit = run.patch.name.takeIf { it in digits }
                 rig.bones.indices.filter { b -> rig.bones[b].name.part == run.partId && rig.bones[b].digit?.patch == digit }.toIntArray()
             }
             val mesh = surface.mesh
-            return SkinSurface(surface.field.field, surface.field.cell, surface.positions, surface.lineNormals, mesh.triangles, mesh.winners, mesh.held, mesh.heldShares, own)
+            return SkinSurface(field.field, field.cell, surface.positions, surface.lineNormals, mesh.triangles, mesh.winners, mesh.held, mesh.heldShares, own)
         }
     }
 }

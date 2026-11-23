@@ -113,6 +113,15 @@ A body's tube parts can be fitted to a drawn **figure outline** instead of drawn
 - **Misses in place.** A recipe build with a figure renders `figure-front.png` and `figure-side.png`: the character in its display pose through a far, narrow camera, the outline over it, and every stretch the shot's silhouette misses by more than an ink line's width (0.004 of the outline's height) marked on the outline in red.
 - **Converting a character.** `convertToFigure` builds a recipe's body tubes, traces their joined field's silhouette at rest on a grid by marching squares, each crossing narrowed to the boundary, the front cut to its left half, every stretch a head, hand or foot hides cut out, and each stroke kept as the fewest places a stroke through them follows within 0.0008 with its corners (turns sharper than 55 degrees); it writes the recipe with those tubes given up for the figure, drawn at rest.
 
+## Pose keys
+
+A recipe's `keys` correct the body in a pose (surface.md, Pose keys). A key gives its pose and either its changes (width scales by the direction a tube's profile names, or by `side+`, `side-`, `top+` and `top-` for a side of a part's own outline, and a blend scale) or an **outline redrawn in its pose**: a figure outline's strokes, only where the key changes the body, fitted to changes before the build sends anything (`fittedKey`, `recipe/build/Key*`).
+
+- **Split in the key's pose.** The strokes are split among the bones of the body's tube parts posed in the key's pose, as a figure's are, each limb on the socket the recipe (or the figure's fit) put it on, so each sample is read in its limb's own bones as posed.
+- **Measured on the posed body.** The recipe runner gives the build a way to pose a body (`KeyBodies`): the tube parts built alone, posed in the key's pose with the changes so far as a key at full weight, exactly as the app poses it, and their silhouette read off the posed surface's triangles. Each sample's miss is the distance to that silhouette's edge along its normal. Without one (a build with no rig) the body is read at rest, each limb's samples carried back by the share of its bone's turn the rig's seam band gives it: half at the limb's root, all of it a root radius out.
+- **Joins, then widths.** First each join whose part the strokes reach near its root takes the share of its blend (among 0.6 to 3.2) whose silhouette lies nearest them; then, for the key's rounds (4), each part's widths take off 0.6 of the miss averaged in bins along it, eased along the part, read over the part's own radius there as a scale, and the round nearest the strokes is kept. A width changes only where the strokes reach.
+- **Reading the fit.** The build prints each key's time and mean miss by round, writes `key-<name>.txt` (each sample's part, place, profile and miss) and `key-<name>-posed.json`, the body in the key's pose with no change traced into a figure outline: the outline to redraw. The recipe as fitted gives each key as its changes.
+
 ## Blank mode
 
 Templates are accelerators, not the only way in. A character can start from an empty body plan and generic parts, with anatomy added by hand.

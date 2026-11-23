@@ -13,6 +13,9 @@ import dev.chieppa.squash.document.LineRules
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartInstance
 import dev.chieppa.squash.document.Pose
+import dev.chieppa.squash.document.PoseKey
+import dev.chieppa.squash.recipe.model.RecipeKey
+import dev.chieppa.squash.recipe.model.RecipeKeyChange
 import dev.chieppa.squash.document.Side
 import dev.chieppa.squash.document.SquashDocument
 import dev.chieppa.squash.document.SurfaceWork
@@ -81,6 +84,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
         shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light, it.key?.let { key -> RecipeKeyLight(key.x, key.y, key.z) }) },
         viewKeys = character.viewKeys.takeIf { it != ViewKeys() },
+        keys = character.poseKeys.map(::exportedKey),
     )
     return RecipeExport(recipe, notCarried)
 }
@@ -204,3 +208,16 @@ private fun leftOut(document: SquashDocument, notCarried: MutableList<String>) {
     if (character.traces.isNotEmpty() || document.references.images.isNotEmpty()) notCarried += "reference and trace images"
     if (character.shownExpression != null) notCarried += "the shown expression"
 }
+
+/** [key] as a recipe's key: each part's changes by its own id, its widths by the side of the outline each scales. */
+private fun exportedKey(key: PoseKey) = RecipeKey(
+    key.name,
+    key.pose,
+    changes = key.changes.map { change ->
+        val widths = change.widths.flatMap { (view, scale) ->
+            val name = view.name.lowercase()
+            listOf("$name+" to scale.plus, "$name-" to scale.minus).filter { it.second.isNotEmpty() }
+        }.associate { (name, places) -> name to places.map { listOf(it.x, it.scale) } }
+        RecipeKeyChange(change.part.value, widths, change.blend.takeIf { it != 1f })
+    },
+)
