@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.build.DigitPatches
 import dev.chieppa.squash.character.catalog.template
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.character.build.HandSockets
+import dev.chieppa.squash.document.NeckStyle
 import dev.chieppa.squash.document.BodyPartChange
 import dev.chieppa.squash.document.CharacterCreases
 import dev.chieppa.squash.document.ViewKeys
@@ -82,6 +83,7 @@ fun exportRecipe(document: SquashDocument): RecipeExport {
         wardrobe = wardrobe,
         displayPose = bones(character.displayPose, "display pose", notCarried),
         creases = character.creases.takeIf { it != CharacterCreases() }?.let { RecipeCreases(it.skin, it.cloth, it.rest) },
+        neck = character.neck.takeIf { it != NeckStyle.BLENDED },
         shading = character.shading.takeIf { it != CharacterShading() }?.let { RecipeShading(it.mode, it.farSideDarker, it.farSide, it.light, it.key?.let { key -> RecipeKeyLight(key.x, key.y, key.z) }) },
         viewKeys = character.viewKeys.takeIf { it != ViewKeys() },
         keys = character.poseKeys.map(::exportedKey),

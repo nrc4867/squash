@@ -9,9 +9,12 @@ import kotlin.test.assertTrue
 /** How close two directions' parts are taken as equal. */
 private const val NEAR = 1e-5f
 
+/** Two colors' channels within one 8-bit step, as a color stores them. */
+private const val CHANNEL_STEP = 1f / 255f
+
 /**
  * Shadow tones keep white white, a cool grey, while a saturated color still shades warm; a fold's band is lighter than a crease's
- * and dark cloth's folds catch a highlight; a view light is the front's for a front view
+ * and dark cloth's folds catch a highlight; a shade cast under a chin is the surface's own shadow tone; a view light is the front's for a front view
  * and turns round with the camera, so a back view is lit from the viewer's side, while a body light stays put.
  */
 class ObjectShadingTest {
@@ -30,6 +33,16 @@ class ObjectShadingTest {
         val skin = Color(0.98f, 0.85f, 0.76f)
         val onSkin = creaseTones(skin)
         assertTrue(onSkin.lit.red > onSkin.lit.blue && onSkin.lit.red < 1f, "on skin a crease is a darker, warmer skin tone: ${onSkin.lit}")
+    }
+
+    @Test
+    fun aCastShadeTakesTheLitColorToTheShadowColorAndLeavesShadowAlone() {
+        val skin = Color(0.98f, 0.85f, 0.76f)
+        val base = Tones(skin, skin.shadeShifted(0.24f))
+        val cast = castShadeTones(base)
+        assertEquals(base.shadow.red, skin.red * cast.lit.red, CHANNEL_STEP)
+        assertEquals(base.shadow.blue, skin.blue * cast.lit.blue, CHANNEL_STEP)
+        assertEquals(Color.White, cast.shadow, "a shade in shadow is not darkened twice over")
     }
 
     @Test

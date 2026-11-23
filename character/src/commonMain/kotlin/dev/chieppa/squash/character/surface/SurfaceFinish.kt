@@ -39,6 +39,8 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
     private val edges = TriangleEdges(mesh.positions, mesh.vertexCount, mesh.triangles)
     private val positive = FloatArray(count)
     private val negative = FloatArray(count)
+    private val chinShade = ChinShade(field, mesh)
+    private val chin = if (chinShade.on) FloatArray(count) else null
     private var done: CharacterSurface? = null
 
     val surface: CharacterSurface get() = checkNotNull(done) { "The surface has work left" }
@@ -56,15 +58,16 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
                 chunks(corners) { from, to ->
                     ownShading(field, mesh, from, to, smoothing.owned, smoothing.held)
                     sides(from, to)
+                    chin?.let { chinShade.fill(from, to, it) }
                 }
-            stage == 2 -> edges.next().orEmpty() + listOf({ smoothing.group() }) +
+            stage == 2 -> edges.next().orEmpty() + listOf({ smoothing.group() }, { if (chin != null) chinShade.smooth(chin) }) +
                 chunks(corners) { from, to -> smoothing.face(from, to) } +
                 chunks(quads) { from, to ->
                     fan.fill(positive, 1, from, to)
                     fan.fill(negative, 1, from, to)
                 }
             stage <= 2 + SMOOTHING_STEPS -> {
-                val edgeWork = if (stage == 3) edges.next().orEmpty() else emptyList()
+                val edgeWork = if (stage == 3) edges.next().orEmpty() + chinQuads() else emptyList()
                 edgeWork + chunks(corners) { from, to -> smoothing.step(from, to) }.also { smoothing.swapNext() }
             }
             stage == 3 + SMOOTHING_STEPS -> {
@@ -80,12 +83,15 @@ class SurfaceFinish(private val field: CharacterField, private val mesh: Surface
                 listOf({ joins = joinCurves(field, mesh, drawn) }) + chunks(count) { from, to -> compose(from, to, out) }
             }
             stage == 4 + SMOOTHING_STEPS + JOIN_SMOOTHING_STEPS -> {
-                done = CharacterSurface(field, mesh, checkNotNull(render), checkNotNull(lines), joins, positive, negative, mesh.positions, smoothing.normals)
+                done = CharacterSurface(field, mesh, checkNotNull(render), checkNotNull(lines), joins, positive, negative, mesh.positions, smoothing.normals, chin)
                 null
             }
             else -> null
         }
     }
+
+    /** The quads' middles' shade under a chin, each the mean of its corners'. */
+    private fun chinQuads(): List<() -> Unit> = chin?.let { values -> chunks(quads) { from, to -> fan.fill(values, 1, from, to) } }.orEmpty()
 
     /** One step of the joins' smoothing, its values taken in by the next batch. */
     private fun joinSteps(): List<() -> Unit> =

@@ -47,6 +47,7 @@ import dev.chieppa.squash.document.SetAreaFill
 import dev.chieppa.squash.document.SetBaseSlot
 import dev.chieppa.squash.document.SetBrushStroke
 import dev.chieppa.squash.document.SetCharacterCreases
+import dev.chieppa.squash.document.SetNeckStyle
 import dev.chieppa.squash.document.SetViewKeys
 import dev.chieppa.squash.document.SetPoseKeys
 import dev.chieppa.squash.document.SetCharacterShading
@@ -99,6 +100,7 @@ import dev.chieppa.squash.uidesign.generated.color_step_material
 import dev.chieppa.squash.uidesign.generated.color_step_palette
 import dev.chieppa.squash.uidesign.generated.color_step_region
 import dev.chieppa.squash.uidesign.generated.color_step_creases
+import dev.chieppa.squash.uidesign.generated.history_neck_style
 import dev.chieppa.squash.uidesign.generated.face_view_keys
 import dev.chieppa.squash.uidesign.generated.pose_keys
 import dev.chieppa.squash.uidesign.generated.face_step_shape
@@ -154,6 +156,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val creases = stringResource(Res.string.color_step_creases)
     val viewKeys = stringResource(Res.string.face_view_keys)
     val poseKeys = stringResource(Res.string.pose_keys)
+    val neckStyle = stringResource(Res.string.history_neck_style)
     val mark = stringResource(Res.string.lines_step_stroke)
     val lineWeight = stringResource(Res.string.lines_step_weight)
     val lineRules = stringResource(Res.string.lines_step_rules)
@@ -204,6 +207,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetCharacterCreases -> creases
             is SetViewKeys -> viewKeys
             is SetPoseKeys -> poseKeys
+            is SetNeckStyle -> neckStyle
             is SetMouthShape -> mouthShape.replace(FIRST, command.shape.word)
             is SetMouthTeeth -> teeth
             is SetTongueLevel -> tongueLevel

@@ -139,6 +139,18 @@ fun Color.shadeFactor(depth: Float, shift: ShadeShift = ShadeShift.AUTO): Color 
  */
 fun creaseTones(color: Color): Tones = Tones(color.shadeFactor(CREASE_DEPTH), color.shadeFactor(CREASE_DEPTH * IN_SHADOW_SHARE))
 
+/**
+ * What a shade cast on a surface of [base] tones multiplies what is under it by, drawn as a crease layer's band: in light, what takes
+ * the lit color to the shadow color, so the shade is the surface's own shadow tone; in shadow, nothing, so a shade in shadow is not
+ * darkened twice over.
+ */
+fun castShadeTones(base: Tones): Tones {
+    fun ratio(shadow: Float, lit: Float) = if (lit > 0f) (shadow / lit).coerceIn(0f, 1f) else 1f
+    val lit = base.lit
+    val shadow = base.shadow
+    return Tones(Color(ratio(shadow.red, lit.red), ratio(shadow.green, lit.green), ratio(shadow.blue, lit.blue)), Color.White)
+}
+
 /** How deep a cloth fold's band shifts what it lies on: lighter than a joint's crease, so folds read soft. */
 private const val FOLD_DEPTH = 0.16f
 

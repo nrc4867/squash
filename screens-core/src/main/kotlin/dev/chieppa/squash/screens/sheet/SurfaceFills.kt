@@ -20,6 +20,7 @@ import dev.chieppa.squash.geom.RenderMesh
 import dev.chieppa.squash.geom.Vec3
 import dev.chieppa.squash.geom.laidOn
 import dev.chieppa.squash.render.BodySide
+import dev.chieppa.squash.render.castShadeTones
 import dev.chieppa.squash.render.creaseTones
 import dev.chieppa.squash.render.foldTones
 import dev.chieppa.squash.render.ColorLayerDraw
@@ -38,7 +39,7 @@ private const val HALF_SHARE = 0.5
  * darkening laid over the surface as a layer that shows by that side's share of each vertex, so a far leg darkens and its join into the
  * body ramps; then each layer of its [paint] in order, each darkened the same way where it lies on a far side, a flat one unshaded. With
  * a [section], only that part's own section of the surface, its paint cut to it; else what of it shows under its garments, [skin], with
- * its [creases]' shade over all. Its eyes show in the look seen along [toViewer] from each eye's middle, the way to the camera there.
+ * the shade under a head's chin and its [creases]' shade over all. Its eyes show in the look seen along [toViewer] from each eye's middle, the way to the camera there.
  */
 fun surfaceDraw(
     surface: CharacterSurface,
@@ -68,7 +69,9 @@ fun surfaceDraw(
     val seen = paint?.seenFrom(toViewer)?.layers.orEmpty()
     val shownLayers = if (section == null) seen else seen.mapNotNull { section.layer(it, surface.render) }
     val creased = creases?.takeIf { section == null }?.let { creaseLayer(mesh, shownCut?.values(it.shade) ?: it.shade, creaseTones(lit)) }
-    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, base.shadow) } + listOfNotNull(creased)
+    val chin = surface.chin?.let { ColorLayerDraw(mesh, castShadeTones(base), shownCut?.values(it) ?: it, crease = true) }
+    val layers = listOfNotNull(sides) + shownLayers.flatMap { layer -> paintLayerDraws(layer, palette, fallback, shading, toCamera, base.shadow) } +
+        listOfNotNull(chin, creased)
     return MeshDraw(mesh, shading.material(base, fallback.ink, toCamera), layers = layers)
 }
 

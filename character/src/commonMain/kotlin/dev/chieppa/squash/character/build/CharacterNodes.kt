@@ -8,6 +8,7 @@ import dev.chieppa.squash.geom.bent
 import dev.chieppa.squash.character.model.BodyPlan
 import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.NeckStyle
 import dev.chieppa.squash.document.PartData
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -58,7 +59,8 @@ data class AssemblyShape(val parts: List<AssemblyPart>, val plan: BodyPlan?, val
 
 /**
  * The parts of [character], as placing reads them, under the garments worn: each on the template it wears, a part a worn garment
- * hides left out with every part on it, and a part a garment owns only while that garment is worn.
+ * hides left out with every part on it, and a part a garment owns only while that garment is worn. A head on a socket carries the
+ * character's neck style in its placement (see [NeckJoin]).
  */
 fun assemblyParts(character: Character): List<AssemblyPart> {
     val hidden = hiddenUnderGarments(character)
@@ -66,7 +68,8 @@ fun assemblyParts(character: Character): List<AssemblyPart> {
         val placement = character.resolvedShape(part).params.filterKeys { PlacementParams.isPlacement(it) || HandSockets.isHandSocket(it) || GenericParams.isGeneric(it) || HandJoints.isHandJoint(it) || HandLandmarks.isHandLandmark(it) || JoinParams.isJoin(it) || it in ClumpInk.PARAMS || (part.role == Role.HAIR && it in ClumpInk.FLOW_PARAMS) }
         val worn = character.wornPart(part)
         val wornSockets = worn.data.params.filter { (key, value) -> (PlacementParams.isSocket(key) || HandSockets.isHandSocket(key)) && placement[key] != value }
-        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, placement, part.role, wornSockets, part.garment, part.blend, character.resolved(part).surface.shades)
+        val joined = if (part.role == Role.HEAD && part.socket != null && character.neck != NeckStyle.BLENDED) placement + (JoinParams.NECK to NeckJoin.of(character.neck).value) else placement
+        AssemblyPart(part.id, worn.template, part.socket, part.pair, part.side, joined, part.role, wornSockets, part.garment, part.blend, character.resolved(part).surface.shades)
     }
 }
 

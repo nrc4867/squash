@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.BodyPlanId
 import dev.chieppa.squash.document.BonePose
 import dev.chieppa.squash.document.Character
+import dev.chieppa.squash.document.SetNeckStyle
 import dev.chieppa.squash.document.CharacterId
 import dev.chieppa.squash.document.DocumentCommand
 import dev.chieppa.squash.document.KeyLight
@@ -49,7 +50,7 @@ class RecipeBuild(
  * Builds recipes into characters by sending the document commands each part of the recipe stands for, in this order: the palette;
  * every body part, placed and shaped in the recipe's order; their colour and surface work; the wardrobe's slots and garments; the
  * parts garments own, placed, shaped and painted; the painted eyes; the membranes; the hair's lock groups and the body's collision shapes; the expressions; the outfits and the one shown; the display pose;
- * the creases; the shading; the view keys; the pose keys.
+ * the creases; the neck style; the shading; the view keys; the pose keys.
  * A key's outline is fitted on the body posed by [keyBodies] when given, at rest otherwise.
  * Anything wrong fails as a [RecipeException] at the recipe path that caused it. See HLD: architecture, Recipes.
  */
@@ -81,6 +82,7 @@ class RecipeBuilder(private val templates: TemplateFolder, private val keyBodies
             outfits()
             if (recipe.displayPose.isNotEmpty()) send("$.displayPose", SetDisplayPose(pose("$.displayPose", recipe.displayPose)))
             recipe.creases?.let { creases(it) }
+            recipe.neck?.let { send("$.neck", SetNeckStyle(it)) }
             recipe.shading?.let { shading(it) }
             recipe.viewKeys?.let { viewKeys(it) }
             if (recipe.keys.isNotEmpty()) poseKeys()

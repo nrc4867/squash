@@ -1,5 +1,6 @@
 package dev.chieppa.squash.rig
 
+import dev.chieppa.squash.character.build.NeckJoin
 import dev.chieppa.squash.document.Anchor
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.document.Role
@@ -178,14 +179,14 @@ private class Rim(val seam: Seam, val bone: Int, val anchor: Vec3, val radius: F
 
 /**
  * How far along u a part's seam band reaches from its socket end: [SEAM_REACH] seam radii times its first joint's [reach], held to
- * half the way to its next joint.
+ * half the way to its next joint, and on a head times its neck style's seam share (see [NeckJoin]).
  */
 internal fun childBandOf(part: RiggedPart, parent: RiggedPart?, reach: JointReach = JointReach.GUESSED): Float {
     val perU = part.rings.lengthPerU
     if (perU <= 0f || part.joints.isEmpty) return 0f
     val next = if (part.joints.owning > 1) part.joints.specs[1].u else 1f
     val factor = reach.of(part.id, part.joints.specs[0].name)
-    return (SEAM_REACH * factor * seamRadius(part, parent) / perU).coerceAtMost(next / 2f)
+    return (SEAM_REACH * factor * seamRadius(part, parent) / perU).coerceAtMost(next / 2f) * NeckJoin.of(part.placed.placement).seamShare
 }
 
 /**

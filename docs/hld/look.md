@@ -83,6 +83,22 @@ An overlap is inked by default, which is also how the reference draws a leg agai
 
 **Line rules and line weights.** Silhouette, interior and taper are the character's, set by command; a mark with no width of its own narrows over its share of taper at each end. A line weight is a stroke of anchors on the surface with a radius and an amount. Every line crossing it, contour, crease or mark, takes the added weight at full strength within most of the radius, easing to none at its edge, and it reaches only the parts its anchors name.
 
+## Necks
+
+A character's neck style (`Character.neck`, `NeckStyle`; `SetNeckStyle` from the Neck row of a head's part drawer, a recipe's `neck`) says how its head meets its neck, from no neck to a slim one:
+
+| Style | Look | The head's join |
+| --- | --- | --- |
+| Blended | No visible neck: the head flows into the neck and shoulders in one smooth curve | Its default blend, its template's ink |
+| Between | A short neck under a soft jaw line | 0.4 of its default blend, unlined, half its seam band; a shade under the chin reaching 0.1 of the head's least extent, and at least four body cells |
+| Defined | A slim neck under the head's own closed outline, the jaw inked across the neck | 0.08 of its default blend, inked, no seam band; a shade under the chin reaching 0.15 of the head's least extent, and at least four body cells |
+
+The style reaches the head as its join's `join.neck` placement value (`NeckJoin`): every part whose role is head and that sits on a socket carries it, and nothing else reads it. A part's own `blend` and `inkJoin` still win over the style's.
+
+- **The jaw line is the head's own outline.** A defined head is drawn closed under its jaw, with the neck rising into it and sitting back under it, so seen from the front the head's outline lies in front of the neck and its contour runs across the neck, the interior line where the neck stands behind it; no ink rule draws it. The head joins the neck by a blend small enough to round the crease under the jaw within a cell or two, so the two never step apart or open a gap, and its join is inked where it shows from below and the side. How slim the neck is, how long and how far back it sits are the recipe's: its width, length and socket.
+- **The head turns whole.** A defined head keeps none of its seam band (surface.md, The rig on the surface), so nothing of its underside takes the neck's bone and a nod or a turn carries the jaw's outline with the head; the bend lies in the neck under it, by the neck's rim band round the head's socket. A head between keeps half its band.
+- **A shade under the chin** (`ChinShade`). Each vertex of the parts the head sits on, the neck and on down, takes, by their share of the surface there, how far inside the head's own solid the places up and a little forward from it lie (body space (0.35, 1, 0), the light's way from above), eased over the head's edge, whole over the nearest 0.45 of the reach and gone at the reach; the head and anything on it take none. The values are smoothed four rounds over the mesh's neighbours, so the border is one smooth curve and no stray tone stays on the throat. They are read at rest and carried by vertex, so posed the shade rides the neck. It draws as a crease layer (`castShadeTones`): where it is at least a half, its edge smoothed over a pixel, it multiplies what is under it by what takes the surface's lit color to its shadow color, and in a two-tone shadow by nothing, so it is the skin's own shadow tone over any paint and never darkened twice.
+
 ## Creases and wrinkles
 
 A bending joint creases on its inner side, as toon reference sheets draw it: a short ink line and a band of shade, faint at rest where a sheet draws one, deepening and lengthening as the joint bends. Cloth creases at the same joints with a small fold either side, wrinkles where a pose bunches it, and gathers in a few short folds just above its hems and cuffs. Each is short and tapered, thick in its middle and pointed at its ends, never the length of a limb or a torso, and a straight limb at rest shows little. Everything is ink, a shade band and, on cloth, a little real fold shape; nothing is painted. The character's `creases` (`CharacterCreases`) hold `skin`, how strongly the body creases, `cloth`, how strongly every garment does, and `rest`, the share of a full crease a joint shows at rest (0.3); both are 1 by default, so every character creases until a strength is set to 0, off, and 2 is the most. Each garment's own `creases`, `wrinkles` and `drape` (1 each) multiply `cloth`.

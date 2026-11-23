@@ -57,6 +57,7 @@ Check each one, every character:
 | ink seams at the hips | a line round each thigh's root or the neck's base on one-colour fur | `inkJoin: false` on that part (`body.md`) |
 | edge-on accessories | a badge, brim or lens seen as a line from the front | its rest and roll (`accessories.md`) |
 | missing neck | the head sunk into the shoulders, the chin on the chest | a neck part (`body.md`) |
+| no jaw line | the sheet draws the head's outline across the neck, the build runs the head into it | `neck: "defined"` or `"between"`, the head closed under the jaw and the neck showing (`body.md`, The neck style) |
 | boxy clothes | a tee like a box, shorts like a skirt | shape the body under them; fit, `partFits` (`clothing.md`) |
 | wobbly or angular body sides | the torso's side rippling in and out, a corner at the hip or waist, a flat shelf at the shoulder | fewer stations, each radius only growing or shrinking between features (`body.md`, Smooth profiles) |
 | clothing copied into the body | a bare body with a dropped shoulder, a waistband pinch or a ledge at the hip | infer the anatomy under the clothes (`body.md`, Smooth profiles) |
