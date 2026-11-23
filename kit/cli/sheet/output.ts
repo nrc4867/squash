@@ -20,6 +20,12 @@ export class SheetOutput {
     return this.done(path);
   }
 
+  text(name: string, text: string): string {
+    const path = join(this.dir, name);
+    writeFileSync(path, text);
+    return this.done(path);
+  }
+
   png(name: string, image: Raster): string {
     return this.done(writePng(join(this.dir, name), image));
   }

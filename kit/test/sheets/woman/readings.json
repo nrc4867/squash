@@ -1,0 +1,8 @@
+{
+  "format": "squash-sheet-readings/1",
+  "proposer": "creature",
+  "plan": "biped",
+  "views": { "front": { "image": "front.png" }, "side": { "image": "side.png" }, "top": { "image": "top.png" } },
+  "unitsPerPixel": 0.0028544,
+  "options": { "id": "woman-proposed" }
+}

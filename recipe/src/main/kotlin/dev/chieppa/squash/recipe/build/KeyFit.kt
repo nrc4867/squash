@@ -17,6 +17,7 @@ import dev.chieppa.squash.recipe.figure.FigureKind
 import dev.chieppa.squash.recipe.figure.FigureMeasure
 import dev.chieppa.squash.recipe.figure.FigurePartSpec
 import dev.chieppa.squash.recipe.figure.FigureView
+import dev.chieppa.squash.recipe.figure.STANDING_VIEWS
 import dev.chieppa.squash.recipe.figure.P2
 import dev.chieppa.squash.recipe.figure.PartSample
 import dev.chieppa.squash.recipe.figure.Silhouette
@@ -157,7 +158,7 @@ fun fittedKey(
         val fields = KeyedFields(body.character, library)
         val pose = Pose(key.pose.map { bone -> bone.copy(part = poseId(recipe, bone.part)) })
         val plain = bodies?.silhouette(body, pose, emptyList(), rootHeight)
-        val posed = plain?.let { silhouette -> FigureView.entries.associateWith { view -> posedSurface(recipe, parts, silhouette, view) } }.orEmpty()
+        val posed = plain?.let { silhouette -> STANDING_VIEWS.associateWith { view -> posedSurface(recipe, parts, silhouette, view) } }.orEmpty()
         val fit = fitFigure(FigureInput(strokes, key.pose, rootHeight, specs, built = built, posed = posed))
         fun measured(changes: List<RecipeKeyChange>): FigureMeasure {
             val made = changes.flatMap { documentChanges(recipe, it, path) }

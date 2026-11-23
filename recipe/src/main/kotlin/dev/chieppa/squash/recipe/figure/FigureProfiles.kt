@@ -43,32 +43,28 @@ internal fun profiles(
     specs: Map<String, FigurePartSpec>,
 ): Map<String, Radii> {
     val out = LinkedHashMap<String, Radii>()
-    val order = if (spec.kind == FigureKind.TRUNK) listOf("left", "front", "back") else listOf("outer", "inner", "front", "back")
+    val order = profileNames(spec)
     val read = HashMap<String, Radii>()
     var crossing: ((Double) -> Double)? = null
     for (view in FigureView.entries) {
         if (spec.part !in reads.getValue(view)) continue
         for (side in BoneSide.entries) {
-            if (view == FigureView.FRONT && spec.kind == FigureKind.TRUNK && side == BoneSide.MINUS) continue
-            val name = profileName(spec.kind, view, side)
+            val name = profileName(spec, view, side)
+            if (view.halved && mirroredSide(spec, name)) continue
             val samples = split.getValue(view).taken.filter { it.part == spec.part && it.side == side }
             val ends = endsUnder(spec, view, side, split.getValue(view), specs)
-            read[name] = binned(samples.filter { it.x <= ends }, input.spacing)
+            val binnedSamples = binned(samples.filter { it.x <= ends }, input.spacing)
+            if (binnedSamples.isNotEmpty() || name !in read) read[name] = binnedSamples
             if (name == "inner" && view == FigureView.FRONT) crossing = crossingTheMiddle(samples, input.spacing)
         }
     }
+    val seenRadii = LinkedHashMap<String, Radii>()
     for (name in order) {
         val seen = read[name].orEmpty()
-        val across = when (name) {
-            "inner" -> out["outer"]
-            "outer" -> null
-            else -> null
-        }
-        val radii = when {
-            seen.isNotEmpty() -> filled(spec, seen, across, if (name == "inner") crossing else null)
-            name == "front" || name == "back" -> roundDepth(spec, out) ?: continue
-            else -> continue
-        }
+        if (seen.isNotEmpty()) seenRadii[name] = filled(spec, seen, if (name == "inner") seenRadii["outer"] else null, if (name == "inner") crossing else null)
+    }
+    for (name in order) {
+        val radii = seenRadii[name] ?: unseen(spec, name, seenRadii) ?: continue
         out[name] = offset(radii, input.offsets[spec.part]?.get(name))
     }
     return out
@@ -195,12 +191,17 @@ private fun evened(r: Radii): Radii = r.mapIndexed { i, p ->
     if (i == 0 || i == r.lastIndex) p else P2(p.x, (r[i - 1].y + p.y + r[i + 1].y) / 3)
 }
 
-/** A limb's depth where the side view does not show it: as deep as it is wide, half its outer and inner sides together at each place. */
-private fun roundDepth(spec: FigurePartSpec, out: Map<String, Radii>): Radii? {
-    if (spec.kind == FigureKind.TRUNK) return out["left"]
-    val outer = out["outer"] ?: return null
-    val inner = out["inner"] ?: return outer
-    return outer.map { P2(it.x, (it.y + readAt(inner, it.x)) / 2) }
+/**
+ * A profile no view reads, from those that are read: a limb as deep as it is wide (half its outer and inner sides together at each place)
+ * or as wide as it is deep, a trunk as round as its one read pair, half that pair's two sides together.
+ */
+private fun unseen(spec: FigurePartSpec, name: String, out: Map<String, Radii>): Radii? {
+    val acrossNames = if (spec.kind == FigureKind.LIMB) listOf("outer", "inner") else listOf("left")
+    if (name in acrossNames && acrossNames.any { it in out }) return null
+    val read = if (name in acrossNames) out.filterKeys { it !in acrossNames } else out.filterKeys { it in acrossNames }
+    val curves = read.values.toList().ifEmpty { return null }
+    val first = curves.first()
+    return first.map { p -> P2(p.x, curves.map { readAt(it, p.x) }.average()) }
 }
 
 /** [r] with [offset] added at each place, never below the least radius. */

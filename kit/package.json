@@ -25,6 +25,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./run": "./src/run/index.ts",
-    "./sheet": "./src/sheet/index.ts"
+    "./sheet": "./src/sheet/index.ts",
+    "./reader": "./src/reader/index.ts",
+    "./propose": "./src/propose/index.ts"
   }
 }

@@ -1,0 +1,70 @@
+{
+  "format": "squash-creature-plan/1",
+  "id": "bird",
+  "name": "Bird",
+  "rest": "standing, the trunk tilted up toward the front, wings folded along its sides, short legs straight down",
+  "head": "head",
+  "rootHeight": 1.7,
+  "parts": [
+    {
+      "id": "trunk", "kind": "trunk", "role": "body", "rest": "forward", "lean": 40, "length": 2.4, "closed": true,
+      "stations": [0, 0.25, 0.5, 0.75, 1],
+      "radii": {
+        "left": [0.38, 0.6, 0.68, 0.6, 0.38],
+        "up": [0.42, 0.68, 0.76, 0.68, 0.42],
+        "down": [0.45, 0.74, 0.84, 0.74, 0.45]
+      }
+    },
+    {
+      "id": "neck", "kind": "trunk", "role": "neck", "on": "trunk", "at": 0.95, "offset": [0, 0, 0], "facing": ["forward", "up"],
+      "rest": "up", "lean": 15, "length": 0.55,
+      "stations": [0, 0.5, 1],
+      "radii": { "left": [0.38, 0.33, 0.32], "front": [0.4, 0.34, 0.33], "back": [0.38, 0.33, 0.32] }
+    },
+    {
+      "id": "leg", "kind": "limb", "role": "leg", "on": "trunk", "at": 0.3, "offset": [0, -0.5, 0.3], "facing": ["forward", "down"],
+      "rest": "down", "outward": 3, "length": 1.0,
+      "joints": [{ "name": "joint.1", "at": 0.5, "low": 0, "high": 140 }],
+      "stations": [0, 0.5, 1],
+      "radii": {
+        "outer": [0.16, 0.09, 0.07],
+        "inner": [0.15, 0.09, 0.07],
+        "front": [0.17, 0.1, 0.07],
+        "back": [0.18, 0.1, 0.07]
+      }
+    }
+  ],
+  "ends": [
+    {
+      "id": "head", "on": "neck", "center": [0.15, 0.35, 0], "radii": [0.55, 0.5, 0.45],
+      "recipe": { "template": "head-bird", "role": "head", "templateLength": 0.3, "spans": 1 }
+    },
+    {
+      "id": "beak", "on": "neck", "center": [1.0, 0.4, 0], "radii": [0.6, 0.22, 0.15], "hides": true,
+      "recipe": { "template": "beak", "role": "jaw", "templateLength": 0.3, "spans": 0, "within": "head", "socket": "muzzle" }
+    },
+    {
+      "id": "foot", "on": "leg", "center": [0.2, -0.05, 0], "radii": [0.35, 0.06, 0.2],
+      "recipe": { "template": "foot-bird", "role": "foot", "templateLength": 0.24, "spans": 0 }
+    },
+    {
+      "id": "wing", "on": "trunk", "at": 0.6, "center": [-0.3, 0.1, 0.62], "radii": [0.95, 0.45, 0.14], "hides": true, "pair": true,
+      "recipe": { "template": "wing-feathered", "role": "wing", "templateLength": 0.55, "spans": 0, "fields": { "lean": -50, "outward": -55 } }
+    },
+    {
+      "id": "tail", "on": "trunk", "at": 0, "center": [-0.45, -0.15, 0], "radii": [0.7, 0.14, 0.3], "hides": true,
+      "recipe": { "template": "tail-feathers", "role": "tail", "templateLength": 0.32, "spans": 0 }
+    }
+  ],
+  "landmarks": [
+    { "id": "crown", "part": "head", "at": 1 },
+    { "id": "throat", "part": "head", "at": 0 },
+    { "id": "breast", "part": "trunk", "at": 0.75 },
+    { "id": "vent", "part": "trunk", "at": 0 },
+    { "id": "hip", "part": "leg", "at": 0 },
+    { "id": "knee", "part": "leg", "at": 0.5 },
+    { "id": "ankle", "part": "leg", "at": 1 }
+  ],
+  "layers": { "feathers": 0.08, "wing": 0.1, "tail": 0.05 },
+  "recipe": { "poses": {"crouch": [{"part": "leg-l", "joint": "joint.1", "degrees": 50}, {"part": "leg-r", "joint": "joint.1", "degrees": 50}, {"part": "neck", "joint": "base", "degrees": -20}]} }
+}

@@ -699,6 +699,8 @@ export interface RecipeFigure {
   front?: RecipeFigureStroke[];
   /** The side view from the character's left: x forward from the body's middle, y up from the ground. Each stroke runs with the figure on its right. */
   side?: RecipeFigureStroke[];
+  /** The top view from above: the character's left half, x from the body's middle toward its left, y forward from the root part's origin. It shapes the widths of parts lying level, as a four-legged body's trunk or a tail, which the front view sees end on. Each stroke runs with the figure on its right. */
+  top?: RecipeFigureStroke[];
   /** The pose the outline is drawn in, over the rest: each limb is read in its own bones as this pose shows them. The display pose when left out; [] for a figure drawn at rest. */
   pose?: BonePose[] | null;
   /** Rounds of correction read off the built body's own silhouette, each a field evaluation: where the joined body lies off the outline, the parts' widths are moved by a share of it. 3 when left out; 0 builds the plain fit. */

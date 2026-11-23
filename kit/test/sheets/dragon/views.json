@@ -1,0 +1,10 @@
+{
+  "format": "squash-sheet-views/1",
+  "pixelsPerUnit": 250.1554,
+  "height": 1.1746,
+  "views": {
+    "front": { "file": "front.png", "middle": 246.8, "ground": 317.8, "origin": 166.6 },
+    "side": { "file": "side.png", "middle": 333.5, "ground": 317.8, "origin": 166.6 },
+    "top": { "file": "top.png", "middle": 246.8, "ground": 585.8, "origin": 434.5 }
+  }
+}

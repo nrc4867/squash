@@ -1,0 +1,8 @@
+{
+  "format": "squash-sheet-readings/1",
+  "proposer": "creature",
+  "plan": "quadruped",
+  "views": { "front": { "image": "front.png" }, "side": { "image": "side.png" }, "top": { "image": "top.png" } },
+  "unitsPerPixel": 0.0031414,
+  "options": { "id": "fennec-proposed" }
+}

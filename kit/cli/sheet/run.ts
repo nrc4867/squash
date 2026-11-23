@@ -2,6 +2,9 @@ import { sheetCommands } from "./commands.ts";
 import { SheetOptions } from "./options.ts";
 
 export const SHEET_USAGE = `usage: tools/recipe.sh kit sheet <command> <image> [option ...]   reads a character sheet (PNG or JPEG)
+  propose   <readings.json> instead of an image: the views it names (front, side, top, each optional) read and the body (or other
+            subject) its proposer and plan propose: proposal.json, figure.json, <id>.recipe.json, evidence-<view>.png, edit.html;
+            edit=true serves the page to drag marks and boxes on (port=47842), Save keeps them in the readings
   views     split the sheet into views: views.png (every box numbered), <view>.png each, views.json
   measure   one view's silhouette and landmarks in heads and body units: measure-<view>.json; views=front,side,back (or all)
             measures each and checks hand and foot sizes across them: measure-across.json

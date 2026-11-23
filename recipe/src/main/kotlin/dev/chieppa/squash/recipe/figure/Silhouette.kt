@@ -44,7 +44,7 @@ interface Silhouette {
         if (!inside(view, at)) {
             outer = 0.0
         } else {
-            val limit = if (view == FigureView.FRONT && at.x > 0 && normal.x < 0) minOf(reach, at.x / -normal.x) else reach
+            val limit = if (view.halved && at.x > 0 && normal.x < 0) minOf(reach, at.x / -normal.x) else reach
             var t = 0.0
             var out: Double? = null
             while (t < limit && out == null) {

@@ -19,12 +19,14 @@ import { regionBoxes, zoomBox, type ZoomRegion } from "../../src/sheet/read/zoom
 import { measuredFrom, sheetFrom, viewFileName } from "./context.ts";
 import type { SheetOptions } from "./options.ts";
 import { SheetOutput } from "./output.ts";
+import { proposeCommand } from "./propose.ts";
 import { sideView } from "./side.ts";
 import { acrossLines, readingLines, summary, traceLines } from "./summary.ts";
 
 export type SheetCommand = (image: string, options: SheetOptions) => void;
 
 export const sheetCommands: Record<string, SheetCommand> = {
+  propose: proposeCommand,
   views(image, options) {
     const sheet = sheetFrom(image, options);
     const out = new SheetOutput(options.outDir(image));

@@ -23,12 +23,17 @@ export function readRaster(path: string): Raster {
   return { width: decoded.width, height: decoded.height, data };
 }
 
+/** An image as PNG bytes. */
+export function encodePng(image: Raster): Buffer {
+  const png = new PNG({ width: image.width, height: image.height });
+  png.data = Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength);
+  return PNG.sync.write(png);
+}
+
 /** Writes a PNG, making its folder; returns the path. */
 export function writePng(path: string, image: Raster): string {
   if (extname(path).toLowerCase() !== ".png") throw new Error(`${path}: images are written as .png`);
   mkdirSync(dirname(path), { recursive: true });
-  const png = new PNG({ width: image.width, height: image.height });
-  png.data = Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength);
-  writeFileSync(path, PNG.sync.write(png));
+  writeFileSync(path, encodePng(image));
   return path;
 }
