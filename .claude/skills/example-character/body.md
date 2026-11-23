@@ -49,7 +49,7 @@ Fall back to the radii below for a tube the figure does not hold: a tail, a snou
 
 ## 3. Tubes before templates
 
-Where a tube fits, use a tube: torso, neck, arms, legs, a long tail, a snout. `tubePart` and `tube` (`kit/README.md`, Shapes and Parts) draw it from radii at stations, so its outline is exactly the sheet's widths at exactly the plan's heights. Use a template where the part needs what only a template has: a head with a face (`head-round`, `head`, `head-bird`), hands with fingers, feet or paws with toes, ears with a cup, curled tails (`tail-curve`). `templates.md` says what each holds; `docs/hld/parts.md` what it is built from.
+Where a tube fits, use a tube: torso, neck, arms, legs, a long tail, a snout. `tubePart` and `tube` (`kit/README.md`, Shapes and Parts) draw it from radii at stations, so its outline holds the widths you chose at the plan's heights. Use a template where the part needs what only a template has: a head with a face (`head-round`, `head`, `head-bird`), hands with fingers, feet or paws with toes, ears with a cup, curled tails (`tail-curve`). `templates.md` says what each holds; `docs/hld/parts.md` what it is built from.
 
 On the `blank` plan the root is a tube resting up (`rest: "up"`): a standing body. Spans turn heights into a part's outline x and its sockets' and joints' u:
 
