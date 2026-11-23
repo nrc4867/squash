@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.AssembledCharacter
+import dev.chieppa.squash.character.build.NeckJoin
 import dev.chieppa.squash.character.build.PlacedPart
 import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.character.mouth.MouthRecess
@@ -178,11 +179,14 @@ internal fun onClosedEndReach(run: FieldRun, parent: PlacedPart, parentRun: Join
 
 /**
  * The blend [part]'s first run, [patch] swept as [solid], joins its socket parent by: the part's own, else its template's share of the
- * run's length, else the larger of a share of the least extent of the run's box and a multiple of the radius it starts open at.
+ * run's length, else the larger of a share of the least extent of the run's box and a multiple of the radius it starts open at; either
+ * default taken at its neck style's share on a head (see [NeckJoin]).
  */
 internal fun socketBlend(part: PlacedPart, solid: Solid, patch: Patch): Float =
-    part.blend ?: part.template.join.blend?.let { it * runLength(patch) }
-        ?: maxOf(leastExtent(solid) * SOCKET_BLEND_SHARE, openRootRadius(patch) * ROOT_BLEND_SHARE)
+    part.blend ?: (
+        part.template.join.blend?.let { it * runLength(patch) }
+            ?: maxOf(leastExtent(solid) * SOCKET_BLEND_SHARE, openRootRadius(patch) * ROOT_BLEND_SHARE)
+        ) * NeckJoin.of(part.placement).blendShare
 
 /**
  * The mean radius of [patch]'s first ring where the run starts open there, at least [OPEN_ROOT_SHARE] of its widest ring; 0 where it starts

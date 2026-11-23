@@ -146,6 +146,23 @@ export const neckPart = tubePart(
 
 The head goes on the neck's end socket at `sink: 0`, drawn from the neck's top (`head-and-face.md`).
 
+### The neck style
+
+Pick the character's `neck` from the sheet before shaping the neck and the head's underside (`docs/hld/look.md`, Necks):
+
+- **`blended`** (the default) where the sheet shows no neck: the head runs into the shoulders in one curve.
+- **`between`** where a short neck shows under a soft jaw line: the jaw's outline flows into the neck's sides and a light shade lies under the chin.
+- **`defined`** where the sheet draws the head's outline closed across a slim neck, often with a shade under the chin.
+
+For `between` and `defined`, leave the head's `blend` and `inkJoin` out: the style sets them, and a value of your own wins over it. Then shape it by eye against the sheet's front, three-quarter and back views:
+
+- **Draw the head closed under the jaw.** Its Side and Top outlines start at radius 0 at x 0, so its underside is round, not a stalk that narrows into the neck.
+- **Run the neck up into the head.** The neck's top (`neckTop`) sits well above the head's seat, so the neck stays inside the head whichever way it turns; the head's seat is the chin.
+- **Show the neck.** The visible neck is the stretch between the chin and the shoulder line on the sheet: raise the head's seat (and the crown with it, keeping the head's size) or lower the shoulders until it shows. A neck the jaw hides shows no jaw line and no shade.
+- **Width and set-back.** Read the neck's width off the front view; its socket on the torso and the head's socket on it (v forward, on the neck's front) set how far it sits back under the head. The jaw line across the neck shows only where the head's outline lies in front of the neck.
+
+Judge it in the head close-ups (`close=head`: front, three-quarter, side, back, above, below), the strip, and named poses turning and nodding the head (`{ part: "head", joint: "neck", turn: 40, mode: "free" }`, `degrees: 20` and `-20`): the jaw line crosses the neck in front, the joins never step, the shade under the chin is one clean shape.
+
 ## 6. Sockets, sinks and blends
 
 - A part on a hand-made socket sinks into its parent by its own depth (`sink` 1, the default). `sink: 0` seats it on the surface. **A neck on the torso's top socket at the default sink drops the neck, the head and everything on it by the neck's depth**: give it `sink: 0`, and the head on the neck's end `sink: 0`. Shoulders take 0 to 0.25; hips the default (the leg starts inside the pelvis). `heights` shows every sink that moved a joint off the plan.

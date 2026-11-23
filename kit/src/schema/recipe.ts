@@ -579,6 +579,8 @@ export interface Recipe {
   targets?: RecipeTarget[];
   /** Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off. */
   creases?: RecipeCreases | null;
+  /** How the head meets the neck: blended, no visible neck, the head flowing into the shoulders in one curve; between, a short neck under a soft jaw line with a light shade under the chin; defined, a slim neck under the head's own closed outline, its jaw inked across the neck and a shade under the chin. It sets the head's join blend and ink where the head part gives neither. Blended when left out. */
+  neck?: ("blended" | "between" | "defined") | null;
   /** How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out. */
   shading?: RecipeShading | null;
   /** Head cheats that follow the camera: the face style, how far the face follows the camera, and keys per view moving the muzzle, ears, nose, any part or the head's shape. Every head's defaults when left out. */

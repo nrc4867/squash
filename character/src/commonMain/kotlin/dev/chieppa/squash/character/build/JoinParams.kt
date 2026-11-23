@@ -7,5 +7,8 @@ object JoinParams {
     /** 0 leaves the join unlined; 1 or unset inks it as a line round the part. */
     const val INK = "${PREFIX}ink"
 
+    /** On a head, its character's neck style (see [NeckJoin]); unset on every other part. */
+    const val NECK = "${PREFIX}neck"
+
     fun isJoin(name: String) = name.startsWith(PREFIX)
 }

@@ -15,6 +15,7 @@ Shape the head first and build it bare; only when its size and profile match the
 ## Drawing head-round
 
 - Put the neck's end socket at `sink: 0` and draw the head from the neck's top; the outline's x runs up from the chin end. Its outline length is the head's height: crown minus the head seat from the plan.
+- **The underside follows the neck style** (`body.md`, The neck style): on a `between` or `defined` neck the outlines start at radius 0 at x 0, so the head closes round under the jaw over the neck; on a `blended` one it may narrow into the neck.
 - **Side is the profile, forward up in the drawing**: up the front from the chin over the lips, nose and brow to the crown, then down the back of the skull and forward under the jaw. **The nose point is the profile's most forward place.** A bump shorter than about 0.3 of the head's height (a nose, lips, a chin) stands out as a narrow ridge; a longer one (a muzzle) swells the whole front.
 - **Top is the face's width** up from the chin, seen from the front: a round head is about as wide as it is tall, a mouse's or bear's cheeks widen it low down.
 - Front is the section seen from above (egg by default).

@@ -24,6 +24,7 @@ One representation runs the whole pipeline: a part is an axis with a row of slic
 | Mark group | Marks with named roles, a draw order and controls (open, expression blend, width, mouth shape). A mouth is a mark group; eyes are painted | Document |
 | Character shading | Flat or two-tone, whether far parts darken and by how much, and whether the light turns with the view or is fixed to the body (look.md, Shading) | Document, on the character |
 | Character creases | How strongly the skin and the cloth crease and wrinkle, and how much shows at rest (look.md, Creases and wrinkles) | Document, on the character |
+| Neck style | How the head meets its neck: blended, between or defined; the defaults of the head's join and the shade under its chin (look.md, Necks) | Document, on the character |
 | Reference image | An image file's bytes as added, its pixel size, where it sits on the References board, and the palette slots picked from it. It never reaches a render | Document, beside the character |
 | Trace | A reference image placed in one of the character's views: where it was first fitted over the character, its scale, offset and turn from there, flip, opacity, behind or over, shown and locked | Document, on the character, one per view |
 | Region | A closed curve of anchors, which may run across parts, a palette slot and an ink flag | Document, in surface work |

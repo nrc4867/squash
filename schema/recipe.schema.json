@@ -1909,6 +1909,21 @@
             }
           ]
         },
+        "neck": {
+          "description": "How the head meets the neck: blended, no visible neck, the head flowing into the shoulders in one curve; between, a short neck under a soft jaw line with a light shade under the chin; defined, a slim neck under the head's own closed outline, its jaw inked across the neck and a shade under the chin. It sets the head's join blend and ink where the head part gives neither. Blended when left out.",
+          "anyOf": [
+            {
+              "enum": [
+                "blended",
+                "between",
+                "defined"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "shading": {
           "description": "How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out.",
           "anyOf": [

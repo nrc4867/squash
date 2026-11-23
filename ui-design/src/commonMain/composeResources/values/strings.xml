@@ -120,6 +120,11 @@
     <string name="shell_part_off">off</string>
     <string name="shell_part_none">No part selected</string>
     <string name="shell_part_blend">Join blend</string>
+    <string name="shell_neck_style">Neck</string>
+    <string name="shell_neck_blended">Blended</string>
+    <string name="shell_neck_between">Between</string>
+    <string name="shell_neck_defined">Defined</string>
+    <string name="history_neck_style">Neck style</string>
     <string name="shell_membranes">Membranes</string>
     <string name="shell_membrane_add">Add membrane</string>
     <string name="shell_membrane_to">To %1$s</string>

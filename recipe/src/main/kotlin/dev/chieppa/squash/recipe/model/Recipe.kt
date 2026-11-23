@@ -9,6 +9,7 @@ import dev.chieppa.squash.document.ShadingLight
 import dev.chieppa.squash.document.ShadingMode
 import dev.chieppa.squash.document.REST_CREASE
 import dev.chieppa.squash.document.JointAngle
+import dev.chieppa.squash.document.NeckStyle
 import dev.chieppa.squash.document.ViewKeys
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
@@ -65,6 +66,8 @@ data class Recipe(
     val targets: List<RecipeTarget> = emptyList(),
     @Doc("Creases and wrinkles: ink and a shade band on the inner side of each bending joint, deepening with its bend, on the body and on cloth, and wrinkles and folds where cloth bunches and hangs. On at their defaults when left out; skin 0 and cloth 0 turn them off.")
     val creases: RecipeCreases? = null,
+    @Doc("How the head meets the neck: blended, no visible neck, the head flowing into the shoulders in one curve; between, a short neck under a soft jaw line with a light shade under the chin; defined, a slim neck under the head's own closed outline, its jaw inked across the neck and a shade under the chin. It sets the head's join blend and ink where the head part gives neither. Blended when left out.")
+    val neck: NeckStyle? = null,
     @Doc("How the character is shaded: flat or two-tone, how much darker its far side is, and where its light comes from. Two-tone renders read the far side and the light. As the defaults when left out.")
     val shading: RecipeShading? = null,
     @Doc("Head cheats that follow the camera: the face style, how far the face follows the camera, and keys per view moving the muzzle, ears, nose, any part or the head's shape. Every head's defaults when left out.")

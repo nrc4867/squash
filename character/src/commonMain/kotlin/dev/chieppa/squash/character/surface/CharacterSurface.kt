@@ -1,6 +1,7 @@
 package dev.chieppa.squash.character.surface
 
 import dev.chieppa.squash.character.build.JoinParams
+import dev.chieppa.squash.character.build.NeckJoin
 import dev.chieppa.squash.document.PartId
 import dev.chieppa.squash.geom.CurvePoint
 import dev.chieppa.squash.geom.RenderMesh
@@ -18,7 +19,8 @@ private const val EASING_STEPS = 3
  * each part's shading carried onto it, its [lines] for contours, read at [positions] with [lineNormals], the surface's normals smoothed
  * over a few rings of neighbours, three values a vertex of [mesh], and the curves where each inked join's two parts share the surface
  * equally, [joins]. [positiveZ] and [negativeZ] hold each vertex's share of paired parts on that side of the body's plane, so a far side
- * darkens by how much of it is that side's. A posed surface keeps the [mesh] it was meshed as, with everything it draws moved.
+ * darkens by how much of it is that side's. [chin] holds each vertex's shade under a head's chin, 0 to 1, or is null where no head's
+ * neck style casts one (see [ChinShade]). A posed surface keeps the [mesh] it was meshed as, with everything it draws moved.
  */
 class CharacterSurface(
     val field: CharacterField,
@@ -30,6 +32,7 @@ class CharacterSurface(
     val negativeZ: FloatArray,
     val positions: FloatArray,
     val lineNormals: FloatArray,
+    val chin: FloatArray? = null,
 ) {
     /**
      * This surface moved: drawn as [render], its vertices at [positions] with [lineNormals], its lines and joins found there again over
@@ -37,7 +40,7 @@ class CharacterSurface(
      */
     fun movedTo(render: RenderMesh, positions: FloatArray, lineNormals: FloatArray, triangles: IntArray = mesh.triangles): CharacterSurface {
         val moved = TriangleLines(positions, lineNormals, triangles)
-        return CharacterSurface(field, mesh, render, moved, joinCurves(field, mesh, moved), positiveZ, negativeZ, positions, lineNormals)
+        return CharacterSurface(field, mesh, render, moved, joinCurves(field, mesh, moved), positiveZ, negativeZ, positions, lineNormals, chin)
     }
 
     /** The surface read by its parts' coordinates, made once when first asked for. */
@@ -106,4 +109,5 @@ internal fun eased(curve: List<CurvePoint>): List<CurvePoint> {
     return if (closed) points + points.first() else points
 }
 
-private fun inked(run: FieldRun): Boolean = run.part.placement[JoinParams.INK]?.let { it > INK_OFF } ?: run.part.template.join.ink
+private fun inked(run: FieldRun): Boolean =
+    run.part.placement[JoinParams.INK]?.let { it > INK_OFF } ?: NeckJoin.of(run.part.placement).inked ?: run.part.template.join.ink
