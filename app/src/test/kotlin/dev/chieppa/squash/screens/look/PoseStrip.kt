@@ -21,17 +21,9 @@ import dev.chieppa.squash.screens.surface.FACE_BINS
 import dev.chieppa.squash.screens.surface.characterView
 import dev.chieppa.squash.screens.surface.framedCamera
 import dev.chieppa.squash.screens.surface.headAngle
-import java.awt.Color
-import java.awt.Font
-import java.awt.RenderingHints
-import java.awt.image.BufferedImage
 import java.io.File
-import javax.imageio.ImageIO
 
 private const val STRIP_MARGIN = 0.05f
-private const val LABEL_SIZE_PIXELS = 16
-private const val LABEL_INSET_PIXELS = 10
-private val LABEL_COLOR = Color(0x80, 0x78, 0x70)
 
 /** The panel labels, left to right. */
 private const val RELAXED_LABEL = "relaxed"
@@ -66,19 +58,6 @@ class PoseStrip(private val work: TestWork, private val errors: MutableList<Stri
         val camera = framedCamera(states.flatMap { state -> state.character.parts.filter { it.id != null } }, toViewer, tile, height, STRIP_MARGIN)
         val views = states.mapIndexed { i, state -> characterView(PixelRect(i * tile, 0, tile, height), camera.camera, state, PROBE_LOOK, probeShading(session), camera.pixelsPerUnit) { id -> FACE_BINS.binFor(state.character.part(id)?.let { headAngle(it, toViewer) } ?: 90f) } }
         val image = FrameSnapshots.render(SceneFrame(PROBE_GROUND, views), tile * states.size, height, errors)
-        keepLabelled(image.pixels, image.width, panels.map { it.first }, tile, name)
-    }
-
-    private fun keepLabelled(pixels: IntArray, width: Int, labels: List<String>, tile: Int, name: String) {
-        val out = BufferedImage(width, pixels.size / width, BufferedImage.TYPE_INT_ARGB)
-        out.setRGB(0, 0, width, out.height, pixels, 0, width)
-        val g = out.createGraphics()
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-        g.font = Font(Font.SANS_SERIF, Font.PLAIN, LABEL_SIZE_PIXELS)
-        g.color = LABEL_COLOR
-        labels.forEachIndexed { i, label -> g.drawString(label, i * tile + LABEL_INSET_PIXELS, LABEL_INSET_PIXELS + LABEL_SIZE_PIXELS) }
-        g.dispose()
-        folder.mkdirs()
-        ImageIO.write(out, "png", File(folder, "$name.png"))
+        keepLabelledStrip(folder, image.pixels, image.width, panels.map { it.first }, tile, name)
     }
 }

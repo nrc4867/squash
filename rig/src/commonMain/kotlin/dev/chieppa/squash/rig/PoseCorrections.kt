@@ -1,6 +1,7 @@
 package dev.chieppa.squash.rig
 
 import dev.chieppa.squash.character.keys.KeyShape
+import dev.chieppa.squash.character.surface.CharacterField
 import dev.chieppa.squash.character.surface.CharacterSurface
 import dev.chieppa.squash.document.Character
 import dev.chieppa.squash.document.Pose
@@ -20,9 +21,19 @@ class RestCorrection(val moved: IntArray, val offsets: FloatArray, val turns: Fl
 
 /**
  * The pose keys of a [character] as shapes on its one rest [surface], one a key ([KeyShape]), each vertex's share of the left side's
- * weight read across the body's middle. Null pieces with no key or no surface.
+ * weight read across the body's middle. Null pieces with no key or no surface. A build keeps what each shape read ([reads]) and the
+ * [held] skin it was made on, so the next build can keep a shape nothing it read has changed.
  */
-class HeldKeys(val surface: CharacterSurface?, val character: Character?, val keys: List<PoseKey>, val shapes: List<KeyShape>) {
+class HeldKeys internal constructor(
+    val surface: CharacterSurface?,
+    val character: Character?,
+    val keys: List<PoseKey>,
+    val shapes: List<KeyShape>,
+    internal val reads: List<KeyReads?>,
+    internal val held: HeldSkin?,
+) {
+    constructor(surface: CharacterSurface?, character: Character?, keys: List<PoseKey>, shapes: List<KeyShape>) : this(surface, character, keys, shapes, emptyList(), null)
+
     /** Every vertex any key moves, in order. */
     private val moved: IntArray = shapes.flatMap { it.moved.asIterable() }.distinct().sorted().toIntArray()
 
@@ -39,7 +50,9 @@ class HeldKeys(val surface: CharacterSurface?, val character: Character?, val ke
         val held = character ?: return null
         if (isEmpty) return null
         val byId = held.parts.associateBy { it.id }
-        val weights = keyWeights(keys, pose, { byId[it]?.side }, { id -> byId[id]?.let(held::twinOf)?.id })
+        val rig = this.held?.rig
+        val turnOf: BoneTurn? = rig?.let { r -> { part, joint, bone -> r.bone(BoneName(part, joint))?.let { localTurn(it, bone.angles()) } } }
+        val weights = keyWeights(keys, pose, { byId[it]?.side }, { id -> byId[id]?.let(held::twinOf)?.id }, turnOf)
         if (weights.all { it.left == 0f && it.right == 0f }) return null
         val offsets = FloatArray(moved.size * 3)
         val turns = FloatArray(moved.size * 3)
@@ -58,6 +71,36 @@ class HeldKeys(val surface: CharacterSurface?, val character: Character?, val ke
             }
         }
         return RestCorrection(moved, offsets, turns)
+    }
+
+    /**
+     * These shapes carried onto [next], a surface whose mesh follows this one's: each vertex the new mesh keeps moved as it was, any
+     * other left still; this, for the same surface; null where [next]'s mesh does not follow. What a pose shows while the keys of a new
+     * surface are still being built.
+     */
+    fun onto(next: CharacterSurface): HeldKeys? {
+        val from = surface ?: return null
+        if (from === next) return this
+        val kept = keptVertices(from, next) ?: return null
+        return HeldKeys(next, character, keys, shapes.map { checkNotNull(it.carried(kept, whole = false)) }, emptyList(), held)
+    }
+
+    /**
+     * The shape of [key] this build made, carried onto [now]'s surface, with what it read, where nothing it read has changed: [base] reads
+     * the same members, [now]'s rig poses its bones the same in the key's pose, and [kept] keeps every vertex it moves, each on the same
+     * bones by the same weights.
+     */
+    internal fun keptFor(key: PoseKey, base: CharacterField, now: HeldSkin, kept: IntArray): Pair<KeyShape, KeyReads>? {
+        val i = keys.indexOf(key)
+        if (i < 0) return null
+        val read = reads.getOrNull(i) ?: return null
+        val was = held ?: return null
+        val wasSkin = was.skin ?: return null
+        val nowSkin = now.skin ?: return null
+        if (!read.stillHolds(base, now.rig, Pose(key.pose))) return null
+        val shape = shapes[i]
+        if (!sameWeights(shape, kept, wasSkin, was.rig, nowSkin, now.rig)) return null
+        return shape.carried(kept, whole = true)?.let { it to read }
     }
 
     private fun leftShares(surface: CharacterSurface, character: Character?): FloatArray {

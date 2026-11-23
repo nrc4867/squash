@@ -82,6 +82,32 @@ class PosedField(surface: SkinSurface, skin: SurfaceSkin, rig: Rig) {
     /** Each slot's map from rest to posed under [transforms]; null for one that stays. */
     internal fun maps(transforms: List<Affine>): Array<Affine?> = Array(slots) { slotBones[it].let { b -> if (b >= 0) transforms[b] else null } }
 
+    /**
+     * Each member's box posed by [frames], low corner then high, six floats a member: the box round its rest box's corners as each of
+     * its pieces' maps takes them.
+     */
+    fun posedBoxes(frames: BoneFrames): FloatArray {
+        val maps = maps(frames.transforms)
+        val out = FloatArray(members.size * 6)
+        for ((m, member) in members.withIndex()) {
+            var lo = Vec3(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE)
+            var hi = Vec3(-Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE)
+            for (piece in pieces[m]) for (corner in 0 until 8) {
+                val c = Vec3(
+                    if (corner and 1 == 0) member.low.x else member.high.x,
+                    if (corner and 2 == 0) member.low.y else member.high.y,
+                    if (corner and 4 == 0) member.low.z else member.high.z,
+                )
+                val q = maps[piece.slot]?.invoke(c) ?: c
+                lo = Vec3(minOf(lo.x, q.x), minOf(lo.y, q.y), minOf(lo.z, q.z))
+                hi = Vec3(maxOf(hi.x, q.x), maxOf(hi.y, q.y), maxOf(hi.z, q.z))
+            }
+            out[m * 6] = lo.x; out[m * 6 + 1] = lo.y; out[m * 6 + 2] = lo.z
+            out[m * 6 + 3] = hi.x; out[m * 6 + 4] = hi.y; out[m * 6 + 5] = hi.z
+        }
+        return out
+    }
+
     /** The field posed by [frames]: each piece read through the inverse of its map. */
     fun posed(frames: BoneFrames): Posed = Posed(maps(frames.transforms).map { it?.inverse }.toTypedArray())
 

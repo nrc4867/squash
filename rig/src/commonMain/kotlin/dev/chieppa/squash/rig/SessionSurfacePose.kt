@@ -82,9 +82,14 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
 
     private val skinSource = graph.follow<HeldSkin, Any>(skin, cacheSize = KEPT_BUILDS) { it }
 
+    private val keyBuilder = PoseKeyBuilder(session.templates)
+
+    /** How many keys the keys' last build made again rather than kept. */
+    val keysBuilt: Int get() = keyBuilder.built
+
     /**
-     * The character's pose keys as shapes on its one rest surface ([poseKeyShapes]), made again when the skin or what the keys read of
-     * the character changes, and never for the coarse surface of a drag.
+     * The character's pose keys as shapes on its one rest surface ([PoseKeyBuilder]), made again when the skin or what the keys read of
+     * the character changes, and never for the coarse surface of a drag; a key none of whose reads an edit changed is kept, not built.
      */
     val keys: Node<*, HeldKeys> = graph.gather(
         session.document.map { doc -> doc.character.takeIf { it.poseKeys.isNotEmpty() }?.let(::keyedCharacter) }.distinctUntilChanged(),
@@ -93,10 +98,22 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
     ) { gathered ->
         val character = gathered.shape ?: return@gather HeldKeys.NONE
         val held = gathered.values.getValue(SkinSource.SKIN) as HeldSkin
-        if (held.coarse) HeldKeys.NONE else poseKeyShapes(character, held, session.templates)
+        if (held.coarse) HeldKeys.NONE else keyBuilder.build(character, held)
     }
 
-    private val keysSource = graph.follow<HeldKeys, Any>(keys, cacheSize = KEPT_BUILDS) { it }
+    /**
+     * The last keys [keys] settled on, none before the first: what the posed surface reads, so a pose never waits for a key being built
+     * but shows the last shapes carried onto the new surface ([HeldKeys.onto]) and takes the new ones when they come.
+     */
+    private val keysSource = graph.node<HeldKeys?, Any>(keys.output, cacheSize = KEPT_BUILDS) { it ?: HeldKeys.NONE }
+
+    /** The last keys carried onto a surface, which a pose of the same keys on the same surface keeps. */
+    @Volatile
+    private var lastCarried: Triple<HeldKeys, CharacterSurface, HeldKeys?>? = null
+
+    private fun keysOn(keys: HeldKeys, surface: CharacterSurface): HeldKeys? =
+        if (keys.surface === surface) keys
+        else lastCarried?.takeIf { it.first === keys && it.second === surface }?.third ?: keys.onto(surface).also { lastCarried = Triple(keys, surface, it) }
 
     /** Where each garment takes the body's key correction from, kept while the body's keys are the same. */
     @Volatile
@@ -156,7 +173,7 @@ class SessionSurfacePose(session: CharacterSession, rig: Node<*, Rig>, pose: Flo
         val settings = gathered.shape.creases
         val creasing = if (settings.creases.on && !held.coarse) PoseCreasing(creaseRigOf(held), frames, settings) else null
         val fits = fitsOf(held)
-        val keys = (gathered.values[SkinSource.KEYS] as HeldKeys?)?.takeIf { it.surface === surface && !held.coarse }
+        val keys = (gathered.values[SkinSource.KEYS] as HeldKeys?)?.takeIf { !held.coarse && !it.isEmpty }?.let { keysOn(it, surface) }
         val correction = keys?.let { breakdown.time("key weights") { it.correction(gathered.shape.pose) } }
         val garmentKeys = correction?.let { made -> garmentKeysOf(keys, surface, made.moved).also { it.prepare(held.dress?.garments.orEmpty().map { g -> g.surface }) } }
         val bodyBreakdown = breakdown?.let { PoseBreakdown() }
