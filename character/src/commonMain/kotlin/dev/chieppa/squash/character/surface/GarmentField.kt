@@ -60,7 +60,8 @@ fun garmentField(field: CharacterField, worn: WornCover, body: AssembledCharacte
     val levels = IntList()
     val shells = ArrayList<Triple<FieldRun, JoinedMember, Int>>()
     val base = baseLevel(field, kept, digits.isNotEmpty())
-    val keptLevel = { run: Int -> bandLevel(field, worn, run, base) }
+    val drawn = worn.cloth.values.any { it.isDrawn }
+    val keptLevel = { run: Int -> bandLevel(field, worn, run, base, drawn) }
     for (run in grown) {
         val at = field.runs[run]
         val member = field.field.members[run]
@@ -223,18 +224,16 @@ private fun baseLevel(field: CharacterField, kept: List<Int>, digits: Boolean): 
 /**
  * The level [worn]'s cloth over [field]'s covered run [run] meshes at: [level], the garment's own (see [baseLevel]), halved further while
  * [worn]'s narrowest band over the run spans fewer than [BAND_CELLS] cells, a painted part's band being its painted cells' and a drawn
- * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings there and [DIGIT_LEVEL] elsewhere, so a belt, a strap, a tie
- * or the gap between two cups is several cells across while the rest of the garment meshes at its own level.
+ * part's also its narrowest drawn piece or gap, up to [DRAWN_LEVEL] halvings in a garment with any [drawn] cloth and [DIGIT_LEVEL]
+ * elsewhere, so a belt, a strap, a tie, the gap between two cups or a collar band beside drawn cloth is several cells across while the
+ * rest of the garment meshes at its own level.
  */
-private fun bandLevel(field: CharacterField, worn: WornCover, run: Int, level: Int): Int {
+private fun bandLevel(field: CharacterField, worn: WornCover, run: Int, level: Int, drawn: Boolean): Int {
     val at = field.runs[run]
     val scales = RunScales(at.patch)
     var narrowest = Float.MAX_VALUE
-    var finest = DIGIT_LEVEL
-    worn.clothOf(at.partId)?.drawnNarrowest(scales::along, scales::around)?.let { drawn ->
-        narrowest = drawn
-        finest = DRAWN_LEVEL
-    }
+    val finest = if (drawn) DRAWN_LEVEL else DIGIT_LEVEL
+    worn.clothOf(at.partId)?.drawnNarrowest(scales::along, scales::around)?.let { narrowest = it }
     val band = bandOf(at.partId, worn)
     if (band.partial) narrowest = minOf(narrowest, band.along * scales.along(band.middle))
     if (!band.allRound) narrowest = minOf(narrowest, band.around * scales.around(band.middle))
