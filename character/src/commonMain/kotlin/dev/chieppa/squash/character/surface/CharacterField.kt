@@ -3,6 +3,7 @@ package dev.chieppa.squash.character.surface
 import dev.chieppa.squash.character.build.AssembledCharacter
 import dev.chieppa.squash.character.build.NeckJoin
 import dev.chieppa.squash.character.build.PlacedPart
+import dev.chieppa.squash.character.model.PartTemplate
 import dev.chieppa.squash.character.model.SurfaceMethod
 import dev.chieppa.squash.character.mouth.MouthRecess
 import dev.chieppa.squash.document.BODY_PATCH
@@ -99,11 +100,13 @@ fun isFieldPart(part: PlacedPart): Boolean =
         part.template.surface == SurfaceMethod.FIELD && part.surface.patches.any { isFieldRun(part, it) }
 
 /** Whether [patch] of [part] is a run in the body's field: a swept run that no block of its template builds as its own mesh. */
-fun isFieldRun(part: PlacedPart, patch: Patch): Boolean =
-    isRun(patch) && part.template.blocks.none { block ->
-        block.surfaceMethod() == SurfaceMethod.SEPARATE &&
-            block.patchNames().any { it.name == patch.name || (it.repeats && patch.name.startsWith(it.name + ":")) }
-    }
+fun isFieldRun(part: PlacedPart, patch: Patch): Boolean = isRun(patch) && !isSeparatePatch(part.template, patch)
+
+/** Whether a block of [template] builds [patch] as its own mesh. */
+fun isSeparatePatch(template: PartTemplate, patch: Patch): Boolean = template.blocks.any { block ->
+    block.surfaceMethod() == SurfaceMethod.SEPARATE &&
+        block.patchNames().any { it.name == patch.name || (it.repeats && patch.name.startsWith(it.name + ":")) }
+}
 
 /** Whether [patch] is a swept run that a member's solid is read from. */
 fun isRun(patch: Patch): Boolean = patch.slices != null && patch.nu >= 2

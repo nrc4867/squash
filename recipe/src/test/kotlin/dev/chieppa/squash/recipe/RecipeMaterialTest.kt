@@ -2,6 +2,7 @@ package dev.chieppa.squash.recipe
 
 import dev.chieppa.squash.character.load.TemplateFolder
 import dev.chieppa.squash.document.KeyLight
+import dev.chieppa.squash.document.MaterialFade
 import dev.chieppa.squash.document.MaterialPreset
 import dev.chieppa.squash.document.MaterialRim
 import dev.chieppa.squash.document.SlotMaterial
@@ -48,6 +49,17 @@ class RecipeMaterialTest {
         assertEquals("$.palette[1].material.shadowSlot", noSlot.path)
         val tooMany = assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"slot": "x", "color": "#ffffff", "material": {"steps": 4}}"""))) }
         assertEquals("$.palette[1].material", tooMany.path)
+    }
+
+    @Test
+    fun aFadeReachesTheSlotRoundTripsAndNamesASlotThePaletteHolds() {
+        val built = builder.build(
+            RecipeJson.read(recipe("""{"slot": "tip", "color": "#302020"}, {"slot": "claw", "color": "#f0e8d8", "material": {"preset": "plastic", "fade": {"slot": "tip", "from": 0.4}}}""")),
+        ).document
+        assertEquals(MaterialFade(SlotName("tip"), from = 0.4f), built.character.palette.material(SlotName("claw"))?.fade)
+        assertEquals(built, builder.build(RecipeJson.read(RecipeJson.write(exportRecipe(built).recipe))).document)
+        val noSlot = assertFailsWith<RecipeException> { builder.build(RecipeJson.read(recipe("""{"slot": "x", "color": "#ffffff", "material": {"fade": {"slot": "none"}}}"""))) }
+        assertEquals("$.palette[1].material.fade.slot", noSlot.path)
     }
 
     @Test

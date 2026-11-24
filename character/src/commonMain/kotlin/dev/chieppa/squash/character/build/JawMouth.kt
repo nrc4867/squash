@@ -55,7 +55,7 @@ fun jawMouthOf(character: Character, instance: PartInstance, template: PartTempl
     val controls = style.controlsOf(group.controls.copy(open = character.shownOpen(group)))
     if (controls.open <= 0f) return null
     val slot = { role: MarkRole -> group.roles.firstOrNull { it.role == role }?.fill }
-    val tongue = slot(MarkRole.TONGUE).takeIf { group.tongueLevel != TongueLevel.NONE }
+    val tongue = slot(MarkRole.TONGUE).takeIf { group.tongueLevel == TongueLevel.FLAT }
     return JawMouth(slot(MarkRole.INNER), tongue, controls.open, controls.tongue)
 }
 

@@ -75,9 +75,10 @@ fun SheetLook.colored(part: SheetPart, color: PaneColor?, toCamera: Vec3, outlin
         val pieces = separatePieces(placed) ?: return null
         val shown = placed.surface.patches.filterNot { isFieldRun(placed, it) }.mapTo(HashSet()) { it.name }
         val own = color.body.parts[id]?.let { PartColor(it.baseSlot, it.layers.filter { held -> held.cut.patch in shown }) }
-        return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts).copy(opacity = opacity, layer = layer)
+        return coloredPartDraw(pieces, own, color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts, spans = spansOf(placed.surface.patches)).copy(opacity = opacity, layer = layer)
     }
-    val draw = coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts)
+    val patches = (posed ?: part.placedPart).surface.patches
+    val draw = coloredPartDraw(mesh, color.body.parts[id], color.palette, fallback, color.shading, part.side, toCamera, part.model(), outline, cutMesh = cuts, spans = spansOf(patches), baseAlong = alongOf(patches))
     return draw.copy(opacity = opacity * draw.opacity, layer = layer)
 }
 

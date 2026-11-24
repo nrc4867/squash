@@ -83,8 +83,9 @@ internal fun shapedMouths(holder: PartId, work: ResolvedSurfaceWork, surface: Pa
     val bySource = work.marks.groupBy { it.source }
     return work.groups.filter { it.isMouth }.mapNotNull { group ->
         val regions = lipRegionsOf(work, group).map { region -> region.border.map { it.anchor } }
-        val placed = group.mouthMarks({ id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, regions)
-        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface, work.dentitions[group.id] ?: MouthDentition.NONE)?.let { group to it }
+        val dentition = work.dentitions[group.id] ?: MouthDentition.NONE
+        val placed = group.mouthMarks({ id -> bySource[id].orEmpty().map { mark -> mark.points.map { it.anchor } } }, regions, dentition.builtOpen)
+        shapeMouth(holder, placed, group.controls, styleOf(work, group), surface, dentition)?.let { group to it }
     }
 }
 

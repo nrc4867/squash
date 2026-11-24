@@ -73,6 +73,7 @@ import dev.chieppa.squash.document.SetEyeLids
 import dev.chieppa.squash.document.SetMouthShape
 import dev.chieppa.squash.document.SetMouthTeeth
 import dev.chieppa.squash.document.SetTongueLevel
+import dev.chieppa.squash.document.SetTongueTip
 import dev.chieppa.squash.document.SetEyeFromFront
 import dev.chieppa.squash.document.SetEyeGaze
 import dev.chieppa.squash.document.SetEyeRoundness
@@ -106,6 +107,7 @@ import dev.chieppa.squash.uidesign.generated.pose_keys
 import dev.chieppa.squash.uidesign.generated.face_step_shape
 import dev.chieppa.squash.uidesign.generated.face_step_teeth
 import dev.chieppa.squash.uidesign.generated.face_step_tongue_level
+import dev.chieppa.squash.uidesign.generated.face_step_tongue_tip
 import dev.chieppa.squash.uidesign.generated.color_step_shading
 import dev.chieppa.squash.uidesign.generated.color_step_stroke
 import dev.chieppa.squash.uidesign.generated.fur_comb_tool
@@ -140,6 +142,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
     val mouthShape = stringResource(Res.string.face_step_shape, FIRST)
     val teeth = stringResource(Res.string.face_step_teeth)
     val tongueLevel = stringResource(Res.string.face_step_tongue_level)
+    val tongueTip = stringResource(Res.string.face_step_tongue_tip)
     val breakPair = stringResource(Res.string.shell_step_break_pair)
     val joinPair = stringResource(Res.string.anatomy_step_pair)
     val replaced = stringResource(Res.string.history_replace_part, FIRST, SECOND)
@@ -211,6 +214,7 @@ fun historyLabels(): (Command<SquashDocument>) -> String {
             is SetMouthShape -> mouthShape.replace(FIRST, command.shape.word)
             is SetMouthTeeth -> teeth
             is SetTongueLevel -> tongueLevel
+            is SetTongueTip -> tongueTip
             is SetMark -> mark
             is SetLineWeight, is SetLineWeightAmount -> lineWeight
             is SetLineRules -> lineRules

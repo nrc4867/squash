@@ -4,6 +4,7 @@ import dev.chieppa.squash.character.model.AreaSpec
 import dev.chieppa.squash.character.surface.LayerTint
 import dev.chieppa.squash.character.model.End
 import dev.chieppa.squash.character.model.PatchSlot
+import dev.chieppa.squash.character.mouth.shaped.mouthPartSlotsOf
 import dev.chieppa.squash.document.wornPart
 import dev.chieppa.squash.document.BrushStrokeId
 import dev.chieppa.squash.document.Character
@@ -44,7 +45,7 @@ data class SocketEnd(val parent: PartId, val closing: BorderClosing)
 
 /**
  * What a part's color reads besides its surface work: the parts its anchors name, its template's areas and colored patches, and for each
- * named part sitting on a socket, how a border crossing that socket closes on it; and for the lower half of a beak the mouth it shows as it drops.
+ * named part sitting on a socket, how a border crossing that socket closes on it, its shaped teeth and tongue among its colored patches; and for the lower half of a beak the mouth it shows as it drops.
  */
 data class PartColorInput(
     val parts: Set<PartId> = emptySet(),
@@ -70,7 +71,7 @@ fun partColorInput(character: Character, part: PartId, templates: TemplateLibrar
     return PartColorInput(
         named,
         areas,
-        PartBuilder.patchSlots(template, params),
+        PartBuilder.patchSlots(template, params) + mouthPartSlotsOf(character, part, templates).map { (patch, slot) -> PatchSlot(patch, slot.value) },
         socketEnds(character, named, templates),
         jawMouthOf(character, instance, template, templates),
     )

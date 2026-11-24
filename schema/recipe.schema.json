@@ -827,7 +827,8 @@
               "enum": [
                 "none",
                 "bar",
-                "blocks"
+                "blocks",
+                "shaped"
               ]
             },
             {
@@ -1545,10 +1546,19 @@
           "$ref": "#/$defs/MouthTeeth"
         },
         "tongueLevel": {
-          "description": "How much tongue the mouth draws: none, or flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark).",
+          "description": "How much tongue the mouth draws: none, flat (its tongue marks, or a plain tongue where the tongue role has a fill and no mark), or shaped (a lofted tongue on the jaw's floor, on a jaw built open or a beak).",
           "enum": [
             "none",
-            "flat"
+            "flat",
+            "shaped"
+          ]
+        },
+        "tongueTip": {
+          "description": "How a shaped tongue's free end is cut: round, groove (a groove down its top) or fork.",
+          "enum": [
+            "round",
+            "groove",
+            "fork"
           ]
         }
       },
@@ -2278,6 +2288,35 @@
       "required": [
         "id",
         "on"
+      ],
+      "patternProperties": {
+        "^x-": {}
+      },
+      "additionalProperties": false
+    },
+    "RecipeFade": {
+      "description": "A second palette slot fading in along a separate part, from its root toward its tip.",
+      "type": "object",
+      "properties": {
+        "slot": {
+          "description": "The palette slot that fades in.",
+          "type": "string"
+        },
+        "from": {
+          "description": "Where along the part, 0 at its root and 1 at its tip, the fade starts: none of the slot shows before it.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "to": {
+          "description": "Where along the part the fade ends: all of the slot shows past it. After from.",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "slot"
       ],
       "patternProperties": {
         "^x-": {}
@@ -4147,6 +4186,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/RecipeGlow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fade": {
+          "description": "A second palette slot fading in along a separate part painted in this one, from its root toward its tip: a claw, horn, beak or tooth darkening or paling toward its tip.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecipeFade"
             },
             {
               "type": "null"

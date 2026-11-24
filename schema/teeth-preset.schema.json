@@ -7,11 +7,12 @@
       "type": "object",
       "properties": {
         "level": {
-          "description": "How much of this jaw shows: none, bar or blocks.",
+          "description": "How much of this jaw shows: none, bar, blocks or shaped (each tooth a hard part, on a jaw built open).",
           "enum": [
             "none",
             "bar",
-            "blocks"
+            "blocks",
+            "shaped"
           ]
         },
         "rows": {

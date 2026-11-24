@@ -16,6 +16,9 @@ enum class TeethLevel {
 
     /** The band split at each slot, one block per tooth. */
     @SerialName("blocks") BLOCKS,
+
+    /** Each slot's tooth built as a small hard part on a jaw built open; painted as blocks on any other mouth. */
+    @SerialName("shaped") SHAPED,
 }
 
 /** How much tongue a mouth draws. */
@@ -26,6 +29,22 @@ enum class TongueLevel {
 
     /** A flat shape: the tongue role's marks, or a plain tongue where its role is filled and has none. */
     @SerialName("flat") FLAT,
+
+    /** A lofted tongue on the jaw's floor, riding bones of its own, on a jaw built open or a beak's lower half; flat on any other mouth. */
+    @SerialName("shaped") SHAPED,
+}
+
+/** How a shaped tongue's free end is cut. */
+@Serializable
+enum class TongueTip {
+    /** Rounded across. */
+    @SerialName("round") ROUND,
+
+    /** Rounded, with a groove down the middle of its top. */
+    @SerialName("groove") GROOVE,
+
+    /** Split into two points. */
+    @SerialName("fork") FORK,
 }
 
 /** The two jaws of a mouth. */
@@ -116,7 +135,7 @@ data class ToothRow(
 @Serializable
 @Doc("One jaw: the level it draws at and its rows, the first in front.")
 data class Jaw(
-    @Doc("How much of this jaw shows: none, bar or blocks.")
+    @Doc("How much of this jaw shows: none, bar, blocks or shaped (each tooth a hard part, on a jaw built open).")
     val level: TeethLevel = TeethLevel.NONE,
     val rows: List<ToothRow> = emptyList(),
 )

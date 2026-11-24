@@ -53,6 +53,21 @@ data class SetTongueLevel(
     }
 }
 
+/** Sets how the shaped tongue of the group [id] that [part] shows ends. */
+@Serializable
+@SerialName("setTongueTip")
+data class SetTongueTip(
+    val part: PartId,
+    val id: MarkGroupId,
+    val tip: TongueTip,
+    val thisSide: Boolean = false,
+) : DocumentCommand {
+    override fun apply(document: SquashDocument): Applied<SquashDocument> {
+        val group = document.shownGroup(part, id, thisSide)
+        return SetMarkGroup(part, id, group.copy(tongueTip = tip), thisSide).apply(document)
+    }
+}
+
 private fun SquashDocument.shownGroup(part: PartId, id: MarkGroupId, thisSide: Boolean): MarkGroup {
     val shown = character.editBase(requirePart(part), thisSide).surface.groups.firstOrNull { it.id == id }
     return requireNotNull(shown) { "No mark group ${id.value} on ${part.value}" }

@@ -3,6 +3,7 @@ package dev.chieppa.squash.screens.surface
 import dev.chieppa.squash.character.build.ResolvedMark
 import dev.chieppa.squash.character.build.ResolvedPoint
 import dev.chieppa.squash.character.model.MouthStyle
+import dev.chieppa.squash.character.mouth.paintsTongue
 import dev.chieppa.squash.character.mouth.AnchoredMark
 import dev.chieppa.squash.character.mouth.FlatPiece
 import dev.chieppa.squash.character.mouth.MouthDentition
@@ -14,7 +15,6 @@ import dev.chieppa.squash.document.MarkGroup
 import dev.chieppa.squash.document.MarkId
 import dev.chieppa.squash.document.MarkRole
 import dev.chieppa.squash.document.Palette
-import dev.chieppa.squash.document.TongueLevel
 import dev.chieppa.squash.geom.ColorShape
 import dev.chieppa.squash.geom.PartSurface
 import dev.chieppa.squash.geom.SurfaceUv
@@ -63,7 +63,7 @@ fun mouthDraws(
         tongue = anchored(MarkRole.TONGUE),
         tongueFilled = role(MarkRole.TONGUE)?.fill != null,
         lipsFilled = role(MarkRole.LIP_LINE)?.fill != null,
-        tongueShown = group.tongueLevel != TongueLevel.NONE,
+        tongueShown = group.paintsTongue(dentition.builtOpen),
         lipRegions = lipRegions,
     )
     val drawn = lipShapes.mapNotNull { shape -> lineOn(surface, origin, like, shape.patch, shape.places)?.let { shape.source.copy(id = shape.source.id, points = it, versions = emptyMap(), width = shape.width) } }

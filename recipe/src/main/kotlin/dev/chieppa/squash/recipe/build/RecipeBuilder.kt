@@ -66,6 +66,7 @@ class RecipeBuilder(private val templates: TemplateFolder, private val keyBodies
         with(context) {
             recipe.palette.forEachIndexed { i, slot ->
                 slot.material?.shadowSlot?.let { slot("$.palette[$i].material.shadowSlot", it) }
+                slot.material?.fade?.let { slot("$.palette[$i].material.fade.slot", it.slot) }
                 val material = slot.material?.let { guard("$.palette[$i].material") { it.slotMaterial } }
                 send("$.palette[$i]", SetPaletteSlot(SlotName(slot.slot), slot.color.slotColor, label = slot.label, material = material))
             }

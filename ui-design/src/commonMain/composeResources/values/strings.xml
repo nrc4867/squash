@@ -388,6 +388,7 @@
     <string name="face_step_shape">Mouth shape %1$s</string>
     <string name="face_step_teeth">Teeth</string>
     <string name="face_step_tongue_level">Tongue level</string>
+    <string name="face_step_tongue_tip">Tongue tip</string>
     <string name="face_teeth">Teeth</string>
     <string name="face_teeth_preset">Preset</string>
     <string name="face_teeth_upper">Upper</string>
@@ -395,6 +396,7 @@
     <string name="face_teeth_level_none">None</string>
     <string name="face_teeth_level_bar">Bar</string>
     <string name="face_teeth_level_blocks">Blocks</string>
+    <string name="face_teeth_level_shaped">Shaped</string>
     <string name="face_teeth_slot">Slot</string>
     <string name="face_teeth_slot_name">%1$s · row %2$d · %3$d %4$s</string>
     <string name="face_teeth_length">Length</string>
@@ -409,6 +411,11 @@
     <string name="face_tongue_level">Tongue</string>
     <string name="face_tongue_none">None</string>
     <string name="face_tongue_flat">Flat</string>
+    <string name="face_tongue_shaped">Shaped</string>
+    <string name="face_tongue_tip">Tip</string>
+    <string name="face_tongue_tip_round">Round</string>
+    <string name="face_tongue_tip_groove">Groove</string>
+    <string name="face_tongue_tip_fork">Fork</string>
     <string name="face_teeth_preset_toon_simple">Toon simple</string>
     <string name="face_teeth_preset_human">Human</string>
     <string name="face_teeth_preset_rodent">Rodent</string>

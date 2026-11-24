@@ -11,7 +11,7 @@ Decided in principle, not yet scheduled into a spike or a stage. Each names its 
 | Foot roll | Heel-to-toe roll for plantigrade feet, driven by the planted foot as the body moves | With walks |
 | Shape touch-up layer at build time | Push and pull offsets in anchor space for grooves, muscle lines and pecs, surviving refits | After the style test |
 | Idle layer | Breathing, blinks, ear flicks and tail sway as an automatic layer under keyed poses, per character, switchable | With animation |
-| Later parts | Teeth, tongue and fangs as parts; beaks; horns and antlers through a tip socket; membrane wings; socket rows for spines and frills; elephant ears; shells with garments. See `docs/hld/parts.md` | Later |
+| Later parts | Shaped teeth and tongue on heads not built open (people, carved mouths); beaks; horns and antlers through a tip socket; membrane wings; socket rows for spines and frills; elephant ears; shells with garments. See `docs/hld/parts.md` | Later |
 | Export plan | How faces, fur edges and outlines survive a glTF export | Not in the first version |
 | Clothing across body plans | Whether one garment refits to another species with the same sockets | Not in the first version |
 | Cloth settle | Sway and follow-through for a free-hanging branch, a settle after the pose rather than a placement by it | With animation |

@@ -99,6 +99,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
+import dev.chieppa.squash.character.mouth.shaped.mouthPartsInputOf
 import dev.chieppa.squash.character.mouth.speaking
 import dev.chieppa.squash.document.MouthShapeName
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -134,7 +135,7 @@ class CharacterSession(
     val mouthPreview = MutableStateFlow<MouthShapeName?>(null)
 
     /** The document as the face shows it: [document] with every mouth saying [mouthPreview]. What the jaw, surface work and color read. */
-    private val shownFace: Flow<SquashDocument> = combine(history.document, mouthPreview) { doc, shape -> doc.speaking(shape, templates) }
+    val shownFace: Flow<SquashDocument> = combine(history.document, mouthPreview) { doc, shape -> doc.speaking(shape, templates) }
 
     private val lengths = LegLengthsOf(templates)
     private val rows = mutableMapOf<PartId, Node<PartBuildInput?, PartBuild>>()
@@ -318,7 +319,8 @@ class CharacterSession(
         val template = instance?.let { templates.find(it.template) }
         val axes = template?.let(PartBuilder::axes) ?: PartAxes.of(Vec3.X)
         val joints = shownFace.map { doc -> template?.let { shownJoints(doc.character, part, it, templates) }.orEmpty() }
-        graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template)
+        val mouthParts = document.map { mouthPartsInputOf(it.character, part, templates) }
+        graph.partSurfaceNode(mesh(part), axes, document.map { it.character.part(part)?.side }, joints, template, mouthParts)
     }
 
     /** What [part]'s sockets are read from while a garment reshapes it, empty otherwise; one per part for the session's life. */

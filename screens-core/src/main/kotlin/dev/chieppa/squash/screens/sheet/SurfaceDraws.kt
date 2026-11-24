@@ -48,7 +48,10 @@ fun Palette.shadowOf(slot: SlotName?): Color? = slot?.let(::shadow)?.let { Color
  * A part's draw with its color from [palette]. Its base shows the slot its work names; with none named, or one the palette does
  * not hold, [fallback]'s base, the look's own part color. A layer whose slot the palette does not hold is not drawn, so what is
  * under it shows. [side] and [toCamera] choose its tones, each slot's material its finish ([tonesOf]). It draws at its base slot's opacity. With [copies] it draws
- * once for each copy, [mesh] being the part's own at rest, each in the slot that copy shows, its own base where it names none.
+ * once for each copy, [mesh] being the part's own at rest, each in the slot that copy shows, its own base where it names none. A slot
+ * whose material fades in another ([dev.chieppa.squash.document.MaterialFade]) draws that slot over itself by how far along its part each
+ * place lies: a layer by its patch's run of u in [spans], the base by [baseAlong]. A shaped tooth's slot with no material draws as
+ * [TEETH_MATERIAL].
  */
 fun coloredPartDraw(
     mesh: RenderMesh,
@@ -62,12 +65,28 @@ fun coloredPartDraw(
     outlinePixels: Float,
     cutMesh: (PatchCut) -> RenderMesh = { it.mesh },
     copies: PartCopies? = null,
+    spans: Map<String, ClosedFloatingPointRange<Float>> = emptyMap(),
+    baseAlong: FloatArray? = null,
 ): MeshDraw {
     val base = palette.tonesOf(color?.baseSlot, fallback.base, shading, side, toCamera)
-    fun drawn(cuts: List<SlottedCut<SlotName>>) = cuts.mapNotNull { layer ->
-        palette.colorOf(layer.slot)?.let { ColorLayerDraw(cutMesh(layer.cut), palette.tonesOf(layer.slot, it, shading, side, toCamera), layer.cut.alphas) }
+    fun drawn(cuts: List<SlottedCut<SlotName>>) = cuts.flatMap { layer ->
+        val shown = palette.forLayer(layer.cut.patch, layer.slot)
+        val lit = shown.colorOf(layer.slot) ?: return@flatMap emptyList()
+        val laid = cutMesh(layer.cut)
+        val own = ColorLayerDraw(laid, shown.tonesOf(layer.slot, lit, shading, side, toCamera), layer.cut.alphas)
+        val fade = shown.look(layer.slot).fade
+        val faded = fade?.let { f ->
+            shown.colorOf(f.slot)?.let { to ->
+                val along = alongOf(layer.cut, spans)
+                ColorLayerDraw(laid, shown.tonesOf(f.slot, to, shading, side, toCamera), FloatArray(along.size) { i -> f.share(along[i]) * (layer.cut.alphas?.get(i) ?: 1f) })
+            }
+        }
+        listOfNotNull(own, faded)
     }
-    val layers = drawn(color?.layers.orEmpty())
+    val baseFade = color?.baseSlot?.let { slot -> palette.look(slot).fade }?.takeIf { baseAlong != null && baseAlong.size == mesh.vertexCount }?.let { f ->
+        palette.colorOf(f.slot)?.let { to -> ColorLayerDraw(mesh, palette.tonesOf(f.slot, to, shading, side, toCamera), FloatArray(mesh.vertexCount) { i -> f.share(requireNotNull(baseAlong)[i]) }) }
+    }
+    val layers = listOfNotNull(baseFade) + drawn(color?.layers.orEmpty())
     val copyLayers = color?.copies?.map(::drawn)
     val material = shading.material(base, fallback.ink, toCamera)
     val instances = copies?.places?.mapIndexed { i, place ->

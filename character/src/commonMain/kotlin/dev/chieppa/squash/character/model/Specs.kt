@@ -71,8 +71,9 @@ data class AreaSpec(
 /**
  * One digit's chain of joints: the digit's patch, its place in its row, the span of the part's u it runs along, whether it is
  * turned [back] past a right angle, and its [joints] in u order from its root, named `<patch>.<n>` from 1. A chain [on] another
- * digit's patch, a claw, hangs from that digit's last joint rather than the part's own chain; a [rigid] chain's joints have no
- * band, so each bone moves what it owns whole.
+ * digit's patch, a claw, hangs from that digit's last joint rather than the part's own chain, and one [from] a joint of the chain by
+ * name, a tooth or tongue from the jaw, hangs from that joint; a [rigid] chain's joints have no band, so each bone moves what it owns
+ * whole. A chain with no joints moves whole with the joint it hangs from.
  */
 data class DigitChain(
     val patch: String,
@@ -82,4 +83,5 @@ data class DigitChain(
     val joints: List<JointSpec>,
     val on: String? = null,
     val rigid: Boolean = false,
+    val from: String? = null,
 )
